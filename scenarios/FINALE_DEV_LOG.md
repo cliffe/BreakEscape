@@ -324,3 +324,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 
 ### m10 stage 7c: script editor
 - m09 script edit R1 (`scenarios/m09_digital_archaeology/SCRIPT_EDIT_R1.md`): revise; A 0/8/12, B 0/8/8, C 0/2/7. Canon break ('read Mr. Lawson his rights'); briefing spends the identity reveal; false-claim lines; Recruiter over cap and budget (17 → 14). Orchestrator: group A's voiced-call budget raised to ~48 distinct new clips (~35 heard per route) rather than cutting carry-over payoffs; the debrief's {&…} cycle is safe (TTS walker expands alternatives). Fixes sent to A, B, C; C then updates CONTRACT.md fixed strings.
+- m09 script edit R1, group A: 20/20 applied; voiced 54 distinct (HaX 51, Netherton 3), 48 new clips (budget met); compile 16/0; phone lint longest 25 words; inkcheck and loopcheck clean. Contract string changes passed to group C.

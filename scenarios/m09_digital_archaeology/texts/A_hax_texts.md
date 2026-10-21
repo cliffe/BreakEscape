@@ -16,9 +16,11 @@ Stage 9 pastes these as `sendTimedMessage` mappings on `agent_0x99` (unvoiced, n
 |---|---|---|---|
 | A3-04 | Tran's just sent the guard to your door. | `conversation_closed:agent_0x99` with `globalVars.flag1_submitted && globalVars.m01_maya_ko` | `onceOnly`, `delayMs: 3000`, so it lands after `flag1_read` closes. **Fixed** |
 | A3-05 | That cabinet takes a print. She stamps everything. | `room_entered:restricted_cage` | `onceOnly`, `delayMs: 2000`. **Fixed** |
-| A3-06a | That box behind her is the last of the night. The legacy files. She gets to it the moment you go past her to the cabinet, or walk out of this cage. She won't stop for asking. | `global_variable_changed:cage_opened` with `value === true && !globalVars.m05_found_pipeline_list` | `onceOnly`. **Fixed**. Two rows for the "not warned in time" arm, because `!(a && !b)` is `!a` or `b` |
-| A3-06b | (same string as A3-06a) | `global_variable_changed:cage_opened` with `value === true && globalVars.m05_found_pipeline_list && globalVars.m05_recruiter_deal_accepted` | `onceOnly` |
-| A3-06c | The legacy files are under Noor's desk. Let her shred the rest. | `global_variable_changed:cage_opened` with `value === true && globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted` | `onceOnly`. **Fixed** |
+| A3-06a | That box behind her is the last of the night. The legacy files. | `global_variable_changed:cage_opened` with `value === true && !globalVars.m05_found_pipeline_list` | `onceOnly`. Script edit R1 A-18: the contract's one 37-word text split in two, 5 s apart (revised fixed string). Two rows per text for the "not warned in time" arm, because `!(a && !b)` is `!a` or `b` |
+| A3-06b | She gets to it when you pass her for the cabinet, or leave the cage. She won't stop for asking. | as A3-06a | `onceOnly`, `delayMs: 5000` |
+| A3-06c | (A3-06a's string) | `global_variable_changed:cage_opened` with `value === true && globalVars.m05_found_pipeline_list && globalVars.m05_recruiter_deal_accepted` | `onceOnly` |
+| A3-06d | (A3-06b's string) | as A3-06c | `onceOnly`, `delayMs: 5000` |
+| A3-06e | The legacy files are under Noor's desk. Let her shred the rest. | `global_variable_changed:cage_opened` with `value === true && globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted` | `onceOnly`. **Fixed** |
 | A3-07 | Hold his file next to the notebook scan in my case file. Then tell me what you see. | `global_variable_changed:nightshade_file_held` with `value === true && !globalVars.flag3_submitted` | `onceOnly`. **Fixed** |
 | A3-08 | She's still feeding it. | `room_entered` with `globalVars.flag2_submitted && !globalVars.hatch_talked` | `onceOnly`. **Fixed** |
 | A3-09 | She's sixty-six. | `npc_ko:sorensen` | `onceOnly`. **Fixed** |
@@ -39,7 +41,7 @@ No raid team, no WREN, no VM detail. Each mapping also sets its `<x>_guide_offer
 | # | Text | Trigger (stage 9) | Notes |
 |---|---|---|---|
 | A3-17 | There's a field guide for the catalogue server if you want it. Ask me. | `object_interacted` with `data.objectType === 'vm-launcher' && data.roomId === 'reading_room'` | `onceOnly`; sets `catalogue_guide_offered` |
-| A3-18 | I've a field guide for the ledger stage. Ask when you want it. | `global_variable_changed:flag1_submitted` with `value === true` | `onceOnly`; sets `ledger_guide_offered`; `delayMs` long enough to land after `flag1_read` closes and Nightshade's call (if any): 15000 |
+| A3-18 | I've a field guide for the ledger, if you want it. Ask me. | `global_variable_changed:flag1_submitted` with `value === true` | `onceOnly`; sets `ledger_guide_offered`; `delayMs` long enough to land after `flag1_read` closes and Nightshade's call (if any): 15000 |
 | A3-19 | Field guide for his box is ready. Say the word. | `room_entered:salvage_cage` | `onceOnly`; sets `tomb_beta_guide_offered` |
 | A3-20 | If the cipher's new to you, there's an archive-code field guide. Ask me. | `global_variable_changed:salvage_keypad_seen` with `value === true && !globalVars.m02_gary_protected` | `onceOnly`; sets `archive_code_guide_offered`. On Gary's branch set the global with no text (his call covers it), so his ring and this text never land together |
 
@@ -49,10 +51,9 @@ Each fires once on its document's read or pickup. The read latches (`rent_ledger
 
 | # | Text | Trigger (stage 9) | Notes |
 |---|---|---|---|
-| A3-21 | There it is. Tomb Gamma has an address. | `item_picked_up:notes`, `data.itemId === 'lease_file'`, with `globalVars.m08_completed && !globalVars.m08_tomb_gamma_location_known` | `onceOnly`. **Fixed** |
-| A3-22a | Same site Nightshade gave us. Now it has a lease. | as A3-21, with `globalVars.m08_tomb_gamma_location_known` | `onceOnly`. **Fixed**. "Otherwise" is two rows: this one and A3-22b |
-| A3-22b | (same string as A3-22a) | as A3-21, with `!globalVars.m08_completed` | `onceOnly`. A cold start hears "Same site Nightshade gave us": the never-played canon is that Nightshade gave the coordinates (SA §10); flag to the orchestrator if cold starts should get A3-21 instead |
-| A3-23a | Big Sky was on Zero Day's client list. Sterling's keys opened it after Cardiff. | as A3-21, with `globalVars.m03_victoria_fate === 'arrested'` | `delayMs: 5000` after A3-21/22. **Fixed** |
+| A3-21 | There it is. Tomb Gamma has an address. | `item_picked_up:notes`, `data.itemId === 'lease_file'`, with `!globalVars.m08_tomb_gamma_location_known` | `onceOnly`. **Fixed**. Script edit R1 ruling 5: cold starts get this line too (the cold briefing has Nightshade in custody saying nothing) |
+| A3-22 | Same site Nightshade gave us. Now it has a lease. | as A3-21, with `globalVars.m08_tomb_gamma_location_known` | `onceOnly`. **Fixed** |
+| A3-23a | Big Sky was on Zero Day's client list. Sterling's keys opened it after Cardiff. | as A3-21, with `globalVars.m03_victoria_fate === 'arrested'` | `delayMs: 5000` after A3-21 or A3-22. **Fixed** |
 | A3-23b | (same string as A3-23a) | as A3-21, with `globalVars.m03_victoria_fate === 'ko'` | `delayMs: 5000`. **Fixed** |
 | A3-24 | Irina's account paid for this. Tell her it bought us the deed. | `global_variable_changed:rent_ledger_read` with `value === true && globalVars.m06_irina_recruited` | `onceOnly`. **Fixed** |
 | A3-25 | St. Catherine's money. It bought the blast door. | `global_variable_changed:refit_ledger_read` with `value === true && globalVars.m02_paid_ransom` | `onceOnly`. **Fixed** |
@@ -73,7 +74,7 @@ Each fires once on its document's read or pickup. The read latches (`rent_ledger
 
 ## 5. Notes for stage 9
 
-- A3-06a/b replace the contract's single "split on `m05_found_pipeline_list && !m05_recruiter_deal_accepted`" row: its negation is an "or", so it is two mappings.
+- A3-06a–d replace the contract's single 37-word text: two texts (script edit R1 A-18), each on two mappings, because the negation of `m05_found_pipeline_list && !m05_recruiter_deal_accepted` is an "or".
 - A3-04 keys on HaX's thread closing so the text can't land inside `flag1_read`; if stage 9 prefers `global_variable_changed:flag1_submitted` with a long delay, 12000 ms clears the 2500 ms ring and a short read.
-- A3-22b: the cold-start reading of the lease line is a judgement call (see the row).
 - Every text is under 30 words; none starts with `*`, `-`, `+`, `=` or `#`.
+- New read latch for stage 9 (script edit R1 A-05): `alpha_annotations_read`, an `onRead` `setVariable` on `alpha_annotations` (readable only after the identity scene, S6). HaX's hub topic 3b, "[His annotation sheets, with the tapes.]", is gated on it; `alpha_clip_played` is no longer read by A1.

@@ -59,7 +59,7 @@ VAR hour_read_done = false
 VAR hour_read_choice_reached = false
 VAR tesseract_call_started = false
 VAR tesseract_call_done = false
-VAR alpha_clip_played = false
+VAR alpha_annotations_read = false
 VAR start_debrief = false
 VAR debrief_notice_before = false
 VAR report_done = false
@@ -135,18 +135,16 @@ VAR hand_answered_here = false
 That noise is a cross-cut shredder. It's been running since before you landed.
 Shutter's his round. The office door's quieter.
 Night guard. Twenty-four. Not ours, not theirs. Don't hurt him.
+{raid_team_answer == "quintero":
+    Quintero's going to hate that she was right if this goes badly. Let's not.
+}
 + [The office door. I'll pick it.]
     Good. That puts you past the front desk and nowhere near his torch.
 + [The shutter. I'll time his round.]
     His torch crosses the far end of the floor. Go when it's gone.
 -
-{raid_team_answer == "quintero":
-    Quintero's going to hate that she was right if this goes badly. Let's not.
-}
 + [Who else is inside?]
     Margaret Sorensen runs the place. County clerk for twenty years before this.
-+ [Just the guard?]
-    No. The director's in. Margaret Sorensen, county clerk for twenty years before this.
 -
 A clerk's on tonight, and an IT contractor, Jesse Tran.
 -> tran_warning ->
@@ -195,7 +193,7 @@ I've told the Director. He'll say nothing to them. Neither will you.
 // never played get nothing.
 {
 - m05_final_choice == "public_exposure":
-    The twenty-three are all marked "blown". Your exposure did that.
+    The twenty-three are all marked "blown".
 - m05_final_choice == "turn_double_agent":
     Torres' entry still reads "live". They never learned he turned.
 - m05_final_choice == "combat_lethal":
@@ -204,10 +202,8 @@ I've told the Director. He'll say nothing to them. Neither will you.
 {m07_found_tomb_gamma:
     You bagged the dossier. 'Including the people.' This is the people.
 }
-+ [Anything else on the entry?]
++ [What else is on the entry?]
     A source code, H&L, and a file number. HL2015-0477.
-+ [Then I'll find out myself.]
-    Start with the source. H&L, file number HL2015-0477.
 -
 #exit_conversation
 -> DONE
@@ -284,7 +280,7 @@ She's watching the deck. Pull her file and we get half her people. She warns the
     -> office
 
 = no_block
-She watched the counter. Not the copy. One of them. Now.
+She only watched the counter. I can pull one before it wipes. Which?
 + [Her file.]
     #set_global:recruiter_offer:named
     #set_global:deck_pulled:her_file
@@ -299,7 +295,7 @@ She watched the counter. Not the copy. One of them. Now.
 = office
 #set_global:deck_choice_made:true
 #complete_task:answer_the_offer
-She fired it from Peg's office. I'm on the door.
+She fired it from Sorensen's office. I'm on the door.
 Her card for the tape room will be in that office.
 #exit_conversation
 -> DONE
@@ -316,14 +312,16 @@ Her card for the tape room will be in that office.
 // VM-STEER: check against the VM plan. The credential's first line, in
 // story terms only (CONTRACT §11 item 2): a SAFETYNET staff credential,
 // issued before he left, never revoked. Quote no VM string.
+// Script edit R1 A-01: the hand line opens the scene when it is still open,
+// so it never interrupts the credential; the start tags go on the first line.
 #set_global:identity_scene_started:true
 #unlock_task:hear_the_name
-Tomb Beta's owner. It's one of ours. A SAFETYNET staff credential.
 {not hand_matched:
     #complete_task:match_the_hand
     #set_global:hand_matched:true
-    You never told me about the hand on his file. I looked while you were busy. It's his.
+    You never told me about the writing on Nightshade's file. I put it next to my notebook. It's his.
 }
+Tomb Beta's owner. It's one of ours. A SAFETYNET staff credential.
 Issued before he left us. Never revoked. The name on it is...
 #set_global:identity_name_said:true
 Director Magnus Netherton: I said we wouldn't name him until we could prove it. We can. Dr Adrian Tesseract.
@@ -333,6 +331,7 @@ Director Magnus Netherton: HaX.
 
 // Beat 3.3 step 3. At most one recognition line, then one of four openings
 // by m06_architect_identity_found x m07_teacher_discussed, then the wall.
+// Script edit R1 A-a: three lines a form from nine shared strings.
 = confession
 {
 - m07_architect_echo_heard:
@@ -342,23 +341,21 @@ Director Magnus Netherton: HaX.
 }
 {
 - m06_architect_identity_found and m07_teacher_discussed:
-    I told you on the handset he taught me.
     I gave you his name after HashChain and called it Satoshi's guess. It was mine as well.
-    He taught me to read people. I never once read him.
-    When his name came up, I put it in a drawer. He was mine.
+    I told you on the handset he taught me. I put his name in a drawer.
+    He was mine, and I wanted to be wrong.
 - m06_architect_identity_found:
     I gave you his name after HashChain and called it Satoshi's guess. I've been hoping ever since that it was only his.
     He taught me. The notebook in my case file is from his course. Those margins are his.
-    I kept it out of every report I wrote. He was mine, and I wanted to be wrong.
+    He was mine, and I wanted to be wrong.
 - m07_teacher_discussed:
     I told you somebody taught me that line. I didn't say who.
     "Keep it out of your notes" was me keeping it out of mine.
-    His name turned up in a crypto fund's file. Eighty-seven per cent. I put it in a drawer.
-    He was mine. I wanted the other thirteen.
+    He was mine, and I wanted to be wrong.
 - else:
     There was a file on a crypto fund, with his name in it at eighty-seven per cent. I put it in a drawer.
-    He trained me. I wanted the other thirteen.
-    The notebook in my case file is from his course. Those margins are his.
+    He taught me. The notebook in my case file is from his course. Those margins are his.
+    He was mine. I wanted the other thirteen.
 }
 // Fixed (CONTRACT §2.1), split at a sentence break for the 25-word phone cap.
 Two cards on that wall. I had his name the night they died.
@@ -380,17 +377,17 @@ I don't know if saying it would have saved them. I didn't say it.
 + [Afterwards. Not during.]
     -> said_afterwards
 
+// Script edit R1 A-b: the Reading forms are one line said before the
+// normal reply.
 = said_should
 #set_global:hax_confession_answer:should_have_told
 #set_global:identity_scene_done:true
 #complete_task:hear_the_name
 {reading_told_hax:
     He wrote that I'd cover for you. He'd know. He taught me.
-    You get all of it from now on.
-- else:
-    Yes. I should have.
-    You get all of it from now on.
 }
+Yes. I should have.
+You get all of it from now on.
 -> back_to_work
 
 = said_same
@@ -398,11 +395,9 @@ I don't know if saying it would have saved them. I didn't say it.
 #set_global:identity_scene_done:true
 #complete_task:hear_the_name
 {reading_told_hax:
-    He says I'll cover for you. Tonight it went the other way.
-    Don't be kind about it. Thank you.
-- else:
-    Don't be kind about it. *beat* Thank you. Once.
+    He wrote that I'd cover for you. Tonight you covered for me.
 }
+Don't be kind about it. *beat* Thank you. Once.
 -> back_to_work
 
 = said_afterwards
@@ -410,12 +405,9 @@ I don't know if saying it would have saved them. I didn't say it.
 #set_global:identity_scene_done:true
 #complete_task:hear_the_name
 {reading_told_hax:
-    ...That's mine. You don't get to use it on me.
-    He says I'll cover for you. We'll find out afterwards which of us needed it.
-- else:
-    ...That's mine. You don't get to use it on me.
-    Thank you.
+    He wrote that I'd cover for you. Tonight you covered for me.
 }
+...That's mine. You don't get to use it on me. *beat* Thank you.
 -> back_to_work
 
 // Beat 3.3 step 5 (milestone M-05).
@@ -424,6 +416,8 @@ Seven years, and nobody turned it off. There's more on his box. A memo and a dra
 -> albion
 
 // Beat 3.4. The hub's notice topic has its own lines and never comes here.
+// Script edit R1 A-03/A-04/A-e/A-f: one controller line per form, no
+// choice, one watch line, one send line, the inquiry as its own sentence.
 = albion
 #unlock_task:send_the_notice
 {
@@ -436,34 +430,15 @@ Seven years, and nobody turned it off. There's more on his box. A memo and a dra
 - else:
     This is the hole Critical Mass came through at Albion. We'd known about it for nine years.
 }
-// The controller line, two fixed forms (SA Beat 3.4), each split at a
-// sentence break to keep phone lines at 25 words or fewer.
 {m04_disclosure_choice == "full":
-    You told them how they got in. They audited every battery site and fixed the settings.
-    The flaw's in the controller, and that's in water works and substations too. Four hundred of them. Nobody told the vendor.
+    They audited every battery site. The controller's still in water works and substations. Four hundred sites.
 - else:
-    Albion fixed its own plant. The flaw's in the controller, and that controller runs in water works and substations too.
-    Four hundred sites, give or take, and every one still open.
+    Albion fixed its own plant. That controller also runs water works and substations. Four hundred sites, still open.
 }
-+ [Then we send it.]
-    Hear the price first.
-+ [Then it stays where it is.]
-    Hear what that buys us first.
--
-{
-- m04_voltage_escaped:
-    That's where our watch is. If Voltage's people try that kit again, we see them.
-- m04_voltage_captured:
-    That's where our watch is. If what's left of his crew tries it again, we see them.
-- else:
-    That's where our watch is. If Critical Mass tries it again, we see them.
-}
-Send it and the vendor starts on a fix for four hundred sites, and we pull the watch.
-// Two whole-sentence forms; the inquiry clause is never printed on its own.
+That's where our watch is. If anyone tries that kit again, we see them.
+Send it and the vendor starts on a fix. They'll go over that kit, so we pull the watch.
 {m04_disclosure_choice == "full" or m04_crew_lost:
-    They'll be crawling over that kit, and we can't be in it when they look. And Albion's inquiry gets to ask when we knew.
-- else:
-    They'll be crawling over that kit, and we can't be in it when they look.
+    And Albion's inquiry gets to ask when we knew.
 }
 It isn't my call. It isn't yours either. If you're going to, don't ask me first.
 {deck_pulled == "alpha_tapes":
@@ -514,11 +489,11 @@ He'll call it full disclosure.
     His notice was the coordinated kind: vendor first, time to fix it. This is every weapon we hold, handed out at once.
 -
 + [Who gets it first?]
-    The cells. Four o'clock, two hours ahead of everyone else.
+    The cells. Oh-four-hundred, UTC. Two hours ahead of everyone else.
     And his defences at Tomb Gamma are on here. Every one of them built from an entry in the stolen database.
 + [What's he hiding behind?]
     A list of his defences at Tomb Gamma. Every one of them built from an entry in the stolen database.
-    And the cells get it at four o'clock. Two hours ahead of everyone else.
+    And the cells get it at oh-four-hundred, UTC. Two hours ahead of everyone else.
 -
 + [Analysis had a guess. Is it on there?]
     His own number. It replaces theirs.
@@ -554,7 +529,7 @@ He'll call it full disclosure.
     -> DONE
 + [Read me the defences.]
     #set_global:hour_read_done:true
-    They're ours, turned round. Every one is an entry from our own database. We wrote the manuals.
+    They're ours, turned round. We wrote the manuals. He read them more carefully than we did.
     #exit_conversation
     -> DONE
 
@@ -606,7 +581,7 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     - not sleeper_named and not sleeper_shortlist:
         H&L's boxes are still shut. That's yours to leave, if you leave it.
     - tran_outcome == "left":
-        Tran's still in the closet. Arakawa's people can collect him.
+        Tran's still at his tapes. Arakawa's people can collect him.
     }
     // Copied once, never again, so a replayed debrief reads a stable value.
     {not start_debrief:
@@ -614,7 +589,7 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     }
     // A tag, so it re-emits even when already true (a reload reopens the debrief).
     #set_global:start_debrief:true
-    Coming in. Netherton's in the hangar.
+    Bringing you in. Netherton's in the hangar.
     #exit_conversation
     -> DONE
 // 2. The notice, from any room (stage 4 P8).
@@ -634,8 +609,11 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     He told us to call him Adrian on the course. None of us ever managed it.
     That's all you get tonight. The rest is afterwards.
     -> support_hub
-// 3b. The Alpha decode (the one reader of alpha_clip_played besides credits).
-+ {alpha_clip_played and not alpha_topic_given} [I decoded his annotation sheet.]
+// 3b. The Alpha decode. Script edit R1 A-05: gated on a read of the annotation
+// sheets (alpha_annotations_read, a new stage 9 onRead latch on
+// alpha_annotations), not on the clip, so the button never claims a decode
+// the player didn't do.
++ {alpha_annotations_read and not alpha_topic_given} [His annotation sheets, with the tapes.]
     ~ alpha_topic_given = true
     That's the version he taught us.
     -> support_hub
@@ -796,6 +774,8 @@ Sent. He'll read it tonight.
     -> support_hub
 
 // The status ladder, most advanced first; each row names the next step.
+// Script edit R1 A-15: no recruiter_call_started row; start's guards exit
+// before the hub while her call is pending.
 === status ===
 {
 - tesseract_call_done:
@@ -812,8 +792,6 @@ Sent. He'll read it tonight.
     The keypad on the salvage cage. The code's the catalogue line I sent you.
 - deck_choice_made:
     Her office. Get the safe open, and her card for the tape room is in it.
-- recruiter_call_started:
-    Take her call. Nothing moves until you do.
 - flag2_submitted and cage_opened:
     Step out of the cage. Someone's been waiting for you to come up for air.
 - flag2_submitted:
@@ -848,6 +826,7 @@ Sent. He'll read it tonight.
     -> guides_menu
 + {tomb_beta_guide_offered and not tomb_beta_guide_hint_given} [Tomb Beta's server.]
     ~ tomb_beta_guide_hint_given = true
+    // VM-STEER: check against the VM plan (the guide's leaver-credential section).
     #give_item:lab-workstation:m09_tomb_beta_field_guide
     On your workstation. Read the part about old accounts.
     -> guides_menu
