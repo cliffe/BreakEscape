@@ -359,3 +359,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 
 ## Stage 8 reviews in
 - m09-R fix first (light) 0/4/15; m10-R fix first 0/5/15; seam pass with fixes 0/3/12; bible pass 0/3/7; helper files SA, VT, BA, CC, SC. Rulings: planning_notes/overall_story_plan/mission_initializations/finale/STAGE_8_RULINGS.md (21 rulings; default bin option (a); shredder reworded; triple-agent cold-m09 gated on m09_completed; twelfth m09 export alpha_annotations_read; Join credit provisional, taste call for user).
+- opus48: VM-STEER comments rewritten to story level (5 blocks); STAGE_8_VM_ANSWERS.md (Opus 5.5 agents must not read it). For the user: Tomb Beta early peek (gate or accept), two submission points per mission, m10 is three target machines (stage 9 wiring), hostnames/numbering after build, root SSH off, seed content placement, timed runs, labUrls later.
