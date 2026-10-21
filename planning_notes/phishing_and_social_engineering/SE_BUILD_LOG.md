@@ -97,6 +97,12 @@ Fix round 2 (opus48): T2-1 fixed with an applied-marker global `se_mail_applied`
 
 `build_log/P2-T.md`. The Phase 1a playtest passes with facts found by browsing (game 2949); bridge-2 15/15 (game 2950). F1 (major): addresses inside selectable blocks render in GNF, because `.minigame-container button` (minigames-framework.css) beats `.ob-block { font: inherit }`, and `_lines()` marks only staff addresses and metadata as `ob-readable`. Minors: site tabs show ids, Teague's headshot 404s, no ready toast when browsing grants the last fact, stale stand-in line in mission.json, `pages[].path` unlinted and `pages[].url` missing from 00 §11.
 
+### Phase 3, round 1 (P3-T, grok): 1 blocker, 1 major, 3 minor
+
+`build_log/P3-T.md`. T3-1 (blocker): a landed Hampshire send records no tells, and the triage loader drops sent records without tells, so the player's own mail is never replayed. T3-2 (major): the review card marks Report on real mail with a red cross although the scorer gives it full marks. Minors: glossary closed on the analyst set, a missing `auth.summary`, the saving notice on a first save. Scorer 84/84, reopen once, blocked save, 403, 600 px and defender picks held. bridge-3's reload races the next command.
+
+Fix round 1 for Phases 2-4 sent to grok with a one-line brief (P2-T, P3-T, P4-T findings).
+
 ## Questions for the user
 
 - **How to build the rest of Phase 4** (call preparation screen P4-C, call UI P4-E, its bridge and playtest). The orchestrator's brief for P4-C was stopped by a safety classifier.
