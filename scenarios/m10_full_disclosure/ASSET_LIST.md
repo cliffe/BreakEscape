@@ -90,7 +90,7 @@ Every object in `scenario.json.erb` uses a sprite `type` (or `sprite`) that exis
 | `kit_table`, the breaching case | forward post | `display_table1` | folding table, work lamp, breaching case | **placeholder** |
 | `van_one`, `van_two` | forward post | `supply_boxes1` | two SAFETYNET vans, side doors open, interior lit | **placeholder** (new sprite: van ×2, or one van with a flipped copy) |
 | `gate_hut` | forward post | `aes_security_desk1` | a gate guard hut, lit / dark (two sprite states for `m06_assets_seized`) and the fence gap | **placeholder** |
-| `incident_file` | forward post | `case-file` | buff Citadel folder | reuse |
+| `incident_file` | forward post | `notes4` | buff Citadel folder (not `case-file`, which opens the intel board) | reuse |
 | `case_signout_sheet` | forward post | `notes_clip1` | clipboard on the case lid | reuse |
 | `helena_plans` | forward post | `notes_ledger1` | rolled 1962 drawings, SUPERSEDED stamp | **placeholder** |
 | `projection_desk` | forward post | `monitor_stand1` | field screen on a folding desk (dark / lit) | **placeholder** |
@@ -102,7 +102,7 @@ Every object in `scenario.json.erb` uses a sprite `type` (or `sprite`) that exis
 | `wanted_photo` | security office | `notice_board1` | photo pinned among shift notes | reuse |
 | `duty_board` | security office | `rota_board1` | duty board, Hollis's photo variant | reuse |
 | `door_log` | security office | `cctv_monitors1` | monitoring desk | reuse |
-| `duty_handset` | security office | `phone1` (with `triggerOnInteract` so the voicemail minigame never opens) | the desk handset | reuse |
+| `duty_handset` | security office | `aes_emergency_phone1` | the duty handset, at (6,4) on open floor below the desk (playtest B-02: reach) | reuse |
 | `records_cupboard` | security office | `filing_cabinet_locked1` | old steel cupboard with a newer keypad | reuse |
 | `fitter_locker` | security office | `aes_lockers_grey1` | dented locker, MAINTENANCE. SPARES | reuse |
 | `casualty_sheet`, `casualty_margin_note`, `bench_log` | workshop floor | `notes2`, `notes_tucked1`, `aes_clipboard1` | pinned sheet, torn strip, clipboard on a nail | reuse |
@@ -111,9 +111,9 @@ Every object in `scenario.json.erb` uses a sprite `type` (or `sprite`) that exis
 | `shutter_isolator` | power room | `aes_esd_station1` (the map's slot) | key switch and breaker row labelled GALLERY SHUTTER | reuse |
 | `bypass_panel` | power room | `aes_bms_bypass1` | refit bypass bolted over 1960s switchgear | reuse |
 | `static_kit` | power room | `aes_toolbox1` | tool roll stencilled S | reuse |
-| `plotting_board` | server hall | `command_board` | the 1960s plotting board, red tape west to east | **placeholder** (wants a wide board across (3,2)–(7,2)) |
+| `plotting_board` | server hall | `command_board` | the 1960s plotting board, red tape west to east | **placeholder** (wants a wide board; now at (2,4) on open floor, as (5,2) was out of reach behind the racks) |
 | `release_console_controls` | server hall | `aes_control_panel1` | head-start feeds and the backdoor queue | reuse |
-| `schedule_terminal` | server hall | `screens` | schedule on the console | reuse |
+| `schedule_terminal` | server hall | `aes_round_terminal1` | free-standing terminal at (10,7), south of the racks (moved off the inverters for reach) | reuse |
 | `uplink_printer` | server hall | `pnw_portable_printer1` | printer with Social Fabric's draft | reuse |
 | `lock_keypad_plate` | gallery | `uni_doorcard1` | keypad face plate beside the outer lock | **placeholder** |
 | `farah_chair`, `slit_window` | gallery | `chair-grey-1`, `window_blinds1` | a floor-post chair (coat variant); slit windows down into the core | window **placeholder** |
