@@ -1,10 +1,13 @@
 # frozen_string_literal: true
 
 # Social lints for the lab area. P6-G: the lab-level lints of 10 N7.
-#   - every engagement item with a `correct` or `good` flag carries a `why`
+#   - every engagement item with a `correct` or `good` flag carries a `why` and a non-blank `text`
+#     (so the pick never shows a blank button) across scope, plan and report
 #   - every completing global in the objectives table is declared: the engagement block and step
 #     globals, and the `global_variable_changed:<name>` event mappings that complete tasks
-# (03 N6's step and pick checks for scope, plan and report live in board.rb.)
+# (03 N6's step and pick checks for scope, plan and report live in board.rb. Defender options carry
+#  `good`; their `text` and `why` are enforced by board.rb's option_checks, so the four engagement
+#  blocks are covered between the two modules.)
 #
 # Return an array of issue strings starting with "❌" (error, fails --strict-social) or "⚠️"
 # (warning), in the style of validate_scenario.rb. Runs only when the scenario has a `social` key.
@@ -36,7 +39,8 @@ module ValidateSocial
     end
 
     # Any object under the block with a boolean `correct` or `good` is an answer option or finding
-    # part, and the student is shown its `why` after picking it.
+    # part. The student picks it by its `text` (a blank one is an unlabelled button) and is shown its
+    # `why` afterwards, so a scored option needs both.
     def self.why_checks(node, where)
       case node
       when Array
@@ -44,7 +48,10 @@ module ValidateSocial
       when Hash
         out = []
         flagged = %w[correct good].select { |k| [true, false].include?(node[k]) }
-        out << err("#{where} has #{flagged.join(' and ')} but no why; every answer shows the student why it is right or wrong") if !flagged.empty? && Mail.blank?(node['why'])
+        unless flagged.empty?
+          out << err("#{where} has #{flagged.join(' and ')} but no text; the pick would show a blank button") if Mail.blank?(node['text'])
+          out << err("#{where} has #{flagged.join(' and ')} but no why; every answer shows the student why it is right or wrong") if Mail.blank?(node['why'])
+        end
         node.each { |k, v| out.concat(why_checks(v, "#{where}.#{k}")) if v.is_a?(Array) || v.is_a?(Hash) }
         out
       else

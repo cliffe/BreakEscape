@@ -120,6 +120,25 @@ test('10 N7: an option with correct or good needs a why', { skip }, () => {
   hit(mutate((j) => { j.social.engagement.report.findings = [{ id: 'f', step: 'results', controls: [{ id: 'c', good: true }] }]; }), /❌.*controls\[c\] has good but no why/);
 });
 
+test('10 N7: a scored option (correct or good) needs non-blank text, across all four blocks', { skip }, () => {
+  // scope: a question-card option (Lab.check)
+  hit(mutate((j) => { delete j.social.engagement.scope.cards[1].options[0].text; }), /❌.*options\[a\] has correct but no text; the pick would show a blank button/);
+  hit(mutate((j) => { j.social.engagement.scope.cards[1].options[1].text = '  '; }), /❌.*options\[b\] has correct but no text/);
+  // plan: a pick-list option (Lab.check)
+  hit(mutate((j) => { delete j.social.engagement.plan.objectives[0].text; }), /❌.*objectives\[o1\] has correct but no text/);
+  // report: a finding's rootCause and control parts (Lab.check)
+  hit(mutate((j) => {
+    j.social.engagement.report.findings = [{ id: 'f', step: 'results',
+      rootCauses: [{ id: 'rc', correct: true, why: 'w' }],
+      controls: [{ id: 'ct', correct: true, text: 't', why: 'w' }] }];
+  }), /❌.*rootCauses\[rc\] has correct but no text/);
+  // defender: a mitigation option (board.rb owns defender text, so the four blocks are covered together)
+  hit(mutate((j) => {
+    j.social.engagement.defender = { onCompleteGlobal: 'plan_ok', factMitigations: [
+      { intel: 'xx', options: [{ id: 'g', good: true, why: 'w' }, { id: 'b', good: false, text: 't', why: 'w' }] }] };
+  }), /❌.*factMitigations\[xx\]\.options\[g\]\.text is empty; the pick would show a blank button/);
+});
+
 test('10 N7: block and step globals must be declared', { skip }, () => {
   hit(mutate((j) => { delete j.globalVariables.signed; }), /❌.*'signed'.*scope\.onCompleteGlobal.*not declared/);
   hit(mutate((j) => { delete j.globalVariables.res_done; }), /❌.*'res_done'.*steps\[results\]\.onCompleteGlobal.*not declared/);

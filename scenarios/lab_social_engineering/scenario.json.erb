@@ -1109,40 +1109,52 @@
           { "id": "spoofed_colleague", "step": "findings", "text": "Finance acted on mail spoofing a colleague",
             "rootCauses": [
               { "id": "no_banner_dmarc_none", "correct": true,
+                "text": "No external-sender banner, and DMARC left at p=none",
                 "why": "No external-sender banner and DMARC at p=none let a spoof of a colleague through." },
               { "id": "staff_carelessness", "correct": false, "blame": true,
+                "text": "Finance staff were careless with a suspicious email",
                 "why": "Blaming staff hides the control gap and stops people reporting." }
             ],
             "controls": [
               { "id": "banner_dmarc_enforce", "correct": true,
+                "text": "Add an external-sender banner and move DMARC to enforcement",
                 "why": "An external-sender banner plus DMARC enforcement would flag or block the spoof." },
               { "id": "ban_finance_email", "correct": false,
+                "text": "Stop Finance using email",
                 "why": "Banning email for Finance is not a workable control." }
             ] },
           { "id": "service_desk_disclosed", "step": "findings", "text": "The service desk gave out the portal name and payslip date",
             "rootCauses": [
               { "id": "no_verification_script", "correct": true,
+                "text": "No script telling the desk to verify a caller before sharing details",
                 "why": "There is no script telling the desk to verify who is calling before sharing details." },
               { "id": "dev_fault", "correct": false, "blame": true,
+                "text": "Dev should not have given anything away",
                 "why": "Dev followed the policy he was given; the missing call-back rule is the gap." }
             ],
             "controls": [
               { "id": "callback_on_file", "correct": true,
+                "text": "Call back on the number already on file before sharing details",
                 "why": "A call-back to a number already on file defeats this line." },
               { "id": "no_phone_support", "correct": false,
+                "text": "Scrap phone support on the service desk",
                 "why": "Removing phone support punishes staff for a process gap." }
             ] },
           { "id": "lookalike_page", "step": "findings", "text": "A look-alike portal page would convince staff",
             "rootCauses": [
               { "id": "no_way_to_check", "correct": true,
+                "text": "Staff have no easy way to check an address or report a suspect page",
                 "why": "Staff have no easy way to check the address or report a suspect page." },
               { "id": "intern_naive", "correct": false, "blame": true,
+                "text": "The new intern was too green to spot it",
                 "why": "Naming the intern as the cause misses the missing control." }
             ],
             "controls": [
               { "id": "bookmark_and_report", "correct": true,
+                "text": "Give staff a bookmarked portal and a report button",
                 "why": "A bookmarked portal and a report button give staff a safe path." },
               { "id": "block_all_links", "correct": false,
+                "text": "Block every link in incoming email",
                 "why": "Blocking every link is not realistic and would not be kept to." }
             ] }
         ]
