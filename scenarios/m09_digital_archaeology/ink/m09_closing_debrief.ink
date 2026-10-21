@@ -129,7 +129,8 @@ Director Magnus Netherton: You've read his memo. Was he right?
     Director Magnus Netherton: His notice is still on that box. Send it, and the vendor starts on a fix for four hundred sites and the Critical Mass watch comes down tonight.
     Director Magnus Netherton: Hold it, and he can call us hoarders, and be right.
 }
-Director Magnus Netherton: You read it. You decide. I'll sign whichever.
+// Stage 8 SR minor 4 (ruling 19): full forms on Netherton's weighted lines.
+Director Magnus Netherton: You read it. You decide. I will sign whichever.
 + [Send it.]
     ~ notice_answered = true
     #set_global:albion_notified:true
@@ -211,7 +212,7 @@ Director Magnus Netherton: You read it. You decide. I'll sign whichever.
     - noor_told:
         Director Magnus Netherton: Miss Haddad is in a hotel in Great Falls with two of Arakawa's people. She has not been allowed to ring her father. She asked twice.
     - m05_found_pipeline_list and not m05_recruiter_deal_accepted:
-        // Warned in the spring: she knew what she was on before tonight.
+        // Warned back in September: she knew what she was on before tonight.
         Director Magnus Netherton: Miss Haddad went home at the end of her shift. She knew what list she was on before you arrived.
     - else:
         Director Magnus Netherton: Miss Haddad went home and rang her father. She is still on a list, and she does not know it.
@@ -275,7 +276,7 @@ Agent HaX: I still owe you the rest. When this is over.
 // Why the team goes in together, the last spoken line. double_crossed first.
 {
 - recruiter_offer == "double_crossed":
-    Director Magnus Netherton: She knows we know. She'll be where he is. So will we.
+    Director Magnus Netherton: She knows we know. She will be where he is. So will we.
 - sleeper_named:
     Director Magnus Netherton: We take her at the briefing, in front of the others, where there is nowhere to go. Until then she sees nothing in my face. Nor in yours.
 - else:

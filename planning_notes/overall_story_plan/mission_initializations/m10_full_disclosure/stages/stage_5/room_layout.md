@@ -50,7 +50,7 @@ Map types: stage 0 asked for m04's `room_aes_*` and m07's `room_pnw_*` first. Ev
 
 Objects without a template slot are pinned with `position` (README:1773). **The four stations each list only their own flag** (F-18): `flags: <%= flags_for_vm_slice('<vm>', N, 1, [...]) %>` with N = 0 (gate), 1 (release console), 2 (sealed hatch), 3 (core host), never `flags_for_vm`, which would give the first station every flag. Each carries `hintOnlyFlags` as a Hash keyed by the other three `"<vm>:flag_N"` references (the top-level `flags` block from `vm_flags_json`), with "That one goes in at …" naming the right terminal. Stage 9 submits one flag at a wrong station to check the hint.
 
-**Story doors** (OT §4): `lockType: "rfid"`, `requires: "tg_story_lock_<room>"`, a `door_sign` that is a name only, and an ERB comment that the validator's "nothing can open it" warning is intended (R1D-m12). Five expected warnings in all: the four story doors, and `fitter_locker`, a key lock with no key item (only the pick opens it; R2-m6).
+**Story doors** (OT §4): `lockType: "rfid"`, `requires: "tg_story_lock_<room>"`, a `door_sign` that is a name only, and an ERB comment that the validator's "nothing can open it" warning is intended (R1D-m12). Five expected warnings in all: the four story doors, and `fitter_locker`, a key lock with no key item (only the pick opens it; R2-m6). A sixth may appear and is also intended: `alarm_override` is type `key` but opens no lock (it works by being carried, `onPickup` sets `override_held`); its tag text says so (stage 8 m-15). Note it beside the five.
 
 ### 2.1 `forward_post` (start; 4×2)
 
@@ -105,9 +105,9 @@ Objects without a template slot are pinned with `position` (README:1773). **The 
 
 | Copy | Visible when | Behaviour |
 |---|---|---|
-| `tunnel_guard` | Helena's plans used (default), or the door announced the player | a short patrol across the post (4, 3) → (6, 4), `los.challengeOnSight`. In a 1-GU corridor this is a timing pass or a talk, not a sneak; HaX's line doesn't promise sneaking (R1D §2d″) |
+| `tunnel_guard` | `!globalVars.nightshade_tethered && !globalVars.nightshade_map_used && !globalVars.override_held` (Helena's plans, or the silent branch untethered; stage 8 M-2: one rule, `&&` only, and `breach_announced` no longer decides it) | a short patrol across the post (4, 3) → (6, 4), `los.challengeOnSight`. In a 1-GU corridor this is a timing pass or a talk, not a sneak; HaX's line doesn't promise sneaking (R1D §2d″) |
 | `tunnel_guard_kettle` | `nightshade_tethered` (the crank) | at the kettle (7, 2), facing away, LOS off; one free tile from `tunnel_rota` (5, 2) (milestone A33) |
-| neither | Nightshade's map used, or the shown branch's override | the post is empty; a cold mug on the desk |
+| neither | `nightshade_map_used`, or `override_held` (the shown branch), without the tether: no copy's condition holds | the post is empty; a cold mug on the desk |
 
 Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 
@@ -121,7 +121,7 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 
 | Id | What | Where | Notes |
 |---|---|---|---|
-| `alarm_panel` | the office's alarm panel | (3, 2), back wall | `alarm_panel` minigame; lamps read `security_alerted` and `breach_announced` |
+| `alarm_panel` | the office's alarm panel | (3, 2), back wall | `alarm_panel` minigame; lamps read `security_alerted` and `breach_announced` (which is false while the override is held; stage 8 M-2) |
 | `wanted_photo` | the player's photo: "0x00: to the core. Do not detain." | (5, 2), back wall | readable in place |
 | `duty_board` | the duty board | (7, 2), back wall | variants: the "posts unmanned: budget" memo on `m06_assets_seized`; Hollis's photo on `m07_hollis_resolved === 'evaded'` |
 | `clock_security` | the duty screen (countdown) | (9, 3), east wall | |
@@ -227,7 +227,7 @@ Both copies are knockable (`tunnel_guard_ko`); nothing hangs on them.
 | `lock_guard`, `displayName` "Sione Fonoti" (S6-05; "S. Fonoti" on the rota) | patrol (7, 4) → (2, 4), `dwellTime` 20 s at (2, 4) facing the slit windows, no `pauseForPlayer`; `los.visualize: true` (his cone is drawn, so the player sees when the keypad is clear); `los.challengeOnSight` with `requireGlobal: "at_keypad"` and `skipIfGlobal: ["lock_guard_challenged"]` (not `outer_lock_open`, which a successful crack sets before his check; R3-M1); `at_keypad` cleared on leaving the gallery, on entering it and on `game_loaded` (R3-m2) (R2-M4; OT §4.5) | always | knockable, `globalVarOnKO: fonoti_ko` (S6-05; every knock-out gets a credit line); carries the code card, `gallery_code_card` ("Outer lock: 6083."; `itemsHeld`, dropped on a knock-out; S6-06); his own ink gives it on one option per route that named him (the rota, Ghost's card gift, escaped Victoria's "[Go.]", Vos's deal; OT §4.5's table); his barks: the pointer on the first try at the keypad ("That takes the shift code. It's on my card, and it stays there.") and "Who gave out the code?" (OT §4.5); `player_spotted:lock_guard` opens his scene (OT §4.5) |
 | `monitor_guard` | (3, 5) | unless `gallery_camera_blinded` (then he barks and hides himself) | knockable |
 | `farah_guard` | (4, 5) | unless `imran_outcome === 'talked_round'` | knockable |
-| `reinforcement_a`, `_b` | (3, 3), (4, 3), off the lock guard's patrol row and clear of the stair's approach (R2-m6, R3-m4) | `victoria_gallery === 'trusted'` with Zero Day's share live (the alarm), **and** `!nightshade_taken_in`. With Nightshade taken in, they never appear: one narrator line instead ("Boots on the stair, then Nightshade's voice on the intercom, and the boots stop."; R1D-m9) | hostile, knockable |
+| `reinforcement_a`, `_b` | (3, 3), (4, 3), off the lock guard's patrol row and clear of the stair's approach (R2-m6, R3-m4) | `globalVars.victoria_gallery === 'trusted' && globalVars.share_zero_day !== 'stopped' && !globalVars.nightshade_taken_in` (the alarm: she sells on a live or a traced share; stage 8 M-1). With Nightshade taken in, they never appear: one narrator line instead ("Boots on the stair, then Nightshade's voice on the intercom, and the boots stop."; R1D-m9) | hostile, knockable |
 | `quintero_lock`, `minder_lock` | (7, 5) | on `outer_lock_open` (their own mappings), per §2.9's roster; one of the two | Quintero knockable |
 | `nightshade_lock` | (6, 5) | on `outer_lock_open`, `nightshade_taken_in` | `koImmune` |
 
@@ -245,7 +245,7 @@ The jam: OT §5. The barks (MC §3.5) are each guard's `bark` on `room_entered:g
 
 | NPC | Where | When | KO |
 |---|---|---|---|
-| Dr Adrian Tesseract (`tesseract`) | (6, 4), seated at the key console | always; his first line is the release by value (OT §4.5) | `koImmune` for the whole scene |
+| Dr Adrian Tesseract (`tesseract`) | (6, 4), seated at the key console | until his ending is chosen; his first line is the release by value (OT §4.5). Stage 8 m-8: his own mappings hide him on `conversation_closed:tesseract` with `globalVars.ending` `scorched`, `joined`, `arrest` or `surrender` (one mapping per value, plus a `game_loaded` copy of each, so a reload with `ending` set never finds him seated), and on `lethal` and `executed` either hide him the same way or swap to a down pose (stage 9's call, by the art there is); `scorched_card` shows as above | `koImmune` for the whole scene |
 | Kowalczyk waiting (`kowalczyk_core_waiting`) | (8, 5), by the service door | `m09_recruiter_offer === 'double_crossed'`, on `room_entered:core`, until Quintero takes her (hides herself on `wren_at_core`) | `koImmune` (the taking is ink) |
 | Kowalczyk through the door (`kowalczyk_core`) | (8, 6) | WREN free at "Stop it": reveals herself on `wren_entering` (set by the beat's ink), hides herself on `wren_stopped` | `koImmune` |
 | Quintero in the core (`quintero_core`) | (5, 7) | reveals herself on `quintero_enters_core` (the beat), with her KO guard | knockable |
@@ -377,7 +377,7 @@ FA §3.2's forty Tier 1 imports, by the room they change and how. Every change i
 | `m02_ghost_deal_accepted`, `m02_exposed_hospital`, `m02_ghost_deal_refused`, `m02_ghost_keys_used` | security office; workshop; gallery | Ghost's branch; the cupboard code (kept); on refused, the player's answer picks the gift: the lock's code (the hospitals answer) or the lock guard's name, spoken, setting `lock_guard_known` (the trust answer; OT §4.2); the codes are notes items given with `#give_item` (`ghost_cupboard_code`, `ghost_lock_code`; F21); on broken with keys used, Ghost's text and Imran's card made uncloneable (`ghost_watch_on_route`, a local written at the call) |
 | `m02_gary_protected` (with `m02_completed`, `m02_exposed_hospital`) | workshop | `gary_consultant` at the door, or `gary_tech` at the bench, or neither |
 | `m02_reeves_fate`, `m02_insider_asset_arrested`, `m02_insider_asset_escaped` | tunnel | `tunnel_rota` variant |
-| `m07_mercer_fate`, `m07_mercer_ko` | server hall | `mercer` in place of `asante`; on `arrested`, HaX's map line on entry |
+| `m07_mercer_fate`, `m07_mercer_ko` | server hall | `mercer` in place of `asante`; on `arrested`, HaX's map line on entry, and Netherton's briefing line "Mercer's statement drew us the server hall. It is on the map." (stage 8, FA row 88) |
 | `m07_hollis_resolved` | security office | `duty_board` variant |
 | `m07_debrief_stance` | forward post | `projection_desk` lit on `hardened` |
 | `m07_team_assignment`, `m07_team_redirected` | server hall | `backdoor_channel_live` (a local at load) unlocks C10; `uplink_printer` variant by Fracture branch |

@@ -133,7 +133,7 @@ One argument in three steps. Claims 2 and 3 open on the exchange just before (W1
 | 1 | [Only a shock? You never tried. You wrote the notice and kept it.] | rebuttal (about "only"; N3) | a long silence, no cue. "No. I didn't send it." |
 | 2 | [The pump flaw's on your own schedule. You'll hand it to everyone at six.] | evidence decoy (the price again) | "I will. That's the price again. I asked whether anything else works." |
 | 3 | [I told Albion's public the truth. They audited every site. Nobody died for it.] (`m04_disclosure_choice = full`) | record | "*pause* No. Nobody did."; on `m04_crew_lost`, his sting first, then "*pause* None of them died of the truth. I'll grant that." instead |
-| 3 | [I published St. Catherine's cover-up. Forty hospitals fixed their networks. Nobody died.] (`m02_exposed_hospital`) | record | "*pause* Done properly. Yes." |
+| 3 | [I published St. Catherine's cover-up. Forty hospitals fixed their networks. Nobody died of it.] (`m02_exposed_hospital`) | record | "Done properly. Yes." (stage 8 SC 8; cue trimmed, m-14) |
 | 4 | [I sent your notice from Helena, nine years after you wrote it.] (`m09_albion_notified`) | record | "*pause* Sooner than I managed." (his Albion sting first, on `m04_crew_lost`) |
 | 4 | [Your Recruiter offered me a name. I wouldn't buy it from her.] (`m09_recruiter_offer` is `named` or `refused`; m09's wording, one button for both missions, MC P22) | record | on `named`: "*pause* No. You'd rather the slow way. It worked." / on `refused`: "*pause* No. You let her keep her people sooner than pay her. I didn't think your service still did that." |
 | fill | [Eleven hundred people at the low end. You can't spend them.] | plain decoy (price; replaces "go to the press", N2) | "That's the price again. I've moved on to why." |
@@ -143,7 +143,7 @@ One argument in three steps. Claims 2 and 3 open on the exchange just before (W1
 > (exchange 2 landed on the rebuttal) Dr Adrian Tesseract: Then I'm late. Someone still has to do it.
 > (exchange 2 landed on a record answer) Dr Adrian Tesseract: Then it can be done without bodies. Someone still has to make them do it.
 > (missed) Dr Adrian Tesseract: You can't tell me who hoards. Then let me tell you who pays.
-> Dr Adrian Tesseract: I taught a room of twenty, once. Let it hurt afterwards, not during.
+> Dr Adrian Tesseract: I taught rooms of twenty, once. Let it hurt afterwards, not during.
 > Dr Adrian Tesseract: Somebody has to be the during. Better me.
 
 (R3-02: his "Better me." sets up the rebuttal's "Better you?" and leaves the decoys no hook. Stage 7 shortened draft 4's "I'd rather it was me" to the two words the rebuttal quotes. On `should_have_told`, HaX's unasked line comes here, before the menu: "My agent told me I sat on it. They were right. You never told me anything.")
@@ -154,7 +154,7 @@ One argument in three steps. Claims 2 and 3 open on the exchange just before (W1
 | 2 | [HaX. You're on speaker.] (`m09_hax_confession_answer` is `same_in_your_place` or `afterwards`; the player offers her the floor, W33, N8) | record: HaX speaks (§3.1) | "Ninety-nine." He says only her number. |
 | 2 | [She learned that from you.] (`should_have_told`, after HaX's unasked line) | record | "*pause* Yes. By example." (N9) |
 | 3 | [Better you? You need my hand on that key so yours stays clean.] | rebuttal | "*pause* Better me, I said. And I brought you." (N10) |
-| 4 | [Your Tomb Alpha notes say carry it. They never say hand it on.] (`m09_deck_pulled = alpha_tapes`; S2-11: the notes; first in the pool, MC §6.3) | record | "*pause* I was younger. I meant it then." |
+| 4 | [Your Tomb Alpha notes say carry it. They never say hand it on.] (`m09_deck_pulled = alpha_tapes` and `m09_alpha_annotations_read`, stage 8 ruling 5; S2-11: the notes; first in the pool, MC §6.3) | record | "*pause* I was younger. I meant it then." |
 | 4 | [She carries it so she never hands it on. You never taught that part.] (`m09_completed`; HaX told the player in m09; the fallback) | record | "*pause* I never said it. She worked it out." |
 | fill | [Nobody elected you to teach the whole world a lesson.] | plain decoy (the hoarding claim, not this one) | "Nobody elected the people who hoard, either. I asked who does the hurting." |
 
@@ -277,7 +277,7 @@ Then "[Do it.]" or "[Lower the weapon.]". Confirmed, one line: "He is still look
 
 **Pointers that say a cost before the pick** (MC §3, P25), one at the beat:
 
-> (the door, not shown) Agent HaX: He's brought his payment. You've got Helena's plans.
+> (the door, not shown) Agent HaX: He's brought his payment. You've got Helena's plans. (On `m09_completed`, stage 8 ruling 6: "Helena gave us the entries he built from. Not which door each one's on. Check his against the plans."; the arrested and shown forms are in MC §3.1.)
 > (Nightshade's map, either branch) Agent HaX: He's only as right as the man who briefed him.
 > (the tunnel post, on Helena's plans) Agent HaX: Helena's plans didn't have him. Nightshade's would have.
 > (Ghost's handset, as it rings) Agent HaX: Ghost leaves when Ghost has been paid. Make it not worth it.
@@ -285,7 +285,7 @@ Then "[Do it.]" or "[Lower the weapon.]". Confirmed, one line: "He is still look
 > (Imran) Agent HaX: Let him go and the phone goes with him. Keep him, and we get his supplier.
 > (Imran taken in, the phone) Agent HaX: A crate signed for at the service door on Tuesday. Raid-issue badge.
 > (unprotected Gary, at his belt) Agent HaX: A man on their bench who ships nothing is worth something. Later.
-> (the console) Agent HaX: I can kill one feed, or follow one. Not both. Pick.
+> (the console, when a share option will show; stage 8 m-6, m-14) Agent HaX: One feed. Kill it or follow it. Pick. (resale only: "The resale's live. I can kill it. One go."; nothing left: "No share left to touch.")
 > (the trace, if the gallery stopped the share) Agent HaX: She cancelled Zero Day's. Nothing to follow. (On Vos's branch: "Vos cancelled Zero Day's. Nothing to follow.")
 > (leaving the hall, console unanswered) Agent HaX: Fifteen minutes to their head start. That console's your last chance at it.
 > (arrested Victoria's re-ring) Agent HaX: Sterling's still on the line. She has something on Vos.
@@ -297,7 +297,7 @@ Then "[Do it.]" or "[Lower the weapon.]". Confirmed, one line: "He is still look
 > Agent HaX: He argued for the vendor nine years ago and lost.
 > Agent HaX: The notice is on here. He wrote it himself, and he never sent it.
 
-On an m09 save: "The notice you read in Helena is on here too." Then, on every save, the console and the vault line (MC §6.1, P5). The purge is no longer said here: HaX says it once, at the database (stage 7, A2-09); her hub topic "[The vault line.]" still carries it as text.
+On an m09 save: "The notice from Helena is on here too." (stage 8 SR minor 8) Then, on every save, the console and the vault line (MC §6.1, P5). The purge is no longer said here: HaX says it once, at the database (stage 7, A2-09); her hub topic "[The vault line.]" still carries it as text.
 
 > Agent HaX: I've got his box. If anything goes out from that console, I can try to kill the feed. Try.
 > Agent HaX: And the line into our vault is open from here. We left it open.
@@ -361,7 +361,7 @@ When the player asks her what to do: "No. This one's yours. If I choose, I'll ch
 
 The player's prompts between the costs (stage 7, A2-02, A3-01): "[And if we keep them?]" / "[Go on, sir.]" before HaX's pump line, "[And if ours go to the vendors?]" / "[(Wait.)]" after it, and "[And if I wipe both copies?]" / "[There's a third way.]" before the wipe.
 
-**At 06:00, on disclose:** "Forty vendors have acknowledged. Patch windows, ninety days. It'll be a year before most of them are fitted." Then: "Three water utilities went to manual at five. There's no patch for their controllers. They'll turn the valves by hand till spring."
+**At 06:00, on disclose:** "Forty vendors have acknowledged. Patch windows, ninety days. It'll be a year before most of them are fitted." Then: "Three water utilities went to manual at five. There's no patch for their old controllers. They'll turn the valves by hand till spring."
 
 **Join, at "Give me the key":** "0x00. Don't."
 
@@ -407,10 +407,10 @@ It doesn't label itself (N4). Its place by ending is fixed in arc §10.1: on arr
 > (shown, come) Director Magnus Netherton: Take him down there and every guard in the place sees him with us. After tonight he gets a new name, and nobody reaches him again. Not even you.
 > (Helena's plans) Director Magnus Netherton: The plans are good plans. They are old plans.
 > (the tether, whodunit running) Director Magnus Netherton: If he goes up, Arakawa goes with him and stays with him. Kowalczyk goes ahead on her own.
-> (the tether, Kowalczyk gone) Director Magnus Netherton: If he goes up, Arakawa stays with him, and Quintero breaches alone. You'll be at the lock without her.
+> (the tether, Kowalczyk gone) Director Magnus Netherton: If he goes up, Arakawa stays with him, and Quintero breaches alone. You will be at the lock without her.
 > (Vector or Phantom wrongly accused) Director Magnus Netherton: Then I am a pair of hands short. Carry on.
 > (at the core, to him) Director Magnus Netherton: Adrian.
-> (secure, his case) Director Magnus Netherton: Half of these cannot be patched this year, and the water controllers never. Send them out and every buyer knows where to hit.
+> (secure, his case) Director Magnus Netherton: Half of these cannot be patched this year, and the oldest water controllers never. Send them out and every buyer knows where to hit.
 > (disclose, its cost and why; MC §6.5) Director Magnus Netherton: Send ours to the vendors, and two operations go dark. / The watch on Sterling. / The HashChain tags. / Both of them run through holes on that list. Patch the holes and we lose the way in. I will sign it. (The two names are the first two that apply on the save, from MC §6.5's list of six, one fixed noun-phrase line each: "The watch on Sterling.", "Nightshade's channel.", "The HashChain tags.", the Critical Mass watch by m04's branch ("The watch on Voltage's people." / "The watch on what's left of Voltage's crew." / "The Critical Mass watch."), "The order-book watch.", "Our tap on Zero Day's brokers."; stage 7, A2-03, R3.)
 > (wipe) Director Magnus Netherton: Then nobody has it, and nobody fixes anything either. We both answer for it.
 > (step 5, two or more points, before the menu; F13) Director Magnus Netherton: If he cooperates, there is no trial. He gives us cells, and nobody hears his speech. Arrest him, and he makes it in open court.
@@ -421,7 +421,7 @@ It doesn't label itself (N4). Its place by ending is fixed in arc §10.1: on arr
 > (`m06_assets_seized`, at 06:00, every ending that reaches it except the cold one) Director Magnus Netherton: The twelve point eight million goes back to the victims' fund. I have signed for that as well.
 > (the same, on `secured`) Director Magnus Netherton: The Council is keeping the twelve point eight million with the copy, as evidence. I argued for the victims' fund. I lost.
 > (06:00, the trace) Director Magnus Netherton: We followed Zero Day's share. Four buyers, and one of them was careless.
-> (06:00, a confronted Victoria) Director Magnus Netherton: The Zero Day tap went dark at five. She'll have sold that too.
+> (06:00, a confronted Victoria) Director Magnus Netherton: The Zero Day tap went dark at five. She will have sold that too.
 > (arrest, at the van) Director Magnus Netherton: A trial. He will make speeches. Let him. / He is in a cell. The cells are not.
 > (surrender, at 06:00) Director Magnus Netherton: There will be no trial.
 > (the van, to him) Director Magnus Netherton: I know. I kept it to one page.
@@ -534,7 +534,7 @@ HaX's pointer to him after the briefing, by branch: "Nightshade's at the table. 
 
 **Gary Whitlock** (the workshop). Birmingham / Black Country; flat, tired, bitter jokes. **Protected:** grateful and awkward about it; wants Imran not to end up the way Gary nearly did. **Unprotected:** recruited after St. Catherine's sacked him; wants, for once, to be listened to. **Secret** (unprotected): three weeks here, and he hasn't shipped a thing.
 
-> (protected) Gary Whitlock: You saved my career. I'm Director of something now. They gave me a lanyard.
+> (protected) Gary Whitlock: You saved my career. Director of Cyber Security now, and the lanyard's still spelt right. (stage 8 SR minor 5)
 > (protected, seeing Imran) Gary Whitlock: I trained him. He was the only one who read my emails.
 > (protected, Imran talked round) Gary Whitlock: Good. That's how I'd want it done.
 > (protected, Imran taken in) Gary Whitlock: I'd hoped you'd ask him first. *flatly* Never mind.
@@ -589,7 +589,7 @@ The talk-down's hook is her own m03 words, in the player's button: "[You said yo
 
 On **broken** the hook works only after the player owns the deal: "[I didn't keep it. I'm asking anyway.]" The bait is the player's "[Sell it, then. I want to see who's buying.]"
 
-**Ghost's texts at 06:00** (unvoiced; sent during the cutscene, they arrive in the thread as it closes, S5-6): kept, by the answer: "Neither was this. Clean exit." ([No. That wasn't why.]) / "Mine will be too. Clean exit." ([They sent a card. Unsigned.]) / "I did. They didn't know who I was. Clean exit." ([Ask them yourself.]); refused, by the gift: "Clean. I noticed." (the code) / "You checked. Most don't." (the card). Alongside it, on `m09_recruiter_offer = double_crossed`, the Recruiter's text: "I'll remember the shape of you."
+**Ghost's texts at 06:00** (unvoiced; sent during the cutscene, they arrive in the thread as it closes, S5-6): kept, by the answer: "Neither was this. Clean exit." ([No. That wasn't why.]) / "Mine will be too. Clean exit." ([They sent a card. Unsigned.]) / "I did. They didn't know who I was. Clean exit." ([Ask them yourself.]); refused, by the gift: "Clean. I noticed." (the code) / "You checked. Most don't." (the card); the selling branches (stage 8 M-5, wording new), talked out (`ghost_sale = stopped` with `ghost_answer = ""`): "Left on a quiet day, as you asked. First sale I ever turned down. Clean exit."; the bait with the resale killed (`ghost_sale = bait`, `head_start_killed = ghost`): "Five buyers paid for nothing, and you have their names. I kept the money. Clean exit."; the bait with the resale gone out: "Sold. You watched who bought it. I hope the names were worth it. Clean exit." Every row is in `scenarios/m10_full_disclosure/texts/BARKS_AND_TEXTS.md`. Alongside it, on `m09_recruiter_offer = double_crossed`, the Recruiter's text: "I'll remember the shape of you."
 
 ### 3.6 The bunker's people
 

@@ -172,7 +172,7 @@ Checked against the 00 prompt's list and the alignment rubric. Ticks are the aut
 - [x] Stakes are specific: 1,100–2,600 if the key is pressed, his own figure; a sleeper on the team; the player's own file.
 - [x] True-believer villains with a spreadsheet (Sorensen, the Architect).
 - [x] Evidence discovered in play, not told.
-- [x] Player choices that matter in m10 (FINALE_ARC §3.4, eleven exports since stage 3), and mid-mission choices for every player (the cage, the Recruiter's offer and the deck, the answer to HaX, the memo stance, the notice). Each is forced by an event or a lock (the office opens on the deck choice; flag 4's read waits on the answer), so stopping Sorensen or Tran first can't skip it.
+- [x] Player choices that matter in m10 (FINALE_ARC §3.4, eleven exports since stage 3; twelve from stage 8, ruling 5), and mid-mission choices for every player (the cage, the Recruiter's offer and the deck, the answer to HaX, the memo stance, the notice). Each is forced by an event or a lock (the office opens on the deck choice; flag 4's read waits on the answer), so stopping Sorensen or Tran first can't skip it.
 - [x] A clock inside the mission (the purge) that runs on story events in one order, costs optional finds only, and is visible.
 - [x] A cold start works: the wall of cards is the "previously on".
 

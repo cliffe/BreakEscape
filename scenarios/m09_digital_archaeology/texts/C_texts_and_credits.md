@@ -35,7 +35,7 @@ Shown on `global_variable_changed:report_done` (`value === true`) with the `vict
 
 ## 3. Credits
 
-Every person ends on an unconditional clause, so each always has a line; clauses run most specific first. `WHAT THE PURGE TOOK` always prints (one `cage_bin` line and one `deck_pulled` line hold on every finished route: `cage_bin` is written at `cage_opened`, `deck_pulled` by the deck choice). `ELSEWHERE` always prints (one Albion line holds). Nightshade has no person line because he exists only on the triple-agent branch; his lines sit in `ELSEWHERE`, where a line may be conditional.
+Every person ends on an unconditional clause, so each always has a line; clauses run most specific first. `WHAT THE PURGE TOOK` always prints (one `cage_bin` line and one `deck_pulled` line hold on every finished route: `cage_bin` is written at `cage_opened`, `deck_pulled` by the deck choice). Stage 8 ruling 1: the default `derek_file` now reaches the notepad on every route (Sorensen hands it over, `m09_sorensen_door.ink` `handover` and "[Walk past her.]"), so "Saved from the bins: Derek Lawson's file." is true for a player who never pressed a bin button. `ELSEWHERE` always prints (one Albion line holds). Nightshade has no person line because he exists only on the triple-agent branch; his lines sit in `ELSEWHERE`, where a line may be conditional.
 
 ```json
 "credits": [
@@ -64,7 +64,7 @@ Every person ends on an unconditional clause, so each always has a line; clauses
     { "name": "NOOR HADDAD", "clauses": [
       { "text": "Knocked down at her own desk.", "condition": "globalVars.noor_ko" },
       { "text": "A witness in Great Falls. Not allowed to ring her father.", "condition": "globalVars.noor_told" },
-      { "text": "Warned in the spring. Held the last box back.", "condition": "globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted" },
+      { "text": "Warned in the autumn. Held the last box back.", "condition": "globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted" },
       { "text": "Went home and rang her father. Still on a list." }
     ] },
     { "name": "CODY OLD COYOTE", "clauses": [
@@ -105,7 +105,7 @@ Every person ends on an unconditional clause, so each always has a line; clauses
 
 ## 4. Notes for stage 9
 
-- Changes from S4 §9's draft: 3d reads "Going into Montana with you." (was "Going in with you."); Sorensen's default is "Fed the shredder all night." (the draft's "until morning" broke the no-dawn rule); Netherton (the memo stance, M) and Kowalczyk (the hangar reply, N) get person lines, so both debrief choices are read back once; Noor gets a warned-in-the-spring clause before her default, matching the debrief's line for that route; the Albion "Elsewhere" line keeps the fix's real pace (ninety days for a fix, then the sites to reach) rather than "a fix in ninety days"; Nightshade's two lines are new, in `ELSEWHERE`.
+- Changes from S4 §9's draft: 3d reads "Going into Montana with you." (was "Going in with you."); Sorensen's default is "Fed the shredder all night." (the draft's "until morning" broke the no-dawn rule); Netherton (the memo stance, M) and Kowalczyk (the hangar reply, N) get person lines, so both debrief choices are read back once; Noor gets a warned-in-the-autumn clause (stage 8 SC 2: m05 ran in September) before her default, matching the debrief's line for that route; the Albion "Elsewhere" line keeps the fix's real pace (ninety days for a fix, then the sites to reach) rather than "a fix in ninety days"; Nightshade's two lines are new, in `ELSEWHERE`.
 - The imports `m05_found_pipeline_list`, `m05_recruiter_deal_accepted` and `m08_nightshade_triple_agent` are read here as m09 globals, which `importGlobals` provides.
 - `old_coyote_told`, `noor_ko`, `old_coyote_ko`, `tran_outcome`, `memo_stance` and `kowalczyk_reply` must be in `globalVariables` (they are, per contract §5.3).
 - Script edit R1 (ruling 1, C-05, C-06): the hangar buttons now hold on the PIN route, so Kowalczyk's warm clause stands and her default reads "Got a shrug."; Sorensen's knock-out clause names no injury; Tran's default no longer says he went home (HaX has Arakawa's people collect him).

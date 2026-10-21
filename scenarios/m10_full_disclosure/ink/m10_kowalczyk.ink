@@ -96,9 +96,6 @@ VAR kow_from_peel = false
 + {kowalczyk_answer == ""} [Before Helena. I had a feeling about you.]
     ~ kowalczyk_answer = "briefing"
     -> van_after
-+ {kowalczyk_answer == ""} [I didn't. I worked it out.]
-    ~ kowalczyk_answer = "worked_out"
-    -> van_after
 + [I'll see you at six.]
     Agent 0x5E 'Lantern': I'll be in this van. Where else.
     ~ kow_quiet = true
@@ -240,7 +237,7 @@ Narrator: For a moment she has nothing to say.
 ~ sleeper_caught = true
 ~ wren_held = true
 {m09_completed:
-    Agent HaX: "The long way is over." I said that the night you handed it over.
+    Agent HaX: "The long way is over." I said that the morning you handed it over.
 }
 Agent 0x5E 'Lantern': Well. *almost laughs* It was a good cracker.
 {kow_arakawa_here():

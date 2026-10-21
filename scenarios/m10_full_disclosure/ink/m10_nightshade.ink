@@ -56,6 +56,9 @@ VAR ns_arr_seen = false     // arrested branch: the opening has played
 === shown ===
 Agent 0x47 'Nightshade': He wrote fifteen years of me in his own hand. I'd know it anywhere. I learned to write like it.
 Agent 0x47 'Nightshade': So you'll have all of it. Every door down there, and the catalogue entry he built it from.
+{m09_completed:
+    Agent HaX: Helena gave us the entries he built from. Not which door each one's on, or who stands where.
+}
 + [Go on. All of it.]
     -> shown_doors
 + [Why give it all now?]
@@ -130,10 +133,19 @@ Director Magnus Netherton: Take him down there and every guard in the place sees
 // The check (S6-16) is a puzzle; the closing choice is map or plans.
 // ---------------------------------------------------------------
 === unshown ===
-Agent 0x47 'Nightshade': All of it, as promised. Every door, and where he got the idea.
+{m08_triple_agent_first_payment:
+    Agent 0x47 'Nightshade': I said I'd pay when you stood at the door. Every door, and where he got the idea.
+- else:
+    Agent 0x47 'Nightshade': All of it, as promised. Every door, and where he got the idea.
+}
 #give_item:notes:nightshade_payment
 Agent 0x47 'Nightshade': The defences, written out as he briefed them to me. Read it before you go down.
-Agent HaX: He's brought his payment. You've got Helena's plans.
+// Ruling 6: on an m09 save the pointer also sets m09's flag 4 list apart.
+{m09_completed:
+    Agent HaX: Helena gave us the entries he built from. Not which door each one's on. Check his against the plans.
+- else:
+    Agent HaX: He's brought his payment. You've got Helena's plans.
+}
 Director Magnus Netherton: I am keeping him. If he burns you twice, that is on my signature as well.
 + [What does he get out of this?]
     Agent 0x47 'Nightshade': A little longer being useful to both sides. I'm honest about that, at least.
@@ -172,8 +184,11 @@ Agent HaX: He's only as right as the man who briefed him.
 Director Magnus Netherton: The plans are good plans. They are old plans.
 -> unshown_menu
 
+// Ruling 4 (STAGE_8_RULINGS): with m09 unplayed, the not-shown choice was never
+// offered, so his map is true (the payment's entry 3 reads correct in JSON), no
+// check, no tripwire.
 === unshown_menu ===
-+ {payment_read and plans_read and not payment_checked} [Your inner door entry says 1962, no interlock. Helena's 1962 drawings have one.]
++ {m09_completed and payment_read and plans_read and not payment_checked} [Your inner door entry says 1962, no interlock. Helena's 1962 drawings have one.]
     ~ payment_checked = true
     Agent 0x47 'Nightshade': *smiles* You read your homework.
     Agent 0x47 'Nightshade': He told me original, unchanged, and I wrote what I was told. Go by the drawings for that door.
@@ -181,7 +196,7 @@ Director Magnus Netherton: The plans are good plans. They are old plans.
     -> unshown_close
 + [We'll go by your map.]
     ~ nightshade_map_used = true
-    ~ tripwire_armed = nightshade_map_used and not payment_checked
+    ~ tripwire_armed = nightshade_map_used and not payment_checked and m09_completed
     ~ door_scene_done = true
     Agent 0x47 'Nightshade': Then the post is empty at half two. Go in when it is.
     ~ ns_quiet = true
@@ -228,7 +243,11 @@ Agent 0x47 'Nightshade': Name the deal and you get the refit. Every door he chan
     Agent 0x47 'Nightshade': You read what I cleared. Then you know I kept his notes.
 }
 Director Magnus Netherton: Without him you have Helena's plans. They are good plans. They are old plans.
-Agent HaX: He's only as right as the man who briefed him.
+{m09_completed:
+    Agent HaX: Helena gave us his entries, not where each one sits. He's only as right as the man who briefed him.
+- else:
+    Agent HaX: He's only as right as the man who briefed him.
+}
 -> arrested_menu
 
 === arrested_menu ===

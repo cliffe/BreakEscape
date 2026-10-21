@@ -20,7 +20,7 @@ VAR hpost_phone_asked = false
 {
 - hpost_quiet:
     ~ hpost_quiet = false
-- ending != "":
+- ending != "" and ending != "joined":
     Agent HaX: It's done. Sit down a minute.
 - breach_open:
     Agent HaX: I'm on your phone now. Ring me.

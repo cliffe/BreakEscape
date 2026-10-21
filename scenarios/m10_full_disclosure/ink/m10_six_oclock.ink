@@ -132,7 +132,7 @@ Agent 0x5E 'Lantern': When did you know?
     ~ kowalczyk_answer = "bench"
 + { sleeper_caught and m09_recruiter_offer == "taken" } [Before Helena. I had a feeling about you.]
     ~ kowalczyk_answer = "briefing"
-+ { sleeper_caught } [I didn't. I worked it out.]
++ { sleeper_caught and m09_recruiter_offer != "taken" } [I didn't. I worked it out.]
     ~ kowalczyk_answer = "worked_out"
 -
 -> kow_reply ->
@@ -203,7 +203,7 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 - m02_gary_protected and imran_outcome == "ko":
     Gary Whitlock: I sat with Imran till the medics came. He asked who it was. I said I didn't see.
 - m02_gary_protected:
-    Gary Whitlock: Consultant. Lanyard and everything. I spent the night watching other people's benches.
+    Gary Whitlock: Consultant for a night. I spent it watching other people's benches.
 - gary_outcome == "talked_round":
     Gary Whitlock: A board finally listened to me. Shame it's a review board.
 - gary_outcome == "taken_in":
@@ -263,7 +263,7 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
 + [(Let him talk.)]
 -
 { ending == "lethal":
-    Director Magnus Netherton: He reached. I'll put that first.
+    Director Magnus Netherton: He reached. I will put that first.
 }
 -> numbers_core ->
 -> more_menu ->
@@ -314,7 +314,7 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
     Director Magnus Netherton: Someone in the second van has bruises ENTROPY did not give them. I will want that explained.
 }
 { victoria_gallery == "confronted":
-    Director Magnus Netherton: The Zero Day tap went dark at five. She'll have sold that too.
+    Director Magnus Netherton: The Zero Day tap went dark at five. She will have sold that too.
 }
 { m06_assets_seized and ending != "executed":
     { database_outcome == "secured":
@@ -340,9 +340,9 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
     }
     -> dark_ops ->
     { ending == "executed":
-        Director Magnus Netherton: Three water utilities went to manual at five. There is no patch for their controllers. They will turn the valves by hand till spring.
+        Director Magnus Netherton: Three water utilities went to manual at five. There is no patch for their old controllers. They will turn the valves by hand till spring.
     - else:
-        Agent HaX: Three water utilities went to manual at five. There's no patch for their controllers. They'll turn the valves by hand till spring.
+        Agent HaX: Three water utilities went to manual at five. There's no patch for their old controllers. They'll turn the valves by hand till spring.
     }
 - database_outcome == "both_wiped":
     -> scorched_close

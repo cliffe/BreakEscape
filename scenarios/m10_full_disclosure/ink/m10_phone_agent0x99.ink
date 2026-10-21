@@ -25,6 +25,7 @@ VAR hax_power_asked = false
 VAR hax_backdoor_asked = false
 VAR hax_console_asked = false
 VAR hax_vault_asked = false
+VAR hax_hatch_asked = false
 VAR hax_suspect = ""
 
 === function hax_guide_ready() ===
@@ -53,8 +54,10 @@ VAR hax_suspect = ""
 + {flag4_submitted and not hax_vault_asked} [The vault line.] -> vault_line
 + {outer_lock_open and not hax_jammed and not what_went_out_given} [What went out?] -> what_went_out
 + {flag2_submitted and not hax_jammed and not outer_lock_open} [What's still live?] -> whats_live
-+ {flag2_submitted and backdoor_channel_live and not backdoor_closed and not hax_backdoor_asked} [The backdoor.] -> backdoor_topic
-+ {flag2_submitted and not flag3_submitted} [The hatch?] -> hatch_topic
+// Stage 8 (ruling 3, m-1): while "[What's still live?]" shows, it carries the
+// backdoor too, so the hub stays at ten on the busiest save.
++ {flag2_submitted and outer_lock_open and backdoor_channel_live and not backdoor_closed and not hax_backdoor_asked} [The backdoor.] -> backdoor_topic
++ {flag2_submitted and not flag3_submitted and not hax_hatch_asked} [The hatch?] -> hatch_topic
 + {power_room_entered and not gallery_shutter_cut and phone_voice_is_hax} [Talk me through the shutter.] -> shutter_topic
 + {officer_out == "malhotra" and clue_alibi} [Bring Malhotra back.] -> recall_malhotra
 + {officer_out == "quintero" and clue_bench_log} [Bring Quintero back.] -> recall_quintero
@@ -81,7 +84,7 @@ VAR hax_suspect = ""
 // OT §5's ladder, first that holds. After a reload it names where to walk back to.
 === where_are_we ===
 {
-- ending != "":
+- ending != "" and ending != "joined":
     It's done. Come up when you're ready.
 - database_outcome != "":
     It's him now.
@@ -447,6 +450,9 @@ Agent 0x88 'Phantom': Noted. It's going on the list.
 {m03_victoria_fate == "recruited":
     Sterling goes with whoever's winning.
 }
+{backdoor_channel_live and not backdoor_closed and not hax_backdoor_asked:
+    -> backdoor_topic
+}
 -> support_hub
 
 // Her four return lines, word for word (CONTRACT §1.6 "The release, said twice").
@@ -481,6 +487,7 @@ It's holding a batch for the moment anyone stops his release. Close it at the co
 
 // FA §6.2, in story terms only.
 === hatch_topic ===
+~ hax_hatch_asked = true
 Sealed section, east end of the hall. A Cold War maintenance hatch, painted over, and somebody's opened it since.
 The release service runs in a container on the host under it. Get out of the container onto that host, and you've got the disarm.
 -> support_hub
@@ -515,7 +522,16 @@ And if both copies die, the room purges. Doors, lights, all of it. He'll be read
             She cancelled Zero Day's. Nothing to follow.
         }
     }
-    I can kill one feed, or follow one. Not both. Pick.
+    {
+    - share_zero_day == "live":
+        One feed. Kill it or follow it. Pick.
+    - ghost_sale == "bait" and share_resale == "live":
+        The resale's live. I can kill it. One go.
+    - backdoor_channel_live and not backdoor_closed:
+        No share left to touch. His backdoor's still open.
+    - else:
+        No share left to touch.
+    }
 - backdoor_channel_live and not backdoor_closed:
     The share's done. His backdoor's still open.
 - else:
@@ -567,6 +583,8 @@ Director Magnus Netherton: Breach. Go.
 - nightshade_tethered:
     Agent 0x47 'Nightshade': Manual.
     He's on the crank. Their reader never saw you.
+- override_held:
+    It's read your badge. Only he knows.
 - else:
     It's read your badge. They know you're in.
 }

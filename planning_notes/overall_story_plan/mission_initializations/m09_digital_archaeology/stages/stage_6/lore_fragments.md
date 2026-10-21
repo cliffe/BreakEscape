@@ -62,7 +62,7 @@ Final fixed strings, ready for stage 9 (revised in round 1, §7). For each objec
 **`hl_box`** -- name "Harwick & Lowe, Dead Files". Container, `locked: true`, `lockType: "password"`, `requires: "HL2015-0477"`. observations: "Archive boxes from a closed search firm. The lid takes a file number." Contents: `hl_placing_sheet`.
 
 **`hl_placing_sheet`** -- name "Placement Record, HL2015-0477" (W6-16, W6-24). `notes`, read from the box (`takeable: true`, collected on read; it is a notes item in a container). `onRead: { "setVariable": { "sleeper_shortlist": true } }`. US, dull on purpose.
-- text: "HARWICK & LOWE -- PLACEMENT RECORD\nRef HL2015-0477. Q2 2015.\nSearch: lateral hires from the private sector.\nClient: government, UK. Two placements.\nFee: 30% of first-year salary, per placement.\nStart: Q3 2015.\nCandidates: H. Kowalczyk; M. Quintero.\nNext of kin: Kowalczyk, mother, nursing home. Quintero, father, nursing home.\nStatus: both placed. File closed."
+- text: "HARWICK & LOWE -- PLACEMENT RECORD\nRef HL2015-0477. Q2 2015.\nSearch: lateral hires from the private sector.\nClient: confidential (security consultancy). Two placements.\nFee: 30% of first-year salary, per placement.\nStart: Q3 2015.\nCandidates: H. Kowalczyk; M. Quintero.\nNext of kin: Kowalczyk, mother, nursing home. Quintero, father, nursing home.\nStatus: both placed. File closed."
 - observations: "A placement record from a search firm that no longer exists. Two names."
 - Carries: narrows WREN to two (both with a parent in care; the record can't say which hire is honest). Sets `sleeper_shortlist`. HaX (ink, SA Beat 2.5): "Harwick & Lowe shut before TalentStack opened." Changed by: nothing.
 
@@ -84,14 +84,14 @@ The ledger block (L) used in the flag 2 variants:
 - Carries: the Series R marks and the coded salvage line (flag 1); the ledger, its totals and the H&L file number (flag 2); Torres' status (m05); the booked sale (`taken` / `double_crossed`). Changed by: flags 1–2, `m05_final_choice`, `invoice_booked`.
 
 **`case_file`** -- name "Case File, Helena". `notes`, `takeable: false`, `readable: true`. UK, HaX's own file (W6-13; reviewer's rewrite 10 as base).
-- `textVariants`: `globalVars.m06_monitoring_enabled` → "CASE FILE -- HELENA. 0x99. Not for circulation.\n1. Intercept, day 10: the order, photographed.\n2. The wall, copied.\n3. Raid team, Montana: four names.\n4. Training notebook, 2011: scan, filed separately.\n5. HashChain tags, standing order. From: frozen fund, tagged. To: Big Sky Holdings LLC. Memo: RENT, SITE 2, MT. Monthly, since 2016.\nPencilled beside item 5: Not Helena."
+- `textVariants`: `globalVars.m06_monitoring_enabled` → "CASE FILE -- HELENA. 0x99. Not for circulation.\n1. Intercept, day 10: the order, photographed.\n2. The wall, copied.\n3. Raid team, Montana: four names.\n4. Training notebook, 2011: scan, filed separately.\n5. HashChain tags, standing order. From: the Architect's fund, tagged. To: Big Sky Holdings LLC. Memo: RENT, SITE 2, MT. Monthly.\nPencilled beside item 5: Not Helena."
 - text (base) → "CASE FILE -- HELENA. 0x99. Not for circulation.\n1. Intercept, day 10: the order, photographed.\n2. The wall, copied.\n3. Raid team, Montana: four names.\n4. Training notebook, 2011: scan, filed separately."
 - observations: "A typed case file in HaX's name. Item 4 has a scan of its own on the next desk."
 - Carries: the tagged payments to the bunker's lessee (Big Sky Holdings LLC, matching `lease_file`); on the no-coordinate branch they point at the bunker before the deed does. Item 4 points, quietly, at the notebook. HaX (ink): "Your tags, from HashChain." Changed by: `m06_monitoring_enabled`.
 
 **`notebook_scan`** -- name "Training Notebook (scan)". `notes`, `takeable: false`, `readable: true`; `onRead: { "setVariable": { "notebook_read": true } }`. UK, 2011 (W6-25: a date and a 7 in each hand, so HaX's "loop on the g" and "crossed sevens" match the page).
 - text: "SAFETYNET STRATEGY -- STRAT-204 -- 17 October 2011\nWk 7. Disclosure: who does it serve?\nIn the margin, another hand: Wk 7. Ask who it hurts first. Then ask again, afterwards."
-- observations: "A scanned page from a student's notebook. Two hands: the student's, and a teacher's in the margin."
+- observations: "A scanned page from a student's notebook. Two hands: the student's, and a teacher's in the margin. In the margin, the g in 'again' loops back on itself, and the 7 is crossed." (stage 8 m-04: the two features HaX's hints name are on the page)
 - Carries: HaX's notebook from Tesseract's course, fifteen years ago; the margin hand is the exemplar for `match_the_hand` (the g of "again", the crossed 7s). The seed of "Let it hurt afterwards". Changed by: nothing.
 
 ### 1.5 The restricted stacks (the hatch)
@@ -122,7 +122,7 @@ The ledger block (L) used in the flag 2 variants:
 
 **`nightshade_file`** -- name "Candidate Assessment, Intake 2011". In `plan_cabinet` (biometric). `notes`, collected; `onPickup: { "setVariable": { "nightshade_file_held": true } }`. UK. A SAFETYNET form with the recruiter's notes on it (W6-07; reviewer's rewrite 5 as base): no "-- A.", no office label. The hand comparison does the naming.
 - text: "SAFETYNET -- INTAKE 2011 -- CANDIDATE ASSESSMENT\nCandidate: 0x47, provisional. Age: 23.\nAssessor's notes: Seen 7 November. Again on the 17th. Idealistic, tired already. Will wait if asked properly.\nAsk properly.\nNo payment. Belief is the payment.\nAssessor: initialled, not signed."
-- observations: "A SAFETYNET training form, fifteen years old. The assessor's notes are in a sloping hand you have seen tonight."
+- observations: "A SAFETYNET training form, fifteen years old. The assessor's notes are in a sloping hand you have seen tonight. The g in 'Again' loops back on itself. Both sevens are crossed." (stage 8 m-04)
 - Carries: the proof, with flag 3, that the course's teacher recruited Nightshade at 23 (U1 canon); the lever that talks Sorensen down (her schedule's "plan chest: not listed"). The match rests on the handwritten notes, not the printed fields: the loop on the g of "Again" and the crossed 7s of "7 November" and "the 17th" are the same as the notebook margin's g of "again" and crossed 7 of "Wk 7", which are the two features HaX's hints name ("Look at the loop on the g." / "Same pen pressure, same crossed sevens."). The 17th also matches the notebook's date, 17 October 2011. Changed by: nothing.
 
 **`feed_table_box`** -- name "The Last Box". `notes`, `takeable: false`, `readable: true` (a readable, not an item; the credit reads "kept from the shredder", M9-19). US, Sorensen's hand (W6-03, W6-15; reviewer's rewrite 2 as base, all eleven rows written, C-19). **The Series L sheets** (the string `noor_desk_box` reuses):
@@ -209,14 +209,14 @@ Carries (all four): the Architect's reading of Agent 0x00 (m07's "figures"); ent
 - Carries: the salvage cage left off the order (the flag 4 realisation); her two kept items. Sets `schedule_read`.
 
 **`lease_file`** -- name "Lease Abstract and Construction File". `notes`, collected (`find_the_deed`). US lease abstract (W6-14), aligned with m10 stage 6's bunker. **No variants** (the old variants were glosses; HaX's lines move to ink, C-21, C-22).
-- text: "LEASE ABSTRACT\nLessor: State of Montana, surplus property.\nLessee: Big Sky Holdings LLC.\nPremises: Sun River Regional Control Site, a decommissioned 1962 civil defense facility, with access road and easements. Lewis and Clark County, Montana.\nTerm: 20 years. Commencement date: June 2, 2016.\nRecorded with the County Clerk and Recorder.\nAttached: as-built drawings, 1962; refit drawings, revision C."
+- text: "LEASE ABSTRACT\nLessor: State of Montana, surplus property.\nLessee: Big Sky Holdings LLC.\nPremises: Sun River Regional Control Site, a decommissioned 1962 civil defense facility, with access road and easements. Lewis and Clark County, Montana.\nTerm: 20 years. Commencement date: June 2, 2016.\nRecorded with the County Clerk and Recorder.\nAttached: as-built drawings, 1962. Refit drawings: withdrawn by lessee."
 - observations: "A lease and a roll of drawings for a bunker in this county."
-- Carries: the deed and the paper half of the defences (`find_the_deed`); on the no-coordinate branch it finds the bunker. The commencement date is the safe PIN (§3.2). HaX (ink): on `!m08_tomb_gamma_location_known` (cold starts included, script edit R1 ruling 5), "There it is. Tomb Gamma has an address."; on `m08_tomb_gamma_location_known`, "Same site Nightshade gave us. Now it has a lease."; on `m03_victoria_fate` `arrested` or `ko` (two conditions), "Big Sky was on Zero Day's client list. Sterling's keys opened it after Cardiff." (C-21: "after Cardiff", not "in the spring").
+- Carries: the deed and the 1962 drawings (`find_the_deed`; stage 8 BP F-02: the refit drawings were withdrawn by the lessee, so m10's `helena_plans` and Nightshade's payment check hold); on the no-coordinate branch it finds the bunker. The commencement date is the safe PIN (§3.2). HaX (ink): on `!m08_tomb_gamma_location_known` (cold starts included, script edit R1 ruling 5), "There it is. Tomb Gamma has an address."; on `m08_tomb_gamma_location_known`, "Same site Nightshade gave us. Now it has a lease."; on `m03_victoria_fate` `arrested` or `ko` (two conditions), "Big Sky was in Zero Day's sales ledger. Sterling's keys opened it after Cardiff." (C-21: "after Cardiff", not "in the spring").
 
 **`rent_book`** (id kept) -- name "Rent Ledger" (W6-16). `notes`, `takeable: false`, `readable: true`. US. **No variants** (C-17).
 - text: "RENT LEDGER -- SITE 2, MT. Lessee: Big Sky Holdings LLC. Lease start: 06/02/16\nDue / received / amount / remitter\n07/01/16 -- 06/29/16 -- $4,250.00 -- acct ending 4471\n08/01/16 -- 07/29/16 -- $4,250.00 -- acct ending 4471\nPaid early, every month since. Same account."
 - observations: "A monthly ledger. Every page is headed with the same date."
-- Carries: the safe PIN the long way (`060216`, the header as printed). HaX (ink, on `m06_irina_recruited`): "Irina's account paid for this. Tell her it bought us the deed."
+- Carries: the safe PIN the long way (`060216`, the header as printed). HaX (ink, on `m06_irina_recruited`): "Irina's tip-off led us to this. Tell her it bought us the deed."
 
 **`danny_sheet`** -- name "Broker's Note: D. Foster". `notes`, `takeable: false`, `readable: true`. US (a broker's memo). C-24: no `danny_ko` variant; a knock-out falls to the base.
 - `textVariants`:
@@ -435,7 +435,7 @@ Each thread deepens as the player goes, and each pays off a season-long question
 | `danny_sheet`; HaX at `lease_file` | m03 Danny's fate; Victoria's keys "after Cardiff" | m03 |
 | `the_reading_3`; `albion_folder` | m04 `disclosure_choice`, landing twice: his reading, then SAFETYNET's own silence | m04 |
 | `feed_table_box`, `noor_desk_box`, `printed_ledger` (LINNET, "$500, filing bonus"), `hl_placing_sheet` | m05 the forty-seven, the twenty-three, Noor, Torres | m05 |
-| `case_file` item 5; HaX at `rent_book` | m06 monitoring (Big Sky Holdings, since 2016); Irina's account | m06 |
+| `case_file` item 5; HaX at `rent_book` | m06 monitoring (Big Sky Holdings, since 2016); Irina's tip-off | m06 |
 | `the_reading_4` | m07 `debrief_stance` | m07 |
 | `nightshade_file`, `nightshade_copy` | m08 Nightshade: the recruitment, what he cleared | m08 |
 
@@ -461,7 +461,7 @@ Handover 9-7 (P14): the second guard Tran calls in on the `m01_maya_ko` branch, 
 
 - **Role:** on `m01_maya_ko` only, shown by the shutter when Tran sees the player first (`tran_alerted`; S5 §3.3). One line, then hostile. Avoidable (a patrol like any other). No arc, no lore object.
 - **Speaker prefix (for stage 7):** NPC id `archive_guard`, `displayName: "Lyle Dillard"`. His one line: "Dillard, Statewide Security. Stay where you are." (then `#hostile:archive_guard`).
-- He is the cost of day one (m01) arriving eight missions late; he carries no document and sets only `archive_guard`'s KO global, if the player drops him.
+- He is the cost of day one (m01) arriving eight missions late; he carries no document and sets no global (stage 8 m-11: the KO global claimed here never existed, and nothing would read it).
 
 ## 6. Proposed changes for earlier docs and FINALE_ARC
 
@@ -598,3 +598,7 @@ Review: `REVIEW_R2.md` (0 blockers, 1 major, 12 minors). The reviewer's rewrites
 | R2-13 | minor | Fixed: the case file's base written in full; the deck has one base observation | §1.4, §1.9 |
 
 **Counts:** 13 findings, all fixed, none withdrawn. No id, global, lock value or condition changed in round 2, so §6's lists stand as written. Stage 6 is complete.
+
+## 9. Stage 8 folded in
+
+From `../stage_8/REVIEW_R1.md`, `finale/STAGE_8_BIBLE_PASS.md` and `STAGE_8_BIBLE_PASS_A.md`, applied 2026-10-21; the full list is `scenarios/m09_digital_archaeology/CONTRACT.md` §15. BA 1: `hl_placing_sheet` "Client: confidential (security consultancy)." (SAFETYNET is no country's agency). BP F-02: `lease_file` "Refit drawings: withdrawn by lessee." BP F-04: `case_file` item 5 on monitoring is "From: the Architect's fund, tagged." with no "since 2016" (the fund was never frozen on that branch, and tags placed in m06 can't show ten years of rent). BP F-05 and F-10: HaX's lease and rent remarks (§1, "HaX (ink)"). m-04: the hand features in both observations. m-11: Dillard sets no global. The stamp (§1) and Noor's box base stay as written here; S4 and S5 now copy them.

@@ -114,6 +114,7 @@ VAR m09_albion_notified = false
 VAR m09_cage_bin = ""
 VAR m09_legacy_files_saved = false
 VAR m09_hax_confession_answer = ""
+VAR m09_alpha_annotations_read = false   // twelfth m09 export (stage 8 ruling 5); Tier 2: gates the Tomb Alpha notes answer
 
 // completed
 VAR m01_completed = false

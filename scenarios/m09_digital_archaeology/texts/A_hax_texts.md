@@ -14,14 +14,14 @@ Stage 9 pastes these as `sendTimedMessage` mappings on `agent_0x99` (unvoiced, n
 
 | # | Text | Trigger (stage 9) | Notes |
 |---|---|---|---|
-| A3-04 | Tran's just sent the guard to your door. | `conversation_closed:agent_0x99` with `globalVars.flag1_submitted && globalVars.m01_maya_ko` | `onceOnly`, `delayMs: 3000`, so it lands after `flag1_read` closes. **Fixed** |
+| A3-04 | Tran's just sent the guard to your door. | `conversation_closed:agent_0x99` with `globalVars.flag1_submitted && globalVars.m01_maya_ko && !globalVars.old_coyote_told && !globalVars.old_coyote_ko` | `onceOnly`, `delayMs: 3000`, so it lands after `flag1_read` closes. **Fixed**. Stage 8 m-01: no text when the guard is in his truck or down. The guard's `patrolOverride` (S5 §3.3) takes the same two guards and a relay on `room_entered:open_stacks`, so it holds when the player never loaded his room |
 | A3-05 | That cabinet takes a print. She stamps everything. | `room_entered:restricted_cage` | `onceOnly`, `delayMs: 2000`. **Fixed** |
 | A3-06a | That box behind her is the last of the night. The legacy files. | `global_variable_changed:cage_opened` with `value === true && !globalVars.m05_found_pipeline_list` | `onceOnly`. Script edit R1 A-18: the contract's one 37-word text split in two, 5 s apart (revised fixed string). Two rows per text for the "not warned in time" arm, because `!(a && !b)` is `!a` or `b` |
 | A3-06b | She gets to it when you pass her for the cabinet, or leave the cage. She won't stop for asking. | as A3-06a | `onceOnly`, `delayMs: 5000` |
 | A3-06c | (A3-06a's string) | `global_variable_changed:cage_opened` with `value === true && globalVars.m05_found_pipeline_list && globalVars.m05_recruiter_deal_accepted` | `onceOnly` |
 | A3-06d | (A3-06b's string) | as A3-06c | `onceOnly`, `delayMs: 5000` |
 | A3-06e | The legacy files are under Noor's desk. Let her shred the rest. | `global_variable_changed:cage_opened` with `value === true && globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted` | `onceOnly`. **Fixed** |
-| A3-07 | Hold his file next to the notebook scan in my case file. Then tell me what you see. | `global_variable_changed:nightshade_file_held` with `value === true && !globalVars.flag3_submitted` | `onceOnly`. **Fixed** |
+| A3-07 | Hold his file next to the notebook scan in my case file. Then tell me what you see. | `global_variable_changed:nightshade_file_held` with `value === true && !globalVars.flag3_submitted` | `onceOnly`. **Fixed**. Stage 8 m-03: the same event's HaX mapping also has `unlockTask: "match_the_hand"` (the task now ships `locked`) |
 | A3-08 | She's still feeding it. | `room_entered` with `globalVars.flag2_submitted && !globalVars.hatch_talked` | `onceOnly`. **Fixed** |
 | A3-09 | She's sixty-six. | `npc_ko:sorensen` | `onceOnly`. **Fixed** |
 | A3-10 | She's done with that box. | `npc_ko:sorensen` with `globalVars.legacy_clock_run` | `onceOnly`, `delayMs: 5000` (after A3-09). **Fixed** |
@@ -53,9 +53,9 @@ Each fires once on its document's read or pickup. The read latches (`rent_ledger
 |---|---|---|---|
 | A3-21 | There it is. Tomb Gamma has an address. | `item_picked_up:notes`, `data.itemId === 'lease_file'`, with `!globalVars.m08_tomb_gamma_location_known` | `onceOnly`. **Fixed**. Script edit R1 ruling 5: cold starts get this line too (the cold briefing has Nightshade in custody saying nothing) |
 | A3-22 | Same site Nightshade gave us. Now it has a lease. | as A3-21, with `globalVars.m08_tomb_gamma_location_known` | `onceOnly`. **Fixed** |
-| A3-23a | Big Sky was on Zero Day's client list. Sterling's keys opened it after Cardiff. | as A3-21, with `globalVars.m03_victoria_fate === 'arrested'` | `delayMs: 5000` after A3-21 or A3-22. **Fixed** |
-| A3-23b | (same string as A3-23a) | as A3-21, with `globalVars.m03_victoria_fate === 'ko'` | `delayMs: 5000`. **Fixed** |
-| A3-24 | Irina's account paid for this. Tell her it bought us the deed. | `global_variable_changed:rent_ledger_read` with `value === true && globalVars.m06_irina_recruited` | `onceOnly`. **Fixed** |
+| A3-23a | Big Sky was in Zero Day's sales ledger. Sterling's keys opened it after Cardiff. | as A3-21, with `globalVars.m03_victoria_fate === 'arrested'` | `delayMs: 5000` after A3-21 or A3-22. Stage 8 BP F-05: m03's client roster has no Big Sky; its sales ledger, seized with the marketplace, does |
+| A3-23b | (same string as A3-23a) | as A3-21, with `globalVars.m03_victoria_fate === 'ko'` | `delayMs: 5000` |
+| A3-24 | Irina's tip-off led us to this. Tell her it bought us the deed. | `global_variable_changed:rent_ledger_read` with `value === true && globalVars.m06_irina_recruited` | `onceOnly`. Stage 8 BP F-10: beside the rent page, "Irina's account" read as her paying ENTROPY's rent |
 | A3-25 | St. Catherine's money. It bought the blast door. | `global_variable_changed:refit_ledger_read` with `value === true && globalVars.m02_paid_ransom` | `onceOnly`. **Fixed** |
 | A3-26a | Danny's statement just became evidence. | `global_variable_changed:danny_sheet_read` with `value === true && globalVars.m03_danny_fate === 'protected' && !globalVars.m03_danny_ko` | `onceOnly`. FA row 36 |
 | A3-26b | (same string as A3-26a) | as A3-26a with `globalVars.m03_danny_fate === 'exposed' && !globalVars.m03_danny_ko` | `onceOnly` |
@@ -70,6 +70,10 @@ Each fires once on its document's read or pickup. The read latches (`rent_ledger
 | – | (no text) | `m01_final_choice === 'arrest'` or never played | A's call: on `arrest` the page's standing order ("put the device down and wait") already reads as what happened; a line would repeat it |
 | A3-29a | After Quantum Dynamics we checked everyone TalentStack ever touched. Harwick & Lowe shut before TalentStack opened. | `global_variable_changed:sleeper_shortlist` with `value === true` | `onceOnly`. **Fixed** |
 | A3-29b | You took her side at the briefing. Keep it. Don't take her word. | as A3-29a with `globalVars.raid_team_answer === 'quintero'` | `delayMs: 5000` after A3-29a. **Fixed** |
+| A3-31a | Reeves' handler, from the hospital. Told to stand down the day we took Reeves. | `global_variable_changed:reeves_sheet_read` with `value === true && globalVars.m02_reeves_fate === 'arrested'` | `onceOnly`. Stage 8 ruling 14, FA row 21 (in custody): the handler contact sheet on the printed ledger (S6 §1.6, the R paragraph) |
+| A3-31b | (same string as A3-31a) | as A3-31a with `globalVars.m02_reeves_fate === 'ko'` | `onceOnly` |
+| A3-31c | (same string as A3-31a) | as A3-31a with `globalVars.m02_reeves_fate === 'flagged'` | `onceOnly` |
+| A3-31d | (same string as A3-31a) | as A3-31a with `globalVars.m02_reeves_fate === '' && globalVars.m02_completed && globalVars.m02_insider_asset_arrested` | `onceOnly`. The read rule for m02 saves before the export (FA row 22) |
 | A3-30 | Your tags, from HashChain. Someone's paying rent on a building in Montana that isn't this one. | `global_variable_changed:case_file_read` with `value === true && globalVars.m06_monitoring_enabled` | `onceOnly`. **Fixed** |
 
 ## 5. Notes for stage 9
@@ -77,4 +81,5 @@ Each fires once on its document's read or pickup. The read latches (`rent_ledger
 - A3-06a–d replace the contract's single 37-word text: two texts (script edit R1 A-18), each on two mappings, because the negation of `m05_found_pipeline_list && !m05_recruiter_deal_accepted` is an "or".
 - A3-04 keys on HaX's thread closing so the text can't land inside `flag1_read`; if stage 9 prefers `global_variable_changed:flag1_submitted` with a long delay, 12000 ms clears the 2500 ms ring and a short read.
 - Every text is under 30 words; none starts with `*`, `-`, `+`, `=` or `#`.
+- Stage 8 (A3-31): new read latch `reeves_sheet_read`, set when the printed ledger is read while its Reeves paragraph shows (S6 §1.6 variants 2–5, which all need flag 2). A plain `printed_ledger_read` won't do: a read before flag 2 latches it with no sheet on the page. If the engine can't set a global per variant, stage 9 sets `reeves_sheet_read` from the object's `onRead` only when `flag2_submitted` is true (a mapping on `object_interacted` for the ledger with that condition).
 - New read latch for stage 9 (script edit R1 A-05): `alpha_annotations_read`, an `onRead` `setVariable` on `alpha_annotations` (readable only after the identity scene, S6). HaX's hub topic 3b, "[His annotation sheets, with the tapes.]", is gated on it; `alpha_clip_played` is no longer read by A1.

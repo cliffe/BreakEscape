@@ -108,9 +108,12 @@ VAR hand_answered_here = false
     Her call first. Take it when it rings.
     #exit_conversation
     -> DONE
-- not dock_heard:
+// Stage 8 m-14: a first open after flag 1 (a late first open, or a seeded
+// playtest segment) skips the Act 1 dock lines and goes to the hub.
+- not dock_heard and not flag1_submitted:
     -> dock
 - else:
+    ~ dock_heard = true
     -> support_hub
 }
 
@@ -239,7 +242,7 @@ I've told the Director. He'll say nothing to them. Neither will you.
     Arakawa got Villanueva. She wanted to know who'd bother.
 }
 {recruiter_secret == "told":
-    Last spring I'd have kept that between us. Not tonight.
+    Back in September I'd have kept that between us. Not tonight.
 }
 Afterwards. Not during.
 It's yours to carry. Nobody else signed for it.
@@ -325,7 +328,7 @@ Her card for the tape room will be in that office.
 Tomb Beta's owner. It's one of ours. A SAFETYNET staff credential.
 Issued before he left us. Never revoked. The name on it is...
 #set_global:identity_name_said:true
-Director Magnus Netherton: I said we wouldn't name him until we could prove it. We can. Dr Adrian Tesseract.
+Director Magnus Netherton: I said we would not name him until we could prove it. We can. Dr Adrian Tesseract.
 Director Magnus Netherton: He was our chief strategist until seven years ago. He trained half my field officers.
 Director Magnus Netherton: HaX.
 -> confession
@@ -433,8 +436,11 @@ Seven years, and nobody turned it off. There's more on his box. A memo and a dra
 {
 - m04_disclosure_choice == "full":
     We marked this hole "retain" nine years ago. The vendor never heard a word from us.
-- m04_disclosure_choice == "partial":
+// Stage 8 SC 6: m04's partial branch has an inquest only when crew were lost.
+- m04_disclosure_choice == "partial" and m04_crew_lost:
     You told Albion's inquiry half of it. We told the vendor less.
+- m04_disclosure_choice == "partial":
+    You told the public half of it. We told the vendor less.
 - m04_disclosure_choice == "quiet":
     You kept Albion quiet. So did we, about this, for nine years.
 - else:
@@ -602,17 +608,11 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     Bringing you in. Netherton's in the hangar.
     #exit_conversation
     -> DONE
-// 2. The notice, from any room (stage 4 P8).
-+ {identity_scene_done and not albion_notified and not notice_sent_here} [His notice. Send it.]
-    ~ notice_sent_here = true
-    #set_global:albion_notified:true
-    Gone.
-    Vendor's acknowledged. They're saying ninety days for a fix. Getting it onto four hundred sites will take a year.
-    Analysis is pulling the watch. It's dark by morning.
-    -> support_hub
-+ {identity_scene_done and not albion_notified and not notice_sent_here} [Not yet.]
-    It keeps. So does the hole.
-    -> support_hub
+// 2. The notice, from any room (stage 4 P8). Stage 8 M-01: one hub row;
+// the send and the hold are its answers (notice_ask).
++ {identity_scene_done and not albion_notified and not notice_sent_here} [His notice.]
+    Still on his box. Say the word.
+    -> notice_ask
 // 3. The name (SE §4.4), once.
 + {identity_scene_done and not name_topic_given} [About the name.]
     ~ name_topic_given = true
@@ -667,8 +667,9 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 + {reading_found and not reading_told_hax_asked} [The Reading.]
     Do you want to tell me what it says?
     -> reading_ask
-// 9. WREN and the cross-reference nudge.
-+ {ledger_read_heard and not sleeper_named and not sleeper_shortlist} [WREN.]
+// 9. WREN and the cross-reference nudge. Stage 8 M-01: retires on the deck
+// choice; topic 1 and the debrief carry the unread boxes after that.
++ {ledger_read_heard and not sleeper_named and not sleeper_shortlist and not deck_choice_made} [WREN.]
     H&L's boxes are in the open stacks. You've got the number.
     {m05_torres_turned:
         Torres is still on their books. He may know how that firm filed its people.
@@ -696,8 +697,9 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     // VM hint, flag 2: checked against the VM plan (opus48). Same machine as flag 1, going further in; stay off flag 1's "part that isn't public".
     Same box you're already on. The live ledger sits where only the machine's keeper can reach. Get that far and it's yours.
     -> support_hub
-// 13. The legacy box (MC §4.3), once.
-+ {cage_opened and not legacy_clock_run and not legacy_files_saved and not legacy_topic_given} [The box behind her.]
+// 13. The legacy box (MC §4.3), once. Stage 8 M-01: also gone once his
+// file is held, since passing her for the cabinet runs the clock.
++ {cage_opened and not legacy_clock_run and not legacy_files_saved and not legacy_topic_given and not nightshade_file_held} [The box behind her.]
     ~ legacy_topic_given = true
     That's the Initiative's legacy files. Their placements outside SAFETYNET, in her own hand.
     It goes in the shredder the moment you go to the cabinet or step out of the cage. If you want it, it's through her.
@@ -709,8 +711,9 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     Victoria's people read their mail. There's a maintenance code for that gate.
     The cabinet in there takes her print. It's on the stamp on her shelf.
     -> support_hub
-// 15. The restricted series.
-+ {flag1_submitted and not series_topic_given} [The restricted series.]
+// 15. The restricted series. Stage 8 M-01: an Act 1 topic, gone once the
+// cage is open.
++ {flag1_submitted and not series_topic_given and not cage_opened} [The restricted series.]
     ~ series_topic_given = true
     R-114 to R-161, bay ten. All of it's behind the cage mesh in the restricted stacks.
     Sorensen's in there with it, at the shredder.
@@ -738,6 +741,18 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     -> DONE
 
 // Choices only (phone resting knots), so a re-navigation replays nothing.
+=== notice_ask ===
++ [Send it.]
+    ~ notice_sent_here = true
+    #set_global:albion_notified:true
+    Gone.
+    Vendor's acknowledged. They're saying ninety days for a fix. Getting it onto four hundred sites will take a year.
+    Analysis is pulling the watch. It's dark by morning.
+    -> support_hub
++ [Not yet.]
+    It keeps. So does the hole.
+    -> support_hub
+
 === reading_ask ===
 + [All of it.]
     ~ reading_told_hax_asked = true
@@ -785,15 +800,24 @@ Sent. He'll read it tonight.
 
 // The status ladder, most advanced first; each row names the next step.
 // Script edit R1 A-15: no recruiter_call_started row; start's guards exit
-// before the hub while her call is pending.
+// before the hub while her call is pending. Stage 8: re-checked row by row
+// (m-02); a flag already in is never named as the next step.
 === status ===
 {
 - tesseract_call_done:
     His box has given us all it's got. When you're ready, tell me to bring you in.
 - hour_read_done:
     Stay by his box. I don't think he's finished with us.
+// Stage 8 m-02 and the truthfulness pass: rows for flag 4 or flag 3 already
+// in, so no row names a flag the player has submitted.
+- identity_scene_done and flag4_submitted:
+    Flag four's in. I'm reading what it gave us. I'll ring you.
 - identity_scene_done:
     Flag four. Take the whole box, and we'll see what it still does.
+- flag3_submitted and not nightshade_file_held:
+    Flag three's in. Bring me Nightshade's file from the plan cabinet in the cage. Then we say the name.
+- flag3_submitted:
+    Flag three's in. Stay on. I'm ringing you.
 - salvage_opened and nightshade_file_held:
     Flag three. Find out whose box that is.
 - salvage_opened:
@@ -806,8 +830,10 @@ Sent. He'll read it tonight.
     Step out of the cage. Someone's been waiting for you to come up for air.
 - flag2_submitted:
     The hatch, then the gate. Her card's on that reel.
+- cage_opened and nightshade_file_held:
+    Flag two. The ledger's still on the catalogue server.
 - cage_opened:
-    The plan cabinet takes her print. Then flag two, the ledger.
+    The plan cabinet takes her print. It's on her stamp, on the hatch shelf. Then flag two, the ledger.
 - stacks_entered:
     The hatch. Talk to her across the counter, and take what you can off her.
 - flag1_submitted:

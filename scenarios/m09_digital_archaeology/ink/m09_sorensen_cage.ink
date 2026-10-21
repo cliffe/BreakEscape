@@ -55,7 +55,9 @@ Margaret Sorensen: Torres cost us one hospital bill, and he got us within an aft
     Narrator: She reads the label on the file in your hand, and sets the stamp down.
     #set_global:sorensen_fate:talked
     Margaret Sorensen: Then I'll keep what's left. Give me a pencil. I'll write down what I've destroyed, accurately.
-    Narrator: The shredder runs down. For the first time tonight, the building is quiet.
+    // Stage 8 M-03 (ruling 2): the room's ambient shredder keeps sounding, so
+    // the line stops the feeding, not the noise.
+    Narrator: She takes her hand off the feed. The shredder runs on, empty.
     -> back
 + {ledger_read_heard and sorensen_fate == "left" and not cage_asked_wren} [Who's WREN?]
     ~ cage_asked_wren = true

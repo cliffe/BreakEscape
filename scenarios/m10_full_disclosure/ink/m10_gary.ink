@@ -24,7 +24,7 @@ VAR gary_t_costs = false     // tech: HaX's cost line before the menu has been s
     -> consultant_rest
 }
 ~ gary_c_seen = true
-Gary Whitlock: You saved my career. I'm Director of something now. They gave me a lanyard.
+Gary Whitlock: You saved my career. Director of Cyber Security now, and the lanyard's still spelt right.
 Gary Whitlock: That casing on the rack. I had one of those behind my server cabinet at St. Catherine's, in a case nobody ever inventoried.
 + [Same supplier, then.]
     Gary Whitlock: Same bench, by the look of it. Small world, and most of it on fire.

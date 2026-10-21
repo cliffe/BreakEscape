@@ -13,11 +13,11 @@ VAR cit_quiet = false
 { ending != "joined" or closing_done:
     -> leave
 }
-Narrator: The Citadel, an hour later. HaX's channel is still open on the wall. Nobody has spoken on it.
+Narrator: The Citadel, an hour later. Netherton is on the wall screen from Montana. Beside him, HaX's channel is still open. Nobody has spoken on it.
 Director Magnus Netherton: He told her it had to be one of ours. He was right, and I signed for that agent myself.
 + [(Listen.)]
 -
-Narrator: On the wall screen, the casualty count climbs. Nobody turns it off.
+Narrator: On the next screen, the casualty count climbs. Nobody turns it off.
 #set_global:closing_done:true
 #complete_task:close_the_night
 Director Magnus Netherton: Find 0x00. Bring them in, and bring them to me.

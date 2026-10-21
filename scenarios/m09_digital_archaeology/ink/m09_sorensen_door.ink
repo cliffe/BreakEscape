@@ -9,7 +9,13 @@
 // (R2 B-R2-05): nobody claimed the lease-holder on this route, so her line
 // after the recognition is her own. And the player never saw the hatch here,
 // so HaX's first bin line opens "One bin is…" (R2 follow-up).
-// "[Walk past her.]" sets nothing: cage_opened already wrote derek_file.
+// Stage 8 ruling 1 (m09-R M-02, option a): the default bin reaches the
+// notepad on every route. "[Walk past her.]" hands over the file nearest her,
+// Derek's, and she tips the other. Knot `handover` is the hatch route's
+// default: a second mapping on room_entered:restricted_cage with
+// cage_opened && hatch_talked && !bin_chosen, onceOnly, opens it on the first
+// cage entry when no hatch button was pressed. One line, no choice: the other
+// bin went into the feed while the player was at the gate.
 // ===========================================
 
 INCLUDE m09_carryover_vars.ink
@@ -72,6 +78,20 @@ Agent HaX: One bin is Derek Lawson's file, and it isn't Derek's handwriting on i
     #exit_conversation
     -> DONE
 + [Walk past her.]
-    Margaret Sorensen: As you like. I have work.
+    #give_item:notes:derek_file
+    #set_global:cage_bin:derek_file
+    #set_global:bin_chosen:true
+    Margaret Sorensen: As you like. Take Mr. Lawson's file on your way. It's nearest. The other one's going in.
+    Narrator: She tips the other bin into the feed without looking at it.
     #exit_conversation
     -> DONE
+
+=== handover ===
+// Hatch route, cage opened with no bin chosen (see header). Same three tags
+// as B3's Derek button, so the default matches a chosen derek_file.
+#give_item:notes:derek_file
+#set_global:cage_bin:derek_file
+#set_global:bin_chosen:true
+Margaret Sorensen: You never chose, so take Mr. Lawson's file. It was nearest. The other one's already gone.
+#exit_conversation
+-> DONE

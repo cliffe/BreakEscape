@@ -175,7 +175,7 @@ Dr Adrian Tesseract: Finish on my box first. I'll keep.
 // his own mapping on flag4_submitted, or on a walk-up after a reload.
 === flag4_lines ===
 { m09_completed:
-    Agent HaX: The notice you read in Helena is on here too.
+    Agent HaX: The notice from Helena is on here too.
 - else:
     Agent HaX: He argued for the vendor nine years ago and lost.
     Agent HaX: The notice is on here. He wrote it himself, and he never sent it.
@@ -194,6 +194,10 @@ Agent HaX: And the line into our vault is open from here. We left it open.
 // the Recruiter beat. A choice at least every three lines.
 === case ===
 Dr Adrian Tesseract: All four. Good. Now it's my turn.
+// FA row 72 (ruling 14): the freeze, the two empty posts.
+{ m06_assets_seized:
+    Dr Adrian Tesseract: You froze my bank. I had to economise on guards. I expect you noticed.
+}
 + [Go on, then.]
 + [Step away from the console first.]
     Dr Adrian Tesseract: No. But I'll keep my hand where you can see it.
@@ -207,6 +211,9 @@ Dr Adrian Tesseract: Hospitals, dispatch, water. In the hands of people who coul
 -
 Dr Adrian Tesseract: Then it stops, because every vendor on earth patches at once, and nobody can hoard what everybody has.
 Dr Adrian Tesseract: Every year your service keeps its map, it costs more than that. Nobody counts it. I did.
+{ m02_completed:
+    -> case_lesson ->
+}
 + [You've had all night. Why haven't you pressed it?]
 + [You could have done this from anywhere. Why wait for me?]
 -
@@ -276,6 +283,16 @@ Dr Adrian Tesseract: Since your first day.
 + [You've watched. So what?]
 -
 -> case_recruiter
+
+// FA row 31 (ruling 14): Ghost's words in his mouth; HaX's own m02 line back.
+// Tesseract quotes Ghost, so the player need not have heard the call.
+=== case_lesson ===
+Dr Adrian Tesseract: Ghost put it best, at St. Catherine's. Not the money. The lesson.
++ [Ghost held a hospital to ransom to say it.]
++ [(Say nothing.)]
+-
+Agent HaX: Ghost wasn't wrong about the problem. I said so then. Wrong about the answer. So is he.
+->->
 
 // MC §6.2: m09's two Recruiter exports, once each, here.
 === case_recruiter ===
@@ -362,21 +379,21 @@ Dr Adrian Tesseract: That's the cheapest it will ever be. Wait a year and the nu
     ~ exchange_1 = "rebuttal"
     -> exch_1_sting ->
     -> first_landed ->
-    Dr Adrian Tesseract: *pause* I signed it.
+    Dr Adrian Tesseract: I signed it.
     -> bridge_in
 // slot 3: hardened > the clean first day > plain decoy
 + { hard } [Your Council's curve is on the desk outside. It doesn't stop after a month.]
     ~ exchange_1 = "record"
     -> exch_1_sting ->
     -> first_landed ->
-    Dr Adrian Tesseract: *pause* No. It wouldn't.
+    Dr Adrian Tesseract: No. It wouldn't.
     -> bridge_in
 + { not hard and clean } [My first day, I had a choice to hurt people. I didn't.]
     ~ exchange_1 = "record"
     -> exch_1_sting ->
     Dr Adrian Tesseract: One agent is an anecdote.
     -> first_landed ->
-    Dr Adrian Tesseract: *pause* I'll grant you the anecdote.
+    Dr Adrian Tesseract: I'll grant you the anecdote.
     -> bridge_in
 + { not slot3 } [You'll be in a cell long before the first month of this is over.]
     -> exch_1_plain
@@ -385,13 +402,13 @@ Dr Adrian Tesseract: That's the cheapest it will ever be. Wait a year and the nu
     ~ exchange_1 = "record"
     -> exch_1_sting ->
     -> first_landed ->
-    Dr Adrian Tesseract: *pause* I had him as rounding. He wasn't.
+    Dr Adrian Tesseract: I had him as rounding. He wasn't.
     -> bridge_in
 + { not bag and derek } [You priced Derek before anyone hired him. You hand your costs out.]
     ~ exchange_1 = "record"
     -> exch_1_sting ->
     -> first_landed ->
-    Dr Adrian Tesseract: *pause* Derek paid it. I didn't.
+    Dr Adrian Tesseract: Derek paid it. I didn't.
     -> bridge_in
 + { slot3 and not slot4 } [You'll be in a cell long before the first month of this is over.]
     -> exch_1_plain
@@ -487,15 +504,15 @@ Dr Adrian Tesseract: Nobody fixes anything until it hurts everyone at once.
     -> albion_sting ->
     -> first_landed ->
     { m04_crew_lost:
-        Dr Adrian Tesseract: *pause* None of them died of the truth. I'll grant that.
+        Dr Adrian Tesseract: None of them died of the truth. I'll grant that.
     - else:
         Dr Adrian Tesseract: *pause* No. Nobody did.
     }
     -> bridge_in
-+ { not full and exposed } [I published St. Catherine's cover-up. Forty hospitals fixed their networks. Nobody died.]
++ { not full and exposed } [I published St. Catherine's cover-up. Forty hospitals fixed their networks. Nobody died of it.]
     ~ exchange_2 = "record"
     -> first_landed ->
-    Dr Adrian Tesseract: *pause* Done properly. Yes.
+    Dr Adrian Tesseract: Done properly. Yes.
     -> bridge_in
 + { not slot3 } [Eleven hundred people at the low end. You can't spend them.]
     -> exch_2_plain
@@ -504,15 +521,15 @@ Dr Adrian Tesseract: Nobody fixes anything until it hurts everyone at once.
     ~ exchange_2 = "record"
     -> albion_sting ->
     -> first_landed ->
-    Dr Adrian Tesseract: *pause* Sooner than I managed.
+    Dr Adrian Tesseract: Sooner than I managed.
     -> bridge_in
 + { not notice and clean_rec } [Your Recruiter offered me a name. I wouldn't buy it from her.]
     ~ exchange_2 = "record"
     -> first_landed ->
     { m09_recruiter_offer == "named":
-        Dr Adrian Tesseract: *pause* No. You'd rather the slow way. It worked.
+        Dr Adrian Tesseract: No. You'd rather the slow way. It worked.
     - else:
-        Dr Adrian Tesseract: *pause* No. You let her keep her people sooner than pay her. I didn't think your service still did that.
+        Dr Adrian Tesseract: No. You let her keep her people sooner than pay her. I didn't think your service still did that.
     }
     -> bridge_in
 + { slot3 and not slot4 } [Eleven hundred people at the low end. You can't spend them.]
@@ -541,7 +558,7 @@ Dr Adrian Tesseract: That's the price again. I've moved on to why.
 - else:
     Dr Adrian Tesseract: You can't tell me who hoards. Then let me tell you who pays.
 }
-Dr Adrian Tesseract: I taught a room of twenty, once. Let it hurt afterwards, not during.
+Dr Adrian Tesseract: I taught rooms of twenty, once. Let it hurt afterwards, not during.
 { m07_architect_echo_heard:
     Agent HaX: You heard him say that on your handset.
 }
@@ -560,7 +577,7 @@ Dr Adrian Tesseract: Somebody has to be the during. Better me.
 }
 ~ temp speaker = m09_hax_confession_answer == "same_in_your_place" or m09_hax_confession_answer == "afterwards"
 ~ temp taught = m09_hax_confession_answer == "should_have_told"
-~ temp tapes = m09_deck_pulled == "alpha_tapes"
+~ temp tapes = m09_deck_pulled == "alpha_tapes" and m09_alpha_annotations_read
 ~ temp helena = m09_completed
 ~ temp slot2 = speaker or taught
 ~ temp slot4 = tapes or helena
@@ -595,14 +612,14 @@ Dr Adrian Tesseract: Somebody has to be the during. Better me.
     ~ exchange_3 = "rebuttal"
     -> ko_sting ->
     -> first_landed ->
-    Dr Adrian Tesseract: *pause* Better me, I said. And I brought you.
+    Dr Adrian Tesseract: Better me, I said. And I brought you.
     -> core_router
-// slot 4: the Tomb Alpha notes > what HaX does with the line > plain decoy
+// slot 4 (ruling 5: the notes answer needs the optional annotation read): the Tomb Alpha notes > what HaX does with the line > plain decoy
 + { tapes } [Your Tomb Alpha notes say carry it. They never say hand it on.]
     ~ exchange_3 = "record"
     -> ko_sting ->
     -> first_landed ->
-    Dr Adrian Tesseract: *pause* I was younger. I meant it then.
+    Dr Adrian Tesseract: I was younger. I meant it then.
     -> core_router
 + { not tapes and helena } [She carries it so she never hands it on. You never taught that part.]
     ~ exchange_3 = "record"
@@ -832,7 +849,7 @@ Agent 0x5E 'Lantern': Adrian.
 // named on the line (his "Too late to stop her walking in." covers that).
 === wren_react ===
 { not sleeper_caught:
-    Agent HaX: Kowalczyk. *quietly* I signed her leave forms.
+    Agent HaX: Kowalczyk. *quietly* I sent her mum flowers.
 }
 ->->
 
@@ -849,7 +866,7 @@ Agent HaX: Netherton's on the line. He wants to hear this.
 Dr Adrian Tesseract: Magnus.
 Director Magnus Netherton: Adrian.
 Director Magnus Netherton: Agent. His copy, and ours in the vault. You decide what happens to both. Hear what each costs first.
-Director Magnus Netherton: Half of these cannot be patched this year, and the water controllers never. Send them out and every buyer knows where to hit.
+Director Magnus Netherton: Half of these cannot be patched this year, and the oldest water controllers never. Send them out and every buyer knows where to hit.
 + [And if we keep them?]
 + [Go on, sir.]
 -
@@ -879,7 +896,7 @@ Director Magnus Netherton: Then nobody has it, and nobody fixes anything either.
 }
 + [Secure it. Their copy's evidence. Ours stays in the vault.]
     ~ database_outcome = "secured"
-    Director Magnus Netherton: Understood. I'll have his collected.
+    Director Magnus Netherton: Understood. I will have his collected.
     -> core_router
 + [Coordinated disclosure. Wipe theirs, and send ours to the vendors, on a schedule.]
     ~ database_outcome = "disclosed"
@@ -1061,11 +1078,12 @@ Agent HaX: 0x00.
 #exit_conversation
 -> parked
 
-// Scorched Earth: his own dead-man purge (FA §4.5). On m09_sleeper_named
-// nobody propped the service door, so he goes his own way.
+// Scorched Earth: his own dead-man purge (FA §4.5). On taken
+// nobody propped the service door, so he goes his own way. SR minor 11: on
+// taken only; on double_crossed she came in by that door.
 === ending_scorched ===
 Narrator: The wipe goes through. Then the room goes: the lights die, the suppression dumps, and somewhere behind the walls the blast doors start to cycle.
-{ m09_sleeper_named:
+{ m09_recruiter_offer == "taken":
     Narrator: When the emergency lights come up, his chair is empty, and a panel nobody had found stands open. On the console, a card in his hand: 'Afterwards, then.'
 - else:
     Narrator: When the emergency lights come up, his chair is empty, and the service door is open. On the console, a card in his hand: 'Afterwards, then.'

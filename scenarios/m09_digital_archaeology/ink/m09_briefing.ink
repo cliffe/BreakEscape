@@ -38,11 +38,25 @@ Director Magnus Netherton: Last night a courier in Helena, Montana, carried this
 - m06_monitoring_enabled:
     Director Magnus Netherton: Your tags lit up last night.
     Director Magnus Netherton: The courier was paid from the fund you tagged at HashChain.
+// Stage 8 SC 4: on m08_nightshade_tidied the holdall was gone before
+// SAFETYNET reached it; the airline booking carries the ticket instead.
+- m08_completed and m08_nightshade_tidied:
+    Director Magnus Netherton: Nightshade cleared his locker before we reached it. The airline kept his booking: one way, to Helena.
+    Director Magnus Netherton: We have read every courier out of that city since.
 - m08_completed:
     Director Magnus Netherton: Nightshade's go-bag held a one-way ticket to Helena. We have read every courier out of that city since.
 - else:
     // Cold start: Nightshade is introduced on the wall, so name him by what he did.
     Director Magnus Netherton: The traitor we took two days ago kept a one-way ticket to Helena in his go-bag. We have read every courier out of that city since.
+}
+// Stage 8 ruling 14, row 116: every m08 player hears the Helena ticket, so
+// it follows the branch when an earlier reason (Albion's card, the tags) took it.
+{ m08_completed and (m04_lore_safehouse_address_found or m06_monitoring_enabled):
+    { m08_nightshade_tidied:
+        Director Magnus Netherton: Nightshade cleared his locker before we reached it. The airline kept his booking: one way, to Helena.
+    - else:
+        Director Magnus Netherton: And Nightshade's go-bag held a one-way ticket to Helena.
+    }
 }
 Director Magnus Netherton: The label named the building. Mountain States Records & Retention, a commercial archive on the edge of Helena.
 // Beat 3 (fixed): the no-coordinate branch.
@@ -92,7 +106,8 @@ Director Magnus Netherton: HaX. The wall.
     ~ unplayed = unplayed + 1
 }
 ~ temp shorten = unplayed >= 5
-Agent HaX: One card for every operation against ENTROPY this year. The short version.
+// Stage 8 SC 3: "this year" dropped (m01-m03 ran in 2024).
+Agent HaX: One card for every operation against ENTROPY. The short version.
 
 // m01 Viral Dynamics. "" with m01_completed is Derek knocked out before he chose (an arrest).
 {
@@ -133,7 +148,11 @@ Agent HaX: One card for every operation against ENTROPY this year. The short ver
     Agent HaX: Zero Day. Victoria Sterling got out. Gone.
 - m03_completed and m03_victoria_fate == "ko":
     Agent HaX: Zero Day. You put Victoria Sterling down. She's in custody, and silent.
-- m03_completed or not shorten:
+// Stage 8 BP F-07: every finished m03 run ends at Sterling's choice, so a
+// finished run with no fate recorded still names her.
+- m03_completed:
+    Agent HaX: Zero Day. Victoria Sterling, their Cardiff broker. You dealt with her.
+- not shorten:
     Agent HaX: Zero Day, ENTROPY's exploit shop. Their Cardiff broker was never identified, and they kept trading.
 }
 
@@ -149,8 +168,14 @@ Agent HaX: One card for every operation against ENTROPY this year. The short ver
     {
     - m04_disclosure_choice == "full":
         Agent HaX: You told the inquiry everything about how Critical Mass got in.
-    - m04_disclosure_choice == "partial":
+    // Stage 8 SC 6 / BP F-06: m04's inquest exists only when crew were
+    // lost, and nine deaths were never filed as a maintenance fault.
+    - m04_disclosure_choice == "partial" and m04_crew_lost:
         Agent HaX: You told the inquiry half of how Critical Mass got in.
+    - m04_disclosure_choice == "partial":
+        Agent HaX: You told the public half of how Critical Mass got in.
+    - m04_crew_lost:
+        Agent HaX: The report said industrial accident, cause under investigation, and you let it.
     - else:
         Agent HaX: The report said maintenance fault, and you let it.
     }
@@ -178,6 +203,9 @@ Narrator: She walks the wall fast, like someone who has rehearsed it.
 {
 - m06_completed and m06_monitoring_enabled:
     Agent HaX: ENTROPY's fund. You tagged its wallets, and we've watched it pay people ever since.
+// Stage 8 BP F-03 / SC 7: the seized branch froze the fund (m06's debrief).
+- m06_completed and m06_assets_seized:
+    Agent HaX: ENTROPY's fund. You froze it before it paid out. Twelve point eight million, in evidence.
 - m06_completed:
     Agent HaX: ENTROPY's fund. You found it, and it was gone by the next day.
 - not shorten:
@@ -211,8 +239,9 @@ Narrator: She walks the wall fast, like someone who has rehearsed it.
 - else:
     Agent HaX: Nightshade, fifteen years one of ours, sent the threat database to Montana. He's in custody and saying nothing.
 }
-// Row 107: Netherton's visit, on an arrest that wasn't a knock-out, and on never played.
-{ (m08_completed and m08_nightshade_arrested and not m08_nightshade_ko_before_fate) or not m08_completed:
+// Row 107: Netherton's visit, on an arrest that wasn't a knock-out. Stage 8
+// ruling 10 (VT 1): not on never played, where HaX's card says "saying nothing".
+{ m08_completed and m08_nightshade_arrested and not m08_nightshade_ko_before_fate:
     Director Magnus Netherton: He said you'd know where to find him. He meant the door.
 }
 { shorten:
@@ -273,7 +302,8 @@ Agent HaX: Analysis says hundreds dead in the first month if the cells get it. T
 Director Magnus Netherton: Quintero leads on the ground. Kowalczyk breaches. Malhotra runs comms. Arakawa talks to the Americans.
 Agent 0x2D 'Anchor': One agent, no cover, in a building that's burning paper. If it goes wrong, I go into Montana a day late and one short.
 Agent 0x2D 'Anchor': Orders don't fall off couriers, Director.
-Director Magnus Netherton: This one didn't. Noted, again.
+// Stage 8 ruling 11 (VT 2): no "again"; m10's "Twice now" counts this as the first.
+Director Magnus Netherton: This one didn't. Noted.
 // C-7: Malhotra's hidden re-vetting (m10) shows nothing here. He asks, is
 // refused, and drops it at once, keen to be seen to be useful.
 Officer Dev Malhotra: If something goes wrong in there, I'd like to hear it go wrong.

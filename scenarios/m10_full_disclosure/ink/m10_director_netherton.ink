@@ -85,7 +85,7 @@ VAR neth_plans_asked = false
 }
 // The cold start's mole (S2-09); his van is the silent branch.
 {not m08_completed:
-    Director Magnus Netherton: Agent 0x47, Nightshade. Fifteen years one of ours. He sold them the database. He is in the van, and he has said one word since.
+    Director Magnus Netherton: Agent 0x47, Nightshade. Fifteen years one of ours. He gave them the database. He is in the van, and he has said one word since.
 }
 + [What are the two times?]
     Director Magnus Netherton: Four and six. Both are his.
@@ -122,7 +122,10 @@ Director Magnus Netherton: The cells get it at four, two hours early, as pay for
     Director Magnus Netherton: His own sheet says eleven hundred to twenty-six hundred, if the key is pressed. City by city, fewer, and later. Not few.
 + [Has he costed it?]
     Director Magnus Netherton: Signed it. Eleven hundred to twenty-six hundred, if the key is pressed. City by city, fewer, and later. Not few.
-- Director Magnus Netherton: Full disclosure is one researcher, one flaw, after the vendor stops answering. This is every weapon we hold, handed out at once.
+- {m07_completed and m07_debrief_stance == "hardened":
+    Director Magnus Netherton: The Council said yes. You asked for the numbers. You have them.
+}
+Director Magnus Netherton: Full disclosure is one researcher, one flaw, after the vendor stops answering. This is every weapon we hold, handed out at once.
 -> briefing_invite
 
 // The invitation (m09 SA Beat 3.6). On a cold start HaX gives the nickname
@@ -175,6 +178,10 @@ Agent 0x2D 'Anchor': For the record, I'd go in at noon tomorrow with twice the p
 - else:
     Director Magnus Netherton: Quintero leads on the ground. Kowalczyk breaches. Malhotra runs comms from the van.
     Director Magnus Netherton: Arakawa liaises. The sheriff has closed the county road for him, and nobody asked who for.
+}
+// FA row 88: Mercer's statement, arrested and not knocked out.
+{m07_completed and m07_mercer_fate == "arrested" and not m07_mercer_ko:
+    Director Magnus Netherton: Mercer's statement drew us the server hall. It is on the map.
 }
 + [How long have we got?]
     Agent HaX: Four for their head start. Six for everyone else.
@@ -245,8 +252,6 @@ Agent 0x5E 'Lantern': When did you know?
     ~ kowalczyk_answer = "bench"
 + [Before Helena. I had a feeling about you.]
     ~ kowalczyk_answer = "briefing"
-+ [I didn't. I worked it out.]
-    ~ kowalczyk_answer = "worked_out"
 - Narrator: She turns back to the window. Quintero shuts the van door.
 -> aside_end
 
@@ -289,7 +294,7 @@ Agent HaX: Start the gate console on your way past. It's slow to boot.
     Director Magnus Netherton: He has said one word since we took him: "Door." Take him up to it, and we may hear a second.
     {
     - neth_kow_gone():
-        Director Magnus Netherton: If he goes up, Arakawa stays with him, and Quintero breaches alone. You'll be at the lock without her.
+        Director Magnus Netherton: If he goes up, Arakawa stays with him, and Quintero breaches alone. You will be at the lock without her.
     - else:
         Director Magnus Netherton: If he goes up, Arakawa goes with him and stays with him. Kowalczyk goes ahead on her own.
     }
@@ -340,7 +345,7 @@ Agent HaX: Start the gate console on your way past. It's slow to boot.
     -> aside
 - aside_done and door_branch() == "silent" and not door_scene_done:
     -> tether
-- ending != "":
+- ending != "" and ending != "joined":
     Director Magnus Netherton: Go and get warm. The paperwork can wait an hour.
 - breach_open:
     Director Magnus Netherton: I am on the net. You do not need to come up here for me.

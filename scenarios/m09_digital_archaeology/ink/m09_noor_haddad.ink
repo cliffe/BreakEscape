@@ -38,7 +38,7 @@ VAR hub_quiet = false
 - m05_found_pipeline_list and m05_recruiter_deal_accepted and m05_recruiter_deal_confessed:
     // Warned late: the warning, and no card.
     #complete_task:meet_the_clerk
-    Noor Haddad: Somebody called me in the summer and told me to watch my boss. Then nobody called back.
+    Noor Haddad: Somebody called me back in September and told me to watch my boss. Then nobody called back.
     Noor Haddad: Peg's been in the cage since before I got here. She never feeds the shredder herself, and tonight she's sent me home twice.
     Noor Haddad: I don't know you. I'm not losing this job for a phone call.
     -> back

@@ -48,9 +48,9 @@ Copy for Task Force Null, Montana. Status: open.
 
 2. The door. Agent 0x47's own access into the vault, opened from inside and left open. Found on day nine.
 
-3. The door. Left open, under watch, to follow the copy. Followed to the coordinate on the Montana order. Risk accepted, on my signature.
+3. The door. Left open, under watch, to follow the copy. Risk accepted, on my signature.
 
-4. Stores. Every PIN cracker 0x47 signed for in the last three years is withdrawn and held: 160 units, one supplier, four batches. Stores will buy elsewhere. They have not yet said where.
+4. Stores. Every unit 0x47 signed in for evaluation since St. Catherine's is withdrawn and held: 160 units, one supplier, four batches. None was ever issued to the field.
 
 M. Netherton, Director.
 ```
@@ -614,6 +614,8 @@ Where he rebuilt, I've said so, with the catalogue entry he built it from. The r
 Every refit came out of your own catalogue. I'd know. I chose what you went in without.
 ```
 
+**Neutral variant (stage 8 ruling 4).** On an m08 triple-agent save with m09 unplayed, the not-shown choice was never offered, so his payment is true: a `textVariants` arm first in the list, `globalVars.m08_nightshade_triple_agent === true && !globalVars.m09_completed`, with the same text except entry 3, which reads "3. Tunnel inner door. Original, 1962. Interlocked to the guardroom, as your plans show." The ink hides the check and never arms the tripwire on that save (`m10_nightshade.ink` `unshown_menu`). The arrested branch's dealt payment keeps the wrong entry on every save.
+
 On the shown branch Nightshade gives no payment item; he says the defences aloud, names entry 3 as the lie he was given to pass on, and hands over the override (MC §3.1).
 
 **`alarm_override`** (in `nightshade_table`'s `itemsHeld`, shown branch; `onPickup.setVariable: { override_held: true }`). Name: "Nightshade's Override Key". Observations: "A brass key on a paper tag. On the tag, in his hand: Security office board. Keep it on you. While you carry it, the board doesn't talk to the floors below." (R1C-m13: the key works as carried, which is how `override_held` is set, on pickup.) (Stage 9 checks that a `#give_item` fires `onPickup`; if not, the giving line also sets `override_held`.)
@@ -703,7 +705,7 @@ The other names on paper, none of them on screen as NPCs with names: B. Haugen (
 
 ### 2.5 The Citadel's incident file
 
-**Named and written** (FA §13 10-3, §8 r11, F7, D-13): **Citadel Incident File V-47**, object `incident_file` at the forward post's road end (§1.1; §6 S6-01). It is the raid's own copy of the Director's file on the theft, which is why it is at the forward post and why it is plain: it states that the door was left open, watched and followed to Montana on Netherton's signature, which is the canon F7 asks to be written down. It stops there (W-01): that the line is still open and reaches the master is first read in his file index at the core, then said by HaX at flag 4 ("And the line into our vault is open from here. We left it open."), so the forward post sets the question and the core answers it. It also carries the stores half of the cracker canon (FA §13 B1): stores withdrew every cracker Nightshade signed for, 160 units from one supplier in four batches, and the bench log's batches G-14 to G-17 are those four. Kowalczyk's own cracker, the cloner logged "to WREN" and the "logged by batch, no recipient" rule live in the bench log (§1.4) and the cracker's description (§1.10), so the canon note is complete across three m10 objects and needs no m09 object.
+**Named and written** (FA §13 10-3, §8 r11, F7, D-13): **Citadel Incident File V-47**, object `incident_file` at the forward post's road end (§1.1; §6 S6-01). It is the raid's own copy of the Director's file on the theft, which is why it is at the forward post and why it is plain: it states that the door was left open and watched on Netherton's signature, which is the canon F7 asks to be written down (stage 8 BP F-09: not "followed to the coordinate", which m08's no-coordinate branch and m09's deed would contradict). It stops there (W-01): that the line is still open and reaches the master is first read in his file index at the core, then said by HaX at flag 4 ("And the line into our vault is open from here. We left it open."), so the forward post sets the question and the core answers it. It also carries the stores half of the cracker canon (FA §13 B1; stage 8 ruling 7, SC 1): every unit Nightshade signed in for evaluation since St. Catherine's is withdrawn and held, 160 units from one supplier in four batches, none ever issued to the field (m03–m08 tell the player SAFETYNET's only cracker is ENTROPY's), and the bench log's batches G-14 to G-17 are those four. Kowalczyk's own cracker, the cloner logged "to WREN" and the "logged by batch, no recipient" rule live in the bench log (§1.4) and the cracker's description (§1.10), so the canon note is complete across three m10 objects and needs no m09 object.
 
 **For m09** (B1's other half): m09 stage 1 asked for the cracker canon "in the Citadel's incident file", which no m09 object carries. m09 claims nothing about where crackers are made (FA §9, stage 1–2 rulings), so the note is dropped from m09; m10's incident file is its home. §6 S6-10.
 
@@ -949,8 +951,7 @@ In eleven counties, people calling for help still get a dead line. Day thirteen.
 3. `globalVars.ghost_sale === 'stopped'` → "Talked out of the sale. Left the network."
 4. `globalVars.ghost_sale === 'bait' && globalVars.head_start_killed === 'ghost'` → "Sold to five buyers in plain view. We have their names."
 5. `globalVars.ghost_sale === 'bait'` → "Sold in plain view. The share went out." (w)
-6. `globalVars.ghost_sale === 'selling' && globalVars.head_start_killed === 'ghost'` → "Sold the head start. It never went out." (R1C-m15)
-7. always → "Sold the head start. Clean exit, no trace." (w)
+6. always → "Sold the head start. Clean exit, no trace." (w)
 
 **GARY WHITLOCK** (only on m02 saves where he is in the bunker)
 
@@ -1161,7 +1162,7 @@ m10 is a raid with about 105 minutes in it (OT §8), so it has no separate colle
 | 4 | The tunnel rota (`tunnel_rota`) | tunnel | personal / operational | ENTROPY's cells | the post's shift change is real (Nightshade's entry 2), and Graham Reeves works here now |
 | 5 | The wanted photo and duty board (`wanted_photo`, `duty_board`) | security office | communications | Tesseract's workshop | the order from the top in his hand; what the freeze cost him in guards |
 | 6 | The alarm log (`alarm_log`, in the cupboard) | security office | operational document | Tesseract's workshop | the readers loaded with 1,206 SAFETYNET badges; the purge circuit, tested three times, "both copies, or nothing"; the camera that was never wired, on his order |
-| 7 | The bench log and the cracker rack (`bench_log`, `cracker_rack`) | workshop | database | ENTROPY's cells, the Publication | the bench sold crackers into SAFETYNET's own stores through a front supplier, four batches; and one cloner went to WREN |
+| 7 | The bench log and the cracker rack (`bench_log`, `cracker_rack`) | workshop | database | ENTROPY's cells, the Publication | the bench sold crackers to SAFETYNET through a front supplier, four batches, signed in by 0x47 for evaluation and never issued; and one cloner went to WREN |
 | 8 | The casualty sheet, the margin strip and Asante's model (`casualty_sheet`, `casualty_margin_note`, `asante_model`) | workshop | **evidence with numbers**: the calculations and the approval chain | the Publication | his figure, 1,100 to 2,600; hers, 2,100 to 3,600; his signature under her correction |
 | 9 | The plotting board (`plotting_board`) | server hall | operational | the Publication | the release laid over a Cold War map, city by city, Seattle first |
 | 10 | The schedule (`schedule_terminal`, after flag 2) | server hall | **evidence with numbers**: scope and victims | the Publication, ENTROPY's cells | 92,460 entries; the channels; two cells paid in early access for the theft; the first victims in plain words, the first of them marked by SAFETYNET "retain" three years ago |
@@ -1176,7 +1177,7 @@ The 06 prompt's evidence documents are 8, 10 and 13, each with numbers, each fou
 
 **Tesseract's workshop: Alpha, Beta, Gamma.** m09 gave the player his two closed workshops as paper: Tomb Alpha's tapes (his teaching) and Tomb Beta's server (his enrolment, left running on purpose). m10 is the third, and the bunker tells it in the order the player walks it. Outside, the plans show what it was: a 1962 civil defence control site, built to outlast a war (2). The first room below shows what he made of it: the readers loaded with SAFETYNET's own badges, one of them set to open a door by name; a purge he tested three times; a camera bracket he ordered left empty, which is the first hint that he built his own way out before he let anyone build their way in, as the Alpha tape says (6). The floors show what it makes: crackers sold back to the service through a front (7), and a price he signed twice (8). The core shows it filed: Alpha closed, Beta closed and left running, Gamma's purge armed, the key kept for one of theirs (13). A player who pulled the Alpha tapes in m09 recognises the service door's empty camera from the lecture before HaX says so at the core.
 
-**ENTROPY's cells.** The night shows the cells as customers and contractors, never as a council. The tunnel rota has m02's Reeves on the payroll (4); the bench sells through a supplier the stores never questioned (7); the schedule pays two cells in early access for the theft, and one of them already has a resale buyer (10, and Vos's secret); Social Fabric's draft carries the Initiative's sign-off (11). The credits then show the ledger: which cells broke, which stand, each m07 cell by its leader's name (§3.4). Nothing here names ENTROPY's founding or a new mastermind (FA row 11: a new one in the last hour is clutter).
+**ENTROPY's cells.** The night shows the cells as customers and contractors, never as a council. The tunnel rota has m02's Reeves on the payroll (4); the bench sells through a supplier nobody questioned (7); the schedule pays two cells in early access for the theft, and one of them already has a resale buyer (10, and Vos's secret); Social Fabric's draft carries the Initiative's sign-off (11). The credits then show the ledger: which cells broke, which stand, each m07 cell by its leader's name (§3.4). Nothing here names ENTROPY's founding or a new mastermind (FA row 11: a new one in the last hour is clutter).
 
 **The Publication's preparation.** From the outside in: the Citadel's file says what went and that the door was left open and followed (1); the core's index later says it is open still; the schedule says what goes, when, through which channels, and to whom first (10); the plotting board puts it on a map (9); the casualty sheet prices it, and Asante's model reprices it (8); the core's index shows the key and the purge waiting (13). Each step is said by a document, so when Tesseract makes his case at the console (six lines, SE §2.2), a reader has seen every number he uses, and one he doesn't.
 
@@ -1196,7 +1197,7 @@ The 06 prompt's evidence documents are 8, 10 and 13, each with numbers, each fou
 
 ### 4.4 Canon this file fixes (for the bible, at the arc-keeper's next pass)
 
-- **The cracker supply chain** (FA §13 item 3, B1): Tomb Gamma's bench made the PIN crackers SAFETYNET's stores bought through a front supplier, Gallatin Instrument Supply of Bozeman: four batches, 160 units, every one of them signed for by Nightshade, all now withdrawn. Kowalczyk's cracker is bench-made but was never issued through stores. Crackers go out by batch with no end user; cloners report each read back to the bench; one cloner went to WREN by hand.
+- **The cracker supply chain** (FA §13 item 3, B1): Tomb Gamma's bench made the PIN crackers SAFETYNET bought through a front supplier, Gallatin Instrument Supply of Bozeman: four batches, 160 units, every one signed in for evaluation by Nightshade since St. Catherine's, none ever issued to the field, all now withdrawn and held (stage 8 ruling 7). Kowalczyk's cracker is bench-made but was never issued through stores. Crackers go out by batch with no end user; cloners report each read back to the bench; one cloner went to WREN by hand.
 - **The bunker's origin**: Sun River Regional Control Site, a 1962 civil defence control site in Lewis and Clark County, at m08's coordinate; leased in 2016 (m09's deed) and refitted last year.
 - **The purge circuit**: fitted and tested in the refit, armed on the loss of both copies; his rule "both copies, or nothing".
 - **The catalogue's size**: 92,460 entries, the sum of m08's four catalogue figures (m08 never prints the total; R1C-m1).

@@ -84,7 +84,7 @@ Description: "The catalogue puts Series R behind the cage mesh in the restricted
 | `talk_at_the_hatch` | Talk to Sorensen at the cage hatch | in-game, social | `custom`, active | two mappings on HaX: `global_variable_changed:hatch_talked` (set at the top of her hatch knot) and `global_variable_changed:cage_opened` (Victoria's route skips the hatch) | the bluff, the recognition, the bin choice, the card clone, the stamp in reach |
 | `open_the_cage` | Get through the cage gate | in-game, RFID | `custom`, active | HaX mapping on `global_variable_changed:cage_opened` | `cage_opened`: the purge's first event (§4 row 2) |
 | `open_plan_cabinet` | Open the locked plan cabinet at the back of the cage | in-game, fingerprint | `unlock_object` `plan_cabinet`, active | the biometric unlock (Sorensen's print, lifted off the stamp) | Nightshade's recruitment file in reach |
-| `match_the_hand` | Compare the hand on Nightshade's file with the notebook scan in HaX's case file | correlation | `custom`, active | `#complete_task:match_the_hand` in HaX's hub knot `the_hand` (§7.1) when the player answers "[Same hand.]"; or, for a player who never did, in the identity scene (§6.2), so it can't hang open past flag 3 | `hand_matched`; HaX: "Those are my notes. That's his pen." then "Hold that." |
+| `match_the_hand` | Compare the hand on Nightshade's file with the notebook scan in HaX's case file | correlation | `custom`, locked (stage 8 m-03), unlocked by a HaX mapping on `global_variable_changed:nightshade_file_held` (`value === true`) with `unlockTask: "match_the_hand"`, the event A3-07's text rides on | `#complete_task:match_the_hand` in HaX's hub knot `the_hand` (§7.1) when the player answers "[Same hand.]"; or, for a player who never did, in the identity scene (§6.2), so it can't hang open past flag 3 | `hand_matched`; HaX: "Those are my notes. That's his pen." then "Hold that." |
 | `stop_the_shredding` | Stop Sorensen's shredding | in-game, choice | `custom`, **optional**, `locked` | unlocked by HaX's mapping on `cage_opened`; completed by two mappings: `global_variable_changed:sorensen_fate` with `value === 'ko'`, and with `value === 'talked'` | `legacy_files_saved` (on a knock-out before the clock), or her written account |
 | `stop_the_tape_wipe` | Stop the tape wipe in the server closet | in-game, choice | `custom`, **optional**, active | brief-gated pair on HaX (m08 pattern), so an Act 1 visit to Tran can't reveal aim 2 early: `global_variable_changed:tran_outcome` with `value !== 'left' && globalVars.flag1_submitted`, and `global_variable_changed:flag1_submitted` with `globalVars.tran_outcome !== 'left'` (Tran's default is `left`) | the tape side saved; Tran talked or held |
 
@@ -134,13 +134,13 @@ Description: "Tomb Beta's last server is still running somewhere in the tape sto
 
 ### 3.6 Aim 6 `report_in`: Report To Netherton (debrief)
 
-Description: "Task Force Null is on the ground at Helena's airfield. Netherton wants the night from you in person."
+Description: "Task Force Null is on the ground at Helena's airfield. When you're done, tell HaX to bring you in." (stage 8 m-06: the airfield isn't on the map; HaX's "[Bring me in.]" is the way there)
 
 `missionConclusion: true`, `conclusionScreen: { "type": "bond_visualiser" }`, `concludeRequires.tasksCompleted`: the four flag tasks (§9).
 
 | `taskId` | Title | Kind | Type / status | Completes on | Feeds |
 |---|---|---|---|---|---|
-| `report_to_netherton` | Report to Director Netherton at the airfield | scene | `custom`, active | `#complete_task:report_to_netherton` on the debrief's **last** line, after the notice question (lesson 46; MC §3.5) | the closing card and credits |
+| `report_to_netherton` | Tell HaX to bring you in to Netherton | scene | `custom`, active | `#complete_task:report_to_netherton` on the debrief's **last** line, after the notice question (lesson 46; MC §3.5) | the closing card and credits |
 
 The debrief starts from HaX's hub ("[Bring me in.]", §7), not by itself, so a player can still finish an optional thread (the notice in the archive, the boxes, Tran) after the call. Pattern: m05's `mission_complete` hub choice and hidden-person debrief (`m05 scenario.json.erb:1528-1560`).
 
@@ -174,13 +174,13 @@ Stage 1 §11's locks table, row by row, as the build will hold it. "HaX" means a
 
 | Rule | Condition |
 |---|---|
-| The other bin goes when the cage opens | `cage_bin` default: HaX on `global_variable_changed:cage_opened` with `!globalVars.bin_chosen` → `setGlobal: { "cage_bin": "derek_file" }`. The bin choice sets `bin_chosen`. On Victoria's route the choice comes at the cage door just after, from a hidden `koImmune` record that holds the files (stage 5 §3.7, review M5), and overwrites. Both bins' `spriteVariants` follow `cage_bin`. |
+| The other bin goes when the cage opens | `cage_bin` default: HaX on `global_variable_changed:cage_opened` with `!globalVars.bin_chosen` → `setGlobal: { "cage_bin": "derek_file" }`. The bin choice sets `bin_chosen`. On Victoria's route the choice comes at the cage door just after, from a hidden `koImmune` record that holds the files (stage 5 §3.7, review M5), and overwrites. Both bins' `spriteVariants` follow `cage_bin`. Stage 8 ruling 1: the default file is handed over. Hatch route: `sorensen_door` mapping on `room_entered:restricted_cage` with `globalVars.cage_opened && globalVars.hatch_talked && !globalVars.bin_chosen`, `onceOnly`, `targetKnot: "handover"` (`#give_item:notes:derek_file`, sets `cage_bin` and `bin_chosen`). Victoria's route: "[Walk past her.]" does the same. |
 | The legacy box goes at the first of Nightshade's file picked up from the plan cabinet (`nightshade_file_held`) or the first exit | `legacy_clock_run`: HaX on `global_variable_changed:nightshade_file_held` with `globalVars.cage_opened && !globalVars.legacy_clock_run`, and on `room_exited` with `data.roomId === 'restricted_cage' && globalVars.cage_opened && !globalVars.legacy_clock_run`. Saved by a knock-out first: HaX on `npc_ko:sorensen` with `!globalVars.legacy_clock_run` → `legacy_files_saved: true`. Held back by Noor: HaX on `global_variable_changed:cage_opened` with `globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted` → `legacy_files_saved: true`. |
 | The printed ledger goes once read, if Sorensen is free | `printed_ledger.onRead` sets `printed_ledger_read`; HaX sets `ledger_page_seen` on `global_variable_changed:printed_ledger_read` with `globalVars.flag2_submitted` (`delayMs: 500`), so only a read after flag 2 counts (the binder's `onRead` fires on the enciphered pre-flag-2 read too; stage 6 C-06); its `textVariants` show the shredded strip ("ACEMENTS 23. CANDIDA") on `globalVars.ledger_page_seen && globalVars.sorensen_fate === 'left'` (the flag holds the content, so nothing is lost). |
 
 **The purge made visible** (review D-04; changes no outcome). The clock stays event-driven, but the building shows it moving:
 - the front desk's trolleys and `trolley_list` empty in three steps (`spriteVariants`/`textVariants` on `flag1_submitted`, `flag2_submitted`, `cage_opened`);
-- Sorensen's stamp on the hatch shelf carries an `observationVariants` line on `flag2_submitted && !cage_opened`: "Her stamp's warm. She's three boxes from the bins." (on the stamp, because the bins are out of reach behind her, review m-R2-4);
+- Sorensen's stamp on the hatch shelf carries an `observationVariants` line on `flag2_submitted && !cage_opened`: "DESTROYED, in red. The stamp is still warm. Three boxes left on her side of the counter." (on the stamp, because the bins are out of reach behind her, review m-R2-4);
 - HaX's `flag1_read` sets the order without forcing it: "The ledger keeps. Her shredder doesn't. Stacks first.";
 - HaX's text, once, on `room_entered` with `globalVars.flag2_submitted && !globalVars.hatch_talked`: "She's still feeding it."
 
@@ -188,7 +188,7 @@ Stage 1 §11's locks table, row by row, as the build will hold it. "HaX" means a
 
 Every global below goes in `globalVariables` with the default shown and is `VAR`-declared in each ink that reads it. The story globals (exports and locals) are MC §10's, unchanged; this section adds the machinery.
 
-**Exports** (MC §10; the stage 9 `exportGlobals` list): `nightshade_shown_file`, `sleeper_named`, `sleeper_shortlist`, `recruiter_offer`, `deck_pulled`, `albion_notified`, `hax_confession_answer`, `recruiter_secret`, `reading_finished`, `cage_bin`, `legacy_files_saved`.
+**Exports** (MC §10; the stage 9 `exportGlobals` list): `nightshade_shown_file`, `sleeper_named`, `sleeper_shortlist`, `recruiter_offer`, `deck_pulled`, `albion_notified`, `hax_confession_answer`, `recruiter_secret`, `reading_finished`, `cage_bin`, `legacy_files_saved`, and (stage 8 ruling 5) `alpha_annotations_read`, the twelfth, so m10 can gate its Tomb Alpha record answer on a read the player actually made.
 
 **Story locals** (MC §10): `raid_team_answer`, `noor_told`, `noor_ko`, `old_coyote_told`, `old_coyote_ko`, `sorensen_fate` (default `"left"`), `tran_outcome` (default `"left"`), `reading_told_hax`, `memo_stance`, `kowalczyk_reply`, `schedule_read`.
 
@@ -228,7 +228,7 @@ Every global below goes in `globalVariables` with the default shown and is `VAR`
 | `hour_read_started`, `hour_read_done` | `false` | first line; last line | rows 10–11 |
 | `tesseract_call_started`, `tesseract_call_done` | `false` | first line; HaX's last line | row 12 |
 | `alpha_deck_used`, `alpha_clip_played` | `false` | the deck's `triggerOnInteract`; the clip's ink | the clip's mapping (`alpha_clip_played` is read by no ink after stage 7; the decode's hub line keys on `alpha_annotations_read`) |
-| `alpha_annotations_read` (stage 7, script edit R1 A-05) | `false` | `alpha_annotations.onRead` (`setVariable`; readable only on `deck_pulled === 'alpha_tapes' && identity_scene_done`) | HaX hub topic 3b, "[His annotation sheets, with the tapes.]" |
+| `alpha_annotations_read` (stage 7, script edit R1 A-05) | `false` | `alpha_annotations.onRead` (`setVariable`; readable only on `deck_pulled === 'alpha_tapes' && identity_scene_done`) | HaX hub topic 3b, "[His annotation sheets, with the tapes.]"; exported (stage 8 ruling 5), read by m10's Tomb Alpha answer |
 | `tran_alerted` | `false` | Tran's `player_spotted` mapping | the called guard, Lyle Dillard (`archive_guard`; stage 5 §3.3, stage 6 §5) |
 | `start_debrief`, `debrief_played`, `report_done` | `false` | HaX hub "[Bring me in.]"; debrief first line; debrief last line | debrief trigger and backstop (`!report_done`); music and credits |
 | hub retire flags | `false` | their hub knots | their own gates. *Stage 7: all became ink-local `VAR`s in `m09_phone_agent0x99.ink`, not scenario globals: `dock_heard`, `series_topic_given`, `tran_topic_given`, `name_topic_given`, `legacy_topic_given`, `alpha_topic_given`, `nightshade_file_decided` (set by the first answer to topic 10; it does not retire the send), `reading_told_hax_asked`, `keypad_topic_asked`, `confession_heard` (the identity scene's resume point), and three shadows for topics that write a global by tag and return to the hub (`notice_sent_here`, `nightshade_sent_here`, `hand_answered_here`). No `flagN_help_given`: the VM topics retire on the flags.* |
@@ -275,7 +275,7 @@ Stage 1 §11's rule, built with the F14 forced-call feature (`README_scenario_de
 | "[No. Keep your name.]" / the hang-up | her last line (or none, on the hang-up) sets `recruiter_gone = true`; the hang-up form keeps `recruiter_offer = refused` and goes straight to HaX's tape choice, opening on her aside "She's started the wipe on her tape deck. She thinks you've gone." (was a narrator line; narration isn't voiced; stage 7 cut "Her counter's running." and keeps the hang-up route in an ink-local, `recruiter_hung_up`, so a restart replays the hang-up form). |
 | Last choice | the legal pair (`taken`+`none`, `double_crossed`+`her_file`, `named`+`her_file`, `refused`+`alpha_tapes`), then `#set_global:deck_choice_made:true` (HaX's `unlockDoor` on the office follows, §4 row 5), `#complete_task:answer_the_offer`, HaX's "She fired it from Sorensen's office. I'm on the door." and "Her card for the tape room will be in that office.", `#exit_conversation`. |
 | Re-ring 1: before any answer | Recruiter, `room_exited` (with `data.nextRoom !== 'restricted_cage'`, so it never rings as the player walks into the cage, review m-R2-3) and `game_loaded`, condition `globalVars.recruiter_call_started && !globalVars.recruiter_said_yes && !globalVars.recruiter_gone && !globalVars.deck_choice_made`, `resume: true`, `targetKnot: "call"` (the fallback when no story is saved, and F20's start knot). |
-| Re-ring 2: between "yes" and the name | Recruiter, same events (the same `nextRoom` test), `globalVars.recruiter_said_yes && !globalVars.sleeper_named && !globalVars.deck_choice_made`, no `resume`, `targetKnot: "resume_name"`: "You hung up on the part you paid for. Halina Kowalczyk." (sets `sleeper_named`, `recruiter_gone`), then HaX's leave-or-pull choice in the same thread. |
+| Re-ring 2: between "yes" and the name (stage 8 m-05: unreachable in practice, since the yes and the naming land in one step; kept as a guard) | Recruiter, same events (the same `nextRoom` test), `globalVars.recruiter_said_yes && !globalVars.sleeper_named && !globalVars.deck_choice_made`, no `resume`, `targetKnot: "resume_name"`: "You hung up on the part you paid for. Halina Kowalczyk." (sets `sleeper_named`, `recruiter_gone`), then HaX's leave-or-pull choice in the same thread. |
 | Re-ring 3: after she has gone | **HaX**, `room_exited`, `game_loaded` and `conversation_closed:agent_0x99` (§6 intro; no room test needed: HaX alone on the line), `globalVars.recruiter_gone && !globalVars.deck_choice_made`, no `resume`, `targetKnot: "deck_resume"` (guarded: exits at once on `deck_choice_made`): "I've paused the deck. It won't hold long.", then the unanswered choice. The knot reads `recruiter_said_yes` to offer leave-or-pull, else her-file-or-tapes, and writes the same pair and done-flag (the four outcomes as the same fixed strings as the Recruiter's knot; stage 7 has no shared include). |
 
 Re-rings 1–3 have disjoint conditions, so only one can fire for any state. All three carry `voiced: true`.
@@ -316,14 +316,14 @@ Not a phone scene, but forced by the same rule. HaX's hub choice "[Bring me in.]
 
 | Call | Host | Trigger | Notes |
 |---|---|---|---|
-| HaX at the dock (`dock`; stage 7, CONTRACT §5.5 M1, proposed for stage 9) | HaX | `conversation_closed:briefing_cutscene`, `delayMs: 2000`, `onceOnly`, not forced, unvoiced | Beat 1.1's lines; `start` also diverts to `dock` until the ink-local `dock_heard` is set, so they can't be missed |
+| HaX at the dock (`dock`; stage 7, CONTRACT §5.5 M1, proposed for stage 9) | HaX | `conversation_closed:briefing_cutscene`, `delayMs: 2000`, `onceOnly`, not forced, unvoiced | Beat 1.1's lines; `start` also diverts to `dock` until the ink-local `dock_heard` is set, so they can't be missed. Stage 8 m-14: only while `not flag1_submitted`; a first open after flag 1 sets `dock_heard` and goes to the hub, so seeded segments S1–S7 never hear the dock call |
 | HaX on flag 1 (`flag1_read`) | HaX | `flag1_submitted`, `delayMs: 2500` | the shelf marks; "The ledger keeps. Her shredder doesn't. Stacks first."; "Her card's on a reel at her hip. You've done this before." (review D-11). Ends with `#give_item:notes:catalogue_salvage_line` (the coded salvage line, from HaX's `itemsHeld`) and "I've sent you the odd one." (§4 row 7). The door opens on its own mapping (§4 row 1) |
 | HaX's ledger read (`ledger_read`) | HaX | `flag2_submitted`, `delayMs: 2500`; backstop §5 | first line sets `ledger_read_heard`; WREN on the raid team; "neither will you"; the m05 and m07 lines; the H&L file number; unlocks `cross_reference_wren` (mapping) |
 | Nightshade (triple agent) | `nightshade_phone` | `flag1_submitted && m08_nightshade_triple_agent`, `delayMs: 7000` | rings after HaX's flag-1 call closes; HaX's "He's right. I hate that he's right." is prefixed in his thread |
 | Nightshade's text back | `nightshade_phone` | `global_variable_changed:nightshade_shown_file` with `value === true`, `delayMs: 4000`, `onceOnly`, `sendTimedMessage`; two mappings, one with `globalVars.cage_bin === 'nightshade_copy'` ("You found what I cleared, too…") and one with `globalVars.cage_bin !== 'nightshade_copy'` ("Thank you. I'd rather not have known…") | unvoiced; MC §4.1, SE §2 (milestone M9-20) |
 | The file in hand | HaX text | `global_variable_changed:nightshade_file_held` with `value === true && !globalVars.flag3_submitted`, `onceOnly` | "Hold his file next to the notebook scan in my case file. Then tell me what you see." (review D-02) |
 | The cabinet's reader | HaX text | `room_entered:restricted_cage`, `onceOnly`, `delayMs: 2000` | "That cabinet takes a print. She stamps everything." (review D-11) |
-| Beat 2.7 "Afterwards" | HaX | `global_variable_changed:deck_choice_made` (`value === true`), `delayMs: 2500` | waits for the Recruiter's call to close, so it lands while the player is still in the hub (review D-12); the loss line, three words, one sentence, "The rest when this is over. Her office is past the binders." Closed early: a hub topic, once |
+| Beat 2.7 "Afterwards" | HaX | `global_variable_changed:deck_choice_made` (`value === true`), `delayMs: 2500` | waits for the Recruiter's call to close, so it lands while the player is still in the hub (review D-12). Stage 8 m-07, a first-playtest check: on the common order, `ledger_read`, the Recruiter's call and this one run back to back (about 35 lines); if testers skim, key this on `office_entered` like the invoice (D-18); the loss line, three words, one sentence, "The rest when this is over. Her office is past the binders." Closed early: a hub topic, once |
 | The invoice | HaX text | `global_variable_changed:office_entered` with `globalVars.recruiter_offer === 'taken'` (and a second mapping for `'double_crossed'`), `delayMs: 20000`, `onceOnly`; sets `invoice_booked` | held until the player is in the office so the seam after "Afterwards" stays quiet (review D-18) |
 | Torres (turned) | `torres_phone` | at the H&L boxes: `object_interacted` with the boxes' `data.objectName` `&& globalVars.flag2_submitted && globalVars.m05_torres_turned`, `delayMs: 1500`; fallback: `global_variable_changed:reading_found` with `globalVars.m05_torres_turned && !globalVars.torres_called`, `delayMs: 8000` | the fallback waits for the safe, never before WREN exists (R3-10), and after the seam (review D-18) |
 | Gary (protected) | `gary_phone` | `door_unlock_attempt` with `data.connectedRoom === 'salvage_cage' && globalVars.m02_gary_protected`, `delayMs: 1500`, `onceOnly` | the hint names the CyberChef operation and points at the legend (stage 6 §2.3: "Seen codes like that. Archives key them to the shelf scheme. Read it like a shelf mark, not a number. Vigenère, and the bay's word is the key. There'll be a chart near the keypad."); sets `gary_called` |
@@ -340,7 +340,7 @@ Counted from the stage 1–3 drafts; stage 7 writes the final strings, all fixed
 | Recruiter's call | The Recruiter | about 14 | four openings (sold-and-lied; "Last time I said the next one would cost me more. This is the next one."; the stranger, two lines; confessed has none), "Of course. Shall we do business anyway?", the grievance (two lines), the offer (two lines), the double-cross price, "Nobody has.", the naming line, "Then I'll tidy my own desk. Gone. Goodnight, agent.", "You hung up on the part you paid for. Halina Kowalczyk." |
 | | Agent HaX | about 15 | "We've talked about that. She has nothing on you.", "Noted. Later.", "She's started the wipe on her tape deck. She thinks you've gone." (the hang-up aside), the deck line (two lines), "I can beat that wipe.", the invoice line, "You thanked her at the briefing. Keep doing it.", "She's watching the deck…", "She only watched the counter. I can pull one before it wipes. Which?", "One of them. Now." (hang-up), the first-handler line (two forms), "One of four. Two, if that firm's boxes say so.", the office lines (two), "I've paused the deck. It won't hold long." |
 | Identity scene | Agent HaX | about 26 | the credential line; the hand line; two recognition lines; four confession openings; the wall line; three replies and three Reading-aware replies; "Seven years, and nobody turned it off…"; four m04 landing lines; two controller lines; three watch lines; the send-cost line and its inquiry clause; "It isn't my call…"; the tapes line |
-| | Director Magnus Netherton | 3 | "I said we wouldn't name him… Dr Adrian Tesseract."; "He was our chief strategist…"; "HaX." |
+| | Director Magnus Netherton | 3 | "I said we would not name him… Dr Adrian Tesseract."; "He was our chief strategist…"; "HaX." |
 | Tesseract's call | Agent HaX | about 8 | the aside that replaces the narrator line, her side of the call (one line with beats, or split at the beats into three), the four-sentence report, "Netherton's on the ground at Helena. Tell me when you're ready to come in." |
 | **Total** | | **about 66** (Recruiter 14, HaX 49, Netherton 3; no narrator) | only these knots are voiced under F20; plus the two-line Alpha-tapes clip already budgeted (F12) |
 
@@ -357,7 +357,7 @@ A player hears about a third of these on any one route (one opening, one branch 
 | # | Player's line (draft) | Shows when | Retires on | What it gives |
 |---|---|---|---|---|
 | 1 | "[Bring me in.]" | `tesseract_call_done and not report_done` | `report_done` | copies `albion_notified` into `debrief_notice_before`, then sets `start_debrief` (§6.5); askable again after a reload (review B2). Before it, one line on anything still open: the notice unsent ("The notice is still on his box. Netherton will ask."), the boxes unread, Tran |
-| 2 | "[His notice. Send it.]" / "[Not yet.]" | `identity_scene_done and not albion_notified` | `albion_notified` | MC §3.5's archive send, here so it works from any room (P8). HaX's two lines on send ("Gone." … the vendor; the watch) |
+| 2 | "[His notice.]", whose answer offers "[Send it.]" / "[Not yet.]" (stage 8 M-01: one row) | `identity_scene_done and not albion_notified` | `albion_notified` | MC §3.5's archive send, here so it works from any room (P8). HaX's two lines on send ("Gone." … the vendor; the watch) |
 | 3 | "[About the name.]" | `identity_scene_done` | `name_topic_given` | "the name" (SE §4.4), once |
 | 3b | "[His annotation sheets, with the tapes.]" (stage 7, script edit R1 A-05) | `alpha_annotations_read and not alpha_topic_given` | `alpha_topic_given` | "That's the version he taught us." Gated on the decode itself, not the clip |
 | 4 | VM help, flags 3–4: "[I'm on his box. Where do I look?]" | `salvage_opened and not flag4_submitted` | `flag4_submitted` | one line per stage in story terms, before flag 3 and between 3 and 4 (review D-06); written by the opus48 VM-STEER pass at game-design level (stage 7) |
@@ -365,13 +365,13 @@ A player hears about a third of these on any one route (one opening, one branch 
 | 6 | "[The tape room.]" | `deck_choice_made and not tape_room_entered` | `tape_room_entered` | "Her card for the tape room will be in the safe." / "It's a floor safe, in her office." |
 | 7 | "[Afterwards.]" | `deck_choice_made and not afterwards_heard` | `afterwards_heard` | Beat 2.7 for a player who closed the call |
 | 8 | "[The Reading.]" | `reading_found and not reading_told_hax_asked` | answered | MC §4.6: "[All of it.]" / "[It's about me. It can stay that way.]" (`reading_told_hax`) |
-| 9 | "[WREN.]" | `ledger_read_heard and not sleeper_named and not sleeper_shortlist` | `sleeper_named` or `sleeper_shortlist` | the cross-reference nudge: "H&L's boxes are in the open stacks. You've got the number." On `m05_torres_turned`, his line follows |
+| 9 | "[WREN.]" | `ledger_read_heard and not sleeper_named and not sleeper_shortlist and not deck_choice_made` | `sleeper_named`, `sleeper_shortlist` or `deck_choice_made` (stage 8 M-01) | the cross-reference nudge: "H&L's boxes are in the open stacks. You've got the number." On `m05_torres_turned`, his line follows |
 | 10 | "[Nightshade's file.]", then "[Send Nightshade his file.]" / "[Hold it.]"; after Hold, "[Send Nightshade his file.]" alone (stage 7) | first ask: `m08_nightshade_triple_agent and nightshade_file_held and not nightshade_file_decided`; after Hold: `nightshade_file_decided and not nightshade_shown_file and not start_debrief` | `nightshade_shown_file` or `start_debrief` | MC §4.1, here so it can be answered anywhere until the debrief (P8). The first answer sets `nightshade_file_decided`; Hold leaves the send in the hub until the debrief, as MC says (milestone F-04) |
 | 11 | "[The hand on his file.]" | `nightshade_file_held and not hand_matched` | `hand_matched` | if `not notebook_read`: "Read the notebook scan in my case file first. Then look again." Otherwise the honest choice (§3.2): "[Same hand.]" (completes `match_the_hand`; "Those are my notes. That's his pen." / "Hold that."; on `bin_chosen and cage_bin == "derek_file"` (the player pulled Derek's file and holds it), "Two samples. One pen." (review m-R2-5)) / "[Different hands.]" / "[I can't tell.]" (a line each, no progress) (review D-02) |
 | 12 | VM help, flag 2: "[The ledger. Where is it?]" | `flag1_submitted and not flag2_submitted` | `flag2_submitted` | one story-level steer (review D-06; written by the opus48 VM-STEER pass, stage 7) |
-| 13 | "[The box behind her.]" | `cage_opened and not legacy_clock_run and not legacy_files_saved and not legacy_topic_given` | the clock, the save, or asked once | what the legacy box is and when it goes (MC §4.3), once |
+| 13 | "[The box behind her.]" | `cage_opened and not legacy_clock_run and not legacy_files_saved and not legacy_topic_given and not nightshade_file_held` | the clock, the save, his file in hand (stage 8), or asked once | what the legacy box is and when it goes (MC §4.3), once |
 | 14 | "[Can Victoria's people get me through that gate?]" (stage 7 R2 A-R2-09) | `m03_victoria_fate == "recruited" and stacks_entered and not cage_opened` | `cage_opened` | Victoria's route (§4 row 2b): "Victoria's people read their mail. There's a maintenance code for that gate." Sets `maintenance_code_used`. Then: "The cabinet in there takes her print. It's on the stamp on her shelf." (review D-10) |
-| 15 | "[The restricted series.]" | `flag1_submitted and not series_topic_given` | given | the shelf marks; Sorensen behind the mesh; "The gate takes her card, the cabinet takes a print." |
+| 15 | "[The restricted series.]" | `flag1_submitted and not series_topic_given and not cage_opened` | given or `cage_opened` (stage 8 M-01) | the shelf marks; Sorensen behind the mesh; "The gate takes her card, the cabinet takes a print." |
 | 16 | VM help, flag 1: "[The catalogue. What am I looking for?]" | `not flag1_submitted` | `flag1_submitted` | "The catalogue's the index. Find the part that isn't public." (review D-06) |
 | 17 | "[Tran.]" | `not tran_topic_given and not cage_opened` | given, or `cage_opened` | the warning by m01 branch (Beat 1.1), then "He's wiping tapes from the server closet off the open stacks. You'd need something he wants to talk him off it. Otherwise it's a fight." (review D-15) |
 | 18 | "[I need a field guide.]" | any `<x>_guide_offered and not <x>_guide_hint_given` | all offered guides given | a sub-menu listing only the offered, undelivered guides (§7.2) (review D-06) |
@@ -379,7 +379,7 @@ A player hears about a third of these on any one route (one opening, one branch 
 
 The sticky exit, "[That's all for now.]", replies "Line's open." (stage 7).
 
-**Showable at once.** The gates make the VM-help topics (4, 12, 16) mutually exclusive, and 15 and 17 are Act 1–2 topics that retire before Act 3. The worst case is just after the deck choice: 6, 7, 8 (once the safe is open), 9, 10 (triple agent only), 11 (if the hand is still open), 13 (rarely still live), 18, 19, which is nine. Stage 7 runs the lint. The two door backstop topics from round 0 are gone (F19, review M3).
+**Showable at once.** The gates make the VM-help topics (4, 12, 16) mutually exclusive, and 15 and 17 are Act 1–2 topics that retire before Act 3. Stage 8 M-01 found 14 at once in Act 3, so: topic 2 is one row whose answer offers send or hold; 9 retires on `deck_choice_made`; 13 also retires on `nightshade_file_held`; 15 retires on `cage_opened`. Re-walked with inkjs at m09-R §4.4's states: just after the deck, 8 (6, 7, 8, 10, 11, 18, 19, exit); just after the identity scene, 10 (2, 3, 3b, 4, 7, 8, 10, 18, 19, exit); after Tesseract's call with everything open, 10 (1 in place of 4). The exit counts. Stage 7 runs the lint. The two door backstop topics from round 0 are gone (F19, review M3).
 
 ### 7.2 Field guides (exposure-gated, on request)
 
@@ -477,7 +477,7 @@ SE §6.2's table as `music.events` entries. No new track is assumed. Tesseract's
 
 "`noir`, low" at the call, at Beat 2.7 and at flag 4 (SE §6.2) is a volume, and the music events take no volume key (`music/scenario-music-events.js` has none). Those three stay on plain `noir`, or use a quieter track if the user adds one; the scene's text carries the drop.
 
-**Ambient sound.** The shredder is a room `ambientSound` on `restricted_stacks` and `restricted_cage`; the zone model plays it quietly through open doors into neighbouring rooms (`rooms.js:3041-3068`). A room's ambient sound is fixed: nothing switches it on a global, so the shredder can't fall silent when Sorensen is stopped. The narrator's line and HaX's carry the silence, as SE §6.1 allows. Making it stop is a small engine item for the user (§15), not a dependency.
+**Ambient sound.** The shredder is a room `ambientSound` on `restricted_stacks` and `restricted_cage`; the zone model plays it quietly through open doors into neighbouring rooms (`rooms.js:3041-3068`). A room's ambient sound is fixed: nothing switches it on a global, so the shredder can't fall silent when Sorensen is stopped. Stage 8 ruling 2: no engine change. The talk-down's narrator line says she stops feeding it ("She takes her hand off the feed. The shredder runs on, empty."), so nothing the player reads contradicts what they hear, on the talk-down or the knock-out.
 
 ## 11. Timing against 85 minutes
 
@@ -538,7 +538,7 @@ Twelve routes, then the three stage 3 named, then the reload set. Import profile
 | R2 | kind: `m05_found_pipeline_list`, no deal; `m02_gary_protected`; `m03_victoria_fate = recruited`; `m06_architect_identity_found` + `m07_teacher_discussed`; `m07_architect_echo_heard`; `m08_nightshade_triple_agent`; `m06_monitoring_enabled` | S0 | Noor's card route (handed over); Victoria's code at the gate; "[Take Derek's file.]" at the door; send Nightshade his file; refuse, her file; read the Reading to the end and tell HaX; confession "same in your place"; notice sent in the archive; Sorensen talked | Noor warned in time (`legacy_files_saved` true via Noor); Victoria's route (§4 row 2b); Gary's hint; identity form "found, discussed" + echo line; Nightshade's call and `nightshade_shown_file`; `named`+`her_file`; `reading_finished`; `albion_notified` in the archive; `talked` |
 | R3 | hard: `m05_recruiter_deal_accepted`, not confessed; `m01_maya_ko`; `m08_nightshade_ko_before_fate` (no coordinate); `m04_disclosure_choice = full`, `m04_crew_lost` | S0 | Old Coyote KO'd; Tran sees the player, guard called, Tran talked with the letters; the letters at the hatch; Sorensen KO'd before the clock; hang up on the Recruiter, the Alpha tapes; the clip and the decode; confession "afterwards"; notice held in the archive, sent at the debrief | sold-and-lied hang-up (`kept`); `refused`+`alpha_tapes`; `letters`; `legacy_files_saved` by KO; `ko`; Tran `talked`; maya_ko obstacles; no-coordinate lease line; the inquiry lines; the extra route "full with crew_lost, held then sent" |
 | R4 | `m05_recruiter_deal_accepted`, not confessed | S5 → back to S4's call | deny, then take | `denied` then `taken` (extra route) |
-| R5 | `m05_recruiter_deal_accepted`, not confessed | S4 | own it; say yes; **close the call between "yes" and the name** (a hit from Tran's guard, or a reload); then pull her file anyway | `told`; re-ring 2 (`resume_name`); `double_crossed`+`her_file`; the invoice line; the text at the tape room; Kowalczyk absent at the hangar and the `double_crossed` spine (extra route) |
+| R5 | `m05_recruiter_deal_accepted`, not confessed | S4 | own it; say yes; **close the call after her naming line, before "[Leave it. Let it wipe.]"** (a hit from Tran's guard, or a reload; stage 8 m-05: "between yes and the name" isn't a reachable state); then pull her file anyway | `told`; re-ring 3 (`deck_resume`, the yes-block); `double_crossed`+`her_file`; the invoice line; the text at the tape room; Kowalczyk absent at the hangar and the `double_crossed` spine (extra route) |
 | R6 | `m05_recruiter_deal_accepted` + `m05_recruiter_deal_confessed` | S4 | refuse, Alpha tapes | `confessed` opening; Noor's late warning (from S0 if run full) |
 | R7 | `m08_nightshade_tidied`, `m08_nightshade_arrested` | S2 | "[Pull Nightshade's copy through.]" | `nightshade_copy`; the arrested wall card (briefing, from S0) |
 | R8 | `m05_torres_turned`; `m06_architect_identity_found` without `m07_teacher_discussed` | S4 | read the H&L sheet; refuse, her file; briefing answer "back Quintero" (from S0) | `sleeper_shortlist`; Torres at the boxes; HaX's Quintero line; identity form "found, not discussed"; closing card line 3c |
@@ -577,7 +577,7 @@ Shipped form (m08). Stage 9 adds `_comment`s and the `puzzle_graph_*` keys; syst
       { "taskId": "talk_at_the_hatch", "title": "Talk to Sorensen at the cage hatch", "type": "custom", "status": "active" },
       { "taskId": "open_the_cage", "title": "Get through the cage gate", "type": "custom", "status": "active" },
       { "taskId": "open_plan_cabinet", "title": "Open the locked plan cabinet at the back of the cage", "type": "unlock_object", "targetObject": "plan_cabinet", "status": "active" },
-      { "taskId": "match_the_hand", "title": "Compare the hand on Nightshade's file with the notebook scan in HaX's case file", "type": "custom", "status": "active" },
+      { "taskId": "match_the_hand", "title": "Compare the hand on Nightshade's file with the notebook scan in HaX's case file", "type": "custom", "status": "locked" },
       { "taskId": "stop_the_shredding", "title": "Stop Sorensen's shredding", "type": "custom", "status": "locked", "optional": true },
       { "taskId": "stop_the_tape_wipe", "title": "Stop the tape wipe in the server closet", "type": "custom", "status": "active", "optional": true }
     ] },
@@ -621,7 +621,7 @@ Shipped form (m08). Stage 9 adds `_comment`s and the `puzzle_graph_*` keys; syst
     "concludeRequires": { "tasksCompleted": ["submit_catalogue_flag", "submit_ledger_flag", "submit_owner_flag", "submit_control_flag"] },
     "conclusionScreen": { "type": "bond_visualiser" },
     "tasks": [
-      { "taskId": "report_to_netherton", "title": "Report to Director Netherton at the airfield", "type": "custom", "status": "active" }
+      { "taskId": "report_to_netherton", "title": "Tell HaX to bring you in to Netherton", "type": "custom", "status": "active" }
     ] }
 ]
 ```
@@ -662,7 +662,7 @@ Not made: FINALE_ARC, m10 and stages 0–3 are not this stage's to edit. Each ch
 1. **Voicing** (F17, decided): the Recruiter's call, the identity scene and Tesseract's call, about 66 audio lines in all (§6.7), plus the two-line clip. Flag 4's read stays text; say if it should be voiced too (about 15 more lines).
 2. **Engine items** still open after F17–F19 (none blocks m09):
    - flag-reward `set_global` lands client-side only until the next sync (`apply-actions.js:34-44`, `state-sync.js:59-64`), so a crash (not a reload) right after a flag could lose it; a `stateSync.sync()` after rewards would close it. m09's load backstops can't recover a global that was never saved (review m6);
-   - a room's ambient sound can't follow a global, so the shredder can't fall silent when Sorensen stops (optional);
+   - a room's ambient sound can't follow a global (optional; stage 8 ruling 2 closed m09's need by rewording the talk-down line);
    - music events take no volume (optional).
 3. **M-14:** real per-flag VM times, from one timed VM run before stage 7 (FINALE_ARC §13 item 45, the cross-mission rule; milestone A-10), so stage 8 can set the published length (§11: about 85 with the optional content, about 76 critical path).
 
@@ -864,3 +864,22 @@ Source: `scenarios/m09_digital_archaeology/CONTRACT.md` as shipped (§5 state, �
 **For stage 9, from the contract** (recorded here, not built): the dock mapping M1; the five read latches; `setVisible: false` on `jesse_tran` on `tran_outcome === 'talked'`; `onceOnly` on `sorensen_door`'s door-scene mapping; the F20 walk and real voiced count; `tagdiff.mjs`; the re-ring and reload browser tests; dialoguelint with the scenario present.
 
 **Left for the orchestrator.** FINALE_ARC §6.1 still has the single legacy-clock line ("go past her to the cabinet, or walk out of this cage"), which the shipped texts replaced (A-18), and FA 9-1's shared outcome include, which the ink doesn't use. CONTRACT §2.1's topic 10 row lists "[Send Nightshade his file.]" / "[Hold it.]" as the choice; the ink puts them behind a "[Nightshade's file.]" topic.
+
+## 22. Stage 8 folded in
+
+Source: `../stage_8/REVIEW_R1.md` (m09-R) and the finale's stage 8 files, applied by the m09 fixer under `finale/STAGE_8_RULINGS.md` on 2026-10-21. Every change is listed in `scenarios/m09_digital_archaeology/CONTRACT.md` §15.
+
+| Finding | Change | Where |
+|---|---|---|
+| M-01 | Hub ≤10 at the §4.4 states: topic 2 one row, 9 retires on the deck, 13 on his file, 15 on the cage | §7.1, "Showable at once" |
+| M-02 (ruling 1) | The default bin handed over: `handover` knot on the hatch route, "[Walk past her.]" on Victoria's | §4 "The other bin goes" |
+| M-03 (ruling 2) | Talk-down line reworded; no engine change | §10 "Ambient sound", §15 |
+| M-04 (ruling 20) | Stage 9's first step: one asset list (art, maps, backgrounds, voice entries, narrator block) with placeholders; no image generation before the user approves scope | stage 9 |
+| m-03 | `match_the_hand` ships `locked`, unlocked on `nightshade_file_held` | §3.2, §13 |
+| m-05 | R5 closes after the naming line; re-ring 2 kept as a guard | §6.1, §12.2 |
+| m-06 | Last task "Tell HaX to bring you in to Netherton"; aim 6 description | §3.6, §13 |
+| m-07 | First-playtest check on the Act 2–3 seam | §6.6 |
+| m-08 | Briefing timed with audio at stage 9; if past 5 minutes, lower `the_wall`'s `shorten` threshold first (unchanged; stage 8's new briefing lines are branch alternatives, and the most any one save gains is about 20 words, the row-116 ticket line) | §11 |
+| m-09 | The stamp's purge line is S6's string | §4 |
+| m-14 | No dock call on a first open after flag 1 | §6.6 |
+| SC 2, 3; BP F-03, F-06, F-07; VT 1, 2; SR minor 4 | String changes in the ink, copied here where S4 quotes them | as quoted |

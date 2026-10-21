@@ -126,22 +126,22 @@
             "style": "warning"
           },
           {
-            "text": "Breaching lead, Task Force Null, for eleven years. Badge returned.",
+            "text": "Breaching lead, Task Force Null. Eleven years in SAFETYNET. Badge returned.",
             "condition": "globalVars.sleeper_caught === true",
             "style": "warning"
           },
           {
-            "text": "Breaching lead, Task Force Null, for eleven years. Stopped at the core with her hand out for his key.",
+            "text": "Breaching lead, Task Force Null. Eleven years in SAFETYNET. Stopped at the core with her hand out for his key.",
             "condition": "globalVars.wren_at_core === true",
             "style": "warning"
           },
           {
-            "text": "Breaching lead, Task Force Null, for eleven years. Woke in the second van. Nobody had named her.",
+            "text": "Breaching lead, Task Force Null. Eleven years in SAFETYNET. Woke in the second van. Nobody had named her.",
             "condition": "globalVars.kowalczyk_ko === true",
             "style": "warning"
           },
           {
-            "text": "Breaching lead, Task Force Null, for eleven years. Badge still active.",
+            "text": "Breaching lead, Task Force Null. Eleven years in SAFETYNET. Badge still active.",
             "style": "warning"
           }
         ]
@@ -163,13 +163,21 @@
         "name": "AGENT HAX",
         "clauses": [
           {
-            "text": "Handler. Her desk was empty by morning."
+            "text": "Handler. Her last message to 0x00 went unanswered."
           }
         ]
       },
       {
         "name": "AGENT 0x2D 'ANCHOR'",
         "clauses": [
+          {
+            "text": "Raid lead. On her feet by Friday, and asking questions.",
+            "condition": "globalVars.quintero_ko === true"
+          },
+          {
+            "text": "Raid lead. Cleared on paper by Friday.",
+            "condition": "globalVars.officer_out === 'quintero'"
+          },
           {
             "text": "Raid lead. Stood down at the outer lock."
           }

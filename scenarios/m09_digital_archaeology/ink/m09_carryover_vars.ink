@@ -30,7 +30,10 @@ VAR m02_insider_asset_arrested = false
 VAR m02_reeves_fate = ""
 VAR m08_nightshade_tidied = false
 
-// ---- Tier 2 (25) ----
+// ---- Tier 2 (24) ----
+// Stage 8: m04_voltage_escaped and m07_team_redirected dropped (read
+// nowhere, ruling 17); m06_assets_seized added for the wall's seized-fund
+// card (BP F-03).
 VAR m01_final_choice = ""
 VAR m04_crew_lost = false
 VAR m01_kevin_ko = false
@@ -44,12 +47,11 @@ VAR m03_danny_ko = false
 VAR m03_directive_decoded = false
 VAR m04_disclosure_choice = ""
 VAR m04_voltage_captured = false
-VAR m04_voltage_escaped = false
 VAR m04_lore_safehouse_address_found = false
 VAR m06_irina_recruited = false
 VAR m06_minder_walked = false
+VAR m06_assets_seized = false
 VAR m07_team_assignment = ""
-VAR m07_team_redirected = false
 VAR m07_debrief_stance = ""
 VAR m07_found_tomb_gamma = false
 VAR m08_debrief_stance = ""

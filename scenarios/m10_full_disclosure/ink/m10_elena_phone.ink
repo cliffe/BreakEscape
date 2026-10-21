@@ -4,6 +4,8 @@ INCLUDE m10_carryover_vars.ink
 // The voiced call is `cut_call` (targetKnot; resume: true; OT §4.9, CONTRACT §1.6, §4).
 // No prefix for the contact, no narrator, no printed variables.
 
+VAR elena_decided_said = false   // FA row 90: said on the first ring only
+
 === start ===
 + [(Put the phone away.)]
     #exit_conversation
@@ -28,7 +30,11 @@ INCLUDE m10_carryover_vars.ink
 }
 
 === cut_0 ===
-It's Elena. They patched me into your feed. I know switchgear older than this, barely.
+It's Elena Rodriguez. They patched me into your feed. I know switchgear older than this, barely.
+{not elena_decided_said:
+    ~ elena_decided_said = true
+    Your director decided what to do with me. This is it.
+}
 There's a gray cabinet by the door. A key switch and a breaker row, labeled GALLERY SHUTTER.
 -> cut_0_menu
 = cut_0_menu

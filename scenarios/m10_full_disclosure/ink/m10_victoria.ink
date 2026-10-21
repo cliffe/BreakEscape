@@ -54,7 +54,7 @@ Victoria Sterling: I can open that lock for you. I can also open it for them. No
     -> gallery_rest
 + [Open it.]
     ~ victoria_gallery = "trusted"
-    {share_zero_day == "live":
+    {share_zero_day != "stopped":
         -> trusted_sells
     }
     #unlock_door:core
@@ -187,7 +187,7 @@ Victoria Sterling: If I walk out of here, I walk out owing nobody. Including you
     {
     - victoria_gallery == "confronted":
         Victoria Sterling: You've seen what I'd have done. Go in before I think about it again.
-    - victoria_gallery == "trusted" and share_zero_day == "live":
+    - victoria_gallery == "trusted" and share_zero_day != "stopped":
         Victoria Sterling: We're square. Don't ask me for anything else.
     - victoria_gallery == "trusted":
         Victoria Sterling: Go on. It's open, and I'm still on your side.
