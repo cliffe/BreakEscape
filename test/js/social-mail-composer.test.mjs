@@ -25,7 +25,7 @@ for (const rel of ['systems/phish-rules.js',
     'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
     'minigames/mail-client/mail-data.js', 'minigames/mail-client/mail-notification.js',
     'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js',
-    'systems/global-writer.js']) {
+    'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }
@@ -188,6 +188,39 @@ test('an account that cannot spoof forces the From to itself (no claimed-From bl
     assert.equal(composer.getState().templates.from, 'from_own');
     assert.ok(host.querySelector('.mail-compose-from-own'));
     // No sender blanks are offered from a non-spoofing account
+    assert.equal(host.querySelector('.mail-blank[data-slot="sender_name"]'), null);
+    assert.deepEqual(composer.buildMessage().headerFrom, { account: true });
+});
+
+test('a single From template with blanks is still drawn, so the gate and the screen agree (F-1)', () => {
+    const fx = fixture();
+    const pierce = fx.phishTargets.find((t) => t.id === 'pierce');
+    // A spoofing account whose target offers one From wording, and that wording has blanks.
+    const solo = { ...pierce, templateSets: { ...pierce.templateSets, from: ['from_named'] } };
+    const { composer, host } = makeComposer(grant('pierce_role', 'pierce_trusts_jed', 'email_pattern'),
+        { phishTargets: [solo],
+          contacts: [{ id: 'pierce', name: 'Melanie Pierce', addresses: ['m.pierce@ledgerwell.example'], targetId: 'pierce' }] });
+    // The "own account" shortcut must not hide a From template that has blanks.
+    assert.equal(composer.templateSet('from').length, 1);
+    assert.equal(composer._fromIsOwn(), false);
+    assert.equal(host.querySelector('.mail-compose-from-own'), null);
+    assert.ok(host.querySelector('.mail-blank[data-slot="sender_name"]'), 'sender_name blank drawn');
+    assert.ok(host.querySelector('.mail-blank[data-slot="sender_address"]'), 'sender_address blank drawn');
+    // P7 invariant: every blank the gate counts toward Send has a button the player can reach.
+    const s = composer.getState();
+    assert.ok(s.blanks.some((b) => b.slot === 'sender_name') && s.blanks.some((b) => b.slot === 'sender_address'));
+    for (const b of s.blanks) {
+        assert.ok(host.querySelector(`.mail-blank[data-slot="${b.slot}"]`), `blank ${b.slot} drawn`);
+    }
+});
+
+test('a single blank-free From wording still hides the From row (the account row carries it)', () => {
+    // hampshire's only From wording is from_own (no slots): the shortcut still applies.
+    const { composer, host } = makeComposer(grant('hampshire_careers'),
+        { contacts: [{ id: 'hampshire', name: 'Chris Hampshire', role: 'Careers', addresses: ['careers@ledgerwell.example'], targetId: 'hampshire' }] });
+    assert.equal(composer.templateSet('from').length, 1);
+    assert.equal(composer._fromIsOwn(), true);
+    assert.ok(host.querySelector('.mail-compose-from-own'));
     assert.equal(host.querySelector('.mail-blank[data-slot="sender_name"]'), null);
     assert.deepEqual(composer.buildMessage().headerFrom, { account: true });
 });

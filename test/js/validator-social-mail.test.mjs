@@ -250,6 +250,111 @@ test('P0-R R-12: a channels.email id that a room NPC holds is an error, only wit
   has(/characters\.headless\.channels\.email/, 0); // its own id
 });
 
+// ── P1-M (1b): the character email-story checks (04 N10, 01 N18) and the closed-target decoy ──
+// Built in-process from crafted social plus the .ink fixtures in ../fixtures/social_mail/ink,
+// which sit outside `fx`, so the folder-unchanged assertion is untouched and nothing is written.
+const inkPath = (name) => `test/js/fixtures/social_mail/ink/${name}`;
+
+function mailCall(expr, social, json = {}) {
+  const j = { rooms: {}, ...json, social };
+  const script = `require ${JSON.stringify(join(root, 'scripts/validate_social.rb'))}
+    require 'json'
+    social = JSON.parse(${JSON.stringify(JSON.stringify(social))})
+    json = JSON.parse(${JSON.stringify(JSON.stringify(j))})
+    ctx = ValidateSocial::Context.new(json: json, repo_root: ${JSON.stringify(root)}, valid_item_types: Set.new, imports: {}, social: social)
+    puts JSON.generate(${expr})`;
+  const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env });
+  assert.equal(r.status, 0, r.stderr);
+  return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+
+function emailStories(chars, targets, accounts = []) {
+  const social = { characters: chars, phishTargets: targets, mailClient: { accounts } };
+  return mailCall('ValidateSocial::Mail.email_stories(ctx)', social);
+}
+
+test('04 N10: a well-formed character on_email raises nothing (both the else and early-return idioms)', { skip }, () => {
+  const ok = emailStories(
+    { pierce: { emailRecord: { storyPath: inkPath('mail_ok.ink') }, emailKnots: { guest: 'give_more' } } },
+    [{ id: 'pierce', character: 'pierce' }], [{ id: 'guest' }]);
+  assert.deepEqual(ok, [], ok.join('\n'));
+  const divert = emailStories(
+    { pierce: { emailRecord: { storyPath: inkPath('mail_ok_divert.ink') } } },
+    [{ id: 'pierce', character: 'pierce' }]);
+  assert.deepEqual(divert, [], divert.join('\n'));
+});
+
+test('04 N10: on_email knot missing, undeclared email_* VARs, and se_influence on one branch only', { skip }, () => {
+  const noKnot = emailStories({ pierce: { emailRecord: { storyPath: inkPath('mail_no_onemail.ink') } } },
+    [{ id: 'pierce', character: 'pierce' }]);
+  assert.ok(noKnot.some((s) => /❌.*mail_no_onemail\.ink has no '=== on_email ===' knot/.test(s)), noKnot.join('\n'));
+
+  const undeclared = emailStories({ pierce: { emailRecord: { storyPath: inkPath('mail_undeclared.ink') } } },
+    [{ id: 'pierce', character: 'pierce' }]);
+  assert.ok(undeclared.some((s) => /reads email_urgency but declares no 'VAR email_urgency'/.test(s)), undeclared.join('\n'));
+  assert.ok(undeclared.some((s) => /reads email_attachment but declares no 'VAR email_attachment'/.test(s)));
+  // the declared email_landed is never flagged
+  assert.ok(!undeclared.some((s) => /email_landed but declares no/.test(s)));
+
+  const oneBranch = emailStories({ pierce: { emailRecord: { storyPath: inkPath('mail_one_branch.ink') } } },
+    [{ id: 'pierce', character: 'pierce' }]);
+  assert.ok(oneBranch.some((s) => /❌.*on_email.*must call se_influence on both branches/.test(s)), oneBranch.join('\n'));
+
+  // a character target whose email story file does not exist is skipped here (owned by the ink layer)
+  const missing = emailStories({ pierce: { emailRecord: { storyPath: 'scenarios/none/ink/nope.ink' } } },
+    [{ id: 'pierce', character: 'pierce' }]);
+  assert.deepEqual(missing, [], missing.join('\n'));
+});
+
+test('04 N10 / 01 N18: #compose_reply resolves to a same-character target; emailKnots name real knots and accounts', { skip }, () => {
+  const out = emailStories(
+    { lord: { emailRecord: { storyPath: inkPath('mail_bad_reply.ink') }, emailKnots: { nosuch_acct: 'on_email', guest: 'ghost_knot' } } },
+    [{ id: 'lord', character: 'lord' }, { id: 'pierce', character: 'pierce' }],
+    [{ id: 'guest' }]);
+  assert.ok(out.some((s) => /#compose_reply:ghost_target names 'ghost_target', which is not a social\.phishTargets id/.test(s)), out.join('\n'));
+  assert.ok(out.some((s) => /#compose_reply:pierce names target 'pierce', whose character is "pierce", not 'lord'/.test(s)));
+  assert.ok(out.some((s) => /emailKnots key 'nosuch_acct' is not a social\.mailClient\.accounts id/.test(s)));
+  assert.ok(out.some((s) => /emailKnots maps 'guest' to knot "ghost_knot", which the email story.*does not define/.test(s)));
+});
+
+test('04 N10: a closed target needs a pretext decoy that cannot satisfy pretextRelevant; open targets are exempt', { skip }, () => {
+  const facts = {
+    memo: { provides: [{ type: 'document', value: 'balance_sheet', kind: 'distinctive' }] },
+    portal: { provides: [{ type: 'portal', value: 'staff_portal_name', kind: 'distinctive' }] },
+    date: { provides: [{ type: 'date', about: 'release', value: 'mon_6th', kind: 'distinctive' }] }
+  };
+  const templates = {
+    pretext_sheet: { part: 'pretext', text: 'Here is {document}.', slots: [{ id: 'document', type: 'document' }] },
+    pretext_generic: { part: 'pretext', text: 'See attached.', slots: [] },
+    pretext_payslip: { part: 'pretext', text: '{portal} {when}', slots: [{ id: 'portal', type: 'portal' }, { id: 'when', type: 'date', about: 'release' }] },
+    pretext_password: { part: 'pretext', text: 'Expires {expiry}', slots: [{ id: 'expiry', type: 'date' }] }
+  };
+  const decoy = (primed, set) => {
+    const social = { intelFacts: facts, templates, phishTargets: [{ id: 'x', primedFor: primed, templateSets: { pretext: set } }] };
+    const expr = `ValidateSocial::Mail.closed_target_decoy(ctx, social['phishTargets'][0], social['templates'], 'social.phishTargets[x]')`;
+    return mailCall(expr, social);
+  };
+  const DECOY = /needs one plausible-but-wrong decoy/;
+  // pierce pattern: sheet (satisfies) + generic (decoy) → fine
+  assert.deepEqual(decoy({ trusts: ['baker'], distinctiveValues: ['balance_sheet'], minDistinct: 1 }, ['pretext_sheet', 'pretext_generic']), []);
+  // lord pattern (minDistinct 2): payslip (satisfies) + password (decoy, its date slot can't carry mon_6th) → fine
+  assert.deepEqual(decoy({ trusts: ['portal'], distinctiveValues: ['staff_portal_name', 'mon_6th'], minDistinct: 2 }, ['pretext_payslip', 'pretext_password']), []);
+  // no decoy: every pretext satisfies → flagged
+  assert.ok(decoy({ trusts: ['baker'], distinctiveValues: ['balance_sheet'], minDistinct: 1 }, ['pretext_sheet']).some((s) => DECOY.test(s)));
+  assert.ok(decoy({ trusts: ['portal'], distinctiveValues: ['staff_portal_name', 'mon_6th'], minDistinct: 2 }, ['pretext_payslip']).some((s) => DECOY.test(s)));
+  // an open inbox (trusts *) is exempt even with a single satisfying pretext
+  assert.deepEqual(decoy({ trusts: ['*'], distinctiveValues: ['balance_sheet'], minDistinct: 1 }, ['pretext_sheet']), []);
+});
+
+test('04 N10: expectedLink shape (brandId/realDomain present); the brand-in-07 cross-check is landing.rb', { skip }, () => {
+  const link = (el) => mailCall(`ValidateSocial::Mail.target_expected_link({ 'expectedLink' => ${el} }, 'w')`, {});
+  assert.deepEqual(link(`{ 'brandId' => 'ledgerwell', 'realDomain' => 'ledgerwell.example' }`), []);
+  assert.ok(link(`{ 'realDomain' => 'x.example' }`).some((s) => /expectedLink\.brandId is missing/.test(s)));
+  assert.ok(link(`{ 'brandId' => 'b' }`).some((s) => /expectedLink\.realDomain is missing/.test(s)));
+  assert.ok(link(`'x'`).some((s) => /expectedLink must be an object/.test(s)));
+  assert.deepEqual(mailCall(`ValidateSocial::Mail.target_expected_link({}, 'w')`, {}), []);
+});
+
 test('--strict-social: exit 1 on the broken fixture, 0 on the clean one and on a social-free one', { skip }, () => {
   const bad = cli('sm_broken', '--strict-social');
   assert.equal(bad.status, 1, bad.stdout + bad.stderr);

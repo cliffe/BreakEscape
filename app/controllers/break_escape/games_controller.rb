@@ -1782,10 +1782,18 @@ module BreakEscape
         end
       elsif location[:type] == 'npc'
         npc_id = location[:npc_id]
-        unless @game.player_state['encounteredNPCs'].include?(npc_id)
-          error_msg = "NPC not encountered: #{npc_id}"
-          Rails.logger.warn "[BreakEscape] #{error_msg}"
-          return error_msg
+        unless @game.player_state['encounteredNPCs']&.include?(npc_id)
+          # A headless email record (00 S8) is never in a room, so walking in never
+          # marks it encountered. A give from it only fires from its own on_email ink,
+          # which the mail runner (P1-J) runs on delivery, so that delivery IS first
+          # contact: encounter it here (the runner records the same on the client).
+          if headless_email_record?(npc_id)
+            @game.encounter_npc!(npc_id)
+          else
+            error_msg = "NPC not encountered: #{npc_id}"
+            Rails.logger.warn "[BreakEscape] #{error_msg}"
+            return error_msg
+          end
         end
       elsif location[:type] == 'flag_station'
         # Flag station items are valid if they're in the player's inventory (already awarded server-side)
@@ -1797,6 +1805,20 @@ module BreakEscape
 
       Rails.logger.info "[BreakEscape] Item collection valid: #{item_type}"
       nil # No error
+    end
+
+    # A headless email record (social.characters.*.emailRecord, 00 S8): a scenario
+    # NPC with no room. A room NPC with the same id wins, so it is not treated as
+    # headless (Game.scenario_npc_records drops the clashing record the same way).
+    def headless_email_record?(npc_id)
+      return false unless npc_id.present?
+      return false unless BreakEscape::Game.headless_npc_records(@game.scenario_data).any? { |record| record['id'] == npc_id }
+      # A room NPC with the same id wins and is encountered the ordinary way.
+      rooms = @game.scenario_data['rooms']
+      in_a_room = rooms.is_a?(Hash) && rooms.each_value.any? do |room|
+        room.is_a?(Hash) && room['npcs'].is_a?(Array) && room['npcs'].any? { |n| n.is_a?(Hash) && n['id'] == npc_id }
+      end
+      !in_a_room
     end
 
     # Locate the scenario definition of an item the client wants to add.

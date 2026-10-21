@@ -499,8 +499,10 @@ module ValidateSocial
     issues
   end
 
-  # Only the schema-level part: keys bar/number/pip, boolean values. (The number-without-bar
-  # warning and per-mount behaviour belong to the P1-K lint.)
+  # The complete influence.display / social.influenceDisplay lint (00 S11, README AA; P1-K
+  # confirmed it needs nothing more): an object, only the keys bar/number/pip, boolean values,
+  # and a warning for number: true beside bar: false. Per-mount behaviour is the bar's job
+  # (ui/influence-bar.js), not the validator's.
   def self.influence_display_lint(obj, where)
     return ["❌ SOCIAL: #{where} must be an object with the keys bar, number, pip"] unless obj.is_a?(Hash)
 

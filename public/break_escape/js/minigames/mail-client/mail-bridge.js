@@ -9,11 +9,10 @@
 // and the phish_<id>_attempts global, and builds the checklist DOM and the
 // §3 gameResult transform.
 //
-// Phase 1a scope: attachments only (no link kind), and NO ink job — a target
-// with a `character` is judged and recorded here, but its reply waits for the
-// mail runner in Phase 1b (plan "Mail client" row: "judge, sent record, text
-// job; no ink job, no victim record yet"). There is no victim record and no
-// landing-page handling in 1a.
+// Attachments only (no link kind) and no victim record / landing-page handling
+// yet. A data-only target's reply is the text job scheduled here; a target with a
+// `character` gets an ink job scheduled through the mail runner (P1-J), whose
+// on_email run writes the reply in character.
 //
 // The judging logic stays in phish-rules.js (pure). This module reads window
 // only through writeGlobal; everything it needs is passed in, so the helpers
@@ -22,6 +21,18 @@
 import { evaluateMessage, CANONICAL } from '../../systems/phish-rules.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import { heldFactIds, heldProvides } from './mail-composer.js';
+
+// The mail runner (P1-J) is loaded lazily: only a send to a character target needs
+// it, and keeping it off the module's static import graph lets the data-only bridge
+// tests run without it. core/game.js imports it at startup, so in the game it is
+// already cached and this resolves immediately.
+let _runnerModule = null;
+function scheduleInkReplyLazy(scheduler, opts) {
+    if (!_runnerModule) _runnerModule = import('../../systems/mail-runner.js');
+    _runnerModule.then((m) => {
+        try { m.scheduleInkReply(scheduler, opts); } catch (e) { console.error('[mail-bridge] scheduleInkReply failed', e); }
+    }).catch((e) => console.error('[mail-bridge] could not load mail-runner', e));
+}
 
 const ICON = '/break_escape/assets/icons/';
 const BODY_PARTS = ['greeting', 'pretext', 'ask'];
@@ -63,8 +74,10 @@ export function applyFactorBias(target, globals = {}) {
     let changed = false;
     if (boost) {
         for (const [globalName, factor] of Object.entries(boost)) {
-            // Compare with === true (N-5): an influence global is a number, where 0 is
-            // falsy and a negative value is truthy; only an explicit true flips a factor.
+            // Compare with === true (N-5): boost/strict name boolean flag globals
+            // (00 §7: "reset_granted_pierce", "helpdesk_alerted"). A character's influence is the
+            // separate route (00 §7: read by the on_email ink, not wired here), and it is a number
+            // where 0 is falsy and a negative value is truthy, so only an explicit true flips a factor.
             if (globals[globalName] === true && req.has(factor)) { req.delete(factor); adv.add(factor); changed = true; }
         }
     }
@@ -241,11 +254,26 @@ export function performSend(scene, message) {
     const m = updateMetrics(metrics, target.id, result.landed);
     writeGlobal(`phish_${target.id}_attempts`, m.sent);
 
-    // A data-only target gets a text job; a character target's ink reply is Phase 1b.
-    // An unopened send gets no job at all (00 §10 "Timing and delivery", J-1): nothing
-    // made the target open it, so there is no reply. The opened-but-failed path keeps
-    // its first-failed-factor reply.
-    if (!isStr(target.character) && result.open && result.open.opened !== false) {
+    // Schedule the reply. An unopened send gets no reply at all in onSend mode
+    // (00 §10 "Timing and delivery", J-1): nothing made the target open it. In
+    // withReply mode a job still runs after the delay so the verdict and checklist
+    // are revealed (01 N17). The opened-but-failed path keeps its reply.
+    const opened = result.open && result.open.opened !== false;
+    if (isStr(target.character)) {
+        // Character target: the on_email ink runner writes the reply (P1-J). The run
+        // itself branches on email_opened, so for withReply an unopened send still
+        // schedules a job (it delivers nothing but reveals the checklist on completion).
+        if (opened || timing === 'withReply') {
+            scheduleInkReplyLazy(scheduler, {
+                target,
+                message: record,
+                result,
+                account,
+                scenario: scene.scenario || { social },
+                inReplyTo: (message && message.inReplyTo) || ''
+            });
+        }
+    } else if (opened) {
         const outcomeGlobal = target.outcome && target.outcome.setGlobal;
         const firstGlobal = isObject(outcomeGlobal) ? Object.keys(outcomeGlobal)[0] : (isStr(outcomeGlobal) ? outcomeGlobal : null);
         scheduler?.scheduleTextJob({
@@ -256,6 +284,10 @@ export function performSend(scene, message) {
             outcomeGlobal: firstGlobal,
             landed: result.landed
         });
+    } else if (timing === 'withReply') {
+        // Unopened, assessment timing: a silent job (empty text, no outcome) so the verdict and
+        // checklist are still revealed after the usual delay (00 §10, 01 N17).
+        scheduler?.scheduleTextJob({ targetId: target.id, accountId, msgId: record.id, text: '', outcomeGlobal: null, landed: false });
     }
 
     if (scene.refresh) scene.refresh();
@@ -370,6 +402,15 @@ export function renderChecklist(result, target, { claimedFrom = null, account = 
     const advisory = arr(result.factors).filter((f) => f.mode === 'advisory' && !f.pass);
     for (const f of advisory) {
         panel.appendChild(cl('p', 'mail-checklist-advisory', `Advisory: ${stripMark(f.line)}`));
+    }
+
+    // Feedback layer 3 (04 N4): the escalating hint, surfaced after a repeated failure on this
+    // target. phish-rules sets result.hint only on a non-landing send once an earlier send failed,
+    // so the first miss is never pre-empted and a landing never shows one.
+    if (!result.landed && isStr(result.hint)) {
+        const hint = cl('p', 'mail-checklist-hint');
+        hint.append(cl('span', 'mail-checklist-hint-label', 'Hint: '), cl('span', 'mail-checklist-hint-text', stripMark(result.hint)));
+        panel.appendChild(hint);
     }
 
     // Tell the player the reply is on its way, so closing the client right after a

@@ -33,6 +33,7 @@ module ValidateSocial
       issues.concat(mail_client_checks(ctx))
       issues.concat(mail_terminals(ctx))
       issues.concat(email_record_clash(ctx))
+      issues.concat(email_stories(ctx))
       issues
     end
 
@@ -232,13 +233,91 @@ module ValidateSocial
 
         issues << err("#{where}.character '#{t['character']}' is not a social.characters entry") if t['character'] && !chars.key?(t['character'])
         issues.concat(target_templates(t, tpls, where))
+        issues.concat(closed_target_decoy(ctx, t, tpls, where))
         issues.concat(target_subjects(t, where))
         issues.concat(target_values(ctx, t, prov, people, where))
         issues.concat(target_outcome(ctx, t, where))
         issues.concat(target_sender_auth(t, where))
+        issues.concat(target_expected_link(t, where))
         issues.concat(target_requires_intel(ctx, t, where))
       end
       issues
+    end
+
+    # Shape only. The brand/host checks on expectedLink (brandId is a brand in 07, realDomain host
+    # rules) belong to the landing-page lint (scripts/validate_social/landing.rb, P5-C), which owns
+    # 07's brands; here we only reject a malformed expectedLink so linkCredible cannot read a blank.
+    def self.target_expected_link(t, where)
+      el = t['expectedLink']
+      return [] if el.nil?
+
+      issues = []
+      unless el.is_a?(Hash)
+        return [err("#{where}.expectedLink must be an object { brandId, realDomain }")]
+      end
+      issues << err("#{where}.expectedLink.brandId is missing; linkCredible and its tell read the claimed brand") if blank?(el['brandId'])
+      issues << err("#{where}.expectedLink.realDomain is missing; the link tell compares against it") if blank?(el['realDomain'])
+      issues
+    end
+
+    # 04 N10, "Closed and open targets": a closed target (primedFor.trusts is not ["*"]) must offer at
+    # least one pretext template that, on its own, cannot satisfy pretextRelevant — the plausible-but-
+    # wrong decoy that carries the lesson. A template can satisfy it when its slots and `implies` can
+    # together hold minDistinct of the target's distinctiveValues. An open-inbox target is exempt.
+    def self.closed_target_decoy(ctx, t, tpls, where)
+      primed = t['primedFor']
+      return [] unless primed.is_a?(Hash)
+      return [] if primed['trusts'] == ['*'] # open target: exempt (04 §7)
+
+      pretexts = list(t.dig('templateSets', 'pretext')).uniq.filter_map { |n| tpls[n] }
+      return [] if pretexts.empty?
+
+      distinct = list(primed['distinctiveValues'])
+      return [] if distinct.empty?
+
+      min = primed['minDistinct'].is_a?(Numeric) && primed['minDistinct'] > 0 ? primed['minDistinct'] : 1
+      meta = value_meta(ctx)
+      has_decoy = pretexts.any? { |tpl| pretext_distinct_reach(tpl, distinct, meta) < min }
+      return [] if has_decoy
+
+      [err("#{where}.templateSets.pretext: every pretext template can satisfy pretextRelevant; a closed " \
+           'target needs one plausible-but-wrong decoy whose slots and implies cannot carry a distinctive value')]
+    end
+
+    # value id => [{ 'type', 'about' }, ...] from every fact's provides (00 §1).
+    def self.value_meta(ctx)
+      @value_meta ||= {}
+      @value_meta[ctx.object_id] ||= begin
+        map = Hash.new { |h, k| h[k] = [] }
+        facts(ctx).each_value do |f|
+          hash_list(f['provides']).each do |p|
+            map[p['value']] << { 'type' => p['type'], 'about' => p['about'] } if p['value'].is_a?(String)
+          end
+        end
+        map
+      end
+    end
+
+    # How many of the target's distinctiveValues one pretext template can carry: `implies` values that
+    # are distinctive, plus a greedy one-per-slot match of a distinctive value the slot can offer
+    # (a provides entry of the slot's type whose `about` matches, 04 appendix "about" rule).
+    def self.pretext_distinct_reach(tpl, distinct, meta)
+      used = []
+      hash_list(tpl['implies']).each { |im| used << im['value'] if distinct.include?(im['value']) }
+      used.uniq!
+      hash_list(tpl['slots']).each do |s|
+        cand = distinct.find do |v|
+          next false if used.include?(v)
+
+          (meta[v] || []).any? { |m| m['type'] == s['type'] && norm_about(m['about']) == norm_about(s['about']) }
+        end
+        used << cand if cand
+      end
+      used.uniq.length
+    end
+
+    def self.norm_about(a)
+      a.is_a?(String) && !a.empty? ? a : nil
     end
 
     def self.target_templates(t, tpls, where)
@@ -690,6 +769,207 @@ module ValidateSocial
         err("social.characters.#{cid}.channels.email '#{eid}' is also the id of an NPC in room #{room_ids[eid].uniq.join(', ')}; " \
             'the server drops the headless emailRecord and the client registers it until that room loads, so give the email record its own id')
       end
+    end
+
+    # ---- 04 N10 / 01 N18: the character email story (on_email, email_* VARs, se_influence, ----
+    #      #compose_reply, emailKnots) ---------------------------------------------------------
+    #
+    # Runs on a character's email-channel story when the .ink source exists (as the characters()
+    # lint does; a missing storyPath file is the ink/storyPath layer's concern, not this one). The
+    # VAR <character>_influence declaration is checked by validate_social.rb characters().
+    EMAIL_VAR_RE = /(?<![A-Za-z0-9_])(email_[A-Za-z0-9_]+)/.freeze
+
+    def self.email_stories(ctx)
+      return [] unless ctx.social.is_a?(Hash)
+
+      issues = []
+      chars = ValidateSocial.characters_hash(ctx)
+      stories = character_email_stories(ctx)
+      parsed = stories.transform_values { |src| parse_email_story(src, ctx.repo_root) }
+      tlist = targets(ctx)
+      acct_ids = account_ids(ctx)
+
+      # (A) every character phish target has an on_email knot that declares the email_* VARs it reads
+      # and calls se_influence on both branches.
+      tlist.each do |t|
+        cid = t['character']
+        next unless cid.is_a?(String) && chars.key?(cid)
+
+        ps = parsed[cid]
+        next unless ps # no story file; owned by the ink/storyPath layer
+
+        where = "social.phishTargets[#{t['id']}]"
+        rel = ps[:rel]
+        unless ps[:knots].key?('on_email')
+          issues << err("#{where}.character '#{cid}' email story #{rel} has no '=== on_email ===' knot; the mail runner enters on_email")
+          next
+        end
+        (ps[:email_reads] - ps[:email_vars]).sort.each do |v|
+          issues << err("#{where}.character '#{cid}' email story #{rel} reads #{v} but declares no 'VAR #{v}'; " \
+                        'the engine writes the email_* set before on_email and ink must declare each one it reads')
+        end
+        unless se_influence_both_branches?(ps)
+          issues << err("#{where}.character '#{cid}' on_email (#{rel}) must call se_influence on both branches; " \
+                        'write { email_landed: ... ~ se_influence(...) - else: ... ~ se_influence(...) } (a divert into a reply knot that calls it also counts)')
+        end
+      end
+
+      # (B) #compose_reply:<targetId> names an existing phishTarget of the same character.
+      parsed.each do |cid, ps|
+        ps[:compose_reply].each do |tid|
+          tgt = tlist.find { |t| t['id'] == tid }
+          if tgt.nil?
+            issues << err("social.characters.#{cid} email story #{ps[:rel]}: #compose_reply:#{tid} names '#{tid}', which is not a social.phishTargets id")
+          elsif tgt['character'] != cid
+            issues << err("social.characters.#{cid} email story #{ps[:rel]}: #compose_reply:#{tid} names target '#{tid}', whose character is #{tgt['character'].inspect}, not '#{cid}'")
+          end
+        end
+      end
+
+      # (C) emailKnots (01 N18): each key is a real account; each value names a knot the story defines.
+      chars.each do |cid, ch|
+        ek = ch['emailKnots']
+        next unless ek.is_a?(Hash)
+
+        ps = parsed[cid]
+        ek.each do |acct, knot|
+          issues << err("social.characters.#{cid}.emailKnots key '#{acct}' is not a social.mailClient.accounts id") unless acct_ids.include?(acct)
+          next unless ps
+
+          unless knot.is_a?(String) && ps[:knots].key?(knot)
+            issues << err("social.characters.#{cid}.emailKnots maps '#{acct}' to knot #{knot.inspect}, which the email story #{ps[:rel]} does not define")
+          end
+        end
+      end
+
+      issues
+    end
+
+    # character id => root .ink source path, for characters whose email story file exists.
+    def self.character_email_stories(ctx)
+      out = {}
+      ValidateSocial.character_stories(ctx).each do |cid, chans|
+        entry = chans['emailRecord'] || chans['email']
+        out[cid] = entry.last if entry.is_a?(Array) && entry.last.is_a?(String)
+      end
+      out
+    end
+
+    # Parse the story's .ink files (root + INCLUDEs). Returns:
+    #   knots: { name => [body line, ...] }, email_reads: Set, email_vars: Set,
+    #   compose_reply: [targetId, ...], rel: repo-relative root path.
+    def self.parse_email_story(src, repo_root = nil)
+      return nil unless src.is_a?(String) && File.exist?(src)
+
+      files = ValidateSocial.ink_files(src)
+      knots = {}
+      current = nil
+      email_reads = []
+      email_vars = []
+      compose_reply = []
+      files.each do |f|
+        ValidateSocial.ink_lines(f).each do |line, _|
+          code = line.sub(%r{//.*\z}, '')
+          if code =~ /^\s*={2,}\s*(?:function\s+)?(\w+)/
+            current = Regexp.last_match(1)
+            knots[current] ||= []
+            next
+          end
+          (knots[current] ||= []) << code if current
+          if code =~ /^\s*VAR\s+(email_[A-Za-z0-9_]+)\s*=/
+            email_vars << Regexp.last_match(1)
+          else
+            code.scan(EMAIL_VAR_RE) { |m| email_reads << m[0] }
+          end
+          code.scan(/#\s*compose_reply\s*:\s*([A-Za-z0-9_]+)/) { |m| compose_reply << m[0] }
+        end
+      end
+      rel = repo_root.is_a?(String) ? src.sub("#{repo_root}/", '') : src
+      { knots: knots, email_reads: email_reads.uniq, email_vars: email_vars.uniq,
+        compose_reply: compose_reply, rel: rel }
+    end
+
+    # True when on_email calls se_influence on both the landing and the failing path (following
+    # diverts). It accepts both authored idioms (04 worked example, 00 §10): the else form
+    # `{ email_landed: ...se_influence(+)... - else: ...se_influence(-)... }`, and the early-return
+    # form `{ email_landed: ...se_influence(+)... -> DONE }` followed by a fall-through that calls
+    # se_influence(-). The landing path is the positive email_landed arm; the failing path is the
+    # else arm plus everything after the conditional (the fall-through, reached only when not landed).
+    def self.se_influence_both_branches?(ps)
+      body = (ps[:knots]['on_email'] || []).join("\n")
+      arms = landed_arms(body)
+      return false unless arms
+
+      landed_text, else_text, tail_text = arms
+      calls_influence?(ps, landed_text, []) && calls_influence?(ps, "#{else_text}\n#{tail_text}", [])
+    end
+
+    # Find the first positive { email_landed: ... } conditional; return [positive arm, else arm,
+    # the body after the closing brace], or nil if there is none.
+    def self.landed_arms(text)
+      i = 0
+      while (i = text.index('{', i))
+        depth = 0
+        head_end = nil
+        close = nil
+        j = i
+        while j < text.length
+          case text[j]
+          when '{' then depth += 1
+          when '}'
+            depth -= 1
+            if depth.zero?
+              close = j
+              break
+            end
+          when ':' then head_end ||= j if depth == 1
+          end
+          j += 1
+        end
+        break unless close
+
+        head = head_end ? text[(i + 1)...head_end] : ''
+        if positive_landed?(head)
+          inner = text[((head_end || i) + 1)...close]
+          pos, els = split_else(inner)
+          return [pos, els, text[(close + 1)..] || '']
+        end
+        i = close + 1
+      end
+      nil
+    end
+
+    # A head that tests email_landed truthy (not `not email_landed`, `email_landed == false`, etc.).
+    def self.positive_landed?(head)
+      head.include?('email_landed') && head !~ /\bnot\b/ && head !~ /false/ && head !~ /[<>]/
+    end
+
+    # Split a conditional's inner text at its top-level `- else:`; [whole, ""] when there is none.
+    def self.split_else(inner)
+      depth = 0
+      pos = 0
+      inner.each_line do |line|
+        if depth.zero? && line =~ /^\s*-\s*else\s*:?/
+          idx = inner.index(line, pos)
+          return [inner[0...idx], inner[(idx + line.length)..] || '']
+        end
+        depth += line.count('{') - line.count('}')
+        pos += line.length
+      end
+      [inner, '']
+    end
+
+    # se_influence called directly in the arm, or in a knot the arm diverts to (bounded).
+    def self.calls_influence?(ps, text, seen)
+      return true if text =~ /se_influence\s*\(/
+
+      text.scan(/->\s*(\w+)/).flatten.each do |k|
+        next if seen.include?(k) || !ps[:knots].key?(k)
+
+        seen << k
+        return true if calls_influence?(ps, ps[:knots][k].join("\n"), seen)
+      end
+      false
     end
   end
 end

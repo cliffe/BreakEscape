@@ -151,7 +151,9 @@ export class MailComposer {
      * @param {HTMLElement} parent
      * @param {object} opts
      *   people, templates, phishTargets, intelFacts, payloadKit   scenario data (00 §11)
-     *   account        resolved sending account { id, address, displayName, spoofsFrom, person }
+     *   account        resolved sending account { id, address, displayName, spoofsFrom, person, burned }
+     *   accounts       every resolved account of the device (the "Send as" choices)
+     *   onSendAs       (accountId) => void           the player picked another account in "Send as"
      *   contacts       visible contacts [{ id, name, addresses, role, targetId, character }]
      *   globals        global variables (held facts, burned_<id>)
      *   pushLayer      (close, name) => remover    the overlay's Esc-layer hook
@@ -168,6 +170,7 @@ export class MailComposer {
         this.intelFacts = isObject(opts.intelFacts) ? opts.intelFacts : {};
         this.payloadKit = arr(opts.payloadKit);
         this.account = opts.account || null;
+        this.accounts = arr(opts.accounts);
         this.contacts = arr(opts.contacts);
         this.globals = isObject(opts.globals) ? opts.globals : {};
 
@@ -203,6 +206,17 @@ export class MailComposer {
 
     get contact() {
         return this.contacts.find((x) => x && x.id === this.contactId) || null;
+    }
+
+    /** An account the ink has reported (`burned_<id>`, 00 §10a): shown greyed and cannot send. */
+    isBurned(acct) {
+        return !!acct && (acct.burned === true || this.globals[`burned_${acct.id}`] === true);
+    }
+
+    /** True when some other listed, unreported account may spoof the From (the hint then says Switch account). */
+    get anotherSpoofs() {
+        return this.accounts.some((a) => a && this.account && a.id !== this.account.id
+            && a.spoofsFrom === true && !this.isBurned(a));
     }
 
     /** From is forced to the account (no claimed-From blanks) when it cannot spoof (00 §10a, 01 §2). */
@@ -328,6 +342,11 @@ export class MailComposer {
 
     /** Recompute the pre-send gate (04 N11 via phish-rules.preSendGate). */
     evaluateGate() {
+        if (this.isBurned(this.account)) {
+            this.gate = { ok: false, reason: 'account-burned',
+                line: 'This address has been reported. Send as another account.' };
+            return this.gate;
+        }
         const target = this.target;
         if (!target) {
             // A non-target contact can be written to but is never judged (01 §2 To).
@@ -411,7 +430,19 @@ export class MailComposer {
 
     // ── rendering ────────────────────────────────────────────────────────────
 
+    /** A selector that finds the control again after render() rebuilds the form, or null. */
+    _focusKey() {
+        const a = typeof document !== 'undefined' ? document.activeElement : null;
+        if (!a || !this.root.contains?.(a) || a === this.root) return null;
+        if (a.id) return `#${a.id}`;
+        if (a.classList.contains('mail-blank') && a.dataset.slot) return `.mail-blank[data-slot="${a.dataset.slot}"]`;
+        if (a.classList.contains('mail-compose-template') && a.dataset.part) return `.mail-compose-template[data-part="${a.dataset.part}"]`;
+        for (const c of ['mail-compose-send', 'mail-compose-back']) if (a.classList.contains(c)) return `.${c}`;
+        return null;
+    }
+
     render() {
+        const focusKey = this._focusKey();
         this._closePicker();
         this.evaluateGate();
         this.root.textContent = '';
@@ -429,17 +460,70 @@ export class MailComposer {
             this._renderAttach();
         }
         this._renderSend();
+        // Rebuilding the form drops focus to the page; put it back where the player was.
+        if (focusKey) {
+            const again = this.root.querySelector(focusKey);
+            if (again && !again.disabled) again.focus?.();
+        }
+    }
+
+    /**
+     * True when the From line only repeats the sending account, so the account row
+     * carries it and no separate From row is drawn: the From is forced to the
+     * account, or there is a single wording with no blanks to fill. A single
+     * wording that HAS blanks must still be drawn, so those blanks appear on screen
+     * and the pre-send gate (which counts them) and the screen agree (F-1).
+     */
+    _fromIsOwn() {
+        if (!this.target) return false;
+        if (this.fromForced) return true;
+        const set = this.templateSet('from');
+        if (set.length > 1) return false;
+        const tpl = templateOf(this.templates, this.choice.from || set[0]);
+        return !arr(tpl && tpl.slots).length;
     }
 
     _renderSendAs() {
         const row = el('div', 'mail-compose-row mail-compose-sendas');
         row.appendChild(el('span', 'mail-compose-label', 'Send as'));
         const acct = this.account;
-        const burned = acct && this.globals[`burned_${acct.id}`] === true;
+        const burned = this.isBurned(acct);
+        const text = (a) => `${a.displayName || a.address} <${a.address}>${this.isBurned(a) ? ' (this address has been reported)' : ''}`;
         const line = el('span', 'mail-compose-value',
             acct ? `${acct.displayName || acct.address} <${acct.address}>` : 'No account');
         if (burned) { line.classList.add('mail-burned'); line.append(' — this address has been reported'); }
-        row.appendChild(line);
+        const hasSelect = this.accounts.length > 1 && !!acct;
+        if (hasSelect) {
+            // Several accounts on this device (P1-L): a select. A reported one stays listed but cannot be picked.
+            const select = el('select', 'mail-compose-sendas-select');
+            select.id = 'mail-compose-sendas';
+            select.setAttribute('aria-label', 'Send as');
+            for (const a of this.accounts) {
+                const opt = el('option', null, text(a));
+                opt.value = a.id;
+                if (this.isBurned(a) && a.id !== acct.id) opt.disabled = true;
+                if (a.id === acct.id) opt.selected = true;
+                select.appendChild(opt);
+            }
+            select.addEventListener('change', () => {
+                if (select.value === acct.id) return;
+                try { this.opts.onSendAs?.(select.value); } catch (err) { console.error('composer onSendAs failed:', err); }
+            });
+            if (burned) select.classList.add('mail-burned');
+            row.appendChild(select);
+            line.textContent = '';
+            line.className = 'mail-compose-value';
+        }
+        // One row for the address: when the From is just this account, the account row carries it.
+        if (this._fromIsOwn()) {
+            line.classList.add('mail-compose-from-own');
+            if (this.fromForced) {
+                line.append(el('span', 'mail-compose-hint', this.anotherSpoofs
+                    ? ' You can only send as yourself from this address. Switch account to send as someone else.'
+                    : ' You can only send as yourself from this address.'));
+            }
+        }
+        if (!hasSelect || line.textContent) row.appendChild(line);
         this.root.appendChild(row);
     }
 
@@ -468,29 +552,16 @@ export class MailComposer {
     }
 
     _renderFrom() {
-        const row = el('div', 'mail-compose-row mail-compose-part');
-        row.appendChild(el('span', 'mail-compose-label', 'From'));
-        if (this.fromForced || this.templateSet('from').length <= 1) {
-            // Forced / single: a read-only From line, no blanks.
-            const acct = this.account;
-            const line = el('p', 'mail-compose-from-own mail-compose-value',
-                acct ? `${acct.displayName || acct.address} <${acct.address}>` : '');
-            if (this.fromForced) {
-                const anotherSpoofs = false; // the account switcher and a second account are 1b
-                line.append(el('span', 'mail-compose-hint',
-                    anotherSpoofs
-                        ? ' You can only send as yourself from this address. Switch account to send as someone else.'
-                        : ' You can only send as yourself from this address.'));
-            }
-            // still record the chosen from template id for the message
+        if (this._fromIsOwn()) {
+            // The address is already on the "Send as" row; record the chosen wording and show no second row.
             if (!this.choice.from) this.choice.from = this.templateSet('from')[0] || 'from_own';
-            row.appendChild(line);
-            this.root.appendChild(row);
             return;
         }
+        const row = el('div', 'mail-compose-row mail-compose-part');
+        row.appendChild(el('span', 'mail-compose-label', 'From'));
         this._renderPartSelect(row, 'from');
-        this._renderPartBlanks('from');
         this.root.appendChild(row);
+        this._renderPartBlanks('from');
     }
 
     _renderSubject() {
@@ -649,6 +720,7 @@ export class MailComposer {
         panel.setAttribute('aria-label', `Choose ${isStr(slot.label) ? slot.label : slot.id}`);
         const list = el('ul', 'mail-picker-list');
         list.setAttribute('role', 'listbox');
+        list.setAttribute('aria-label', `${isStr(slot.label) ? slot.label : slot.id} options`);
         list.tabIndex = 0;
         const chosen = this.slots[slot.id];
         let active = Math.max(0, options.findIndex((o) => o.value === chosen));
@@ -661,7 +733,7 @@ export class MailComposer {
             li.append(el('span', 'mail-picker-label', opt.label));
             if (opt.kind && opt.kind !== 'generic') li.append(el('span', `mail-picker-kind kind-${opt.kind}`, opt.kind));
             li.setAttribute('aria-selected', opt.value === chosen ? 'true' : 'false');
-            li.addEventListener('click', () => { this._closePicker(); this.setSlot(slot.id, opt.value); });
+            li.addEventListener('click', () => this._pick(slot, opt.value));
             items.push(li);
             list.appendChild(li);
         });
@@ -671,13 +743,15 @@ export class MailComposer {
             list.setAttribute('aria-activedescendant', items[active].id);
         };
         list.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowDown') { e.preventDefault(); setActive(active + 1); }
+            // Tab stays in the open picker; Esc (the layer) and a choice are the ways out.
+            if (e.key === 'Tab') e.preventDefault();
+            else if (e.key === 'Home') { e.preventDefault(); setActive(0); }
+            else if (e.key === 'End') { e.preventDefault(); setActive(items.length - 1); }
+            else if (e.key === 'ArrowDown') { e.preventDefault(); setActive(active + 1); }
             else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(active - 1); }
             else if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                const opt = options[active];
-                this._closePicker();
-                this.setSlot(slot.id, opt.value);
+                this._pick(slot, options[active].value);
             }
         });
         panel.appendChild(list);
@@ -686,6 +760,13 @@ export class MailComposer {
         this._popPicker = this.opts.pushLayer?.(() => this._closePicker(true), 'blank-picker') || null;
         setActive(active);
         list.focus?.();
+    }
+
+    /** A choice made in the picker: close it, set the blank, and return focus to that blank's button. */
+    _pick(slot, value) {
+        this._closePicker();
+        this.setSlot(slot.id, value);
+        this.root.querySelector?.(`.mail-blank[data-slot="${slot.id}"]`)?.focus?.();
     }
 
     _closePicker(focusAnchor = false) {
@@ -725,6 +806,8 @@ export class MailComposer {
             attachment: this.attachment,
             blanks,
             picker,
+            account: this.account ? this.account.id : null,
+            sendAs: this.accounts.map((a) => ({ id: a.id, burned: this.isBurned(a) })),
             sendEnabled: this.gate.ok,
             gateLine: this.gate.ok ? '' : (this.gate.line || ''),
             gateReason: this.gate.reason || null

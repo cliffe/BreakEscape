@@ -21,7 +21,7 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
     'utils/display-dashes.js', 'ui/modal-stack.js',
-    'systems/phish-rules.js', 'systems/global-writer.js', 'systems/mail-scheduler.js',
+    'systems/phish-rules.js', 'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js', 'systems/mail-scheduler.js',
     'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
     'minigames/mail-client/mail-data.js', 'minigames/mail-client/mail-notification.js',
     'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js'
@@ -152,6 +152,36 @@ test('applyFactorBias: strict promotes to required, boost demotes to advisory; o
     const relaxed = bridge.applyFactorBias(boost, { reset_granted: true });
     assert.ok(!relaxed.requiredFactors.includes('senderTrust'));
     assert.ok(relaxed.advisoryFactors.includes('senderTrust'));
+});
+
+test('N5: boost/strict fire only on === true; a numeric influence value (0 or negative) never flips a factor', () => {
+    // 00 §7: boost/strict name boolean flag globals; a character's influence is a separate route
+    // (read by the on_email ink), and as a number 0 is falsy and a negative value is truthy, so
+    // neither must flip a factor (P1-R N-5). Only an explicit true does.
+    const boost = { id: 't', requiredFactors: ['senderTrust'], advisoryFactors: ['senderAuth'], boostIfGlobal: { pierce_influence: 'senderTrust' } };
+    for (const v of [0, -10, 40, 'true', 1]) {
+        assert.equal(bridge.applyFactorBias(boost, { pierce_influence: v }), boost, `influence ${JSON.stringify(v)}: no flip, same object`);
+    }
+    const flipped = bridge.applyFactorBias(boost, { pierce_influence: true });
+    assert.ok(flipped.advisoryFactors.includes('senderTrust'), 'an explicit true does demote');
+});
+
+test('N4: renderChecklist shows the escalating hint only on a failed send that carries result.hint', () => {
+    const result = (over = {}) => ({
+        landed: false, open: { opened: true, via: 'subject' }, openLine: '✓ opened',
+        factors: [{ id: 'senderTrust', mode: 'required', pass: false, line: 'Who is this?' }],
+        hint: 'What does she expect to receive, and when?', ...over
+    });
+    const hintOf = (panel) => panel.querySelector('.mail-checklist-hint');
+
+    const failed = bridge.renderChecklist(result(), { id: 'pierce' }, {});
+    assert.ok(hintOf(failed), 'a failed send with a hint shows the hint row');
+    assert.match(hintOf(failed).textContent, /Hint:/);
+    assert.match(hintOf(failed).textContent, /What does she expect to receive/);
+
+    // No hint when the result carries none (first miss), and never on a landing.
+    assert.equal(hintOf(bridge.renderChecklist(result({ hint: null }), { id: 'pierce' }, {})), null);
+    assert.equal(hintOf(bridge.renderChecklist(result({ landed: true, hint: 'x' }), { id: 'pierce' }, {})), null);
 });
 
 // ── end-to-end send through the shell + scheduler ────────────────────────────

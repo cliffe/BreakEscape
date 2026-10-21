@@ -24,7 +24,7 @@ export function openClientCount() {
  */
 export function notifyNewMail(record) {
     for (const client of openClients) {
-        if (client.mailboxId() === record?.mailbox) {
+        if (client.holdsMailbox ? client.holdsMailbox(record?.mailbox) : client.mailboxId() === record?.mailbox) {
             client.receiveMessage(record);
             return 'appended';
         }

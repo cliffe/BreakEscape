@@ -22,6 +22,7 @@
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';
+import { createInfluenceBar } from '../../ui/influence-bar.js';
 import { buildBoardModel, readBoardState, STATE_KEY, READY_TEXT } from './board-model.js';
 
 const ICON = '/break_escape/assets/icons/';
@@ -63,6 +64,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         this.mode = SUPPORTED_MODES.includes(this.params.mode) ? this.params.mode : (this.params.mode || 'recon');
         this.model = null;
         this._liveText = '';
+        this._bars = [];
     }
 
     // ── data ──────────────────────────────────────────────────────────────
@@ -96,6 +98,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
 
     // ── drawing ───────────────────────────────────────────────────────────
     _render() {
+        this._destroyBars();
         const m = this.model;
         const supported = SUPPORTED_MODES.includes(this.mode);
         this.gameContainer.textContent = '';
@@ -167,6 +170,14 @@ export class IntelBoardMinigame extends SocialOverlayScene {
 
         if (meta.length) card.appendChild(h('p', { class: 'ib-meta', text: meta.join(' · ') }));
 
+        // Influence section (03, 00 S4): only for a target that is a social character, and
+        // nothing when its influence.display has bar: false. Read-only, from gameState.
+        const bar = createInfluenceBar({ characterId: t.id, scenario: { ...this._scenarioFor(), social: this.social }, mount: 'board' });
+        if (bar) {
+            this._bars.push(bar);
+            card.appendChild(h('div', { class: 'ib-influence', 'data-person': t.id }, bar.el));
+        }
+
         const found = h('ul', { class: 'ib-facts', 'aria-label': `Found about ${t.name}` });
         for (const f of t.facts) {
             found.appendChild(h('li', { class: 'ib-fact', 'data-fact': f.id },
@@ -192,6 +203,15 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         }
         if (t.ready) card.appendChild(h('p', { class: 'ib-ready-line', text: READY_TEXT }));
         return card;
+    }
+
+    _scenarioFor() {
+        return (typeof window !== 'undefined' ? window.gameScenario : null) || {};
+    }
+
+    _destroyBars() {
+        for (const bar of this._bars) bar.destroy();
+        this._bars = [];
     }
 
     _contactsSection(m) {
@@ -287,6 +307,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
                     status: t.status, facts: [...t.factIds], emptySlots: [...t.emptySlots],
                     slots: t.slots.map((s) => ({ label: s.label, done: s.done }))
                 })),
+                influence: this._bars.map((b) => b.getState()),
                 contacts: m.contacts.map((c) => c.id),
                 company: { facts: [...m.company.factIds], stale: [...m.company.staleIds] }
             } : null
@@ -294,6 +315,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
     }
 
     cleanup() {
+        this._destroyBars();
         this.root = null;
         super.cleanup();
     }

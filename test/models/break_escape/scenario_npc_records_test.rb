@@ -154,12 +154,17 @@ module BreakEscape
                    game.player_state.dig('npc_given_items', 'pierce_mail')
     end
 
-    test 'a headless record the player has not met cannot give' do
+    # P1-J: a headless record gives from no room, so it is never encountered by
+    # walking in. A #give_item from it only fires from its own on_email ink, which
+    # the mail runner runs on delivery, so the give path auto-encounters the record
+    # (that delivery is first contact).
+    test 'a headless record the player has not met is auto-encountered by its give' do
       game = create_game(encountered: [])
       post inventory_game_url(game), params: { action_type: 'add', item: PAYSLIP, source_npc_id: 'pierce_mail' }, as: :json
 
-      assert_response :unprocessable_entity
-      assert_match(/NPC not encountered/, response.parsed_body['message'])
+      assert_response :success, response.body
+      assert_equal ['pierce_payslip'], game.reload.player_state['inventory'].map { |i| i['id'] }
+      assert_includes game.player_state['encounteredNPCs'], 'pierce_mail'
     end
 
     test 'a headless record cannot give an item it does not hold' do

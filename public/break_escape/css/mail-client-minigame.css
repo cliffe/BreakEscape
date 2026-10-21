@@ -83,7 +83,8 @@
     font-size: 15px;
     color: var(--ui-accent, #ffcc44);
 }
-.mail-notice:empty { display: none; }
+/* An empty live region is kept in the tree (hidden by size, not display:none) so a later notice is announced. */
+.mail-notice:empty { min-height: 0; height: 0; overflow: hidden; }
 
 /* Reader: two panes */
 .mail-reader {
@@ -231,6 +232,7 @@
 .mail-checklist-advisory { margin: 2px 0 0; font-size: 14px; color: var(--ui-warn, #e6b04d); }
 .mail-checklist-reply { margin: 6px 0 0; font-size: 15px; color: var(--ui-accent, #ffcc44); }
 .mail-checklist-replyto { margin: 4px 0 0; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+.mail-checklist-hint { margin: 6px 0 0; padding: 6px 8px; font-size: 15px; color: var(--ui-text, #e6ecf5); border-left: 3px solid var(--ui-accent, #ffcc44); background: rgba(255, 204, 68, 0.08); }
 .mail-checklist-edit,
 .mail-checklist-done { align-self: flex-start; margin-top: 8px; }
 
@@ -344,8 +346,34 @@
 .mail-picker-kind { font-size: 12px; color: var(--ui-text-dim, #a8b2c8); font-family: var(--ui-heading-font, 'GNF', monospace); }
 .mail-picker-kind.kind-stale { color: var(--ui-warn, #e6b04d); }
 
+/* Keyboard focus ring on every control (the theme buttons only style hover). */
+.mail-client button:focus-visible,
+.mail-client select:focus-visible,
+.mail-client [tabindex]:focus-visible {
+    outline: 3px solid var(--ui-accent, #ffcc44);
+    outline-offset: 2px;
+}
+.mail-subject:focus { outline: none; }
+.mail-picker-list:focus-visible { outline: 3px solid var(--ui-accent, #ffcc44); outline-offset: -3px; }
+.mail-composer select,
+.mail-details-toggle,
+.mail-contacts-close { min-height: 44px; }
+.mail-compose-label { overflow-wrap: anywhere; }
+
 @media (max-width: 767px) {
-    .mail-client { height: 85vh; max-height: none; padding: 8px; }
+    .mail-client { height: 85vh; max-height: none; padding: 8px; max-width: 100vw; overflow-x: hidden; }
+    .mail-client * { max-width: 100%; }
+    .mail-toolbar > * { min-width: 0; }
+    .mail-account { flex: 1 1 100%; margin-right: 0; }
+    .mail-toolbar .se-overlay-close { margin-left: 0; }
+    .mail-list-pane, .mail-read-pane { overflow-x: hidden; }
+    .mail-chip { max-width: 100%; box-sizing: border-box; }
+    .mail-back { min-height: 44px; }
+    .mail-checklist, .mail-contacts-panel { inset: 8px; }
+    .mail-compose-row { flex-direction: column; align-items: stretch; }
+    .mail-compose-label { min-width: 0; }
+    .mail-composer select { min-width: 0; width: 100%; flex: none; box-sizing: border-box; }
+    .mail-compose-fixed { min-width: 0; }
     /* Narrow: the toolbar may wrap again rather than squeeze everything onto one row. */
     .mail-toolbar { flex-wrap: wrap; }
     .mail-reader { grid-template-columns: 1fr; }
@@ -362,5 +390,59 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .mail-client * { animation: none !important; transition: none !important; }
+    .mail-client *,
+    .mail-client *::before,
+    .mail-client *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* Accounts (P1-L; 01 N11): switcher, Create-account panel, Send as select */
+.mail-account-select,
+.mail-compose-sendas-select {
+    min-height: 44px;
+    max-width: 100%;
+    min-width: 0;
+    font-family: var(--se-font-readable);
+    font-size: 15px;
+    padding: 6px;
+    background: var(--ui-surface-2, rgba(16, 22, 38, 0.9));
+    color: var(--ui-text, #eef1f8);
+    border: 1px solid var(--ui-line, #4c5b80);
+}
+.mail-account-select { flex: 0 1 auto; }
+.mail-account-select[hidden], .mail-account-label[hidden] { display: none; }
+.mail-create-panel {
+    position: absolute;
+    inset: 16px;
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    overflow-y: auto;
+    border: 2px solid var(--ui-line, #4c5b80);
+    background-color: #10152a;
+    background-image: linear-gradient(var(--ui-surface, rgba(24, 30, 48, 1)), var(--ui-surface, rgba(24, 30, 48, 1)));
+}
+.mail-create-title { margin: 0; font-family: var(--ui-heading-font, 'GNF', monospace); font-size: 16px; }
+.mail-create-help { margin: 0; font-family: var(--se-font-readable); font-size: 15px; color: var(--ui-text-dim, #a8b2c8); }
+.mail-create-menu { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.mail-create-option {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    min-height: 44px;
+    padding: 6px 8px;
+    border: 1px solid var(--ui-line, #4c5b80);
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+    cursor: pointer;
+}
+.mail-create-option input { width: 20px; height: 20px; }
+.mail-create-address { overflow-wrap: anywhere; color: var(--ui-text-dim, #a8b2c8); }
+.mail-create-bar { display: flex; gap: 8px; justify-content: flex-end; }
+@media (max-width: 767px) {
+    .mail-account-select { width: 100%; }
+    .mail-account { flex: 1 1 100%; }
+    .mail-create-panel { inset: 8px; }
 }

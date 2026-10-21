@@ -29,6 +29,7 @@
  *
  * Extra fields beyond 00 section 3 (additive; consumers may ignore them):
  *   result.openLine, result.firstFail, result.failCount, result.attachment, result.link,
+ *   result.hintIndex, result.hint (N4: the escalating hint to show after a repeated failure),
  *   and per factor: passLine, line, detail.
  */
 
@@ -416,6 +417,11 @@ export function evaluateMessage(target, message, ctx) {
   const hints = arr(target.hints);
   const prior = Number.isInteger(ctx && ctx.priorFailures) && ctx.priorFailures > 0 ? ctx.priorFailures : 0;
   const hintIndex = hints.length ? Math.min(prior, hints.length - 1) : 0;
+  // N4, feedback layer 3: an escalating hint after repeated failures on the same target
+  // (04 "Layered, legible feedback", worked example "Hint after the second try"). Shown only
+  // on a send that did not land and only once at least one earlier send to this target failed,
+  // so a first miss is not pre-empted. The bridge renders result.hint in the checklist.
+  const hint = (!landed && prior >= 1 && hints.length) ? hints[hintIndex] : null;
 
   return {
     landed,
@@ -425,6 +431,7 @@ export function evaluateMessage(target, message, ctx) {
     claimedSender: sender.claimedSender,
     fromAccount: message.fromAccount,
     hintIndex,
+    hint,
     advisory: { urgency: urgencyRead || 'low', senderAuth: auth.read },
     tells,
     firstFail: failedRequired.length ? failedRequired[0].id : '',

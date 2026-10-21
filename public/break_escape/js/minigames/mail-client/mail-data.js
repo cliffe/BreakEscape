@@ -17,8 +17,9 @@ const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
  * only once that global is true. A 'created' account is listed once `acct_<id>`
  * is true, with the address and display name of the createMenu entry named by
  * the string global `acct_<id>_choice`; until then it is left out (the Create
- * account panel is 1b). Returns [{ id, address, displayName, domain, kind,
- * person, spoofsFrom, mailbox }].
+ * account panel offers it, see pendingCreations). `burned` is true while the
+ * global `burned_<id>` is (00 §10a). Returns [{ id, address, displayName,
+ * domain, kind, person, spoofsFrom, mailbox, burned }].
  */
 export function resolveAccounts(config, accountIds, globals = {}) {
     const all = Array.isArray(config?.accounts) ? config.accounts : [];
@@ -47,7 +48,8 @@ export function resolveAccounts(config, accountIds, globals = {}) {
             kind: a.kind || 'given',
             person: a.person ?? null,
             spoofsFrom: a.spoofsFrom === true,
-            mailbox: a.mailbox || a.id
+            mailbox: a.mailbox || a.id,
+            burned: globals[`burned_${a.id}`] === true
         });
     }
     return out;
@@ -178,4 +180,56 @@ export function splitBody(body) {
 export function linkDestination(link) {
     if (!isObject(link)) return '';
     return String(link.destination ?? link.realUrl ?? link.href ?? link.realDomain ?? link.linkText ?? '');
+}
+
+// ── Accounts, 1b (01 N11; 00 §10a) ───────────────────────────────────────────
+
+/**
+ * The `created` accounts a device offers that the player has not made yet, for
+ * the switcher's "Create account" entry. An account is pending while its
+ * `acct_<id>` global is not true, it has a non-empty `createMenu`, and its
+ * `unlockedBy` (when it names something other than `acct_<id>` itself) is true.
+ * Returns [{ id, mailbox, createMenu: [{ id, address, displayName }] }].
+ */
+export function pendingCreations(config, accountIds, globals = {}) {
+    const all = Array.isArray(config?.accounts) ? config.accounts.filter(isObject) : [];
+    const ids = Array.isArray(accountIds) && accountIds.length ? accountIds : all.map((a) => a.id);
+    const out = [];
+    for (const id of ids) {
+        const a = all.find((x) => x.id === id);
+        if (!a || a.kind !== 'created') continue;
+        if (globals[`acct_${a.id}`] === true) continue;
+        if (a.unlockedBy && a.unlockedBy !== `acct_${a.id}` && globals[a.unlockedBy] !== true) continue;
+        const menu = (Array.isArray(a.createMenu) ? a.createMenu : [])
+            .filter((m) => isObject(m) && typeof m.id === 'string' && typeof m.address === 'string' && m.address)
+            .map((m) => ({ id: m.id, address: m.address, displayName: m.displayName || m.address }));
+        if (!menu.length) continue;
+        out.push({ id: a.id, mailbox: a.mailbox || a.id, createMenu: menu });
+    }
+    return out;
+}
+
+/**
+ * The two global writes that create an account, in order: the choice first, then
+ * `acct_<id>`, so a listener that fires on `acct_<id>` already sees the choice.
+ * Returns null for an unknown entry or an account already created.
+ */
+export function createAccountWrites(config, accountId, entryId, globals = {}) {
+    const pending = pendingCreations(config, [accountId], globals)[0];
+    if (!pending || !pending.createMenu.some((m) => m.id === entryId)) return null;
+    return [[`acct_${accountId}_choice`, entryId], [`acct_${accountId}`, true]];
+}
+
+/**
+ * The Phase 0 headless record a contact's character replies from (00 S8): the
+ * `social.characters.<character>.channels.email` id, when the character has an
+ * `emailRecord`. Same rule as systems/scenario-npc-records.js (kept inline so
+ * this file stays import-free). Null for a contact with no character.
+ */
+export function contactRecordId(social, contact) {
+    const key = isObject(contact) ? contact.character : null;
+    const ch = isObject(social?.characters) && typeof key === 'string' ? social.characters[key] : null;
+    if (!isObject(ch) || !isObject(ch.emailRecord)) return null;
+    const id = isObject(ch.channels) ? ch.channels.email : null;
+    return typeof id === 'string' && id ? id : null;
 }

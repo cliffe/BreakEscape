@@ -453,6 +453,24 @@ test('hintIndex follows priorFailures, capped at the last hint', () => {
   assert.equal(evaluateMessage({ ...T.pierce, hints: undefined }, pierceLand(), ctx({ priorFailures: 5 })).hintIndex, 0);
 });
 
+test('N4: result.hint is the escalating hint, shown only on a failed send after an earlier failure', () => {
+  // A failing send: generic pretext carries no distinctive value, so pretextRelevant fails.
+  const fail = () => ({ ...pierceLand(), templates: { ...pierceLand().templates, pretext: 'pretext_generic' }, attachment: 'kit_balance_sheet' });
+  // first miss (no prior failure): no hint pre-empted
+  const first = evaluateMessage(T.pierce, fail(), ctx({ priorFailures: 0 }));
+  assert.equal(first.landed, false);
+  assert.equal(first.hint, null);
+  // second attempt (one prior failure): hints[1]
+  const second = evaluateMessage(T.pierce, fail(), ctx({ priorFailures: 1 }));
+  assert.equal(second.hint, T.pierce.hints[1]);
+  // capped at the last hint
+  assert.equal(evaluateMessage(T.pierce, fail(), ctx({ priorFailures: 99 })).hint, T.pierce.hints[3]);
+  // a landing never shows a hint, whatever the prior count
+  assert.equal(evaluateMessage(T.pierce, pierceLand(), ctx({ priorFailures: 5 })).hint, null);
+  // a target with no hints has none to show
+  assert.equal(evaluateMessage({ ...T.pierce, hints: undefined }, fail(), ctx({ priorFailures: 3 })).hint, null);
+});
+
 // ------------------------------------------------------------------ pre-send gate (N11)
 test('pre-send gate: an empty blank shows the one fixed line and names nothing', () => {
   const m = lordLand({ slots: { sender_name: 'portal_full', sender_address: 'portal_address', name: 'lord_first', portal: 'staff_portal_name' } }); // no date

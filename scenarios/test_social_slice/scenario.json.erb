@@ -26,6 +26,16 @@
         { "taskId": "ready_hampshire", "title": "Learn enough about Careers to approach", "type": "custom", "status": "active" },
         { "taskId": "hampshire_landed", "title": "Land a message on the Careers inbox", "type": "custom", "status": "active" }
       ]
+    },
+    {
+      "aimId": "teague_round",
+      "title": "Teague's inbox",
+      "description": "A finance manager who only opens mail from someone she already trusts. Collect what you know, then write to her as the colleague she expects.",
+      "status": "active",
+      "order": 1,
+      "tasks": [
+        { "taskId": "teague_landed", "title": "Land a message on Morgan Teague", "type": "custom", "status": "active" }
+      ]
     }
   ],
 
@@ -37,15 +47,50 @@
     "osint_done": false,
     "phish_hampshire_landed": false,
     "phish_hampshire_attempts": 0,
-    "se_board_state": {}
+    "se_board_state": {},
+
+    "se_intel_teague_role": false,
+    "se_intel_teague_trusts_shah": false,
+    "se_intel_teague_expects_export": false,
+    "se_intel_company_addresses": false,
+    "target_ready_teague": false,
+    "phish_teague_landed": false,
+    "phish_teague_attempts": 0,
+    "teague_influence": 0,
+    "teague_wary": false,
+    "teague_latched": "",
+
+    "acct_freemail": false,
+    "acct_freemail_choice": "",
+    "burned_guest": false,
+    "burned_freemail": false
   },
 
   "social": {
     "people": [
       { "id": "hampshire", "kind": "cast", "address": "careers@ledgerwell.example",
         "avatar": "hampshire_headshot",
-        "forms": { "full": "Chris Hampshire" } }
+        "forms": { "full": "Chris Hampshire" } },
+      { "id": "teague", "kind": "cast", "address": "m.teague@ledgerwell.example",
+        "forms": { "first": "Morgan", "short": "Mo", "formal": "Ms Teague", "full": "Morgan Teague" } },
+      { "id": "shah", "kind": "cast", "address": "r.shah@ledgerwell.example",
+        "forms": { "first": "Ravi", "full": "Ravi Shah" } }
     ],
+
+    "characters": {
+      "teague": {
+        "displayName": "Morgan Teague",
+        "channels": { "email": "teague_mail" },
+        "emailRecord": { "storyPath": "scenarios/test_social_slice/ink/teague_mail.json", "displayName": "Morgan Teague" },
+        "emailReplyDelay": 15,
+        "influence": { "global": "teague_influence", "min": -40, "max": 100, "start": 0 },
+        "syncedVars": ["teague_influence"],
+        "thresholds": [
+          { "id": "wary", "at": -30, "icon": "wary",
+            "effects": [ { "type": "setGlobal", "global": "teague_wary", "value": true, "clearOnRearm": true } ] }
+        ]
+      }
+    },
 
     "intelFacts": {
       "hampshire_careers": {
@@ -69,6 +114,43 @@
         "provides": [
           { "type": "document", "value": "cv", "label": "my CV", "kind": "distinctive", "attachmentKind": "document" }
         ]
+      },
+
+      "teague_role": {
+        "text": "Morgan Teague manages the Finance team.",
+        "subject": "teague",
+        "source": "note_teague_role",
+        "provides": [
+          { "type": "name", "about": "recipient", "value": "teague_first", "label": "Morgan", "kind": "generic" },
+          { "type": "name", "about": "recipient", "value": "teague_formal", "label": "Ms Teague", "kind": "generic" },
+          { "type": "name", "about": "recipient", "value": "teague_full", "label": "Morgan Teague", "kind": "generic" }
+        ]
+      },
+      "teague_trusts_shah": {
+        "text": "Morgan trusts her colleague Ravi Shah.",
+        "subject": "teague",
+        "source": "note_teague_shah",
+        "provides": [
+          { "type": "name", "about": "sender", "value": "shah_full", "label": "Ravi Shah", "kind": "distinctive" }
+        ]
+      },
+      "teague_expects_export": {
+        "text": "Morgan expects a Q3 ledger export from Ravi on Tuesdays.",
+        "subject": "teague",
+        "source": "note_teague_export",
+        "provides": [
+          { "type": "document", "value": "ledger_export", "label": "the Q3 ledger export", "kind": "distinctive", "attachmentKind": "spreadsheet" },
+          { "type": "name", "about": "recipient", "value": "teague_short", "label": "Mo", "kind": "generic" },
+          { "type": "date", "value": "tuesday", "label": "Tuesday", "kind": "generic" }
+        ]
+      },
+      "company_addresses": {
+        "text": "Staff addresses are first-initial.surname@ledgerwell.example.",
+        "subject": "company",
+        "source": "note_company_addresses",
+        "provides": [
+          { "type": "address", "rule": "initial.surname@ledgerwell.example", "label": "an address built from the pattern" }
+        ]
       }
     },
 
@@ -80,19 +162,39 @@
       "pretext_enquiry": { "part": "pretext", "text": "I'd like to ask about your accounting services.", "slots": [],
         "urgency": "low" },
       "ask_review_cv": { "part": "ask", "text": "Could you review my CV when you have a moment?", "slots": [],
+        "urgency": "low" },
+
+      "from_named": { "part": "from", "text": "{sender_name} <{sender_address}>",
+        "slots": [ { "id": "sender_name", "type": "name", "about": "sender" },
+                   { "id": "sender_address", "type": "address" } ] },
+      "greet_named": { "part": "greeting", "text": "Hi {name},",
+        "slots": [ { "id": "name", "type": "name", "about": "recipient" } ] },
+      "pretext_sheet": { "part": "pretext", "text": "Here is {document} you wanted {when}.",
+        "slots": [ { "id": "document", "type": "document" }, { "id": "when", "type": "date" } ],
+        "urgency": "low" },
+      "pretext_generic": { "part": "pretext", "text": "Please see attached.", "slots": [],
+        "urgency": "low" },
+      "ask_open_attached": { "part": "ask", "text": "Can you open the attached file and check it, please?", "slots": [],
         "urgency": "low" }
     },
 
     "mailClient": {
       "accounts": [
         { "id": "guest", "address": "guest@workstation.example", "displayName": "Operator",
-          "kind": "given", "person": null, "mailbox": "guest", "spoofsFrom": true }
+          "kind": "given", "person": null, "mailbox": "guest", "spoofsFrom": true },
+        { "id": "freemail", "kind": "created", "person": null, "unlockedBy": "acct_freemail",
+          "mailbox": "freemail", "spoofsFrom": false,
+          "createMenu": [ { "id": "tt1", "address": "tarnside.test@freemail.example", "displayName": "T. Test" },
+                          { "id": "nt2", "address": "n.assurance@freemail.example", "displayName": "N. Assurance" } ] }
       ],
-      "mailboxes": [ { "id": "guest" } ],
+      "mailboxes": [ { "id": "guest" }, { "id": "freemail" } ],
       "contacts": [
         { "id": "hampshire", "person": "hampshire", "name": "Chris Hampshire",
           "addresses": ["careers@ledgerwell.example"], "role": "Careers",
-          "revealedBy": "se_intel_hampshire_careers", "targetId": "hampshire" }
+          "revealedBy": "se_intel_hampshire_careers", "targetId": "hampshire" },
+        { "id": "teague", "person": "teague", "character": "teague", "name": "Morgan Teague",
+          "addresses": ["m.teague@ledgerwell.example"], "role": "Finance",
+          "revealedBy": "se_intel_teague_role", "targetId": "teague" }
       ],
       "seededMessages": [
         { "id": "welcome", "mailbox": "guest",
@@ -107,7 +209,9 @@
           "time": "08:20", "unread": true, "folder": "inbox" }
       ],
       "payloadKit": [
-        { "id": "kit_cv", "label": "CV.docx", "kind": "document" }
+        { "id": "kit_cv", "label": "CV.docx", "kind": "document" },
+        { "id": "kit_ledger", "label": "Q3-ledger.xlsx", "kind": "spreadsheet" },
+        { "id": "kit_memo", "label": "Memo.pdf", "kind": "pdf" }
       ],
       "checklistTiming": "onSend",
       "bodyMode": "templates",
@@ -117,7 +221,7 @@
 
     "intelBoard": {
       "title": "Engagement: Ledgerwell",
-      "people": ["hampshire"],
+      "people": ["hampshire", "teague"],
       "readinessSlots": {
         "hampshire": [
           { "label": "Where mail goes", "needsIntel": ["hampshire_careers"],
@@ -129,6 +233,20 @@
           { "label": "Why she would read it", "needsIntel": ["hampshire_cv_backlog"],
             "goalString": "You still don't know what Chris is busy with.",
             "doneString": "You know what's keeping her busy this week." }
+        ],
+        "teague": [
+          { "label": "Who she is", "needsIntel": ["teague_role"],
+            "goalString": "You still don't know Morgan's name or role.",
+            "doneString": "You know Morgan Teague runs Finance." },
+          { "label": "Who she trusts", "needsIntel": ["teague_trusts_shah"],
+            "goalString": "You still don't know whose mail Morgan would open.",
+            "doneString": "You know she trusts her colleague Ravi Shah." },
+          { "label": "What she expects", "needsIntel": ["teague_expects_export"],
+            "goalString": "You still don't know what Morgan is waiting for.",
+            "doneString": "You know she expects a Q3 ledger export on Tuesdays." },
+          { "label": "How to build the address", "needsIntel": ["company_addresses"],
+            "goalString": "You still don't know how staff addresses are formed.",
+            "doneString": "You know the first-initial.surname address pattern." }
         ]
       }
     },
@@ -164,6 +282,55 @@
         "replies": { "landed": "Thanks, I'll get to this CV before Friday." },
         "hints": ["An open inbox trusts anyone who looks like an applicant.", "What does the careers page ask applicants to send?"],
         "outcome": { "setGlobal": { "phish_hampshire_landed": true } }
+      },
+      {
+        "id": "teague",
+        "character": "teague",
+        "address": "m.teague@ledgerwell.example",
+        "displayName": "Morgan Teague",
+        "subjects": [
+          { "id": "s_quick", "text": "Quick one", "topic": "general" },
+          { "id": "s_review", "text": "For your review", "topic": "finance" }
+        ],
+        "interests": { "topics": ["finance"] },
+        "addressedAs": ["teague_first", "teague_short", "teague_formal"],
+        "templateSets": {
+          "from": ["from_named"],
+          "greeting": ["greet_named"],
+          "pretext": ["pretext_sheet", "pretext_generic"],
+          "ask": ["ask_open_attached"]
+        },
+        "senderAuth": { "domainPublishesAuth": true, "spoofAligns": false, "dmarcPolicy": "none" },
+        "redFlagMeter": false,
+        "urgency": { "advisoryMax": "medium" },
+        "primedFor": {
+          "distinctiveValues": ["ledger_export"],
+          "genericValues": ["tuesday"],
+          "minDistinct": 1,
+          "expectedAttachment": "spreadsheet",
+          "trusts": ["shah"],
+          "story": "a Q3 ledger export from Ravi, on a Tuesday"
+        },
+        "requiredFactors": ["senderTrust", "addressedTo", "pretextRelevant", "attachmentPlausible"],
+        "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
+        "factorStrings": {
+          "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
+          "senderTrust": { "pass": "✓ From someone she trusts", "fail": "Sorry, who is this? I don't recognise the address.", "redFlag": null },
+          "addressedTo": { "pass": "✓ Addressed her by name", "fail": "This doesn't even have my name on it.", "redFlag": null },
+          "pretextRelevant": { "pass": "✓ Relevant to her", "fail": "I'm not expecting anything like this.", "redFlag": null },
+          "senderAuth": {
+            "pass": "✓ Sender authentication would pass",
+            "fail": "The spoofed r.shah@ address fails the domain's alignment check. Ledgerwell publishes its DMARC policy as p=none, so a receiver would still deliver it.",
+            "redFlag": null
+          },
+          "attachmentPlausible": {
+            "pass": "✓ The ledger export is attached",
+            "missing": { "fail": "You said you'd attach it, but there's nothing here.", "redFlag": null },
+            "wrong-type": { "fail": "That isn't a file I can open as a ledger.", "redFlag": null }
+          }
+        },
+        "hints": ["Think about who Morgan trusts.", "What does she expect to receive, and from whom?",
+                  "This account can only send as itself. The Operator account lets you choose the sender."]
       }
     ]
   },
@@ -196,6 +363,12 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "hampshire_landed"
+            },
+            {
+              "eventPattern": "global_variable_changed:phish_teague_landed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "teague_landed"
             }
           ]
         }
@@ -211,7 +384,7 @@
           "active": true,
           "locked": false,
           "observations": "A workstation signed in to the Operator mailbox.",
-          "minigameData": { "accountIds": ["guest"] }
+          "minigameData": { "accountIds": ["guest", "freemail"] }
         },
         {
           "type": "case-file",
@@ -260,6 +433,54 @@
           "active": true,
           "observations": "A printout of the how-to-apply page.",
           "triggerOnInteract": [ { "type": "grant_fact", "fact": "careers_attachment" } ]
+        },
+        {
+          "type": "notes",
+          "sprite": "notes4",
+          "id": "note_teague_role",
+          "name": "Finance Team Page Printout",
+          "position": { "x": 2, "y": 4 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A printout of the finance team page listing Morgan Teague.",
+          "triggerOnInteract": [ { "type": "grant_fact", "fact": "teague_role" } ]
+        },
+        {
+          "type": "notes",
+          "sprite": "notes5",
+          "id": "note_teague_shah",
+          "name": "Morgan's Social Post",
+          "position": { "x": 4, "y": 4 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A printed social post from Morgan mentioning her colleague Ravi.",
+          "triggerOnInteract": [ { "type": "grant_fact", "fact": "teague_trusts_shah" } ]
+        },
+        {
+          "type": "notes",
+          "sprite": "notes6",
+          "id": "note_teague_export",
+          "name": "Company-Site Note",
+          "position": { "x": 6, "y": 4 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A note: Ravi will send Morgan the Q3 ledger export on Tuesday.",
+          "triggerOnInteract": [ { "type": "grant_fact", "fact": "teague_expects_export" } ]
+        },
+        {
+          "type": "notes",
+          "sprite": "notes_ledger1",
+          "id": "note_company_addresses",
+          "name": "Address-Lookup Result",
+          "position": { "x": 8, "y": 4 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A lookup result showing the staff address pattern.",
+          "triggerOnInteract": [ { "type": "grant_fact", "fact": "company_addresses" } ]
         }
       ]
     }

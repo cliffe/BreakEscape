@@ -10,6 +10,7 @@
 // displayDashes, and the CSS sets them in var(--se-font-readable).
 
 import { splitBody, linkDestination } from './mail-data.js';
+import { createInfluenceBar } from '../../ui/influence-bar.js';
 
 const ICON = '/break_escape/assets/icons/';
 const ATTACH_ICONS = new Set(['document', 'pdf', 'spreadsheet', 'archive', 'image', 'link']);
@@ -42,6 +43,9 @@ export class MailReader {
      * @param {(close: Function, name?: string) => Function} [opts.pushLayer]  Esc layer hook
      * @param {(record: object) => boolean} [opts.judgedVisible]  whether a sent record's judged line shows
      * @param {string} [opts.emptyText]
+     * @param {(record: object) => string|null} [opts.influenceCharacter]  the social character whose
+     *        influence bar shows with a message (default: the character in `thread`, else `targetId`)
+     * @param {object} [opts.scenario]  scenario holding `social` for the bar (default window.gameScenario)
      */
     constructor(parent, opts = {}) {
         this.opts = opts;
@@ -51,14 +55,15 @@ export class MailReader {
         this.detailsOpen = false;
         this._popLayer = null;
         this.linkNote = '';
+        this.influenceBar = null;
 
         this.root = el('div', 'mail-reader');
         this.listPane = el('div', 'mail-list-pane');
         this.list = el('div', 'mail-list');
+        this.list.setAttribute('role', 'group');
         this.list.setAttribute('aria-label', 'Messages');
         this.listPane.appendChild(this.list);
         this.readPane = el('div', 'mail-read-pane');
-        this.readPane.setAttribute('aria-live', 'polite');
         this.root.append(this.listPane, this.readPane);
         parent.appendChild(this.root);
         this.render();
@@ -90,10 +95,15 @@ export class MailReader {
 
     /** Back to the list (the narrow layout's Back button); also clears the selection on wide screens. */
     back() {
+        const from = this.selectedId;
         this._closeDetails();
         this.selectedId = null;
         this.linkNote = '';
         this.render();
+        // Render rebuilt the list; focus returns to the row the player just left.
+        const row = [...(this.list.querySelectorAll?.('.mail-row') || [])].find((r) => r.dataset.id === from)
+            || this.list.querySelector?.('.mail-row');
+        row?.focus?.();
     }
 
     render() {
@@ -142,10 +152,31 @@ export class MailReader {
         }
     }
 
+    /** The social character a message belongs to, for the influence bar (01 N7). */
+    _influenceCharacter(rec) {
+        if (this.opts.influenceCharacter) return this.opts.influenceCharacter(rec) || null;
+        if (typeof rec.thread === 'string' && rec.thread.includes(':')) return rec.thread.split(':')[0];
+        return rec.targetId || null;
+    }
+
+    _destroyInfluenceBar() {
+        if (this.influenceBar) { this.influenceBar.destroy(); this.influenceBar = null; }
+    }
+
     _renderPane() {
         const pane = this.readPane;
-        pane.textContent = '';
         const rec = this.selected();
+        const nextCharacter = rec ? this._influenceCharacter(rec) : null;
+        // Keep the live influence bar across a pane rebuild when the character is
+        // unchanged. A reply delivered while a message is open refreshes the pane
+        // (the mail client's _refresh); destroying and rebuilding the bar would
+        // drop its "Last change" line and the live announcement that has already
+        // fired (F-2). Detach it before clearing so textContent = '' leaves it alone.
+        const keptBar = this.influenceBar && nextCharacter && this.influenceBar.config.id === nextCharacter
+            ? this.influenceBar : null;
+        if (keptBar) keptBar.el.remove?.();
+        else this._destroyInfluenceBar();
+        pane.textContent = '';
         if (!rec) {
             pane.appendChild(el('p', 'mail-placeholder', 'Select a message to read it.'));
             return;
@@ -171,6 +202,17 @@ export class MailReader {
         addRow('To', [el('span', 'mail-to', rec.to || '')]);
         if (rec.time) addRow('Time', [el('span', 'mail-time', rec.time)]);
         pane.appendChild(head);
+
+        // The influence bar (01 N7, 00 S4): shown for a social character, read from gameState,
+        // and nothing when the character's influence.display has bar: false.
+        const characterId = nextCharacter;
+        const bar = keptBar
+            || (characterId ? createInfluenceBar({ characterId, scenario: this.opts.scenario, mount: 'reading-pane' }) : null);
+        if (bar) {
+            this.influenceBar = bar;
+            pane.appendChild(bar.el);
+            if (keptBar) bar.update(); // re-read gameState; the kept bar keeps its change line
+        }
 
         const detailsBtn = el('button', 'mail-details-toggle minigame-button',
             this.detailsOpen ? 'Hide message details' : 'Message details');
@@ -247,10 +289,15 @@ export class MailReader {
     }
 
     _toggleDetails() {
-        if (this.detailsOpen) { this._closeDetails(); this.render(); return; }
+        if (this.detailsOpen) { this._closeDetails(); this.render(); this._focusDetailsToggle(); return; }
         this.detailsOpen = true;
-        this._popLayer = this.opts.pushLayer?.(() => { this._closeDetails(); this.render(); }, 'message-details') || null;
+        this._popLayer = this.opts.pushLayer?.(() => { this._closeDetails(); this.render(); this._focusDetailsToggle(); }, 'message-details') || null;
         this.render();
+        this._focusDetailsToggle();
+    }
+
+    _focusDetailsToggle() {
+        this.readPane.querySelector?.('.mail-details-toggle')?.focus?.();
     }
 
     _closeDetails() {
@@ -262,7 +309,8 @@ export class MailReader {
     _sentNote(rec) {
         const note = el('div', 'mail-sent-note');
         if (rec.kind === 'quickReply') return note;
-        if (rec.judgePending === true || this.opts.judgedVisible?.(rec) === false) {
+        const hidden = this.opts.judgedVisible ? this.opts.judgedVisible(rec) === false : rec.judgePending === true;
+        if (hidden) {
             note.appendChild(el('p', 'mail-judged mail-judged-waiting', 'Sent. Waiting for a reply.'));
             return note;
         }
@@ -282,6 +330,7 @@ export class MailReader {
             selectedId: this.selectedId,
             detailsOpen: this.detailsOpen,
             linkNote: this.linkNote,
+            influence: this.influenceBar ? this.influenceBar.getState() : null,
             messages: this.records.map((r) => ({
                 id: r.id,
                 who: this.folder === 'sent' ? (r.to || '') : (r.from?.name || r.from?.address || ''),
@@ -294,6 +343,7 @@ export class MailReader {
 
     destroy() {
         this._closeDetails();
+        this._destroyInfluenceBar();
         this.root.remove?.();
     }
 }

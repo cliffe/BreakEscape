@@ -3,8 +3,9 @@
 // What is here: the account bar, Inbox and Sent folders over the shared
 // MailReader, the contacts panel (contacts appear once their `revealedBy`
 // global is true), seeded inbox mail, new-mail arrival, Close/Esc behaviour and
-// getTestState(). What is not: the composer (P1-E2), the account switcher and
-// Create-account panel (1b), registration, the starter and the CSS <link> (P1-W).
+// getTestState(). The account switcher, the Create-account panel and the
+// per-mailbox unread counts are P1-L (01 N11, 00 §10a). Registration, the
+// starter and the CSS <link> are P1-W's.
 //
 // Starter params (all optional except where noted; see socialOverlayParams):
 //   accountIds       string[]  the accounts this device offers (mail_terminal.minigameData.accountIds)
@@ -24,9 +25,11 @@ import { MailReader } from './mail-reader.js';
 import { MailComposer } from './mail-composer.js';
 import { registerOpenClient } from './mail-notification.js';
 import { performSend, renderChecklist } from './mail-bridge.js';
+import { writeGlobal } from '../../systems/global-writer.js';
 import {
     resolveAccounts, visibleContacts, emptyMailState, ensureMailbox,
-    recountUnread, seedMailState, folderMessages
+    recountUnread, seedMailState, folderMessages,
+    pendingCreations, createAccountWrites, contactRecordId
 } from './mail-data.js';
 
 const ICON = '/break_escape/assets/icons/';
@@ -55,6 +58,11 @@ export class MailClientMinigame extends SocialOverlayScene {
         this._unregister = null;
         this.accounts = [];
         this.account = null;
+        this.creatable = [];
+        this.createOpen = false;
+        this.createPanel = null;
+        this.createChoice = null;
+        this._popCreate = null;
         this.checklistPanel = null;
         this._popChecklist = null;
         this._claimedFromNoticeShown = false;
@@ -93,10 +101,27 @@ export class MailClientMinigame extends SocialOverlayScene {
         return this.account?.mailbox || null;
     }
 
-    _loadAccounts() {
+    /**
+     * Resolve the device's accounts from the live globals (01 N11). `keepId` is the
+     * account to stay on across a reload; the first open uses `accountId`
+     * (a reopen) or `defaultAccount`, else the first listed.
+     */
+    _loadAccounts(keepId = null) {
         this.accounts = resolveAccounts(this.config, this.params.accountIds, this.globals);
-        const want = this.params.accountId || this.params.defaultAccount;
+        this.creatable = pendingCreations(this.config, this.params.accountIds, this.globals);
+        const want = keepId || this.params.accountId || this.params.defaultAccount;
         this.account = this.accounts.find((a) => a.id === want) || this.accounts[0] || null;
+    }
+
+    /** Whether this client shows `mailboxId` (the notifier asks, so any listed account's arrivals append). */
+    holdsMailbox(mailboxId) {
+        return this.accounts.some((a) => a.mailbox === mailboxId);
+    }
+
+    /** Unread inbox count of a mailbox, read without creating the mailbox. */
+    unreadOf(mailboxId) {
+        const list = this.mailState?.mailboxes?.[mailboxId]?.messages;
+        return Array.isArray(list) ? list.filter((m) => m.folder !== 'sent' && m.read !== true).length : 0;
     }
 
     _changed(change) {
@@ -124,7 +149,7 @@ export class MailClientMinigame extends SocialOverlayScene {
 
         this.reader = new MailReader(root, {
             pushLayer: (close, name) => this.pushLayer(close, name),
-            judgedVisible: (rec) => !(this._checklistTiming() === 'withReply' && rec.judgePending === true),
+            judgedVisible: (rec) => !this._judgePending(rec),
             onOpen: (rec) => this._markRead(rec)
         });
         this._refresh();
@@ -133,10 +158,44 @@ export class MailClientMinigame extends SocialOverlayScene {
     start() {
         super.start();
         this._unregister = registerOpenClient(this);
+        // A delivery job that finishes while the client is open (a reply, or a silent job that
+        // only reveals the verdict) reveals the Sent verdict at once (01 N17).
+        this._offJobs = this.scheduler?.onEvent?.((event, data) => {
+            if (event === 'mail_job_done') this._onJobDone(data?.job);
+        }) || null;
+    }
+
+    /**
+     * withReply timing (01 N17): a Sent record's verdict stays hidden while a delivery job for
+     * it is still queued. The queue is the truth: the flag the bridge sets on the record is not
+     * kept by the scheduler or the server, so it cannot be relied on after a reload.
+     */
+    _judgePending(rec) {
+        if (this._checklistTiming() !== 'withReply' || !rec) return false;
+        if (rec.judgePending === true) return true;
+        const jobs = Array.isArray(this.mailState?.jobs) ? this.mailState.jobs : [];
+        return jobs.some((j) => j && j.msgId === rec.id);
+    }
+
+    _onJobDone(job) {
+        if (job?.msgId) {
+            const box = this.account ? this.mailState?.mailboxes?.[this.account.mailbox] : null;
+            const sent = box?.messages?.find((m) => m.id === job.msgId);
+            if (sent) delete sent.judgePending;
+        }
+        if (this.root && this.reader) this._refresh();
+        // withReply: the reply has been read (or the silent job has run); now show why.
+        const held = job?.msgId && this._heldChecklists?.get(job.msgId);
+        if (held) {
+            this._heldChecklists.delete(job.msgId);
+            this._showChecklist(held);
+        }
     }
 
     cleanup() {
         if (this._unregister) { this._unregister(); this._unregister = null; }
+        if (this._offJobs) { this._offJobs(); this._offJobs = null; }
+        this.closeCreateAccount(false);
         this._dismissChecklist();
         this.composer?.destroy?.();
         this.composer = null;
@@ -162,7 +221,12 @@ export class MailClientMinigame extends SocialOverlayScene {
         img.src = `${ICON}mail-account.png`;
         img.alt = '';
         this.accountLabel = el('span', 'mail-account-label');
-        acct.append(img, this.accountLabel);
+        // The switcher (01 N11): shown when the device offers more than one account or a
+        // pending "Create account"; a lone account is just the label above.
+        this.switcher = el('select', 'mail-account-select');
+        this.switcher.setAttribute('aria-label', 'Account');
+        this.addEventListener(this.switcher, 'change', () => this._onSwitcher());
+        acct.append(img, this.accountLabel, this.switcher);
 
         const tabs = el('div', 'mail-folders');
         tabs.setAttribute('role', 'group');
@@ -203,8 +267,9 @@ export class MailClientMinigame extends SocialOverlayScene {
 
     _refresh() {
         const acct = this.account;
-        this.accountLabel.textContent = acct ? `${acct.displayName} <${acct.address}>` : 'No account';
+        this.accountLabel.textContent = acct ? `${acct.displayName} <${acct.address}>${acct.burned ? ' (reported)' : ''}` : 'No account';
         const unread = acct ? recountUnread(this.mailState, acct.mailbox) : 0;
+        this._renderSwitcher();
         for (const [btn, folder] of [[this.inboxTab, 'inbox'], [this.sentTab, 'sent']]) {
             const active = this.folder === folder;
             btn.classList.toggle('active', active);
@@ -215,6 +280,175 @@ export class MailClientMinigame extends SocialOverlayScene {
         count.setAttribute('aria-label', unread > 0 ? `${unread} unread` : '');
         this.reader.setMessages(acct ? folderMessages(this.mailState, acct.mailbox, this.folder) : [], this.folder);
         this.noticeEl.textContent = this.notice;
+    }
+
+    // ── account switcher and Create account (P1-L; 01 N11) ───────────────────────
+
+    _accountOptionText(a) {
+        const n = this.unreadOf(a.mailbox);
+        return `${a.displayName} <${a.address}>${a.burned ? ' (reported)' : ''}${n > 0 ? ` (${n} unread)` : ''}`;
+    }
+
+    _renderSwitcher() {
+        const sw = this.switcher;
+        if (!sw) return;
+        const multi = this.accounts.length > 1 || this.creatable.length > 0;
+        sw.hidden = !multi;
+        this.accountLabel.hidden = multi;
+        if (!multi) return;
+        sw.textContent = '';
+        for (const a of this.accounts) {
+            const opt = el('option', null, this._accountOptionText(a));
+            opt.value = a.id;
+            if (this.account && a.id === this.account.id) opt.selected = true;
+            sw.appendChild(opt);
+        }
+        for (const c of this.creatable) {
+            const opt = el('option', null, this.creatable.length > 1 ? `Create account (${c.id})` : 'Create account');
+            opt.value = `create:${c.id}`;
+            sw.appendChild(opt);
+        }
+        if (this.account) sw.value = this.account.id;
+    }
+
+    _onSwitcher() {
+        const v = this.switcher.value;
+        if (v.startsWith('create:')) {
+            if (this.account) this.switcher.value = this.account.id;
+            this.openCreateAccount(v.slice('create:'.length));
+        } else {
+            this.switchAccount(v);
+        }
+    }
+
+    /**
+     * Move to another listed account. The open composer is rebuilt for it (its draft
+     * is the new account's own), the checklist and the selected message are dropped.
+     */
+    switchAccount(id) {
+        const next = this.accounts.find((a) => a.id === id);
+        if (!next || (this.account && next.id === this.account.id)) {
+            if (this.switcher && this.account) this.switcher.value = this.account.id;
+            return false;
+        }
+        const hadCompose = this.composeOpen;
+        if (hadCompose) this.closeCompose(false);
+        this._dismissChecklist();
+        this.account = next;
+        ensureMailbox(this.mailState, next.mailbox);
+        this.folder = 'inbox';
+        this.reader.selectedId = null;
+        this.notice = '';
+        this._refresh();
+        if (hadCompose) this.openCompose();
+        this._changed({ type: 'account', mailbox: next.mailbox, id: next.id });
+        return true;
+    }
+
+    openCreateAccount(accountId) {
+        const entry = accountId
+            ? this.creatable.find((c) => c.id === accountId)
+            : this.creatable[0];
+        if (!entry || this.createOpen) return false;
+        this.closeContacts();
+        this.createOpen = true;
+        this.createChoice = null;
+        const panel = el('div', 'mail-create-panel');
+        panel.setAttribute('role', 'dialog');
+        panel.setAttribute('aria-label', 'Create account');
+        panel.dataset.account = entry.id;
+        panel.appendChild(el('h2', 'mail-create-title', 'Create account'));
+        panel.appendChild(el('p', 'mail-create-help',
+            'Pick the address this account will use. You cannot change it afterwards.'));
+        const group = el('div', 'mail-create-menu');
+        group.setAttribute('role', 'radiogroup');
+        group.setAttribute('aria-label', 'Addresses');
+        const confirm = el('button', 'mail-create-confirm minigame-button', 'Confirm');
+        confirm.type = 'button';
+        confirm.disabled = true;
+        entry.createMenu.forEach((m, i) => {
+            const label = el('label', 'mail-create-option');
+            const input = el('input');
+            input.type = 'radio';
+            input.name = `mail-create-${entry.id}`;
+            input.value = m.id;
+            label.append(input, document.createTextNode(' '),
+                el('span', 'mail-create-name', m.displayName),
+                document.createTextNode(' '),
+                el('span', 'mail-create-address', `<${m.address}>`));
+            this.addEventListener(input, 'change', () => {
+                this.createChoice = m.id;
+                confirm.disabled = false;
+            });
+            group.appendChild(label);
+        });
+        const bar = el('div', 'mail-create-bar');
+        const back = el('button', 'mail-create-back minigame-button', 'Back');
+        back.type = 'button';
+        this.addEventListener(back, 'click', () => this.closeCreateAccount());
+        this.addEventListener(confirm, 'click', () => this.confirmCreateAccount());
+        bar.append(back, confirm);
+        panel.append(group, bar);
+        this.root.appendChild(panel);
+        this.createPanel = panel;
+        this.createAccountId = entry.id;
+        this._popCreate = this.pushLayer(() => this.closeCreateAccount(), 'create-account');
+        group.querySelector('input')?.focus?.();
+        return true;
+    }
+
+    closeCreateAccount(restoreFocus = true) {
+        if (!this.createOpen) return;
+        this.createOpen = false;
+        this.createPanel?.remove?.();
+        this.createPanel = null;
+        this.createChoice = null;
+        if (this._popCreate) { this._popCreate(); this._popCreate = null; }
+        if (restoreFocus) this.switcher?.focus?.();
+    }
+
+    /** Pick an entry by id (the panel's radio, for keyboard-free callers). */
+    chooseCreateEntry(entryId) {
+        const input = this.createPanel?.querySelector(`input[value="${entryId}"]`);
+        if (!input) return false;
+        input.checked = true;
+        this.createChoice = entryId;
+        const confirm = this.createPanel.querySelector('.mail-create-confirm');
+        if (confirm) confirm.disabled = false;
+        return true;
+    }
+
+    /**
+     * Confirm: write `acct_<id>_choice` then `acct_<id>` through the shared writer
+     * (00 §10a, S3), reload the accounts and move to the new one. Final for the session.
+     */
+    confirmCreateAccount() {
+        const id = this.createAccountId;
+        const choice = this.createChoice;
+        const writes = this.createChoice ? createAccountWrites(this.config, id, this.createChoice, this.globals) : null;
+        if (!writes) return false;
+        for (const [name, value] of writes) {
+            writeGlobal(name, value, { emitAlways: true });
+            // A params.globals object that is not gameState's own still has to see the write.
+            if (this.params.globals && this.params.globals !== window.gameState?.globalVariables) {
+                this.params.globals[name] = value;
+            }
+        }
+        this.closeCreateAccount(false);
+        this._loadAccounts(id); // the new account now resolves, so this lands on it
+        if (this.account) ensureMailbox(this.mailState, this.account.mailbox);
+        const hadCompose = this.composeOpen;
+        if (hadCompose) this.closeCompose(false);
+        this._dismissChecklist();
+        this.folder = 'inbox';
+        this.reader.selectedId = null;
+        this.notice = this.account && this.account.id === id ? `Account created: ${this.account.address}` : '';
+        this._refresh();
+        if (hadCompose) this.openCompose();
+        this.switcher?.focus?.();
+        this._changed({ type: 'account-created', id, mailbox: this.account?.mailbox });
+        try { this.params.onAccountCreated?.(id, choice); } catch (err) { console.error('mail onAccountCreated failed:', err); }
+        return true;
     }
 
     setFolder(folder) {
@@ -232,13 +466,22 @@ export class MailClientMinigame extends SocialOverlayScene {
         const count = this.inboxTab.querySelector('.mail-folder-count');
         const n = this.mailState.mailboxes[this.account.mailbox].unread;
         count.textContent = n > 0 ? String(n) : '';
+        this._renderSwitcher();
         this._changed({ type: 'read', mailbox: rec.mailbox, id: rec.id });
     }
 
     // ── contacts ─────────────────────────────────────────────────────────────
 
+    /**
+     * Visible contacts for the open account. A contact with a `character` also carries
+     * `recordId`, the Phase 0 headless record the character replies from (00 S8).
+     */
     contacts() {
-        return this.account ? visibleContacts(this.config, this.account.id, this.globals) : [];
+        if (!this.account) return [];
+        return visibleContacts(this.config, this.account.id, this.globals).map((c) => {
+            const recordId = contactRecordId(this.social, c);
+            return recordId ? { ...c, recordId } : c;
+        });
     }
 
     toggleContacts() {
@@ -272,6 +515,7 @@ export class MailClientMinigame extends SocialOverlayScene {
         panel.appendChild(back);
         this.root.appendChild(panel);
         this.contactsPanel = panel;
+        this._syncCovered();
         this._popContacts = this.pushLayer(() => this.closeContacts(), 'contacts');
         this.contactsBtn.setAttribute('aria-expanded', 'true');
         back.focus?.();
@@ -282,6 +526,7 @@ export class MailClientMinigame extends SocialOverlayScene {
         this.contactsOpen = false;
         this.contactsPanel?.remove?.();
         this.contactsPanel = null;
+        this._syncCovered();
         if (this._popContacts) { this._popContacts(); this._popContacts = null; }
         this.contactsBtn.setAttribute('aria-expanded', 'false');
         this.contactsBtn.focus?.();
@@ -305,6 +550,8 @@ export class MailClientMinigame extends SocialOverlayScene {
             intelFacts: social.intelFacts,
             payloadKit: this.config.payloadKit,
             account: this.account,
+            accounts: this.accounts,
+            onSendAs: (id) => this.switchAccount(id),
             contacts: this.contacts(),
             globals: this.globals,
             draft,
@@ -314,19 +561,21 @@ export class MailClientMinigame extends SocialOverlayScene {
             onClose: () => this.closeCompose()
         });
         this.composer.root.classList.add('mail-compose-panel');
+        this._syncCovered();
         this._popCompose = this.pushLayer(() => this.closeCompose(), 'compose');
         this.composeBtn.setAttribute('aria-expanded', 'true');
     }
 
-    closeCompose() {
+    closeCompose(restoreFocus = true) {
         if (!this.composeOpen) return;
         this.composeOpen = false;
         this._dismissChecklist();
         this.composer?.destroy?.();
         this.composer = null;
+        this._syncCovered();
         if (this._popCompose) { this._popCompose(); this._popCompose = null; }
         this.composeBtn.setAttribute('aria-expanded', 'false');
-        this.composeBtn.focus?.();
+        if (restoreFocus) this.composeBtn.focus?.();
     }
 
     /**
@@ -365,6 +614,10 @@ export class MailClientMinigame extends SocialOverlayScene {
             if (sendInfo.result) this._clearDraft();
             if (sendInfo.result && this._checklistTiming() === 'onSend') {
                 this._showChecklist(sendInfo);
+            } else if (sendInfo.result && sendInfo.record?.id) {
+                // withReply: hold the checklist until the delivery job for this message has run.
+                (this._heldChecklists || (this._heldChecklists = new Map())).set(sendInfo.record.id, sendInfo);
+                this._dismissChecklist();
             } else {
                 this._dismissChecklist();
             }
@@ -390,6 +643,7 @@ export class MailClientMinigame extends SocialOverlayScene {
         });
         this.root.appendChild(panel);
         this.checklistPanel = panel;
+        this._syncCovered();
         this._popChecklist = this.pushLayer(() => this._dismissChecklist(), 'checklist');
         const action = panel.querySelector('.mail-checklist-edit, .mail-checklist-done');
         action?.focus?.();
@@ -407,6 +661,20 @@ export class MailClientMinigame extends SocialOverlayScene {
         if (this._popChecklist) { this._popChecklist(); this._popChecklist = null; }
         this.checklistPanel?.remove?.();
         this.checklistPanel = null;
+        this._syncCovered();
+    }
+
+    /**
+     * The contacts panel, composer and checklist are opaque panels over the toolbar and reader.
+     * While one is up, what is under it is inert so Tab never lands on a control the player
+     * cannot see (01 "Narrow screens": every control reachable in order).
+     */
+    _syncCovered() {
+        const covered = !!(this.contactsOpen || this.composeOpen || this.checklistPanel);
+        for (const node of [this.toolbar, this.reader?.root]) {
+            if (!node) continue;
+            if (covered) node.setAttribute('inert', ''); else node.removeAttribute('inert');
+        }
     }
 
     // ── arrival (N14) ────────────────────────────────────────────────────────
@@ -418,11 +686,19 @@ export class MailClientMinigame extends SocialOverlayScene {
      * not (the test path), it is added here.
      */
     receiveMessage(record) {
-        if (!record || !this.account || record.mailbox !== this.account.mailbox) return false;
+        if (!record || !this.account || !this.holdsMailbox(record.mailbox)) return false;
         const box = ensureMailbox(this.mailState, record.mailbox);
         if (!box.messages.some((m) => m.id === record.id)) box.messages.push(record);
         recountUnread(this.mailState, record.mailbox);
         const who = record.from?.name || record.from?.address || 'someone';
+        if (record.mailbox !== this.account.mailbox) {
+            // Another of this device's accounts: only its unread count in the switcher moves.
+            const owner = this.accounts.find((a) => a.mailbox === record.mailbox);
+            this.notice = `New message for ${owner ? owner.address : record.mailbox} from ${who}: ${record.subject || '(no subject)'}`;
+            this._refresh();
+            this._changed({ type: 'arrival', mailbox: record.mailbox, id: record.id });
+            return true;
+        }
         this.notice = `New message from ${who}: ${record.subject || '(no subject)'}`;
         const keep = this.reader.selectedId;
         this._refresh();
@@ -470,6 +746,20 @@ export class MailClientMinigame extends SocialOverlayScene {
             mail: {
                 account: acct ? { id: acct.id, address: acct.address, displayName: acct.displayName, mailbox: acct.mailbox } : null,
                 accounts: this.accounts.map((a) => a.id),
+                switcher: {
+                    visible: !!this.switcher && !this.switcher.hidden,
+                    options: this.switcher ? [...this.switcher.options].map((o) => ({ value: o.value, text: o.textContent })) : [],
+                    value: this.switcher ? this.switcher.value : null
+                },
+                unreadByAccount: Object.fromEntries(this.accounts.map((a) => [a.id, this.unreadOf(a.mailbox)])),
+                burned: this.accounts.filter((a) => a.burned).map((a) => a.id),
+                creatable: this.creatable.map((c) => c.id),
+                createOpen: this.createOpen,
+                createMenu: this.createOpen
+                    ? [...this.createPanel.querySelectorAll('input')].map((i) => ({ id: i.value, checked: i.checked }))
+                    : [],
+                createChoice: this.createChoice,
+                contactRecords: Object.fromEntries(this.contacts().filter((c) => c.recordId).map((c) => [c.id, c.recordId])),
                 folder: this.folder,
                 unread: box ? box.unread || 0 : 0,
                 selectedId: reader?.selectedId ?? null,

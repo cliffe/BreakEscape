@@ -22,7 +22,7 @@ for (const rel of ['minigames/framework/base-minigame.js', 'minigames/framework/
     'minigames/mail-client/mail-client-minigame.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'minigames/mail-client/mail-notification.js', 'minigames/mail-client/mail-composer.js',
-    'minigames/mail-client/mail-bridge.js', 'systems/global-writer.js']) {
+    'minigames/mail-client/mail-bridge.js', 'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }
@@ -262,8 +262,11 @@ test('getTestState has the documented shape and is plain JSON', () => {
     assert.deepEqual(JSON.parse(JSON.stringify(s)), s);
     assert.equal(s.overlay.sceneType, null); // set by the framework when registered
     assert.equal(s.overlay.closeMode, 'abort');
-    assert.deepEqual(Object.keys(s.mail).sort(), ['account', 'accounts', 'contacts', 'contactsOpen', 'detailsOpen',
-        'folder', 'linkNote', 'messages', 'narrow', 'notice', 'selectedId', 'sentThisSession', 'unread']);
+    // P1-L added burned, contactRecords, creatable, createChoice, createMenu, createOpen, switcher, unreadByAccount
+    assert.deepEqual(Object.keys(s.mail).sort(), ['account', 'accounts', 'burned', 'contactRecords', 'contacts',
+        'contactsOpen', 'creatable', 'createChoice', 'createMenu', 'createOpen', 'detailsOpen',
+        'folder', 'linkNote', 'messages', 'narrow', 'notice', 'selectedId', 'sentThisSession', 'switcher',
+        'unread', 'unreadByAccount']);
     assert.deepEqual(s.mail.messages[0], { id: 'lookalike', who: 'Payroll <b>Team</b>', subject: 'Hours <script>x</script>', time: '09:00', unread: true });
     assert.deepEqual(s.mail.account, { id: 'guest', address: 'guest@workstation.example', displayName: 'Operator', mailbox: 'guest' });
 });
