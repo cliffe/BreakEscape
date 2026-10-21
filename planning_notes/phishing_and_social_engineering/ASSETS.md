@@ -22,7 +22,7 @@ that doc is read.
 - **Tier.** *Slice* is the first build slice: mail client (01), rules engine (04) and intel board (03) running
   the lab's Hampshire target. *Lab* is the rest of the student lab (10). *Later* is Eldritch Hacker, the
   awareness product (11), extension content and anything the plan only mentions.
-- **First-slice minimum.** The Atkinson font files, `mail_terminal`, the `case-file` board art, the mail
+- **First-slice minimum.** The Source Sans 3 font files, `mail_terminal`, the `case-file` board art, the mail
   chrome, attachment icons, tick and cross marks, the board's corkboard art, a Hampshire headshot and a
   new-mail notification icon. Sound and music come from files already in the repo. Ruth, rooms and the other
   cast can be placeholders (existing keys) while the slice is built.
@@ -55,7 +55,7 @@ the validator still wants one `assets/objects/<type>.png` per type.
 | OBJ14 | Three door keys (Recon, Operations, Blue Team). `key.png`; the `keyPins` tell them apart. Tinting optional | 10 §3, §8 | Reuse | existing | Lab |
 | OBJ15 | Room props named in 10 §8: desk, whiteboard, SOC wall of screens. Existing `exec_desk1`, `marble_desk1`, `whiteboard1`, `siem_dashboard`, `smartscreen`, `cctv_monitors1`; the room-dressing skill decides gaps | 10 §8 | Reuse | existing | Lab |
 | OBJ16 | Inventory icon for a takeable `mail_terminal` | 01 Assets; README O | New | PixelLab | Later |
-| OBJ17 | Company logo signs for rooms (Northgate, AccountingNow), in the style of `hq_logo_sign1` and `pnw_logo_sign1`. Suggestion only, not in the plan | none | New | PixelLab | Later |
+| OBJ17 | Company logo signs for rooms (Tarnside, AccountingNow), in the style of `hq_logo_sign1` and `pnw_logo_sign1`. Suggestion only, not in the plan | none | New | PixelLab | Later |
 
 ## 2. NPC cast
 
@@ -74,14 +74,14 @@ and headshot) and swapping later. Placeholder candidates with a full set: `femal
 
 | ID | Character | Role and channel | New or reused | Needs | Generator | Tier |
 |----|-----------|------------------|---------------|-------|-----------|------|
-| NPC1 | Ruth Adeyemi (`ruth`, `ruth_phone`) | Northgate engagement lead; briefing and hint hub; person and phone | New (placeholder `female_office_worker_v2`) | Full set: concept, bust, talk, visemes, 8-direction walk, headshot | Gemini concept, PixelLab | Lab |
-| NPC2 | Gareth Whitlock (`whitlock`) | Client MD; one short scene | New (placeholder `male_office_worker_v2`) | Full set | Gemini concept, PixelLab | Lab |
+| NPC1 | Ruth Adeyemi (`ruth`, `ruth_phone`) | Tarnside engagement lead; briefing and hint hub; person and phone | New (placeholder `female_office_worker_v2`) | Full set: concept, bust, talk, visemes, 8-direction walk, headshot | Gemini concept, PixelLab | Lab |
+| NPC2 | Gareth Fairbairn (`fairbairn`) | Client MD; one short scene | New (placeholder `male_office_worker_v2`) | Full set | Gemini concept, PixelLab | Lab |
 | NPC3 | Tomasz (`tomasz`) | AccountingNow security lead; triage brief and closing debrief | New (placeholder `male_telecom_v2`) | Full set | Gemini concept, PixelLab | Lab |
 | NPC4 | Dev (`dev`, `dev_service_desk`) | Service desk; the pretext-call target; phone only | New | Bust, talk, visemes, headshot; no walk sprite (10 §8) | Gemini concept, PixelLab | Lab |
-| NPC5 | Chris Hampshire (`hampshire`) | Target 1; email only, no ink, no bar | New | 32x32 headshot (10 §8: an avatar is enough) | PixelLab | Slice |
-| NPC6 | Melanie Pierce (`pierce`) | Target 2; email only; `pierce_mail` | New | Headshot | PixelLab | Lab |
-| NPC7 | Sofia Lord (`lord`) | Target 3; email only; `lord_mail` | New | Headshot | PixelLab | Lab |
-| NPC8 | Jed Baker (`baker`) | Not an NPC; the trusted sender; appears on the team page, profiles and sender cards | New | Headshot | PixelLab | Lab |
+| NPC5 | Chris Hampshire (`hampshire`) | Target 1; email only, no ink, no bar | New | 32x32 headshot only, made at that size; a headshot asset id, no sprite key (10 §8, 02 N6) | PixelLab | Slice |
+| NPC6 | Melanie Pierce (`pierce`) | Target 2; email only; `pierce_mail` | New | 32x32 headshot only | PixelLab | Lab |
+| NPC7 | Sofia Lord (`lord`) | Target 3; email only; `lord_mail` | New | 32x32 headshot only | PixelLab | Lab |
+| NPC8 | Jed Baker (`baker`) | Not an NPC; the trusted sender; appears on the team page, profiles and sender cards | New | 32x32 headshot only | PixelLab | Lab |
 | NPC9 | "IT Security" portrait for report replies in triage | 05 Assets | Reuse (Tomasz's headshot) | none | existing | Lab |
 | NPC10 | Senders of the ~6 seeded benign inbox messages | 10 §5 data volume | Reuse (`assets/npc/avatars/npc_*.png`) | none | existing | Slice |
 | NPC11 | Awareness cast, about 10 characters across the roles (supplier contact, finance manager, recruiter, helpdesk caller, executive, PA and others), recurring ones with their own keys | 11 §8 | New | Portraits and busts; walk only where a person sits in a room | Gemini concept, PixelLab | Later |
@@ -90,15 +90,12 @@ and headshot) and swapping later. Placeholder candidates with a full set: `femal
 
 Notes.
 
-- **Name clashes to settle before art.** `gary_whitlock` (m02, the tired IT admin, Gemini voice Charon) already
-  exists, so Gareth Whitlock shares a surname with a shipped character in a different season. `ruth_halloran`
-  (m05) shares a first name with Ruth Adeyemi, and `backgrounds/northgate_hospital.png` and the m02 hospital
-  already use "Northgate". The README says the cast surnames Pierce, Lord and Hampshire stay; Whitlock and
-  Northgate Assurance were not covered. This is a decision for the user, not made here.
-- **Headshot route.** `02` N6 and `03` say each target "needs a sprite key" (existing headshots are cut from a
-  walk sprite), while `10` §8 says an `avatar` is enough because they never walk. The cheapest route is a
-  PixelLab bust at target size and a 32x32 headshot, with no walk sheet. Confirm that route; it changes the
-  count for NPC5 to NPC8 from four walk-sheet characters to four headshots.
+- **Names.** The client MD is Gareth Fairbairn (`fairbairn`) and the consultancy is Tarnside Assurance, chosen so that
+  the lab shares no surname with m02's `gary_whitlock` and avoids the "Northgate" name used by m02 and
+  `backgrounds/northgate_hospital.png`. `ruth_halloran` (m05) shares only a first name with Ruth Adeyemi.
+  AccountingNow and CloudBox are pending with the user.
+- **Headshot route (settled).** Hampshire, Pierce, Lord and Baker are headshot-only (`10` §8, `02` N6): a
+  32x32 headshot made at that size, with a headshot asset id and no sprite key or walk sheet.
 - **Stand-ins that need no art.** `leeds_baker` (the Leeds plumber) and `portal` (the payroll sender) are
   text-only in the plan. The portal's sender chip can use the AccountingNow logo (LOGO1).
 
@@ -113,7 +110,7 @@ that could stand in while the lab's rooms are being dressed: `m01_main_office_ar
 
 | ID | Asset | Used in | Status | Generator | Tier |
 |----|-------|---------|--------|-----------|------|
-| BG1 | Engagement Office POV, 400x400 (Ruth and Whitlock talk here) | 10 §8 | New | Gemini concept, PixelLab | Lab |
+| BG1 | Engagement Office POV, 400x400 (Ruth and Fairbairn talk here) | 10 §8 | New | Gemini concept, PixelLab | Lab |
 | BG2 | Blue Team Room POV, 400x400 (Tomasz) | 10 §8 | New | Gemini concept, PixelLab | Lab |
 | BG3 | Helpdesk office, 400x400, behind Dev's call. 06 allows a plain desk background instead, so `m01_it_room` is the fallback | 06 §8 | New | Gemini concept, PixelLab | Lab |
 | BG4 | Operations Room POV. No person NPC works there (the call is on a phone object), so optional | 10 | New | Gemini concept, PixelLab | Later |
@@ -180,7 +177,7 @@ such as Hunter, theHarvester and Recon-ng appear in text as concept-card labels 
 | ID | Asset | Used in | Status | Generator | Tier |
 |----|-------|---------|--------|-----------|------|
 | LOGO1 | AccountingNow logo, with the builder's logo variants (per 07). Used on the company site, the payroll-page model, the portal sender chip and the favicon | 00 §1; 10 stage 4 | New | PixelLab | Lab |
-| LOGO2 | Northgate Assurance logo (RoE sheet, report, Ruth's signature block) | 10 §3 | New | PixelLab | Lab |
+| LOGO2 | Tarnside Assurance logo (RoE sheet, report, Ruth's signature block) | 10 §3 | New | PixelLab | Lab |
 | LOGO3 | friendface, the invented social network: logo, favicon and a plainly parody layout | 02 (site `friendface.example`) | New | PixelLab | Lab |
 | LOGO4 | Generic sign-in look (neutral layout art for the builder) | README S; 07 | New | PixelLab | Lab |
 | LOGO5 | CloudBox, a second invented builder brand named in the README open questions. Not on the lab's one page, so confirm it is wanted | README open questions | New | PixelLab | Later |
@@ -193,23 +190,22 @@ such as Hunter, theHarvester and Recon-ng appear in text as concept-card labels 
 
 ## 5. Fonts
 
-The bundled readable face is **Atkinson Hyperlegible Next** (Regular and Bold; SIL OFL 1.1; Latin and Cyrillic
-subsets), self-hosted, exposed as `--se-font-readable` in `css/fonts.css`. It is used for every string the
-player reads or compares. Today `public/break_escape/assets/fonts/` holds only `gnf.ttf`, `gnf.woff2`,
-`PressStart2P-Regular.ttf`, `PressStart2P-Regular.woff2`, `press-start-2p.woff2`, `PixelifySans-VF.woff2`,
-`pixl8.png` and `pixl8.xml`. No Atkinson file exists. The font is downloaded from its official release and
-subset with a font tool, not generated. Cyrillic coverage is unverified, so the import acceptance check in
-`00` §6 gates it; Source Sans 3 is the fallback.
+The bundled readable face is **Source Sans 3** (Regular and Bold; SIL OFL 1.1; Latin and Cyrillic), self-hosted,
+exposed as `--se-font-readable` in `css/fonts.css` and used for all social overlay text. It covers every Cyrillic
+letter the confusable map uses (`00` §6). Today `public/break_escape/assets/fonts/` holds only `gnf.ttf`,
+`gnf.woff2`, `PressStart2P-Regular.ttf`, `PressStart2P-Regular.woff2`, `press-start-2p.woff2`,
+`PixelifySans-VF.woff2`, `pixl8.png` and `pixl8.xml`. The files are the per-subset WOFF2 builds as published
+upstream, downloaded and used unmodified (the Reserved Font Name "Source" rules out a subset or edit of our own),
+not generated.
 
 | ID | Asset | Used in | Status | Generator | Tier |
 |----|-------|---------|--------|-----------|------|
-| FONT1 | `AtkinsonHyperlegibleNext-Regular-latin.woff2` (about 40 to 60 KB) | 00 §6; README Fonts | New | font file, subset | Slice |
-| FONT2 | `AtkinsonHyperlegibleNext-Bold-latin.woff2` | 00 §6 | New | font file, subset | Slice |
+| FONT1 | Source Sans 3 Regular, Latin subset WOFF2 | 00 §6; README Fonts | New | upstream font file | Slice |
+| FONT2 | Source Sans 3 Bold, Latin subset WOFF2 | 00 §6 | New | upstream font file | Slice |
 | FONT3 | OFL 1.1 licence text beside the files | 00 §6 | New | font file | Slice |
-| FONT4 | `-Regular-cyrillic.woff2` (U+0400 to U+04FF), for the lab's one homograph example | 00 §6; README X | New | font file, subset | Lab |
-| FONT5 | `-Bold-cyrillic.woff2` | 00 §6 | New | font file, subset | Lab |
-| FONT6 | Source Sans 3 Latin and Cyrillic, only if the Atkinson check fails | 00 §6 | New (contingent) | font file | Later |
-| FONT7 | `GNF` (body chrome), `Press Start 2P` (headings), `PixelifySans` already bundled | README Conventions | Reuse | existing | Slice |
+| FONT4 | Source Sans 3 Regular, Cyrillic subset WOFF2, for the lab's one homograph example | 00 §6; README X | New | upstream font file | Lab |
+| FONT5 | Source Sans 3 Bold, Cyrillic subset WOFF2 | 00 §6 | New | upstream font file | Lab |
+| FONT6 | `GNF` (body chrome), `Press Start 2P` (headings), `PixelifySans` already bundled | README Conventions | Reuse | existing | Slice |
 
 ## 6. Audio
 
@@ -225,7 +221,7 @@ run. Voice names are unique within a mission. Line counts are my estimates, sinc
 | VO2 | Ruth Adeyemi (phone) | Hint hub, three rungs per stage over about 8 stages (`ruth_phone.ink`). 10 §8 says "voice for Ruth" without separating the two stories; confirm hints are voiced | 25 to 30 | New | Gemini TTS | Lab |
 | VO3 | Tomasz | Triage briefing and closing debrief (`tomasz.ink`) | 20 to 25 | New | Gemini TTS | Lab |
 | VO4 | Dev | The pretext call: opening, reactions per held value, grants, wary and refusal lines (`dev_service_desk.ink`) | 25 to 35 | New | Gemini TTS | Lab |
-| VO5 | Gareth Whitlock | One short authorisation scene. Not listed for voice in 10 §8, so text-only unless the user says otherwise | 0 (or 6 to 10) | New (optional) | Gemini TTS | Lab |
+| VO5 | Gareth Fairbairn | One short authorisation scene. Not listed for voice in 10 §8, so text-only unless the user says otherwise | 0 (or 6 to 10) | New (optional) | Gemini TTS | Lab |
 | VO6 | Awareness E3 helpdesk callers (impostors and genuine) | 4 calls | 12 to 24 | New | Gemini TTS | Later |
 | VO7 | Awareness E4 voice note and call from the "executive" | Fixed clips | 2 to 4 | New | Gemini TTS | Later |
 | VO8 | Awareness E7 three voicemails, one "cloned". The cloned clip is a style variant of an in-world voice, never a real person (11 N7, A1) | Fixed clips | 3 to 4 | New | Gemini TTS | Later |
@@ -272,13 +268,12 @@ scenario. The lab authors no credits music (10 §5).
 
 ## 8. Open points for the user
 
-1. Whitlock surname and "Northgate" name clashes with shipped missions (section 2).
-2. Headshot-only route for the three targets and Baker, or full walk sheets (section 2).
-3. Whether Ruth's phone hints are voiced, and whether Whitlock is (section 6a).
-4. Whether the lab gets a theme song (MUS4).
-5. Whether CloudBox is wanted at all (LOGO5).
-6. Gemini TTS and Gemini concept portraits are metered; confirm scope before either runs.
-7. A second pass on `designs/07` is needed to firm up UI22, the logo variants, LOGO4 to LOGO6 and the builder's sprite list.
+1. Whether AccountingNow and CloudBox keep their names (pending with the user).
+2. Whether Ruth's phone hints are voiced, and whether Fairbairn is (section 6a).
+3. Whether the lab gets a theme song (MUS4).
+4. Whether CloudBox is wanted at all (LOGO5).
+5. Gemini TTS and Gemini concept portraits are metered; confirm scope before either runs.
+6. A second pass on `designs/07` is needed to firm up UI22, the logo variants, LOGO4 to LOGO6 and the builder's sprite list.
 
 ## 9. Counts
 
@@ -289,12 +284,12 @@ Counted from the tables above. *Adapt* is reported separately because the new fi
 |------|-----|-------|-------|-------|
 | First slice | 9 | 4 | 8 | 21 |
 | Rest of the lab | 34 | 6 | 18 | 58 |
-| Later | 19 | 1 | 1 | 21 |
-| **All** | **62** | **11** | **27** | **100** |
+| Later | 18 | 1 | 1 | 20 |
+| **All** | **61** | **11** | **27** | **99** |
 
 The Lab "Reuse" figure includes two rows marked "Reuse or New" (SFX7, SFX8), counted as reuse because the
 existing UI sounds are tried first. A further 5 rows are *Hold* (NPC13, BG8, LOGO11, MUS5, MUS6) and sit
-outside the totals. The 100 rows are 17 object sprites, 12 NPC rows, 7 background rows, 24 in-overlay UI rows,
-11 logo and brand rows, 7 font files, 8 voice groups, 11 sound effects and 4 music rows. Characters to make
-(section 2): 8 for the lab (Ruth, Whitlock, Tomasz, Dev as full or voice-and-bust sets; Hampshire, Pierce,
+outside the totals. The 99 rows are 17 object sprites, 12 NPC rows, 7 background rows, 24 in-overlay UI rows,
+11 logo and brand rows, 6 font rows, 8 voice groups, 11 sound effects and 4 music rows. Characters to make
+(section 2): 8 for the lab (Ruth, Fairbairn, Tomasz, Dev as full or voice-and-bust sets; Hampshire, Pierce,
 Lord, Baker as headshots), about 11 for awareness, none yet for Eldritch Hacker.

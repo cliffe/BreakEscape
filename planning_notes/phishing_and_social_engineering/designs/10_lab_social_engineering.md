@@ -63,15 +63,15 @@ side and show the company how they should have caught me."
 
 ### Setting and cast (fictional throughout)
 
-The student plays a junior consultant at **Northgate Assurance**, a security consultancy, on a
+The student plays a junior consultant at **Tarnside Assurance**, a security consultancy, on a
 contracted engagement for **AccountingNow Ltd**, a 40-person accountancy software firm. Both are
 invented; every person, domain (`accountingnow.example`) and profile is fictional, and no real staff
 are profiled. Cast ids follow `00` §1.
 
 | Who | Role in the lab | How the student meets them |
 |-----|-----------------|----------------------------|
-| **Ruth Adeyemi** | Northgate engagement lead: briefs, hands over keys, runs the support hub (progress-gated, as Agent HaX is in Licence to Hack) | Person NPC in the Engagement Office (`ruth`); phone contact `ruth_phone` for hints from any room |
-| **Gareth Whitlock** | AccountingNow managing director, the signing client | Person NPC in the Engagement Office, one short scene once the sheet is signed |
+| **Ruth Adeyemi** | Tarnside engagement lead: briefs, hands over keys, runs the support hub (progress-gated, as Agent HaX is in Licence to Hack) | Person NPC in the Engagement Office (`ruth`); phone contact `ruth_phone` for hints from any room |
+| **Gareth Fairbairn** | AccountingNow managing director, the signing client | Person NPC in the Engagement Office, one short scene once the sheet is signed |
 | **Chris Hampshire** (`hampshire`, Careers/HR) | Target 1, easy: the open `careers@` inbox accepts CVs from anyone | Email only; data-only target (no `character`, no ink story): the reply is a text job from the target's authored `replies` |
 | **Melanie Pierce** (`pierce`, finance, new starter) | Target 2, medium: trusts colleague Jed Baker, primed for a Friday balance sheet (the worked example in 04) | Email only; `character: pierce`, mail story `pierce_mail` |
 | **Sofia Lord** (`lord`, intern) | Target 3, hard: new to the firm, uses the staff payroll portal, cautious about links | Email only; `character: lord`, mail story `lord_mail` |
@@ -92,7 +92,7 @@ re-read the board at any time.
 
 | Room | Contents | Component |
 |------|----------|-----------|
-| **Engagement Office** (start, hub) | Ruth; Whitlock; three `case-file` objects, one per board mode: the **Rules of Engagement** sheet on the desk (`scope`), the **planning whiteboard** (`plan`) and the **case-file board** (`recon`); the report workstation | 03 board; report builder |
+| **Engagement Office** (start, hub) | Ruth; Fairbairn; three `case-file` objects, one per board mode: the **Rules of Engagement** sheet on the desk (`scope`), the **planning whiteboard** (`plan`) and the **case-file board** (`recon`); the report workstation | 03 board; report builder |
 | **Recon Room** | OSINT workstation | 02 |
 | **Operations Room** | **Mail workstation** (`mail_terminal`); **page-builder workstation**; a **desk phone** | 01 (+04); 07; 06 |
 | **Blue Team Room** | **Triage workstation**; the SOC board (`case-file`, `defender` mode); Tomasz | 05; 03 |
@@ -123,7 +123,7 @@ deterministic feedback:
   compromise or a real person in distress?" A question card with one right answer (stop and call the
   emergency contact on the sheet) and a reason for each wrong one.
 
-When both steps are done the mode sets `roe_signed`, Whitlock's authorisation is "signed", and the
+When both steps are done the mode sets `roe_signed`, Fairbairn's authorisation is "signed", and the
 rule is stated once, plainly: "The same actions without this sheet are offences (the Computer Misuse
 Act 1990 in the UK, and equivalent laws elsewhere)." **This beat is the ethics gate (book Ch. 2);
 it is the first aim and cannot be skipped.**
@@ -294,8 +294,8 @@ the mail client offers is the payload-kit item `kit_payroll_page`, and only for 
 and never for Hampshire or Pierce.
 
 If Sofia signs in on a page that meets its threshold and her email landed, the mail client adds the page's
-authored note to the notes: Sofia's staff portal username and password, captured. The note holds no password
-value (`07` §5, N11). Nothing in the lab depends on it, because
+authored note to the notes: a note that Sofia's staff portal sign-in was captured (the account name only; no
+password value; `07` §5, N11). Nothing in the lab depends on it, because
 the lab ships no found accounts (`00` §10a).
 
 The page does not depend on the call, and the call does not change the page's score: 07 reads no
@@ -394,9 +394,9 @@ keep:
   failed send is a chance for a member of staff to report you". The reply received is the landed
   outcome; the lab records no "opened" or "clicked" for mail.
 - **Page.** From the persisted page record `se_landing_pages.payroll_login.victim` (`00` §11a, 07
-  step 5), written for every send with a page attached, landed or not (a below-threshold page reads visited and
-  noticed): the three booleans are shown as "Visited: yes · Submitted: yes (simulated) · Noticed: no".
-  They are a best-outcome flag, not a count of visits. The record keeps its best outcome, so a later
+  step 5), written for every send with a page attached, landed or not (a below-threshold page reads visited, not
+  submitted): the line reads "Visited: yes · Submitted: yes (simulated)", the same two outcomes as the
+  builder's metrics line (`07` §5). They are a best-outcome flag, not a count of visits. The record keeps its best outcome, so a later
   send that does not land never erases an earlier success; the report reads the same. If `victim` is
   absent (no send has carried the page) the panel says "no page sent".
 - **Call.** From the pretext globals: whether any ask was granted (`pretext_call_done`), whether Dev
@@ -517,7 +517,7 @@ the slack, and the cut order below is applied if the playtest runs long.
 
 | Stage | Minutes | What is in it |
 |-------|--------:|---------------|
-| 0 Authorisation | 5 | Brief, five scope cards, one stop-rule question, Whitlock's line |
+| 0 Authorisation | 5 | Brief, five scope cards, one stop-rule question, Fairbairn's line |
 | 1 Scope & plan | 4 | Objective and measure picks |
 | 2 OSINT | 10 | Team page, Hunter lookup, name search, three social profiles, the document's properties panel, the archived chart; 11 facts |
 | 3 Phish rounds 1 and 2 | 11 | Freemail account (1), Hampshire (3), Pierce (7) with two to three attempts each; the 15-second reply waits overlap with reading the checklist |
@@ -593,7 +593,7 @@ global per step and a block global when every step is done (`00` §11, "Engageme
 | Aim | Task (type) | Completes on | Hand-over or unlock |
 |-----|-------------|--------------|---------------------|
 | `authorise` | `scope_cards` (`manual`) | `roe_scope_done` | |
-| | `stop_rule` (`manual`) | `roe_stoprule_done` | `roe_signed` (block): Whitlock's scene |
+| | `stop_rule` (`manual`) | `roe_stoprule_done` | `roe_signed` (block): Fairbairn's scene |
 | `plan` | `pick_objectives` (`manual`) | `plan_objective_done` | |
 | | `pick_measures` (`manual`) | `plan_measures_done` | `plan_done` (block): Recon key |
 | `recon` | `enter_recon` (`enter_room`) | entering the room | |
@@ -605,7 +605,7 @@ global per step and a block global when every step is done (`00` §11, "Engageme
 | `phish_easy` | `enter_operations` (`enter_room`) | entering the room | |
 | | `hampshire_landed` (`manual`) | `phish_hampshire_landed` | |
 | | `pierce_landed` (`manual`) | `phish_pierce_landed` | |
-| `prepare_hard` | `landing_page_built` (`manual`) | `landing_payroll_login_built` | |
+| `prepare_hard` | `payroll_page_attached` (`manual`; the host mapping on `global_variable_changed:landing_payroll_login_built` runs `completeTask`) | `landing_payroll_login_built` | |
 | | `call_dev` (`manual`) | `pretext_call_done` | aim ends when both are done, either order |
 | `phish_hard` | `lord_landed` (`manual`) | `phish_lord_landed` | |
 | `report` | `results_reviewed` (`manual`) | `report_results_done` | |
@@ -627,7 +627,7 @@ writer (`00` S3).
 
 | Global | Set by | Read by |
 |--------|--------|---------|
-| `roe_scope_done`, `roe_stoprule_done`, `roe_signed` | the `scope` mode (03) | `authorise` tasks, Ruth, Whitlock |
+| `roe_scope_done`, `roe_stoprule_done`, `roe_signed` | the `scope` mode (03) | `authorise` tasks, Ruth, Fairbairn |
 | `plan_objective_done`, `plan_measures_done`, `plan_done` | the `plan` mode | `plan` tasks, Ruth |
 | `profile_done` | the `defender` mode (no steps) | the `defend` task, Tomasz (his debrief needs this and `triage_pass`) |
 | `report_results_done`, `report_findings_done`, `report_filed` | the report builder (N1) | `report` tasks, Ruth |
@@ -700,7 +700,7 @@ explained and re-done, so a student can finish with mistakes made on the way.
 | 1 scope & law | `scope_cards`, `stop_rule` |
 | 2, 3 OSINT | `email_pattern_found`, `metadata_read`, `ready_hampshire`, `ready_pierce`, `ready_lord` |
 | 4 spear-phish | `hampshire_landed`, `pierce_landed`, `lord_landed` |
-| 5 landing page | `lord_landed` (needs a page that meets the threshold, because `linkCredible` is required); `landing_page_built` records only that a page was attached, since "attach anyway" is allowed below the threshold |
+| 5 landing page | `lord_landed` (needs a page that meets the threshold, because `linkCredible` is required); `landing_payroll_login_built` (task `payroll_page_attached`) records only that a page was attached, since "attach anyway" is allowed below the threshold |
 | 6 pretext | `call_dev` |
 | 7 reporting | `results_reviewed`, `findings_paired`, `pick_objectives`, `pick_measures` |
 | 8 authentication | `triage_passed` (a round at or above the pass mark; a failed round is re-run) |
@@ -791,7 +791,7 @@ The three characters are the table in `00` §8 ("Characters of the student lab")
 Pierce and Lord are reachable only by mail and are on the critical path, so they have no `refuses`,
 `reports` or `lockout`, and the -40 floor means failed sends (-10 each) only move the bar. Dev is the
 only lab character with a lockout, and it sits on `reports` so that a forced report lifts too. Hampshire
-has no character entry (no ink story, no bar). Ruth, Whitlock and Tomasz are ordinary story NPCs with
+has no character entry (no ink story, no bar). Ruth, Fairbairn and Tomasz are ordinary story NPCs with
 no entry and no bar. No lab character uses `combatHostile`.
 
 ### Object types (wiring checklist)
@@ -834,7 +834,7 @@ VARs, `00` §10; each declares its `se_intel_*` and synced VARs, `00` §5, §9):
 |------|---------|---------|
 | `ruth.ink` | person | Briefing, key hand-overs (`#give_item`), stage check-ins that re-issue `#complete_task` for completed steps, debrief on the report |
 | `ruth_phone.ink` | phone | Hint hub: three rungs per stage, gated on progress globals |
-| `whitlock.ink` | person | The short authorisation scene |
+| `fairbairn.ink` | person | The short authorisation scene |
 | `tomasz.ink` | person | Triage briefing and the closing debrief |
 | `dev_service_desk.ink` | phone | The pretext call (06 §4.8), `pretext_say` and `pretext_ask` |
 | `pierce_mail.ink` | email, headless | `on_email`: Pierce's reply and influence changes |
@@ -851,7 +851,7 @@ Hampshire's reply is a text job from her target's authored `replies` (no ink sto
   "roe": {
     "inScope":  [ "work email to named staff", "published service-desk phone line", "public OSINT" ],
     "outScope": [ "personal accounts", "physical entry", "real customers", "denial of service" ],
-    "stopContact": "Ruth Adeyemi, Northgate duty line"
+    "stopContact": "Ruth Adeyemi, Tarnside duty line"
   },
   "scope": {
     "onCompleteGlobal": "roe_signed",
@@ -937,7 +937,7 @@ Every value below is settled in `00`; 10 builds on it and cites the section.
 
 | Doc | What the lab uses | Settled in |
 |-----|-------------------|------------|
-| `00` | Facts and `provides` (including `old_org_chart`, `baker_namesake`, the portal sender, Lord's greeting forms), readiness and `osint_done`, characters, `createMenu`, sent record and `mailState.metrics`, pointers, engagement mode blocks, Atkinson Hyperlegible Next | §1, §4, §8, §10a, §11, §13 |
+| `00` | Facts and `provides` (including `old_org_chart`, `baker_namesake`, the portal sender, Lord's greeting forms), readiness and `osint_done`, characters, `createMenu`, sent record and `mailState.metrics`, pointers, engagement mode blocks, Source Sans 3 | §1, §4, §8, §10a, §11, §13 |
 | `01` | Accounts `guest` and `freemail`; the fixed `from_own` template; text-job replies for Hampshire; `kit_payroll_page`; per-target `phish_<id>_attempts` | `00` §10, §10a, §11a |
 | `02` | Hunter result `r_pattern` grants `email_pattern`; the field-selection panel grants `username_convention`; the J. Baker search keeps its ambiguous result; the archived chart `org_old_chart` grants `old_org_chart`; no typed input | `00` §1; 02 "Picked lookups" |
 | `03` | Four modes by `minigameData.mode`, one object per mode; mode blocks with `onCompleteGlobal`; question cards; defender mode has no indicators step unless authored | `00` §11 |
@@ -957,10 +957,10 @@ Every value below is settled in `00`; 10 builds on it and cites the section.
 | N5 | Door and key gating use existing locks and `#give_item`; **no new engine work** | Key locks and the key items both carry `keyPins`; the key items also carry `opens_lock`. Ruth's phone is a starting item (`startItemsInInventory`, `npcIds: ["ruth_phone"]`) |
 | N6 | Non-VM mission configuration: `secgen_scenario: null` and the new `collection` label `lab_games`. `lab_tesseract_trials` is the same kind of game, so its `mission.json` moves to `lab_games` too (a one-line content change). The three Tesseract documents that name `escape_room` (`DESIGN.md`, Q10; `SOLUTION_GUIDE.md`; `ALIGNMENT_PLAN.md`) are updated to match, and `db:seed` is re-run on deployed instances so the stored label changes | `Mission#requires_vms?` already supports it; `db/seeds.rb` lines 67 to 71 read `secgen_scenario` and `collection`; the missions index builds its filter and headings from `Mission.collections` and titleizes the label (`app/views/break_escape/missions/index.html.erb`, lines 114 to 125), so it shows as "Lab Games" with no code change |
 | N7 | **Validator work** (`scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `scripts/minigame-data-schemas.json`) | `known_top_level` (lines 246 to 251) gains `social`; `known_npc_fields` and `known_behavior_fields` gain only what 00 §8 and §9 add; `minigame-data-schemas.json` gains an entry per object type in the table above; each type needs its `assets/objects/<type>.png` sprite; every `engagement` item with a `correct` or `good` flag carries a `why`; every completing global in the objectives table is declared; the promised lints from 00 §12 S11, 04 N3, 05 N5, 06 N10 and 07 |
-| N8 | **Ink externals** (`se_influence`, `pretext_say`, `pretext_ask`) bind in `InkEngine` (`00` S1) | The authoring guide says "use synced-global `VAR`s, not `EXTERNAL` functions" because the engine binds only six read-only externals and an unbound one throws (`ink-engine.js` catches only the bind failure). When S1 lands, amend that rule in `README_scenario_design.md`. Also needed: bind in person-chat, phone-chat and the headless mail runner; add stubs to `scripts/ink_runtime_check/voicelines.mjs`, `inkcheck.js` and `reopencheck.mjs`; a validator rule that every `EXTERNAL` a story declares is bound for every channel the character supports |
+| N8 | **Ink externals** (`se_influence`, `pretext_say`, `pretext_ask`): `InkEngine.loadStory` turns on `allowExternalFunctionFallbacks` and each external has an ink-side fallback function (`00` S1) | The authoring guide says "use synced-global `VAR`s, not `EXTERNAL` functions" because the engine binds only six read-only externals and an unbound one throws (`ink-engine.js` catches only the bind failure). When S1 lands, amend that rule in `README_scenario_design.md` to "an `EXTERNAL` needs an ink fallback function". Also needed: the pretext session and the headless mail runner bind the real functions; the ink tooling (`scripts/ink_runtime_check/voicelines.mjs`, `inkcheck.js`, `reopencheck.mjs`) sets the same flag; a lint rule that every `EXTERNAL` a social story declares has a fallback function |
 
 The other engine items the lab depends on (S1 to S14 in `00` §12, the OSINT, board, mail, pretext,
-triage and landing-page work in 01 to 07, the bundled Atkinson Hyperlegible Next font) are in the README's
+triage and landing-page work in 01 to 07, the bundled Source Sans 3 font) are in the README's
 consolidated table. Nothing here needs a VM, the flag-station or the vm-launcher.
 
 ## 7. Reuse and tuning
@@ -981,17 +981,18 @@ consolidated table. Nothing here needs a VM, the flag-station or the vm-launcher
 ## 8. Assets (PixelLab-first, none generated now)
 
 - Characters needing the full set (sprite, 400x400 chat background, `spriteTalk`, `spriteVisemes`,
-  `avatar`, per the v2 sheet rule in `README_scenario_design.md`): Ruth, Whitlock, Tomasz, and Dev
+  `avatar`, per the v2 sheet rule in `README_scenario_design.md`): Ruth, Fairbairn, Tomasz, and Dev
   (phone only, so portrait and visemes with no walk sprite). Targets Chris Hampshire, Melanie Pierce
-  and Sofia Lord speak only in email text, so an `avatar` is enough for the board cards and reply
-  headers; they do not walk. Vary ethnicity and age across the cast (standing preference).
+  and Sofia Lord speak only in email text, and Jed Baker appears only on pages and sender cards, so all
+  four are headshot-only: a 32x32 headshot (the `avatar`) made at that size, with a headshot asset id and
+  no sprite key or walk sheet, for the board cards, OSINT pages and reply headers (`02` N6). Vary ethnicity and age across the cast (standing preference).
 - Rooms: Engagement Office, Recon Room, Operations Room, Blue Team Room; orthogonal top-down props:
   desk, workstation, whiteboard/board, desk phone, SOC wall of screens.
 - Object sprites, one per new type (`case-file`, `osint-workstation`, `mail_terminal`, `page-builder`,
   `report-workstation`, `triage-workstation`), plus item sprites: RoE sheet, three keys (Recon,
   Operations, Blue Team).
 - UI art owned by 01, 02, 03, 05, 07; this doc adds only the report panel (results table, finding
-  cards, tick and cross). All text the player reads or compares uses Atkinson Hyperlegible Next (`00` §6), whose Latin and Cyrillic subsets let the homograph option in the domain menu show as typed, with the punycode form as a teaching contrast.
+  cards, tick and cross). All text the player reads or compares uses Source Sans 3 (`00` §6), whose Latin and Cyrillic subsets let the homograph option in the domain menu show as typed, with the punycode form as a teaching contrast.
 - Audio: voice for Ruth, Dev and Tomasz, fixed lines only (the TTS cache is keyed on text, so no
   printed variables in a voiced line; Dev's reactions are fixed strings per held value, 06 §4.4).
   Music reuses an existing office track.

@@ -335,12 +335,12 @@ browser. The composer (`01`) does not open the board at all; it reads the `se_in
 | # | Item | Where in code |
 |---|------|---------------|
 | N1 | `osint-browser` overlay: sites strip, display-only address bar, page renderer (company, social, document, tools), selectable blocks, properties panel, profile-level `showIf`, the shared concept-card renderer (also used by `07` N7), own Close control, `requiresKeyboardInput: true`. The wiring checklist above | new `minigames/osint-browser/`; `index.js`; `minigame-starters.js`; `systems/interactions.js`; `show.html.erb` |
-| N2 | `grantFact(id)`: shared writer (`00` S3), note, sync, flip-only, then `evaluateReadiness` (sets `target_ready_<id>`, `osint_done`); used by 02 and by `06` grants | new `systems/social-intel.js`; `systems/apply-actions.js` `set_global`; `notes-minigame.js` `window.addNote` (unique note ids: timestamp plus counter). Unit test file `test/js/social-intel.test.mjs` (grant flip-only behaviour, naming rule, readiness), run by the CI glob in `07` N6 |
+| N2 | `grantFact(id)`: shared writer (`00` S3), note, sync, flip-only, then `evaluateReadiness` (sets `target_ready_<id>`, `osint_done`); used by 02 and by `06` grants | new `systems/social-intel.js`; `systems/apply-actions.js` `set_global`; `notes-minigame.js` `window.addNote` (unique note ids: timestamp plus counter). Unit test file `test/js/social-intel.test.mjs` (grant flip-only behaviour, naming rule, readiness), run by the CI glob that `00` S11 owns |
 | N3 | Document properties view with selectable fields | in N1 |
 | N4 | Tools panel: picked lookups with `unlockedBy`, decoy entries, result blocks | in N1 |
 | N5 | Close as a normal exit, own Close control and Escape, nested launch to the case file with return-to (`00` S12) | `minigames/framework/base-minigame.js` (`disableClose`), `minigame-manager.js` |
-| N6 | Cast headshots: each of `pierce`, `baker`, `hampshire`, `lord` needs a sprite key and a `<key>_headshot.png` (32x32). A headshot-to-`<key>_talk.png` fallback for profile images does not exist (`person-chat-portraits.js:913-916` falls back the other way, `_talk` to `_headshot`), so either every key ships a headshot or the reverse fallback is new work here. Site images live under `assets/osint/<scenario>/` | `public/break_escape/assets/characters/`; path built as in `ui/hud.js`; `person-chat-portraits.js` |
-| N7 | Bundle Atkinson Hyperlegible Next, Latin and Cyrillic subsets, after the import check (`00` §6) and apply `--se-font-readable` to every string the browser shows that holds a domain, address, handle, file name or metadata field, wherever it appears (address bar, tools-panel labels such as "Hunter lookup: accountingnow.example", result lines, notes, confirmations); authored domains rendered raw | `public/break_escape/assets/fonts/`; `css/fonts.css`; `utils/display-dashes.js` bypass |
+| N6 | Cast headshots: `pierce`, `baker`, `hampshire` and `lord` are headshot-only (`10` §8: they never walk), so none needs a sprite key or walk sheet; each has a headshot asset id, the `<id>` of a 32x32 `<id>_headshot.png` made at that size. A headshot-to-`<key>_talk.png` fallback for profile images does not exist (`person-chat-portraits.js:913-916` falls back the other way, `_talk` to `_headshot`), so either every key ships a headshot or the reverse fallback is new work here. Site images live under `assets/osint/<scenario>/` | `public/break_escape/assets/characters/`; path built as in `ui/hud.js`; `person-chat-portraits.js` |
+| N7 | Bundle Source Sans 3, the upstream Latin and Cyrillic subset files, unmodified, with the OFL text (`00` §6), and apply `--se-font-readable` to every string the browser shows that holds a domain, address, handle, file name or metadata field, wherever it appears (address bar, tools-panel labels such as "Hunter lookup: accountingnow.example", result lines, notes, confirmations); authored domains rendered raw | `public/break_escape/assets/fonts/`; `css/fonts.css`; `utils/display-dashes.js` bypass |
 | N8 | Validator: every fact (bar the call-granted ones, and bar the mail-highlight-granted ones, which `01` N18 checks: each is granted by exactly one highlight whose id equals the fact's `source`) is granted by exactly one element and each `source` equals that element's id; every `fact` and `showIf` resolves; every `unlockedBy` is `{ visited }` (a site id or `siteId.pageId` that exists) or `{ fact }` (a declared fact id); every `card` id is in `social.conceptCards`; every `se_intel_*` declared; `se_osint_state` declared with default `{}`; every field on the single lint field list in `00` §11 that this block authors (`sites[].url`, staff-block and contact `address` values, `provides` `address` values) passes the lint rules in `07` §1 and N6 (host-only `.example`, ASCII, denylist); this item does not restate the field list or the rules, and the raw-label brand-word allowlist does not apply to site urls; `social.osint` schema and the `minigameData` entry | `scripts/validate_scenario.rb` (`known_top_level`); `scripts/scenario-schema.json`; `scripts/minigame-data-schemas.json` (S11) |
 | N9 | Tests: the address-bar formatter (a pure function) returns the authored host as typed, with `--` (an `xn--` label) and any non-ASCII letter unchanged and never converted either way; clicking a page link leaves `window.location` unchanged and switches the displayed page (needs the DOM that `07` N3 supplies with `jsdom`). Both live in `test/js/social-osint-address-bar.test.mjs` and are run by the CI step in `00` S11 and `07` N6 (`bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs`) | `test/js/`; named in the CI step's `social-*` glob (`07` N6) |
 
@@ -375,9 +375,11 @@ browser. The composer (`01`) does not open the board at all; it reads the `se_in
 - Browser chrome, page layouts and a profile template as pixel UI (PixelLab-first, none generated yet);
   small favicons per site; a properties-panel frame.
 - Staff and profile pictures: the existing headshot pipeline (32x32 `<key>_headshot.png`, shown at integer
-  scale with `image-rendering: pixelated`). The cast are new characters, so each needs its own sprite key,
-  including `baker`, who is not an NPC but appears on profiles and sender cards. Headshots are cut from the
-  walk sprite and can be stale, so check each after art changes.
+  scale with `image-rendering: pixelated`). The four targets (`pierce`, `baker`, `hampshire`, `lord`) are
+  headshot-only: each has its own headshot asset id and no sprite key or walk sheet, `baker` included, who
+  is not an NPC but appears on profiles and sender cards. Their headshots are made at 32x32. A character
+  that does have a walk sprite has its headshot cut from it, which can go stale, so check each after art
+  changes.
 
 ## Visual style
 
@@ -387,8 +389,8 @@ browser. The composer (`01`) does not open the board at all; it reads the `se_in
 - In-world pictures (logos, banners, product photos, headshots) are pixel art.
 - Text the player must read or compare is **inert DOM text in a readable sans-serif, not a pixel font**:
   the address bar, document metadata, bios, posts, body text, and any tools-panel label or result line
-  that contains a domain, address or handle. The face is Atkinson Hyperlegible Next (`00` §6, N7), which keeps
-  `l`, `I`, `1` and `rn`/`m` apart; the game's own fonts (`GNF`, `Press Start 2P`) stay on chrome labels
+  that contains a domain, address or handle. The face is Source Sans 3 (`00` §6, N7), whose tailed `l` keeps
+  `l`, `I` and `1` apart and which keeps `rn` and `m` distinct; the game's own fonts (`GNF`, `Press Start 2P`) stay on chrome labels
   and headings with no such string. Without a bundled face the text would take whatever the player's
   operating system supplies and look-alike domains would not behave as in a real browser. The bundled face covers Latin and Cyrillic (`00` §6), so a look-alike host the address bar is given (the lab's homograph reaches it through the page links of `07`, not through `sites[].url`, which stays ASCII under the lint) draws as typed; the punycode form may sit beside it as a teaching contrast.
 - Real tools (CyberChef, a terminal) keep their own real look.

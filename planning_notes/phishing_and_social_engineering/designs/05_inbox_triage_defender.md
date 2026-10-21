@@ -634,7 +634,7 @@ analyst round. `result`:
 **Bridging to globals and objectives.** The starter's `onComplete` writes `<prefix>percent`,
 `<prefix>reportRate`, `<prefix>done` and `<prefix>pass` through the shared writer (`00` S3, which
 `applyActions` `set_global` uses; the prefix is the set's `outcome.setGlobalPrefix` with `{stage}`
-replaced by the effective stage). Four rules:
+replaced by the effective stage). Five rules:
 
 - **Sync, then emit.** The starter calls the writer with `deferEmit` (the S3 option that updates
   `gameState.globalVariables` without emitting `global_variable_changed`), awaits
@@ -642,15 +642,18 @@ replaced by the effective stage). Four rules:
   names (only those whose value changed, as `deferEmit` returns pending events for changed values only; `00` S3) and its done event, last (`00` §11). The server copy of `globalVariables` is therefore current
   before any `eventMappings` entry fires a task POST, so a `concludeRequires` keyed on
   `<prefix>done` or `<prefix>pass` finds it met. The await applies to every set, not only check sets.
-  `sync()` resolves even when the PUT fails or the server answers `{ stale: true }`, so the starter does
-  not use it. `syncConfirmed()` (`00` S3) goes through the same single-flight queue as `sync()` and
-  re-issues the PUT with a fresh `clientTs` until the server accepts it; it resolves `true` at once when
-  there is nothing left to send. While it is retrying, the result screen
-  shows a "Saving your result..." notice and the done event is held; nothing is emitted until a sync is
-  confirmed. If the player is offline or the server keeps refusing, the notice stays and the retries
-  continue in the background, so the task completes late rather than never. The limitation: a player
-  who closes the tab during the retries loses the unsent result, and the shell concludes only on
-  the next completed round.
+  `sync()` resolves the same way whether the PUT succeeded, failed or was answered `{ stale: true }`, so
+  the starter does not use it. `syncConfirmed()` (`00` S3) goes through the same single-flight queue as
+  `sync()` and re-issues the PUT with a fresh `clientTs`, with back-off and a capped number of attempts;
+  it resolves `true` at once when there is nothing left to send, and a 403 refusal ends it at once. While
+  it is retrying, the result screen shows a "Saving your result..." notice and the done event is held;
+  nothing is emitted until a sync is confirmed. If the connection never comes back, or the attempts run
+  out, nothing is emitted and the task stays incomplete until the player reopens the round (`00` §11).
+- **Reopen re-emits.** The 30 s timer or the `pagehide` flush may already have carried `<prefix>done` to
+  the server when the tab closed. So when the first-attempt guard finds `<prefix>done` true (N6), the
+  starter also checks the conclusion task named in its `conclusionTaskId` param; if that task is not
+  `completed`, it awaits `syncConfirmed()` and re-emits the done events. Completion is idempotent on the
+  client and the server (`00` §11 "Reopen re-emits").
 
 - **`<prefix>done` means the round was completed, at any score**, and is what the pre/post
   first-attempt guard reads (N6). **`<prefix>pass` means `percent >= outcome.passPercent`.** A task or
@@ -689,7 +692,7 @@ awards a lab flag for finishing, it goes through `POST /games/:id/flags`
 | N3 | Import 00 §2's factor library and canonical red-flag strings (including `senderAuth` and the channel tells) through the same resolution rule `04`/`01` use (per-target `factorStrings` override, else canonical, never null). 05 adds only the chip label tables | No `04` schema change needed: `senderAuth` is already the shared factor in 00 §2 |
 | N4 | `triage-scoring.js` pure scorer and its unit tests in `test/js/social-triage-scoring.test.mjs` (named so the CI glob in `00` S11 runs them; the worked example is test case one) | No framework deps |
 | N5 | Scenario validator checks: the `stage` launch parameter only with a `{stage}` prefix, `call` messages only in `awareness` sets with `verifyVerdict` and `push` messages only in `awareness` sets, `playerSentAuth` placeholders limited to `{account_address}` and `{domain}`, `<setGlobalPrefix>` names treated as written (so an `exportGlobals` entry for them raises no "never written" warning), the four `<prefix>` globals declared only for the stage the mission's kiosk launches and any name the mission imports (`importGlobals`) skipped, so an import never collides with an own declaration, `passPercent: 0` accepted on a check set (and the non-zero-`passPercent` warning on a `<prefix>done` task applying to the other sets), parallel-form balance (counts per factor and per truth, skipping `playerSent`), non-empty authored strings, every phish message has `perFlagNote` per flag and at least one flag, `truth.flags` ids exist in 00 §2's factor library or enabled channel tells, `playerSentAuth` has a row for every account id and for every id in `07`'s domain menu, `domainFrom` appears only on `playerSent` entries, a set has no `mailbox` field | Extends the validator (`00` S11); lint like `04` N3 |
-| N6 | Result persistence and the **first-attempt guard**: on completion the starter writes `<prefix>percent`, `<prefix>reportRate`, `<prefix>done`, `<prefix>pass` as globals through the shared writer (S3). Globals persist across reload (the writer patches `gameState.globalVariables`; serialised by `state-sync.js` and restored in `core/game.js`'s saved-globals restore, with saved values taking precedence; `00` §5). The writes use `deferEmit`, then the starter awaits `window.stateSync.syncConfirmed()`, which retries until the server confirms (S3 makes `_syncOnce` report success), before emitting the changed `global_variable_changed` events and its done event (see "Bridging"). Before starting a `pre` or `post` set the starter checks `<prefix>done`: if true, it opens a read-only result screen built from the stored globals (the headline band from `percent`, and the report rate); no replay, nothing overwritten. Per-message answers, `perFactor`, `answers[].ms` and the review cards are not stored and are not shown on the reopen; training and mission sets skip the check | Needs the S3 `deferEmit` option and the confirmed-sync result from `_syncOnce` (`00` S3). The awareness product still needs a server-side record for anything richer (OQ1) |
+| N6 | Result persistence and the **first-attempt guard**: on completion the starter writes `<prefix>percent`, `<prefix>reportRate`, `<prefix>done`, `<prefix>pass` as globals through the shared writer (S3). Globals persist across reload (the writer patches `gameState.globalVariables`; serialised by `state-sync.js` and restored in `core/game.js`'s saved-globals restore, with saved values taking precedence; `00` §5). The writes use `deferEmit`, then the starter awaits `window.stateSync.syncConfirmed()`, which retries with back-off up to a capped number of attempts (a 403 is final) (S3 changes `_syncOnce`, which returns `undefined` on every path today, to return `true` or `false`), before emitting the changed `global_variable_changed` events and its done event (see "Bridging"). Before starting a `pre` or `post` set the starter checks `<prefix>done`: if true, it opens a read-only result screen built from the stored globals (the headline band from `percent`, and the report rate); no replay, nothing overwritten. On that reopen, if the shell's conclusion task (`conclusionTaskId`) is not `completed`, the starter awaits `syncConfirmed()` and re-emits the done events, so a round whose done global reached the server through the timer or `pagehide` flush before the tab closed still completes its task (`00` §11 "Reopen re-emits"); a test reloads with `done` on the server and the task incomplete and checks the task completes once. Per-message answers, `perFactor`, `answers[].ms` and the review cards are not stored and are not shown on the reopen; training and mission sets skip the check | Needs the S3 `deferEmit` option and the boolean `_syncOnce` result behind `syncConfirmed()` (`00` S3). The awareness product still needs a server-side record for anything richer (OQ1) |
 | N7 | Starter `startInboxTriageMinigame` in `systems/minigame-starters.js` (with the `stage` parameter and `answers[].ms`), plus the rest of the wiring checklist above | Modelled on `startSiemMinigame` |
 | N8 | `scoringProfile` support in `triage-scoring.js`: the two profiles in "Scoring profiles", with a test for each using the worked example (68% analyst, 86% awareness) | Pure function |
 | N9 | `playerSent` message kind: reads the latest persisted sent record to the target whose `tells` include `senderTrust` or `senderAuth` (else the latest with any tell), from any mailbox (`01` N12, `00` §10a: `fromAccount`, `tells`, `link`, `attachment`, rendered `body`), takes `truth.flags` from stored `EvalResult.tells`, the `playerSentAuth` literal table and `domainFrom` substitution, with the page-less case above | — |

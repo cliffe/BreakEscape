@@ -74,9 +74,9 @@ canonical **pass and fail lines** are in `00` §2, imported by both this engine 
 - **`urgencyCalibrated` is advisory only.** Overdone urgency does not fail a send (real heavy-urgency
   phishing still lands). Urgency is a tell the defender reads and an advisory note to the attacker.
 
-**Strictness of the coherence gate.** The gate that decides whether a message hangs together (the open check
-and `pretextRelevant`: sender, subject and pretext facts agree) starts lenient: `minDistinct: 1`, any one
-distinctive value counts, and a target's hard settings are raised only by authored values. The settings
+**Strictness of the coherence gate.** The only strictness setting is `pretextRelevant`'s `minDistinct`, and it
+starts lenient: `minDistinct: 1`, any one distinctive value counts, and a target's hard settings are raised only
+by authored values. The open check has no setting of its own and stays as specified (sender or subject topic). The settings
 are tuned in playtest, loosening first where players stall. The lab ships with the lenient starting values
 that are authored in this document (Lord's `minDistinct: 2` is the one deliberate exception, as the
 hard target).
@@ -383,8 +383,14 @@ Notes on the records:
   the `00` §10 schema; the lab's full set is the appendix below. A template may carry an authored
   `urgency` (`low|medium|high`) that feeds `urgencyCalibrated` and `email_urgency`.
 - **Factors not overridden** fall back to the `00` §2 canonical strings (what `05`'s chips use). Every
-  `factorStrings` entry has the same shape: `pass`, `fail`, `redFlag`; the attachment factor replaces
-  `fail` with one entry per non-pass state. The lint requires each non-empty.
+  `factorStrings` entry has the same keys, `pass`, `fail` and `redFlag`, and each is optional: an absent
+  key or a `null` takes the canonical string. The attachment factor replaces `fail` with one entry per
+  non-pass state. An entry may leave out `fail` when that state cannot occur: Hampshire's `senderAuth`
+  carries only `pass`, because her From is always the account's own and the read is always would-pass.
+  The lint requires a string to be non-empty only where its key is present and not `null`. It **warns**
+  (not an error) only when an entry supplies its own `fail` string and omits the `redFlag` key entirely;
+  `redFlag: null` records that the author deliberately supplies no override (the canonical flag applies)
+  and raises no warning, which is how every lab target is written.
 - **Who sets the outcome.** A target with a `character` has no `outcome` block: its `on_email` knot
   sets `phish_<id>_landed` with `#set_global`. A data-only target has an `outcome.setGlobal`, which
   its text job applies on delivery. The validator requires exactly one owner per target.
@@ -462,8 +468,9 @@ the real `fromAccount`, the `headerFrom` pair (or `{ account: true }`), the temp
 The mail client (`01`) resolves the accounts, fills `linkInfo`, calls the module on send, renders the
 checklist, and hands the result to the mail bridge (`01` N6), which writes the run-scoped `email_*`
 ink variables and queues the reply on the mail scheduler (`00` §10, S6, S7, S9). Externals the
-`on_email` story declares (`se_influence`) are bound inside `InkEngine` (S1), so the mail runner, the
-phone preload and dry runs can all load it. The triage defender (`05`) uses the same factor
+`on_email` story declares (`se_influence`) carry an ink-side fallback function, and `InkEngine` turns on
+external fallbacks (S1), so the phone preload and dry runs can load the story; the mail runner binds the
+real function first. The triage defender (`05`) uses the same factor
 definitions, so attack and defence cannot disagree about what a tell is. No new framework hooks: it
 runs inside minigames that already use `startMinigame` / `onComplete`. Data-only outcomes are applied
 by the text job through the shared writer (S3).
@@ -497,7 +504,7 @@ by `01` before judging) and S11. Doc items:
 | N9 | `tells[]` computation (table above), returned on every `EvalResult` |
 | N10 | Validator checks in `scripts/validate_scenario.rb` (via `00` S11): every `character` target has an email story with `on_email` that declares the `email_*` VARs it reads and `VAR <character>_influence`; each target's `templateSets` cover all four parts and slot ids are unique; every `distinctiveValues` entry is provided by some fact; every required factor is reachable from facts the scenario grants, including that each required `addressedTo` has a name option in `addressedAs` provided by a granted fact; `trusts` ids resolve against `social.people`; one outcome owner; `senderAuth.dmarcPolicy` present whenever `domainPublishesAuth` is true; `requiresIntelToAttempt` globals are declared; outcome globals are declared and read; `expectedLink.brandId` is a brand in `07`; every template named in a set exists; every `phishTargets` entry has at least one `subjects` item, with ids unique within the target, non-empty `text` and a `topic` (the first is the composer's default and the sent record, draft and reply subject read it); every target has `interests.topics` and at least one subject whose topic is not among them unless it trusts `"*"`; every closed target (`primedFor.trusts` is not `["*"]`) has a pretext part of two to four templates, at most two blanks each, including one that cannot satisfy `pretextRelevant`, and every lab target offers at least two pretext templates; every `character` target's `on_email` knot calls `se_influence` on both its landing and failing branches; a reply to `#compose_reply:<targetId>` names an existing target of the same character |
 | N11 | Pre-send gate: the fixed neutral line, shown by `01` for an empty blank or a missing `requiresIntelToAttempt` fact; the validator rejects any scenario string that tries to replace it |
-| N12 | Open check in `phish-rules.js`: `interests.topics` against the subject's `topic`, `senderTrust` as the other route, `EvalResult.open`, `landed` needing it, the `email_opened`, `email_open_via` and `email_subject_topic` variables; unit tests in `social-phish-rules` for sender-opens, subject-opens and neither | `00` §2, §3, §10 |
+| N12 | Open check in `phish-rules.js`: `interests.topics` against the subject's `topic`, `senderTrust` as the other route, `EvalResult.open`, `landed` needing it, the `email_opened`, `email_open_via` and `email_subject_topic` variables; unit tests in `social-phish-rules` for sender-opens, subject-opens and neither (contract in `00` §2, §3, §10) |
 
 ## Reuse across products
 
@@ -509,8 +516,9 @@ awareness learner's first try.
 
 None open. Decided 2026-10-21:
 
-- Strictness: the coherence gate starts lenient (`minDistinct: 1`, any one distinctive value) and is tuned
-  in playtest; the hard target raises it by authored values.
-- A per-factor, per-target `redFlag` string is optional. The canonical `00` §2 library covers every factor,
-  so `05` always has material; the validator warns when a target overrides `fail` without a matching
-  `redFlag` (a mismatched override).
+- Strictness: `pretextRelevant` starts lenient (`minDistinct: 1`, any one distinctive value) and is tuned
+  in playtest; the hard target raises it by authored values. The open check stays as specified.
+- `pass`, `fail` and `redFlag` in a per-target `factorStrings` entry are each optional; absent or `null`
+  takes the canonical `00` §2 text, which covers every factor, so `05` always has material. The validator
+  warns only when an entry supplies its own `fail` and omits the `redFlag` key entirely; `redFlag: null`
+  raises no warning ("Scenario-authored data" above).

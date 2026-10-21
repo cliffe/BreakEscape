@@ -10,6 +10,8 @@ Note: `git status` differed before/after by one file, `planning_notes/.../m09_di
 
 ## 1. Font: Atkinson Hyperlegible Next and Cyrillic
 
+**Folded into the plan:** Source Sans 3 for all social overlay text, unmodified upstream subset files; Atkinson dropped (README X, `00` §6, ASSETS §5).
+
 **Answer: No.** Atkinson Hyperlegible Next has zero Cyrillic. Source Sans 3 covers all the homograph letters.
 
 **Evidence**
@@ -38,6 +40,8 @@ so no markup changes. For Phaser canvas text the same family string works, but t
 Alternative: use Source Sans 3 everywhere in the mail UI so Latin and Cyrillic come from one design.
 
 ## 2. stateSync / _syncOnce and confirmation
+
+**Folded into the plan:** boolean `_syncOnce`, `syncConfirmed()` with back-off, capped attempts and a final 403 (`00` S3, §11; README engine table).
 
 **Answer: Partly.** No caller can learn that a given save was confirmed today. `sync()` returns a promise, but it resolves
 `undefined` in every case (success, stale, network failure alike), so it cannot distinguish them.
@@ -84,6 +88,8 @@ builds changes at run start and a mid-flight caller is deferred to the next run.
 
 ## 3. Unlock endpoint and a takeable locked object
 
+**Folded into the plan:** takeable `mail_terminal` is a room object with a scenario-unique id; validator checks unique object ids; no server change (`00` S11, S14; `01`).
+
 **Answer: Partly (yes, with a condition).** The endpoint never consults the player's inventory or position; it looks the target up
 in the static scenario data under `rooms[*].objects`. A takeable `mail_terminal` is accepted **if it is declared as an object in some
 room's `objects` array** (whether or not the player has picked it up). It is rejected ("Object not found", 422) if it exists only as NPC `itemsHeld`,
@@ -114,6 +120,8 @@ or `contents`, add a fallback after the rooms loop in `validate_unlock` (and `fi
 (and NPC `itemsHeld`) for `item['id'] == target_id`, mirroring `find_flag_station_by_id`. About 8 lines. Keep pin/password `requires` read from the scenario copy, never from the client-supplied inventory item.
 
 ## 4. Ink EXTERNAL functions never bound
+
+**Folded into the plan:** option (a), `allowExternalFunctionFallbacks = true` in `loadStory`, an ink fallback per external, and a lint rule (`00` S1, §6; `06`; `10` N8; README engine table).
 
 **Answer: It throws** (an uncaught `Error`, not a warning) on the first `Continue()`, and it throws for a story that merely *declares*
 an unbound EXTERNAL, even if the knot being run never calls it. Nothing in the repo sets `allowExternalFunctionFallbacks`.
@@ -149,6 +157,8 @@ Pick one:
 Either way, add an `inkcheck`/validator rule that every `EXTERNAL` name is in the bound list or has a fallback function.
 
 ## 5. Task completion before its aim/task is unlocked
+
+**Folded into the plan:** documented, no server change; designs gate through their own globals and `concludeRequires` (`00` §11; README Objectives row).
 
 **Answer: Yes. The server accepts it and scores it.** The client also allows it for direct completions, though not for event-driven ones.
 

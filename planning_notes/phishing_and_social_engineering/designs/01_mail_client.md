@@ -29,7 +29,7 @@ global that carries across all three.
 ## The loop
 
 A single overlay. The frame (window chrome, buttons, folder icons) is pixel-art and in the game's UI
-theme. Every string the player reads or compares is in the bundled Atkinson Hyperlegible Next (`00` §6):
+theme. Every string the player reads or compares is in the bundled Source Sans 3 (`00` §6):
 headers, addresses, subjects, bodies, contact names, file names, checklist lines, banners and
 advisory lines. Only chrome labels that contain none of those (a button reading "Compose") use the
 theme fonts. Authored addresses render with `textContent`, never through `displayDashes`. Two panes: a
@@ -155,7 +155,7 @@ stays pure and the stored target is untouched. It then calls `evaluateMessage(ta
    authentication). In training mode (`mailClient.checklistTiming: "onSend"`, the lab's setting) it
    shows at once. In assessment mode (`"withReply"`) the Sent row reads "Sent. Waiting for a reply" and
    the checklist is revealed when the delivery job runs, so the player reads the character's reaction
-   first. The job runs even when the character ignores the message, so the checklist always arrives. The sender-authentication line is the target's
+   first. The job runs even when the character ignores the message, so the checklist always arrives; a data-only target that does not open the message gets a silent text job (empty `text`, no outcome) for this purpose (`00` §10). The sender-authentication line is the target's
    authored `factorStrings.senderAuth` text when it has one: its `fail` string when the derived read
    is `would-fail`, its `pass` string when it is `would-pass`. In the lab Pierce authors both (her
    `fail` carries the `p=none` line) and Hampshire authors a `pass` line only (her From is always the
@@ -402,8 +402,9 @@ every new minigame needs; it is also in the README conventions):
    `handleObjectInteraction` with no lock test. So the `mail_terminal` branch goes after the lock
    check, beside the phone branch (near 1355), and the pickup block must send a takeable item whose
    `locked` is true to the unlock flow first, so a locked takeable terminal is not picked up and
-   opened from inventory before it is unlocked (`00` S14). The server-side unlock endpoint validates by
-   object id; confirm it accepts a takeable item before relying on this.
+   opened from inventory before it is unlocked (`00` S14). The server-side unlock endpoint finds the
+   object in `rooms[*].objects` by id, whether or not the player holds it (`game.rb:1092-1105`), so a
+   takeable terminal is a room object with a scenario-unique `id`; the validator checks this (`00` S11, S14).
 4. **Stylesheet.** A `css/mail-client-minigame.css`, linked in
    `app/views/break_escape/games/show.html.erb`.
 5. **Close and Esc.** Because `disableClose` hides the framework's close button and Esc handler, the
@@ -486,11 +487,11 @@ reads `metrics`, the sent records and the outcome globals.
 | N10 | Template composer: blanks whose options come from held evidence (`se_intel_*` globals through each fact's `provides`), and a send gate that refuses an empty blank with the neutral pre-send line (`04`) | Shares the blank picker with `06` (N6) |
 | N11 | Accounts: own-account resolution, `unlockedBy` globals, `createMenu` and the Create-account panel, `accountIds` on objects, the switcher, `burned_<id>` greying, per-mailbox unread | `00` §10a |
 | N12 | Sent record per `00` §10a (all of its fields, including `id`, `thread`, `mailbox` and `to`): `folder`, `fromAccount`, `targetId`, `subject`, `templates`, `slots`, `body`, `attachment`, `link`, `landed`, `tells`; the Sent folder view | Part of `mailState`; `05` replays it |
-| N13 | Narrow-screen layout and accessibility pass (below) | Needs the bundled Atkinson Hyperlegible Next (`00` §6) |
+| N13 | Narrow-screen layout and accessibility pass (below) | Needs the bundled Source Sans 3 (`00` §6) |
 | N14 | Mail notification (HUD badge or bark variant) and the rule that an open client appends without a bark | `00` S9 |
 | N15 | Devices: `accountIds` on each `mail_terminal`, takeable terminals used from inventory, per-contact `accountIds`, seeded mailbox history (`folder` inbox or sent), password-locked terminals via the ordinary object lock | `00` S14 |
 | N16 | Highlights: render marked spans, "Save as evidence" calling `grantFact` with the highlight id as the source, "Add to Notepad" for any selection (S12 `returnTo`) | `00` S14, `02` N2 |
-| N17 | Checklist timing: `checklistTiming` setting, the "Waiting for a reply" Sent row and the reveal when the job runs; the open-check row. In `withReply` mode the Sent folder's judged line and tells stay hidden until the job has run, so the reply is read before the verdict | `00` §10 |
+| N17 | Checklist timing: `checklistTiming` setting, the "Waiting for a reply" Sent row and the reveal when the job runs; the open-check row. In `withReply` mode the Sent folder's judged line and tells stay hidden until the job has run, so the reply is read before the verdict; a data-only target that does not open the message still gets a silent text job (empty `text`, no outcome) that only reveals the checklist | `00` §10 |
 | N18 | Validator checks for `social.mailClient` (via `00` S11): `createMenu` ids unique; `unlockedBy`, `acct_<id>`, `acct_<id>_choice` and `phish_<id>_attempts` declared in `globalVariables` (an undeclared global is silently not synced to ink, `npc-conversation-state.js:362-372`); mailbox ids named by accounts and seeded messages exist; `mail_terminal.accountIds`, `defaultAccount` and contact `accountIds` name real accounts; every highlight `text` is an exact substring of its message body, each highlight-granted fact has `source` equal to the highlight id and is granted by exactly one highlight; `deliverAt.global` is declared; `emailKnots` names exist in the character's email story | Owned here; `00` S11 references it |
 
 ## Narrow screens and accessibility
@@ -513,7 +514,7 @@ reads `metrics`, the sent records and the outcome globals.
 
 ## Reuse across products
 
-- **Student lab:** full composer, template body with more blanks per template, red-flag meter on for
+- **Student lab:** full composer, more templates per part (still at most two blanks each), red-flag meter on for
   the first target only (the per-target `redFlagMeter`), several targets with escalating strictness,
   replies that teach, and exactly two accounts (the given operator account `guest` and the created
   `freemail`). The `found` account kind, found devices and highlights are part of the model and are not
@@ -540,10 +541,10 @@ reads `metrics`, the sent records and the outcome globals.
 - In-world pages and messages use pixel-art imagery: NPC headshots (the existing pixel portraits) for
   senders and contacts, pixel logos, banners, product photos, and cult sigils or flyers where a
   scenario has them. The mail frame (folder pane, buttons, window chrome) is styled like the game UI.
-- All text the player must read or compare uses the bundled Atkinson Hyperlegible Next (`00` §6), not a
+- All text the player must read or compare uses the bundled Source Sans 3 (`00` §6), not a
   pixel font. That covers email headers, addresses, subjects, body text, contact and file names, and
   the checklist, banner and tells lines. Look-alike addresses (`accountingnovv` against
   `accountingnow`, `rn` against `m`) must read as they would in a real mail client. A homograph address (a Cyrillic letter in a Latin name) draws as typed in the same face, which covers Cyrillic (`00` §6); the tells line may add the punycode form as a contrast. Pixel fonts blur
   those differences or make them obvious, and long reading in a pixel font is tiring.
 - The checklist and the tells use the house pixel style for chrome (icons, frames, headings that hold
-  no authored string). Their reason text is Atkinson Hyperlegible Next.
+  no authored string). Their reason text is Source Sans 3.

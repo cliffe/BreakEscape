@@ -85,8 +85,11 @@ about 8 minutes). The defend set, its scoring and the pre and post check are the
 episode, so measurement is unchanged. What is lost is the empathy beat of seeing one's own message arrive.
 The brief and debrief carry a `defendOnly` string where they refer to the learner's own message. The
 variant is a field of the episode definition, so the defend-only version is its own shell mission (its own
-`awarenessEpisode`, same `defend.setId`); the kiosk still carries only `{ episodeId }`, and the organiser picks
-the mission when building the event.
+`awarenessEpisode`, same `defend.setId`) with **its own id**, the full episode's id plus `_defend` (for
+example `e1_invoice_fraud_defend`). That id sets the shell's global prefix
+(`episode_e1_invoice_fraud_defend_defend_`) and its `episode_<id>_state` key, so the two shells never share a
+global, and every in-episode measurement record carries the `variant` (5.2). The kiosk still carries only
+`{ episodeId }`, and the organiser picks the mission when building the event.
 
 Stage 3 is the only
 place the learner "attacks"; it is capped at **one attempt producing one artefact** (one message, one
@@ -173,7 +176,7 @@ INV-2217. Authored flags (F = 2): `lookalike_domain` and `changed_bank_details`.
   looks right because the display name is right. Check the address: `brightwel1foods` has a digit 1
   where the l should be. And look at what it asks: a bank-detail change on an open invoice is the
   commonest invoice-fraud move. The safe step is to ring the supplier on the number you already hold."
-  The checklist strings come straight from `04`'s `redFlagStrings` and `00` §2, so the tells the
+  The checklist strings come straight from the target's `factorStrings` (`04`) and the `00` §2 canonical library, so the tells the
   learner just wrote into their own phish in the attack beat are the ones they are told to look for.
 - No silent result. Every item shows its reasoning, pass or fail.
 
@@ -201,7 +204,8 @@ These are product rules, enforced in copy review:
   authoring rule (the author places a similar item after each likely miss), not an adaptive engine.
 - **"People who fall for these are not stupid."** The line lands after E1's flip beat, when the
   learner sees their own message in a defender's inbox and the defender is *fooled by it* in a
-  scripted example. The flip is where the Chothia empathy lesson actually happens.
+  scripted example. The flip is where the Chothia empathy lesson actually happens. A defend-only
+  episode has no flip, so there the line moves to the debrief, as part of its `defendOnly` string.
 
 ## 5. Scenario-authored data, measurement and facilitation
 
@@ -258,14 +262,14 @@ Three pieces make that conclusion reachable:
   the player's state, which the client syncs every 30 seconds, and the host's mapping fires on
   `global_variable_changed:<done global>` the moment the shared writer emits it. The triage starter
   therefore writes its globals (`percent`, `reportRate`, `pass`, `done`) through the shared writer
-  with `deferEmit` set (`00` S3), so no event is emitted yet; it awaits `window.stateSync.syncConfirmed()`, which retries until the server confirms the PUT (`00` S3
-  and §11, "Sync, then emit"; `sync()` resolves even when the server answers `{ stale: true }`, so it
+  with `deferEmit` set (`00` S3), so no event is emitted yet; it awaits `window.stateSync.syncConfirmed()`, which retries with back-off up to a capped number of attempts and stops on a 403 (`00` S3
+  and §11, "Sync, then emit"; `sync()` resolves the same way whether or not the server confirmed, so it
   cannot be used here); and only then emits the `global_variable_changed` events and its done event.
-  If the connection never returns, or the tab closes first, nothing is emitted and the task stays
-  incomplete until the learner reopens the round and it syncs; the result screen shows a saving
-  notice meanwhile. The mapping's task
-  completion then finds the gate met and the exported values current (`05` N6; `00` §11, "Missions
-  that carry a score"). The test is that the unflushed case cannot happen.
+  If the connection never returns, nothing is emitted and the result screen shows a saving notice. If
+  the tab closes after the timer or `pagehide` flush has carried the done global but before the emit,
+  the next reopen finds the done global set and the conclusion task (`conclusionTaskId`) incomplete, and
+  re-emits after a confirmed sync (`00` §11 "Reopen re-emits"). The mapping's task completion then finds
+  the gate met and the exported values current (`05` N6; `00` §11, "Missions that carry a score").
 - **Validator-clean globals.** Check sets author `passPercent: 0`, so a task keyed on `<prefix>done`
   does not trip the `05` warning about `done` with a non-zero pass mark. The pre mission declares
   `triage_pre_percent`, `triage_pre_reportRate`, `triage_pre_done` and `triage_pre_pass` in its own
@@ -330,7 +334,8 @@ core loop and not a later add-on (the default is to measure from the start and s
   - A role-specific pair covers a learner's primary role. Episodes from other roles are extras with no
     check of their own.
 - **Recorded per item:** item id, form, learner verdict (Trust, Report, Delete), the chips ticked, the
-  item score, stage (pre, post, in-episode first answer), and time to answer in milliseconds (`05` records `answers[].ms`;
+  item score, stage (pre, post, in-episode first answer), the episode `variant` (`full` or `defendOnly`)
+  for in-episode answers, and time to answer in milliseconds (`05` records `answers[].ms`;
   the time is never shown to the learner and `05` has no timer, so it measures nothing the learner is
   judged on). The attack beat stores a template id
   plus blank ids, held in session to feed the flip, then discarded. No free text exists in the scored
@@ -401,8 +406,9 @@ checklist and the stored `tells`, which are available at once.
 `mission.json` (`app/models/break_escape/mission.rb:46-50, 124-135`; `db/seeds.rb:50-60`), and a game
 needs a map and a player. A JSON-only episode has no way into it. Decision: **one shell mission per
 episode**, each a one-room kiosk map with `ui_theme: "general"`, a host NPC (5.1) and a single `kiosk` object
-whose `minigameData` is `{ episodeId }` (`00` §11). Hacktivity then lists seven episode missions plus the
-check missions of 5.2 (a `collection` label to agree; the existing `training` may fit), and an
+whose `minigameData` is `{ episodeId }` (`00` §11). Hacktivity then lists up to seven episode missions and
+their defend-only shells, plus the check missions of 5.2 (the `collection` label is an open question in the
+README; the existing `training` may fit), and an
 organiser puts the chosen ones in an event. The episode data lives in each shell's
 `social.awarenessEpisode`.
 
@@ -423,7 +429,7 @@ organiser puts the chosen ones in an event. The episode data lives in each shell
 | N13 | **Interactive `page` card** (E5): the per-kind surface for `05`'s existing `page` kind, with a clickable address bar and certificate padlock check | `05` already defines the `page` kind; the interactive address-bar and padlock behaviour, and its art, are the new part. `02`'s browser is a navigation shell and `07`'s padlock is a canvas decoy; neither is a triage item. `07` N5 (defender inspection items) is proposed as a change request to `05` and is not accepted yet. Overlay rules as N1 |
 | N14 | **Art and layout for the `qr` and `sms` card surfaces** (E6): a printed QR poster and a phone-shaped SMS thread | `05` already defines the `qr` and `sms` kinds; this is the per-kind surface and art each needs |
 | N15 | **Role swap** (E3): the learner is the helpdesk agent and takes scripted calls. Each call in the episode's `defend.calls[]` is `{ id, genuine, claims: [{ fact, value }], tells: [...] }`, with the claims drawn from the same `06` `knows` and `lines` data the attacker call used, so the facts the learner exploited are the ones they now check. For each call the agent picks `comply`, `verify_callback` (ring the number on file), `escalate` or `refuse`. The right action for an impostor is `verify_callback` or `escalate`; a genuine awkward caller is also served by `verify_callback`, and refusing one without offering the safe route loses points. Scoring reuses `05`'s scorer through `05`'s `call` message kind, with the call's `tells` as the flags (`vish_callback_pressure`, `borrowed_authority`, `secrecy_or_bypass`) | Specified here and built here, before E3 ships; the lab and `06` do not need it. The role swap runs inside the `inbox-triage` scene: `defend.calls[]` are authored as `call` messages in the episode's `05` triage set, so the existing triage starter writes `episode_<id>_defend_done` with sync-then-emit (N16) and no second writer exists. `person-chat` is not used for the defend beat. New: the `call` kind's surface in `05` and the conversion of `defend.calls[]` into `call` messages |
-| N16 | **Shell host NPC and flushed done event**: one visible NPC per check and episode shell whose `eventMappings` complete the conclusion task, and a triage starter that writes its globals with `deferEmit`, awaits `window.stateSync.syncConfirmed()` (retrying until the server confirms; `00` §11), then emits the change events and its done event (5.1). E3's role-swap calls run in that same starter (N15), so it is the only writer of `episode_<id>_defend_done` | Small. The ordering is the `05` N6 change and the `deferEmit` option is the shared writer's (`00` S3); the NPC is authored content. Validator: every shell has at least one aim and task, and a `concludeRequires` global that its set writes |
+| N16 | **Shell host NPC and flushed done event**: one visible NPC per check and episode shell whose `eventMappings` complete the conclusion task, and a triage starter that writes its globals with `deferEmit`, awaits `window.stateSync.syncConfirmed()` (back-off, capped attempts, 403 final; `00` §11), then emits the change events and its done event (5.1); on a reopen with the done global set and the `conclusionTaskId` task incomplete it re-emits. E3's role-swap calls run in that same starter (N15), so it is the only writer of `episode_<id>_defend_done` | Small. The ordering is the `05` N6 change and the `deferEmit` option is the shared writer's (`00` S3); the NPC is authored content. Validator: every shell has at least one aim and task, and a `concludeRequires` global that its set writes |
 
 ### 6.2 Privacy defaults and hosting
 

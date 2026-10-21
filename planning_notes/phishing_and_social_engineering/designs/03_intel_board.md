@@ -268,14 +268,14 @@ the mode's global, not on that event.
 Chrome follows house style (README Conventions): dark panel, square corners, `--ui-*` tokens, `GNF` body,
 `Press Start 2P` headings; no hard-coded green. Pinned-card, string and empty-slot art are pixel art. Every
 string the player reads (fact text, addresses, the checklist, mitigation options and their `why` lines,
-the scope brief) is inert DOM text in Atkinson Hyperlegible Next (`00` §6, `--se-font-readable`).
+the scope brief) is inert DOM text in Source Sans 3 (`00` §6, `--se-font-readable`).
 
 ## Assets
 
 - Corkboard background, pinned-card and string pixel art (PixelLab-first, none generated yet), empty-slot
   markers, threshold icons (shared with S4).
-- Headshots for people and contact cards: the same 32x32 `<key>_headshot.png` files as `02`, which needs
-  sprite keys for `pierce`, `baker`, `hampshire`, `lord` (`02` N6).
+- Headshots for people and contact cards: the same 32x32 `<id>_headshot.png` files as `02`; `pierce`,
+  `baker`, `hampshire` and `lord` are headshot-only, with a headshot asset id and no sprite key (`02` N6).
 
 ## Open questions
 
