@@ -90,7 +90,7 @@ no live updates. The layout:
   are not readiness slots, because readiness never depends on something earned after the recon room
   (`00` §4).
 - **Influence:** a card for a target that has a `social.characters` entry shows its influence bar with the
-  threshold icons and the score as a number beside it (`00` §8, the S4 component), read-only, from the character's influence global.
+  threshold icons and the score as a number beside it (`00` §8, the S4 component), read-only, from the character's influence global. The card follows the character's `influence.display` (`00` §8): no bar when `bar` is false, no number when `number` is false.
 
 ### Readiness rule and worked example
 

@@ -416,7 +416,8 @@ phone-chat, mail and the `callId` starter, refusal before `pretext-prep` opens, 
 of `phone-chat` and `person-chat`, with its number; Dev is phone-only. The world-sprite pip (S13) is
 drawn only for characters with walk sprites, which the lab's social characters do not have. So the
 pip is built and tested in this phase on a test character with a sprite, for awareness and Eldritch
-Hacker, and is not part of the lab (ASSETS UI10).
+Hacker, and is not part of the lab (ASSETS UI10). Per-character `influence.display` (README AA) is
+read through `resolveInfluenceDisplay` from P1-K on; the lab uses the defaults.
 
 **Files and hook points.**
 - New `systems/pretext-judge.js`, `minigames/pretext-prep/`,
@@ -1135,7 +1136,7 @@ Notes that hold for the table:
 | P1-R | 1a | Slice review | Opus | P1 diffs | Findings | No blocker or major left open |
 | P1-T | 1a | Slice playtest; runs `bridge-1a.jsonl` | Sonnet | Phase 1a "Done when"; §2.2 Phase 1a "Bridge" row | Report | Steps 1 to 6 pass; `verify-run.rb --tasks` lists `ready_hampshire` and `hampshire_landed` completed, `tasks_completed` 2; `count-task-posts.sh` counts one per task; `check-bridge.mjs` all true |
 | P1-J | 1b | Mail runner and ink jobs (S6, `04` N6) | Opus | `00` §10, S6, S7; `phone-chat-conversation.js:733-790` | `systems/mail-runner.js`, `social-mail-runner` test | Test passes; back-compat 7 |
-| P1-K | 1b | Influence bar (S4, `01` N7), mounted in the reading pane and the board's influence section | Sonnet | `00` S4, §8 "How the bar reads it" | `ui/influence-bar.js`, both mounts, `social-influence-bar` test | Test passes; both mounts visible in `bridge-1b.jsonl` (after P1-T0b) |
+| P1-K | 1b | Influence bar (S4, `01` N7), mounted in the reading pane and the board's influence section; `resolveInfluenceDisplay` and the `influence.display` lint (README AA) | Sonnet | `00` S4, §8 "How the bar reads it" and `influence.display` | `ui/influence-bar.js`, both mounts, `social-influence-bar` test covering defaults, scenario default, per-character override, `bar: false` and `number: false` | Test passes; both mounts visible in `bridge-1b.jsonl` (after P1-T0b) |
 | P1-T0b | 1b | Write `tools/playtest/se/bridge-1b.jsonl` from the §2.2 Phase 1b Bridge row, including the picker and pre-send rows on the Pierce-style target; after P1-O | Sonnet | §2.2 Phase 1b | The script | Runs against the slice |
 | P1-L | 1b | Accounts and Create-account (`01` N11); bridge gate after P1-T0b | Sonnet | `00` §10a | Mail client changes | The account rows of `tools/playtest/se/bridge-1b.jsonl` pass |
 | P1-M | 1b | Rules extras and remaining lints (`04` N4, N5, N10 rest; `01` N18 rest) | Sonnet | `04`; `01` N18 | Code, extended tests | Extended `social-phish-rules` and `validator-social-mail` pass |
@@ -1161,7 +1162,7 @@ Notes that hold for the table:
 | P4-T0 | 4 | Write `bridge-4.jsonl` from the §2.2 Phase 4 Bridge row; after P4-C and P4-G (code), because it registers `pretext-prep`; registration, starter and `callId` branch blocks for `pretext-prep` are placed by P4-D's design, added as shared-file blocks here | Sonnet | §2.2 Phase 4; Phase 4 "Files" | The script; shared-file blocks | Runs against the slice |
 | P4-C | 4 | `pretext-prep` (`06` N5, N6); bridge gate after P4-T0 | Sonnet | `06` Beats 1 and 2; the 1a picker | `minigames/pretext-prep/` | `pretext-prep` rows of `tools/playtest/se/bridge-4.jsonl` pass |
 | P4-D | 4 | Lockout checks and lift (S10) | Opus | `00` S10, §8; `interactions.js:1355` | Code, lockout cases in `social-influence` | Tests pass; the refusal-before-prep and one-minute lift steps pass in the slice |
-| P4-E | 4 | Influence bar in the person-chat and phone-chat headers; tells panel, phone bubbles, tint; world pip for sprite characters only; the board's "From the call" section (`06` N4, S13, `03` N1) | Sonnet | `06` §4.4; `00` S13; `ui/npc-health-bars.js`; Phase 4 "Where the bar shows" | UI code, `social-influence-pip` test | Test passes; bar and tells visible in both chat headers in the bridge script; pip absent for a character with no sprite |
+| P4-E | 4 | Influence bar in the person-chat and phone-chat headers; tells panel, phone bubbles, tint; world pip for sprite characters only; the board's "From the call" section (`06` N4, S13, `03` N1) | Sonnet | `06` §4.4; `00` S13; `ui/npc-health-bars.js`; Phase 4 "Where the bar shows" | UI code, `social-influence-pip` test | Test passes; bar and tells visible in both chat headers in the bridge script; pip absent for a character with no sprite and for one with `display.pip: false`; header bar absent with `display.bar: false` while thresholds still fire |
 | P4-F | 4 | Pretext lints (`06` N10, N12, including the `reports` threshold on every character with call data) | Sonnet | `06` N10 | `pretext.rb`, `validator-social-pretext` test | Test passes |
 | P4-G | 4 | Test call ink and data, with a one-minute test lockout expiry; plus a sprite test character (a person NPC in the slice with an existing walk sprite key, a `social.characters` entry and a person-chat call), so the pip can be shown for a sprite character and absent for the phone-only one | Opus | `06` §4.8; `00` S13 | Slice edits | inkcheck clean; validator exits 0 |
 | P4-T | 4 | Review, playtests, R3 again | Opus, then Sonnet | Phase 4 "Done when"; §2.4 | Findings; reports | No blocker or major open; Phase 4 "Done when" and R3 hold |

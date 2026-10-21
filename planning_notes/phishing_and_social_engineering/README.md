@@ -181,7 +181,7 @@ assessment alike, and the bar also appears on the character's world sprite once 
 the player can steer away from pushing it too low. One bar per character; a second social meter only if
 research supports it and the player would understand it at once. The modelled helpdesk policy stays
 deliberately weak and is labelled weak, with callback to the number on file as the defence. `00` §8, S13,
-`06`.
+`06`. Visibility is now configurable per character (AA).
 
 **R. Student lab, triage and awareness answers (decided 2026-10-20).**
 - Failed phishing in the lab: free, unlimited retries as rehearsal; no heat limit (`10`).
@@ -263,6 +263,13 @@ and the second builder brand is **CloudBoxy**. Real software named in OSINT page
 Microsoft Excel) stays, as incidental realism; the lint keeps its exemption for those fields. Ruth's
 hints and the minor characters are voiced as well as the main cast, but no TTS is generated until the
 words are signed off at a late stage. The lab has no theme song and reuses the existing playlists.
+
+**AA. Influence bar visibility per character (decided 2026-10-21).** Each social character can set
+`influence.display` with three booleans, `bar`, `number` and `pip`, each defaulting to true, and
+`social.influenceDisplay` sets a scenario-wide default with the same keys. A hidden bar changes nothing
+about the mechanics: thresholds, effects and tells still run. The lab keeps the defaults, so Dev's bar
+and number show as Q describes. An author can hide the meter for a character the player should read from
+the dialogue alone, or keep the bar and drop the number. `00` §8.
 
 Defaults taken elsewhere, for context: fictional targets only, no real-staff OSINT; the
 lab is the first slice; the awareness product measures pre and post from the start and defers LMS and
