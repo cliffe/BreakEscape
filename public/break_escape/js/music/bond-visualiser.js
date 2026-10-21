@@ -23,7 +23,7 @@
 
 import MusicController from './music-controller.js';
 import { displayDashes } from '../utils/display-dashes.js';
-import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay } from './credits-theme.js';
+import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay, nextCreditsHeader, creditsHeader } from './credits-theme.js';
 import { cardHoldMs } from './closing-sequence.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────
@@ -1495,7 +1495,9 @@ let _resizeHandler = null;
  * Pick the theme from the scenario and re-skin the overlay for it. A theme whose
  * overlay() returns null (safetynet) keeps the overlay exactly as built.
  */
+let _headerText = null;  // set by a credits entry's headerText; survives later open({})
 function _applyTheme(opts) {
+    _headerText = nextCreditsHeader(_headerText, opts);
     if (opts.credits?.length) _lastCredits = opts.credits;
     _theme    = resolveCreditsTheme(window.gameScenario);
     _themeDef = getCreditsTheme(_theme);
@@ -1514,6 +1516,8 @@ function _applyTheme(opts) {
         credits:     _lastCredits,
     });
     if (t) _applyOverlayText(t);
+    const h1 = _overlay.querySelector('.bv-title-block h1');
+    if (h1) h1.textContent = creditsHeader(_headerText, t?.heading);
     _applyScenarioOverlay(scenarioCreditsOverlay(window.gameScenario, missionName));
     _themeApplied = _theme;
 }
@@ -1767,6 +1771,7 @@ export const BondVisualiser = {
      * @param {boolean}  [opts.autoClose]    - close the visualiser when musiccontroller:trackended fires
      * @param {boolean}  [opts.autoStop]     - stop music after current track ends; visualiser stays open
      * @param {boolean}  [opts.disableClose] - hide × button and block Esc (forced/cutscene mode)
+     * @param {string}   [opts.headerText]   - header in place of MISSION COMPLETE // AUDIO INTEL; kept by later opens without credits
      */
     open(opts) { _open_overlay(opts || {}); },
     /** Close the fullscreen visualiser. */

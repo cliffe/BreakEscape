@@ -129,6 +129,30 @@ export function scenarioCreditsOverlay(scenario, fallbackName) {
     return { operation, ticker };
 }
 
+/** The visualiser's header when neither the ending nor the theme sets one. */
+export const DEFAULT_CREDITS_HEADER = 'MISSION COMPLETE // AUDIO INTEL';
+
+/**
+ * The header text an open of the visualiser leaves in place. A credits entry's
+ * `headerText` (e.g. "MISSION FAILED // AUDIO INTEL") sets it; a new credits roll
+ * without one goes back to the default (null); an open with no credits, such as a
+ * conclusionScreen's open({}) after the credits, keeps what is there.
+ * @param {string|null} current
+ * @param {object} [opts] - the open() options
+ * @returns {string|null}
+ */
+export function nextCreditsHeader(current, opts) {
+    const text = typeof opts?.headerText === 'string' ? opts.headerText.trim() : '';
+    if (text) return text;
+    if (opts?.credits?.length) return null;
+    return current ?? null;
+}
+
+/** What the header shows: the ending's text, else the theme's heading, else the default. */
+export function creditsHeader(headerText, themeHeading) {
+    return headerText || themeHeading || DEFAULT_CREDITS_HEADER;
+}
+
 export function resolveCreditsTheme(scenario) {
     const name = scenario?.creditsTheme;
     return Object.prototype.hasOwnProperty.call(CREDITS_THEMES, name) ? name : DEFAULT_CREDITS_THEME;
