@@ -13,7 +13,7 @@ m09 and m10 close Season 1 of SAFETYNET: Licence to Hack. They are the payoff fo
 - **No eldritch content.** The Quantum Cabal / cosmic-horror direction for game 2 is not woven into m09–m10. The universe-bible pass is skipped for this work. The only exception is possibly a few seconds right before the final end credits, as a teaser for the next game; plan a slot for it, don't depend on it.
 - **Carry everything that can be carried.** Every open thread from m01–m08 and as many of the player's decisions as possible carry into m09/m10, and the player should *feel* the impact of their earlier choices: who turns up, who helps, who betrays, what's possible, what's said to them. Not a list of name-checks in a debrief.
 - **Endings (F1):** the full range stays. Success, with the player choosing how it ends for Tesseract (arrest / talk him into surrender and cooperation / lethal force); Scorched Earth (both databases destroyed, Tesseract escapes in the chaos, player suspended); and the Join ENTROPY bad ending, the one non-success path, built as a deliberate, clearly signposted choice and never a trap. Earlier choices shape the cost and who is standing at the end.
-- **Approved (F2–F4):** SecGen drafts for m09/m10 by a Haiku agent once stage 0 fixes the flag plan; a teaser slot before the final credits; JSON-only `exportGlobals` additions to m01–m08 (m08 has none yet).
+- **Approved (F2–F4):** SecGen drafts for m09/m10 by an `opus48` agent (was Haiku; changed 2026-10-21) once stage 0 fixes the flag plan; a teaser slot before the final credits; JSON-only `exportGlobals` additions to m01–m08 (m08 has none yet).
 - **VM sizes** (`finale/VM_SHAPE.md`): m01–m08 VMs have about 4 flags each. The m10 container-escape basis has only 2 flags, both at the climax, so m10's VM needs an earlier entry stage added when SecGen is drafted.
 - **Follow the full staged pipeline** (`story_design/story_dev_prompts/00`–`09`), then the iterative improvement loops in `AGENTS.md` (alignment, puzzle chains, scenario design, dialogue, playtests; then dressing, lighting, POV, characters, lab sheet, audio).
 
@@ -57,11 +57,11 @@ Author (Opus) writes the stage output section by section with Edit. A fresh Opus
 
 ## Rules for every agent
 
-- **Opus agents never read VM material** (`finale/VM_SHAPE.md`, `SECGEN_MODULE_PLAN.md`, SecGen, field guides). The stage-0 author was stopped by a safety check after reading them. Opus works with the story meaning of each flag; the VM plan (`finale/FINALE_VM_PLAN.md`, when written) is Haiku's.
+- **Opus 5.5 agents never read VM material** (`finale/VM_SHAPE.md`, `SECGEN_MODULE_PLAN.md`, SecGen, field guides). The stage-0 author was stopped by a safety check after reading them. Opus 5.5 works with the story meaning of each flag; the VM plan (`finale/FINALE_VM_PLAN.md`, when written) goes to an `opus48` agent (Opus 4.8; was Haiku, changed 2026-10-21).
 - Create documents as skeletons (headings) first, then fill one section per Edit.
 
 - Write documents section by section with Edit, never one whole-file rewrite.
-- **VM content stays at game-design level.** Say "the VM's second flag (root on the archive server)", never exploit steps, CVE detail, commands or tool usage. Do not open SecGen files or the four exploit-detail field guides. VM technical writing goes to a Haiku agent the orchestrator runs.
+- **VM content stays at game-design level.** Say "the VM's second flag (root on the archive server)", never exploit steps, CVE detail, commands or tool usage. Do not open SecGen files or the four exploit-detail field guides. VM technical writing goes to an `opus48` agent the orchestrator runs (was Haiku, changed 2026-10-21).
 - Cast diversity: vary ethnicity, age and look across each mission's cast; recurring characters keep their own sprite key.
 - Spoken lines: no printed variables in voiced lines. Choose between fixed strings instead.
 - UK English ("Cyber Security" with a space), plain writing, no AI filler (the user's style rules in `~/.claude/CLAUDE.md` apply to everything a human will read, including dialogue).
