@@ -137,3 +137,6 @@ Rulings sent with m09's R2 fix pass: WREN single goal; reviewer's locks for the 
 | m10 structure (`m10.../stage_1/REVIEW_R2_STRUCTURE.md`) | 0 | 5 | 14 | not clean: R1 blocker gone; S2-01 WREN told in front of the team, S2-02 camera would show her, S2-03 tunnel fork names her, S2-04 clue 3 source missable, S2-05 epilogue payoffs lack homes; budget ~105 (108–115 first time); arc changes: accept 23, modify 10, new 34–36; 23 engine items |
 
 Rulings sent with m10's R2 fix pass: adopt both reviewers' fixes; m10 ~105 min, ceiling 110; no section-replace scripts (keep diffs reviewable); Alpha tapes/export name to agree with m09.
+- m09 R2 fix pass: 32 addressed (31 fixed, 1 split: Alpha-tape playback to stage 3). Locks table for the night's order (§11); schedule clue in the safe; double-cross priced; 06:00 consistent; confession lines rewritten; third confession value `afterwards`; ninth export `deck_pulled`; budget 85 with field guides, 95–100 without. §14 now 27 proposed arc changes. Passed `afterwards`, `deck_pulled` and the "Ninety-nine" line to the m10 author.
+
+### Stages 1+2 round 3

@@ -1,6 +1,6 @@
 # m09 Digital Archaeology: Stage 1, narrative structure
 
-Stage 1. Author: stages 1–2 author (Opus), 2026-10-21. Status: round 1 fixes folded in (§15).
+Stage 1. Author: stages 1–2 author (Opus), 2026-10-21. Status: round 2 fixes folded in (§15 round 1, §16 round 2).
 
 Inputs: `../stage_0_initialization.md`; `../../../finale/FINALE_ARC.md` §1–9 and §13 (the shared source of truth; row numbers below are its §2 rows); `story_dev_prompts/01_narrative_structure.md`; the `mission-alignment-plan` and `npc-dialog-review` skills; `README_ink_best_practices.md`; the shipped m01, m02 and m08 briefings, debriefs and HaX phone ink. Characters, voices and sample lines are in `../stage_2/storytelling_elements.md`. VM flags appear only by story meaning (FINALE_ARC §6.1).
 
@@ -21,22 +21,22 @@ Inputs: `../stage_0_initialization.md`; `../../../finale/FINALE_ARC.md` §1–9 
 
 **The night's shape in one paragraph.** The player gets in, sets up a drop terminal and opens the catalogue (flag 1). The catalogue says the restricted series is in the cage where Sorensen is feeding the shredder. The player talks to her at the cage's hatch, saves one bin, and gets into the cage. Nightshade's file is in a plan chest, and the hand on it matches the margin notes in HaX's old training notebook. The ledger (flag 2) names WREN on the raid team. As soon as the player is out of the cage the Recruiter rings with an offer, and as she hangs up she wipes a tape deck: the player saves one tape. HaX says three words about a line she was taught. In Sorensen's office the player opens the safe with the cracker a raid-team member gave them that morning; the Reading is inside. In the tape room is Tomb Beta's last server. Flag 3 brings the name, with HaX and Netherton on the phone; flag 4 brings the hour, the defences, the key, and Tesseract's own casualty sheet. Tesseract rings HaX. Netherton signs the Montana order.
 
-**The surprise the night builds to.** The purge order comes with a destruction schedule. It protects the cells: it lists the Initiative's placements, its letters and its recruits by series, and whatever of his old paper is filed beside them. It does not list the tape room's rack, or the box that holds the Reading. The server that holds his credential, his Albion memo, the hour and the defences is left running on purpose. He wants to be known, he wants SAFETYNET to read what it kept, and he wants them to come (FINALE_ARC §1.2). The player sees it first, at flag 4, as a line of their own; his call to HaX is the only confirmation.
+**The surprise the night builds to.** The purge order comes with a destruction schedule. It protects the cells: it lists the Initiative's placements, its letters and its recruits by series, and whatever of his old paper is filed beside them. Sorensen has ticked each room of the building down its margin as its series are reached; the tape room's line has no series and no tick, and she has pencilled one query: "Reading (safe): not listed. Keep?" The master copy is in her safe, so every player holds it (R2-S03). The server that holds his credential, his Albion memo, the hour and the defences is left running on purpose. He wants to be known, he wants SAFETYNET to read what it kept, and he wants them to come (FINALE_ARC §1.2). A player who read the schedule says it first, at flag 4; for everyone else HaX states the fact from the job's side, once; his call to HaX is the only confirmation.
 
 ## 2. Structure at a glance
 
 | Part | What happens | Rooms | Flags | Minutes |
 |---|---|---|---|---|
 | Briefing (cutscene) | The order, the wall of cards, the raid team, the cracker | Task Force Null's room (cutscene background) | – | 4 |
-| Act 1: Get in | Loading dock, the guard, the clerk, the drop terminal, the catalogue; the shredder heard through the wall | loading dock, front desk, reading room | 1 | 16 |
+| Act 1: Get in | Loading dock, the guard, the clerk, the drop terminal, the catalogue; the shredder heard through the wall | loading dock, front desk, reading room | 1 | 15 |
 | Act 2: The stacks | The cage and the bins, Nightshade's file, the ledger and WREN, the Recruiter's call and the deck; optional: the cross-reference, Tran | restricted stacks (the cage), open stacks, server closet, reading room | 2 | 31 |
-| Act 3: The name and the hour | The safe and the Reading, the schedule, the tape room, Tomb Beta's server, the identity scene by phone, the Albion papers, the hour and the key, Tesseract's call | Sorensen's office, tape room, salvage cage | 3, 4 | 30 |
+| Act 3: The name and the hour | The safe and the Reading, the schedule, the tape room, Tomb Beta's server, the identity scene by phone, the Albion papers, the hour and the key, Tesseract's call | Sorensen's office, tape room, salvage cage | 3, 4 | 31 |
 | Debrief | Kowalczyk's question; Netherton reads the two names and signs the Montana order | airfield hangar (cutscene background) | – | 4 |
 | **Total** | | nine rooms (stage 0 §6) | 4 | **85** |
 
-**Budget notes** (rebuilt in round 1, S-01; ceiling 85 minutes by orchestrator ruling).
+**Budget notes** (rebuilt in rounds 1–2, S-01, R2-S04). **About 85 minutes with the field guides; 95–100 without.** Stage 8's playtests set the published figure. Each act's minutes are the sum of its beats.
 
-- Each VM stage is budgeted at 7 minutes for a player using the field guides: flag 1 inside Act 1, flag 2 inside Act 2, flags 3 and 4 inside Act 3. The purge moves on story events, so a slow VM stage stretches its act without costing anything in the story.
+- Each VM stage is budgeted at 7 minutes for a player following the field guides, an assumption, not a measurement (no shipped mission records time per VM stage): flag 1 inside Act 1, flag 2 inside Act 2, flags 3 and 4 inside Act 3. The purge moves on story events, so a slow VM stage stretches its act without costing anything in the story.
 - Act 3 lost its two walk-backs: the Reading is in the office safe (no trip into the open stacks), and flag 3 is submitted in the tape room with HaX and Netherton on the phone (no trip to the reading room and back). Together they save about seven minutes (§14 change 12).
 - Act 2 holds the optional content and is the first place to cut if playtests run long, in this order: the cross-reference (the Recruiter's offer is the certain route to the name), Tran's server closet, the Alpha tapes' decode. Nothing on the critical path is cut.
 - The briefing's spine is about twelve lines before the wall (S-22, W-09); with the wall, the team and a three-topic hub, about four minutes.
@@ -57,7 +57,7 @@ Carry-overs in the briefing are held to the ones the player feels: the wall (a m
 3. **The no-coordinate line**, on `m08_completed and not m08_tomb_gamma_location_known`: "We have Helena. Not the bunker. Not yet." The deed becomes the night's first concern.
 4. **HaX's first line**, by m08 branch (rows 108, 111): where she sent "Same classroom. Don't ask me whose yet", she picks it up ("Keep not asking. By morning you won't need to."). `m08_hax_ko` first: "You put me on the floor at the Citadel. I'm still running you." Knock-out-before-fate and never played m08: a plain opening (§10.2). On `m08_nightshade_arrested` the wall's m08 card carries the branch (S-14; FINALE_ARC's "which briefing opening plays" is met there).
 5. **The wall** (row 57). HaX walks it in about sixty seconds: one short line per card, m01 to m08, in the player's own outcomes or the never-played sentence (§10.1). The last two cards carry a name each and no outcome: Agent 0x19 Callum Fraser and Agent 0x6B Ana Lúcia Ferreira, the two dead from the unanswered m07 sites. HaX does not read them. Netherton: "I will read those two myself. Later." (row 100.)
-6. **The suspect, without the name.** At the "-- A." pinned above the wall, Netherton: "ENTROPY's planner. Every card on this wall has his initial on it somewhere." (S-21.) Then: SAFETYNET has a suspect; he was one of theirs; "I will not say the name in this room until we can prove it." (W-17: no "Tonight we can.") On `m06_architect_identity_found`, HaX to the player alone: "You heard me say it after HashChain. I called it his guess. It wasn't only his." (S-10; m06's debrief gave the name as Satoshi's guess.) The name lands in the identity scene (Beat 3.3) for every player, cold starts included (§14 change 1).
+6. **The suspect, without the name.** At the "-- A." pinned above the wall, Netherton: "ENTROPY's planner. Every card on this wall has his initial on it somewhere." (S-21.) Then: SAFETYNET has a suspect; he was one of theirs; "I will not say the name in this room until we can prove it." (W-17: no "Tonight we can.") On `m06_architect_identity_found`, HaX to the player alone: "You heard me say it after HashChain. I called it his guess." and a look; the admission waits for the tape room (S-10, R2-S06). The name lands in the identity scene (Beat 3.3) for every player, cold starts included (§14 change 1).
 7. **The stakes** (HaX, fact first, three short lines):
    - Nobody knows what the Publication is. They know what it would be made of: the database, "every weakness we have ever catalogued". One entry, said plainly: an infusion-pump flaw in a hundred and forty hospitals.
    - Analysis's guess, labelled as one: hundreds dead in the first month if the cells get it. "They're guessing. I'd like to find out they guessed high." Flag 4 replaces the guess with his own figure.
@@ -89,7 +89,7 @@ Netherton introduces Task Force Null's four in one breath ("Quintero leads on th
 | Dev Malhotra | Asks to run the Helena line himself: "If something goes wrong in there, I'd like to hear it go wrong." HaX: "I run 0x00." He lets it go at once. | He wanted to listen to the operation. |
 | Kenji Arakawa | Has asked Helena's police to keep their cars off the archive's side of town tonight: "Nobody asked who for. Nobody will." | He cleared the street, and the player cannot know for whom. |
 
-The player can answer one of them: back Quintero ("She's right. Send me anyway."), thank Kowalczyk, or say nothing. It is recorded locally and paid back where it can hurt (W-19): on "thanked Kowalczyk", when the Recruiter names her, HaX says "You thanked her this morning. Keep doing it."; on "backed Quintero", when the Harwick & Lowe file puts Quintero on the shortlist, HaX says "You took her side this morning. Don't stop now. Don't start trusting her either."
+The player can answer one of them: back Quintero ("She's right. Send me anyway."), thank Kowalczyk, or say nothing. It is recorded locally and paid back where it can hurt (W-19): on "thanked Kowalczyk", when the Recruiter names her, HaX says "You thanked her at the briefing. Keep doing it."; on "backed Quintero", when the Harwick & Lowe file puts Quintero on the shortlist, HaX says "You took her side at the briefing. Keep it. Don't take her word." (N-16; "at the briefing", not "this morning", because the archive night is the next UTC day, R2-S07.)
 
 ### 3.4 The cracker (FINALE_ARC §13 item 3, m09 side)
 
@@ -109,7 +109,7 @@ HaX gives the building's people here, where they matter, in three short lines (m
 
 On `m01_maya_ko`, Tran also makes one move on the main path (S-13): after flag 1 he radios Old Coyote to "check the reading room", and the guard's round passes the drop terminal once. Avoidable as any patrol is.
 
-### Beat 1.2: The front desk and Noor (4 minutes)
+### Beat 1.2: The front desk and Noor (3 minutes)
 
 Noor Haddad is at the front desk at an hour clerks are not, loading archive boxes onto trolleys from a printed list. Sorensen called her in "for a scheduled destruction run", and in a records archive that is a normal night's work, which is why Noor has not asked. The trolleys go to the cage. The player can talk to her as whoever they choose to be (a contractor, the auditor, or SAFETYNET), and what she offers depends on m05 (row 62):
 
@@ -125,9 +125,9 @@ The reading room is the archive's public face: long tables, green lamps, a micro
 
 HaX gives the VM job in story terms: the public catalogue hides a series; the catalogue server does not. The drop terminal also carries her case file: the order's photograph, the wall's cards, and one item she does not mention, a scanned notebook labelled only with a course code (Beat 2.2).
 
-### Beat 1.4: Flag 1, the catalogue (6 minutes)
+### Beat 1.4: Flag 1, the catalogue (7 minutes)
 
-**VM flag 1** (a foothold on the catalogue server): the index of every box, tape and shelf, including the restricted series. Submitted at the drop terminal. HaX says what it bought: the shelf marks for Series R, which sit in the restricted cage, and "the boxes on Noor's trolleys are the ones on this list". It also gives the first clue to the tape room's code: one catalogue entry for the tape room is written in an old archive encoding (decoded later, Beat 3.2).
+**VM flag 1** (a foothold on the catalogue server): the index of every box, tape and shelf, including the restricted series. Submitted at the drop terminal. HaX says what it bought: the shelf marks for Series R, which sit in the restricted cage, and "the boxes on Noor's trolleys are the ones on this list". **Lock (R2-S01):** flag 1's reward opens the restricted stacks' outer door, so the cage cannot come before flag 1. It also gives the first clue to the tape room's code: one catalogue entry for the tape room is written in an old archive encoding (decoded later, Beat 3.2).
 
 On `m08_nightshade_triple_agent`, **Nightshade rings** here (row 104), from a SAFETYNET room, on the player's handset, competing with HaX for the line. He names which database entries the archive's restricted cage was built against (the reader that takes a lifted print; the badge reader that takes a clone), and he is right. HaX lets him talk and says nothing until he has gone: "He's right. I hate that he's right." This is his whole m09 presence until his file (Beat 2.2).
 
@@ -143,9 +143,9 @@ The restricted stacks are a steel mesh cage inside the warehouse, floor to roof.
 
 **Staging** (S-09, for stage 5). The design needs the player to talk to Sorensen, clone her card and lift her print while she is behind the mesh. The intended staging: the cage's front is a counter with a document hatch, and Sorensen works at the counter, on a tile the player can reach for conversation and the cloner, with the locked cage door beside it. If the engine cannot hold that, the fallback keeps the beat: she comes to the hatch counter when the player rings its bell. Stage 5 checks both against m08's clone-while-talking build before placing anything.
 
-1. **The bluff.** The player can be the auditor the lease-holder sent (stage 0 §5). Sorensen is polite, precise and in no hurry; auditors are a thing she knows how to handle. She stamps each box "destroyed" with a rubber stamp she sets down on the hatch shelf between boxes, and her master card hangs on a reel at her hip. The player lifts her print off the stamp and clones the card while she talks (the m08 technique). On `m03_victoria_fate == "recruited"`, Victoria's protocols read the archive's internal mail, and Sorensen's mail holds the cage's maintenance code: a second way in that replaces the print and the card (row 32). On that route, the recognition and the bins play at the cage door instead (S-16).
+1. **The bluff.** The player can be the auditor the lease-holder sent (stage 0 §5). Sorensen is polite, precise and in no hurry; auditors are a thing she knows how to handle. She stamps each box "destroyed" with a rubber stamp she sets down on the hatch shelf between boxes, and her master card hangs on a reel at her hip. The player lifts her print off the stamp and clones the card while she talks (the m08 technique). On `m03_victoria_fate == "recruited"`, Victoria's protocols read the archive's internal mail, and Sorensen's mail holds the cage's maintenance code: a second way in that replaces the print and the card (row 32). On that route the recognition plays at the cage door, and the bins are two objects just inside it: HaX names them as the door opens, the player takes one, and Sorensen tips the other (S-16, R2-S10).
 2. **HaX names the bins and what each buys** (W-12, S-08). Two bins wait by the shredder's mouth, and HaX gives each one line:
-   - **By the hatch: Derek Lawson's file**, from the restricted series, written before Viral Dynamics hired him, costing his fall (rows 1, 9). It is the Architect's own hand on the player's first case, with his standing order to Derek and a page of costing notes. What it buys: a second sample of his hand for the identity proof (Beat 2.2), and Derek's file read back in the debrief.
+   - **By the hatch: Derek Lawson's file**, from the restricted series, written before Viral Dynamics hired him, costing his fall (rows 1, 9). It is the Architect's own hand on the player's first case, with his standing order to Derek and a page of costing notes. HaX names the stake that matters (R2-S09, N-14): "Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwriting on it. It's the only place anyone wrote down why he did what he did." What it buys: the one answer m09 gives m01 (on `surrender`, why he put the device down; on every value, his fall costed in advance), a second sample of the hand (Beat 2.2), and Derek's file read back in the debrief. Stage 3 decides an m10 echo (for example, his standing order as a record answer under Tesseract's first claim).
    - **The other bin:** by default **the Initiative's letters to Social Fabric**. They are Jesse Tran's trade route, with his drop and his handler in them. What they buy: a lever on Tran (Beat 2.6). Holding them, the player can talk him off the wipe, which saves the tape side without a fight; on `m01_maya_ko` the letters give back what Maya's names would have given (HaX: "That's the warning we didn't have."). On `m08_nightshade_tidied` this bin instead holds **the copy Nightshade sent ahead** (row 113): what he cleared from his locker. It buys his own words on what he took, which changes his reply to his file on the triple-agent branch (stage 2 §2) and is read back in the debrief.
 3. **The recognition.** Before the player can act, Sorensen ends the bluff herself. She quotes the player's file at them from memory, because she filed it (row 101): one line per value of the Reading's first entry, in her words (stage 2 §3 has every line). A cold-start player hears the second entry's never-played form ("Your first days aren't in your file. Somebody at SAFETYNET is careful with you.", W-10). Then: "You're not from the lease-holder. You're the one he writes about." HaX: "...She's got a file on you." This is the act's first spike.
 4. **Why she lets the player carry on** (W-25). She keeps stamping and keeps the reel on her hip. If the player is plainly cloning or lifting: "Take the print if you like. By the time it matters, the shredder will have caught up."
@@ -164,55 +164,70 @@ On `m08_nightshade_triple_agent`, the player can send Nightshade his own file fr
 
 The ledger shelf holds the Initiative's printed ledger in a locked binder, codenames only, unreadable without the key the live copy carries.
 
-**VM flag 2** (the Insider Threat Initiative's live ledger): submitted at the drop terminal in the reading room. HaX reads it aloud in story terms: twenty-three placements, forty-seven candidates, and a legacy section older than any list m05 found. One legacy entry, under the codename WREN, was updated yesterday in Sorensen's hand: "assigned TF Null, Montana operation".
+**VM flag 2** (the Insider Threat Initiative's live ledger): submitted at the drop terminal in the reading room. HaX reads it aloud in story terms: twenty-three placements, forty-seven candidates, and a legacy section older than any list m05 found. One legacy entry, under the codename WREN, was updated on day 10 in Sorensen's hand: "assigned TF Null, Montana operation".
 
-- HaX: "Montana operation. Yesterday. That's one of the four you met this morning." Then the rule: she has told Netherton; he will say nothing to the team; "and neither will you."
+- HaX: "Montana operation. Day ten. That's one of the four you met at the briefing." (R2-S07: UTC.) Then the rule: she has told Netherton; he will say nothing to the team; "and neither will you."
 - **What m05 changed** (rows 63, 64, 64a), one line on the page and at most one from HaX: on `public_exposure` the twenty-three are marked "blown"; on `turn_double_agent` Torres' entry still reads "live", because the Initiative never learned he turned; on `combat_lethal` it reads "closed placement" in Sorensen's hand and HaX says nothing for a beat; on `arrest`, `combat_nonlethal`, or never played, "lost".
 - On `m07_found_tomb_gamma` (row 95): "You bagged the dossier. 'Including the people.' This is the people."
 - WREN's legacy entry carries a source code, "H&L", and a file number, which opens the optional cross-reference (Beat 2.5).
 - The printed ledger at the shelf becomes readable: optional, for the player who wants the page in their hand. It holds two small finds: on Reeves in custody (`m02_reeves_fate` in `arrested`, `ko`, `flagged`, or the read rule on `m02_insider_asset_arrested`; rows 21–22), his handler's contact sheet, clipped inside, as an object with no voiced line (W-23); and Noor's codename on the candidates' page, which a player who told her she is on a list can show her (§8). If Sorensen is still free, she shreds the binder once it has been read; nothing is lost, because the flag holds it.
 
-### Beat 2.4: The Recruiter's call (4 minutes)
+### Beat 2.4: The Recruiter's call (5 minutes)
 
-**When** (S-03, S-04). The call fires on flag 2 itself, after a short delay, once the player is out of the cage and not in another conversation. Flag 2 is submitted in the reading room, so in normal play it rings there, a few seconds after HaX's WREN line. Every player gets it, and Sorensen is never in the same scene. Aim 4 opens only when the call's deck choice is made, so `recruiter_offer` is always set before the mission can conclude.
+**When, and what guarantees it** (S-03, S-04, R2-S01, R2-S02; each is a stage 4–5 lock or condition):
+
+- The call fires once **flag 2 is in and the cage has been opened** (`cage_opened`), after a short delay, when the player is out of the cage and not in another conversation. A player who submits flag 2 before the cage hears HaX read the ledger then; the call holds until they leave the opened cage. So the cage, the bins and the hand always come before the call.
+- **The call's first line sets `recruiter_offer = "refused"` and the deck to nothing pulled.** The choices overwrite both. If the player closes the call mid-knot (Escape, or damage), it rings again on leaving the room and resumes at the offer. So the export is never `""` once m09 is played.
+- **Sorensen's office opens only after the deck choice** (Beat 3.1): HaX reads the office door's code out of Sorensen's mail once the call has ended. With the office holding the tape room's key card, flags 3 and 4 always come after the call.
 
 Phone only, no face, as in m05. HaX stays on the line. The call has three openings and one spine, and it ends in the second purge choice.
 
 **Openings** (row 61):
 
-- **Sold and lied** (`m05_recruiter_deal_accepted and not m05_recruiter_deal_confessed`): the receipt and the offer in one breath: "Forty-seven names, and nothing points at you. Does your handler know? I'd like to give you one more name, and I'd like you to keep this one too." HaX has heard it. The player's choice (W-24; stage 3 owns the wording): own it on the open line ("She's right. I took her money in the spring.", `recruiter_secret = told`), or hang up (`kept`). A hang-up ends her half of the call; HaX stays on, says the wipe has started, and asks which tape (S-02). Her file → `named`; the Alpha tapes or nothing → `refused`, as FINALE_ARC §3.4 has it. HaX asks about the spring once, later, and lets it lie.
+- **Sold and lied** (`m05_recruiter_deal_accepted and not m05_recruiter_deal_confessed`): the receipt and the offer in one breath: "Forty-seven names, and nothing points at you. Does your handler know? I'd like to give you one more name, and I'd like you to keep this one too." HaX has heard it. The player's choice (W-24; stage 3 owns the wording): own it on the open line ("She's right. I took her money in the spring.", `recruiter_secret = told`), or hang up (`kept`). A hang-up ends her half of the call; HaX stays on, says the wipe has started, prices the two tapes, and asks which (S-02). Her file → `named`; the Alpha tapes or nothing → `refused`, as FINALE_ARC §3.4 has it. HaX asks about the spring once, later, and lets it lie.
 - **Sold and confessed** (`m05_recruiter_deal_accepted and m05_recruiter_deal_confessed`): HaX cuts in first: "We've talked about that. She has nothing on you." The leverage dies on the line, and the Recruiter goes straight to the offer (`recruiter_secret = confessed`).
 - **No deal in m05, or never played:** she introduces herself. A player who finished m05 without taking her deal (refused, or never offered terms) hears a line that fits both (S-11): "Last time I said the next one would cost me more. This is the next one." A cold-start player gets a stranger who already knows their designation and their kit.
 
 **The spine** (every player):
 
-1. **Her grievance, as accounting** (S-18, W-18). The Architect has taken WREN's tasking for Montana: she still sits on Sorensen's books and draws the Initiative's money, and she no longer answers to the Recruiter. And his order is burning her records office. "Eleven years of placements, written off in a night for his schedule. I'd like something back on the books."
+1. **Her grievance, as accounting** (S-18, W-18). The Architect has taken WREN's tasking for Montana: WREN still reports to the Initiative and draws its money, but her orders now come from him, not from the Recruiter. And his order is burning her records office. "Eleven years of placements, written off in a night for his schedule. I'd like something back on the books."
 2. **The offer.** WREN's name, now, and always right (trusting her is never a trap). The price: the player lets her file go. Her file is a tape on a deck in the archive, and she is about to wipe the deck herself.
-3. **HaX names what is on the deck, and what each is worth**, before the player answers (W-04): the Recruiter's file, a tape with her handler list (by m05: the handlers for the twenty-three; on `public_exposure` her handlers and the forty-seven; on `turn_double_agent` the names Torres could not give), "her whole network, if we're quick"; and Tomb Alpha's tapes, his teaching sessions from the first workshop, recorded, in his voice: "His voice. Teaching. It's the only place you'll hear him tonight." (Stage 3 decides their m10 use, item 25.)
-4. **The answer.** Take the offer: "Halina Kowalczyk." and one line more ("She gave you something this morning, I expect. She's generous. It's how we hired her."); she hangs up and fires the wipe; the player has HaX pull the Alpha tapes (`taken`) or her file anyway (`double_crossed`). Refuse: she hangs up and fires the wipe; the player has HaX pull her file (`named`), or the Alpha tapes, or nothing (`refused`). The tape not pulled is wiped. `sleeper_named` is set only when she has said the name. On "thanked Kowalczyk" in the briefing, HaX: "You thanked her this morning. Keep doing it." (W-19.)
-5. **After she hangs up.** On `double_crossed`, HaX: "She'll know inside the hour." The Recruiter's answer waits for the m10 epilogue ("I'll remember the shape of you", row 60).
+3. **The price of a double-cross, said before the choice** (N-01). The Recruiter: "If anything comes off that deck but what I've left you, I'll know before your plane does. About half of them will be gone by morning."
+4. **HaX names what is on the deck, and what each is worth**, before the player answers (W-04, N-01): the Recruiter's file, a tape with her handler list (by m05: the handlers for the twenty-three; on `public_exposure` her handlers and the forty-seven; on `turn_double_agent` the names Torres could not give), "her whole network, if she doesn't see it coming"; and Tomb Alpha's tapes, his teaching sessions from the first workshop, recorded, with annotation sheets in his hand: "His voice, on tape. Teaching. He teaches what he'll do. If he built the bunker the way he taught it, it's on that tape." No promise that the player hears it tonight; playback is stage 3's call (R2-S15).
+5. **The answer.** Take the offer: "Halina Kowalczyk. Her mother's care home has had my cheque every month for eleven years. She gave you something at the briefing, I expect. She's generous. It's how we hired her." (N-09: WREN's reason, said as an expense.) She hangs up and fires the wipe; the player has HaX pull the Alpha tapes (`taken`), her file anyway (`double_crossed`), or nothing (`taken`, R2-S13). Refuse: she hangs up and fires the wipe; the player has HaX pull her file (`named`), the Alpha tapes or nothing (`refused`). The tape not pulled is wiped. `sleeper_named` is set only when she has said the name; `deck_pulled` records which tape (§14 change 25). On "thanked Kowalczyk" at the briefing, HaX: "You thanked her at the briefing. Keep doing it." (W-19.)
+6. **After she hangs up.** On `double_crossed`, HaX: "She'll know inside the hour. About half of them, then." The Recruiter's answer waits for the m10 epilogue ("I'll remember the shape of you", row 60).
 
-**Why it is a dilemma for every player** (W-04). The Recruiter is the only certain route to the name. The cross-reference narrows WREN to two people and stops there (Beat 2.5). So: taking the deal buys certainty about the woman who will be beside the player in the bunker, and costs the Recruiter's network; refusing and pulling her file costs the certainty and keeps her network; double-crossing gets both and loses the Alpha tapes and half the network, and makes an enemy. Every option loses something the player has just heard named.
+**Why it is a dilemma for every player** (W-04, N-01). Each route gets one thing and loses one the player has just heard priced:
 
-### Beat 2.5: The cross-reference, optional (3 minutes)
+| Route | Gets | Loses |
+|---|---|---|
+| Take, pull the tapes | certainty about WREN; his teaching, and what it may say about the bunker | her network |
+| Double-cross | certainty about WREN; about half her network | the tapes; the other half, warned; an enemy who knows the player's shape |
+| Refuse, pull her file | her whole network | certainty (two faces at best, from the optional cross-reference) |
+| Refuse, pull the tapes | his teaching | her network and certainty |
+| Refuse, pull nothing | a principle | everything on the deck |
 
-WREN's entry points at Harwick & Lowe, an executive search firm closed years ago, whose dead files are deposited for retention in the open stacks like any other client's boxes. The file number leads to a placing sheet, not a name: two lateral hires placed with "a government client" in the same quarter eleven years ago, both still at SAFETYNET, both on Task Force Null. H. Kowalczyk and M. Quintero. Harwick & Lowe placed real candidates as cover, and Quintero is one of them. Each sheet lists next of kin in the same dull type, and both list a parent in residential care (W-08): for Kowalczyk, her mother, which is the human fact under WREN's eleven years; for Quintero, her father, which is a coincidence that the file cannot tell apart. This sets `sleeper_shortlist` (a new export, §14 change 6). On "backed Quintero" in the briefing, HaX: "You took her side this morning. Don't stop now. Don't start trusting her either."
+### Beat 2.5: The cross-reference, optional (4 minutes)
+
+WREN's entry points at Harwick & Lowe, an executive search firm closed years ago, whose dead files are deposited for retention in the open stacks like any other client's boxes. The file number leads to a placing sheet, not a name: two lateral hires placed with "a government client" in the same quarter eleven years ago, both still at SAFETYNET, both on Task Force Null. H. Kowalczyk and M. Quintero. Harwick & Lowe placed real candidates as cover, and Quintero is one of them. Each sheet lists next of kin in the same dull type, and both list a parent in residential care (W-08): for Kowalczyk, her mother, which is the human fact under WREN's eleven years; for Quintero, her father, which is a coincidence that the file cannot tell apart. Reading the sheet sets `sleeper_shortlist` (a new export, §14 change 6), whatever the order: m10 reads `sleeper_named` first (R2-S13). On "backed Quintero" at the briefing, HaX: "You took her side at the briefing. Keep it. Don't take her word."
+
+The question a player of m05 will ask, answered once by HaX at the sheet (R2-S08): "After Quantum Dynamics we checked everyone TalentStack ever touched. Harwick & Lowe shut before TalentStack opened."
 
 On `m05_torres_turned`, **Torres rings** from his desk inside the Initiative as the player opens the boxes, or, if they never do, once on the walk to Sorensen's office (S-12). He knows the legacy filing scheme (one step off the search) and says the line only he would know about the forty-seven: "They pick people with someone to lose. Look for the ones with a sick parent." On the shortlist it lands on both women, and on Noor. It does not decide between them. He also says, once: "I gave you this address in the spring. It was a line in a list."
 
-### Beat 2.6: Tran and the tape side, optional (2–4 minutes)
+### Beat 2.6: Tran and the tape side, optional (3 minutes)
 
 Jesse Tran runs the rest of the tape side's wipe from the server closet: the Initiative's legacy recruitment interviews, optional lore. He is Social Fabric's agent on the staff (row 6). On `m01_maya_ko`, if he sees the player first, he calls in a second guard (avoidable). Stopping him (talk, knock-out or arrest) saves whatever of the tape side is still unwiped; with the Social Fabric letters in hand, the talk works without a fight ("You can explain those to Social Fabric, or to me."). It never saves the deck, which the Recruiter wiped herself.
 
-### Beat 2.7: Afterwards (under a minute)
+### Beat 2.7: Afterwards (1 minute)
 
 After the deck, once the player is moving again, HaX rings unprompted, once (W-03, orchestrator ruling). She names what the purge cost, once and plainly: which bin and which tape are gone. A pause. Then three words, and one sentence that is new:
 
 > Agent HaX: Afterwards. Not during.
 >
-> Agent HaX: It's your own hurt. You don't hand it to people who never signed up for it.
+> Agent HaX: It's yours to carry. Nobody else signed for it.
 
-When the player asks more, she promises the rest "when this is over" (§14 change 15; m10 pays it). She does not say whose line it is. On `m07_architect_echo_heard` the player already knows who said it to them, and she knows they know; she doesn't add a word. This also lives in her hub, once, for a player who closed the call early.
+When the player asks more, she promises the rest "when this is over" (§14 change 15). m09 never says what the rest is; m10 pays it at 06:00 (agreed with the m10 author, whose confession-promise wording matches this one). She does not say whose line it is. On `m07_architect_echo_heard` the player already knows who said it to them, and she knows they know; she doesn't add a word. This also lives in her hub, once, for a player who closed the call early. If Torres' fallback call is due on the same walk, HaX's comes first and his follows after a delay (engine item 5).
 
 **Act 2 ends** with WREN named, or narrowed to two faces, or one of four; the purge's two losses named; and three words from HaX. Aim 4 opens: "Search the director's office".
 
@@ -220,15 +235,17 @@ When the player asks more, she promises the rest "when this is over" (§14 chang
 
 About 30 minutes, two VM stages included. Aims 4 and 5. Two rooms on the critical path (Sorensen's office, the tape room), no walk-backs (S-01).
 
-### Beat 3.1: Sorensen's office, the safe and the Reading (8 minutes)
+### Beat 3.1: Sorensen's office, the safe and the Reading (6 minutes)
+
+**Getting in** (R2-S01, a stage 4–5 lock): the office door opens on a code HaX reads out of Sorensen's mail once the Recruiter's call has ended, so the office (and the tape room's key card) always comes after the deck choice.
 
 A county clerk's office moved forty miles: a wall of binders, a kettle, a framed certificate for twenty years' service to Lewis and Clark County. The safe opens with Kowalczyk's cracker, or the long way (the PIN is on her desk for a player who looks). HaX: "Kowalczyk's toy. Tell her it worked." On `sleeper_named`: "Her cracker. Use it anyway."
 
-**The safe** holds the tape room's key card and the Reading (S-01, S-17): a thin file, the Architect's reading of Agent 0x00 (row 101), four entries and a last page, in his written register (stage 2 §5). Finding it is an aim-4 task; reading to the last page is optional and sets `reading_finished`. The player reads it alone; HaX says nothing while it is open. The Reading also has one line about her (W-13): "Their handler will cover for them. She was taught to." Afterwards HaX asks once whether the player wants to tell her what it says. Telling her includes that line, and she hears it just before her confession; not telling her keeps it from her.
+**The safe** holds the tape room's key card, the master destruction schedule, and the Reading (S-01, S-17, R2-S03): a thin file, the Architect's reading of Agent 0x00 (row 101), four entries and a last page, in his written register (stage 2 §5). Finding it is an aim-4 task; reading to the last page is optional and sets `reading_finished`. The player reads it alone; HaX says nothing while it is open. The Reading also has one line about her (W-13): "Their handler will cover for them. She was taught to." Afterwards HaX asks once whether the player wants to tell her what it says. Telling her includes that line, and she hears it just before her confession; not telling her keeps it from her.
 
 **The four entries** (row 101; FINALE_ARC D-06): m01 `final_choice`, the innocents line, m04 `disclosure_choice`, m07 `debrief_stance`, each with a never-played form; wording in stage 2 §5. **The last page** predicts that when the hour comes 0x00 will be in the room with the key in reach, and will press it (FINALE_ARC §1.2). Finding it on the page in his words is the second half of the cage's spike.
 
-**The destruction schedule** (S-07). On her desk, Sorensen's working copy of the schedule that came with the order, annotated by room in her hand: every series, every shelf, the server closet's tapes. Two places are not on it: the tape room's rack, and the box that held the Reading. The player can notice it here; the game doesn't point at it until flag 4.
+**The destruction schedule** (S-07, R2-S03). The master copy that came with the order, in the safe, so every player holds it. Down the margin Sorensen has pencilled each room of the building and ticked it as its series are reached: dock, front desk, reading room, open stacks, cage, closet, office. The tape room's line is there with no series against it and no tick. On the same page, her one query: "Reading (safe): not listed. Keep?" Reading the page sets `schedule_read`. The game doesn't point at the gap until flag 4.
 
 **The office files**, two objects, at most one line each (W-23):
 
@@ -245,18 +262,19 @@ Inside: tape racks to the roof, cold air, and among them Tomb Beta's last server
 
 **VM flag 3** (the owner of Tomb Beta's server): the credential text beside the flag is a SAFETYNET staff credential issued to Dr Adrian Tesseract before he left seven years ago, never revoked. Submitted in the tape room, beside the machine, through the field kit's link to the drop terminal (§14 change 12). The identity scene plays there, by phone, with the server's fans as the only sound in the room.
 
-The scene runs when flag 3 is in and the player holds Nightshade's file (on the critical path before the tape room; stage 5 places it). If the file is somehow not held, HaX asks for it and the scene starts when it is picked up. It carries the proof, the name, one sentence on who he was, at most one recognition line, HaX's confession with its cost, and the player's answer (FINALE_ARC §13 item 9).
+**The trigger** (R2-S02, a stage 4 condition): the scene fires on flag 3 alone. If Nightshade's file is not held, HaX holds the name back: "Bring me his file. Then we say it." and the scene resumes when it is picked up. Tesseract's call and the conclusion aim both wait on `identity_scene_done` as well as flag 4, so nobody can ring HaX before the name has been said, and `hax_confession_answer` is never empty. The scene carries the proof, the name, one sentence on who he was, at most one recognition line, HaX's confession with its cost, and the player's answer (FINALE_ARC §13 item 9).
 
 1. **The proof.** HaX reads the credential's first line aloud and stops before the name.
-2. **Netherton**, on the line from the aircraft taking Task Force Null to Montana (§14 change 7). Row 125's line, unchanged: "I said we wouldn't name him until we could prove it. We can. Dr Adrian Tesseract." Then one sentence, for every player and cold starts most of all: "He was our chief strategist until seven years ago. He trained half my field officers." He stops there (W-02). At most one recognition line: `m07_architect_echo_heard` ("You heard him say it. My line. His line.", row 97), else `m03_directive_decoded` ("You've read him before. Sterling's drive.", row 37; style, not handwriting, S-05). Then: "HaX." Nothing else. He stays on the line.
-3. **HaX's confession** (rows 70, 98; FINALE_ARC §5.4). She says the rest herself: he trained her; she was his. Four openings, chosen by `m06_architect_identity_found` and `m07_teacher_discussed`:
-   - **Safe opened, teacher discussed:** "I told you on the handset he taught me." She gave the player the name after HashChain as Satoshi's guess; it was hers too.
-   - **Safe opened, teacher not discussed:** the same, from a little further back: she called it Satoshi's guess, and has hoped since that it was only his.
-   - **Safe shut, teacher discussed:** "I told you somebody taught me that line. I didn't say who." She has known since the fund's file in m06; "keep it out of your notes" in m07 was her keeping it out of hers.
-   - **Neither** (cold starts included): a file on a crypto fund, a name at eighty-seven per cent, and a drawer.
-
-   **Every form then reaches the wall** (W-01, orchestrator ruling). She had the name the night Fraser and Ferreira died in m07, and Netherton is listening: "Two cards on that wall. I had his name the night they died. I've done the sum, and I don't know the answer." Netherton says nothing. His silence is the season's rhyme: in m08 he told the player "Two of ours are dead in the space between what I knew and what I did."
-4. **The player's answer** (every player; `hax_confession_answer`). Safe shut: "You should have told me." (`should_have_told`) or "I'd have done the same in your place." (`same_in_your_place`). Safe opened: "You should have taken it to Netherton." (said with him listening; `should_have_told`) or "I'd have sat on it too." (`same_in_your_place`). On every form, a third answer, her own line back to her: "Afterwards. Not during." (W-14), recorded as `same_in_your_place`, with its own reply. Neither answer is wrong. HaX replies in one or two lines; if the player told her the Reading's line about her, her reply knows it. Then she gets back to work.
+2. **Netherton**, on the line from the aircraft taking Task Force Null to Montana (§14 change 7). Row 125's line, unchanged: "I said we wouldn't name him until we could prove it. We can. Dr Adrian Tesseract." Then one sentence, for every player and cold starts most of all: "He was our chief strategist until seven years ago. He trained half my field officers." Then: "HaX." Nothing else (W-02, R2-S05). He stays on the line.
+3. **HaX's confession** (rows 70, 98; FINALE_ARC §5.4). She says the rest herself: he trained her; she was his.
+   - **Her first line is the recognition line, if any** (R2-S05, N-03; row 97 gives it to her): on `m07_architect_echo_heard`, "You heard him say it in Portland. My line. His line."; else on `m03_directive_decoded`, "You've read him before. Sterling's drive." (style, not handwriting, S-05). It replaces the opening sentence of her form.
+   - **Four openings** (N-12: labelled by import, since "the safe" in m09 is Sorensen's), chosen by `m06_architect_identity_found` and `m07_teacher_discussed`:
+     - **m06 name found, teacher discussed:** "I told you on the handset he taught me." She gave the player the name after HashChain as Satoshi's guess; it was hers too.
+     - **m06 name found, teacher not discussed:** the same, from a little further back: she called it Satoshi's guess, and has hoped since that it was only his.
+     - **m06 name not found, teacher discussed:** "I told you somebody taught me that line. I didn't say who." She has known since the fund's file in m06; "keep it out of your notes" in m07 was her keeping it out of hers.
+     - **Neither** (cold starts included): "There was a file on a crypto fund, with his name in it at eighty-seven per cent. I put it in a drawer. He trained me. I wanted the other thirteen." (N-04.)
+   - **Every form then reaches the wall** (W-01, N-04). She had the name the night Fraser and Ferreira died in m07, and Netherton is listening: "Two cards on that wall. I had his name the night they died. I don't know if saying it would have saved them. I didn't say it." Netherton says nothing. His silence is the season's rhyme: in m08 he told the player "Two of ours are dead in the space between what I knew and what I did."
+4. **The player's answer** (every player; `hax_confession_answer`). m06 name not found: "You should have told me." (`should_have_told`) or "I'd have done the same in your place." (`same_in_your_place`). m06 name found: "You should have taken it to Netherton." (said with him listening; `should_have_told`) or "I'd have sat on it too." (`same_in_your_place`). On every form, a third answer, her own line back to her: "Afterwards. Not during." (W-14), recorded as a third value, `afterwards` (N-17; §14 change 24). No answer is wrong. HaX replies in one or two lines (stage 2 §4.3); if the player told her the Reading's line about her, her reply knows it (N-05, drafted in stage 2). Then she gets back to work.
 5. **Back to work.** "There's more on his box. A memo and a draft. Read them."
 
 ### Beat 3.4: The Albion papers and the notice (2 minutes, plus the optional send)
@@ -271,23 +289,27 @@ HaX lands the m04 choice (rows 48, 57), one line by `m04_disclosure_choice`: `fu
 
 **VM flag 4** (full control of Tomb Beta's server), submitted beside the machine: the job that still mirrors to Tomb Gamma. In story terms it carries:
 
-- **What the Publication is.** At 06:00 UTC on day 13 Tomb Gamma releases the whole stolen database to everyone at once, free, every entry with working detail. HaX: "He's giving it away. Free, to everyone, in the same minute."
-- **The key** (W-06). The job has a manual release: a key at Tomb Gamma's console that sends everything at once, and it needs a hand on it. **The fallback**: if nobody presses it, the database goes anyway, city by city, from 06:00. HaX: "Then why build a key at all?" Nobody answers it in m09.
+- **What the Publication is, and what the key does** (W-06, N-02). The whole stolen database goes out free, every entry with working detail. By default it goes **city by city, starting at 06:00 UTC on day 13**. There is also a key at Tomb Gamma's console that sends **everything, everywhere, in the same minute**, and it needs a hand on it. HaX: "He's giving it away. At six it starts going out, city by city. Turn that key and it goes everywhere in the same minute." Then: "Then why build a key at all?" Nobody answers it in m09. The question points at something real: the key makes it worse, faster, and needs someone to press it.
 - **The head start**: the cells get it two hours early, at 04:00.
 - **The defences**: the list of Tomb Gamma's defences, each built from an entry in the stolen database.
 - **His casualty sheet**, signed, his original (the correction is m10's, FINALE_ARC §4.1): 1,100 to 2,600 dead in the first month. "An acceptable price for the last arms race." It replaces the briefing's guess. HaX reads the range once and does not round it. On `m06_minder_walked`: "Kemal Aydin walked out on a smaller number than this." (row 77, moved here from the briefing, W-09.)
 
-**The realisation, once, as the player's line** (W-05, orchestrator ruling). A player choice at the end of HaX's read: "The tape room isn't on the schedule." HaX: "No. It isn't. He shredded everyone but himself." If the player found the schedule in the office, the line reads "Her schedule left this room off." The arc states it nowhere else; the call confirms it.
+**The realisation, stated once** (W-05, R2-S03, N-06). At the end of HaX's read:
+
+- On `schedule_read`, the player has two options: "Her schedule. This room isn't on it." or "Read me the defences." The first gets HaX: "No. It isn't. He shredded everyone but himself." The second skips it; the call still confirms.
+- Without `schedule_read`, HaX states the fact from the job's side, once: "Nobody's wiping this box. Not her, not him."
+
+The arc states it nowhere else; the call confirms it.
 
 ### Beat 3.6: Tesseract rings HaX (1 minute)
 
-He rings HaX, not the player. The player's line stays open and they hear her side only. His voice is never heard in m09; the narrator gives one line ("A man's voice on her end, too low to make out."). Her side (W-11):
+**The trigger** (R2-S02): flag 4 and `identity_scene_done`. He rings HaX, not the player. The player's line stays open and they hear her side only. His voice is never heard in m09; the narrator gives one line ("A man's voice on her end, too low to make out."). He calls her "Ninety-nine", as he did on the course, and she refuses it (agreed with the m10 author, §14 change 13). Her side (W-11):
 
-> Agent HaX: ...Yes. *(beat)* I know it's you. *(beat)* Nobody's called me that since the course. *(beat)* No. *(long beat)* ...I'll bring them.
+> Agent HaX: ...Yes. *(beat)* I know it's you. *(beat)* Nobody's called me that since the course. It's HaX. It has been for seven years. *(long beat)* ...I'll bring them.
 
-He called her "Ninety-nine" (shared with the m10 author, §14 change 13). Then she reports it in three sentences, as if it were any intercept, and her voice goes on the last: the blast door will open for 0x00 by name; take your time getting there; and he asked whether they had liked his notes.
+Then she reports it in four short sentences, as if it were any intercept, and her voice goes on the last: he called her Ninety-nine; the blast door will open for 0x00 by name; take your time getting there; and he asked whether they had liked his notes.
 
-Music under the call is near-silence (stage 2 §6). The conclusion aim opens: report to Netherton. `concludeRequires`: the four flags only.
+Music under the call is near-silence (stage 2 §6). The conclusion aim opens: report to Netherton. It waits on `identity_scene_done` as well as the call; `concludeRequires` stays the four flags only.
 
 ## 7. Closing debrief
 
@@ -298,24 +320,23 @@ The m02 shape: a face-to-face moment, a stance beat, a question hub so nothing i
 ### 7.1 Beats in order
 
 1. **Cold open** (Narrator). Floodlights, an aircraft with its ramp down, the team unloading cases.
-2. **Kowalczyk** (W-07). Before Netherton reaches the player, she does, with a crate on her hip: "Well? Did my toy earn its keep?" Two short replies: warm ("It opened the safe. Thank you.") or flat ("It did the job."). She grins either way and goes back to the ramp. On a player who doesn't know, it is nothing. On `sleeper_named`, it is the scene: the player is thanking, or not thanking, WREN to her face, with Netherton walking up behind her. On `sleeper_shortlist`, it is half of it. (S-20: no line about Quintero watching her.)
+2. **Kowalczyk** (W-07). Before Netherton reaches the player, she does, with a crate on her hip: "Well? Did my toy earn its keep?" Two short replies: warm ("It opened the safe. Thank you.") or flat ("It did the job."). She grins either way and goes back to the ramp. On a player who doesn't know, it is nothing. On `sleeper_named`, it is the scene: the player is thanking, or not thanking, WREN to her face, with Netherton walking up behind her. On `sleeper_shortlist`, it is half of it. (S-20: no line about Quintero watching her.) On `sleeper_named` with the flat reply, Netherton, as he arrives after she has gone: "Warmer, next time. She notices." (N-08, local only.)
 3. **Netherton opens with the hour**, as the thing that has changed: "Oh-six-hundred, day thirteen. Twenty hours. He has given us every one of them." Then the name, once, as a fact he can now say in a hangar.
-4. **Stance** (every player; W-16). He has read the memo on the flight. "You've read his memo. Was he right?" Two answers, recorded locally and paid back at the end: "About Albion, yes." / "No. Not about any of it." Neither is wrong.
+4. **Stance** (every player; W-16). He has read the memo on the flight. "You've read his memo. Was he right?" Two answers, recorded locally and paid back at the pen: "About Albion, yes." / "No. Not about any of it." Neither is wrong.
 5. **The question hub.** Each topic once; the spine follows whatever the player asks.
 
 | Topic | What Netherton says, by branch |
 |---|---|
 | "The archive, sir." | What the purge cost and what the player stopped, one line each and no list: the bin saved (Derek's file, now with Analysis beside his statement; the Social Fabric letters, and Tran's handler is being watched; or Nightshade's copy, read); the tape saved (her file, the Alpha tapes, or nothing); Sorensen (arrested: "she has asked for a lawyer and a pencil"; knocked out; or left at the shredder, and she finished the job); Tran; Noor (helped, warned, told she is on the list, or none); Old Coyote (talked past, or knocked out: "He wants to climb power lines for a living. He will. Not this week."). |
-| "WREN." | `sleeper_named`: "Halina Kowalczyk." On `double_crossed`, the twelve, and the rest warned. `sleeper_shortlist` without the name: "Two names. I have worked with both for eleven years. One of them is lying to me tonight." Neither: "One of four. I have known all four of them for years, and it does not help." |
-| "The Recruiter." | By `recruiter_offer`: `named`, her handler list is with Analysis and the arrests start tonight; `double_crossed`, the same, "and she knows it was you"; `taken`, she is at large and her network with her, "you bought a name, and it was the right name"; `refused`, she is at large, "and you did not let her set the price". On `recruiter_secret == "told"`: "HaX tells me you said something on that call. I do not need to hear it twice." |
+| "WREN." | `sleeper_named`: "Halina Kowalczyk." On `double_crossed`: "About half of her network. She warned the rest." (N-01; the earlier "twelve" is dropped.) `sleeper_shortlist` without the name: "Two names. I have worked with both for eleven years. One of them is lying to me tonight." Neither: "One of four. I have known all four of them for years, and it does not help." |
+| "The Recruiter." | By `recruiter_offer`: `named`, her handler list is with Analysis and the arrests start tonight; `double_crossed`, about half of it, "and she knows it was you"; `taken`, she is at large and her network with her, "you bought a name, and it was the right name"; `refused`, she is at large, "and you did not let her set the price". On `recruiter_secret == "told"`: "HaX tells me you said something on that call. I do not need to hear it twice." |
 | "The notice." (only on `albion_notified`) | "You sent it without asking me. I would have said yes. I would have taken a week to say it." |
 | "Montana, sir." | Goes to the spine. |
 
 6. **The spine** (every player):
-   - **The two names** (row 100). He reads them before he signs, in full: "Agent 0x19, Callum Fraser. Agent 0x6B, Ana Lúcia Ferreira." He gets her middle name right, and it costs him (W-22: the narrator gives that pause one line). No comment after.
-   - **The order.** He signs the Montana order in front of the player. On `m08_debrief_stance == "owned"`, his own name goes beside Nightshade's on the file, and he says so (row 109). On `defended`, one thank-you he does not explain.
-   - **HaX, last on the line**, by `hax_confession_answer`: on `should_have_told`, she is telling the player everything from now on, starting with the bunker; on `same_in_your_place`, a thank-you, and she will not ask them to do it again. Either way, "the rest" she promised in the archive is still owed (§14 change 15).
-   - **Netherton's reply to the stance** (W-16, worst-ten #7): "About Albion, yes" gets "Then I sign for him too."; "No" gets "Good. He can tell a court so."
+   - **The two names** (row 100). He reads them before he signs, in full: "Agent 0x19, Callum Fraser. Agent 0x6B, Ana Lúcia Ferreira." Narrator (W-22, N-10): "He reads the first name off the card. He doesn't look down for the second." No comment after.
+   - **The order, and his reply to the stance** (N-07: the reply sits at the pen). "About Albion, yes" gets "Then I sign for him too." as he signs; "No" gets "Good. Then he can make that argument in court, and lose it." and he signs. On `m08_debrief_stance == "owned"`, his own name goes beside Nightshade's on the file, and he says so (row 109). On `defended`, one thank-you he does not explain.
+   - **HaX, last on the line**, by `hax_confession_answer`: on `should_have_told`, she is telling the player everything from now on, starting with the bunker; on `same_in_your_place`, a thank-you, once; on `afterwards`, "You said afterwards. I'm holding you to it." Either way, "the rest" she promised in the archive is still owed (§14 change 15).
    - **Why the team goes in together** (row 117), the last spoken line. Not named: "If I bench four agents tonight, WREN knows we know. They come. You watch them." Named: "We take her at the briefing, in front of the others, where there is nowhere to go. Until then she sees nothing in my face. Nor in yours."
    - **The last image** (Narrator): he caps the pen. On `sleeper_named`, across the hangar, Kowalczyk waves.
 7. **Conclusion**: `mission_complete`, the conclusion task, `bond_visualiser`, credits reading back the night's choices (stage 4 writes the credit lines).
@@ -333,8 +354,8 @@ Stage 3 owns the wording, the costs and the "does it matter" test; this is where
 | # | Choice | Who meets it | When | Options | Sets | Paid back |
 |---|---|---|---|---|---|---|
 | 1 | The cage bin | every player | Beat 2.1 | Derek's file / the other bin (the Social Fabric letters, or Nightshade's copy) / open the cage without the hatch (Derek's survives) | `cage_bin_saved` | in m09 (S-08, W-12): Derek's file is a second sample of the hand (Beat 2.2); the letters are a talk-down lever on Tran (Beat 2.6) and, on `m01_maya_ko`, Maya's missing warning; Nightshade's copy changes his reply to his file. The debrief reads each. Stage 3 may add an m10 echo. |
-| 2 | The Recruiter's offer and the deck | every player | Beat 2.4 | take / refuse / take, then pull her file anyway; which tape HaX pulls (also after a hang-up) | `recruiter_offer`, `sleeper_named`, `deck_pulled` | m10 briefing (WREN detained), m10 closing card (her network); the debrief |
-| 3 | The answer to HaX's confession | every player | Beat 3.3 | "should have told me / taken it to Netherton" / "same in your place / sat on it too" / "Afterwards. Not during." | `hax_confession_answer` (the third answer records as `same_in_your_place`) | the debrief's HaX line; m10's core (FINALE_ARC §5.4) |
+| 2 | The Recruiter's offer and the deck | every player (the call is guaranteed, Beat 2.4) | Beat 2.4 | take / refuse / take, then pull her file anyway (priced aloud first); which tape HaX pulls (also after a hang-up); take + nothing records `taken` | `recruiter_offer` (defaults to `refused` on the call's first line), `sleeper_named`, `deck_pulled` (`her_file` / `alpha_tapes` / `none`) | m10 briefing (WREN detained), m10 closing card (her network, half on `double_crossed`), m10's use of the Alpha tapes (stage 3); the debrief |
+| 3 | The answer to HaX's confession | every player | Beat 3.3 | "should have told me / taken it to Netherton" / "same in your place / sat on it too" / "Afterwards. Not during." | `hax_confession_answer`: `should_have_told` / `same_in_your_place` / `afterwards` (N-17; §14 change 24) | the debrief's HaX line; m10's core (FINALE_ARC §5.4) |
 | 4 | The stance on Tesseract | every player | debrief beat 4 | "About Albion, yes." / "No. Not about any of it." | local | Netherton's reply in the spine |
 | 5 | Own the m05 deal, or hang up | `m05_recruiter_deal_accepted and not m05_recruiter_deal_confessed` | Beat 2.4 | own it on the open line / hang up | `recruiter_secret` (`told` / `kept`) | m10: Tesseract's leverage line and HaX's reply (note S-25 for the m10 author) |
 | 6 | Send Nightshade his file | `m08_nightshade_triple_agent` | Beat 2.2 onwards | send / keep | `nightshade_shown_file` | m10's door (row 105) |
@@ -346,9 +367,9 @@ Stage 3 owns the wording, the costs and the "does it matter" test; this is where
 | 12 | Tran | players who go to the server closet | Beat 2.6 | talk him off it (needs the letters) / knock out / arrest / leave him | `tran_stopped` | what of the tape side survives; the debrief |
 | 13 | Old Coyote | every player who meets him | Act 1 | talk past / sneak past / knock out | `old_coyote_ko` | one debrief line |
 | 14 | The raid team | every player | briefing | back Quintero / thank Kowalczyk / say nothing | local | HaX at the moment it hurts: the Recruiter naming Kowalczyk, or the shortlist naming Quintero (W-19) |
-| 15 | Kowalczyk in the hangar | every player | debrief beat 2 | warm / flat | local | none; the moment is the payoff (W-07) |
+| 15 | Kowalczyk in the hangar | every player | debrief beat 2 | warm / flat | local | on `sleeper_named` and flat, Netherton: "Warmer, next time. She notices." (N-08) |
 
-Choices 1 and 2 are forced by events (the cage opening, the call ending), so stopping Sorensen or Tran first cannot skip them (stage 0 §7). Nothing on this list gates `concludeRequires` or the critical path. **Handed to stage 3:** W-26's optional fifth note in the Reading, written before tonight, predicting which bin the player saves (fixed strings by `cage_bin_saved`). Kept out of stage 1 because it stretches D-06's four-entry cap.
+Choices 1 and 2 are forced by events (the cage opening, the call ending), so stopping Sorensen or Tran first cannot skip them (stage 0 §7); choice 3 is forced because Tesseract's call and the conclusion aim wait on the identity scene (Beat 3.3). Nothing on this list gates `concludeRequires` or the critical path. **Handed to stage 3:** W-26's optional fifth note in the Reading, written before tonight, predicting which bin the player saves (fixed strings by `cage_bin_saved`). Kept out of stage 1 because it stretches D-06's four-entry cap.
 
 ## 9. Climax and the hook into m10
 
@@ -365,12 +386,12 @@ Light combat stays where stage 0 put it (Tran's guard, Sorensen if pushed). A fi
 - **The hour and the door.** 06:00 UTC on day 13; the blast door that opens for 0x00 by name; "take your time" (Tesseract via HaX). m10 opens on that countdown.
 - **WREN.** A name the player holds and Netherton will act on at m10's briefing; or two faces from a closed firm's file; or one of four. "They come. You watch them." is the line that ends the mission's plot.
 - **His case, already half-answered.** The Albion papers, and on `albion_notified` the notice already sent.
-- **The key.** "Then why build a key at all?" is left open; with the Reading's last page it is the question m10 answers.
-- **HaX's promise.** "The rest, when this is over." m10 pays it (§14 change 15).
+- **The key.** At 06:00 it goes out city by city; the key sends it everywhere in the same minute, and needs a hand. "Then why build a key at all?" is left open; with the Reading's last page it is the question m10 answers.
+- **HaX's promise.** "The rest, when this is over." m09 never says what it is; m10 pays it at 06:00 (§14 change 15).
 
 The last image is Netherton capping his pen. The music goes to the closing track on the pen.
 
-**What m10 imports from m09** (FINALE_ARC §3.4): `nightshade_shown_file`, `sleeper_named`, `recruiter_offer`, `albion_notified`, `hax_confession_answer`, `recruiter_secret`, `reading_finished`, plus `m09_completed`, and `sleeper_shortlist` if §14 change 6 is taken. Stage 4 also keeps `deck_pulled` readable for stage 3's decision on the Alpha tapes (item 25).
+**What m10 imports from m09** (FINALE_ARC §3.4): `nightshade_shown_file`, `sleeper_named`, `recruiter_offer`, `albion_notified`, `hax_confession_answer`, `recruiter_secret`, `reading_finished`, plus `m09_completed`; and, if §14 changes 6 and 25 are taken, `sleeper_shortlist` and `deck_pulled`: nine exports in all. `deck_pulled` replaces FINALE_ARC §13 item 25's working name `alpha_tapes_saved` (R2-S13: decided here, because `recruiter_offer` alone can't tell whether the Alpha tapes were saved).
 
 ## 10. Cold start ("previously on")
 
@@ -429,7 +450,7 @@ The nine rooms are stage 0 §6's; placement and lock order are stage 5's (FINALE
 | 2.5 | open stacks (Harwick & Lowe boxes) | Torres by phone (turned; or on the walk to the office) | – | – | 3 (optional task) |
 | 2.6 | server closet | Tran | – | the rest of the tape side, until he is stopped | optional |
 | 2.7 | moving (by phone) | – | – | – | 3 → 4 |
-| 3.1 | Sorensen's office (safe, Reading, schedule, files) | – | – | – | 4 |
+| 3.1 | Sorensen's office (opens after the deck; safe, Reading, schedule, files) | – | – | – | 4 |
 | 3.2 | tape room; salvage cage | Gary by phone (protected) | – | – | 5 |
 | 3.3–3.4 | tape room | Netherton by phone | 3 | – | 5 |
 | 3.5 | tape room | – | 4 | – | 5 |
@@ -438,7 +459,19 @@ The nine rooms are stage 0 §6's; placement and lock order are stage 5's (FINALE
 
 **Aims**, as stage 0 §6 sets them, with the beats that open and close each: 1 Get in and set up the drop terminal (1.1–1.3). 2 Find the restricted series before it burns (1.4–2.2). 3 Read the Initiative's ledger (2.3–2.5; optional: the cross-reference). Aim 3 completes on the deck choice, which is forced on flag 2 (S-03). 4 Search the director's office (3.1: the safe and the Reading are tasks; reading to the end is not). 5 Take Tomb Beta's server (3.2–3.5). Optional: stop Sorensen; stop the tape wipe; send the vendor notice. Conclusion: report to Netherton.
 
-**Engine checks this arc depends on** (from the structure review's E-1 to E-10, for stages 4, 5 and 9): talking to and cloning from an NPC at the cage counter (E-1, S-09); Sorensen's non-combat "keeps shredding" state (E-2); calls conditioned on "not in a conversation" and re-checked after their delay (E-3); the identity scene on two globals (E-4); removing the unchosen bin and tape (E-5); object text readable after a flag (E-6); Tran's sight trigger (E-7); five NPCs in the briefing and a hangar background (E-8); ambient sound on an event and near-silence (E-9); two speakers in one phone conversation (E-10).
+**What enforces the night's order** (R2-S01, R2-S02). Aims gate nothing and the server concludes on `concludeRequires` alone, so each step of FINALE_ARC §6.1's one order is held by a lock or a condition. Stages 4–5 build them; stage 1 states them:
+
+| Step | Held by |
+|---|---|
+| flag 1 → the cage | flag 1's reward opens the restricted stacks' outer door (Beat 1.4) |
+| the cage → the call | the call waits on flag 2 **and** `cage_opened` (Beat 2.4) |
+| the call → the deck choice | the call's first line sets `recruiter_offer = "refused"`; a closed call rings again on leaving the room and resumes at the offer (Beat 2.4) |
+| the deck → the office | the office door's code comes from Sorensen's mail, read by HaX when the call ends (Beat 3.1) |
+| the office → the tape room | the tape room's key card is in the safe (Beat 3.1) |
+| flag 3 → the identity scene | the scene fires on flag 3; without Nightshade's file HaX holds the name until it is picked up (Beat 3.3) |
+| the scene → the call → the conclusion | Tesseract's call and the conclusion aim wait on `identity_scene_done` and flag 4 (Beats 3.3, 3.6) |
+
+**Engine checks** (REVIEW_R2_STRUCTURE.md's engine list, items 1–14, carries R1's E-1 to E-10 forward): locks opened by a flag reward and by an ink global (1); flag 2 on its own station, if stage 5 takes that option (2); a call that survives being closed (3); a second speaker in a phone thread, shown and voiced as themselves (4); two calls due on one walk (5); the cage counter (6); Sorensen non-combat (7); item removal and spawn on a global (8); calls held while in a conversation (9); object text that changes on a global (10); Tran's sight trigger and Old Coyote's re-routed round (11); drop-terminal actions reachable from the tape room (12); the multi-speaker briefing and the hangar (13); ambient sound and near-silence (14).
 
 ## 12. Handover items settled (FINALE_ARC §13)
 
@@ -447,67 +480,81 @@ Items owned by stage 1 or 2 that concern m09. The m10 scenes in the same list (i
 | # | Item | Settled here | Where |
 |---|---|---|---|
 | 3 | What Kowalczyk's cracker is for; whether every SAFETYNET cracker comes from the bench | m09 side: stores quarantined every cracker Nightshade signed for after m08; Kowalczyk gives the player her own ("never been through stores"), which is true and is the one logged "to WREN" at the bench. She gives it to be liked and because getting 0x00 to Montana is what the Architect wants. In m09 it opens Sorensen's safe, and she asks about it in the hangar. Canon default kept: Nightshade's crackers and WREN's came from the bench, not every SAFETYNET cracker. Canon note for stage 6. m10 must issue it again (S-26). | §3.4, Beat 3.1, §7.1 |
-| 4 | A beat and a reason for suspicion for Quintero, Malhotra and Arakawa | m09 briefing: Quintero argued against tonight's job (the archive where the ledger is) and doubts the courier; Malhotra asked to run the Helena line himself; Arakawa kept Helena's police off the archive's side of town tonight. Kowalczyk's is the cracker. All true, all innocent except hers. Round 1 adds a second, harder one for Quintero: she is the other Harwick & Lowe hire on the shortlist. | §3.3, Beat 2.5 |
+| 4 | A beat and a reason for suspicion for Quintero, Malhotra and Arakawa | m09 briefing: Quintero argued against tonight's job (the archive where the ledger is) and doubts the courier, and she is the other name on the Harwick & Lowe sheet; Malhotra asked to run the Helena line himself; Arakawa kept Helena's police off the archive's side of town tonight. Kowalczyk's is the cracker. All true, all innocent except hers. Round 1 adds a second, harder one for Quintero: she is the other Harwick & Lowe hire on the shortlist. | §3.3, Beat 2.5 |
 | 8 | The default source of the archive's company name | The courier label on the order, which SAFETYNET read and let go on. How it was caught, one reason by priority: the Calder Wharf courier account (m04 found), else the HashChain tags (m06), else the Helena ticket in Nightshade's go-bag. The other confirmations move out of the briefing (W-09): Victoria's keys to the lease file, Torres' address line to his call, Kemal's tip to the casualty sheet. | §3.1 beat 2, Beats 2.5, 3.1, 3.5 |
 | 9 | The identity scene's load; whether the notice moves | The scene carries the proof, Netherton's name and one sentence (he stops before HaX), at most one recognition line, HaX's confession with its cost (the two dead, Netherton listening) and the player's answer. The handwriting is matched earlier against HaX's notebook (2.2) and confirmed in the salvage cage (3.2). The line's meaning is cut to three words and one sentence (2.7). The notice has its own beat (3.4). | Beats 2.2, 2.7, 3.3, 3.4 |
 | 10 | Nine years | Used throughout. | – |
 | 11 | One non-HaX voice per room | Applied to m09 per scene during play; cutscenes exempt. The Recruiter's call now fires outside the cage, so Sorensen is never in its scene (S-04). | §11, §14 change 6 |
 | 16 | The "who is Tesseract" sentence (m10's cold start) | Not m09's. m09's equivalent is Netherton's sentence in the identity scene; the briefing gives who the Architect is (S-21) and holds the name back (§14 change 1). | §3.1 beat 6, Beat 3.3 |
 
-**Handed on:** item 7 (the Recruiter's wording) and 25 (a later use for the Alpha tapes; their m09 stake is now "His voice. Teaching.") to stage 3; item 1 (the night's UTC steps; the debrief's "twenty hours") to stage 4; item 31 (lock order and placement, and the cage staging S-09) to stage 5.
+**Handed on:** item 7 (the Recruiter's wording) and 25 (a later use for the Alpha tapes; their m09 stake is now "He teaches what he'll do", and the export is `deck_pulled`; stage 3 also decides playback, R2-S15) to stage 3; item 1 (the night's UTC steps; the debrief's "twenty hours") to stage 4; item 31 (lock order and placement, and the cage staging S-09) to stage 5.
 
 ## 13. Notes for later stages
 
 **Stage 3 (moral choices).**
 - Whether talk can stop Sorensen once the cage is open. Suggested lever: her vocation (a records keeper ordered to destroy records), or her own schedule leaving his rack off. It must not turn her; stopping is not cooperation.
-- The two purge choices now each buy something in m09 (§8 #1, #2). Stage 3 tests whether the player can value them at the moment of choosing, and decides any m10 echo.
+- The two purge choices each buy something in m09 (§8 #1, #2), and the Recruiter's routes are now priced before the choice (Beat 2.4's table). Stage 3 tests whether the player can value them at the moment of choosing, and decides any m10 echo (Derek's standing order is the obvious one).
+- **Decide the Alpha tapes early, before stage 7** (R2-S15): playable (a short clip at the drop terminal, a new voiced asset for Tesseract that the user approves) or not. HaX's line is worded so it doesn't promise the player hears him tonight. Their practical use in m10 (how he built the bunker, as he taught it) is item 25.
 - W-26: an optional note in the Reading, written before tonight, predicting the player's bin (§8).
-- The confession's third answer, "Afterwards. Not during.", records as `same_in_your_place`. If stage 3 wants it distinct in m10, that is a FINALE_ARC change.
 
-**Stage 4 (objectives and events).**
-- Triggers: Nightshade's call on flag 1 (triple agent); Tran's radio to Old Coyote after flag 1 (`m01_maya_ko`); the Recruiter's call on flag 2, delayed, outside the cage, not in a conversation; aim 3 completes and aim 4 opens on the deck choice; HaX's "Afterwards" call on the deck choice plus leaving the room; Torres on opening the boxes, or on the walk to the office; Gary on the first keypad attempt; the identity scene on flag 3 plus Nightshade's file held; Tesseract's call on flag 4.
-- The deck pull is inside the call ink, including after a hang-up (HaX's half); the ink sets `deck_pulled` and `recruiter_offer`.
-- The debrief's "twenty hours" needs the night's UTC time fixed.
+**Stage 4 (objectives and events)**, with the locks in §11's order table:
+- Triggers: Nightshade's call on flag 1 (triple agent); Tran's radio to Old Coyote after flag 1 (`m01_maya_ko`); the Recruiter's call on flag 2 **and** `cage_opened`, delayed, not in a conversation, re-ringing if closed; the office code on the call's end; HaX's "Afterwards" call on the deck choice plus leaving the room, then Torres' fallback after a delay; Gary on the first keypad attempt; the identity scene on flag 3 (held for Nightshade's file if needed); Tesseract's call on flag 4 **and** `identity_scene_done`; the conclusion aim waits on both.
+- The deck pull is inside the call ink, including after a hang-up (HaX's half); the call's first line sets the defaults.
+- The night's UTC steps: the archive night is local night on day 11, early day 12 UTC (R2-S07); the debrief's "twenty hours" follows from it, and FINALE_ARC §1.5's row needs the same wording.
 - Music: near-silence for Tesseract's call; ask the user before adding a track.
 
 **Stage 5 (rooms).**
-- The cage staging (S-09, E-1): Sorensen at a hatch counter the player can reach, or the bell fallback. Check m08's clone-while-talking first.
+- The cage staging (S-09): Sorensen at a hatch counter the player can reach, or the bell fallback; on Victoria's route the bins are two objects inside the door. Check m08's clone-while-talking first.
+- Flag 1's reward opens the restricted stacks' outer door. The office door takes the code HaX reads from the mail.
 - Nightshade's plan chest sits before the tape room.
-- The safe holds the Reading and the key card. The schedule is on Sorensen's desk.
+- The safe holds the key card, the master schedule and the Reading.
 - The salvage cage opens off the tape room.
 - The Harwick & Lowe boxes are in the open stacks, findable without the file number and readable only with it.
+- Option for stage 5 (R2-S01): give flag 2 its own station at the ledger shelf, which also gives the shelf a job.
 
-**Stage 6 (lore).** New canon: stores' quarantine of Nightshade's crackers; the order read and let go on; the destruction schedule leaving off the rack and the Reading; Harwick & Lowe's dead files at the archive, and Quintero as an innocent H&L hire; WREN's mother in residential care; the Architect taking WREN's tasking; HaX's training notebook; the Alpha tapes as his recorded teaching; "Ninety-nine"; Sorensen's twenty years as a county clerk.
+**Stage 6 (lore).** New canon: stores' quarantine of Nightshade's crackers; the order read and let go on; the master schedule's ticked rooms and her query about the Reading; Harwick & Lowe's dead files at the archive, and Quintero as an innocent H&L hire (SAFETYNET recruits internationally; "Client: government (UK)" for an American hire is ordinary, R2-S08); H&L shut before TalentStack opened; WREN's mother in residential care, paid by the Initiative; the Architect taking WREN's tasking; HaX's training notebook; the Alpha tapes as his recorded teaching; "Ninety-nine", refused; Sorensen's twenty years as a county clerk.
 
 **Stage 7 (ink).**
 - Briefing spine about twelve lines before the wall; wall eight short lines; hub three topics.
 - The Reading is document text, unvoiced.
-- Tesseract is not voiced in m09.
-- Every branch line is a fixed string.
+- Tesseract is not voiced in m09 (unless stage 3 makes the Alpha tapes playable).
+- Every branch line is a fixed string; the forms of the confession are wired to imports, not to "the safe".
 
-**For the m10 author** (from the structure review): on `recruiter_secret == "kept"`, HaX already heard the receipt in m09, so Tesseract's line is that the player never explained (S-25); the cracker must be issued again at m10's briefing as "the one Kowalczyk gave you" (S-26); "Ninety-nine"; the m09 casualty sheet is his original; on `sleeper_shortlist` the alibi clue (FINALE_ARC §4.4 clue 2) leaves the same two names; HaX owes the player "the rest".
+**Stage 0 fixes** (proposed; this stage does not edit stage 0, R2-S11): §1 and §7 "about 75 minutes" → "about 85 with the field guides, 95–100 without"; §2.1 and §2.3 flag 3 at the drop terminal → in the tape room, with the identity scene there by phone; §2.2 and §2.3 "intercepts" → read and let go on; §6 design notes' "who is Tesseract" beat → the suspect without the name; §6 "Opening and closing": the debrief in a Helena hangar. Listed again in §14 changes 14 and 27.
+
+**For the m10 author** (agreed or to agree): on `recruiter_secret == "kept"`, HaX already heard the receipt in m09, so Tesseract's line is that the player never explained (S-25); the cracker must be issued again at m10's briefing (S-26); HaX refuses "Ninety-nine" on the m09 call with "It's HaX. It has been for seven years."; the m09 casualty sheet is his original; on `sleeper_shortlist` the alibi clue leaves the same two names; HaX's promise of "the rest" is made after the deck, in Beat 2.7, not in the confession, and m10 pays it at 06:00; WREN has one goal, the key; a third `hax_confession_answer` value, `afterwards`, and the `deck_pulled` export need m10 handling (§14 changes 24, 25).
 
 ## 14. Proposed FINALE_ARC changes
 
-Not made: FINALE_ARC is shared with the m10 author, and an arc-keeper applies these later. Verdicts are the structure reviewer's (REVIEW_R1_STRUCTURE.md), with the orchestrator's round 1 rulings folded in.
+Not made: FINALE_ARC and stage 0 are shared, and an arc-keeper applies these later. Verdicts are the round 2 structure reviewer's (REVIEW_R2_STRUCTURE.md), with the orchestrator's rulings folded in. 27 changes: 17 from round 1 as revised, 18–23 the reviewer's wording additions, 24–27 new this round.
 
-1. **The briefing holds the name back** (accepted, with a sweep). Row 57's "who is Tesseract" beat becomes "who is the suspect": ENTROPY's planner, one of ours once, no name until it can be proved. The name and one sentence (chief strategist, trained half the field) land in the identity scene through Netherton; HaX says the rest. Sweep: row 57, D-15, §8 r2, §5.5 m09, stage 0 §6 "Next steps" and "Design notes".
-2. **The order is read and let go on, and its schedule leaves the rack off** (modified). Netherton: "We read it. Then we let it go on. If it hadn't arrived, he would know." The order reads "Burn Helena before the Publication. Schedule attached. -- A." The destruction schedule (Sorensen's annotated copy, in her office) lists every series and leaves off the tape room's rack and the Reading's box, because he wants SAFETYNET to read his server and his file, and to come (§1.2). The player says it at flag 4; his call confirms it. Goes in §1.3, §1.5 (day 11 "intercepts" → "reads"), §6.1.
-3. **The sold-and-lied opening carries the offer, and a hang-up keeps the deck pull** (modified). After a hang-up HaX stays on, says the wipe has started, and asks which tape; her file → `named`, the Alpha tapes or nothing → `refused`, as §3.4 already says. Row 61.
-4. **The deck pull is made inside the call by HaX** (accepted). Row 60, §6.1 item 3. The saved tape is data on the drop terminal, so the Alpha decode is at a terminal.
-5. **Flag 4 carries the casualty sheet, his original** (accepted). §6.1 flag 4 row, §1.2. The correction stays m10's (§4.1). The briefing gives Analysis's lower guess.
-6. **One non-HaX voice per scene during play; Torres moves; the cross-reference narrows to two; a new export** (accepted with tweaks, plus the orchestrator's dilemma ruling). Cutscenes are exempt. Torres rings at the Harwick & Lowe boxes, or on the walk to the office if the player never opens them. The H&L file narrows WREN to two lateral hires, Kowalczyk and Quintero (Quintero an innocent H&L placement; both list a parent in residential care). `sleeper_named` is set only by the Recruiter's name. **New export `sleeper_shortlist`** (`true` when the player read the H&L placing sheet without the name): m10 reads "two faces" (a HaX line; the alibi clue confirms the same pair). Goes in row 64, rows 117 and §4.4, §3.4, §5.1 Torres, §5.2 Quintero.
-7. **Netherton is on the aircraft, and the debrief is in Helena** (accepted, with a sweep). Row 125 ("from the Citadel"), §5.5 m09, stage 0 §6 "Opening and closing".
-8. **The Recruiter's reason** (modified). The Architect has taken WREN's *tasking* for Montana: she stays on Sorensen's books and draws the Initiative's money but answers to him, not the Recruiter, and his order burns her records office. The Recruiter sells what she can no longer use. In m10, WREN plays both ends (his hand on the key if he lets her; the copy for the Initiative when he won't); the m10 author confirms. Row 60, §4.4.
+1. **The briefing holds the name back** (accepted). Row 57's "who is Tesseract" beat becomes "who is the suspect": ENTROPY's planner, one of ours once, no name until it can be proved. The name and one sentence land in the identity scene through Netherton; HaX says the rest. HaX's briefing aside loses "It wasn't only his." (R2-S06). Sweep: row 57, D-15, §8 r2, §5.5 m09, stage 0 §6.
+2. **The order is read and let go on, and its schedule shows the gap** (modified, R2-S03). Netherton: "We read it. Then we let it go on. If it hadn't arrived, he would know." The order reads "Burn Helena before the Publication. Schedule attached. -- A." The master schedule is in Sorensen's safe, with each room ticked down the margin, the tape room's line unticked, and her query "Reading (safe): not listed. Keep?" The flag-4 line is offered only to a player who read it; otherwise HaX states the fact from the job's side. Goes in §1.3, §1.5, §6.1.
+3. **The sold-and-lied opening carries the offer, and a hang-up keeps the deck pull** (accepted). Row 61; values as §3.4.
+4. **The deck pull is made inside the call by HaX, with defaults and a re-ring** (modified, R2-S02, R2-S13). The call's first line sets `recruiter_offer = "refused"` and nothing pulled; a closed call rings again on leaving the room and resumes at the offer; take + nothing records `taken`. The double-cross's price ("about half") is said before the choice. The call waits on flag 2 and the cage opened. Row 60, §6.1 item 3 ("The player can pull one from the drop terminal").
+5. **Flag 4 carries his original casualty sheet** (accepted). §6.1 flag 4 row, §1.2; the correction stays m10's.
+6. **One voice per scene in m09; Torres moves; the cross-reference narrows to two; `sleeper_shortlist`** (accepted, with tweaks). Per-scene is m09's rule; FA's per-room R3-01 stays for m10. Torres rings at the boxes, or on the walk to the office. The H&L sheet names Kowalczyk and Quintero (Quintero an honest H&L hire; both list a parent in care), and HaX says why nobody checked: "Harwick & Lowe shut before TalentStack opened." `sleeper_named` comes only from the Recruiter. `sleeper_shortlist` is set on reading the sheet, whatever the order. Rows 64, 117, §4.4, §3.4, §5.1 Torres, §5.2 Quintero; the m10 import is change 23.
+7. **Netherton on the aircraft; the debrief in Helena** (accepted). Row 125, §5.5 m09, stage 0 §6.
+8. **The Recruiter's reason, and WREN's one goal** (accepted, revised by orchestrator ruling). The Architect has taken WREN's *tasking* for Montana: she still reports to the Initiative and draws its money, but her orders now come from him. The Recruiter sells what she can no longer use. WREN has one goal, the key (m10's design); "plays both ends" is withdrawn everywhere. Row 60, §4.4.
 9. **The order names the Publication** (accepted). §1.3.
-10. **The cracker** (accepted). Rows 29, 118. m10 issues it again to every player at its briefing (S-26).
-11. **The raid team's suspicion beats in §5.2** (accepted). Quintero's "Orders don't fall off couriers" is answered by Netherton ("This one didn't.") so it agrees with change 2. Kowalczyk's door-spec line is cut (W-20); her beat is the cracker.
-12. **Flag 3 is submitted in the tape room** (new, orchestrator ruling). §6.1's "Flags 1–3 are submitted at the drop terminal" becomes flags 1–2; flag 3 is submitted beside Tomb Beta's server through the field kit's link, and the identity scene plays there by phone with HaX and Netherton. Saves the walk back to the reading room and the return trip.
-13. **"Ninety-nine"** (new, shared with the m10 author). Tesseract calls HaX "Ninety-nine", as he did on the course; nobody else has since. §5.4.
-14. **m09 runs about 85 minutes** (new, orchestrator ruling, S-01). §1.3 ("About 75 minutes"), §8 r6, stage 0 §1.
-15. **HaX's promise** (new). In m09 she gives the line's meaning in three words and one sentence and promises "the rest, when this is over"; m10 pays it (§5.4). Her confession carries its cost: she had the name the night Fraser and Ferreira died, and Netherton hears it. §5.4 m09.
-16. **The Alpha tapes are his recorded teaching** (new, for stage 3's item 25). Tomb Alpha's tapes hold his teaching sessions from the first workshop, in his voice, with annotation sheets in his hand. That is their stake when the player chooses. Row 60, §6.1 item 3.
-17. **The m06 name came in the m06 debrief, as Satoshi's guess** (new, wording; S-10). Any line that has HaX saying the name "in Satoshi's office" is wrong; row 70's wording ("said the name in the m06 debrief as Satoshi's 87% guess") already matches.
+10. **The cracker** (accepted). Rows 29, 118; m10 reissues it.
+11. **The raid team's suspicion beats in §5.2** (accepted). Quintero's "Orders don't fall off couriers" is answered by "This one didn't."; Kowalczyk's beat is the cracker.
+12. **Flag 3 submitted in the tape room** (accepted, with sweep). §6.1's header and flag 3 row, stage 0 §2.1 and §2.3. The identity scene fires on flag 3 (HaX holds the name for Nightshade's file if needed), and Tesseract's call and the conclusion wait on it (R2-S02).
+13. **"Ninety-nine", refused** (accepted, synced with m10). Tesseract calls HaX "Ninety-nine" on his m09 call; she refuses it: "It's HaX. It has been for seven years." m10 calls back to that refusal. §5.4.
+14. **m09 runs about 85 minutes with the field guides, 95–100 without** (modified, R2-S04). §1.3, §8 r6, stage 0 §1 and §7; stage 8 sets the published figure.
+15. **HaX's promise, and the confession's cost** (accepted, with content). Her confession carries the two dead with Netherton listening. After the deck she gives "Afterwards. Not during." and one sentence, and promises "the rest, when this is over". The promise is made in Beat 2.7, not in the confession (R2-S14). What the rest is belongs to m10, which pays it at 06:00 (agreed with the m10 author); m09 never states it. §5.4.
+16. **The Alpha tapes are his recorded teaching** (accepted, conditional). They hold his teaching at the first workshop, in his voice, with annotation sheets in his hand, and a practical stake: "He teaches what he'll do. If he built the bunker the way he taught it, it's on that tape." Stage 3 decides playback before stage 7 (R2-S15). Row 60, §6.1 item 3, §13 item 25.
+17. **The m06 name came in the m06 debrief, as Satoshi's guess** (accepted). Row 70 already matches; see change 20 for row 37.
+18. **Sorensen in §5.2** (wording, R2-S12). "Holds … the Reading's shelf mark" → holds the Reading in her safe; "Hostile once the cage is open" → keeps shredding, non-combat; arrest or knock-out.
+19. **`hax_confession_answer` in §5.4 and §3.4** (wording, R2-S12). The m06-name-found answers are "You should have taken it to Netherton." / "I'd have sat on it too." (replacing "You should have pushed."); with change 24's third value.
+20. **Row 37** (wording, R2-S12). "You've read his hand before" → "You've read him before. Sterling's drive." (style, not handwriting), and the line is HaX's, as row 97's is.
+21. **§6.1 flag 2 and the one-order line** (wording, R2-S12). The printed ledger is optional (the flag holds it, and Sorensen shreds it if free); "The Recruiter rings next" → she rings once flag 2 is in and the cage has been opened.
+22. **§6.1 header** (wording, R2-S12). "Flags 1–3 are submitted at the drop terminal" → flags 1–2; flag 3 and the identity scene in the tape room (with change 12).
+23. **§3.2: m10 imports `m09_sleeper_shortlist`** (wording, R2-S12). Tier 1, H; Tier 1 becomes 38. Add `m09_deck_pulled` if change 25 is taken.
+24. **A third `hax_confession_answer` value, `afterwards`** (new, N-17). The player throws her own line back at her; it defers the judgement, so it is neither blame nor absolution. §3.4 gains the value; m10 decides its core beat (suggestion: it reads as `same_in_your_place` for "Put me on speaker", and HaX's debrief line is "You said afterwards. I'm holding you to it.").
+25. **`deck_pulled` exported** (new, R2-S13, decided here). Values `her_file` / `alpha_tapes` / `none`. `recruiter_offer` can't say whether the Alpha tapes were saved (`taken` and `refused` both include "nothing"), so stage 3's use of them in m10 needs it. Replaces §13 item 25's `alpha_tapes_saved`. Nine m09 exports in all.
+26. **The night in UTC** (new, R2-S07). §1.5 day 11: the archive is the local night of day 11, early day 12 UTC; in-game lines say "on day ten" for WREN's update and "at the briefing" for the morning's events.
+27. **Stage 0 sweep** (new, R2-S11). Stage 0 §1 and §7 (75 minutes), §2.1 and §2.3 (flag 3 and the identity scene at the drop terminal; the order "intercepted"), §6 (the "who is Tesseract" beat; the debrief's place). See §13 "Stage 0 fixes".
 
 ## 15. Review round 1 outcomes
 
@@ -578,3 +625,52 @@ Reviews: `REVIEW_R1_WRITING.md` (W-01 to W-27: 12 majors, 15 minors) and `REVIEW
 | S-26 | minor | Passed to the m10 author; in §14 change 10 | §13, §14 |
 
 **Counts:** 53 findings (21 major, 32 minor). 49 fixed, 1 flagged for stage 5 with a staging decided here (S-09), 1 handed to stage 3 (W-26), 2 passed to the m10 author (S-25, S-26). None withdrawn.
+
+## 16. Review round 2 outcomes
+
+Reviews: `REVIEW_R2_WRITING.md` (N-01 to N-17: 2 majors, 15 minors) and `REVIEW_R2_STRUCTURE.md` (R2-S01 to R2-S15: 3 majors, 12 minors; verdicts on §14, additions 18–23; an engine list for stages 4–5). Orchestrator rulings applied as given. "SE" is `../stage_2/storytelling_elements.md`.
+
+### Writing review
+
+| ID | Sev | Outcome | Where |
+|---|---|---|---|
+| N-01 | major | Fixed: the double-cross is priced aloud before the choice (the Recruiter: "About half of them will be gone by morning"; HaX: "We'd get half"); the debrief says "about half" in both topics and "the twelve" is dropped; the Alpha tapes gain a practical stake ("He teaches what he'll do. If he built the bunker the way he taught it, it's on that tape."); a route table shows every option losing something | Beat 2.4, §7.1; SE §2, §4.3 |
+| N-02 | major | Fixed: by default it goes city by city from 06:00; the key sends it everywhere in the same minute and needs a hand; then "Then why build a key at all?" | Beat 3.5, §9; SE §4.3 |
+| N-03 | minor | Fixed: "You heard him say it in Portland. My line. His line." is HaX's first line on that branch; Netherton stops at "HaX." | Beat 3.3; SE §4.3, §7.1 |
+| N-04 | minor | Fixed: "I don't know if saying it would have saved them. I didn't say it."; cold-start form ends "I wanted the other thirteen." | Beat 3.3; SE §4.3 |
+| N-05 | minor | Fixed: a Reading-aware reply drafted for each of the three answers | SE §4.3 |
+| N-06 | minor | Fixed: the realisation is offered beside "Read me the defences." and only on `schedule_read`; the line is "Her schedule. This room isn't on it." | Beat 3.5 |
+| N-07 | minor | Fixed: the reply sits at the pen; "No" gets "Good. Then he can make that argument in court, and lose it." | §7.1; SE §2 |
+| N-08 | minor | Fixed: "Warmer, next time. She notices." on `sleeper_named` with the flat reply | §7.1, §8 #15; SE §2 |
+| N-09 | minor | Fixed: the Recruiter's naming carries the reason as an expense ("Her mother's care home has had my cheque every month for eleven years.") | Beat 2.4; SE §2 |
+| N-10 | minor | Fixed: "He reads the first name off the card. He doesn't look down for the second." | §7.1; SE §2 |
+| N-11 | minor | Fixed: stage 2 swept (the quiet-stretch row, "victory on the pen", the Portland half-line, the no-coordinate line, `m01_maya_ko`'s places, "read him before", Beat numbers, Sorensen and `threat`); the call report is four sentences in both files | SE §4, §5, §6, §7; Beat 3.6 |
+| N-12 | minor | Fixed: forms labelled by import ("m06 name found / not found") | Beat 3.3; SE §4.3 |
+| N-13 | minor | Fixed: "It's yours to carry. Nobody else signed for it." | Beat 2.7; SE §4.3 |
+| N-14 | minor | Fixed: Sorensen's recruit line is "It's in your file, you know."; the bin line says it isn't Derek's handwriting | Beat 2.1; SE §3, §4.3 |
+| N-15 | minor | Fixed: "Derek wrote things down. Look how that went." | SE §3 |
+| N-16 | minor | Fixed: "You took her side at the briefing. Keep it. Don't take her word." | §3.3, Beat 2.5 |
+| N-17 | minor | Fixed by proposal: a third value, `afterwards`, with its own debrief line | Beat 3.3, §7.1, §8; §14 change 24 |
+
+### Structure review
+
+| ID | Sev | Outcome | Where |
+|---|---|---|---|
+| R2-S01 | major | Fixed (orchestrator ruling): flag 1's reward opens the restricted stacks; the call waits on flag 2 and `cage_opened`; the office opens on a code from Sorensen's mail after the deck choice; §11 now says which lock holds each step. Stage 5 may give flag 2 its own station at the shelf | Beats 1.4, 2.4, 3.1; §11, §13 |
+| R2-S02 | major | Fixed: the call's first line sets `recruiter_offer = "refused"`; a closed call rings again and resumes; the identity scene fires on flag 3 (HaX holds the name for the file); Tesseract's call and the conclusion aim wait on `identity_scene_done` | Beats 2.4, 3.3, 3.6; §8, §11 |
+| R2-S03 | major | Fixed: the master schedule is in the safe with each room ticked and the tape room unticked, plus her query about the Reading; `schedule_read` gates the player's line; otherwise HaX states it from the job's side | §1, Beats 3.1, 3.5; SE §5.3; §14 change 2 |
+| R2-S04 | minor | Fixed: "about 85 with the field guides, 95–100 without"; act minutes are the sums of their beats (4 + 15 + 31 + 31 + 4); 7 minutes per VM stage marked as an assumption | §2, beat headings |
+| R2-S05 | minor | Fixed with N-03 | Beat 3.3 |
+| R2-S06 | minor | Fixed: "It wasn't only his." cut from the briefing | §3.1 beat 6; SE §4.3 |
+| R2-S07 | minor | Fixed: "on day ten" and "at the briefing" in voiced lines; stage 4 and FINALE_ARC §1.5 get the UTC wording | Beats 2.3, 2.4, 2.5, §3.3; §13; §14 change 26 |
+| R2-S08 | minor | Fixed: HaX at the sheet, "After Quantum Dynamics we checked everyone TalentStack ever touched. Harwick & Lowe shut before TalentStack opened."; the international-hire note goes to stage 6 | Beat 2.5; §13 |
+| R2-S09 | minor | Fixed: HaX names Derek's stake ("the only place anyone wrote down why he did what he did"); the m10 echo is stage 3's | Beat 2.1; SE §4.3 |
+| R2-S10 | minor | Fixed: on Victoria's route the bins are two objects inside the door | Beat 2.1 |
+| R2-S11 | minor | Fixed in SE; stage 0's stale lines listed as proposed fixes (not edited) | SE; §13 "Stage 0 fixes"; §14 change 27 |
+| R2-S12 | minor | Fixed: changes 18–23 added | §14 |
+| R2-S13 | minor | Fixed: `sleeper_shortlist` on reading the sheet, whatever the order; take + nothing records `taken`; `deck_pulled` exported (decided here) | Beats 2.4, 2.5; §8, §9; §14 change 25 |
+| R2-S14 | minor | Fixed, synced with m10: HaX refuses "Ninety-nine" ("It's HaX. It has been for seven years."); the promise is made after the deck, not in the confession; its content is m10's, paid at 06:00, never stated in m09 | Beats 2.7, 3.6; §13, §14 changes 13, 15 |
+| R2-S15 | minor | Wording fixed (no promise the player hears him tonight); playback handed to stage 3, to decide before stage 7 | Beat 2.4; SE §2, §4.3; §13 |
+| Orchestrator: WREN's goal | – | Fixed: WREN has one goal, the key; she reports to the Initiative but her tasking is his; "plays both ends" withdrawn | Beat 2.4; SE §3; §14 change 8 |
+
+**Counts:** 32 findings (5 major, 27 minor). 31 fixed (N-17, R2-S11's stage-0 part and R2-S12 by proposals for the arc-keeper), 1 split (R2-S15: wording fixed here, playback to stage 3). None withdrawn. §14 now holds 27 proposed changes.
