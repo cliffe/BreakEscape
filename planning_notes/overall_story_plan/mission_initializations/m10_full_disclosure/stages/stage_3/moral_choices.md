@@ -2,7 +2,7 @@
 
 ## 0. Status and sources
 
-**Stage 3 complete** (draft 4, 2026-10-21; round 3's findings folded in, §17; no further review round, the orchestrator checks directly). Author: stage 3 author (Opus), 2026-10-21. Draft 1 the same day; round 1 reviews (`REVIEW_R1_CHOICES.md`, `REVIEW_R1_STRUCTURE.md`) folded in (§15), then round 2 (`REVIEW_R2.md`, §16), each with the orchestrator's rulings. User decisions in force: F11 (two lethal versions), F12 (m09's Alpha-tapes clip is voiced), F13 (surrender is a deal with no public trial; arrest is a public trial with no cells).
+**Stage 3 complete** (draft 4, 2026-10-21; round 3's findings folded in, §17; no further review round, the orchestrator checks directly). Author: stage 3 author (Opus), 2026-10-21. Draft 1 the same day; round 1 reviews (`REVIEW_R1_CHOICES.md`, `REVIEW_R1_STRUCTURE.md`) folded in (§15), then round 2 (`REVIEW_R2.md`, §16), each with the orchestrator's rulings. User decisions in force: F11 (two lethal versions), F12 (m09's Alpha-tapes clip is voiced), F13 (surrender is a deal with no public trial; arrest is a public trial with no cells), F14–F16 (engine trials, playtest bootstrap, KO-pattern exports). **Milestone fix pass, 2026-10-21:** the stages 0–3 milestone findings and the orchestrator's simplification pass are applied here (media room and C11 cut; gallery at two options per branch; record pools of two; one fixed cells rule; a walkabout of three; the test plan rebuilt as act-start segments). The log is `../stage_1/story_arc.md` §20.
 
 Built on `../../../finale/FINALE_ARC.md` ("FA §n", thread rows "row n"; the version with stages 1–2 folded in, FA §15), `../stage_0_initialization.md`, `../stage_1/story_arc.md` ("arc §n") and `../stage_2/storytelling_elements.md` ("SE §n"), with m09's choices and exports from `../../m09_digital_archaeology/stages/stage_3/moral_choices.md` ("m09 MC", its round 1 revision: eleven exports, the double-cross voiding the name, `recruiter_secret = denied`). The prompt is `story_design/story_dev_prompts/03_moral_choices.md`; where it and the newer standards differ, the newer ones win: `npc-dialog-review` §2d (choices that matter), `mission-puzzle-chains` §3a (are the mission's own choices required), `README_ink_best_practices.md` "Making Choices Matter", and `docs/agents/CARRY_OVER_PLAN.md` (imports never gate completion).
 
@@ -14,14 +14,14 @@ Conventions as in arc §0: UTC clock times; flags by story meaning only; "WREN" 
 
 1. **Every option buys something the others don't.** If one option is better on every count, it isn't a choice. Each decision below lists a gain and a cost per option, and §13 records where stages 1–2 or draft 1 had a dominated option and how it was fixed. Puzzles (a right answer by design) and tasks (free to do) are labelled as such and are exempt.
 2. **The cost is said before the pick**, by someone with a reason to say it: HaX, Netherton, the person in the room, or the narrator at the core. A cost the player learns only afterwards is allowed for one kind of choice, the trust test (does the player check before they trust?), and then the warning to check comes first. In the gallery, where HaX is jammed, her warnings come in her last line before the jam (D-22).
-3. **The cost is felt in play**, not only in the credits: a door that opens or stays shut, a person who is or isn't there, a line from someone the player knows, a beat at 06:00. **An effect worth one guard more or fewer always comes with a line that says why** (a guard's bark, HaX naming it, a person's absence the player can see); otherwise it moves onto a person. At most three choices in the mission pay in a guard more or fewer, and each is voiced in the room: the tunnel post (the door, §3.1), the gallery's monitor post (the camera switch, §3.4) and Priya's gallery post (Imran, §3.3). Reinforcements after an alarm (a trusted Victoria while the share is live) are an event the player watches happen, not a quiet count. The credits restate an outcome in one clause; they never carry it alone.
+3. **The cost is felt in play**, not only in the credits: a door that opens or stays shut, a person who is or isn't there, a line from someone the player knows, a beat at 06:00. **An effect worth one guard more or fewer always comes with a line that says why** (a guard's bark, HaX naming it, a person's absence the player can see); otherwise it moves onto a person. At most three choices in the mission pay in a guard more or fewer, and each is voiced in the room: the tunnel post (the door, §3.1), the gallery's monitor post (the camera switch, §3.4) and Farah's gallery post (Imran, §3.3). Reinforcements after an alarm (a trusted Victoria while the share is live) are an event the player watches happen, not a quiet count. The credits restate an outcome in one clause; they never carry it alone.
 4. **Fight or sneak is a playstyle, not a moral option.** Every scene keeps a way through by knock-out, stealth or a cloned card (stage 0 §2.2). It is quicker and costs an epilogue line where someone is hurt. The no-dominance test applies to the social options. **Every slot scene's first line sets its outcome global to `avoided`, and a room-exit mapping sets the same if the scene never opened**, so a player who walks past still gets a credits clause.
 5. **Forced or optional, stated for each choice.** A choice the story needs is forced by a lock or an event, never by a nag: a door opened by an eventMapping on a local done-flag (`global_variable_changed:<flag>` firing `unlock_door`, with a `game_loaded` re-check for reloads), a menu that must be answered to go on, a phone scene that rings again. An optional choice has a signposted cost for skipping it.
 6. **Imports never gate.** No import appears in `concludeRequires`, an aim's `unlockCondition`, or a door mapping's condition (FA §3; CARRY_OVER_PLAN §2.7). An import may decide which branch of a scene plays and which options the menu shows; the locks that force a choice read only m10's own globals, which every branch sets. Every scene works with every import at its default (§7).
-7. **Forced phone scenes** (Ghost's handset, arrested Victoria's line) follow FA §6.1: defaults on the first line, the done-flag on the last choice, a re-ring on leaving the room that resumes at the last unanswered choice, and nothing downstream keyed on the conversation closing. **No phone rings into the jammed gallery** (§3.5).
+7. **Forced phone scenes** (Ghost's handset, arrested Victoria's line) follow FA §6.1: defaults on the first line, the done-flag on the last choice, a re-ring on leaving the room that resumes at the last unanswered choice, and nothing downstream keyed on the conversation closing. **No phone rings into the jammed gallery** (§3.5). This is designed to the approved resumable-call engine trial (F14, running); the written fallback is the desk handset as a clickable object that reopens the call at the last unanswered choice, with the done-flag lock holding the player until it is answered.
 8. **Stance choices are allowed** where the outcome is fixed by character (Ghost on the kept branch, Kowalczyk's question), and each still sets a global that something reads later (npc-dialog-review §2d.2).
 9. **No line tells the player about a choice they didn't make.** Every at-large or penalising default also needs that source's `completed` (FA §3).
-10. **Knock-outs and walk-aways never strand a forced scene.** The engine has no KO immunity (no such key in `systems/`), so "can't be knocked out" is a stage 5 engine item (§14, engine 36) for Tesseract until the end-for-him menu and for the forced-scene NPCs (Nightshade at the door, Netherton, Malhotra on comms). Until it exists, and as a fallback after, every forced face-to-face scene has an `npc_ko` mapping on m08's pattern (`m08 scenario.json.erb:1050–1056`) that writes the scene's defaults and its done-flag. Each mapping is named with its scene below.
+10. **Knock-outs and walk-aways never strand a forced scene.** The engine has no KO immunity yet (no such key in `systems/`); it is one of the four approved engine trials (F14, running; D-08). The design assumes it for Tesseract until the end-for-him menu and for the forced-scene NPCs (Nightshade at the door, Netherton, Malhotra on comms). The fallback stays written, for the trial failing and for anyone it doesn't cover: every forced face-to-face scene has an `npc_ko` mapping on m08's pattern (`m08 scenario.json.erb:1050–1056`) that writes the scene's defaults and its done-flag. Each mapping is named with its scene below.
 11. **The core resumes.** Its four menus, and WREN's one-option "[Stop her.]" beat, write their globals on the pick (`exchange_1..3`, `console_choice`, `wren_at_core`, `database_outcome`, `ending`); walking away or reloading re-enters at the first one still unset. Nothing is incremented, so nothing can be counted twice (`points_landed` is derived, §6.3).
 12. **Every choice is labelled by kind** (§2): dilemma (no right answer), puzzle (a right answer by design), stance (outcome fixed, attitude recorded), task (free to do), information, or hub. Stage 7 writes menus by kind.
 
@@ -40,17 +40,16 @@ In the order a player meets them. "Forced" names the lock or event that makes th
 | C8 | Arrested Victoria's line | dilemma | `m03_victoria_fate = arrested` | server hall, after flag 2 | optional, with a warned cost: one re-ring as the player leaves the hall, with HaX's warning; unanswered, Vos's secret is lost | `victoria_line_deal`, `vos_secret_known` |
 | C9 | The console: kill a share, or trace one | dilemma on every save (kill Zero Day's, kill Ghost's buyers' where live, or let Zero Day's run and trace it) | every player | server-hall console, after flag 2 | optional: skipping it lets every live share go at the outer lock untraced, warned twice | `head_start_killed` |
 | C10 | Close the backdoor | task | `m07_completed` and Austin not covered directly | server-hall console | optional: skipping it costs the partial release | `backdoor_closed` |
-| C11 | Kill the story | task | Fracture uncovered, with `m07_completed` | media room | optional: skipping it lets the story run | `media_story_killed` |
 | C12 | The accusation (§5) | puzzle, with a moral cost for a wrong guess | every player not on `m09_sleeper_named` | any time after clue 1 | optional: no accusation means WREN acts at the core, said at the aside | `accused`, `officer_out`, `sleeper_caught`, `wrong_accusation` |
-| C13 | The gallery (§3.5) | dilemma | every player | gallery | forced: the outer lock is past the slot-holder | `victoria_gallery`, `vos_outcome` |
+| C13 | The gallery (§3.5) | dilemma, two options at most per branch (none on arrested Victoria's branch when her secret is known: it is used automatically) | every player | gallery | forced: the outer lock is past the slot-holder | `victoria_gallery`, `vos_outcome` |
 | C14 | The three exchanges (§6.3) | puzzle | every player | core | forced: the console's menu comes after the third | `exchange_1..3` |
 | C15 | Stop it, or "Show me how it works" | gateway (the dilemma is Join's step 2) | every player | core | forced: the database menu waits on it | `console_choice`, `join_step` |
 | C16 | The database (§6.5) | dilemma | every player who stops it | core | forced: step 5 waits on it | `database_outcome` |
 | C17 | The end for him (§6.6) | dilemma | every player who secures or discloses | core | forced: the ending scene waits on it | `ending` |
-| C18 | Kowalczyk's question | stance | a right face-to-face accusation; a line accusation (asked at 06:00) | forward post | optional | `kowalczyk_answer` |
+| C18 | Kowalczyk's question | stance | a right face-to-face accusation; a line accusation (asked at 06:00); `m09_recruiter_offer = taken`, at the van window after the aside (M-07) | forward post | optional | `kowalczyk_answer` |
 | – | The 06:00 walkabout | hub (not counted) | every ending that reaches 06:00 except the cold one | forward post | "[That's everyone.]" | none |
 
-**17 choices**: nine dilemmas (C2, C4, C5, C6, C8, C9, C13, C16, C17; C4 is a stance on Ghost's kept and refused branches), one gateway (C15, whose dilemma is Join's step 2), two puzzles (C12, C14), two stances (C1, C18), two tasks (C10, C11) and one piece of optional information (C7), plus the walkabout hub. Arakawa's call is no longer a choice (round 2): it stays as his line and his alibi. Numbering is kept so references stay stable; C3 is retired. Every player meets C1, C2, C4, C5, C6, C9, C13, C14 and C15 (C9 can be skipped, at a warned cost), and every player who doesn't join meets C16 and C17: ten forced decisions (C9 is the optional eleventh), five of them in the full scenes. A rich save makes about 19 picks in all (draft 1: about 25), with one decision after the talk in each Act 2 scene.
+**16 choices** (milestone pass; was 17): nine dilemmas (C2, C4, C5, C6, C8, C9, C13, C16, C17; C4 is a stance on Ghost's kept and refused branches), one gateway (C15, whose dilemma is Join's step 2), two puzzles (C12, C14), two stances (C1, C18), one task (C10) and one piece of optional information (C7), plus the walkabout hub (three picks at most). Arakawa's call is no longer a choice (round 2): it stays as his line and his alibi. Numbering is kept so references stay stable; C3 is retired, and **C11 (kill the story) is retired with the media room** (orchestrator ruling, D-05). Every player meets C1, C2, C4, C5, C6, C9, C13, C14 and C15 (C9 can be skipped, at a warned cost; C13 has no menu on arrested Victoria's branch when her secret is known), and every player who doesn't join meets C16 and C17: ten forced decisions (C9 is the optional eleventh), five of them in the full scenes. A rich save makes about 18 picks in all (draft 1: about 25; before the milestone pass, about 19), with one decision after the talk in each Act 2 scene.
 
 ## 3. The five full scenes
 
@@ -88,7 +87,7 @@ For a player who checked, the map is better on every count: that is the reward f
 | [No deals. I said it then.] (first, as the player's m08 answer) *(default)* | The player keeps their word. Nothing he wrote is used: no tripwire. He serves his full term (credits). At the lock, Quintero: "You turned him down twice. I'd have taken the deal. I'm glad you didn't." | Helena's old plans: the tunnel post is manned (HaX names it, as above). No ENTROPY-habits line: clue 2 stays to be found. | Netherton: "Without him you have Helena's plans. They are good plans. They are old plans." |
 | [Name them. You'll get your deal.] | The refit's map, as above; his line on ENTROPY's habits, which replaces clue 2 (arc §8.3). | One entry is wrong (Tesseract lied to him too): unchecked, the tripwire. His sentence is reduced in the credits. | HaX: "He's only as right as the man who briefed him." |
 
-Sets `nightshade_deal` (`refused` / `taken`). On `m09_cage_bin = nightshade_copy`, one line from him on either option: "You read what I cleared. Then you know I kept his notes." (m09 MC §3.1; the arrested-branch help m09 once proposed is dropped.)
+Sets `nightshade_deal` (`refused` / `taken`). On `m09_cage_bin = nightshade_copy`, one line from him on either option, on this branch **and on the kept-not-shown branch above** (the talking branches; not after the shown-file text): "You read what I cleared. Then you know I kept his notes." (m09 MC §3.1; FA row 107; MS-05. The arrested-branch help m09 once proposed is dropped.)
 
 **Silent, or never played** (`m08_nightshade_ko_before_fate`, or `not m08_completed`). One word: "Door."
 
@@ -143,16 +142,16 @@ Workshop floor (arc §7.2). **Forced** by the power-room door, which opens to a 
 
 | Option | Gain | Cost | Who says so first |
 |---|---|---|---|
-| [Go home. Keep your phone.] (talked round) | He opens the power-room door, names the bench log ("Names, not stores. Look at the log."), and rings a friend on the gallery shift to send her home. In the gallery her post is empty, her coat still on the chair, and a guard says it: "Where's Priya? She was on till six." She is safe in the credits. He walks out uncharged. | His phone, and the bench's supplier contact on it, leave with him: the front supplier isn't touched. | HaX: "Let him go and the phone goes with him. Keep him, and we get his supplier." |
-| [I'm taking you in.] (taken in) | His card (cloned), the phone and his statement. HaX reads the supplier's last delivery off the phone at once: "A crate signed for at the service door on Tuesday. Raid-issue badge." That points at the service door tonight (a nudge for the whodunit, not a clue). The front supplier is rolled up (cells ledger, §10), and the credits' Initiative line names how it recruits sacked hospital staff. | He is charged; no bench-log pointer; Priya stays on shift. | as above |
+| [Go home. Keep your phone.] (talked round) | He opens the power-room door, names the bench log ("Names, not stores. Look at the log."), and rings a friend on the gallery shift to send her home. In the gallery her post is empty, her coat still on the chair, and a guard says it: "Where's Farah? She was on till six." She is safe in the credits. He walks out uncharged. | His phone, and the bench's supplier contact on it, leave with him: the front supplier isn't touched. | HaX: "Let him go and the phone goes with him. Keep him, and we get his supplier." |
+| [I'm taking you in.] (taken in) | His card (cloned), the phone and his statement. HaX reads the supplier's last delivery off the phone at once: "A crate signed for at the service door on Tuesday. Raid-issue badge." That points at the service door tonight (a nudge for the whodunit, not a clue). The front supplier is named and raided by morning (a clause in Imran's credits line, "His supplier was raided by morning."; under the fixed cells rule it is not a ledger cell, §10), and the credits' Initiative line names how it recruits sacked hospital staff. | He is charged; no bench-log pointer; Farah stays on shift. | as above |
 
 On the protected branch Gary reacts each way: "Good. That's how I'd want it done." / "*flatly* I'd hoped you'd ask him first." Talking round and taking in are each best on one count: kind and quick, or hard and thorough (draft 1's middle option, "phone taken", is folded into taking him in).
 
-**Gary, unprotected and quiet** (`m02_completed and not m02_gary_protected and not m02_exposed_hospital`). Gary is on the floor; Imran follows whatever Gary does (`talked_round` → Imran `talked_round`, Priya goes home; `left_in_place` → Imran `card_cloned`; `taken_in` → Imran `taken_in`). Listening is the argument: the talk is three short beats, and a dismissive pick ("[Spare me the speech.]") closes it without a fight ("Then you're the board. Card's on my belt.").
+**Gary, unprotected and quiet** (`m02_completed and not m02_gary_protected and not m02_exposed_hospital`). Gary is on the floor; Imran follows whatever Gary does (`talked_round` → Imran `talked_round`, Farah goes home; `left_in_place` → Imran `card_cloned`; `taken_in` → Imran `taken_in`). Listening is the argument: the talk is three short beats, and a dismissive pick ("[Spare me the speech.]") closes it without a fight ("Then you're the board. Card's on my belt.").
 
 | Option | Gain | Cost | Who says so first |
 |---|---|---|---|
-| Talk him round | He opens the power-room door and walks out with the team ("Seven warnings, nobody listened. You're listening now?"); "a technician talked round" is a record answer under the third claim (§6.3). A witness, not a defendant, in the credits. | Time and the right picks; and he leaves the Initiative's books tonight. | HaX's m02 memory line comes first (SE §3.5). |
+| Talk him round | He opens the power-room door and walks out with the team ("Seven warnings, nobody listened. You're listening now?"); a witness, not a defendant, in the credits. (Its exchange 3 record answer left the pool when pools were capped at two, §6.3.) | Time and the right picks; and he leaves the Initiative's books tonight. | HaX's m02 memory line comes first (SE §3.5). |
 | Leave him where he is (clone his card) | Quick. Gary stays on the Initiative's payroll, shipping nothing, and SAFETYNET knows: "Still on their payroll. Still shipping nothing." in the credits (a later-season thread). | No witness, no record answer, and he stays inside with them. | HaX, as the player reaches his belt: "A man on their bench who ships nothing is worth something. Later." |
 | [Cuff him.] | His statement, as Imran's above. | He is charged after three weeks of shipping nothing; Imran goes with him. | Gary: "Three weeks. I've not shipped a thing. Write that down." |
 
@@ -168,16 +167,16 @@ Power room (arc §7.3). **Forced** by aim 3: the gallery's blast shutter is cut 
 
 | Option | Gain | Cost |
 |---|---|---|
-| [Your hands. Go on.] | A fast cut. He asks one thing for the inquiry ("Write down that I did it myself."), which the credits record. "Voltage did tonight's switching, for us" becomes a record answer under the third claim (§6.3). | The player watches him stand at a switch that could blind the raid's view of the gallery, and takes his word for it: "I could. Watch my hands." He doesn't. The gallery's monitor post stays manned. |
-| [I'll do it. Talk me through it.] | The player works the old switchgear (a short switching task), and the camera switch with it. Voltage: "You're right not to trust me." | Slower and fiddlier; no inquiry ask, no record answer. |
+| [Your hands. Go on.] | A fast cut. He asks one thing for the inquiry ("Write down that I did it myself."), which the credits record: "Did tonight's switching himself, for us." (Its record answer left the pool, §6.3.) | The player watches him stand at a switch that could blind the raid's view of the gallery, and takes his word for it: "I could. Watch my hands." He doesn't. The gallery's monitor post stays manned. |
+| [I'll do it. Talk me through it.] | The player works the old switchgear (a short switching task), and the camera switch with it. Voltage: "You're right not to trust me." | Slower and fiddlier; no inquiry ask, and no credits line in his own words. |
 
 **Voltage escaped** (`m04_voltage_escaped`). He runs the room; Static beside him on `m04_static_left and not m04_static_left_alone`, else Wendell nervous at the far panel.
 
 | Option | Gain | Cost |
 |---|---|---|
-| Prove the bypass was his (`m04_voltage_print_on_bypass` only) | He stands down at once ("I'm not going to argue with my own thumb."); HaX: "I said it'd be waiting. It was." He cuts the shutter and goes out cuffed. A record answer under the third claim, the print form (§6.3). | none: the print is the reward for m04 (a puzzle solved earlier) |
-| Talk him down with the corrected sheet (every escaped branch) | The same stand-down ("This one's wrong by a thousand."), and the sheet form of the record answer. | Two right picks; a miss ("Don't tell me about sums.") leaves fight or the hand cut. |
-| Fight | Quick, and the hand cut gives the camera switch. | Static, if present, fights too; no record answer; Voltage is a knock-out in the credits. |
+| Prove the bypass was his (`m04_voltage_print_on_bypass` only) | He stands down at once ("I'm not going to argue with my own thumb."); HaX: "I said it'd be waiting. It was." He cuts the shutter and goes out cuffed; his credits clause says he stood down on his own print. | none: the print is the reward for m04 (a puzzle solved earlier) |
+| Talk him down with the corrected sheet (every escaped branch) | The same stand-down ("This one's wrong by a thousand."); his credits clause says he checked the sums. | Two right picks; a miss ("Don't tell me about sums.") leaves fight or the hand cut. |
+| Fight | Quick, and the hand cut gives the camera switch. | Static, if present, fights too; Voltage is a knock-out in the credits. |
 
 **Wendell Briggs, the default** (Voltage neither captured nor escaped). He thinks the servers belong to a data company.
 
@@ -186,31 +185,30 @@ Power room (arc §7.3). **Forced** by aim 3: the gallery's blast shutter is cut 
 | [Tell him what the servers are for.] | He cuts the shutter himself ("Well. Which switch do you want."), and rings his old colleague Dale on the next shift, who stays home (credits: "Rang his mate Dale. Dale stayed home."). | The call goes out through the bunker's switchboard in the server hall: the hall knows the raid is coming. Asante won't show the schedule (C7 closes), or, on Mercer's branch, Mercer can't be drawn off the console (fight only). | The phone voice: "He doesn't know. Tell him, and he'll want to warn somebody. Their switchboard will hear it." |
 | Work round him | By hand with the phone voice, and the camera switch with it; Wendell never knows. | He is swept up at 06:00 with everyone else ("Do I still get paid for the week?"), and Dale walks into a raid at shift change: frightened, detained, released by morning (credits). | as above |
 
-Draft 1's separate Dale menu is cut: the call is now what telling Wendell costs. Sets `voltage_outcome` (`his_hands` / `by_hand` / `stood_down_print` / `talked_down` / `fought` / `ko` / `avoided`), `wendell_outcome` (`told` / `worked_round` / `ko` / `avoided`), `gallery_camera_blinded`, and `server_hall_warned` on "told". The phone slot (Vance, else Elena, else HaX) changes the voice, not the options.
+Draft 1's separate Dale menu is cut: the call is now what telling Wendell costs. Sets `voltage_outcome` (`his_hands` / `by_hand` / `stood_down_print` / `talked_down` / `fought` / `ko` / `avoided`), `wendell_outcome` (`told` / `worked_round` / `ko` / `avoided`), `gallery_camera_blinded`, and `server_hall_warned` on "told". The phone slot (Vance, else Elena, else HaX) changes the voice, not the options; it is unused when a captured Voltage is in the room (MS-07; FA row 44).
 
 ### 3.5 The gallery: Victoria or Vos, and arrested Victoria's line
 
-The gallery is the room HaX can't reach (arc §7.4, §9.1). **Forced** by geography: the outer lock is at the far end, past whoever holds the slot. **Defaults:** the slot scene's first line, or the room's exit if the player picks the lock past a slot-holder they never addressed, sets `victoria_gallery` / `vos_outcome` to `avoided`; a knock-out sets `ko`. Zero Day's share of the head start goes as the lock opens unless it was killed at the console (C9) or stopped here, so every decision here about it is in time. The question: **justice for one person against harm to many, and what a turned asset is worth.**
+The gallery is the room HaX can't reach (arc §7.4, §9.1). **Forced** by geography: the outer lock is at the far end, past whoever holds the slot. **Defaults:** the slot scene's first line, or the room's exit if the player picks the lock past a slot-holder they never addressed, sets `victoria_gallery` / `vos_outcome` to `avoided`; a knock-out sets `ko`. Zero Day's share of the head start goes as the lock opens unless it was killed at the console (C9) or stopped here, so every decision here about it is in time, and the walkway's countdown object shows which share is still live (D-03, §12 display globals). The question: **justice for one person against harm to many, and what a turned asset is worth.**
+
+**Two options per branch at most** (orchestrator ruling, D-04). The milestone pass cut recruited Victoria's "refuse" (left unanswered, `refused`, the default, keeps its old outcome), arrested Victoria's use-or-keep (the secret is used automatically) and Vos's talk-out. The room now holds about nine outcomes instead of fifteen.
 
 **The ways through the outer lock**, each with its own payoff rather than the same one five times (M-04): picked the long way, under the lock's guard; the lock card (named by escaped Victoria, bought from Vos, or Ghost's card gift), the quiet way; opened from inside by a Victoria who holds or a Vos who stands aside; or Ghost's maintenance code, which needs nobody at all. A taken-in Nightshade isn't a way through: he holds the lock behind the player, so nothing comes up the walkway after them (on a trusted Victoria, the reinforcements stop at him).
 
-**What the gallery's people say** (F-01). HaX can't speak here, so each effect carried in from earlier gets one bark from a guard and no explanation: "Camera's dead again. I'll go and look." (the switch, §3.4); "Where's Priya? She was on till six." with her coat on an empty chair (Imran, §3.3); the lock's keypad taking Ghost's code with a guard's "Who changed the code?" (§3.2); Nightshade's voice on the lock's intercom, "Go on. I've got the door." (§3.1).
+**What the gallery's people say** (F-01). HaX can't speak here, so each effect carried in from earlier gets one bark from a guard and no explanation: "Camera's dead again. I'll go and look." (the switch, §3.4); "Where's Farah? She was on till six." with her coat on an empty chair (Imran, §3.3); the lock's keypad taking Ghost's code with a guard's "Who changed the code?" (§3.2); Nightshade's voice on the lock's intercom, "Go on. I've got the door." (§3.1).
 
-**HaX's last line before the jam** carries every warning the gallery needs (D-22), by branch:
-
-- Recruited Victoria: "Sterling goes with whoever's winning. Make sure it's us before you hand her anything. Show her the order, and she'll know we read Zero Day's mail."
-- Arrested Victoria, after her call: "Use it on Vos and it's spent. Keep it, and it's ours for later."
-- Every branch: "Netherton sweeps the whole place at six. Whoever you leave standing up there, he collects."
+**HaX's last line before the jam** carries the one warning the gallery needs (D-22; milestone D-04), on recruited Victoria only: "Sterling goes with whoever's winning. Make sure it's us before you hand her anything. Show her the order, and she'll know we read Zero Day's mail." Arrested Victoria's use-or-keep warning is gone with the choice. The sweep line ("Netherton sweeps the whole place at six. Whoever you leave standing up there, he collects.") is said on every branch at the server hall's exit (arc §6.3), so the pre-jam line never carries more than one warning.
 
 **Recruited** (`m03_victoria_fate = recruited`). She offers to open the outer lock. m03's "whether she stays turned is anyone's guess" is answered here, and the answer depends on the night: **she goes with whoever is winning** (F-03). If Zero Day's share is already dead (C9), Zero Day has nothing left to pay her, and she is SAFETYNET's; if it is live, she sells.
 
 | Option | Gain | Cost |
 |---|---|---|
-| [Before you touch that lock. Zero Day's order has your name on it.] (confront) | The safe check. She holds ("Then you know I'm hedging. So is everyone."), opens the lock, and withdraws Zero Day's order. Her watch survives: a Victoria who held goes back to Zero Day as if she lost her nerve (§11 item 27). | She has seen what SAFETYNET reads. The tap on Zero Day's brokers goes quiet by morning (Netherton at 06:00: "The Zero Day tap went dark at four. She'll have sold that too."). |
+| [Before you touch that lock. Zero Day's order has your name on it.] (confront) | The safe check. She holds ("Then you know I'm hedging. So is everyone."), opens the lock, and withdraws Zero Day's order. Her watch survives: a Victoria who held goes back to Zero Day as if she lost her nerve (§11 item 27). | She has seen what SAFETYNET reads. The tap on Zero Day's brokers goes quiet by morning (Netherton at 06:00: "The Zero Day tap went dark at five. She'll have sold that too."; one time for one event, MS-17). |
 | [Open it.] (trust her) | If Zero Day's share is dead: the lock at once, and both her watch and the Zero Day tap survive: the best result, for the player who made sure we were winning. | If the share is live: she opens it and sells the raid. An alarm, reinforcements on the walkway (stopped at the lock if Nightshade holds it), Zero Day's order stands, and she is gone by the far stair; her watch is over. |
-| [No. Stand away from it.] (refuse) | She is never given the chance to choose. Her watch and the tap both survive. | The long way to the lock (or another way through), and Zero Day's order stands unless the console killed it. |
 
-**Escaped, with the m03 threat** (`escaped and m03_sterling_on_call_seen`). A pistol held low: "In London my associates offered to deal with you. I said I'd do it myself. I still might." Then her terms: "If I walk out of here, I walk out owing nobody. Including you."
+Unanswered (`refused`, the default on this branch, FA row 32: the player takes the lock another way without answering her) keeps what the cut "refuse" option bought: she is never handed anything, her watch and the tap both survive, and Zero Day's order stands unless the console killed it. It is a playstyle default, not a menu option.
+
+**Escaped, with the m03 threat** (`escaped and m03_sterling_on_call_seen`). A pistol held low, and her m03 threat in its shipped words (`m03_npc_victoria.ink:737`; MS-01): "My associates offered to deal with you. I said I'd do it myself. I still might." Then her terms: "If I walk out of here, I walk out owing nobody. Including you."
 
 | Option | Gain | Cost |
 |---|---|---|
@@ -230,17 +228,12 @@ Both escaped branches ask the same question two ways: justice for Victoria, or Z
 
 | Option | Gain | Cost | Who says so first |
 |---|---|---|---|
-| [Deal. I'll tell them you helped.] | She keeps talking after tonight: Zero Day's London book, one Zero Day desk in the cells ledger (§10). | Her charge is reduced: the woman who sold St. Catherine's walks sooner. | Victoria: "A reduced charge, and you get the rest of my book. Or nothing, and you still have this." |
-| [No deal. You gave it for free.] | She serves the full charge. | She stops at Vos; no London book. | as above |
+| [Deal. I'll tell them you helped.] | She keeps talking after tonight: Zero Day's UK book (a clause in her credits line, "Still talking."; under the fixed cells rule it is not a ledger cell, §10). | Her charge is reduced: the woman who sold St. Catherine's walks sooner. | Victoria: "A reduced charge, and you get the rest of my book. Or nothing, and you still have this." |
+| [No deal. You gave it for free.] | She serves the full charge. | She stops at Vos; no book. | as above |
 
-Part two, **the gallery**: Vos, face to face.
+Part two, **the gallery**: Vos, face to face, with no menu (orchestrator ruling, D-04: the use-or-keep sub-decision is cut). With `vos_secret_known`, the player says it ("[Your second buyer. The one you skim from.]", a one-option line), and Vos withdraws Zero Day's order to keep the secret and stands aside from the lock ("Who told you that. No. Don't. I'm leaving."). The leverage is spent tonight; it doesn't burn the Zero Day tap (Vos learns that Victoria talked, not what SAFETYNET reads). `vos_secret_used` is set on that line. Netherton's "in a drawer" line is gone with the keep option.
 
-| Option | Gain | Cost |
-|---|---|---|
-| Use it ("[Your second buyer. The one you skim from.]") | Vos withdraws Zero Day's order to keep the secret and stands aside from the lock ("Who told you that. No. Don't. I'm leaving."). | The leverage is spent tonight. (It doesn't burn the Zero Day tap: Vos learns that Victoria talked, not what SAFETYNET reads.) |
-| Keep it | SAFETYNET keeps Vos's secret for later: Netherton at 06:00, "I have Mr Vos's second buyer in a drawer. He doesn't know." | Vos's default terms below: his trade, or the long way. |
-
-If the call was abandoned (`vos_secret_known` false), the "Use it" option isn't on the menu and Vos's default trade plays as written below.
+If the call was abandoned (`vos_secret_known` false), Vos's default trade plays as written below.
 
 **Victoria knocked out in m03, or never met** (`ko`, or `""`): **Pieter Vos** and his trade: "That guard has the lock card. You can have it. My name stays off whatever you write tonight."
 
@@ -248,9 +241,10 @@ If the call was abandoned (`vos_secret_known` false), the "Use it" option isn't 
 |---|---|---|
 | [Deal.] | The lock card: the only quiet way on his branch. | His name is missing from the report: he walks free, unnamed, and the credits' Zero Day line leaves him out (the player's doing). Zero Day's order stands. |
 | [No.] | He is named, and swept up at six. | The lock the long way; Zero Day's order stands. |
-| Talk him out (only once Zero Day's share is dead: "[It's stopped. You're waiting for nothing.]") | He leaves before the sweep; nothing to collect. | He is at large, and named. |
 
-Sets `victoria_gallery` (`confronted` / `trusted` / `refused` / `talked_down` / `walked` / `arrested_here` / `ko` / `avoided`; the m03-arrested branch leaves it unset and records Vos alone), `vos_secret_used`, `vos_outcome` (`stood_aside` / `bought` / `refused` / `talked_out` / `ko` / `avoided`), and, at the lock's unlock event, whether Zero Day's share was stopped (§12).
+His talk-out is cut (D-04).
+
+Sets `victoria_gallery` (`confronted` / `trusted` / `refused` (recruited branch default) / `talked_down` / `walked` / `arrested_here` / `ko` / `avoided`; the m03-arrested branch leaves it unset and records Vos alone), `vos_secret_used`, `vos_outcome` (`stood_aside` / `bought` / `refused` / `ko` / `avoided`), the display global `share_zero_day` where a gallery outcome stops the share, and, at the lock's unlock event, whether Zero Day's share was stopped (§12).
 
 ## 4. The smaller choices on the way
 
@@ -272,19 +266,21 @@ Backing Quintero is also backing a suspect, a tell the player can't yet read. It
 
 | Option | Gain | Cost |
 |---|---|---|
-| [Kill Zero Day's.] | Zero Day's share is dead: recruited Victoria is now safe to trust (§3.5), escaped Victoria's arrest costs nothing, and Vos can be talked out. | No trace; on the bait branch, Ghost's buyers get their share. |
-| [Kill Ghost's buyers'.] (bait branch only, where Ghost's share is still live) | Ghost's buyers get nothing, and have paid for nothing in plain view: a cell in the ledger (§3.2, §10). | Zero Day's share goes at the lock unless the gallery stops it. |
+| [Kill Zero Day's.] | Zero Day's share is dead: recruited Victoria is now safe to trust (§3.5), and escaped Victoria's arrest costs nothing. | No trace; on the bait branch, Ghost's buyers get their share. |
+| [Kill Ghost's buyers'.] (bait branch only, where Ghost's share is still live) | Ghost's buyers get nothing, and have paid for nothing in plain view: the console's cell in the ledger, "the five buyers of the resale share" (§3.2, §10). | Zero Day's share goes at the lock unless the gallery stops it. |
 | [Let it run. Trace who gets it.] (every save) | SAFETYNET follows Zero Day's share to the buyers: one cell in the ledger, and the order-book watch (operation 5, §6.5) gets names. At 06:00, on every ending that reaches it, Netherton says so: "We followed Zero Day's share. Four buyers, and one of them was careless." (R3-03; a player who killed the share doesn't hear it, and the silence is the kill's cost.) The database question in small: stop the harm, or let it happen and learn from it. | Zero Day's share goes out at the lock, unless the gallery stops it (then there is nothing to trace, and HaX says so: "She cancelled it. Nothing to follow."). On the bait branch, Ghost's buyers' share goes too. |
 
-So the console always costs something, on every save, and the gallery's Zero Day stakes stay live for any player who traces (R2-01). Skipped, every live share goes untraced. HaX warns twice: after flag 2, and leaving the hall ("Fifteen minutes to their head start. That console's your last chance at it."). Sets `head_start_killed` (`zero_day` / `ghost` / `trace` / `""`).
+So the console always costs something, on every save, and the gallery's Zero Day stakes stay live for any player who traces (R2-01). Skipped, every live share goes untraced. HaX warns twice: after flag 2, and leaving the hall ("Fifteen minutes to their head start. That console's your last chance at it."). Sets `head_start_killed` (`zero_day` / `ghost` / `trace` / `""`) and the display globals `share_zero_day` / `share_resale` (§12).
 
-**C10, the backdoor** (task; server hall, after flag 2). One action, free; skipped, its queued batch goes at "Stop it" (the partial release). The second planned cut.
+**The state is visible** (D-03). From flag 2, every countdown object shows the two shares, "ZERO DAY: LIVE / STOPPED / TRACED" and "SECOND BUYER: LIVE / STOPPED / NONE", read from the display globals; and HaX's hub has a topic, "[What's still live?]", until the jam, which says each share's state and what can still stop it. The player can see before the gallery whether trusting a recruited Victoria is safe. Object text reading a global is an approved engine trial (F14, running); the fallback is one object per state swapped with `setVisible`, with the hub topic carrying the state alone.
 
-**C11, the media room** (task; optional, the first planned cut). Kill the story at the desk, or leave it. Left, "massacre in Montana" runs all night (naming the player on `m05_entropy_program_exposed`), and Netherton's 06:00 numbers say so. On the executed ending the rule in §8.3 overrides it.
+**C10, the backdoor** (task; server hall, after flag 2). One action, free; skipped, its queued batch goes at "Stop it" (the partial release). The first planned cut (arc §2).
+
+**C11, the media room: retired** (milestone pass; orchestrator ruling, D-05). The media room is cut. What is left is a prop and a HaX line in the server hall (arc §6.4; FA row 84): the draft, naming the player on `m05_entropy_program_exposed`. On uncovered Fracture Social Fabric runs it from outside as the raid starts, with no task to stop it (a cost line at 06:00); otherwise it is held. On the executed ending a new version goes out on every branch (§8.3).
 
 ## 5. The whodunit accusation
 
-A puzzle with a moral cost. Off whenever m09 named WREN (`m09_sleeper_named`): on `taken` she is cuffed at the briefing (`sleeper_caught` true from the start); on `double_crossed` she was warned and is gone, and waits at the core (below, and §6.4). Otherwise **optional**, any time after clue 1, face to face when the accused is in the room and on the line to HaX otherwise (arc §8.4). The question is **loyalty to the people beside you**: accusing a colleague costs that colleague's job tonight if the player is wrong, and not accusing costs a colleague's shoulder if they're right to suspect.
+A puzzle with a moral cost. Off whenever m09 named WREN (`m09_sleeper_named`; the two forms keyed on `m09_recruiter_offer`, `double_crossed` checked first, MS-03): on `taken` she is cuffed at the briefing (`sleeper_caught` true from the start), and she still asks "When did you know?" at the van window after the aside (C18, M-07); on `double_crossed` she was warned and is gone, and waits at the core (below, and §6.4). Otherwise **optional**, any time after clue 1, face to face when the accused is in the room and on the line to HaX otherwise (arc §8.4). The question is **loyalty to the people beside you**: accusing a colleague costs that colleague's job tonight if the player is wrong, and not accusing costs a colleague's shoulder if they're right to suspect.
 
 **Signposting.** At the private aside Netherton adds one sentence to his "and neither will you": "Whoever it is wants the same room you do. Find them before you get there." HaX's nudge after each clue says what she can see and never a name; after the third: "That's three things that point somewhere. Your call, and you don't have to make it." The accusation is reached through the HaX hub ("[I know who WREN is.]"), then the team members on tonight's raid, then one confirmation: "[Yes. Them.]" / "[Not yet.]".
 
@@ -341,7 +337,7 @@ No decision (arc §9.3 step 1; SE §2.2): the Publication, the offer every playe
 
 1. **`m09_recruiter_secret`** (to HaX, on the open line): `kept`, his leverage and her "I'll deal with that when this is done."; `told` or `confessed`, she cuts him off at "Forty-seven names", "They told me. Next."; **`denied`** (m09's new value: the player told her the Recruiter was fishing), he gets the receipt out whole, and HaX hears the lie exposed in front of him: "You told me she was fishing." Nothing else; she doesn't look at the player again until the database menu, and on 06:00 it is her own walkabout pick, as on `kept`. `""`, nothing.
 2. **`m09_recruiter_offer`** (to the player):
-   - `taken` or `double_crossed`: **the invoice**, one ledger sting that decides nothing: "You bought WREN from my Recruiter. You understand costing." (FA §13 item 33: confirmed.) On `double_crossed` he adds one glance at the service door she was taken through.
+   - `taken` or `double_crossed`: **the invoice**, one ledger sting that decides nothing: "You bought WREN from my Recruiter. You understand costing." (FA §13 item 33: confirmed.) On `double_crossed` he adds one glance at the service door she came in by (Quintero took her out by the lock side; MS-16).
    - `named` or `refused`: **the clean record** is the player's own answer under the second claim (§6.3), in m09's wording. If it is not on the player's menu (slot 4 taken by `m09_albion_notified`), he says it for them here instead: "My Recruiter offered you a name. You wouldn't buy it. I would have." It stings nothing and decides nothing.
    - `""`: nothing.
 
@@ -357,27 +353,25 @@ This is where the season is felt in the argument: **the player answers him with 
 
 **What two or more points buy, and what fewer buy** (said before step 5; §6.6): two or more, he stands with his hands empty and offers cooperation; fewer, he stays seated and the arrest has a dangerous moment in it. Neither is a failure: every count reaches a success ending, and fewer than two is the only way to the justified-lethal one.
 
-**Which record answers show** (two at most per exchange). Draft 0's lists put the generic m09 answers first, so on any m09 save some of the player's own choices could never appear. Each record slot now has its own pool, most specific first:
+**Which record answers show** (two at most per exchange). Draft 0's lists put the generic m09 answers first, so on any m09 save some of the player's own choices could never appear. Each record slot now has its own pool, most specific first, and **no pool holds more than two candidates** (orchestrator ruling, milestone simplification 3; exchange 3's slot 4 had five):
 
 | Exchange | Record slot 3 (slot 2 in exchange 3) | Record slot 4 |
 |---|---|---|
-| 1. "The cost is acceptable." | `m07_debrief_stance = hardened` > the clean first day (with `m01_completed`, no m01 KOs, no `m02_patient_assaulted`) | `m02_bed4_manually_stabilised` > Derek's file (`m09_cage_bin = derek_file`) |
+| 1. "The cost is acceptable." | `m07_debrief_stance = hardened` > the clean first day (with `m01_completed`, no m01 KOs, no `m02_patient_assaulted`, and `ko_pattern() == 0`) | `m02_bed4_manually_stabilised` > Derek's file (`m09_cage_bin = derek_file`) |
 | 2. "Services like yours hoard." | earlier missions: `m04_disclosure_choice = full` > `m02_exposed_hospital` | Helena: `m09_albion_notified` > the clean record (`m09_recruiter_offer` `named` or `refused`; if hidden, he says it in the Recruiter beat, §6.2) |
-| 3. "Better me, with clean hands." | HaX: "[HaX. You're on speaker.]" (`same_in_your_place` or `afterwards`) or "[She learned that from you.]" (`should_have_told`) | the player's own acts: the Tomb Alpha notes (`m09_deck_pulled = alpha_tapes`) > "Your file says I press it" (`m09_reading_finished`) > Voltage (captured `his_hands`; escaped `stood_down_print` or `talked_down`) > a technician talked round (`gary_outcome` or `imran_outcome = talked_round`) > HaX's meaning of the line (`m09_completed`), last, as the fallback |
+| 3. "Better me, with clean hands." | HaX: "[HaX. You're on speaker.]" (`same_in_your_place` or `afterwards`) or "[She learned that from you.]" (`should_have_told`) | the Tomb Alpha notes (`m09_deck_pulled = alpha_tapes`) > HaX's meaning of the line (`m09_completed`), as the fallback |
 
-`m09_reading_finished` loses nothing by sitting second: it is also paid after "Stop it" (§6.4). The new answers:
+Exchange 3's slot 2 is one candidate per `m09_hax_confession_answer` value, so it counts as one pool. Slot 4 follows FA §4.1 (the arc-keeper's call in the same pass). Three answers leave it, and each keeps another home: "Your file says I press it" (`m09_reading_finished`) keeps "Then I was wrong about one thing." after "Stop it" (§6.4); Voltage's three forms and a technician talked round keep their credits clauses, and their scenes keep a gain on each option without them (§3.3, §3.4). Exchange 1's clean first day also needs `ko_pattern() == 0` (F16, FA §3.6).
+
+**The knock-out pattern** (F16; FA §3.6; D-06). `ko_pattern()`, one function in `m10_carryover_vars.ink`, counts the earlier missions in which the player knocked out at least one bystander (seventeen Tier 2 imports). In exchange 3, whose claim is clean hands, he reads it back as a ledger sting before his response to whatever the player picks; it stings and decides nothing. Fixed strings by band: 1, "You put someone on the floor who wasn't armed. Once. I noticed."; 2–3, "More than once, you've put someone on the floor who wasn't armed. Clean hands, Agent?"; 4 or more, "Most of the operations I've watched, you put someone on the floor who wasn't armed. That isn't a lapse. It's a method."; 0, nothing.
+
+The new answers:
 
 > [You priced Derek Lawson before anyone hired him. You don't pay your costs. You hand them out.] (exchange 1, Derek's file; m09's wording) / Dr Adrian Tesseract: *pause* Derek paid it. I didn't.
 >
 > [Your Recruiter offered me a name. I wouldn't buy it from her.] (exchange 2, the clean record; m09's wording) / on `named`: "*pause* No. You'd rather the slow way. It worked." / on `refused`: "*pause* No. You let her keep her people sooner than pay her. I didn't think your service still did that."
->
-> [Voltage did tonight's switching with his own hands. For us.] (exchange 3, captured) / "*pause* His own hands. He'll want that written down."
->
-> [Voltage saw his own print on your bypass and stood down.] (exchange 3, the print) / "*pause* He always did hate being used."
->
-> [Voltage checked your sums tonight and stood down.] (exchange 3, the sheet; SE's line) / "*pause* He always did check."
 
-A technician talked round is Gary's line where Gary was the one ("[A man who warned them seven times opened a door for me tonight.]") and Imran's otherwise ("[A man you recruited for a grudge listened to me tonight, and went home.]" / "*pause* Listening. It's slower."). Ledger answers (`m04_crew_lost`, `m02_patient_bed4_deceased`, `m06_satoshi_stance`) still sting first and decide nothing (SE §2.1). Record answers placed under the wrong claim are decoys, after slot 4 (R4-05). The rebuttal's position rule (2nd, 1st, 3rd on a cold start) is unchanged, because only the order inside slot pools moves.
+(Voltage's three answers and the technician's, added at stage 3, are retired with the cap.) Ledger answers (`m04_crew_lost`, `m02_patient_bed4_deceased`, `m06_satoshi_stance`, and the knock-out pattern in exchange 3) still sting first and decide nothing (SE §2.1). Record answers placed under the wrong claim are decoys, after slot 4 (R4-05). The rebuttal's position rule (2nd, 1st, 3rd on a cold start) is unchanged, because only the order inside slot pools moves.
 
 ### 6.4 The console
 
@@ -390,7 +384,7 @@ A technician talked round is Gary's line where Gary was the one ("[A man who war
 
 `console_choice = stopped` is written on "Stop it"; `joined` only on the key's confirmation (§6.7). `partial_release` is set on "Stop it" (`none` / `small` / `large`, FA §4.2).
 
-**WREN, if free** (not caught, not knocked out, not on the double-cross branch): as the player reaches for the console to stop it, the service door she propped opens and she comes through for the key. **He refuses her**, every time, because it is his motive in his own mouth: "Not you, Halina. When they find out what you are, it proves nothing. It has to be one of theirs." She says one word, "Adrian.", and tries anyway. Then, by branch:
+**WREN, if free** (not caught, not knocked out, not on the double-cross branch; the double-cross is checked first, then `taken` via `sleeper_caught`, MS-03): as the player reaches for the console to stop it, the service door she propped opens and she comes through for the key. **He refuses her**, every time, because it is his motive in his own mouth: "Not you, Halina. When they find out what you are, it proves nothing. It has to be one of theirs." She says one word, "Adrian.", and tries anyway. Then, by branch:
 
 - **Default:** Quintero comes in from the lock at the noise and is wounded stopping her (a shoulder; she's talking at 06:00). `quintero_wounded` true.
 - **On `m09_deck_pulled = alpha_tapes`** (m09 MC §9 item 25): HaX knows his habits from the tapes and warns as the player reaches the console: "Service door. He always builds his own way out first." The beat runs the same, refusal included, but Quintero, warned, is already moving and takes her **after** his refusal and before she touches the key, unhurt. This is the Alpha tapes' second payoff (the clip is voiced, F12).
@@ -408,7 +402,7 @@ The disarm goes through in every case, so she can never press the key. Being sto
 
 **The operations at stake.** Disclosure burns two live operations; securing keeps them, and the first pays off before the credits. Netherton names the two by this priority, the first two that apply:
 
-1. The watch on a recruited Victoria (`recruited`, and she was confronted or refused, §3.5).
+1. The watch on a recruited Victoria: `m03_victoria_fate = recruited` and `victoria_gallery` is `confronted`, `refused` (the unanswered default, which keeps the cut "refuse" option's outcome), or `trusted` while Zero Day's share was dead at the lock (the same test `head_start_out` uses, §12). Every branch that keeps her watch is on the list (MS-02; §3.5).
 2. Nightshade's channel (`m08_nightshade_triple_agent and not m09_nightshade_shown_file`, §3.1).
 3. The HashChain tags (`m06_monitoring_enabled`).
 4. The Critical Mass watch (`m09_completed and not m09_albion_notified`; sending the notice in m09 burned it, m09 MC §3.5), named by m04's branch as m09 names it: "the watch on Voltage's people" (`m04_voltage_escaped`), "what's left of his crew" (`m04_voltage_captured`), "the Critical Mass watch" otherwise.
@@ -422,13 +416,14 @@ There are always at least two: 5 always applies, and 6 is gone only when 1 appli
 - Netherton, for secure, because it is his argument to make: "Half of these can't be patched this year. The water controllers can't be patched at all. Send those out and every buyer knows where to hit. Nobody can stop them."
 - HaX, the cost of secure: "Infusion pumps in a hundred and forty hospitals. The one he used on you. Still live next year if we do this."
 - Netherton, the cost of disclose, and why (R2-08; the same reason m09 gives for its watch going dark): "Two operations go dark if you do this: [the two names]. Both of them run through holes on that list. Patch the holes and we lose the way in. I will sign it." Each operation rides a listed flaw: Victoria's watch a broker's compromised mail server, Nightshade's channel a compromised vendor portal, the HashChain tags a flaw in the exchange's ledger software, the Critical Mass watch the Albion vendor's equipment, the order-book watch and the Zero Day tap the platforms the buyers trade on.
+- HaX names the player's middle option by its real name, so the practice is named before the menu and can't be confused with the Publication (D-02; Netherton's full-disclosure line is at the briefing, arc §3 beat 2): "That's coordinated disclosure. The vendors first, quietly, with time to fix it."
 - HaX, how disclose treats the ones that can't be fixed (R2-06): "The ones nobody can patch go to the operators, with workarounds. Not into a public list." On `m09_albion_notified`, HaX: "You burned the Critical Mass watch for one letter. This is that letter, a thousand times."
 - HaX, the cost of wipe, plainly, with the menu open (F-06): "If both copies die, this room purges itself. Doors, lights, everything. You won't have him after." Netherton: "Then nobody has it. Not him, not us. Nobody fixes anything either. We both answer for it."
 
 | Option, as the player sees it | Gain | Cost |
 |---|---|---|
-| [Secure it. Their copy's evidence. Ours stays in the vault.] | The flaws nobody can fix yet stay out of buyers' hands. Both named operations keep running, and the first rolls up a cell before the credits (cells ledger, §10). | The hoard stands: the pumps stay live, and the card says so ("Infusion pumps in 140 hospitals: still unpatched."). He was right about the service, and the player's hand proved it. |
-| [Disclose it. Wipe theirs, and send ours to the vendors, on a schedule.] | Coordinated disclosure, at its true speed (F-05; the same timescale m09 uses for the notice): acknowledgements tonight, fixes in about ninety days, a year before most are fitted. At 06:00 HaX reads the acknowledgements: "Forty vendors have acknowledged. Patch windows, ninety days. It'll be a year before most of them are fitted." The pumps' vendor has a date. On Austin-uncovered saves, the dispatch vendor ships a workaround within days and the fix on the same ninety-day window (§10). | Both named operations go dark on screen at 06:00 ("He's been moved. I can't reach him." / "The tags dropped at five past."). And one public cost, the honest one: the operators were told, there is no fix, so they run by hand. HaX, at 06:00: "Three water utilities went to manual at five. There's no patch for their controllers. They'll turn the valves by hand till spring." |
+| [Secure it. Their copy's evidence. Ours stays in the vault.] | The flaws nobody can fix yet stay out of buyers' hands. Both named operations keep running, and the first rolls up its named cell before the credits (the fixed cells rule, §10). | The hoard stands: the pumps stay live, and the card says so ("Infusion pumps in 140 hospitals: still unpatched."). He was right about the service, and the player's hand proved it. |
+| [Coordinated disclosure. Wipe theirs, and send ours to the vendors, on a schedule.] (D-02: the practice named on the button) | Coordinated disclosure, at its true speed (F-05; the same timescale m09 uses for the notice): acknowledgements tonight, fixes in about ninety days, a year before most are fitted. At 06:00 HaX reads the acknowledgements: "Forty vendors have acknowledged. Patch windows, ninety days. It'll be a year before most of them are fitted." The pumps' vendor has a date. On Austin-uncovered saves, the dispatch vendor ships a workaround within days and the fix on the same ninety-day window (§10). | Both named operations go dark on screen at 06:00 ("He's been moved. I can't reach him." / "The tags dropped at five past."). And one public cost, the honest one: the operators were told, there is no fix, so they run by hand. HaX, at 06:00: "Three water utilities went to manual at five. There's no patch for their controllers. They'll turn the valves by hand till spring." |
 | [Wipe both. Theirs and ours.] | Nobody holds the map: not him, not the cells' customers, not the service. It is the one outcome his argument can't win. At 06:00 the gain is shown, in one line on every save, crediting only the wipe (R2-07): Netherton, "Nobody holds the map now. Not him, not the buyers, not whoever sits in my chair next." | Nothing is fixed: every flaw is still out there, unmapped. The core purges itself and he goes in the dark by the service door (§8.1). The end-for-him choice is gone, as HaX said. The player is suspended. |
 
 None is best on every count: secure buys safety from the unfixable and two operations at the price of the hoard; disclose buys fixes, over months, at the price of two operations and a bad morning for three utilities; wipe buys a world where nobody holds the map, at the price of the fixes, the man, and the player's badge. `database_outcome` (`secured` / `disclosed` / `both_wiped`; `published` on Join).
@@ -445,7 +440,7 @@ HaX, if asked to choose (a fourth option, "[HaX. What would you do?]", which ret
 
 | Option | Gain | Cost |
 |---|---|---|
-| [Then cooperate. All of it.] (`surrender`) | He types the cells' contact protocol into the bunker's terminal himself; two cells go into the ledger (§10). HaX sits with him in the van. | A deal for the man who priced 1,100 to 2,600 deaths: no public trial, and his argument is never tested in court. He warns the player: "They'll work out who you are by Thursday. Be careful." Credits: "Dr Adrian Tesseract. Cooperating. No trial." |
+| [Then cooperate. All of it.] (`surrender`) | He types the cells' contact protocol into the bunker's terminal himself; two cells go into the ledger, always the cells' couriers and their quartermaster (§10). HaX sits with him in the van. | A deal for the man who priced 1,100 to 2,600 deaths: no public trial, and his argument is never tested in court. He warns the player: "They'll work out who you are by Thursday. Be careful." Credits: "Dr Adrian Tesseract. Cooperating. No trial." |
 | [No deal. You're under arrest.] (`arrest`) | A public trial: his case is answered in open court, and nobody did a deal with him. HaX testifies. | No protocol, no cells: "He is in a cell. The cells are not." He gets the platform he wanted ("A trial. He will make speeches. Let him."). Credits: "Dr Adrian Tesseract. Awaiting trial." |
 | [Shoot him where he stands.] | the cold choice, below | |
 
@@ -485,7 +480,7 @@ Only the key's confirmation sets `ending = joined`, `console_choice = joined` an
 
 **Stepping back is remembered** (`join_step`: 0–3, the furthest step reached; 3 means the player saw the key's confirmation and said no). Step 1 is curiosity and costs nothing. Asking for the key (`join_step >= 2`) is paid once, by his line at step 5 (§6.6), and nothing else. Nobody else mentions it; HaX heard it and says nothing, which the player will notice.
 
-**What changes how it is offered, and only that**: the points (his step 1 line, above), `m01_player_launched_attack` (he makes the offer to that player first and most directly) and `m06_satoshi_stance` (`wondered` warmer, `rejected` colder). The signposting never changes.
+**What changes how it is offered, and only that**: the points (his step 1 line, above), `m01_player_launched_attack` (he makes the offer to that player first and most directly) and `m06_satoshi_stance`, which has three values in m06 (`m06_satoshi_confrontation.ink:540–551`; MS-14): `wondered` ("Sometimes. But I chose my side.") warmer; `rejected` ("No. Your ideology doesn't cover murder.", a reasoned no) its own line, neither warm nor cold; `refused` ("I'm not debating this with you.") colder, with "You told him no without thinking." Satoshi asked his question before the police came, not in cuffs. The signposting never changes.
 
 ## 7. Imported decisions and the never-played defaults
 
@@ -495,6 +490,8 @@ How each earlier decision changes a choice in m10: which branch the player meets
 |---|---|---|---|
 | m01 | `final_choice` | none directly; his evidence's second line (SE §2.2) | the arrest line |
 | m01 | `maya_ko`, `kevin_ko`, `sarah_ko` (with `m01_completed`) | removes or keeps the clean-first-day answer in exchange 1 | no clean-first-day answer |
+| m01–m08 | the seventeen bystander knock-out latches (F16, FA §3.6), read only through `ko_pattern()` | Tesseract's exchange 3 ledger sting by band; the clean first day also needs `ko_pattern() == 0` | `0`: no sting |
+| m08 | `named_on_evidence` (M-12) | none; HaX's aside line when the whodunit runs | no line |
 | m01 | `player_launched_attack` | how directly Join is offered (§6.7); nothing else | the plain offer |
 | m02 | `ghost_deal_accepted`, `exposed_hospital`, `ghost_deal_refused`, `completed` | which Ghost branch (§3.2): a stance and a door, a gift, or the sale to argue down or bait | stranger: the sale |
 | m02 | `ghost_keys_used` | on the broken branch, Ghost's text, and Imran keeps his card on him (no clone; talk or the hatch) | none |
@@ -505,15 +502,15 @@ How each earlier decision changes a choice in m10: which branch the player meets
 | m03 | `victoria_fate`, `sterling_on_call_seen` | which gallery branch (§3.5), and whether there is a server-hall call (C8) | Vos and his trade |
 | m03 | `guard_bribed` | a line in the lull; no choice | none |
 | m04 | `voltage_captured`, `voltage_escaped`, `voltage_print_on_bypass`, `static_left`, `static_left_alone` | which power-room branch (§3.4); whether the print option exists; Static as one more hostile; the name Netherton gives the Critical Mass watch (§6.5) | Wendell and a phone voice |
-| m04 | `vance_is_ally`, (m07) `elena_outcome` | the phone voice in the power room; not the options | HaX |
+| m04 | `vance_is_ally`, (m07) `elena_outcome` | the phone voice in the power room, unused when a captured Voltage is in the room (MS-07); not the options | HaX |
 | m04 | `disclosure_choice` | his evidence's first line; the strongest exchange 2 answer on `full` | his Albion default line; no answer |
 | m04 | `crew_lost` | a ledger sting in exchange 2 if the player argues from Albion | none |
-| m05 | `entropy_program_exposed` | raises the cost of skipping C11: the story names the player | the story names nobody |
+| m05 | `entropy_program_exposed` | no choice since C11 is retired: the server hall's story names SAFETYNET and the player, where it runs (uncovered Fracture) and on the executed ending | the story names nobody |
 | m05 | `recruiter_deal_*`, `found_pipeline_list`, `final_choice`, `elena_treatment_funded` | none; the close (§10) | the never-played clauses |
 | m06 | `assets_seized` | two empty posts and the fence gap, an easier route; the $12.8M at 06:00 (§11 item 35) | full staffing; no $12.8M line |
 | m06 | `monitoring_enabled` | adds the HashChain tags to the operations the database choice keeps or burns (§6.5) | not on the list |
-| m06 | `satoshi_stance` | Join's warmth; a ledger sting | neutral |
-| m07 | `team_assignment`, `team_redirected` (with `m07_completed`) | whether C10 (the backdoor) and C11 (the media room) exist, and how big the partial release is if C10 is skipped | no backdoor, no live story (the draft on the desk) |
+| m06 | `satoshi_stance` (`wondered` / `rejected` / `refused`; MS-14) | Join's warmth (§6.7: one line per value); a ledger sting | neutral |
+| m07 | `team_assignment`, `team_redirected` (with `m07_completed`) | whether C10 (the backdoor) exists, and how big the partial release is if C10 is skipped; on Fracture uncovered, Social Fabric runs its story from outside (no choice; the media room and C11 are cut; the server hall holds the draft as a prop) | no backdoor; the draft held |
 | m07 | `countdown_expired` | "Seattle first." at "Stop it"; no choice | none |
 | m07 | `mercer_fate`, `mercer_ko` (with `m07_completed`) | Mercer replaces Asante: C7 becomes a fight or a sneak | Asante |
 | m07 | `debrief_stance` | his evidence's third line; on `hardened`, the projection desk and an exchange 1 answer | his default line; no answer |
@@ -521,19 +518,19 @@ How each earlier decision changes a choice in m10: which branch the player meets
 | m08 | `nightshade_triple_agent`, `nightshade_arrested`, `nightshade_ko_before_fate`, `completed` | which door branch (§3.1) | silent: the tether |
 | m08 | `accused_*`, `*_apologised`, `*_hostile` (with `m08_completed`) | whether Vector and Phantom are on the team: two more suspects, two more people a wrong accusation can cost, Vector's door, Phantom's list | the four-person team |
 | m09 | `nightshade_shown_file` | on the triple-agent branch: shown, his channel is spent and the choice is his safety against his look at Tesseract; held, the payment check and cuff-or-leave, with his channel live (§3.1, §6.5) | (no triple agent without m08) |
-| m09 | `sleeper_named` | removes C12 and C18: the whodunit is off | the whodunit runs |
+| m09 | `sleeper_named` (read with `recruiter_offer`, MS-03) | removes C12: the whodunit is off; C18 stays on `taken` (at the van window, M-07) and goes on `double_crossed` | the whodunit runs |
 | m09 | `sleeper_shortlist` | a helper for C12 (replaces clue 2) | none |
-| m09 | `recruiter_offer` (Tier 1 now) | the Recruiter beat (§6.2) and the clean-record answer in exchange 2; on `double_crossed`, WREN is off the team, no whodunit, and she waits at the core, where nobody is wounded (§5, §6.4): a presence, so Tier 1 | nothing |
+| m09 | `recruiter_offer` (Tier 1 now) | the Recruiter beat (§6.2) and the clean-record answer in exchange 2; on `double_crossed`, WREN is off the team, no whodunit, and she waits at the core, where nobody is wounded (§5, §6.4): a presence, so Tier 1. On `named`, Netherton's aside (her tape is by codename only; the arrests start at six, D-01). One "Elsewhere" clause per value (§10; MS-04) | nothing |
 | m09 | `recruiter_secret` | HaX's exchange with him (§6.2), including `denied` ("You told me she was fishing."); her own 06:00 walkabout pick on `kept` or `denied`; on `told`, a clause in the player's own credits line | nothing |
 | m09 | `albion_notified` | an exchange 2 answer; HaX's line before the database choice | none; HaX reads the notice off his box |
 | m09 | `hax_confession_answer` | the speaker answer or "She learned that from you." in exchange 3 | no HaX answer; a plain decoy |
-| m09 | `deck_pulled` (Tier 1) | exchange 3's slot 4 pool; HaX's blast-door line, "The best lock there is. Tape two."; on `alpha_tapes`, HaX's service-door warning, which spares Quintero (§6.3, §6.4) | none |
-| m09 | `reading_finished` | exchange 3's slot 4 pool; after "Stop it", "wrong about one thing" (or "two things" with `cage_bin`) | none |
-| m09 | `legacy_files_saved` (proposed import, Tier 2) | no choice; its one "Elsewhere" clause (§10) | no clause |
+| m09 | `deck_pulled` (Tier 1) | exchange 3's slot 4 pool, first (§6.3); HaX's blast-door line, "The best lock there is. Tape two."; on `alpha_tapes`, HaX's service-door warning, which spares Quintero (§6.4) | none |
+| m09 | `reading_finished` | after "Stop it", "wrong about one thing" (or "two things" with `cage_bin`); its exchange 3 record answer left the pool (§6.3) | none |
+| m09 | `legacy_files_saved` (Tier 2) | no choice; its one "Elsewhere" clause (§10) | no clause |
 | m09 | `albion_notified` (again) | whether the Critical Mass watch is on the database choice's list (§6.5) | not on the list |
-| m09 | `cage_bin` (proposed) | `derek_file`: an exchange 1 answer (§6.3); `letters`: a HaX line in the media room; `nightshade_copy`: Nightshade's line at the door (m09 stage 3 §3.1) | none |
+| m09 | `cage_bin` | `derek_file`: an exchange 1 answer (§6.3); `letters`: a HaX line at the server hall's drafted story (arc §6.4); `nightshade_copy`: Nightshade's line at the door, on the not-shown and arrested branches (§3.1) | none |
 
-**A player whose first mission is m10** meets: the door's tether choice, Ghost as a stranger, Imran alone, Wendell, Vos's trade, the default team of four, Asante, no backdoor or live story, and every core choice with the mission's own rebuttals. Every forced choice above is present on that save: the minimum is the full set of ten (§2), with no import set.
+**A player whose first mission is m10** meets: the door's tether choice, Ghost as a stranger, Imran alone, Wendell, Vos's trade, the default team of four, Asante, no backdoor, the drafted story held, and every core choice with the mission's own rebuttals. Every forced choice above is present on that save: the minimum is the full set of ten (§2), with no import set.
 
 ## 8. The ending matrix
 
@@ -558,16 +555,16 @@ The ending scene and the 06:00 frame are fixed per ending (arc §10); what the p
 
 | What changes | Arrest | Surrender | Lethal, justified | Lethal, cold | Scorched Earth | Join |
 |---|---|---|---|---|---|---|
-| Who is standing at 06:00 (the walkabout) | Quintero (on a stretcher on `quintero_wounded`), Kowalczyk in the van if caught, a wrongly accused officer not recalled, HaX on `kept` or `denied`, a shown Nightshade left at the post, then Voltage, Gary and Imran, Wendell, Victoria, by branch | same | same | no walkabout | same, then the hearing | no 06:00 |
-| Netherton's numbers | the head start (`head_start_out`), the partial release or the story, the trace on `head_start_killed = trace` (when Zero Day's share went out), and the $12.8M on `m06_assets_seized` | same | same | he signs nothing, and the $12.8M line doesn't play (its "I have signed for that as well" would contradict his refusal; its absence is part of it) | the suspension, the wipe's gain (§6.5), and the $12.8M line (victims' fund) | he orders 0x00 brought in |
-| The database's beat | secured: the first named operation rolls up a cell; disclosed: the acknowledgements, both named operations go dark, the utilities on manual | same | same | same, without HaX reading the acknowledgements | both wiped | published |
-| The cells on the card | the cells ledger (§10) | the ledger, with his two | the ledger; "the cells go quiet" | the ledger | the ledger | "Every cell has it." |
+| Who is standing at 06:00 (the walkabout, three at most; D-05) | Quintero first (on a stretcher on `quintero_wounded`), then Kowalczyk in the van if caught, a wrongly accused officer not recalled, Voltage, Gary or Imran, Wendell, Victoria, by branch, until three. Fixed beats outside the walkabout, so the cap can't drop them (D-07): a shown Nightshade left at the post speaks as the cutscene opens; HaX's forty-seven line on `kept` or `denied` comes before "the rest"; on `m09_recruiter_offer = named`, Netherton's "It's six. The arrests have started." (D-01) | same | same | no walkabout | same, then the hearing | no 06:00 |
+| Netherton's numbers | the head start (`head_start_out`), the partial release or the story (uncovered Fracture), the trace on `head_start_killed = trace` (when Zero Day's share went out), and the $12.8M on `m06_assets_seized` | same | same | he signs nothing, and the $12.8M line doesn't play (its "I have signed for that as well" would contradict his refusal; its absence is part of it) | the suspension, the wipe's gain (§6.5), and the $12.8M line (victims' fund) | he orders 0x00 brought in |
+| The database's beat | secured: the first named operation rolls up its cell; disclosed: the acknowledgements, both named operations go dark, the utilities on manual | same | same | same, without HaX reading the acknowledgements | both wiped | published |
+| The cells on the card | the fixed cells rule (§10) | the same, plus his two | the same; "the cells go quiet" | the same | the same | "Every cell has it." |
 | Tesseract at 06:00 and in the credits | the van; the chapter with Netherton; "Awaiting trial." | the van; HaX sits with him; "Cooperating. No trial." | dead by the console | dead | gone; the card "Afterwards, then." | walks out with the player |
 | HaX's last word | the rest, then "I said no. It took me till morning." | the rest, then "He asked who taught you. I said I did." | the rest, then "There'll be a board. I'll be sitting next to you." | the designation, once; later, "I'll be at the board. I don't know what I'll say." | the rest at the hearing, then "They'll ask me if I'd have stopped you. I'll tell them I wasn't asked." | the designation, unanswered |
 | A taken-in Nightshade | his look, at the van window: "You wrote me as a line item." / "You were a good one." | same | none (simplification 7) | none | none | none |
 | WREN | caught: in the van; stopped at the core but never named: HaX's line | same | same | same | same; he leaves by the door she propped (his own way on `m09_sleeper_named`, when nobody propped it) | never comes; credits list her |
 | Ghost's and the Recruiter's texts | Ghost's message by branch; the Recruiter on `double_crossed` | same | same | same, arriving while the player is held | same | none |
-| Media story | ran or killed (C11), by branch | same | same | **runs**, with its one true paragraph (§8.3) | ran or killed | irrelevant |
+| Media story | ran from outside on uncovered Fracture, else held | same | same | **sent on every branch**, with its one true paragraph (§8.3) | as arrest | irrelevant |
 
 Nothing earlier changes which ending the player can choose; it changes who is there when it lands, and what it cost.
 
@@ -580,7 +577,7 @@ Nothing earlier changes which ending the player can choose; it changes who is th
 1. **HaX** says nothing for a long time, then the player's designation, once. She doesn't come to the van, and she doesn't tell "the rest": the promise from Helena goes unpaid, and the player who played m09 knows what they lost. Her last word is a message, later: "I'll be at the board. I don't know what I'll say."
 2. **Quintero** comes in from the lock and takes the weapon without a word (a minder from Netherton's van team, if she is wounded or out).
 3. **Netherton** signs nothing, the one time in the season: "I will not put my name under this one. You will be held until the board sits." He has signed for everything since m08's "it is on my signature", Nightshade included, so the refusal is the verdict.
-4. **The story** (`media_story_ran` true on every media-room branch): at 06:00 Social Fabric sends a new version with the player's photo on it. It appears on the forward post's screen, headline and photo and a paragraph that is true, with no narrator line (M-06): the player reads it themselves.
+4. **The story** (`media_story_ran` true on every branch of this ending): at 06:00 Social Fabric sends a new version of the story the player saw on the server hall's printer (arc §6.4), from outside, with the player's photo on it and one new paragraph (running since the breach: updated; held: the draft goes out). The media room is cut, so this is one rule on every save. It appears on the forward post's screen, headline and photo and a paragraph that is true, with no narrator line (M-06): the player reads it themselves.
 5. **The close.** No walkabout. Credits title MISSION COMPLETE, then AGENT 0x00: IN CUSTODY; the card's first line, "Dr Adrian Tesseract: shot unarmed." The rest of the night's work still lands (the database's beat, the cells, the people in "In this operation"), because the player did that work too. The ending punishes the act, not the whole night.
 
 **What it is not.** It is not reached by any import, by failing the talk-down, or by the clock. The player who chooses it chose it twice, after being told what it was.
@@ -594,7 +591,7 @@ Four questions run through the night. Nobody states them. HaX refuses to decide 
 | Asked small | Asked in full |
 |---|---|
 | Ghost selling the head start, and whether to let it run to see who buys (§3.2): information as a thing people sell | The database: secure, disclose, wipe (§6.5) |
-| Vos reselling Zero Day's early access; arrested Victoria selling his secret; whether to spend it or keep it (§3.5): knowledge used now or hoarded for later | His second claim: "Services like yours hoard. Only a shock fixes it." (§6.3) |
+| Vos reselling Zero Day's early access; arrested Victoria selling his secret, at the price of her own sentence (§3.5): what knowledge is worth, and who pays for it | His second claim: "Services like yours hoard. Only a shock fixes it." (§6.3) |
 | The schedule's first entries in plain words, and the console that can kill one share, or trace one: stop the harm, or let it run and learn who takes it (§4 C9) | "Show me how it works": release, the key itself (§6.7) |
 | The player's own record: m04's disclosure, m02's cover-up, m09's notice | |
 
@@ -616,9 +613,9 @@ Four questions run through the night. Nobody states them. HaX refuses to decide 
 
 The user's test is that the player feels their choices "in who turns up, who helps, who betrays, what's possible, and what's said to them", never as a roll-call. The close keeps to that with four rules:
 
-1. **One consequence, one person, one line.** Each consequence that lands at 06:00 is said by someone with a reason to say it: Quintero about the briefing stance, Kowalczyk about her question, Wendell about the week's pay, Netherton about numbers he signs for. The walkabout is a hub the player chooses from, at most five, so nobody is read out.
+1. **One consequence, one person, one line.** Each consequence that lands at 06:00 is said by someone with a reason to say it: Quintero about the briefing stance, Kowalczyk about her question, Wendell about the week's pay, Netherton about numbers he signs for. The walkabout is a hub the player chooses from, at most three, Quintero first (orchestrator ruling, D-05), so nobody is read out; the close is budgeted at about 8 minutes (arc §2).
 2. **Netherton's numbers are the night's, not the season's.** His lines are tonight's cost (the head start, the partial release or the story, the trace, the $12.8M). Earlier missions reach 06:00 only through the people standing there.
-3. **The closing card is five fixed lines, in this order** (FA §13 item 36; confirmed): the Architect by ending; the database by `database_outcome`; the head start; the cells (the count and one name from the cells ledger, below); one human line. Join's card is three: "Dr Adrian Tesseract: with you." / "The database: everywhere." / "Every cell has it." The cold card's first line is "shot unarmed".
+3. **The closing card is five fixed lines, in this order** (FA §13 item 36; confirmed): the Architect by ending; the database by `database_outcome`; the head start; the cells (the count and one name, by the fixed cells rule below); one human line. Join's card is three: "Dr Adrian Tesseract: with you." / "The database: everywhere." / "Every cell has it." The cold card's first line is "shot unarmed".
 4. **The credits carry the rest, one clause per person**, in the order the player met them tonight ("In this operation"), then "Elsewhere" for those with nobody in m10 to carry them (arc §11.3). A clause states an outcome, never the choice that caused it ("Imran Siddiqui, the workshop. Went home. So did a friend."), so the player connects it themselves.
 
 **The card's human line** (FA §13 item 36): the first that applies, in this order, which is the order of how many people the earlier choice put at risk and for how long the player has carried it:
@@ -635,9 +632,18 @@ Dispatch is first because it has run through both missions' briefings as a count
 
 **Where the $12.8M lands** (FA §13 item 35): see §11.
 
-**The cells ledger** (S3-07): one derivation, applied once when `ending` is set, so no cell is counted twice and no promised roll-up is lost. The night's sources, in order, each take the first cell not already taken: (1) the bait catch (Ghost's buyers, §3.2 with C9 on Ghost's share); (2) the trace (Zero Day's buyers, C9 `trace`, when the share went out); (3) a taken-in Imran's front supplier (§3.3); (4) arrested Victoria's London book (a Zero Day desk, §3.5); (5) secure's first named operation, each with its cell named (R2-05): Victoria's watch, Zero Day's London desk; Nightshade's channel, the Initiative's procurement desk; the HashChain tags, the Crypto Anarchists' reserve the tags follow; the Critical Mass watch, Critical Mass; the order-book watch, the book's largest buyer; the Zero Day tap, Zero Day's brokers; (6) surrender's protocol, two cells (§6.6); (7) the m07 cells by m07's rule (FA §4.6, with `m07_completed`). A source whose cell is already taken takes the next in a fixed fallback order, **each entry only where it exists on this save**: Zero Day; Ghost's buyers (only where Ghost sold); the cells that took the head start (`head_start_out`); Critical Mass; the Recruiter's network (on `m09_recruiter_offer = named`); and last, one that always exists, **the order book's next-largest buyer** from flag 2, so surrender always gets two. The card names the last cell the ledger took; the credits list them all once. Surrender's rule (§11 item 34) is this ledger's source (6).
+**The cells: one fixed rule** (orchestrator ruling, milestone simplification 4; replaces the seven-source ledger and its fallback chain, S3-07, R2-05). Computed once when `ending` is set. Each source has its own cell, named in advance, so no two sources can claim the same one and nothing falls back:
 
-**m09's "Elsewhere" clauses** (m09 MC §11 change 6): `m09_legacy_files_saved`, "Eleven placements outside SAFETYNET, picked up from the Helena files." (the import's one reader); the notice's inquiry half, merged into human line 2 above; on `m09_recruiter_secret = told`, a clause in the player's own "In this operation" line: "Agent 0x00. Told their handler." (never in "Elsewhere"); and on `m09_recruiter_offer = double_crossed`, the Recruiter's network clause, m09's line: "About half of them. She warned the rest."
+| Source | Cells | Which |
+|---|---|---|
+| The console (C9) | one at most | the bait's catch, "the five buyers of the resale share" (console on the resale share, after the bait); or the trace, "the four buyers of Zero Day's share" (`trace`, when the share went out). The console does one thing, so never both. |
+| Secure (C16) | one | the cell named for the first operation on the list (§6.5): Victoria's watch, Zero Day's UK desk; Nightshade's channel, the Initiative's procurement desk; the HashChain tags, the Crypto Anarchists' reserve; the Critical Mass watch, Critical Mass; the order-book watch, the book's largest buyer; the Zero Day tap, Zero Day's brokers |
+| Surrender (C17) | two | always his protocol's own two, the cells' couriers and their quartermaster, which no other source names (FA §4.6) (§6.6) |
+| m07 | by m07's rule | FA §4.6, with `m07_completed`; each named by its leader |
+
+So the count runs from zero (no console catch, wipe or the cold ending) to four plus m07's. The card names one cell: surrender's first, else secure's, else the console's, else an m07 leader's, or the "not among them" form where m07 left a leader's cell standing. **m07's cells are named by leader** ("Michael Reeves's cell", "Marcus Ashford's cell", "Jennifer Walsh's cell"), never as Ghost Protocol, and the console's catch is "the resale share", never "Ghost's buyers", on any closing screen, so Ghost (whose text arrives at 06:00) and Ghost Protocol are never on one screen (consistency review, name clashes). The first name is kept so the m02 Reeves can't be read. A taken-in Imran's supplier and arrested Victoria's book are no longer cells: each is a clause in that person's credits line ("His supplier was raided by morning." / "Still talking."). The credits list the cells once. Surrender's rule (§11 item 34) is the table's third row.
+
+**m09's "Elsewhere" clauses** (m09 MC §11 change 6): `m09_legacy_files_saved`, "Eleven placements outside SAFETYNET, picked up from the Helena files." (the import's one reader); the notice's inquiry half, merged into human line 2 above; on `m09_recruiter_secret = told`, a clause in the player's own "In this operation" line: "Agent 0x00. Told their handler." (never in "Elsewhere"); and **one clause for the Recruiter on every value of `m09_recruiter_offer`** (MS-04; she has no card line), the same wording as m09 SA §20: `taken` or `refused`, "The Recruiter: at large, her people at their desks."; `named`, "The Recruiter's network: rolled up." (at six, not before, D-01); `double_crossed`, m09's line, "About half of them. She warned the rest."; `""`, nothing.
 
 ## 11. FINALE_ARC §13 items for stage 3
 
@@ -646,18 +652,18 @@ Every FA §13 item owned by stage 3 that concerns m10. Item 7 (the Recruiter's c
 | # | Item | Settled as | Where |
 |---|---|---|---|
 | 11 | Each slot's wording and costs | Every branch of the five scenes has options, gains, costs and who signposts them; each Act 2 scene has one decision after the talk; effects carried into the gallery are voiced there. | §3 |
-| 14 | Disclose's operations and an epilogue beat per database option | One priority list of six operations, item 5 being the watch on the early-access order book from flag 2, so two always apply; disclose burns the first two, secure keeps both and the first rolls up a cell through the ledger. Each option has a public cost and a beat at 06:00; disclosure at its real speed. | §6.5, §8.2, §10 |
+| 14 | Disclose's operations and an epilogue beat per database option | One priority list of six operations, item 5 being the watch on the early-access order book from flag 2, so two always apply; disclose burns the first two, secure keeps both and the first rolls up its named cell. Each option has a public cost and a beat at 06:00; disclosure at its real speed. | §6.5, §8.2, §10 |
 | 24 | Escaped Victoria without the threat | Her trade, worded; the arrest is cheaper when the console spent itself on Zero Day's share. | §3.5 |
 | 25 | The Alpha tapes in m10 | Three payoffs: the exchange 3 record answer (first in slot 4's pool), HaX's blast-door line as the door opens for 0x00 ("The best lock there is. Tape two."), and HaX's service-door warning at the console, after his refusal of WREN, so Quintero takes her unhurt (no Quintero: the warning goes to the player). `m09_deck_pulled` is Tier 1. The clip itself is m09's (F12, voiced). | §6.3, §6.4, §7 |
-| 27 | Why the branch operations survive the raid | A recruited Victoria who held, or was refused, goes back to Zero Day as if she lost her nerve; one trusted while the share was live burned herself. Nightshade's channel survives only where the player held his file in m09: he never turned openly and stays at the forward post, above ground. | §3.1, §3.5, §6.5 |
+| 27 | Why the branch operations survive the raid | A recruited Victoria who held (confronted), was left unanswered (`refused`, the default), or was trusted while Zero Day's share was dead goes back to Zero Day as if she lost her nerve; one trusted while the share was live burned herself (MS-02; "refused" is cut, and walking past carries its outcome). Nightshade's channel survives only where the player held his file in m09: he never turned openly and stays at the forward post, above ground. | §3.1, §3.5, §6.5 |
 | 28 | Where a taken-in Nightshade goes | The outer lock, with Quintero (a minder from the van team if she is out): he holds it behind the player. His look at Tesseract is one exchange at the van window on arrest and surrender, and nothing on the other endings (simplification 7). Netherton has said the cost: he is relocated under a new name afterwards. | §3.1, §8.2 |
 | 29 | WREN on the Join path | Checked against the three steps: she never comes while the player is on them; she comes as normal at "Stop it" if the player stepped back. On the double-cross branch she is already at the core and taken before step 0. | §6.4 |
 | 33 | The invoice and refusing's clean record | Confirmed both. The invoice is a ledger sting in the Recruiter beat. The clean record is an exchange 2 answer in slot 4 (m09's wording, an answer per value), after `m09_albion_notified`; where that hides it, he says it himself in the Recruiter beat, so it is paid once on every refusing save. m10's slot pools supersede m09's "ranked last" (S3-18). | §6.2, §6.3 |
-| 34 | Surrender's two cells | Step 6 of the cells ledger: the first two cells not already taken, in the ledger's fallback order (each only where it exists: Zero Day, Ghost's buyers, the head start's holders, Critical Mass, the Recruiter's network on `named`, then the order book's next-largest buyer, which always exists), so there are always two. His protocol is tonight's contact list, so it hurts most where earlier choices left a cell running. | §10 |
+| 34 | Surrender's two cells | Always his protocol's own two, the cells' couriers and their quartermaster, under the fixed cells rule (milestone pass; the fallback order is gone). No other source names either, so there are always two. | §10 |
 | 35 | The $12.8M | Flipped on `secured` (which three endings share), kept on the rest. Default: "The twelve point eight million goes back to the victims' fund. I have signed for that as well." On `secured`: "The Council is keeping the twelve point eight million with the copy, as evidence. I argued for the victims' fund. I lost." Only on `m06_assets_seized`, and not on the cold ending, where Netherton signs nothing (R2-16). | §10, §8.2 |
 | 36 | The closing card's human line, and the card's order | Card order confirmed (Architect, database, head start, cells, human line). Human line: dispatch, then Albion's inquiry (one clause for m04 and m09), then the forty-seven, then Elena Torres. | §10 |
 | 37 | The cold choice's wording, both menus | Confirmed: "[Shoot him where he sits.]" / "[Shoot him where he stands.]", always last; the narrator's warning; "[Do it.]" / "[Lower the weapon.]"; lowering removes the option. | §6.6 |
-| 38 | m09 choices handed on (m10's half) | The cage bin through m09's `cage_bin`: Derek's file is an exchange 1 answer; the letters a HaX line in the media room (or at the draft's prop if cut); Nightshade's copy one line at the door. "Then I was wrong about two things." on `m09_reading_finished and m09_cage_bin != derek_file`. `legacy_files_saved` gets its "Elsewhere" clause. | §3.1, §6.3, §6.4, §10 |
+| 38 | m09 choices handed on (m10's half) | The cage bin through m09's `cage_bin`: Derek's file is an exchange 1 answer; the letters a HaX line at the drafted story's prop in the server hall (the media room is cut); Nightshade's copy one line at the door, on the not-shown and arrested branches. "Then I was wrong about two things." on `m09_reading_finished and m09_cage_bin != derek_file`. `legacy_files_saved` gets its "Elsewhere" clause. | §3.1, §6.3, §6.4, §10 |
 
 ## 12. State table
 
@@ -668,12 +674,12 @@ Every global the choices set. Names are working names (stage 4 fixes them; expor
 | Global | Values | Default | Computed | Read by (in m10) |
 |---|---|---|---|---|
 | `ending` | `arrest` / `surrender` / `lethal` / `executed` / `scorched` / `joined` | `""` | the C17 pick, "wipe both", the Join key's confirmation, or, after a knock-out, the terminal's database pick (§6.1); always after `database_outcome` | ending scene (which completes the conclusion task, §8.1), 06:00, card, credits, music |
-| `database_outcome` | `secured` / `disclosed` / `both_wiped` / `published` | `""` | C16; `published` on the key's confirmation | 06:00 beat, card, dispatch line, $12.8M line, cells ledger |
+| `database_outcome` | `secured` / `disclosed` / `both_wiped` / `published` | `""` | C16; `published` on the key's confirmation | 06:00 beat, card, dispatch line, $12.8M line, cells rule |
 | `sleeper_caught` | bool | `false`; `true` at load on `m09_sleeper_named and m09_recruiter_offer = taken` | a right accusation (face to face or on the line); the double-cross branch's taking at the core | WREN at the core, 06:00, credits |
 | `wrong_accusation` | bool | `false` | any wrong accusation; stays true after a recall | 06:00 walkabout, credits |
-| `head_start_out` | `none` / `zero_day` / `ghost` / `both` | `""` | the outer lock's own unlock event, the same event whichever way opened it (engine 39): Zero Day out unless `head_start_killed = zero_day` or the gallery stopped it (`victoria_gallery` in `confronted` / `talked_down` / `walked`, a recruited Victoria trusted while the share was dead, or `vos_secret_used`); Ghost's buyers out unless `head_start_killed = ghost` or `ghost_sale = stopped` | Netherton's numbers, card, cells ledger |
+| `head_start_out` | `none` / `zero_day` / `ghost` / `both` | `""` | the outer lock's own unlock event, the same event whichever way opened it (engine 39; part of the approved lock-and-countdown trial, F14, with a per-route eventMapping fallback): Zero Day out where `share_zero_day = live` or `traced`; the resale share out where `share_resale = live`. Equivalently, Zero Day out unless `head_start_killed = zero_day` or the gallery stopped it (`victoria_gallery` in `confronted` / `talked_down` / `walked`, or `vos_secret_used`); Ghost's buyers out unless `head_start_killed = ghost` or `ghost_sale = stopped` | Netherton's numbers, card, cells rule (the trace) |
 | `partial_release` | `none` / `small` / `large` / `published` | `none` | "Stop it": `small` on the redirected channel left open, `large` on the uncovered one; `published` on the key's confirmation | HaX at 06:00, Netherton's numbers, card |
-| `media_story_ran` | bool | `false` | when `ending` is set: `true` if the live story was never killed, or on `executed`; left `false` on Join | Netherton's numbers, cold ending, credits |
+| `media_story_ran` | bool | `false` | when `ending` is set: `true` on `m07_completed` and uncovered Fracture (the story runs from outside; the media room is cut), and on `executed` on every branch; `false` on Join (FA §3.5) | Netherton's numbers, cold ending's screen, credits |
 
 **Done-flags** (local; every branch sets them; each opens a door through an eventMapping on `global_variable_changed:<flag>` firing `unlock_door`, with a `game_loaded` re-check; S3-13):
 
@@ -694,26 +700,27 @@ Every global the choices set. Names are working names (stage 4 fixes them; expor
 | `tripwire_tripped` | bool | `false` | the tunnel's inner door | security office, WREN's timing (arc §8.5) |
 | `nightshade_deal` | `taken` / `refused` / `""` | `refused` on the arrested branch's first line | §3.1 arrested branch | tunnel, clue 2 helper, outer lock, credits |
 | `nightshade_tethered` | bool | `false` | §3.1 silent branch | blast door, Arakawa's placement, Kowalczyk's peel-off room, accusation costs |
-| `ghost_sale` | `stopped` / `bait` / `selling` | by branch on the call's first line | §3.2 | `head_start_out`, C9's options, cells ledger |
+| `ghost_sale` | `stopped` / `bait` / `selling` | by branch on the call's first line | §3.2 | `share_resale`, `head_start_out`, C9's options, cells rule |
 | `ghost_gift` | `code` / `card` / `""` | `""` | §3.2 refused branch | the outer lock |
 | `ghost_answer` | one value per answer on the kept and refused branches | `""` | §3.2 | Ghost's 06:00 text |
-| `imran_outcome` | `talked_round` / `taken_in` / `card_cloned` / `ko` / `avoided` | `avoided` (first line or room exit) | §3.3 | power-room door, bench-log pointer, Priya in the gallery, exchange 3 pool, cells ledger, credits |
-| `gary_outcome` | `talked_round` / `left_in_place` / `taken_in` / `ko` / `avoided` | `avoided` on the unprotected branch | §3.3 | power-room door, exchange 3 pool, credits |
-| `voltage_outcome` | `his_hands` / `by_hand` / `stood_down_print` / `talked_down` / `fought` / `ko` / `avoided` | `avoided` | §3.4 | shutter, exchange 3 pool, credits |
+| `imran_outcome` | `talked_round` / `taken_in` / `card_cloned` / `ko` / `avoided` | `avoided` (first line or room exit) | §3.3 | power-room door, bench-log pointer, Farah in the gallery, credits (the supplier clause on `taken_in`) |
+| `gary_outcome` | `talked_round` / `left_in_place` / `taken_in` / `ko` / `avoided` | `avoided` on the unprotected branch | §3.3 | power-room door, credits |
+| `voltage_outcome` | `his_hands` / `by_hand` / `stood_down_print` / `talked_down` / `fought` / `ko` / `avoided` | `avoided` | §3.4 | shutter, credits |
 | `wendell_outcome` | `told` / `worked_round` / `ko` / `avoided` | `avoided` | §3.4 | 06:00, credits |
 | `server_hall_warned` | bool | `false` | §3.4, Wendell told | Asante (C7 closed), Mercer (no draw-off) |
 | `gallery_camera_blinded` | bool | `false` | §3.4, the switch, only inside a by-hand cut | the gallery's monitor post and its bark |
 | `asante_outcome` | `talked` / `ko` / `untouched` | `untouched` | C7 | credits |
 | `asante_confirmed_sheet` | bool | `false` | C7 | exchange 1 rebuttal's decoded form |
-| `victoria_line_deal` | `deal` / `no_deal` | `no_deal` on the call's first line | C8 | cells ledger, credits |
-| `vos_secret_known` | bool | `false` | C8, on the line that tells it | gallery options |
-| `vos_secret_used` | bool | `false` | §3.5 arrested branch | Zero Day's share, 06:00 |
-| `victoria_gallery` | `confronted` / `trusted` / `refused` / `talked_down` / `walked` / `arrested_here` / `ko` / `avoided` | `avoided` (Victoria's branches only) | §3.5 | Zero Day's share, operations list, Zero Day tap, 06:00, credits |
-| `vos_outcome` | `stood_aside` / `bought` / `refused` / `talked_out` / `ko` / `avoided` | `avoided` (Vos's branches only) | §3.5 | credits' Zero Day line |
-| `head_start_killed` | `zero_day` / `ghost` / `trace` / `""` | `""` | C9 | `head_start_out`, recruited Victoria, Vos's talk-out, the bait's catch, the trace's cell |
+| `victoria_line_deal` | `deal` / `no_deal` | `no_deal` on the call's first line | C8 | credits ("Still talking.") |
+| `vos_secret_known` | bool | `false` | C8, on the line that tells it | the gallery's branch: the secret used automatically, or Vos's own trade |
+| `vos_secret_used` | bool | `false` | §3.5 arrested branch, set on the one-option line in the gallery whenever `vos_secret_known` | `share_zero_day`, `head_start_out` |
+| `victoria_gallery` | `confronted` / `trusted` / `refused` / `talked_down` / `walked` / `arrested_here` / `ko` / `avoided` | `refused` on the recruited branch (unanswered); `avoided` on the escaped branches | §3.5 | `share_zero_day`, operations list, Zero Day tap, 06:00, credits |
+| `vos_outcome` | `stood_aside` / `bought` / `refused` / `ko` / `avoided` | `avoided` (Vos's branches only) | §3.5 | credits' Zero Day line |
+| `head_start_killed` | `zero_day` / `ghost` / `trace` / `""` | `""` | C9 | `share_zero_day`, `share_resale`, `head_start_out`, recruited Victoria, the console's cell |
+| `share_zero_day` | `live` / `stopped` / `traced` / `released` | `live` | display global (D-03): `stopped` on `head_start_killed = zero_day`, `confronted`, `talked_down`, `walked` or `vos_secret_used`; `traced` on `head_start_killed = trace`; `released` replaces `live` and `traced` at the lock's unlock event | every countdown object's status line, HaX's "What's still live?", `head_start_out` |
+| `share_resale` | `live` / `stopped` / `none` / `released` | `none`; `live` on the call's first line where `ghost_sale = selling` | display global (D-03): `stopped` on `ghost_sale = stopped` (talked out) or `head_start_killed = ghost`; `released` replaces `live` at the lock | every countdown object's status line, HaX's "What's still live?", `head_start_out` |
 | `tesseract_ko` | bool | `false` | his `npc_ko` mapping (§6.1), and nothing else | the core's KO resume order: the hand disarm, the terminal's database menu, "[Cuff him.]" |
 | `backdoor_closed` | bool | `false` | C10 | `partial_release` |
-| `media_story_killed` | bool | `false` | C11 | `media_story_ran` |
 | `accused` | `kowalczyk` / `""` (the right accusation only) | `""` | §5 | team staging, core, 06:00 |
 | `officer_out` | one officer sent back and not recalled, or `""` (one at a time) | `""` | §5; cleared on recall | per-room staging, HaX's jam room, core, 06:00 |
 | `kowalczyk_ko`, `quintero_ko`, `malhotra_ko`, `arakawa_ko`, `vector_ko`, `phantom_ko` | bool | `false` | `globalVarOnKO` | staging, WREN at the core, 06:00, credits |
@@ -726,9 +733,9 @@ Every global the choices set. Names are working names (stage 4 fixes them; expor
 | `join_step` | 0–3 | 0 | §6.7, the furthest step reached | his step 5 line on `>= 2` |
 | `cold_lowered` | bool | `false` | §6.6, "Lower the weapon." | removes the cold option |
 
-Cut since draft 1: `nightshade_cuffed`, `dale_rang`, `ghost_gift = declined`/`blind`, the two Imran phone values (folded into `talked_round` and `taken_in`). `teaser_enabled` (FA §7) is configuration, not a decision, and is not listed. The countdown objects' global and its step values are stage 4's (FA §4.2).
+Cut since draft 1: `nightshade_cuffed`, `dale_rang`, `ghost_gift = declined`/`blind`, the two Imran phone values (folded into `talked_round` and `taken_in`); in the milestone pass, `media_story_killed` (C11) and `vos_outcome = talked_out` (`victoria_gallery = refused` stays, as the recruited branch's unanswered default). Added in the milestone pass: the display globals `share_zero_day` and `share_resale` (D-03). `teaser_enabled` (FA §7) is configuration, not a decision, and is not listed. The countdown objects' global and its step values are stage 4's (FA §4.2).
 
-**New imports** (§14): `m09_cage_bin` (`derek_file` / `letters` / `nightshade_copy` / `""`) and `m09_legacy_files_saved` (bool), both Tier 2, as m09 MC exports them.
+**New imports** (§14): `m09_cage_bin` (`derek_file` / `letters` / `nightshade_copy` / `""`) and `m09_legacy_files_saved` (bool), both Tier 2, as m09 MC exports them. **Milestone pass** (FA §3.2, §3.6): eighteen more Tier 2 lines-only imports, the seventeen bystander knock-out latches read only through `ko_pattern()` in `m10_carryover_vars.ink` (F16) and `m08_named_on_evidence` (HaX's aside line, M-12). m10 now imports **85** (Tier 1 40, Tier 2 45) plus nine `completed`.
 
 ## 13. Dominated and unforced choices found, and the fixes
 
@@ -742,12 +749,12 @@ Checked against rule 1.1 (no dominated option), rule 1.5 (forced, or optional wi
 | D2 | Kept Nightshade, not shown | "accept or check" (s1–2); then a cuff-or-leave menu that sat past the breach (draft 1, S3-01) | One closing choice at the table: his map or Helena's plans. The check is the puzzle that makes his map safe; the channel stays live either way. |
 | D3 | Arrested Nightshade | refusing bought nothing | Refusing keeps the player's word and carries no tripwire; the deal's map is newer and carries one. |
 | D4 | Captured Voltage | "by hand" was slower and safe; then the camera switch, as a free object, undid the fix (F-07) | By hand is the only way to the camera switch, which goes inert once someone else cuts. |
-| D5 | Recruited Victoria | confronting beat both (s1–2); then trusting her was a hidden-cost trap (draft 1, F-03) | She goes with whoever is winning: trust is right when Zero Day's share is dead, wrong when it is live, and HaX says so before the jam; confront is the safe check that costs the tap; refuse keeps both operations. |
+| D5 | Recruited Victoria | confronting beat both (s1–2); then trusting her was a hidden-cost trap (draft 1, F-03) | She goes with whoever is winning: trust is right when Zero Day's share is dead, wrong when it is live, and HaX says so before the jam; confront is the safe check that costs the tap. (Milestone pass: "refuse" is cut to keep the gallery at two options; leaving her unanswered (`refused`, the default) keeps its outcome, and the countdown object shows the share's state, so trust is a judgement, not a guess.) |
 | D6 | Escaped Victoria, with the threat | the knock-out beat the talk-down | Talked down, she cancels Zero Day's order; knocked out, she is charged. |
 | D7 | Arrested Victoria's line | she tells the secret either way | The deal keeps her talking after tonight (a desk in the ledger), at the price of her sentence. |
-| D8 | Arrested Victoria's secret, in the gallery | withholding it bought nothing | Kept, it is leverage Netherton holds on Vos. |
+| D8 | Arrested Victoria's secret, in the gallery | withholding it bought nothing | Kept, it was leverage Netherton held on Vos. Milestone pass: the use-or-keep choice is cut (D-04) and the secret is used automatically; the choice on this branch is C8's deal, on the line. |
 | D9 | Unprotected Gary | walking past bought nothing | Left in place, a man on their bench who ships nothing. |
-| D10 | Imran | three outcomes, two alike; "phone taken" paid only in the credits (M-01) | Two: talked round (door, pointer, Priya home) or taken in (the supplier's delivery read out tonight, a nudge for the whodunit, the supplier in the ledger). |
+| D10 | Imran | three outcomes, two alike; "phone taken" paid only in the credits (M-01) | Two: talked round (door, pointer, Farah home) or taken in (the supplier's delivery read out tonight, a nudge for the whodunit, the supplier in the ledger). |
 | D11 | Wendell | "tell him" cost nothing; "work round" bought nothing | Telling him means he warns Dale, and the server hall hears it (Asante won't talk, Mercer can't be drawn off); working round gives the camera switch. |
 | D12 | Surrender against arrest | surrender bought cells and cost nothing | F13: a deal with no trial against a trial with no cells; Netherton says so first. |
 | D13 | Wipe both | its gain unsaid, its escape a surprise (F-06) | The escape said plainly with the menu open; its gain shown at 06:00. |
@@ -949,9 +956,68 @@ Review: `REVIEW_R2.md` (0 blockers, 4 majors R2-01–R2-04, 12 minors R2-05–R2
 | Worst lines 1–5 | – | All taken as rewritten (Netherton's "new name"; the valves by hand; "Nobody holds the map now"; secure's case; Ghost's two texts) | §3.1, §3.2, §6.5 |
 | Scope cuts 1–2 | – | Applied (ruling): Arakawa's call is a line; Vector's and Phantom's wrong-accusation costs are the shared one. Simplification 8 stays in reserve | §4, §5 |
 
-**Final count.** 17 choices: nine dilemmas (C2, C4, C5, C6, C8, C9, C13, C16, C17), one gateway (C15), two puzzles (C12, C14), two stances (C1, C18), two tasks (C10, C11), one piece of information (C7); plus the walkabout hub. Every player meets C1, C2, C4, C5, C6, C9, C13, C14 and C15, and everyone who doesn't join meets C16 and C17. About 19 picks on a rich save. m10 imports 67 (Tier 1 40, Tier 2 27) plus nine `completed`.
+**Final count** (as of round 2; superseded by the milestone pass, §2: 16 choices, C11 retired, about 18 picks). 17 choices: nine dilemmas (C2, C4, C5, C6, C8, C9, C13, C16, C17), one gateway (C15), two puzzles (C12, C14), two stances (C1, C18), two tasks (C10, C11), one piece of information (C7); plus the walkabout hub. Every player meets C1, C2, C4, C5, C6, C9, C13, C14 and C15, and everyone who doesn't join meets C16 and C17. About 19 picks on a rich save. m10 imports 67 (Tier 1 40, Tier 2 27) plus nine `completed`.
 
-### Test plan for stage 8
+### Test plan for stage 8 (milestone pass; the live plan)
+
+Rebuilt for D-10 and the simplification pass. **35 runs, about 15 hours of agent play** (the round 2 plan: 35 runs, 20 of them full length, about 35 hours). Three true end-to-end runs; everything else is an **act-start segment** of 15–30 minutes, started with the approved playtest bootstrap (F15: start in room R with globals G loaded; VM flags injected as globals unless the run says "worked"). Each scene branch, each C9 option, each gallery option, each accusation outcome and each lock route appears at least once; each ending and each database outcome at least twice. KO and reload nets sit inside the segment that owns the scene.
+
+**End to end (3, about 105 minutes each, VM flags worked)**
+
+| # | Save | What it proves |
+|---|---|---|
+| E1 | kind: careful m01–m09 (triple agent shown; m02 protected, kept deal; m03 recruited; m04 captured, `full`; m06 seized; m09 `named`, `same_in_your_place`, notice sent) | the whole night in one sitting with the most allies; the 105-minute budget and the 8-minute close; D-01's aside and 06:00 line; Victoria trusted with the share dead; surrender |
+| E2 | hard: ruthless m01–m09 (m02 broken deal, keys used; m04 escaped, no print, crew lost; m03 escaped with threat; m07 Austin uncovered, `hardened`; m08 kept, not shown; m09 `taken`, `kept`) | the hostile route, the named cold open, Helena's plans at the door (a manned tunnel post), few record answers; fewer than two points, justified lethal |
+| E3 | cold start, no imports | every default, the cold-start briefing read cold, the rebuttal positions; arrest after hold fire |
+
+**Segment A: forward post to the security office's stair (8 runs, about 15 minutes each; start: mission start)**
+
+| # | Save | Briefing and C1 | Door | Ghost | Also checks |
+|---|---|---|---|---|---|
+| A1 | m09 `taken` + m08 KO-before-fate | named cold open (`recruiter_offer == taken`); Quintero | silent, tether (Quintero breaches) | refused, code | MS-03 guard; Arakawa's 02:10 call worked |
+| A2 | m09 `double_crossed` | empty place; Netherton | silent, leave | stranger, bait | double-cross checked before `taken` |
+| A3 | m08 shown; Vector and Phantom present | say nothing | shown, stay | kept, answer 1 | the D-02 line; Vector's sealed door |
+| A4 | m08 shown | – | shown, come; then Nightshade KO'd before the closing choice on a reload (the net: default, override dropped) | kept, answer 3 | KO immunity (trial) and the net |
+| A5 | m08 kept, not shown; m02 broken, keys used; `nightshade_copy` | – | not shown, map unchecked (the tripwire, through to the security office) | broken, own it, talk out; call closed and reloaded mid-call | the notes line on the not-shown branch (MS-05) |
+| A6 | m08 kept, not shown; m02 refused | – | not shown, payment checked, map | refused, card | door scene closed early, then resumed |
+| A7 | m08 arrested; m02 unanswered; m03 `guard_bribed`; `nightshade_copy`; m09 `named` | – | arrested, refuse | unanswered, talk out | the Cardiff lull line (MS-01); D-01 aside; notes line on the arrested branch |
+| A8 | m08 arrested; m02 kept | – | arrested, deal, unchecked; reload: deal, checked | kept, answer 2 (east door stays shut until answered) | Netherton KO'd before the closing choice on a silent-branch reload (his lines later stand) |
+
+**Segment B: workshop floor and power room (5 runs, about 15 minutes; start: workshop floor)**
+
+| # | Save | Workshop | Power room | Also checks |
+|---|---|---|---|---|
+| B1 | cold | Imran, talked round | Wendell, told (server hall warned) | Farah's post set empty |
+| B2 | m02 protected | Gary + Imran, taken in (supplier read off the phone) | captured Voltage, his hands | phone slot unused with Voltage in the room (MS-07) |
+| B3 | m02 unprotected; m04 escaped + print | Gary talked round | escaped, print | – |
+| B4 | m02 unprotected; m04 escaped, Static | Gary left in place (Imran cloned) | escaped, sheet talk-down | – |
+| B5 | m02 unprotected; m04 captured; m02 keys used | Gary cuffed; Imran keeps his card (hatch) | captured, by hand (camera switch); Wendell KO'd on a second pass | the switch inert after another cut |
+
+**Segment W: the whodunit, security office to the outer lock (4 runs, about 30 minutes; start: security office, clue 1 open)**
+
+| # | Accusation | Also checks |
+|---|---|---|
+| W1 | right, face to face (four cards) | her question; Arakawa looks away |
+| W2 | wrong Malhotra, refused second accusation, recalled; right on the line | HaX's line drops a room early while he is out |
+| W3 | wrong Arakawa, not recalled; tethered Nightshade (van team at the blast door) | the county road cost |
+| W4 | wrong Quintero, not recalled; then Kowalczyk on the line with no Quintero (the player stops her at the core) | `sleeper_caught` true from the core |
+
+**Segment C: server hall to the outer lock (6 runs, about 20 minutes; start: server hall, flag 2 injected)**
+
+| # | Save | C9 | C8 / gallery | Lock | Also checks |
+|---|---|---|---|---|---|
+| C1 | m03 recruited | kill Zero Day | trust (share dead) | opened from inside | status lines STOPPED; the "What's still live?" topic; Victoria's watch on the operations list (MS-02) |
+| C2 | m03 recruited; m02 broken deal, Ghost baited | trace | trust (share live: alarm) | picked under guard | status TRACED then RELEASED; sweep line at the hall's exit (D-04) |
+| C3 | m03 recruited | skipped | confront (tap dark at five); reload: left unanswered (`refused`) | opened from inside | both warnings on leaving the hall; one warning before the jam |
+| C4 | m03 escaped + threat; m07 Mercer at large; m02 unanswered, Ghost baited | kill Ghost's (bait) | talked down / knocked out (reload) | Ghost's code | Mercer, Asante off the map; the story running from outside (Fracture uncovered) |
+| C5 | m03 escaped, no threat; m07 Austin uncovered | trace | go (lock card named) / arrest (reload) | card | backdoor closed |
+| C6 | m03 arrested | kill Zero Day | line: deal; the secret used on Vos automatically. Reload: call closed, re-ring at the stair, abandoned; Vos's trade, deal / no | Vos stands aside; card | no keep option; `vos_secret_used` |
+
+**Segment D: the core (9 runs, about 15 minutes; start: the core with globals, flag 4 injected unless "worked")**
+
+D1 each of the six endings in turn from one save, checking the card (cells by the fixed rule; "Michael Reeves's cell", never Ghost Protocol next to Ghost's text), the walkabout of three, the fixed 06:00 beats (Nightshade, HaX's forty-seven, D-01's arrests line) and the credits clauses (the Recruiter on each value); D2 `join_step` 1 → step back → stop, and 3 → "No" → step away → stop; D3 a reload between each core menu (resume; `points_landed` unchanged); D4 Tesseract knocked out before the database menu, then secure (arrest) and wipe (Scorched Earth), and after secure (resumes at "[Cuff him.]"), checking the trial's immunity first and the net second; D5 WREN free with Quintero, then with no Quintero ("[Stop her.]", reload on the beat); D6 WREN caught, and the double-cross opening (glance at the door she came in by); D7 `alpha_tapes` with and without Quintero; D8 the record pools at their cap (the Alpha notes over HaX's meaning in exchange 3; `full` over the hospital in exchange 2; the clean first day withheld when `ko_pattern() > 0`), the knock-out sting at each band (0, 1, 2–3, 4+) from seeded saves, and Satoshi's three stances in his offer; D9 the cold option lowered, a reload, then executed (the server hall's draft sent with its true paragraph).
+
+### Test plan for stage 8 (round 2–3 version, superseded by the plan above; kept as the record)
 
 About 35 runs, most of them short, against m07's 39. Full-length profiles are a covering set: each walks a non-default branch in every scene at once, so every scene branch, every C9 option and every accusation outcome appears at least once, and every ending and database outcome at least twice.
 
