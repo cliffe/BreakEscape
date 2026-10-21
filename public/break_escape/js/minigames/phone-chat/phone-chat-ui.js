@@ -10,7 +10,7 @@
 import { ASSETS_PATH } from '../../config.js';
 import TTSManager from '../../systems/tts-manager.js';
 import MusicController from '../../music/music-controller.js';
-import { displayPhoneLine } from './phone-chat-speaker.js';
+import { displayPhoneLine, otherSpeaker } from './phone-chat-speaker.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { messageClockText } from '../../systems/game-clock.js';
 import { hasHiddenChoicesBelow, numberedChoiceText } from './phone-chat-choices.js';
@@ -662,9 +662,21 @@ export default class PhoneChatUI {
             // Regular text message
             const messageText = document.createElement('div');
             messageText.className = 'message-text';
+            // Another character's line in this thread ("Name: …") gets their name over
+            // the bubble, prefix dropped, instead of reading as the contact's own (F14)
+            let bodyText = trimmedText;
+            const other = type === 'npc' ? otherSpeaker(trimmedText, contact, this._knownSpeakerNames()) : null;
+            if (other) {
+                const sender = document.createElement('div');
+                sender.className = 'message-sender';
+                sender.textContent = displayDashes(other.name);
+                messageBubble.appendChild(sender);
+                messageBubble.classList.add('other-speaker');
+                bodyText = other.text;
+            }
             // Terminal theme adds its own "> " prompt in CSS; skip it when the line already starts with one
-            if (/^\s*>/.test(trimmedText)) messageText.classList.add('has-own-prompt');
-            messageText.textContent = displayDashes(trimmedText);
+            if (/^\s*>/.test(bodyText)) messageText.classList.add('has-own-prompt');
+            messageText.textContent = displayDashes(bodyText);
             
             messageBubble.appendChild(messageText);
             
@@ -686,6 +698,13 @@ export default class PhoneChatUI {
         }
 
         return Promise.resolve();
+    }
+
+    /** Display names of every registered character, for otherSpeaker(). */
+    _knownSpeakerNames() {
+        const npcs = this.npcManager?.npcs;
+        if (!npcs || typeof npcs.values !== 'function') return [];
+        return Array.from(npcs.values()).map(n => n?.displayName).filter(Boolean);
     }
 
     _typewriterMessage(text, scrollToBottom) {

@@ -87,6 +87,7 @@ export function initNPCHostileSystem() {
     getState: (npcId) => getNPCHostileState(npcId),
     damageNPC: (npcId, amount) => damageNPC(npcId, amount),
     isNPCKO: (npcId) => isNPCKO(npcId),
+    isNPCKOImmune: (npcId) => isNPCKOImmune(npcId),
     getKOFacing: (npcId) => getKOFacing(npcId),
     exportHostility: () => exportHostility(),
     restoreHostility: (saved) => restoreHostility(saved),
@@ -258,7 +259,21 @@ function getNPCHostileState(npcId) {
   return state;
 }
 
+/**
+ * An NPC with "koImmune": true in the scenario can't be hurt or knocked out
+ * (the finale's story-critical NPCs). Player punches pass over it without
+ * turning it hostile (player-combat.js), and damageNPC refuses it, so no
+ * npc_ko, globalVarOnKO, taskOnKO or item drop can come from it.
+ */
+export function isNPCKOImmune(npcId) {
+  return window.npcManager?.getNPC?.(npcId)?.koImmune === true;
+}
+
 function damageNPC(npcId, amount) {
+  if (isNPCKOImmune(npcId)) {
+    console.log(`🛡️ NPC ${npcId} is koImmune - no damage`);
+    return false;
+  }
   const state = getNPCHostileState(npcId);
   if (!state) return false;
 

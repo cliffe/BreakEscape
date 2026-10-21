@@ -16,6 +16,7 @@ import { processGameActionTags } from '../helpers/chat-helpers.js';
 import { classifyPhoneLine, displayPhoneLine, phoneStepLines } from './phone-chat-speaker.js';
 import { choiceIndexFromKey } from './phone-chat-choices.js';
 import { whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
+import { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS } from './phone-call-lock.js';
 
 export class PhoneChatMinigame extends MinigameScene {
     /**
@@ -173,8 +174,13 @@ export class PhoneChatMinigame extends MinigameScene {
             }
         });
         
-        // Back button (return to contact list)
+        // Back button (return to contact list). A forced call has none: leaving the
+        // thread for the list was a way out of it.
+        if (phoneCloseLocked(this.params) && this.ui.elements.backButton) {
+            this.ui.elements.backButton.style.display = 'none';
+        }
         this.addEventListener(this.ui.elements.backButton, 'click', () => {
+            if (phoneCloseLocked(this.params)) return;
             this.closeConversation();
         });
         
@@ -224,16 +230,21 @@ export class PhoneChatMinigame extends MinigameScene {
         if (!this.gameState.isActive) return;
         
         switch(event.key) {
-            case 'Escape':
-                if (this.ui.getCurrentView() === 'conversation') {
+            case 'Escape': {
+                // A forced call (disableClose) ignores Esc, as person-chat does
+                const action = phoneEscapeAction(this.ui.getCurrentView(), this.params);
+                if (action === 'back') {
                     // Go back to contact list
                     event.preventDefault();
                     this.closeConversation();
-                } else {
+                } else if (action === 'close') {
                     // Close minigame
                     this.complete(false);
+                } else {
+                    event.preventDefault();
                 }
                 break;
+            }
                 
             default: {
                 // Quick choice selection: number keys 1-9
@@ -556,6 +567,7 @@ export class PhoneChatMinigame extends MinigameScene {
             console.log('🏁 Story has ended');
             this.ui.showNotification('Conversation ended', 'info');
             this.isConversationActive = false;
+            this._releaseForcedCall();
         } else {
             console.log('ℹ️ No choices available in current state');
         }
@@ -659,6 +671,7 @@ export class PhoneChatMinigame extends MinigameScene {
             console.log('🏁 Conversation ended');
             this.ui.showNotification('Conversation ended', 'info');
             this.isConversationActive = false;
+            this._releaseForcedCall();
             return;
         }
 
@@ -711,6 +724,7 @@ export class PhoneChatMinigame extends MinigameScene {
             // No more content and no choices - end conversation
             console.log('🏁 No more choices available');
             this.isConversationActive = false;
+            this._releaseForcedCall();
         }
 
         // Save story state after processing
@@ -898,6 +912,7 @@ export class PhoneChatMinigame extends MinigameScene {
             console.log('🏁 Conversation ended');
             this.ui.showNotification('Conversation ended', 'info');
             this.isConversationActive = false;
+            this._releaseForcedCall();
             return;
         }
 
@@ -908,12 +923,25 @@ export class PhoneChatMinigame extends MinigameScene {
             // No more content and no choices - end conversation
             console.log('🏁 No more choices available');
             this.isConversationActive = false;
+            this._releaseForcedCall();
         }
 
         // Save story state for resuming later
         this.saveStoryState();
     }
     
+    /**
+     * A forced call (disableClose) whose story ended without #exit_conversation has no
+     * way out: no x, no Close, no Esc, no back arrow. Close it for the player once the
+     * last line has been read, as person-chat's showConversationOverMessage does.
+     */
+    _releaseForcedCall() {
+        if (!phoneCloseLocked(this.params)) return;
+        whenSessionOverlayClosed().then(() => setTimeout(() => {
+            if (this.gameState.isActive) this.complete(true);
+        }, FORCED_CALL_END_CLOSE_MS));
+    }
+
     /**
      * Save the current Ink story state to NPC data
      */

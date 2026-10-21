@@ -846,6 +846,10 @@
           "type": "string",
           "description": "Task ID to complete when this NPC is knocked out. Must exist in objectives."
         },
+        "koImmune": {
+          "type": "boolean",
+          "description": "true: the player can't fight or knock out this NPC. Punches pass over it without turning it hostile."
+        },
         "storyPath": { "type": "string" },
         "currentKnot": { "type": "string" },
         "avatar": { "type": "string" },

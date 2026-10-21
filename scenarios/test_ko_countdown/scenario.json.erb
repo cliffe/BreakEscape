@@ -1,0 +1,85 @@
+{
+  "scenario_id": "test_ko_countdown",
+  "scenario_name": "Test: KO immunity and countdown display",
+  "scenario_brief": "Engine check (finale F14).\n\n1. Switch to Jab (Q) and punch the Director: nothing happens, he stays calm.\n2. Punch the Guard: he turns hostile, as before.\n3. Examine the Release Timer: RELEASE IN 04:00.\n4. Try the vault door: the timer reads RELEASE IN 01:45.\n5. Unlock the vault (PIN 1234): door_unlocked sets the timer to RELEASED.",
+  "endGoal": "Check koImmune, door_unlocked and observationVariants/textVariants.",
+  "startRoom": "lobby",
+  "globalVariables": {
+    "release_clock": "long"
+  },
+  "rooms": {
+    "lobby": {
+      "type": "room_office",
+      "door_sign": "Lobby",
+      "connections": { "north": "vault" },
+      "npcs": [
+        {
+          "id": "test_director",
+          "displayName": "The Director",
+          "npcType": "person",
+          "koImmune": true,
+          "position": { "x": 3, "y": 4 },
+          "spriteSheet": "female_blowse_v2",
+          "storyPath": "scenarios/ink/generic-npc.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "_comment": "Trying the vault door moves the clock on.",
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'vault' && globalVars.release_clock === 'long'",
+              "onceOnly": true,
+              "setGlobal": { "release_clock": "short" }
+            },
+            {
+              "_comment": "The vault door unlocked: door_unlocked, filtered by data.connectedRoom.",
+              "eventPattern": "door_unlocked",
+              "condition": "data.connectedRoom === 'vault'",
+              "onceOnly": true,
+              "setGlobal": { "release_clock": "released" }
+            }
+          ]
+        },
+        {
+          "id": "test_guard",
+          "displayName": "Guard",
+          "npcType": "person",
+          "position": { "x": 7, "y": 4 },
+          "spriteSheet": "female_security_guard_v2",
+          "storyPath": "scenarios/ink/generic-npc.json",
+          "currentKnot": "start"
+        }
+      ],
+      "objects": [
+        {
+          "type": "smartscreen",
+          "id": "release_timer",
+          "name": "Release Timer",
+          "position": { "x": 5, "y": 2 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "RELEASE IN 04:00",
+          "observationVariants": [
+            { "condition": "globalVars.release_clock === 'released'", "value": "RELEASED" },
+            { "condition": "globalVars.release_clock === 'short'", "value": "RELEASE IN 01:45" }
+          ],
+          "text": "RELEASE IN 04:00",
+          "textVariants": [
+            { "condition": "globalVars.release_clock === 'released'", "value": "RELEASED" },
+            { "condition": "globalVars.release_clock === 'short'", "value": "RELEASE IN 01:45" }
+          ]
+        }
+      ]
+    },
+    "vault": {
+      "type": "room_office",
+      "door_sign": "Vault",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "1234",
+      "connections": { "south": "lobby" },
+      "objects": []
+    }
+  }
+}

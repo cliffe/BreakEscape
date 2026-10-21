@@ -268,7 +268,7 @@ def check_unknown_fields(json_data)
   # Known NPC fields
   known_npc_fields = %w[
     id displayName npcType position spriteSheet spriteTalk spriteVisemes spriteConfig
-    voice behavior globalVarOnKO restartOnRetalk taskOnKO storyPath currentKnot avatar
+    voice behavior globalVarOnKO restartOnRetalk taskOnKO koImmune storyPath currentKnot avatar
     phoneId phoneTheme unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
@@ -292,7 +292,7 @@ def check_unknown_fields(json_data)
   known_event_mapping_fields = %w[
     eventPattern condition onceOnly maxTriggers cooldown fireOnlyWhenLoaded delayMs
     bark message barkDelay
-    targetKnot conversationMode background disableClose
+    targetKnot conversationMode background disableClose resume
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
     sendTimedMessage setGlobal completeTask skipTask unlockTask unlockAim
     _comment
@@ -1078,7 +1078,8 @@ def check_objectives_wiring(json_data, base_dir)
   # eventMapping fallback (keyed to its KO global) for the second one.
   # Reference: m01_first_contact gives every conversation-gated task a
   # taskOnKO (e.g. dr_sarah_kim→meet_dr_kim, derek_lawson→confront_derek).
-  # Skipped when the scenario sets "disableAttacks": true.
+  # Skipped when the scenario sets "disableAttacks": true. A task one of whose completing
+  # NPCs has "koImmune": true is KO-safe.
   # ─────────────────────────────────────────────────────────────
   begin
     # Tasks completed via any eventMapping (phones, handlers, objects, rooms) — KO-safe.
@@ -1092,10 +1093,13 @@ def check_objectives_wiring(json_data, base_dir)
       end
     end
 
+    # NPCs with koImmune: true can't be knocked out, so their conversations are KO-safe.
+    ko_immune_ids = Set.new
     json_data['rooms']&.each do |_room_id, room|
       room['npcs']&.each do |npc|
         scan_event_mappings.call(npc['eventMappings'])
         taskonko_tasks << npc['taskOnKO'] if npc['taskOnKO']
+        ko_immune_ids << npc['id'] if npc['koImmune'] == true
       end
       room['objects']&.each { |obj| scan_event_mappings.call(obj['eventMappings']) }
     end
@@ -1210,6 +1214,7 @@ def check_objectives_wiring(json_data, base_dir)
       next if event_completed_tasks.include?(tid)          # eventMapping fallback exists
       next if taskonko_tasks.include?(tid)                 # some NPC's taskOnKO covers it
       next if sources.any? { |s| s[:taskonko_match] }      # a completing NPC has taskOnKO for it
+      next if sources.any? { |s| ko_immune_ids.include?(s[:npc_id]) } # a completing NPC can't be KO'd (koImmune)
       # every completing NPC has a KO-triggered phone conversation whose ink also completes the task
       next if sources.all? { |s| ko_phone_ink[s[:npc_id]].any? { |c| c.include?("complete_task:#{tid}") } }
 
@@ -2191,6 +2196,21 @@ def check_common_issues(json_data, valid_item_types = nil)
           # Track hostile NPCs (hostile can be true or a config object)
           if npc['behavior']&.key?('hostile') && npc['behavior']['hostile']
             has_hostile_npcs = true
+          end
+
+          # koImmune: the player can't fight or knock out this NPC (npc-hostile.js isNPCKOImmune)
+          if npc.key?('koImmune')
+            if npc['koImmune'] != true && npc['koImmune'] != false
+              issues << "❌ INVALID: '#{path}' koImmune must be true or false (got #{npc['koImmune'].inspect})."
+            elsif npc['koImmune'] == true
+              dead = %w[taskOnKO globalVarOnKO].select { |k| npc[k] }
+              if dead.any?
+                issues << "⚠️ WARNING: '#{path}' has koImmune: true, so it can never be knocked out and its #{dead.join(' and ')} never fires. Drop #{dead.length == 1 ? 'it' : 'them'}, or drop koImmune."
+              end
+              if npc['behavior'].is_a?(Hash) && npc['behavior']['hostile']
+                issues << "⚠️ WARNING: '#{path}' has koImmune: true and behavior.hostile: it would attack the player and can't be hit back. Drop one of them."
+              end
+            end
           end
 
           # Track and cross-reference globalVarOnKO

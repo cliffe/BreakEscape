@@ -24,6 +24,7 @@
 import MusicController from './music-controller.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay } from './credits-theme.js';
+import { cardHoldMs } from './closing-sequence.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const PIX = 4; // pixel block size for all drawing
@@ -1237,6 +1238,9 @@ const STYLE_MAP = {
     'section-header': `font-family:VT323,monospace;font-size:18px;color:#FFD700;opacity:0.8;letter-spacing:0.3em;text-shadow:${_GLOW_DARK},0 0 16px rgba(255,215,0,0.6);`,
     'entry':          `font-family:VT323,monospace;font-size:28px;color:#00FF41;letter-spacing:0.1em;text-shadow:${_GLOW_DARK},0 0 20px rgba(0,255,65,0.8);`,
     'warning':        `font-family:VT323,monospace;font-size:28px;color:#FF6600;letter-spacing:0.1em;text-shadow:${_GLOW_DARK},0 0 20px rgba(255,100,0,0.9),0 0 40px rgba(255,100,0,0.4);`,
+    // closingCard (closing-sequence.js): several lines shown together, then the teaser
+    'card':           `font-family:VT323,monospace;font-size:30px;line-height:1.35;color:#E8F4FF;letter-spacing:0.06em;text-shadow:${_GLOW_DARK},0 0 16px rgba(160,210,255,0.6);`,
+    'teaser':         `font-family:VT323,monospace;font-size:26px;line-height:1.35;color:#C77DFF;font-style:italic;letter-spacing:0.08em;text-shadow:${_GLOW_DARK},0 0 18px rgba(199,125,255,0.7);`,
 };
 
 function _startCredits(lines) {
@@ -1271,8 +1275,8 @@ function _startCredits(lines) {
     }
     label.style.cssText = 'text-align:center;padding:0 10%;transition:opacity 0.4s ease;';
 
-    // Filter to non-empty lines only
-    const items = lines.filter(l => l.text && l.text.trim());
+    // Filter to non-empty lines only (a card carries its own lines)
+    const items = lines.filter(l => (Array.isArray(l.lines) && l.lines.length) || (l.text && l.text.trim()));
 
     let idx = 0;
 
@@ -1297,10 +1301,25 @@ function _startCredits(lines) {
         label.style.opacity = '0';
         _creditsTimerId = setTimeout(() => {
             label.style.cssText = `text-align:center;padding:0 10%;transition:opacity 0.4s ease;${baseStyle}`;
-            label.textContent   = displayDashes(item.text);
+            let holdMs = 3000;
+            if (Array.isArray(item.lines) && item.lines.length) {
+                // A closing card or teaser: its lines together, one per row
+                label.textContent = '';
+                for (const line of item.lines) {
+                    const row = document.createElement('div');
+                    row.className = 'bv-cr-card-line';
+                    row.style.margin = '0.25em 0';
+                    row.textContent = displayDashes(line);
+                    label.appendChild(row);
+                    if (_themeDef.logCredits) addLog('> ' + displayDashes(line));
+                }
+                holdMs = cardHoldMs(item.lines.length);
+            } else {
+                label.textContent = displayDashes(item.text);
+                if (_themeDef.logCredits) addLog('> ' + displayDashes(item.text));
+            }
             label.style.opacity = '1';
-            if (_themeDef.logCredits) addLog('> ' + displayDashes(item.text));
-            _creditsTimerId = setTimeout(showNext, 3000);
+            _creditsTimerId = setTimeout(showNext, holdMs);
         }, 450); // brief fade-out gap before switching text
     }
 

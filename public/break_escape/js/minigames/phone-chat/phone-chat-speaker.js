@@ -160,3 +160,29 @@ export function phoneBarkText(text, contact) {
         .map(line => line.text.trim())
         .join('\n');
 }
+
+/**
+ * A line in a contact's thread spoken by someone else the game knows ("Director
+ * Netherton: Put her on." in HaX's thread, finale F14). The phone drew it as the
+ * contact's bubble with the prefix left in, so it read as HaX saying the name. Only a
+ * registered character's display name counts, so "Note: …" or "Step 2: …" stay text.
+ * @param {string} text - the line after displayPhoneLine
+ * @param {{id?: string, displayName?: string}|null} contact - the thread's own contact
+ * @param {string[]} knownNames - display names of the scenario's characters
+ * @returns {{name: string, text: string}|null} the speaker's name as registered, and the line without it
+ */
+export function otherSpeaker(text, contact, knownNames) {
+    if (typeof text !== 'string' || !Array.isArray(knownNames)) return null;
+    const own = new Set(contactNames(contact));
+    const trimmed = text.trim();
+    const names = knownNames
+        .filter(n => typeof n === 'string' && n.trim() && !own.has(n.trim().toLowerCase()))
+        .sort((a, b) => b.length - a.length);
+    for (const name of names) {
+        const match = trimmed.match(new RegExp(`^${escapeRegExp(name.trim())}\\s*:\\s*`, 'i'));
+        if (!match) continue;
+        const rest = trimmed.slice(match[0].length).trim();
+        if (rest) return { name: name.trim(), text: rest };
+    }
+    return null;
+}

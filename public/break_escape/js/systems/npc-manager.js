@@ -294,7 +294,8 @@ export default class NPCManager {
         background: entry.timedConversation.background, // Optional background image
         waitForEvent: entry.timedConversation.waitForEvent || null,
         skipIfGlobal: entry.timedConversation.skipIfGlobal || null,
-        setGlobalOnStart: entry.timedConversation.setGlobalOnStart || null
+        setGlobalOnStart: entry.timedConversation.setGlobalOnStart || null,
+        disableClose: entry.timedConversation.disableClose === true
       });
       console.log(`[NPCManager] Scheduled timed conversation for ${realId} to knot: ${entry.timedConversation.targetKnot}`);
     }
@@ -633,6 +634,7 @@ export default class NPCManager {
         emitEvent:     mapping.emitEvent     || null,   // event name to emit when mapping fires
         emitEventData: mapping.emitEventData || {},     // optional payload for that event
         disableClose:  mapping.disableClose  || false,  // hide × and block Esc for this conversation
+        resume:        mapping.resume === true,         // phone-chat: reopen the saved thread, no knot jump
         background:    mapping.background    || null,    // optional background image path
         // NEW ACTION FIELDS [Phase 2-4]
         setVisible:         mapping.setVisible          ?? undefined,
@@ -1118,7 +1120,10 @@ export default class NPCManager {
           window.MinigameFramework.startMinigame('phone-chat', null, {
             npcId: npc.id,
             phoneId: npc.phoneId || 'player_phone',
-            startKnot: knotToUse,
+            // resume: a re-ring of an unfinished call. No knot, so phone-chat restores the
+            // saved story and shows the choice the player left unanswered. With no saved
+            // story yet it falls back to the knot, as a first ring.
+            startKnot: (config.resume && npc.storyState) ? null : knotToUse,
             title: npc.displayName || 'Phone',
             theme: npc.phoneTheme,
             disableClose: config.disableClose || false
@@ -1464,7 +1469,7 @@ export default class NPCManager {
   //     }
   //   }
   scheduleTimedConversation(opts) {
-    const { npcId, targetKnot, triggerTime, delay, background, waitForEvent, skipIfGlobal, setGlobalOnStart } = opts;
+    const { npcId, targetKnot, triggerTime, delay, background, waitForEvent, skipIfGlobal, setGlobalOnStart, disableClose } = opts;
 
     if (!npcId || !targetKnot) {
       console.error('[NPCManager] scheduleTimedConversation requires npcId and targetKnot');
@@ -1483,7 +1488,8 @@ export default class NPCManager {
       waitForEvent: waitForEvent || null,
       triggerTime: waitForEvent ? null : actualDelay, // Only set triggerTime if not waiting for event
       skipIfGlobal: skipIfGlobal || null,     // Skip if this global is already truthy
-      setGlobalOnStart: setGlobalOnStart || null // Set this global to true when conversation fires
+      setGlobalOnStart: setGlobalOnStart || null, // Set this global to true when conversation fires
+      disableClose: disableClose === true // no ×, no Esc (documented; was dropped before 2026-10-21)
     };
 
     this.timedConversations.push(conversation);
@@ -1694,7 +1700,8 @@ export default class NPCManager {
           npcId: conversation.npcId,
           phoneId: npc.phoneId || 'player_phone',
           title: 'Phone',
-          theme: npc.phoneTheme
+          theme: npc.phoneTheme,
+          disableClose: conversation.disableClose === true
         });
       } else {
         console.log(`🎭 Starting timed person conversation for ${conversation.npcId} at knot: ${conversation.targetKnot}`);
@@ -1702,7 +1709,8 @@ export default class NPCManager {
         window.MinigameFramework.startMinigame('person-chat', null, {
           npcId: conversation.npcId,
           title: npc.displayName || conversation.npcId,
-          background: conversation.background // Optional background image path
+          background: conversation.background, // Optional background image path
+          disableClose: conversation.disableClose === true
         });
       }
     } else {

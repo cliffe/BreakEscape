@@ -78,7 +78,9 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                     if (window.gameState?.unlockedRooms && !window.gameState.unlockedRooms.includes(action.room_id)) {
                         window.gameState.unlockedRooms.push(action.room_id);
                     }
-                    window.eventDispatcher?.emit('door_unlocked', { roomId: action.room_id, source });
+                    // connectedRoom is the room unlocked, as in unlock-system.js's door_unlocked:
+                    // objectives-manager and eventMapping conditions (data.connectedRoom) read it
+                    window.eventDispatcher?.emit('door_unlocked', { roomId: action.room_id, connectedRoom: action.room_id, source });
                 }
                 break;
 

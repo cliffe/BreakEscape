@@ -514,6 +514,27 @@ Example (dynamic bedside monitor copy):
 }
 ```
 
+A display whose text follows the story (a countdown that story beats set to "04:00", "01:45", then "RELEASED") is the same mechanism keyed on one global with string values. Set the global from eventMappings (`setGlobal`) or ink (`#set_global`), and declare it in `globalVariables`:
+
+```json
+{
+  "type": "monitor", "name": "Release Timer", "readable": true,
+  "readDisplay": "gameDisplay", "addToNotes": false,
+  "observations": "RELEASE IN 04:00",
+  "observationVariants": [
+    { "condition": "globalVars.release_clock === 'released'", "value": "RELEASED" },
+    { "condition": "globalVars.release_clock === 'short'", "value": "RELEASE IN 01:45" }
+  ],
+  "text": "RELEASE IN 04:00",
+  "textVariants": [
+    { "condition": "globalVars.release_clock === 'released'", "value": "RELEASED" },
+    { "condition": "globalVars.release_clock === 'short'", "value": "RELEASE IN 01:45" }
+  ]
+}
+```
+
+The text is chosen each time it is shown (examine, read, the hover label), so it does not tick on its own or change while a read is open. Put the most advanced state first. `observationVariants` is what the examine view and the hover label show; `textVariants` is what Read shows, so set both if the object is readable. `addToNotes: false` keeps a stale copy out of the notepad. For a live ticking clock, use a scenario `timers` entry instead.
+
 ### Lock Types
 
 Applies to both rooms and objects (safes, PCs, briefcases, doors, etc.):
@@ -965,6 +986,7 @@ In-world characters with sprites that the player can walk up to and interact wit
 | `voice` | TTS voice for dialogue and barks: `{ "name": "...", "style": "...", "language": "en-GB" }`. Optional `fx` subfield applies Web Audio distortion — see Casting Voices and Voice FX below |
 | `globalVarOnKO` | Global variable name to set `true` when NPC is knocked out |
 | `taskOnKO` | Task ID to complete when NPC is knocked out |
+| `koImmune` | `true`: the player can't fight or knock out this NPC. A punch passes over it without turning it hostile or firing `npc_attacked`, so no `npc_ko`, `globalVarOnKO`, `taskOnKO` or item drop can come from it. Use it for story-critical NPCs whose KO would break the plot, instead of a KO safety-net mapping (as m08 has for `nightshade_confrontation`). The validator then counts that NPC's conversations as KO-safe, and warns if it also has `taskOnKO`/`globalVarOnKO` (never fire) or `behavior.hostile` (it would hit the player and can't be hit back). Ink can still turn it hostile with `#hostile`. For a scenario with no fighting at all, use the top-level `disableAttacks` instead. |
 | `itemsHeld` | Items dropped when NPC is knocked out. Give an item an `id` when the NPC holds more than one of the same `type` — `#give_item` matches on `type` first, then disambiguates against `id`/`opens_lock`/`name`, and with no `id` the first matching item always wins. |
 | `behavior.hostile` | Makes NPC chase and attack. Fields: `chaseSpeed`, `attackDamage`, `pauseToAttack` |
 | `behavior.patrol` | Patrol configuration (see Patrol Behaviour below) |
@@ -1105,7 +1127,7 @@ Trigger a conversation automatically when the player loads the room:
 | `waitForEvent` | Wait for this game event before starting |
 | `skipIfGlobal` | Skip if this global variable is truthy (prevents cutscene replaying on resume) |
 | `setGlobalOnStart` | Set this global variable to `true` when conversation starts |
-| `disableClose` | `true` prevents player closing the dialog |
+| `disableClose` | `true` prevents player closing the dialog (person-chat and phone; on the phone it also hides the back arrow and ignores Esc). Honoured since 2026-10-21; before that the field was read but dropped. |
 
 #### NPC Event Mappings
 
@@ -1131,6 +1153,8 @@ Common event patterns:
 - `"npc_attacked:npc_id"` — fires when an NPC is attacked
 - `"item_picked_up:item_type"` — fires when an item is picked up
 - `"door_unlock_attempt"` — fires on any door unlock attempt (`condition: "data.connectedRoom === 'room_id'"`)
+- `"door_unlocked"` — fires when the player unlocks a locked door (any lock type) or a flag reward's `unlock_door` action opens one. `data.connectedRoom` is the room unlocked (`condition: "data.connectedRoom === 'vault'"`); for a player unlock `data.roomId` is the room the player unlocked it from, and `data.lockType` and `data.direction` are set. No `:room_id` suffix form: filter with the condition
+- `"door_unlocked_by_npc"` — fires when an NPC's ink `#unlock_door:<room_id>` opens a door. `data.roomId` is the room unlocked, `data.npcId` who did it. It does not also fire `door_unlocked`
 - `"door_unlock_failed"` / `"door_unlock_failed:room_id"` — fires when a door refuses the player: no key (`reason: "no_key"`), a fingerprint reader refusal, an RFID reader refusing a card or clone (`"wrong_card"`, `"uid_only"`), or a card reader with nothing to present (no keycard, and no cloner or one with no saved cards: `"no_card"`), a wrong password at a password door (`"wrong_password"`, or `"wrong_password_case"` when the entry was right apart from letter case). `data.lockType` says which kind of lock
 - `"password_failed"` / `"password_failed:target_id"` — fires on every wrong password at a password keypad, door or object (`target_id` is the door's room id or the object's id). `data.caseMismatch` is true when the entry matched apart from letter case (the keypad then says passwords are case-sensitive); `data.attemptsRemaining`, `data.targetType`, `data.name`
 - `"object_interacted"` — fires when object interacted with (`condition: "data.objectType === 'vm-launcher'"`)
@@ -1148,7 +1172,9 @@ Event mapping actions (can be combined):
 | `bark: "text"` | Show a bark bubble above the NPC and play TTS audio (if NPC has `voice`). Each NPC has its own audio channel so multiple NPCs can bark simultaneously. |
 | `barkDelay: ms` | Milliseconds to wait before firing the bark (default `0`). Use to stagger responses from multiple NPCs reacting to the same event. |
 | `targetKnot: "knot_name"` | Jump to this Ink knot (person NPCs only; updates `currentKnot` so next conversation starts there; does NOT work on phone NPCs after first open) |
-| `conversationMode: "person-chat"` | Trigger a person-chat cutscene (person NPCs only). Requires `targetKnot`. |
+| `conversationMode: "person-chat"` | Trigger a person-chat cutscene (person NPCs only). Requires `targetKnot`. `"phone-chat"` opens a phone NPC's thread at `targetKnot` (see [Forced phone calls](#forced-phone-calls-that-ring-again)); `"video-call"` opens any NPC in person-chat as a call. |
+| `disableClose: true` | The conversation this mapping opens can't be closed by the player (no x, no Close, no Esc; on the phone no back arrow). It closes on `#exit_conversation`, by itself 2 s after a story that ends without one, or when the player takes a hit. |
+| `resume: true` | `phone-chat` only: reopen the thread from its saved story instead of jumping to `targetKnot`, so the player is back at the choice they left. With no saved story yet it rings at `targetKnot` like a first call. For re-ringing an unfinished call. |
 | `background: "path"` | Background image for person-chat cutscene |
 | `patrolOverride: { "targetTile": {"x": n, "y": n}, "speed": n, "stopOnArrival": true }` | Override current patrol — NPC walks directly to target tile. `stopOnArrival: true` halts patrol when destination is reached. |
 | `setPatrolSpeed: number` | Change the NPC's patrol speed (pixels/second) from this point on |
@@ -1233,8 +1259,34 @@ Contacts in the player's phone. Not rendered in the world — they exist only in
 - Phone NPCs must **not** have `position` or `spriteSheet`
 - Phone NPCs must have `phoneId` matching a phone in `startItemsInInventory`
 - `targetKnot` in event mappings does **not** work after first conversation — use `setGlobal` + an Ink conditional hub choice instead
-- `conversationMode` field is ignored on phone NPCs
+- `conversationMode` other than `"phone-chat"` is ignored on phone NPCs
 - A phone NPC with no `timedMessages` still works as a contact the player can call manually
+
+#### Forced phone calls that ring again
+
+A call the player must finish: it opens by itself, can't be closed, and if something does close it before the end (a hit from a hostile NPC closes it, so the player can fight), it rings again at the question they left rather than starting over.
+
+```json
+"timedConversation": { "delay": 2000, "targetKnot": "forced_call", "waitForEvent": "game_loaded", "disableClose": true },
+"eventMappings": [
+  {
+    "eventPattern": "conversation_closed:agent_0x99",
+    "condition": "globalVars.call_started && !globalVars.call_done",
+    "conversationMode": "phone-chat", "targetKnot": "forced_call",
+    "resume": true, "disableClose": true, "cooldown": 0
+  }
+]
+```
+
+- The ink sets `call_started` at the top of the call knot and `call_done` on its last line (with `#exit_conversation`). Declare both as globals so the mapping's condition can read them.
+- **When it rings again** is the mapping's `eventPattern`: `conversation_closed:<id>` rings straight away; `room_exited` with `"condition": "data.roomId === 'office' && globalVars.call_started && !globalVars.call_done"` rings when the player leaves that room; any other event works the same way. Add `delayMs` for a pause before it rings.
+- `cooldown: 0` matters: the default 5 s cooldown would swallow a second close inside 5 s.
+- `resume: true` restores the saved story (it is saved after every choice), so the thread keeps what was said and the unanswered choices show again. Without it the mapping re-runs `targetKnot` from the top.
+- If the player opens the contact from the phone before it rings, the thread also reopens at the saved choice.
+- A re-ring ends whatever minigame is open, as every conversation mapping does (in the trial scenario it replaced the Mission Brief popup that follows the opening call).
+- While the call is open, texts from other contacts still arrive (they go in that contact's thread and show as a toast); clicking the toast does nothing until the call ends. A text from the caller is held until the phone closes.
+- A line in the caller's thread prefixed with another character's display name (`Director Netherton: Put her on.`) is drawn with that name over the bubble. Only registered characters' names count, so `Note: ...` stays plain text.
+- Test scenario: `scenarios/test_finale_calls_credits/`.
 
 #### Field guides (exposure-gated handler lab sheets)
 
@@ -1490,6 +1542,40 @@ Dynamic music based on in-game events:
 | `all_hostiles_ko` | Fires when all hostile NPCs are knocked out |
 | `global_variable_changed:var_name` | Fires when a global variable changes |
 
+### Closing card and credits
+
+An event entry with `credits` (or `closingCard`) asks the server to conclude the mission and, once it agrees, opens the credits visualiser. Everything is chosen from globals when the event fires, and every string is fixed text with no printed variables (the standing rule for voiced lines), so players differ only in which lines appear. Conditions are JavaScript over `globalVars` (`||` and parentheses work here).
+
+```json
+"closingCard": {
+  "lines": [
+    { "text": "The grid stayed up.", "condition": "globalVars.grid_saved" },
+    { "text": "The grid went dark for an hour.", "condition": "!globalVars.grid_saved" },
+    { "text": "Nobody outside the room will hear about it." }
+  ],
+  "teaser": { "enabledBy": "teaser_enabled", "lines": [{ "text": "Somewhere, a phone rings." }] }
+},
+"credits": [
+  { "text": "MISSION COMPLETE", "style": "title" },
+  { "section": "IN THIS OPERATION", "people": [
+    { "name": "AGENT HAX", "clauses": [
+      { "text": "Put on the floor by her own agent.", "condition": "globalVars.hax_ko", "style": "warning" },
+      { "text": "On the line to the end." }
+    ] }
+  ] },
+  { "section": "ELSEWHERE", "lines": [
+    { "text": "THE ARCHITECT: At large.", "condition": "!globalVars.architect_caught", "style": "warning" }
+  ] }
+]
+```
+
+- **Order on screen:** the closing card (its lines shown together), then the teaser, then the credits one line at a time.
+- **`closingCard.lines`:** the lines whose condition holds, in the order written, at most 5 (later ones that hold are dropped). A line with no condition always holds. A plain string is a line with no condition. The card stays up 2.5 s plus 1.5 s a line.
+- **`closingCard.teaser`:** shown only while the global named by `enabledBy` (default `teaser_enabled`) is truthy, so it is off unless the scenario or a carry-over sets it. Takes `lines` like the card, or a single `text`, and an optional `condition`.
+- **`section` blocks:** `people` gives one line per person, `NAME: clause`, using the first clause whose condition holds (none holds: no line for that person). Order the clauses most specific first and end with an unconditional one if the person must always appear. `lines` gives every line that holds. The heading prints only if something under it does. `headerStyle` overrides `section-header`; a clause's `style` (or the person's) defaults to `entry`.
+- Plain lines (`text`, `style`, `condition`) work as before, and can sit between blocks.
+- Code: `public/break_escape/js/music/closing-sequence.js`; test scenario `scenarios/test_finale_calls_credits/`.
+
 ---
 
 ## ERB Template Helpers
@@ -1707,7 +1793,7 @@ These are the mistakes that most often leave a mission unfinishable or silently 
 - **Scenes opened by `npc_ko:<id>` need `disableClose: true`.** A KO'd NPC cannot be talked to again and the event does not re-fire.
 - **An NPC's mappings register only after its room loads.** A `setVisible` on an event that fires earlier is lost. Reveal on `room_entered:<the NPC's own room>`, or put the mapping on an always-loaded NPC such as HaX.
 - **Hide an NPC with a `setVisible: false` mapping, not `#remove_npc`.** `#remove_npc` fails for NPCs in rooms loaded after the start.
-- **`conversation_closed:<npc>` can fire twice, and phone chats never emit it.** Make handlers idempotent by routing on a global, and open debriefs from a person-chat or a global, not a phone close.
+- **`conversation_closed:<npc>` can fire twice.** Make handlers idempotent by routing on a global. Phone chats emit it too (when the thread is left or the phone closes), but open debriefs from a person-chat or a global rather than a phone close.
 - **`item_picked_up:` carries the item type, not its id.** Match on the type and add a `data.itemId` condition.
 
 ### Timers
@@ -1754,7 +1840,7 @@ Scenario file:
 - **Credits and debrief lines match what the player did.** Check each conditional line against every route that can reach it. *m03: "the guard never logged you" and PERFECT STEALTH after the guard had challenged the player; m06: Priya's "Drew the graph" credit after one question.* (review)
 - **Space timed texts 4-6 s apart.** Two `sendTimedMessage` or `timedMessages` texts triggered by the same event, with delays under 4 s apart and conditions that can both hold, stack as toasts and the first is gone before it can be read. Space them or fold them into one message. *m04 (Vance's card and the RFID guide), m05 (two barks off one object click).* (validator warning; pairs whose conditions can't both be true, such as `x` against `!x`, or where one mapping's `setGlobal` blocks the other, aren't reported)
 - **A global that is set should be read.** A global set by `setGlobal`, `setGlobalOnStart`, `globalVarOnKO`, an `onRead`/`onPickup` `setVariable`, an ink `#set_global` or `~` assignment, that no condition, `skipIfGlobal`-style field, `global_variable_changed` mapping, credit or music condition, ink read or engine code ever mentions, is dead weight and reads as if it mattered. Use it or drop it. The mirror of "every ink `VAR` that's read is set somewhere". *m05: `mission_priority` (the opening's choice changed nothing); m08: `witness_heard`.* (validator suggestion)
-- **A credits section needs a line that always prints.** A `section-header` whose entries all carry a `condition` can come out as a bare heading if no condition holds. Add an unconditional line, or check that the conditions cover every route. *m05: the Recruiter section.* (validator suggestion; it can't prove exhaustive conditions, so a section that does cover every route is a deliberate pass)
+- **A credits section needs a line that always prints.** A `section-header` whose entries all carry a `condition` can come out as a bare heading if no condition holds. Add an unconditional line, use a `section` block (it drops its heading when nothing in it prints; see [Closing card and credits](#closing-card-and-credits)), or check that the conditions cover every route. *m05: the Recruiter section.* (validator suggestion; it can't prove exhaustive conditions, so a section that does cover every route is a deliberate pass)
 
 Ink (details and examples in `README_ink_best_practices.md`):
 

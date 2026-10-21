@@ -19,6 +19,7 @@
  */
 
 import MusicController from './music-controller.js';
+import { buildEndSequence } from './closing-sequence.js';
 
 const TAG = '[ScenarioMusic]';
 
@@ -85,7 +86,9 @@ function anyHostilesAlive() {
  *   stopAfterTrack — if true, stop playback when the current track ends
  *   credits        — array of { text, style?, condition? } lines for the
  *                    BondVisualiser credits scroll; conditions are evaluated
- *                    against globalVars at trigger time
+ *                    against globalVars at trigger time. A { section, people,
+ *                    lines } item is a block (closing-sequence.js)
+ *   closingCard    — { lines, teaser } shown before the credits (closing-sequence.js)
  *
  * @param {object} entry - music event config entry
  * @param {object} data  - event payload
@@ -102,7 +105,8 @@ function switchIfConditionMet(entry, data) {
     // server answers, and on a refusal it put a fullscreen end-of-mission
     // screen in front of a player who was simultaneously being told they were
     // not finished.
-    const ownsVisualiser = !!entry.credits?.length;
+    const hasEnding = !!(entry.credits?.length || entry.closingCard);
+    const ownsVisualiser = hasEnding;
     if (ownsVisualiser && window.BondVisualiser?.setAutoOpenSuppressed) {
         window.BondVisualiser.setAutoOpenSuppressed(true);
     }
@@ -124,10 +128,15 @@ function switchIfConditionMet(entry, data) {
     }
 
     // ── Credits scroll ────────────────────────────────────────────────────────
-    if (entry.credits?.length && window.BondVisualiser) {
-        const filteredLines = entry.credits
-            .filter(item => evaluateCondition(item.condition, data))
-            .map(item => ({ text: item.text ?? '', style: item.style ?? '' }));
+    if (hasEnding && window.BondVisualiser) {
+        // closingCard (card + teaser) first, then the credits with sections and
+        // per-person clauses resolved (closing-sequence.js). Chosen now, at the
+        // trigger, as the plain conditioned lines always were.
+        const filteredLines = buildEndSequence(
+            entry,
+            window.gameState?.globalVariables || {},
+            condition => evaluateCondition(condition, data)
+        );
 
         // Credits mean the story is over, so this is also the moment the
         // mission concludes. The client is trusted to decide the story ended;

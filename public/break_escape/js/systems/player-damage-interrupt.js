@@ -52,7 +52,10 @@ export function closeMinigameOnDamage(amount, deps = {}) {
 
   const notify = deps.notify ?? (typeof window !== 'undefined' ? window.showNotification : null);
 
-  if (current._sceneType === 'phone-chat' && current.params?.cutscene !== true && deps.ko !== true) {
+  // A forced call (disableClose) has no Esc, so it closes like any other minigame;
+  // a re-ring mapping brings it back at the unanswered choice (finale F14)
+  if (current._sceneType === 'phone-chat' && current.params?.cutscene !== true &&
+      current.params?.disableClose !== true && deps.ko !== true) {
     notifyPhoneHit(notify, deps);
     return false;
   }

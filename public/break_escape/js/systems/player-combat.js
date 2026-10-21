@@ -326,6 +326,12 @@ export class PlayerCombat {
             return;
           }
 
+          // "koImmune": true NPCs can't be fought: the punch passes over them
+          // without turning them hostile or emitting npc_attacked
+          if (window.npcHostileSystem.isNPCKOImmune?.(npcId)) {
+            return;
+          }
+
           if (!this.bodyOverlapsCone(npcSprite.body, playerX, playerY, direction, punchRange)) {
             return; // Outside cone
           }

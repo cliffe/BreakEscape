@@ -10,6 +10,7 @@ import { displayDashes } from '../utils/display-dashes.js';
 import { releaseHeldBarks } from './bark-release-policy.js';
 import { workstationPopupOpen, phoneThreadOpenFor, openPhoneThread, threadTextKey } from '../utils/overlay-open.js';
 import { barkLifetimeMs, barksToTrim, BARK_RESUME_MIN_MS } from './bark-lifetime.js';
+import { inventoryBlockedByForcedMinigame } from './forced-minigame-guard.js';
 
 export default class NPCBarkSystem {
   constructor(npcManager) {
@@ -451,6 +452,9 @@ export default class NPCBarkSystem {
     } else if (payload.openPhone !== false && npcId) {
       // Default: clicking bark opens phone chat with this NPC
       el.addEventListener('click', () => {
+        // A forced call (disableClose) is not replaced by another contact's thread;
+        // the text is in that thread for later (finale F14)
+        if (inventoryBlockedByForcedMinigame()) return;
         this.openPhoneChat(payload);
         this._removeBark(el);
       });
