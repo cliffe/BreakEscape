@@ -57,7 +57,7 @@ test('npc-combat: no windup while open or in the grace; a running windup does no
 
     const start = combat.slice(combat.indexOf('startAttackAnimation(npcId, npcSprite, state) {'),
                                combat.indexOf('applyAttackDamage(npcId, npcSprite, state) {'));
-    assert.match(start, /if \(attacksPausedByUI\(\)\) \{[\s\S]*?this\.npcAttacking\.delete\(npcId\);[\s\S]*?return;/);
+    assert.match(start, /if \(attacksPausedByUI\(\)\) \{[\s\S]*?this\.(npcAttacking\.delete|endAttack)\(npcId\);[\s\S]*?return;/);
 
     const land = combat.slice(combat.indexOf('applyAttackDamage(npcId, npcSprite, state) {'));
     const pauseAt = land.indexOf('attacksPausedByUI()');

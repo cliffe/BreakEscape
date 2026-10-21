@@ -631,28 +631,10 @@ export function handleObjectInteraction(sprite) {
         });
     }
     
-    // Handle swivel chair interaction - trigger punch to kick it!
+    // Handle swivel chair interaction - a jab kicks it
     if (sprite.isSwivelChair && sprite.body) {
-        const player = window.player;
-        if (player && window.playerCombat) {
-            // In interact mode, auto-switch to jab for chairs
-            const currentMode = window.playerCombat.getInteractionMode();
-            const wasInteractMode = currentMode === 'interact';
-            
-            if (wasInteractMode) {
-                console.log('🪑 Chair in interact mode - auto-jabbing');
-                window.playerCombat.setInteractionMode('jab');
-            }
-            
-            // Trigger punch to kick the chair
-            window.playerCombat.punch();
-            
-            // Restore interact mode if we switched
-            if (wasInteractMode) {
-                setTimeout(() => {
-                    window.playerCombat.setInteractionMode('interact');
-                }, 100);
-            }
+        if (window.player && window.playerCombat) {
+            window.playerCombat.punch('jab');
         }
         return;
     }
@@ -661,29 +643,12 @@ export function handleObjectInteraction(sprite) {
     if (sprite._isNPC && sprite.npcId) {
         console.log('NPC INTERACTION', { npcId: sprite.npcId });
         
-        // Check if NPC is hostile
+        // A hostile NPC can't be talked to: say so, and throw the next punch
+        // of the combo at it
         const isHostile = window.npcHostileSystem && window.npcHostileSystem.isNPCHostile(sprite.npcId);
-        
-        // If hostile and in interact mode, auto-jab instead of talking
         if (isHostile && window.playerCombat) {
-            const currentMode = window.playerCombat.getInteractionMode();
-            const wasInteractMode = currentMode === 'interact';
-            
-            if (wasInteractMode) {
-                console.log('👊 Hostile NPC in interact mode - auto-jabbing');
-                showPastTalkingToast(sprite.npcId); // 7.1i: say why there's no conversation
-                window.playerCombat.setInteractionMode('jab');
-            }
-            
-            // Punch the hostile NPC
-            window.playerCombat.punch();
-            
-            // Restore interact mode if we switched
-            if (wasInteractMode) {
-                setTimeout(() => {
-                    window.playerCombat.setInteractionMode('interact');
-                }, 100);
-            }
+            showPastTalkingToast(sprite.npcId); // 7.1i: say why there's no conversation
+            window.playerCombat.attack({ x: sprite.x, y: sprite.y });
             return;
         }
         
@@ -1835,10 +1800,8 @@ export function tryInteractWithNPC(npcSprite) {
         if (npcId && window.npcHostileSystem && window.npcHostileSystem.isNPCHostile(npcId)) {
             // Hostile NPC - punch instead of talk
             if (window.playerCombat) {
-                if (window.playerCombat.getInteractionMode?.() === 'interact') {
-                    showPastTalkingToast(npcId); // 7.1i: say why there's no conversation
-                }
-                window.playerCombat.punch();
+                showPastTalkingToast(npcId); // 7.1i: say why there's no conversation
+                window.playerCombat.attack({ x: npcSprite.x, y: npcSprite.y });
             }
             return true;
         }

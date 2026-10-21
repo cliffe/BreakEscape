@@ -32,7 +32,8 @@ window.npcHostileSystem = sys;
 
 const combatSrc = readFileSync(join(js, 'systems/player-combat.js'), 'utf8')
     .split("'../config/combat-config.js'").join(`'${configUrl}'`)
-    .split("'../utils/knockback.js'").join(`'${dataUrl('export function applyKnockback() {}')}'`);
+    .split("'../utils/knockback.js'").join(`'${dataUrl('export function applyKnockback() {}')}'`)
+    .split("'./fight-styles.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/fight-styles.js'), 'utf8'))}'`);
 const { PlayerCombat } = await import(dataUrl(combatSrc));
 
 const actionsSrc = readFileSync(join(js, 'systems/apply-actions.js'), 'utf8')

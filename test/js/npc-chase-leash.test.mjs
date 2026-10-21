@@ -16,11 +16,13 @@ writeFileSync(join(dir, 'constants-stub.mjs'), 'export const TILE_SIZE = 32;');
 writeFileSync(join(dir, 'pathfinding-stub.mjs'), 'export class NPCPathfindingManager {}');
 writeFileSync(join(dir, 'combat-config.mjs'), readFileSync(join(js, 'config/combat-config.js'), 'utf8'));
 writeFileSync(join(dir, 'npc-chase-leash.mjs'), readFileSync(join(js, 'systems/npc-chase-leash.js'), 'utf8'));
+writeFileSync(join(dir, 'fight-styles.mjs'), readFileSync(join(js, 'systems/fight-styles.js'), 'utf8'));
 writeFileSync(join(dir, 'npc-behavior.mjs'), readFileSync(join(js, 'systems/npc-behavior.js'), 'utf8')
     .replace("'../utils/constants.js'", "'./constants-stub.mjs'")
     .replace("'./npc-pathfinding.js'", "'./pathfinding-stub.mjs'")
     .replace("'../config/combat-config.js'", "'./combat-config.mjs'")
-    .replace("'./npc-chase-leash.js'", "'./npc-chase-leash.mjs'"));
+    .replace("'./npc-chase-leash.js'", "'./npc-chase-leash.mjs'")
+    .replace("'./fight-styles.js'", "'./fight-styles.mjs'"));
 
 globalThis.window = { gameState: { globalVariables: {} } };
 const silently = fn => { const l = console.log; console.log = () => {}; try { return fn(); } finally { console.log = l; } };

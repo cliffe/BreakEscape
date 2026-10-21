@@ -1,5 +1,5 @@
 /* HUD (Heads-Up Display) System Styles */
-/* Combines Inventory, Health UI, Avatar, and Mode Toggle */
+/* Combines Inventory, Health UI, Avatar, and the Punch and Block buttons */
 
 /* ===== HUD SCALE =====
  * main.js sets --hud-zoom from the game's pixel scale, so the HUD grows with
@@ -111,75 +111,110 @@ html .game-display-dialog {
   image-rendering: crisp-edges;
 }
 
-/* Mode Toggle Button */
-#hud-mode-toggle-button {
+/* ===== PUNCH AND BLOCK BUTTONS =====
+ * Two equal round buttons. On a phone they sit bottom right above the
+ * inventory strip, for the thumb that isn't steering; on a wider screen they
+ * drop into the strip's row, centred on it, at its right end.
+ * Their bezel is a thick raised ring that presses down when held, so they
+ * read as buttons and not as another portrait ring like the avatar's.
+ * Icons are hand_frames.png at 2x: frame 6 (fist) and frame 0 (open palm). */
+#combat-buttons {
+  --combat-button-size: 64px;
+  --combat-strip-height: 80px; /* inventory.css; ui-themes.css sets 108px */
+  position: fixed;
+  right: 24px;
+  bottom: 116px;
+  z-index: 1100;
   display: flex;
-  flex-direction: column;
-  padding: 0;
+  gap: 28px;
+  align-items: center;
+  zoom: var(--hud-zoom, 1);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
 }
 
-#hud-hand-canvas {
+/* Wide screens, and phones held sideways (too short for a second row) */
+@media (min-width: 900px), (orientation: landscape) and (max-height: 500px) {
+  #combat-buttons {
+    bottom: calc((var(--combat-strip-height) - var(--combat-button-size)) / 2 + 8px);
+  }
+
+  /* End the strip short of the buttons: it scrolls sideways, so extra
+     slots scroll instead of sliding under them (padding alone doesn't) */
+  body:has(#combat-buttons) #inventory-container {
+    right: 220px;
+  }
+}
+
+.combat-button {
+  --bezel: #c8c8c8;
+  --bezel-dark: #000;
+  --bezel-base: color-mix(in srgb, var(--bezel) 45%, #000);
+  --face: #2a2a33;
+  position: relative;
+  width: var(--combat-button-size);
+  height: var(--combat-button-size);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--face) 70%, #fff) 0, var(--face) 70%);
+  /* stepped ring: black edge, a thick bezel, black edge, then the raised
+     base below in the bezel's shadow colour */
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.45),
+    0 0 0 2px var(--bezel-dark),
+    0 0 0 9px var(--bezel),
+    0 0 0 11px var(--bezel-dark),
+    0 6px 0 11px var(--bezel-base);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.05s, box-shadow 0.05s;
+}
+
+.combat-button-icon {
   width: 64px;
   height: 64px;
+  background: url('../assets/icons/hand_frames.png') no-repeat;
+  background-size: 256px 256px;
   image-rendering: pixelated;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
+  pointer-events: none;
+  clip-path: circle(30px at 50% 50%);
 }
 
-#hud-mode-label {
+#hud-punch-button .combat-button-icon { background-position: -128px -64px; }
+#hud-block-button .combat-button-icon { background-position: 0 0; }
+
+.combat-button-label {
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  transform: translateX(-50%);
   font-family: 'GNF', 'Courier New', monospace;
   font-size: 10px;
-  color: #ffffff;
-  text-align: center;
-  margin-top: 2px;
   line-height: 1;
-  display: none; /* Hide label to make room for 64px hand icon */
+  color: #ffffff;
+  text-shadow: 0 1px 2px #000;
+  pointer-events: none;
 }
 
-/* Mode-specific border colors */
-#hud-mode-toggle-button.mode-interact {
-  border-color: rgba(0, 255, 0, 0.4); /* Green */
+/* Pressed: the face drops onto its base */
+.combat-button:active,
+.combat-button.held {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 3px 0 rgba(0, 0, 0, 0.45),
+    0 0 0 2px var(--bezel-dark),
+    0 0 0 9px var(--bezel),
+    0 0 0 11px var(--bezel-dark),
+    0 2px 0 11px var(--bezel-base);
 }
 
-#hud-mode-toggle-button.mode-jab {
-  border-color: rgba(0, 204, 255, 0.4); /* Cyan */
-}
-
-#hud-mode-toggle-button.mode-cross {
-  border-color: rgba(255, 0, 0, 0.4); /* Red */
-}
-
-/* Hover colors */
-#hud-mode-toggle-button.mode-interact:hover {
-  border-color: rgba(0, 255, 136, 0.4); /* Brighter green */
-}
-
-#hud-mode-toggle-button.mode-jab:hover {
-  border-color: rgba(136, 238, 255, 0.4); /* Brighter cyan */
-}
-
-#hud-mode-toggle-button.mode-cross:hover {
-  border-color: rgba(255, 136, 0, 0.4); /* Orange */
-}
-
-/* Animation for mode transitions */
-@keyframes mode-change {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(0.9);
-    opacity: 0.7;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.hud-button.animating {
-  animation: mode-change 0.2s ease;
-}
+#hud-punch-button:active { --bezel: #ff5a28; }
+#hud-block-button.held { --bezel: #28c8ff; }
 
 /* ===== HEALTH UI ===== */
 

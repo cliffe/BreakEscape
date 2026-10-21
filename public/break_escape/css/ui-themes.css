@@ -510,33 +510,55 @@
   object-fit: fill;
 }
 
-/* Action badge: the 32px hand at 2x in a 56px opening, upper right */
-[data-ui-theme] #hud-mode-toggle-button.hud-button {
-  left: 64px;
-  top: 8px;
-  width: 56px;
-  height: 56px;
-  overflow: visible;
-  isolation: isolate;
+/* Punch and Block: the skin's own button art (button.png, the bevelled
+   9-slice every theme uses for things to press), so they read as buttons and
+   not as the avatar's portrait ring or the inventory's thin slot frames. The
+   64px hand overhangs the 44px opening; its transparent margin takes it. */
+[data-ui-theme] #combat-buttons {
+  --combat-strip-height: 108px;
+  --combat-button-size: 68px;
 }
 
-[data-ui-theme] #hud-mode-toggle-button.hud-button::before {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  z-index: -1;
-  pointer-events: none;
-  background: var(--ui-badge-image) no-repeat 0 0 / 68px 68px;
+[data-ui-theme] .combat-button {
+  box-sizing: border-box;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  border-style: solid;
+  border-width: var(--ui-button-px);
+  border-image-source: var(--ui-button-image);
+  border-image-slice: var(--ui-button-slice) fill;
+  border-image-width: var(--ui-button-px);
+  border-image-repeat: stretch;
   image-rendering: pixelated;
+  transition: filter 0.08s ease, transform 0.05s ease;
 }
 
-/* The 32px hand canvas at 2x, centred and clipped to the opening */
-[data-ui-theme] #hud-hand-canvas {
-  width: 64px;
-  height: 64px;
-  flex-shrink: 0;
-  margin: -4px;
-  clip-path: circle(28px at 50% 50%);
+[data-ui-theme] .combat-button-icon {
+  flex: 0 0 auto;
+  clip-path: none;
+  margin: -10px;
+}
+
+[data-ui-theme] .combat-button-label {
+  bottom: -28px;
+  color: var(--ui-text);
+}
+
+[data-ui-theme] .combat-button:hover {
+  filter: brightness(1.2) var(--ui-glow-filter);
+}
+
+[data-ui-theme] .combat-button:active,
+[data-ui-theme] .combat-button.held {
+  box-shadow: none;
+  transform: translateY(2px);
+  filter: brightness(0.85);
+}
+
+/* The guard held: lit, in the skin's glow, so it's clear it's still up */
+[data-ui-theme] #hud-block-button.held {
+  filter: brightness(1.3) var(--ui-glow-filter);
 }
 
 [data-ui-theme] #player-hud-buttons .hud-button:hover {
@@ -626,9 +648,6 @@
   50% { filter: drop-shadow(0 0 4px var(--ui-danger)); }
 }
 
-/* The current mode tints the badge */
-[data-ui-theme] #hud-mode-toggle-button.mode-jab { filter: drop-shadow(0 0 4px rgba(0, 204, 255, 0.9)); }
-[data-ui-theme] #hud-mode-toggle-button.mode-cross { filter: drop-shadow(0 0 4px rgba(255, 40, 0, 0.9)); }
 
 
 /* ===================================================================

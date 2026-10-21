@@ -1797,7 +1797,11 @@ export async function create() {
     // Initialize pathfinder
     initializePathfinder(this);
     
-    // Set up input handling
+    // Set up input handling. Right-click is the punch, so no browser menu
+    // over the game. A second touch pointer lets a finger on the canvas keep
+    // walking while another presses a HUD button.
+    this.input.mouse?.disableContextMenu();
+    this.input.addPointer(1);
     this.input.on('pointerdown', (pointer) => {
         // Check if a minigame is currently running - if so, don't process main game clicks
         if (window.MinigameFramework && window.MinigameFramework.currentMinigame) {
@@ -1812,59 +1816,16 @@ export async function create() {
         const worldX = this.cameras.main.scrollX + pointer.x;
         const worldY = this.cameras.main.scrollY + pointer.y;
         
-        // Check interaction mode - if in punch mode (jab or cross), just punch in the direction of click
-        if (window.playerCombat) {
-            const currentMode = window.playerCombat.getInteractionMode();
-            if (currentMode === 'jab' || currentMode === 'cross') {
-                // Calculate direction from player to click point
-                const player = window.player;
-                // A click on open floor, away from the player and any NPC, walks
-                // there instead of punching the air (7.1i)
-                if (player && !fistsClickPunches({
-                    dx: worldX - player.x,
-                    dy: worldY - player.y,
-                    onNPC: !!findNPCAtPosition(worldX, worldY)
-                })) {
-                    if (!window.preventPlayerMovement) {
-                        movePlayerToPoint(worldX, worldY);
-                        startHoldWalk();
-                    }
-                    return;
-                }
-                if (player) {
-                    const dx = worldX - player.x;
-                    const dy = worldY - player.y;
-                    
-                    // Calculate direction using same logic as NPCs
-                    const absVX = Math.abs(dx);
-                    const absVY = Math.abs(dy);
-                    
-                    let direction;
-                    // Threshold: if one axis is > 2x the other, consider it pure cardinal
-                    if (absVX > absVY * 2) {
-                        direction = dx > 0 ? 'right' : 'left';
-                    } else if (absVY > absVX * 2) {
-                        direction = dy > 0 ? 'down' : 'up';
-                    } else {
-                        // Diagonal
-                        if (dy > 0) {
-                            direction = dx > 0 ? 'down-right' : 'down-left';
-                        } else {
-                            direction = dx > 0 ? 'up-right' : 'up-left';
-                        }
-                    }
-                    
-                    // Update player facing direction
-                    player.lastDirection = direction;
-                    
-                    // Trigger punch animation (don't move)
-                    window.playerCombat.punch();
-                    if (window.getTutorialManager) window.getTutorialManager().notifyAttackedInCombatMode();
-                }
-                return; // Exit early - no movement or interaction in punch modes
+        // Right-click punches towards the pointer (jab, jab, cross for clicks in
+        // a row). Left click and touch always move or interact; touch players
+        // punch with the on-screen button (hud.js).
+        if (pointer.rightButtonDown()) {
+            if (window.playerCombat) {
+                window.playerCombat.attack({ x: worldX, y: worldY });
             }
+            return;
         }
-        
+
         // A menu is already open — this tap is meant to dismiss it. Consume it so
         // it doesn't also move the player / trigger another interaction.
         if (isInteractionMenuOpen()) {

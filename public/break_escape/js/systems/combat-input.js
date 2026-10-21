@@ -1,31 +1,12 @@
 /**
  * Small rules for combat input (7.1i; m06, m05 M5).
  *
- * In fists mode (jab or cross) a click used to throw a punch wherever it
- * landed, so the player couldn't click to walk away until they pressed Q
- * again. Now a click punches only when it lands on an NPC or close to the
- * player; a click on open floor walks there.
- *
  * Interacting with a hostile NPC gave no feedback; it now shows a short toast.
+ * (The fists-mode click rule that lived here went with the mode toggle: click
+ * and tap always move or interact, and punches have their own button and keys.)
  *
  * Kept free of imports so it can be tested in isolation.
  */
-
-// A click within this distance (px) of the player's sprite centre punches.
-export const FISTS_PUNCH_CLICK_RADIUS = 64;
-
-/**
- * Whether a click in fists mode throws a punch (true) or walks (false).
- * @param {object} p
- * @param {number} p.dx - click x minus player x
- * @param {number} p.dy - click y minus player y
- * @param {boolean} p.onNPC - the click landed on an NPC sprite
- * @param {number} [p.radius]
- */
-export function fistsClickPunches({ dx, dy, onNPC, radius = FISTS_PUNCH_CLICK_RADIUS }) {
-  if (onNPC) return true;
-  return dx * dx + dy * dy <= radius * radius;
-}
 
 /**
  * "He's past talking." for an NPC known to be male, "She's" for female,

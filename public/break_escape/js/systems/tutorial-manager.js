@@ -195,8 +195,8 @@ export class TutorialManager {
                 },
                 {
                     title: 'Combat Mode',
-                    instruction: 'Tap the hand icon in the bottom-left HUD to cycle through Interact, and attack modes.',
-                    objective: 'Switch to an attack mode using the toggle button, then tap to attack',
+                    instruction: 'Tapping the screen always walks or interacts. To fight, use the buttons at the bottom right: tap Punch (tap again quickly for jab, jab, cross) and hold Block to guard.',
+                    objective: 'Tap Punch, then hold Block',
                     checkComplete: () => this.playerToggledCombatMode && this.playerAttackedInCombatMode
                 }
             ];
@@ -243,8 +243,8 @@ export class TutorialManager {
                 },
                 {
                     title: 'Combat Mode',
-                    instruction: 'Press Q or click the hand icon in the bottom-left HUD to cycle through Interact, Quick Jab, and Cross Punch modes.',
-                    objective: 'Press Q to switch to an attack mode, then click or E to attack',
+                    instruction: 'Clicking always walks or interacts. To fight, right-click or press F to punch (press again quickly for jab, jab, cross) and hold Q to block. Touch players get Punch and Block buttons at the bottom right.',
+                    objective: 'Punch with F or right-click, then hold Q to block',
                     checkComplete: () => this.playerToggledCombatMode && this.playerAttackedInCombatMode
                 }
             ];
@@ -477,6 +477,15 @@ export class TutorialManager {
         if (this.active) {
             this.playerRan = true;
         }
+    }
+
+    /**
+     * Notify tutorial that the player raised the guard (Q or the Block
+     * button). Completes the combat step's "toggled" half, which used to be
+     * switching to an attack mode before the toggle was replaced.
+     */
+    notifyBlocked() {
+        this.notifyCombatModeToggled();
     }
 
     /**

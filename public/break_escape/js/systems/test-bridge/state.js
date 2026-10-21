@@ -227,7 +227,8 @@ function playerState() {
         hp: health?.getHP ? health.getHP() : null,
         maxHp: health?.getMaxHP ? health.getMaxHP() : null,
         isKO: health?.isKO ? health.isKO() : false,
-        interactionMode: window.playerCombat?.getInteractionMode?.() ?? null
+        interactionMode: window.playerCombat?.getInteractionMode?.() ?? null,
+        blocking: window.playerCombat?.isBlocking === true
     };
 }
 

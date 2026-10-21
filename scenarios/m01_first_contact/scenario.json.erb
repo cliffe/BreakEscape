@@ -1371,8 +1371,11 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           ],
           "behavior": {
             "hostile": {
+              "fightStyle": "guarded",
               "chaseSpeed": 145,
-              "attackDamage": 25,
+              "attackDamage": 30,
+              "maxHP": 150,
+              "attackCooldown": 3200,
               "pauseToAttack": true
             }
           },
@@ -1542,9 +1545,11 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "globalVarOnKO": "kevin_ko",
           "behavior": {
             "hostile": {
+              "fightStyle": "slugger",
               "chaseSpeed": 145,
-              "attackDamage": 15,
-              "pauseToAttack": false
+              "attackDamage": 30,
+              "attackCooldown": 2600,
+              "pauseToAttack": true
             }
           },
           "itemsHeld": [
@@ -1825,7 +1830,16 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
             "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
             "language": "en-US"
           },
-          "globalVarOnKO": "maya_ko"
+          "globalVarOnKO": "maya_ko",
+          "behavior": {
+            "hostile": {
+              "fightStyle": "cower",
+              "fleeSpeed": 120,
+              "attackDamage": 5,
+              "attackCooldown": 1200,
+              "pauseToAttack": true
+            }
+          }
         }
       ],
       "objects": [

@@ -25,6 +25,7 @@ import { TILE_SIZE } from '../utils/constants.js';
 import { NPCPathfindingManager } from './npc-pathfinding.js';
 import { COMBAT_CONFIG } from '../config/combat-config.js';
 import { hostileMayChase, resolveChaseRange, shouldCloseInDirectly, CLOSE_IN_MARGIN } from './npc-chase-leash.js';
+import { resolveFightStyle, pickFleeHeading } from './fight-styles.js';
 
 /**
  * NPCBehaviorManager - Manages all NPC behaviors
@@ -374,7 +375,10 @@ class NPCBehavior {
                 // follows the player out of its room (npc-chase-leash.js)
                 chaseRange: resolveChaseRange(config.hostile?.chaseRange, COMBAT_CONFIG.npc.chaseRange),
                 chaseAcrossRooms: config.hostile?.chaseAcrossRooms === true,
-                pauseToAttack: config.hostile?.pauseToAttack !== undefined ? config.hostile.pauseToAttack : true
+                pauseToAttack: config.hostile?.pauseToAttack !== undefined ? config.hostile.pauseToAttack : true,
+                // How it fights (fight-styles.js): brawler (default), guarded,
+                // slugger or cower
+                fightStyle: typeof config.hostile?.fightStyle === 'string' ? config.hostile.fightStyle : undefined
             }
         };
 
@@ -1417,6 +1421,8 @@ class NPCBehavior {
         const attackRange = window.npcHostileSystem ?
             window.npcHostileSystem.getState(this.npcId)?.attackRange || 32 : 32;
 
+        const style = resolveFightStyle(this.config.hostile.fightStyle);
+
         // If in attack range, try to attack
         if (distance <= attackRange) {
             // Stop moving and clear chase path
@@ -1425,9 +1431,13 @@ class NPCBehavior {
             this.chasePath = [];
             this.chasePathIndex = 0;
 
-            // Face player
+            // Face player: in guard if its style guards and it isn't swinging
             this.direction = this.calculateDirection(dx, dy);
-            this.playAnimation('idle', this.direction);
+            if (window.npcCombat?.isGuarding?.(this.npcId)) {
+                this.showGuardPose();
+            } else {
+                this.playAnimation('idle', this.direction);
+            }
 
             // Attempt attack
             if (window.npcCombat) {
@@ -1435,6 +1445,11 @@ class NPCBehavior {
             }
 
             return true;
+        }
+
+        // A cowering fighter keeps its distance and only jabs when caught
+        if (style.flees) {
+            return this.updateCowerBehavior(dx, dy, distance, style, pathfindingManager);
         }
 
         // Just out of reach (a knockback, a step back) with a clear line: walk
@@ -1528,6 +1543,76 @@ class NPCBehavior {
         this.isMoving = false;
 
         return true;
+    }
+
+    /**
+     * A cowering hostile (fightStyle "cower"): runs from the player while the
+     * player is within its flee distance, along the open heading that points
+     * most directly away and stays in its room. Cornered, or once far enough,
+     * it stops and watches the player. It jabs only when the player is in
+     * reach (the in-range branch of updateHostileBehavior).
+     * @param {number} dx - player x minus NPC x (body centres)
+     * @param {number} dy - player y minus NPC y
+     */
+    updateCowerBehavior(dx, dy, distance, style, pathfindingManager) {
+        this.chasePath = [];
+        this.chasePathIndex = 0;
+        const fleeDistance = style.fleeDistance || 112;
+        const speed = this.config.hostile.fleeSpeed || 180;
+
+        let heading = null;
+        if (distance < fleeDistance) {
+            const { x: nx, y: ny } = this.npcBodyPos();
+            const room = window.rooms?.[this.roomId];
+            const bounds = room?.position && room?.map ? {
+                left: room.position.x + 32, right: room.position.x + room.map.widthInPixels - 32,
+                top: room.position.y + 64, bottom: room.position.y + room.map.heightInPixels - 32
+            } : null;
+            const look = 40;
+            heading = pickFleeHeading(-dx, -dy, (ux, uy) => {
+                const tx = nx + ux * look;
+                const ty = ny + uy * look;
+                if (bounds && (tx < bounds.left || tx > bounds.right || ty < bounds.top || ty > bounds.bottom)) return false;
+                return pathfindingManager?.hasWorldPhysicsLineOfSight
+                    ? pathfindingManager.hasWorldPhysicsLineOfSight(nx, ny, tx, ty)
+                    : true;
+            });
+        }
+
+        if (heading) {
+            this.sprite.body.setVelocity(heading.x * speed, heading.y * speed);
+            this.direction = this.calculateDirection(heading.x, heading.y);
+            this.playAnimation('walk', this.direction);
+            this.isMoving = true;
+            return true;
+        }
+
+        // Far enough, or cornered: stand and watch the player
+        this.sprite.body.setVelocity(0, 0);
+        this.isMoving = false;
+        this.direction = this.calculateDirection(dx, dy);
+        this.playAnimation('idle', this.direction);
+        return true;
+    }
+
+    /**
+     * Hold the guard pose: the first frame of the NPC's lead-jab in the way it
+     * faces (fists up, knees bent). Sprites without a jab keep their idle.
+     */
+    showGuardPose() {
+        const jab = this.scene?.anims?.get(`npc-${this.npcId}-jab-${this.direction}`);
+        const frame = jab?.frames?.[0];
+        if (!frame) {
+            this.playAnimation('idle', this.direction);
+            return;
+        }
+        if (this.sprite.anims.isPlaying) this.sprite.anims.stop();
+        if (this.sprite.frame?.name !== frame.textureFrame || this.sprite.texture?.key !== frame.textureKey) {
+            this.sprite.setTexture(frame.textureKey, frame.textureFrame);
+        }
+        this.sprite.setFlipX(false);
+        // Next playAnimation call always restarts its animation
+        this.lastAnimationKey = null;
     }
 
     /**
@@ -1714,7 +1799,8 @@ class NPCBehavior {
     playAnimation(state, direction) {
         // Don't interrupt attack animations (red tint placeholder)
         const currentAnim = this.sprite.anims?.currentAnim?.key || '';
-        if (currentAnim.includes('attack') || currentAnim.includes('punch')) {
+        if ((currentAnim.includes('attack') || currentAnim.includes('punch') || currentAnim.includes('-jab-')) &&
+            this.sprite.anims.isPlaying) {
             return;
         }
         

@@ -302,21 +302,21 @@ function setupKeyboardInput() {
             return;
         }
         
-        // E key for interaction
+        // F punches (jab, jab, cross for presses in a row); Q held blocks.
+        // A held key's auto-repeat doesn't count as more presses.
+        if (key === 'f') {
+            if (!event.repeat && window.playerCombat) window.playerCombat.attack();
+            event.preventDefault();
+            return;
+        }
+        if (key === 'q') {
+            if (!event.repeat && window.playerCombat) window.playerCombat.startBlock();
+            event.preventDefault();
+            return;
+        }
+
+        // E key for interaction: always interacts (a hostile NPC is punched)
         if (key === 'e') {
-            // Check interaction mode - if in punch mode, just punch in current direction
-            if (window.playerCombat) {
-                const currentMode = window.playerCombat.getInteractionMode();
-                if (currentMode === 'jab' || currentMode === 'cross') {
-                    // Punch in current facing direction (don't interact)
-                    window.playerCombat.punch();
-                    if (window.getTutorialManager) window.getTutorialManager().notifyAttackedInCombatMode();
-                    event.preventDefault();
-                    return;
-                }
-            }
-            
-            // Normal interaction mode - interact with nearest object
             if (window.tryInteractWithNearest) {
                 window.tryInteractWithNearest();
             }
@@ -363,8 +363,18 @@ function setupKeyboardInput() {
         }
     });
     
+    // Leaving the window (alt-tab) never delivers Q's keyup: lower the guard
+    window.addEventListener('blur', () => window.playerCombat?.endBlock());
+
     // Handle keyup events
     document.addEventListener('keyup', (event) => {
+        // Releasing Q lowers the guard even if a minigame paused the keyboard
+        // meanwhile, so the guard can't stick up
+        if (event.key.toLowerCase() === 'q') {
+            window.playerCombat?.endBlock();
+            return;
+        }
+
         // Skip if keyboard input is paused (for minigames that need keyboard input)
         if (keyboardPaused) {
             return;
@@ -995,6 +1005,15 @@ export function updatePlayerMovement() {
     // Check if movement is explicitly disabled
     if (player.disableMovement) {
         player.body.setVelocity(0, 0);
+        return;
+    }
+
+    // Blocking: stand in guard, no walking (player-combat.js startBlock)
+    if (window.playerCombat?.isBlocking) {
+        player.body.setVelocity(0, 0);
+        player.isMoving = false;
+        window.playerCombat.showGuardPose();
+        updateFootstepSound(false);
         return;
     }
 

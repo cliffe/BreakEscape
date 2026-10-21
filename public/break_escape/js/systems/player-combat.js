@@ -5,6 +5,7 @@
 
 import { COMBAT_CONFIG } from '../config/combat-config.js';
 import { applyKnockback } from '../utils/knockback.js';
+import { nextComboStep, PUNCH_COMBO, directionToward, blockedDamage } from './fight-styles.js';
 
 /**
  * True when the scenario turns player attacks off (top-level
@@ -26,71 +27,214 @@ export class PlayerCombat {
     this.scene = scene;
     this.lastPunchTime = 0;
     this.isPunching = false;
-    this.currentMode = 'interact'; // Default to interact mode
+    // The punch being thrown: 'jab' or 'cross' (COMBAT_CONFIG.interactionModes)
+    this.currentPunch = 'jab';
+    // The combo (fight-styles.js PUNCH_COMBO): the step last thrown, when it
+    // ended, and a press made mid-punch that is thrown as soon as it can be
+    this.comboStep = -1;
+    this.lastPunchEndedAt = 0;
+    this.queuedPress = false;
+    this.isBlocking = false;
 
     console.log('✅ Player combat system initialized');
   }
 
   /**
-   * Set interaction mode (interact, jab, cross)
-   * @param {string} mode - The mode to set ('interact', 'jab', or 'cross')
-   */
-  setInteractionMode(mode) {
-    if (!COMBAT_CONFIG.interactionModes[mode]) {
-      console.error(`Invalid interaction mode: ${mode}`);
-      return;
-    }
-    if (mode !== 'interact' && attacksDisabled()) {
-      mode = 'interact';
-    }
-    this.currentMode = mode;
-    console.log(`🥊 Interaction mode set to: ${mode}`);
-  }
-
-  /**
-   * Get current interaction mode
+   * Click and tap always move or interact now; the old toggle's modes are
+   * gone. Kept so older callers and the test bridge still get an answer.
    * @returns {string}
    */
   getInteractionMode() {
-    return this.currentMode;
+    return 'interact';
   }
 
-  /**
-   * Get current mode configuration
-   * @returns {object}
-   */
+  /** The settings (damage, cooldown, animation) of the punch being thrown. */
   getCurrentModeConfig() {
-    return COMBAT_CONFIG.interactionModes[this.currentMode];
+    return COMBAT_CONFIG.interactionModes[this.currentPunch] || COMBAT_CONFIG.interactionModes.jab;
   }
 
   /**
-   * Check if player can punch (cooldown check)
+   * Check if the player can throw a punch of this kind now (cooldown)
+   * @param {string} [kind] - 'jab' or 'cross'
    * @returns {boolean}
    */
   canPunch() {
-    if (attacksDisabled()) {
+    if (attacksDisabled() || this.isBlocking) {
       return false;
     }
-
-    const modeConfig = this.getCurrentModeConfig();
-    
-    // Can't punch in interact mode
-    if (!modeConfig.canPunch) {
-      return false;
-    }
-
-    const now = Date.now();
-    const timeSinceLast = now - this.lastPunchTime;
-    const cooldown = modeConfig.cooldown || COMBAT_CONFIG.player.punchCooldown;
-    return timeSinceLast >= cooldown;
+    return Date.now() - this.lastPunchTime >= this.recoveryAfterLastPunch();
   }
 
   /**
-   * Perform punch attack
-   * This is called when player interacts with a hostile NPC
-   * Damage applies to ALL NPCs in punch range and facing direction
+   * A punch's cooldown is the recovery after it: a jab is quickly followed,
+   * a cross holds the player for longer. (Measuring the next punch's own
+   * cooldown made the cross wait so long the combo window closed first.)
    */
-  punch() {
+  recoveryAfterLastPunch() {
+    if (!this.lastPunchTime) return 0;
+    const modeConfig = COMBAT_CONFIG.interactionModes[this.currentPunch] || COMBAT_CONFIG.interactionModes.jab;
+    return modeConfig.cooldown || COMBAT_CONFIG.player.punchCooldown;
+  }
+
+  /**
+   * Fists stay down while a minigame or overlay is open (the title screen,
+   * a conversation, the phone): click and tap don't reach the game then either.
+   */
+  fightingPaused() {
+    return !!window.MinigameFramework?.currentMinigame || window.playerHealth?.isKO?.() === true;
+  }
+
+  /**
+   * The punch button, F and right-click: throws the next punch of the combo
+   * (jab, jab, cross for three presses in a row). A press while a punch is
+   * still playing is kept and thrown when it ends, so quick presses aren't lost.
+   * @param {{x:number, y:number}} [toward] - world point to face (right-click);
+   *   without it the player turns to the nearest hostile in reach, if any
+   * @returns {boolean} true if a punch was thrown or queued
+   */
+  attack(toward = null) {
+    if (attacksDisabled() || this.isBlocking || !window.player) return false;
+    if (this.fightingPaused()) return false;
+
+    if (this.isPunching) {
+      this.queuedPress = true;
+      return true;
+    }
+
+    const step = nextComboStep(this.comboStep, Date.now() - this.lastPunchEndedAt);
+    const kind = PUNCH_COMBO[step];
+    if (!this.canPunch()) {
+      this.queuedPress = true;
+      this.scheduleQueuedPress();
+      return true;
+    }
+
+    if (toward) {
+      window.player.lastDirection = directionToward(toward.x - window.player.x, toward.y - window.player.y);
+      window.player.direction = window.player.lastDirection;
+    } else {
+      this.faceNearestHostile(COMBAT_CONFIG.player.punchRange + 32);
+    }
+
+    this.comboStep = step;
+    const thrown = this.punch(kind);
+    if (thrown && window.getTutorialManager) window.getTutorialManager().notifyAttackedInCombatMode();
+    return thrown;
+  }
+
+  /** Throw a queued press once the cooldown of the next punch allows it. */
+  scheduleQueuedPress() {
+    if (this._queuedTimer) return;
+    const wait = Math.max(0, this.recoveryAfterLastPunch() - (Date.now() - this.lastPunchTime));
+    this._queuedTimer = this.scene.time.delayedCall(wait, () => {
+      this._queuedTimer = null;
+      if (this.queuedPress && !this.isPunching) {
+        this.queuedPress = false;
+        this.attack();
+      }
+    });
+  }
+
+  /** A punch finished (or was cut short): note it, then throw any queued press. */
+  finishPunch() {
+    this.isPunching = false;
+    this.lastPunchEndedAt = Date.now();
+    if (this.comboStep >= PUNCH_COMBO.length - 1) this.comboStep = -1; // cross ends the combo
+    if (this.queuedPress) {
+      this.scheduleQueuedPress();
+    }
+  }
+
+  /**
+   * The nearest visible, standing hostile NPC within `range` px of the player,
+   * or null. Used to turn the player towards a fight on a punch or a block.
+   */
+  nearestHostile(range) {
+    const player = window.player;
+    if (!player || !window.rooms || !window.npcHostileSystem) return null;
+    let best = null;
+    let bestDist = range;
+    for (const roomId in window.rooms) {
+      for (const sprite of window.rooms[roomId]?.npcSprites || []) {
+        if (!sprite?.npcId || !sprite.visible || sprite.destroyed) continue;
+        if (!window.npcHostileSystem.isNPCHostile(sprite.npcId)) continue;
+        if (window.npcHostileSystem.isNPCKO(sprite.npcId)) continue;
+        const d = Math.hypot(sprite.x - player.x, sprite.y - player.y);
+        if (d <= bestDist) {
+          best = sprite;
+          bestDist = d;
+        }
+      }
+    }
+    return best;
+  }
+
+  faceNearestHostile(range) {
+    const target = this.nearestHostile(range);
+    if (!target || !window.player) return false;
+    const dir = directionToward(target.x - window.player.x, target.y - window.player.y);
+    window.player.lastDirection = dir;
+    window.player.direction = dir;
+    return true;
+  }
+
+  /**
+   * Raise the guard (Q held, or the block button held). The player stands in
+   * guard, turned to the nearest hostile, and can't walk or punch until
+   * endBlock(). Hits from the front do a fifth of their damage (npc-combat.js).
+   */
+  startBlock() {
+    if (attacksDisabled() || this.isBlocking || !window.player) return false;
+    if (this.fightingPaused()) return false;
+    this.isBlocking = true;
+    this.queuedPress = false;
+    window.cancelClickToMove?.();
+    window.player.body?.setVelocity(0, 0);
+    window.player.isMoving = false;
+    this.faceNearestHostile(COMBAT_CONFIG.block.autoFaceRange);
+    this.showGuardPose();
+    window.getTutorialManager?.()?.notifyBlocked?.();
+    return true;
+  }
+
+  endBlock() {
+    if (!this.isBlocking) return false;
+    this.isBlocking = false;
+    const player = window.player;
+    if (player?.anims && !window.playerHealth?.isKO?.()) {
+      const idleKey = `idle-${player.lastDirection || 'down'}`;
+      if (this.scene.anims.exists(idleKey)) player.anims.play(idleKey, true);
+    }
+    return true;
+  }
+
+  /**
+   * Hold the guard pose: the first frame of lead-jab (fists up, knees bent)
+   * in the way the player faces. Called each frame while blocking, so a hit
+   * from behind (which plays taking-punch) returns to guard afterwards.
+   */
+  showGuardPose() {
+    const player = window.player;
+    if (!player?.anims || player.destroyed) return;
+    // A punch thrown just before the guard went up finishes (and lands) first
+    if (this.isPunching) return;
+    const current = player.anims.currentAnim?.key || '';
+    if (player.anims.isPlaying && current.includes('taking-punch')) return;
+    const jab = this.scene.anims.get(`lead-jab_${this.mapDirectionToCompass(player.lastDirection || 'down')}`);
+    const frame = jab?.frames?.[0];
+    if (!frame) return;
+    if (player.anims.isPlaying) player.anims.stop();
+    if (player.frame?.name !== frame.textureFrame || player.texture?.key !== frame.textureKey) {
+      player.setTexture(frame.textureKey, frame.textureFrame);
+    }
+  }
+
+  /**
+   * Throw one punch of the given kind in the way the player faces.
+   * Damage applies to all NPCs in punch range and facing direction.
+   * @param {string} [kind] - 'jab' (default) or 'cross'
+   */
+  punch(kind = 'jab') {
     if (attacksDisabled()) {
       return false;
     }
@@ -99,9 +243,9 @@ export class PlayerCombat {
       console.log('🥊 Punch blocked - already punching');
       return false;
     }
-    
+
     if (!this.canPunch()) {
-      console.log('🥊 Punch blocked - on cooldown');
+      console.log('🥊 Punch blocked - on cooldown or blocking');
       return false;
     }
 
@@ -110,10 +254,9 @@ export class PlayerCombat {
       return false;
     }
 
+    this.currentPunch = COMBAT_CONFIG.interactionModes[kind] ? kind : 'jab';
     this.isPunching = true;
     this.lastPunchTime = Date.now();
-    
-    console.log(`🥊 Player starting punch, isPunching set to true`);
 
     // Play punch animation and wait for completion
     this.playPunchAnimation();
@@ -139,7 +282,31 @@ export class PlayerCombat {
   }
 
   /**
-   * Play punch animation - uses current mode's animation (lead-jab or cross-punch)
+   * After a punch, walk on if the player is still moving (click-to-move or a
+   * held key), else stand idle. The movement code only starts the walk cycle
+   * when movement starts or turns, so it won't restart it by itself.
+   * @param {string} idleDirection - the way the punch was thrown
+   */
+  resumeMovementAnimation(idleDirection) {
+    const player = window.player;
+    if (!player?.anims || player.destroyed) return;
+    if (player.isMoving) {
+      const dir = player.direction || idleDirection;
+      // Legacy sprites have no left walks; they flip the right one instead
+      const walkKey = [`walk-${dir}`, `walk-${dir.replace('left', 'right')}`]
+        .find(key => this.scene.anims.exists(key));
+      if (walkKey) {
+        player.anims.play(walkKey, true);
+        player.lastDirection = dir;
+        return;
+      }
+    }
+    const idleKey = `idle-${idleDirection}`;
+    if (this.scene.anims.exists(idleKey)) player.anims.play(idleKey, true);
+  }
+
+  /**
+   * Play punch animation for the punch being thrown (lead-jab or cross-punch)
    */
   playPunchAnimation() {
     if (!window.player) return;
@@ -147,121 +314,54 @@ export class PlayerCombat {
     const player = window.player;
     const direction = player.lastDirection || 'down';
     const compassDir = this.mapDirectionToCompass(direction);
-    
-    // Get current mode's animation key
+
     const modeConfig = this.getCurrentModeConfig();
     const animationBase = modeConfig.animationKey; // 'lead-jab' or 'cross-punch'
-    
-    if (!animationBase) {
-      console.log('⚠️ Current mode has no punch animation');
-      return;
-    }
-    
     const animKey = `${animationBase}_${compassDir}`;
-    
-    console.log(`🥊 Punch attempt: mode=${this.currentMode}, direction=${direction}, compass=${compassDir}`);
-    console.log(`  - Trying: ${animKey} (exists: ${this.scene.anims.exists(animKey)})`);
-    
-    let animPlayed = false;
-    
-    // Try to play the mode's animation
-    if (this.scene.anims.exists(animKey)) {
-      console.log(`  ✓ Found ${animKey}, playing...`);
-      player.anims.play(animKey, true);
-      animPlayed = true;
 
-      // Play swipe sound at the moment the arm swings
-      if (window.soundManager) {
-        const swipeSound = animationBase === 'lead-jab' ? 'punch_swipe_jab' : 'punch_swipe_cross';
-        window.soundManager.play(swipeSound);
-      }
-      console.log(`  - After play: currentAnim=${player.anims.currentAnim?.key}, visible=${player.visible}, alpha=${player.alpha}`);
+    if (window.soundManager) {
+      window.soundManager.play(animationBase === 'lead-jab' ? 'punch_swipe_jab' : 'punch_swipe_cross');
     }
-    
-    if (animPlayed) {
-      console.log(`🥊 Playing punch animation: ${animKey}`);
-      
+
+    if (this.scene.anims.exists(animKey)) {
+      player.anims.play(animKey, true);
+
       // Safety timeout to ensure flag is cleared even if animation is interrupted
-      const maxAttackDuration = 2000; // 2 seconds max
-      const safetyTimeout = this.scene.time.delayedCall(maxAttackDuration, () => {
+      const safetyTimeout = this.scene.time.delayedCall(2000, () => {
         if (this.isPunching) {
           console.warn(`⚠️ Player punch animation timeout, clearing isPunching flag`);
-          this.isPunching = false;
+          this.finishPunch();
         }
       });
-      
-      // Animation will complete naturally
-      // Apply damage when animation completes, then return to idle
+
+      // Apply damage when the animation completes, then return to idle
       player.once('animationcomplete', (anim) => {
-        // Cancel safety timeout if animation completes properly
         if (safetyTimeout) {
           safetyTimeout.remove();
         }
-        
-        // Check if the completed animation is a punch/jab animation
+
         if (anim.key.includes('punch') || anim.key.includes('jab')) {
-          console.log(`🥊 Player punch animation completed: ${anim.key}`);
-          // Apply damage on animation complete
           this.checkForHits();
-          this.isPunching = false;
-          
-          const idleKey = `idle-${direction}`;
-          if (player.anims && player.anims.exists && this.scene.anims.exists(idleKey)) {
-            player.anims.play(idleKey, true);
-          }
+          this.finishPunch();
+          if (!this.isBlocking) this.resumeMovementAnimation(direction);
         } else if (this.isPunching) {
           // Animation was different (interrupted), just clear the flag
           console.warn(`⚠️ Player punch interrupted - animation changed to: ${anim.key}`);
-          this.isPunching = false;
+          this.finishPunch();
         }
       });
     } else {
-      // Fallback: red tint + walk animation
+      // Fallback: red tint, then damage after the usual punch duration
       console.log(`⚠️ No punch animation found (tried ${animKey}), using fallback (red tint)`);
-      if (window.soundManager) {
-        const swipeSound = animationBase === 'lead-jab' ? 'punch_swipe_jab' : 'punch_swipe_cross';
-        window.soundManager.play(swipeSound);
-      }
-      
-      // Apply red tint
       if (window.spriteEffects) {
         window.spriteEffects.applyAttackTint(player);
       }
 
-      // Play walk animation if not already playing
-      if (!player.anims.isPlaying) {
-        const walkKey = `walk-${direction}`;
-        if (this.scene.anims.exists(walkKey)) {
-          player.play(walkKey, true);
-        }
-      }
-
-      // Safety timeout to ensure flag is cleared
-      const maxAttackDuration = 2000;
-      const safetyTimeout = this.scene.time.delayedCall(maxAttackDuration, () => {
-        if (this.isPunching) {
-          console.warn(`⚠️ Player fallback punch timeout, clearing isPunching flag`);
-          this.isPunching = false;
-        }
-      });
-
-      // Apply damage and remove tint after animation duration (fallback)
       this.scene.time.delayedCall(COMBAT_CONFIG.player.punchAnimationDuration, () => {
-        // Cancel safety timeout
-        if (safetyTimeout) {
-          safetyTimeout.remove();
-        }
-        
-        console.log(`🥊 Player fallback punch completed`);
         this.checkForHits();
-        this.isPunching = false;
-        
+        this.finishPunch();
         if (window.spriteEffects && player && !player.destroyed) {
           window.spriteEffects.clearAttackTint(player);
-        }
-        // Stop animation
-        if (player && player.anims && !player.destroyed) {
-          player.anims.stop();
         }
       });
     }
@@ -574,14 +674,30 @@ export class PlayerCombat {
       npcSprite = npcIdOrNPC.sprite;
     }
 
+    // A guarded fighter (fight-styles.js) takes a fifth of the punch on its
+    // guard and isn't pushed back; one that is armoured in its windup takes
+    // the full punch but carries on with its swing
+    const guarded = window.npcCombat?.isGuarding?.(npcId) === true;
+    const armoured = !guarded && window.npcCombat?.isArmoured?.(npcId) === true;
+    if (guarded) {
+      damage = blockedDamage(damage, window.npcCombat.styleFor(npcId).guardDamageScale);
+    }
+
     // Apply damage
     window.npcHostileSystem.damageNPC(npcId, damage);
 
     // Check if NPC is now KO (after damage)
     const isKO = window.npcHostileSystem && window.npcHostileSystem.isNPCKO(npcId);
 
-    // Play hit animation if available (only if not KO - death anim takes priority)
-    if (npcSprite && !isKO) {
+    if (guarded && !isKO) {
+      this.showBlockedHit(npcSprite, damage);
+      console.log(`🛡️ ${npcId} blocked the punch: ${damage} damage got through`);
+      return;
+    }
+
+    // Play hit animation if available (only if not KO - death anim takes
+    // priority; not while armoured, which would cut its swing short)
+    if (npcSprite && !isKO && !armoured) {
       this.playHitAnimation(npcSprite, npcId);
     }
 
@@ -606,8 +722,8 @@ export class PlayerCombat {
       window.damageNumbers.show(npcSprite.x, npcSprite.y - 30, damage, 'damage');
     }
 
-    // Knockback (only if NPC is not KO)
-    if (npcSprite && window.player && !isKO) {
+    // Knockback (only if NPC is not KO, nor armoured in its windup)
+    if (npcSprite && window.player && !isKO && !armoured) {
       applyKnockback(npcSprite, window.player.x, window.player.y);
     }
 
@@ -617,6 +733,20 @@ export class PlayerCombat {
     }
 
     console.log(`Dealt ${damage} damage to ${npcId}`);
+  }
+
+  /**
+   * A punch that landed on a guard: a dull knock, a grey number, a small
+   * shake and no knockback. Used for NPC guards here and the player's own
+   * block in npc-combat.js.
+   * @param {Phaser.GameObjects.Sprite} sprite - the one who blocked
+   * @param {number} damage - what got through
+   */
+  showBlockedHit(sprite, damage) {
+    if (window.soundManager) window.soundManager.play('hit_impact', { volume: 0.3 });
+    if (sprite && window.spriteEffects) window.spriteEffects.flashTint(sprite, 0xbbbbbb, 120);
+    if (sprite && window.damageNumbers) window.damageNumbers.show(sprite.x, sprite.y - 30, damage, 'blocked');
+    if (window.screenEffects) window.screenEffects.shake?.(1, 80);
   }
 
   /**

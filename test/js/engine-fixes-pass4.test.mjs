@@ -55,11 +55,13 @@ stub('constants-stub.mjs', 'export const TILE_SIZE = 32;');
 stub('pathfinding-stub.mjs', 'export class NPCPathfindingManager {}');
 copy('config/combat-config.js', 'combat-config.mjs');
 copy('systems/npc-chase-leash.js', 'npc-chase-leash.mjs');
+copy('systems/fight-styles.js', 'fight-styles.mjs');
 const behaviorUrl = copy('systems/npc-behavior.js', 'npc-behavior.mjs', [
     ["'../utils/constants.js'", "'./constants-stub.mjs'"],
     ["'./npc-pathfinding.js'", "'./pathfinding-stub.mjs'"],
     ["'../config/combat-config.js'", "'./combat-config.mjs'"],
     ["'./npc-chase-leash.js'", "'./npc-chase-leash.mjs'"],
+    ["'./fight-styles.js'", "'./fight-styles.mjs'"],
 ]);
 
 const store = new Map();
