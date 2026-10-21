@@ -141,3 +141,6 @@ Rulings sent with m10's R2 fix pass: adopt both reviewers' fixes; m10 ~105 min, 
 
 ### Stages 1+2 round 3
 - m10 R2 fix pass: all fixed (S2-15 by proposal; S2-19 was already fixed in m09, orchestrator grep). Whodunit fair on every branch (private aside, dummy camera, fork decides nothing, sign-out sheet, four-card accusation); argument: four fixed slots, rebuttal moves, equal-length evidence decoys; no pause ("It goes at six whatever we say"); m07 "I prefer to watch" callback; payoffs homed in credits and two 06:00 texts; "Still HaX." pays m09's refusal; 108 min all-in, ~105 after the media-room cut. §14 now 39 rows. Open for stage 3: the $12.8M default (returned to the victims' fund).
+| m09 R3 combined (`m09.../stage_1/REVIEW_R3.md`) | 0 | 4 | 11 | not clean: 29/32 R2 resolved; R3-01 office code cancels Victoria's route, R3-02 closing calls still leaks (one rule for all forced phone scenes), R3-03 threat covers a refusal, R3-04 refuse-and-pull-tapes dominated (fix: taking leaves a receipt Tesseract reads in m10); 12-line stale sweep incl. FINALE_ARC and m10 |
+
+Rulings: adopt all four fixes; one forced-phone-scene rule (done-flag, re-ring and resume) for both missions; "reload mid-call" added to stage 5 checks. Round 4 is m09's last check for stages 1–2.
