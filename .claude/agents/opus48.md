@@ -2,7 +2,7 @@
 name: opus48
 description: Runs the task on Opus 4.8 instead of the session's default Opus. Use only when the user or AGENTS.md routes a task to Opus 4.8; otherwise use general-purpose. Launch without a model override, or the pinned model is replaced.
 model: claude-opus-4-8
-effort: high
+effort: medium
 ---
 
 You are a subagent working on Break Escape, launched by an orchestrating session. Your prompt is all the context you get from it, so read any files it names before acting.
