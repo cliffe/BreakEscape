@@ -11,12 +11,16 @@
 # rooms, NPC ids, objects), texts/ (A3, B9, C7). Placeholder art, maps and
 # voices: ASSET_LIST.md.
 #
-# VM-WIRE: the VM is not built yet. `catalogue_server` (flags 1-2) and
-# `tomb_beta_server` (flags 3-4) are the story-level system names from S4 §1;
-# `attack_vm` is the attack box both launchers open. The opus48 VM pass sets
-# the real SecGen system_names, IPs, flag fallbacks and targetFlags (S4
-# assumes each machine numbers its own flags from 1). Search this file for
-# VM-WIRE.
+# VM-WIRE (wired to the SecGen draft m09_digital_archaeology.xml; box not yet
+# built). The two archive servers are `catalogue_server` (story flags 1-2: the
+# catalogue index, then the Initiative's ledger) and `tomb_beta_server` (story
+# flags 3-4: the owner's credential, then full control of the server).
+# `attack_vm` is the Kali box both launchers open. Each machine numbers its own
+# flags from 1, so the targetFlags read catalogue_server-flag1/2 and
+# tomb_beta_server-flag1/2. The fallback flag strings below are dev
+# placeholders; the built box generates the real values (F9: confirm the two
+# hostnames, the flag values and the catalogue service account off the built
+# VM). Search this file for VM-WIRE.
 #
 # ROOM LAYOUT (grid units, S5 §2; all ten connections single, no arrays):
 #
@@ -343,8 +347,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     Initiative's ledger; tomb_beta_server flag 1 = the owner's credential,
     flag 2 = full control (the mirror job). %>
   "flags": {
-    "catalogue_server": <%= vm_flags_json('catalogue_server', ['flag{m09_catalogue_placeholder}', 'flag{m09_ledger_placeholder}']) %>,
-    "tomb_beta_server": <%= vm_flags_json('tomb_beta_server', ['flag{m09_owner_placeholder}', 'flag{m09_control_placeholder}']) %>
+    "catalogue_server": <%= vm_flags_json('catalogue_server', ['flag{m09_catalogue_index}', 'flag{m09_initiative_ledger}']) %>,
+    "tomb_beta_server": <%= vm_flags_json('tomb_beta_server', ['flag{m09_tomb_beta_owner}', 'flag{m09_tomb_beta_control}']) %>
   },
 
   "narrator": {
@@ -1372,7 +1376,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "acceptsVms": ["catalogue_server"],
           "puzzle_graph_unlocks": "restricted_stacks",
           "puzzle_graph_note": "Flag 1 here sets flag1_submitted; HaX's unlockDoor mapping opens the restricted stacks.",
-          "flags": <%= flags_for_vm('catalogue_server', ['flag{m09_catalogue_placeholder}', 'flag{m09_ledger_placeholder}']) %>,
+          "flags": <%= flags_for_vm('catalogue_server', ['flag{m09_catalogue_index}', 'flag{m09_initiative_ledger}']) %>,
           "flagRewards": [
             { "type": "set_global", "key": "flag1_submitted", "value": true },
             { "type": "set_global", "key": "flag2_submitted", "value": true }
@@ -2140,7 +2144,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "takeable": false,
           "observations": "A drop link wired into Tomb Beta's rack. It takes what you pull off this server, and nothing else.",
           "acceptsVms": ["tomb_beta_server"],
-          "flags": <%= flags_for_vm('tomb_beta_server', ['flag{m09_owner_placeholder}', 'flag{m09_control_placeholder}']) %>,
+          "flags": <%= flags_for_vm('tomb_beta_server', ['flag{m09_tomb_beta_owner}', 'flag{m09_tomb_beta_control}']) %>,
           "flagRewards": [
             { "type": "set_global", "key": "flag3_submitted", "value": true },
             { "type": "set_global", "key": "flag4_submitted", "value": true }

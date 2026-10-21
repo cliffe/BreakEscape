@@ -3,7 +3,7 @@
   "description": "A courier carried the Architect's order to a records archive in Helena, Montana: burn Helena before the Publication. Get inside after hours while the director feeds a shredder box by box, take the restricted series before it is ash, and follow the paper to the man who signed it. The Season 1 finale begins.",
   "difficulty_level": 3,
   "secgen_scenario": "break_escape/safetynet/m09_digital_archaeology.xml",
-  "_vm_wire": "VM-WIRE: secgen_scenario names the SecGen scenario the opus48 VM pass will write; it does not exist yet. The secgen block's vulnerabilities and the VM CyBOK rows are set by that pass.",
+  "_vm_wire": "VM-WIRE: secgen_scenario points at the SecGen draft (two targets, catalogue_server and tomb_beta_server, plus the Kali attack_vm). The box is not built yet; flag values are generated at build (F9: confirm the two hostnames, per-machine flag numbering and the catalogue service account off the built VM).",
   "collection": "season_1",
   "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology/",
   "ui_theme": "spy",
@@ -51,7 +51,7 @@
     {
       "ka": "SOIM",
       "topic": "Fundamental Concepts",
-      "keywords": ["VULNERABILITY ANALYSIS"]
+      "keywords": ["VULNERABILITY ANALYSIS", "PENETRATION TESTING - SOFTWARE TOOLS"]
     },
     {
       "ka": "SSL",
@@ -62,14 +62,39 @@
       "ka": "CPS",
       "topic": "Physical Security",
       "keywords": ["Physical access control"]
+    },
+    {
+      "ka": "NS",
+      "topic": "Networking Applications",
+      "keywords": ["NMAP", "PORT SCANNING", "SERVICE FINGERPRINTING"]
+    },
+    {
+      "ka": "WAM",
+      "topic": "Server-Side Vulnerabilities and Mitigations",
+      "keywords": ["server-side misconfiguration and vulnerable components", "injection vulnerabilities"]
+    },
+    {
+      "ka": "SS",
+      "topic": "Categories of Vulnerabilities",
+      "keywords": ["CVES AND CWES"]
+    },
+    {
+      "ka": "OSV",
+      "topic": "Primitives for Isolation and Mediation",
+      "keywords": ["PRIVILEGE ESCALATION", "ATTACKS AGAINST SUDO", "Linux security model"]
     }
   ],
   "secgen": {
-    "scenario": "m09_digital_archaeology (VM-WIRE: to be written by the opus48 VM pass)",
-    "vulnerabilities": [],
+    "scenario": "m09_digital_archaeology (Break Escape SAFETYNET: Mission 9 — Digital Archaeology VMs)",
+    "vulnerabilities": [
+      "Apache Druid unauthenticated RCE (catalogue server foothold)",
+      "Nostromo web server RCE (Tomb Beta server foothold)",
+      "Sudo misconfiguration on a pager utility (root on both servers)",
+      "Document and credential analysis on the recovered hosts"
+    ],
     "flags": 4,
     "difficulty": "Advanced",
-    "integrationMethod": "Two stations: the drop terminal takes the catalogue server's two flags, Tomb Beta's drop link takes the server's two; each flag sets a story global that rings the night's calls"
+    "integrationMethod": "Two targets, two stations: the reading-room drop terminal takes the catalogue server's two flags, the tape-room drop link takes Tomb Beta's two; each flag sets a story global that rings the night's calls"
   },
   "mechanics": {
     "new": [
