@@ -2,7 +2,7 @@
 
 ## 1. Status and how to use this
 
-Stage 2, draft 4. Author: stages 1–2 author (Opus). Draft 1 on 2026-10-21; round 1–3 fixes the same day (logged in `../stage_1/story_arc.md` §15–17). User decisions F11 (two lethal-force versions) and F13 (surrender is a deal with no public trial; arrest is a public trial) are folded in. Stage 3 (`../stage_3/moral_choices.md`, "MC §n") was folded in on 2026-10-21 (logged in arc §19): its new sample lines (P24, P25, P43) are added below, and stale ones replaced. MC is the authority for choice wording and costs; where a line here differs, MC wins. The stages 0–3 milestone fixes and the simplification pass were applied on 2026-10-21 (logged in arc §20): the media room and Social Fabric's crew are cut, the gallery has two options per branch, exchange 3's last record pool is two answers, the gallery guard is Farah Qureshi (FA §5.2), and the lines below follow. Stages 4–5 (`../stage_4/objectives_tasks.md`, "OT §n"; `../stage_5/room_layout.md`, "RL §n") were folded in on 2026-10-21 (logged in arc §21): HaX's briefing questions now live in her phone hub, she reads the case's sign-out names, she returns at the core inside his conversation, the release is said aloud by value, Ghost's call is answered at the handset, the kept branch's door is the records cupboard, the lock card is the lock guard's code card, the rooms and music follow RL and OT §7, and the voiced calls are listed in §9.
+Stage 2, draft 4. Author: stages 1–2 author (Opus). Draft 1 on 2026-10-21; round 1–3 fixes the same day (logged in `../stage_1/story_arc.md` §15–17). User decisions F11 (two lethal-force versions) and F13 (surrender is a deal with no public trial; arrest is a public trial) are folded in. Stage 3 (`../stage_3/moral_choices.md`, "MC §n") was folded in on 2026-10-21 (logged in arc §19): its new sample lines (P24, P25, P43) are added below, and stale ones replaced. MC is the authority for choice wording and costs; where a line here differs, MC wins. The stages 0–3 milestone fixes and the simplification pass were applied on 2026-10-21 (logged in arc §20): the media room and Social Fabric's crew are cut, the gallery has two options per branch, exchange 3's last record pool is two answers, the gallery guard is Farah Qureshi (FA §5.2), and the lines below follow. Stages 4–5 (`../stage_4/objectives_tasks.md`, "OT §n"; `../stage_5/room_layout.md`, "RL §n") were folded in on 2026-10-21 (logged in arc §21): HaX's briefing questions now live in her phone hub, she reads the case's sign-out names, she returns at the core inside his conversation, the release is said aloud by value, Ghost's call is answered at the handset, the kept branch's door is the records cupboard, the lock card is the lock guard's code card, the rooms and music follow RL and OT §7, and the voiced calls are listed in §9. Stage 6 (`../stage_6/lore_fragments.md`) was folded in on 2026-10-21 (logged in OT's last section): the lock guard is Sione Fonoti and is named in each naming line (S6-17), HaX gains the Hollis freeze line (S6-09) and "Copy just the code." (S6-22), Tesseract's card and credit lines follow stage 6 §3, and Arakawa's telescope moves from his credit to the close's last line (S6-29). Stage 6 is the authority for every readable string and every card and credits line.
 
 Companion to `../stage_1/story_arc.md` ("arc §n"), which has the structure, order and branches. This file has the people (voice, wants, secret, arc, sample lines) and the feel of the night. FINALE_ARC is cited "FA §n" and its thread rows "row n"; a bare "§n" is a section of this file.
 
@@ -224,7 +224,7 @@ Then "[Do it.]" or "[Lower the weapon.]". Confirmed, one line: "He is still look
 
 **Surrender, at the terminal**, typing the cells' protocol: "They never knew who I was. They'll work out who you are by Thursday. Be careful."
 
-**Credits, by ending** (MC §6.6, F13): arrest, "Dr Adrian Tesseract. Awaiting trial."; surrender, "Dr Adrian Tesseract. Cooperating. No trial."; the cold ending's card, "Dr Adrian Tesseract: shot unarmed."; Join's card, "Dr Adrian Tesseract: with you."
+**The card and credits, by ending** (MC §6.6, F13; fixed strings in stage 6 §3.2–3.3, which supersede the drafts here). The card's first line: arrest, "Dr Adrian Tesseract: in a cell, awaiting trial."; surrender, "Dr Adrian Tesseract: cooperating. No trial."; lethal, "Dr Adrian Tesseract: dead at his console, reaching for the key."; the cold ending, "Dr Adrian Tesseract: shot unarmed."; Scorched Earth, "Dr Adrian Tesseract: gone, with everything he remembers."; Join, "Dr Adrian Tesseract: free." His credit carries what the card doesn't (R2-01): arrest, "Held out his wrists before anyone asked."; surrender, "Typed the cells' protocol himself, without hurrying."; lethal, "His key never went down."; the cold ending, "Hands empty, in plain sight."
 
 **A taken-in Nightshade at the van window** (arrest and surrender only): Nightshade, "You wrote me as a line item." He: "You were a good one."
 
@@ -263,6 +263,8 @@ Then "[Do it.]" or "[Lower the weapon.]". Confirmed, one line: "He is still look
 > Agent HaX: The readers take our badges. He loaded every SAFETYNET credential he stole. That door was told to want yours.
 > Agent HaX: Whoever's in the power room runs your lights.
 > Agent HaX: Reeves. From the hospital. He's theirs full time now.
+> (the duty board, on `m06_assets_seized && m07_hollis_resolved === 'evaded'`, in place of "I hope he stays in the hut"; S6-09: the freeze empties the gate, so Hollis can't be on it) Agent HaX: Stood down for the budget. Your freeze kept him home tonight.
+> (the casualty sheet's margin strip, after Imran's or her own "There's something written in the margin. Not plain English."; S6-22) Agent HaX: Copy just the code.
 > (the pre-breach lull, `m03_guard_bribed`) Agent HaX: Finance want to know about five hundred pounds and a security guard in Cardiff. I've never been so pleased to fill in a form.
 
 > (the blast door, on `m09_deck_pulled = alpha_tapes`) Agent HaX: The best lock there is. Tape two.
@@ -480,7 +482,7 @@ The first two are said from the stretcher when she is hurt. She is unhurt when t
 
 With Malhotra out, HaX's relay goes with him: her call as the gallery stair opens breaks up after its warning (§3.1; OT §4.4). Without Arakawa, Netherton covers the county road on the net, with no deputy on screen: "Sheriff's asking who the road's closed for. I've told him to wait." (arc §8.4).
 
-**Officer Kenji Arakawa.** 41, Japanese-American, from Sacramento, lives in Billings (as m09 SE has him; MS-06); a federal lateral hire, the team's US liaison; Pacific Northwest, soft and slow. **Wants:** home for his daughter's ninth birthday on Saturday. **Secret:** none worth hiding; that is his job in the story (the transfer from draft 1 is cut, W19). **Arc:** the closed road and the breaching case (his suspicion); the call at 02:10 (his alibi; a line, not a choice, MC §4); a room ahead with Kowalczyk; the line as she goes; he looks away at her accusation. Credits: "Home for Saturday, with a telescope."
+**Officer Kenji Arakawa.** 41, Japanese-American, from Sacramento, lives in Billings (as m09 SE has him; MS-06); a federal lateral hire, the team's US liaison; Pacific Northwest, soft and slow. **Wants:** home for his daughter's ninth birthday on Saturday. **Secret:** none worth hiding; that is his job in the story (the transfer from draft 1 is cut, W19). **Arc:** the closed road and the breaching case (his suspicion); the call at 02:10 (his alibi; a line, not a choice, MC §4); a room ahead with Kowalczyk; the line as she goes; he looks away at her accusation. His credit carries the county road ("Kept the county road shut all night. Nobody asked who for."); the telescope is no longer his credit (S6-29) but ELSEWHERE's fixed last line, "In Billings, a girl turns nine on Saturday. Her father is bringing a telescope.", or the card's human line where no other applies, so the close ends on a person on every save that reaches six.
 
 > Officer Kenji Arakawa: It's ten past eight here. She goes to bed at quarter past. Thirty seconds.
 > (hanging up, unprompted) Officer Kenji Arakawa: She wants a telescope. I'm getting her a telescope.
@@ -550,6 +552,8 @@ HaX's pointer to him after the briefing, by branch: "Nightshade's at the table. 
 > (escaped, the threat, a miss) Victoria Sterling: Don't analyse me.
 > (escaped, no threat) Victoria Sterling: St. Catherine's was a proof of concept. This is the rest.
 > (escaped, the trade) Victoria Sterling: I walk out. Zero Day's order goes away, and I tell you which of these two has the code card.
+
+On "[Go.]" she names the lock guard, Fonoti (S6-17; stage 7 words it).
 > (arrested, the line) Victoria Sterling: He took my desk by Monday. He's been selling my clients twice since Tuesday. I'd rather he lost than I won.
 > (arrested, her price, after the secret) Victoria Sterling: A reduced charge, and you get the rest of my book. Or nothing, and you still have this.
 
@@ -564,7 +568,7 @@ The talk-down's hook is her own m03 words, in the player's button: "[You said yo
 > (refused) Ghost: I hope it's you leading it. You turned me down. Why?
 > (refused, the gift, unasked) Ghost: Don't thank me. It's not for you.
 > (refused, "hold hospitals"; `ghost_gift = code`, the code goes into the notepad) Ghost: Then do this cleanly. Four digits.
-> (refused, "didn't trust you"; `ghost_gift = card`, the guard named aloud, no item, `lock_guard_known` set; OT §4.2) Ghost: Then don't trust me. Check it.
+> (refused, "didn't trust you"; `ghost_gift = card`, the guard named aloud, no item, `lock_guard_known` set; OT §4.2) Ghost: Then don't trust me. Check it. The one at the lock end. Fonoti. (S6-17; stage 7's wording)
 > (unanswered) Ghost: You never answered me. Answer this.
 > (stranger) Ghost: You don't know me. That's rather the point. Two hours' head start. Five buyers. One of them wants the hospitals.
 > (a miss: money, then a threat) Ghost: Numbers are my department. / Ghost: You won't.
@@ -589,6 +593,8 @@ On **broken** the hook works only after the player owns the deal: "[I didn't kee
 > Pieter Vos: I don't do philosophy. I do delivery dates.
 > (KO branch) Pieter Vos: You put Sterling in hospital. I sent flowers. Business is business.
 > (the default trade) Pieter Vos: That guard has the code card. You can have it. My name stays off whatever you write tonight.
+
+On "[Deal.]" he names the guard, Fonoti, as he hands over his own copy, `vos_code_card` (S6-17).
 > (Victoria's secret used) Pieter Vos: *pause* Who told you that. No. Don't. I'm leaving. The order goes with me.
 
 **Imran Siddiqui** (workshop). 26, British-Pakistani, from Sparkhill; Birmingham, quick, bitter, young. A recruit with a grievance, not a believer. **Wants:** someone to admit the board was wrong. **Secret:** he has seen the bench ship some units "to people, not stores", and kept it to himself.
@@ -612,6 +618,8 @@ Taken in ("[I'm taking you in.]"), he gives his card, phone and statement and no
 The phone voice says the cost before the player tells him, in a text as the player first walks into the power room, before Wendell's menu opens (OT §4.9; milestone A11): "He doesn't know. Tell him, and he'll want to warn somebody. Their switchboard will hear it." Credits: told, "Rang his mate Dale. Dale stayed home."; worked round, Dale walks into a raid at shift change (frightened, detained, released by morning). When the cut falls to the player (Wendell worked round or never told, a fight with escaped Voltage, either knocked out), the same phone voice rings and talks them through the switching, the camera switch among its choices; it rings again on every entry to the power room until the shutter is down (S4-15; OT §4.9). It is voiced, about eight lines in each of the three voices.
 
 **Guards and technicians.** The cells' people: hired muscle and contractors, mixed ages and backgrounds, varied generic sprites. Told to let 0x00 through and not why, so they fight. Two or three barks each, never gendering the player: "That's the one off the wall." / "Nobody said let them through armed." In the gallery, where HaX can't speak, each effect carried in from earlier gets one bark and no explanation (MC §3.5, P38): "Camera's dead again. I'll go and look." (the camera switch) / "Where's Farah? She was on till six." (Imran's call to his friend Farah Qureshi; her coat on an empty chair) / "Who gave out the code?" (the lock's opening on a save where Ghost gave the code; OT §4.5). The lock guard has two more (OT §4.5): on the first try at the keypad, "That takes the shift code. It's on my card, and it stays there." (the pointer to his own code card; milestone A13), and his challenge if the player cracks the keypad inside his cone, which a "[Shift change. Netherton's orders.]" talks past once.
+
+**Sione Fonoti** (the lock guard, gallery; S6-05, stage 6 §2.4). 34, Samoan-American, from West Valley City, Utah; a former college lineman who does night security because it pays and nobody asks; big, slow to speak, polite. Hired muscle like the rest: told to let one agent through to the core and nothing about why. `displayName` "Sione Fonoti"; "S. Fonoti" on the gallery rota, which says he carries the shift code card. Named by Ghost's card gift, escaped Victoria's "[Go.]" and Vos's "[Deal.]"; his own pointer bark stays first person and doesn't name him. A knock-out sets `fonoti_ko` and gets a credit line ("Put on the floor on the walkway.").
 
 **Social Fabric** has no crew in the bunker (the media room is cut; arc §6.4). Its story is a prop on the server hall's uplink printer; on uncovered Fracture it runs from outside, and HaX says so at the prop: "It isn't going out from here. Nothing I can stop from this end." Held otherwise: "They wrote your obituary and didn't send it."
 
@@ -640,6 +648,7 @@ Cast diversity: varied ethnicity, age and look; recurring characters keep their 
 | Victoria Sterling | m03 | by branch | as in m03 |
 | Pieter Vos (new) | 50s, Dutch, Rotterdam | Zero Day | Dutch-accented English; flat, courteous |
 | Ghost (phone) | unplaceable | Ransomware Inc. | as in m02 |
+| Sione Fonoti (new; the lock guard) | 34, Samoan-American, West Valley City, Utah | ENTROPY's hire | Utah; slow, polite |
 | Guards and technicians | mixed | ENTROPY's hire | varied |
 
 ## 5. Atmosphere, act by act

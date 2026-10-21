@@ -304,3 +304,4 @@ Orchestrator rulings for the S4–5 milestone fix pass (all four parts):
 
 ## Fold stage 6 into earlier docs
 - Fold (m09 stages 0–5, S4 §20): stage 6 ids, wiring, codes (safe PIN 060216), names, salvage puzzle, US usage folded (~158 exact replacements, each match-count checked); Sorensen's hatch-line repetition noted for stage 7; m05 'in the spring' → 'last spring'.
+- Fold (m10 stages 0–5, OT 'Stage 6 folded in'): 25/31 S6 changes (the rest target FINALE_ARC or m09, or are optional). Rulings on its flags: the SAFETYNET and 'In memory' (Fraser, Ferreira) credits sections ship, written by stage 7 in the committed section format; Kowalczyk's and Quintero's ids stay immune from the briefing to the breach (teammates in that stretch).
