@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # Social lints for the board area (P1-H, phase 1a): 03 N6 for `social.intelBoard.readinessSlots`.
-# P3-E adds the defender half of N6 (`social.engagement.defender`, below). The rest of N6 (plan picks, question cards, steps, factMitigations) belongs to the packet that
-# builds those board items.
+# P3-E adds the defender half of N6 (`social.engagement.defender`, below). P6-G adds the step and
+# correct-count checks for the `scope`, `plan` and `report` blocks (engagement_step_checks).
 #
 # Returns an array of issue strings starting with "❌" (error, fails --strict-social) or "⚠️"
 # (warning), in the style of validate_scenario.rb. Runs only when the scenario has a `social` key.
@@ -12,7 +12,7 @@ module ValidateSocial
     def self.check(ctx)
       return [] unless ctx.social.is_a?(Hash)
 
-      defender = defender_checks(ctx)
+      defender = defender_checks(ctx) + engagement_step_checks(ctx)
       board = ctx.social['intelBoard']
       return defender unless board.is_a?(Hash)
 
@@ -119,6 +119,121 @@ module ValidateSocial
         err("#{where}: contact '#{c['id']}' is revealed by '#{rb}', but fact '#{fact}' is not in this target's readiness slots; " \
             'the card could read ready while the contact cannot be reached')
       end
+    end
+
+    # ---- 03 N6, scope / plan / report blocks (P6-G) -----------------------------
+
+    ENGAGEMENT_BLOCKS = %w[scope plan report].freeze
+
+    # Step binding (00 section 11): every item names a step declared in its block, and every declared
+    # step has at least one item. A `question` card and each `plan` pick list (objectives, measures,
+    # picks[].options) has exactly one `correct: true` option, or it could never be answered right.
+    def self.engagement_step_checks(ctx)
+      eng = ctx.social['engagement']
+      return [] unless eng.is_a?(Hash)
+
+      issues = []
+      ENGAGEMENT_BLOCKS.each do |mode|
+        block = eng[mode]
+        next if block.nil?
+
+        where = "social.engagement.#{mode}"
+        unless block.is_a?(Hash)
+          issues << err("#{where} must be an object")
+          next
+        end
+        issues.concat(block_step_checks(block, mode, where))
+      end
+      issues
+    end
+
+    # One entry per board item: { label, step } (step nil when none authored).
+    def self.block_items(block, mode, where, issues)
+      items = []
+      Mail.hash_list(block['cards']).each do |c|
+        label = "#{where}.cards[#{c['id'] || '?'}]"
+        kind = c['kind'] || (c['options'].is_a?(Array) ? 'question' : 'sort')
+        items << { label: label, step: c['step'] }
+        if kind == 'question'
+          issues.concat(correct_count(c['options'], label, 'question card'))
+        elsif kind == 'sort' && ![true, false].include?(c['inScope'])
+          issues << err("#{label}.inScope must be true or false; the card has no right pile")
+        end
+      end
+      if mode == 'plan'
+        %w[objectives measures].each do |key|
+          next unless block.key?(key)
+
+          label = "#{where}.#{key}"
+          list = block[key]
+          unless list.is_a?(Array)
+            issues << err("#{label} must be an array of options")
+            next
+          end
+          items << group_item(list, label, issues)
+        end
+        Mail.hash_list(block['picks']).each do |p|
+          label = "#{where}.picks[#{p['id'] || '?'}]"
+          opts = p['options']
+          steps = (Mail.hash_list(opts).map { |o| o['step'] } + [p['step']]).compact.uniq
+          issues << err("#{label} names more than one step (#{steps.join(', ')}); one pick list binds to one step") if steps.length > 1
+          items << { label: label, step: steps.first }
+          issues.concat(correct_count(opts, label, 'plan pick'))
+        end
+      end
+      Mail.hash_list(block['items']).each_with_index do |c, i|
+        label = "#{where}.items[#{i}]"
+        items << { label: label, step: c['step'] }
+        issues << err("#{label}: a confirm item needs a text label for its button") if c['kind'] == 'confirm' && Mail.blank?(c['text'])
+      end
+      Mail.hash_list(block['findings']).each { |f| items << { label: "#{where}.findings[#{f['id'] || '?'}]", step: f['step'] } } if mode == 'report'
+      items
+    end
+
+    def self.group_item(list, label, issues)
+      opts = Mail.hash_list(list)
+      steps = opts.map { |o| o['step'] }.compact.uniq
+      issues << err("#{label} options name more than one step (#{steps.join(', ')}); one pick list binds to one step") if steps.length > 1
+      issues.concat(correct_count(list, label, 'plan pick'))
+      { label: label, step: steps.first }
+    end
+
+    def self.correct_count(opts, label, what)
+      n = Mail.hash_list(opts).count { |o| o['correct'] == true }
+      return [] if n == 1
+
+      [err("#{label} (#{what}) has #{n} options with correct: true; it needs exactly one")]
+    end
+
+    def self.block_step_checks(block, mode, where)
+      issues = []
+      items = block_items(block, mode, where, issues)
+      declared = nil
+      if block.key?('steps')
+        if block['steps'].is_a?(Array)
+          declared = block['steps'].filter_map { |s| s['id'] if s.is_a?(Hash) && !Mail.blank?(s['id']) }
+        else
+          issues << err("#{where}.steps must be an array of { id, onCompleteGlobal }")
+        end
+      end
+      if declared.nil?
+        items.each do |it|
+          issues << err("#{it[:label]} names step '#{it[:step]}', but #{where} declares no steps") unless it[:step].nil?
+        end
+        return issues
+      end
+      items.each do |it|
+        if it[:step].nil?
+          issues << err("#{it[:label]} has no step; #{where} declares steps, so every item must name one")
+        elsif !declared.include?(it[:step])
+          issues << err("#{it[:label]} names step '#{it[:step]}', which #{where}.steps does not declare")
+        end
+      end
+      used = items.filter_map { |it| it[:step] }
+      declared.uniq.each do |sid|
+        issues << err("#{where}.steps: step '#{sid}' has no items; it could never be done") unless used.include?(sid)
+      end
+      issues
     end
 
     # ---- 03 N6, defender mode (P3-E) -------------------------------------------

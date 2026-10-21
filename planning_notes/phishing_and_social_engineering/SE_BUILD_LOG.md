@@ -259,6 +259,9 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 
 - **P6-E** (opus48): `scenarios/lab_social_engineering/` data (four rooms, the full social block, 8 aims and 23 tasks, globals), matched to P6-F's ids; strict validator 0 errors with the ink lints passing; doors aligned; P6-C's three text fields added. Placeholder `report-workstation.png` (copy of case-file.png). Committed with P5-A to P5-F, P6-B, P6-C, P6-D.
 
+- **P6-M** (opus48): live red-flag meter while composing (per target; on for Hampshire), template selects show the filled sentence, influence reasons in words, toolbar clip fixed, the withReply checklist rebuilt after a reload (`pendingMessage` whitelisted on the server). Mail tests 132/132; Rails 723/0. Orchestrator checked the meter screenshot. Its residual urgency flag on Hampshire is Grok's R-1 change, which fix round 2 reverts.
+- **P6-G** (Sonnet): engagement step and one-correct lints in `board.rb`; `lab.rb` (every scored option has a `why`, completing globals declared, mappings name declared globals and real tasks); lab block in `missions.json`. Validator tests 122/122; lab and slice `--strict-social` clean; reopencheck on the lab 0 problems.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
