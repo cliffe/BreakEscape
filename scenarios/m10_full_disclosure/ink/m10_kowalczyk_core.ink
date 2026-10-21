@@ -17,7 +17,7 @@ VAR kowc_quiet = false
 }
 
 === waiting ===
-Agent 0x5E 'Lantern': Talk to him, not me. That's what you came down for.
+Agent 0x5E 'Lantern': He's the one you came down for. Go on.
 ~ kowc_quiet = true
 #exit_conversation
 -> rest

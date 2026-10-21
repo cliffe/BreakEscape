@@ -31,7 +31,7 @@ VAR pha_list_heard = false
     -> the_list
 + {whodunit_live and pha_list_heard and not clue_bench_log} [Who signed for the case?]
     ~ clue_bench_log = true
-    Agent 0x88 'Phantom': Kowalczyk and Arakawa. I'd rather it had none.
+    Agent 0x88 'Phantom': Kowalczyk and Arakawa. Both signatures are good. The count isn't.
     ~ pha_quiet = true
     -> post
 + {pha_can_accuse()} [You're WREN.]

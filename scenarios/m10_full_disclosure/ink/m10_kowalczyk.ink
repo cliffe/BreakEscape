@@ -93,7 +93,7 @@ VAR kow_from_peel = false
 + {kowalczyk_answer == ""} [In Helena. Your name on the placing sheet.]
     ~ kowalczyk_answer = "bench"
     -> van_after
-+ {kowalczyk_answer == ""} [At the briefing. You laughed too easily.]
++ {kowalczyk_answer == ""} [Before Helena. I had a feeling about you.]
     ~ kowalczyk_answer = "briefing"
     -> van_after
 + {kowalczyk_answer == ""} [I didn't. I worked it out.]

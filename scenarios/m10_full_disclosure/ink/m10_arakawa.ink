@@ -16,6 +16,7 @@ INCLUDE m10_carryover_vars.ink
 VAR arak_quiet = false
 VAR arak_road_asked = false
 VAR arak_daughter_asked = false
+VAR arak_peel_said = false
 
 === function arak_can_accuse() ===
 ~ return clue_door_log and whodunit_live and accused == "" and officer_out == ""
@@ -127,6 +128,7 @@ Officer Kenji Arakawa: I've got him. He hasn't said a third word.
 === ws ===
 {
 - wren_warned and kowalczyk_gone_ahead:
+    ~ arak_peel_said = true
     Officer Kenji Arakawa: Service side. She always takes the door nobody's watching.
 - else:
     Officer Kenji Arakawa: Solder. Smells like my dad's garage.
@@ -143,6 +145,7 @@ Officer Kenji Arakawa: That hum's in my teeth. Let's not stay long.
 === hall ===
 {
 - kowalczyk_gone_ahead and not wren_warned:
+    ~ arak_peel_said = true
     Officer Kenji Arakawa: Service side. She always takes the door nobody's watching.
 - else:
     Officer Kenji Arakawa: Two patrols. I'll watch the left half.
@@ -151,12 +154,13 @@ Officer Kenji Arakawa: That hum's in my teeth. Let's not stay long.
 -> menu
 
 // The resting knot. If she went ahead while he was talked to earlier, he
-// says his line on the next talk.
+// says his line once on the next talk (B-12), then the plain re-entry.
 === menu ===
 {
 - arak_quiet:
     ~ arak_quiet = false
-- kowalczyk_gone_ahead and whodunit_live and accused == "":
+- kowalczyk_gone_ahead and whodunit_live and accused == "" and not arak_peel_said:
+    ~ arak_peel_said = true
     Officer Kenji Arakawa: Service side. She always takes the door nobody's watching.
 - else:
     Officer Kenji Arakawa: I'm here. What do you need?

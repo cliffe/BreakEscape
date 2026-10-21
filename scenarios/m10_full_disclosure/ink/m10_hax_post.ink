@@ -23,7 +23,7 @@ VAR hpost_phone_asked = false
 - ending != "":
     Agent HaX: It's done. Sit down a minute.
 - breach_open:
-    Agent HaX: I'm on your phone. Use that, not me.
+    Agent HaX: I'm on your phone now. Ring me.
 - door_scene_done:
     Agent HaX: Gate terminal. Then we wait on Netherton.
 - else:

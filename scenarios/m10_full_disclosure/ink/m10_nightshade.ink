@@ -54,7 +54,7 @@ VAR ns_arr_seen = false     // arrested branch: the opening has played
 // hands over the override on both options.
 // ---------------------------------------------------------------
 === shown ===
-Agent 0x47 'Nightshade': He wrote fifteen years of me as a line item. In his hand. I'd know it anywhere. I learned to write like it.
+Agent 0x47 'Nightshade': He wrote fifteen years of me in his own hand. I'd know it anywhere. I learned to write like it.
 Agent 0x47 'Nightshade': So you'll have all of it. Every door down there, and the catalogue entry he built it from.
 + [Go on. All of it.]
     -> shown_doors
@@ -134,7 +134,7 @@ Agent 0x47 'Nightshade': All of it, as promised. Every door, and where he got th
 #give_item:notes:nightshade_payment
 Agent 0x47 'Nightshade': The defences, written out as he briefed them to me. Read it before you go down.
 Agent HaX: He's brought his payment. You've got Helena's plans.
-Director Magnus Netherton: I'm keeping him. If he burns you twice, that's on my signature as well.
+Director Magnus Netherton: I am keeping him. If he burns you twice, that is on my signature as well.
 + [What does he get out of this?]
     Agent 0x47 'Nightshade': A little longer being useful to both sides. I'm honest about that, at least.
     -> unshown_extras

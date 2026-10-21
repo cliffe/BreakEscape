@@ -188,7 +188,7 @@ Victoria Sterling: If I walk out of here, I walk out owing nobody. Including you
     - victoria_gallery == "confronted":
         Victoria Sterling: You've seen what I'd have done. Go in before I think about it again.
     - victoria_gallery == "trusted" and share_zero_day == "live":
-        Victoria Sterling: Nothing personal. It never is.
+        Victoria Sterling: Zero Day pays on time. You never did.
     - victoria_gallery == "trusted":
         Victoria Sterling: Go on. It's open, and I'm still on your side.
     - victoria_gallery == "arrested_here":

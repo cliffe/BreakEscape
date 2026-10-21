@@ -64,7 +64,7 @@ VAR fon_shift_used = false  // "Shift change" has been tried at the challenge
     -> talk
 }
 Sione Fonoti: Hey. That's the core door. Who said you could open it?
-+ [Shift change. Netherton's orders.]
++ [Shift change. Orders from upstairs.]
     ~ fon_shift_used = true
     Sione Fonoti: Nobody tells me anything. *slowly* Okay. Go on.
     ~ fon_quiet = true

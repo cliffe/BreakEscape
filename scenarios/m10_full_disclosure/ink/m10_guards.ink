@@ -55,7 +55,7 @@ Guard: Hold it. Post's closed till the shift changes.
 {grd_kettle_ok:
     -> passed
 }
-Guard: Kettle's on. If you're my relief, you're early.
+Guard: Coffee's on. If you're my relief, you're early.
 + [I'm early. Drink your coffee.]
     ~ grd_kettle_ok = true
     Guard: Suit yourself. Shut the door behind you.
@@ -76,7 +76,7 @@ Guard: Kettle's on. If you're my relief, you're early.
 Guard: That's the one off the wall.
 + [Read what it says under the photo.]
     #hostile:duty_guard
-    Guard: I read it. Nobody said let you through armed.
+    Guard: I read it. It doesn't say let you past.
     ~ grd_quiet = true
     #exit_conversation
     -> fight
@@ -133,7 +133,7 @@ Guard: Whoa. Hands where I can see them.
 Guard: Hall's closed. Turn around.
 + [I'm going to the core. Read the photo.]
     #hostile:hall_guard_a
-    Guard: Core's past us. And nobody said let you through armed.
+    Guard: Core's past us. Nobody's going past us.
     ~ grd_quiet = true
     #exit_conversation
     -> fight

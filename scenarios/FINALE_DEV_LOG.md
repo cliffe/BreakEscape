@@ -338,3 +338,6 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - R2 follow-ups: Reading split (should path keeps payoff; audio cut 2 undone), B5 Victoria-route bin line reworded. A 48 new (54 distinct). Compile/lint/loopcheck clean.
 
 ### m09 script edit round 3
+- R1 fixes applied: A all but A-26 (accepted as is), B all (B-09 bracketed silent option; B-10 'Twice now' gated on m09_completed), C all; cross-group B-04 'dead', A-10 'Confirmed…' lines shared. 33/33 compile, lint 0 errors, loopcheck clean. Voiced: Tesseract 185, 06:00 100, calls 81. CONTRACT.md draft 2 with §8 'Script edit R1 changes'.
+
+### m10 script edit round 2

@@ -11,7 +11,8 @@ INCLUDE m10_carryover_vars.ink
 // No DONE or END (PASS2 lesson 21): exits divert to hub, which skips its
 // re-entry line once (neth_quiet) so a goodbye doesn't end on a greeting.
 // HaX, Quintero and Kowalczyk speak here as second speakers.
-// Netherton never names the player (CONTRACT §1.2).
+// He may say "Agent", "Agent 0x00" or "0x00" (SCRIPT_EDIT_R1 R-1); nobody
+// uses a personal name or a gendered word for the player.
 // ================================================
 
 VAR neth_quiet = false
@@ -118,9 +119,9 @@ Director Magnus Netherton: The cells get it at four, two hours early, as pay for
     Director Magnus Netherton: Vector declined. He said you would know why.
 }
 + [How many will it kill?]
-    Director Magnus Netherton: His own sheet says. By key: 1,100 to 2,600. City by city from six: fewer, and later. Not few.
+    Director Magnus Netherton: His own sheet says eleven hundred to twenty-six hundred, if the key is pressed. City by city, fewer, and later. Not few.
 + [He's put that in writing?]
-    Director Magnus Netherton: Signed it. By key: 1,100 to 2,600. City by city from six: fewer, and later. Not few.
+    Director Magnus Netherton: Signed it. Eleven hundred to twenty-six hundred, if the key is pressed. City by city, fewer, and later. Not few.
 - Director Magnus Netherton: Full disclosure is one researcher, one flaw, after the vendor stops answering. This is every weapon we hold, handed out at once.
 -> briefing_invite
 
@@ -144,14 +145,20 @@ Agent HaX: The door will open for 0x00, he says. We should take our time getting
 // C1 (MC §4), a stance written on the pick.
 === briefing_objection ===
 Agent 0x2D 'Anchor': For the record, I'd go in at noon tomorrow with twice the people. You don't walk through a door a man's kept for you.
-Director Magnus Netherton: Noted, Agent Quintero. Twice now. The record also says six o'clock.
+// "Twice now" is her objection to Helena in m09 (arc §3 beat 4), so it needs m09.
+{
+- m09_completed:
+    Director Magnus Netherton: Noted, Agent Quintero. Twice now. The record also says six o'clock.
+- else:
+    Director Magnus Netherton: Noted, Agent Quintero. The record also says six o'clock.
+}
 + [She's right. And we're going anyway.]
     ~ quintero_stance = "quintero"
     Agent 0x2D 'Anchor': Thank you. I'll hold you to the second half.
 + [The record says six. We go.]
     ~ quintero_stance = "netherton"
     Agent 0x2D 'Anchor': Your clock, then.
-+ [Say nothing.]
++ [(Say nothing.)]
     ~ quintero_stance = ""
     Narrator: Quintero looks at you a moment, then back at the map.
 - -> briefing_team
@@ -210,7 +217,7 @@ Narrator: Netherton and HaX walk you to the van end. Through the open door the t
 + [Then bench the team.]
     Director Magnus Netherton: Bench four agents tonight and WREN knows we know. They stay together.
 + [Do we know who?]
-    Director Magnus Netherton: No. And if I benched four agents tonight, WREN would know we know.
+    Director Magnus Netherton: Bench four agents tonight and WREN knows we know. They stay together.
 - Director Magnus Netherton: I will say nothing to them, and neither will you.
 Director Magnus Netherton: Whoever it is wants the same room you do. Find them before you get there.
 {m09_recruiter_offer == "named":
@@ -230,12 +237,12 @@ Director Magnus Netherton: Whoever it is wants the same room you do. Find them b
 // Helena, not on tonight's bench log); its value and her 06:00 reply are the same.
 === aside_taken ===
 Narrator: Netherton and HaX walk you to the van end. Kowalczyk sits in the back of the second van, cuffed.
-Director Magnus Netherton: She was the one the ledger meant. If there is a second, it doesn't show one. Watch anyway.
+Director Magnus Netherton: She was the one the ledger meant. If there is a second, it does not show one. Watch anyway.
 Narrator: At the van window, Kowalczyk turns her head.
 Agent 0x5E 'Lantern': When did you know?
 + [In Helena. Your name on the placing sheet.]
     ~ kowalczyk_answer = "bench"
-+ [At the briefing. You laughed too easily.]
++ [Before Helena. I had a feeling about you.]
     ~ kowalczyk_answer = "briefing"
 + [I didn't. I worked it out.]
     ~ kowalczyk_answer = "worked_out"
@@ -348,11 +355,11 @@ Agent HaX: Start the gate console on your way past. It's slow to boot.
     ~ neth_sign_asked = true
     Director Magnus Netherton: Whatever it costs. If he burns you, it is on my signature.
     -> hub.topics
-+ {not neth_plans_asked} [Helena's plans.]
++ {not neth_plans_asked} [Are Helena's plans any good?]
     ~ neth_plans_asked = true
     Director Magnus Netherton: Drawn in 1962. Whatever he built since is not on them.
     -> hub.topics
-+ [Nightshade.]
++ [What about Nightshade?]
     -> neth_nightshade
 + [Back to it.]
     Director Magnus Netherton: Carry on.

@@ -34,14 +34,13 @@ VAR six_quiet = false
 
 // Fixed beats outside the walkabout, so its cap can't drop them (FA §4.6).
 === opening ===
-Narrator: The forward post at six. Floodlights, engines running, people sitting on bumpers with their jackets open.
+Narrator: The forward post, a few minutes before six. Floodlights, engines running, people sitting on bumpers with their jackets open.
 { m08_nightshade_triple_agent and m09_nightshade_shown_file and not nightshade_taken_in:
     Agent 0x47 'Nightshade': You left me where they couldn't see me. I'm still useful. That's rarer than you'd think.
 }
 { m09_recruiter_offer == "named":
-    Director Magnus Netherton: It's six. The arrests have started.
+    Director Magnus Netherton: The arrest teams are at the doors. They go on the hour.
 }
-~ six_quiet = true
 -> walkabout
 
 // MC §8.2, FA §4.6: a hub of the people the night left standing here, at
@@ -51,15 +50,10 @@ Narrator: The forward post at six. Floodlights, engines running, people sitting 
 ~ temp imran_here = imran_outcome != "talked_round"
 ~ temp wendell_here = (not m04_voltage_captured and not m04_voltage_escaped) or (m04_voltage_escaped and (not m04_static_left or m04_static_left_alone))
 ~ temp vic_here = victoria_gallery == "arrested_here" or victoria_gallery == "ko"
-~ temp kow_here = sleeper_caught
+~ temp kow_here = sleeper_caught or wren_at_core
 ~ temp officer_here = officer_out != "" and officer_out != "quintero"
 { six_picks >= 3:
     -> numbers
-}
-{ six_quiet:
-    ~ six_quiet = false
-- else:
-    Narrator: The floodlights hum. Somebody passes round a flask.
 }
 + { not six_q } { quintero_wounded } [(Go to Quintero's stretcher.)]
     -> walk_quintero
@@ -85,7 +79,6 @@ Narrator: The forward post at six. Floodlights, engines running, people sitting 
 // Each pick counts once, then returns to the hub.
 === walk_back ===
 ~ six_picks = six_picks + 1
-~ six_quiet = true
 -> walkabout
 
 // Quintero (group B's voice): MC §4 C1's 06:00 line by stance; a knock-out or
@@ -94,7 +87,7 @@ Narrator: The forward post at six. Floodlights, engines running, people sitting 
 ~ six_q = true
 {
 - quintero_ko:
-    Agent 0x2D 'Anchor': Somebody put me on the floor in that tunnel. I know who. I'd like to know why, one day.
+    Agent 0x2D 'Anchor': Somebody put me on the floor down there. I know who. I'd like to know why, one day.
 - officer_out == "quintero":
     Agent 0x2D 'Anchor': I watched the whole thing on a screen in the van. Read the sheet next time.
 - quintero_stance == "quintero":
@@ -129,11 +122,13 @@ Narrator: The forward post at six. Floodlights, engines running, people sitting 
 
 === kow_question ===
 Agent 0x5E 'Lantern': When did you know?
-+ [At the bench log. Then your name on the case's sheet.]
++ { not sleeper_caught } [I didn't. Not till you came through his door.]
+    ~ kowalczyk_answer = "worked_out"
++ { sleeper_caught } [At the bench log. Then your name on the case's sheet.]
     ~ kowalczyk_answer = "bench"
-+ [At the briefing. You laughed too easily.]
++ { sleeper_caught } [At the briefing. You laughed too easily.]
     ~ kowalczyk_answer = "briefing"
-+ [I didn't. I worked it out.]
++ { sleeper_caught } [I didn't. I worked it out.]
     ~ kowalczyk_answer = "worked_out"
 -
 -> kow_reply ->
@@ -160,7 +155,11 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 - officer_out == "arakawa":
     Officer Kenji Arakawa: Sheriff opened the road at four. I'll still make Billings by Saturday.
 - officer_out == "vector":
-    Agent 0x23 'Vector': Twice now. I'll wait for the apology this time.
+    { m08_accused_vector:
+        Agent 0x23 'Vector': Twice now. I'll wait for the apology this time.
+    - else:
+        Agent 0x23 'Vector': Check it properly next time. I'll wait for the apology.
+    }
 - officer_out == "phantom":
     Agent 0x88 'Phantom': Tonight's on my list now. Under your name.
 }
@@ -171,7 +170,7 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 ~ six_v = true
 {
 - voltage_outcome == "his_hands":
-    Voltage (Critical Mass): Tell the inquiry the shutter came down first time. They'll ask.
+    Voltage (Critical Mass): Tell the inquiry the shutter died first time. They'll ask.
 - voltage_outcome == "by_hand":
     Voltage (Critical Mass): You did it right. Slower than me, but right.
 - voltage_outcome == "stood_down_print":
@@ -204,7 +203,7 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 - gary_outcome == "ko":
     Gary Whitlock: I'd have come quietly, you know. I always do.
 - else:
-    Gary Whitlock: You walked straight past my bench. I'm used to that.
+    Gary Whitlock: Nobody came to my bench all night. I'm used to that.
 }
 -> walk_back
 
@@ -230,7 +229,7 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 - m04_voltage_escaped:
     Wendell Briggs: Kept my head down at the far panel. Never saw a thing, and I'll say so.
 - wendell_outcome == "told":
-    Wendell Briggs: Dale stayed home. His grandkids won't ever hear about tonight.
+    Wendell Briggs: Dale stayed home. Slept right through it, he says.
 - wendell_outcome == "ko":
     Wendell Briggs: Somebody laid me out at my own panel. I'd like that in writing.
 - else:
@@ -270,7 +269,7 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
 === numbers_core ===
 {
 - head_start_out == "both":
-    Director Magnus Netherton: Two cells have it. We'll be finding out which entries for a year.
+    Director Magnus Netherton: Two cells have it. We will be finding out which entries for a year.
 - head_start_out == "zero_day":
     Director Magnus Netherton: Zero Day got its two hours. Nobody else did.
 - head_start_out == "ghost":
@@ -289,20 +288,19 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
 // The partial release or the story, our own people, the tap, the $12.8M.
 === numbers_more ===
 {
-- partial_release == "large" and m07_countdown_expired:
-    Director Magnus Netherton: The backdoor's batch went out when the core shut. Forty-seven million systems. Seattle's went first.
 - partial_release == "large":
     Director Magnus Netherton: The backdoor's batch went out when the core shut. Forty-seven million systems.
-- partial_release == "small" and m07_countdown_expired:
-    Director Magnus Netherton: What was left on the backdoor went out when the core shut. Fourteen million systems. Seattle's went first.
 - partial_release == "small":
     Director Magnus Netherton: What was left on the backdoor went out when the core shut. Fourteen million systems.
+}
+{ partial_release != "none" and m07_countdown_expired:
+    Director Magnus Netherton: Seattle's went first.
 }
 { media_story_ran and ending != "executed":
     Director Magnus Netherton: Social Fabric ran its story from outside as we breached. Your photograph is on it, and not a word of it is true.
 }
 { kowalczyk_ko or quintero_ko or arakawa_ko or vector_ko or phantom_ko:
-    Director Magnus Netherton: We have officers in the second van with bruises ENTROPY did not give them. I will want that explained.
+    Director Magnus Netherton: Someone in the second van has bruises ENTROPY did not give them. I will want that explained.
 }
 { victoria_gallery == "confronted":
     Director Magnus Netherton: The Zero Day tap went dark at five. She'll have sold that too.
@@ -318,19 +316,6 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
 
 // FA §4.6 "The database choice in the epilogue". One beat with a consequence.
 === database_beat ===
-{ database_outcome == "secured" or database_outcome == "disclosed":
-    -> database_ask
-}
--> database_lines
-
-=== database_ask ===
-Narrator: He scrolls to the next page.
-+ [And the database?]
-+ [(Say nothing.)]
--
--> database_lines
-
-=== database_lines ===
 {
 - database_outcome == "secured":
     Director Magnus Netherton: His copy goes into the vault tonight, beside ours.
@@ -382,7 +367,7 @@ Narrator: He scrolls to the next page.
 }
 { n < 2 and m08_nightshade_triple_agent and not m09_nightshade_shown_file:
     ~ n = n + 1
-    Director Magnus Netherton: Nightshade's been moved. I can't reach him.
+    Director Magnus Netherton: Nightshade has been moved. I cannot reach him.
 }
 { n < 2 and m06_monitoring_enabled:
     ~ n = n + 1

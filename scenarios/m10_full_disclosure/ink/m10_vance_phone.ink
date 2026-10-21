@@ -15,7 +15,7 @@ INCLUDE m10_carryover_vars.ink
 // ---------------------------------------------------------------
 === cut_call ===
 {gallery_shutter_cut:
-    Shutter's down already. You don't need me for that.
+    Shutter's dead already. You don't need me for that.
     #exit_conversation
     -> cut_after
 }

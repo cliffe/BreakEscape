@@ -99,7 +99,7 @@ Narrator: She goes out through the lock without looking back at him.
 === arrival ===
 {
 - head_start_out == "both":
-    Dr Adrian Tesseract: Two cells have it. They'll waste it.
+    Dr Adrian Tesseract: Two cells have it. Much good may it do them.
 - head_start_out == "zero_day":
     Dr Adrian Tesseract: Zero Day has it. You didn't stop that one.
 - head_start_out == "ghost":
@@ -115,16 +115,16 @@ Dr Adrian Tesseract: Take your time. It goes at six whatever we say. Or now, if 
 }
 {
 - head_start_out == "both":
-    Agent HaX: Their head start went. Both shares.
+    Agent HaX: Confirmed. Both shares went at the lock.
 - head_start_out == "zero_day":
-    Agent HaX: Zero Day's went.
+    Agent HaX: Confirmed. Zero Day's went.
 - head_start_out == "ghost":
-    Agent HaX: The resale went.
+    Agent HaX: Confirmed. The resale went.
 - else:
-    Agent HaX: Nothing went at the lock.
+    Agent HaX: Confirmed. Nothing left the lock.
 }
 { m04_voltage_captured:
-    Agent HaX: Voltage told you above him it stops being a person you can arrest. That's him.
+    Agent HaX: Voltage said above Blackout it stops being a person you can arrest. There's the person.
 }
 Dr Adrian Tesseract: Ninety-nine. You've done well with them.
 Agent HaX: Still HaX.
@@ -202,7 +202,7 @@ Dr Adrian Tesseract: All four. Good. Now it's my turn.
 -
 Dr Adrian Tesseract: At six it starts going out, city by city. Everything SAFETYNET ever found, free, with working detail.
 Dr Adrian Tesseract: Press this, and it goes everywhere in the same minute. Eleven hundred to twenty-six hundred, the first month.
-Dr Adrian Tesseract: Hospitals, dispatch, water. People who never had the skill before.
+Dr Adrian Tesseract: Hospitals, dispatch, water. In the hands of people who could never have got in before.
 + [You'd kill eleven hundred people to make a point.]
     Dr Adrian Tesseract: At the low end. I don't round down.
 + [And then what?]
@@ -319,7 +319,11 @@ Dr Adrian Tesseract: Three things. Answer them properly and I'll tell you so.
 
 // Exchange 1. "The cost is acceptable."
 === exch_1 ===
-Dr Adrian Tesseract: You've seen the sheet. You think the number's obscene.
+{ casualty_sheet_read:
+    Dr Adrian Tesseract: You've seen the sheet. You think the number's obscene.
+- else:
+    Dr Adrian Tesseract: You've heard the number. You think it's obscene.
+}
 Dr Adrian Tesseract: That's the cheapest it will ever be. Wait a year and the number goes up.
 ~ tess_menu = true
 -> exch_1_menu
@@ -462,11 +466,7 @@ Dr Adrian Tesseract: Nobody fixes anything until it hurts everyone at once.
 // slot 1: the rebuttal (about "only")
 + [Only a shock? You never tried. You wrote the notice and kept it.]
     ~ exchange_2 = "rebuttal"
-    { landed_count() == 1:
-        Narrator: He looks at the console for a long moment.
-    - else:
-        Narrator: He doesn't answer for a while.
-    }
+    -> first_landed ->
     Dr Adrian Tesseract: No. I didn't send it.
     -> bridge_in
 // slot 2: evidence decoy (the price again)
@@ -493,10 +493,9 @@ Dr Adrian Tesseract: Nobody fixes anything until it hurts everyone at once.
 + { not slot3 } [Eleven hundred people at the low end. You can't spend them.]
     -> exch_2_plain
 // slot 4: Helena, the notice > the clean record > plain decoy
-+ { notice } [I sent your notice. Tonight, from Helena.]
++ { notice } [I sent your notice from Helena, nine years after you wrote it.]
     ~ exchange_2 = "record"
     -> albion_sting ->
-    Dr Adrian Tesseract: Nine years late.
     -> first_landed ->
     Dr Adrian Tesseract: *pause* Sooner than I managed.
     -> bridge_in
@@ -659,7 +658,12 @@ Dr Adrian Tesseract: That's my argument. The key is yours to use or not.
 + [Stop it.]
     -> console_stop
 + [Show me how it works.]
-    -> join_1
+    { join_step < 1:
+        -> join_1
+    }
+    Dr Adrian Tesseract: You were asking how it works.
+    ~ tess_menu = true
+    -> join_1_menu
 
 // "Stop it": written on the pick. The partial release goes now if the
 // backdoor's channel was left open (FA §4.2).
@@ -789,12 +793,15 @@ Agent 0x5E 'Lantern': Adrian.
     ~ quintero_enters_core = true
     ~ wren_at_core = true
     Narrator: Quintero is already through the lock. She has Kowalczyk's wrist before it reaches the key.
+    -> wren_react ->
     -> core_router
 - else:
     ~ quintero_enters_core = true
     ~ quintero_wounded = true
     ~ wren_at_core = true
     Narrator: Quintero comes in from the lock at the noise. They go down hard against the console, and Quintero gets up holding her shoulder, with Kowalczyk pinned.
+    Agent 0x2D 'Anchor': Shoulder. Leave it.
+    -> wren_react ->
     -> core_router
 }
 
@@ -808,12 +815,21 @@ Agent 0x5E 'Lantern': Adrian.
     ~ wren_stopped = true
     ~ wren_at_core = true
     Narrator: You get to her first. She doesn't fight you for it.
+    -> wren_react ->
     -> core_router
+
+// SCRIPT_EDIT_R1 A-03: the reveal gets one reaction. Not when she was already
+// named on the line (his "Too late to stop her walking in." covers that).
+=== wren_react ===
+{ not sleeper_caught:
+    Agent HaX: Kowalczyk. *quietly* I signed her leave forms.
+}
+->->
 
 // ===========================================
 // The database (MC §6.5; FA §4.1 step 4). Each cost said before the menu, by
 // the person with a reason to say it. Netherton names the first two
-// operations that apply, as one fixed line per pair (never a printed name).
+// operations that apply, one fixed line each (never a printed name).
 // ===========================================
 === database ===
 Agent HaX: Netherton's on the line. He wants to hear this.
@@ -823,22 +839,17 @@ Agent HaX: Netherton's on the line. He wants to hear this.
 Dr Adrian Tesseract: Magnus.
 Director Magnus Netherton: Adrian.
 Director Magnus Netherton: Agent. His copy, and ours in the vault. You decide what happens to both. Hear what each costs first.
-Director Magnus Netherton: Half of these can't be patched this year. The water controllers can't be patched at all.
-+ [And if they go out anyway?]
+Director Magnus Netherton: Half of these cannot be patched this year, and the water controllers never. Send them out and every buyer knows where to hit.
++ [And if we keep them?]
 + [Go on, sir.]
 -
-Director Magnus Netherton: Send those out and every buyer knows where to hit. Nobody can stop them.
-Agent HaX: Infusion pumps in a hundred and forty hospitals. The one he used on you. Still live next year if we do this.
+Agent HaX: Infusion pumps in a hundred and forty hospitals. Still live next year if we do this.
 + [What does it cost to send ours to the vendors?]
 + [And the other way?]
 -
 -> database_ops ->
 Director Magnus Netherton: Both of them run through holes on that list. Patch the holes and we lose the way in. I will sign it.
-Agent HaX: That's coordinated disclosure. The vendors first, quietly, with time to fix it.
-+ [What about the ones nobody can fix?]
-+ [How quietly?]
--
-Agent HaX: The ones nobody can patch go to the operators, with workarounds. Kept off any public list.
+Agent HaX: That's coordinated disclosure. Vendors first, quietly, with time to fix. The ones nobody can patch go to the operators, with workarounds.
 { m09_albion_notified:
     Agent HaX: You burned the Critical Mass watch for one letter. This is that letter, a thousand times.
 }
@@ -846,7 +857,7 @@ Agent HaX: The ones nobody can patch go to the operators, with workarounds. Kept
 + [There's a third way.]
 -
 Agent HaX: If both copies die, this room purges itself. Doors, lights, everything. You won't have him after.
-Director Magnus Netherton: Then nobody has it. Not him, not us. Nobody fixes anything either. We both answer for it.
+Director Magnus Netherton: Then nobody has it, and nobody fixes anything either. We both answer for it.
 ~ tess_menu = true
 -> database_menu
 
@@ -875,56 +886,43 @@ Director Magnus Netherton: Then nobody has it. Not him, not us. Nobody fixes any
     ~ tess_menu = true
     -> database_menu
 
-// MC §6.5's list: (1) Victoria's watch, (2) Nightshade's channel, (3) the
+// SCRIPT_EDIT_R1 cut 2: an opener, then the first two that apply, one fixed
+// line each. MC §6.5's list: (1) Victoria's watch, (2) Nightshade's channel, (3) the
 // HashChain tags, (4) the Critical Mass watch (named by m04's branch), (5) the
 // order-book watch (every save), (6) the Zero Day tap (gone only when 1 holds).
 // 5 always applies, so the first two are always one of these pairs.
 === database_ops ===
-~ temp o1 = m03_victoria_fate == "recruited" and (victoria_gallery == "confronted" or victoria_gallery == "refused" or (victoria_gallery == "trusted" and head_start_killed == "zero_day"))
-~ temp o2 = m08_nightshade_triple_agent and not m09_nightshade_shown_file
-~ temp o3 = m06_monitoring_enabled
-~ temp o4 = m09_completed and not m09_albion_notified
-~ temp cm_esc = m04_voltage_escaped
-~ temp cm_cap = m04_voltage_captured
-{
-- o1 and o2:
-    Director Magnus Netherton: Two operations go dark if you do this: the watch on Sterling, and Nightshade's channel.
-- o1 and o3:
-    Director Magnus Netherton: Two operations go dark if you do this: the watch on Sterling, and the HashChain tags.
-- o1 and o4 and cm_esc:
-    Director Magnus Netherton: Two operations go dark if you do this: the watch on Sterling, and the watch on Voltage's people.
-- o1 and o4 and cm_cap:
-    Director Magnus Netherton: Two operations go dark if you do this: the watch on Sterling, and the watch on what's left of Voltage's crew.
-- o1 and o4:
-    Director Magnus Netherton: Two operations go dark if you do this: the watch on Sterling, and the Critical Mass watch.
-- o1:
-    Director Magnus Netherton: Two operations go dark if you do this: the watch on Sterling, and the watch on the head start's order book.
-- o2 and o3:
-    Director Magnus Netherton: Two operations go dark if you do this: Nightshade's channel, and the HashChain tags.
-- o2 and o4 and cm_esc:
-    Director Magnus Netherton: Two operations go dark if you do this: Nightshade's channel, and the watch on Voltage's people.
-- o2 and o4 and cm_cap:
-    Director Magnus Netherton: Two operations go dark if you do this: Nightshade's channel, and the watch on what's left of Voltage's crew.
-- o2 and o4:
-    Director Magnus Netherton: Two operations go dark if you do this: Nightshade's channel, and the Critical Mass watch.
-- o2:
-    Director Magnus Netherton: Two operations go dark if you do this: Nightshade's channel, and the watch on the head start's order book.
-- o3 and o4 and cm_esc:
-    Director Magnus Netherton: Two operations go dark if you do this: the HashChain tags, and the watch on Voltage's people.
-- o3 and o4 and cm_cap:
-    Director Magnus Netherton: Two operations go dark if you do this: the HashChain tags, and the watch on what's left of Voltage's crew.
-- o3 and o4:
-    Director Magnus Netherton: Two operations go dark if you do this: the HashChain tags, and the Critical Mass watch.
-- o3:
-    Director Magnus Netherton: Two operations go dark if you do this: the HashChain tags, and the watch on the head start's order book.
-- o4 and cm_esc:
-    Director Magnus Netherton: Two operations go dark if you do this: the watch on Voltage's people, and the watch on the head start's order book.
-- o4 and cm_cap:
-    Director Magnus Netherton: Two operations go dark if you do this: the watch on what's left of Voltage's crew, and the watch on the head start's order book.
-- o4:
-    Director Magnus Netherton: Two operations go dark if you do this: the Critical Mass watch, and the watch on the head start's order book.
-- else:
-    Director Magnus Netherton: Two operations go dark if you do this: the watch on the head start's order book, and our tap on Zero Day's brokers.
+~ temp n = 0
+Director Magnus Netherton: Two operations go dark if you do this.
+{ m03_victoria_fate == "recruited" and (victoria_gallery == "confronted" or victoria_gallery == "refused" or (victoria_gallery == "trusted" and head_start_killed == "zero_day")):
+    ~ n = n + 1
+    Director Magnus Netherton: The watch on Sterling goes dark.
+}
+{ n < 2 and m08_nightshade_triple_agent and not m09_nightshade_shown_file:
+    ~ n = n + 1
+    Director Magnus Netherton: Nightshade's channel goes dark.
+}
+{ n < 2 and m06_monitoring_enabled:
+    ~ n = n + 1
+    Director Magnus Netherton: The HashChain tags go dark.
+}
+{ n < 2 and m09_completed and not m09_albion_notified:
+    ~ n = n + 1
+    {
+    - m04_voltage_escaped:
+        Director Magnus Netherton: The watch on Voltage's people goes dark.
+    - m04_voltage_captured:
+        Director Magnus Netherton: The watch on what's left of Voltage's crew goes dark.
+    - else:
+        Director Magnus Netherton: The Critical Mass watch goes dark.
+    }
+}
+{ n < 2:
+    ~ n = n + 1
+    Director Magnus Netherton: The watch on the head start's order book goes dark.
+}
+{ n < 2:
+    Director Magnus Netherton: Our tap on Zero Day's brokers goes dark.
 }
 ->->
 
@@ -1058,11 +1056,10 @@ Agent HaX: 0x00.
 === ending_scorched ===
 Narrator: The wipe goes through. Then the room goes: the lights die, the suppression dumps, and somewhere behind the walls the blast doors start to cycle.
 { m09_sleeper_named:
-    Narrator: When the emergency lights come up, his chair is empty. A panel in the back wall stands open that nobody had found.
+    Narrator: When the emergency lights come up, his chair is empty, and a panel nobody had found stands open. On the console, a card in his hand: 'Afterwards, then.'
 - else:
-    Narrator: When the emergency lights come up, his chair is empty, and the service door is open.
+    Narrator: When the emergency lights come up, his chair is empty, and the service door is open. On the console, a card in his hand: 'Afterwards, then.'
 }
-Narrator: On the console there is a card, in his hand. 'Afterwards, then.'
 Agent HaX: Out, 0x00. The team's at the lock. Follow their torches.
 ~ tess_quiet = true
 #exit_conversation
@@ -1070,7 +1067,7 @@ Agent HaX: Out, 0x00. The team's at the lock. Follow their torches.
 
 === join_end ===
 Narrator: Every screen in the room changes to the same word. RELEASED.
-Narrator: He takes his coat from the back of the empty chair and holds the service door for you.
+Narrator: He takes his coat from the back of his chair and holds the service door for you.
 ~ tess_quiet = true
 #exit_conversation
 -> parked

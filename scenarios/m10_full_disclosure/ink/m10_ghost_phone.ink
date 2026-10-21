@@ -102,7 +102,7 @@ You turned me down. Why?
     We said we'd be watching. We were.
     You took my keys, and the papers never left that conference room.
 - m02_completed:
-    You never answered me. Answer this.
+    You never answered me. You'll want to now.
 - else:
     You don't know me. That's rather the point.
 }
@@ -140,7 +140,7 @@ Agent HaX: Let it sell and you'll want the console for that share. It only does 
 
 // Broken branch, before the player owns the deal: nothing moves.
 === hook_refused ===
-We said we'd be watching. We were. You don't get to ask me about hospitals.
+Not from you. You don't get to ask me about hospitals.
 -> selling_menu
 
 === hook_lands ===

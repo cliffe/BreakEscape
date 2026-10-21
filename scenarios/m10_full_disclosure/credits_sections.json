@@ -3,78 +3,219 @@
   "safetynet": {
     "section": "SAFETYNET",
     "people": [
-      { "name": "DIRECTOR MAGNUS NETHERTON", "clauses": [
-        { "text": "Director. Convened the board himself.", "condition": "globalVars.ending === 'executed'" },
-        { "text": "Director. Still in his chair.", "condition": "globalVars.ending === 'scorched'" },
-        { "text": "Director. Ran the raid from the forward post." }
-      ] },
-      { "name": "AGENT HAX", "clauses": [
-        { "text": "Handler. Her agent's file is on her desk, unopened.", "condition": "globalVars.ending === 'executed'" },
-        { "text": "Handler. Gave her evidence at the hearing in one sentence.", "condition": "globalVars.ending === 'scorched'" },
-        { "text": "Handler. First on the prosecution's witness list.", "condition": "globalVars.ending === 'arrest'" },
-        { "text": "Handler. Sat in on every one of his debriefs.", "condition": "globalVars.ending === 'surrender'" },
-        { "text": "Handler. Her name is under her agent's on the board's papers.", "condition": "globalVars.ending === 'lethal'" },
-        { "text": "Handler." }
-      ] },
-      { "name": "MARISOL QUINTERO", "clauses": [
-        { "text": "Raid lead. Back on light duties in six weeks.", "condition": "globalVars.quintero_wounded === true" },
-        { "text": "Raid lead. Cleared on paper by Friday.", "condition": "globalVars.officer_out === 'quintero'" },
-        { "text": "Raid lead, Task Force Null." }
-      ] },
-      { "name": "OFFICER KENJI ARAKAWA", "clauses": [
-        { "text": "US liaison. Drove home on the road he'd kept shut.", "condition": "globalVars.officer_out === 'arakawa'" },
-        { "text": "US liaison, Montana." }
-      ] },
-      { "name": "OFFICER DEV MALHOTRA", "clauses": [
-        { "text": "Comms. Re-vetted again, and cleared again.", "condition": "globalVars.officer_out === 'malhotra'" },
-        { "text": "Comms, both vans." }
-      ] },
-      { "name": "AGENT 0x23 'VECTOR'", "clauses": [
-        { "text": "Cryptographer. Still waiting for an apology.", "condition": "globalVars.vector_on_team === true && globalVars.officer_out === 'vector'" },
-        { "text": "Cryptographer, the crypto annex.", "condition": "globalVars.vector_on_team === true" }
-      ] },
-      { "name": "AGENT 0x88 'PHANTOM'", "clauses": [
-        { "text": "Auditor. Filed a complaint about tonight. It was upheld.", "condition": "globalVars.phantom_on_team === true && globalVars.officer_out === 'phantom'" },
-        { "text": "Auditor. The kit sign-outs balance now.", "condition": "globalVars.phantom_on_team === true" }
-      ] },
-      { "name": "HALINA KOWALCZYK, 'WREN'", "clauses": [
-        { "text": "Former breaching lead. Walked off the apron in Helena.", "condition": "globalVars.m09_recruiter_offer === 'double_crossed'", "style": "warning" },
-        { "text": "Breaching lead, Task Force Null, for eleven years. Badge returned.", "condition": "globalVars.sleeper_caught === true", "style": "warning" },
-        { "text": "Breaching lead, Task Force Null, for eleven years. Badge still active.", "style": "warning" }
-      ] }
+      {
+        "name": "DIRECTOR MAGNUS NETHERTON",
+        "clauses": [
+          {
+            "text": "Director. Convened the board himself.",
+            "condition": "globalVars.ending === 'executed'"
+          },
+          {
+            "text": "Director. Still in his chair.",
+            "condition": "globalVars.ending === 'scorched'"
+          },
+          {
+            "text": "Director. Ran the raid from the forward post."
+          }
+        ]
+      },
+      {
+        "name": "AGENT HAX",
+        "clauses": [
+          {
+            "text": "Handler. Her agent's file is on her desk, unopened.",
+            "condition": "globalVars.ending === 'executed'"
+          },
+          {
+            "text": "Handler. Gave her evidence at the hearing in one sentence.",
+            "condition": "globalVars.ending === 'scorched'"
+          },
+          {
+            "text": "Handler. First on the prosecution's witness list.",
+            "condition": "globalVars.ending === 'arrest'"
+          },
+          {
+            "text": "Handler. Sat in on every one of his debriefs.",
+            "condition": "globalVars.ending === 'surrender'"
+          },
+          {
+            "text": "Handler. Her name is under her agent's on the board's papers.",
+            "condition": "globalVars.ending === 'lethal'"
+          },
+          {
+            "text": "Handler."
+          }
+        ]
+      },
+      {
+        "name": "AGENT 0x2D 'ANCHOR'",
+        "clauses": [
+          {
+            "text": "Raid lead. Back on light duties in six weeks.",
+            "condition": "globalVars.quintero_wounded === true"
+          },
+          {
+            "text": "Raid lead. Cleared on paper by Friday.",
+            "condition": "globalVars.officer_out === 'quintero'"
+          },
+          {
+            "text": "Raid lead, Task Force Null."
+          }
+        ]
+      },
+      {
+        "name": "OFFICER KENJI ARAKAWA",
+        "clauses": [
+          {
+            "text": "US liaison. Drove home on the road he'd kept shut.",
+            "condition": "globalVars.officer_out === 'arakawa'"
+          },
+          {
+            "text": "US liaison, Montana."
+          }
+        ]
+      },
+      {
+        "name": "OFFICER DEV MALHOTRA",
+        "clauses": [
+          {
+            "text": "Comms. Re-vetted again, and cleared again.",
+            "condition": "globalVars.officer_out === 'malhotra'"
+          },
+          {
+            "text": "Comms, both vans."
+          }
+        ]
+      },
+      {
+        "name": "AGENT 0x23 'VECTOR'",
+        "clauses": [
+          {
+            "text": "Cryptographer. Still waiting for an apology.",
+            "condition": "globalVars.vector_on_team === true && globalVars.officer_out === 'vector'"
+          },
+          {
+            "text": "Cryptographer, the crypto annex.",
+            "condition": "globalVars.vector_on_team === true"
+          }
+        ]
+      },
+      {
+        "name": "AGENT 0x88 'PHANTOM'",
+        "clauses": [
+          {
+            "text": "Auditor. Filed a complaint about tonight. It was upheld.",
+            "condition": "globalVars.phantom_on_team === true && globalVars.officer_out === 'phantom'"
+          },
+          {
+            "text": "Auditor. The kit sign-outs balance now.",
+            "condition": "globalVars.phantom_on_team === true"
+          }
+        ]
+      },
+      {
+        "name": "HALINA KOWALCZYK, 'WREN'",
+        "clauses": [
+          {
+            "text": "Former breaching lead. Walked off the apron in Helena. Taken at the core.",
+            "condition": "globalVars.m09_recruiter_offer === 'double_crossed'",
+            "style": "warning"
+          },
+          {
+            "text": "Breaching lead, Task Force Null, for eleven years. Badge returned.",
+            "condition": "globalVars.sleeper_caught === true",
+            "style": "warning"
+          },
+          {
+            "text": "Breaching lead, Task Force Null, for eleven years. Stopped at the core with her hand out for his key.",
+            "condition": "globalVars.wren_at_core === true",
+            "style": "warning"
+          },
+          {
+            "text": "Breaching lead, Task Force Null, for eleven years. Woke in the second van. Nobody had named her.",
+            "condition": "globalVars.kowalczyk_ko === true",
+            "style": "warning"
+          },
+          {
+            "text": "Breaching lead, Task Force Null, for eleven years. Badge still active.",
+            "style": "warning"
+          }
+        ]
+      }
     ]
   },
   "safetynet_join": {
     "section": "SAFETYNET",
     "people": [
-      { "name": "DIRECTOR MAGNUS NETHERTON", "clauses": [
-        { "text": "Director. On the phone to the Council by seven." }
-      ] },
-      { "name": "AGENT HAX", "clauses": [
-        { "text": "Handler. Her desk was empty by morning." }
-      ] },
-      { "name": "MARISOL QUINTERO", "clauses": [
-        { "text": "Raid lead. Stood down at the outer lock." }
-      ] },
-      { "name": "OFFICER KENJI ARAKAWA", "clauses": [
-        { "text": "US liaison. Reopened the county road." }
-      ] },
-      { "name": "OFFICER DEV MALHOTRA", "clauses": [
-        { "text": "Comms. Logged the minute it went out." }
-      ] },
-      { "name": "AGENT 0x23 'VECTOR'", "clauses": [
-        { "text": "Cryptographer. Tracing the release.", "condition": "globalVars.vector_on_team === true" }
-      ] },
-      { "name": "AGENT 0x88 'PHANTOM'", "clauses": [
-        { "text": "Auditor. Auditing 0x00's sign-outs.", "condition": "globalVars.phantom_on_team === true" }
-      ] }
+      {
+        "name": "DIRECTOR MAGNUS NETHERTON",
+        "clauses": [
+          {
+            "text": "Director. On the phone to the Council by seven."
+          }
+        ]
+      },
+      {
+        "name": "AGENT HAX",
+        "clauses": [
+          {
+            "text": "Handler. Her desk was empty by morning."
+          }
+        ]
+      },
+      {
+        "name": "AGENT 0x2D 'ANCHOR'",
+        "clauses": [
+          {
+            "text": "Raid lead. Stood down at the outer lock."
+          }
+        ]
+      },
+      {
+        "name": "OFFICER KENJI ARAKAWA",
+        "clauses": [
+          {
+            "text": "US liaison. Reopened the county road."
+          }
+        ]
+      },
+      {
+        "name": "OFFICER DEV MALHOTRA",
+        "clauses": [
+          {
+            "text": "Comms. Logged the minute it went out."
+          }
+        ]
+      },
+      {
+        "name": "AGENT 0x23 'VECTOR'",
+        "clauses": [
+          {
+            "text": "Cryptographer. Tracing the release.",
+            "condition": "globalVars.vector_on_team === true"
+          }
+        ]
+      },
+      {
+        "name": "AGENT 0x88 'PHANTOM'",
+        "clauses": [
+          {
+            "text": "Auditor. Auditing 0x00's sign-outs.",
+            "condition": "globalVars.phantom_on_team === true"
+          }
+        ]
+      }
     ]
   },
   "in_memory": {
     "section": "IN MEMORY",
     "lines": [
-      { "text": "Agent 0x19 Callum Fraser." },
-      { "text": "Agent 0x6B Ana Lúcia Ferreira." }
+      {
+        "text": "Agent 0x19 Callum Fraser."
+      },
+      {
+        "text": "Agent 0x6B Ana Lúcia Ferreira."
+      }
     ]
   }
 }

@@ -29,7 +29,7 @@ Vos is on your screen. Zero Day's order, under his name.
     -> secret
 
 = secret
-He took my desk by Monday. He's been selling my clients twice since Tuesday. I'd rather he lost than I won.
+He had my desk by Monday. He's been selling my clients twice since Tuesday. I'd rather he lost than I won.
 ~ vos_secret_known = true
 So, for nothing: he resells Zero Day's early access to a second buyer, and skims. Zero Day doesn't know.
 A reduced charge, and you get the rest of my book. Or nothing, and you still have this.

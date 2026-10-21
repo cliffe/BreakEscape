@@ -168,7 +168,7 @@ VAR hax_suspect = ""
 // The briefing's three questions (arc §3 beat 8; OT §5). They retire at the breach.
 === why_me ===
 ~ hax_why_asked = true
-He needs one of ours to press his key. Then the history books say SAFETYNET did it.
+He wants it to be one of ours. Ask him why. He'll enjoy telling you.
 He's kept a file on you since your first day. He thinks it'll be you.
 + [He's wrong.]
     Then prove it to him slowly. He likes to be shown.
@@ -197,7 +197,7 @@ Two posts empty. That's your freeze. He couldn't make payroll.
 === power_room_topic ===
 ~ hax_power_asked = true
 Whoever's in the power room runs your lights.
-The gallery's blast shutter runs off it too. That has to come down before you reach him.
+The gallery's blast shutter runs off it too. That has to be dead before you reach him.
 -> support_hub
 
 // ---------------- the whodunit ----------------
@@ -223,7 +223,7 @@ The log says Malhotra's badge. Malhotra was on with me at ten past.
 - arakawa_ko:
     Arakawa was at the gate with you at ten past, upright or not.
 - else:
-    You had Arakawa at the gate, on the phone to his girl.
+    You had Arakawa at the gate, on the phone to his daughter.
 }
 {
 - vector_on_team and phantom_on_team:
@@ -256,18 +256,20 @@ Opened one fifty-two. Kowalczyk and Arakawa.
 Go on. Who?
 -> accuse_who
 
+// Order carries no hint (SCRIPT_EDIT_R1 B-01): Malhotra, the name on the
+// log, first; Kowalczyk neither first nor last.
 === accuse_who ===
++ {officer_out != "malhotra"} [Malhotra.]
+    ~ hax_suspect = "malhotra"
+    -> accuse_confirm
++ {officer_out != "arakawa"} [Arakawa.]
+    ~ hax_suspect = "arakawa"
+    -> accuse_confirm
 + [Kowalczyk.]
     ~ hax_suspect = "kowalczyk"
     -> accuse_confirm
 + {officer_out != "quintero"} [Quintero.]
     ~ hax_suspect = "quintero"
-    -> accuse_confirm
-+ {officer_out != "arakawa"} [Arakawa.]
-    ~ hax_suspect = "arakawa"
-    -> accuse_confirm
-+ {officer_out != "malhotra"} [Malhotra.]
-    ~ hax_suspect = "malhotra"
     -> accuse_confirm
 + {vector_on_team and officer_out != "vector"} [Vector.]
     ~ hax_suspect = "vector"
@@ -452,13 +454,13 @@ Agent 0x88 'Phantom': Noted. It's going on the list.
 ~ what_went_out_given = true
 {
 - head_start_out == "both":
-    Their head start went. Both shares.
+    Confirmed. Both shares went at the lock.
 - head_start_out == "zero_day":
-    Zero Day's went.
+    Confirmed. Zero Day's went.
 - head_start_out == "ghost":
-    The resale went.
+    Confirmed. The resale went.
 - else:
-    Nothing went at the lock.
+    Confirmed. Nothing left the lock.
 }
 {share_zero_day == "traced":
     We followed it out. Netherton has the trace.
@@ -526,7 +528,7 @@ And if both copies die, the room purges. Doors, lights, all of it. He'll be read
     ~ head_start_killed = "zero_day"
     Done. Zero Day's share is dead. Nobody follows it now.
     -> console_menu
-+ {head_start_killed == "" and ghost_sale == "bait" and share_resale == "live"} [Kill Ghost's buyers'.]
++ {head_start_killed == "" and ghost_sale == "bait" and share_resale == "live"} [Kill the resale.]
     ~ head_start_killed = "ghost"
     Done. Five buyers just paid for nothing.
     -> console_menu
@@ -606,8 +608,7 @@ Stair's open. Workshop floor's below you.
     Fifteen minutes to their head start. That console's your last chance at it.
 }
 {m03_victoria_fate == "recruited":
-    Sterling goes with whoever's winning. Make sure it's us before you hand her anything.
-    Show her the order, and she'll know we read Zero Day's mail.
+    Sterling goes with whoever's winning. Show her the order, and she'll know we read Zero Day's mail.
 }
 {officer_out == "malhotra":
     Netherton sweeps the... I'm losing y...
@@ -628,7 +629,7 @@ You're on your own for one room. I'll be at the door.
 // first unanswered step. No resume on the mapping (§4.3).
 === cut_call ===
 {gallery_shutter_cut:
-    Shutter's already down. Nothing left to do in there.
+    Shutter's already dead. Nothing left to do in there.
     #exit_conversation
     -> DONE
 }
@@ -674,7 +675,7 @@ Top row. The third breaker from the left feeds the shutter.
 + [Pulling it.]
     ~ cut_step = 3
     ~ gallery_shutter_cut = true
-    That's the shutter. It's down.
+    That's the shutter. It's dead.
     #exit_conversation
     -> DONE
 + [Give me a minute.]

@@ -14,7 +14,7 @@ INCLUDE m10_carryover_vars.ink
 // ---------------------------------------------------------------
 === cut_call ===
 {gallery_shutter_cut:
-    The shutter's already down. You don't need me for this one.
+    The shutter's already dead. You don't need me for this one.
     #exit_conversation
     -> cut_after
 }
@@ -63,7 +63,7 @@ Breaker row. The shutter's third from the left. Leave the rest alone, they feed 
 + [Pulling it.]
     ~ cut_step = 3
     ~ gallery_shutter_cut = true
-    Done. That shutter won't close tonight. Old switchgear does what it's told. People are harder.
+    Done. That shutter won't close tonight. Go get him.
     #exit_conversation
     -> cut_after
 + [Give me a minute.]

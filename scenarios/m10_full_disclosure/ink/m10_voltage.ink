@@ -204,7 +204,7 @@ Voltage (Critical Mass): The shutter stays live until he says otherwise. Say wha
 + {m04_voltage_print_on_bypass and voltage_print_lifted} [That's your thumb on the bypass. Same as Albion.]
     ~ voltage_outcome = "stood_down_print"
     Voltage (Critical Mass): My print. *flatly* I'm not going to argue with my own thumb.
-    Agent HaX: I said it'd be waiting. It was.
+    Agent HaX: I told you it'd be waiting. It was.
     -> stand_down
 + {casualty_sheet_read and not volt_missed and volt_talk == 0} [You check sums for a living. His casualty sheet is wrong.]
     ~ volt_talk = 1

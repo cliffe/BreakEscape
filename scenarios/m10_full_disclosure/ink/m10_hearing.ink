@@ -14,7 +14,7 @@ VAR hear_quiet = false
     -> leave
 }
 Narrator: A hearing room at the Citadel, two days later. Three people behind a table, and an empty chair beside yours until HaX sits in it.
-Agent HaX: He still knows. He's one man with a memory now, not a map.
+Agent HaX: He still knows. But the map's gone. He's one man with a memory now.
 + [They'll want to know why I did it.]
     Agent HaX: Tell them. Short, and true. They can count.
 + [(Say nothing.)]

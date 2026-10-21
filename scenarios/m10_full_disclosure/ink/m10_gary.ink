@@ -25,7 +25,7 @@ VAR gary_t_costs = false     // tech: HaX's cost line before the menu has been s
 }
 ~ gary_c_seen = true
 Gary Whitlock: You saved my career. I'm Director of something now. They gave me a lanyard.
-Gary Whitlock: That casing on the rack. I had one of those behind my rack at St. Catherine's, in a case nobody ever inventoried.
+Gary Whitlock: That casing on the rack. I had one of those behind my server cabinet at St. Catherine's, in a case nobody ever inventoried.
 + [Same supplier, then.]
     Gary Whitlock: Same bench, by the look of it. Small world, and most of it on fire.
     -> consultant_imran
@@ -148,7 +148,7 @@ Agent HaX: A man on their bench who ships nothing is worth something. Later.
     ~ gary_quiet = true
     #exit_conversation
     -> tech_rest
-+ [Cuff him.]
++ [You're coming in, Gary.]
     ~ gary_outcome = "taken_in"
     ~ imran_outcome = "taken_in"
     #clone_keycard:tg_power_room_card
