@@ -67,6 +67,22 @@ export const MinigameFramework = {
             }
             console.log('Ending current minigame before starting new one');
             this.endMinigame(false, null);
+            // N-02 (Phase 0 round 2): ending the displaced minigame can run a
+            // chain of onCompletes — a child's returnTo releasing a suspended
+            // parent (_releaseParent), and that parent's own onComplete opening
+            // its own minigame. Any minigame now running was opened during that
+            // teardown, and installing this interrupting scene below would
+            // overwrite currentMinigame and orphan it (its container left in the
+            // DOM, cleanup never called, input disabled). End it too first. This
+            // never fires for a clean S12 suspend (that path ends with no
+            // minigame running); the guard bounds a pathological onComplete loop.
+            let strayGuard = 0;
+            while (this.currentMinigame && !this.currentMinigame._ending && strayGuard++ < 8) {
+                const stray = this.currentMinigame;
+                console.log('Ending a minigame opened during teardown before the interrupt (N-02)');
+                this.endMinigame(false, null);
+                if (this.currentMinigame === stray) { this.currentMinigame = null; break; }
+            }
         }
 
         // The child's returnTo remembers the parent's full params, so the parent

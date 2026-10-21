@@ -189,6 +189,33 @@
 
 .mail-back { display: none; margin-bottom: 8px; }
 
+/* Send checklist (01 §3, N17): the teaching layer over the composer */
+.mail-checklist {
+    position: absolute;
+    inset: 16px;
+    z-index: 7;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px;
+    overflow-y: auto;
+    background: var(--ui-panel-bg, rgba(22, 28, 44, 0.98));
+    border: 2px solid var(--ui-border, #42506f);
+    border-radius: 6px;
+    font-family: var(--se-font-readable);
+    color: var(--ui-text, #e7ecf6);
+}
+.mail-checklist-banner { margin: 0 0 4px; font-size: 18px; font-weight: 600; }
+.mail-checklist-banner.landed { color: var(--ui-success, #6ee08f); }
+.mail-checklist-banner.not-landed { color: var(--ui-danger, #ff7a6b); }
+.mail-checklist-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.mail-check-row { font-size: 16px; line-height: 1.35; }
+.mail-check-row.pass { color: var(--ui-success, #6ee08f); }
+.mail-check-row.fail { color: var(--ui-danger, #ff7a6b); }
+.mail-checklist-advisory { margin: 2px 0 0; font-size: 14px; color: var(--ui-warn, #e6b04d); }
+.mail-checklist-replyto { margin: 4px 0 0; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+.mail-checklist-edit { align-self: flex-start; margin-top: 8px; }
+
 /* Contacts panel */
 .mail-contacts-panel {
     position: absolute;

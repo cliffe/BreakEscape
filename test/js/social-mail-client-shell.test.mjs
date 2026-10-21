@@ -21,7 +21,8 @@ for (const rel of ['minigames/framework/base-minigame.js', 'minigames/framework/
     'utils/display-dashes.js', 'ui/modal-stack.js', 'systems/phish-rules.js',
     'minigames/mail-client/mail-client-minigame.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
-    'minigames/mail-client/mail-notification.js', 'minigames/mail-client/mail-composer.js']) {
+    'minigames/mail-client/mail-notification.js', 'minigames/mail-client/mail-composer.js',
+    'minigames/mail-client/mail-bridge.js', 'systems/global-writer.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }

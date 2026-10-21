@@ -118,6 +118,12 @@ All 15 round 1 findings closed (R-12 by deferral). Node 926/930 (pass3 quarantin
 
 - **P1-E2** (opus48): composer (`mail-client/mail-composer.js`), gate from `phish-rules.preSendGate`, picker offers held facts only, Hampshire's blank-free templates send directly. Test 10/10; social tests 232/232. Boundary: the composer builds the message and calls `params.onSend`/`onDraftChange`; judging, sent record, job and metrics are P1-F's. Compose state is on `scene.composer.getState()`, not yet in `getTestState().mail` (P1-T0 adds it with the shell test). P1-F goes to opus48 too, after P1-S.
 
+- **Shared tree, 2026-10-21:** a third session (breakescape-be, combat controls) owns the uncommitted combat edits (core/game.js pointer input, interactions.js hostile and chair branches ~630-655 and ~1815, player, hud, tutorial-manager, test-bridge/state.js) and is changing m01's `behavior.hostile` for Derek, Kevin and Maya. Later R3 runs on m01 must expect that change; it is not ours.
+
+- **P1-F** (opus48): N-02 fixed in `startMinigame` (drains a minigame opened by a parent's onComplete during an interrupt; test 2/2); `notifyNewMail` hooked to `mail_delivered`; shell seeding sets `seeded: true`; new `mail-bridge.js` (judge, sent record, text job for data-only targets, metrics, attempts, checklist, drafts persisted); `mail_terminal` in PICKUP_THEN_INTERACT_TYPES with the locked-pickup rule, branch moved after the lock check. Test 11/11; suite 1079/1082 (runner flake). Browser gate (game 2878): terminal opens the client, a landed send writes one sent record and one job, the sync carries per-message keys and seeded stubs. Choices for P1-R: `boostIfGlobal` makes a factor advisory and `strictIfGlobal` required (designs silent); mail-channel lockout check left to Phase 4.
+
+- **P1-T0** (Sonnet): `tools/playtest/se/bridge-1a.jsonl`, 37 boolean evals (A mail client, B board, C composer, E Esc order, D reload, F send and reply). Game 2882: 36/37. D3 fails for real: the server draft whitelist drops `contactId`, so the composer resets a restored draft after reload; sent to the P1-F agent to fix both ends. Running notes: Playwright here needs the Node 24 binary and a wrapper for the cached chromium; reload via `?skip_resume=1`.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor

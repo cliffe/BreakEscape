@@ -23,6 +23,7 @@ import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { MailReader } from './mail-reader.js';
 import { MailComposer } from './mail-composer.js';
 import { registerOpenClient } from './mail-notification.js';
+import { performSend, renderChecklist } from './mail-bridge.js';
 import {
     resolveAccounts, visibleContacts, emptyMailState, ensureMailbox,
     recountUnread, seedMailState, folderMessages
@@ -54,6 +55,9 @@ export class MailClientMinigame extends SocialOverlayScene {
         this._unregister = null;
         this.accounts = [];
         this.account = null;
+        this.checklistPanel = null;
+        this._popChecklist = null;
+        this._claimedFromNoticeShown = false;
     }
 
     // ── data ─────────────────────────────────────────────────────────────────
@@ -69,6 +73,11 @@ export class MailClientMinigame extends SocialOverlayScene {
     /** The whole social block (people, templates, phishTargets, intelFacts), for the composer. */
     get social() {
         return this.params.social || (typeof window !== 'undefined' && window.gameScenario?.social) || {};
+    }
+
+    /** The mail scheduler (P1-F): owns jobs, the sent record and persistence. Falls back to window.mailScheduler. */
+    get scheduler() {
+        return this.params.scheduler || (typeof window !== 'undefined' ? window.mailScheduler : null) || null;
     }
 
     /** The live mailState. The scheduler and persistence (P1-F) own the object on window; the shell edits it in place. */
@@ -128,6 +137,7 @@ export class MailClientMinigame extends SocialOverlayScene {
 
     cleanup() {
         if (this._unregister) { this._unregister(); this._unregister = null; }
+        this._dismissChecklist();
         this.composer?.destroy?.();
         this.composer = null;
         this.reader?.destroy?.();
@@ -136,6 +146,11 @@ export class MailClientMinigame extends SocialOverlayScene {
 
     _checklistTiming() {
         return this.params.checklistTiming || this.config.checklistTiming || 'onSend';
+    }
+
+    /** The bridge reads the active timing through this (01 N17). */
+    checklistTiming() {
+        return this._checklistTiming();
     }
 
     // ── chrome ───────────────────────────────────────────────────────────────
@@ -306,6 +321,7 @@ export class MailClientMinigame extends SocialOverlayScene {
     closeCompose() {
         if (!this.composeOpen) return;
         this.composeOpen = false;
+        this._dismissChecklist();
         this.composer?.destroy?.();
         this.composer = null;
         if (this._popCompose) { this._popCompose(); this._popCompose = null; }
@@ -313,20 +329,68 @@ export class MailClientMinigame extends SocialOverlayScene {
         this.composeBtn.focus?.();
     }
 
-    /** Draft persistence is the mail bridge's (P1-F); forward it so it can hook in. */
+    /**
+     * Draft persistence (01 §2 "Drafts", 00 §10a): one draft per account in
+     * mailState, written on every change and before any nested launch. The
+     * scheduler owns mailState.drafts; also forward to any params hook.
+     */
     _onDraftChange(draft) {
-        try { this.params.onDraftChange?.(draft, this.account?.id); } catch (err) { console.error('mail onDraftChange failed:', err); }
+        const id = this.account?.id;
+        if (id) {
+            if (this.scheduler?.setDraft) this.scheduler.setDraft(id, draft);
+            else { (this.mailState.drafts || (this.mailState.drafts = {}))[id] = draft; }
+        }
+        try { this.params.onDraftChange?.(draft, id); } catch (err) { console.error('mail onDraftChange failed:', err); }
     }
 
     /**
-     * A gated-open send. Judging, the sent record, the delivery job, metrics and
-     * the checklist are the mail bridge's (P1-F, N6/N17); the composer hands the
-     * built message here. For now the host records that a send was composed and
-     * forwards it, keeping the overlay open (01 §3 "the overlay stays open").
+     * A gated-open send (01 §3, N6/N17): the bridge judges the message, writes
+     * the Sent record and the delivery job, updates metrics and the attempts
+     * global, then this shows the checklist in training mode. The overlay stays
+     * open so the player can read it and edit/resend (01 §3 "the overlay stays open").
      */
     _handleComposeSend(message, composer) {
         this.lastComposed = message;
-        try { this.params.onSend?.(message, composer, this); } catch (err) { console.error('mail onSend failed:', err); }
+        let sendInfo = null;
+        try {
+            sendInfo = performSend(this, message);
+        } catch (err) {
+            console.error('mail send failed:', err);
+        }
+        if (sendInfo) {
+            this.recordSend(sendInfo.gameResult);
+            if (sendInfo.result && this._checklistTiming() === 'onSend') {
+                this._showChecklist(sendInfo);
+            } else {
+                this._dismissChecklist();
+            }
+        }
+        try { this.params.onSend?.(message, composer, this, sendInfo); } catch (err) { console.error('mail onSend hook failed:', err); }
+    }
+
+    // ── checklist (N17) ────────────────────────────────────────────────────────
+
+    _showChecklist(sendInfo) {
+        this._dismissChecklist();
+        const showReplyToNote = !!sendInfo.claimedFrom && !this._claimedFromNoticeShown;
+        if (showReplyToNote) this._claimedFromNoticeShown = true;
+        const panel = renderChecklist(sendInfo.result, sendInfo.target, {
+            claimedFrom: sendInfo.claimedFrom,
+            account: this.account,
+            showReplyToNote,
+            onEdit: () => this._dismissChecklist()
+        });
+        this.root.appendChild(panel);
+        this.checklistPanel = panel;
+        this._popChecklist = this.pushLayer(() => this._dismissChecklist(), 'checklist');
+        const edit = panel.querySelector('.mail-checklist-edit');
+        edit?.focus?.();
+    }
+
+    _dismissChecklist() {
+        if (this._popChecklist) { this._popChecklist(); this._popChecklist = null; }
+        this.checklistPanel?.remove?.();
+        this.checklistPanel = null;
     }
 
     // ── arrival (N14) ────────────────────────────────────────────────────────

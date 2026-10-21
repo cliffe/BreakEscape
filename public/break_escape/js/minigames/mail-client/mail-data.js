@@ -92,6 +92,9 @@ export function recountUnread(mailState, id) {
 /**
  * Normalise an authored seeded message into the persisted record shape (00 §10a):
  * `read = !unread`, `gameTime` from the clock at load, the inbox/sent defaults.
+ * The record is flagged `seeded: true` so it exports as a stub and the server
+ * trim never drops it; it is not re-added unflagged if the scheduler already
+ * seeded it (P1-C follow-up, P1-S stub rule).
  */
 export function normaliseSeeded(seed, now = 0) {
     const from = isObject(seed.from)
@@ -112,7 +115,8 @@ export function normaliseSeeded(seed, now = 0) {
         read: folder === 'sent' ? true : seed.unread !== true,
         tells: [],
         landed: null,
-        targetId: null
+        targetId: null,
+        seeded: true
     };
     if (folder === 'sent') rec.fromAccount = seed.fromAccount ?? null;
     if (Array.isArray(seed.links)) rec.links = seed.links;

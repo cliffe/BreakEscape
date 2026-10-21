@@ -115,6 +115,16 @@ module BreakEscape
       assert_equal({ 'sent' => 2, 'failed' => 1, 'landed' => 1, 'firstTryLanded' => false }, mail.dig('metrics', 'pierce'))
     end
 
+    test 'contactId is kept in the draft whitelist so an unsent draft restores its recipient (D3)' do
+      @game.merge_mail_state!('drafts' => { 'guest' => {
+        'to' => 'careers@ledgerwell.example', 'subject' => 's_hello', 'contactId' => 'hampshire',
+        'templates' => { 'pretext' => 'pretext_enquiry' }, 'slots' => {}, 'attachment' => nil, 'link' => nil,
+        'nope' => 'x'
+      } })
+      assert_equal 'hampshire', mail.dig('drafts', 'guest', 'contactId')
+      refute mail.dig('drafts', 'guest').key?('nope')
+    end
+
     test 'bad records are dropped: a message that is not an object, a job with no id or an unknown kind' do
       @game.merge_mail_state!(
         'mailboxes.guest.bad' => 'string',

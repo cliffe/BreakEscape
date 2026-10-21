@@ -37,6 +37,7 @@ import { CommandBoardRecorder } from '../minigames/command-board/command-board-t
 import { initLighting } from '../systems/lighting.js';
 import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture } from '../systems/character-textures.js';
 import { mailScheduler } from '../systems/mail-scheduler.js';  // Mail jobs and mailState (social missions)
+import { notifyNewMail } from '../minigames/mail-client/mail-notification.js';  // HUD/bark for delivered mail (P1-F)
 
 // Global variables that will be set by main.js
 let gameScenario;
@@ -1473,6 +1474,15 @@ export async function create() {
     // first load. A mission with no social.mailClient and nothing saved stays inactive
     // and sends no mailState (00 S9). Jobs restart their countdown from remainingMs.
     mailScheduler.init({ scenario: gameScenario, saved: gameScenario.savedMailState || null });
+    // A delivered reply or timed message raises the mail notification (01 N14,
+    // 00 S9): appended silently when a client is open on that mailbox, a toast
+    // otherwise. Hooked once per page (P1-F, P1-C follow-up).
+    if (!mailScheduler._notifyHooked) {
+        mailScheduler._notifyHooked = true;
+        mailScheduler.onEvent((event, data) => {
+            if (event === 'mail_delivered' && data?.message) notifyNewMail(data.message);
+        });
+    }
 
     // Restore objectives state from server if available (passed via objectivesState)
     if (gameScenario.objectivesState) {

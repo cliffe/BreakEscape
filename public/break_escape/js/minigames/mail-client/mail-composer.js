@@ -182,6 +182,7 @@ export class MailComposer {
         this.gate = { ok: false, reason: 'empty-blank', line: '' };
         this._picker = null;
         this._popPicker = null;
+        this._draftRestored = false;
 
         this.root = el('div', 'mail-composer');
         this.root.setAttribute('role', 'form');
@@ -229,7 +230,16 @@ export class MailComposer {
         if (this.contactId) return;
         const withTarget = this.contacts.find((c) => c && isStr(c.targetId));
         const first = withTarget || this.contacts[0] || null;
-        if (first) this.selectContact(first.id, false);
+        if (!first) return;
+        // A restored draft already chose its parts; binding a default recipient
+        // through selectContact would reset choice/slots/attachment, so bind it
+        // directly and keep the restored form (D3: the unsent draft must come back).
+        if (this._draftRestored) {
+            this.contactId = first.id;
+            if (!this.toAddress) this.toAddress = arr(first.addresses)[0] || '';
+            return;
+        }
+        this.selectContact(first.id, false);
     }
 
     selectContact(id, rerender = true) {
@@ -352,6 +362,16 @@ export class MailComposer {
         if (isObject(draft.slots)) this.slots = { ...draft.slots };
         if (isStr(draft.attachment)) this.attachment = draft.attachment;
         if (isStr(draft.contactId)) this.contactId = draft.contactId;
+        // A draft saved before contactId was persisted (or a non-target one)
+        // still names its recipient by address: recover it from `to` (D3).
+        else if (isStr(draft.to)) {
+            const c = this.contacts.find((x) => x && arr(x.addresses).includes(draft.to));
+            if (c) this.contactId = c.id;
+        }
+        // Mark the form as restored so _selectDefaultContact does not reset it.
+        this._draftRestored = isStr(draft.to) || isStr(draft.contactId) ||
+            (isObject(draft.templates) && Object.keys(draft.templates).length > 0) ||
+            isStr(draft.attachment) || (isObject(draft.slots) && Object.keys(draft.slots).length > 0);
     }
 
     draft() {

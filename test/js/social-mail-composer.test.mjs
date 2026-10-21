@@ -24,7 +24,8 @@ for (const rel of ['systems/phish-rules.js',
     'utils/display-dashes.js', 'ui/modal-stack.js',
     'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
     'minigames/mail-client/mail-data.js', 'minigames/mail-client/mail-notification.js',
-    'minigames/mail-client/mail-composer.js']) {
+    'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js',
+    'systems/global-writer.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }
@@ -193,6 +194,25 @@ test('Esc on the picker is a layer close: the composer pops it first', () => {
     composer._closePicker(true);
     assert.equal(composer.pickerOpen, false);
     assert.equal(popped, 1);
+});
+
+test('a restored draft keeps its recipient and form; the default contact does not overwrite it (D3)', () => {
+    const { composer } = makeComposer(grant('hampshire_careers', 'pierce_role'), {
+        draft: { contactId: 'pierce', to: 'm.pierce@ledgerwell.example', subject: 's_q3',
+                 templates: { pretext: 'pretext_invoice' }, slots: {}, attachment: null, link: null }
+    });
+    // hampshire is the first contact with a target, but the restored draft wins.
+    assert.equal(composer.contactId, 'pierce');
+    assert.equal(composer.choice.pretext, 'pretext_invoice');
+    assert.equal(composer.toAddress, 'm.pierce@ledgerwell.example');
+});
+
+test('a draft with no contactId recovers its recipient from `to` (pre-fix drafts) (D3)', () => {
+    const { composer } = makeComposer(grant('hampshire_careers', 'pierce_role'), {
+        draft: { to: 'm.pierce@ledgerwell.example', templates: { pretext: 'pretext_invoice' }, slots: {} }
+    });
+    assert.equal(composer.contactId, 'pierce', 'derived from the To address');
+    assert.equal(composer.choice.pretext, 'pretext_invoice', 'form kept, not reset to the default contact');
 });
 
 test('the mail client Compose button opens the composer over the reader', () => {

@@ -776,9 +776,18 @@ export function handleObjectInteraction(sprite) {
     const PICKUP_THEN_INTERACT_TYPES = new Set([
         'workstation', 'lab-workstation',
         'vm-launcher', 'vm_launcher',
-        'launch-device', 'phone'
+        'launch-device', 'phone',
+        'mail_terminal'   // SE: a takeable mail terminal is carried and opened from inventory (00 S14)
     ]);
     if (sprite.scenarioData.takeable && PICKUP_THEN_INTERACT_TYPES.has(sprite.scenarioData.type)) {
+        // A locked takeable device must be unlocked before it is picked up and
+        // opened from inventory, or the lock is skipped entirely (the pickup
+        // re-enters this handler with no lock test). Send it to the unlock flow
+        // first; once unlocked it is picked up on the next interaction (00 S14).
+        if (sprite.scenarioData.locked === true) {
+            handleUnlock(sprite, 'item');
+            return;
+        }
         playUISound('item');
         addToInventory(sprite);
         setTimeout(() => handleObjectInteraction(sprite), 1000);
@@ -994,17 +1003,9 @@ export function handleObjectInteraction(sprite) {
         return;
     }
   
-    // Social-engineering overlays: the mail terminal and the case file only open
-    // their overlay (P1-F moves the mail branch after the lock check).
-    if (sprite.scenarioData.type === 'mail_terminal') {
-        if (window.startMailClientMinigame) {
-            window.startMailClientMinigame(sprite);
-        } else {
-            window.gameAlert('Mail terminal unavailable.', 'error', 'Error', 3000);
-        }
-        return;
-    }
-
+    // Social-engineering overlays: the case file opens its overlay here. The
+    // mail terminal branch sits after the generic lock check (near the phone
+    // branch), so a locked terminal reaches handleUnlock first (00 S14, P1-F).
     if (sprite.scenarioData.type === 'case-file') {
         if (window.startIntelBoardMinigame) {
             window.startIntelBoardMinigame(sprite);
@@ -1362,7 +1363,19 @@ export function handleObjectInteraction(sprite) {
         handleUnlock(sprite, 'item');
         return;
     }
-    
+
+    // SE mail terminal: opens the mail client on the device's accounts. Placed
+    // after the generic lock check (and beside the phone branch) so an object
+    // lock on a terminal is honoured before the overlay opens (00 S14, 01 §5, P1-F).
+    if (data.type === 'mail_terminal') {
+        if (window.startMailClientMinigame) {
+            window.startMailClientMinigame(sprite);
+        } else {
+            window.gameAlert('Mail terminal unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
     const resolvedObservations = resolveObjectField(data, 'observations', sprite.observations || null);
     const resolvedText = resolveObjectField(data, 'text', null);
 
