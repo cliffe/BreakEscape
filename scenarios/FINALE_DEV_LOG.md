@@ -166,8 +166,11 @@ Rulings: adopt the fixes; the m10 author must play the argument as a cold-start 
 - Draft (`m09.../stage_3/moral_choices.md`): 14 choices A–N with dominance checks and locks; five dominated options and one unforced choice fixed; 35 proposed changes (§11). Housekeeping in stage 1 done.
 - Orchestrator rulings: accept the Recruiter's price = the whole deck (take → nothing comes off; refuse → HaX saves one tape; no "pull nothing"); accept new exports `cage_bin`, `legacy_files_saved` (m09 → 11 exports) and `m09_deck_pulled` to m10 tier 1; accept new canon (Tesseract reads the Initiative's books; Analysis's Critical Mass watch through the Albion flaw); Noor's cost (her job, her father's dialysis) stands. Proposed changes to stage 1–2, FINALE_ARC and m10 are applied after review, by the authors and the arc-keeper.
 - F12 for the user: a two-line (~15 s) voiced Tesseract lecture clip on the Alpha-tapes route; fallback a transcript.
+- R1: choices (`stage_3/REVIEW_R1_CHOICES.md`) 0/9/6; structure (`REVIEW_R1_STRUCTURE.md`) 0/7/12, change verdicts accept 20 / modify 15. Canon errors: m05 (no money changed hands), m04 (Albion hole published or patched). Legacy files would name WREN. Rulings sent with the fix pass: canon first; legacy files per the structure reviewer; keep Tesseract's refusal of WREN; double-cross gets a cost; drop the arrested-branch help; adopt simplifications 1–4.
 
 ### m10 stage 3
 - Draft (`m10.../stage_3/moral_choices.md`, ~17.5k words): 19 choices; 16 dominated options, 2 hidden, 5 unforced fixed; two new locks (`door_scene_done`, `ghost_call_done`); one priority list of six live operations for the database costs; Recruiter beat guarantees m09's invoice or clean record is heard once; 28 proposed changes. Housekeeping in stage 1–2 done.
 - Orchestrator rulings: $12.8M default as written (kept as evidence on `secured`, victims' fund otherwise); "Lower the weapon" removes the cold option for the rest of the scene. F13 (surrender = deal, no public trial) to the user.
 - Watch: scope. Stage 3 adds many outcomes per scene; the structure reviewer is asked what to simplify.
+
+User answers 2026-10-21: **F12 approved** (voiced Alpha-tapes clip); **F13 approved** (surrender = deal, no public trial; arrest = public trial, no cells).
