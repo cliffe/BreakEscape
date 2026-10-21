@@ -42,6 +42,8 @@ VAR asked_recruiter = false
 VAR asked_notice = false
 VAR notice_answered = false
 
+VAR said_floor_line = false   // R3 I-7 guard (ink-local)
+
 === start ===
 // debrief_played is read before the tag lands, so a replay gets the short open.
 #set_global:debrief_played:true
@@ -240,7 +242,10 @@ Narrator: He reads the first name off the card. He doesn't look down for the sec
 Narrator: He lays the Montana order on a crate and uncaps a pen.
 // R3 I-7: the ruthless save, remembered once (pays off the briefing's
 // "Nobody mentions why.").
-{m08_netherton_ko:
+// Ink-local guard: ink variables survive a reload (visit counts don't), so a
+// replay of the spine doesn't say it twice.
+{m08_netherton_ko and not said_floor_line:
+    ~ said_floor_line = true
     Director Magnus Netherton: You put me on the floor at the Citadel. Nobody has mentioned it. I am mentioning it once.
 }
 {

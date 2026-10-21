@@ -343,3 +343,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 ### m10 script edit round 2
 - R3 (fresh editor): revise (light), then ship. A 0/1/2, B 0/1/2, C 0/0/2. All R2 in; compile 16/16, lint 0 errors, loopcheck 24 states clean. Quotables per scene confirmed. Gap: m08 KOs of HaX/Netherton are name-checks only. Ruling: apply all findings and improvements; A-R3-01 take 'I covered for him.' (+1); I-7 Netherton pen line (+1) for carry-over impact; C2 L215 full form.
 - R3 fixes applied: all, I-3 trimmed to 24 words (phone cap). A 49 new (55 distinct), Recruiter 14, briefing 84+8N, debrief 50+16N. Compile/lint/loopcheck clean. Contract §14. Follow-up: guard I-7 pen line against debrief replay.
+- I-7 guarded by ink-local said_floor_line. m09 script edit closed after 3 rounds (R3 verdict: ship). Next: opus48 VM-STEER pass.
