@@ -1,6 +1,6 @@
 # m09 Digital Archaeology: Stage 2, storytelling elements
 
-Stage 2. Author: stages 1–2 author (Opus), 2026-10-21. Status: round 2 fixes folded in (outcomes in story arc §15 and §16).
+Stage 2. Author: stages 1–2 author (Opus), 2026-10-21. Status: round 3 fixes folded in (outcomes in story arc §15–17).
 
 Inputs: `../stage_1/story_arc.md` (beats are cited as "Beat 2.4" and so on), `../stage_0_initialization.md`, `../../../finale/FINALE_ARC.md` (§2 rows, §5 cast), `story_dev_prompts/02_storytelling_elements.md`, `story_design/universe_bible/04_characters/voice_bible.md` (it wins on every returning voice), `README_ink_best_practices.md`, the `npc-dialog-review` skill. The 02 prompt asks for three files (characters, atmosphere, dialogue); this finale keeps them as one document, as the stage layout gives one file per stage.
 
@@ -23,7 +23,7 @@ Voices follow the voice bible; this section says what each wants tonight, what t
 
 ### Director Magnus Netherton
 
-- **In m09:** the briefing (in person), the identity scene (on the line from the aircraft), the debrief (in person, Helena).
+- **In m09:** the briefing (in person), the identity scene (on the line from the aircraft's forward cabin, door shut, where WREN can't hear), the debrief (in person, Helena).
 - **Wants:** a name he can say in court, and to take four agents into Montana without telling one of them he knows.
 - **Hiding:** from the moment flag 2 goes in, that all four of his team are under suspicion, and he has known every one of them for years. On the `owned` branch of m08 he is still carrying Nightshade's file and means to sign beside it.
 - **Arc in m09:** the man who promised not to say a name, keeping the promise and then saying it, and then listening while HaX says what the delay cost. He says nothing to that; the silence is his m08 confession heard from the other side. His control cracks once, at the debrief: "He reads the first name off the card. He doesn't look down for the second."
@@ -63,7 +63,9 @@ Voices follow the voice bible; this section says what each wants tonight, what t
 >
 > The Recruiter: One of your four is mine. Was mine. He took her for Montana and didn't ask. I'll give you her name tonight, and all it costs you is a tape you've never heard of.
 >
-> The Recruiter: If anything comes off that deck but what I've left you, I'll know before your plane does. About half of them will be gone by morning. *(the double-cross priced, before the choice)*
+> The Recruiter: Take my name, and if anything else comes off that deck, I'll know before your plane does. Half my people will have moved by morning. *(the double-cross priced, before the choice; covers the deal only, R3-03)*
+>
+> The Recruiter: Then I'll tidy my own desk. *(refused: she wipes her file first and drops off, sure it's gone)*
 >
 > The Recruiter: Halina Kowalczyk. Her mother's care home has had my cheque every month for eleven years. She gave you something at the briefing, I expect. She's generous. It's how we hired her.
 >
@@ -263,7 +265,7 @@ m08 left her close to coming apart: a friend unmasked as the mole, and a text se
 | Act 2, the plan chest | The first crack. | "Those are my notes. That's his pen." Then "Hold that." and nothing more. |
 | Act 2, flag 2 | Cold. One of four people she has worked beside is WREN. | Says it once, then the rule: "neither will you." |
 | Act 2, the call | Sharp and protective. On the sold-and-lied branch, hurt, and holding it. | Cuts the Recruiter off on the confessed branch; on the lied branch asks once, later, and lets it lie. Names the tapes' stakes, including the one that is personal to her ("His voice. Teaching."). |
-| Act 2, after the deck | The second crack, three words long. | "Afterwards. Not during." and one sentence; the rest "when this is over". |
+| Act 2, after the deck | The second crack, three words long. | "Afterwards. Not during." and one sentence; then, unasked, "The rest when this is over." |
 | Act 3, the Reading | Silent while it is open. | Asks once afterwards. Doesn't push. |
 | Act 3, flag 3 | The one time she opens up. | Reads the credential's first line and stops. Lets Netherton say the name. Then the confession, and the two dead, with Netherton listening. The longest thing she says all season. |
 | Act 3, flag 4 | Back at work, because the number demands it. | Reads the casualty range in full and doesn't round it. Asks the question nobody answers: "Then why build a key at all?" |
@@ -298,7 +300,11 @@ Act 2:
 >
 > Agent HaX: We've talked about that. She has nothing on you. *(m05 sold and confessed)*
 >
-> Agent HaX: Her file's her whole network, if she doesn't see it coming. The Alpha tapes are his voice, on tape. Teaching. He teaches what he'll do. If he built the bunker the way he taught it, it's on that tape.
+> Agent HaX: Her file is her network, all of it. The Alpha tapes are him teaching, recorded. He teaches what he'll do. If he built the bunker the way he taught it, it's on there.
+>
+> Agent HaX: She thinks it's gone. Let her. *(refused, pulling her file a second ahead of the wipe)*
+>
+> Agent HaX: She fired it from Peg's office. I'm on the door. *(after the deck choice; the office opens)*
 >
 > Agent HaX: Take her name and her file, and she warns them. We'd get half. *(if the player asks about both)*
 
@@ -310,7 +316,7 @@ After the deck (Beat 2.7; W-03):
 >
 > Agent HaX: It's yours to carry. Nobody else signed for it.
 >
-> Agent HaX: The rest of it when this is over. Right. Her office is past the binders. *(if the player asks for more)*
+> Agent HaX: The rest when this is over. Her office is past the binders. *(said unasked, Beat 2.7's last line; R3-06)*
 
 The confession (Beat 3.3), the opening of each form, then the line every form reaches:
 
@@ -322,13 +328,13 @@ The confession (Beat 3.3), the opening of each form, then the line every form re
 >
 > Agent HaX: There was a file on a crypto fund, with his name in it at eighty-seven per cent. I put it in a drawer. He trained me. I wanted the other thirteen. *(neither)*
 >
-> Agent HaX: You heard him say it in Portland. My line. His line. *(first line of any form on `m07_architect_echo_heard`; else "You've read him before. Sterling's drive." on `m03_directive_decoded`)*
+> Agent HaX: You heard him say it in Portland. My line. His line. *(before her form's first sentence, never in place of it, on `m07_architect_echo_heard`; else "You've read him before. Sterling's drive." on `m03_directive_decoded`; R3-05)*
 >
 > Agent HaX: Two cards on that wall. I had his name the night they died. I don't know if saying it would have saved them. I didn't say it. *(every form; Netherton says nothing)*
 
 Her replies to the player's answer:
 
-> Agent HaX: Yes. I should have. So, everything from now on. Starting with what's on his box. *(should have told / taken it to Netherton)*
+> Agent HaX: Yes. I should have. You get all of it from now on. His box first. *(should have told / taken it to Netherton)*
 >
 > Agent HaX: Don't be kind about it. *(beat)* Thank you. Once. *(same in your place / sat on it too)*
 >
@@ -340,7 +346,7 @@ If the player told her the Reading's line about her (N-05):
 >
 > Agent HaX: He says I'll cover for you. Tonight it went the other way. *(same in your place)*
 >
-> Agent HaX: He says I'll cover for you. Then cover for me till it's over. *(afterwards)*
+> Agent HaX: He says I'll cover for you. We'll find out afterwards which of us needed it. *(afterwards)*
 
 Act 3:
 
@@ -349,6 +355,8 @@ Act 3:
 > Agent HaX: He's giving it away. At six it starts going out, city by city. Turn that key and it goes everywhere in the same minute.
 >
 > Agent HaX: Then why build a key at all?
+>
+> Agent HaX: His file first. Then the rest of his box. *(flag 4 in before the identity scene is done; R3-08)*
 >
 > Agent HaX: No. It isn't. He shredded everyone but himself. *(on `schedule_read`, after "Her schedule. This room isn't on it.")*
 >
@@ -416,7 +424,9 @@ SAFETYNET read it and let it go on (story arc §3.1). The schedule is §5.3's.
 
 **The casualty sheet** (flag 4's files):
 
-> Projected deaths attributable to the Publication, first thirty days: 1,100 to 2,600. Principal causes: hospital systems (dispatch, infusion, records); grid control; water treatment. Assumes the cells move first. An acceptable price for the last arms race. -- A.
+> Projected deaths attributable to the Publication, first thirty days. Release by key, all cities: 1,100 to 2,600. Fallback by city: fewer, later. Principal causes: hospital systems (dispatch, infusion, records); grid control; water treatment. Assumes the cells move first. An acceptable price for the last arms race. -- A.
+
+(R3-12: the sheet prices the key, so "Then why build a key at all?" points at a choice he made on paper.)
 
 This is his original sheet; the correction that shows his model double-counts is m10's (FINALE_ARC §4.1).
 
@@ -446,7 +456,7 @@ The Albion papers (Beat 3.4) are the first time the player hears the man before 
 | Nightshade's recruitment file | Tesseract's hand, fifteen years ago, kind and clinical in the same sentence. | Twenty-three. Idealistic, tired already. Will wait if asked properly. Ask properly. |
 | Derek Lawson's file | The same hand, before Viral Dynamics. | Expected loss of asset: total. Expected yield: one demonstration, and the agency's attention. |
 | Harwick & Lowe placing sheet | An executive search firm's file, dull on purpose. Two candidates, same quarter, same client. | Candidates: H. Kowalczyk; M. Quintero. Lateral, private sector. Client: government (UK). Both placed. Next of kin: mother, residential care (Kowalczyk); father, residential care (Quintero). |
-| The master destruction schedule (Sorensen's safe) | The order's attachment: series by number, and her pencil down the margin, a room per line, each ticked as its series are reached. | Dock ✓. Front desk ✓. Reading room ✓. Open stacks ✓. Cage ✓. Closet ✓. Office ✓. Tape room (no series, no tick). In the margin: "Reading (safe): not listed. Keep?" Reading the page sets `schedule_read`. |
+| The master destruction schedule (Sorensen's safe) | The order's attachment: series by number, and her planning pass down the margin from before the night, a room per line, its series checked against the order and ticked as covered (R3-07). | Dock ✓. Front desk ✓. Reading room ✓. Open stacks ✓. Cage ✓. Closet ✓. Office ✓. Tape room (no series, no tick). In the margin: "Reading (safe); plan chest: not listed. Keep?" Reading the page sets `schedule_read`. |
 | HaX's training notebook (scanned, case file) | A student's notes, fifteen-odd years old, in her hand; his margin notes in another. | Her: "Disclosure: who does it serve?" His, beside it: "Ask who it hurts first. Then ask again afterwards." |
 | Tomb Alpha's tapes (if pulled) | Recordings of his teaching at the first workshop, with typed annotation sheets in his hand. | The decode of one sheet gives the line HaX recognises. What the recordings are used for is stage 3's (item 25). |
 | Old Coyote's incident book | Block capitals, short entries, unanswered. | SHREDDER RUNNING AGAIN. MRS S SAYS SCHEDULED. NOTED. |
