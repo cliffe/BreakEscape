@@ -924,8 +924,25 @@
   filter: brightness(1.3) var(--ui-glow-filter);
 }
 
-[data-ui-theme] .minigame-success-message { color: var(--ui-success); border-color: var(--ui-success); }
-[data-ui-theme] .minigame-failure-message { color: var(--ui-danger); border-color: var(--ui-danger); }
+/* Dark theme surface under the coloured text: the base style's bright green
+   or red fill made the themed text unreadable */
+[data-ui-theme] .minigame-success-message,
+[data-ui-theme] .minigame-failure-message {
+  background: var(--ui-surface-raised);
+  font-family: var(--ui-heading-font);
+  line-height: 1.4;
+  text-shadow: var(--ui-text-glow);
+}
+[data-ui-theme] .minigame-success-message {
+  color: var(--ui-success);
+  border-color: var(--ui-success);
+  box-shadow: 0 0 0 2px var(--ui-bar-outline), 0 0 16px color-mix(in srgb, var(--ui-success) 40%, transparent);
+}
+[data-ui-theme] .minigame-failure-message {
+  color: var(--ui-danger);
+  border-color: var(--ui-danger);
+  box-shadow: 0 0 0 2px var(--ui-bar-outline), 0 0 16px color-mix(in srgb, var(--ui-danger) 40%, transparent);
+}
 
 
 /* ===================================================================
