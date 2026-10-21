@@ -2,7 +2,7 @@
 
 ## 0. Status and inputs
 
-Stage 5. Author: stages 4–5 author (Opus), 2026-10-21. Status: round 1 and round 2 fixes folded in (§14, §15; reviews `REVIEW_R1_PUZZLES.md`, `REVIEW_R1_DESIGN.md` and `REVIEW_R2.md` in this folder), for review round 3. Designed to user decisions F17 and F20 (voiced forced calls, `voiced: true`, voicing only what the call opens), F18 (the flag-reward door fix), F19 (`unlockDoor`, a persistent door unlock from a mapping) and F10 (the `silence` playlist), committed in 57d3d237. Companion to `../stage_4/objectives_tasks.md` ("S4"), which holds the tasks, globals, mappings and forced scenes; this document holds the space.
+Stage 5. Author: stages 4–5 author (Opus), 2026-10-21. Status: **stages 4–5 complete** (round 1–3 fixes folded in, §14–§16; reviews `REVIEW_R1_PUZZLES.md`, `REVIEW_R1_DESIGN.md`, `REVIEW_R2.md`, `REVIEW_R3.md` in this folder). Designed to user decisions F17 and F20 (voiced forced calls, `voiced: true`; F20, voicing only what the call opens, is in progress and not yet committed), F18 (the flag-reward door fix), F19 (`unlockDoor`, a persistent door unlock from a mapping) and F10 (the `silence` playlist), committed in 57d3d237. Companion to `../stage_4/objectives_tasks.md` ("S4"), which holds the tasks, globals, mappings and forced scenes; this document holds the space.
 
 Inputs: as S4 §0, plus `story_dev_prompts/05_room_layout_design.md`, the `mission-puzzle-chains` skill (lock order, cumulative kit, the silent-failure bug sweep), the `mission-room-dressing` skill (layout constraints only: north wall two tiles, square props, NPCs clear of furniture, interactables 32 px apart), `README_scenario_design.md` (grid units, room types, door rules, authoring rules), `tools/pass2/PASS2_LESSONS.md`, and the engine (`core/rooms.js`, `systems/doors.js` via the README's rules, `systems/interactions.js`, `systems/npc-manager.js`, `systems/npc-hostile.js`, `systems/unlock-system.js`, `app/controllers/break_escape/games_controller.rb`, `app/models/break_escape/game.rb`).
 
@@ -118,7 +118,7 @@ Room types are placeholders. No shipped room type is a records warehouse; the ne
 - **Objects** (the drop terminal is a reading desk with the field kit on it; review D-13 thinned this room):
   - `field_laptop`: `vm-launcher` (the attack VM).
   - `drop_terminal`: `flag-station`, `acceptsVms: ["catalogue_server"]`, `flagRewards`: `[set_global flag1_submitted, set_global flag2_submitted]`.
-  - `drop_terminal_screen`: one readable with stacked `textVariants`, most advanced first: the sale line on `invoice_booked`; the ledger after `flag2_submitted` (WREN's entry, the H&L source code and file number, Torres' line by `m05_final_choice`); the catalogue after `flag1_submitted` (the Series R shelf marks); "Public catalogue only." before. **Every variant from flag 1 on ends with the coded salvage line** ("salvage cage: access ****"), so no later variant hides it. The line also reaches the notepad on every route from HaX's `flag1_read` (`#add_note`), and her keypad topic quotes it (review B-R2-1).
+  - `drop_terminal_screen`: one readable with stacked `textVariants`, most advanced first: the sale line on `invoice_booked`; the ledger after `flag2_submitted` (WREN's entry, the H&L source code and file number, Torres' line by `m05_final_choice`); the catalogue after `flag1_submitted` (the Series R shelf marks); "Public catalogue only." before. **Every variant from flag 1 on ends with the coded salvage line** ("salvage cage: access ****"), so no later variant hides it. The line also reaches the notepad on every route as a notes item HaX's `flag1_read` gives (`#give_item:notes:catalogue_salvage_line` from her `itemsHeld`; not `#add_note`, review N-R3-1), and her keypad topic quotes it (review B-R2-1). The coded string avoids `|`, `#`, `//`, `{`, `}` (review m-R3-4).
   - `case_file`: readable; HaX's case file (the order's photograph, the wall's cards, the raid team), with the tagged-payments page as a `textVariants` section on `m06_monitoring_enabled`.
   - `notebook_scan`: readable, a course code on the label; `onRead` sets `notebook_read`. Two tiles from the case file. It stays its own object because `notebook_read` has to come from reading this scan, not the case file.
   - microfiche reader, public catalogue terminal (dressing; "Series R: no records").
@@ -256,7 +256,7 @@ Two ❌ verdicts, both social locks where the person is the lock. Nothing on the
 
 ### 4.3 What could break (SOFTLOCK_PATTERNS S1, S2)
 
-- **S1, a burnt first call.** No gate keys on "was a call answered": every forced scene sets its own done-flag on its last choice and re-rings, and every first ring has a load and room-entry backstop (S4 §4, §5; review B3).
+- **S1, a burnt first call.** No gate keys on "was a call answered": every forced scene sets its own done-flag on its last choice and re-rings, and every first ring has a room-entry backstop (it fires on load too) (S4 §4, §5; review B3).
 - **S2, order dependence.** Checked for each lock against what the player may already hold:
   - Flag 2 before the cage: the call waits for the opened cage and for the player to be outside it (S4 §4 row 3).
   - The card cloned and the gate opened before the bin choice: the default bin applies (`cage_bin = derek_file`).
@@ -341,7 +341,7 @@ Positions are tiles in the room (the sprite's centre; the feet sit about a tile 
 
 | NPC | Room | Kind | Spawn | KO | Notes |
 |---|---|---|---|---|---|
-| `agent_0x99` (HaX) | `loading_dock` | phone | – | – | hosts the hub, the bridges, the `unlockDoor` mappings and three forced scenes; `itemsHeld`: four field guides |
+| `agent_0x99` (HaX) | `loading_dock` | phone | – | – | hosts the hub, the bridges, the `unlockDoor` mappings and three forced scenes; `itemsHeld`: four field guides and the `catalogue_salvage_line` notes item |
 | `recruiter` | `loading_dock` | phone | – | – | not in `npcIds`; her call is voiced |
 | `nightshade_phone`, `torres_phone`, `gary_phone` | `loading_dock` | phone | – | – | branch calls only |
 | `briefing_cutscene` + `netherton`, `quintero`, `kowalczyk`, `malhotra`, `arakawa` | `loading_dock` | person, hidden | 500,500 | n/a | registered speakers for the briefing and the hangar |
@@ -383,10 +383,10 @@ Stage 1 §11's engine list: items 1–15, then stage 3's items 16–29 (MC §11 
 
 | # | Item | Verdict | Evidence and pattern |
 |---|---|---|---|
-| 1 | Locks opened by a flag reward and by an ink global | **works** with F19 (round 1) | A flag carries one reward (`games_controller.rb:2160-2167`) and its `unlock_door` opened the station's own room (~2166, ~2233; being fixed as F18). With F19 a HaX mapping keyed on the flag's or the deck's global unlocks the door persistently (`unlockDoor`, S4 §4 rows 1, 2b, 5). Fallback if F19 lands differently: HaX's ink `#unlock_door` with `unlockable` (`chat-helpers.js:71-97`, `game.rb:1246-1270`), retired on entering the room. |
+| 1 | Locks opened by a flag reward and by an ink global | **works** with F19 | A flag carries one reward (`games_controller.rb:2160-2167`); its `unlock_door` opened the station's own room (fixed as F18). A HaX mapping keyed on the flag's or the deck's global unlocks the door persistently with `unlockDoor` (S4 §4 rows 1, 2b, 5), with an in-session retry and a load backstop. |
 | 2 | Flag 2 on its own station | not used | One station per machine (§9). Stage 1's option is declined: a second station accepting the same VM would split one flag's submission point. |
 | 3 | A call that survives being closed | **works** | F14: `disableClose` honoured for Esc and the back arrow; `resume: true` (`npc-manager.js:1148-1160`); README "Forced phone calls". |
-| 4 | A second speaker in a phone thread, shown and voiced | shown: **works**; voiced: **works** (F17, F20) | `otherSpeaker()` draws a registered name over the bubble (`phone-chat-ui.js:665-676`). F17's `voiced: true` voices each line in its speaker's voice, if the speaker is registered (`netherton` in the start room; carried in playtest segments). Under F20 only the voiced call's knot and its diverts are voiced, not the host's whole thread; narration in a phone thread stays silent, so the scenes use HaX's asides instead (S4 §6). |
+| 4 | A second speaker in a phone thread, shown and voiced | shown: **works**; voiced: **works** (F17, F20) | `otherSpeaker()` draws a registered name over the bubble (`phone-chat-ui.js:665-676`). F17's `voiced: true` voices each line in its speaker's voice, if the speaker is registered (`netherton` in the start room; carried in playtest segments). Under F20 (in progress) only the voiced call's knot and its diverts are voiced, not the host's whole thread; narration in a phone thread stays silent, so the scenes use HaX's asides instead (S4 §6). |
 | 5 | Two calls due on one walk | **works** | A `delayMs` mapping waits while any minigame or conversation is open, retrying every 500 ms (`npc-manager.js:612-620`), so HaX's Beat 2.7 call and Torres' follow each other. Pending delays aren't saved: room-entry backstops (S4 §5). |
 | 6 | The cage counter | **pattern** | An NPC talks only in its own room and within 32 px (`constants.js:65`): `sorensen_hatch` is a static-sprite NPC behind the counter whose body edge reaches it, so the body-edge reach applies (`npc-sprites.js:91-107`, `npc-reach.js`); `koImmune` (F14); swapped for `sorensen` in the cage on `cage_opened`. Fallback: a hatch bell whose global opens her conversation by mapping (review B1). Browser check at stage 9. |
 | 7 | Sorensen non-combat | **works** | NPCs are non-hostile by default; she fights back only if attacked (as any friendly NPC). The hatch record can't be attacked (`koImmune`). |
@@ -408,7 +408,7 @@ Stage 1 §11's engine list: items 1–15, then stage 3's items 16–29 (MC §11 
 | 24 | Noor and Old Coyote leaving, their desks left in place | **works** | `setVisible: false` on their own mappings (their rooms are loaded when the player tells them); objects are separate. |
 | 25 | The Alpha-tapes clip as an ink conversation from the station, voiced | **pattern** | The deck's `triggerOnInteract` sets a global (`interactions.js:715-719`; `onInteract` is deprecated, review m2); the hidden `alpha_recording` in the tape room opens its person-chat on it, voiced per speaker; HaX speaks through the hidden person-type `hax_voice`. |
 | 26 | The double-cross text on first entry to the tape room | **works** | Recruiter mapping on `room_entered:tape_room` with `sendTimedMessage`, `onceOnly`. |
-| 27 | A choice in the debrief between the stance and the hub, resumed if closed | **works**, browser test | Ink order; `disableClose`; person-chat saves after each choice; m05's room-entry backstop for a reload. |
+| 27 | A choice in the debrief between the stance and the hub, after a reload | **works**, browser test | A mapping-opened person-chat restarts at its knot after a reload (`npc-manager.js:1072-1081`), so the debrief replays safely: it reads `debrief_notice_before` and skips answered beats (S4 §6.5); `disableClose`; m05's room-entry backstop. |
 | 28 | The drop terminal's send actions from the tape room | **pattern** | As item 12. |
 | 29 | The cage bins: one removed on `cage_opened` | **pattern** | `spriteVariants` on `cage_bin`, whose default is written on `cage_opened` (S4 §4). |
 
@@ -505,7 +505,7 @@ Review: `REVIEW_R2.md` (B-R2-1; M-R2-1 to M-R2-4; m-R2-1 to m-R2-8), with the or
 | B-R2-1 | blocker | Fixed (ruling): HaX's `flag1_read` logs the coded line with `#add_note`; every screen variant from flag 1 on repeats it; her keypad topic quotes it | §3.5; S4 §4 row 7, §7.1 topic 5, §8 |
 | M-R2-1 | major | Fixed (ruling): `cage_opened` follows `door_unlocked_by_npc` on Victoria's route; an in-session retry and a `game_loaded` backstop re-issue the unlock | S4 §4 row 2b, §5 |
 | M-R2-2 | major | Fixed (ruling): `cooldown: 0` on both `in_cage` setters; `!in_cage` dropped from ring (a) | S4 §4 row 3, §5 |
-| M-R2-3 | major | Resolved by F20: the scenes stay on their hosts; only the calls' knots are voiced; narrator lines become HaX's asides; recounted at about 66 | §10 item 4; S4 §6, §6.7 |
+| M-R2-3 | major | Resolved by F20 (in progress): the scenes stay on their hosts; only the calls' knots are voiced; narrator lines become HaX's asides; recounted at about 66 | §10 item 4; S4 §6, §6.7 |
 | M-R2-4 | major | Fixed (ruling): S6 and S7 start in `tape_room`; `--carry-npc netherton`, and for S7 also `closing_debrief`, `kowalczyk`, `hax_voice`; a note on 1-GU start rooms flipping door parity | S4 §12 |
 | m-R2-1 | minor | Fixed: scene-opening backstops on `room_entered` only; unlock backstops on `game_loaded` | S4 §4, §5 |
 | m-R2-2 | minor | Fixed: the debrief restarts at its knot after a reload, so it reads `debrief_notice_before` (copied before it opens) and skips answered beats | S4 §5, §6.5 |
@@ -517,4 +517,19 @@ Review: `REVIEW_R2.md` (B-R2-1; M-R2-1 to M-R2-4; m-R2-1 to m-R2-8), with the or
 | m-R2-8 | minor | Fixed: final key names, no fallback wording; P1's "three phone scenes"; the salvage cage's spacing left to `slot_audit.py` | S4 §0, §1; §0, §3.10, §12 |
 
 **Counts:** 13 findings (1 blocker, 4 majors, 8 minors). 12 fixed, 1 resolved by a user decision (M-R2-3, F20). None withdrawn.
+
+## 16. Review round 3 outcomes
+
+Review: `REVIEW_R3.md` (2 majors, 4 minors); S4 §18 has the full table.
+
+| ID | Sev | Outcome | Where |
+|---|---|---|---|
+| N-R3-1 | major | Fixed: the coded line reaches the notepad as a notes item HaX gives, not `#add_note` | §3.5; S4 §4 row 7 |
+| N-R3-2 | major | Fixed: `!in_cage` back on ring (a); the setters on `recruiter`, ahead of (a) | S4 §4 row 3 |
+| m-R3-1 | minor | Fixed: F20 marked in progress | §0, §10 item 4 |
+| m-R3-2 | minor | Fixed: §4.3 S1 wording; §10 items 1 and 27 | §4.3, §10 |
+| m-R3-3 | minor | Fixed in S4 §5 (`cage_opened` on entering the cage) | S4 §5 |
+| m-R3-4 | minor | Fixed: the coded string's banned characters | §3.5; S4 P20 |
+
+**Counts:** 6 findings, all fixed. Stages 4–5 complete.
 
