@@ -43,6 +43,19 @@
 #   --give ITEM_ID         put a scenario item in the inventory, found by its
 #                          object id (rooms, containers, NPC itemsHeld, startItems);
 #                          the room copy is marked removed so it is not doubled
+#   --complete-task TASK_ID  mark an objective task completed in the stored state, the
+#                          way Game#complete_task! does (completedAt, onComplete unlockTask/
+#                          unlockAim/setGlobal, aim completion, tasks_completed, score,
+#                          mission conclusion) but WITHOUT its per-type validation, so
+#                          e.g. an npc_conversation task needs no met NPC. Repeatable.
+#                          Unknown ids abort and list the tasks. Client eventMappings that
+#                          would have fired on completion do NOT replay.
+#   --submit-flag FLAG_ID  record a VM flag as submitted the way POST /flags does, with no VM:
+#                          Game#submit_flag, the station's flagRewards (give_item,
+#                          unlock_door, emit_event; set_global/unlock_object applied
+#                          straight to the state) and submit_flags task progress. FLAG_ID is
+#                          vm:flag_N, vm-flagN or station:vm-flagN. Repeatable. Unknown ids
+#                          abort and list the flags. Hacktivity scoring is skipped.
 # Set globals sit in player_state like any played-in value; imported globals
 # (importGlobals) are re-applied by the server, so use --imports=<file> for those.
 # --help prints this text.
@@ -58,8 +71,11 @@ unlock_opts = []
 carry_opts = []
 set_opts = []
 give_opts = []
+complete_opts = []
+flag_opts = []
 head_start = { '--start-room' => ->(v) { start_room_opt = v }, '--unlock' => ->(v) { unlock_opts << v }, '--carry-npc' => ->(v) { carry_opts << v },
-               '--set' => ->(v) { set_opts << v }, '--give' => ->(v) { give_opts << v } }
+               '--set' => ->(v) { set_opts << v }, '--give' => ->(v) { give_opts << v },
+               '--complete-task' => ->(v) { complete_opts << v }, '--submit-flag' => ->(v) { flag_opts << v } }
 rest = []
 args = ARGV.dup
 until args.empty?
@@ -75,7 +91,7 @@ until args.empty?
 end
 ARGV.replace(rest)
 ARGV.reject! { |a| a.start_with?('--imports=') && (imports_opt = a.split('=', 2)[1]) }
-arg = ARGV[0] or abort 'usage: new-game.rb <mission_name_or_id> [flag_hints.xml] [--imports=none|latest|<file.json>] [--start-room R] [--unlock R] [--set k=v] [--give ITEM_ID]  (--help for details)'
+arg = ARGV[0] or abort 'usage: new-game.rb <mission_name_or_id> [flag_hints.xml] [--imports=none|latest|<file.json>] [--start-room R] [--unlock R] [--set k=v] [--give ITEM_ID] [--complete-task TASK_ID] [--submit-flag FLAG_ID]  (--help for details)'
 xml_path = ARGV[1]
 
 mission = if arg =~ /\A\d+\z/
@@ -241,6 +257,163 @@ if [start_room_opt, unlock_opts, set_opts, give_opts, carry_opts].any?(&:present
     head_start_notes << "NOTE #{item_id} is a notes item: it opens in the notepad, not the inventory" if item['type'] == 'notes'
   end
   g.player_state = ps
+  g.save!
+end
+
+# Objective / flag head start (test only, script-only: nothing in the engine
+# calls this file). Mirrors Game#complete_task! (minus validation) and the
+# GamesController#submit_flag pipeline, writing straight to this game's row.
+if complete_opts.any? || flag_opts.any?
+  g.reload
+  sd = g.scenario_data
+  g.send(:initialize_objectives)
+  ps = g.player_state
+
+  all_tasks = Array(sd['objectives']).flat_map { |a| Array(a['tasks']).map { |t| t['taskId'] } }
+  bad = complete_opts - all_tasks
+  abort "--complete-task: unknown task(s) #{bad.join(', ')}. Tasks:\n  #{all_tasks.join("\n  ")}" if bad.any?
+
+  # Flag ids: every spelling resolves to a flag VALUE through flags_by_vm
+  # (scenario_data['flags'] as a second source).
+  vm_flags = {}
+  (ps['flags_by_vm'] || {}).each { |vm, arr| vm_flags[vm] = Array(arr) if arr.is_a?(Array) }
+  (sd['flags'] || {}).each do |vm, h|
+    next unless h.is_a?(Hash)
+    vm_flags[vm] ||= h.sort_by { |k, _| k[/\d+/].to_i }.map { |_, v| v }
+  end
+  flag_index = {}
+  vm_flags.each do |vm, arr|
+    arr.each_with_index do |val, i|
+      flag_index["#{vm}:flag_#{i + 1}"] = val
+      flag_index["#{vm}-flag#{i + 1}"] = val
+    end
+  end
+  stations = []
+  (sd['rooms'] || {}).each do |rid, room|
+    Array(room['objects']).each { |o| stations << [rid, o] if %w[flag-station launch-device].include?(o['type']) }
+    Array(room['npcs']).each { |n| Array(n['itemsHeld']).each { |o| stations << [rid, o] if %w[flag-station launch-device].include?(o['type']) } }
+  end
+  stations.each do |_rid, st|
+    key = st['id'].presence || st['name']
+    Array(st['acceptsVms']).first.then do |vm|
+      next unless vm
+      Array(st['flags']).each_with_index { |_, i| (v = flag_index["#{vm}-flag#{i + 1}"]) && flag_index["#{key}:#{vm}-flag#{i + 1}"] = v }
+    end
+  end
+  resolve = ->(ref) { ref.is_a?(String) && ref.match?(/\A[^:]+:flag_\d+\z/) ? (flag_index[ref] || g.resolve_flag_ref(ref)) : ref }
+  bad = flag_opts.reject { |f| flag_index.key?(f) }
+  if bad.any?
+    abort "--submit-flag: unknown flag id(s) #{bad.join(', ')}. Known (vm:flag_N / vm-flagN):\n  " +
+          flag_index.keys.select { |k| k.include?(':flag_') }.map { |k| "#{k} (#{k.sub(':flag_', '-flag')})" }.join("\n  ")
+  end
+
+  # ---- tasks ----
+  complete_opts.each do |tid|
+    task = g.send(:find_task_in_scenario, tid)
+    if ps.dig('objectivesState', 'tasks', tid, 'status') == 'completed'
+      head_start_notes << "complete-task #{tid}: already completed"
+      next
+    end
+    ps = g.player_state # re-fetch: save! can hand back a fresh copy
+    ps['objectivesState']['tasks'][tid] = (ps['objectivesState']['tasks'][tid] || {}).merge('status' => 'completed', 'completedAt' => Time.current.iso8601)
+    g.send(:process_task_completion, task)
+    g.send(:check_aim_completion, task['aimId'])
+    g.send(:recheck_pending_mission_conclusions!)
+    g.tasks_completed = (g.tasks_completed || 0) + 1
+    g.score = g.calculate_task_score.round
+    g.save!
+    aim_done = g.player_state.dig('objectivesState', 'aims', task['aimId'], 'status') == 'completed'
+    head_start_notes << "complete-task #{tid} (aim #{task['aimId']}#{aim_done ? ' now complete' : ''})"
+  end
+
+  # ---- flags ----
+  flag_opts.each do |fid|
+    value = flag_index[fid]
+    res = g.submit_flag(value)
+    unless res[:success]
+      head_start_notes << "submit-flag #{fid}: #{res[:message]}"
+      next
+    end
+    ps = g.player_state
+    station = nil
+    stations.each do |_rid, st|
+      refs = Array(st['flags'])
+      if refs.any? { |r| resolve.call(r).to_s.casecmp?(value) }
+        station = st
+        break
+      end
+    end
+    if station.nil?
+      stations.each do |rid, st|
+        next unless Array(st['acceptsVms']).any? { |vm| vm_flags[vm]&.include?(value) }
+        station = st
+        break
+      end
+    end
+    if station.nil?
+      (sd['rooms'] || {}).each_value do |room|
+        Array(room['objects']).each do |o|
+          station ||= o if o['lockType'] == 'flag' && o['requires'] && resolve.call(o['requires']).to_s.casecmp?(value)
+        end
+      end
+    end
+    fvm = fid[/\A(?:[^:]+:)?(.+?)(?::flag_|-flag)/, 1]
+    ids = []
+    if station && (vm = Array(station['acceptsVms']).first) && (idx = Array(station['flags']).find_index { |r| resolve.call(r).to_s.casecmp?(value) })
+      legacy = "#{vm}-flag#{idx + 1}"
+      key = station['id'].presence || station['name'].presence
+      ids = key ? ["#{key}:#{legacy}", legacy] : [legacy]
+    end
+    # rewards
+    rewards = []
+    if station && station['flagRewards']
+      fr = station['flagRewards']
+      sid = station['id'] || station['name']
+      if fr.is_a?(Hash)
+        k = fr.keys.find { |kk| kk.downcase == value.downcase }
+        rewards << fr[k] if k
+      elsif station['requires']
+        rewards.concat(fr)
+      else
+        i = Array(station['flags']).find_index { |r| resolve.call(r).to_s.casecmp?(value) }
+        rewards << fr[i] if i && fr[i]
+      end
+      rewards.map! { |r| r.merge('flag_station_id' => sid) }
+    end
+    applied = []
+    unless ps['flag_rewards_claimed']&.include?(value)
+      rewards.each do |r|
+        case r['type']
+        when 'give_item'
+          item = Array(station['itemsHeld']).find { |i| i['type'] == r['item_type'] || i['name'] == r['item_name'] }
+          if item then g.add_inventory_item!(item); applied << "give_item #{item['type']}" else applied << 'give_item: item not found in station' end
+        when 'unlock_door'
+          room = r['target_room'] || r['room_id']
+          g.unlock_room!(room) if room
+          applied << "unlock_door #{room}"
+        when 'emit_event'
+          ev = r['event_name'] || "flag_submitted:#{value}"
+          ps = g.player_state
+          (ps['pending_events'] ||= []) << { 'name' => ev, 'data' => { 'flag' => value, 'timestamp' => Time.current.to_i } }
+          applied << "emit_event #{ev} (queued; client fires on load)"
+        when 'set_global'
+          ps = g.player_state
+          (ps['globalVariables'] ||= {})[r['key']] = r['value']
+          applied << "set_global #{r['key']}=#{r['value'].inspect}"
+        when 'unlock_object'
+          oid = r['object_id'] || r['target_object'] || r['id']
+          oid ? (g.unlock_object!(oid); applied << "unlock_object #{oid}") : applied << 'unlock_object: no id in reward'
+        else
+          applied << "#{r['type']} (client-only, not applied)"
+        end
+      end
+      ps = g.player_state
+      (ps['flag_rewards_claimed'] ||= []) << value
+      g.save!
+    end
+    outcome = ids.any? ? g.process_flag_task_completions!(ids) : { completed_tasks: [], updated_tasks: [] }
+    head_start_notes << "submit-flag #{fid} -> station=#{station && (station['id'] || station['name'])} flagIds=#{ids.first(2).join('|')} rewards=[#{applied.join('; ')}] tasks_completed=#{outcome[:completed_tasks].inspect} tasks_updated=#{outcome[:updated_tasks].inspect}"
+  end
   g.save!
 end
 
