@@ -1,6 +1,6 @@
 # m09 Digital Archaeology: Stage 2, storytelling elements
 
-Stage 2. Author: stages 1–2 author (Opus), 2026-10-21. Status: round 3 fixes folded in (outcomes in story arc §15–17).
+Stage 2. Author: stages 1–2 author (Opus), 2026-10-21. Status: round 4 fixes folded in (outcomes in story arc §15–18).
 
 Inputs: `../stage_1/story_arc.md` (beats are cited as "Beat 2.4" and so on), `../stage_0_initialization.md`, `../../../finale/FINALE_ARC.md` (§2 rows, §5 cast), `story_dev_prompts/02_storytelling_elements.md`, `story_design/universe_bible/04_characters/voice_bible.md` (it wins on every returning voice), `README_ink_best_practices.md`, the `npc-dialog-review` skill. The 02 prompt asks for three files (characters, atmosphere, dialogue); this finale keeps them as one document, as the stage layout gives one file per stage.
 
@@ -302,7 +302,7 @@ Act 2:
 >
 > Agent HaX: Her file is her network, all of it. The Alpha tapes are him teaching, recorded. He teaches what he'll do. If he built the bunker the way he taught it, it's on there.
 >
-> Agent HaX: She thinks it's gone. Let her. *(refused, pulling her file a second ahead of the wipe)*
+> Agent HaX: She thinks it's gone. Let her. *(refused or hung up, pulling her file a second ahead of the wipe; R4-06)*
 >
 > Agent HaX: She fired it from Peg's office. I'm on the door. *(after the deck choice; the office opens)*
 >
@@ -357,6 +357,8 @@ Act 3:
 > Agent HaX: Then why build a key at all?
 >
 > Agent HaX: His file first. Then the rest of his box. *(flag 4 in before the identity scene is done; R3-08)*
+>
+> Agent HaX: Finish with me first. Then his box. *(the same, to a player who already holds the file; R4-04)*
 >
 > Agent HaX: No. It isn't. He shredded everyone but himself. *(on `schedule_read`, after "Her schedule. This room isn't on it.")*
 >
