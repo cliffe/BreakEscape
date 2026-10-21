@@ -2,7 +2,7 @@
 
 ## 0. Status, sources and conventions
 
-Stage 6, draft 2, 2026-10-21. Author: m10 stage 6 author (Opus). Round 1's two reviews (`REVIEW_R1_WRITING.md`, "W-nn"; `REVIEW_R1_CLUES.md`, "R1C-…") and the coordinator's rulings are folded in; §8 lists every finding and where it landed.
+**Stage 6 complete** (draft 3, 2026-10-21; round 2 folded in, §9; no round 3, the orchestrator checks directly). Author: m10 stage 6 author (Opus). Round 1's two reviews (`REVIEW_R1_WRITING.md`, "W-nn"; `REVIEW_R1_CLUES.md`, "R1C-…") and the coordinator's rulings are folded in; §8 lists every finding and where it landed.
 
 **Built on** `../stage_1/story_arc.md` ("arc"), `../stage_2/storytelling_elements.md` ("SE"), `../stage_3/moral_choices.md` ("MC", the authority for choices, costs and globals), `../stage_4/objectives_tasks.md` ("OT", incl. §16's globals inventory), `../stage_5/room_layout.md` ("RL", the authority for object ids and positions), and `../../finale/FINALE_ARC.md` ("FA") §1–9 and §13's stage 6 handover (rows B1–B3, 10-1 to 10-8; the milestone part `finale/MILESTONE_S4-5_PART_a3237d9b.md` §3 is the same list in more detail). Prompt: `story_design/story_dev_prompts/06_lore_fragments.md`; standards that win where they differ: `.claude/skills/scenario-design-review/SKILL.md` §2b (clue distribution), `README_scenario_design.md` (object fields, variants, notes items, "Closing card and credits"), `README_ink_best_practices.md`. Canon checked against shipped m01–m08 (`scenarios/*/scenario.json.erb` and ink, read-only) and the universe bible. m09's shared facts come from m09's stage 1–5 documents (its stage 6 is being written in parallel; §6 lists what the two must match). No VM material was opened; flags are named by story meaning only.
 
@@ -81,6 +81,7 @@ Variants, same for both, the rest of the sheet identical (R1C-M1):
 
 1. `globalVars.m09_recruiter_offer === 'double_crossed'` (she walked off the apron at Helena before the case was packed): "Opened: 01:52. Arakawa." and "Packed and checked by: K.A."
 2. `globalVars.m09_recruiter_offer === 'taken'` (she packed the case before the briefing, and was detained at it): "Opened: 01:52. Arakawa." and "Packed and checked by: H.K., K.A." So the case that holds the unused WREN cloner still shows her hand in the packing, and points at nobody new.
+3. `globalVars.raid_clock === 't0145'` (the briefing step, while every screen reads 01:45; R2-07): "Opened: not yet." with the packers unchanged. From `t0200` the default's "Opened: 01:52." shows. On the two m09 branches the case is opened by Arakawa at the same moment; their variants above stand, since nothing on them is a clue.
 
 **`helena_plans`** ((8, 8); readable, `gameDisplay`; `onRead.setVariable: { plans_read: true }`). Name: "Helena's Plans: Tomb Gamma, As Built". Observations: "The construction file from the Helena archive. Cold War drawings, every room numbered, stamped SUPERSEDED in red." Carries: the bunker's history (lore), the hand crank (pays the silent Nightshade's "Manual."), the shutter fed from the power room (why the power room is on the route), and the half of the payment check: entry 3, the inner door's interlock, which Nightshade's payment calls "original, unchanged" and contradicts (the payment's text is §1.10). Changed by: nothing.
 
@@ -274,18 +275,19 @@ Day 12, 20:00. Standing order from below: the service door stays shut until told
 ```
 Printing 3. Refit model.
 
-Projected deaths attributable to the Publication, first thirty days.
+PROJECTED DEATHS ATTRIBUTABLE TO THE PUBLICATION, FIRST THIRTY DAYS
 Release by key, all cities: 1,100 to 2,600.
 Fallback by city: fewer, later.
 Principal causes: hospital systems (dispatch, infusion, records); grid control; water treatment.
-Assumes the cells move first. An acceptable price for the last arms race. -- A.
+Assumes the cells move first.
+An acceptable price for the last arms race. -- A.
 
 In the margin, in a second hand, small and square: Hospital recovery is counted twice. This understates. A.A.
 
 Under it, in the first hand: Seen. -- A.
 ```
 
-(Checked against m09 stage 6's `mirror_job_printout`: the same five lines, the same line breaks, without m09's bold heading, which is a notes-markdown device on m09's printout and not part of his sheet. m09's "Release configuration" paragraph belongs to the printout, not to the sheet, so the bench copy leaves it out.)
+(Checked against m09 stage 6's current `mirror_job_printout`: its heading and five lines, character for character, with the same line breaks (R2-08). m09's "Release configuration" paragraph belongs to the printout, not to the sheet, so the bench copy leaves it out.)
 
 Whose initials (A35, settled): Asante's, "A.A.", and his second signature under them. The plain correction says *that* it is low and that someone else said so, which is all the rebuttal's plain form needs ("[Someone corrected your sheet upwards, and you signed the old number.]"). It doesn't say by how much or who: those are the decode's reward.
 
@@ -412,7 +414,7 @@ Block D, every save:
 
 ```
 FIRST ENTRIES. SEATTLE.
-0001  Infusion pumps, a hospital group. The same flaw is live in 140 hospitals. SAFETYNET disposition: retain. Operational value. Catalogued three years ago.
+0001  Infusion pumps, a hospital group. The same flaw is live in 140 hospitals. SAFETYNET disposition: RETAIN. Operational value. Catalogued three years ago.
 0002  Dispatch software. One county's emergency calls.
 0003  Water treatment controllers, a city utility. End of life. The vendor cannot fix them.
 ```
@@ -728,7 +730,7 @@ OT §7 has one music entry per closing NPC and ending value, each on `conversati
 
 **No `||` anywhere** (round 1 ruling). Every card and credits condition is `globalVars.` tests joined by `&&`. Three kinds of logic need more than that, and each is handled once:
 
-1. **The close's derived strings, computed in ink** (`close_compute`, S6-23). The closing scene (`six_oclock`, `hearing`, `citadel`) opens with one ink function in `m10_carryover_vars.ink` that reads the imports and locals with ink's own `or` and writes five string globals by `#set_global` before any line that matters plays. The card and credits are shown after the scene closes, so they always see them. Every value starts with a letter (ink turns digit-only values into numbers, F-01). Defaults `""`.
+1. **The close's derived strings, computed in ink** (`close_compute`, S6-23). The closing scene (`six_oclock`, `hearing`, `citadel`) opens with one ink function in `m10_carryover_vars.ink` that reads the imports and locals with ink's own `or` and assigns five declared string globals with plain ink `~ close_x = "value"` (the five are global `VAR`s synced to `gameState.globalVariables` by the variable observer, `npc-conversation-state.js:556-592`; no `#set_global` tag inside a function, R2-06) before any line that matters plays. The card and credits are shown after the scene closes, so they always see them. Every value starts with a letter (ink turns digit-only values into numbers, F-01). Defaults `""`.
 
 | Global | Values | Computed as |
 |---|---|---|
@@ -777,7 +779,7 @@ The `both_wiped` split is R1C-M3: "Nobody holds the map" is said only where noth
 | Condition | Line |
 |---|---|
 | `globalVars.head_start_out === 'none'` | "Nothing went at four." |
-| `globalVars.head_start_out === 'zero_day' && globalVars.share_zero_day === 'traced'` | "Zero Day has it. We followed it to four buyers." |
+| `globalVars.head_start_out === 'zero_day' && globalVars.share_zero_day === 'traced'` | "Zero Day has it. We followed it." |
 | `globalVars.head_start_out === 'zero_day' && globalVars.share_zero_day !== 'traced'` | "Zero Day has it." |
 | `globalVars.head_start_out === 'ghost'` | "Someone's buyers have it. Not Zero Day's." |
 | `globalVars.head_start_out === 'both' && globalVars.share_zero_day === 'traced'` | "Two cells have it. We followed Zero Day's." |
@@ -791,22 +793,24 @@ The `both_wiped` split is R1C-M3: "Nobody holds the map" is said only where noth
 |---|---|---|
 | `couriers` | ENTROPY's couriers | `ending == "surrender"` (his protocol's two: the couriers and their quartermaster, W-07) |
 | `zd_uk` | Zero Day's UK desk | `close_secure_cell == "zd_uk"` (and the same for the next four rows: the cell named is `close_secure_cell`'s) |
-| `procurement` | the Initiative's procurement desk | secured, not op 1, Nightshade's channel live (`m08_nightshade_triple_agent` and not `m09_nightshade_shown_file`) |
-| `crypto` | the Crypto Anarchists' reserve | secured, not ops 1–2, `m06_monitoring_enabled` |
+| `procurement` | The Initiative's procurement desk | secured, not op 1, Nightshade's channel live (`m08_nightshade_triple_agent` and not `m09_nightshade_shown_file`) |
+| `crypto` | The Crypto Anarchists' reserve | secured, not ops 1–2, `m06_monitoring_enabled` |
 | `cm` | Critical Mass | secured, not ops 1–3, `m09_completed` and not `m09_albion_notified` |
-| `book` | the order book's largest buyer | secured, none of ops 1–4 |
-| `bait` | the resale share's five buyers | `head_start_killed == "ghost"` and `ghost_sale == "bait"` |
-| `trace` | Zero Day's four buyers | `share_zero_day == "traced"` and `head_start_killed != "ghost"` (R1C-m12) |
-| `reeves` | Michael Reeves's cell | `m07_completed` and `m07_team_assignment == "fracture"` |
-| `ashford` | Marcus Ashford's cell | `m07_completed` and `m07_team_assignment == "meltdown"` |
-| `walsh` | Jennifer Walsh's cell | not `m07_completed`, or `m07_team_assignment == "trojan_horse"` (never played reads Austin covered, FA §3) |
+| `book` | The order book's largest buyer | secured, none of ops 1–4 |
+| `bait` | The resale share's buyers | `head_start_killed == "ghost"` and `ghost_sale == "bait"` |
+| `trace` | Zero Day's buyers | `share_zero_day == "traced"` and `head_start_killed != "ghost"` (R1C-m12) |
+| `reeves` | Michael Reeves's people | `m07_completed` and `m07_team_assignment == "fracture"` |
+| `ashford` | Marcus Ashford's people | `m07_completed` and `m07_team_assignment == "meltdown"` |
+| `walsh` | Jennifer Walsh's people | not `m07_completed`, or `m07_team_assignment == "trojan_horse"` (never played reads Austin covered, FA §3) |
 | `none` | – | none of the above |
 
 The line's three forms:
 
 - `c0` (only with `none`): "Not one cell broken."
-- `c1`: "One cell broken: " + the name + "." For example "One cell broken: Jennifer Walsh's cell."
-- `c2` to `c5`: the word (Two, Three, Four, Five) + " cells broken, " + the name + " among them." For example "Two cells broken, Zero Day's UK desk among them." / "Three cells broken, ENTROPY's couriers among them."
+- `c1`: the name + " broken. That was all." For example "Jennifer Walsh's people broken. That was all."
+- `c2` to `c5`: the name + " broken, and " + (one, two, three, four) + " more." For example "Zero Day's UK desk broken, and one more." / "ENTROPY's couriers broken, and three more."
+
+Name first, count after (R2-11): the line never says "cell" of the couriers or the buyers, never says "cell" twice, and never opens with the same words as the head-start line above it ("Two cells have it."). The buyers carry no number on the card, so "four buyers" appears only in THE CELLS (R2-02). The names are sentence-start forms; m07's are "people" on the card and "cell" in THE CELLS.
 
 The count includes m07's cell where its site was covered, so it is the cells broken in the work that led here, not tonight's alone, and the line never says "tonight". The cold ending counts a secured cell like the others (ruling on R1C-m17). THE CELLS (§3.4) lists every one.
 
@@ -824,7 +828,7 @@ The count includes m07's cell where its site was covered, so it is the cells bro
 | `fortyseven_late` | `m05_completed`, the list found and sold but confessed (FA row 62) | "Of the forty-seven, twenty-eight were warned in time. Nineteen had already signed." |
 | `fortyseven_none` | `m05_completed`, and the list neither found nor kept from her | "None of the forty-seven were warned. They're still on someone's list." |
 | `elena` | `m05_elena_treatment_funded` | "Elena Torres is in treatment. It's working." |
-| `none` | none of the above | no line; the card runs four |
+| `none` | none of the above | "In Billings, a girl turns nine on Saturday. Her father is bringing a telescope." (R2-03: the card still ends on a person) |
 
 Each card row's condition is `globalVars.close_human === '<value>'`. The m09 half rides only where there was an inquiry (FA row 59). **S6-11** stands: in MC §10 the forty-seven applied on every m05 save, and `m05_elena_treatment_funded` is only true on an m05 save, so Elena Torres could never reach the card; here the forty-seven take the line only when some of them weren't reached, and where all were warned it falls through to her.
 
@@ -834,7 +838,7 @@ A full card, arrest, secured, nothing out at four, Zero Day's desk rolled up, Au
 Dr Adrian Tesseract: in a cell, awaiting trial.
 The database: back in the vault. Infusion pumps in 140 hospitals are still unpatched.
 Nothing went at four.
-Two cells broken, Zero Day's UK desk among them.
+Zero Day's UK desk broken, and one more.
 In eleven counties, people calling for help still get a dead line. Day thirteen.
 ```
 
@@ -845,11 +849,9 @@ In eleven counties, people calling for help still get a dead line. Day thirteen.
 **AGENT 0x00**
 
 1. `globalVars.ending === 'joined'` → "Pressed the key." (w)
-2. `globalVars.m09_recruiter_secret === 'told'` → "Told their handler."
-3. `globalVars.ending === 'executed'` → "Held until the board sits." (w)
-4. `globalVars.ending === 'scorched'` → "Suspended." (w)
+2. `globalVars.m09_recruiter_secret === 'told'` → "Told their handler about the Recruiter's call."
 
-(No "always" clause: on most saves the title is the player's line.)
+(No "always" clause: on most saves the title is the player's line. The custody and the suspension are in the titles, so the player's line doesn't repeat them, R2-04.)
 
 **DIRECTOR MAGNUS NETHERTON**
 
@@ -865,7 +867,7 @@ In eleven counties, people calling for help still get a dead line. Day thirteen.
 3. `globalVars.ending === 'arrest' && globalVars.head_start_killed === 'zero_day'` → "Killed a feed at the console. Testifying."
 4. `globalVars.ending === 'arrest' && globalVars.head_start_killed === 'ghost'` → same text
 5. `globalVars.ending === 'arrest'` → "Testifying against her teacher."
-6. `globalVars.ending === 'surrender'` → "Sat with him in the van for a minute. Told him what she'd taught 0x00 that he hadn't."
+6. `globalVars.ending === 'surrender'` → "Sat with him in the van for a minute. Told him 0x00 was hers, not his."
 7. `globalVars.ending === 'lethal'` → "Signed under her agent."
 8. `globalVars.ending === 'scorched'` → "Stood beside her agent at the hearing."
 9. always → "On the line to the end."
@@ -874,7 +876,7 @@ In eleven counties, people calling for help still get a dead line. Day thirteen.
 
 **NIGHTSHADE**
 
-1. `globalVars.m08_nightshade_triple_agent === true && globalVars.m09_nightshade_shown_file === true && globalVars.nightshade_taken_in === true` → "Held the outer lock. Moved under a new name, and unreachable."
+1. `globalVars.m08_nightshade_triple_agent === true && globalVars.m09_nightshade_shown_file === true && globalVars.nightshade_taken_in === true` → "Held the outer lock. Gone by morning, under a new name."
 2. `globalVars.m08_nightshade_triple_agent === true && globalVars.m09_nightshade_shown_file === true && globalVars.ending === 'arrest'` → "Left at the post. On the trial's witness list."
 3. `globalVars.m08_nightshade_triple_agent === true && globalVars.m09_nightshade_shown_file === true` → "Left at the post. Still useful."
 4. `globalVars.m08_nightshade_triple_agent === true && !globalVars.m09_nightshade_shown_file && globalVars.database_outcome === 'disclosed'` → "Moved by morning. Unreachable."
@@ -978,7 +980,8 @@ In eleven counties, people calling for help still get a dead line. Day thirteen.
 5. `globalVars.voltage_outcome === 'fought'` → "Fought at his own switchgear. Charged." (w)
 6. `globalVars.voltage_outcome === 'ko'` → "Knocked out at his own switchgear. Charged." (w)
 7. `globalVars.m04_voltage_captured === true` → "Brought up after the breach. Not needed."
-8. `globalVars.m04_voltage_escaped === true` → "Still at his switchgear when the team came down."
+8. `globalVars.ending === 'joined' && globalVars.m04_voltage_escaped === true` → "Still at his switchgear." (R2-05)
+9. `globalVars.m04_voltage_escaped === true` → "Still at his switchgear when the team came down."
 
 **STATIC** (only `m04_static_left && !m04_static_left_alone`)
 
@@ -1041,7 +1044,7 @@ In eleven counties, people calling for help still get a dead line. Day thirteen.
 2. `globalVars.ending === 'joined'` → "Still on the walkway."
 3. always → "Swept up at six, card or no card."
 
-**DR ADRIAN TESSERACT** (one clause per entry, no condition): E1 "Awaiting trial."; E2 "Cooperating. No trial."; E3 "Dead at his console, reaching." (w); E4 "Shot unarmed." (w); E5 "Gone by the service door. He left a card." (w); E6 "Walked out with 0x00." (w)
+**DR ADRIAN TESSERACT** (one clause per entry, no condition; each says what the card doesn't, R2-01): E1 "Held out his wrists before anyone asked."; E2 "Typed the cells' protocol himself, without hurrying."; E3 "His key never went down." (w); E4 "Hands empty, in plain sight." (w); E5 "Gone by the service door. He left a card." (w); E6 "Walked out with 0x00." (w)
 
 On a quiet save (Imran and Asante untouched, Voltage escaped and never resolved, Vos refused), the block now reads one line per person, each different: "Never asked. Still at his bench at six, under his own sheet." / "Still at his switchgear when the team came down." / "Arrested at the release console she wrote." / "Named. Arrested on the walkway, waiting for a delivery." / "Swept up at six, card or no card." The knock-out openings vary ("Put on the floor", "Knocked out", "Knocked down", "Floored"), and every knock-out is still admitted (SE §9).
 
@@ -1074,7 +1077,7 @@ On a quiet save (Imran and Asante untouched, Voltage escaped and never resolved,
 
 ### 3.5 Elsewhere
 
-`{ "section": "ELSEWHERE", "lines": [...] }` on E1–E5, in **three movements, in this order** (W-05): what is still out there; what the night did to systems; then people. The last line is always a person. No line repeats the card's human line (W-04): each person-line the card could have taken carries `close_human !== '<value>'`, and dispatch, which always takes the card when it applies, isn't here at all. The tap on Zero Day's brokers is Victoria's clause and isn't repeated. "Ninety days" isn't used (W-03).
+`{ "section": "ELSEWHERE", "lines": [...] }` on E1–E5, in **three movements, in this order** (W-05): what is still out there; what the night did to systems; then people. The last line is a person: the telescope, or, on a save whose card already carries it (`close_human === 'none'`), the last line of movement 1 or 2. No line repeats the card's human line (W-04): each person-line the card could have taken carries `close_human !== '<value>'`, and dispatch, which always takes the card when it applies, isn't here at all. The tap on Zero Day's brokers is Victoria's clause and isn't repeated. "Ninety days" isn't used (W-03).
 
 **Movement 1: still out there**
 
@@ -1124,15 +1127,15 @@ The "Then it asked" and "They also heard" lines print only directly under the li
 | `globalVars.m05_completed === true && !globalVars.m05_found_pipeline_list && globalVars.close_human !== 'fortyseven_none'` | "None of the forty-seven were warned. They're still on someone's list." (w) |
 | `globalVars.m05_completed === true && globalVars.m05_found_pipeline_list === true && globalVars.m05_recruiter_deal_accepted === true && !globalVars.m05_recruiter_deal_confessed && globalVars.close_human !== 'fortyseven_none'` | same text (w) |
 | `globalVars.m05_elena_treatment_funded === true && globalVars.close_human !== 'elena'` | "Elena Torres is in treatment. It's working." |
-| always | "In Billings, a girl turns nine on Saturday. Her father is bringing a telescope." |
+| `globalVars.close_human !== 'none'` | "In Billings, a girl turns nine on Saturday. Her father is bringing a telescope." |
 
-The last line is true on every save that reaches six o'clock (Arakawa's call, SE §3.4; his credit no longer carries the telescope) and is never on the card, so ELSEWHERE always ends on a person.
+The last line is true on every save that reaches six o'clock (Arakawa's call, SE §3.4; his credit no longer carries the telescope). Where the card has no other human line it takes the telescope instead (R2-03), and this row's guard keeps it from printing twice.
 
 ### 3.6 Join's card and credits
 
 E6 (`citadel`, `ending === 'joined'`). FA §4.5: MISSION FAILED with the Publication's casualty projection, as m01's launch ending.
 
-**Card** (three lines, no conditions): "Dr Adrian Tesseract: with you." / "The database: everywhere." / "Every cell has it." No teaser.
+**Card** (three lines, no conditions): "Dr Adrian Tesseract: free." / "The database: everywhere." / "Every cell has it." No teaser.
 
 **Credits:**
 
@@ -1227,7 +1230,7 @@ Clue 2 ∩ clue 3 = Kowalczyk. Clue 1 is what turns 02:10 into a test. No docume
 | Arakawa knocked out before 02:10 | same | HaX's variant: "Arakawa was on the gravel at ten past. You saw to that." | same | yes |
 | Malhotra wrongly sent back | same | same | same | yes; recalled on clue 2 ("Eleven years. Check the log again.") |
 | Vector and Phantom present | same | Netherton had both at the van end | Phantom's list, with the sheet, replaces it ("one more unit than its sheet lists"; the names are the sheet's) | yes |
-| Kowalczyk or Quintero struck before the split | — | — | — | not possible: their table copies (`kowalczyk_post`, `quintero_post`) are `koImmune` until `split_started`, like Malhotra all night; only their bunker copies, after 02:10, can be knocked out (R1C-M2, ruling; §6 S6-26). So no paper ever records an act by someone the player had already put down |
+| Kowalczyk, Quintero or Arakawa struck at the table | — | — | — | not possible: the table copies (`kowalczyk_post`, `quintero_post`, `arakawa_post`) are `koImmune` (R2-07 added Arakawa; his gate copy, from the split, stays knockable), like Malhotra all night; only their bunker copies, after 02:10, can be knocked out (R1C-M2, ruling; §6 S6-26). So no paper ever records an act by someone the player had already put down |
 | Quintero sent back on a wrong accusation | same | the alibi still names the tunnel pair (where she was at 02:10 is unchanged); she is recalled on clue 3 ("I took the drain. I didn't pack the case. Read the sheet.") | same | yes |
 | Nightshade kept or dealt | same | his habits line replaces it | same | yes |
 | `m09_sleeper_shortlist` | same | HaX at the aside replaces it | same | yes |
@@ -1264,17 +1267,17 @@ None is made here (this stage edits only its own file). "FA" is FINALE_ARC; the 
 | S6-20 | m09 stage 6 (cross-check, no change needed unless they differ) | Shared facts as m10 uses them: the sheet's body (m09's `mirror_job_printout` wording); "Disposition: retain. Operational value."; Carrow Controls; Tomb Alpha and Tomb Beta closed, papers and server in Helena; the cracker handed over at the m09 briefing; 2017 / 2015 / 2019 / 2011 anchors. If m09's deed names the bunker, it should be Sun River Regional Control Site (m09 stage 6 currently says only "a decommissioned bunker, Montana") | One set of facts across both missions |
 | S6-21 | FA §4.0, §4.4; OT §6 (`t0145`) | "The breaching case on the table, opened at 01:52", not "open on the table" from 01:45 | R1C-m11: the sheet and HaX's hub line say 01:52; the case comes out shut and is opened seven minutes into the kit check, still before the 01:58 copy |
 | S6-22 | SE §3.1 / stage 7 (HaX's margin pointer) | HaX's pointer gains "Copy just the code." | R1C-m7: the strip's text is now the code alone; the half-line keeps a player from pasting the observation too |
-| S6-23 | OT §16, MC §12, stage 7 (`m10_carryover_vars.ink`), stage 9 | `close_compute`: an ink function run on the first line of each closing scene that writes `close_secure_cell`, `close_cell_name`, `close_cells`, `close_human`, `close_zero_day` (strings, default `""`, letter-first values) by `#set_global`; all three legs declared | The coordinator's ruling: no `\|\|` in any condition. The close's "or"s and the cells count live in ink, where `or` is native, and the card reads single `===` tests |
+| S6-23 | OT §16, MC §12, stage 7 (`m10_carryover_vars.ink`), stage 9 | `close_compute`: an ink function run on the first line of each closing scene that writes `close_secure_cell`, `close_cell_name`, `close_cells`, `close_human`, `close_zero_day` (strings, default `""`, letter-first values) by plain `~` assignment to synced global `VAR`s (no tags inside the function, R2-06); all three legs declared | The coordinator's ruling: no `\|\|` in any condition. The close's "or"s and the cells count live in ink, where `or` is native, and the card reads single `===` tests |
 | S6-24 | MC §10 ("the count runs from zero (no console catch, wipe or the cold ending)") | The cold ending counts a secured cell like the others | R1C-m17, ruled by the coordinator: the database was secured before the shot |
 | S6-25 | stage 7 (the hold-fire beat), optional | If wanted, a local `fire_held` set on "[Hold fire.]", read by a first HaX clause "Killed his feed in time. Testifying." | R1C-M4 moved HaX's feed clause to the console's `head_start_killed`; the hold-fire kill has no global of its own |
-| S6-26 | RL §2.1 (NPC table), §2.9 (roster); MC §5 | `kowalczyk_post` and `quintero_post` (the briefing-table copies) become `koImmune`, like Malhotra; their post-split and bunker copies stay knockable with their `_ko` latches | R1C-M2, ruling: `koImmune` can't be toggled in the engine (RL §6 item 36), and a pre-split knock-out would leave the 01:58 and 02:10 papers recording acts she couldn't have done. A `kowalczyk_ko` now always happens below ground |
+| S6-26 | RL §2.1 (NPC table), §2.9 (roster); MC §5 | `kowalczyk_post`, `quintero_post` and `arakawa_post` (the briefing-table copies) become `koImmune`, like Malhotra (Arakawa added in round 2, R2-07; his gate copy `arakawa_gate` stays knockable, so the Arakawa-down alibi row still works); their post-split and bunker copies stay knockable with their `_ko` latches | R1C-M2, ruling: `koImmune` can't be toggled in the engine (RL §6 item 36), and a pre-split knock-out would leave the 01:58 and 02:10 papers recording acts she couldn't have done. A `kowalczyk_ko` now always happens below ground |
 | S6-27 | RL §2.5 (`shutter_isolator`) | Its default text becomes "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it." | W-18: the talk-through is HaX's and Voltage's to offer |
 | S6-28 | FA §2 row 59 | "with an inquiry (`full` or `m04_crew_lost`)" becomes "(`full`, or `partial` with `m04_crew_lost`)"; a `quiet` save that sent the notice gets the Carrow Controls line in ELSEWHERE | R1C-m3: on `quiet` no Albion line prints, so "also asked" would hang |
 | S6-29 | SE §3.4 (Arakawa's credit) | "Home for Saturday, with a telescope." becomes ELSEWHERE's fixed last line, "In Billings, a girl turns nine on Saturday. Her father is bringing a telescope."; his own credit carries the county road | W-05: the close ends on a person on every save |
 | S6-30 | RL §2.6, §2.8 (`schedule_terminal`, `core_files`) | Default `text` empty, so no pre-flag page reaches the notepad; stage 9 confirms the readable branch is skipped with no text, else `addToNotes: false` | R1C-m8 |
 | S6-31 | RL §4 | The cracker's description quotes m09's line whole on m09 saves, and drops "never been near him" only on a cold start with m08 unplayed | R1C-m18a, FA §4.0 |
 
-**Stage 9 checks this file asks for** (not design changes): that `#give_item` fires an item's `onPickup` (the override); that the cracker minigame runs faster on the dusted plate's four digits (else the plate's ordered fallback sentence, §1.7); that `hasFingerprint` can be given to `bypass_panel` on the escaped branch only; that `points_landed` is a declared global, since the credits read it.
+**Stage 9 checks this file asks for** (not design changes): that `#give_item` fires an item's `onPickup` (the override); that the cracker minigame runs faster on the dusted plate's four digits (else the plate's ordered fallback sentence, §1.7); that `hasFingerprint` can be given to `bypass_panel` on the escaped branch only.
 
 ## 7. For the user
 
@@ -1349,3 +1352,24 @@ Two reviews, 2026-10-21: `REVIEW_R1_WRITING.md` (0 blockers, 7 majors, 18 minors
 | R1C-m16 `vos_outcome` default | `""`, written `avoided` by Vos's own mapping (S6-12) |
 | R1C-m17 cold ending's cells | ruled: counts (S6-24) |
 | R1C-m18 quote, Qureshi, blast-door default | cracker quote whole on m09 saves (S6-31); Qureshi marked reused; the panel's default kept as a safety default and noted |
+
+## 9. Review round 2 outcomes
+
+`REVIEW_R2.md`, 2026-10-21: 0 blockers, 3 majors, 8 minors, all applied, none withdrawn; the reviewer's rewrites P1–P5 used. Stage 6 is complete; the orchestrator checks directly.
+
+| Finding | Fix |
+|---|---|
+| R2-01 card line repeated as his credit | §3.3: Tesseract's credits now carry what the card doesn't: E1 "Held out his wrists before anyone asked.", E2 "Typed the cells' protocol himself, without hurrying.", E3 "His key never went down.", E4 "Hands empty, in plain sight." (E5, E6 unchanged). §3.1's "No line of the card is repeated below it" now holds |
+| R2-02 "four buyers" twice | §3.2 H: "Zero Day has it. We followed it."; the C name is "Zero Day's buyers"; the number stays in THE CELLS |
+| R2-03 thin saves end on a count | §3.2 U: `close_human === 'none'` puts the telescope on the card; ELSEWHERE's telescope row is guarded `close_human !== 'none'` |
+| R2-04 "Suspended" three times; "Told their handler." | §3.3: the player's executed and scorched clauses cut; P3 |
+| R2-05 Voltage on Join | §3.3: Join arm "Still at his switchgear." (Quintero can't be wounded on Join: WREN never comes through on that path, FA §4.4) |
+| R2-06 `close_compute`'s writes | §3.1 and S6-23: plain `~` assignments to synced global `VAR`s, no tags in the function |
+| R2-07 sheet at 01:45; Arakawa at the table | §1.1: "Opened: not yet." on `t0145`; S6-26 and §5 add `arakawa_post` |
+| R2-08 sheet not word for word | §1.4: m09's current heading and six lines exactly; "RETAIN" in capitals on the schedule |
+| R2-09 stale `points_landed` check | §6: dropped |
+| R2-10 "with you" | §3.6: "Dr Adrian Tesseract: free." |
+| R2-11 the cells line's shape | §3.2 C: name first, count after ("Zero Day's UK desk broken, and one more." / "Jennifer Walsh's people broken. That was all."); couriers and buyers not called cells; no clash with "Two cells have it." |
+| P1, P2 | HaX's surrender clause "Told him 0x00 was hers, not his."; Nightshade "Gone by morning, under a new name." |
+
+Not taken: the reviewer's optional "After the attacks." for the alarm log. "After the four-site night." stays, because the bunker's staff were part of that night and the phrase is how the season names it.

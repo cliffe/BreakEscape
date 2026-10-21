@@ -299,3 +299,7 @@ Orchestrator rulings for the S4–5 milestone fix pass (all four parts):
 - **m09 stage 6 closed 2026-10-21.** Two review rounds (R1 50, R2 13 findings).
 - m10 stage 6 R1 fix pass: 47/47. `close_compute` ink function writes five derived close strings (no `||` in conditions); five-line cards of varied shapes; human line always a person; 'ninety days' once; ELSEWHERE in three movements ending (on 06:00 endings) on Arakawa's 'In Billings, a girl turns nine on Saturday. Her father is bringing a telescope.'; Join ends 'Zero Day: still trading.'; sign-out sheet split for `taken`/`double_crossed`; HaX's feed credit on `head_start_killed`; margin strip's code alone. Proposals S6-01..31 for the fold. Taste calls for the user to read: the season's last lines.
 - m10 stage 6 R2 (`m10.../stage_6/REVIEW_R2.md`): 0/3/8. All on the closing card: the Architect's card line repeats as his credit; 'four buyers' twice; cold starts end the card on a count (fix: telescope line onto the card, guarded). Whodunit fair; Base64 decodes; no `||`; `close_compute` consistent with how the card reads globals (minor: use `~` assignments, not tags in a function). Final pass sent; orchestrator checks.
+- m10 stage 6 final pass: 11/11. Orchestrator checked R2-01 (Tesseract's credits no longer repeat his card line), R2-02 ('four buyers' only in THE CELLS), R2-03 (telescope line on the card when `close_human === 'none'`, guarded in ELSEWHERE).
+- **m10 stage 6 closed 2026-10-21.** Two review rounds (R1 47, R2 11 findings).
+
+## Fold stage 6 into earlier docs
