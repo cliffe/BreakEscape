@@ -349,3 +349,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - R2 fixes applied: A 13/13 (new global hax_asked_database), B 7/7 (hub 10 on busy save; fence gate workshop_entered), C 3/3. Cross-group lines verified identical. Voiced: tesseract 184, six_oclock 98, hearing 9, calls 81. CONTRACT §9. Ruling: HaX hub text purge line after flag 4 stays (text, player-asked).
 
 ### m10 script edit round 3
+- R3 (fresh editor): revise, no R4 needed. A 0/3/4, B 0/1/5, C 0/0/1. R2 all in; compile clean, loopcheck 18 states, hub <=10 on all seeds. Majors: A3-01 database buttons duplicate, A3-02 06:00 'rest of it' can be empty, B3-01 taken answer false (placing sheet), A3-03 m08 HaX KO never said (Tesseract line). Ruling: apply all, incl. scratch-tested A3-02/A3-06 tunnels. Stage 9 confirms after-ending hub lines unreachable.
