@@ -113,6 +113,8 @@ Fix round 1 for Phases 2-4 sent to grok with a one-line brief (P2-T, P3-T, P4-T 
 
 `scenarios/lab_social_engineering/REVIEW_R2.md`. All round 1 findings confirmed closed. R2-M1: the plan relied on a live red-flag meter that is not built and had no owner. Decision: build it, in P6-M (row updated). Minors: in-voice replies for Hampshire's likely failures, the metadata step named in the task and Ruth's hint, "see Ruth for the key" at locked doors, and a sharper, shorter opening with a real choice. Folding in by the planner.
 
+Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fixed (tables at the end of each file); bridges 1a 38, 1b 82, 2 15, 3 32, 4 30 (bridge-4 changed to click Done because Close now shows the debrief); Rails 722/0; slice validator 0. Two JS files Grok reported failing (`navigator` assignment) pass here: Grok's Node version. Uncommitted pending Claude review: Opus reviews the Phase 2-3 work (`build_log/REVIEW_grok_P2P3.md`), opus48 the Phase 4 work (`REVIEW_grok_P4.md`).
+
 ## Questions for the user
 
 - **How to build the rest of Phase 4** (call preparation screen P4-C, call UI P4-E, its bridge and playtest). The orchestrator's brief for P4-C was stopped by a safety classifier.
