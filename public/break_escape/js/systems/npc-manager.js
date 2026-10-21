@@ -1636,6 +1636,8 @@ export default class NPCManager {
     const now = Date.now();
     const elapsed = now - this.gameStartTime;
 
+    window.mailScheduler?.tick?.(now); // mail replies and timed mail (mail-scheduler.js)
+
     for (const message of this.timedMessages) {
       // Skip messages that haven't been triggered yet (waiting for event)
       if (message.triggerTime === null) {

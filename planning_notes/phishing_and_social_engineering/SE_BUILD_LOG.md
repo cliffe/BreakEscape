@@ -4,7 +4,7 @@ Brief: `docs/agents/SE_BUILD_BRIEF.md`. Plan: `IMPLEMENTATION_PLAN.md`. Artefact
 
 ## Resume
 
-Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a started: P1-A, B, C, D, E1, G, H, I running (shared notes `build_log/P1_COMMON.md`). Next: P1-E2 after E1; P1-W after E1, G, I; P1-F after A, C, E2 (N-02 first); P1-T0; P1-R; P1-T. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
+Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a: A, B, C, D, E1, E2, G, H, I, W landed (uncommitted). Running: P1-S (mail save size). Next: commit, then P1-F (opus48), P1-T0, P1-R, P1-T. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
 
 ## User instructions for this build (2026-10-21)
 
@@ -14,6 +14,7 @@ Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison r
   later round of improvements. Pixel art is made at its final size, never rescaled.
 - Hacktivity changes go to main, but check with the user before making any Hacktivity change. Other
   repos may be changed now.
+- Builder (07) packets in future rounds go to `opus48`, not Haiku (2026-10-21). The plan's Phase 5 model columns still say Haiku; the opus48 agent that starts Phase 5 updates them.
 - Questions: the question tool when no context is needed; otherwise a batched `.md` with images and
   context.
 
@@ -77,10 +78,13 @@ All 15 round 1 findings closed (R-12 by deferral). Node 926/930 (pass3 quarantin
 
 ## Questions for the user
 
+- **How to build the composer (P1-E2).** See the stop above.
+
 - **Speaker tie in shipped missions (R-01).** Applying the tie everywhere would give every briefing and debrief's "Agent HaX:" lines, and m07/m08 Netherton and Nightshade, the portrait of the conversation's own NPC instead of the first matching record. Probably a fix, but visible in finished missions. Held back until the user decides.
 
 ## Found in shipped content (for the user; not fixed here)
 
+- Dev database has a pending migration (20261004000001 RemoveJsonbGinIndexesFromBreakEscapeGames) so `bin/rails db:seed` refuses; agents seed with `bin/rails runner` instead. Run the migration when convenient.
 - Resume overlay after reload swallows Space; a keyboard player who presses Space first sees nothing happen until Enter (existing `ui/session-resume-keys.js` design; targeted check A).
 
 - lab_scanning: reload replays the timed intro and resets `instructor_rapport` (P0-A9).
@@ -89,6 +93,30 @@ All 15 round 1 findings closed (R-12 by deferral). Node 926/930 (pass3 quarantin
 - m03: closing a chat while the cloner is open can leave an empty person-chat overlay and `NPC not found: null` (P0-A3 F1, seen via the harness only).
 
 - **P0-T m03** (games 2843, 2846): 25 same, 5 different, 4 not reached. Popup counts lower than the baseline (Ffion 10 v 11, Victoria 5 v 9) with identical influence totals and tag counts: the baseline observer's double count (as found in m04). One `complete() called on a superseded minigame instance` warning during the Victoria cloner save, an old guard also seen in m02 and m05 baselines, but on the path P0-M changed: for the round 2 reviewer to check. Cloner beat by hand worked.
+
+- **P1-B** (Sonnet): `systems/social-intel.js` (grantFact flip-only, note, sync, readiness; evaluateReadiness), `grant_fact` action with "Noted: <label>" toast, unique note ids in notes-minigame. Test 9/9. The new import in apply-actions needed stubs in three tests that load it standalone (one is the finale session's untracked file; told them). 00 has no fact `label`, so the toast shows the full fact text until scenarios add one.
+
+- **P1-I** (Sonnet): `scenarios/test_social_slice/` built from contract values; seeded via `bin/rails runner 'load db/seeds.rb'` because the dev DB has a pending migration (20261004000001, not ours; left for the user). Orchestrator: widened `scenario-schema.json` (`grant_fact` action with `fact`; object-valued globals for `se_board_state` etc.) and added `folder: inbox` to the seeded messages; now `--strict-social` exits 0. Open for the review: headshot key `avatar` on `social.people`, sender `avatar` on seeded mail (contract names neither), `se_board_state` still undeclared, and P1-H's "outcome global not read" warning ignores eventMappings.
+
+- **P1-D** (Opus): `merge_mail_state!` with caps, whitelists and trim order (read seeded, read replies, sent; unread never dropped; over-cap updates refused whole), `savedMailState` bootstrap, merge after phoneState. Model 13/45, controller 6/26, Rails 703/0. Client contract sent to P1-C: `seeded: true` on seeded records, null to remove a key, field whitelist. Open: the 1 MB total trim can drop read mail from a mailbox the client still holds as confirmed.
+
+- **P1-A** (Sonnet): `systems/phish-rules.js`, pure, 48/48 incl. every 04 and 00 worked example and Hampshire. Ten contract gaps resolved, listed in `build_log/P1-A_decisions.md` for P1-R.
+
+- **P1-G** (Sonnet): intel board recon mode (`minigames/intel-board/`, pure `board-model.js`, CSS with batch-1 art), readiness read from globals not computed, `se_board_state` `{v:1, recon:{seenReady}}`, textContent only. Test 10/10. It installed jsdom 26.1.0 into the shared node_modules with `--no-save` (additive; the lockfile already pins it). Not yet rendered in a browser.
+
+- **P1-H** (Sonnet): `validate_social/mail.rb` and `board.rb` (04 N3, N11, N10 subset; 01 N18; 03 N6; the email-id clash as an error when the character has an `emailRecord`). Test 10/10; R0 unchanged on all 73 scenarios; slice `--strict-social` clean (the outcome-read check now counts `global_variable_changed:<name>`). Left for 1b/P1-M: `on_email`/`email_*` ink checks, `expectedLink.brandId`, closed-target decoys, `emailKnots`, `se_intel_*` declarations. `mail_terminal` schema entry is P1-W's.
+
+- **P1-E1** (Sonnet): mail client shell (`minigames/mail-client/`: minigame, reader, pure `mail-data.js`, notification), CSS with batch-1 art, textContent only. Test 13/13. Seam for P1-F: `mailState` from params, else `window.mailState`.
+- **P1-E2 (composer): stopped.** A safety classifier stopped the orchestrator while it was writing the composer brief; the agent had started on a truncated prompt and was stopped before it wrote any file (checked). Not retried or reworded; the user is asked how to proceed. P1-F (mail bridge) waits on it. P1-W wiring launched meanwhile.
+
+- **P1-W** (Sonnet): both overlays registered, started, branched in interactions.js (mail branch plain, for P1-F to move), CSS linked, schema entries, preload lines; slice `--strict-social` exits 0; both open and close in the slice (game 2864), art crisp at 2x; m01 smoke check fine (game 2865). The `mailScheduler` lines in core/game.js are P1-C's, not the finale session's. Playwright 1.64.1 needs Node 24 here (it used the cached one).
+- **P1-E2 routed to opus48** (user, 2026-10-21, after the session restart).
+
+- **P1-C** (Opus; resumed after the restart): `systems/mail-scheduler.js` (`window.mailScheduler`, wall-clock jobs, delivery into the sending account's mailbox, outcome global via writeGlobal), `mailState` keyed section with dotted `mailboxes.<id>` keys and id-only job compare, dropped whole from the reduced pagehide flush. Tests 9/9 and 7/7; R4 on m01 and m05 unchanged with no `mailState` in their bodies. F3: background tabs throttle to about once a minute after a minute hidden, so deadlines are wall-clock with a tick on visibilitychange; time closed does not count. F4: a generous student's mailState is about 40 KB, a delivery diff about 35 KB of the 60 KB keepalive budget. Two client-side follow-ups put into P1-F.
+
+- **Sync-size review** (Opus, user request): `build_log/sync_size_review.md`. Mail save keeps the earlier rules (idle sends nothing, id-only job compare, no extra writes) but strains them: whole mailbox resent per change (~35 KB), pagehide budget, 25-40 KB rewritten on every row write, seeded mail stored in full, one key for all threads, server refusals silent (phone too). Decision: packet P1-S applies all four recommendations before P1-F.
+
+- **P1-E2** (opus48): composer (`mail-client/mail-composer.js`), gate from `phish-rules.preSendGate`, picker offers held facts only, Hampshire's blank-free templates send directly. Test 10/10; social tests 232/232. Boundary: the composer builds the message and calls `params.onSend`/`onDraftChange`; judging, sent record, job and metrics are P1-F's. Compose state is on `scene.composer.getState()`, not yet in `getTestState().mail` (P1-T0 adds it with the shell test). P1-F goes to opus48 too, after P1-S.
 
 ## Review rounds
 

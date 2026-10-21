@@ -1,0 +1,266 @@
+{
+  "scenario_id": "test_social_slice",
+  "scenario_name": "Test: social engineering slice",
+  "scenario_brief": "Test fixture for the Phase 1 social-engineering slice. Read the three stand-in notes to collect what you know about Chris Hampshire in Careers, open the case file to see whether you are ready, then write to her from the mail terminal.",
+  "endGoal": "Prepare and land one phishing email on the Careers inbox.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "slice_room",
+
+  "player": {
+    "id": "player",
+    "displayName": "Operator",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 12 }
+  },
+
+  "objectives": [
+    {
+      "aimId": "hampshire_round",
+      "title": "Hampshire's inbox",
+      "description": "Learn how Careers receives mail, then send something her inbox will accept.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "ready_hampshire", "title": "Learn enough about Careers to approach", "type": "custom", "status": "active" },
+        { "taskId": "hampshire_landed", "title": "Land a message on the Careers inbox", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "globalVariables": {
+    "se_intel_hampshire_careers": false,
+    "se_intel_hampshire_cv_backlog": false,
+    "se_intel_careers_attachment": false,
+    "target_ready_hampshire": false,
+    "osint_done": false,
+    "phish_hampshire_landed": false,
+    "phish_hampshire_attempts": 0
+  },
+
+  "social": {
+    "people": [
+      { "id": "hampshire", "kind": "cast", "address": "careers@ledgerwell.example",
+        "avatar": "hampshire_headshot",
+        "forms": { "full": "Chris Hampshire" } }
+    ],
+
+    "intelFacts": {
+      "hampshire_careers": {
+        "text": "The careers inbox accepts CVs from anyone.",
+        "subject": "hampshire",
+        "source": "careers_inbox",
+        "provides": []
+      },
+      "hampshire_cv_backlog": {
+        "text": "Chris is behind on CVs before Friday.",
+        "subject": "hampshire",
+        "source": "post_hampshire_cvs",
+        "provides": [
+          { "type": "date", "value": "friday", "label": "Friday", "kind": "generic" }
+        ]
+      },
+      "careers_attachment": {
+        "text": "Chris takes .odt and .docx files.",
+        "subject": "hampshire",
+        "source": "apply_format",
+        "provides": [
+          { "type": "document", "value": "cv", "label": "my CV", "kind": "distinctive", "attachmentKind": "document" }
+        ]
+      }
+    },
+
+    "templates": {
+      "from_own": { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] },
+      "greet_generic": { "part": "greeting", "text": "Hello,", "slots": [] },
+      "pretext_apply": { "part": "pretext", "text": "I'm applying for the open role.", "slots": [],
+        "implies": [ { "type": "document", "value": "cv" } ], "urgency": "low" },
+      "pretext_enquiry": { "part": "pretext", "text": "I'd like to ask about your accounting services.", "slots": [],
+        "urgency": "low" },
+      "ask_review_cv": { "part": "ask", "text": "Could you review my CV when you have a moment?", "slots": [],
+        "urgency": "low" }
+    },
+
+    "mailClient": {
+      "accounts": [
+        { "id": "guest", "address": "guest@workstation.example", "displayName": "Operator",
+          "kind": "given", "person": null, "mailbox": "guest", "spoofsFrom": true }
+      ],
+      "mailboxes": [ { "id": "guest" } ],
+      "contacts": [
+        { "id": "hampshire", "person": "hampshire", "name": "Chris Hampshire",
+          "addresses": ["careers@ledgerwell.example"], "role": "Careers",
+          "revealedBy": "se_intel_hampshire_careers", "targetId": "hampshire" }
+      ],
+      "seededMessages": [
+        { "id": "welcome", "mailbox": "guest",
+          "from": { "name": "IT", "address": "it@ledgerwell.example", "avatar": "npc_helper" },
+          "to": "guest@workstation.example", "subject": "Your new laptop",
+          "body": "Hello,\n\nYour workstation account is ready. Sign in with the details on the card in your welcome pack.\n\nIT Service Desk",
+          "time": "08:05", "unread": true, "folder": "inbox" },
+        { "id": "rota", "mailbox": "guest",
+          "from": { "name": "Facilities", "address": "facilities@ledgerwell.example", "avatar": "npc_neutral" },
+          "to": "guest@workstation.example", "subject": "Visitor parking this week",
+          "body": "Hello,\n\nVisitor parking is in the east car park until Friday. Please use the signed bays.\n\nFacilities",
+          "time": "08:20", "unread": true, "folder": "inbox" }
+      ],
+      "payloadKit": [
+        { "id": "kit_cv", "label": "CV.docx", "kind": "document" }
+      ],
+      "checklistTiming": "onSend",
+      "bodyMode": "templates",
+      "freeTextFlavour": false,
+      "showRedFlagMeter": true
+    },
+
+    "intelBoard": {
+      "title": "Engagement: Ledgerwell",
+      "people": ["hampshire"],
+      "readinessSlots": {
+        "hampshire": [
+          { "label": "Where mail goes", "needsIntel": ["hampshire_careers"],
+            "goalString": "You still don't know how Chris receives mail from strangers.",
+            "doneString": "The careers inbox accepts CVs from anyone." },
+          { "label": "What the file should be", "needsIntel": ["careers_attachment"],
+            "goalString": "You still don't know what kind of file Chris will open.",
+            "doneString": "Chris takes .odt and .docx files." },
+          { "label": "Why she would read it", "needsIntel": ["hampshire_cv_backlog"],
+            "goalString": "You still don't know what Chris is busy with.",
+            "doneString": "Chris is behind on CVs before Friday." }
+        ]
+      }
+    },
+
+    "phishTargets": [
+      {
+        "id": "hampshire",
+        "address": "careers@ledgerwell.example",
+        "displayName": "Chris Hampshire",
+        "subjects": [
+          { "id": "s_application", "text": "Application", "topic": "recruitment" },
+          { "id": "s_hello", "text": "Hello", "topic": "general" }
+        ],
+        "interests": { "topics": ["recruitment"] },
+        "emailReplyDelay": 15,
+        "redFlagMeter": true,
+        "templateSets": { "from": ["from_own"], "greeting": ["greet_generic"],
+                          "pretext": ["pretext_apply", "pretext_enquiry"], "ask": ["ask_review_cv"] },
+        "primedFor": { "distinctiveValues": ["cv"], "minDistinct": 1, "expectedAttachment": "document",
+                       "trusts": ["*"], "story": "an applicant's CV for the open role" },
+        "requiredFactors": ["senderTrust", "pretextRelevant", "attachmentPlausible"],
+        "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
+        "factorStrings": {
+          "senderTrust": { "pass": "✓ An open inbox accepts any sender", "fail": "I don't recognise who this is from.", "redFlag": null },
+          "pretextRelevant": { "pass": "✓ Reads like an application", "fail": "This isn't about the role. I only handle applications.", "redFlag": null },
+          "senderAuth": { "pass": "✓ Sent as your own address, so there is nothing to spoof and nothing to fail.", "redFlag": null },
+          "attachmentPlausible": {
+            "pass": "✓ The CV is attached",
+            "missing": { "fail": "You mention a CV, but there's nothing attached.", "redFlag": null },
+            "wrong-type": { "fail": "That isn't a file type I can open as a CV.", "redFlag": null }
+          }
+        },
+        "replies": { "landed": "Thanks, I'll get to this CV before Friday." },
+        "hints": ["An open inbox trusts anyone who looks like an applicant.", "What does the careers page ask applicants to send?"],
+        "outcome": { "setGlobal": { "phish_hampshire_landed": true } }
+      }
+    ]
+  },
+
+  "rooms": {
+    "slice_room": {
+      "type": "room_office",
+      "door_sign": "Engagement Office",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "slice_host",
+          "displayName": "Host",
+          "npcType": "person",
+          "position": { "x": 3, "y": 3 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/ink/generic-npc.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:target_ready_hampshire",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "ready_hampshire"
+            },
+            {
+              "eventPattern": "global_variable_changed:phish_hampshire_landed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "hampshire_landed"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "mail_terminal",
+          "id": "slice_mail_terminal",
+          "name": "Mail Terminal",
+          "position": { "x": 6, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A workstation signed in to the Operator mailbox.",
+          "minigameData": { "accountIds": ["guest"] }
+        },
+        {
+          "type": "case-file",
+          "sprite": "notice_board1",
+          "id": "slice_case_file",
+          "name": "Case File",
+          "position": { "x": 8, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "The engagement board for Ledgerwell.",
+          "minigameData": { "mode": "recon" }
+        },
+        {
+          "type": "notes",
+          "sprite": "notes1",
+          "id": "careers_inbox",
+          "name": "Careers Page Printout",
+          "position": { "x": 3, "y": 6 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A printout of the careers page.",
+          "triggerOnInteract": [ { "type": "grant_fact", "fact": "hampshire_careers" } ]
+        },
+        {
+          "type": "notes",
+          "sprite": "notes2",
+          "id": "post_hampshire_cvs",
+          "name": "Chris's Social Post",
+          "position": { "x": 5, "y": 6 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A printed social post from Chris in Careers.",
+          "triggerOnInteract": [ { "type": "grant_fact", "fact": "hampshire_cv_backlog" } ]
+        },
+        {
+          "type": "notes",
+          "sprite": "notes3",
+          "id": "apply_format",
+          "name": "How To Apply Page",
+          "position": { "x": 7, "y": 6 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A printout of the how-to-apply page.",
+          "triggerOnInteract": [ { "type": "grant_fact", "fact": "careers_attachment" } ]
+        }
+      ]
+    }
+  }
+}

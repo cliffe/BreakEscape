@@ -438,23 +438,24 @@ arrived; when the mail client is open the reply is appended with no bark (S9).
 
 | Touch point | Where |
 |-------------|-------|
-| Client registration | `js/state-sync.js`: register the section as a keyed section in `KEYED_SECTIONS` (`00` §10a) and in `confirm()`, and build it in `buildPlayerSections` / `buildChanges` |
-| `pagehide` flush | `state-sync.js` `flush()`: add `mailState` to the hard-coded allow-list, placed immediately after `globalVariables` in the first reduced list (`00` §10a), so it survives the fallback trimming. The keepalive body is capped at `KEEPALIVE_BODY_LIMIT` (60 000 bytes), so a large mailbox falls back to the next 30 s sync; messages and the job that produced them are committed in one write, so a flush never keeps one without the other |
-| Server accept | `app/controllers/break_escape/games_controller.rb` `merge_last_write_wins_sections`, so a stale request cannot overwrite it; the section's sanitiser and caps live in `app/models/break_escape/game.rb`, a `merge_mail_state!` modelled on `merge_phone_state!` and its cap constants |
-| Bootstrap and restore | `games_controller.rb` bootstrap (`savedMailState`) and `js/core/game.js` restore, then `state-sync` acknowledges the key |
+| Client registration | `js/state-sync.js`: register the section as a keyed section in `KEYED_SECTIONS` (`00` §10a) and in `confirm()`, and build it in `buildPlayerSections` / `buildChanges`. `mail-scheduler.js` `exportMailState()` emits one key per message (`mailboxes.<box>.<msgId>`), one per thread (`threads.<character>:<accountId>`), and `jobs`, `drafts` and `metrics`; seeded mail as a stub `{ id, seeded: true, read, gameTime }`; no unread count. `confirm()` skips a section the server lists in `notSaved`, so it is resent |
+| `pagehide` flush | `state-sync.js` `flush()`: add `mailState` to the hard-coded allow-list, placed immediately after `globalVariables` in the first reduced list (`00` §10a), so it survives the fallback trimming, and dropped whole in the second. The keepalive body is capped at `KEEPALIVE_BODY_LIMIT` (60 000 bytes); with per-message keys a delivery's change is about 1–2 KB, so it fits. Messages and the job that produced them are committed in one write, so a flush never keeps one without the other |
+| Server accept | `app/controllers/break_escape/games_controller.rb` `merge_last_write_wins_sections`, so a stale request cannot overwrite it; a refused merge is answered as `notSaved: ["mailState"]`. The section's sanitiser and caps live in `app/models/break_escape/game.rb`, a `merge_mail_state!` modelled on `merge_phone_state!` and its cap constants; it upserts or deletes by message id and by thread key into the nested stored shape |
+| Bootstrap and restore | `games_controller.rb` bootstrap (`savedMailState`, nested) and `js/core/game.js` restore: the scheduler builds seeded mail, configured mailboxes and `deliverAt` jobs from the scenario, then applies the save (stubs take back their authored text; `00` §10a "Seeded mail is saved as a stub"). The first sync after the load sends every key |
 
 The caps are new constants in `merge_mail_state!`, not the phone's (`game.rb` has
 `MAX_PHONE_HISTORY_MESSAGES = 150` and `MAX_PHONE_STATE_BYTES = 512.kilobytes`): 200 messages per
 mailbox, 4000 characters per body, 50 jobs, one draft per account, and a total of
 `MAX_MAIL_STATE_BYTES = 1.megabyte` for the whole section (three mailboxes at the per-message caps
-could otherwise pass 2 MB). Over a cap, the sanitiser drops the oldest read inbox messages first
-(seeded mail before replies), then the oldest sent records, and never drops unread mail or a pending
-job. If the section is still over the total, the update is not saved and the previous state stands
-(logged, as `npcInkVariables` does). The `00` §10a caps line states these values.
+could otherwise pass 2 MB). Over a cap, the sanitiser drops the oldest read replies first, then the
+oldest sent records, and never drops a seeded stub, unread mail or a pending job. If the section is
+still over the total, the update is not saved and the previous state stands (logged, and reported to
+the client as `notSaved` so it resends). The `00` §10a caps line states these values.
 
 `mailState` holds the mailboxes (`messages[]` as the `00` §10a record in full: `id`, `thread`, `mailbox`,
 `folder`, `fromAccount`, `from`, `to`, `subject`, `targetId`, `templates`, `slots`, `body`,
-`attachment`, `link`, `landed`, `tells`, `time`, `gameTime`, `read`), the pending delivery jobs (ink and text), the per-`(character, account)` thread
+`attachment`, `link`, `landed`, `tells`, `time`, `gameTime`, `read`; seeded mail only as a stub
+`{ id, seeded: true, read, gameTime }`), the pending delivery jobs (ink and text), the per-`(character, account)` thread
 positions, the drafts and `metrics[targetId]` (`sent`, `failed`, `landed`, `firstTryLanded`). The
 displayed time is the record's `time`; the countdown is wall clock. The engagement report (`10`)
 reads `metrics`, the sent records and the outcome globals.
@@ -476,7 +477,7 @@ reads `metrics`, the sent records and the outcome globals.
 | # | Item | Notes |
 |---|------|-------|
 | N1 | `mail-client` minigame component (list, reading pane, Sent folder, composer, account switcher, Create-account panel) | New overlay; one component with a narrow layout, not a second one |
-| N2 | `mailState` persistence: the touch points above, with the new per-mailbox caps and the total byte cap and trim order; drafts (`mailState.drafts`) written on change and before a launch; `metrics` and `phish_<id>_attempts` written on each send; change detection for `jobs` compares job ids and `accountId`/`msgId` only, as `timedMessages` does with its pending ids, because `remainingMs` counts down on every tick and would otherwise mark the section changed on every sync (`remainingMs` rides along with any other change) | Implements `00` S9's persistence half |
+| N2 | `mailState` persistence: the touch points above, keyed per message and per thread with seeded mail as stubs, with the new per-mailbox caps and the total byte cap and trim order (never a stub), and refused sections reported as `notSaved` and resent; drafts (`mailState.drafts`) written on change and before a launch; `metrics` and `phish_<id>_attempts` written on each send; change detection for `jobs` compares job ids and `accountId`/`msgId` only, as `timedMessages` does with its pending ids, because `remainingMs` counts down on every tick and would otherwise mark the section changed on every sync (`remainingMs` rides along with any other change) | Implements `00` S9's persistence half |
 | N3 | Close behaviour and the `gameResult` transform above (completion on Close, never on send), documented for scenario authors; own Close control, capture-phase Esc, `requiresKeyboardInput` and its bridge test | — |
 | N4 | Payload kit as abstract items; Attach menu; the `link` kind refers to a landing page built in `07`; nested launch of the builder and Notes through S12; `linkInfo` filled from `linkInfoFor`; the link item offered only for targets in the page's `targets` map; the re-attach test reads the page record's `built` | Cross-component |
 | N5 | A read-only **`mail-reader`** component (message list + reading pane, link-hover status bar, header panel) shared with the triage defender (`05`) | `01` adopts it too so the two cannot drift |

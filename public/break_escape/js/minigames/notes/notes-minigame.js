@@ -831,6 +831,14 @@ export function startNotesMinigame(item, noteContent, observationText, navigateT
     window.MinigameFramework.startMinigame('notes', null, params);
 }
 
+// Unique note ids: the timestamp plus a counter, so several notes added in one
+// millisecond (a call grants three facts in one run) do not collide in the sync merge.
+let noteIdCounter = 0;
+function nextNoteId() {
+    noteIdCounter = (noteIdCounter + 1) % 1000;
+    return Date.now() * 1000 + noteIdCounter;
+}
+
 // Global addNote function for compatibility with the old notes system
 window.addNote = function(title, text, important = false) {
     console.log('Global addNote called:', { title, important, textLength: text.length });
@@ -865,7 +873,7 @@ window.addNote = function(title, text, important = false) {
     }
     
     const note = {
-        id: Date.now(),
+        id: nextNoteId(),
         title: title,
         text: text,
         timestamp: new Date(),

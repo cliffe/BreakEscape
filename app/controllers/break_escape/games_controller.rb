@@ -356,6 +356,12 @@ module BreakEscape
           filtered['savedPhoneState'] = @game.player_state['phoneState']
         end
 
+        # Mail client state (mailboxes, pending reply jobs, threads, drafts,
+        # metrics; 00 §10a). Absent for a mission that never used mail.
+        if @game.player_state['mailState'].present?
+          filtered['savedMailState'] = @game.player_state['mailState']
+        end
+
         # Include current inventory from player_state for page reload recovery
         # This allows the client to restore inventory state on reload
         if @game.player_state['inventory'].present? && @game.player_state['inventory'].is_a?(Array)
@@ -695,6 +701,9 @@ module BreakEscape
     def sync_state
       stale = false
       refusal = nil
+      # Sections a merge refused over a cap (the saved copy stands). Reported
+      # as notSaved so the client does not mark them confirmed and resends them.
+      @not_saved = []
       Game.transaction do
         @game = Game.lock.select(*SYNC_STATE_COLUMNS).find(params[:id])
         authorize @game if defined?(Pundit)
@@ -719,6 +728,8 @@ module BreakEscape
         render json: { success: false, message: refusal }, status: :forbidden
       elsif stale
         render json: { success: true, stale: true }
+      elsif @not_saved.any?
+        render json: { success: true, notSaved: @not_saved }
       else
         render json: { success: true }
       end
@@ -1423,8 +1434,16 @@ module BreakEscape
         @game.replace_timed_messages!(params[:timedMessages].to_unsafe_h)
       end
 
-      if params[:phoneState].respond_to?(:to_unsafe_h)
-        @game.merge_phone_state!(params[:phoneState].to_unsafe_h)
+      if params[:phoneState].respond_to?(:to_unsafe_h) &&
+         @game.merge_phone_state!(params[:phoneState].to_unsafe_h) == false
+        @not_saved << 'phoneState'
+      end
+
+      # mailState: each key replaces the saved message, thread or list whole, so
+      # an older copy would undo a read mark or bring back a delivered job (00 §10a)
+      if params[:mailState].respond_to?(:to_unsafe_h) &&
+         @game.merge_mail_state!(params[:mailState].to_unsafe_h) == false
+        @not_saved << 'mailState'
       end
 
       if params[:npcVisibility].respond_to?(:to_unsafe_h)

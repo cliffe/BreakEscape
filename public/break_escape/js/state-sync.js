@@ -10,7 +10,15 @@ const CLOCK_ONLY_INTERVAL_MS = 5 * 60 * 1000;
 
 // Keyed sections: only changed keys are sent, and a key that has gone is sent
 // as null (the server deletes it for globalVariables and ignores it elsewhere).
-const KEYED_SECTIONS = ['globalVariables', 'npcVisibility', 'npcHostility', 'triggeredEvents', 'npcInkVariables'];
+const KEYED_SECTIONS = ['globalVariables', 'npcVisibility', 'npcHostility', 'triggeredEvents', 'npcInkVariables', 'mailState'];
+
+// Keys of a keyed section compared by something other than their whole value.
+// mailState.jobs: remainingMs counts down every tick, so only which jobs exist
+// (ids, account, message) is a change, as timedMessages diffs its pending ids;
+// the current times ride along with anything else that is sent (00 S9).
+const mailJobsChangeKey = jobs => json((jobs || []).map(j =>
+  [j.jobId, j.kind, j.accountId ?? null, j.msgId ?? null, j.messageId ?? null]));
+const CHANGE_KEYS = { mailState: { jobs: mailJobsChangeKey } };
 
 // Lists replaced whole when they change
 const WHOLE_SECTIONS = ['commandBoardLog', 'biometricSamples', 'playerHealth'];
@@ -29,7 +37,7 @@ const json = v => JSON.stringify(v);
  *                        commandBoardLog, triggeredEvents
  *   per player:          currentRoom, notes, phoneState, npcInkVariables,
  *                        biometricSamples, timedMessages, scenarioBriefShown,
- *                        playerHealth
+ *                        playerHealth, mailState
  * buildPayload() builds the two groups separately, in that order.
  *
  * Every request carries clientTs, which only increases within a page. The
@@ -53,6 +61,7 @@ export class StateSync {
     this._next = null; // the one sync queued behind it
     this.lastError = null; // error from the latest failed run (status set for HTTP errors)
     this._boolFor = new WeakMap(); // run promise -> the boolean promise sync() hands out
+    this._notSavedLogged = new Set(); // sections already warned about on this page
   }
 
   start() {
@@ -149,6 +158,12 @@ export class StateSync {
     // a reload between an event and its delayed text keeps the text
     const timedMessages = window.npcManager?.exportTimedMessages?.();
     if (timedMessages) out.timedMessages = timedMessages;
+
+    // Mail (social missions only): keyed by mailboxes.<box>.<msgId>, jobs,
+    // threads.<character>:<accountId>, drafts, metrics (00 §10a). Null for a
+    // mission with no mail, so no mailState key is ever sent.
+    const mailState = window.mailScheduler?.exportMailState?.();
+    if (mailState) out.mailState = mailState;
     return out;
   }
 
@@ -177,9 +192,10 @@ export class StateSync {
       const confirmed = this.confirmed[section] || {};
       const changes = {};
       const acked = {};
+      const changeKeys = CHANGE_KEYS[section] || {};
       for (const [key, value] of Object.entries(current)) {
         if (value === undefined) continue;
-        const s = json(value);
+        const s = changeKeys[key] ? changeKeys[key](value) : json(value);
         if (confirmed[key] !== s) { changes[key] = value; acked[key] = s; }
       }
       for (const key of Object.keys(confirmed)) {
@@ -252,14 +268,25 @@ export class StateSync {
       body.timedMessages = full.timedMessages;
       ack.timedMessagesKey = timedKey;
     }
+    // Mail jobs' current times ride along with anything else that is sent
+    const mailJobs = full.mailState?.jobs;
+    if (mailJobs && mailJobs.length > 0 && !body.mailState?.jobs && Object.keys(body).length > 0) {
+      body.mailState = { ...(body.mailState || {}), jobs: mailJobs };
+      ack.mailState = { ...(ack.mailState || {}), jobs: mailJobsChangeKey(mailJobs) };
+    }
     if (Object.keys(body).length === 0) return null;
     return { body, ack };
   }
 
-  /** Record what the server now holds, after a 2xx answer that wasn't stale. */
-  confirm({ body, ack }, now = Date.now()) {
+  /**
+   * Record what the server now holds, after a 2xx answer that wasn't stale.
+   * Sections in notSaved (the server refused them over a cap and kept its
+   * previous copy) are not confirmed, so they are sent again (00 §13).
+   */
+  confirm({ body, ack }, now = Date.now(), notSaved = []) {
+    const refused = new Set(Array.isArray(notSaved) ? notSaved : []);
     for (const section of [...KEYED_SECTIONS, 'notes']) {
-      if (!ack[section]) continue;
+      if (!ack[section] || refused.has(section)) continue;
       const kept = { ...(this.confirmed[section] || {}) };
       for (const [key, s] of Object.entries(ack[section])) {
         if (s === null) delete kept[key]; else kept[key] = s;
@@ -270,7 +297,7 @@ export class StateSync {
       if (ack[key] !== undefined) this.confirmed[key] = ack[key];
     }
     if (body.scenarioClock) this.clockConfirmedAt = now;
-    if (body.phoneState) window.npcManager?.markPhoneStateSynced?.(body.phoneState);
+    if (body.phoneState && !refused.has('phoneState')) window.npcManager?.markPhoneStateSynced?.(body.phoneState);
   }
 
   /**
@@ -332,7 +359,13 @@ export class StateSync {
         this.lastError = null;
         return { ok: false, error: null };
       }
-      this.confirm(changes);
+      const notSaved = Array.isArray(response?.notSaved) ? response.notSaved : [];
+      for (const section of notSaved) {
+        if (this._notSavedLogged.has(section)) continue;
+        this._notSavedLogged.add(section);
+        console.warn(`State sync: the server did not save ${section} (over a cap); resending it with each sync`);
+      }
+      this.confirm(changes, Date.now(), notSaved);
       this.lastError = null;
       console.log('✓ State synced to server');
       return { ok: true, error: null };
@@ -375,10 +408,13 @@ export class StateSync {
       const payload = { ...changes.body, clientTs: this.nextClientTs() };
       let body = JSON.stringify(payload);
       if (body.length > KEEPALIVE_BODY_LIMIT) {
-        // Keep the reload-critical parts: globals, fired one-shot handlers, the timed
-        // texts they scheduled, and the phone threads changed since the last sync
-        const { globalVariables, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, clientTs } = payload;
-        body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, clientTs });
+        // Keep the reload-critical parts: globals, the mail changed since the last
+        // sync (a delivered reply and its job travel together), fired one-shot
+        // handlers, the timed texts they scheduled, and the phone threads changed
+        // since the last sync. mailState is dropped whole, never cut, in the
+        // second list (00 §10a "The pagehide flush has a size budget").
+        const { globalVariables, mailState, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, clientTs } = payload;
+        body = JSON.stringify({ globalVariables, mailState, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, clientTs });
         if (body.length > KEEPALIVE_BODY_LIMIT) {
           body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, clientTs });
           if (body.length > KEEPALIVE_BODY_LIMIT) return;

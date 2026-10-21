@@ -1,5 +1,6 @@
 import { displayDashes } from '../utils/display-dashes.js';
 import { writeGlobal } from './global-writer.js';
+import { grantFact } from './social-intel.js';
 
 /**
  * Shared action executor for scenario-defined action descriptors.
@@ -11,6 +12,8 @@ import { writeGlobal } from './global-writer.js';
  * Supported action types:
  *   set_global     { key, value }    — patches gameState.globalVariables and fires
  *                                      global_variable_changed:<key>
+ *   grant_fact     { fact }          — grants an intel fact once (note, readiness) and
+ *                                      toasts "Noted: <fact label>" (00 S15)
  *   emit_event     { event_name }    — fires a raw eventDispatcher event
  *   complete_task  { taskId }        — marks an objective task complete
  *   unlock_object  { objectId }      — unlocks a world object (+ optional server persist)
@@ -40,6 +43,15 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                     // left as before (openChat: false).
                     writeGlobal(action.key, action.value, { emitAlways: true, openChat: false });
                     console.log(`[applyActions] set_global ${action.key} =`, action.value);
+                }
+                break;
+
+            case 'grant_fact':
+                if (action.fact) {
+                    // Flip-only (social-intel.js): a repeat grant does nothing, so the
+                    // toast shows once, beside the note the grant adds.
+                    const granted = grantFact(action.fact, { source });
+                    if (granted.granted) window.gameAlert?.(`Noted: ${granted.label}`, 'info', 'Noted', 4000);
                 }
                 break;
 

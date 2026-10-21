@@ -87,6 +87,16 @@
     "optional": ["tabs", "tabSet", "title", "caseRef", "reviewedVar", "confirmedVar", "confirmGateTab", "confirmLabel", "confirmHint", "confirmReadyHint", "confirmSuccessText"]
   },
 
+  "mail_terminal": {
+    "required": [],
+    "optional": ["accountIds", "defaultAccount"]
+  },
+
+  "case-file": {
+    "required": [],
+    "optional": ["mode"]
+  },
+
   "notes": {
     "optional": ["timerRef"]
   },

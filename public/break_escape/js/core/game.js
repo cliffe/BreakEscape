@@ -36,7 +36,7 @@ import { sightChallengeWatcher } from '../systems/npc-sight-challenge.js';  // O
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
 import { initLighting } from '../systems/lighting.js';
 import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture } from '../systems/character-textures.js';
-import { fistsClickPunches } from '../systems/combat-input.js';  // 7.1i: fists mode still walks on open floor
+import { mailScheduler } from '../systems/mail-scheduler.js';  // Mail jobs and mailState (social missions)
 
 // Global variables that will be set by main.js
 let gameScenario;
@@ -295,6 +295,8 @@ export function preload() {
     this.load.image('notes', 'objects/notes1.png');
     this.load.image('checklist', 'objects/checklist.png');
     this.load.image('phone', 'objects/phone1.png');
+    this.load.image('mail_terminal', 'objects/mail_terminal.png');
+    this.load.image('case-file', 'objects/case-file.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');
     this.load.image('smartscreen', 'objects/smartscreen.png');
     this.load.image('photo', 'objects/picture1.png');
@@ -1466,6 +1468,11 @@ export async function create() {
     if (gameScenario.savedPhoneState) {
         window.npcManager?.restorePhoneState?.(gameScenario.savedPhoneState);
     }
+
+    // Mail (social missions): the saved mailState, or the scenario's seeded mail on a
+    // first load. A mission with no social.mailClient and nothing saved stays inactive
+    // and sends no mailState (00 S9). Jobs restart their countdown from remainingMs.
+    mailScheduler.init({ scenario: gameScenario, saved: gameScenario.savedMailState || null });
 
     // Restore objectives state from server if available (passed via objectivesState)
     if (gameScenario.objectivesState) {

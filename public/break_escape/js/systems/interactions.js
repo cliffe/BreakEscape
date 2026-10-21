@@ -994,6 +994,26 @@ export function handleObjectInteraction(sprite) {
         return;
     }
   
+    // Social-engineering overlays: the mail terminal and the case file only open
+    // their overlay (P1-F moves the mail branch after the lock check).
+    if (sprite.scenarioData.type === 'mail_terminal') {
+        if (window.startMailClientMinigame) {
+            window.startMailClientMinigame(sprite);
+        } else {
+            window.gameAlert('Mail terminal unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
+    if (sprite.scenarioData.type === 'case-file') {
+        if (window.startIntelBoardMinigame) {
+            window.startIntelBoardMinigame(sprite);
+        } else {
+            window.gameAlert('Case file unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
     // Handle Major Incident Command Board
     if (sprite.scenarioData.type === 'command_board') {
         if (window.startCommandBoardMinigame) {

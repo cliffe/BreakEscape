@@ -1984,10 +1984,11 @@ module BreakEscape
 
       if merged.to_json.bytesize > MAX_PHONE_STATE_BYTES
         Rails.logger.warn "[BreakEscape] phoneState over #{MAX_PHONE_STATE_BYTES} bytes; update not saved"
-        return
+        return false # the caller reports it as notSaved, so the client resends
       end
 
       player_state['phoneState'] = merged
+      true
     end
 
     def sanitize_phone_state_entry(entry)
@@ -2038,6 +2039,318 @@ module BreakEscape
 
       clean
     end
+
+    # mailState: the social-engineering mail client's saved state (00 §10a,
+    # 01 "Persisted mail"). Its own caps, not the phone's.
+    MAX_MAIL_STATE_BYTES = 1.megabyte
+    MAX_MAIL_MESSAGES_PER_MAILBOX = 200
+    MAX_MAIL_BODY_CHARS = 4000
+    MAX_MAIL_JOBS = 50
+    MAX_MAIL_MAILBOXES = 20
+    MAX_MAIL_THREADS = 200
+    MAX_MAIL_DRAFTS = 20
+    MAX_MAIL_METRICS = 200
+    MAX_MAIL_THREAD_POSITION_BYTES = 60.kilobytes
+    MAX_MAIL_STRING = 1000
+    MAX_MAIL_ID_LENGTH = 300
+    MAX_MAIL_JSON_DEPTH = 6
+    MAX_MAIL_JSON_ENTRIES = 200
+    MAIL_STATE_KEYS = %w[mailboxes jobs threads drafts metrics].freeze
+    MAIL_MESSAGE_KEYS = %w[
+      id thread mailbox folder fromAccount from to targetId subject templates slots body
+      attachment link landed tells time gameTime read kind seeded links attachments highlights
+    ].freeze
+    MAIL_JOB_KINDS = %w[ink text seed].freeze
+    MAIL_JOB_STRING_KEYS = %w[character npcId accountId msgId knot targetId messageId mailbox global outcomeGlobal].freeze
+    MAIL_DRAFT_KEYS = %w[to subject templates slots attachment link targetId headerFrom].freeze
+    MAIL_METRIC_COUNTS = %w[sent failed landed].freeze
+
+    # Merge the mail client's keyed section (00 §10a "Persistence"). Keys:
+    #   mailboxes.<box>.<msgId>  one message, upserted by id into the mailbox
+    #                            (appended when new); null removes it. A seeded
+    #                            message comes as a stub { id, seeded, read, gameTime }.
+    #   threads.<key>            one thread's position; null removes it.
+    #   jobs, drafts, metrics    replaced whole; null removes it.
+    # Mailbox ids hold no dot (validator), so the key splits on the first dot
+    # after the prefix; a message id may hold dots. A whole mailbox or a whole
+    # threads key is not accepted. A mailbox over its message cap, or the section
+    # over MAX_MAIL_STATE_BYTES, is trimmed: oldest read replies, then oldest
+    # sent records. Seeded stubs, unread mail and pending jobs are never dropped:
+    # if trimming is not enough, or a count cap is passed, the update is not
+    # saved and the previous state stands (a reply and the job that produced it
+    # change together, so one is never kept without the other). Returns true
+    # when saved, false when refused (the caller reports it as notSaved), nil
+    # when nothing usable came. Does not save!; the caller does.
+    def merge_mail_state!(incoming)
+      return nil unless incoming.is_a?(Hash)
+
+      updates = mail_state_updates(incoming)
+      return nil if updates.empty?
+
+      merged = (player_state['mailState'] || {}).deep_dup
+      updates.each do |path, value|
+        if path.is_a?(Array) && path[0] == 'mailboxes'
+          _, box_id, msg_id = path
+          boxes = merged['mailboxes'] ||= {}
+          box = boxes[box_id] ||= { 'messages' => [] }
+          box['messages'] = Array(box['messages'])
+          index = box['messages'].index { |m| m.is_a?(Hash) && m['id'] == msg_id }
+          if value.nil?
+            box['messages'].delete_at(index) if index
+          elsif index
+            box['messages'][index] = value
+          else
+            box['messages'] << value
+          end
+          boxes.delete(box_id) if box['messages'].empty?
+        elsif path.is_a?(Array) # ['threads', key]
+          threads = merged['threads'] ||= {}
+          if value.nil?
+            threads.delete(path[1])
+          else
+            threads[path[1]] = value
+          end
+          merged.delete('threads') if threads.empty?
+        elsif value.nil?
+          merged.delete(path)
+        else
+          merged[path] = value
+        end
+      end
+      merged.delete('mailboxes') if merged['mailboxes'] == {}
+
+      refusal = mail_state_refusal(merged, updates)
+      if refusal
+        Rails.logger.warn "[BreakEscape] mailState #{refusal}; update not saved"
+        return false
+      end
+
+      player_state['mailState'] = merged
+      true
+    end
+
+    private
+
+    # Incoming keys sanitised, as { 'jobs' => [...], ['mailboxes', box, msgId] => {...},
+    # ['threads', key] => {...}, ... }. A key whose value cannot be sanitised is
+    # left out (the saved one stands).
+    def mail_state_updates(incoming)
+      updates = {}
+      incoming.each do |key, value|
+        key = key.to_s
+        if key.start_with?('mailboxes.')
+          box_id, msg_id = key.delete_prefix('mailboxes.').split('.', 2)
+          next unless mail_box_id?(box_id) && mail_id?(msg_id)
+
+          if value.nil?
+            updates[['mailboxes', box_id, msg_id]] = nil
+          else
+            clean = sanitize_mail_message(value.is_a?(Hash) ? value.merge('id' => msg_id) : value)
+            updates[['mailboxes', box_id, msg_id]] = clean if clean
+          end
+        elsif key.start_with?('threads.')
+          thread_key = key.delete_prefix('threads.')
+          next unless thread_key.present? && thread_key.length <= 200
+
+          if value.nil?
+            updates[['threads', thread_key]] = nil
+          else
+            clean = sanitize_mail_threads(thread_key => value)&.dig(thread_key)
+            updates[['threads', thread_key]] = clean if clean
+          end
+        elsif %w[jobs drafts metrics].include?(key)
+          if value.nil?
+            updates[key] = nil
+          else
+            clean = send("sanitize_mail_#{key}", value)
+            updates[key] = clean unless clean.nil?
+          end
+        end
+      end
+      updates
+    end
+
+    # Why the merged section cannot be saved, or nil. Trims messages first.
+    def mail_state_refusal(merged, updates)
+      boxes = merged['mailboxes'] || {}
+      return "has #{boxes.size} mailboxes (cap #{MAX_MAIL_MAILBOXES})" if boxes.size > MAX_MAIL_MAILBOXES
+      return "has #{merged['jobs'].size} jobs (cap #{MAX_MAIL_JOBS})" if Array(merged['jobs']).size > MAX_MAIL_JOBS
+      return "has #{merged['threads'].size} threads (cap #{MAX_MAIL_THREADS})" if merged['threads'].to_h.size > MAX_MAIL_THREADS
+      return "has #{merged['drafts'].size} drafts (cap #{MAX_MAIL_DRAFTS})" if merged['drafts'].to_h.size > MAX_MAIL_DRAFTS
+      return "has #{merged['metrics'].size} metrics (cap #{MAX_MAIL_METRICS})" if merged['metrics'].to_h.size > MAX_MAIL_METRICS
+
+      updates.each_key.filter_map { |path| path[1] if path.is_a?(Array) && path[0] == 'mailboxes' }.uniq.each do |box_id|
+        box = boxes[box_id]
+        next unless box
+
+        trim_mail_messages!([box]) { box['messages'].size <= MAX_MAIL_MESSAGES_PER_MAILBOX }
+        if box['messages'].size > MAX_MAIL_MESSAGES_PER_MAILBOX
+          return "mailbox #{box_id} holds more than #{MAX_MAIL_MESSAGES_PER_MAILBOX} unread or seeded messages"
+        end
+      end
+
+      bytes = merged.to_json.bytesize
+      if bytes > MAX_MAIL_STATE_BYTES
+        trim_mail_messages!(boxes.values) do |dropped|
+          bytes -= dropped.to_json.bytesize + 1 if dropped
+          bytes <= MAX_MAIL_STATE_BYTES
+        end
+        bytes = merged.to_json.bytesize
+        return "over #{MAX_MAIL_STATE_BYTES} bytes after trimming" if bytes > MAX_MAIL_STATE_BYTES
+      end
+      nil
+    end
+
+    # Drop messages from the given mailboxes, in trim order, until the block
+    # (called with the message just dropped, or nil before the first) is true.
+    # Order: read inbox replies, then sent records; oldest first within each
+    # (gameTime, then position). Seeded stubs and unread inbox mail are kept: a
+    # dropped stub would bring its message back unread on reload, and a stub is
+    # about 60 bytes.
+    def trim_mail_messages!(boxes)
+      return if yield(nil)
+
+      candidates = []
+      boxes.each_with_index do |box, box_index|
+        box['messages'].each_with_index do |msg, index|
+          next if msg['seeded'] == true
+
+          tier = if msg['folder'] == 'sent' then 1
+                 elsif msg['read'] != true then next
+                 else 0
+                 end
+          time = msg['gameTime'].is_a?(Numeric) ? msg['gameTime'] : -1
+          candidates << [[tier, time, box_index, index], box, msg]
+        end
+      end
+
+      candidates.sort_by(&:first).each do |_, box, msg|
+        box['messages'].delete_at(box['messages'].index { |m| m.equal?(msg) })
+        break if yield(msg)
+      end
+    end
+
+    def sanitize_mail_message(msg)
+      return nil unless msg.is_a?(Hash) && mail_id?(msg['id'])
+
+      MAIL_MESSAGE_KEYS.each_with_object({}) do |key, clean|
+        next unless msg.key?(key)
+
+        value = msg[key]
+        case key
+        when 'body'
+          clean[key] = value[0, MAX_MAIL_BODY_CHARS] if value.is_a?(String)
+        when 'folder'
+          clean[key] = value if %w[inbox sent].include?(value)
+        when 'gameTime'
+          clean[key] = value if value.is_a?(Numeric)
+        when 'read', 'seeded'
+          clean[key] = value if [true, false].include?(value)
+        when 'landed'
+          clean[key] = value if [true, false, nil].include?(value)
+        when 'tells'
+          clean[key] = value.select { |t| t.is_a?(String) && t.length <= 100 }.first(50) if value.is_a?(Array)
+        else
+          clean[key] = sanitize_mail_json(value)
+        end
+      end
+    end
+
+    def sanitize_mail_jobs(value)
+      return nil unless value.is_a?(Array)
+
+      value.filter_map do |job|
+        next unless job.is_a?(Hash) && mail_id?(job['jobId']) && MAIL_JOB_KINDS.include?(job['kind'])
+
+        clean = { 'jobId' => job['jobId'], 'kind' => job['kind'] }
+        MAIL_JOB_STRING_KEYS.each do |key|
+          clean[key] = job[key] if job[key].is_a?(String) && job[key].length <= MAX_MAIL_ID_LENGTH
+        end
+        clean['outcomeGlobal'] = nil if job.key?('outcomeGlobal') && job['outcomeGlobal'].nil?
+        clean['remainingMs'] = job['remainingMs'].to_i.clamp(0, MAX_TIMED_MESSAGE_DELAY_MS) if job['remainingMs'].is_a?(Numeric)
+        clean['choice'] = job['choice'].to_i if job['choice'].is_a?(Numeric)
+        clean['text'] = job['text'][0, MAX_MAIL_BODY_CHARS] if job['text'].is_a?(String)
+        clean['vars'] = sanitize_mail_json(job['vars']) if job['vars'].is_a?(Hash)
+        clean
+      end
+    end
+
+    def sanitize_mail_threads(value)
+      return nil unless value.is_a?(Hash)
+
+      value.each_with_object({}) do |(key, thread), clean|
+        next unless key.is_a?(String) && key.length <= 200 && thread.is_a?(Hash)
+
+        entry = {}
+        position = thread['position']
+        if (position.is_a?(String) || position.is_a?(Hash)) &&
+           (position.is_a?(String) ? position.bytesize : position.to_json.bytesize) <= MAX_MAIL_THREAD_POSITION_BYTES
+          entry['position'] = position.is_a?(Hash) ? position.to_h : position
+        end
+        entry['choices'] = sanitize_mail_json(thread['choices'].first(20)) if thread['choices'].is_a?(Array)
+        expects = thread['expects']
+        if expects.is_a?(Hash) && %w[choices compose].include?(expects['mode'])
+          entry['expects'] = { 'mode' => expects['mode'] }
+          entry['expects']['targetId'] = expects['targetId'] if expects['targetId'].is_a?(String) && expects['targetId'].length <= 100
+        end
+        clean[key] = entry
+      end
+    end
+
+    def sanitize_mail_drafts(value)
+      return nil unless value.is_a?(Hash)
+
+      value.each_with_object({}) do |(account_id, draft), clean|
+        next unless account_id.is_a?(String) && account_id.length <= 100 && draft.is_a?(Hash)
+
+        clean[account_id] = draft.slice(*MAIL_DRAFT_KEYS).to_h.transform_values { |v| sanitize_mail_json(v) }
+      end
+    end
+
+    def sanitize_mail_metrics(value)
+      return nil unless value.is_a?(Hash)
+
+      value.each_with_object({}) do |(target_id, metric), clean|
+        next unless target_id.is_a?(String) && target_id.length <= 100 && metric.is_a?(Hash)
+
+        entry = {}
+        MAIL_METRIC_COUNTS.each do |key|
+          entry[key] = metric[key].to_i.clamp(0, 100_000) if metric[key].is_a?(Numeric)
+        end
+        entry['firstTryLanded'] = metric['firstTryLanded'] if [true, false].include?(metric['firstTryLanded'])
+        clean[target_id] = entry
+      end
+    end
+
+    def mail_id?(value)
+      value.is_a?(String) && value.present? && value.length <= MAX_MAIL_ID_LENGTH
+    end
+
+    def mail_box_id?(value)
+      value.is_a?(String) && value.present? && value.length <= 100
+    end
+
+    # Plain JSON only: string-keyed hashes, arrays, short strings, finite
+    # numbers, booleans and null, nested at most MAX_MAIL_JSON_DEPTH deep.
+    def sanitize_mail_json(value, depth = 0)
+      case value
+      when String then value[0, MAX_MAIL_STRING]
+      when Integer, true, false, nil then value
+      when Float then value.finite? ? value : nil
+      when Hash
+        return {} if depth >= MAX_MAIL_JSON_DEPTH
+
+        value.first(MAX_MAIL_JSON_ENTRIES).each_with_object({}) do |(k, v), out|
+          out[k.to_s] = sanitize_mail_json(v, depth + 1) if k.to_s.length <= 100
+        end
+      when Array
+        return [] if depth >= MAX_MAIL_JSON_DEPTH
+
+        value.first(MAX_MAIL_JSON_ENTRIES).map { |v| sanitize_mail_json(v, depth + 1) }
+      end
+    end
+
+    public
 
     # Aim/Task status helpers
     def aim_status(aim_id)

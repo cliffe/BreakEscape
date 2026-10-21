@@ -11,6 +11,7 @@ import KeyCutCalculator from '../utils/key-cut-calculator.js';
 import { catchLockpickInView } from './lockpick-catch.js';
 import { keypadTitle } from '../utils/lock-titles.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
+import { socialOverlayParams } from '../minigames/framework/social-overlay.js';
 
 // Maps Phaser texture keys to their actual filenames (where key !== filename stem)
 const TEXTURE_KEY_TO_FILE = {
@@ -1111,3 +1112,48 @@ export function startCombinationMinigame(lockable, type, combination, callback) 
     });
 }
 window.startCombinationMinigame = startCombinationMinigame;
+
+// Social-engineering overlays (mail client, intel board). socialOverlayParams
+// supplies requiresKeyboardInput and disableClose; each overlay has its own Close.
+export function startMailClientMinigame(sprite, options = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Mail terminal unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    const data = sprite?.scenarioData?.minigameData || {};
+    window.MinigameFramework.startMinigame('mail-client', null, socialOverlayParams({
+        title: sprite?.scenarioData?.name || 'Mail',
+        accountIds: data.accountIds,
+        defaultAccount: data.defaultAccount,
+        onComplete: (success, result) => {
+            if (typeof options.onComplete === 'function') options.onComplete(success, result);
+        },
+        ...options
+    }));
+}
+window.startMailClientMinigame = startMailClientMinigame;
+
+export function startIntelBoardMinigame(sprite, options = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Case file unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    const data = sprite?.scenarioData?.minigameData || {};
+    window.MinigameFramework.startMinigame('intel-board', null, socialOverlayParams({
+        title: sprite?.scenarioData?.name || 'Case File',
+        mode: data.mode || 'recon',
+        returnTo: options.returnTo,
+        onComplete: (success, result) => {
+            if (typeof options.onComplete === 'function') options.onComplete(success, result);
+        }
+    }));
+}
+window.startIntelBoardMinigame = startIntelBoardMinigame;

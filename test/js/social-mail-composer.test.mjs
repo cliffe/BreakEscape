@@ -1,0 +1,220 @@
+// Mail composer: template parts, the blank picker fed from held evidence, and
+// the pre-send gate (SE design 01 §2 "Compose", N10; contract 00 §10; 04 N11
+// runtime; packet P1-E2). The real composer, the rules engine and the mail
+// client run in jsdom.
+// Run with: bundle exec node --test test/js/social-mail-composer.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { JSDOM } from 'jsdom';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const root = join(here, '../..');
+const js = join(root, 'public/break_escape/js');
+const fixture = () => JSON.parse(readFileSync(join(here, 'fixtures/social/mail/composer-scenario.json'), 'utf8'));
+
+// The real files, copied with their relative layout into an ESM folder.
+const dir = mkdtempSync(join(tmpdir(), 'social-mail-composer-'));
+writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
+for (const rel of ['systems/phish-rules.js',
+    'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
+    'utils/display-dashes.js', 'ui/modal-stack.js',
+    'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
+    'minigames/mail-client/mail-data.js', 'minigames/mail-client/mail-notification.js',
+    'minigames/mail-client/mail-composer.js']) {
+    mkdirSync(dirname(join(dir, rel)), { recursive: true });
+    writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
+}
+
+const dom = new JSDOM('<!doctype html><html><body><div id="host"></div></body></html>', { pretendToBeVisual: true });
+globalThis.window = dom.window;
+globalThis.document = dom.window.document;
+console.log = () => {};
+console.error = () => {};
+
+const mod = await import(pathToFileURL(join(dir, 'minigames/mail-client/mail-composer.js')));
+const { MailComposer, optionsForSlot, heldFactIds, heldProvides, PRE_SEND_GATE_LINE } = mod;
+const data = await import(pathToFileURL(join(dir, 'minigames/mail-client/mail-data.js')));
+const { MailClientMinigame } = await import(pathToFileURL(join(dir, 'minigames/mail-client/mail-client-minigame.js')));
+
+const GUEST = { id: 'guest', address: 'guest@workstation.example', displayName: 'Operator', spoofsFrom: true, person: null, mailbox: 'guest' };
+const grant = (...ids) => Object.fromEntries(ids.map((id) => [`se_intel_${id}`, true]));
+
+// A standalone composer over the fixture, with the contacts the globals reveal.
+function makeComposer(globals = {}, over = {}) {
+    const host = document.getElementById('host');
+    host.textContent = '';
+    const fx = fixture();
+    const sends = [];
+    const contacts = over.contacts || data.visibleContacts(fx.mailClient, (over.account || GUEST).id, globals);
+    const composer = new MailComposer(host, {
+        people: fx.people, templates: fx.templates, phishTargets: fx.phishTargets,
+        intelFacts: fx.intelFacts, payloadKit: fx.mailClient.payloadKit,
+        account: over.account || GUEST, contacts, globals,
+        pushLayer: () => () => {},
+        onSend: (m) => sends.push(m),
+        ...over
+    });
+    return { composer, host, sends, fx };
+}
+const entriesFor = (fx, globals) => heldProvides(heldFactIds(fx.intelFacts, globals), fx.intelFacts);
+const optionValues = (host) => [...host.querySelectorAll('.mail-picker-option')].map((li) => li.dataset.value);
+
+test('held facts come only from the true se_intel_* globals', () => {
+    const fx = fixture();
+    assert.deepEqual(heldFactIds(fx.intelFacts, grant('pierce_role')), ['pierce_role']);
+    assert.deepEqual(heldFactIds(fx.intelFacts, { se_intel_pierce_role: false }), []);
+    assert.deepEqual(heldFactIds(fx.intelFacts, {}), []);
+});
+
+test('a blank offers only the values held facts provide, with the type and about filter', () => {
+    const fx = fixture();
+    const nameSlot = { id: 'name', type: 'name', about: 'recipient' };
+    // Only pierce_role held: her recipient forms, and not the Q3-note "Mel" (pierce_short)
+    let opts = optionsForSlot(nameSlot, { entries: entriesFor(fx, grant('pierce_role')), people: fx.people });
+    assert.deepEqual(opts.map((o) => o.value), ['pierce_first', 'pierce_formal', 'pierce_full']);
+    // A sender slot never shows a recipient entry: a different about is filtered out
+    const senderSlot = { id: 'sender_name', type: 'name', about: 'sender' };
+    opts = optionsForSlot(senderSlot, { entries: entriesFor(fx, grant('pierce_role')), people: fx.people });
+    assert.deepEqual(opts, []);
+});
+
+test('the picker includes a held stale value and never an unheld one', () => {
+    const fx = fixture();
+    const senderSlot = { id: 'sender_name', type: 'name', about: 'sender' };
+    // The trusted sender (distinctive) and the namesake decoy (stale) are both held
+    const opts = optionsForSlot(senderSlot,
+        { entries: entriesFor(fx, grant('pierce_trusts_jed', 'baker_namesake')), people: fx.people });
+    assert.deepEqual(opts.map((o) => [o.value, o.kind]),
+        [['baker_full', 'distinctive'], ['leeds_baker_full', 'stale']]);
+    // The portal sender is never offered: its fact is not held
+    assert.equal(opts.some((o) => o.value === 'portal_full'), false);
+});
+
+test('an address blank builds <person>_address from a held sender name plus the pattern fact', () => {
+    const fx = fixture();
+    const addrSlot = { id: 'sender_address', type: 'address' };
+    // pattern + the trusted sender -> baker_address; the stale namesake -> leeds_baker_address
+    let opts = optionsForSlot(addrSlot,
+        { entries: entriesFor(fx, grant('email_pattern', 'pierce_trusts_jed', 'baker_namesake')), people: fx.people });
+    assert.deepEqual(opts.map((o) => [o.value, o.label]),
+        [['baker_address', 'j.baker@ledgerwell.example'], ['leeds_baker_address', 'j.baker@leedsplumbing.example']]);
+    // No pattern fact: a rule is not a value, so nothing is built
+    opts = optionsForSlot(addrSlot, { entries: entriesFor(fx, grant('pierce_trusts_jed')), people: fx.people });
+    assert.deepEqual(opts, []);
+    // Pattern but no sender name: still nothing (the rule needs a person)
+    opts = optionsForSlot(addrSlot, { entries: entriesFor(fx, grant('email_pattern')), people: fx.people });
+    assert.deepEqual(opts, []);
+});
+
+test("Hampshire's blank-free templates send at once, with no picker", () => {
+    const { composer, host, sends } = makeComposer(grant('hampshire_careers'),
+        { contacts: [{ id: 'hampshire', name: 'Chris Hampshire', role: 'Careers', addresses: ['careers@ledgerwell.example'], targetId: 'hampshire' }] });
+    const s = composer.getState();
+    assert.equal(s.targetId, 'hampshire');
+    assert.deepEqual(s.blanks, []);                       // no blanks at all
+    assert.equal(host.querySelector('.mail-blank'), null); // nothing to pick
+    assert.equal(s.sendEnabled, true);
+    assert.equal(host.querySelector('.mail-compose-send').disabled, false);
+    host.querySelector('.mail-compose-send').click();
+    assert.equal(sends.length, 1);
+    assert.equal(sends[0].targetId, 'hampshire');
+    assert.deepEqual(sends[0].headerFrom, { account: true }); // from_own is forced
+    assert.equal(sends[0].templates.from, 'from_own');
+});
+
+test('with no evidence held, Send is disabled and the neutral line shows, naming no fact', () => {
+    const { composer, host } = makeComposer({},
+        { contacts: [{ id: 'pierce', name: 'Melanie Pierce', role: 'Finance', addresses: ['m.pierce@ledgerwell.example'], targetId: 'pierce' }] });
+    const s = composer.getState();
+    assert.equal(s.targetId, 'pierce');
+    assert.equal(s.sendEnabled, false);
+    assert.equal(s.gateReason, 'empty-blank');
+    assert.equal(s.gateLine, PRE_SEND_GATE_LINE);
+    // The line beside the empty blank names nothing about the missing fact or value
+    const gate = host.querySelector('.mail-blank-gate');
+    assert.equal(gate.textContent, PRE_SEND_GATE_LINE);
+    assert.doesNotMatch(s.gateLine, /pierce|melanie|balance|jed|friday|pattern/i);
+    assert.equal(host.querySelector('.mail-compose-send').disabled, true);
+});
+
+test('after the fact is granted the picker offers it, and choosing it enables Send', () => {
+    const { composer, host, sends } = makeComposer(grant('pierce_role'),
+        { contacts: [{ id: 'pierce', name: 'Melanie Pierce', role: 'Finance', addresses: ['m.pierce@ledgerwell.example'], targetId: 'pierce' }] });
+    // Isolate a single blank: a blank-free From, pretext and ask, so only the greeting name remains
+    composer.chooseTemplate('from', 'from_own');
+    composer.chooseTemplate('pretext', 'pretext_invoice');
+    composer.chooseTemplate('ask', 'ask_confirm');
+    composer.chooseTemplate('greeting', 'greet_named');
+    let s = composer.getState();
+    assert.deepEqual(s.blanks.map((b) => b.slot), ['name']);
+    // Options exist but none chosen: not the neutral line, the "choose" line
+    assert.equal(s.sendEnabled, false);
+    assert.equal(s.gateReason, 'unchosen');
+    assert.notEqual(s.gateLine, PRE_SEND_GATE_LINE);
+
+    host.querySelector('.mail-blank[data-slot="name"]').click();
+    assert.deepEqual(optionValues(host), ['pierce_first', 'pierce_formal', 'pierce_full']);
+    host.querySelector('.mail-picker-option[data-value="pierce_first"]').click();
+
+    s = composer.getState();
+    assert.equal(s.slots.name, 'pierce_first');
+    assert.equal(s.sendEnabled, true);
+    assert.equal(host.querySelector('.mail-compose-send').disabled, false);
+    host.querySelector('.mail-compose-send').click();
+    assert.equal(sends.length, 1);
+    assert.equal(sends[0].slots.name, 'pierce_first');
+    assert.equal(sends[0].subject, 's_quick');
+});
+
+test('an account that cannot spoof forces the From to itself (no claimed-From blanks)', () => {
+    const freemail = { id: 'freemail', address: 'tarnside.test@freemail.example', displayName: 'T. Test', spoofsFrom: false, person: null, mailbox: 'freemail' };
+    const { composer, host } = makeComposer(grant('pierce_role', 'pierce_trusts_jed', 'email_pattern'),
+        { account: freemail, contacts: [{ id: 'pierce', name: 'Melanie Pierce', addresses: ['m.pierce@ledgerwell.example'], targetId: 'pierce' }] });
+    assert.equal(composer.getState().templates.from, 'from_own');
+    assert.ok(host.querySelector('.mail-compose-from-own'));
+    // No sender blanks are offered from a non-spoofing account
+    assert.equal(host.querySelector('.mail-blank[data-slot="sender_name"]'), null);
+    assert.deepEqual(composer.buildMessage().headerFrom, { account: true });
+});
+
+test('Esc on the picker is a layer close: the composer pops it first', () => {
+    let popped = 0;
+    const { composer, host } = makeComposer(grant('pierce_trusts_jed', 'baker_namesake', 'email_pattern'),
+        { contacts: [{ id: 'pierce', name: 'Melanie Pierce', addresses: ['m.pierce@ledgerwell.example'], targetId: 'pierce' }],
+          pushLayer: (close) => { const c = close; return () => { popped += 1; }; } });
+    composer.chooseTemplate('from', 'from_named');
+    host.querySelector('.mail-blank[data-slot="sender_name"]').click();
+    assert.equal(composer.pickerOpen, true);
+    assert.deepEqual(optionValues(host), ['baker_full', 'leeds_baker_full']); // distinctive then stale
+    composer._closePicker(true);
+    assert.equal(composer.pickerOpen, false);
+    assert.equal(popped, 1);
+});
+
+test('the mail client Compose button opens the composer over the reader', () => {
+    const host = document.getElementById('host');
+    host.textContent = '';
+    const fx = fixture();
+    window.gameState = { globalVariables: grant('hampshire_careers') };
+    const scene = new MailClientMinigame(host, {
+        social: fx, mailClient: fx.mailClient, accountIds: ['guest'],
+        mailState: data.emptyMailState(), globals: window.gameState.globalVariables
+    });
+    window.MinigameFramework = { currentMinigame: scene, endMinigame() { scene.cleanup(); } };
+    scene.init();
+    scene.start();
+    assert.equal(host.querySelector('.mail-composer'), null);
+    host.querySelector('.mail-compose-btn').click();
+    assert.ok(host.querySelector('.mail-composer'));
+    assert.ok(scene.composer);
+    assert.equal(scene.composer.getState().targetId, 'hampshire');
+    // Esc closes the compose layer before the overlay
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    assert.equal(host.querySelector('.mail-composer'), null);
+    assert.equal(scene.gameState.isActive, true);
+    scene.cleanup();
+});

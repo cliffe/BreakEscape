@@ -31,7 +31,9 @@ copy('systems/ink/ink-engine.js', 'ink-engine.mjs');
 copy('utils/display-dashes.js', 'display-dashes.mjs');
 copy('systems/apply-actions.js', 'apply-actions.mjs', s => s
     .replace("'../utils/display-dashes.js'", "'./display-dashes.mjs'")
-    .replace("'./global-writer.js'", "'./global-writer.mjs'"));
+    .replace("'./global-writer.js'", "'./global-writer.mjs'")
+    .replace("'./social-intel.js'", "'./social-intel.mjs'"));
+copy('systems/social-intel.js', 'social-intel.mjs', s => s.replace("'./global-writer.js'", "'./global-writer.mjs'"));
 
 globalThis.window = { gameState: { globalVariables: {} } };
 const inkjs = createRequire(import.meta.url)(join(here, '../../public/break_escape/assets/vendor/ink.js'));

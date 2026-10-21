@@ -1,0 +1,254 @@
+/* Intel board (design 03). Cork background, 9-slice cards, pins and string are
+   pixel art drawn at 1x and shown at 2x. Every string the player reads is DOM
+   text in Source Sans 3. Marks are always paired with words. The stylesheet
+   <link> is added by the wiring packet (P1-W). */
+
+.intel-board-container {
+    background: var(--ui-backdrop, rgba(6, 8, 16, 0.78));
+}
+
+.intel-board-game-container {
+    width: min(1100px, 96vw);
+    height: min(92vh, 860px);
+    margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #aa7446 url('/break_escape/assets/ui/social/board-cork.png') 0 0 / 124px 124px repeat;
+    image-rendering: pixelated;
+    border: 4px solid #4a3220;
+    box-shadow: 0 0 0 2px var(--ui-line, #4c5b80), inset 0 0 24px rgba(0, 0, 0, 0.45);
+}
+
+.ib-root {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
+    font-size: 16px;
+    color: #2a2118;
+    outline: none;
+}
+
+.ib-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 10px 14px;
+    background: var(--ui-surface, rgba(24, 30, 48, 0.94));
+    border-bottom: 3px solid var(--ui-line, #4c5b80);
+    color: var(--ui-text, #eef1f8);
+}
+
+.ib-title {
+    margin: 0;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 400;
+    flex: 1 1 auto;
+}
+
+.ib-progress {
+    margin: 0;
+    font-size: 16px;
+    color: var(--ui-text-dim, #a8b2c8);
+}
+
+.ib-close {
+    min-width: 88px;
+    min-height: 44px;
+    font-family: 'GNF', monospace;
+    cursor: pointer;
+}
+
+.ib-live {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.ib-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.ib-scroll:focus-visible,
+.ib-close:focus-visible {
+    outline: 3px solid var(--ui-accent, #ffcc44);
+    outline-offset: 2px;
+}
+
+.ib-scope-note {
+    margin: 0;
+    padding: 8px 12px;
+    background: var(--ui-surface-raised, rgba(38, 48, 74, 0.96));
+    color: var(--ui-text, #eef1f8);
+    border-left: 4px solid var(--ui-accent, #ffcc44);
+}
+
+.ib-section { position: relative; }
+
+.ib-h {
+    margin: 0 0 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    font-weight: 400;
+    color: #fff;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.ib-empty {
+    margin: 0;
+    padding: 6px 2px;
+    font-style: italic;
+}
+
+/* ── cards: board-card.png (34x24, 3px edge) as a 9-slice, shown at 2x ── */
+.ib-card {
+    position: relative;
+    box-sizing: border-box;
+    padding: 22px 14px 12px;
+    color: #2a2118;
+    background: transparent;
+    border: 6px solid transparent;
+    border-image: url('/break_escape/assets/ui/social/board-card.png') 3 fill / 6px / 0 stretch;
+    image-rendering: pixelated;
+    list-style: none;
+}
+
+.ib-pin {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    width: 22px;
+    height: 28px;
+    margin-left: -11px;
+    image-rendering: pixelated;
+    pointer-events: none;
+}
+
+ul.ib-people, ul.ib-contacts {
+    list-style: none;
+    margin: 0;
+    padding: 12px 0 0;
+    display: grid;
+    gap: 22px 16px;
+}
+
+ul.ib-people { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+ul.ib-contacts { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+
+.ib-strings { height: 22px; margin-top: 2px; }
+.ib-string { display: block; width: 100%; height: 100%; }
+
+.ib-card-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px 10px;
+}
+
+.ib-name {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.ib-name.is-unknown { font-style: italic; font-weight: 400; color: #5a4a3a; }
+
+.ib-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.ib-status.ready { color: #1d6a35; }
+.ib-status.not-ready { color: #8a2b1f; }
+
+.ib-new {
+    padding: 0 6px;
+    background: var(--ui-accent, #ffcc44);
+    color: #2a2118;
+    font-size: 13px;
+}
+
+.ib-meta { margin: 2px 0 8px; color: #4a3b2c; overflow-wrap: anywhere; }
+
+.ib-icon {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    image-rendering: pixelated;
+}
+
+.ib-facts, .ib-check {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ib-fact, .ib-slot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 8px;
+    min-height: 32px;
+}
+
+.ib-fact.is-empty .ib-fact-text { color: #6b5a48; font-style: italic; }
+.ib-word, .ib-slot-word { font-weight: 700; }
+.ib-slot.done .ib-slot-word { color: #1d6a35; }
+.ib-slot.missing .ib-slot-word { color: #8a2b1f; }
+.ib-fact.is-stale { color: #5a4a3a; }
+.ib-fact-text, .ib-slot-text { flex: 1 1 140px; min-width: 0; overflow-wrap: anywhere; }
+
+.ib-check {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 2px dashed rgba(42, 33, 24, 0.45);
+}
+
+.ib-ready-line { margin: 10px 0 0; font-weight: 700; color: #1d6a35; }
+
+.ib-subh { margin: 12px 0 0; font-size: 16px; font-weight: 700; }
+
+.ib-contact { padding-top: 24px; display: flex; flex-direction: column; gap: 2px; }
+
+.ib-company-card { max-width: 640px; }
+
+/* ── one column on narrow screens ── */
+@media (max-width: 700px) {
+    ul.ib-people { grid-template-columns: minmax(0, 1fr); }
+    .ib-strings { display: none; }
+    .intel-board-game-container { width: 100vw; height: 100vh; border-width: 0; }
+}
+
+@media (max-width: 1000px) and (min-width: 701px) {
+    ul.ib-people { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .intel-board-game-container *, .intel-board-game-container *::before {
+        animation: none !important;
+        transition: none !important;
+    }
+}

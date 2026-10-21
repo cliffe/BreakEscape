@@ -13,6 +13,8 @@ export { FingerprintReaderMinigame, startFingerprintReader } from './biometrics/
 export { ContainerMinigame, startContainerMinigame, returnToContainerAfterNotes, returnToConversationAfterNPCInventory } from './container/container-minigame.js';
 export { PhoneChatMinigame, returnToPhoneAfterNotes } from './phone-chat/phone-chat-minigame.js';
 export { PersonChatMinigame } from './person-chat/person-chat-minigame.js';
+export { MailClientMinigame } from './mail-client/mail-client-minigame.js';
+export { IntelBoardMinigame } from './intel-board/intel-board-minigame.js';
 export { PinMinigame, startPinMinigame } from './pin/pin-minigame.js';
 export { PasswordMinigame } from './password/password-minigame.js';
 export { TextFileMinigame, returnToTextFileAfterNotes } from './text-file/text-file-minigame.js';
@@ -94,6 +96,10 @@ import { PhoneChatMinigame, returnToPhoneAfterNotes } from './phone-chat/phone-c
 // Import the person chat minigame (In-person NPC conversations)
 import { PersonChatMinigame } from './person-chat/person-chat-minigame.js';
 
+// Import the social-engineering overlays (mail client, intel board)
+import { MailClientMinigame } from './mail-client/mail-client-minigame.js';
+import { IntelBoardMinigame } from './intel-board/intel-board-minigame.js';
+
 // Import the PIN minigame
 import { PinMinigame, startPinMinigame } from './pin/pin-minigame.js';
 
@@ -155,6 +161,8 @@ MinigameFramework.registerScene('fingerprint-reader', FingerprintReaderMinigame)
 MinigameFramework.registerScene('container', ContainerMinigame);
 MinigameFramework.registerScene('phone-chat', PhoneChatMinigame);
 MinigameFramework.registerScene('person-chat', PersonChatMinigame);
+MinigameFramework.registerScene('mail-client', MailClientMinigame);
+MinigameFramework.registerScene('intel-board', IntelBoardMinigame);
 MinigameFramework.registerScene('pin', PinMinigame);
 MinigameFramework.registerScene('password', PasswordMinigame);
 MinigameFramework.registerScene('text-file', TextFileMinigame);

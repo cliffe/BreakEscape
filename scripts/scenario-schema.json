@@ -131,7 +131,8 @@
         "oneOf": [
           { "type": "boolean" },
           { "type": "number" },
-          { "type": "string" }
+          { "type": "string" },
+          { "type": "object", "description": "Object-valued globals are for the social systems' state (se_board_state, se_landing_pages, se_landing_drafts), default {}" }
         ]
       }
     },
@@ -1255,9 +1256,10 @@
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["set_global", "emit_event", "complete_task", "unlock_task", "unlock_aim", "confirm_action", "unlock_object", "unlock_door", "give_item", "tint_objects", "show_end_screen", "lighting_dip"]
+                "enum": ["set_global", "emit_event", "complete_task", "unlock_task", "unlock_aim", "confirm_action", "unlock_object", "unlock_door", "give_item", "tint_objects", "show_end_screen", "lighting_dip", "grant_fact"]
               },
               "key": { "type": "string" },
+              "fact": { "type": "string", "description": "grant_fact: the social intel fact id (00 S15)" },
               "value": {},
               "event_name": { "type": "string" },
               "task_id": { "type": "string" },
