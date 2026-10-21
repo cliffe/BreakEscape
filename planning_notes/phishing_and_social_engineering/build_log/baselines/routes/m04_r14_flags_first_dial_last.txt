@@ -1,0 +1,56 @@
+
+## R14 (puzzle chains R2-1/R2-2): the four flags in first, with no paper evidence and no dial. map_the_attack completes on the flags alone, so attack_mechanism_known is set. 'Where do I stand?' must name the dial (it holds the ESD), before and after Voltage is dealt with, never 'Stay by the button', and never ask for the break-in on paper.
+   {set {"briefing_played":true,"guard_admitted":true,"vance_met":true,"vance_provided_keycard":true,"server_room_reached":true,"plant_reader_seen":true,"fingerprint_kit_found":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"attack_mechanism_known":true,"vance_spoken":true}}
+      [engine: attack mapped -> clock_started]
+      [clock: h2_advisory started at 0 min]
+      [clock: racks_vent started at 0 min]
+
+--- phone ---
+     (6 options)
+ > Where do I stand?
+  Your flags are in. Grid control still wants a real reading off the racks.
+  The dial thermometer on the Rack Bank C wall in Hall 1. It isn't on their network.
+     (6 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+     (6 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+  [chat closes]
+   [PASS] said: "dial thermometer on the Rack Bank C wall"
+   [PASS] not said: "on paper"
+   [PASS] not said: "Stay by the button"
+
+## Plant room reached, Voltage dealt with; the dial still unread.
+   {set {"plant_room_entered":true,"voltage_neutralised":true,"voltage_captured":true}}
+
+--- phone ---
+     (4 options)
+ > Where do I stand?
+  Your flags are in. Grid control still wants a real reading off the racks.
+  The dial thermometer on the Rack Bank C wall in Hall 1. It isn't on their network.
+     (4 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+     (4 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+  [chat closes]
+   [PASS] said: "dial thermometer on the Rack Bank C wall"
+   [PASS] not said: "Stay by the button"
+   [PASS] not said: "on paper"
+
+## The dial is read now: HaX's 61 degrees call. With the attack mapped and Voltage down, 'the last piece' is true.
+   {set {"anomaly_detected":true,"esd_authorized":true}}
+
+--- phone @on_anomaly_confirmed ---
+  Nightshade's got your reading. Sixty-one degrees on the Hall 1 battery thermometer, against twenty-eight on the screens.
+  His words: those cells are past safe, and they won't wait for 0800, trigger or no trigger.
+  The screens lie because ENTROPY feed them. That dial isn't on ENTROPY's network.
+ > Then the dial was the last piece.
+  It was. Grid control can see the difference now.
+  [chat closes]
+   [PASS] said: "It was. Grid control can see the difference now."
+
+[stats] spoken/narrated lines 12, choices 7, longest run without a choice 3 (phone); runs>=6: 
+[result] all expectations met

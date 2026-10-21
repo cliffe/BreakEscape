@@ -1,0 +1,28 @@
+
+## R33 (Phase 8 final check F2): the engine preloads HaX's opening at the gate (the story stops at the first-call choices), then the player first opens the phone once inside, which re-navigates to first_call_choices a second time (reopenWithCurrentGlobals). The visit count is then 2; the guard no longer reads it, so the inside answers and the objectives still play.
+   {set {"briefing_played":true}}
+
+--- phone ---
+  Agent, status check. Are you inside the facility?
+     [0] Not yet. I'm at the gate.
+  [stopped: no pick]
+   [PASS] said: "Agent, status check. Are you inside the facility?"
+   {set {"guard_admitted":true,"checkpoint_passed":true,"vance_met":true,"vance_spoken":true}}
+
+--- phone ---
+     (3 options)
+ > I'm inside. Met Robert Vance, the facility manager.
+  How's he taking the cover? Buying it, or watching you?
+     (2 options)
+ > Cooperative. He's getting me access.
+  Good. Hold the cover until you've got hard evidence. Then bring him in.
+  First, prove the screens are lying. Something in Battery Hall 1 that isn't on their feed.
+  Then the engineering workshop, off the same hall. That's how they got onto the SCADA network.
+ > On it.
+  Call me when you've got a real reading.
+  [chat closes]
+   [PASS] said: "I'm inside. Met Robert Vance, the facility manager."
+   [PASS] said: "First, prove the screens are lying."
+
+[stats] spoken/narrated lines 6, choices 3, longest run without a choice 3 (phone); runs>=6: 
+[result] all expectations met

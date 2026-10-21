@@ -1,0 +1,188 @@
+TAP version 13
+# 🗂️ NPC Conversation State Manager initialized
+# 🗂️ NPC Conversation State Manager initialized
+# 💾 Saved variables for victoria_sterling: {
+#   victoria_influence: 0,
+#   victoria_trusts_player: false,
+#   victoria_suspicious: 0,
+#   rfid_clone_started: false,
+#   rfid_clone_complete: false,
+#   victoria_card_cloned: false,
+#   topic_zero_day_philosophy: false,
+#   topic_ethics: false,
+#   recruitment_discussed: true,
+#   night_confrontation_ready: false,
+#   victoria_fate: '',
+#   usb_seen: false,
+#   lore_directive_found: false,
+#   roster_seen: false,
+#   receptionist_ko: false,
+#   clone_call_done: false,
+#   guard_told_safetynet: false,
+#   sable_named: false,
+#   transaction_log_read: false,
+#   revelation_heard: false,
+#   suspicion_warned: false,
+#   eager_act_done: false,
+#   read_dropped: false,
+#   read_checked: false,
+#   recruit_refused: false,
+#   asked_lab_services: false,
+#   asked_lab_access: false,
+#   asked_lab_praise: false,
+#   idle_quiet: false,
+#   hub_quiet: false,
+#   victoria_test_answer: '',
+#   afternoon_goodbye: '',
+#   sterling_on_call_seen: false,
+#   danny_fate: '',
+#   named_target_selection: false,
+#   defended_danny: false,
+#   came_via_hospital: false,
+#   cloner_glimpsed: false,
+#   cloner_deflection: ''
+# }
+# 💾 Saved global variables snapshot: {
+#   victoria_card_cloned: false,
+#   victoria_fate: '',
+#   night_confrontation_ready: false,
+#   player_approach: '',
+#   victoria_influence: 0,
+#   victoria_trusts_player: false,
+#   victoria_suspicious: 0,
+#   victoria_trust: 0
+# }
+# 💾 Saved full story state for victoria_sterling (active story)
+# ✅ NPC state persisted for: victoria_sterling {
+#   timestamp: '11:38:10 AM',
+#   hasEnded: undefined,
+#   hasVariables: true,
+#   hasStoryState: true
+# }
+# 🗂️ NPC Conversation State Manager initialized
+# 💾 Saved variables for victoria_sterling: {
+#   victoria_influence: 0,
+#   victoria_trusts_player: false,
+#   victoria_suspicious: 0,
+#   rfid_clone_started: false,
+#   rfid_clone_complete: false,
+#   victoria_card_cloned: false,
+#   topic_zero_day_philosophy: false,
+#   topic_ethics: false,
+#   recruitment_discussed: true,
+#   night_confrontation_ready: false,
+#   victoria_fate: '',
+#   usb_seen: false,
+#   lore_directive_found: false,
+#   roster_seen: false,
+#   receptionist_ko: false,
+#   clone_call_done: false,
+#   guard_told_safetynet: false,
+#   sable_named: false,
+#   transaction_log_read: false,
+#   revelation_heard: false,
+#   suspicion_warned: false,
+#   eager_act_done: false,
+#   read_dropped: false,
+#   read_checked: false,
+#   recruit_refused: false,
+#   asked_lab_services: false,
+#   asked_lab_access: false,
+#   asked_lab_praise: false,
+#   idle_quiet: false,
+#   hub_quiet: false,
+#   victoria_test_answer: '',
+#   afternoon_goodbye: '',
+#   sterling_on_call_seen: false,
+#   danny_fate: '',
+#   named_target_selection: false,
+#   defended_danny: false,
+#   came_via_hospital: false,
+#   cloner_glimpsed: false,
+#   cloner_deflection: ''
+# }
+# 💾 Saved global variables snapshot: {
+#   victoria_card_cloned: false,
+#   victoria_fate: '',
+#   night_confrontation_ready: false,
+#   player_approach: '',
+#   victoria_influence: 0,
+#   victoria_trusts_player: false,
+#   victoria_suspicious: 0,
+#   victoria_trust: 0
+# }
+# 💾 Saved full story state for victoria_sterling (active story)
+# ✅ NPC state persisted for: victoria_sterling {
+#   timestamp: '11:38:10 AM',
+#   hasEnded: undefined,
+#   hasVariables: true,
+#   hasStoryState: true
+# }
+# 🗂️ NPC Conversation State Manager initialized
+# 🗂️ Seeded saved ink variables for 1 NPC(s)
+# ✅ Restored NPC-specific variables for NPC: victoria_sterling {
+#   savedAt: '1:00:00 AM',
+#   reason: 'Story ended - restarting fresh with saved variables'
+# }
+# 🗂️ NPC Conversation State Manager initialized
+# 🗂️ NPC Conversation State Manager initialized
+# 🗂️ Seeded saved ink variables for 1 NPC(s)
+# 🗂️ Applied 67 saved ink variable(s) to agent_0x99_handler
+# 🗂️ NPC Conversation State Manager initialized
+# 🗂️ Seeded saved ink variables for 1 NPC(s)
+# ⚠️ Saved ink variable patch no longer in victoria_sterling's story; skipped
+# ⚠️ Saved ink variable no_such_var no longer in victoria_sterling's story; skipped
+# 🗂️ Applied 1 saved ink variable(s) to victoria_sterling
+# 🗂️ NPC Conversation State Manager initialized
+# ✅ Synced victoria_card_cloned = true to story
+# ✅ Synced victoria_fate =  to story
+# ✅ Synced night_confrontation_ready = false to story
+# ✅ Synced victoria_influence = 0 to story
+# ✅ Synced victoria_trusts_player = false to story
+# ✅ Synced victoria_suspicious = 0 to story
+# ✅ Synced victoria_card_cloned = true to story
+# ✅ Synced victoria_fate =  to story
+# ✅ Synced night_confrontation_ready = false to story
+# ✅ Synced victoria_influence = 0 to story
+# ✅ Synced victoria_trusts_player = false to story
+# ✅ Synced victoria_suspicious = 0 to story
+# 🌐 Global variable changed: victoria_influence = 5 (from victoria_sterling)
+# Subtest: saveNPCState captures declared ink VARs, not VariablesState internals
+ok 1 - saveNPCState captures declared ink VARs, not VariablesState internals
+  ---
+  duration_ms: 42.422705
+  ...
+# Subtest: Victoria: export, JSON round trip, import, restart at start goes to the hub, not the intro
+ok 2 - Victoria: export, JSON round trip, import, restart at start goes to the hub, not the intro
+  ---
+  duration_ms: 23.695801
+  ...
+# Subtest: control: without the import, Victoria plays her intro
+ok 3 - control: without the import, Victoria plays her intro
+  ---
+  duration_ms: 9.858489
+  ...
+# Subtest: phone path (m06 HaX): recordInkVariables / applySavedInkVariables skip first_call
+ok 4 - phone path (m06 HaX): recordInkVariables / applySavedInkVariables skip first_call
+  ---
+  duration_ms: 13.609199
+  ...
+# Subtest: stale or internal names are refused, not written onto VariablesState
+ok 5 - stale or internal names are refused, not written onto VariablesState
+  ---
+  duration_ms: 2.029943
+  ...
+# Subtest: syncing gameState globals into an observed story emits nothing; a real change emits once
+ok 6 - syncing gameState globals into an observed story emits nothing; a real change emits once
+  ---
+  duration_ms: 3.369685
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 249.757367

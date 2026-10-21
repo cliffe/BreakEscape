@@ -1,0 +1,76 @@
+   [imports: {"m01_completed":true,"m01_final_choice":"fight"}]
+
+## R3: m01 fight, spreadsheet not found. The Derek line comes in the hub answer (q_entropy_link) instead; the debrief keeps the original line.
+
+--- briefing ---
+  Narrator: A secure operations room. On the wall screen, a hospital floor plan gone entirely red. At the head of the table, a tall man in a creased suit you know only by name.
+  Director Magnus Netherton: Agent 0x00. Magnus Netherton -- I run this shop. I would rather we had met under better circumstances, but circumstances are rather the point tonight.
+  Director Magnus Netherton: I have a handler who knows this one cold, and a hospital running out of time while I make introductions. HaX -- it's yours.
+  Agent HaX: Agent. I'll be quick. The hospital can't afford slow.
+  Agent HaX: St. Catherine's Regional went dark at 02:47 this morning. Every clinical system encrypted in the same minute.
+  Agent HaX: Monitoring, medication records, imaging. All of it behind a ransom screen.
+  Agent HaX: Forty-seven people are on life support in there, running on backup generators. Twelve hours of power, less if anything trips.
+  Agent HaX: After that, the machines keeping them breathing start going quiet.
+     (3 options)
+ > Who did this?
+  Agent HaX: There's a name, and there's the part that matters. Ask me in that order.
+     (5 options)
+ > How can you be sure it's ENTROPY and not an ordinary crew?
+  Agent HaX: Two things. Social Fabric was cataloguing the other cells, and one entry describes this playbook exactly.
+  Agent HaX: Find a neglected system, encrypt everything, squeeze a public service that can't afford downtime.
+  Agent HaX: And the ransom note reads like a business invoice. Same signature we flagged in Derek's material.
+  Agent HaX: You put Derek on the floor at Viral Dynamics. His lawyers are still shouting about it. His files don't care.
+  Agent HaX: ENTROPY want to show that everything you rely on is one unpatched box from collapse. The patients are their chalkboard.
+  Agent HaX: What else?
+     (4 options)
+ > Enough background. Give me my objectives.
+  Agent HaX: Three things, then. Get inside St. Catherine's and reach their crisis lead. She's expecting a security consultant.
+  Agent HaX: Get into their IT systems and find how the attackers got in. It'll be that neglected backup server.
+  Agent HaX: Then turn their own backdoor on them. Recover the decryption keys and bring those systems home before either clock runs out.
+     [0] What's my cover?
+     [1] What am I walking into? Security?
+     [2] Understood. I'm moving.
+  [stopped: no pick]
+   [PASS] said: "Same signature we flagged in Derek's material"
+   [PASS] said: "You put Derek on the floor at Viral Dynamics"
+   [PASS] not said: "You had Derek taken in by the book"
+   [PASS] not said: "You offered Derek a deal and he turned you down"
+   [PASS] not said: "You put Derek's casualty projections on every front page"
+   [PASS] not said: "Derek put the launch device down for you"
+   [PASS] not said: "You put Derek down before he'd said his piece"
+
+--- debrief ---
+      [set_global debrief_played=true]
+  Narrator: SAFETYNET headquarters. Forty-eight hours after St. Catherine's.
+  Agent HaX: Agent. Sit down. You've earned the chair.
+  Agent HaX: Systems are back. Patients are stable. But I've read your field notes twice and I keep landing on the same thing.
+  Agent HaX: This wasn't a burglary. Ghost didn't want money. They wanted a lesson taught in bodies.
+  Agent HaX: Casualties, calculated in advance, signed off before the operation started.
+  Agent HaX: We've seen that signature before. You've seen it before.
+     (2 options)
+ > You mean Derek. Social Fabric.
+  Agent HaX: I mean Derek. Same fingerprints, different hands.
+  Agent HaX: Operation Shatter and this. ENTROPY doesn't improvise. Somebody's teaching them.
+  Agent HaX: What do you want to know?
+     (3 options)
+ > This was ENTROPY again -- like Derek's cell at Viral Dynamics.
+  Agent HaX: Yes. ENTROPY. The same network that ran Social Fabric out of Viral Dynamics.
+  Agent HaX: Derek Lawson kept casualty projections. A spreadsheet of how many Operation Shatter would kill, approved before he pulled the trigger.
+  Agent HaX: Ghost will have done the same sums. Different cell, different weapon, identical arithmetic.
+  Agent HaX: Somebody taught both of them to do the sums and sleep at night. That's a method.
+     (2 options)
+ > So the cells don't even know each other?
+  Agent HaX: Compartmentalised. Social Fabric never heard of Ransomware Incorporated. That's by design -- you can't burn a network you can't see.
+  Agent HaX: But they all learned from the same source.
+  Agent HaX: What else?
+     [0] Who was Ghost, really?
+     [1] Then who's running the cells? The Architect?
+     [2] Enough. Walk me through what it cost.
+  [stopped: no pick]
+   [PASS] said: "Derek Lawson kept casualty projections. A spreadsheet of how many Operation Shatter would kill"
+   [PASS] not said: "You let Operation Shatter launch, and people died, near enough the number on his spreadsheet"
+   [PASS] not said: "You found the spreadsheet yourself"
+   [PASS] longest run 8 (briefing) <= 8
+
+[stats] spoken/narrated lines 34, choices 6, longest run without a choice 8 (briefing); runs>=6: briefing:8, briefing:6, debrief:6
+[result] all expectations met

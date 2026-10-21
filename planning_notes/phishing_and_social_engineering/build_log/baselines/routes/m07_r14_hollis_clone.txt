@@ -1,0 +1,120 @@
+
+## R14 (puzzle chains r1 F3, closing round F7): the quiet route past Hollis. The clone choice is hidden until the player has seen the server-hall reader (inside_reached). First chat: stakes, then back off; HaX offers the RFID guide on the ops floor; the next sighting offers the clone, which reads his badge off his belt. The clone opens the reader; he stays bought, gives no vault rule and no Park tip, and is recorded as evaded with its own credit.
+   {set {"briefing_played":true}}
+      [clock: architect_taunt_t20 started at 0 min]
+      [clock: architect_taunt_t10 started at 0 min]
+      [clock: redirect_window_close started at 0 min]
+      [clock: redirect_window_display started at 0 min]
+   {event player_spotted:ray_hollis}
+   [opens ray_hollis @start (person-chat)]
+
+--- hollis @start ---
+  Narrator: He clocks you at thirty feet. His hand goes to his belt before his face moves. The flashlight finds your chest.
+  Ray Hollis: Building's evacuating. So you're lost, or you're the other thing.
+     [0] I'm on the contractor list. Check it.
+     [1] The grid goes down tonight. You know that.
+     [2] Walk at him. "I'm not here to fight you, Ray."
+     [3] Back off. I'm leaving.
+  [stopped: no pick]
+   [PASS] not said: "Keep him on the money"
+
+--- hollis ---
+  Ray Hollis: You again. Say it or go.
+     (4 options)
+ > The grid goes down tonight. You know that.
+  Ray Hollis: What I know is my shift ends at six, and there's a number in my account that says stand here.
+  Narrator: It comes out too fast, and he hears it.
+  Ray Hollis: That's not what I meant.
+     (2 options)
+ > How much?
+  Ray Hollis: Enough that I can't give it back. That's the whole trick of it, isn't it.
+     [0] I'm on the contractor list. Check it.
+     [1] The grid goes down tonight. You know that.
+     [2] Walk at him. "I'm not here to fight you, Ray."
+     [3] Back off. I'm leaving.
+  [stopped: no pick]
+   [PASS] not said: "Keep him on the money"
+
+--- hollis ---
+  Ray Hollis: You again. Say it or go.
+     (4 options)
+ > Back off. I'm leaving.
+  Narrator: You step back out of his flashlight. He keeps the beam on you a long moment, then lets it drop.
+  Ray Hollis: Yeah. Thought so.
+      [ink: hollis_backed_off=true]
+      [set_global hollis_backed_off=true]
+  [chat closes]
+   {enter operations_floor}
+      [mapping agent_0x99: set inside_reached=true]
+      [mapping agent_0x99: set rfid_guide_offered=true]
+   [text agent_0x99 +9500ms] Server hall door, far side of this floor, wants a server-zone badge. Hollis has one. His desk's badge station prints them too, with its PIN. RFID guide?
+      [mapping the_architect: set architect_contact=true]
+   [text the_architect +5000ms] Agent 0x00.
+   [PASS] said: "RFID guide?"
+   {event player_spotted:ray_hollis}
+   [opens ray_hollis @start (person-chat)]
+
+--- hollis @start ---
+  Narrator: He is jumpier now. The flashlight comes up fast, and this time it finds you.
+  Ray Hollis: There you are. I knew something was in here.
+     (5 options)
+ > (Keep him on the money. Let the cloner read his belt.)
+  Narrator: You ask him what it bought, and step in close while he works out an answer.
+      [RFID minigame: Server Zone Badge - R. Hollis saved]
+      [mapping agent_0x99: set hollis_cloned=true]
+      [mapping agent_0x99: set badge_obtained=true]
+      [mapping agent_0x99: set hollis_backed_off=true]
+   [text agent_0x99 +4000ms] Got it. His badge never left his belt. Anyone who stands that close can walk off with a copy.
+  Narrator: He keeps talking about retainers.
+  Narrator: He's still talking when you step back. He never looks at his belt.
+  Ray Hollis: Are we done? Go on, then.
+      [set_global hollis_backed_off=true]
+  [chat closes]
+   [PASS] said: "Server Zone Badge - R. Hollis saved"
+   [PASS] said: "His badge never left his belt"
+   [PASS] said: "He never looks at his belt"
+   [PASS] not said: "didn't get a clean read"
+   [PASS] not said: "plate on the transfer switch"
+   [PASS] not said: "Went down the riser"
+   [PASS] hollis_cloned = true (expected true)
+   [PASS] badge_obtained = true (expected true)
+   [PASS] hollis_backed_off = true (expected true)
+   [PASS] hollis_resolved = "" (expected "")
+   {enter server_room}
+      [mapping agent_0x99: set hollis_resolved="evaded"]
+      [mapping agent_0x99: set server_hall_reached=true]
+      [aim unlocked: reach_the_control_room,trace_the_intrusion]
+      [mapping agent_0x99: set lockpicking_guide_offered=true]
+   [text agent_0x99 +9000ms] Plant door, south side of this hall, is a keyed lock. There's a key on the ops floor, but your picks will open it. Want the lockpicking guide?
+   [PASS] hollis_resolved = "evaded" (expected "evaded")
+
+--- hollis @start ---
+  Narrator: He looks up from the desk. His hand stays off his belt this time.
+  Ray Hollis: Thought you'd gone. Say it or go.
+     [0] I'm on the contractor list. Check it.
+     [1] The grid goes down tonight. You know that.
+     [2] Walk at him. "I'm not here to fight you, Ray."
+     [3] Back off. I'm leaving.
+  [stopped: no pick]
+   [PASS] said: "Thought you'd gone. Say it or go."
+   [PASS] not said: "Keep him on the money"
+
+--- hollis @start ---
+  Ray Hollis: Still here. Say it or go.
+     [0] I'm on the contractor list. Check it.
+     [1] The grid goes down tonight. You know that.
+     [2] Walk at him. "I'm not here to fight you, Ray."
+     [3] Back off. I'm leaving.
+  [stopped: no pick]
+   [PASS] said: "Still here. Say it or go."
+   [PASS] not said: "Thought you'd gone"
+   [PASS] not said: "His hand stays off his belt this time"
+   [PASS] credits say: "RAY HOLLIS: Badge copied off his belt"
+   [PASS] credits don't say: "RAY HOLLIS: Evaded"
+   [PASS] credits don't say: "Talked, and handed over"
+
+## Phase 4 dialogue C1: no conversation runs more than nine lines without a choice.
+   [PASS] longest run 4 (hollis) <= 9
+
+[stats] spoken/narrated lines 19, choices 4, longest run without a choice 4 (hollis); runs>=6: 
+[result] all expectations met

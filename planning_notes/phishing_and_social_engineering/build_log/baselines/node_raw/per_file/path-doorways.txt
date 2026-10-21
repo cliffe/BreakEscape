@@ -1,0 +1,55 @@
+TAP version 13
+# Subtest: both rooms' doors on one opening give one doorway
+ok 1 - both rooms' doors on one opening give one doorway
+  ---
+  duration_ms: 2.818357
+  ...
+# Subtest: crossing points sit on the centre line, square to the opening, in travel order
+ok 2 - crossing points sit on the centre line, square to the opening, in travel order
+  ---
+  duration_ms: 0.652268
+  ...
+# Subtest: a raw path that wanders inside an N/S opening is replaced by the pins
+ok 3 - a raw path that wanders inside an N/S opening is replaced by the pins
+  ---
+  duration_ms: 0.605089
+  ...
+# Subtest: a path that runs along a doorway without going through keeps its points
+ok 4 - a path that runs along a doorway without going through keeps its points
+  ---
+  duration_ms: 0.192029
+  ...
+# Subtest: a diagonal route through a side door is squared up on the gap
+ok 5 - a diagonal route through a side door is squared up on the gap
+  ---
+  duration_ms: 0.341477
+  ...
+# Subtest: a north door crossing is squared up on the gap, both directions
+ok 6 - a north door crossing is squared up on the gap, both directions
+  ---
+  duration_ms: 0.580387
+  ...
+# Subtest: pins the player is already past are left out
+ok 7 - pins the player is already past are left out
+  ---
+  duration_ms: 0.246541
+  ...
+# Subtest: the far pin is left out when the destination is inside the opening
+ok 8 - the far pin is left out when the destination is inside the opening
+  ---
+  duration_ms: 0.383864
+  ...
+# Subtest: a path that never meets a doorway is unchanged
+ok 9 - a path that never meets a doorway is unchanged
+  ---
+  duration_ms: 0.1906
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 163.734086

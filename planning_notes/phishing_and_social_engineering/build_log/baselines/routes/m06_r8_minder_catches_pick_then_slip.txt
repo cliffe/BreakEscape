@@ -1,0 +1,298 @@
+
+## R8 (round 2, R2-M3, R2-m7b): cover held. Kemal sees the player and turns them back ('Wrong floor'); a pick he sees ends the FCA line for this visit ('The FCA does not carry picks'); the player backs off and picks the door unseen later. No 'Never saw you' credit; Satoshi and the debrief say he turned the player back.
+   {set {"briefing_played":true}}
+   {room security_checkpoint}
+
+--- guard ---
+  Narrator: A contract guard with a clipboard walks a slow line across the checkpoint, between you and the trading-floor door.
+  Checkpoint Guard: Evening. Floor's restricted. Who are you?
+     (4 options)
+ > Financial Conduct Authority. Routine supervisory visit.
+  Checkpoint Guard: Regulator. Yeah, they said there'd be one. Who are you here to see?
+     (3 options)
+ > Dr Volkova. The CTO.
+      [set_variable guard_waved_through=true]
+  Checkpoint Guard: Dr Volkova. You're on the list. She's on the floor.
+      [unlock_door trading_floor]
+  Checkpoint Guard: Door's open. Don't touch the screens; the traders bite.
+  [chat closes]
+   {room trading_floor}
+      [HaX text: You're on the floor. Two doors here are on RFID, and your cloner reads a badge from across a desk. Ask if you want the guide.]
+
+--- irina ---
+      [task: meet_irina]
+  Narrator: A sharp-eyed woman in her mid-thirties looks up from three monitors of transaction graphs.
+  Dr. Irina Volkova: You must be the FCA. Dr Irina Volkova, Chief Technology Officer.
+  Dr. Irina Volkova: A supervisory visit. Always a pleasure, I'm sure.
+     (3 options)
+ > Thirty-seven papers and nearly three thousand citations. I've read some of your work.
+  Dr. Irina Volkova: You read my work? Most people from your side see "cryptographer" and hear "hacker".
+  Dr. Irina Volkova: I built this exchange on sound principles. Zero-knowledge proofs, homomorphic encryption. Things I can defend.
+  Dr. Irina Volkova: My research is about financial privacy. Governments should not be able to read every transaction a person makes.
+  Dr. Irina Volkova: I would call that a privacy position. Your office calls it something else.
+     (2 options)
+ > Financial surveillance worries me too. I understand the principle.
+  Dr. Irina Volkova: Then we have that much in common.
+  Dr. Irina Volkova: Go on.
+     (5 options)
+ > I'll need to test your password strength. What do people here actually use?
+      [give text_file:m06_password_dictionary]
+  Dr. Irina Volkova: Reasonable request for a supervisor. Here.
+  Dr. Irina Volkova: My own audit wordlist. Every crypto firm on earth picks from the same twenty words and bolts a year on the end.
+  Dr. Irina Volkova: Sixty-one per cent of our staff accounts fell to that list last time I ran it. Management's response was to stop me running it.
+  Dr. Irina Volkova: What else?
+     (4 options)
+ > That's all for now.
+  Dr. Irina Volkova: Find me if you need anything else.
+  [chat closes]
+      [engine: Irina's first close -> exchange_infiltrated=true]
+      [HaX text: Their analysts sit east of the floor. If anyone has drawn the money, it's them.]
+   {set {"found_blockchain_evidence":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true,"flag4_submitted":true,"found_wallet_keys":true,"found_architects_fund":true}}
+
+--- irina ---
+  Dr. Irina Volkova: Yes?
+     (7 options)
+ > Satoshi's wing. You've a badge for it.
+  Narrator: You show her the authorisation line on the fund page, and nothing else.
+  Dr. Irina Volkova: Satoshi's Ghost. He signs the money with that name. He thinks it's funny.
+  Dr. Irina Volkova: *quietly* You're not from the FCA. ...No. Don't tell me yet.
+      [give keycard:executive_access_badge]
+  Dr. Irina Volkova: I put the readers in on his floor. Facilities lent me a spare to do it and never asked for it back. Here.
+  Dr. Irina Volkova: His wing is east of the data centre. He'll be at his desk; he always is.
+  Dr. Irina Volkova: Go on.
+     (6 options)
+ > There's something you need to see, Dr Volkova.
+  Narrator: You lay Priya's write-up on her desk. Money in from the cells, money back out.
+  Dr. Irina Volkova: Where did you get our internal analysis?
+     (2 options)
+ > Never mind where. Read what it pays for.
+  Narrator: You put the fund allocation beside it, open at the casualty projection.
+  Dr. Irina Volkova: They costed the deaths. They put a number in a cell and moved on.
+  Narrator: You put your SAFETYNET credentials on the desk.
+  Dr. Irina Volkova: I asked you not to tell me.
+  Dr. Irina Volkova: My work. Used to kill people.
+     (3 options)
+ > You built it believing in it. They turned it. Help us take it apart.
+  Dr. Irina Volkova: ...Then I'll help you. On one condition: what I give you tonight gets used. Not buried.
+  Narrator: You give her your word.
+      [set_variable irina_recruited=true]
+      [set_variable irina_fate_decided=true]
+  Dr. Irina Volkova: His safe is 2140. The year the last bitcoin is mined. He told me once, as if it were clever.
+  Dr. Irina Volkova: Whatever he keeps on The Architect is in there.
+  Dr. Irina Volkova: The pool keys and the wallet map go to your handler tonight, and the name on the account that pays me.
+  Dr. Irina Volkova: And thank you for treating this as a choice.
+  [chat closes]
+   {room executive_wing}
+
+--- minder @on_sighted ---
+  Narrator: The man by the corner office turns, sees you, and steps squarely into your path.
+  Kemal Aydin: The FCA does not come up here.
+     (2 options)
+ > Wrong floor. I'll go.
+  Kemal Aydin: Yes. You will.
+  [chat closes]
+   [PASS] minder_challenged = true (expected true)
+   [PASS] minder_passed = false (expected false)
+
+--- minder @on_lockpick_seen ---
+      [set_variable minder_challenged=true]
+  Narrator: A hand the size of a shovel closes over yours before the second pin sets.
+  Kemal Aydin: No.
+  Kemal Aydin: The FCA does not carry picks.
+  Kemal Aydin: I guarded banks that stole politely. He at least says what he is.
+  Kemal Aydin: So. Who are you really?
+     (4 options)
+ > (Back off down the corridor.)
+  Kemal Aydin: Good. Stay down there.
+  [chat closes]
+   [PASS] said: "before the second pin sets"
+   [PASS] said: "The FCA does not carry picks"
+
+--- minder ---
+  Kemal Aydin: You again. The answer has not changed.
+     [0] Dr Volkova sent me up. Ring her if you like.
+     [1] The FCA. Routine supervisory visit.
+     [2] Wrong floor. I'll go.
+  [stopped: no pick]
+   [PASS] said: "Dr Volkova sent me up"
+   [PASS] said: "Routine supervisory visit"
+   [PASS] not said: "compliance file has my name"
+
+--- minder ---
+  Kemal Aydin: Still here. Still closed.
+     (3 options)
+ > Wrong floor. I'll go.
+  Kemal Aydin: Yes. You will.
+  [chat closes]
+
+## The pick in his blind window (he never sees it).
+   {set {"door_open_satoshi_office":true}}
+   {room satoshi_office}
+
+--- satoshi ---
+      [task: confront_satoshi]
+      [set_variable satoshi_confronted=true]
+      [set_variable satoshi_spoken=true]
+  Narrator: A man in his early forties leans on the front of an executive desk. The Bitcoin whitepaper hangs framed behind him, level with his own head.
+  Satoshi Nakamoto II: Your paperwork was good. I had you checked anyway. Old habit.
+  Satoshi Nakamoto II: Kemal turned you away, I hear. And yet here you are.
+  Satoshi Nakamoto II: SAFETYNET, right? So you've worked out what this place is for.
+     (4 options)
+ > Or should I call you Satoshi's Ghost? You signed the fund with it.
+  Narrator: For the first time since you walked in, he stops smiling.
+  Satoshi Nakamoto II: Nobody says that name in this building.
+  Satoshi Nakamoto II: Yes. Satoshi's Ghost. The Crypto Anarchists answer to me, and The Architect's money answers to my signature.
+  Satoshi Nakamoto II: "Nakamoto the Second" is for the brochure. The Ghost is who pays for things.
+  Satoshi Nakamoto II: You found the allocation.
+  Satoshi Nakamoto II: Three hundred and fifty to six hundred, across every operation. The cells' own estimates. Yes.
+  Satoshi Nakamoto II: Here's my question. How many die keeping the current system running?
+     (2 options)
+ > You worked out how many would die, and went ahead.
+  Satoshi Nakamoto II: We costed it so it stays small. That's what a number is for.
+  Satoshi Nakamoto II: The Architect calls them lessons. I just pay the invoices.
+  Satoshi Nakamoto II: Whoever controls the money controls the people. We'd like nobody to.
+     (3 options)
+ > You're a criminal with a manifesto.
+  Satoshi Nakamoto II: By whose law? The one your agency reads my mail under?
+  Satoshi Nakamoto II: I don't accept it. You knew that walking in.
+  Satoshi Nakamoto II: You won't agree. You work for the people who'd lose the most if I'm right.
+  Satoshi Nakamoto II: So. You've found the network. What are you going to do with it?
+  Satoshi Nakamoto II: Let's talk about my money.
+  Satoshi Nakamoto II: Twelve point eight million, signed and waiting.
+  Satoshi Nakamoto II: You could freeze it. Very decisive. Tonight's money stops, and everyone hears about it.
+  Satoshi Nakamoto II: Or you let it run and watch who comes to collect. Patient of you, and the money keeps moving.
+     (3 options)
+ > I'm freezing it. The $12.8 million goes into a wallet we hold, tonight.
+      [set_variable assets_seized=true]
+      [set_variable assets_decided=true]
+      [task: decide_asset_strategy]
+  Narrator: On your phone, the transfer clears. The balances will never reach the cells.
+  Narrator: He watches it land, and smiles as if he'd sent it himself.
+  Satoshi Nakamoto II: Twelve point eight million, gone on one agent's say-so. No court, no hearing.
+  Satoshi Nakamoto II: That's the state I've been warning people about. You just proved it for me.
+      [engine: both calls made, all four flags in -> ready_to_extract=true]
+      [HaX text: both calls made ... His safe's still shut, if that matters to you.]
+     (2 options)
+ > Whatever hadn't gone out stays put.
+  Satoshi Nakamoto II: The balances, sure. The advances went out a week ago, and nobody's asking for them back.
+  Narrator: You tell him he's coming with you. The police are on their way up.
+  Narrator: He stands and holds out his wrists.
+  Satoshi Nakamoto II: They'll convict me. They'll want an example.
+  Satoshi Nakamoto II: And the frozen wallet will be on every forum by morning.
+  Satoshi Nakamoto II: Irina will hurt us for a while. She was the best we had.
+  Satoshi Nakamoto II: One question before they come. Do you ever wonder if we're right?
+     (3 options)
+ > No. Your ideology doesn't cover murder.
+      [set_variable satoshi_stance=rejected]
+  Satoshi Nakamoto II: Murder's what they call it when you lose. The winners get statues.
+  Satoshi Nakamoto II: Call your police, then. I'll wait.
+  Satoshi Nakamoto II: You closed one exchange. The Architect keeps spares.
+  [chat closes]
+   [PASS] said: "Your paperwork was good"
+   [PASS] said: "Kemal turned you away"
+
+--- phone ---
+     (5 options)
+ > I'm done here. Bring me in.
+  Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+  His safe's still shut, for one.
+     (2 options)
+ > Bring me in.
+  Car's round the back of the building. Two minutes.
+ > On my way.
+      [task: call_in_after_sweep]
+      [set_variable start_debrief_cutscene=true]
+  See you at HQ.
+      [engine: start_debrief_cutscene -> the debrief opens]
+     [0] The whole estate is mapped. Where does that leave us?
+     [1] Send me a field guide.
+     [2] Remind me where we are.
+     [3] I'm good for now.
+  [stopped: no pick]
+
+--- debrief ---
+      [set_variable debrief_played=true]
+  Narrator: SAFETYNET headquarters. The handler's office at four in the morning, the city still lit beyond the glass.
+  Agent HaX: Every ENTROPY cell banks at HashChain, and tonight we got the books.
+  Agent HaX: We've been chasing cells one at a time. Now we can see who pays them all.
+     (2 options)
+ > Start with the fund.
+  Agent HaX: You traced the fund yourself. In through the mixer, out by amount and time.
+  Agent HaX: $12.8 million, split across six cells. Every name's on that page.
+  Agent HaX: Three hundred and fifty to six hundred projected dead across the operations it pays for. The cells' own estimates.
+  Agent HaX: They wrote that number down and called it "The Architect's Masterpiece."
+     (2 options)
+ > How does anyone sign off on that?
+  Agent HaX: They think the system's falling anyway, and pushing it saves lives later.
+  Agent HaX: Greed I could bargain with. These people believe it.
+  Agent HaX: The freeze doesn't stop the cells that were already paid.
+  Agent HaX: And ENTROPY knows we were inside their bank. We won't get in again.
+  Agent HaX: Volkova.
+  Agent HaX: You turned her.
+  Agent HaX: She gave us the mixer. Nobody alive knows ENTROPY's plumbing better.
+     (2 options)
+ > Was it the right call?
+  Agent HaX: For tonight, yes. What's in her head beats anything on her servers.
+  Agent HaX: She's promised the pool keys and the wallet map by tonight, and the account that paid her.
+  Agent HaX: She came over because she believed you. Remember that when someone asks if she was worth it.
+  Agent HaX: We detained "Satoshi Nakamoto the Second" in his own office and handed him to the police.
+  Agent HaX: He talked about financial freedom all the way through his rights.
+     (2 options)
+ > Did he give anything up?
+  Agent HaX: Not a word about The Architect. That's what his safe was for.
+  Agent HaX: HashChain's finished and the mixer's dark. Every cell needs a new bank, and they won't trust the next one for months.
+  Agent HaX: His minder turned you back, and you went through his boss's door anyway.
+  Agent HaX: And the cover held on the floor. Only Satoshi thought to check, and by then you were at his desk.
+  Agent HaX: All four flags in.
+     (2 options)
+ > Walk me through it.
+  Agent HaX: A build service nobody had switched off got you onto their backend. One cracked password, and the same password opened a second account.
+  Agent HaX: The financial database gave us their doors, and the vault account gave us the keys to every cold wallet they hold.
+  Agent HaX: That's the whole chain, from outside to the keys, and they'd left every link open.
+  Agent HaX: One more thing. You were their regulator tonight, and the FCA wants its letter. Give me the three findings that go in it.
+     (10 options)
+ > Their door passphrases follow a house rule, and the rule is pinned to a noticeboard.
+     (9 options)
+ > Two service accounts share one password.
+     (8 options)
+ > Every cold wallet's recovery keys sit on one account.
+  Agent HaX: Three for three. Any one of those would have cost them their licence. Together they explain how you walked in.
+  Agent HaX: Priya's write-up and the fund allocation, both. Wallets, transactions and what they pay for.
+  Agent HaX: That's evidence the police can use. People in several cells will face charges over the money.
+  Agent HaX: You left Satoshi's safe shut. Whatever he kept in it, the police will open on their schedule, not ours.
+  Agent HaX: A man like that keeps insurance. I'd have liked to read it first.
+  Agent HaX: Here's what worries me.
+  Agent HaX: Six cells, one fund, one seventy-two-hour clock. Somebody wrote one schedule for all of them.
+     (2 options)
+ > What's next?
+  Agent HaX: We find out which of them moves first, and get there before it does.
+  Agent HaX: Get some rest. Keep your phone on.
+      [task: hear_debrief]
+  [end]
+   [PASS] said: "His minder turned you back, and you went through his boss's door anyway"
+   [PASS] said: "And the cover held on the floor"
+
+--- credits ---
+   MISSION COMPLETE
+   FOLLOW THE MONEY
+   THE ARCHITECT'S FUND: $12.8M — TRACED THROUGH THE MIXER
+   ENTROPY FINANCIAL NETWORK: PARTIALLY MAPPED
+   ── ASSETS ──
+   FROZEN — $12.8M moved into a SAFETYNET wallet. The balances never reach the cells.
+   ── PERSONNEL ──
+   CHECKPOINT GUARD: Waved you through on the FCA cover
+   DR. IRINA VOLKOVA: Turned — gave up the mixer tonight
+   'SATOSHI NAKAMOTO II': Detained — handed to the police
+   KEMAL AYDIN (MINDER): Turned you back once; you got past him anyway
+   FCA COVER: held all night
+   ── THE ARCHITECT ──
+   IDENTITY: Unknown — safe contents never recovered
+   72 hours. Six cells. Some of them were already paid.
+   [PASS] said: "KEMAL AYDIN (MINDER): Turned you back once"
+   [PASS] said: "FCA COVER: held all night"
+   [PASS] not said: "Never saw you"
+   [PASS] not said: "Talked your way past him"
+   [PASS] longest run 8 (satoshi) <= 9
+
+[stats] spoken/narrated lines 128, choices 31, longest run without a choice 8 (satoshi); runs>=6: irina:6, irina:6, satoshi:7, satoshi:8, satoshi:7, debrief:7, debrief:7
+[result] all expectations met

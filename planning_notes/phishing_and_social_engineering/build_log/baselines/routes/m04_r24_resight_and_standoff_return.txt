@@ -1,0 +1,153 @@
+
+## R24 (phase 4 dialogue C1, D5-15/D5-6/D5-25/D5-20): the guard's sight challenge fires twice before he admits the player (the repeat doesn't replay his opener); admitted, a re-talk gets a fresh idle line. Vance's commit exit answers 'I'm going.'. Voltage's standoff narration plays once, and a backed-off player coming back doesn't hear it again.
+
+--- guard @on_sighted ---
+  Narrator: The guard looks up from the desk and gets to his feet.
+  Security Guard: Morning. Bit early for visitors. Desk first, if you don't mind.
+     [0] Grid-safety regulator. I'm here for the audit.
+     [1] Just a routine visit. Won't take long.
+     [2] (Keep walking.)
+  [stopped: no pick]
+   [PASS] said: "The guard looks up from the desk"
+   [PASS] said: "Bit early for visitors"
+
+--- guard @on_sighted ---
+  Security Guard: Still need you at the desk first, my lover. Badge.
+     (3 options)
+ > Grid-safety regulator. I'm here for the audit.
+  Narrator: He turns your badge over, glances at the clipboard, hands it back.
+  Security Guard: Regulator, is it.
+  Security Guard: Alright, sign in here. Mr Vance said there was an audit today. He's not happy about it, fair warning.
+     (2 options)
+ > Routine procedure. Where do I find Mr Vance?
+  Security Guard: He'll be at his desk or in the control room at this hour.
+      [set_global guard_admitted=true]
+  Security Guard: Go on through, my lover. Operations office is straight down the hall.
+  [chat closes]
+   [PASS] said: "Still need you at the desk first, my lover"
+   [PASS] said: "Regulator, is it."
+   [PASS] said: "Go on through"
+   [PASS] not said: "The guard looks up from the desk"
+   [PASS] not said: "This early?"
+
+--- guard ---
+  Security Guard: Still about?
+     (3 options)
+ > Anything unusual on shift tonight?
+  Security Guard: Quiet. That OptiGrid lot came through late on the ninth, but they had cards. Mr Vance is the one to ask.
+  Security Guard: Need something?
+     (3 options)
+ > Nothing. Carry on.
+  Security Guard: Right you are.
+  [chat closes]
+   [PASS] said: "That OptiGrid lot came through late on the ninth"
+
+--- guard ---
+  Security Guard: You again.
+     (3 options)
+ > Nothing. Carry on.
+  Security Guard: Right you are.
+  [chat closes]
+   [PASS] said: "Security Guard: You again."
+   {set {"briefing_played":true,"vance_provided_keycard":true}}
+
+--- vance ---
+      [task: meet_robert_vance]
+      [set_global vance_spoken=true]
+  A grid-safety audit at four in the morning. You regulator lot keep strange hours.
+     (3 options)
+ > Just doing the job, Mr Vance.
+  Right. I run a tight ship here, on a tighter budget.
+  Tick your boxes and let's be quick about it. I've a plant to keep running.
+     (2 options)
+ > Tell me about the recent maintenance work.
+  Maintenance? OptiGrid came in on the ninth, control-system upgrades.
+  Cards worked, they quoted an order number. I've still not found the order.
+     (2 options)
+ > I'd like to see those access logs.
+  I can pull those. They checked out, proper credentials.
+  Is there a problem?
+     (2 options)
+ > There's something you need to know.
+  Alright. You've got my attention. What's this really about?
+     (2 options)
+ > You deserve the truth. ENTROPY are inside your facility.
+  Narrator: You drop the cover and tell him who you work for. ENTROPY operatives are inside his facility, and his battery storage is the target.
+  ...What?
+  ENTROPY. Here. In my plant.
+     (2 options)
+ > Deadly serious. At least three of them, and your battery systems are the target.
+  My God. Two hundred and forty thousand people on this grid.
+  How long have we got?
+     (2 options)
+ > I can stop it, but I need your help.
+  Tell me what you need. Anything.
+  You'll have the halls. And I know the SCADA side better than they do.
+  I'll have the access logs and the monitoring up from here.
+  Come back to the ops desk when you need me. I'm on comms while you move.
+ > I'm going.
+  Robert Vance: Go. I'll be on the desk.
+  [chat closes]
+   [PASS] said: "Go. I'll be on the desk."
+   {set {"anomaly_detected":true,"attack_mechanism_known":true,"plant_room_entered":true,"operative_static_defeated":true}}
+      [engine: attack mapped -> clock_started]
+      [clock: h2_advisory started at 0 min]
+      [clock: racks_vent started at 0 min]
+
+--- voltage ---
+  One of you. I'd budgeted for more.
+  You got past my people.
+  But you're late. This place has no security worth the name, and we've had three days in it.
+     (2 options)
+ > It's over, Voltage. Stand down.
+  Polite. They train that into you.
+  One keystroke and it's now, not eight o'clock. The racks go critical, the hall burns, and the grid drops.
+  Your move.
+     (2 options)
+ > Then I take that laptop off you.
+  Narrator: The laptop's open on the bench, the trigger armed on screen. Behind him, on the wall, is the red mushroom head of the hardwired shutdown. You cannot reach both.
+  Voltage: So. The button, or me.
+  Voltage: Static's down. So it's you, me, and one keystroke.
+     (4 options)
+ > Not like this. (Back off.)
+  Voltage: Then get out of my plant room. The clock doesn't care either way.
+  [chat closes]
+   [PASS] said: "You cannot reach both"
+   [PASS] said: "You got past my people"
+
+--- voltage ---
+  Voltage: *not looking up* You came back. Nothing you say next will be new.
+     (2 options)
+ > Then let's finish this.
+  Voltage: So. The button, or me.
+  Voltage: Static's down. So it's you, me, and one keystroke.
+     (4 options)
+ > Step away from the bench. You're coming with me.
+  Narrator: He looks at your hands, then at the door behind you.
+  Voltage: You're between me and the dock. I could still make that keystroke before you reached me.
+  Voltage: So give me a reason not to.
+     (2 options)
+ > Hands where I can see them. A court can check your sums.
+      [task: confront_voltage]
+      [set_global blackout_named=true]
+  Voltage: ...A court. Fine. Let them read the casualty model. I signed it.
+  Narrator: He steps back from the bench with his hands open, and lets you take the laptop off it.
+      [task: confront_voltage]
+  [chat closes]
+   [PASS] not said: "The laptop is open on the plant-room bench"
+
+--- voltage ---
+      [task: confront_voltage]
+  Voltage: *flat* Still counting?
+     (2 options)
+ > Nothing you want to tell me?
+  Voltage: Read the casualty model on that bench. It's the only honest document in the building.
+      [task: confront_voltage]
+  Voltage: *flat* You've got me. You haven't got him.
+     [0] Nothing you want to tell me?
+     [1] Say nothing.
+  [stopped: no pick]
+   [PASS] said: "Still counting?"
+
+[stats] spoken/narrated lines 53, choices 20, longest run without a choice 4 (vance); runs>=6: 
+[result] all expectations met

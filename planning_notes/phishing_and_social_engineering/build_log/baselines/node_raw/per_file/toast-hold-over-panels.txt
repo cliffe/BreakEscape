@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: workstation popups count as open only while displayed
+ok 1 - workstation popups count as open only while displayed
+  ---
+  duration_ms: 1.129446
+  ...
+# Subtest: an open minigame counts, one already closing does not
+ok 2 - an open minigame counts, one already closing does not
+  ---
+  duration_ms: 0.835262
+  ...
+# Subtest: info and success wait behind a panel; warnings and errors do not
+ok 3 - info and success wait behind a panel; warnings and errors do not
+  ---
+  duration_ms: 0.64921
+  ...
+# Subtest: a held toast renders once the panel closes
+ok 4 - a held toast renders once the panel closes
+  ---
+  duration_ms: 401.490605
+  ...
+# Subtest: toasts raised just before a minigame opens go back in the hold
+ok 5 - toasts raised just before a minigame opens go back in the hold
+  ---
+  duration_ms: 1.429818
+  ...
+# Subtest: a bark from the open phone thread waits; other contacts still show
+ok 6 - a bark from the open phone thread waits; other contacts still show
+  ---
+  duration_ms: 1.052305
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 562.781916

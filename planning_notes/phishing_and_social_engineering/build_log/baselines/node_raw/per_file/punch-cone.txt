@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: the cone is ±40° by default
+ok 1 - the cone is ±40° by default
+  ---
+  duration_ms: 0.705938
+  ...
+# Subtest: a target 35-40° off-axis is now hit; one at 45° still misses
+ok 2 - a target 35-40° off-axis is now hit; one at 45° still misses
+  ---
+  duration_ms: 0.220585
+  ...
+# Subtest: range still applies
+ok 3 - range still applies
+  ---
+  duration_ms: 0.085016
+  ...
+# Subtest: the debug overlay draws the same cone
+ok 4 - the debug overlay draws the same cone
+  ---
+  duration_ms: 0.477173
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 107.594046

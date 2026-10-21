@@ -1,0 +1,137 @@
+TAP version 13
+# 👁️ SIGHT CHALLENGE: "guard" spotted the player in "lobby" → player_spotted:guard
+# 👁️ SIGHT CHALLENGE: "guard" spotted the player in "lobby" → player_spotted:guard
+# 👁️ SIGHT CHALLENGE: "guard" spotted the player in "lobby" → player_spotted:guard
+# 👁️ SIGHT CHALLENGE: "guard" spotted the player in "lobby" → player_spotted:guard
+# 👁️ SIGHT CHALLENGE: "guard" spotted the player in "lobby" → player_spotted:guard
+# 👁️ SIGHT CHALLENGE: "guard" spotted the player in "lobby" → player_spotted:guard
+# 👁️ SIGHT CHALLENGE: "guard" spotted the player in "lobby" → lobby_guard_challenge
+# 👁️ SIGHT CHALLENGE: "guard" spotted the player in "lobby" → player_spotted:guard
+# 📋 Setting up event mappings for guard: [
+#   {
+#     eventPattern: 'player_spotted:guard',
+#     setGlobal: { guard_challenged: true },
+#     cooldown: 0
+#   }
+# ]
+#   📌 Registering listener for event: player_spotted:guard → undefined
+# ✅ Registered 1 event mappings for guard
+# 📋 Setting up event mappings for quiet_guard: [
+#   {
+#     eventPattern: 'player_spotted:quiet_guard',
+#     setGlobal: { quiet_fired: true }
+#   }
+# ]
+#   📌 Registering listener for event: player_spotted:quiet_guard → undefined
+# ✅ Registered 1 event mappings for quiet_guard
+# 👁️ SIGHT CHALLENGE: "guard" spotted the player in "lobby" → player_spotted:guard
+# 🎯 Event triggered: player_spotted:guard for NPC: guard {
+#   npcId: 'guard',
+#   roomId: 'lobby',
+#   playerPosition: { x: 50, y: 0 },
+#   timestamp: 1000
+# }
+# ✅ Event player_spotted:guard conditions passed, triggering NPC reaction
+# 🌐 Event setGlobal: guard_challenged = true
+# 🔍 Event config for player_spotted:guard: {
+#   conversationMode: undefined,
+#   npcType: 'person',
+#   knot: undefined,
+#   fullConfig: {
+#     handlerIndex: 0,
+#     knot: undefined,
+#     bark: undefined,
+#     once: undefined,
+#     cooldown: 0,
+#     condition: undefined,
+#     delayMs: 0,
+#     maxTriggers: undefined,
+#     conversationMode: undefined,
+#     changeStoryPath: undefined,
+#     sendTimedMessage: undefined,
+#     setGlobal: { guard_challenged: true },
+#     completeTask: undefined,
+#     skipTask: undefined,
+#     unlockTask: undefined,
+#     unlockAim: undefined,
+#     emitEvent: null,
+#     emitEventData: {},
+#     disableClose: false,
+#     background: null,
+#     setVisible: undefined,
+#     patrolOverride: null,
+#     setPatrolSpeed: undefined,
+#     setDwellMultiplier: undefined,
+#     navigateToPlayer: false
+#   }
+# }
+# [NPCManager] Event 'player_spotted:guard' triggered for NPC 'guard' → knot 'undefined'
+# Subtest: default off: no challengeOnSight, nothing emitted even in plain view
+ok 1 - default off: no challengeOnSight, nothing emitted even in plain view
+  ---
+  duration_ms: 1.632539
+  ...
+# Subtest: true means defaults: player_spotted:<id>, 10 s cooldown
+ok 2 - true means defaults: player_spotted:<id>, 10 s cooldown
+  ---
+  duration_ms: 0.129036
+  ...
+# Subtest: walking into the cone emits once per sighting, with the payload
+ok 3 - walking into the cone emits once per sighting, with the payload
+  ---
+  duration_ms: 4.36437
+  ...
+# Subtest: outside the cone angle (behind him) is not a sighting
+ok 4 - outside the cone angle (behind him) is not a sighting
+  ---
+  duration_ms: 1.991384
+  ...
+# Subtest: leaving and coming back fires again only after the cooldown
+ok 5 - leaving and coming back fires again only after the cooldown
+  ---
+  duration_ms: 2.390473
+  ...
+# Subtest: updates are throttled
+ok 6 - updates are throttled
+  ---
+  duration_ms: 0.483124
+  ...
+# Subtest: only in the player's room, and only in the listed rooms
+ok 7 - only in the player's room, and only in the listed rooms
+  ---
+  duration_ms: 0.298336
+  ...
+# Subtest: requireGlobal and skipIfGlobal gate it; a global set mid-sighting lets it fire
+ok 8 - requireGlobal and skipIfGlobal gate it; a global set mid-sighting lets it fire
+  ---
+  duration_ms: 0.544186
+  ...
+# Subtest: custom event name
+ok 9 - custom event name
+  ---
+  duration_ms: 0.274697
+  ...
+# Subtest: nothing while a minigame or conversation is open, and no retrigger when it closes
+ok 10 - nothing while a minigame or conversation is open, and no retrigger when it closes
+  ---
+  duration_ms: 0.227864
+  ...
+# Subtest: hidden, KO'd and phone NPCs never challenge
+ok 11 - hidden, KO'd and phone NPCs never challenge
+  ---
+  duration_ms: 0.123445
+  ...
+# Subtest: a player_spotted mapping on the guard fires through NPCManager
+ok 12 - a player_spotted mapping on the guard fires through NPCManager
+  ---
+  duration_ms: 2.648201
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 115.937053

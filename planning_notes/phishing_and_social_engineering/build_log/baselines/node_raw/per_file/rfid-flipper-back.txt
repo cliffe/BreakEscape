@@ -1,0 +1,32 @@
+TAP version 13
+# 🔓 MIFAREAttackManager initialized
+# 🔐 RFIDDataManager initialized
+# 🎨 RFIDUIRenderer initialized
+# 🔐 RFIDDataManager initialized
+# 🎨 RFIDUIRenderer initialized
+# 🔐 RFIDDataManager initialized
+# 🎨 RFIDUIRenderer initialized
+# Subtest: Info screen: Back returns to the read screen with the read kept; Abandon read closes
+ok 1 - Info screen: Back returns to the read screen with the read kept; Abandon read closes
+  ---
+  duration_ms: 6.448299
+  ...
+# Subtest: Back keeps keys already cracked
+ok 2 - Back keeps keys already cracked
+  ---
+  duration_ms: 0.905717
+  ...
+# Subtest: read screen: the way out is labelled as abandoning the read
+ok 3 - read screen: the way out is labelled as abandoning the read
+  ---
+  duration_ms: 0.251669
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 167.366388

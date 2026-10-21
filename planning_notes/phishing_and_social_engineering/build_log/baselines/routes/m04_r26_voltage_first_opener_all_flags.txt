@@ -1,0 +1,117 @@
+
+## R26 (phase 4 dialogue C3, D7-1/D7-21): the Voltage-first debrief opener with every optional flag set (print, Cipher walked, go-bag card, directive and coordination log, both stances, guard KO'd), crew lost, Voltage taken. The new player beat follows the people knot, the proof line is folded, Bank B is recapped (news on this opener), and no run without a choice exceeds 9.
+   {set {"briefing_played":true,"guard_admitted":true,"vance_met":true,"vance_spoken":true,"vance_provided_keycard":true,"vance_card_cloned":true,"relay_card_cloned":true,"vance_is_ally":true,"vance_trust_level":90,"anomaly_detected":true,"server_room_reached":true,"plant_reader_seen":true,"fingerprint_kit_found":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"attack_mechanism_known":true,"voltage_print_on_bypass":true,"cipher_walked":true,"lore_safehouse_address_found":true,"lore_architect_directive_found":true,"lore_cross_cell_coordination_found":true,"promised_voltage_alive":true,"asked_the_number":true,"security_guard_ko":true,"voltage_six_cities":true}}
+      [engine: attack mapped -> clock_started]
+      [clock: h2_advisory started at 0 min]
+      [clock: racks_vent started at 0 min]
+   {advance 15 min}
+      [clock 8 min: h2_advisory FIRES {"hydrogen_alarm":true,"urgency_stage":3}]
+      [clock 14 min: racks_vent FIRES {"racks_vented":true,"casualties_occurred":true,"urgency_stage":4}]
+      [engine: racks_vented with the crew in Hall 2 -> crew_lost]
+   [PASS] crew_lost = true (expected true)
+   {set {"plant_room_entered":true,"operative_static_defeated":true}}
+   {ko voltage}
+   {set {"esd_authorized":true,"attack_prevented":true}}
+
+--- phone ---
+     (3 options)
+ > I'm done here. Bring me in.
+  Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+     (2 options)
+ > Bring me in.
+  Car's at the loading dock. Two minutes.
+ > On my way.
+      [task: call_in_after_sweep]
+      [set_global mission_complete=true]
+  See you at HQ.
+     [0] Where do I stand?
+     [1] Nothing right now.
+  [stopped: no pick]
+
+--- debrief ---
+      [set_global debrief_started=true]
+  Agent, report.
+     (2 options)
+ > Voltage is in custody.
+      [set_global blackout_named=true]
+  In custody. Nobody else in that building knows the chain above Blackout.
+  He'll talk. He wants someone to check his sums.
+  Vance lost nine of his crew tonight. He hasn't said a word about you yet.
+  And the gate guard's in hospital with a sore head. He was the one person on site doing his job by the book.
+ > Nine. Tell me we came out with something.
+  The directive said it: Zero Day supplies, Critical Mass executes, grid storage this winter. Tonight was that plan, running.
+  Voltage is in a room now. So far he's given us one thing: his casualty figure.
+  To the decimal this time. You only got "forty-odd".
+  You said you'd bring him in breathing. You did.
+  And his print on that bypass module puts his own hand in the cabinet. That'll stand up in court.
+  Cipher went to look at the night crew and kept walking. Police picked him up on the access road. He's talking.
+  The documents show Critical Mass and Social Fabric coordinating the one attack, in their own handwriting. That's the proof we've chased since Zero Day.
+  And that card from the go-bag. It decodes to Calder Wharf, Social Fabric's regional safehouse. That goes on the board.
+  Keep the OptiGrid print kit. Forensics can have the case it came in.
+ > And how did they get in? How did I?
+  Agent HaX: Before you write it up. Here's what let them in. Nearly all of it let you in too.
+  Agent HaX: Vance's door card copied from across his own desk. Old prox hands its number to anything that asks.
+  Agent HaX: You did it to Relay too, while she was talking.
+  Agent HaX: The HV door took one finger, and that finger was on a panel he touched every two hours. A print names you. It can't prove you're the one standing there.
+  Agent HaX: And the control room believed its own sensors. The honest ones weren't on the bus: a dial on a wall, and a gas monitor off their network.
+     (2 options)
+ > And the network?
+  Agent HaX: A legacy compile service on an OT box, trusting whatever it was sent. That comes off the network.
+  Agent HaX: An FTP service handing their cross-cell plan to anyone who looked, and a jump-server account with more privilege than it ever needed. Somebody reviews those.
+  Agent HaX: And on site: encrypted cards, a second factor on the HV door, and a gauge in every hall that somebody reads.
+     (2 options)
+ > It goes in the report. Vance will want every line.
+  Social Fabric had disinformation queued for the morning, ready to turn a fire into a panic.
+     (2 options)
+ > The Architect. He's running all of it.
+  The same name the Zero Day directive carried. The Architect.
+  We've just watched one of his strikes from the inside. Now we know how the cells fit together.
+  This site was a rehearsal.
+  Netherton wants a standing team on The Architect. Hunt the coordination, not the cells.
+  He's calling it Task Force Null. Your name's on his list.
+     (2 options)
+ > What would Task Force Null do?
+  Find whoever sends the directives. Every cell we've hit so far was working from the same ones.
+  Four missions now, and you're still standing. Tonight nearly went the other way.
+  He'll call when he's ready. Not tonight.
+  Agent HaX: The banks are isolated, but Bank B went before you got to the button.
+  Agent HaX: Nine in Hall 2. Two more on the feed before the grid caught up.
+  Agent HaX: Vance had the evacuation alarm on his desk all night.
+  Agent HaX: You stopped the rest of it. Hold on to that when the names come out tomorrow.
+  Narrator: Vance is on the line from the Albion ops desk.
+  How do we handle this publicly?
+     (3 options)
+ > Full public disclosure. People have a right to know.
+  Full transparency. The attack, the holes it came through, ENTROPY. All of it.
+  Robert Vance: Good. Nobody gets to call it an accident.
+  The public gets the truth and the warning with it. Albion takes the hit, every other storage site gets audited, and someone in Parliament finally answers for the funding.
+  Netherton will back that.
+  Done.
+  Statement goes out with the local authorities.
+  Robert Vance: I don't know what you are. I know what you did.
+  Robert Vance: Nine of mine. I'll be telling their families myself.
+     (2 options)
+ > I'm sorry about your people, Mr Vance.
+  Robert Vance: We've run this place on hope and gaffer tape for years.
+  Robert Vance: That stops on my shift.
+  Voltage will keep.
+  Sleep. I'll call.
+      [task: report_to_0x99]
+  [end]
+   [PASS] longest run 9 <= 9
+   [PASS] said: "In custody. Nobody else in that building"
+   [PASS] said: "Nine. Tell me we came out with something."
+   [PASS] said: "That's the proof we've chased since Zero Day."
+   [PASS] said: "Bank B went before you got to the button"
+   [PASS] said: "Hold on to that when the names come out tomorrow"
+   [PASS] said: "Keep the OptiGrid print kit"
+   [PASS] said: "I'm sorry about your people, Mr Vance."
+   [PASS] said: "You did it to Relay too"
+   [PASS] not said: "Good. Nobody else"
+   [PASS] not said: "the proof we've been chasing"
+   [PASS] not said: "won't be zero"
+   [PASS] not said: "Keep the crew's"
+   [PASS] not said: "Netherton can live with that"
+
+[stats] spoken/narrated lines 52, choices 12, longest run without a choice 9 (debrief); runs>=6: debrief:9, debrief:9, debrief:8
+[result] all expectations met
