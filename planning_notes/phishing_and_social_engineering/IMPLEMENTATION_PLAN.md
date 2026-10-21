@@ -428,10 +428,159 @@ capture note appear as `00` §11a says; a forced brand-lint violation in a fixtu
 
 ### Phase 5 detail — to be written by the builder agent
 
-*Left for the builder agent. Expected contents: the `07` N-items mapped to files and hook points; the
-renderer and guard design at the level `07` allows; packet split; the asset list confirmed against
-`07`; the test cases inside the three named files; the playtest steps for the builder and the Lord
-round. The orchestrator folds its packets into §4 once this section is written.*
+Written from `designs/07` (read in full on 2026-10-21). Where this section and the outline above
+disagree, this section wins. The outline's asset line is corrected in "Assets" below.
+
+**Goal.** Build the landing-page builder: a scored, data-only model of a credential-harvest page that
+the player assembles, scores, attaches to a mail, and then inspects as the victim. The safety rules in
+`07` §1 (no form controls, no network, no export, invented brands, `.example` hosts) are enforced by
+tests and by the validator lint, not by convention.
+
+**07 items covered.** N1 to N11, with N6b. The packet that owns each item is in brackets.
+- N1 overlay and wiring [P5-D, P5-G]
+- N2 pure model, scorer, tells and closed record keys [P5-A]
+- N3 two-layer renderer and DOM-safety test [P5-B]
+- N4 persisted pages and drafts [P5-F]
+- N5 step 6 defender inspection [P5-E]
+- N6 offline lint, `--strict-social` and the CI wiring [P5-C; the CI job itself is P0-K]
+- N6b runtime guard: model half [P5-A], renderer half [P5-B]
+- N7 concept cards: display [P5-D], card-id check [P5-C]
+- N8 Source Sans 3 on every authored string [P5-B]
+- N9 nested launch, close and keyboard handling [P5-D, P5-G]
+- N10 `linkInfoFor`, `describeVictimOutcome`, `betterVictim` [P5-A]
+- N11 `captureGranted` [P5-A]. The send-path call that adds the note sits in `01` (P1-F), not here.
+
+**Files to create.** Under `public/break_escape/js/minigames/landing-page-builder/` unless stated.
+- `landing-page-model.js` (P5-A): pure, with no DOM and no globals.
+- `landing-page-render.js` (P5-B).
+- `landing-page-builder-minigame.js` (P5-D, P5-E). It extends `MinigameScene`, and it uses
+  `minigames/framework/social-overlay.js` only if P0-M built that helper (0.10).
+- `public/break_escape/css/landing-page-builder-minigame.css` (P5-D), named as
+  `siem-dashboard-minigame.css` is.
+- `scripts/validate_social/landing.rb` (P5-C), required from `scripts/validate_scenario.rb` (see D1).
+- Tests: `test/js/social-landing-page-model.test.mjs`, `social-landing-page-guard.test.mjs`,
+  `social-landing-page-render.test.mjs` (P5-A, P5-B), `social-landing-page-state.test.mjs` (P5-F; the
+  name is proposed, since `07` names no test for N4), and `validator-landing-pages.test.mjs` (P5-C).
+  Lint fixtures go in `test/js/fixtures/social_landing/`.
+- `public/break_escape/assets/objects/page-builder.png` (OBJ8, a user request).
+
+**Files to modify, with hook points.** Checked on 2026-10-21. The tree is shared, so re-read each file
+just before editing it.
+- `public/break_escape/js/minigames/index.js`: `text-file` is the model. Its export is at :18, its
+  import at :104 and `registerScene('text-file', …)` at :160. Add the same three lines for
+  `landing-page-builder`.
+- `public/break_escape/js/minigames/framework/minigame-manager.js`: `startMinigame` at :15, the
+  `requiresKeyboardInput` pause at :37 to :45, the `onComplete` call at :204 to :206 (the close path in
+  `07` §6), and `registerScene` at :229. Expected to need no edit. P0-M may have moved these lines, so re-read before relying on them.
+- `public/break_escape/js/minigames/framework/base-minigame.js`: `disableClose` at :18 to :23 and :70 to
+  :80, and the Esc handler at :72 to :73. Expected to need no edit. The builder passes
+  `disableClose: true` and binds its own capture-phase Esc.
+- `public/break_escape/js/systems/minigame-starters.js`: `startSiemMinigame` (:649 to :680, which calls
+  `startMinigame('siem-dashboard', null, params)` at :679) is the model. Add `startLandingPageBuilder`
+  and its `window.` export beside `window.startSiemMinigame` at :923. The starter sets
+  `requiresKeyboardInput: true`.
+- `public/break_escape/js/systems/interactions.js`: a new `page-builder` branch beside the siem branch
+  (`siem_dashboard` at :937 to :967) and the command board branch (`command_board` at :998).
+- `public/break_escape/js/core/game.js`: `this.load.image('page-builder', 'objects/page-builder.png')`
+  beside the siem preload at :1194.
+- `app/views/break_escape/games/show.html.erb`: a stylesheet line after the siem stylesheet at :40.
+  `fonts.css` is already linked at :16.
+- `public/break_escape/js/state-sync.js`: `KEYED_SECTIONS` at :13 and the `pagehide` listener at :61.
+  The shape guard for `se_landing_pages` and `se_landing_drafts` (N4) goes where the record is written
+  and synced, which is P5-F's job.
+- `minigame-data-schemas.json` (the `page-builder` entry, `{ landingPageId }`, `00` §11) is P5-G.
+  `scripts/scenario-schema.json` (`social.landingPages`) is P5-C.
+- `public/break_escape/js/minigames/notes/notes-minigame.js:835` (`window.addNote`) is called by `01`'s
+  send path, not by the builder. It is listed so the owner of the capture note is clear.
+- Read only: `utils/display-dashes.js` (the renderer must not call it), `css/ui-themes.css` (the
+  `--ui-*` tokens), `css/fonts.css` (`--se-font-readable`, from P0-L), `core/player.js` (:36 and :95,
+  `keyboardPaused`), and `minigames/siem/siem-dashboard-minigame.js` (`STATE_KEY` at :5, read and write at
+  :925 and :941, the model for N4).
+
+**Dependencies.**
+- Phase 0: the shared writer (0.2, P0-D) for the `landing_<pageId>_built` and `_domain` writes; the
+  validator framework and CI (0.7, P0-J and P0-K); Source Sans 3 (0.8, P0-L); return-to (0.9, P0-M).
+  The overlay helper (0.10) is optional.
+- Phase 1a: the intel board in recon mode (`03` N1 to N3 and N5, P1-G), for the Case file button
+  (`07` §6).
+- Phase 1b: the mail client's Attach menu and `link` kind (`01` N4, P1-F), and the second test target
+  (P1-O). See D5.
+- Phase 2: the card renderer from `02` N1 (P2-A), for N7. See D4.
+
+**Decisions in this section (challenge any of them).**
+- D1. The lint lives in `scripts/validate_social/landing.rb`, as P0-J's per-area split requires.
+  `07` N6 and the README engine table name `validate_scenario.rb` instead. The split stops parallel
+  packets from editing one file.
+- D2. The validator test is `test/js/validator-landing-pages.test.mjs`, which is `07`'s name. The
+  outline's earlier suggestion, `validator-social-landing.test.mjs`, is dropped.
+- D3. The object type id is `page-builder`, as in `00` §11, `07` §6 and OBJ8. The code's siem and
+  command-board branches use an `_` separator (`siem_dashboard`, `command_board`). The new branch compares
+  against the hyphenated id.
+- D4. N7 cards render through the `02` N1 card renderer. If P2-A has not landed when P5-D runs, P5-D shows
+  the card text as plain paragraphs behind the same "?" button, and swaps to the shared renderer when
+  P2-A lands. Nothing else waits on it.
+- D5. The bridge checks need a target whose required factors include `linkCredible`. If P1-O's second
+  target does not have it, P5-G adds a page with a third target to `test_social_slice`. The orchestrator
+  decides this at the start of Phase 5.
+- D6. LOGO5 and LOGO6 are in Phase 5's asset list. They are Lab-tier rows, and stage 2 offers CloudBoxy as
+  a brand choice (`07` §3 step 1 and §7). The outline's "later" was wrong for the lab.
+- D7. Builder packets are Haiku at high effort, as the outline and README S say. The bridge packet (P5-T)
+  follows the same rule. §1 of this plan says Sonnet runs every browser playtest, so the two rules
+  conflict for this phase. The orchestrator picks one before P5-T starts.
+- D8. The N4 shape guard goes into the shared `state-sync.js`. P5-F re-reads the file before editing and
+  runs after the Phase 0 sync changes have landed.
+
+**Packet split.** Packets A (model) and B (renderer) run first, in parallel with C (lint). D (overlay)
+follows A and B. E (step 6) follows D. F (persistence) follows A and runs beside D. G (wiring) follows D
+and F. T (bridge checks) follows G, and R (review, Opus) follows T. The rows are in §4.
+
+**Assets (ASSETS.md rows; no generation inside a packet).** Each image is a separate request to the user,
+one at a time, as ASSETS.md says.
+- OBJ8 `page-builder`: the workstation sprite. Needed by P5-G, and `--strict-social` fails without it.
+- UI22: builder chrome (window frame, address bar frame, padlock states, "Not secure" badge, five step
+  icons, tell stamp, meter frame). Needed by P5-D and P5-E.
+- UI23: the padlock. Reuse `public/break_escape/assets/icons/padlock_32.png`. ASSETS.md gives the path
+  without the `assets/` prefix. No request is needed.
+- LOGO1 (Ledgerwell, crisp 32x32), LOGO4 (Ledgerwell's generic look for the three page purposes),
+  LOGO5 (CloudBoxy, crisp 32x32) and LOGO6 (CloudBoxy's parody look). See D6.
+- FONT1 to FONT3 land in Phase 0 (P0-L). FONT4 and FONT5 (Cyrillic) also land in Phase 0, per open
+  question 5, and the homograph chip needs them.
+- UI24 concept-card images are tier Later and optional (`social.conceptCards[].image?`). They are not a
+  Phase 5 gate.
+- Audio: none new. The "found it" cue reuses an existing UI click (`07` §8).
+
+**Playtest steps (P5-T, on :3001 with `PLAYTEST_PORT=3001`, scenario `test_social_slice`).**
+1. Open the builder from the workstation. The step strip shows five steps. Space and E do nothing while the
+   builder is open.
+2. Make a choice in each of the seven rows, by keyboard only (Tab, arrows, Space). The preview redraws
+   each time.
+3. Score the first worked-example choices (Ledgerwell, "Sign in", `ledgerwall`, blurry logo, wording with
+   slips, email, password and card number, padlock off). The meter reads 34 and shows the first verdict.
+   Change to the second attempt (Ledgerwell, "Payslip ready", `ledgerwell-hr`, crisp logo, matching wording,
+   email and password, padlock on). The meter reads 87 and Attach to email appears.
+4. Change one choice after a Score. The meter greys, Attach hides, and the stored record reads
+   `built: false`.
+5. Attach anyway below the threshold. The overlay closes with no `minigame_failed`,
+   `landing_payroll_login_built` is true, and `gameResult` carries the `linkInfoFor` fields with
+   `saved: true`.
+6. Reopen the page, inspect it as the victim and find each tell. Use Show the link target and the padlock
+   decoy line. Finish on the five-habits card. Esc and Close at each stage produce no `minigame_failed`.
+7. Reload after the draft, after a Score, after the attach, and part-way through step 6. Each restores its
+   state.
+8. At 600 px the panes stack, every control is at least 44 px, and the steps read as a list with
+   `aria-current`.
+
+Each step is recorded as pass or fail. `tools/playtest/verify-run.rb <game_id>` must show progress.
+
+**Done when.**
+- The Node tests in §2.2 (Phase 5) pass under `bundle exec node --test test/js/social-landing-page-*.test.mjs
+  test/js/validator-landing-pages.test.mjs`, with `CI` set and none skipped.
+- `npm run test:social` runs the same files. Their names match the `social-*` and `validator-*` globs.
+- `--strict-social --no-graph --skip-ink` exits 1 on the lint fixture with a raw homograph character, and
+  exits 0 on the clean fixture.
+- Playtest steps 1 to 8 pass on :3001, and `verify-run.rb` shows progress.
+- `git diff --stat` touches only the files listed above. The R1 and R2 suites (§2.4) are green.
+- P5-R has no blocker or major finding open.
 
 ### Phase 6 — Student lab (`lab_social_engineering`)
 
@@ -655,8 +804,19 @@ the user asks.
 | Bridge | `pretext-prep` and the chats | Keyboard and Close; a locked-out phone shows the refusal before `pretext-prep` opens; a reload mid-call restores the bar, the tells panel and the session log |
 | E2E | Phase 4 "Done when" runs | — |
 
-**Phase 5.** The three named tests and the lint fixture (Phase 5 section); detail from the builder
-agent.
+**Phase 5**
+
+| Kind | Test | Asserts |
+|------|------|---------|
+| Node | `social-landing-page-model.test.mjs` (N2, N10, N11) | The 34-point and 87-point worked examples (`07` §4); the 75-point `d_letter` case with its gate line; tier 3 with every other choice perfect scores 100; a non-sensitive extra field scores 5; an extra field plus a missing real field scores 4; a choice change after a Score gives `meetsThreshold: false` and `built: false`, so `linkInfoFor` returns `missing`; `applyScore` keeps `victim` and `tellsFound`; `betterVictim` keeps `submitted` over a later `noticed` or all-false record, and the first send writes an entry even when all-false; `captureGranted` adds the note once, on the first `submitted`, and never on a repeat or a `noticed`; no exported identifier matches `/serial\|export\|download/i`; `buildRecord`, `applyScore` and `betterVictim` emit only the closed keys |
+| Node | `social-landing-page-render.test.mjs` (N3, N8) | Under jsdom, in each of six states (build, score, step 6 hot-spots, blocked placeholder, homograph option, worked-example page): no `a`, `form`, `input`, `textarea`, `select`, `button`, `iframe` or `script` element and no `contenteditable` in the preview; `div role="button" tabindex="0"` hot-spots are allowed; the preview is `role="img"` in build and score and `role="group"` in step 6; the builder folder has no `fetch`, `XMLHttpRequest`, `WebSocket` or `sendBeacon`; no serialise function is exported; the homograph domain and its `xn--` label go through `textContent`, never through `displayDashes` |
+| Node | `social-landing-page-guard.test.mjs` (N6b) | (a) `ledgerwell.test` injected straight into the model and the renderer returns `{ blocked: true }` and the "Blocked address" frame; (b) the off-menu domain `payroll-desk.example` returns the same placeholder; (c) the menu domain `ledgerwell-hr.example` is drawn normally |
+| Node | `social-landing-page-state.test.mjs` (N4; name proposed) | `se_landing_pages` and `se_landing_drafts` default to `{}`; a key outside the closed record set is dropped on write and on sync; a `tellsFound` id outside the nine is dropped; a draft key outside the seven choice keys is dropped; a full record for all six domain ids fits inside the `pagehide` flush share |
+| Validator | `validator-landing-pages.test.mjs` (N6, N7) | A raw homograph character in `domain` fails; the `е` escape passes; the punycode encoder gives `xn--ledgerwll-m0h` for `ledgerw`, U+0435, `ll`; the menu domain `paypal.example` fails the allowlist; `paypa1` and `pay.pal` as labels of `capture.address` each fail, by fold and by concatenation; `Q3.pdf` and a `.co.uk` ending in card text pass (not host-shaped); a tier with no defender string fails; a `decoyWords` entry of `paypal` fails; card text naming a denylisted brand fails; a brand `look` other than `generic` or `parody` fails; a page with no `targets` key fails, and so does a `page-builder` object whose page has more than one; a `targets` key without `linkCredible` among its required factors fails; a `conceptCards` id that does not resolve fails; an empty string, or a placeholder outside `{firstName}`, `{shown}`, `{real}`, `{linkText}`, fails; `--strict-social` exits 1 on a file with a lint error and 0 on a clean one |
+| Bridge | Phase 5 "Playtest steps" 1 to 8 (P5-T) | Space and E do nothing while the builder is open; a keyboard-only build; Attach anyway below threshold; a choice changed after a Score hides Attach; reload at draft, scored, built and part-way through step 6; Esc and Close give no `minigame_failed`; the 600 px layout |
+| Safety (cross-reference) | `social-osint-address-bar` (`02` N9) | Belongs to Phase 2. Listed in the N6 CI glob with the three landing tests |
+| Back-compat | none new | §2.4 R1 and R2 after each engine commit |
+| E2E | Phase 6 F8, F11, F12, F13 | Run in Phase 6, not here |
 
 **Phase 6**
 
@@ -875,7 +1035,15 @@ Notes that hold for the table:
 | P4-F | 4 | Pretext lints (`06` N10, N12) | Sonnet | `06` N10 | `pretext.rb`, tests | Tests pass |
 | P4-G | 4 | Test call ink and data | Opus | `06` §4.8 | Slice edits | inkcheck clean |
 | P4-T | 4 | Review, playtests, R3 again | Opus, then Sonnet | Phase 4 "Done when"; §2.4 | Findings; reports | As stated there |
-| P5-* | 5 | To be split by the builder agent | Haiku (high effort) | README; `00` §11a, §13; `07` | Phase 5 detail section, then code | Named tests (Phase 5) |
+| P5-A | 5 | Model: scorer, tells, `buildRecord`, `applyScore`, `betterVictim`, `linkInfoFor`, `describeVictimOutcome`, `captureGranted`, closed keys; guard model half (`07` N2, N6b, N10, N11) | Haiku (high effort) | `07` §4, §5 (record shape), §6 model bullet; `00` §11a; the worked examples in `07` §4 | `landing-page-model.js`; `social-landing-page-model` and `-guard` tests | Every N2 fixture case passes; no DOM or global access; the no-`serial|export|download` identifier test passes |
+| P5-B | 5 | Renderer: two layers, DOM-safety walk, forbidden-network grep, `--se-font-readable`; guard renderer half (`07` N3, N6b, N8) | Haiku (high effort) | `07` §1 safety, §6 renderer bullet, §8a; `00` §6; P0-L | `landing-page-render.js`; `social-landing-page-render` test | Six states pass the DOM walk; grep clean; homograph drawn raw, not through `displayDashes` |
+| P5-C | 5 | Validator lint (`07` N6, N7 id check) in `scripts/validate_social/landing.rb`: punycode encoder, denylist and confusable fold, `scenario-schema.json` entry | Haiku (high effort) | `07` §1 lint bullets, N6, §5; `00` §11 "Lint field list"; P0-J framework; `scripts/validate_scenario.rb:247` | `landing.rb`; `validator-landing-pages` test and `test/js/fixtures/social_landing/` | Every N6 fixture case passes; `--strict-social` exit codes as stated in Phase 5 "Done when" |
+| P5-D | 5 | Overlay: steps 1 to 5, Score panel, Attach and Attach anyway, Case file launch, nested launch and close, card display (`07` N1, N7 display, N9) | Haiku (high effort) | `07` §3, §4 strings, §6; P5-A, P5-B; `minigame-manager.js:15,37-45,204-206`; `base-minigame.js:18-23,70-80`; README Conventions | Overlay JS and CSS | Bridge steps 1 to 5 pass; `requiresKeyboardInput: true`; Esc and Close give no `minigame_failed` |
+| P5-E | 5 | Step 6 defender inspection: hot-spots, decoy padlock, Show the link target, five-habits card; exports `buildSuspectPage` and `tells` (`07` N5) | Haiku (high effort) | `07` §3 step 6, §4 tells tables, §6 "Inspect" and role rules | Code in the overlay folder | Bridge step 6 passes; DOM test still passes in `group` and `img` states |
+| P5-F | 5 | Persistence: `se_landing_pages` and `se_landing_drafts` declared with `{}` defaults; shape guard on write and sync; flush size (`07` N4) | Haiku (high effort) | `07` §5 "Stored record" and "Drafts"; `00` §11, §11a; `state-sync.js:13,61`; `siem-dashboard-minigame.js:5,925,941` | Edits in `state-sync.js` (re-read first); declarations; `social-landing-page-state` test | Guard drops out-of-set keys in its test; bridge step 7 passes |
+| P5-G | 5 | Wiring and fixture: the README checklist (`minigames/index.js:18,104,160`; `minigame-starters.js:649-680,923`; `interactions.js:937-967,998`; `core/game.js:1194`; `show.html.erb:40`), the `page-builder` schema entry, the test page in `test_social_slice`, and the Space and E pause check (`07` §6) | Haiku (high effort) | README Conventions checklist; P5-D, P5-F; shared files re-read before editing | Shared-file blocks only; slice fixture page (D5) | `git diff --stat` limited to these files; slice exits 0 under `--strict-social --no-graph --skip-ink` |
+| P5-T | 5 | Bridge checks 1 to 8 on :3001 (Phase 5 "Playtest steps"); see D7 for the model | Haiku (high effort) | Phase 5 playtest steps; §1 "Playtests" | Run report with pass or fail per step | `verify-run.rb` shows progress; each step recorded |
+| P5-R | 5 | Implementation review of Phase 5 | Opus | All P5 diffs; `07` §1 safety list; N6 list | Findings tagged blocker, major or minor, with file:line | No blocker or major open; safety tests read, not only run |
 | P6-A | 6 | Lab scenario plan | Opus | `10`; `00`; AGENTS.md "The mission loop" | Plan in the lab folder | Three review rounds closed |
 | P6-B | 6 | Report builder (`10` N1, N2) | Sonnet | `10` N1; `00` §11 | `minigames/engagement-report/` | `social-engagement-report` passes |
 | P6-C | 6 | Board `scope` and `plan` modes (`03` N4) | Sonnet | `03` "Modes"; `00` §11, §13 | Board changes | Bridge checks |
