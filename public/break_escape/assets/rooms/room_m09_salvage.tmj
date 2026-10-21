@@ -234,15 +234,15 @@
    "name": "tables",
    "objects": [
     {
-     "gid": 1334,
-     "height": 24,
+     "gid": 1034,
+     "height": 39,
      "id": 6,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 32,
-     "x": 124.0,
+     "width": 51,
+     "x": 116.0,
      "y": 96.0
     },
     {
@@ -254,31 +254,31 @@
      "type": "",
      "visible": true,
      "width": 51,
-     "x": 170.0,
+     "x": 174.0,
      "y": 96.0
     },
     {
      "gid": 110,
-     "height": 41,
-     "id": 10,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 32,
-     "x": 240.0,
-     "y": 96.0
-    },
-    {
-     "gid": 109,
      "height": 41,
      "id": 15,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
+     "width": 32,
+     "x": 182.0,
+     "y": 128.0
+    },
+    {
+     "gid": 109,
+     "height": 41,
+     "id": 18,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
      "width": 50,
-     "x": 214.0,
+     "x": 234.0,
      "y": 128.0
     }
    ],
@@ -316,6 +316,30 @@
      "width": 35,
      "x": 228.0,
      "y": 28.0
+    },
+    {
+     "gid": 1334,
+     "height": 24,
+     "id": 10,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 32,
+     "x": 240.0,
+     "y": 96.0
+    },
+    {
+     "gid": 1334,
+     "height": 24,
+     "id": 12,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 32,
+     "x": 240.0,
+     "y": 74.0
     }
    ],
    "opacity": 1,
@@ -362,7 +386,7 @@
      "type": "",
      "visible": true,
      "width": 32,
-     "x": 128.0,
+     "x": 118.0,
      "y": 128.0
     }
    ],
@@ -386,8 +410,8 @@
      "type": "",
      "visible": true,
      "width": 28,
-     "x": 126.0,
-     "y": 79.2
+     "x": 125.46,
+     "y": 72.6
     },
     {
      "gid": 1340,
@@ -398,32 +422,32 @@
      "type": "",
      "visible": true,
      "width": 23,
-     "x": 178.9,
-     "y": 71.04
+     "x": 188.0,
+     "y": 72.6
     },
     {
      "gid": 304,
      "height": 16,
-     "id": 12,
+     "id": 17,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 16,
-     "x": 248.0,
-     "y": 75.5
+     "x": 190.0,
+     "y": 114.06
     },
     {
      "gid": 1339,
      "height": 27,
-     "id": 16,
+     "id": 19,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 40,
-     "x": 219.0,
-     "y": 111.6
+     "x": 239.0,
+     "y": 114.06
     }
    ],
    "opacity": 1,
@@ -440,14 +464,14 @@
     {
      "gid": 1252,
      "height": 11,
-     "id": 11,
+     "id": 16,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 16,
-     "x": 248.0,
-     "y": 67.3
+     "x": 190.0,
+     "y": 103.4
     }
    ],
    "opacity": 1,
@@ -473,6 +497,17 @@
      "y": 84.0
     },
     {
+     "height": 10,
+     "id": 11,
+     "name": "collision",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 28,
+     "x": 242.0,
+     "y": 86.0
+    },
+    {
      "height": 12.0,
      "id": 14,
      "name": "collision",
@@ -480,7 +515,7 @@
      "type": "",
      "visible": true,
      "width": 28.0,
-     "x": 130.0,
+     "x": 120.0,
      "y": 116.0
     }
    ],
@@ -492,7 +527,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 17,
+ "nextobjectid": 20,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -2925,7 +2960,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 537,
+   "tilecount": 538,
    "tileheight": 60,
    "tiles": [
     {
@@ -6058,7 +6093,7 @@
      "id": 531,
      "image": "../objects/m09_hatch_counter1.png",
      "imageheight": 104,
-     "imagewidth": 16
+     "imagewidth": 22
     },
     {
      "id": 532,
@@ -6149,6 +6184,12 @@
      "image": "../objects/m09_sign_bay1.png",
      "imageheight": 11,
      "imagewidth": 27
+    },
+    {
+     "id": 547,
+     "image": "../objects/m09_deck_controller1.png",
+     "imageheight": 14,
+     "imagewidth": 18
     }
    ],
    "tilewidth": 60

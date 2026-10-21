@@ -1119,12 +1119,12 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       },
       "npcs": [
         {
-          "_comment": "Cody Old Coyote, night guard (B6). Challenges on sight (any cover talks past him); leaves on old_coyote_told. On m01_maya_ko after flag 1, Tran's radio sends him to a tile beside the reading-room door (S5 §3.3), with a relay for a route-A player who never loaded this room (stage 8 m-01). Holds the dock office door's only key. PLACEHOLDER art: male_security_guard (ASSET_LIST §1.2).",
+          "_comment": "Room dressing R2: start and round moved from y 8.5 to 7.5; 8.5 was outside the room's pathfinding bounds (tiles y 2-8), so the patrol was dropped. Cody Old Coyote, night guard (B6). Challenges on sight (any cover talks past him); leaves on old_coyote_told. On m01_maya_ko after flag 1, Tran's radio sends him to a tile beside the reading-room door (S5 §3.3), with a relay for a route-A player who never loaded this room (stage 8 m-01). Holds the dock office door's only key. PLACEHOLDER art: male_security_guard (ASSET_LIST §1.2).",
           "id": "old_coyote",
           "displayName": "Cody Old Coyote",
           "npcType": "person",
           "gender": "male",
-          "position": { "x": 5, "y": 8.5 },
+          "position": { "x": 5, "y": 7.5 },
           "spriteSheet": "male_security_guard",
           "spriteTalk": "assets/characters/male_security_guard_talk.png",
           "spriteVisemes": "assets/characters/male_security_guard_visemes.png",
@@ -1158,13 +1158,13 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "enabled": true,
               "pauseForPlayer": false,
               "waypoints": [
-                { "x": 3, "y": 8.5, "dwellTime": 2500 },
-                { "x": 8, "y": 8.5, "dwellTime": 1500 },
-                { "x": 12.5, "y": 8.5, "dwellTime": 1500 },
+                { "x": 3, "y": 7.5, "dwellTime": 2500 },
+                { "x": 8, "y": 7.5, "dwellTime": 1500 },
+                { "x": 12.5, "y": 7.5, "dwellTime": 1500 },
                 { "x": 12.5, "y": 4.5, "dwellTime": 3000 },
-                { "x": 12.5, "y": 8.5, "dwellTime": 1000 },
-                { "x": 17, "y": 8.5, "dwellTime": 3000 },
-                { "x": 8, "y": 8.5, "dwellTime": 1000 }
+                { "x": 12.5, "y": 7.5, "dwellTime": 1000 },
+                { "x": 17, "y": 7.5, "dwellTime": 3000 },
+                { "x": 8, "y": 7.5, "dwellTime": 1000 }
               ],
               "waypointMode": "sequential",
               "loop": true,
@@ -1300,12 +1300,12 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       },
       "npcs": [
         {
-          "_comment": "Jesse Tran, IT contractor, Social Fabric's man (B7). Talked off the wipe with the letters (tran_outcome talked, then he walks out), or a fight. PLACEHOLDER art: male_nerd (ASSET_LIST §1.2).",
+          "_comment": "Room dressing R2: moved from (2.5, 4) to (3.3, 3.5), between the rack and the terminal and clear of the W door's mouth, so a tap on the Wipe Console (SW) no longer also lists him. Jesse Tran, IT contractor, Social Fabric's man (B7). Talked off the wipe with the letters (tran_outcome talked, then he walks out), or a fight. PLACEHOLDER art: male_nerd (ASSET_LIST §1.2).",
           "id": "jesse_tran",
           "displayName": "Jesse Tran",
           "npcType": "person",
           "gender": "male",
-          "position": { "x": 2.5, "y": 4 },
+          "position": { "x": 3.3, "y": 3.5 },
           "spriteSheet": "male_nerd",
           "spriteTalk": "assets/characters/male_nerd_talk.png",
           "spriteVisemes": "assets/characters/male_nerd_visemes.png",
@@ -2015,10 +2015,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
         },
         {
           "type": "notes",
-          "sprite": "tablet",
           "id": "deck_controller",
           "name": "Tape Deck Controller",
-          "position": "as-type:tablet",
+          "position": "as-type:m09_deck_controller",
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",

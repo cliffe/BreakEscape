@@ -193,6 +193,12 @@ def room_m09_stacks():
     for x in (432.0, 482.0):
         r.solid("supply_shelves1", x, 210.0, depth=60)
     r.item("step_stool1", 352.0, 140.0)
+    r.item("m09_box_trolley1", 236.0, 148.0)            # a trolley being loaded in the first aisle
+    r.solid("aes_pallet1", 566.0, 206.0)                 # returns in, east end, clear of the E door
+    r.item("m09_box_taped1", 568.0, 194.0)
+    r.item("m09_box_taped1", 582.0, 194.0)
+    r.item("m09_box_taped1", 575.0, 184.0)
+    r.item("no_smoking_sign1", 48.0, 56.0)
     r.item("fire_alarm_point1", 14.0, 180.0)
     r.item("fire_extinguisher1", 612.0, 170.0)
     return _build(r, "room_m09_stacks", "20x10_wide")
@@ -202,19 +208,20 @@ def room_m09_closet():
     """
     1x1 GU (5x6) the server closet (server_closet): grey blockwork, anti-static
     tiles. A rack in the NE corner, the wipe schedule on a clipboard over the door
-    end of the back wall, the degausser (the tape side's wipe console) SE, a small
-    desk with a terminal SW, a box of tapes waiting.
+    end of the back wall, the degausser (the tape side's wipe console) SW, a small
+    desk with a terminal SE, a box of tapes waiting.
     Door: W on row 2 (mouth x 32-92, y 64-118 clear). Nothing to the south.
-    NPC: Tran at (2.5,4): frame x 40-120, y 57-137; the console's top-left is below it.
+    NPC: Tran at (3.3,3.5) (R2; was (2.5,4)): frame x 66-146, y 41-121, between the rack
+    and the terminal and clear of the W door's mouth; the console is SW, out of his tap area.
     Slot: m09_degausser1 (as-type, Wipe Console).
     """
     r = G._Uni()
     r.item("aes_clipboard1", 66.0, 46.0)
     r.solid("server_rack2", 96.0, 98.0, depth=30)
-    _cond(r, "m09_degausser1", 98.0, 174.0)
-    d = r.table("smalldesk2", 34.0, 174.0)              # x 34-66
+    _cond(r, "m09_degausser1", 34.0, 174.0)             # SW, out of Tran's tap area (R2)
+    d = r.table("smalldesk2", 94.0, 174.0)              # x 94-126, a terminal SE
     r.on(d, "pc6", 0.50, 0.42)
-    r.item("m09_box_open1", 74.0, 174.0)
+    r.item("m09_box_open1", 70.0, 174.0)
     return _build(r, "room_m09_closet", "5x6")
 
 
@@ -241,11 +248,10 @@ def room_m09_reading():
     """
     2x1 GU (10x6) the reading room (reading_room): oak parquet, library-green walls
     with a brass line, the only warm room. The staff passage covers the bottom two
-    rows, so the floor is y 64-128. Back wall: READING ROOM, the drop terminal's
-    wall screen over the reading desk. A small desk west (the notebook scan beside a
-    microfiche reader); the reading desk (the field laptop, a green-shaded lamp, the
-    SAFETYNET drop terminal); a reading table on a red rug in front (HaX's case file,
-    a lamp).
+    rows, so the floor is y 64-128. Back wall: READING ROOM. A small desk west (the
+    notebook scan); the reading desk (the field laptop, a green-shaded lamp, the
+    SAFETYNET drop terminal); the microfiche reader cart; the drop terminal's wall
+    screen east of it over open floor; a reading table on a red rug (HaX's case file).
     Doors: N (x 32-64; lane x 32-72), E on row 2 (mouth x 230-288), S (x 256-288).
     Usable floor x 76-226.
     Slots: notes_notebook1 (as-type, Training Notebook), vm-launcher (Field Laptop),
@@ -254,18 +260,19 @@ def room_m09_reading():
     """
     r = G._Uni()
     r.item("m09_sign_reading1", 80.0, 28.0)
-    _cond(r, "m09_drop_screen1", 212.0, 38.0)            # over the desk's east end, clear of both desk slots
+    # the terminal's wall screen east of the desk, over open floor (the E door's mouth),
+    # so a player can stand right under it (R2: over the desk it was only reachable at 52 px)
+    _cond(r, "m09_drop_screen1", 236.0, 58.0)
     w = r.table("smalldesk2", 78.0, 90.0)               # x 78-110
     r.on(w, "notes_notebook1", 0.40, 0.30, layer="conditional_table_items")
-    r.solid("m09_microfiche1", 112.0, 90.0)             # the microfiche reader cart, x 112-146
-    d = r.table("desk1", 148.0, 90.0)                   # x 148-226
-    r.on(d, "vm-launcher", 0.18, 0.45, layer="conditional_table_items")
-    r.on(d, "bankers_lamp1", 0.50, 0.32)
-    r.on(d, "safetynet_flag_terminal1", 0.82, 0.45, layer="conditional_table_items")
-    t = r.table("smalldesk1", 96.0, 128.0)              # x 96-146, on the rug
-    r.on(t, "case-file", 0.40, 0.70, layer="conditional_table_items")
-    r.on(t, "bankers_lamp1", 0.88, 0.28)
-    r.item("hospital_chair2", 150.0, 126.0)
+    d = r.table("desk1", 120.0, 90.0)                   # x 120-198
+    r.on(d, "vm-launcher", 0.30, 0.45, layer="conditional_table_items")
+    r.on(d, "bankers_lamp1", 0.62, 0.32)
+    r.on(d, "safetynet_flag_terminal1", 0.90, 0.45, layer="conditional_table_items")
+    r.solid("m09_microfiche1", 200.0, 90.0)             # the microfiche reader cart, x 200-234
+    t = r.table("smalldesk1", 92.0, 128.0)              # x 92-142, on the rug
+    r.on(t, "case-file", 0.46, 0.70, layer="conditional_table_items")
+    r.item("hospital_chair2", 146.0, 126.0)
     return _build(r, "room_m09_reading", "10x6_hall")
 
 
@@ -276,7 +283,7 @@ def room_m09_restricted():
     reader by the tape-room door (N). The cage front down the east wall below the gate:
     the hatch counter (an oak ledge with mesh along its east edge; collision x 224-240,
     y 124-228), the sealed strip behind it (x 240-288, darker floor) where Sorensen
-    works, mesh runs closing the strip at both ends, two bins at its south end. Her
+    works, sealed at both ends (a mesh run at the south end), her bin behind her. Her
     rubber stamp on the counter's south end, on the player's side. A sorting table
     with open boxes SW of centre; the middle stays clear so all four doors show.
     Doors: N (x 32-64), S (x 32-64; lane x 32-72 from y 180), W and E on row 2
@@ -293,15 +300,14 @@ def room_m09_restricted():
     r.solid("binder_shelves1", 146.0, 96.0, depth=30)
     r.solid("filing_cabinet_steel1", 196.0, 96.0, depth=30)
     r.item("hq_badge_reader1", 296.0, 146.0)            # by the gate, E wall
+    r.item("wall_clock1", 182.0, 40.0)
     # the cage front
-    counter = r.table("m09_hatch_counter1", 224.0, 228.0, kind="objects")
+    counter = r.table("m09_hatch_counter1", 220.0, 228.0, kind="objects")   # x 220-242
     r.collision(224.0, 124.0, 16.0, 104.0)
     r.collision(240.0, 120.0, 48.0, 8.0)                # sealed at the north end
     r.collision(240.0, 228.0, 48.0, 10.0)               # and the south
-    r.item("m09_mesh_low1", 240.0, 128.0)
-    r.item("m09_mesh_low1", 240.0, 252.0)
-    r.item("hq_confidential_bin1", 244.0, 226.0)
-    r.item("yellow_bin1", 266.0, 226.0)
+    r.item("m09_mesh_low1", 240.0, 252.0)              # the strip's south end
+    r.item("yellow_bin1", 262.0, 226.0)                 # her bin, behind her
     r.conditional_table_items.append(G.make_obj("objects", "m09_rubber_stamp1", 224.0, 214.0, r._next()))
     # the sorting table
     st = r.table("desk1", 96.0, 224.0)                  # x 96-174
@@ -361,8 +367,8 @@ def room_m09_office():
     build-out ledger on a sideboard south; the floor safe in the SE corner; the
     keypad on the east wall by the door; a coat stand, a club chair, a bin.
     Door: E on row 2 (mouth x 230-288, y 64-118 clear). Nothing to the south.
-    Slots: hce_phd_frame1 (as-type, Framed Certificate), tablet on the credenza
-    (as-type, Tape Deck Controller), case-file on the desk (as-type, Lease File),
+    Slots: hce_phd_frame1 (as-type, Framed Certificate), m09_deck_controller1 on the
+    credenza (as-type, Tape Deck Controller), case-file on the desk (as-type, Lease File),
     book1 (as-type, Rent Ledger), notes2 (as-type, Broker's Note), notes4 (as-type,
     Build-Out Ledger), safe1 (as-type, Floor Safe).
     """
@@ -373,7 +379,7 @@ def room_m09_office():
     cr = r.table("credenza1", 166.0, 100.0, kind="objects")   # x 166-228
     r.on(cr, "kettle1", 0.14, 0.30)
     r.on(cr, "mugs_tray1", 0.36, 0.34)
-    r.on(cr, "tablet", 0.74, 0.32, layer="conditional_table_items")
+    r.on(cr, "m09_deck_controller1", 0.76, 0.34, layer="conditional_table_items")
     r.item("exec_chair_black1", 148.0, 170.0)
     d = r.table("desk1", 126.0, 204.0)                  # x 126-204, on the rug
     r.on(d, "bankers_lamp1", 0.14, 0.32)
@@ -433,12 +439,13 @@ def room_m09_salvage():
     2x1 GU (10x6) the salvage cage (salvage_cage): stained concrete, dark brick. The
     tape room covers the bottom two rows, so the floor is y 64-128. Back wall: the
     cut door controller over the S door's corner, SALVAGE. Back row: Tomb Beta's
-    rack (the property label on its front), the ALPHA crate with the field kit on it,
-    the drop link on a steel desk, the printer stand with the mirror job in its tray.
-    Front row: the BETA crate (enrolment binders), the printed folder on a low table.
+    rack (the property label on its front), the field kit on a steel desk, the drop
+    link on a second, the ALPHA crates stacked against the wall. Front row: the BETA
+    crate (enrolment binders), the printer stand with the mirror job in its tray, the
+    printed folder on a low table.
     Door: S (x 32-64; lane x 32-72). Usable floor x 76-288.
     Slots: server_rack1 (as-type, Rack Server), notes_tucked1 on its front (as-type,
-    Property Label), vm-launcher on the ALPHA crate (Field Kit Link),
+    Property Label), vm-launcher on the kit desk (Field Kit Link),
     safetynet_flag_terminal1 (as-type, Tomb Beta Drop Link), notes1 on the printer
     stand (as-type, Mirror Job Printout), m09_crate_beta1 (as-type, Crate BETA),
     notes5 on the low table (as-type, Printed Folder).
@@ -449,17 +456,19 @@ def room_m09_salvage():
     _cond(r, "server_rack1", 80.0, 96.0)
     r.collision(82.0, 84.0, 26.0, 12.0)
     _cond(r, "notes_tucked1", 89.0, 84.0)
-    ca = r.table("m09_crate_alpha1", 124.0, 96.0, kind="objects")   # x 124-156
-    r.on(ca, "vm-launcher", 0.50, 0.30, layer="conditional_table_items")
-    sd = r.table("zds_desk3", 170.0, 96.0, kind="objects")          # x 170-221
-    r.on(sd, "safetynet_flag_terminal1", 0.40, 0.36, layer="conditional_table_items")
-    ps = r.table("smalldesk2", 240.0, 96.0)                         # x 240-272
-    r.on(ps, "pnw_portable_printer1", 0.50, 0.30)
-    r.on(ps, "notes1", 0.50, 0.50, layer="conditional_table_items")
-    _cond(r, "m09_crate_beta1", 128.0, 128.0)
-    r.collision(130.0, 116.0, 28.0, 12.0)
-    lt = r.table("smalldesk1", 214.0, 128.0)                        # x 214-264
-    r.on(lt, "case-file", 0.50, 0.60, layer="conditional_table_items")
+    kd = r.table("zds_desk3", 116.0, 96.0, kind="objects")          # x 116-167, the field kit
+    r.on(kd, "vm-launcher", 0.46, 0.40, layer="conditional_table_items")
+    sd = r.table("zds_desk3", 174.0, 96.0, kind="objects")          # x 174-225, the drop link
+    r.on(sd, "safetynet_flag_terminal1", 0.50, 0.40, layer="conditional_table_items")
+    r.solid("m09_crate_alpha1", 240.0, 96.0)                        # ALPHA, against the back wall
+    r.item("m09_crate_alpha1", 240.0, 74.0)                         # stacked two high
+    _cond(r, "m09_crate_beta1", 118.0, 128.0)
+    r.collision(120.0, 116.0, 28.0, 12.0)
+    ps = r.table("smalldesk2", 182.0, 128.0)                        # x 182-214, the printer stand
+    r.on(ps, "pnw_portable_printer1", 0.50, 0.40)
+    r.on(ps, "notes1", 0.50, 0.66, layer="conditional_table_items")
+    lt = r.table("smalldesk1", 234.0, 128.0)                        # x 234-284
+    r.on(lt, "case-file", 0.50, 0.66, layer="conditional_table_items")
     return _build(r, "room_m09_salvage", "10x6_hall")
 
 

@@ -159,24 +159,48 @@ def rubber_stamp():
 
 
 def hatch_counter():
-    """The hatch counter at the restricted stacks, seen from above: a long oak ledge
-    (west, the player's side) with a steel mesh screen along its east edge, posts at
-    each end and in the middle; the hatch is a gap in the mesh at the counter's middle."""
-    w, h = 16, 104
+    """The hatch counter at the restricted stacks, seen from above and a little from the
+    player's side (west): the counter's panelled front face, its oak top with the grain
+    running along it and a brass edge strip, then a steel mesh screen along the east edge
+    with posts. The hatch is a gap in the mesh mid-counter with a worn patch on the top
+    where papers are passed through. 22 px wide so it reads as a counter, not a plank."""
+    w, h = 22, 104
     c = Canvas(w, h)
-    c.rect(0, 0, 10, h - 1, OUTLINE)
-    c.rect(1, 1, 9, h - 2, OAK)
-    for y in range(4, h - 2, 7):
-        c.hline(2, 8, y, OAK_DARK)
-    c.rect(1, h - 4, 9, h - 2, OAK_DARK)   # front edge shadow
-    c.rect(11, 0, 15, h - 1, STEEL_DARK)
+    # front face (west), darker panelled boards
+    c.rect(0, 0, 4, h - 1, OUTLINE)
     for y in range(1, h - 1):
-        for x in range(12, 15):
-            c.px(x, y, STEEL_LIGHT if (x + y) % 3 == 0 else (60, 64, 70))
-    for y0 in (0, h // 2 - 9, h - 6):
-        c.rect(10, y0, 15, y0 + 5, STEEL)
-    # the hatch: a gap in the mesh, 14 px, mid-counter
-    c.rect(12, h // 2 - 2, 14, h // 2 + 12, OAK_DARK)
+        c.px(1, y, OAK_DARK)
+        c.px(2, y, (122, 86, 50))
+        c.px(3, y, OAK_DARK)
+    for y in range(12, h - 4, 24):
+        c.hline(1, 3, y, OUTLINE)
+    # top
+    c.rect(4, 0, 14, h - 1, OUTLINE)
+    for y in range(1, h - 1):
+        for x in range(5, 14):
+            col = OAK
+            if x in (7, 11):
+                col = (180, 134, 84)
+            c.px(x, y, col)
+        c.px(5, y, (220, 184, 110))        # brass edge on the player's side
+    c.hline(5, 13, 1, (214, 172, 118))
+    # worn patch at the hatch
+    mid = h // 2
+    for y in range(mid - 8, mid + 8):
+        for x in range(8, 14):
+            if (x + y) % 3:
+                c.px(x, y, (210, 168, 112))
+    # mesh screen
+    c.rect(15, 0, 21, h - 1, STEEL_DARK)
+    for y in range(1, h - 1):
+        for x in range(16, 21):
+            c.px(x, y, STEEL_LIGHT if (x + y) % 3 == 0 else (64, 68, 74))
+    for y0 in (0, 34, 66, h - 5):
+        c.rect(15, y0, 21, y0 + 4, STEEL)
+    # the hatch: a gap in the mesh, mid-counter
+    c.rect(16, mid - 9, 20, mid + 9, (0, 0, 0, 0))
+    c.rect(15, mid - 10, 21, mid - 9, STEEL)
+    c.rect(15, mid + 9, 21, mid + 10, STEEL)
     c.save(OBJ, "m09_hatch_counter1")
 
 
@@ -301,8 +325,25 @@ def drop_screen():
     c.save(OBJ, "m09_drop_screen1")
 
 
+def deck_controller():
+    """The Recruiter's controller for the tape deck, left on the credenza: a small black
+    box with a stubby aerial, a red key switch and a green status lamp."""
+    w, h = 18, 14
+    c = Canvas(w, h)
+    c.rect(13, 0, 14, 4, (90, 94, 100))                # aerial
+    c.rect(0, 4, w - 1, h - 1, OUTLINE)
+    c.rect(1, 5, w - 2, h - 2, (46, 48, 54))
+    c.hline(1, w - 2, 5, (82, 86, 94))
+    c.rect(3, 7, 6, 10, RED)
+    c.px(4, 8, (250, 200, 200))
+    c.rect(9, 8, 10, 9, (70, 200, 110))
+    c.hline(9, 15, 11, (120, 124, 130))
+    c.save(OBJ, "m09_deck_controller1")
+
+
 def main():
     logo_sign()
+    deck_controller()
     drop_screen()
     plate("BAY 1", "m09_sign_bay1", face=YELLOW, ink=BLACK, rim=(150, 120, 30))
     plate("READING ROOM", "m09_sign_reading1")

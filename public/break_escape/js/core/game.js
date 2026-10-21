@@ -1341,6 +1341,7 @@ export function preload() {
     this.load.image('m09_tape_cabinet1', 'objects/m09_tape_cabinet1.png');
     this.load.image('m09_drop_screen1', 'objects/m09_drop_screen1.png');
     this.load.image('m09_sign_bay1', 'objects/m09_sign_bay1.png');
+    this.load.image('m09_deck_controller1', 'objects/m09_deck_controller1.png');
 
     // Load audio files
     // NPC system sounds

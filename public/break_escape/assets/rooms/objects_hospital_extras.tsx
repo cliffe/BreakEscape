@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="537" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="538" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -1565,7 +1565,7 @@
   <image source="../objects/m09_rubber_stamp1.png" width="16" height="11"/>
  </tile>
  <tile id="531">
-  <image source="../objects/m09_hatch_counter1.png" width="16" height="104"/>
+  <image source="../objects/m09_hatch_counter1.png" width="22" height="104"/>
  </tile>
  <tile id="532">
   <image source="../objects/m09_mesh_low1.png" width="48" height="24"/>
@@ -1611,5 +1611,8 @@
  </tile>
  <tile id="546">
   <image source="../objects/m09_sign_bay1.png" width="27" height="11"/>
+ </tile>
+ <tile id="547">
+  <image source="../objects/m09_deck_controller1.png" width="18" height="14"/>
  </tile>
 </tileset>

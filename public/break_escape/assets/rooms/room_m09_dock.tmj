@@ -3278,7 +3278,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 537,
+   "tilecount": 538,
    "tileheight": 60,
    "tiles": [
     {
@@ -6411,7 +6411,7 @@
      "id": 531,
      "image": "../objects/m09_hatch_counter1.png",
      "imageheight": 104,
-     "imagewidth": 16
+     "imagewidth": 22
     },
     {
      "id": 532,
@@ -6502,6 +6502,12 @@
      "image": "../objects/m09_sign_bay1.png",
      "imageheight": 11,
      "imagewidth": 27
+    },
+    {
+     "id": 547,
+     "image": "../objects/m09_deck_controller1.png",
+     "imageheight": 14,
+     "imagewidth": 18
     }
    ],
    "tilewidth": 60

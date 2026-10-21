@@ -95,3 +95,66 @@ Layout fields only. Pre-edit copy: the session scratchpad (`dress_r1/scenario_be
 5. Owed art (ASSET_LIST §4): four-state trolleys, `cage_bin` bin states, logbook, deck controller box, county certificate.
 6. Bay plates should be registered as wall items (validator hint "stands on the back wall").
 7. The stacks' open middle and the hub's empty centre could take more detail (ladders, a returns cage) without touching the patrol band or the four door sightlines.
+
+## Round 2 (2026-10-22): browser check, fixes, critique pass
+
+### Browser check
+
+Round 1's helper (log in the session scratchpad, `dress_r1/pt1/`) found every door walkable both ways (the cage's west door included) and all 32 objects reachable, with no missing art. It also found the six problems below. I fixed them and re-checked in my own headless session (game 3079, every room unlocked server-side, log `dress_r1/pt2/session.jsonl`).
+
+| # | Finding (round 1 helper) | Fix | Re-check (game 3079) |
+|---|---|---|---|
+| B1 | Old Coyote never moved: his start (5, 8.5) and six of his seven waypoints sat at y 8.5, outside open_stacks' pathfinding bounds (tiles y 2–8), so `npc-behavior.js` dropped them | Start and round moved to y 7.5 (scenario NPC fields; the route is otherwise the same: west end at x 3, up the cross aisle at x 12.5, east to x 17). The shelving leaves y 7.5 clear | Walks a full lap: (116,213) → (338) → up to (404,134) → (542) → back to (107); he spots the player and opens his challenge as before |
+| B2 | drop_terminal_screen only reachable from 52 px: it hung on the wall over the desk | The wall screen moved east of the desk, over open floor in the E door's mouth (x 236–272, y 32–58) | 25 px, no pick menu; drop_terminal 25 px, field_laptop, case_file and notebook_scan all open on their own |
+| B3 | staff_passage → front_desk opened a two-entry door menu: each room draws its own sprite for a shared N/S doorway, and here both were in reach | Engine: `gatherInteractablesNearClick` (game.js) lists a doorway once per room pair, using the sprite of the room the player is in | passage → front desk → passage walks through with no menu |
+| B4 | Reading room cramped; field kit PC on the ALPHA crate; hatch counter read as a tall plank, crowded with two bins and two mesh runs | Reading room, salvage cage and hub redone (below) | — |
+| B5 | tape_side_console shared a pick menu with Jesse Tran (10–14 px) | Degausser moved SW and the terminal desk SE; Tran moved from (2.5, 4) to (3.3, 3.5), between the rack and the terminal and clear of the W door's mouth | Console opens its read modal, no menu |
+| B6 | One uncaught "Cannot read properties of undefined (reading 'style')" page error | Not reproduced: none in game 3079. In round 1 it came alongside a run of 503s from the keyless server | Open (round 3: watch for it) |
+
+Also re-checked in game 3079: restricted_stacks ↔ restricted_cage both ways; Sorensen at the hatch opens her person-chat from the counter (the engine reaches her body edge); the stamp opens the dusting minigame from 26 px; cage_shredder, feed_table_box and printed_ledger open; the reel deck opens from 26 px, approached from the west; the legend and annotations open; all seven salvage objects open, the rack and its label sharing a menu as intended. The plan cabinet is in reach at 24 px but no minigame opened in this probe (it is a biometric lock and no print had been lifted); round 1's helper confirmed its interaction. `tools/playtest/m09_digital_archaeology-flags-game3064.xml` is git-ignored (`tools/playtest/*-flags-game*.xml`), so I left it.
+
+### Critique pass (all eleven rooms)
+
+| Room | Reads as its place? | Square to walls | Doors and tap areas | Action |
+|---|---|---|---|---|
+| loading_dock | yes: a night yard, shutter, hut desk, fence | cones and pallet truck the only angled props | clear | none |
+| front_desk | yes: records front office | yes | clear; Noor clear of the trolleys | none |
+| open_stacks | yes, but the open floor read bare | yes | patrol band and cross aisle clear | added a box trolley being loaded in the first aisle, a pallet of returns in the east column (clear of the E door), NO SMOKING by the W end |
+| server_closet | yes | yes | console and Tran now apart | B5 |
+| staff_passage | yes | yes | one doorway entry now | B3 |
+| reading_room | cramped | yes (one side-facing chair) | screen hard to reach | back row now notebook desk, reading desk (laptop, lamp, terminal), microfiche cart; wall screen east over open floor; the lamp is off the case-file table |
+| restricted_stacks | counter read as a plank; hatch crowded | yes | sightlines to all four doors clear | counter redrawn 22 px wide (panelled front, oak top with brass edge and grain, mesh with a gap at the hatch); north mesh run and the confidential-waste bin removed (the strip stays sealed by collision); a wall clock |
+| restricted_cage | yes | yes | W row 2 clear | none this round |
+| sorensen_office | yes | yes | clear | the deck controller is now its own art (`m09_deck_controller1`, a black box with an aerial and key switch) in place of a tablet |
+| tape_room | yes | yes | deck approachable from the west | none |
+| salvage_cage | crowded front row; PC on a crate | yes | rack/label menu kept | field kit and drop link on two steel desks; ALPHA crates stacked against the wall; front row BETA crate, printer stand with the mirror job, folder on a low table, every slot 32 px or more apart |
+
+### Changes in files
+
+- `scripts/room_gen/m09_rooms.py`: closet, reading room, restricted stacks, salvage cage, stacks, office, as above; docstrings updated.
+- `scripts/room_gen/make_m09_props.py`: hatch counter redrawn (22×104; catalog, `tilesets_ref.json` and the extras `.tsx` widths updated), new `m09_deck_controller1` (registered).
+- `scripts/generate_rooms.py`: `m09_bay_plate` added to `WALL_MOUNTED_EXTRAS` (round 1 open item 6).
+- `public/break_escape/js/core/game.js`: the doorway de-duplication (B3).
+- Scenario (re-read before each edit; layout fields only): Old Coyote's start and waypoints (B1), Jesse Tran's position (B5), deck_controller → `as-type:m09_deck_controller` with its `tablet` stand-in dropped; comments say why.
+- README room table: office and salvage rows updated.
+
+### Art
+
+No PixelLab call this round (balance unchanged at 4123). The deck controller box is hand-drawn. Still owed from ASSET_LIST §4, each needing a scenario change as well as art, so left for a decision: the trolleys' four states (they are dressing now, not objects; making them change needs objects with `spriteVariants`), the bins' `cage_bin` states (the bins are not placed by design), a guard's logbook (`notes_ledger1` already reads as one), a county certificate (`hce_phd_frame1`, a framed certificate with a seal, reads well enough).
+
+### Checks after round 2
+
+- Validator: exit 0, 0 errors, schema passes.
+- `slot_audit.py --notes`: 0 problems; the same five notes prompts, left for the reasons in round 1.
+- `check_room_walls.py`: all maps 64. `check_door_alignment.py`: 11 of 11 OK. Door-clearance check: no hits. Slot spacing: all 32 px or more, except the rack and its label (by design).
+- `game.js` passes `node --check`.
+- Renders: maps `dressing_r2/maps/` (contact sheet included); in game (game 3081) `dressing_r2/ingame/<room>-a.png`.
+
+### Open for round 3
+
+1. The 'style' page error (B6): not reproduced; watch for it in the next playtest.
+2. Salvage cage: the "mesh pen" doesn't show; the walls are brick. Paint mesh into the back wall of the sheet, or hang mesh runs.
+3. Restricted cage: same; a mesh feel along its walls would say "cage" at a glance.
+4. Server closet is thin (rack, degausser, terminal); a reel rack would help if a narrow one is drawn.
+5. The trolley and bin states need a decision on making them scenario objects before any art is made.
+6. Lighting is next once dressing is signed off: the tour reports no lighting configured yet.

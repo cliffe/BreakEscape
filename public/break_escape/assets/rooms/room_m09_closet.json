@@ -67,7 +67,7 @@
                  "type":"",
                  "visible":true,
                  "width":32,
-                 "x":34,
+                 "x":94,
                  "y":174
                 }],
          "opacity":1,
@@ -114,7 +114,7 @@
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":74,
+                 "x":70,
                  "y":174
                 }],
          "opacity":1,
@@ -138,7 +138,7 @@
                  "type":"",
                  "visible":true,
                  "width":28,
-                 "x":98,
+                 "x":34,
                  "y":174
                 }],
          "opacity":1,
@@ -172,7 +172,7 @@
                  "type":"",
                  "visible":true,
                  "width":32,
-                 "x":34,
+                 "x":94,
                  "y":150.22
                 }],
          "opacity":1,
@@ -2715,7 +2715,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":537,
+         "tilecount":538,
          "tileheight":104,
          "tiles":[
                 {
@@ -5952,7 +5952,7 @@
                  "id":531,
                  "image":"..\/objects\/m09_hatch_counter1.png",
                  "imageheight":104,
-                 "imagewidth":16
+                 "imagewidth":22
                 }, 
                 {
                  "id":532,
@@ -6046,6 +6046,12 @@
                  "image":"..\/objects\/m09_sign_bay1.png",
                  "imageheight":11,
                  "imagewidth":27
+                }, 
+                {
+                 "id":547,
+                 "image":"..\/objects\/m09_deck_controller1.png",
+                 "imageheight":14,
+                 "imagewidth":18
                 }],
          "tilewidth":252
         }],

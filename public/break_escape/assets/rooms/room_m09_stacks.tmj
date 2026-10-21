@@ -905,9 +905,81 @@
      "y": 140.0
     },
     {
+     "gid": 1343,
+     "height": 46,
+     "id": 37,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 42,
+     "x": 236.0,
+     "y": 148.0
+    },
+    {
+     "gid": 1079,
+     "height": 26,
+     "id": 38,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 30,
+     "x": 566.0,
+     "y": 206.0
+    },
+    {
+     "gid": 1336,
+     "height": 14,
+     "id": 40,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 16,
+     "x": 568.0,
+     "y": 194.0
+    },
+    {
+     "gid": 1336,
+     "height": 14,
+     "id": 41,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 16,
+     "x": 582.0,
+     "y": 194.0
+    },
+    {
+     "gid": 1336,
+     "height": 14,
+     "id": 42,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 16,
+     "x": 575.0,
+     "y": 184.0
+    },
+    {
+     "gid": 879,
+     "height": 26,
+     "id": 43,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 22,
+     "x": 48.0,
+     "y": 56.0
+    },
+    {
      "gid": 828,
      "height": 20,
-     "id": 37,
+     "id": 44,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -919,7 +991,7 @@
     {
      "gid": 818,
      "height": 28,
-     "id": 38,
+     "id": 45,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1151,6 +1223,17 @@
      "width": 46,
      "x": 484.0,
      "y": 150.0
+    },
+    {
+     "height": 10,
+     "id": 39,
+     "name": "collision",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 26,
+     "x": 568.0,
+     "y": 196.0
     }
    ],
    "opacity": 1,
@@ -1161,7 +1244,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 39,
+ "nextobjectid": 46,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3594,7 +3677,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 537,
+   "tilecount": 538,
    "tileheight": 60,
    "tiles": [
     {
@@ -6727,7 +6810,7 @@
      "id": 531,
      "image": "../objects/m09_hatch_counter1.png",
      "imageheight": 104,
-     "imagewidth": 16
+     "imagewidth": 22
     },
     {
      "id": 532,
@@ -6818,6 +6901,12 @@
      "image": "../objects/m09_sign_bay1.png",
      "imageheight": 11,
      "imagewidth": 27
+    },
+    {
+     "id": 547,
+     "image": "../objects/m09_deck_controller1.png",
+     "imageheight": 14,
+     "imagewidth": 18
     }
    ],
    "tilewidth": 60

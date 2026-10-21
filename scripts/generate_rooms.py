@@ -1047,6 +1047,7 @@ WALL_MOUNTED_EXTRAS = {
     "m09_sign_director",
     "m09_sign_series_r",
     "m09_sign_stacks",
+    "m09_bay_plate",
     "m09_sign_returns",
     "m09_shelf_legend",
     "m09_keypad",
