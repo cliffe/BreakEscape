@@ -85,14 +85,14 @@ regression suite on their own, before new UI hides the cause of a failure.
 | 2 | OSINT browser | `02` | 1a (grantFact, board) | Sonnet; Opus review | Slice facts found by browsing instead of stand-ins |
 | 3 | Inbox triage; board defender mode | `05`, `03` N4 (defender) | 1a (mail-reader, sent records) | Sonnet (UI, scorer); Opus (sync, then emit) | `playerSent` replay of the slice's own send; triage result survives a reload and completes its task once |
 | 4 | Pretext dialogue | `06`; `00` S10, S13 | 0, 1b (bar) | Opus | Dev-style call in a test scenario, all three outcomes, lockout and lift |
-| 5 | Landing-page builder | `07` | 0 (jsdom, lint framework, 0.2 shared writer), 1a (board recon mode), 1b (Attach, link kind), 2 (`02` N1 concept-card renderer) | Haiku only, playtests included | The three named builder tests and `validator-landing-pages` pass; detail in "Phase 5 detail" |
+| 5 | Landing-page builder | `07` | 0 (jsdom, lint framework, 0.2 shared writer), 1a (board recon mode; the Attach control and attachments), 2 (`02` N1 concept-card renderer). The mail `link` kind (`01` N4) and the send-path victim record and capture call (`01` N6) are built in Phase 5 by P5-G | Haiku only, playtests included | The three named builder tests and `validator-landing-pages` pass; detail in "Phase 5 detail" |
 | 6 | Student lab | `10` | 1 to 5 | Opus (plan, ink, review); Sonnet (data entry, playtests) | Critical path playable blind in 60 to 90 minutes |
 | 7 | Awareness episodes; Eldritch Hacker gated on its bible | `11` | 3, 4, 5, 6 | Opus | E1 shell plays end to end and completes its task once |
 | 8 | Lab sheets, then voice audio | `10` OQ5, README R, Z | 6 (and 7 for its own sheets) | Opus (sheet); Sonnet (audio checks) | Sheet audited against the game files; audio only after sign-off |
 
 Phases 2, 3 and 4 can run side by side once 1a is in, split by file (each owns its own minigame
-folder; each validator area has its own lint file, see 0.7). Phase 1b must land before 4 and
-5, and Phase 2 before 5. The lab's triage set (Phase 6) needs both 3 and 5, because its `playerSent` rows read the built
+folder; each validator area has its own lint file, see 0.7). Phase 1b must land before 4, and
+Phases 1a and 2 before 5. The lab's triage set (Phase 6) needs both 3 and 5, because its `playerSent` rows read the built
 page's domain.
 
 ### Phase 0 — Engine groundwork
@@ -114,8 +114,8 @@ shipped missions, with no change a player of m01 to m08 can see.
 
 | # | Item | Cites | Files and hook points |
 |---|------|-------|-----------------------|
-| 0.0 | **Baselines** before any edit. (a) The Node suite under the local Node version (18.19.1 on the dev machine today) with per-file results: today 748 pass and 1 fail, `engine-fixes-round4.test.mjs` failing in the full run with "Unable to deserialize cloned data" while passing on its own. (b) `reopencheck` output. (c) The route drivers `node scripts/ink_runtime_check/m0N_routes/route.js scripts/ink_runtime_check/m0N_routes/<route>.json` for m02 to m08 (m01 has no route folder; for m01, inkcheck on its compiled stories). (d) The m01–m08 browser checks listed in §2.4 R3, run once before the first engine edit, so R3 has a browser baseline. Validator output is **not** frozen here: other agents keep editing missions, so the validator comparison is rebuilt from HEAD for each commit (§2.4 R0). Kept in the build log folder, not the scratchpad | AGENTS.md "Verifying work" | read-only |
-| 0.1 | **Ink externals fall back.** `loadStory` sets `this.story.allowExternalFunctionFallbacks = true` right after the `Story` is built; the ink tools that build their own `Story` get the same flag: `inkcheck.js`, `reopencheck.mjs`, `loopcheck.js` (which also binds a fixed list of six externals, `loopcheck.js:14`, `:33`) and the seven `m0N_routes/route.js` drivers, which build a raw `Story` (for example `m05_routes/route.js:153`). `voicelines.mjs` already sets the flag (`:72`). The authoring rule changes from "synced `VAR`s, not `EXTERNAL`s" to "an `EXTERNAL` needs an ink fallback function". Lands after spike F2 (§3) | `00` S1; `10` N8 | `systems/ink/ink-engine.js:10-18` (`new inkjs.Story` at 15 and 18); the ink tools named; `README_scenario_design.md:1724` |
+| 0.0 | **Baselines** before any edit. (a) The Node suite under the local Node version (18.19.1 on the dev machine today) with per-file results: today 748 pass and 1 fail, `engine-fixes-round4.test.mjs` failing in the full run with "Unable to deserialize cloned data" while passing on its own. (b) `reopencheck` output. (c) The route drivers `node scripts/ink_runtime_check/m0N_routes/route.js scripts/ink_runtime_check/m0N_routes/<route>.json` for m02 to m08 (m01 has no route folder; for m01, inkcheck on its compiled stories). (d) The m01–m08 browser checks listed in §2.4 R3, run once before the first engine edit, one packet per mission (P0-A1 to P0-A8), so R3 has a browser baseline. Validator, dialoguelint and route-driver output is **not** frozen here: other agents keep editing missions, so each comparison is rebuilt for each commit on identical content (§2.4 R0). Kept in the build log folder, not the scratchpad. Every Phase 0 editing packet waits for P0-A (§4) | AGENTS.md "Verifying work" | read-only |
+| 0.1 | **Ink externals fall back.** `loadStory` sets `this.story.allowExternalFunctionFallbacks = true` right after the `Story` is built; the ink tools that build their own `Story` get the same flag: `inkcheck.js`, `loopcheck.js` (which also binds a fixed list of six externals, `loopcheck.js:14`, `:33`) and the seven `m0N_routes/route.js` drivers, which build a raw `Story` (for example `m05_routes/route.js:153`). `voicelines.mjs` already sets the flag (`:72`). `reopencheck.mjs` needs no edit: it copies the real `ink-engine.js` (`:27`) and calls `loadStory` (`:59`, `:176`), so it picks up the flag, and it stays a check. The authoring rule changes from "synced `VAR`s, not `EXTERNAL`s" to "an `EXTERNAL` needs an ink fallback function". Lands after spike F2 (§3) | `00` S1; `10` N8 | `systems/ink/ink-engine.js:10-18` (`new inkjs.Story` at 15 and 18); the ink tools named; `README_scenario_design.md:1724` |
 | 0.2 | **Shared global writer and confirmed sync.** A new `systems/global-writer.js` (settled; the README and `00` wording that puts it in `apply-actions.js` is updated to match by P0-P) exporting one write function with `emitAlways` and `deferEmit` options and an optional calling-story engine. It writes `gameState.globalVariables`, calls `broadcastGlobalVariableChange`, writes the calling story with the observer detached, and writes a clamped value back to the source story. `applyActions` `set_global` uses it with `emitAlways`. `_syncOnce` returns a boolean, `syncConfirmed({ attempts, onRetry })` is added, and `ApiClient.put` attaches `error.status` | `00` S3, §13 "Sync then emit", "`applyActions` emit" | `systems/apply-actions.js:33-43`; `systems/npc-conversation-state.js` (`broadcastGlobalVariableChange`, observer, `isGlobalVariable` at 362); `state-sync.js:290-302` (`sync`), `:304-319` (`_syncOnce`); `api-client.js:70-72` |
 | 0.3 | **Social influence service and the live tag processor.** New `systems/social-influence.js`: watcher on `<character>_influence`, the `se_influence(delta, reason)` write path, thresholds, latch, band flags with `clearOnRearm`, `recoverTo`, forced `report(character, reason)`, `npc_influence_changed`, and the per-run idempotency ledger. New tag cases in `processGameActionTags` for `#influence:N`, `#influence_gained[:reason]`, `#influence_lost[:reason]` and `#report:<reason>`, **only for characters listed in `social.characters`**. The existing `influence_increased` and `influence_decreased` popup cases and `hostile` stay exactly as they are. The lockout's storage fields are written here, but the channel checks that read them are Phase 4 (S10) | `00` S5, §8, §13 "Band flags", "`recoverTo` rule", "Band numbers"; `06` N9 | new `systems/social-influence.js`; `minigames/helpers/chat-helpers.js:24` (`processGameActionTags`; existing cases at 201, 215, 250, 453, 548); `minigames/phone-chat/phone-chat-conversation.js` (shared loader); `person-chat-conversation.js` is not loaded and is not edited |
 | 0.4 | **Run-scoped `email_` variables and loader order.** Exclude the `email_` prefix from saved ink variables; every loader sets engine-written variables after restore and sync | `00` S7 | `systems/npc-conversation-state.js:156-162` (`exportNpcInkVariables`), `:229-255` (`recordInkVariables`); `person-chat-minigame.js:497` (restore), `:532`, `:563` (sync); `phone-chat-minigame.js` |
@@ -125,7 +125,7 @@ shipped missions, with no change a player of m01 to m08 can see.
 | 0.8 | **Source Sans 3.** Regular and Bold, Latin and Cyrillic WOFF2 subset files, unmodified, with `OFL.txt`; `@font-face` rules and a `--se-font-readable` custom property in `css/fonts.css`. All four files are Phase 0 (settled; ASSETS FONT4 and FONT5 move to this tier). Source: the subset WOFF2 files that the Google Fonts CSS API serves (`https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;700`, the `latin` and `cyrillic` `@font-face` blocks), with `OFL.txt` from `github.com/google/fonts` `ofl/sourcesans3/`, the same family SPIKES §1 checked. The packet records each file's URL, SHA-256, the font version from its `name` table and the google/fonts commit, and those records are the comparison for "unmodified". Spike F6 (canvas text) runs in the same packet | `00` §6; README X; Fonts row | `public/break_escape/assets/fonts/` (today `gnf`, `PressStart2P`, `PixelifySans`, `pixl8` only); `public/break_escape/css/fonts.css` (linked at `app/views/break_escape/games/show.html.erb:16`) |
 | 0.9 | **Return-to for nested overlays.** `startMinigame(scene, container, { returnTo, suspended })`; `endMinigame` calls `returnTo` after `onComplete`, on a normal exit only | `00` S12; README Minigame framework row | `minigames/framework/minigame-manager.js:15` (`startMinigame`, which ends the running one at 33), `:151` (`endMinigame`); `minigames/framework/base-minigame.js` |
 | 0.10 | **Overlay helper (optional, decided here).** One small helper for the own Close control, capture-phase Esc, `aborted` handling and a `getTestState()` base for the social overlays, so seven overlays do not each re-implement them. A choice, not a contract item: skip it if the first overlay shows the code is too small to share | README Conventions; `00` §6 "Overlay rules" | new `minigames/framework/social-overlay.js`; `base-minigame.js:18-23, 70-80` (`disableClose`), `getTestState` at about 170 |
-| 0.11 | **Playtest tooling.** `verify-run.rb` prints only boolean and string globals (`:23`) and counts only rooms beyond the first, unlocked objects and flags as progress (`:42-60`), so a one-room scenario with no locks reads "BOOTSTRAP ONLY" and exits 1 after a perfect run. It gains a section listing `objectivesState` tasks with their status and completion time, and completed tasks count as a progress signal. Because `complete_task!` stores only a status (`game.rb:1313`), "completed once" is proved from the score: the script prints `tasks_completed` and the game's score, and a gate states the expected values. A playtest script also greps the keyless server log (`tmp/keyless-3001.log`, as `sync-state-regress.js` uses) for `complete_task` requests per task id. Gates in this plan that say "once" mean both checks | AGENTS.md "Verifying work" | `tools/playtest/verify-run.rb`; a new `tools/playtest/count-task-posts.sh` (name to settle in the packet) |
+| 0.11 | **Playtest tooling.** `verify-run.rb` prints only boolean and string globals (`:23`) and counts only rooms beyond the first, unlocked objects and flags as progress (`:42-60`), so a one-room scenario with no locks reads "BOOTSTRAP ONLY" and exits 1 after a perfect run. It gains a section that always **lists** `objectivesState` tasks with their status and completion time. Completed tasks **count toward the verdict** only when the scenario has a top-level `social` key, or when `--tasks` is passed, and every social gate in this plan passes it. The default verdict for other missions is unchanged. That matters because the opening briefings of m04, m05, m06 and m07 complete tasks themselves (`#complete_task` in their opening ink), and today's verdict deliberately ignores anything the opening sets (`:38-46`). Because `complete_task!` stores only a status (`game.rb:1313`), "completed once" is proved from the score: the script prints `tasks_completed` and the game's score, and a gate states the expected values. A second script counts completions in the keyless server log (`tmp/keyless-3001.log`, as `sync-state-regress.js` uses). It counts only `POST` requests to the exact path `/break_escape/games/<id>/objectives/tasks/<task_id>` (`config/routes.rb:39`) that complete with 200, and ignores `PUT` progress updates (`:41`), `/skip` (`:40`) and failed requests the client retried (`objectives-manager.js:957-959`). It prints the server start time with the count, because `start-keyless-server.sh` truncates the log on each start. Gates that say "once" mean both checks. **Bridge assertions:** `playtest-session.js` has no assert command (its list at `:13-38`), and it is a skill script that agents do not edit. So in each bridge `.jsonl` file, every assertion is an `eval` line whose expression returns a boolean, preceded by a `waitFor` where timing matters. P0-N adds `tools/playtest/se/check-bridge.mjs`, which reads the session's output and fails on any `eval` result that is not `true`. The agent pastes the checker's summary into its report | AGENTS.md "Verifying work" | `tools/playtest/verify-run.rb`; new `tools/playtest/count-task-posts.sh` and `tools/playtest/se/check-bridge.mjs` |
 
 **Not in this phase, with the reason.** S4 (influence bar) and S6 (mail runner) arrive in 1b, which
 has the first character target to drive them. S9 (mail scheduler, `mailState`) and S14 (mail
@@ -151,14 +151,19 @@ The packet table in §4 uses the same split.
 - `node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json` and the
   m02–m08 route drivers match the 0.0 baseline.
 - For every scenario, `ruby scripts/validate_scenario.rb scenarios/<s> --no-graph --skip-ink` gives
-  the same findings as the same command run on HEAD in a git worktree (§2.4 R0). The only new lines
+  the same findings as the HEAD validator run on the same scenario content (§2.4 R0). The only new lines
   allowed come from the two lints that apply to every scenario (aim `unlockCondition` keys, unique
   object ids). Each such line is checked by hand and logged as a real finding or a false positive,
   and a false positive is fixed in the lint, not accepted. `--strict-social` on a scenario with no
   `social` key exits 0. `git status --porcelain` shows no tracked file rewritten.
 - The one-off ink load script (§2.3 items 6 and 8) shows no change between flag off and flag on.
 - The m01 to m08 regression checks R0 to R4 (§2.4) hold.
-- `verify-run.rb` on a finished one-room fixture game lists its completed tasks and exits 0.
+- `verify-run.rb --tasks` on the P0-N fixture game (a game on `scenarios/test_objectives`, collection
+  `testing`, whose tasks are completed through `complete_task!` by a runner snippet kept in the
+  scratchpad) lists its completed tasks and exits 0. `verify-run.rb` on an m05 game where only the
+  opening was played still exits 1.
+- Back-compat item 7's fixture half passes. Its bridge half needs `test_social_slice`, so it starts in
+  P1-T.
 - The CI job is green on a pushed branch. Pushing is the user's job (see "Needs the user").
 
 ### Phase 1 — Thin slice: mail client, rules engine, intel board, one target
@@ -171,7 +176,7 @@ target needs (ink replies, influence, a second account).
 **The test scenario.** `scenarios/test_social_slice/` (`mission.json`, `scenario.json.erb`, `ink/`),
 modelled on `scenarios/lab_tesseract_trials/` for a non-VM layout (`secgen_scenario: null`). Its
 `mission.json` sets `"collection": "testing"`, as most existing test scenarios do. When a
-`mission.json` is present, `db/seeds.rb:69` takes `collection` from it with `'default'` as the
+`mission.json` is present, `db/seeds.rb:71` takes `collection` from it with `'default'` as the
 fallback and infers nothing (inference runs only without a `mission.json`, `seeds.rb:9-23`). Every
 seeded mission is published, so the slice lists under "Testing" on the missions index, beside the
 other test scenarios, and not among the missions. `bin/rails db:seed` runs on the dev database
@@ -180,7 +185,7 @@ before the first playtest, because `new-game.rb` looks the mission up there (`ne
 One room. It holds a `mail_terminal` with `accountIds: ["guest"]`; two seeded benign inbox messages
 (`seededMessages`, folder `inbox`, senders using NPC10 avatars), so the inbox is not empty and the
 reader has something to show; Hampshire's contact with `targetId: "hampshire"` and `revealedBy:
-"hampshire_careers"`, so the To list offers her once the careers fact is held (`01` §2 and
+"se_intel_hampshire_careers"` (the global, `01` "Scenario-authored data"), so the To list offers her once the careers fact is held (`01` §2 and
 "Scenario-authored data"); one `case-file` with `{ mode: "recon" }` (texture override
 `notice_board1`, OBJ3); a placeholder host NPC whose `eventMappings` complete the tasks; and three
 readable stand-in objects whose `triggerOnInteract` grant Hampshire's three facts
@@ -188,7 +193,11 @@ readable stand-in objects whose `triggerOnInteract` grant Hampshire's three fact
 lines 185 to 187). The `social` block carries the Hampshire `phishTargets` entry, her two pretext
 templates (`pretext_apply`, `pretext_enquiry`), the `from_own` template, the greeting and ask parts,
 the `kit_cv` payload and the intel facts, all copied from the contract values in `00` §1, §7 and
-§13, with no new content. Tasks: `ready_hampshire` (on `target_ready_hampshire`) and
+§13, with no new content. None of Hampshire's templates has a blank (`04` "What each blank offers":
+"hampshire | none | no blanks"; `pretext_apply` has `"slots": []` in `00` §10). So 1a never opens
+the blank picker in the browser. The send gate and the picker are proved in Node and jsdom in 1a,
+and in the browser in 1b on the Pierce-style target, whose templates have blanks. Tasks:
+`ready_hampshire` (on `target_ready_hampshire`) and
 `hampshire_landed` (on `phish_hampshire_landed`). The stand-ins go when Phase 2 lands. The scenario
 stays afterwards as the fixture for the Phase 1 regression runs.
 
@@ -211,9 +220,9 @@ dead.
 | Scheduler and `mailState` | `00` S9: text jobs with a wall-clock countdown, jobs change-keyed by ids only; `mailState` as a keyed section with its `pagehide` place; server sanitiser, caps and bootstrap | new `systems/mail-scheduler.js` ticked from the NPC manager loop (`systems/npc-manager.js:1557`; `_checkTimedMessages` at 1572 is the model); `state-sync.js:13` (`KEYED_SECTIONS`), `:107` (`buildPlayerSections`), `:218-227` (the `timedMessages` id-only key, the model), `:259` (`confirm`), `:328` (`flush`); `games_controller.rb:356` (bootstrap, `savedPhoneState` is the model for `savedMailState`), `:1403` (`merge_last_write_wins_sections`), `:1426` (the `phoneState` merge call); `game.rb:1902-1913` (phone caps and `merge_phone_state!`, the model for `merge_mail_state!` and `MAX_MAIL_STATE_BYTES`); `core/game.js` restore |
 | Mail device | `00` S14, fixed terminal only: `mail_terminal` added to `PICKUP_THEN_INTERACT_TYPES`; its branch placed after the generic lock check, beside the phone branch, so a locked terminal asks to be unlocked; the pickup block refuses to auto-open a `locked` takeable item | `systems/interactions.js:776-784` (the set and pickup block), `:1340` (lock check), `:1355` (phone branch) |
 | Intel board | `03` N1 (people cards, contacts strip, company panel, readiness checklist; no "From the call" section or influence bar yet), N2 (rebuild from globals on open), N3 (show readiness), N5 (Close as a normal exit, return-to); N6 for `readinessSlots` | new `minigames/intel-board/`; new `css/intel-board-minigame.css`; `case-file` branch in `systems/interactions.js`; state in `se_board_state` |
-| Wiring, both overlays | Sprites and preload lines; `minigame-data-schemas.json` entries; `requiresKeyboardInput: true`; own Close and capture-phase Esc; `getTestState()` overrides so the test bridge can drive them | `core/game.js` `preload()` (from 66; object lines such as `'pc'` at 292); `scripts/minigame-data-schemas.json`; `minigames/framework/minigame-manager.js:37-45` (keyboard pause) |
+| Wiring, both overlays (P1-W) | Registration of `mail-client` and `intel-board` in `minigames/index.js`; both starters in `systems/minigame-starters.js` with `requiresKeyboardInput: true`; the `case-file` and `mail_terminal` branches in `systems/interactions.js` (the mail branch's placement is P1-F's design, P1-W adds the block); both CSS `<link>`s in `show.html.erb`; the `minigame-data-schemas.json` entries; the placeholder sprite copies `mail_terminal.png` (from `pc1.png`) and `case-file.png` (from `notice_board1.png`) with their `preload()` lines. Own Close, capture-phase Esc and `getTestState()` overrides stay in each overlay's own packet | `minigames/index.js` (from 147); `systems/minigame-starters.js` (649, 923); `systems/interactions.js`; `app/views/break_escape/games/show.html.erb:16-19`; `core/game.js` `preload()` (from 66; object lines such as `'pc'` at 292); `scripts/minigame-data-schemas.json`; `public/break_escape/assets/objects/`; `minigames/framework/minigame-manager.js:37-45` (keyboard pause) |
 
-**Assets (first-slice rows).** FONT1 to FONT3 (Phase 0); OBJ1 `mail_terminal`, OBJ2 `case-file`,
+**Assets (first-slice rows).** FONT1 to FONT5 (Phase 0); OBJ1 `mail_terminal`, OBJ2 `case-file`,
 OBJ3 (reuse `notice_board1`); UI1 to UI7; NPC5 (Hampshire 32x32 headshot); NPC10 (existing avatars
 for the seeded benign mail); SFX1 to SFX4; MUS1. Until the user approves each image (one at a time,
 PixelLab, made at target size), OBJ1 and OBJ2 start as copies of `pc1.png` and `notice_board1.png`
@@ -229,30 +238,32 @@ reviewer checks the whole slice before the playtest.
 **Done when (1a).**
 - `bundle exec node --test test/js/social-phish-rules.test.mjs test/js/social-intel.test.mjs
   test/js/social-mail-scheduler.test.mjs test/js/social-mail-state-export.test.mjs
-  test/js/validator-social-mail.test.mjs` passes, and so does the whole `test/js` suite apart from
-  the named quarantines.
+  test/js/social-mail-composer.test.mjs test/js/validator-social-mail.test.mjs` passes, and so does
+  the whole `test/js` suite apart from the named quarantines. `social-mail-composer` (jsdom) proves
+  the send gate on a fixture template with one blank: no held fact, so Send is disabled with the
+  neutral line "A blank needs evidence you haven't found yet", which never names the fact; then the
+  fact is granted, the picker offers it, and Send enables.
 - `bin/rails test test/models/break_escape/mail_state_test.rb
   test/controllers/break_escape/mail_state_sync_test.rb` passes, and so does the whole suite.
 - `ruby scripts/validate_scenario.rb scenarios/test_social_slice --strict-social --no-graph
-  --skip-ink` exits 0, then `git status --porcelain scenarios/` is empty.
+  --skip-ink` exits 0. A `git status --porcelain` snapshot and SHA-256 hashes of the files under
+  `scenarios/`, taken before the run and compared after it, show no change.
 - After `bin/rails db:seed`, a Sonnet playtest on :3001 (`new-game.rb test_social_slice`) shows,
   step by step:
   1. Before any fact, the To list does not offer Hampshire. After the careers stand-in only, she
-     appears. With `pretext_apply` chosen, Send is blocked with "A blank needs evidence you haven't
-     found yet", because the blank fed by `hampshire_cv_backlog` has nothing to offer yet. P1-I
-     confirms from the template data that such a blank exists. If none does, this step is dropped
-     from the playtest, and the block is proved in `social-phish-rules` and the bridge check
-     instead.
+     appears.
   2. After the other two stand-ins, the board shows Hampshire ready and `target_ready_hampshire` is
      true.
   3. A `pretext_enquiry` send shows the full checklist at once, with `pretextRelevant` failing on her
      authored line.
   4. A reload during the 15-second wait still delivers the reply into the `guest` mailbox.
   5. A `pretext_apply` send with `kit_cv` lands.
-  6. `verify-run.rb <id>` (after P0-N) lists `ready_hampshire` and `hampshire_landed` as completed
-     and shows `tasks_completed` 2. The server log has one `complete_task` request per task id.
+  6. `verify-run.rb --tasks <id>` (after P0-N) lists `ready_hampshire` and `hampshire_landed` as
+     completed and shows `tasks_completed` 2. `count-task-posts.sh` counts one successful completion
+     POST per task id.
 - The bridge checks for both overlays pass (§2.2, Phase 1a), run with `playtest-session.js` from
-  the script `tools/playtest/se/bridge-1a.jsonl` that P1-T writes.
+  `tools/playtest/se/bridge-1a.jsonl`. P1-T0 writes that script from the §2.2 rows once P1-I and
+  P1-W are in, before the UI packets are gated on it.
 
 #### 1b. Mail completion for character targets
 
@@ -275,10 +286,16 @@ with test-only ids so it never collides with the lab's `pierce`, and a `freemail
   does the whole `test/js` suite.
 - A story that declares `se_influence` with an ink fallback loads in the phone preload, the bark path
   and a dry run (`social-ink-fallback` fixture test, §2.3 item 7).
-- Playtest on :3001: create `freemail`, land Hampshire from it; send a failing then a landing message
-  to the character target; the reply comes from its `on_email` knot, the bar moves by the authored
-  delta with its reason, and both values survive a reload; `verify-run.rb` lists both landed tasks
-  as completed, and the server log has one `complete_task` request for each.
+- Playtest on :3001: create `freemail`, land Hampshire from it. Before the facts the character
+  target's blanks need are held, Send is blocked with the neutral pre-send line, which never names
+  the fact. Its blanks (`from_named`, `greet_named`, `pretext_sheet` in the Pierce pattern) offer only
+  held facts. Then send a failing message and a landing one; the reply comes from its `on_email`
+  knot, the bar moves by the authored delta with its reason, and both values survive a reload.
+  `verify-run.rb --tasks` lists both landed tasks as completed, and `count-task-posts.sh` counts one
+  successful completion POST for each.
+- The picker and pre-send rows of `tools/playtest/se/bridge-1b.jsonl` pass: the picker opens by
+  keyboard, arrow keys move through its listbox, Esc closes the picker before the overlay, and the
+  disabled Send says why.
 
 ### Phase 2 — OSINT browser
 
@@ -299,7 +316,9 @@ for this block), N9 (address-bar formatter tests). N2 landed in Phase 1a.
 **Files.** New `minigames/osint-browser/` and `css/osint-browser-minigame.css`; the
 `osint-workstation` branch in `systems/interactions.js`; register and starter as in 1a; preload line
 and schema entry; site images under `public/break_escape/assets/osint/<scenario>/`; lints in
-`scripts/validate_social/osint.rb`. The board's "Case file" button and the browser's return use the
+`scripts/validate_social/osint.rb`. The shared-file wiring (registration, starter, the
+`osint-workstation` branch, CSS link, placeholder sprite copy and preload line, schema entry) is
+packet P2-W. The board's "Case file" button and the browser's return use the
 Phase 0 return-to.
 
 **Dependencies.** Phase 0 (return-to, fonts, jsdom in CI), Phase 1a (`grantFact`, board).
@@ -351,7 +370,8 @@ with the done global set and the `conclusionTaskId` task incomplete, it re-emits
 `css/inbox-triage-minigame.css`; `triage-workstation` branch in `systems/interactions.js`; starter
 `startInboxTriageMinigame` modelled on `startSiemMinigame` (`systems/minigame-starters.js:649`);
 `minigames/intel-board/` gains defender mode; lints in `scripts/validate_social/triage.rb` and
-`board.rb`.
+`board.rb`. The shared-file wiring (registration, starter block, `triage-workstation` branch, CSS
+link, placeholder sprite copy and preload line, schema entry) is packet P3-W.
 
 **Dependencies.** Phase 0 (writer, `syncConfirmed`), Phase 1a (`mail-reader`, sent records with
 `tells`).
@@ -444,7 +464,7 @@ which wins where the two differ. All builder work, its playtests (P5-T) included
 agent at high effort, with model and effort passed explicitly (README S).
 
 **Position.** Last of the systems (README "Build order", item 5: the most new UI for the least
-reuse). It can start once Phases 1b and 2 are in and run beside Phases 3 and 4. The lab (Phase 6) needs it
+reuse). It can start once Phases 1a and 2 are in and run beside Phases 3 and 4. The lab (Phase 6) needs it
 for stage 4 and for the Lord round, and the lab's triage set needs its domain menu for the
 `playerSent` rows.
 
@@ -601,9 +621,8 @@ just before editing it.
   runs after the Phase 0 sync changes have landed.
 - D9. Two `01` touch points in "Touch points owned by other docs" have no packet in §4: the `link` kind
   in the mail Attach menu (`01` N4; P1-F covers only attachments) and the send-path victim record and
-  capture call (`01` N6, which uses `betterVictim` and `captureGranted`). Options: add both to P5-G
-  (Haiku, after P5-A), or give them a separate Opus packet in Phase 5 that runs after P5-G. The
-  orchestrator picks one before P5-G starts. `05` N9 is P3-B's, so it is not in this list.
+  capture call (`01` N6, which uses `betterVictim` and `captureGranted`). Settled: P5-G (Haiku,
+  after P5-A). `05` N9 is P3-B's, so it is not in this list.
 
 **Packet split.** Packets A (model) and B (renderer) run first, in parallel with C (lint). D (overlay)
 follows A and B. E (step 6) follows D. F (persistence) follows A and runs beside D. G (wiring) follows D
@@ -684,7 +703,8 @@ the eight-message triage set, the call, the page, concept cards); objectives and
 timed playtest (`10` §4), so applying a cut is a data change.
 
 **Files and hook points.** New `minigames/engagement-report/` and its CSS; the `report-workstation`
-branch in `systems/interactions.js`; starter, registration, preload line, schema entry as in 1a;
+branch in `systems/interactions.js`; starter, registration, preload line, schema entry as in 1a,
+all owned by the wiring packet P6-W;
 `db/seeds.rb:67-71` already reads `secgen_scenario` and `collection`, and the missions index
 titleises the label (`app/views/break_escape/missions/index.html.erb`, lines 114 to 125), so there is
 no platform code change. The lab also gets its own block in
@@ -818,7 +838,7 @@ the user asks.
 | Node | `social-ink-vars.test.mjs` | `email_*` names never reach `recordInkVariables` or `exportNpcInkVariables`; engine-written variables are set after restore and sync in both chat loaders |
 | Node | `social-return-to.test.mjs` | `returnTo` runs after `onComplete` on a normal exit only; a `suspended` parent ignores the `onComplete(false, null)` fired when the child starts; the keyboard pause survives the hand-back (spike F5) |
 | Validator | `validator-social-framework.test.mjs` | `social` is a known top-level key; `--strict-social` exits 1 on a social lint error and 0 on a clean fixture and on a scenario with no `social` key; the `EXTERNAL`-fallback lint; aim `unlockCondition` keys; duplicate object ids; a missing sprite for a social object type fails under `--strict-social` only; the `social.characters` data lints (synced variables declared, `VAR`s match, thresholds ordered, `recoverTo >= A + rearmMargin`, `clearOnRearm` only on booleans, lockout with an expiry or a route), one bad fixture each; the run leaves the fixture folder's files unchanged |
-| Tooling | `verify-run.rb` on a fixture game (P0-N) | Lists `objectivesState` tasks with status and time; a one-room game with completed tasks reports progress and exits 0; a fresh game still exits 1 |
+| Tooling | `verify-run.rb` on a fixture game (P0-N) | Lists `objectivesState` tasks with status and time for every game; with `--tasks`, the P0-N fixture game (`scenarios/test_objectives`, tasks completed by a runner snippet) reports progress and exits 0; a fresh game still exits 1; an m05 game where only the opening was played still exits 1 without `--tasks`, though its opening completes tasks. `count-task-posts.sh` counts one completion for a single 200 POST and ignores a `PUT`, a `/skip` and a failed retry in a fixture log |
 | Rails | `test/models/break_escape/scenario_npc_records_test.rb` | `find_npc_in_scenario` and `scenario_npc_ids` find a headless `emailRecord`; the room-NPC lookups are unchanged; `#give_item` validation accepts a headless record's items |
 | Rails | extend `test/integration/npc_ink_loading_test.rb` | The ink endpoint serves a headless record's story |
 | Rails | extend `test/controllers/break_escape/games_controller_test.rb` | `sync_state` still answers stale with `{ success: true, stale: true }` and a refused last-write-wins section with 403, which `syncConfirmed` relies on |
@@ -832,13 +852,14 @@ the user asks.
 | Node | `social-phish-rules.test.mjs` | The open check (opened by sender, opened by subject topic, neither); each factor's pass and fail; the slot judge's distinctive, generic and stale kinds and `implies`; `from_own`; `senderAuth` derivation and `dmarcPolicy`; `tells[]` on every result; free text ignored; Hampshire's two pretext templates give the authored fail line and the landing result |
 | Node | `social-intel.test.mjs` | `grantFact` flips once (a second grant emits nothing and adds no note); the `se_intel_` naming rule; `evaluateReadiness` sets `target_ready_<id>` and `osint_done` at grant time; note ids stay unique within one millisecond |
 | Node | `social-mail-scheduler.test.mjs` | A text job delivers after its wall-clock delay into the mailbox of the account used; `phish_<id>_landed` is set only on a landed send; the job change key ignores `remainingMs`; a serialised and restored job still delivers; a data-only target that does not open the message gets a silent text job |
+| Node | `social-mail-composer.test.mjs` (jsdom) | On a fixture template with one blank: Send is disabled with "A blank needs evidence you haven't found yet" while the blank's fact is not held, and the line names no fact; the picker offers only held facts (stale ones included); after the grant, Send enables. Hampshire's blank-free templates send with no picker |
 | Node | `social-mail-state-export.test.mjs` | `mailState` is a keyed section; in the `pagehide` flush it comes right after `globalVariables` and is dropped, not truncated, when over the 60 KB budget; a message and the job that produced it are confirmed together |
 | Validator | `validator-social-mail.test.mjs` | The `01` N18 checks Hampshire's data touches (accounts, mailboxes, contacts, `mail_terminal.accountIds`) and the `04` N10 subset; the pre-send line cannot be replaced by scenario text (`04` N11); empty authored strings fail (`04` N3) |
 | Rails | `test/models/break_escape/mail_state_test.rb` | `merge_mail_state!` caps: 200 messages per mailbox, 4000 characters per body, 50 jobs, one draft per account, `MAX_MAIL_STATE_BYTES` total; trim order (oldest read seeded inbox mail, then replies, then sent), never unread mail or a pending job; over the total, the previous state stands; unknown keys stripped |
 | Rails | `test/controllers/break_escape/mail_state_sync_test.rb` | `mailState` sits in `merge_last_write_wins_sections`, so a stale request cannot overwrite it; bootstrap returns `savedMailState`; a grant's `se_intel_*` global round-trips through `sync_state` |
 | Rails | extend `test/integration/unlock_system_test.rb` | A locked takeable `mail_terminal` declared in a room's `objects` with a unique `id` unlocks whether or not it is in the inventory; one that exists only in an NPC's `itemsHeld` gets "Object not found" (SPIKES §3, documented) |
 | Rails | extend `test/integration/task_set_global_test.rb` | Server half only, because Rails cannot run the client's `eventMappings`: a `complete_task` for `hampshire_landed` completes it and raises `tasks_completed` and the score; a second call is a no-op and the score does not change; an early completion is accepted (SPIKES §5, documented). The mapping itself is proved by the 1a bridge check |
-| Bridge | mail client and board | Space and `E` do nothing while open (player position unchanged, no second minigame); Tab reaches every control in order; Esc closes an open picker first, then the overlay; the own Close control works; the mail client's Close with nothing sent completes with `{ aborted: true }` and records nothing; the board's Close completes with `success: true` and no `minigame_failed`; a mail draft, a pending reply and the board state survive a reload |
+| Bridge | mail client and board | Space and `E` do nothing while open (player position unchanged, no second minigame); Tab reaches every control in order; Esc inside the reading pane or composer closes the overlay only after any open sub-panel; the own Close control works; the mail client's Close with nothing sent completes with `{ aborted: true }` and records nothing; the board's Close completes with `success: true` and no `minigame_failed`; a mail draft, a pending reply and the board state survive a reload |
 | E2E | Phase 1a "Done when" script | — |
 
 **Phase 1b**
@@ -849,7 +870,7 @@ the user asks.
 | Node | `social-influence-bar.test.mjs` (jsdom) | Threshold icons are paired with words; the number is always printed; the bar redraws on `npc_influence_changed`; the score region is `aria-live="polite"` |
 | Node | extend `social-phish-rules` | `boostIfGlobal` and `strictIfGlobal` act on a copy; the `EvalResult` to `email_*` mapping table |
 | Validator | extend `validator-social-mail` | A character target's `on_email` declares the `email_*` VARs it reads and its influence VAR, and calls `se_influence` on both branches; `createMenu` ids unique; `acct_<id>`, `acct_<id>_choice` and `phish_<id>_attempts` declared |
-| Bridge | mail client | The account switcher and Create-account panel by keyboard; Esc order picker, then panel, then overlay; layout at 600 px has no horizontal scroll |
+| Bridge | mail client | On the Pierce-style target: the blank picker opens by keyboard and its listbox takes arrow keys; Send is disabled with the neutral line until each blank holds a fact; the account switcher and Create-account panel by keyboard; Esc order picker, then panel, then overlay; layout at 600 px has no horizontal scroll |
 | E2E | Phase 1b "Done when" script | — |
 
 **Phase 2**
@@ -930,7 +951,7 @@ need every live story are one-off scripts whose output goes in the build log.
 | 5 | `neye-eve.json` is untouched | `git diff --exit-code scenarios/ink/neye-eve.json scenarios/ink/neye-eve.ink` in the pre-commit check; the worked example is a new copy |
 | 6 | A story with none of the new externals or variables loads with no warning | **Standing:** `social-ink-fallback` loads a fixture copied into `test/js/fixtures/social/ink_compat/` of one m01 story with no externals, through `InkEngine` with a console spy, and expects no warning. **One-off:** `scripts/ink_runtime_check/social-load-all.mjs` (new, written by P0-B as spike F2) loads every compiled m01 to m08 story through the chat, phone-preload and bark paths with the flag off and on and diffs the warnings and outcomes. Its output is kept in the build log and re-run before each engine commit that touches a loader |
 | 7 | A story that declares the new externals loads from the phone preload, the bark path and a dry run | `social-ink-fallback` fixture through the three loaders (with the bark loader's `InkEngine` usage at `systems/npc-manager.js:1206` and `:2079`); a bridge check in `test_social_slice` that opens the phone preload and fires a bark |
-| 8 (added) | Stories that already declare `EXTERNAL`s behave exactly as before on every loader. Today that is m02 (11 files), m03 (6; `m03_closing_debrief.ink` only names it in a comment) and m04 (7). m07 has none (`m07_npc_elena_rodriguez.ink:23` is a comment saying it was removed) | **Standing:** `social-ink-fallback` loads copied fixtures (one `EXTERNAL` story each from m02, m03 and m04, in `test/js/fixtures/social/ink_compat/`) through the chat and bark paths and checks the outcome matches what they did without the flag, because turning fallbacks on must not change a story that has no fallback functions. **One-off:** the same `social-load-all.mjs` run as item 6 covers the live files |
+| 8 (added) | Stories that already declare `EXTERNAL`s behave exactly as before on every loader. Today that is m02 (11 files), m03 (6; `m03_night_transition.ink` only names it in a comment, and is not counted) and m04 (7). m07 has none (`m07_npc_elena_rodriguez.ink:23` is a comment saying it was removed) | **Standing:** `social-ink-fallback` loads copied fixtures (one `EXTERNAL` story each from m02, m03 and m04, in `test/js/fixtures/social/ink_compat/`) through the chat and bark paths and checks the outcome matches what they did without the flag, because turning fallbacks on must not change a story that has no fallback functions. **One-off:** the same `social-load-all.mjs` run as item 6 covers the live files |
 
 ### 2.4 Regression suite for the shipped missions m01 to m08
 
@@ -945,11 +966,11 @@ before relying on the figures.)
 
 | Id | What | Command or method | When |
 |----|------|-------------------|------|
-| R0 | Static, per mission | `ruby scripts/validate_scenario.rb scenarios/<m> --no-graph --skip-ink` on the working tree, diffed against the same command run on HEAD in a throwaway `git worktree` made for that commit, so other agents' mission edits never show up as engine regressions (no tracked file written; checked with `git status --porcelain`); ink compiled to the scratchpad; `dialoguelint.mjs` with no new findings; the route drivers `node scripts/ink_runtime_check/m0N_routes/route.js scripts/ink_runtime_check/m0N_routes/<route>.json` for every route of m02 to m08, matching the 0.0 baseline; for m01, which has no route folder, `inkcheck.js` on each compiled story; `reopencheck.mjs scripts/ink_runtime_check/missions.json`; `tagdiff.mjs` showing no ink change in an engine-only commit | Every engine commit |
+| R0 | Static, per mission | Old and new engine run on **identical content**. For each commit, make a throwaway `git worktree` of HEAD under the session scratchpad, then copy the working tree's `scenarios/<m>` (and `scenarios/ink/`) into it, so other agents' uncommitted mission edits appear on both sides. Then run `ruby scripts/validate_scenario.rb scenarios/<m> --no-graph --skip-ink`, `dialoguelint.mjs scenarios/<m>/` and the route drivers (`node scripts/ink_runtime_check/m0N_routes/route.js scripts/ink_runtime_check/m0N_routes/<route>.json`, every route of m02 to m08) in both trees and diff the outputs; for m01, which has no route folder, `inkcheck.js` on each compiled story in both. No tracked file is written (checked with `git status --porcelain`); ink is compiled to the scratchpad; `reopencheck.mjs scripts/ink_runtime_check/missions.json`; `tagdiff.mjs` showing no ink change in an engine-only commit | Every engine commit |
 | R1 | Node suite | `bundle exec node --test test/js/*.test.mjs` (existing tests such as `phone-reopen-and-persistence`, `global-sync-declared`, `state-sync`, `person-chat-reopen`, the `engine-fixes-*` files, plus every new test), passing apart from the named quarantine list; a quarantined file is run on its own and must pass there | Every engine commit |
 | R2 | Rails suite | `bin/rails test` | Every engine commit |
-| R3 | Short Sonnet browser runs on :3001, 10 to 15 minutes each, each with a reload | m01: Derek's hostile route and Kevin's `#hostile:kevin_park`; the opening phone briefing. m02: guard and ward nurse conversations that change values, with none turning hostile; a phone chat and a bark from a story that declares `EXTERNAL`s. m03 and m04: a person chat and a bark from an `EXTERNAL` story; the m04 Vance pair. m05: Patricia, Lisa, Owen and Dr Halloran popups and the Patricia pair. m06: Irina's popups and a `global_variable_changed` mapping. m07: a `global_variable_changed` mapping chain and a phone conversation with a reload (it has no `EXTERNAL` story). m08: a global mapping chain and its spaced-form popups. One quick lab instructor (`lab_scanning`) and one sis01 popup check | Phase 0; after 1b (tick loop and sync); after 4 (both chat loaders); before the Phase 6 commit |
-| R4 | Sync regression | `node tools/playtest/sync-state-regress.js` on m01 and m05: the reload round-trip and the idle request count are unchanged, and no `mailState` key appears in the request body of a mission with no mail | Phase 0; 1a; 3 |
+| R3 | Short Sonnet browser runs on :3001, 10 to 15 minutes each, each with a reload | m01: Derek's hostile route and Kevin's `#hostile:kevin_park`; the opening phone briefing. m02: guard and ward nurse conversations that change values, with none turning hostile; a phone chat and a bark from a story that declares `EXTERNAL`s. m03 and m04: a person chat and a bark from an `EXTERNAL` story; the m04 Vance pair. m05: Patricia, Lisa, Owen and Dr Halloran popups and the Patricia pair. m06: Irina's popups and a `global_variable_changed` mapping. m07: a `global_variable_changed` mapping chain and a phone conversation with a reload (it has no `EXTERNAL` story). m08: a global mapping chain and its spaced-form popups. One quick lab instructor (`lab_scanning`) and one sis01 popup check | Phase 0; a short subset before the 1a commit (an m01 phone pickup, and one mission with a takeable workstation or phone, because 1a edits `PICKUP_THEN_INTERACT_TYPES`, the pickup block at `interactions.js:776-784` and the NPC manager tick at `npc-manager.js:1557`); in full after 1b (tick loop and sync); after 4 (both chat loaders); before the Phase 6 commit |
+| R4 | Sync regression | `node tools/playtest/sync-state-regress.js` on m01 and m05: the reload round-trip and the idle request count are unchanged, and no `mailState` key appears in the request body of a mission with no mail | Phase 0, and after every phase whose diff touches `state-sync.js` (1a at least; 5, per P5-F) |
 
 A run passes when each listed check holds, in the same way it did in the 0.0 browser baseline
 (item 0.0 (d)). Each R3 run ends with `verify-run.rb` and an earned-secrets table. A failure goes
@@ -980,7 +1001,7 @@ Failure-branch runs, each short:
 | F3 | A subject the target does not open: the open-check row says so and nothing lands |
 | F4 | A `freemail` retry after a `guest` spoof: triage still replays the spoof (decision K) |
 | F5 | Lord without a page: `linkCredible` fails as `missing` |
-| F6 | The Dev call is reported: report global and lockout set; the desk phone refuses before `pretext-prep`; the student turns to the builder; the lift after the authored expiry (if the expiry is too long for a run, prove the lift in `test_social_slice`) |
+| F6 | The Dev call is reported: report global and lockout set; the desk phone refuses before `pretext-prep`; the student turns to the builder; after Dev's two real minutes (`06` §4.8, line 223; `00` §8 `afterMinutes: 2`) the phone opens again with Dev at -30 and `dev_wary` and `dev_refusing` cleared |
 | F7 | A call left after one ask, reopened: only the ungranted ask is offered and grants accumulate |
 | F8 | The page re-scored after Attach: Attach needs a current Score; the victim record keeps its best outcome |
 | F9 | Triage below 60%: "Try again"; `triage_pass` stays true after a later lower round |
@@ -1074,59 +1095,68 @@ Notes that hold for the table:
 
 | Id | Phase | Scope | Model | Inputs | Outputs | Gate |
 |----|-------|-------|-------|--------|---------|------|
-| P0-A | 0 | Baselines (0.0), including the Node per-file results and the R3 browser baseline | Sonnet | AGENTS.md "Verifying work"; this plan 0.0 and §2.4 | Baseline files in the build log folder | Every 0.0 item present; `git status` clean apart from them |
+| P0-A | 0 | Baselines 0.0 (a) to (c): Node per-file results, reopencheck, route drivers | Sonnet | AGENTS.md "Verifying work"; this plan 0.0 and §2.4 | Baseline files in the build log folder | Every item present; `git status` clean apart from them |
+| P0-A1 to P0-A8 | 0 | 0.0 (d): the R3 browser baseline, one packet per mission (m01 to m08), run beside P0-A | Sonnet | §2.4 R3 row for that mission | Run report per mission | `verify-run.rb` shows progress; each listed check recorded as observed |
 | P0-B | 0 | Spikes F1 and F2 (§3), including the one-off `scripts/ink_runtime_check/social-load-all.mjs` | Opus | `00` S1, S3; SPIKES.md §4 | Findings in the build log; the load script and its first output | Each answer cites file:line and a scratchpad experiment; the script's flag-off and flag-on output is logged |
-| P0-C | 0 | Ink fallbacks and tooling flag (0.1); after P0-B | Opus | `00` S1; `ink-engine.js`; `inkcheck.js`, `reopencheck.mjs`, `loopcheck.js`, the seven `route.js` drivers; README_scenario_design.md:1724 | Code, `social-ink-fallback` test and its copied fixtures, rule edit | Back-compat 6 to 8 (standing tests and the one-off script) pass; R0 reopencheck and route drivers unchanged |
-| P0-D | 0 | Shared writer, `applyActions` on it (0.2, writer half); after P0-B | Opus | `00` S3; `apply-actions.js`; `npc-conversation-state.js` | `systems/global-writer.js`, `social-global-writer` test | Back-compat 1 passes; R1 green apart from quarantines |
-| P0-E | 0 | Boolean `_syncOnce`, `syncConfirmed`, `error.status` (0.2, sync half) | Sonnet | SPIKES.md §2 (code given); `state-sync.js`; `api-client.js` | Code, `social-state-sync-confirmed` test | Test passes; R4 on m01 unchanged |
+| P0-C | 0 | Ink fallbacks and tooling flag (0.1); after P0-A and P0-B | Opus | `00` S1; `ink-engine.js`; `inkcheck.js`, `loopcheck.js`, the seven `route.js` drivers (reopencheck needs no edit); README_scenario_design.md:1724 | Code, `social-ink-fallback` test and its copied fixtures, rule edit | Back-compat 6 and 8 (standing tests and the one-off script) and the fixture half of 7 pass (7's bridge half starts in P1-T); R0 reopencheck and route drivers unchanged |
+| P0-D | 0 | Shared writer, `applyActions` on it (0.2, writer half); after P0-A and P0-B | Opus | `00` S3; `apply-actions.js`; `npc-conversation-state.js` | `systems/global-writer.js`, `social-global-writer` test | Back-compat 1 passes; R1 green apart from quarantines |
+| P0-E | 0 | Boolean `_syncOnce`, `syncConfirmed`, `error.status` (0.2, sync half); after P0-A | Sonnet | SPIKES.md §2 (code given); `state-sync.js`; `api-client.js` | Code, `social-state-sync-confirmed` test | Test passes; R4 on m01 unchanged |
 | P0-F | 0 | Influence service (0.3, service half); after P0-D | Opus | `00` §8, S5, §13 band rows; `06` N9 | `systems/social-influence.js`, `social-influence` test | Test passes; no shipped code path imports it except the tag processor |
 | P0-G | 0 | Tag processor cases (0.3, tags half); after P0-F | Opus | `chat-helpers.js:24-560`; `00` §8 "Influence tags"; §2.4 tag counts | Code, `social-tag-processor` test | Back-compat 2 to 4; both popup forms and the hub-demo numeric form covered; R3-m01 Derek |
-| P0-H | 0 | `email_` exclusion and loader order (0.4) | Opus | `00` S7; `npc-conversation-state.js`; both chat minigames | Code, `social-ink-vars` test | R1 green apart from quarantines, with `person-chat-reopen` and `phone-reopen-and-persistence` passing |
-| P0-I | 0 | Headless records, client and server (0.5, 0.6) | Opus | `00` S2, S8; the files in 0.5 | Code, `scenario_npc_records_test.rb`, ink endpoint test | R2 green; the R0 worktree diff shows no new line |
-| P0-J | 0 | Validator social framework, generic lints and the `social.characters` data lints (0.7, lint half) | Sonnet | `00` S11, §11 "Lint field list" (framework only), §13 "Validator exit" | `scripts/validate_social.rb`, area stubs, `validator-social-framework` test | Test passes; R0 worktree diff limited to the reviewed new lines |
-| P0-K | 0 | CI job (social globs, then the whole `test/js` suite with the named quarantine list), jsdom, lockfile, `test:social` (0.7, CI half); after P0-J | Sonnet | `00` S11 CI text; `ci.yml`; `.gitignore:43`; `package.json`; the P0-A Node results | Workflow job; lockfile, committed when the user asks | `npm ci && npm run test:social` and the full suite pass locally apart from the quarantine list; CI green once the user pushes |
-| P0-L | 0 | Source Sans 3 (0.8) and spike F6 | Sonnet | `00` §6; ASSETS §5; SPIKES.md §1 licence notes; the source URLs in 0.8 | Font files, `OFL.txt`, `css/fonts.css` rules, a provenance note (URL, SHA-256, version, google/fonts commit) in the build log | SHA-256 of each committed file matches the note; a test page renders `раураl` in the bundled face (computed `font-family` and no fallback glyph); F6 answered |
-| P0-M | 0 | Return-to and overlay helper (0.9, 0.10); spike F5 | Opus | `00` S12; `minigame-manager.js`; `base-minigame.js` | Code, `social-return-to` test | Test passes; `modal-stack-escape` and `session-overlay-pause` tests still pass |
-| P0-N | 0 | Playtest tooling (0.11): task listing and progress in `verify-run.rb`; the `complete_task` log count | Sonnet | 0.11; `tools/playtest/verify-run.rb`; `game.rb:1306-1360` | Script changes | The §2.2 Phase 0 "Tooling" row passes on a fixture game |
-| P0-P | 0 | Doc edits the settlements need (outside this plan): `grant_fact` and `systems/global-writer.js` in `00` §12 and the README engine table; the `--strict-social` lints described as split into `scripts/validate_social/*` in the README; ASSETS FONT4 and FONT5 tier; any README or 06 line that puts the world pip in the lab. Not `07` | Haiku | FIX_BRIEF "Implementation plan settlements"; this plan 0.2, 0.7, 0.8, Phase 1 "Stand-in grants", Phase 4 "Where the bar shows" | Line edits in those docs | `git diff` limited to the named lines; no `07` file touched |
+| P0-H | 0 | `email_` exclusion and loader order (0.4); after P0-A | Opus | `00` S7; `npc-conversation-state.js`; both chat minigames | Code, `social-ink-vars` test | R1 green apart from quarantines, with `person-chat-reopen` and `phone-reopen-and-persistence` passing |
+| P0-I | 0 | Headless records, client and server (0.5, 0.6); after P0-A | Opus | `00` S2, S8; the files in 0.5 | Code, `scenario_npc_records_test.rb`, ink endpoint test | R2 green; the R0 worktree diff shows no new line |
+| P0-J | 0 | Validator social framework, generic lints and the `social.characters` data lints (0.7, lint half); after P0-A | Sonnet | `00` S11, §11 "Lint field list" (framework only), §13 "Validator exit" | `scripts/validate_social.rb`, area stubs, `validator-social-framework` test | Test passes; R0 worktree diff limited to the reviewed new lines |
+| P0-K | 0 | CI job (social globs, then the whole `test/js` suite with the named quarantine list), jsdom, lockfile, `test:social` (0.7, CI half); after P0-J | Sonnet | `00` S11 CI text; `ci.yml`; `.gitignore:43`; `package.json`; the P0-A Node results | Workflow job; lockfile regenerated with `npm install --package-lock-only` in the shared tree (no `node_modules` change), committed when the user asks | `npm ci && npm run test:social` and the full suite pass apart from the quarantine list, run in a throwaway worktree under the scratchpad, because `npm ci` in the shared tree would delete the `node_modules` (and playwright) that other agents' playtests are using; CI green once the user pushes |
+| P0-L | 0 | Source Sans 3 (0.8) and spike F6; after P0-A | Sonnet | `00` §6; ASSETS §5; SPIKES.md §1 licence notes; the source URLs in 0.8 | Font files, `OFL.txt`, `css/fonts.css` rules, a provenance note (URL, SHA-256, version, google/fonts commit) in the build log | SHA-256 of each committed file matches the note; a test page renders `раураl` in the bundled face (computed `font-family` and no fallback glyph); F6 answered |
+| P0-M | 0 | Return-to and overlay helper (0.9, 0.10); spike F5; after P0-A | Opus | `00` S12; `minigame-manager.js`; `base-minigame.js` | Code, `social-return-to` test | Test passes; `modal-stack-escape` and `session-overlay-pause` tests still pass |
+| P0-N | 0 | Playtest tooling (0.11): task listing in `verify-run.rb`, counted toward the verdict only for `social` scenarios or with `--tasks`; `count-task-posts.sh` with the exact-path, 200-only rule; `tools/playtest/se/check-bridge.mjs`; after P0-A | Sonnet | 0.11; `tools/playtest/verify-run.rb`; `game.rb:1306-1360`; `config/routes.rb:39-41`; `playtest-session.js:13-38` | Script changes; the fixture game on `scenarios/test_objectives` (runner snippet in the scratchpad) | The §2.2 Phase 0 "Tooling" row passes, including the m05 opening-only game still exiting 1 |
+| P0-P | 0 | Doc edits the settlements still need (outside this plan): `grant_fact` and `systems/global-writer.js` in `00` §12 and the README engine table; any README or 06 line that puts the world pip in the lab. Already done in the r10 fix round, so not in scope: the README Landing page and Validator rows, `04` N10 and `10` N7 pointing at `scripts/validate_social/*`; ASSETS FONT4, FONT5, UI10, UI23 and the §9 recount; `06` line 90. Not `07` | Haiku | FIX_BRIEF "Implementation plan settlements"; this plan 0.2, 0.7, 0.8, Phase 1 "Stand-in grants", Phase 4 "Where the bar shows" | Line edits in those docs | `git diff` limited to the named lines; no `07` file touched |
 | P0-R | 0 | Implementation review of Phase 0 | Opus | All P0 diffs; `00` §12 | Findings table in the build log | No blocker or major left open |
 | P0-T | 0 | R3 browser runs, one packet per mission | Sonnet | §2.4 R3 row; the mission's walkthrough; the P0-A browser baseline | Run reports with earned-secrets tables | `verify-run.rb` shows progress; every listed R3 check holds as it did in the baseline |
 | P1-A | 1a | `phish-rules.js` and tests (`04` N1, N2, N7–N9, N11 runtime, N12) | Sonnet | `04`; `00` §2, §3, §7, §10, §13 | Module, `social-phish-rules` test | Test passes; module has no DOM or global access |
 | P1-B | 1a | `social-intel.js`, `grant_fact` action with its toast (`02` N2) | Sonnet | `00` §4, §5; `02` N2 | Module, action case, `social-intel` test | Test passes |
 | P1-C | 1a | Mail scheduler and `mailState` client (S9); spikes F3 and F4 first | Opus | `00` §10, §10a, S9; `state-sync.js`; `npc-manager.js:1557-1600` | `systems/mail-scheduler.js`, state-sync changes, `social-mail-scheduler` and `social-mail-state-export` tests | Both tests pass; R4 passes |
 | P1-D | 1a | `mailState` server side | Opus | `01` "Persisted mail"; `game.rb:1902-1960`; `games_controller.rb:356`, `:1403-1430` | `merge_mail_state!`, bootstrap, `mail_state_test.rb`, `mail_state_sync_test.rb` | Those two Rails tests and the whole suite pass |
-| P1-E1 | 1a | Mail client shell: list, `mail-reader` reading pane, Sent folder, notification, seeded inbox messages, contacts with `revealedBy` (`01` N1 shell, N3, N5, N9, N12 view, N14, N15 inbox seeds) | Sonnet | `01`; `00` §6 overlay rules, §10a; README Conventions | `minigames/mail-client/` (shell, reader), CSS, `getTestState()` | The reader, Sent and Close rows of the 1a bridge script pass |
-| P1-E2 | 1a | Composer: template parts, blank picker from held facts, send gate (`01` N10, `04` N11 runtime); after P1-E1 | Sonnet | `01` §2 "Compose"; `00` §10 "Template and slot schema" | Composer code | The composer rows of the 1a bridge script pass (picker by keyboard, Esc order, neutral pre-send line) |
-| P1-F | 1a | Mail bridge and device branch (`01` N2 client writes: drafts on change and before a launch, `metrics` and `phish_<id>_attempts` on send; N4 attachments, N6, N17; device `accountIds`; S14 fixed terminal); after P1-A, P1-C, P1-E2 | Opus | `01` §3; `00` §10; `interactions.js:776-784, 1340, 1355` | Bridge code, interaction branch, starter, preload line | Steps 1 to 5 of the 1a playtest pass in a run by the packet's own agent, with `mailState` in the next `sync_state` body |
-| P1-G | 1a | Intel board, recon mode (`03` N1 without "From the call", N2, N3, N5) | Sonnet | `03`; `00` §4, §11 | `minigames/intel-board/`, CSS | The board rows of the 1a bridge script pass |
+| P1-E1 | 1a | Mail client shell: list, `mail-reader` reading pane, Sent folder, notification, seeded inbox messages, contacts with `revealedBy` (`01` N1 shell, N3, N5, N9, N12 view, N14, N15 inbox seeds); bridge gate after P1-I, P1-W and P1-T0 | Sonnet | `01`; `00` §6 overlay rules, §10a; README Conventions | `minigames/mail-client/` (shell, reader), CSS, `getTestState()` | The reader, Sent and Close rows of `bridge-1a.jsonl` pass under `check-bridge.mjs` |
+| P1-E2 | 1a | Composer: template parts, blank picker from held facts, send gate (`01` N10, `04` N11 runtime); after P1-E1 | Sonnet | `01` §2 "Compose"; `00` §10 "Template and slot schema" | Composer code, `social-mail-composer` test (jsdom) | `social-mail-composer` passes (gate disabled with the neutral line, picker offers held facts only, Send enables after the grant). Browser picker checks wait for 1b (P1-T2), because Hampshire has no blanks |
+| P1-F | 1a | Mail bridge and device branch design (`01` N2 client writes: drafts on change and before a launch, `metrics` and `phish_<id>_attempts` on send; N4 attachments, N6, N17; device `accountIds`; S14 fixed terminal: placement after the lock check and the locked-pickup rule); after P1-A, P1-C, P1-E2 | Opus | `01` §3; `00` §10; `interactions.js:776-784, 1340, 1355` | Bridge code; the `mail_terminal` branch logic, which P1-W places in the shared file | Bridge-level checks after P1-W: mail opens from the terminal, a send writes a sent record and a job, and `mailState` appears in the next `sync_state` body. Then, after P1-B, P1-D, P1-G and P1-I with `db:seed`, a **Sonnet** tester runs steps 1 to 5 of the 1a playtest |
+| P1-G | 1a | Intel board, recon mode (`03` N1 without "From the call", N2, N3, N5); bridge gate after P1-I, P1-W and P1-T0 | Sonnet | `03`; `00` §4, §11 | `minigames/intel-board/`, CSS, `getTestState()` | The board rows of `bridge-1a.jsonl` pass under `check-bridge.mjs` |
 | P1-H | 1a | Lints (1a): `04` N3, N10 subset, N11 validator half; `01` N18 subset; `03` N6 recon | Sonnet | Those lists | `scripts/validate_social/mail.rb`, `board.rb`, `validator-social-mail` test | Test passes |
-| P1-I | 1a | `test_social_slice` scenario, `"collection": "testing"`, seeded mail, contact, stand-ins | Sonnet | `00` §1, §7, §13 Hampshire rows; `scenarios/lab_tesseract_trials/` as layout model; Phase 1 "The test scenario" | Scenario folder | `--strict-social --no-graph --skip-ink` exits 0; after `bin/rails db:seed` it lists under "Testing" |
+| P1-I | 1a | `test_social_slice` scenario, `"collection": "testing"`, seeded mail, contact, stand-ins | Sonnet | `00` §1, §7, §13 Hampshire rows; `scenarios/lab_tesseract_trials/` as layout model; Phase 1 "The test scenario" | Scenario folder | `--strict-social --no-graph --skip-ink` exits 0 (after P1-W's sprite copies); after `bin/rails db:seed` it lists under "Testing" |
+| P1-W | 1a | Wiring for both overlays, on the P5-G pattern: registration, starters, the `case-file` and `mail_terminal` blocks in `interactions.js` (mail logic from P1-F), CSS links, schema entries, placeholder sprite copies and `preload()` lines (Phase 1 table, "Wiring" row); shared-file blocks only, each file re-read before editing | Sonnet | README Conventions checklist; Phase 1a "Wiring" row | Shared-file blocks; `mail_terminal.png`, `case-file.png` | `git diff --stat` limited to those files and blocks; both overlays open from their objects in the slice |
+| P1-T0 | 1a | Write `tools/playtest/se/bridge-1a.jsonl` from the §2.2 Phase 1a Bridge row (`eval` booleans, checked by `check-bridge.mjs`); after P1-I and P1-W | Sonnet | §2.2 Phase 1a; `docs/test-bridge.md` | The script | Runs end to end against the slice, with failures expected only where a UI packet is not yet in |
 | P1-R | 1a | Slice review | Opus | P1 diffs | Findings | No blocker or major left open |
-| P1-T | 1a | Slice playtest; writes and runs `tools/playtest/se/bridge-1a.jsonl` | Sonnet | Phase 1a "Done when"; §2.2 Phase 1a "Bridge" row | Report; bridge script | Steps 1 to 6 pass; `verify-run.rb` lists `ready_hampshire` and `hampshire_landed` completed, `tasks_completed` 2; one `complete_task` per task in the log |
+| P1-T | 1a | Slice playtest; runs `bridge-1a.jsonl` and the bridge half of back-compat item 7 (phone preload and a bark from a story declaring the new externals) | Sonnet | Phase 1a "Done when"; §2.2 Phase 1a "Bridge" row | Report | Steps 1 to 6 pass; `verify-run.rb --tasks` lists `ready_hampshire` and `hampshire_landed` completed, `tasks_completed` 2; `count-task-posts.sh` counts one per task; `check-bridge.mjs` all true |
 | P1-J | 1b | Mail runner and ink jobs (S6, `04` N6) | Opus | `00` §10, S6, S7; `phone-chat-conversation.js:733-790` | `systems/mail-runner.js`, `social-mail-runner` test | Test passes; back-compat 7 |
-| P1-K | 1b | Influence bar (S4, `01` N7), mounted in the reading pane and the board's influence section | Sonnet | `00` S4, §8 "How the bar reads it" | `ui/influence-bar.js`, both mounts, `social-influence-bar` test | Test passes; both mounts visible in the 1b bridge script |
-| P1-L | 1b | Accounts and Create-account (`01` N11) | Sonnet | `00` §10a | Mail client changes | The account rows of `tools/playtest/se/bridge-1b.jsonl` pass |
+| P1-K | 1b | Influence bar (S4, `01` N7), mounted in the reading pane and the board's influence section | Sonnet | `00` S4, §8 "How the bar reads it" | `ui/influence-bar.js`, both mounts, `social-influence-bar` test | Test passes; both mounts visible in `bridge-1b.jsonl` (after P1-T0b) |
+| P1-T0b | 1b | Write `tools/playtest/se/bridge-1b.jsonl` from the §2.2 Phase 1b Bridge row, including the picker and pre-send rows on the Pierce-style target; after P1-O | Sonnet | §2.2 Phase 1b | The script | Runs against the slice |
+| P1-L | 1b | Accounts and Create-account (`01` N11); bridge gate after P1-T0b | Sonnet | `00` §10a | Mail client changes | The account rows of `tools/playtest/se/bridge-1b.jsonl` pass |
 | P1-M | 1b | Rules extras and remaining lints (`04` N4, N5, N10 rest; `01` N18 rest) | Sonnet | `04`; `01` N18 | Code, extended tests | Extended `social-phish-rules` and `validator-social-mail` pass |
-| P1-N | 1b | Narrow layout, accessibility, `withReply` (`01` N13, N17) | Sonnet | `01` "Narrow screens" | CSS and code | At 600 px no horizontal scroll and every control reachable by Tab (bridge script rows) |
+| P1-N | 1b | Narrow layout, accessibility, `withReply` (`01` N13, N17); bridge gate after P1-T0b | Sonnet | `01` "Narrow screens" | CSS and code | At 600 px no horizontal scroll and every control reachable by Tab (bridge script rows) |
 | P1-O | 1b | Second test target and its `on_email` ink | Opus | `04` worked example; `00` §10 | Ink and data in `test_social_slice` | inkcheck clean on the compiled story; validator exits 0 |
 | P1-T2 | 1b | Review, then playtest | Opus, then Sonnet | Phase 1b "Done when" | Findings; report | No blocker or major open; the 1b playtest steps pass |
-| P2-A | 2 | OSINT browser overlay (`02` N1, N3–N7) | Sonnet | `02` | `minigames/osint-browser/`, CSS | `tools/playtest/se/bridge-2.jsonl` passes; screenshots as in Phase 2 "Done when" |
+| P2-A | 2 | OSINT browser overlay (`02` N1, N3–N7); bridge gate after P2-W, P2-C and P2-T0 | Sonnet | `02` | `minigames/osint-browser/`, CSS, `getTestState()` | `tools/playtest/se/bridge-2.jsonl` passes under `check-bridge.mjs`; screenshots as in Phase 2 "Done when" |
+| P2-W | 2 | Wiring: registration, starter, `osint-workstation` branch, CSS link, placeholder sprite copy and `preload()` line, schema entry; shared-file blocks only | Sonnet | README Conventions checklist; Phase 2 "Files" | Shared-file blocks; `osint-workstation.png` copy | `git diff --stat` limited to those blocks; the browser opens from its object |
+| P2-T0 | 2 | Write `bridge-2.jsonl` from the §2.2 Phase 2 Bridge row; after P2-W and P2-C | Sonnet | §2.2 Phase 2 | The script | Runs against the slice |
 | P2-B | 2 | OSINT lints and address-bar test (`02` N8, N9) | Sonnet | `02` N8, N9; `00` §11 lint list | `scripts/validate_social/osint.rb`, tests | `social-osint-address-bar` and `validator-social-osint` pass |
 | P2-C | 2 | Slice OSINT data replacing the stand-ins | Sonnet | `00` §1 "Discoverable intel" | Scenario edits | Validator exits 0 |
 | P2-T | 2 | Review and playtest | Opus, then Sonnet | Phase 2 "Done when" | Findings; report | No blocker or major open; the 1a playtest passes with facts found by browsing |
 | P3-A | 3 | Triage scorer and tests (`05` N4, N8) | Sonnet | `05` "The rules / scoring" | `triage-scoring.js`, test | 68% and 86% cases pass |
-| P3-B | 3 | Triage UI and `playerSent`, email kind only (`05` N1 email, N2, N3, N7, N9) | Sonnet | `05`; `00` §10a | `minigames/inbox-triage/`, CSS, `social-player-sent` test | Test passes; `tools/playtest/se/bridge-3.jsonl` triage rows pass |
+| P3-W | 3 | Wiring: registration, starter block, `triage-workstation` branch, CSS link, placeholder sprite copy and `preload()` line, schema entry; the slice's four-message set and defender board object; shared-file blocks only | Sonnet | README Conventions checklist; Phase 3 "Files" and "Done when" | Shared-file blocks; `triage-workstation.png` copy; slice data | `git diff --stat` limited to those; triage opens from its object |
+| P3-T0 | 3 | Write `bridge-3.jsonl` from the §2.2 Phase 3 Bridge row; after P3-W | Sonnet | §2.2 Phase 3 | The script | Runs against the slice |
+| P3-B | 3 | Triage UI and `playerSent`, email kind only (`05` N1 email, N2, N3, N7, N9); bridge gate after P3-W and P3-T0 | Sonnet | `05`; `00` §10a | `minigames/inbox-triage/`, CSS, `social-player-sent` test | Test passes; `tools/playtest/se/bridge-3.jsonl` triage rows pass |
 | P3-C | 3 | Starter: sync, then emit; reopen (`05` N6) | Opus | `05` "Bridging"; `00` S3, §13 | Starter code, `social-triage-starter`, `social_sync_then_emit_test.rb` | Both tests pass; the blocked-sync and 403 runs pass |
-| P3-D | 3 | Board defender mode (`03` N4 defender) | Sonnet | `03` "Defender mode"; `00` §1 defender facts | Board changes | Defender rows of the Phase 3 bridge script pass |
+| P3-D | 3 | Board defender mode (`03` N4 defender); bridge gate after P3-W and P3-T0 | Sonnet | `03` "Defender mode"; `00` §1 defender facts | Board changes | Defender rows of the Phase 3 bridge script pass |
 | P3-E | 3 | Triage lints (`05` N5, `03` N6 defender) | Sonnet | Those lists | `triage.rb`, `board.rb` additions, `validator-social-triage` test | Test passes |
 | P3-T | 3 | Review and playtest | Opus, then Sonnet | Phase 3 "Done when" | Findings; report | No blocker or major open; Phase 3 "Done when" holds |
 | P4-A | 4 | `pretext-judge.js` and tests (`06` N1) | Sonnet | `06` §4 | Module, test | Worked examples pass |
 | P4-B | 4 | `PretextSession`, bindings, `person-chat-pretext.js` (`06` N2, N3, N7–N9) | Opus | `06` §6; `00` §8, S3 | Code, `social-pretext-session` test | Test passes; back-compat 2 to 8 |
-| P4-C | 4 | `pretext-prep` (`06` N5, N6) | Sonnet | `06` Beats 1 and 2; the 1a picker | `minigames/pretext-prep/` | `pretext-prep` rows of `tools/playtest/se/bridge-4.jsonl` pass |
+| P4-T0 | 4 | Write `bridge-4.jsonl` from the §2.2 Phase 4 Bridge row; after P4-G; registration, starter and `callId` branch blocks for `pretext-prep` are placed by P4-D's design, added as shared-file blocks here | Sonnet | §2.2 Phase 4; Phase 4 "Files" | The script; shared-file blocks | Runs against the slice |
+| P4-C | 4 | `pretext-prep` (`06` N5, N6); bridge gate after P4-T0 | Sonnet | `06` Beats 1 and 2; the 1a picker | `minigames/pretext-prep/` | `pretext-prep` rows of `tools/playtest/se/bridge-4.jsonl` pass |
 | P4-D | 4 | Lockout checks and lift (S10) | Opus | `00` S10, §8; `interactions.js:1355` | Code, lockout cases in `social-influence` | Tests pass; the refusal-before-prep and one-minute lift steps pass in the slice |
 | P4-E | 4 | Influence bar in the person-chat and phone-chat headers; tells panel, phone bubbles, tint; world pip for sprite characters only; the board's "From the call" section (`06` N4, S13, `03` N1) | Sonnet | `06` §4.4; `00` S13; `ui/npc-health-bars.js`; Phase 4 "Where the bar shows" | UI code, `social-influence-pip` test | Test passes; bar and tells visible in both chat headers in the bridge script; pip absent for a character with no sprite |
 | P4-F | 4 | Pretext lints (`06` N10, N12, including the `reports` threshold on every character with call data) | Sonnet | `06` N10 | `pretext.rb`, `validator-social-pretext` test | Test passes |
-| P4-G | 4 | Test call ink and data, with a one-minute test lockout expiry | Opus | `06` §4.8 | Slice edits | inkcheck clean; validator exits 0 |
+| P4-G | 4 | Test call ink and data, with a one-minute test lockout expiry; plus a sprite test character (a person NPC in the slice with an existing walk sprite key, a `social.characters` entry and a person-chat call), so the pip can be shown for a sprite character and absent for the phone-only one | Opus | `06` §4.8; `00` S13 | Slice edits | inkcheck clean; validator exits 0 |
 | P4-T | 4 | Review, playtests, R3 again | Opus, then Sonnet | Phase 4 "Done when"; §2.4 | Findings; reports | No blocker or major open; Phase 4 "Done when" and R3 hold |
 | P5-A | 5 | Model: scorer, tells, `buildRecord`, `applyScore`, `betterVictim`, `linkInfoFor`, `describeVictimOutcome`, `captureGranted`, closed keys; guard model half (`07` N2, N6b, N10, N11) | Haiku (high effort) | `07` §4, §5 (record shape), §6 model bullet; `00` §11a; the worked examples in `07` §4 | `landing-page-model.js`; `social-landing-page-model` and `-guard` tests | Every N2 fixture case passes; no DOM or global access; the no-`serial|export|download` identifier test passes |
 | P5-B | 5 | Renderer: two layers, DOM-safety walk, forbidden-network grep, `--se-font-readable`; guard renderer half (`07` N3, N6b, N8) | Haiku (high effort) | `07` §1 safety, §6 renderer bullet, §8a; `00` §6; P0-L | `landing-page-render.js`; `social-landing-page-render` test | Six states pass the DOM walk; grep clean; homograph drawn raw, not through `displayDashes` |
@@ -1138,8 +1168,10 @@ Notes that hold for the table:
 | P5-T | 5 | Bridge checks 1 to 8 on :3001 (Phase 5 "Playtest steps"); see D7 for the model | Haiku (high effort) | Phase 5 playtest steps; §1 "Playtests"; P5-G | Run report with pass or fail per step | `verify-run.rb` shows progress; each step recorded |
 | P5-R | 5 | Implementation review of Phase 5 | Opus | All P5 diffs; `07` §1 safety list; N6 list | Findings tagged blocker, major or minor, with file:line | No blocker or major open; safety tests read, not only run |
 | P6-A | 6 | Lab scenario plan | Opus | `10`; `00`; AGENTS.md "The mission loop" | Plan in the lab folder | Three review rounds closed with no blocker or major open |
-| P6-B | 6 | Report builder (`10` N1, N2) | Sonnet | `10` N1; `00` §11 | `minigames/engagement-report/` | `social-engagement-report` passes; report rows of `tools/playtest/se/bridge-6.jsonl` pass |
-| P6-C | 6 | Board `scope` and `plan` modes (`03` N4) | Sonnet | `03` "Modes"; `00` §11, §13 | Board changes | Scope and plan rows of the Phase 6 bridge script pass |
+| P6-W | 6 | Wiring: registration, starter, `report-workstation` branch, CSS link, placeholder sprite copy and `preload()` line, schema entry; shared-file blocks only; after P6-E | Sonnet | README Conventions checklist; Phase 6 "Files" | Shared-file blocks; `report-workstation.png` copy | `git diff --stat` limited to those; the report opens from its object |
+| P6-T0 | 6 | Write `bridge-6.jsonl` from the §2.2 Phase 6 rows (report, scope and plan); after P6-W | Sonnet | §2.2 Phase 6 | The script | Runs against the lab |
+| P6-B | 6 | Report builder (`10` N1, N2); bridge gate after P6-T0 | Sonnet | `10` N1; `00` §11 | `minigames/engagement-report/` | `social-engagement-report` passes; report rows of `tools/playtest/se/bridge-6.jsonl` pass |
+| P6-C | 6 | Board `scope` and `plan` modes (`03` N4); bridge gate after P6-T0 | Sonnet | `03` "Modes"; `00` §11, §13 | Board changes | Scope and plan rows of the Phase 6 bridge script pass |
 | P6-D | 6 | `lab_games` label and the Tesseract docs (`10` N6) | Haiku | `10` N6 | Four small edits | `git diff` limited to them |
 | P6-E | 6 | Lab scenario build: rooms, objects, data, objectives | Opus | P6-A plan | Scenario folder | Validator exits 0 under `--strict-social --no-graph --skip-ink` |
 | P6-F | 6 | Lab ink | Opus | P6-A plan; README_ink_best_practices.md | `ink/` | inkcheck and loopcheck clean over the logged state matrix; dialoguelint cleared or justified |
@@ -1164,14 +1196,17 @@ shows"; ASSETS UI10); the Cyrillic font files in Phase 0 (0.8); `test_social_sli
 `"collection": "testing"` (Phase 1 "The test scenario"); the awareness `collection` label is
 `training`; builder playtests on Haiku.
 
-Still open, each with a working default:
+Closed in the r10 round:
 
-1. **Lockout expiry in the lab.** This plan did not check the authored expiry for Dev. If it is
-   longer than a short playtest allows, failure run F6 proves the lift in the test scenario, which
-   carries a one-minute test expiry (Phase 4).
-2. **The send-blocked playtest step.** Step 1 of the 1a playtest assumes a `pretext_apply` blank is
-   fed by `hampshire_cv_backlog`. P1-I confirms it from the template data, or the step moves to the
-   Node and bridge tests.
+1. **Lockout expiry in the lab.** Dev's lockout is two real minutes (`06` §4.8 line 223 and 280;
+   `00` §8 line 948, `afterMinutes: 2`), so failure run F6 proves the lift in the lab itself. The
+   generic table in `06` §4.1 (line 90) gives Priya's ten minutes, which matches `00` §8 line 805;
+   that line now names both values so the two cannot be read as a conflict.
+2. **The send-blocked playtest step.** Hampshire has no blanks (`04` "What each blank offers";
+   `pretext_apply` `"slots": []`). The gate is proved in 1a by `social-phish-rules` and the jsdom
+   `social-mail-composer` test, and in the browser in 1b on the Pierce-style target.
+
+No question is open now.
 
 ### Needs the user
 

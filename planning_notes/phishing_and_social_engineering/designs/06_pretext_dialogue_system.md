@@ -87,7 +87,7 @@ The character's score is its influence global (`00` §8), `<character>_influence
 | wary | -40 | Sets the band flag `priya_wary`, cleared again once she is back at -30 or above. Ink asks a verifying question, hesitates on asks, drops pleasantries. |
 | refuses | -50 | Sets the band flag `priya_refusing` (cleared the same way). Ink declines asks that have no floor of their own. |
 | reports | -70 | Sets `helpdesk_alerted` and ends the conversation. |
-| lockout | -90 | Refuses new conversations on the channel for ten real minutes, then resets influence to -30 (the wary line plus the re-arm margin, which clears both band flags). Not combat. |
+| lockout | -90 | Refuses new conversations on the channel for ten real minutes (Priya's `afterMinutes: 10`, `00` §8; the lab's Dev uses two, §4.8), then resets influence to -30 (the wary line plus the re-arm margin, which clears both band flags). Not combat. |
 
 Combat hostile is an effect a character can add (`combatHostile`). It is off by default and none of the SE characters use it. Existing missions that rely on `#hostile` or the legacy `-50` rule keep them.
 

@@ -140,7 +140,7 @@ scaled with `image-rendering: pixelated`. Anything the player reads or compares 
 |----|-------|---------|--------|-----------|------|
 | UI8 | Threshold icons, 16x16: wary, refuses, reports, hostile, trusts (shared by the bar, 03 and the world pip) | 00 S4; 03; 06 §8 | New | PixelLab | Lab |
 | UI9 | Influence bar, about 96x16, -100 to +100, calm/wary/refusing/reported bands | 06 §8; 00 S4 | New | PixelLab | Lab |
-| UI10 | World influence pip above a character sprite, drawn only for characters with walk sprites (awareness, Eldritch Hacker). Not in the lab: there the influence bar shows in the phone-chat and person-chat header, and Dev is phone-only (settled 2026-10-21; moved from Lab, §9 counts not yet updated) | 00 S13 | New | PixelLab | Later |
+| UI10 | World influence pip above a character sprite, drawn only for characters with walk sprites (awareness, Eldritch Hacker). Not in the lab: there the influence bar shows in the phone-chat and person-chat header, and Dev is phone-only (settled 2026-10-21; moved from Lab) | 00 S13 | New | PixelLab | Later |
 | UI11 | Tells-panel frame | 06 §8 | New | PixelLab | Lab |
 | UI12 | Pretext card frame (pinned-note look from the board) | 06 §8 | Adapt (UI6 card) | PixelLab | Lab |
 | UI13 | Portrait tint for wary and refusing bands (code tint of existing talk and viseme sheets, no new art) | 06 §8 | Reuse | code | Lab |
@@ -199,8 +199,8 @@ not generated.
 | FONT1 | Source Sans 3 Regular, Latin subset WOFF2 | 00 §6; README Fonts | New | upstream font file | Slice |
 | FONT2 | Source Sans 3 Bold, Latin subset WOFF2 | 00 §6 | New | upstream font file | Slice |
 | FONT3 | OFL 1.1 licence text beside the files | 00 §6 | New | font file | Slice |
-| FONT4 | Source Sans 3 Regular, Cyrillic subset WOFF2, for the lab's one homograph example | 00 §6; README X | New | upstream font file | Lab |
-| FONT5 | Source Sans 3 Bold, Cyrillic subset WOFF2 | 00 §6 | New | upstream font file | Lab |
+| FONT4 | Source Sans 3 Regular, Cyrillic subset WOFF2, for the lab's one homograph example. Bundled in Phase 0 with the Latin files (settled 2026-10-21) | 00 §6; README X | New | upstream font file | Slice |
+| FONT5 | Source Sans 3 Bold, Cyrillic subset WOFF2. Bundled in Phase 0 (settled 2026-10-21) | 00 §6 | New | upstream font file | Slice |
 | FONT6 | `GNF` (body chrome), `Press Start 2P` (headings), `PixelifySans` already bundled | README Conventions | Reuse | existing | Slice |
 
 ## 6. Audio
@@ -276,9 +276,9 @@ Counted from the tables above. *Adapt* is reported separately because the new fi
 
 | Tier | New | Adapt | Reuse | Total |
 |------|-----|-------|-------|-------|
-| First slice | 9 | 4 | 8 | 21 |
-| Rest of the lab | 36 | 6 | 18 | 60 |
-| Later | 16 | 1 | 1 | 18 |
+| First slice | 11 | 4 | 8 | 23 |
+| Rest of the lab | 33 | 6 | 18 | 57 |
+| Later | 17 | 1 | 1 | 19 |
 | **All** | **61** | **11** | **27** | **99** |
 
 The Lab "Reuse" figure includes two rows marked "Reuse or New" (SFX7, SFX8), counted as reuse because the
