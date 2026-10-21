@@ -450,8 +450,9 @@ for stage 4 and for the Lord round, and the lab's triage set needs its domain me
 
 **Dependencies.** Phase 0: the shared writer (0.2), return-to (0.9), Source Sans 3 including the
 Cyrillic files (0.8), the `social` lint framework (0.7), and `jsdom`, which Phase 0 owns (P0-K adds
-it, with the lockfile). Phase 1a: the board's recon mode. Phase 1b: the mail client's Attach
-control. Phase 2: the shared concept-card renderer (`02` N1).
+it, with the lockfile). Phase 1a: the board's recon mode, and the mail client's Attach control for
+attachments (`01` N4, P1-F). The `link` kind is built with this phase. Phase 2: the shared
+concept-card renderer (`02` N1).
 
 **Engine items the README engine table assigns to it** ("Landing page" row, `07` N1 to N11 with
 N6b): the builder; the scorer; the DOM/pixel layered renderer, with text in the readable sans-serif;
@@ -515,7 +516,8 @@ tests and by the validator lint, not by convention.
 - N8 Source Sans 3 on every authored string [P5-B]
 - N9 nested launch, close and keyboard handling [P5-D, P5-G]
 - N10 `linkInfoFor`, `describeVictimOutcome`, `betterVictim` [P5-A]
-- N11 `captureGranted` [P5-A]. The send-path call that adds the note sits in `01` (P1-F), not here.
+- N11 `captureGranted` [P5-A]. The send-path call that adds the note is part of `01` N6's victim-record
+  work. P1-F's 1a scope has no victim record, so no packet owns the call yet (D9).
 
 **Files to create.** Under `public/break_escape/js/minigames/landing-page-builder/` unless stated.
 - `landing-page-model.js` (P5-A): pure, with no DOM and no globals.
@@ -570,14 +572,15 @@ just before editing it.
   The overlay helper (0.10) is optional.
 - Phase 1a: the intel board in recon mode (`03` N1 to N3 and N5, P1-G), for the Case file button
   (`07` §6).
-- Phase 1b: the mail client's Attach menu and `link` kind (`01` N4, P1-F), and the second test target
-  (P1-O). See D5.
+- Phase 1a: the mail client's Attach control for attachments (`01` N4, P1-F). The `link` kind is built
+  here (see D9).
+- Phase 1b: the second test target (P1-O). See D5.
 - Phase 2: the card renderer from `02` N1 (P2-A), for N7. See D4.
 
 **Decisions in this section (challenge any of them).**
 - D1. The lint lives in `scripts/validate_social/landing.rb`, as P0-J's per-area split requires.
-  `07` N6 and the README engine table name `validate_scenario.rb` instead. The split stops parallel
-  packets from editing one file.
+  `07` (§1 and N6) now says so too. The README engine table still names `validate_scenario.rb` for
+  the lint, which is outside this section. The split stops parallel packets from editing one file.
 - D2. The validator test is `test/js/validator-landing-pages.test.mjs`, which is `07`'s name. The
   outline's earlier suggestion, `validator-social-landing.test.mjs`, is dropped.
 - D3. The object type id is `page-builder`, as in `00` §11, `07` §6 and OBJ8. The code's siem and
@@ -592,10 +595,15 @@ just before editing it.
 - D6. LOGO5 and LOGO6 are in Phase 5's asset list. They are Lab-tier rows, and stage 2 offers CloudBoxy as
   a brand choice (`07` §3 step 1 and §7). The outline's "later" was wrong for the lab.
 - D7. Builder packets are Haiku at high effort, as the outline and README S say. The bridge packet (P5-T)
-  follows the same rule. §1 of this plan says Sonnet runs every browser playtest, so the two rules
-  conflict for this phase. The orchestrator picks one before P5-T starts.
+  is Haiku too: §1 ("Playtest models") carves the builder out of its Sonnet-for-playtests rule, so
+  nothing is open here.
 - D8. The N4 shape guard goes into the shared `state-sync.js`. P5-F re-reads the file before editing and
   runs after the Phase 0 sync changes have landed.
+- D9. Two `01` touch points in "Touch points owned by other docs" have no packet in §4: the `link` kind
+  in the mail Attach menu (`01` N4; P1-F covers only attachments) and the send-path victim record and
+  capture call (`01` N6, which uses `betterVictim` and `captureGranted`). Options: add both to P5-G
+  (Haiku, after P5-A), or give them a separate Opus packet in Phase 5 that runs after P5-G. The
+  orchestrator picks one before P5-G starts. `05` N9 is P3-B's, so it is not in this list.
 
 **Packet split.** Packets A (model) and B (renderer) run first, in parallel with C (lint). D (overlay)
 follows A and B. E (step 6) follows D. F (persistence) follows A and runs beside D. G (wiring) follows D
@@ -1124,10 +1132,10 @@ Notes that hold for the table:
 | P5-B | 5 | Renderer: two layers, DOM-safety walk, forbidden-network grep, `--se-font-readable`; guard renderer half (`07` N3, N6b, N8) | Haiku (high effort) | `07` §1 safety, §6 renderer bullet, §8a; `00` §6; P0-L | `landing-page-render.js`; `social-landing-page-render` test | Six states pass the DOM walk; grep clean; homograph drawn raw, not through `displayDashes` |
 | P5-C | 5 | Validator lint (`07` N6, N7 id check) in `scripts/validate_social/landing.rb`: punycode encoder, denylist and confusable fold, `scenario-schema.json` entry | Haiku (high effort) | `07` §1 lint bullets, N6, §5; `00` §11 "Lint field list"; P0-J framework; `scripts/validate_scenario.rb:247` | `landing.rb`; `validator-landing-pages` test and `test/js/fixtures/social_landing/` | Every N6 fixture case passes; `--strict-social` exit codes as stated in Phase 5 "Done when" |
 | P5-D | 5 | Overlay: steps 1 to 5, Score panel, Attach and Attach anyway, Case file launch, nested launch and close, card display (`07` N1, N7 display, N9) | Haiku (high effort) | `07` §3, §4 strings, §6; P5-A, P5-B; `minigame-manager.js:15,37-45,204-206`; `base-minigame.js:18-23,70-80`; README Conventions | Overlay JS and CSS | Bridge steps 1 to 5 pass; `requiresKeyboardInput: true`; Esc and Close give no `minigame_failed` |
-| P5-E | 5 | Step 6 defender inspection: hot-spots, decoy padlock, Show the link target, five-habits card; exports `buildSuspectPage` and `tells` (`07` N5) | Haiku (high effort) | `07` §3 step 6, §4 tells tables, §6 "Inspect" and role rules | Code in the overlay folder | Bridge step 6 passes; DOM test still passes in `group` and `img` states |
-| P5-F | 5 | Persistence: `se_landing_pages` and `se_landing_drafts` declared with `{}` defaults; shape guard on write and sync; flush size (`07` N4) | Haiku (high effort) | `07` §5 "Stored record" and "Drafts"; `00` §11, §11a; `state-sync.js:13,61`; `siem-dashboard-minigame.js:5,925,941` | Edits in `state-sync.js` (re-read first); declarations; `social-landing-page-state` test | Guard drops out-of-set keys in its test; bridge step 7 passes |
+| P5-E | 5 | Step 6 defender inspection: hot-spots, decoy padlock, Show the link target, five-habits card; exports `buildSuspectPage` and `tells` (`07` N5) | Haiku (high effort) | `07` §3 step 6, §4 tells tables, §6 "Inspect" and role rules; P5-D | Code in the overlay folder | Bridge step 6 passes; DOM test still passes in `group` and `img` states |
+| P5-F | 5 | Persistence: `se_landing_pages` and `se_landing_drafts` declared with `{}` defaults; shape guard on write and sync; flush size (`07` N4) | Haiku (high effort) | `07` §5 "Stored record" and "Drafts"; `00` §11, §11a; `state-sync.js:13,61`; `siem-dashboard-minigame.js:5,925,941`; P5-A (the closed key sets) | Edits in `state-sync.js` (re-read first); declarations; `social-landing-page-state` test | Guard drops out-of-set keys in its test; bridge step 7 passes |
 | P5-G | 5 | Wiring and fixture: the README checklist (`minigames/index.js:18,104,160`; `minigame-starters.js:649-680,923`; `interactions.js:937-967,998`; `core/game.js:1194`; `show.html.erb:40`), the `page-builder` schema entry, the test page in `test_social_slice`, and the Space and E pause check (`07` §6) | Haiku (high effort) | README Conventions checklist; P5-D, P5-F; shared files re-read before editing | Shared-file blocks only; slice fixture page (D5) | `git diff --stat` limited to these files; slice exits 0 under `--strict-social --no-graph --skip-ink` |
-| P5-T | 5 | Bridge checks 1 to 8 on :3001 (Phase 5 "Playtest steps"); see D7 for the model | Haiku (high effort) | Phase 5 playtest steps; §1 "Playtests" | Run report with pass or fail per step | `verify-run.rb` shows progress; each step recorded |
+| P5-T | 5 | Bridge checks 1 to 8 on :3001 (Phase 5 "Playtest steps"); see D7 for the model | Haiku (high effort) | Phase 5 playtest steps; §1 "Playtests"; P5-G | Run report with pass or fail per step | `verify-run.rb` shows progress; each step recorded |
 | P5-R | 5 | Implementation review of Phase 5 | Opus | All P5 diffs; `07` §1 safety list; N6 list | Findings tagged blocker, major or minor, with file:line | No blocker or major open; safety tests read, not only run |
 | P6-A | 6 | Lab scenario plan | Opus | `10`; `00`; AGENTS.md "The mission loop" | Plan in the lab folder | Three review rounds closed with no blocker or major open |
 | P6-B | 6 | Report builder (`10` N1, N2) | Sonnet | `10` N1; `00` §11 | `minigames/engagement-report/` | `social-engagement-report` passes; report rows of `tools/playtest/se/bridge-6.jsonl` pass |
