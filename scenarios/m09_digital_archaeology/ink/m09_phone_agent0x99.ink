@@ -111,7 +111,8 @@ VAR hand_answered_here = false
     -> DONE
 - recruiter_call_started and not recruiter_gone and not deck_choice_made:
     Her call first. Take it when it rings.
-    #exit_conversation
+    + [Right.]
+        #exit_conversation
     -> DONE
 // Stage 8 m-14: a first open after flag 1 (a late first open, or a seeded
 // playtest segment) skips the Act 1 dock lines and goes to the hub.
@@ -170,8 +171,11 @@ Night guard. Twenty-four. Not ours, not theirs. Don't hurt him.
     #set_global:dock_done:true
     A clerk's on tonight, and an IT contractor, Jesse Tran. Viral Dynamics' staff files have a Tran in them.
 }
-#exit_conversation
--> DONE
+// Final playtest: the thread closed ~3 ms after the last line, so the call
+// ends on a one-word reply (m01/m05 pattern) and the line can be read.
++ [On my way.]
+    #exit_conversation
+    -> DONE
 
 // ================================================
 // FLAG 1 READ (Beat 1.4; unvoiced)
@@ -193,8 +197,11 @@ The catalogue keeps something else live. Their ledger.
 -
 Her card's on a reel at her hip. You've done this before.
 I've sent you the odd one. Salvage cage, their own code.
-#exit_conversation
--> DONE
+// Final playtest: the thread closed ~3 ms after the last line, so the call
+// ends on a one-word reply (m01/m05 pattern) and the line can be read.
++ [Got it.]
+    #exit_conversation
+    -> DONE
 
 // ================================================
 // LEDGER READ (Beat 2.3; unvoiced)
@@ -229,8 +236,11 @@ I've told the Director. He'll say nothing to them. Neither will you.
 + [What else is on the entry?]
     A source code, H&L, and a file number. HL2015-0477.
 -
-#exit_conversation
--> DONE
+// Final playtest: the thread closed ~3 ms after the last line, so the call
+// ends on a one-word reply (m01/m05 pattern) and the line can be read.
++ [Got it.]
+    #exit_conversation
+    -> DONE
 
 // ================================================
 // AFTERWARDS (Beat 2.7; unvoiced; hub topic 7 diverts here)
@@ -270,8 +280,11 @@ It's yours to carry. Nobody else signed for it.
 // On the last line, so a player who closes early still gets hub topic 7.
 #set_global:afterwards_heard:true
 The rest when this is over. Her office is past the binders.
-#exit_conversation
--> DONE
+// Final playtest: the thread closed ~3 ms after the last line, so the call
+// ends on a one-word reply (m01/m05 pattern) and the line can be read.
++ [Understood.]
+    #exit_conversation
+    -> DONE
 
 // ================================================
 // DECK RESUME (voiced, forced; Recruiter re-ring 3)
@@ -321,8 +334,11 @@ She only watched the counter. I can pull one before it wipes. Which?
 #complete_task:answer_the_offer
 She fired it from Sorensen's office. I'm on the door.
 Her card for the tape room will be in that office.
-#exit_conversation
--> DONE
+// Final playtest: the thread closed ~3 ms after the last line, so the call
+// ends on a one-word reply (m01/m05 pattern) and the line can be read.
++ [On my way.]
+    #exit_conversation
+    -> DONE
 
 // ================================================
 // IDENTITY SCENE (voiced, forced; Beats 3.3-3.4)
@@ -485,8 +501,11 @@ It isn't my call. It isn't yours either. If you're going to, don't ask me first.
 {deck_pulled == "alpha_tapes":
     His tapes are on the bench next door. When you want them.
 }
-#exit_conversation
--> DONE
+// Final playtest: the thread closed ~3 ms after the last line, so the call
+// ends on a one-word reply (m01/m05 pattern) and the line can be read.
++ [Understood.]
+    #exit_conversation
+    -> DONE
 
 // ================================================
 // IDENTITY RESUME (voiced, forced re-ring)
@@ -559,19 +578,23 @@ He'll call it full disclosure.
 - else:
     #set_global:hour_read_done:true
     Nobody's wiping this box. Not her, not him.
-    #exit_conversation
-    -> DONE
+    -> read_close
 }
 
 = realisation_choice
 + [Her schedule. This room isn't on it.]
     #set_global:hour_read_done:true
     No. It isn't. He shredded everyone but himself.
-    #exit_conversation
-    -> DONE
+    -> read_close
 + [Read me the defences.]
     #set_global:hour_read_done:true
     They're ours, turned round. We wrote the manuals. He read them more carefully than we did.
+    -> read_close
+
+// Final playtest: the thread closed ~3 ms after the last line, so the call
+// ends on a one-word reply (m01/m05 pattern) and the line can be read.
+= read_close
++ [Understood.]
     #exit_conversation
     -> DONE
 
@@ -607,8 +630,11 @@ He called me Ninety-nine. He says the door will open for you by name. He says ta
 #set_global:tesseract_call_done:true
 And he asked if we'd liked his notes.
 Netherton's on the ground at Helena. Tell me when you're ready to come in.
-#exit_conversation
--> DONE
+// Final playtest: the thread closed ~3 ms after the last line, so the call
+// ends on a one-word reply (m01/m05 pattern) and the line can be read.
++ [Understood.]
+    #exit_conversation
+    -> DONE
 
 // ================================================
 // SUPPORT HUB (unvoiced; newest topics first; S4 §7.1)

@@ -27,5 +27,8 @@ The gate's badge reader is older. You know what to do with old.
     I know. She's been listening since before you picked up.
 - Every lock is a promise somebody made years ago. Most of them forget they made it. Goodnight, 0x00.
 Agent HaX: He's right. I hate that he's right.
-#exit_conversation
--> DONE
+// Final playtest: the thread closed ~3 ms after the last line, so the call
+// ends on a one-word reply (m01/m05 pattern) and the line can be read.
++ [Noted.]
+    #exit_conversation
+    -> DONE

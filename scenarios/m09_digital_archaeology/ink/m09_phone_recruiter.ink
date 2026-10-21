@@ -176,8 +176,10 @@ Agent HaX: She's watching the deck. Pull her file and we get half her people. Sh
     #complete_task:answer_the_offer
     Agent HaX: She fired it from Sorensen's office. I'm on the door.
     Agent HaX: Her card for the tape room will be in that office.
-    #exit_conversation
-    -> DONE
+    // Final playtest: a one-word reply so the last line can be read.
+    ++ [On my way.]
+        #exit_conversation
+        -> DONE
 + [Pull her file anyway.]
     #set_global:recruiter_offer:double_crossed
     #set_global:deck_pulled:her_file
@@ -186,8 +188,10 @@ Agent HaX: She's watching the deck. Pull her file and we get half her people. Sh
     #complete_task:answer_the_offer
     Agent HaX: She fired it from Sorensen's office. I'm on the door.
     Agent HaX: Her card for the tape room will be in that office.
-    #exit_conversation
-    -> DONE
+    // Final playtest: a one-word reply so the last line can be read.
+    ++ [On my way.]
+        #exit_conversation
+        -> DONE
 
 = no_block
 Agent HaX: She only watched the counter. I can pull one before it wipes. Which?
@@ -212,8 +216,10 @@ Agent HaX: One of them. Now.
     #complete_task:answer_the_offer
     Agent HaX: She fired it from Sorensen's office. I'm on the door.
     Agent HaX: Her card for the tape room will be in that office.
-    #exit_conversation
-    -> DONE
+    // Final playtest: a one-word reply so the last line can be read.
+    ++ [On my way.]
+        #exit_conversation
+        -> DONE
 + [The Alpha tapes.]
     #set_global:recruiter_offer:refused
     #set_global:deck_pulled:alpha_tapes
@@ -221,8 +227,10 @@ Agent HaX: One of them. Now.
     #complete_task:answer_the_offer
     Agent HaX: She fired it from Sorensen's office. I'm on the door.
     Agent HaX: Her card for the tape room will be in that office.
-    #exit_conversation
-    -> DONE
+    // Final playtest: a one-word reply so the last line can be read.
+    ++ [On my way.]
+        #exit_conversation
+        -> DONE
 
 // ===========================================
 // RE-RING 2: closed between "yes" and the name (voiced)
