@@ -2,7 +2,7 @@
 
 ## 1. Status and how to use this
 
-Stage 2, draft 3. Author: stages 1–2 author (Opus). Draft 1 on 2026-10-21; round 1 and round 2 fixes the same day (logged in `../stage_1/story_arc.md` §15 and §16). User decision F11 (two lethal-force versions) is folded in.
+Stage 2, draft 4. Author: stages 1–2 author (Opus). Draft 1 on 2026-10-21; round 1–3 fixes the same day (logged in `../stage_1/story_arc.md` §15–17). User decision F11 (two lethal-force versions) is folded in.
 
 Companion to `../stage_1/story_arc.md` ("arc §n"), which has the structure, order and branches. This file has the people (voice, wants, secret, arc, sample lines) and the feel of the night. FINALE_ARC is cited "FA §n" and its thread rows "row n"; a bare "§n" is a section of this file.
 
@@ -92,7 +92,7 @@ Then: "Since your first day." He never claims to have read the player's file; in
 
 ### 2.3 The three exchanges
 
-One argument in three steps. Claims 2 and 3 open on the exchange just before (W1, N1): a landed point moves him to new ground, a miss lets him press, and he never concedes something that wasn't proved. Each exchange has four fixed slots (S2-12): the rebuttal; an **evidence decoy**, which cites something found tonight against the wrong claim; and two record slots, where a plain decoy fills any slot the player's record doesn't. The rebuttal is in slot 2, then 1, then 3. Rebuttal and evidence decoy are one sentence each and about the same length (N3), so a cold-start player's three buttons can't be told apart by length.
+One argument in three steps. Claims 2 and 3 open on the exchange just before (W1, N1, R3-11): one opener for a landed rebuttal, one for a landed record answer, one for a miss, so he never concedes something that wasn't proved. Each exchange has four fixed slots (S2-12): the rebuttal; an **evidence decoy**, which cites something found tonight against the wrong claim; and two record slots. A plain decoy fills the **first empty record slot** (R3-01). The order is checked after the buttons close up: on a cold start the three buttons are [decoy, **rebuttal**, decoy], [**rebuttal**, decoy, decoy], [decoy, decoy, **rebuttal**]. No position, and neither "longest" nor "shortest", wins more than once (§17 of the arc has the play-through). Decoys never answer the words he has just said; each answers an earlier or a different claim (R3-02).
 
 **Exchange 1. "The cost is acceptable."**
 
@@ -106,11 +106,11 @@ One argument in three steps. Claims 2 and 3 open on the exchange just before (W1
 | 3 | [Your Council's curve is on the desk outside. It doesn't stop after a month.] (`hardened`) | record | "*pause* No. It wouldn't." |
 | 3 | [My first day, I had a choice to hurt people. I didn't.] (the first-day condition, row 6; N18) | record | "One agent is an anecdote." Then, on its own line: "*pause* I'll grant you the anecdote." |
 | 4 | [I squeezed a bag for an hour to keep one man breathing. Your sheet has him as rounding.] (`m02_bed4_manually_stabilised`) | record | "*pause* I had him as rounding. He wasn't." |
-| 4 (fill) | [Hospitals can't patch in a week. Half of them can't patch in a year.] | plain decoy (speed) | "That's an argument about speed. I asked about a price." |
+| fill | [You'll be in a cell long before the first month of this is over.] | plain decoy (about him, not the price; R3-12) | "That's about me. I asked about a price." |
 
 **Exchange 2. "Services like yours hoard. Only a shock fixes it."**
 
-> (landed) Dr Adrian Tesseract: Then the number was wrong. The reason isn't.
+> (exchange 1 landed, rebuttal or record) Dr Adrian Tesseract: Then the price is wrong. The reason isn't.
 > (missed) Dr Adrian Tesseract: You've no answer to the price. Then hear why I'll pay it.
 > Dr Adrian Tesseract: Infusion pumps. A hundred and forty hospitals. Your service has known for three years and calls it an asset.
 > Dr Adrian Tesseract: Nobody fixes anything until it hurts everyone at once.
@@ -118,22 +118,25 @@ One argument in three steps. Claims 2 and 3 open on the exchange just before (W1
 | Slot | Answer | Kind | His response |
 |---|---|---|---|
 | 1 | [Only a shock? You never tried a letter. You wrote the notice and didn't send it.] | rebuttal (about "only"; N3) | a long silence, no cue. "No. I didn't send it." |
-| 2 | [The pump flaw's on your own schedule. You'll hand it to everyone at six.] | evidence decoy (the price again) | "I will. You've had that argument. I asked whether anything else works." |
+| 2 | [The pump flaw's on your own schedule. You'll hand it to everyone at six.] | evidence decoy (the price again) | "I will. That's the price again. I asked whether anything else works." |
 | 3 | [I told Albion's public the truth. They audited every site. Nobody died for it.] (`m04_disclosure_choice = full`) | record | "*pause* No. Nobody did." (on `m04_crew_lost`, his sting first) |
 | 3 | [I sent your notice. Tonight, from Helena.] (`m09_albion_notified`) | record | "Nine years late." Then: "*pause* Sooner than I managed." |
 | 4 | [I published St. Catherine's cover-up. Forty hospitals fixed their networks, and nobody had to die.] (`m02_exposed_hospital`) | record | "*pause* Done properly. Yes." |
-| 4 (fill) | [Eleven hundred people at the low end. You don't get to spend them.] | plain decoy (price; replaces "go to the press", N2) | "That's the price again. I've moved on to why." |
+| fill | [Eleven hundred people at the low end. You don't get to spend them.] | plain decoy (price; replaces "go to the press", N2) | "That's the price again. I've moved on to why." |
 
 **Exchange 3. "Someone has to make it hurt. Better me, with clean hands."**
 
-> (exchange 2 landed) Dr Adrian Tesseract: Then I'm late. Someone still has to do it.
+> (exchange 2 landed on the rebuttal) Dr Adrian Tesseract: Then I'm late. Someone still has to do it.
+> (exchange 2 landed on a record answer) Dr Adrian Tesseract: Then it can be done without bodies. Someone still has to make them do it.
 > (missed) Dr Adrian Tesseract: You can't tell me who hoards. Then let me tell you who pays.
 > Dr Adrian Tesseract: I taught a room of twenty, once. Let it hurt afterwards, not during.
-> Dr Adrian Tesseract: Somebody has to be the during. I'd rather it was someone who can do the sums.
+> Dr Adrian Tesseract: Somebody has to be the during. I'd rather it was me.
+
+(R3-02: "I'd rather it was me" sets up "Better me" for the rebuttal and leaves the decoys no hook.)
 
 | Slot | Answer | Kind | His response |
 |---|---|---|---|
-| 1 | [Your own systems lead corrected you, and you signed anyway. You're not fit to do the sums.] | evidence decoy (the price again) | "You've had that point. I asked who does the hurting." |
+| 1 | [Your schedule sends the pumps out first. That's a target list with a reason on top.] | evidence decoy (the price again) | "You've told me the cost. I asked who does the hurting." |
 | 2 | [HaX. You're on speaker.] (`m09_hax_confession_answer` is `same_in_your_place` or `afterwards`; the player offers her the floor, W33, N8) | record: HaX speaks (§3.1) | "Ninety-nine." He says only her number. |
 | 2 | [She learned that from you.] (`should_have_told`, after HaX's unasked line) | record | "*pause* Yes. By example." (N9) |
 | 3 | [Better you? You need my hand on that key so yours stays clean.] | rebuttal | "*pause* Better me, I said. And I brought you." (N10) |
@@ -141,9 +144,9 @@ One argument in three steps. Claims 2 and 3 open on the exchange just before (W1
 | 4 | [Your file says I press it. Watch me.] (`m09_reading_finished`) | record | "A reading is a guess with handwriting." Then: "*pause* I'd hoped mine were better." |
 | 4 | [I've read your Tomb Alpha notes. You told them to carry it. You never told them to hand it on.] (`m09_deck_pulled = alpha_tapes`; S2-11: the notes, since the tapes may never play) | record | "*pause* I was younger. I meant it then." |
 | 4 | [Voltage checked your sums tonight and stood down.] / [A man who warned them seven times opened a door for me tonight.] | record | "*pause* He always did check." / "*pause* Listening. It's slower." |
-| 4 (fill) | [You're not clean. You stole the database.] | plain decoy | "I'll answer for the theft. I asked who does the hurting." |
+| fill | [Nobody elected you to teach the world a lesson.] | plain decoy (the hoarding claim, not this one) | "Nobody elected the people who hoard, either. I asked who does the hurting." |
 
-Record answers take their slot by priority (first listed first); two record answers at most per exchange, and the fill decoy only where one is missing. Record answers placed under the wrong claim are decoys too (the full-disclosure answer under exchange 1: "True, and beside the point. I asked what it costs."), so a rich save has more decoys as well as more answers. On `m07_architect_echo_heard`, HaX has one line as he says "Let it hurt afterwards": "You heard him say that on your handset."
+Record answers take their slot by priority (first listed first); two record answers at most per exchange; the fill decoy takes the first empty record slot. Record answers placed under the wrong claim are decoys too (the full-disclosure answer under exchange 1: "True, and beside the point. I asked what it costs."), so a rich save has more decoys as well as more answers. On `m07_architect_echo_heard`, HaX has one line as he says "Let it hurt afterwards": "You heard him say that on your handset."
 
 ### 2.4 His other lines
 
@@ -185,7 +188,7 @@ Record answers take their slot by priority (first listed first); two record answ
 
 > Narrator: His hand goes to the console. One key, and the first city's list goes out anyway.
 
-**Justified lethal force** (the only line on screen):
+**Justified lethal force** (the button is a plain "[Fire.]", so it never shares words with the cold labels; the only line on screen):
 
 > Narrator: His hand is on the key. You fire. He falls against the console before it's pressed.
 
@@ -213,9 +216,9 @@ Then, if confirmed, one line: "He is still looking at you when you fire." Nothin
 
 `Agent HaX`. RP; short lines, fact then reason then the human bit; drier, never louder, under pressure; care shown by what she does (voice bible).
 
-**Wants.** Her agent out alive and her teacher stopped, in that order, and not to be the one who decides what happens to him. **Secret.** By m10 the name is out (m09's confession). What is left is "the rest" she promised in Helena, when this is over: the night he walked out seven years ago he asked her to come with him. She said no, and it took her until morning to say it; she never wrote it down. That night is why part of her still wants him to win the argument. She never says so; it shows in the gap after "Ninety-nine.", and in four words at 06:00.
+**Wants.** Her agent out alive and her teacher stopped, in that order, and not to be the one who decides what happens to him. **Secret.** By m10 the name is out (m09's confession). What is left is "the rest" she promised in Helena, when this is over: the night he walked out seven years ago he asked her to come with him. She said no, and it took her until morning to say it; she never wrote it down. That night is why part of her still wants him to win the argument. She never says so; it shows in the gap after "Ninety-nine.", and in two lines at 06:00.
 
-**Arc to the end.** In person at the forward post, then on the line all night. She knows the bunker's tricks because she knows his. The jam takes her for the gallery, the first room the player walks without her all season. At the core she answers him for the first time in seven years, refuses to decide for the player, argues with him herself on the speaker branch, and kills the feed if the player holds fire. In every success ending she has the last word before the card, and on every ending that reaches 06:00, except the cold one, she pays the promise.
+**Arc to the end.** In person at the forward post, then on the line all night. She knows the bunker's tricks because she knows his. The jam takes her for the gallery, the first room the player walks without her all season. At the core she answers him again, on the open line in front of her agent (she refused the name on his m09 call), refuses to decide for the player, argues with him herself on the speaker branch, and kills the feed if the player holds fire. In every success ending she has the last word before the card, and on every ending that reaches 06:00, except the cold one, she pays the promise.
 
 **The briefing: "How are you?"**, by `m09_hax_confession_answer` (S1-13):
 
@@ -234,6 +237,11 @@ Then, if confirmed, one line: "He is still looking at you when you fire." Nothin
 
 **Whodunit nudges** say what she can see and never name anyone (arc §8.2).
 
+**As flag 4 lands**, on a cold start or if the player never read the Albion papers (R3-03):
+
+> Agent HaX: He argued for the vendor nine years ago and lost.
+> Agent HaX: The notice is on here. He wrote it himself, and he never sent it.
+
 **After flag 2**, reading the schedule: "Infusion pumps, a hospital group. Dispatch software, a whole county. A water utility's controllers." Then: "That's enough of that. You've got the rest on screen."
 
 **Her last line before the jam:**
@@ -248,7 +256,7 @@ Then, if confirmed, one line: "He is still looking at you when you fire." Nothin
 
 When the player asks her what to do: "No. This one's yours. If I choose, I'll choose for the wrong reasons."
 
-**On speaker** (`same_in_your_place` or `afterwards`). The player offers her the floor ("[HaX. You're on speaker.]"; W33, N8). Personal, and short (W3). On `afterwards` she first says, to the player: "You gave me my line back in Helena. All right." Then:
+**On speaker** (`same_in_your_place` or `afterwards`). The player offers her the floor ("[HaX. You're on speaker.]"; W33, N8). Personal, and short (W3). On `afterwards` she first says, to the player: "All right. Let him hear it from me." (R3-16: the briefing has already said she is holding them to it.) Then:
 
 > Agent HaX: You said it to twenty of us in a room with no windows. I wrote it on the back of my hand.
 > Agent HaX: I've said it to every agent I've run since. I never once meant "so someone else can bleed".
@@ -268,17 +276,17 @@ When the player asks her what to do: "No. This one's yours. If I choose, I'll ch
 > Agent HaX: The night he left, he asked me to go with him.
 > Agent HaX: I said no. It took me till morning.
 
-It doesn't label itself (N4). It comes after the van, before her last word (arc §10.1). "Afterwards" is said at most twice in a run: his line in exchange 3, and her "It's afterwards." on arrest.
+It doesn't label itself (N4). Its place by ending is fixed in arc §10.1: on arrest, "It's afterwards." opens it and its last line is her last word; on surrender and justified lethal, it comes before her last word; on Scorched Earth, at the hearing. "Afterwards" is said at most twice in a run: his line in exchange 3, and her "It's afterwards." on arrest.
 
 **Her last word, by ending:**
 
 | Ending | Last word |
 |---|---|
-| Arrest | At the van window: "You'll want a lawyer, Adrian. Get a good one. I'm testifying." When it has gone: "It's afterwards." |
-| Surrender | Back from the van: "He asked who taught you. I said I did." |
+| Arrest | At the van window: "You'll want a lawyer, Adrian. Get a good one. I'm testifying." When it has gone, "It's afterwards." opens the rest, and the rest's last line is her last word: "I said no. It took me till morning." (R3-08) |
+| Surrender | The rest, then, last: "He asked who taught you. I said I did." |
 | Lethal, justified | On the line: "I was a second behind you. Log it. I'll sign under you." At 06:00: "There'll be a board. I'll be sitting next to you." |
 | Lethal, cold | Your designation, once, on the line. Later, a message: "I'll be at the board. I don't know what I'll say." |
-| Scorched Earth | At the hearing: "They'll ask me if I'd have stopped you. I'll tell them I wasn't asked." |
+| Scorched Earth | At the hearing, after the rest: "They'll ask me if I'd have stopped you. I'll tell them I wasn't asked." |
 | Join | A message, unanswered: the player's designation, nothing else. |
 
 ### 3.2 Director Netherton
@@ -323,7 +331,7 @@ Then one question, which she gets an answer to at 06:00: "When did you know?" Th
 
 **At the core, refused:** one word to him before she tries anyway: "Adrian." It is the only time anyone in the season says his first name to his face before the end.
 
-**At 06:00** (caught), in the van: "I liked you. I'd still have taken it off you at the lock." Knocked out and never named: she says nothing, and HaX has the line.
+**At 06:00** (caught), in the van: "I liked you. I'd still have pressed it." After a line accusation she asks her question here instead: "When did you know?" Knocked out and never named: she says nothing, and HaX has the line.
 
 ### 3.4 The rest of the raid team
 
@@ -342,7 +350,7 @@ Each reads as possibly WREN until a clue clears them, and as someone the player 
 **Officer Dev Malhotra.** 33, British-Indian, from Hounslow; quick and precise, defensive at the edges; eleven years in. **Wants:** to be trusted. **Secret:** the screening after m08 flagged him on a paperwork error, and he spent a week re-vetted; nobody on the team knows. It is why he asked to run the Helena line himself in m09, and why he runs it again tonight. **Arc:** the comms check; logging Arakawa off the net at 02:10; his badge on the door log.
 
 > Officer Dev Malhotra: Arakawa, you're off the net.
-> (asked about the log) Officer Dev Malhotra: It's my badge. It isn't my hand. I was talking to her at ten past. Ask her.
+> (asked about the log, through HaX's channel, R3-14) Officer Dev Malhotra: It's my badge. It isn't my hand. I was talking to her at ten past. Ask her.
 > (wrongly accused) Officer Dev Malhotra: Eleven years. Check the log again.
 
 **Officer Kenji Arakawa.** 41, Japanese-American, raised in Seattle, lives in Billings; a federal lateral hire, the team's US liaison; Pacific Northwest, soft and slow. **Wants:** home for his daughter's ninth birthday on Saturday. **Secret:** none worth hiding; that is his job in the story (the transfer from draft 1 is cut, W19). **Arc:** the closed road and the breaching case (his suspicion); the call at 02:10 (his alibi); a room ahead with Kowalczyk; the line as she goes; he looks away at her accusation.
@@ -356,7 +364,7 @@ Each reads as possibly WREN until a clue clears them, and as someone the player 
 **Agent 0x23 'Vector' and Agent 0x88 'Phantom'** (with `m08_completed` and not wronged), in their m08 voices. **Wants:** Vector, to be useful after being suspected; Phantom, to finish the hunt he started in m08. Their presence is the reward.
 
 > Agent 0x23 'Vector': Annex standard. They copied our lock and kept our master. Give me two seconds. One.
-> Agent 0x88 'Phantom': Since Portland I audit every sign-out. Two names signed for that breaching case tonight. I'd rather it had none.
+> Agent 0x88 'Phantom': Since Portland I audit every sign-out. That case went out with one more unit than its sheet lists. Two names signed for it. I'd rather it had none.
 > (Vector, wrongly accused) Agent 0x23 'Vector': You've done this to me once. Check it properly, then say sorry properly.
 > (Phantom, wrongly accused) Agent 0x88 'Phantom': My list had a name on it. It wasn't mine.
 
