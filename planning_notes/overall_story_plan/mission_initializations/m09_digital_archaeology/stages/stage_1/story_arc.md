@@ -350,7 +350,7 @@ The m02 shape: a face-to-face moment, a stance beat, a question hub so nothing i
 
 ## 8. Mid-mission choices
 
-Stage 3 owns the wording, the costs and the "does it matter" test; this is where each choice sits in the story and what it sets. Every player meets the first four. Variable names are working names; stage 4 fixes them. The exports keep FINALE_ARC §3.4's names, plus `sleeper_shortlist` if §14 change 6 is taken.
+Stage 3 owns the wording, the costs and the "does it matter" test; this is where each choice sits in the story and what it sets. Every player meets the first four. Variable names are working names; stage 4 fixes them. The exports keep FINALE_ARC §3.4's names, including `sleeper_shortlist` and `deck_pulled` (§14 changes 6 and 25, both accepted).
 
 | # | Choice | Who meets it | When | Options | Sets | Paid back |
 |---|---|---|---|---|---|---|
@@ -392,7 +392,7 @@ Light combat stays where stage 0 put it (Tran's guard, Sorensen if pushed). A fi
 
 The last image is Netherton capping his pen. The music goes to the closing track on the pen.
 
-**What m10 imports from m09** (FINALE_ARC §3.4): `nightshade_shown_file`, `sleeper_named`, `recruiter_offer`, `albion_notified`, `hax_confession_answer`, `recruiter_secret`, `reading_finished`, plus `m09_completed`; and, if §14 changes 6 and 25 are taken, `sleeper_shortlist` and `deck_pulled`: nine exports in all. `deck_pulled` replaces FINALE_ARC §13 item 25's working name `alpha_tapes_saved` (R2-S13: decided here, because `recruiter_offer` alone can't tell whether the Alpha tapes were saved).
+**What m10 imports from m09** (FINALE_ARC §3.4): `nightshade_shown_file`, `sleeper_named`, `recruiter_offer`, `albion_notified`, `hax_confession_answer`, `recruiter_secret`, `reading_finished`, `sleeper_shortlist` and `deck_pulled` (§14 changes 6 and 25): nine exports in all, plus `m09_completed`. `deck_pulled` replaces FINALE_ARC §13 item 25's working name `alpha_tapes_saved` (R2-S13: decided here, because `recruiter_offer` alone can't tell whether the Alpha tapes were saved).
 
 ## 10. Cold start ("previously on")
 
@@ -556,7 +556,7 @@ Not made: FINALE_ARC and stage 0 are shared, and an arc-keeper applies these lat
 20. **Row 37** (wording, R2-S12). "You've read his hand before" → "You've read him before. Sterling's drive." (style, not handwriting), and the line is HaX's, as row 97's is.
 21. **§6.1 flag 2 and the one-order line** (wording, R2-S12). The printed ledger is optional (the flag holds it, and Sorensen shreds it if free); "The Recruiter rings next" → she rings once flag 2 is in and the cage has been opened.
 22. **§6.1 header** (wording, R2-S12). "Flags 1–3 are submitted at the drop terminal" → flags 1–2; flag 3 and the identity scene in the tape room (with change 12).
-23. **§3.2: m10 imports `m09_sleeper_shortlist`** (wording, R2-S12). Tier 1, H; Tier 1 becomes 38. Add `m09_deck_pulled` if change 25 is taken.
+23. **§3.2: m10 imports `m09_sleeper_shortlist`** (wording, R2-S12). Tier 1, H; Tier 1 becomes 38. Also add `m09_deck_pulled` (change 25), in Tier 2.
 24. **A third `hax_confession_answer` value, `afterwards`** (new, N-17). The player throws her own line back at her; it defers the judgement, so it is neither blame nor absolution. §3.4 gains the value; m10 decides its core beat (suggestion: it reads as `same_in_your_place` for "Put me on speaker", and HaX's debrief line is "You said afterwards. I'm holding you to it.").
 25. **`deck_pulled` exported** (new, R2-S13, decided here). Values `her_file` / `alpha_tapes` / `none`. `recruiter_offer` can't say whether the Alpha tapes were saved (`taken` and `refused` both include "nothing"), so stage 3's use of them in m10 needs it. Replaces §13 item 25's `alpha_tapes_saved`. Nine m09 exports in all.
 26. **The night in UTC** (new, R2-S07). §1.5 day 11: the archive is the local night of day 11, early day 12 UTC; in-game lines say "on day ten" for WREN's update and "at the briefing" for the morning's events.

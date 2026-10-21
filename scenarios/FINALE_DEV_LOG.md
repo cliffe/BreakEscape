@@ -161,3 +161,8 @@ Rulings: adopt the fixes; the m10 author must play the argument as a cold-start 
 - Remaining inconsistencies 1–4 (stage 1 doc housekeeping) go to the stage 3 authors as their first task; 5 to stage 4; 6–7 to stage 7.
 
 ## Stage 3: moral choices (per mission)
+
+### m09 stage 3
+- Draft (`m09.../stage_3/moral_choices.md`): 14 choices A–N with dominance checks and locks; five dominated options and one unforced choice fixed; 35 proposed changes (§11). Housekeeping in stage 1 done.
+- Orchestrator rulings: accept the Recruiter's price = the whole deck (take → nothing comes off; refuse → HaX saves one tape; no "pull nothing"); accept new exports `cage_bin`, `legacy_files_saved` (m09 → 11 exports) and `m09_deck_pulled` to m10 tier 1; accept new canon (Tesseract reads the Initiative's books; Analysis's Critical Mass watch through the Albion flaw); Noor's cost (her job, her father's dialysis) stands. Proposed changes to stage 1–2, FINALE_ARC and m10 are applied after review, by the authors and the arc-keeper.
+- F12 for the user: a two-line (~15 s) voiced Tesseract lecture clip on the Alpha-tapes route; fallback a transcript.
