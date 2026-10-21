@@ -115,6 +115,14 @@ Fix round 1 for Phases 2-4 sent to grok with a one-line brief (P2-T, P3-T, P4-T 
 
 Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fixed (tables at the end of each file); bridges 1a 38, 1b 82, 2 15, 3 32, 4 30 (bridge-4 changed to click Done because Close now shows the debrief); Rails 722/0; slice validator 0. Two JS files Grok reported failing (`navigator` assignment) pass here: Grok's Node version. Uncommitted pending Claude review: Opus reviews the Phase 2-3 work (`build_log/REVIEW_grok_P2P3.md`), opus48 the Phase 4 work (`REVIEW_grok_P4.md`).
 
+### Grok's Phase 4 work, Claude review (opus48): 0 blocker, 0 major, 5 minor
+
+`build_log/REVIEW_grok_P4.md`. Every P4-T finding real and every fix correct; the reviewer re-ran the P4 suites (94/94), the slice validator and bridge-4 (30/30, game 2964), confirming a phone call records `reported` and a person call `walked_away`, while aborts record nothing. No m01-m08 path reaches the new code. Minors R-1 to R-5; decision on R-5: the hint ladder advances on any failed call (report, refusals, nothing granted), not only reports. Phase 4 done once the R-minors land with the Phase 2-3 fixes.
+
+### Grok's Phase 2-3 work, Claude review (Opus): 0 blocker, 4 major, 10 minor
+
+`build_log/REVIEW_grok_P2P3.md`. Phase 2 fixes correct. Phase 3: Grok's T3-1 fix relabelled Hampshire's CV ask as urgent so a tell was stored, so every Hampshire send shows a false "rushed" advisory and the replayed card flags a deadline that is not there (R-1); the replayed card contradicts itself on authentication (R-2); the authored phish `pay_today` comes from the real domain with every check passing (R-3); no bridge opens the replayed card (R-4). No m01-m08 change (validator identical on all eight before and after `84b96773`). Decisions: revert the urgency change and point the player-sent entry at Teague's spoofed send; give `pay_today` a look-alike domain and a header note as in 05's example; add bridge rows that open the replayed card; fix all minors (F3 shows the contract's default icon); check-bridge compares eval counts. Fix round 2 (opus48) takes these plus the Phase 4 R-minors.
+
 ## Questions for the user
 
 - **How to build the rest of Phase 4** (call preparation screen P4-C, call UI P4-E, its bridge and playtest). The orchestrator's brief for P4-C was stopped by a safety classifier.
@@ -237,6 +245,15 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 - **P5-C** (opus48): `validate_social/landing.rb` (the 07 N6 and N7 lints, the `expectedLink.brandId` cross-check, a punycode encoder, reuse of `HostLint` and `ctx.raw`, a confusables table, `wordings` must have one `match` and at least one `slips`), `social.landingPages` schema entry. Tests 24/24; validator glob 100/100; slice output byte-identical. Contract it set: defender strings at `strings["domainTier<N>Defender"]`; P5-D and the lab must use those keys and `slips: true`.
 
 - **P5-D** (opus48): builder overlay (steps 1-5, score panel, Attach and Attach anyway, Case file launch, concept cards, persistence through the writer), CSS. Test 13/13; social and validator glob 623/623. Contracts it set, accepted by the orchestrator: a page lists held facts in `pretext.facts` (fact ids); pages author `fields` and `extraSensitiveFields`; `{firstName}` comes from `social.people[].forms.first`. P5-G's fixture page and the lab must author these.
+
+- **P6-D** (Haiku): Tesseract's collection moved to `lab_games` (mission.json and three docs); the missions index titleizes it as "Lab Games", so no label code is needed. `db:seed` on deployed instances is the user's.
+- **P5-F** (opus48): a landing-state shape guard in `state-sync.js` `buildSharedSections` (closed key sets kept local, checked against the model's by test; no-op without landing globals). Test 8/8; every test that copies state-sync 89/89; R4 on m01 and m05 unchanged (games 2958, 2959).
+
+- **P5-E** (opus48): builder step 6, defender inspection (`landing-page-inspect.js`, pure; hot-spots, padlock decoy, show the link target, five-habits card), CSS. Tests 27/27; social and validator glob 645/645. Found: the lint (P5-C) checks defender strings at `domainTier<N>Defender` but the model reads `defDomainTier<N>`, `tellFormOrigin`, `tellHoverMismatch`, `padlockDecoy`. Decision: the model's names win; P5-G changes the lint and fixture to match.
+
+- **P6-C** (Sonnet): board `scope` and `plan` modes (brief, rules sheet, sort piles, question card, single-select picks; wrong answers explain and stay changeable; step and block globals set once). Tests 33/33 with the recon and defender tests. For P6-W: add `scope` and `plan` to the case-file `mode` schema. For P6-G: lints for `step` and `correct` counts. For P6-E (sent): `plan.objectivesPrompt`, `plan.measuresPrompt`, `scope.intro`.
+
+- **P6-B** (opus48): engagement report overlay (`minigames/engagement-report/`: pure `buildReportModel(social, globals, mailState)` reading mail metrics, the page's victim record and the call globals; findings pair a root cause with a control; the blame option explains itself; `se_report_state` ids only). Test 15/15. Decision: the call panel reads the lab's fixed global names (`pretext_<callId>_outcome`/`_lowest`, `pretext_call_done`, `<character>_reported`). Wiring and bridge wait for P6-W, P6-T0 and the lab scenario.
 
 ## Review rounds
 
