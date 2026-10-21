@@ -36,19 +36,24 @@
 # globalVars / data / value with !, ===, !== and && only (FA 13 B5). Where the
 # design needs an "or", there is one mapping or variant per arm.
 #
-# VM (story level only; nobody on this build opened the VM plan):
+# VM (story level):
 #   flag 1  the foothold on the security monitoring host   -> gate_terminal
 #   flag 2  the staging schedule                           -> release_console
-#   flag 3  out of the release service's container         -> sealed_hatch
-#   flag 4  the core host                                  -> core_host_terminal
-# m10 has three target machines plus an attack box (finale stage 8 answers).
-# VM-WIRE: m10_vms and m10_stations below carry PLACEHOLDER system_names,
-# fallback flags and the flag-to-machine split (flags 1 and 2 on the
-# monitoring host, 3 on the release host, 4 on the core host, by story
-# meaning only). The opus48 VM pass replaces the system_names, the flag order,
-# the attack box title / ip, mission.json's secgen_scenario and the four
-# guide ids/labUrls (m10_guide_flag1..4). Everything else derives from the
-# two tables, so only these lines change.
+#   flag 3  out of the release service's container          -> sealed_hatch
+#   flag 4  the core host                                   -> core_host_terminal
+# Three target machines plus an attack box. The monitoring host carries flags 1
+# and 2, the release host flag 3, the core host flag 4 (finale VM plan).
+# VM-WIRE: m10_vms and m10_stations below are wired to the SecGen draft
+# m10_full_disclosure.xml (not yet built). The three target system_names are
+# the draft's own (bunker_monitor, release_host, core_host); attack_vm is the
+# Kali box every launcher opens. Each station carries only its own flag, so its
+# flag is flag1 of its slice and the station-qualified targetFlags disambiguate
+# the two that sit on the monitoring host. The fallback flag strings are dev
+# placeholders; the built box generates the real values. F9 (confirm after the
+# build): the three hostnames, the flag values, that each station takes the
+# right flag, and that root login over SSH is refused on the release and core
+# hosts. The four guide labUrls come with the lab sheets (written last).
+# Everything else derives from the two tables, so only these lines change.
 # ============================================================================
 
 require 'base64'
@@ -62,16 +67,16 @@ j = ->(value) { value.to_json }
 # system_name => fallback flags (standalone/dev render only; Hacktivity mode
 # takes the real per-build flags from vm_context).
 m10_vms = {
-  'tg_monitoring_host' => ['flag{m10_placeholder_monitoring_foothold}', 'flag{m10_placeholder_staging_schedule}'],
-  'tg_release_host'    => ['flag{m10_placeholder_container_escape}'],
-  'tg_core_host'       => ['flag{m10_placeholder_core_host}']
+  'bunker_monitor' => ['flag{m10_monitoring_foothold}', 'flag{m10_staging_schedule}'],
+  'release_host'   => ['flag{m10_container_escape}'],
+  'core_host'      => ['flag{m10_core_host}']
 }
 # One flag per station (F-18): each station lists only its own flag, by slice.
 m10_stations = [
-  { id: 'gate_terminal',      flag: 1, vm: 'tg_monitoring_host', index: 0, hint: "That one goes in at the gate terminal, up at the forward post." },
-  { id: 'release_console',    flag: 2, vm: 'tg_monitoring_host', index: 1, hint: "That one goes in at the release console in the server hall." },
-  { id: 'sealed_hatch',       flag: 3, vm: 'tg_release_host',    index: 0, hint: "That one goes in at the sealed section's hatch, at the east end of the server hall." },
-  { id: 'core_host_terminal', flag: 4, vm: 'tg_core_host',       index: 0, hint: "That one goes in at the core host terminal." }
+  { id: 'gate_terminal',      flag: 1, vm: 'bunker_monitor', index: 0, hint: "That one goes in at the gate terminal, up at the forward post." },
+  { id: 'release_console',    flag: 2, vm: 'bunker_monitor', index: 1, hint: "That one goes in at the release console in the server hall." },
+  { id: 'sealed_hatch',       flag: 3, vm: 'release_host',   index: 0, hint: "That one goes in at the sealed section's hatch, at the east end of the server hall." },
+  { id: 'core_host_terminal', flag: 4, vm: 'core_host',      index: 0, hint: "That one goes in at the core host terminal." }
 ]
 # The attack box (HaX's racked field console). VM-WIRE: title and fallback ip.
 m10_attack_vm = 'attack_vm'

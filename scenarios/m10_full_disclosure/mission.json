@@ -3,7 +3,7 @@
   "description": "Tomb Gamma, a Cold War bunker under Montana. At six o'clock the man behind ENTROPY's plan releases every weakness SAFETYNET ever catalogued to every city at once. Raid the bunker with Task Force Null, take his systems one host at a time, find the sleeper on your own team, and decide at his console what happens to the database, and to him.",
   "difficulty_level": 3,
   "secgen_scenario": "break_escape/safetynet/m10_full_disclosure.xml",
-  "_vm_wire": "PLACEHOLDER: secgen_scenario path, the three target machines' system_names and the attack box are set by the opus48 VM pass (scenario.json.erb header, m10_vms / m10_stations). lab_sheet_url is added with the lab sheet, the last step.",
+  "_vm_wire": "VM-WIRE: secgen_scenario points at the SecGen draft (three targets — bunker_monitor, release_host, core_host — plus the Kali attack_vm). The box is not built yet; flag values are generated at build (F9: confirm the three hostnames, that each station takes the right flag, and that root login over SSH is refused on the release and core hosts). lab_sheet_url is added with the lab sheet, the last step.",
   "collection": "season_1",
   "ui_theme": "spy",
   "id": "m10_full_disclosure",
@@ -44,6 +44,16 @@
       "keywords": ["network monitoring", "segmentation", "lateral movement"]
     },
     {
+      "ka": "WAM",
+      "topic": "Server-Side Vulnerabilities and Mitigations",
+      "keywords": ["injection vulnerabilities", "command injection"]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Fundamental Concepts",
+      "keywords": ["PENETRATION TESTING - NETWORK MAPPING", "FINGERPRINTING", "NMAP"]
+    },
+    {
       "ka": "SS",
       "topic": "Categories of Vulnerabilities",
       "keywords": ["CVES AND CWES", "vulnerability disclosure"]
@@ -65,13 +75,17 @@
     }
   ],
   "secgen": {
-    "scenario": "m10_full_disclosure (three target machines and an attack box; built from the finale VM plan)",
+    "scenario": "m10_full_disclosure (Break Escape SAFETYNET: Mission 10 — Full Disclosure VMs)",
     "vulnerabilities": [
-      "Story level only at stage 9: a foothold on the security monitoring host, the staging schedule, out of the release service's container onto its host, the core host"
+      "Maltrail unauthenticated command injection in the monitoring platform's login handler (security monitoring host foothold)",
+      "Staging schedule held in the monitoring platform's threat-data store (monitoring host, second flag)",
+      "Privileged container (Docker) escape to the host beneath it (release host)",
+      "Chroot jail escape to the host beneath it (core host)",
+      "Network mapping and service fingerprinting across the bunker network"
     ],
     "flags": 4,
     "difficulty": "Advanced",
-    "integrationMethod": "Four flag stations, one flag each (gate terminal, release console, sealed section hatch, core host terminal); each flag's reward emits an event that sets its story global and opens the story doors"
+    "integrationMethod": "Three targets, four flag stations, one flag each: the gate terminal takes the monitoring host's foothold, the release console its staging schedule, the sealed section's hatch the release host, the core host terminal the core host; each flag's reward sets a story global that opens the bunker's doors"
   },
   "mechanics": {
     "new": [
