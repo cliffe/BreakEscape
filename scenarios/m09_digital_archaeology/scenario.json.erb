@@ -1,0 +1,2326 @@
+<%
+# ============================================================================
+# MISSION 9: DIGITAL ARCHAEOLOGY - SCENARIO FILE (stage 9 build, 2026-10-21)
+# ============================================================================
+# Break Escape - SAFETYNET: Licence to Hack, Season 1 finale (part one).
+#
+# Sources, highest authority first (CONTRACT.md §0): CONTRACT.md (ink names,
+# globals, fixed strings; §15 stage 8 changes), stage 6 lore_fragments.md
+# ("S6": every document string and code), stage 4 objectives_tasks.md ("S4":
+# tasks, globals, mappings, forced scenes), stage 5 room_layout.md ("S5":
+# rooms, NPC ids, objects), texts/ (A3, B9, C7). Placeholder art, maps and
+# voices: ASSET_LIST.md.
+#
+# VM-WIRE: the VM is not built yet. `catalogue_server` (flags 1-2) and
+# `tomb_beta_server` (flags 3-4) are the story-level system names from S4 §1;
+# `attack_vm` is the attack box both launchers open. The opus48 VM pass sets
+# the real SecGen system_names, IPs, flag fallbacks and targetFlags (S4
+# assumes each machine numbers its own flags from 1). Search this file for
+# VM-WIRE.
+#
+# ROOM LAYOUT (grid units, S5 §2; all ten connections single, no arrays):
+#
+#                       [SALVAGE CAGE 2x1]  password LEWISANDCLARK
+#                       [TAPE ROOM]         rfid tape_room_reader (card in the safe)
+#   [SORENSEN'S OFFICE]=[RESTRICTED STACKS]=[RESTRICTED CAGE]
+#    password (HaX)      rfid stacks_release   rfid stacks_card (her card)
+#                        (HaX on flag 1)
+#                       [READING ROOM]=====[OPEN STACKS 4x2]=====[CLOSET 1x1]
+#                       rfid reading_staff_door   (shutter, open)
+#                       [FRONT DESK]=======[LOADING DOCK] start
+#                        key dock_office_door (picks)
+#
+# CRITICAL PATH: dock -> reading room (flag 1) -> restricted stacks -> hatch
+# (clone her card, lift her print) -> cage -> plan cabinet (Nightshade's file)
+# -> flag 2 -> the Recruiter's call (outside the cage) -> office (HaX opens
+# it) -> safe (PIN, Kowalczyk's cracker or the rent ledger) -> tape room
+# (card) -> salvage keypad (decoded) -> flags 3-4 -> identity scene, the read,
+# Tesseract's call -> HaX "[Bring me in.]" -> debrief.
+# ============================================================================
+
+# --- Codes (S6 §3.2) ----------------------------------------------------------
+# Safe PIN: the rent ledger's header "Lease start: 06/02/16", digits as printed.
+# `requires` never reaches the client, so the safe declares "pinLength": 6
+# (minigame-starters.js reads scenarioData.pinLength; added at stage 9).
+safe_pin = "060216"
+office_code = "clerk-of-the-county"      # written nowhere; HaX opens the door
+hl_file_number = "HL2015-0477"
+salvage_code = "LEWISANDCLARK"           # Vigenere Decode of MSJMQAEGDZNVI, key BONEYARD
+salvage_tail = %q{\n\nSALVAGE CAGE ACCESS\nMSJMQAEGDZNVI}
+
+# --- Fixed document strings reused in more than one variant (S6 §1) ----------
+series_l = %q{SERIES L -- LEGACY PLACEMENTS, NOT SAFETYNET. M.S.\nName / placed / post / cost to date / yield / notes\nRuth Lindqvist -- 2009 -- deputy clerk, Cascade County -- $14,000 -- voter rolls -- Quiet. Reliable.\nGail Pettibone -- 2010 -- dispatcher, county 911 center -- $8,500 -- call routing -- Asks nothing.\nDolores Ortega -- 2012 -- billing director, regional hospital -- $31,500 -- records, three systems -- Wants out. Remind her of her son.\nHector Salas -- 2012 -- shift supervisor, water treatment plant -- $12,000 -- control room rota -- Steady.\nJune Akiyama -- 2013 -- IT contractor, state DMV -- $22,000 -- license data -- Careful. Too careful.\nTom Brekke -- 2014 -- school board, Bozeman -- $6,000 -- vendor contracts -- Enjoys it.\nVernon Teague -- 2014 -- lineman foreman, rural co-op -- $9,800 -- substation keys -- Drinks. Watch.\nLeah Brandvold -- 2015 -- paralegal, county attorney -- $11,200 -- case lists -- Bright. Bored.\nAmit Deshmukh -- 2016 -- zoning officer, Billings -- $9,200 -- substation permits -- Never asked for anything yet. Will be.\nSamuel Ocampo -- 2017 -- records officer, VA clinic -- $7,400 -- patient lists -- Grateful.\nDoreen Fitch -- 2018 -- court reporter, district court -- $5,600 -- transcripts -- Lonely.\nPenciled at the foot: The best work I have done. Nobody will ever know. That was the point.}
+
+ledger_block = %q{LIVE CAPTURE -- INITIATIVE LEDGER\nPlacements 23. Candidates 47. Legacy 11.\nWREN -- H&L -- placed 11 yrs -- LIVE -- Day 10: assigned TF Null, Montana operation. M.S.\nSource file: HL2015-0477}
+
+printed_page = %q{INSIDER THREAT INITIATIVE -- LEDGER, PRINT COPY. M.S.\nPlacements 23. Candidates 47. Legacy 11.\nCodename / source / placed / status / cost to date / notes\nWREN -- H&L -- 11 yrs -- LIVE -- $611,400, care fees, next of kin -- Day 10: assigned TF Null, Montana. Expected yield: one raid. M.S.\nLINNET -- direct -- not placed -- CANDIDATE -- $500, filing bonus -- Father, dialysis, Dearborn. Ready when asked.}
+
+reeves_para = %q{\nClipped inside: HANDLER CONTACT SHEET -- G. Reeves, St. Catherine's. Handler line, drop, schedule. Status: asset in custody. Handler: stand down.}
+
+reading_head = %q{0x00. Kept by M.S. Not to be summarised.\n\nVIRAL DYNAMICS\n}
+
+# --- Event-mapping builders ----------------------------------------------------
+# Mappings are built as Ruby hashes and emitted with JSON.generate, so the
+# long lists below can't drop a comma. Every condition is `&&`-only, written
+# globalVars.<name> (lesson 35).
+require 'json'
+def jgen(list)
+  list.map { |h| '            ' + JSON.generate(h) }.join(",\n")
+end
+
+# delay: the mapping's delayMs (waits for an open conversation or minigame,
+# and re-checks the condition); msg_delay: the text's own delay, used to space
+# two texts from one event 5 s apart (README "Space timed texts 4-6 s apart").
+def text_map(event, cond, msg, once: true, delay: nil, msg_delay: 0, set: nil, extra: {})
+  h = { "eventPattern" => event }
+  h["condition"] = cond if cond
+  h["onceOnly"] = true if once
+  h["delayMs"] = delay if delay
+  h["setGlobal"] = set if set
+  h["sendTimedMessage"] = { "delay" => msg_delay, "message" => msg }
+  h.merge(extra)
+end
+
+def call_map(event, cond, knot, delay: nil, voiced: false, forced: true, once: false, resume: false, cooldown0: false, comment: nil)
+  h = {}
+  h["_comment"] = comment if comment
+  h["eventPattern"] = event
+  h["condition"] = cond if cond
+  h["conversationMode"] = "phone-chat"
+  h["targetKnot"] = knot
+  h["resume"] = true if resume
+  h["disableClose"] = true if forced
+  h["voiced"] = true if voiced
+  h["delayMs"] = delay if delay
+  h["onceOnly"] = true if once
+  h["cooldown"] = 0 if cooldown0
+  h
+end
+
+# The three re-ring events for HaX's scenes (S4 §6 intro): leaving a room, a
+# reload, and closing her thread (the engine's "immediately", 500 ms).
+def hax_rerings(cond, knot, voiced:)
+  [
+    call_map("room_exited", cond, knot, voiced: voiced, cooldown0: true),
+    call_map("game_loaded", cond, knot, voiced: voiced, cooldown0: true),
+    call_map("conversation_closed:agent_0x99", cond, knot, voiced: voiced, cooldown0: true, delay: 500)
+  ]
+end
+
+# --- Agent HaX's mappings (agent_0x99, loading_dock: always loaded) ----------
+hax_maps = []
+
+# M1 (CONTRACT §5.5): the dock call after the briefing. Not forced, unvoiced.
+hax_maps << call_map("conversation_closed:briefing_cutscene", "!globalVars.flag1_submitted", "dock",
+                     delay: 2000, forced: false, once: true,
+                     comment: "M1: Beat 1.1 at the dock. start also diverts to dock until dock_heard, so the lines can't be missed (stage 8 m-14: only before flag 1).")
+
+# Act 1 tasks.
+hax_maps << { "eventPattern" => "room_entered:front_desk", "onceOnly" => true, "completeTask" => "get_inside" }
+hax_maps << { "eventPattern" => "room_entered:open_stacks", "onceOnly" => true, "completeTask" => "get_inside" }
+hax_maps << text_map("object_interacted", "data.objectType === 'vm-launcher' && data.roomId === 'reading_room'",
+                     "There's a field guide for the catalogue server if you want it. Ask me.",
+                     set: { "catalogue_guide_offered" => true }, extra: { "completeTask" => "set_up_drop_terminal" })
+
+# Door refusals (A3-01..03).
+hax_maps << text_map("door_unlock_failed:restricted_stacks", nil, "That reader's on the catalogue server. Get me in there and I'll open it.")
+hax_maps << text_map("door_unlock_failed:sorensen_office", nil, "Her keypad's off the card system. Leave it for now.")
+hax_maps << text_map("door_unlock_failed:tape_room", nil, "That reader wants a real card. Hers will be somewhere she trusts.")
+
+# Flag 1 (S4 §4 row 1): the stacks door opens on HaX's unlockDoor (F19),
+# with an in-session retry and a reload backstop; her flag1_read call rings
+# after the station closes.
+hax_maps << { "eventPattern" => "global_variable_changed:flag1_submitted", "condition" => "value === true", "onceOnly" => true, "unlockDoor" => "restricted_stacks" }
+hax_maps << { "eventPattern" => "door_unlock_attempt", "condition" => "data.connectedRoom === 'restricted_stacks' && globalVars.flag1_submitted", "unlockDoor" => "restricted_stacks", "cooldown" => 0 }
+hax_maps << { "eventPattern" => "game_loaded", "condition" => "globalVars.flag1_submitted && !globalVars.stacks_entered", "unlockDoor" => "restricted_stacks" }
+hax_maps << call_map("global_variable_changed:flag1_submitted", "value === true", "flag1_read", delay: 2500, forced: false, once: true)
+hax_maps << text_map("global_variable_changed:flag1_submitted", "value === true", "I've a field guide for the ledger, if you want it. Ask me.",
+                     delay: 15000, set: { "ledger_guide_offered" => true })
+hax_maps << text_map("conversation_closed:agent_0x99",
+                     "globalVars.flag1_submitted && globalVars.m01_maya_ko && !globalVars.old_coyote_told && !globalVars.old_coyote_ko",
+                     "Tran's just sent the guard to your door.", delay: 3000)
+hax_maps << { "eventPattern" => "room_entered:restricted_stacks", "onceOnly" => true, "setGlobal" => { "stacks_entered" => true } }
+
+# The cage gate (S4 §4 rows 2, 2b). cage_opened follows the door, by the card
+# or by HaX's unlock on Victoria's route, and is rebuilt on entry.
+hax_maps << { "eventPattern" => "door_unlocked", "condition" => "data.connectedRoom === 'restricted_cage' && !globalVars.cage_opened", "setGlobal" => { "cage_opened" => true } }
+hax_maps << { "eventPattern" => "door_unlocked_by_npc", "condition" => "data.roomId === 'restricted_cage' && !globalVars.cage_opened", "setGlobal" => { "cage_opened" => true } }
+hax_maps << { "eventPattern" => "room_entered:restricted_cage", "condition" => "!globalVars.cage_opened", "setGlobal" => { "cage_opened" => true } }
+hax_maps << { "eventPattern" => "global_variable_changed:maintenance_code_used", "condition" => "value === true", "unlockDoor" => "restricted_cage" }
+hax_maps << { "eventPattern" => "door_unlock_attempt", "condition" => "data.connectedRoom === 'restricted_cage' && globalVars.maintenance_code_used && !globalVars.cage_opened", "unlockDoor" => "restricted_cage", "cooldown" => 0 }
+hax_maps << { "eventPattern" => "game_loaded", "condition" => "globalVars.maintenance_code_used && !globalVars.cage_opened", "unlockDoor" => "restricted_cage" }
+hax_maps << { "eventPattern" => "global_variable_changed:hatch_talked", "condition" => "value === true", "onceOnly" => true, "completeTask" => "talk_at_the_hatch" }
+hax_maps << { "eventPattern" => "global_variable_changed:cage_opened", "condition" => "value === true", "onceOnly" => true,
+              "completeTask" => ["talk_at_the_hatch", "open_the_cage"], "unlockTask" => "stop_the_shredding" }
+
+# The purge's timed rules (S4 §4): the default bin, the legacy box's clock.
+hax_maps << { "eventPattern" => "global_variable_changed:cage_opened", "condition" => "value === true && !globalVars.bin_chosen", "onceOnly" => true, "setGlobal" => { "cage_bin" => "derek_file" } }
+hax_maps << text_map("global_variable_changed:cage_opened", "value === true && globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted",
+                     "The legacy files are under Noor's desk. Let her shred the rest.", set: { "legacy_files_saved" => true })
+hax_maps << text_map("global_variable_changed:cage_opened", "value === true && !globalVars.m05_found_pipeline_list",
+                     "That box behind her is the last of the night. The legacy files.")
+hax_maps << text_map("global_variable_changed:cage_opened", "value === true && !globalVars.m05_found_pipeline_list",
+                     "She gets to it when you pass her for the cabinet, or leave the cage. She won't stop for asking.", msg_delay: 5000)
+hax_maps << text_map("global_variable_changed:cage_opened", "value === true && globalVars.m05_found_pipeline_list && globalVars.m05_recruiter_deal_accepted",
+                     "That box behind her is the last of the night. The legacy files.")
+hax_maps << text_map("global_variable_changed:cage_opened", "value === true && globalVars.m05_found_pipeline_list && globalVars.m05_recruiter_deal_accepted",
+                     "She gets to it when you pass her for the cabinet, or leave the cage. She won't stop for asking.", msg_delay: 5000)
+hax_maps << { "eventPattern" => "global_variable_changed:nightshade_file_held", "condition" => "value === true && globalVars.cage_opened && !globalVars.legacy_clock_run", "onceOnly" => true, "setGlobal" => { "legacy_clock_run" => true } }
+hax_maps << { "eventPattern" => "room_exited", "condition" => "data.roomId === 'restricted_cage' && globalVars.cage_opened && !globalVars.legacy_clock_run", "setGlobal" => { "legacy_clock_run" => true } }
+hax_maps << text_map("room_entered:restricted_cage", nil, "That cabinet takes a print. She stamps everything.", delay: 2000)
+hax_maps << text_map("room_entered", "globalVars.flag2_submitted && !globalVars.hatch_talked", "She's still feeding it.")
+
+# Sorensen knocked down (S4 §4; S5 §10 item 21). Her fate keeps 'talked'.
+hax_maps << { "eventPattern" => "npc_ko:sorensen", "condition" => "globalVars.sorensen_fate !== 'talked'", "onceOnly" => true, "setGlobal" => { "sorensen_fate" => "ko" } }
+hax_maps << { "eventPattern" => "npc_ko:sorensen", "condition" => "!globalVars.legacy_clock_run", "onceOnly" => true, "setGlobal" => { "legacy_files_saved" => true } }
+hax_maps << text_map("npc_ko:sorensen", nil, "She's sixty-six.")
+hax_maps << text_map("npc_ko:sorensen", "globalVars.legacy_clock_run", "She's done with that box.", msg_delay: 5000)
+hax_maps << { "eventPattern" => "global_variable_changed:sorensen_fate", "condition" => "value === 'ko'", "onceOnly" => true, "completeTask" => "stop_the_shredding" }
+hax_maps << { "eventPattern" => "global_variable_changed:sorensen_fate", "condition" => "value === 'talked'", "onceOnly" => true, "completeTask" => "stop_the_shredding" }
+
+# Nightshade's file and the hand (S4 §3.2, stage 8 m-03: the task ships locked).
+hax_maps << { "eventPattern" => "global_variable_changed:nightshade_file_held", "condition" => "value === true", "onceOnly" => true, "unlockTask" => "match_the_hand" }
+hax_maps << text_map("global_variable_changed:nightshade_file_held", "value === true && !globalVars.flag3_submitted",
+                     "Hold his file next to the notebook scan in my case file. Then tell me what you see.")
+
+# Tran (S4 §3.2 brief-gated pair; S5 §3.4).
+hax_maps << { "eventPattern" => "npc_ko:jesse_tran", "condition" => "globalVars.tran_outcome !== 'talked'", "onceOnly" => true, "setGlobal" => { "tran_outcome" => "ko" } }
+hax_maps << { "eventPattern" => "global_variable_changed:tran_outcome", "condition" => "value !== 'left' && globalVars.flag1_submitted", "onceOnly" => true, "completeTask" => "stop_the_tape_wipe" }
+hax_maps << { "eventPattern" => "global_variable_changed:flag1_submitted", "condition" => "value === true && globalVars.tran_outcome !== 'left'", "onceOnly" => true, "completeTask" => "stop_the_tape_wipe" }
+
+# Flag 2 and the ledger (S4 §6.6, §5; S6 C-06).
+hax_maps << call_map("global_variable_changed:flag2_submitted", "value === true && !globalVars.ledger_read_heard", "ledger_read", delay: 2500, forced: false, once: true)
+hax_maps << call_map("room_entered", "globalVars.flag2_submitted && !globalVars.ledger_read_heard", "ledger_read", forced: false,
+                     comment: "Backstop: the ledger read on the next room entry (also fires on load).")
+hax_maps << { "eventPattern" => "global_variable_changed:flag2_submitted", "condition" => "value === true", "onceOnly" => true, "unlockTask" => "cross_reference_wren" }
+hax_maps << { "eventPattern" => "global_variable_changed:sleeper_shortlist", "condition" => "value === true", "onceOnly" => true, "completeTask" => "cross_reference_wren" }
+hax_maps << { "eventPattern" => "global_variable_changed:sleeper_named", "condition" => "value === true", "onceOnly" => true, "completeTask" => "cross_reference_wren" }
+hax_maps << { "eventPattern" => "global_variable_changed:printed_ledger_read", "condition" => "value === true && globalVars.flag2_submitted", "onceOnly" => true, "delayMs" => 500, "setGlobal" => { "ledger_page_seen" => true } }
+[["'arrested'", nil], ["'ko'", nil], ["'flagged'", nil], ["''", "globalVars.m02_completed && globalVars.m02_insider_asset_arrested"]].each do |fate, extra|
+  cond = "value === true && globalVars.flag2_submitted && globalVars.m02_reeves_fate === #{fate}"
+  cond += " && #{extra}" if extra
+  hax_maps << { "eventPattern" => "global_variable_changed:printed_ledger_read", "condition" => cond, "onceOnly" => true, "setGlobal" => { "reeves_sheet_read" => true } }
+end
+hax_maps << { "eventPattern" => "game_loaded", "setGlobal" => { "in_cage" => false } }
+
+# After the deck (S4 §4 row 5, §6.6): the office door, the afterwards call,
+# the invoice.
+hax_maps << { "eventPattern" => "global_variable_changed:deck_choice_made", "condition" => "value === true", "onceOnly" => true, "unlockDoor" => "sorensen_office" }
+hax_maps << { "eventPattern" => "door_unlock_attempt", "condition" => "data.connectedRoom === 'sorensen_office' && globalVars.deck_choice_made", "unlockDoor" => "sorensen_office", "cooldown" => 0 }
+hax_maps << { "eventPattern" => "game_loaded", "condition" => "globalVars.deck_choice_made && !globalVars.office_entered", "unlockDoor" => "sorensen_office" }
+hax_maps << call_map("global_variable_changed:deck_choice_made", "value === true && !globalVars.afterwards_heard", "afterwards", delay: 2500, forced: false, once: true)
+hax_maps << { "eventPattern" => "room_entered:sorensen_office", "onceOnly" => true, "setGlobal" => { "office_entered" => true } }
+hax_maps << text_map("room_entered:sorensen_office", "globalVars.sleeper_named", "Her cracker. Use it anyway.")
+hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.sleeper_named", "Safe's open. Kowalczyk will want to hear about her toy.")
+%w[taken double_crossed].each do |offer|
+  hax_maps << text_map("global_variable_changed:office_entered", "value === true && globalVars.recruiter_offer === '#{offer}'",
+                       "Sale. WREN. To Agent 0x00. Consideration, one deck. Booked.", delay: 20000, set: { "invoice_booked" => true })
+  hax_maps << text_map("global_variable_changed:office_entered", "value === true && globalVars.recruiter_offer === '#{offer}'",
+                       "She's booked you. You're in her ledger now.", delay: 20000, msg_delay: 5000)
+end
+hax_maps << { "eventPattern" => "room_entered:tape_room", "onceOnly" => true, "setGlobal" => { "tape_room_entered" => true } }
+
+# The salvage keypad and Tomb Beta's server (S4 §4 rows 7-8, §7.2).
+hax_maps << { "eventPattern" => "door_unlock_attempt", "condition" => "data.connectedRoom === 'salvage_cage'", "onceOnly" => true, "setGlobal" => { "salvage_keypad_seen" => true } }
+hax_maps << { "eventPattern" => "door_unlocked", "condition" => "data.connectedRoom === 'salvage_cage'", "onceOnly" => true, "setGlobal" => { "salvage_opened" => true } }
+hax_maps << text_map("global_variable_changed:salvage_keypad_seen", "value === true && !globalVars.m02_gary_protected",
+                     "If the cipher's new to you, there's an archive-code field guide. Ask me.", set: { "archive_code_guide_offered" => true })
+hax_maps << { "eventPattern" => "global_variable_changed:salvage_keypad_seen", "condition" => "value === true && globalVars.m02_gary_protected", "onceOnly" => true, "setGlobal" => { "archive_code_guide_offered" => true } }
+hax_maps << text_map("room_entered:salvage_cage", nil, "Field guide for his box is ready. Say the word.", set: { "tomb_beta_guide_offered" => true })
+
+# Flag 3 and the identity scene (S4 §4 row 9, §6.2). Voiced (F17/F20).
+hax_maps << call_map("global_variable_changed:flag3_submitted", "value === true && globalVars.nightshade_file_held && !globalVars.identity_scene_started", "identity_scene", delay: 2500, voiced: true)
+hax_maps << text_map("global_variable_changed:flag3_submitted", "value === true && !globalVars.nightshade_file_held", "Bring me his file. Then we say it.", delay: 2500)
+hax_maps << call_map("global_variable_changed:nightshade_file_held", "value === true && globalVars.flag3_submitted && !globalVars.identity_scene_started", "identity_scene", delay: 1500, voiced: true)
+hax_maps << call_map("room_entered", "globalVars.flag3_submitted && globalVars.nightshade_file_held && !globalVars.identity_scene_started", "identity_scene", voiced: true,
+                     comment: "First-ring backstop (S4 §5): room entry, which also fires on load.")
+hax_maps.concat(hax_rerings("globalVars.identity_scene_started && !globalVars.identity_scene_done", "identity_resume", voiced: true))
+hax_maps << call_map("global_variable_changed:flag4_submitted", "value === true && globalVars.identity_scene_started && !globalVars.identity_scene_done", "identity_resume", delay: 1500, voiced: true, cooldown0: true)
+
+# Flag 4 and the read (S4 §4 row 10, §6.3). Text, not voiced.
+hax_maps << call_map("global_variable_changed:flag4_submitted", "value === true && globalVars.identity_scene_done && !globalVars.hour_read_started", "hour_read", delay: 1500)
+hax_maps << call_map("global_variable_changed:identity_scene_done", "value === true && globalVars.flag4_submitted && !globalVars.hour_read_started", "hour_read", delay: 3000)
+hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true && !globalVars.identity_scene_started && !globalVars.nightshade_file_held",
+                     "His file first. Then the rest of his box.", once: false, delay: 1500)
+hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true && !globalVars.identity_scene_started && globalVars.nightshade_file_held && !globalVars.flag3_submitted",
+                     "Owner first. Get me flag three, then we read the rest of his box.", once: false, delay: 1500)
+hax_maps << call_map("room_entered", "globalVars.flag4_submitted && globalVars.identity_scene_done && !globalVars.hour_read_started", "hour_read",
+                     comment: "First-ring backstop (S4 §5).")
+hax_maps.concat(hax_rerings("globalVars.hour_read_started && !globalVars.hour_read_done && globalVars.schedule_read", "hour_read_resume", voiced: false))
+hax_maps.concat(hax_rerings("globalVars.hour_read_started && !globalVars.hour_read_done && !globalVars.schedule_read", "hour_read", voiced: false))
+
+# Tesseract's call (S4 §4 rows 11-12, §6.4). Voiced; restarts from the top.
+hax_maps << call_map("global_variable_changed:hour_read_done", "value === true && !globalVars.tesseract_call_started", "tesseract_call", delay: 4000, voiced: true)
+hax_maps << call_map("room_entered", "globalVars.hour_read_done && !globalVars.tesseract_call_started", "tesseract_call", voiced: true,
+                     comment: "First-ring backstop (S4 §5).")
+hax_maps.concat(hax_rerings("globalVars.tesseract_call_started && !globalVars.tesseract_call_done", "tesseract_call", voiced: true))
+hax_maps << { "eventPattern" => "global_variable_changed:tesseract_call_done", "condition" => "value === true", "onceOnly" => true, "completeTask" => "hear_the_mirror_job" }
+hax_maps << { "eventPattern" => "global_variable_changed:albion_notified", "condition" => "value === true", "onceOnly" => true, "completeTask" => "send_the_notice" }
+
+# Re-ring 3 of the Recruiter's call: HaX's deck_resume, once she has gone
+# (S4 §6.1). Voiced.
+hax_maps.concat(hax_rerings("globalVars.recruiter_gone && !globalVars.deck_choice_made", "deck_resume", voiced: true))
+
+# The Alpha annotations (stage 7 A-05): the sheet's onRead also fires on the
+# blank-stock read, so the export is set only when the readable variant shows.
+hax_maps << { "eventPattern" => "global_variable_changed:alpha_annotations_opened", "condition" => "value === true && globalVars.deck_pulled === 'alpha_tapes' && globalVars.identity_scene_done", "onceOnly" => true, "setGlobal" => { "alpha_annotations_read" => true } }
+
+# HaX's document remarks (texts/A_hax_texts.md §4). Each once.
+hax_maps << text_map("item_picked_up:notes", "data.itemId === 'lease_file' && !globalVars.m08_tomb_gamma_location_known", "There it is. Tomb Gamma has an address.")
+hax_maps << text_map("item_picked_up:notes", "data.itemId === 'lease_file' && globalVars.m08_tomb_gamma_location_known", "Same site Nightshade gave us. Now it has a lease.")
+%w[arrested ko].each do |v|
+  hax_maps << text_map("item_picked_up:notes", "data.itemId === 'lease_file' && globalVars.m03_victoria_fate === '#{v}'",
+                       "Big Sky was in Zero Day's sales ledger. Sterling's keys opened it after Cardiff.", msg_delay: 5000)
+end
+hax_maps << text_map("global_variable_changed:rent_ledger_read", "value === true && globalVars.m06_irina_recruited", "Irina's tip-off led us to this. Tell her it bought us the deed.")
+hax_maps << text_map("global_variable_changed:refit_ledger_read", "value === true && globalVars.m02_paid_ransom", "St. Catherine's money. It bought the blast door.")
+%w[protected exposed].each do |fate|
+  hax_maps << text_map("global_variable_changed:danny_sheet_read", "value === true && globalVars.m03_danny_fate === '#{fate}' && !globalVars.m03_danny_ko", "Danny's statement just became evidence.")
+end
+%w[recruited escaped].each do |vf|
+  hax_maps << text_map("global_variable_changed:danny_sheet_read", "value === true && globalVars.m03_danny_fate === 'protected' && globalVars.m03_victoria_fate === '#{vf}' && !globalVars.m03_danny_ko",
+                       "Danny asked again last week. I didn't have an answer. Tonight I might.", msg_delay: 5000)
+end
+hax_maps << text_map("global_variable_changed:danny_sheet_read", "value === true && globalVars.m03_danny_fate === 'left' && !globalVars.m03_danny_ko",
+                     "\"Loose end, resolved.\" I rang. He's alive, and still hiding from them. Good.")
+# The legacy box remark: once, and only while the Series L sheets show
+# (stage 9: the feed box's gone state and Noor's base box show other text).
+hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true && globalVars.legacy_files_saved && !globalVars.legacy_remark_sent",
+                     "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
+hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true && !globalVars.legacy_clock_run && !globalVars.legacy_files_saved && !globalVars.legacy_remark_sent",
+                     "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
+hax_maps << text_map("global_variable_changed:noor_box_read", "value === true && globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted && !globalVars.legacy_remark_sent",
+                     "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
+[["surrender", "There's your why. He was told to."], ["expose", "He wanted your headlines."],
+ ["fight", "\"Will not stop when they tell him to.\" He didn't."], ["recruit", "He believed this more than the man who wrote it. You turned him anyway."]].each do |v, msg|
+  hax_maps << text_map("item_picked_up:notes", "data.itemId === 'derek_file' && globalVars.m01_final_choice === '#{v}'", msg)
+end
+hax_maps << text_map("global_variable_changed:sleeper_shortlist", "value === true",
+                     "After Quantum Dynamics we checked everyone TalentStack ever touched. Harwick & Lowe shut before TalentStack opened.")
+hax_maps << text_map("global_variable_changed:sleeper_shortlist", "value === true && globalVars.raid_team_answer === 'quintero'",
+                     "You took her side at the briefing. Keep it. Don't take her word.", msg_delay: 5000)
+hax_maps << text_map("global_variable_changed:reeves_sheet_read", "value === true",
+                     "Reeves' handler, from the hospital. Told to stand down the day we took Reeves.")
+hax_maps << text_map("global_variable_changed:asset_tag_read", "value === true && !globalVars.flag3_submitted",
+                     "Strategy Directorate. One of ours signed this out and never handed it back. Find out who.")
+hax_maps << text_map("global_variable_changed:case_file_read", "value === true && globalVars.m06_monitoring_enabled",
+                     "Your tags, from HashChain. Someone's paying rent on a building in Montana that isn't this one.")
+
+# --- The Recruiter's mappings (recruiter, loading_dock) -----------------------
+# S4 §4 row 3 and §6.1. The two in_cage setters come first (one NPC's
+# mappings for an event run in list order, review N-R3-2).
+ring_c = "globalVars.ledger_read_heard && globalVars.cage_opened && !globalVars.in_cage && !globalVars.recruiter_call_started"
+rec_maps = []
+rec_maps << { "eventPattern" => "room_entered:restricted_cage", "setGlobal" => { "in_cage" => true }, "cooldown" => 0 }
+rec_maps << { "eventPattern" => "room_exited", "condition" => "data.roomId === 'restricted_cage'", "setGlobal" => { "in_cage" => false }, "cooldown" => 0 }
+rec_maps << call_map("room_exited", "data.roomId === 'restricted_cage' && #{ring_c}", "call", delay: 3000, voiced: true, once: true,
+                     comment: "Ring (a): walking out of the cage with the ledger read.")
+rec_maps << call_map("global_variable_changed:ledger_read_heard", "value === true && #{ring_c}", "call", delay: 3000, voiced: true, once: true,
+                     comment: "Ring (b): the ledger read closes with the cage already open and the player outside it.")
+rec_maps << call_map("room_entered", "data.roomId !== 'restricted_cage' && #{ring_c}", "call", voiced: true,
+                     comment: "Ring (c), backstop: any room entry outside the cage (also on load).")
+re1 = "globalVars.recruiter_call_started && !globalVars.recruiter_said_yes && !globalVars.recruiter_gone && !globalVars.deck_choice_made"
+re2 = "globalVars.recruiter_said_yes && !globalVars.sleeper_named && !globalVars.deck_choice_made"
+rec_maps << call_map("room_exited", "data.nextRoom !== 'restricted_cage' && #{re1}", "call", voiced: true, resume: true, cooldown0: true, comment: "Re-ring 1: before any answer.")
+rec_maps << call_map("game_loaded", re1, "call", voiced: true, resume: true, cooldown0: true)
+rec_maps << call_map("room_exited", "data.nextRoom !== 'restricted_cage' && #{re2}", "resume_name", voiced: true, cooldown0: true,
+                     comment: "Re-ring 2: between yes and the name (stage 8 m-05: unreachable in practice; kept as a guard).")
+rec_maps << call_map("game_loaded", re2, "resume_name", voiced: true, cooldown0: true)
+rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === 'double_crossed'",
+                     "You took the name and something off my deck. I said I'd know. Your team's plane is still in the air.")
+%>
+{
+  "scenario_brief": "Helena, Montana, after hours. Last night a courier carried the Architect's order to Mountain States Records & Retention: burn Helena before the Publication. SAFETYNET read it and let it go on. Tonight the archive's director is feeding a shredder box by box, and somewhere in her stacks is the paper ENTROPY can't afford to keep. Get in, open the archive's catalogue server and take what the shredder hasn't reached. Task Force Null follows you to Montana tonight, and Director Netherton wants a name he can say in court.",
+
+  "show_scenario_brief": "on_resume",
+
+  "startRoom": "loading_dock",
+
+<%# VM-WIRE: top-level flag map. Keys must be the real SecGen system_names;
+    the fallback arrays are standalone/dev placeholders only. Story order:
+    catalogue_server flag 1 = the catalogue (the hidden part), flag 2 = the
+    Initiative's ledger; tomb_beta_server flag 1 = the owner's credential,
+    flag 2 = full control (the mirror job). %>
+  "flags": {
+    "catalogue_server": <%= vm_flags_json('catalogue_server', ['flag{m09_catalogue_placeholder}', 'flag{m09_ledger_placeholder}']) %>,
+    "tomb_beta_server": <%= vm_flags_json('tomb_beta_server', ['flag{m09_owner_placeholder}', 'flag{m09_control_placeholder}']) %>
+  },
+
+  "narrator": {
+    "id": "narrator",
+    "skipTextValidation": true,
+    "voice": {
+      "name": "Algenib",
+      "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A records archive burning its own past at night, and the people who were filed in it.",
+      "language": "en-GB"
+    }
+  },
+
+<%# Music (S4 §10). 'victory' carries the closing card and credits
+    (texts/C_texts_and_credits.md §2-§3, the F14 format) and fires on the
+    debrief's last line (report_done), after report_to_netherton completes. %>
+  "music": {
+    "events": [
+      { "trigger": "game_loaded", "condition": "!globalVars.briefing_played", "playlist": "cutscene", "fade": false },
+      { "trigger": "game_loaded", "condition": "globalVars.briefing_played && !globalVars.start_debrief", "playlist": "noir", "fade": false },
+      { "trigger": "game_loaded", "condition": "globalVars.start_debrief && !globalVars.report_done", "playlist": "cutscene", "fade": false },
+      { "trigger": "conversation_closed:briefing_cutscene", "playlist": "noir", "fade": true },
+      { "trigger": "npc_hostile_state_changed", "condition": "isHostile === true", "playlist": "threat", "fade": true },
+      { "trigger": "all_hostiles_ko", "playlist": "noir", "fade": true },
+      { "trigger": "global_variable_changed:identity_scene_started", "condition": "value === true", "playlist": "cutscene", "fade": true },
+      { "trigger": "global_variable_changed:identity_scene_done", "condition": "value === true", "playlist": "noir", "fade": true },
+      { "trigger": "global_variable_changed:tesseract_call_started", "condition": "value === true", "playlist": "silence", "fade": true },
+      { "trigger": "global_variable_changed:tesseract_call_done", "condition": "value === true", "playlist": "noir", "fade": true },
+      { "trigger": "global_variable_changed:start_debrief", "condition": "value === true", "playlist": "cutscene", "fade": true },
+      {
+        "trigger": "global_variable_changed:report_done",
+        "condition": "value === true",
+        "playlist": "victory",
+        "autoStop": true,
+        "disableClose": true,
+        "fade": true,
+        "closingCard": {
+          "lines": [
+            { "text": "The Architect: Dr Adrian Tesseract. Proved." },
+            { "text": "The Publication: 06:00 UTC, day 13." },
+            { "text": "WREN: Halina Kowalczyk. She doesn't know you know.", "condition": "globalVars.recruiter_offer === 'taken'" },
+            { "text": "WREN: Halina Kowalczyk. She walked off the apron at Helena.", "condition": "globalVars.recruiter_offer === 'double_crossed'" },
+            { "text": "WREN: one of two names on a dead firm's placement record.", "condition": "!globalVars.sleeper_named && globalVars.sleeper_shortlist" },
+            { "text": "WREN: one of four. Going into Montana with you.", "condition": "!globalVars.sleeper_named && !globalVars.sleeper_shortlist" },
+            { "text": "His vendor notice: sent tonight.", "condition": "globalVars.albion_notified" },
+            { "text": "His vendor notice: still on his box.", "condition": "!globalVars.albion_notified" },
+            { "text": "The Montana order: signed." }
+          ]
+        },
+        "credits": [
+          { "text": "MISSION COMPLETE", "style": "title" },
+          { "text": "DIGITAL ARCHAEOLOGY", "style": "subtitle" },
+          { "section": "IN THIS OPERATION", "people": [
+            { "name": "AGENT HAX", "clauses": [
+              { "text": "Told she should have said it. She agreed.", "condition": "globalVars.hax_confession_answer === 'should_have_told'" },
+              { "text": "Given her own line back.", "condition": "globalVars.hax_confession_answer === 'afterwards'" },
+              { "text": "Thanked, once." }
+            ] },
+            { "name": "DIRECTOR NETHERTON", "clauses": [
+              { "text": "Read the memo on the flight. Signed for Tesseract too.", "condition": "globalVars.memo_stance === 'yes_albion'" },
+              { "text": "Said the name. Signed the Montana order." }
+            ] },
+            { "name": "HALINA KOWALCZYK", "clauses": [
+              { "text": "Took a phone call on the apron and walked away.", "condition": "globalVars.recruiter_offer === 'double_crossed'" },
+              { "text": "Thanked for her cracker, to her face.", "condition": "globalVars.kowalczyk_reply === 'warm'" },
+              { "text": "Asked after her cracker. Got a shrug." }
+            ] },
+            { "name": "MARGARET SORENSEN", "clauses": [
+              { "text": "Wrote down every box she destroyed.", "condition": "globalVars.sorensen_fate === 'talked'" },
+              { "text": "Stopped at the shredder. Asked for a lawyer.", "condition": "globalVars.sorensen_fate === 'ko'" },
+              { "text": "Fed the shredder all night." }
+            ] },
+            { "name": "NOOR HADDAD", "clauses": [
+              { "text": "Knocked down at her own desk.", "condition": "globalVars.noor_ko" },
+              { "text": "A witness in Great Falls. Not allowed to ring her father.", "condition": "globalVars.noor_told" },
+              { "text": "Warned in the autumn. Held the last box back.", "condition": "globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted" },
+              { "text": "Went home and rang her father. Still on a list." }
+            ] },
+            { "name": "CODY OLD COYOTE", "clauses": [
+              { "text": "Knocked down on his round.", "condition": "globalVars.old_coyote_ko" },
+              { "text": "Sat out the night in his truck.", "condition": "globalVars.old_coyote_told" },
+              { "text": "Walked the fence. Saw nothing." }
+            ] },
+            { "name": "JESSE TRAN", "clauses": [
+              { "text": "Walked out and made a phone call.", "condition": "globalVars.tran_outcome === 'talked'" },
+              { "text": "In custody. Asked for a phone charger.", "condition": "globalVars.tran_outcome === 'ko'" },
+              { "text": "Wiped the tape side. Nobody stopped him." }
+            ] },
+            { "name": "THE RECRUITER", "clauses": [
+              { "text": "Sold you a name and booked the sale.", "condition": "globalVars.recruiter_offer === 'taken'" },
+              { "text": "Sold you a name, then warned it.", "condition": "globalVars.recruiter_offer === 'double_crossed'" },
+              { "text": "Wiped her own file. You kept a copy.", "condition": "globalVars.recruiter_offer === 'named'" },
+              { "text": "Kept her name. You kept his tapes." }
+            ] }
+          ] },
+          { "section": "WHAT THE PURGE TOOK", "lines": [
+            { "text": "Saved from the bins: Derek Lawson's file.", "condition": "globalVars.cage_bin === 'derek_file'" },
+            { "text": "Saved from the bins: the Social Fabric letters. Teresa Villanueva was warned.", "condition": "globalVars.cage_bin === 'letters'" },
+            { "text": "Saved from the bins: what Nightshade cleared from his locker.", "condition": "globalVars.cage_bin === 'nightshade_copy'" },
+            { "text": "The deck: wiped, all of it.", "condition": "globalVars.deck_pulled === 'none'" },
+            { "text": "The deck: her file pulled, the rest wiped.", "condition": "globalVars.deck_pulled === 'her_file'" },
+            { "text": "The deck: Tomb Alpha's tapes pulled, the rest wiped.", "condition": "globalVars.deck_pulled === 'alpha_tapes'" },
+            { "text": "The legacy placement files: kept from the shredder.", "condition": "globalVars.legacy_files_saved" },
+            { "text": "The tape side: saved.", "condition": "globalVars.tran_outcome !== 'left'" }
+          ] },
+          { "section": "ELSEWHERE", "lines": [
+            { "text": "Albion's controller: the vendor has ninety days for a fix, and four hundred sites to reach. The Critical Mass watch went dark.", "condition": "globalVars.albion_notified" },
+            { "text": "Albion's controller: four hundred sites, still open. The watch stays on.", "condition": "!globalVars.albion_notified" },
+            { "text": "NIGHTSHADE: Sent his own file. He knows what his teacher wrote.", "condition": "globalVars.m08_nightshade_triple_agent && globalVars.nightshade_shown_file" },
+            { "text": "NIGHTSHADE: Kept in play, and in the dark.", "condition": "globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_shown_file" }
+          ] }
+        ]
+      }
+    ]
+  },
+
+<%# Start kit (S5 §3.1, §5): every tool from m01-m08, plus Kowalczyk's PIN
+    cracker, which the briefing narrates her handing over (S4 P15: a
+    #give_item in the briefing would give from the briefing's host). The phone
+    lists HaX only: the Recruiter and the three branch callers ring by their
+    mappings (lesson 36, stage 8 m-12). %>
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Your Phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": ["agent_0x99"],
+      "observations": "Your secure phone. HaX is on the line from wheels down."
+    },
+    {
+      "type": "lockpick",
+      "name": "Lock Pick Kit",
+      "takeable": true,
+      "observations": "SAFETYNET field pick kit.",
+      "puzzle_graph_role": "tool",
+      "puzzle_graph_unlocks": ["front_desk", "enrolment_crate"]
+    },
+    {
+      "type": "rfid_cloner",
+      "name": "RFID Cloner",
+      "takeable": true,
+      "observations": "Concealed RFID cloning device. Stand close to a keycard to copy it.",
+      "puzzle_graph_role": "tool",
+      "puzzle_graph_unlocks": ["restricted_cage"],
+      "puzzle_graph_note": "Clones Sorensen's stacks card across the hatch counter (and Noor's, on route A). On Victoria's route HaX's maintenance code opens the gate instead."
+    },
+    {
+      "type": "fingerprint_kit",
+      "name": "Fingerprint Kit",
+      "takeable": true,
+      "observations": "Powder, brush, lifting tape.",
+      "puzzle_graph_role": "tool"
+    },
+    {
+      "type": "workstation",
+      "id": "cyberchef_workstation",
+      "name": "CyberChef Workstation",
+      "takeable": true,
+      "observations": "A laptop with CyberChef loaded. Paste anything encoded or enciphered here.",
+      "puzzle_graph_role": "tool",
+      "puzzle_graph_note": "Vigenere Decode: the salvage code (key from the tape room's shelf marks) and the optional Alpha annotations"
+    },
+    {
+      "type": "pin-cracker",
+      "id": "kowalczyk_pin_cracker",
+      "name": "PIN Cracker (Kowalczyk's)",
+      "takeable": true,
+      "observations": "Halina Kowalczyk's own PIN cracker, bench-built and never through stores. It clamps over a keypad and reads each wrong try back to you: how many digits are right and in place, how many are right but elsewhere.",
+      "puzzle_graph_role": "tool",
+      "puzzle_graph_unlocks": ["director_safe"]
+    }
+  ],
+
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "male_hacker_hood_down_v2",
+    "spriteTalk": "assets/characters/male_hacker_hood_down_talk.png",
+    "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 }
+  },
+
+<%# Objectives (S4 §13 with stage 8: match_the_hand ships locked, unlocked by
+    HaX on nightshade_file_held; the last task reads "Tell HaX to bring you in
+    to Netherton"). Reveal tasks ship locked and are opened by #unlock_task in
+    the scene that reveals them. concludeRequires holds the four flag tasks
+    only. VM-WIRE: the four targetFlags use the story-level system names. %>
+  "objectives": [
+    {
+      "aimId": "get_in",
+      "title": "Get In And Set Up The Drop Terminal",
+      "description": "Mountain States Records & Retention, after hours. Get inside, set the field laptop up in the reading room and open the archive's catalogue server. The shredder has been running since before you landed.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "get_inside", "title": "Get inside the archive", "type": "custom", "status": "active" },
+        { "taskId": "meet_the_clerk", "title": "Talk to the clerk at the front desk", "type": "npc_conversation", "targetNPC": "noor_haddad", "status": "active", "optional": true },
+        { "taskId": "set_up_drop_terminal", "title": "Set up the field laptop in the reading room", "type": "custom", "status": "active" },
+        { "taskId": "submit_catalogue_flag", "title": "Get into the catalogue server and submit the flag", "type": "submit_flags",
+          "targetFlags": ["drop_terminal:catalogue_server-flag1"], "targetCount": 1, "currentCount": 0, "showProgress": true, "status": "active",
+          "puzzle_graph_unlocks": "restricted_stacks" }
+      ]
+    },
+    {
+      "aimId": "restricted_series",
+      "title": "Find The Restricted Series Before It Burns",
+      "description": "The catalogue puts Series R behind the cage mesh in the restricted stacks, where the director is feeding a shredder from the clerk's trolleys. Get past her and into the cage before it's all ash.",
+      "status": "locked",
+      "order": 1,
+      "unlockCondition": { "aimCompleted": "get_in" },
+      "tasks": [
+        { "taskId": "enter_restricted_stacks", "title": "Get into the restricted stacks", "type": "enter_room", "targetRoom": "restricted_stacks", "status": "active" },
+        { "taskId": "talk_at_the_hatch", "title": "Talk to Sorensen at the cage hatch", "type": "custom", "status": "active" },
+        { "taskId": "open_the_cage", "title": "Get through the cage gate", "type": "custom", "status": "active" },
+        { "taskId": "open_plan_cabinet", "title": "Open the locked plan cabinet at the back of the cage", "type": "unlock_object", "targetObject": "plan_cabinet", "status": "active" },
+        { "taskId": "match_the_hand", "title": "Compare the hand on Nightshade's file with the notebook scan in HaX's case file", "type": "custom", "status": "locked" },
+        { "taskId": "stop_the_shredding", "title": "Stop Sorensen's shredding", "type": "custom", "status": "locked", "optional": true },
+        { "taskId": "stop_the_tape_wipe", "title": "Stop the tape wipe in the server closet", "type": "custom", "status": "active", "optional": true }
+      ]
+    },
+    {
+      "aimId": "read_the_ledger",
+      "title": "Read The Initiative's Ledger",
+      "description": "The catalogue server keeps the Insider Threat Initiative's ledger live: placements, candidates, and an older legacy section. Pull it, and see who's still on their books.",
+      "status": "locked",
+      "order": 2,
+      "unlockCondition": { "aimCompleted": "get_in" },
+      "tasks": [
+        { "taskId": "submit_ledger_flag", "title": "Pull the Initiative's ledger off the catalogue server and submit it", "type": "submit_flags",
+          "targetFlags": ["drop_terminal:catalogue_server-flag2"], "targetCount": 1, "currentCount": 0, "showProgress": true, "status": "active" },
+        { "taskId": "answer_the_offer", "title": "Answer the Recruiter's offer", "type": "custom", "status": "locked", "puzzle_graph_unlocks": "sorensen_office" },
+        { "taskId": "cross_reference_wren", "title": "Find WREN's file among Harwick & Lowe's boxes in the open stacks", "type": "custom", "status": "locked", "optional": true }
+      ]
+    },
+    {
+      "aimId": "search_the_office",
+      "title": "Search The Director's Office",
+      "description": "The Recruiter fired the wipe from Sorensen's office, and HaX has the door. Search it. Whatever the night is protecting, she kept the keys to it.",
+      "status": "locked",
+      "order": 3,
+      "unlockCondition": { "aimCompleted": "read_the_ledger" },
+      "tasks": [
+        { "taskId": "enter_office", "title": "Get into Sorensen's office", "type": "enter_room", "targetRoom": "sorensen_office", "status": "active" },
+        { "taskId": "open_the_safe", "title": "Open Sorensen's safe", "type": "unlock_object", "targetObject": "director_safe", "status": "active" },
+        { "taskId": "take_the_reading", "title": "Take the file Sorensen quoted from", "type": "collect_items", "targetItemIds": ["the_reading"], "targetCount": 1, "showProgress": true, "status": "active" },
+        { "taskId": "take_tape_room_card", "title": "Take the tape room key card", "type": "collect_items", "targetItemIds": ["tape_room_keycard"], "targetCount": 1, "showProgress": true, "status": "active" },
+        { "taskId": "find_the_deed", "title": "Find Tomb Gamma's deed and construction file", "type": "collect_items", "targetItemIds": ["lease_file"], "targetCount": 1, "showProgress": true, "status": "active" }
+      ]
+    },
+    {
+      "aimId": "take_tomb_beta",
+      "title": "Take Tomb Beta's Server",
+      "description": "Tomb Beta's last server is still running somewhere in the tape store, off the destruction schedule. Get to it, take it, and read what it's mirroring.",
+      "status": "locked",
+      "order": 4,
+      "unlockCondition": { "aimCompleted": "read_the_ledger" },
+      "tasks": [
+        { "taskId": "enter_tape_room", "title": "Get into the tape room", "type": "enter_room", "targetRoom": "tape_room", "status": "active" },
+        { "taskId": "open_salvage_cage", "title": "Get through the salvage cage keypad", "type": "unlock_room", "targetRoom": "salvage_cage", "status": "active" },
+        { "taskId": "submit_owner_flag", "title": "Find out who owns Tomb Beta's server and submit it", "type": "submit_flags",
+          "targetFlags": ["tomb_beta_station:tomb_beta_server-flag1"], "targetCount": 1, "currentCount": 0, "showProgress": true, "status": "active" },
+        { "taskId": "hear_the_name", "title": "Take the call with HaX and Netherton", "type": "custom", "status": "locked" },
+        { "taskId": "submit_control_flag", "title": "Take full control of Tomb Beta's server and submit it", "type": "submit_flags",
+          "targetFlags": ["tomb_beta_station:tomb_beta_server-flag2"], "targetCount": 1, "currentCount": 0, "showProgress": true, "status": "active" },
+        { "taskId": "hear_the_mirror_job", "title": "Hear what the server is mirroring to Tomb Gamma", "type": "custom", "status": "locked" },
+        { "taskId": "send_the_notice", "title": "Decide whether to send his vendor notice", "type": "custom", "status": "locked", "optional": true }
+      ]
+    },
+    {
+      "aimId": "report_in",
+      "title": "Report To Netherton",
+      "description": "Task Force Null is on the ground at Helena's airfield. When you're done, tell HaX to bring you in.",
+      "status": "locked",
+      "order": 5,
+      "unlockCondition": { "aimCompleted": "take_tomb_beta" },
+      "missionConclusion": true,
+      "concludeRequires": { "tasksCompleted": ["submit_catalogue_flag", "submit_ledger_flag", "submit_owner_flag", "submit_control_flag"] },
+      "conclusionScreen": { "type": "bond_visualiser" },
+      "tasks": [
+        { "taskId": "report_to_netherton", "title": "Tell HaX to bring you in to Netherton", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+
+<%# =========================================================================
+    LOADING DOCK (start; S5 §3.1). Every phone contact and every hidden
+    person NPC lives here, so their mappings hear every event from the first
+    frame (lesson 43). Order matters for speaker prefixes: a prefix resolves to
+    the first registered NPC with that displayName, so the dedicated speakers
+    (director_netherton, hax_voice after agent_0x99) come before the cutscene
+    hosts that borrow their names.
+    PLACEHOLDER map: room_aes_dock (ASSET_LIST §2). %>
+    "loading_dock": {
+      "type": "room_aes_dock",
+      "door_sign": "Mountain States Records & Retention -- Deliveries",
+      "connections": {
+        "north": "open_stacks",
+        "west": "front_desk"
+      },
+      "npcs": [
+        {
+          "_comment": "Agent HaX: the handler, phone. Home knot start (diverts to support_hub; guards for pending scenes, CONTRACT §2.1). Hosts the dock, flag1_read, ledger_read, afterwards (text), the identity scene, deck_resume and Tesseract's call (voiced), the hour read (text). Carries the bridges, door unlocks, task completions, the purge rules and every timed text.",
+          "id": "agent_0x99",
+          "displayName": "Agent HaX",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "storyPath": "scenarios/m09_digital_archaeology/ink/m09_phone_agent0x99.json",
+          "voice": {
+            "name": "Aoede",
+            "style": "Intelligence handler on a secure line, the night her teacher gets a name. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "itemsHeld": [
+            {
+              "_comment": "PLACEHOLDER labUrl: lab sheets are written last (ASSET_LIST §7).",
+              "type": "lab-workstation",
+              "id": "m09_catalogue_field_guide",
+              "name": "SAFETYNET Field Guide: The Catalogue Server",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology/field-guide-catalogue/"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "m09_ledger_field_guide",
+              "name": "SAFETYNET Field Guide: The Ledger",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology/field-guide-ledger/"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "m09_tomb_beta_field_guide",
+              "name": "SAFETYNET Field Guide: Tomb Beta's Server",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology/field-guide-tomb-beta/"
+            },
+            {
+              "type": "lab-workstation",
+              "id": "m09_archive_code_guide",
+              "name": "SAFETYNET Field Guide: Archive Codes",
+              "takeable": true,
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology/field-guide-archive-codes/"
+            },
+            {
+              "_comment": "The coded salvage line (S6 §1.10, §2.2). Given at the end of flag1_read (#give_item:notes:catalogue_salvage_line). Fixed text, no variants (C-07).",
+              "type": "notes",
+              "id": "catalogue_salvage_line",
+              "name": "Catalogue: salvage cage",
+              "takeable": true,
+              "readable": true,
+              "text": "SALVAGE CAGE ACCESS\nMSJMQAEGDZNVI",
+              "observations": "One catalogue line in the archive's own cipher. The second line is the code.",
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_unlocks": ["salvage_cage"]
+            }
+          ],
+          "eventMappings": [
+<%= jgen(hax_maps) %>
+          ]
+        },
+        {
+          "_comment": "The Recruiter: phone, outside the phone's npcIds (lesson 36; m05's pattern). Home knot start is a '[Hello?]' stub. Her call (call / resume_name) is voiced. Voice copied exactly from m05 (voice bible).",
+          "id": "recruiter",
+          "displayName": "The Recruiter",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "avatar": "assets/characters/the_recruiter_headshot.png",
+          "spriteTalk": "assets/characters/the_recruiter_talk.png",
+          "spriteVisemes": "assets/characters/the_recruiter_visemes.png",
+          "storyPath": "scenarios/m09_digital_archaeology/ink/m09_phone_recruiter.json",
+          "voice": {
+            "name": "Gacrux",
+            "style": "ENTROPY's recruiter, a former intelligence-agency talent spotter in her fifties, calling from somewhere comfortable. Speak with a consistent educated American (Washington DC, Mid-Atlantic) accent throughout — do not shift to any other accent. Low, warm pitch; slow, patient pace, never raised. Charming and empathetic on the surface, utterly ruthless underneath; talks about people as placements.",
+            "language": "en-US"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+<%= jgen(rec_maps) %>
+          ]
+        },
+        {
+          "_comment": "Nightshade (triple-agent branch only): rings after HaX's flag-1 call. Unvoiced. Outside npcIds (stage 8 m-12).",
+          "id": "nightshade_phone",
+          "displayName": "Agent 0x47 'Nightshade'",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "avatar": "assets/characters/nightshade_headshot.png",
+          "storyPath": "scenarios/m09_digital_archaeology/ink/m09_phone_nightshade.json",
+          "voice": {
+            "name": "Enceladus",
+            "style": "SAFETYNET's cryptographic-hardware analyst, now a triple agent. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, collegial; serene and a little tired.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+<%= jgen([
+  call_map("global_variable_changed:flag1_submitted", "value === true && globalVars.m08_nightshade_triple_agent", "call", delay: 7000, forced: false, once: true),
+  text_map("global_variable_changed:nightshade_shown_file", "value === true && globalVars.cage_bin === 'nightshade_copy'",
+           "You found what I cleared, too. Then you know I kept his notes. I'd have burned anything else.", delay: 4000),
+  text_map("global_variable_changed:nightshade_shown_file", "value === true && globalVars.cage_bin !== 'nightshade_copy'",
+           "Thank you. I'd rather not have known. No. That isn't true.", delay: 4000)
+]) %>
+          ]
+        },
+        {
+          "_comment": "David Torres (turned branch only): rings at the Harwick & Lowe boxes after flag 2, or after the safe. Unvoiced. Voice copied from m05.",
+          "id": "torres_phone",
+          "displayName": "David Torres",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "avatar": "assets/characters/david_torres_headshot.png",
+          "storyPath": "scenarios/m09_digital_archaeology/ink/m09_phone_torres.json",
+          "voice": {
+            "name": "Schedar",
+            "style": "Senior engineer in his late forties, born in Madrid and twenty years in England. Speak with a consistent light Castilian Spanish accent in fluent British English throughout — do not shift to any other accent. Low, soft pitch; slow, worn pace. Exhausted and grieving, past the point of lying; quietly desperate rather than angry.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+<%= jgen([
+  call_map("object_interacted", "data.objectName === 'Harwick & Lowe, Dead Files' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called", "call", delay: 1500, forced: false, once: true),
+  call_map("global_variable_changed:reading_found", "value === true && globalVars.m05_torres_turned && !globalVars.torres_called", "call", delay: 8000, forced: false, once: true)
+]) %>
+          ]
+        },
+        {
+          "_comment": "Gary Whitlock (protected branch only): rings at the first try of the salvage keypad. Unvoiced. Voice copied from m02 (Charon, the same as Netherton; harmless, his call is a text thread).",
+          "id": "gary_phone",
+          "displayName": "Gary Whitlock",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "avatar": "assets/characters/gary_whitlock_headshot.png",
+          "storyPath": "scenarios/m09_digital_archaeology/ink/m09_phone_gary.json",
+          "voice": {
+            "name": "Charon",
+            "style": "Hospital IT systems administrator, mid-thirties, running on vending machine coffee. Consistent Birmingham / Black Country accent throughout. Flat, tired, self-deprecating -- a man who has been right for six months and got nothing for it. Anger sits under the surface, not on top of it.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+<%= jgen([
+  call_map("door_unlock_attempt", "data.connectedRoom === 'salvage_cage' && globalVars.m02_gary_protected", "call", delay: 1500, forced: false, once: true)
+]) %>
+          ]
+        },
+        {
+          "_comment": "Director Netherton: hidden registered speaker for the briefing, the identity scene (prefixed in HaX's voiced thread) and the debrief. No storyPath (CONTRACT §1).",
+          "id": "director_netherton",
+          "displayName": "Director Magnus Netherton",
+          "npcType": "person",
+          "gender": "male",
+          "position": { "x": 500, "y": 500 },
+          "spriteSheet": "netherton",
+          "spriteTalk": "assets/characters/netherton_talk.png",
+          "spriteVisemes": "assets/characters/netherton_visemes.png",
+          "avatar": "assets/characters/netherton_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "voice": {
+            "name": "Charon",
+            "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. Tonight he can finally prove what he has suspected for months, and he will not say the name until he can; under the control is grief for two agents he sent.",
+            "language": "en-GB"
+          },
+          "behavior": { "initiallyHidden": true },
+          "koImmune": true
+        },
+        {
+          "_comment": "HaX as a person-chat speaker (the Alpha clip, the debrief). Same voice block as agent_0x99, so one clip serves either. S5 §3.1, M9-24: stage 9 browser check whether the phone contact alone resolves; drop this record if so.",
+          "id": "hax_voice",
+          "displayName": "Agent HaX",
+          "npcType": "person",
+          "gender": "female",
+          "position": { "x": 500, "y": 500 },
+          "spriteSheet": "agent_hax",
+          "spriteTalk": "assets/characters/agent_hax_talk.png",
+          "spriteVisemes": "assets/characters/agent_hax_visemes.png",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "voice": {
+            "name": "Aoede",
+            "style": "Intelligence handler on a secure line, the night her teacher gets a name. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+            "language": "en-GB"
+          },
+          "behavior": { "initiallyHidden": true },
+          "koImmune": true
+        },
+<%# The raid team: hidden registered speakers for the briefing and the
+    debrief. PLACEHOLDER sprites and new voices (ASSET_LIST §1.2, §6). %>
+<% [
+  ["quintero", "Agent 0x2D 'Anchor'", "female", "female_security_guard", "female_security_guard", "Callirrhoe", "SAFETYNET raid leader in her fifties, from El Paso, Texas. Consistent West Texas American accent with a light Mexican-American lilt throughout -- do not shift to any other accent. Low, steady, dry; few words, unsentimental and fierce about her people.", "en-US"],
+  ["kowalczyk", "Agent 0x5E 'Lantern'", "female", "female_hacker_hood_down_v2", "female_hacker_hood_down_v2", "Leda", "SAFETYNET breaching lead in her late forties, Polish-British, grew up in Ealing. Consistent West London English accent throughout -- do not shift to any other accent. Warm, funny, practical; the one joke in a tense room. Nothing in her voice gives anything away.", "en-GB"],
+  ["malhotra", "Officer Dev Malhotra", "male", "male_telecom", "male_telecom", "Iapetus", "SAFETYNET comms officer in his thirties, British-Indian, from Hounslow. Consistent West London English accent throughout -- do not shift to any other accent. Precise, a little anxious about any gap in coverage; jokes only about kit.", "en-GB"],
+  ["arakawa", "Officer Kenji Arakawa", "male", "male_office_worker", "male_office_worker", "Rasalgethi", "SAFETYNET's US liaison in his forties, Japanese-American from Sacramento, living in Billings. Consistent Northern California American accent throughout -- do not shift to any other accent. Courteous, laconic, a fixer.", "en-US"]
+].each do |id, name, gender, sheet, art, voice, style, lang| %>
+        {
+          "_comment": "PLACEHOLDER art: <%= sheet %> (ASSET_LIST §1.2). Hidden registered speaker; no storyPath.",
+          "id": "<%= id %>",
+          "displayName": <%= name.to_json %>,
+          "npcType": "person",
+          "gender": "<%= gender %>",
+          "position": { "x": 500, "y": 500 },
+          "spriteSheet": "<%= sheet %>",
+          "spriteTalk": "assets/characters/<%= art %>_talk.png",
+          "spriteVisemes": "assets/characters/<%= art %>_visemes.png",
+          "avatar": "assets/characters/<%= art %>_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "voice": { "name": "<%= voice %>", "style": <%= style.to_json %>, "language": "<%= lang %>" },
+          "behavior": { "initiallyHidden": true },
+          "koImmune": true
+        },
+<% end %>
+        {
+          "_comment": "The opening briefing (C1): a hidden person-chat cutscene in Task Force Null's room. Every line is prefixed, so the host borrows Netherton's art and voice. The cracker is in the start kit; the briefing only narrates the handover (S4 P15). PLACEHOLDER background (ASSET_LIST §3).",
+          "id": "briefing_cutscene",
+          "displayName": "Director Magnus Netherton",
+          "npcType": "person",
+          "gender": "male",
+          "position": { "x": 500, "y": 500 },
+          "spriteSheet": "netherton",
+          "spriteTalk": "assets/characters/netherton_talk.png",
+          "spriteVisemes": "assets/characters/netherton_visemes.png",
+          "avatar": "assets/characters/netherton_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m09_digital_archaeology/ink/m09_briefing.json",
+          "voice": {
+            "name": "Charon",
+            "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. Tonight he can finally prove what he has suspected for months, and he will not say the name until he can; under the control is grief for two agents he sent.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "behavior": { "initiallyHidden": true },
+          "koImmune": true,
+          "timedConversation": {
+            "delay": 0,
+            "targetKnot": "start",
+            "background": "assets/backgrounds/hq4.png",
+            "waitForEvent": "game_loaded",
+            "skipIfGlobal": "briefing_played",
+            "setGlobalOnStart": "briefing_played"
+          }
+        },
+        {
+          "_comment": "The debrief (C2): a hidden person-chat at the Helena hangar, opened when HaX's '[Bring me in.]' sets start_debrief (it re-emits). Keyed on !report_done, so a reload anywhere inside it reopens it at start; the ink replays safely (S4 §6.5). report_to_netherton and report_done are on its last line. PLACEHOLDER background (ASSET_LIST §3).",
+          "id": "closing_debrief",
+          "displayName": "Director Magnus Netherton",
+          "npcType": "person",
+          "gender": "male",
+          "position": { "x": 500, "y": 500 },
+          "spriteSheet": "netherton",
+          "spriteTalk": "assets/characters/netherton_talk.png",
+          "spriteVisemes": "assets/characters/netherton_visemes.png",
+          "avatar": "assets/characters/netherton_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m09_digital_archaeology/ink/m09_closing_debrief.json",
+          "voice": {
+            "name": "Charon",
+            "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. Tonight he can finally prove what he has suspected for months, and he will not say the name until he can; under the control is grief for two agents he sent.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "behavior": { "initiallyHidden": true },
+          "koImmune": true,
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:start_debrief",
+              "condition": "value === true && !globalVars.report_done",
+              "conversationMode": "person-chat",
+              "targetKnot": "start",
+              "background": "assets/backgrounds/hq2.png",
+              "disableClose": true,
+              "cooldown": 0
+            },
+            {
+              "_comment": "Backstop (S4 §5): a reload after start_debrief and before report_done reopens the debrief on the next room entry (fires on load too).",
+              "eventPattern": "room_entered",
+              "condition": "globalVars.start_debrief && !globalVars.report_done",
+              "conversationMode": "person-chat",
+              "targetKnot": "start",
+              "background": "assets/backgrounds/hq2.png",
+              "disableClose": true
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "sprite": "notes_ledger1",
+          "id": "incident_book",
+          "name": "Incident Log",
+          "position": { "x": 2.5, "y": 3.5 },
+          "takeable": false,
+          "readable": true,
+          "text": "MON. SHREDDER RUNNING, NIGHT. MRS. S SAYS SCHEDULED. NOTED.\nTUE. SAME. NOTED.\nWED. SAME.\nTHU. SAME.\nFRI. SAME. NOBODY READS THIS.",
+          "observations": "A guard's log in block capitals. The same entry, five nights running."
+        }
+      ]
+    },
+
+<%# =========================================================================
+    FRONT DESK (S5 §3.2). Route A: picks on the dock's office door, then
+    Noor's card (cloned on every branch, or handed over warned in time) on
+    the staff door into the reading room. PLACEHOLDER map: room_reception. %>
+    "front_desk": {
+      "type": "room_reception",
+      "door_sign": "Front Desk -- Staff Only Beyond This Point",
+      "locked": true,
+      "lockType": "key",
+      "requires": "dock_office_door",
+      "keyPins": [35, 50, 30, 45],
+      "difficulty": "easy",
+      "connections": {
+        "east": "loading_dock",
+        "north": "reading_room"
+      },
+      "npcs": [
+        {
+          "_comment": "Noor Haddad, records clerk (B2). On the floor by the trolleys so she can be reached (review m5). Clone on every branch (#clone_keycard:reading_staff_door, EM4100, the night's easy card); warned in time she hands over noor_staff_card. Leaves on noor_told. PLACEHOLDER art: female_telecom (ASSET_LIST §1.2).",
+          "id": "noor_haddad",
+          "displayName": "Noor Haddad",
+          "npcType": "person",
+          "gender": "female",
+          "position": { "x": 6.5, "y": 5.5 },
+          "spriteSheet": "female_telecom",
+          "spriteTalk": "assets/characters/female_telecom_talk.png",
+          "spriteVisemes": "assets/characters/female_telecom_visemes.png",
+          "avatar": "assets/characters/female_telecom_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m09_digital_archaeology/ink/m09_noor_haddad.json",
+          "voice": {
+            "name": "Despina",
+            "style": "Records clerk in her thirties from Dearborn, Michigan, on a night shift. Consistent Midwestern American accent throughout -- do not shift to any other accent. Mid pitch; quick, guarded, sardonic under pressure; answers a question with a question when scared.",
+            "language": "en-US"
+          },
+          "currentKnot": "start",
+          "rfidCard": {
+            "card_id": "reading_staff_door",
+            "rfid_protocol": "EM4100",
+            "name": "Staff Card, N. Haddad"
+          },
+          "itemsHeld": [
+            {
+              "type": "keycard",
+              "id": "noor_staff_card",
+              "name": "Staff Card, N. Haddad",
+              "takeable": true,
+              "card_id": "reading_staff_door",
+              "rfid_protocol": "EM4100",
+              "opens_lock": "reading_staff_door",
+              "observations": "Noor's staff card. It opens the staff door into the reading room.",
+              "puzzle_graph_unlocks": ["reading_room"]
+            }
+          ],
+          "globalVarOnKO": "noor_ko",
+          "taskOnKO": "meet_the_clerk",
+          "behavior": { "hostile": { "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:noor_told", "condition": "value === true", "setVisible": false },
+            { "eventPattern": "room_entered:front_desk", "condition": "globalVars.noor_told", "setVisible": false }
+          ],
+          "observations": "The night clerk, checking boxes off a list by the trolleys."
+        }
+      ],
+      "objects": [
+        {
+          "_comment": "S6 §1.2. Trolley art in four states is owed (ASSET_LIST §4); the run sheet's struck lines carry the purge meanwhile.",
+          "type": "notes",
+          "sprite": "notes_clip1",
+          "id": "trolley_list",
+          "name": "Destruction Run, Series R",
+          "position": { "x": 3.5, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "observations": "A printed run sheet clipped to the trolley rail.",
+          "text": "DESTROY. Series R, 48 boxes.\nR-114 to R-129\nR-130 to R-145\nR-146 to R-161\nCertificate to follow.",
+          "textVariants": [
+            { "condition": "globalVars.cage_opened", "value": "DESTROY. Series R, 48 boxes.\nR-114 to R-129 -- DONE\nR-130 to R-145 -- DONE\nR-146 to R-161 -- DONE\nCertificate to follow." },
+            { "condition": "globalVars.flag2_submitted", "value": "DESTROY. Series R, 48 boxes.\nR-114 to R-129 -- DONE\nR-130 to R-145 -- DONE\nR-146 to R-161\nCertificate to follow." },
+            { "condition": "globalVars.flag1_submitted", "value": "DESTROY. Series R, 48 boxes.\nR-114 to R-129 -- DONE\nR-130 to R-145\nR-146 to R-161\nCertificate to follow." }
+          ]
+        },
+        {
+          "_comment": "S6 §1.2. On the warned-in-time branch Noor held the legacy files back. noor_box_read (stage 9) latches HaX's remark only on that branch.",
+          "type": "notes",
+          "sprite": "office-misc-box1",
+          "id": "noor_desk_box",
+          "name": "Box Under the Desk",
+          "position": { "x": 2, "y": 3.5 },
+          "takeable": false,
+          "readable": true,
+          "observations": "A box of returns under the clerk's desk.",
+          "observationVariants": [
+            { "condition": "globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted", "value": "A records box, lid taped. Its label: Series L, boxes 1 to 3. Hold for M.S." }
+          ],
+          "text": "RETURNS FOR RE-SHELVING. County deeds, 1971 to 1978.",
+          "textVariants": [
+            { "condition": "globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted", "value": "<%= series_l %>" }
+          ],
+          "onRead": { "setVariable": { "noor_box_read": true } }
+        }
+      ]
+    },
+
+<%# =========================================================================
+    OPEN STACKS (S5 §3.3). Route B, past the guard. The 4x2 warehouse floor:
+    Old Coyote's round crosses the west end on every lap; the Harwick &
+    Lowe boxes near the east end; the closet off the east wall. Dillard, the
+    guard Tran calls on the m01_maya_ko branch, waits hidden by the shutter.
+    PLACEHOLDER map: room_aes_hall1 (patrol waypoints kept to the bottom
+    walkway and the marked N-S aisle; ASSET_LIST §2). %>
+    "open_stacks": {
+      "type": "room_aes_hall1",
+      "door_sign": "Open Stacks -- Client Deposits",
+      "ambientSound": "server_room_ventilation",
+      "ambientVolume": 0.15,
+      "connections": {
+        "south": "loading_dock",
+        "west": "reading_room",
+        "east": "server_closet"
+      },
+      "npcs": [
+        {
+          "_comment": "Cody Old Coyote, night guard (B6). Challenges on sight (any cover talks past him); leaves on old_coyote_told. On m01_maya_ko after flag 1, Tran's radio sends him to a tile beside the reading-room door (S5 §3.3), with a relay for a route-A player who never loaded this room (stage 8 m-01). Holds the dock office door's only key. PLACEHOLDER art: male_security_guard (ASSET_LIST §1.2).",
+          "id": "old_coyote",
+          "displayName": "Cody Old Coyote",
+          "npcType": "person",
+          "gender": "male",
+          "position": { "x": 5, "y": 8.5 },
+          "spriteSheet": "male_security_guard",
+          "spriteTalk": "assets/characters/male_security_guard_talk.png",
+          "spriteVisemes": "assets/characters/male_security_guard_visemes.png",
+          "avatar": "assets/characters/male_security_guard_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m09_digital_archaeology/ink/m09_old_coyote.json",
+          "voice": {
+            "name": "Achird",
+            "style": "Night guard in his twenties from Lodge Grass, Montana, Crow (Apsaalooke). Consistent rural Montana American accent throughout -- do not shift to any other accent. Easy, dry, a little bored; sharp when treated as furniture. An ordinary young man, not a mystic and not a stoic.",
+            "language": "en-US"
+          },
+          "currentKnot": "start",
+          "globalVarOnKO": "old_coyote_ko",
+          "itemsHeld": [
+            {
+              "type": "key",
+              "id": "dock_office_key",
+              "name": "Key Ring, Dock Office",
+              "takeable": true,
+              "opens_lock": "dock_office_door",
+              "keyPins": [35, 50, 30, 45],
+              "observations": "The night guard's key ring. One key fits the dock office door.",
+              "puzzle_graph_unlocks": ["front_desk"],
+              "puzzle_graph_optional": true
+            }
+          ],
+          "behavior": {
+            "facePlayer": false,
+            "hostile": { "chaseSpeed": 90, "attackDamage": 4, "pauseToAttack": true },
+            "patrol": {
+              "enabled": true,
+              "pauseForPlayer": false,
+              "waypoints": [
+                { "x": 3, "y": 8.5, "dwellTime": 2500 },
+                { "x": 8, "y": 8.5, "dwellTime": 1500 },
+                { "x": 12.5, "y": 8.5, "dwellTime": 1500 },
+                { "x": 12.5, "y": 4.5, "dwellTime": 3000 },
+                { "x": 12.5, "y": 8.5, "dwellTime": 1000 },
+                { "x": 17, "y": 8.5, "dwellTime": 3000 },
+                { "x": 8, "y": 8.5, "dwellTime": 1000 }
+              ],
+              "waypointMode": "sequential",
+              "loop": true,
+              "speed": 45
+            }
+          },
+          "los": {
+            "enabled": true,
+            "range": 150,
+            "angle": 120,
+            "challengeOnSight": {
+              "cooldown": 20000,
+              "rooms": ["open_stacks"],
+              "skipIfGlobal": "old_coyote_told"
+            }
+          },
+          "eventMappings": [
+            { "eventPattern": "player_spotted:old_coyote", "conversationMode": "person-chat", "targetKnot": "challenge", "cooldown": 0 },
+            { "eventPattern": "global_variable_changed:old_coyote_told", "condition": "value === true", "setVisible": false },
+            { "eventPattern": "room_entered:open_stacks", "condition": "globalVars.old_coyote_told", "setVisible": false },
+            {
+              "eventPattern": "global_variable_changed:flag1_submitted",
+              "condition": "value === true && globalVars.m01_maya_ko && !globalVars.old_coyote_told && !globalVars.old_coyote_ko",
+              "onceOnly": true,
+              "patrolOverride": { "targetTile": { "x": 2, "y": 6.5 }, "stopOnArrival": true }
+            },
+            {
+              "_comment": "Relay (stage 8 m-01): his mapping doesn't hear flag 1 while this room is unloaded.",
+              "eventPattern": "room_entered:open_stacks",
+              "condition": "globalVars.flag1_submitted && globalVars.m01_maya_ko && !globalVars.old_coyote_told && !globalVars.old_coyote_ko",
+              "patrolOverride": { "targetTile": { "x": 2, "y": 6.5 }, "stopOnArrival": true }
+            }
+          ],
+          "observations": "The night guard, torch on his belt, phone on speaker."
+        },
+        {
+          "_comment": "Lyle Dillard, Statewide Security (B8; S6 §5): the guard Tran calls in, m01_maya_ko branch only (tran_alerted). Hidden and non-hostile until his own one-line conversation ends #hostile:archive_guard, so no hidden NPC is ever hostile (review m10). Avoidable. PLACEHOLDER art: security_guard (ASSET_LIST §1.2).",
+          "id": "archive_guard",
+          "displayName": "Lyle Dillard",
+          "npcType": "person",
+          "gender": "male",
+          "position": { "x": 3.5, "y": 8 },
+          "spriteSheet": "security_guard",
+          "spriteTalk": "assets/characters/security_guard_talk.png",
+          "spriteVisemes": "assets/characters/security_guard_visemes.png",
+          "avatar": "assets/characters/security_guard_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m09_digital_archaeology/ink/m09_archive_guard.json",
+          "voice": {
+            "name": "Algieba",
+            "style": "Contract security guard in his fifties, an ex-sheriff's deputy from Montana. Consistent Western American accent throughout -- do not shift to any other accent. Heavy, slow, bored; in it for the overtime.",
+            "language": "en-US"
+          },
+          "currentKnot": "start",
+          "behavior": {
+            "initiallyHidden": true,
+            "hostile": { "chaseSpeed": 85, "attackDamage": 5, "pauseToAttack": true }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:tran_alerted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setVisible": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "start"
+            },
+            {
+              "_comment": "Catch-up: re-show him on entry once called (an initiallyHidden NPC is re-hidden on room load).",
+              "eventPattern": "room_entered:open_stacks",
+              "condition": "globalVars.tran_alerted",
+              "setVisible": true
+            }
+          ],
+          "observations": "A heavy man in a Statewide Security jacket, in no hurry."
+        }
+      ],
+      "objects": [
+        {
+          "type": "directory_sign1",
+          "id": "hl_bay_label",
+          "name": "Bay Label",
+          "position": { "x": 15, "y": 2.6 },
+          "takeable": false,
+          "observations": "HARWICK & LOWE, EXEC SEARCH (CLOSED). RETENTION 25 YRS."
+        },
+        {
+          "_comment": "S6 §1.3. The lid takes the file number from flag 2 (password HL2015-0477; P10). Torres rings as it is opened on the turned branch (object_interacted on this name).",
+          "type": "safe",
+          "sprite": "supply_boxes1",
+          "id": "hl_box",
+          "name": "Harwick & Lowe, Dead Files",
+          "position": { "x": 15, "y": 4.2 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "password",
+          "requires": "<%= hl_file_number %>",
+          "showKeyboard": true,
+          "observations": "Archive boxes from a closed search firm. The lid takes a file number.",
+          "puzzle_graph_role": "container",
+          "puzzle_graph_optional": true,
+          "contents": [
+            {
+              "type": "notes",
+              "id": "hl_placing_sheet",
+              "name": "Placement Record, HL2015-0477",
+              "takeable": true,
+              "readable": true,
+              "text": "HARWICK & LOWE -- PLACEMENT RECORD\nRef HL2015-0477. Q2 2015.\nSearch: lateral hires from the private sector.\nClient: confidential (security consultancy). Two placements.\nFee: 30% of first-year salary, per placement.\nStart: Q3 2015.\nCandidates: H. Kowalczyk; M. Quintero.\nNext of kin: Kowalczyk, mother, nursing home. Quintero, father, nursing home.\nStatus: both placed. File closed.",
+              "observations": "A placement record from a search firm that no longer exists. Two names.",
+              "onRead": { "setVariable": { "sleeper_shortlist": true } },
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_optional": true
+            }
+          ]
+        }
+      ]
+    },
+
+<%# =========================================================================
+    SERVER CLOSET (S5 §3.4). Jesse Tran wipes the tape side. On
+    m01_maya_ko he sees the player first at the door and calls a guard.
+    PLACEHOLDER map: small_room_1x1gu. %>
+    "server_closet": {
+      "type": "small_room_1x1gu",
+      "door_sign": "IT -- Authorised Contractors Only",
+      "ambientSound": "server_room_ventilation",
+      "ambientVolume": 0.4,
+      "connections": {
+        "west": "open_stacks"
+      },
+      "npcs": [
+        {
+          "_comment": "Jesse Tran, IT contractor, Social Fabric's man (B7). Talked off the wipe with the letters (tran_outcome talked, then he walks out), or a fight. PLACEHOLDER art: male_nerd (ASSET_LIST §1.2).",
+          "id": "jesse_tran",
+          "displayName": "Jesse Tran",
+          "npcType": "person",
+          "gender": "male",
+          "position": { "x": 2.5, "y": 4 },
+          "spriteSheet": "male_nerd",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "avatar": "assets/characters/male_nerd_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m09_digital_archaeology/ink/m09_jesse_tran.json",
+          "voice": {
+            "name": "Puck",
+            "style": "IT contractor in his late twenties from Seattle. Consistent Pacific Northwest American accent throughout -- do not shift to any other accent. Fast, ironic, contemptuous, very online; talks to everyone as a tourist.",
+            "language": "en-US"
+          },
+          "currentKnot": "start",
+          "globalVarOnKO": "tran_ko",
+          "behavior": {
+            "facePlayer": true,
+            "hostile": { "chaseSpeed": 90, "attackDamage": 4, "pauseToAttack": true }
+          },
+          "los": {
+            "enabled": true,
+            "range": 150,
+            "angle": 120,
+            "challengeOnSight": {
+              "rooms": ["server_closet"],
+              "requireGlobal": "m01_maya_ko",
+              "skipIfGlobal": "tran_alerted"
+            }
+          },
+          "eventMappings": [
+            { "eventPattern": "player_spotted:jesse_tran", "onceOnly": true, "setGlobal": { "tran_alerted": true } },
+            { "eventPattern": "global_variable_changed:tran_outcome", "condition": "value === 'talked'", "setVisible": false },
+            { "eventPattern": "room_entered:server_closet", "condition": "globalVars.tran_outcome === 'talked'", "setVisible": false }
+          ],
+          "observations": "A contractor at the console, a degausser whining beside him."
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "sprite": "pc6",
+          "id": "tape_side_console",
+          "name": "Wipe Console",
+          "position": { "x": 1.5, "y": 2.6 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "A console running a degausser through a rack of reels.",
+          "text": "WIPE IN PROGRESS. Series LI, legacy interviews: 212 reels.",
+          "textVariants": [
+            { "condition": "globalVars.tran_outcome !== 'left'", "value": "WIPE HALTED. Series LI, legacy interviews: 97 of 212 reels intact." }
+          ]
+        }
+      ]
+    },
+
+<%# =========================================================================
+    READING ROOM (S5 §3.5). The drop terminal: the field laptop (the attack
+    VM), the flag station for flags 1-2, the live screen, HaX's case file and
+    the notebook scan. The only warm room.
+    STAGE 9 DEVIATION: S5 has an RFID staff door (Noor's card) from the
+    front desk and an open door from the open stacks. A lock belongs to the
+    room, not the door (doors.js reads the connected room; game.rb
+    validate_unlock checks the room), so one lock would shut both routes.
+    The room is left unlocked so route B (the guard) always works; Noor's
+    clone and card stay in her ink with nothing to open. For the
+    orchestrator (stage 9 report). PLACEHOLDER map: room_uni_special. %>
+    "reading_room": {
+      "type": "room_uni_special",
+      "door_sign": "Reading Room",
+      "connections": {
+        "south": "front_desk",
+        "east": "open_stacks",
+        "north": "restricted_stacks"
+      },
+      "objects": [
+        {
+          "_comment": "VM-WIRE: vm_object's system name and fallback (the attack box both launchers open).",
+          "type": "vm-launcher",
+          "id": "field_laptop",
+          "name": "Field Laptop",
+          "position": { "x": 3, "y": 4 },
+          "takeable": false,
+          "observations": "Your field kit, set up on a reading desk: a laptop on the archive's network, quiet enough not to show up on anyone's screen.",
+          "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+          "vm": <%= vm_object('attack_vm', {"id" => 1, "title" => "kali", "ip" => "172.16.0.3", "enable_console" => true}) %>,
+          "puzzle_graph_role": "vm"
+        },
+        {
+          "_comment": "VM-WIRE: acceptsVms and flags_for_vm system name and fallbacks. flagRewards are index-parallel to flags: one set_global per flag (S4 §4). Flags 3-4 are refused here by ownership.",
+          "type": "flag-station",
+          "sprite": "safetynet_flag_terminal1",
+          "id": "drop_terminal",
+          "name": "SAFETYNET Drop Terminal",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "observations": "The drop terminal. Anything you pull off the catalogue server goes to HaX through here.",
+          "acceptsVms": ["catalogue_server"],
+          "puzzle_graph_unlocks": "restricted_stacks",
+          "puzzle_graph_note": "Flag 1 here sets flag1_submitted; HaX's unlockDoor mapping opens the restricted stacks.",
+          "flags": <%= flags_for_vm('catalogue_server', ['flag{m09_catalogue_placeholder}', 'flag{m09_ledger_placeholder}']) %>,
+          "flagRewards": [
+            { "type": "set_global", "key": "flag1_submitted", "value": true },
+            { "type": "set_global", "key": "flag2_submitted", "value": true }
+          ]
+        },
+        {
+          "_comment": "S6 §1.4. Every variant from flag 1 on ends with the coded salvage line, label and code apart (C-01).",
+          "type": "notes",
+          "sprite": "monitor_stand1",
+          "id": "drop_terminal_screen",
+          "name": "SAFETYNET Drop Terminal",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "PUBLIC CATALOGUE. County deeds, land records, corporate deposits.",
+          "observationVariants": [
+            { "condition": "globalVars.invoice_booked", "value": "LIVE CAPTURE -- INITIATIVE LEDGER, NEW ENTRY" },
+            { "condition": "globalVars.flag2_submitted", "value": "LIVE CAPTURE -- INITIATIVE LEDGER" },
+            { "condition": "globalVars.flag1_submitted", "value": "LIVE CAPTURE -- FULL CATALOGUE" }
+          ],
+          "text": "PUBLIC CATALOGUE. County deeds, land records, corporate deposits.",
+          "textVariants": [
+            { "condition": "globalVars.invoice_booked", "value": "LIVE CAPTURE -- INITIATIVE LEDGER, NEW ENTRY\nSale. WREN. To Agent 0x00. Consideration, one deck. Booked. M.S.\n\nPlacements 23. Candidates 47. Legacy 11.\nWREN -- H&L -- placed 11 yrs -- LIVE\nSource file: HL2015-0477<%= salvage_tail %>" },
+            { "condition": "globalVars.flag2_submitted && globalVars.m05_final_choice === 'combat_lethal'", "value": "<%= ledger_block %>\nTORRES -- placed 1 yr -- CLOSED PLACEMENT. M.S.<%= salvage_tail %>" },
+            { "condition": "globalVars.flag2_submitted && globalVars.m05_final_choice === 'turn_double_agent'", "value": "<%= ledger_block %>\nTORRES -- placed 1 yr -- LIVE<%= salvage_tail %>" },
+            { "condition": "globalVars.flag2_submitted && globalVars.m05_final_choice === 'public_exposure'", "value": "<%= ledger_block %>\nPlacements, current series: BLOWN, all 23. M.S.\nTORRES -- placed 1 yr -- LOST<%= salvage_tail %>" },
+            { "condition": "globalVars.flag2_submitted", "value": "<%= ledger_block %>\nTORRES -- placed 1 yr -- LOST<%= salvage_tail %>" },
+            { "condition": "globalVars.flag1_submitted", "value": "LIVE CAPTURE -- FULL CATALOGUE\nSeries R, restricted: R-114 to R-161. Location: restricted cage, bay 10.\nUnindexed entry:<%= salvage_tail %>" }
+          ],
+          "puzzle_graph_role": "clue"
+        },
+        {
+          "_comment": "S6 §1.4. Read in place; case_file_read latches HaX's HashChain remark (A3-30).",
+          "type": "notes",
+          "sprite": "case-file",
+          "id": "case_file",
+          "name": "Case File, Helena",
+          "position": { "x": 2.5, "y": 7 },
+          "takeable": false,
+          "readable": true,
+          "observations": "A typed case file in HaX's name. Item 4 has a scan of its own on the next desk.",
+          "text": "CASE FILE -- HELENA. 0x99. Not for circulation.\n1. Intercept, day 10: the order, photographed.\n2. The wall, copied.\n3. Raid team, Montana: four names.\n4. Training notebook, 2011: scan, filed separately.",
+          "textVariants": [
+            { "condition": "globalVars.m06_monitoring_enabled", "value": "CASE FILE -- HELENA. 0x99. Not for circulation.\n1. Intercept, day 10: the order, photographed.\n2. The wall, copied.\n3. Raid team, Montana: four names.\n4. Training notebook, 2011: scan, filed separately.\n5. HashChain tags, standing order. From: the Architect's fund, tagged. To: Big Sky Holdings LLC. Memo: RENT, SITE 2, MT. Monthly.\nPencilled beside item 5: Not Helena." }
+          ],
+          "onRead": { "setVariable": { "case_file_read": true } }
+        },
+        {
+          "_comment": "S6 §1.4 (stage 8 m-04: the looped g and the crossed 7 in the observations).",
+          "type": "notes",
+          "sprite": "notes_notebook1",
+          "id": "notebook_scan",
+          "name": "Training Notebook (scan)",
+          "position": { "x": 4.5, "y": 7 },
+          "takeable": false,
+          "readable": true,
+          "observations": "A scanned page from a student's notebook. Two hands: the student's, and a teacher's in the margin. In the margin, the g in 'again' loops back on itself, and the 7 is crossed.",
+          "text": "SAFETYNET STRATEGY -- STRAT-204 -- 17 October 2011\nWk 7. Disclosure: who does it serve?\nIn the margin, another hand: Wk 7. Ask who it hurts first. Then ask again, afterwards.",
+          "onRead": { "setVariable": { "notebook_read": true } },
+          "puzzle_graph_role": "clue"
+        }
+      ]
+    },
+
+<%# =========================================================================
+    RESTRICTED STACKS, the hub (S5 §3.6). Its door opens on HaX's
+    unlockDoor when flag 1 is in: `stacks_release` is a card id nothing in
+    the world carries, so the validator's credential warning here is expected
+    (m09-R §4.1). Sorensen works the hatch counter on the east wall.
+    PLACEHOLDER map: room_hq_ops (no counter yet; ASSET_LIST §2). %>
+    "restricted_stacks": {
+      "type": "room_hq_ops",
+      "_comment": "Expected validator warning: no item declares rfid 'stacks_release'. HaX's unlockDoor mapping on flag1_submitted opens this door (with a retry on door_unlock_attempt and a game_loaded backstop).",
+      "door_sign": "Restricted Stacks -- Series R",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "stacks_release",
+      "ambientSound": "server_room_ventilation",
+      "ambientVolume": 0.4,
+      "connections": {
+        "south": "reading_room",
+        "east": "restricted_cage",
+        "west": "sorensen_office",
+        "north": "tape_room"
+      },
+      "npcs": [
+        {
+          "_comment": "Margaret Sorensen at the hatch (B3). A static sprite behind the counter whose body edge reaches it, so she can be talked to across it (review B1); koImmune (behind the mesh). Her card clones on every branch (MIFARE with custom keys, the night's hard clone). Holds the three bin files, given by id. Hidden once the cage opens (and on entry if it already has: Victoria's route). PLACEHOLDER art: female_office_worker (ASSET_LIST §1.2). Browser check owed: reach from a tile at the counter; fallback a hatch bell (S5 §3.6).",
+          "id": "sorensen_hatch",
+          "displayName": "Margaret Sorensen",
+          "npcType": "person",
+          "gender": "female",
+          "position": { "x": 8.25, "y": 5.5 },
+          "spriteSheet": "female_office_worker",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "avatar": "assets/characters/female_office_worker_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m09_digital_archaeology/ink/m09_sorensen_hatch.json",
+          "voice": {
+            "name": "Vindemiatrix",
+            "style": "Retired county clerk in her sixties, now director of a Montana records archive. Consistent Western American (Montana) accent throughout -- do not shift to any other accent. Low, warm pitch; unhurried, exact, kind in tone. She never raises her voice and never hurries; the kindness is the dangerous part.",
+            "language": "en-US"
+          },
+          "currentKnot": "start",
+          "koImmune": true,
+          "behavior": { "staticSprite": true, "immovable": true, "facePlayer": false },
+          "rfidCard": {
+            "card_id": "stacks_card",
+            "rfid_protocol": "MIFARE_Classic_Custom_Keys",
+            "name": "Stacks Card, M. Sorensen"
+          },
+          "itemsHeld": [
+            {
+              "type": "notes",
+              "id": "derek_file",
+              "name": "Asset File: D. Lawson",
+              "takeable": true,
+              "readable": true,
+              "text": "LAWSON, D. -- ASSET, VIRAL DYNAMICS\nMotive: belief. He has read everything I sent him and believes it more than I do. That is why he will do it, and why he will not stop when they tell him to.\nExpected loss of asset: total. Expected yield: one demonstration, and the agency's attention.\nStanding order, on hire: if taken, put the device down and wait. Say nothing.\nIf they publish his figures, let them. Publicity recruits.\nA good first lesson for whoever they send. -- A.",
+              "observations": "A thin asset file, costed in a neat, sloping hand."
+            },
+            {
+              "type": "notes",
+              "id": "letters",
+              "name": "Initiative to Social Fabric, Handoff 14",
+              "takeable": true,
+              "readable": true,
+              "text": "INITIATIVE TO SOCIAL FABRIC -- HANDOFF 14\nCourier: J.T., server closet, Mountain States. Collects Thursdays. Paid per envelope, cash.\nHandler: D. Varga, the Bozeman number. J.T. has never met him and doesn't ask.\nNext file: Teresa Villanueva, 41. Union rep, Butte copper mine.\nMethod: an affair, photographs in hand. Her medical file, obtained. Press first, then the union board.\nWhy her: when she says we, she means the men on the night shift. Take that away and they stop listening.",
+              "observations": "Typed correspondence between two cells. The last page names a woman in Butte."
+            },
+            {
+              "type": "notes",
+              "id": "nightshade_copy",
+              "name": "Cleared from Locker 47",
+              "takeable": true,
+              "readable": true,
+              "text": "Covering slip: Cleared from my locker and sent ahead. His notes to me, nothing of the Initiative's. Anything that named anyone else, I burned. -- 47\nUnder it, one card in another hand: 0x47. They will ask you to choose between them and us. You will not need to. Wait. -- A.\nAt the foot of the slip: A man may keep his own letters. It is other people's that make him a traitor.",
+              "observations": "A covering slip clipped to one small card."
+            }
+          ],
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:cage_opened", "condition": "value === true", "setVisible": false },
+            { "eventPattern": "room_entered:restricted_stacks", "condition": "globalVars.cage_opened", "setVisible": false }
+          ],
+          "observations": "A woman in a cardigan behind the hatch counter, feeding boxes to a shredder without hurrying."
+        }
+      ],
+      "objects": [
+        {
+          "_comment": "S6 §1.5. The print for the plan cabinet (S4 §4 row 2c); the purge line after flag 2 (m-09: S6's string). A tile clear of her body (review m-R2-4). PLACEHOLDER sprite (ASSET_LIST §4).",
+          "type": "office-misc-stapler",
+          "id": "sorensen_stamp",
+          "name": "Rubber Stamp",
+          "position": { "x": 6.5, "y": 6.5 },
+          "takeable": false,
+          "observations": "A rubber stamp: DESTROYED, in red.",
+          "observationVariants": [
+            { "condition": "globalVars.flag2_submitted && !globalVars.cage_opened", "value": "DESTROYED, in red. The stamp is still warm. Three boxes left on her side of the counter." }
+          ],
+          "hasFingerprint": true,
+          "fingerprintOwner": "Margaret Sorensen",
+          "fingerprintCandidates": ["Noor Haddad", "Jesse Tran", "Cody Old Coyote"],
+          "fingerprintDifficulty": "medium",
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_unlocks": ["plan_cabinet"]
+        }
+      ]
+    },
+
+<%# =========================================================================
+    RESTRICTED CAGE (S5 §3.7). One door, so leaving is a room_exited the
+    engine sees (the legacy clock, the Recruiter's ring). Three Sorensen
+    records share one name and voice: the cage one can be knocked down and
+    holds only her card; the hidden koImmune one hosts Victoria's door scene
+    and the hatch route's default handover (stage 8 ruling 1).
+    PLACEHOLDER map: room_hce_vault. %>
+    "restricted_cage": {
+      "type": "room_hce_vault",
+      "door_sign": "Restricted Cage -- Authorised Staff Only",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "stacks_card",
+      "ambientSound": "server_room_ventilation",
+      "ambientVolume": 0.5,
+      "connections": {
+        "west": "restricted_stacks"
+      },
+      "npcs": [
+        {
+          "_comment": "Margaret Sorensen at the shredder's feed (B4). Non-hostile; fights back only if attacked. Holds her stacks card only (review M5). Her fate on a knock-out is set by HaX's npc_ko:sorensen mapping unless talked. PLACEHOLDER art (ASSET_LIST §1.2).",
+          "id": "sorensen",
+          "displayName": "Margaret Sorensen",
+          "npcType": "person",
+          "gender": "female",
+          "position": { "x": 6.5, "y": 4.5 },
+          "spriteSheet": "female_office_worker",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "avatar": "assets/characters/female_office_worker_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m09_digital_archaeology/ink/m09_sorensen_cage.json",
+          "voice": {
+            "name": "Vindemiatrix",
+            "style": "Retired county clerk in her sixties, now director of a Montana records archive. Consistent Western American (Montana) accent throughout -- do not shift to any other accent. Low, warm pitch; unhurried, exact, kind in tone. She never raises her voice and never hurries; the kindness is the dangerous part.",
+            "language": "en-US"
+          },
+          "currentKnot": "start",
+          "globalVarOnKO": "sorensen_ko",
+          "behavior": {
+            "facePlayer": false,
+            "hostile": { "chaseSpeed": 60, "attackDamage": 2, "pauseToAttack": true }
+          },
+          "itemsHeld": [
+            {
+              "type": "keycard",
+              "id": "sorensen_stacks_card",
+              "name": "Stacks Card, M. Sorensen",
+              "takeable": true,
+              "card_id": "stacks_card",
+              "rfid_protocol": "MIFARE_Classic_Custom_Keys",
+              "opens_lock": "stacks_card",
+              "observations": "Sorensen's own stacks card, on a reel."
+            }
+          ],
+          "observations": "Sorensen at the shredder's feed, working through a box sheet by sheet."
+        },
+        {
+          "_comment": "Hidden Sorensen record (B5), koImmune, holding the three bin files so knocking down the cage Sorensen can't drop a file that went in the shredder. Victoria's route: the door scene (onceOnly). Hatch route with no bin pressed: the default handover (stage 8 ruling 1).",
+          "id": "sorensen_door",
+          "displayName": "Margaret Sorensen",
+          "npcType": "person",
+          "gender": "female",
+          "position": { "x": 500, "y": 500 },
+          "spriteSheet": "female_office_worker",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "avatar": "assets/characters/female_office_worker_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m09_digital_archaeology/ink/m09_sorensen_door.json",
+          "voice": {
+            "name": "Vindemiatrix",
+            "style": "Retired county clerk in her sixties, now director of a Montana records archive. Consistent Western American (Montana) accent throughout -- do not shift to any other accent. Low, warm pitch; unhurried, exact, kind in tone. She never raises her voice and never hurries; the kindness is the dangerous part.",
+            "language": "en-US"
+          },
+          "currentKnot": "door",
+          "koImmune": true,
+          "behavior": { "initiallyHidden": true },
+          "itemsHeld": [
+            {
+              "type": "notes",
+              "id": "derek_file",
+              "name": "Asset File: D. Lawson",
+              "takeable": true,
+              "readable": true,
+              "text": "LAWSON, D. -- ASSET, VIRAL DYNAMICS\nMotive: belief. He has read everything I sent him and believes it more than I do. That is why he will do it, and why he will not stop when they tell him to.\nExpected loss of asset: total. Expected yield: one demonstration, and the agency's attention.\nStanding order, on hire: if taken, put the device down and wait. Say nothing.\nIf they publish his figures, let them. Publicity recruits.\nA good first lesson for whoever they send. -- A.",
+              "observations": "A thin asset file, costed in a neat, sloping hand."
+            },
+            {
+              "type": "notes",
+              "id": "letters",
+              "name": "Initiative to Social Fabric, Handoff 14",
+              "takeable": true,
+              "readable": true,
+              "text": "INITIATIVE TO SOCIAL FABRIC -- HANDOFF 14\nCourier: J.T., server closet, Mountain States. Collects Thursdays. Paid per envelope, cash.\nHandler: D. Varga, the Bozeman number. J.T. has never met him and doesn't ask.\nNext file: Teresa Villanueva, 41. Union rep, Butte copper mine.\nMethod: an affair, photographs in hand. Her medical file, obtained. Press first, then the union board.\nWhy her: when she says we, she means the men on the night shift. Take that away and they stop listening.",
+              "observations": "Typed correspondence between two cells. The last page names a woman in Butte."
+            },
+            {
+              "type": "notes",
+              "id": "nightshade_copy",
+              "name": "Cleared from Locker 47",
+              "takeable": true,
+              "readable": true,
+              "text": "Covering slip: Cleared from my locker and sent ahead. His notes to me, nothing of the Initiative's. Anything that named anyone else, I burned. -- 47\nUnder it, one card in another hand: 0x47. They will ask you to choose between them and us. You will not need to. Wait. -- A.\nAt the foot of the slip: A man may keep his own letters. It is other people's that make him a traitor.",
+              "observations": "A covering slip clipped to one small card."
+            }
+          ],
+          "eventMappings": [
+            {
+              "_comment": "Victoria's route: the gate opened by the maintenance code, the hatch never visited.",
+              "eventPattern": "room_entered:restricted_cage",
+              "condition": "globalVars.cage_opened && !globalVars.hatch_talked && !globalVars.bin_chosen",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "door"
+            },
+            {
+              "_comment": "Hatch route, no bin pressed: she hands over the nearest file (stage 8 ruling 1, m09-R M-02).",
+              "eventPattern": "room_entered:restricted_cage",
+              "condition": "globalVars.cage_opened && globalVars.hatch_talked && !globalVars.bin_chosen",
+              "onceOnly": true,
+              "conversationMode": "person-chat",
+              "targetKnot": "handover"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "shredder1",
+          "id": "cage_shredder",
+          "name": "Cross-Cut Shredder",
+          "position": { "x": 4.5, "y": 2.8 },
+          "takeable": false,
+          "observations": "An industrial cross-cut shredder. It has been running since before you landed."
+        },
+        {
+          "_comment": "S6 §1.6, the Series L sheets. legacy_box_read latches HaX's remark; her mapping sends it only while the sheets show.",
+          "type": "notes",
+          "sprite": "office-misc-box1",
+          "id": "feed_table_box",
+          "name": "The Last Box",
+          "position": { "x": 7.8, "y": 6.2 },
+          "takeable": false,
+          "readable": true,
+          "observations": "An open box on the feed table. She is working through it sheet by sheet.",
+          "observationVariants": [
+            { "condition": "globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted", "value": "The feed tray is empty. The last box never came up." },
+            { "condition": "globalVars.legacy_files_saved", "value": "The last box, off the feed table." },
+            { "condition": "globalVars.legacy_clock_run", "value": "Strips in the bin. The last box is gone." }
+          ],
+          "text": "<%= series_l %>",
+          "textVariants": [
+            { "condition": "globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted", "value": "SERIES L. RECALLED. M.S." },
+            { "condition": "globalVars.legacy_files_saved", "value": "<%= series_l %>" },
+            { "condition": "globalVars.legacy_clock_run", "value": "Lindqvist -- 20" }
+          ],
+          "onRead": { "setVariable": { "legacy_box_read": true } }
+        },
+        {
+          "_comment": "S4 §4 row 2c. Her print, lifted off the stamp on the hatch shelf.",
+          "type": "safe",
+          "sprite": "plan_chest2",
+          "id": "plan_cabinet",
+          "name": "Plan Cabinet",
+          "position": { "x": 7.8, "y": 2.8 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "biometric",
+          "requires": "Margaret Sorensen",
+          "biometricMatchThreshold": 0.5,
+          "observations": "A steel plan cabinet with a fingerprint reader she fitted herself. Not on any schedule.",
+          "puzzle_graph_role": "container",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "nightshade_file",
+              "name": "Candidate Assessment, Intake 2011",
+              "takeable": true,
+              "readable": true,
+              "text": "SAFETYNET -- INTAKE 2011 -- CANDIDATE ASSESSMENT\nCandidate: 0x47, provisional. Age: 23.\nAssessor's notes: Seen 7 November. Again on the 17th. Idealistic, tired already. Will wait if asked properly.\nAsk properly.\nNo payment. Belief is the payment.\nAssessor: initialled, not signed.",
+              "observations": "A SAFETYNET training form, fifteen years old. The assessor's notes are in a sloping hand you have seen tonight. The g in 'Again' loops back on itself. Both sevens are crossed.",
+              "onPickup": { "setVariable": { "nightshade_file_held": true } },
+              "puzzle_graph_role": "evidence"
+            }
+          ]
+        },
+        {
+          "_comment": "S6 §1.6. Read in place. printed_ledger_read feeds HaX's ledger_page_seen (a read after flag 2) and reeves_sheet_read (while the Reeves paragraph shows).",
+          "type": "notes",
+          "sprite": "binders1",
+          "id": "printed_ledger",
+          "name": "Initiative Ledger, Print Copy",
+          "position": { "x": 2.5, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "observations": "A ring binder of rows in the archive's cipher. The live copy will have the key.",
+          "observationVariants": [
+            { "condition": "globalVars.ledger_page_seen && globalVars.sorensen_fate === 'left'", "value": "Strips. She got to it." },
+            { "condition": "globalVars.flag2_submitted", "value": "A binder of costed rows. Two have notes in pencil." }
+          ],
+          "text": "INSIDER THREAT INITIATIVE -- LEDGER, PRINT COPY. M.S.\nCodename / source / placed / status / cost to date / notes\nVQTL -- XJ -- 11 -- ZKWM -- RHQ -- PWOZ BVNM\nKDSA -- XJ -- 9 -- ZKWM -- RHQ -- TOYL\nHGRF -- MQ -- 3 -- BEOP -- QNX -- LLUZ WYDE",
+          "textVariants": [
+            { "condition": "globalVars.ledger_page_seen && globalVars.sorensen_fate === 'left'", "value": "ACEMENTS 23. CANDIDA" },
+            { "condition": "globalVars.flag2_submitted && globalVars.m02_reeves_fate === 'arrested'", "value": "<%= printed_page %><%= reeves_para %>" },
+            { "condition": "globalVars.flag2_submitted && globalVars.m02_reeves_fate === 'ko'", "value": "<%= printed_page %><%= reeves_para %>" },
+            { "condition": "globalVars.flag2_submitted && globalVars.m02_reeves_fate === 'flagged'", "value": "<%= printed_page %><%= reeves_para %>" },
+            { "condition": "globalVars.flag2_submitted && globalVars.m02_reeves_fate === '' && globalVars.m02_completed && globalVars.m02_insider_asset_arrested", "value": "<%= printed_page %><%= reeves_para %>" },
+            { "condition": "globalVars.flag2_submitted", "value": "<%= printed_page %>" }
+          ],
+          "onRead": { "setVariable": { "printed_ledger_read": true } }
+        }
+      ]
+    },
+
+<%# =========================================================================
+    SORENSEN'S OFFICE (S5 §3.8). The keypad takes a code nobody has
+    (password, so the PIN cracker can't skip it, S4 P11); HaX opens it on the
+    deck choice. The safe: PIN 060216 (Kowalczyk's cracker, or the rent
+    ledger's header read the long way). PLACEHOLDER map: room_hce_office. %>
+    "sorensen_office": {
+      "type": "room_hce_office",
+      "door_sign": "Director -- M. Sorensen",
+      "locked": true,
+      "lockType": "password",
+      "requires": "<%= office_code %>",
+      "connections": {
+        "east": "restricted_stacks"
+      },
+      "objects": [
+        {
+          "type": "safe",
+          "sprite": "safe1",
+          "id": "director_safe",
+          "name": "Floor Safe",
+          "position": { "x": 6.5, "y": 7.5 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "<%= safe_pin %>",
+          "pinLength": 6,
+          "observations": "A floor safe with a six-digit keypad.",
+          "puzzle_graph_role": "container",
+          "puzzle_graph_unlocks": "tape_room",
+          "puzzle_graph_note": "Holds the tape room key card (and the Reading, the master schedule).",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "the_reading",
+              "name": "The Reading, 1: Viral Dynamics",
+              "takeable": true,
+              "readable": true,
+              "observations": "A thin file in a sloping hand. The first page is about you.",
+              "text": "<%= reading_head %>Lawson was arrested and kept his promise to me. Their file does not say who arrested him.",
+              "textVariants": [
+                { "condition": "globalVars.m01_final_choice === 'fight'", "value": "<%= reading_head %>They put Lawson on the floor when the argument was already won. Force first. Noted." },
+                { "condition": "globalVars.m01_final_choice === 'arrest'", "value": "<%= reading_head %>They read Lawson his rights. He kept his promise to me and said nothing." },
+                { "condition": "globalVars.m01_final_choice === '' && globalVars.m01_completed", "value": "<%= reading_head %>They read Lawson his rights. He kept his promise to me and said nothing." },
+                { "condition": "globalVars.m01_final_choice === 'recruit'", "value": "<%= reading_head %>They offered Lawson a deal. A recruiter's instinct. They should be careful whom they show it to." },
+                { "condition": "globalVars.m01_final_choice === 'expose'", "value": "<%= reading_head %>They gave Lawson's figures to the press. Applications rose. I keep the figure." },
+                { "condition": "globalVars.m01_final_choice === 'surrender'", "value": "<%= reading_head %>Lawson put the device down when they asked. It is the only order of mine he enjoyed." }
+              ],
+              "onPickup": { "setVariable": { "reading_found": true } },
+              "puzzle_graph_role": "evidence"
+            },
+            {
+              "type": "notes",
+              "id": "the_reading_2",
+              "name": "The Reading, 2: The Innocents",
+              "takeable": true,
+              "readable": true,
+              "observations": "The second page of the file, in the same hand.",
+              "text": "THE INNOCENTS\nTheir first days are not in my file. Someone at SAFETYNET is careful with them.",
+              "textVariants": [
+                { "condition": "globalVars.m02_patient_assaulted", "value": "THE INNOCENTS\nThey struck a patient on a ward. I have read the ward's notes. So, I expect, have they." },
+                { "condition": "globalVars.m01_completed && globalVars.m01_kevin_ko", "value": "THE INNOCENTS\nOn their first day they put a bystander on the floor. They will have told themselves it was necessary." },
+                { "condition": "globalVars.m01_completed && globalVars.m01_sarah_ko", "value": "THE INNOCENTS\nOn their first day they put a bystander on the floor. They will have told themselves it was necessary." },
+                { "condition": "globalVars.m01_completed && globalVars.m01_maya_ko", "value": "THE INNOCENTS\nOn their first day they put a bystander on the floor. They will have told themselves it was necessary." },
+                { "condition": "globalVars.m01_completed", "value": "THE INNOCENTS\nNot one bystander hurt on their first day. Rare. It will not last." }
+              ]
+            },
+            {
+              "type": "notes",
+              "id": "the_reading_3",
+              "name": "The Reading, 3: Albion",
+              "takeable": true,
+              "readable": true,
+              "observations": "The third page of the file, in the same hand.",
+              "text": "ALBION\nTheir report went upstairs and no further. I will not guess what it said.",
+              "textVariants": [
+                { "condition": "globalVars.m04_disclosure_choice === 'full'", "value": "ALBION\nThey told the inquiry everything, and every site was audited. My lesson, delivered by them. They do not know it yet." },
+                { "condition": "globalVars.m04_disclosure_choice === 'partial'", "value": "ALBION\nThey told half. Half is how we arrived here." },
+                { "condition": "globalVars.m04_disclosure_choice === 'quiet'", "value": "ALBION\nThey buried it. They understand me better than they admit." }
+              ]
+            },
+            {
+              "type": "notes",
+              "id": "the_reading_4",
+              "name": "The Reading, 4: Portland",
+              "takeable": true,
+              "readable": true,
+              "observations": "The fourth page of the file, in the same hand.",
+              "text": "PORTLAND\nOne team, four sites. They sent it where they were told. Obedience or trust. I will learn which.",
+              "textVariants": [
+                { "condition": "globalVars.m07_debrief_stance === 'defended'", "value": "PORTLAND\n'I'd make it again.' They would. I have counted on it." },
+                { "condition": "globalVars.m07_debrief_stance === 'owned'", "value": "PORTLAND\nThey said it was theirs. They will carry this too." },
+                { "condition": "globalVars.m07_debrief_stance === 'refused'", "value": "PORTLAND\n'Don't ask me to rank them.' I ranked them for them." },
+                { "condition": "globalVars.m07_debrief_stance === 'hardened'", "value": "PORTLAND\nThey asked for the numbers. Good. I keep numbers." }
+              ]
+            },
+            {
+              "type": "notes",
+              "id": "the_reading_last_page",
+              "name": "The Reading, Last Page",
+              "takeable": true,
+              "readable": true,
+              "observations": "The last page. A pencilled line in the margin, older than the ink.",
+              "text": "When the hour comes, they will be in the room and the key will be in reach. They will press it. I will not need to ask. They will have read this far and found nothing here that is untrue.\nBelow: Their handler will cover for them. She was taught to.\nPencilled in the margin: They will save Lawson's file. They will want to know why he did it.",
+              "onRead": { "setVariable": { "reading_finished": true } }
+            },
+            {
+              "type": "notes",
+              "id": "master_schedule",
+              "name": "Destruction Schedule (master)",
+              "takeable": true,
+              "readable": true,
+              "observations": "The order's schedule, ticked room by room in pencil.",
+              "text": "Series by number, per the order. -- A.\nIn pencil, room by room: Dock ✓. Front desk ✓. Reading room ✓. Open stacks ✓. Closet ✓. Stacks ✓. Cage ✓. Office ✓. Tape room ✓. Salvage cage, no series, no tick.\nIn the margin: Reading (safe). Plan chest: not listed. Keep?",
+              "onRead": { "setVariable": { "schedule_read": true } }
+            },
+            {
+              "type": "keycard",
+              "id": "tape_room_keycard",
+              "name": "Key Card, Tape Store",
+              "takeable": true,
+              "card_id": "tape_room_reader",
+              "opens_lock": "tape_room_reader",
+              "observations": "A key card on a lanyard. The tag says TAPE STORE.",
+              "puzzle_graph_role": "key",
+              "puzzle_graph_unlocks": "tape_room"
+            }
+          ]
+        },
+        {
+          "_comment": "S6 §1.7. Read in place; its header is the safe's PIN the long way. rent_ledger_read latches HaX's Irina line (A3-24).",
+          "type": "notes",
+          "sprite": "book1",
+          "id": "rent_book",
+          "name": "Rent Ledger",
+          "position": { "x": 2.5, "y": 4 },
+          "takeable": false,
+          "readable": true,
+          "observations": "A monthly ledger. Every page is headed with the same date.",
+          "text": "RENT LEDGER -- SITE 2, MT. Lessee: Big Sky Holdings LLC. Lease start: 06/02/16\nDue / received / amount / remitter\n07/01/16 -- 06/29/16 -- $4,250.00 -- acct ending 4471\n08/01/16 -- 07/29/16 -- $4,250.00 -- acct ending 4471\nPaid early, every month since. Same account.",
+          "onRead": { "setVariable": { "rent_ledger_read": true } },
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_unlocks": ["director_safe"],
+          "puzzle_graph_optional": true
+        },
+        {
+          "_comment": "S6 §1.7. Collected (find_the_deed); no variants (C-21). HaX's lines on pickup are texts (A3-21..23).",
+          "type": "notes",
+          "sprite": "case-file",
+          "id": "lease_file",
+          "name": "Lease Abstract and Construction File",
+          "position": { "x": 4.2, "y": 4 },
+          "takeable": true,
+          "readable": true,
+          "observations": "A lease and a roll of drawings for a bunker in this county.",
+          "text": "LEASE ABSTRACT\nLessor: State of Montana, surplus property.\nLessee: Big Sky Holdings LLC.\nPremises: Sun River Regional Control Site, a decommissioned 1962 civil defense facility, with access road and easements. Lewis and Clark County, Montana.\nTerm: 20 years. Commencement date: June 2, 2016.\nRecorded with the County Clerk and Recorder.\nAttached: as-built drawings, 1962. Refit drawings: withdrawn by lessee.",
+          "puzzle_graph_role": "evidence"
+        },
+        {
+          "type": "notes",
+          "sprite": "notes2",
+          "id": "danny_sheet",
+          "name": "Broker's Note: D. Foster",
+          "position": { "x": 5.9, "y": 4 },
+          "takeable": false,
+          "readable": true,
+          "observations": "A two-line memo on Zero Day paper.",
+          "text": "FOSTER, D. No further action.",
+          "textVariants": [
+            { "condition": "globalVars.m03_danny_fate === 'left'", "value": "FOSTER, D. Loose end, resolved." },
+            { "condition": "globalVars.m03_danny_fate === 'protected'", "value": "FOSTER, D. His survey methods are now in SAFETYNET's hands. Assume our selection list is known." },
+            { "condition": "globalVars.m03_danny_fate === 'exposed'", "value": "FOSTER, D. Named us in full. His survey of 214 is on the public record." }
+          ],
+          "onRead": { "setVariable": { "danny_sheet_read": true } }
+        },
+        {
+          "type": "notes",
+          "sprite": "notes4",
+          "id": "refit_ledger",
+          "name": "Build-Out Ledger",
+          "position": { "x": 7.5, "y": 4 },
+          "takeable": false,
+          "readable": true,
+          "observations": "Construction draws for the bunker's refit.",
+          "text": "BUILD-OUT -- SITE 2, MT\nDraws 1 to 9 -- lessee's own account -- paid in full.",
+          "textVariants": [
+            { "condition": "globalVars.m02_paid_ransom", "value": "BUILD-OUT -- SITE 2, MT\nDraw 9 -- funds received 11/2024 -- $189,600, converted from BTC -- applied: blast door, furnish and install.\nAll other draws: lessee's own account." }
+          ],
+          "onRead": { "setVariable": { "refit_ledger_read": true } }
+        },
+        {
+          "type": "notes",
+          "sprite": "tablet",
+          "id": "deck_controller",
+          "name": "Tape Deck Controller",
+          "position": { "x": 2.5, "y": 7 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "The deck's remote controller, still lit.",
+          "text": "STANDBY. Reels loaded: 2.",
+          "textVariants": [
+            { "condition": "globalVars.deck_pulled === 'none'", "value": "WIPE COMPLETE. Deck empty. Last operator: remote." },
+            { "condition": "globalVars.deck_pulled === 'her_file'", "value": "WIPE COMPLETE. 1 reel copied out before erase. Deck empty. Last operator: remote." },
+            { "condition": "globalVars.deck_pulled === 'alpha_tapes'", "value": "WIPE COMPLETE. 1 reel copied out before erase, series ALPHA. Deck empty. Last operator: remote." }
+          ]
+        },
+        {
+          "type": "hce_phd_frame1",
+          "id": "clerk_certificate",
+          "name": "Framed Certificate",
+          "position": { "x": 4.5, "y": 2.2 },
+          "takeable": false,
+          "observations": "LEWIS AND CLARK COUNTY, MONTANA. Board of County Commissioners. In appreciation of twenty years of service: Margaret A. Sorensen, Clerk and Recorder, 1986 to 2006. Presented June 2006."
+        }
+      ]
+    },
+
+<%# =========================================================================
+    TAPE ROOM (S5 §3.9). The card from the safe opens it. The shelf-mark
+    legend hangs beside the salvage keypad (the key to the coded line); the
+    Alpha tapes' deck and annotation sheets on the deck route.
+    PLACEHOLDER map: room_servers. %>
+    "tape_room": {
+      "type": "room_servers",
+      "door_sign": "Tape Store",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "tape_room_reader",
+      "ambientSound": "server_room_ventilation",
+      "ambientVolume": 0.35,
+      "connections": {
+        "south": "restricted_stacks",
+        "north": "salvage_cage"
+      },
+      "npcs": [
+        {
+          "_comment": "The Alpha clip's speaker (C6): hidden; opened by the deck's global on every interaction. m07's Architect art and voice name, styled as a tape recording; the user hears the style first (FA 9-9). PLACEHOLDER (ASSET_LIST §1.2, §6).",
+          "id": "alpha_recording",
+          "displayName": "Dr Adrian Tesseract (recording)",
+          "npcType": "person",
+          "gender": "male",
+          "position": { "x": 500, "y": 500 },
+          "spriteSheet": "the_architect",
+          "spriteTalk": "assets/characters/the_architect_talk.png",
+          "spriteVisemes": "assets/characters/the_architect_visemes.png",
+          "avatar": "assets/characters/the_architect_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m09_digital_archaeology/ink/m09_alpha_recording.json",
+          "voice": {
+            "name": "Sadaltager",
+            "style": "A SAFETYNET strategy lecturer in his fifties, recorded on reel tape in a lecture hall. Educated, unplaceable English. Low, unhurried, a lecturer's precision; patient with a room of students. Faintly amused.",
+            "language": "en-GB",
+            "fx": "radio"
+          },
+          "currentKnot": "deck",
+          "koImmune": true,
+          "behavior": { "initiallyHidden": true },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:alpha_deck_used",
+              "condition": "value === true",
+              "conversationMode": "person-chat",
+              "targetKnot": "deck",
+              "cooldown": 0
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "_comment": "S6 §1.9: the key to the salvage code (BONEYARD, bay 12). Observations only.",
+          "type": "chart",
+          "id": "shelf_code_legend",
+          "name": "Shelf Marks",
+          "position": { "x": 3.2, "y": 2.2 },
+          "takeable": false,
+          "observationDisplay": "gameDisplay",
+          "observations": "MOUNTAIN STATES RECORDS & RETENTION -- SHELF MARKS\nBay 1 ....... Reading room ..... COTTONWOOD\nBays 2 to 9 . Open stacks ...... MERIDIAN\nBay 10 ...... Restricted ....... WATCHTOWER\nBay 11 ...... Tape store ....... STANDBY\nBay 12 ...... Salvage .......... BONEYARD\nHouse rule: cage and keypad codes use the bay word. Never write a code down. M.S.",
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_note": "The key (BONEYARD) to the coded line HaX sends at flag 1; with CyberChef's Vigenere Decode they give the salvage keypad code."
+        },
+        {
+          "_comment": "S5 §3.9: triggerOnInteract sets alpha_deck_used each time, so the clip can be replayed.",
+          "type": "tape_library1",
+          "id": "alpha_tape_deck",
+          "name": "Reel Deck",
+          "position": { "x": 5.5, "y": 5.5 },
+          "takeable": false,
+          "observations": "A reel-to-reel deck. Empty spools.",
+          "observationVariants": [
+            { "condition": "globalVars.deck_pulled === 'alpha_tapes'", "value": "A reel-to-reel deck. One spool loaded, labelled ALPHA 2." }
+          ],
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "alpha_deck_used", "value": true }
+          ]
+        },
+        {
+          "_comment": "S6 §1.9 / §2.4: readable after the identity scene on the Alpha-tapes route. Its onRead latches alpha_annotations_opened; HaX promotes it to alpha_annotations_read only when the readable variant is showing (stage 9).",
+          "type": "notes",
+          "sprite": "notes3",
+          "id": "alpha_annotations",
+          "name": "Annotation Sheets, Series ALPHA",
+          "position": { "x": 7.2, "y": 5.5 },
+          "takeable": false,
+          "readable": true,
+          "observations": "A box of blank label stock.",
+          "observationVariants": [
+            { "condition": "globalVars.deck_pulled === 'alpha_tapes' && globalVars.identity_scene_done", "value": "Typed sheets, stencilled ALPHA, with one enciphered line at the foot." }
+          ],
+          "text": "Blank label stock.",
+          "textVariants": [
+            { "condition": "globalVars.deck_pulled === 'alpha_tapes' && globalVars.identity_scene_done", "value": "TOMB ALPHA -- SESSION TWO -- ANNOTATIONS\nA lock that expects you is a lock you cannot fight. Build the door before the room.\nFor session three, decode. Key: the series.\nClgyy ie nvurdtsf. Lpi pt hfga afetywacsz." }
+          ],
+          "onRead": { "setVariable": { "alpha_annotations_opened": true } }
+        }
+      ]
+    },
+
+<%# =========================================================================
+    SALVAGE CAGE (S5 §3.10). The decoded keypad code. Tomb Beta's server,
+    its own flag station (flags 3-4 only) and a second launcher onto the same
+    attack VM. Objects spaced along the floor (slot_audit decides final
+    spots). PLACEHOLDER map: room_hq_intel (10x6, door S). %>
+    "salvage_cage": {
+      "type": "room_hq_intel",
+      "door_sign": "Salvage -- Bay 12",
+      "locked": true,
+      "lockType": "password",
+      "requires": "<%= salvage_code %>",
+      "ambientSound": "server_room_ventilation",
+      "ambientVolume": 0.6,
+      "connections": {
+        "south": "tape_room"
+      },
+      "objects": [
+        {
+          "type": "server_rack1",
+          "id": "tomb_beta_rack",
+          "name": "Rack Server",
+          "position": { "x": 1.5, "y": 3 },
+          "takeable": false,
+          "observations": "A rack server, still running, fans loud in the cold. Asset tag: TOMB BETA. Nobody has stamped anything in here."
+        },
+        {
+          "_comment": "S6 §1.10 (stage 8, the m-15 echo). asset_tag_read latches HaX's text A3-32 before flag 3.",
+          "type": "notes",
+          "sprite": "notes_tucked1",
+          "id": "beta_asset_tag",
+          "name": "Property Label",
+          "position": { "x": 2.9, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "observations": "A service property label, half hidden under the TOMB BETA sticker. Signed out, and never signed back in.",
+          "text": "PROPERTY OF THE SERVICE. NOT FOR DISPOSAL.\nASSET 0412. Rack server, 2U.\nIssued to: Strategy Directorate.\nReturned: --",
+          "onRead": { "setVariable": { "asset_tag_read": true } }
+        },
+        {
+          "_comment": "VM-WIRE: the same attack VM as field_laptop (two launchers, one console; S5 §9).",
+          "type": "vm-launcher",
+          "id": "field_kit_link",
+          "name": "Field Kit Link",
+          "position": { "x": 4.3, "y": 3 },
+          "takeable": false,
+          "observations": "Your field kit, plugged into Tomb Beta's rack and linked to the drop terminal.",
+          "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+          "vm": <%= vm_object('attack_vm', {"id" => 1, "title" => "kali", "ip" => "172.16.0.3", "enable_console" => true}) %>,
+          "puzzle_graph_role": "vm"
+        },
+        {
+          "_comment": "VM-WIRE: acceptsVms and flags_for_vm system name and fallbacks. Only this station takes Tomb Beta's flags (S4 §4 row 8).",
+          "type": "flag-station",
+          "sprite": "safetynet_flag_terminal1",
+          "id": "tomb_beta_station",
+          "name": "Tomb Beta Drop Link",
+          "position": { "x": 5.7, "y": 3 },
+          "takeable": false,
+          "observations": "A drop link wired into Tomb Beta's rack. It takes what you pull off this server, and nothing else.",
+          "acceptsVms": ["tomb_beta_server"],
+          "flags": <%= flags_for_vm('tomb_beta_server', ['flag{m09_owner_placeholder}', 'flag{m09_control_placeholder}']) %>,
+          "flagRewards": [
+            { "type": "set_global", "key": "flag3_submitted", "value": true },
+            { "type": "set_global", "key": "flag4_submitted", "value": true }
+          ]
+        },
+        {
+          "type": "notes",
+          "sprite": "notes5",
+          "id": "albion_folder",
+          "name": "Printed Folder: VH-2017-0312",
+          "position": { "x": 7.1, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "observations": "Printer tray, empty.",
+          "observationVariants": [
+            { "condition": "globalVars.flag3_submitted", "value": "Three documents printed off the box, stapled together." }
+          ],
+          "text": "PRINTER READY. TRAY EMPTY.",
+          "textVariants": [
+            { "condition": "globalVars.flag3_submitted", "value": "CATALOGUE ENTRY -- VULNERABILITY HOLDINGS\nRef: VH-2017-0312. Authentication bypass, Carrow Controls RM-4 remote-management module.\nDeployed at: grid battery sites, water treatment works, substations. Approx. 400 UK sites.\nVendor aware: no.\nDisposition: RETAIN. Operational value. Review 2019.\nBoard: OPS ✓ LEGAL ✓ TECH ✓ INT ✓ STRAT ......\n\nMEMO. To: Disposition Board. From: Chief Strategist. 14 March 2017. Re: VH-2017-0312.\nWe are holding a flaw in a Carrow controller because it may one day be useful to us. It will certainly one day be useful to someone else.\nFour hundred sites run this module. Their engineers cannot patch what nobody has told them about, and we cannot defend them from it, having chosen not to.\nI recommend notification to the vendor within thirty days. I have drafted the notice. I would rather send it than explain later why we didn't.\nA. Tesseract\n\nDRAFT, NOT SENT. 14 March 2017. To: Product Security, Carrow Controls. Re: RM-4 remote-management module.\nWe have found a flaw in the RM-4 module that lets an unauthenticated user on the management network issue control commands. A test case is attached for your engineers.\nWe will keep this confidential for ninety days from the date of this letter, or until a fix ships, whichever is sooner, so that your customers have time to patch. We are glad to help with testing.\nWith thanks,\nDr Adrian Tesseract, Chief Strategist" }
+          ]
+        },
+        {
+          "type": "notes",
+          "sprite": "notes1",
+          "id": "mirror_job_printout",
+          "name": "Mirror Job Printout",
+          "position": { "x": 7.1, "y": 4.5 },
+          "takeable": false,
+          "readable": true,
+          "observations": "Printer tray, empty.",
+          "observationVariants": [
+            { "condition": "globalVars.flag4_submitted", "value": "Two pages in the printer tray. The first is signed." }
+          ],
+          "text": "PRINTER READY. TRAY EMPTY.",
+          "textVariants": [
+            { "condition": "globalVars.flag4_submitted", "value": "PROJECTED DEATHS ATTRIBUTABLE TO THE PUBLICATION, FIRST THIRTY DAYS\nRelease by key, all cities: 1,100 to 2,600.\nFallback by city: fewer, later.\nPrincipal causes: hospital systems (dispatch, infusion, records); grid control; water treatment.\nAssumes the cells move first.\nAn acceptable price for the last arms race. -- A.\n\nRELEASE CONFIGURATION\nManual, at console. Single key. Requires an operator present.\nFallback: 06:00 UTC, staged by city." }
+          ]
+        },
+        {
+          "_comment": "S5 §3.10: the enrolment binders in a picked crate (optional). Lockpick only by design: no key exists, so the validator's 'nothing can open it' warning is expected.",
+          "type": "safe",
+          "sprite": "supply_boxes1",
+          "id": "enrolment_crate",
+          "name": "Crate, Stencilled BETA",
+          "position": { "x": 5.7, "y": 4.5 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "requires": "beta_crate",
+          "keyPins": [40, 30, 50, 35],
+          "difficulty": "easy",
+          "observations": "A padlocked crate stencilled BETA.",
+          "puzzle_graph_role": "container",
+          "puzzle_graph_optional": true,
+          "contents": [
+            {
+              "type": "notes",
+              "id": "enrolment_binders",
+              "name": "Enrolment Binder, Tomb Beta",
+              "takeable": true,
+              "readable": true,
+              "observations": "A ring binder of enrolment sheets, pencilled in a hand you have seen twice tonight.",
+              "text": "TOMB BETA -- WORKSHOP ENROLMENT, SPRING INTAKE\nTwelve names, a photograph clipped to each.\nPencilled beside most of them: Ready. Not yet. Ask properly."
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+<%# Carry-over (CONTRACT §5.2; FA §3.1, §22): 43 imports and eight
+    `completed`, read-only, all through m09_carryover_vars.ink. The default
+    branch of every import is the never-played canon. %>
+  "importGlobals": [
+<% imports = [
+  ['m01_first_contact', 'final_choice', '""'], ['m01_first_contact', 'maya_ko', 'false'], ['m01_first_contact', 'kevin_ko', 'false'], ['m01_first_contact', 'sarah_ko', 'false'],
+  ['m02_ransomed_trust', 'gary_protected', 'false'], ['m02_ransomed_trust', 'insider_asset_arrested', 'false'], ['m02_ransomed_trust', 'reeves_fate', '""'],
+  ['m02_ransomed_trust', 'patient_assaulted', 'false'], ['m02_ransomed_trust', 'exposed_hospital', 'false'], ['m02_ransomed_trust', 'ghost_deal_accepted', 'false'], ['m02_ransomed_trust', 'paid_ransom', 'false'],
+  ['m03_ghost_in_the_machine', 'victoria_fate', '""'], ['m03_ghost_in_the_machine', 'danny_fate', '""'], ['m03_ghost_in_the_machine', 'danny_ko', 'false'], ['m03_ghost_in_the_machine', 'directive_decoded', 'false'],
+  ['m04_critical_failure', 'crew_lost', 'false'], ['m04_critical_failure', 'disclosure_choice', '""'], ['m04_critical_failure', 'voltage_captured', 'false'], ['m04_critical_failure', 'lore_safehouse_address_found', 'false'],
+  ['m05_insider_trading', 'recruiter_deal_accepted', 'false'], ['m05_insider_trading', 'recruiter_deal_confessed', 'false'], ['m05_insider_trading', 'found_pipeline_list', 'false'], ['m05_insider_trading', 'torres_turned', 'false'], ['m05_insider_trading', 'final_choice', '""'],
+  ['m06_follow_the_money', 'architect_identity_found', 'false'], ['m06_follow_the_money', 'monitoring_enabled', 'false'], ['m06_follow_the_money', 'irina_recruited', 'false'], ['m06_follow_the_money', 'minder_walked', 'false'], ['m06_follow_the_money', 'assets_seized', 'false'],
+  ['m07_architects_gambit', 'teacher_discussed', 'false'], ['m07_architects_gambit', 'architect_echo_heard', 'false'], ['m07_architects_gambit', 'team_assignment', '""'], ['m07_architects_gambit', 'debrief_stance', '""'], ['m07_architects_gambit', 'found_tomb_gamma', 'false'],
+  ['m08_the_mole', 'nightshade_triple_agent', 'false'], ['m08_the_mole', 'nightshade_arrested', 'false'], ['m08_the_mole', 'nightshade_ko_before_fate', 'false'], ['m08_the_mole', 'tomb_gamma_location_known', 'false'],
+  ['m08_the_mole', 'nightshade_tidied', 'false'], ['m08_the_mole', 'debrief_stance', '""'], ['m08_the_mole', 'netherton_ko', 'false'], ['m08_the_mole', 'netherton_hostile', 'false'], ['m08_the_mole', 'hax_ko', 'false']
+]
+completed = %w[m01_first_contact m02_ransomed_trust m03_ghost_in_the_machine m04_critical_failure m05_insider_trading m06_follow_the_money m07_architects_gambit m08_the_mole]
+rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default": #{d} }) } +
+       completed.map { |m| %Q(    { "from": "#{m}", "completed": "#{m[0, 3]}_completed" }) } %>
+<%= rows.join(",\n") %>
+  ],
+
+<%# Exports (CONTRACT §5.1): twelve, read by m10 as m09_<name>. %>
+  "exportGlobals": ["recruiter_offer", "deck_pulled", "sleeper_named", "sleeper_shortlist", "recruiter_secret",
+                    "hax_confession_answer", "albion_notified", "nightshade_shown_file", "reading_finished",
+                    "cage_bin", "legacy_files_saved", "alpha_annotations_read"],
+
+<%# Globals (CONTRACT §5.1, §5.3, §5.5; S4 §5). Ink file-locals (dock_heard,
+    hub_quiet, said_floor_line, confession_heard, asked_*, ...) are NOT here.
+    Stage 9 additions, not in the contract (see the stage 9 report):
+    noor_box_read and legacy_remark_sent (the legacy remark fires once, and
+    never on Noor's base box); alpha_annotations_opened (the sheet's onRead
+    fires on the blank-stock read too, so HaX's mapping promotes it to
+    alpha_annotations_read only when the readable variant is showing). %>
+  "globalVariables": {
+    "recruiter_offer": "",
+    "deck_pulled": "",
+    "sleeper_named": false,
+    "sleeper_shortlist": false,
+    "recruiter_secret": "",
+    "hax_confession_answer": "",
+    "albion_notified": false,
+    "nightshade_shown_file": false,
+    "reading_finished": false,
+    "cage_bin": "",
+    "legacy_files_saved": false,
+    "alpha_annotations_read": false,
+
+    "raid_team_answer": "",
+    "noor_told": false,
+    "noor_ko": false,
+    "old_coyote_ko": false,
+    "sorensen_ko": false,
+    "tran_ko": false,
+    "old_coyote_told": false,
+    "sorensen_fate": "left",
+    "tran_outcome": "left",
+    "reading_told_hax": false,
+    "memo_stance": "",
+    "kowalczyk_reply": "",
+    "schedule_read": false,
+    "briefing_played": false,
+
+    "flag1_submitted": false,
+    "flag2_submitted": false,
+    "flag3_submitted": false,
+    "flag4_submitted": false,
+
+    "stacks_entered": false,
+    "cage_opened": false,
+    "in_cage": false,
+    "nightshade_file_held": false,
+    "notebook_read": false,
+    "legacy_clock_run": false,
+    "ledger_page_seen": false,
+    "printed_ledger_read": false,
+    "reading_found": false,
+    "salvage_keypad_seen": false,
+    "tape_room_entered": false,
+    "salvage_opened": false,
+    "tran_alerted": false,
+    "office_entered": false,
+    "invoice_booked": false,
+    "alpha_deck_used": false,
+    "alpha_clip_played": false,
+    "alpha_annotations_opened": false,
+
+    "hatch_talked": false,
+    "bin_chosen": false,
+    "maintenance_code_used": false,
+    "hand_matched": false,
+    "ledger_read_heard": false,
+    "recruiter_call_started": false,
+    "recruiter_said_yes": false,
+    "recruiter_gone": false,
+    "deck_choice_made": false,
+    "afterwards_heard": false,
+    "torres_called": false,
+    "gary_called": false,
+
+    "identity_scene_started": false,
+    "identity_scene_done": false,
+    "identity_name_said": false,
+    "hour_read_started": false,
+    "hour_read_done": false,
+    "hour_read_choice_reached": false,
+    "tesseract_call_started": false,
+    "tesseract_call_done": false,
+
+    "start_debrief": false,
+    "debrief_notice_before": false,
+    "debrief_played": false,
+    "report_done": false,
+
+    "catalogue_guide_offered": false,
+    "catalogue_guide_hint_given": false,
+    "ledger_guide_offered": false,
+    "ledger_guide_hint_given": false,
+    "tomb_beta_guide_offered": false,
+    "tomb_beta_guide_hint_given": false,
+    "archive_code_guide_offered": false,
+    "archive_code_guide_hint_given": false,
+
+    "rent_ledger_read": false,
+    "refit_ledger_read": false,
+    "danny_sheet_read": false,
+    "case_file_read": false,
+    "legacy_box_read": false,
+    "noor_box_read": false,
+    "legacy_remark_sent": false,
+    "reeves_sheet_read": false,
+    "asset_tag_read": false
+  }
+}
