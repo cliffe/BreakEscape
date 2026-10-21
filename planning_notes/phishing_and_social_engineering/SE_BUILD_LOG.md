@@ -89,6 +89,10 @@ Fix round 1 (opus48): all of J-1, N-1 to N-6, O-1 and the ten UI items fixed (ta
 
 Fix round 2 (opus48): T2-1 fixed with an applied-marker global `se_mail_applied` that shares the influence's sync fate (the review's mailState placement would not have closed it; two partial-sync tests), T2-2, T2-3, T2-5, T2-8 fixed, T2-4 accepted with a test, T2-6 and T2-7 deferred; playtest A2, A3, A5 to A11, A13 fixed; A1, A4, A12 deferred. Back-compat item 7 bridge half passes (game 2913). Rails 717/0, slice validator 0, bridge-1a 37/37, bridge-1b 78/78. Orchestrator screenshot check: raw `{placeholders}` still show in template selects, change reasons are factor ids, two toolbar labels clip; queued as plan packet P6-M with the deferrals. **Phase 1 closed.**
 
+### Phase 4, round 1 (P4-T, grok): 1 blocker, 3 major, 7 minor
+
+`build_log/P4-T.md`. T4-1 (blocker, confirmed by the orchestrator in `person-chat-pretext.js`): a call records its outcome and shows the debrief only on `complete(true)`; Esc, ink END and a report close with `complete(false)` or teardown, so the outcome is never written and the session stays open. T4-2 (major, confirmed in `pretext-judge.js` `claimValue`): the judge reads blanks by blank name, the card stores them by fact id. T4-3: slice asks grant only globals, so a call never feeds the mail loop. T4-4: a granted ask is offered again. Minors T4-5 to T4-11 in the file. R3 regression over m01-m08, lab_scanning and sis01: no blocker or major (Grok's comparison; m01 combat-number differences attributed to the combat session's d9d2bf59). Fix round waits for the Phase 2 and 3 reviews.
+
 ## Questions for the user
 
 - **How to build the rest of Phase 4** (call preparation screen P4-C, call UI P4-E, its bridge and playtest). The orchestrator's brief for P4-C was stopped by a safety classifier.
