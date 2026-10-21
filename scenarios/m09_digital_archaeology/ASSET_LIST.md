@@ -43,7 +43,7 @@ The placeholders are all generic sheets, so the validator's "shared by different
 
 ## 2. Room maps
 
-Ten new maps, `room_m09_*`, built and registered by the room-dressing pass (README "Available Room Types"). Until then each room uses a shipped map of the same size, so door alignment and geometry hold (the sizes match S5 §2's stub, which passed `check_door_alignment.py`). Placeholder furniture may sit near a generated door; the dressing pass replaces it.
+Eleven new maps, `room_m09_*`, built and registered by the room-dressing pass (README "Available Room Types"). Until then each room uses a shipped map of the same size, so door alignment and geometry hold (the sizes match S5 §2's stub, which passed `check_door_alignment.py`). Placeholder furniture may sit near a generated door; the dressing pass replaces it.
 
 | Room id | Size (GU / tiles) | Doors (S5 §2) | Placeholder map now | Start the new map from | What the new map must hold (S5 §3) |
 |---|---|---|---|---|---|
@@ -51,7 +51,8 @@ Ten new maps, `room_m09_*`, built and registered by the room-dressing pass (READ
 | `front_desk` | 2×2 | E, N (staff door) | `room_reception` | `room_reception` | counter, Noor's desk (box under it), two trolleys of boxes, floor space by the trolleys for Noor |
 | `open_stacks` | 4×2 / 20×10 | S (west end), W, E | `room_aes_hall1` | `room_archive_1x2gu`, m08 `room_hq_archives` (shelving) | warehouse floor of client-deposit shelving bays, two long aisles for Old Coyote's round, the H&L bay and boxes near the east end, clear crossing at the west end (shutter to reading-room door) |
 | `server_closet` | 1×1 / 5×6 | W | `small_room_1x1gu` | `small_room_storage_1x1gu` | rack, console desk, degausser, reel rack |
-| `reading_room` | 2×2 | S, E, N | `room_uni_special` | `room_library_1x2gu`, `room_uni_special` | green-shaded lamps, reading desk with the field kit (laptop and drop terminal), case file and notebook scan desks two tiles apart, microfiche reader, public catalogue terminal |
+| `staff_passage` (stage 9) | 2×1 / 10×6 | S (SW corner), N (NE corner) | `room_qdc_hall` | `room_qdc_hall` | a staff corridor behind the front desk: card reader by the S door, noticeboard, coat hooks; two floor rows show |
+| `reading_room` | 2×1 / 10×6 (stage 9; was 2×2) | S (SE corner), E, N (NW corner) | `room_library_1x2gu` | `room_library_1x2gu` | green-shaded lamps, reading desk with the field kit (laptop and drop terminal), case file and notebook scan two tiles apart; two floor rows show (the passage's north wall covers the rest) |
 | `restricted_stacks` (hub) | 2×2 | S (SW corner), E (gate, row 2), W (office, row 2), N (tape room, NW corner) | `room_hq_ops` (has all four doors) | `room_uni_lecture` (collision rows) for the counter technique | **the hatch counter**: half a tile deep with collision at x 7.0–7.5, y 4–7, a sealed strip behind it (x 7.5–9) where `sorensen_hatch` stands; binders along the west wall either side of the office door; the stamp shelf at (6.5, 6.5) |
 | `restricted_cage` | 2×2 | W (gate, row 2) | `room_hce_vault` (mesh custody cage) | `room_hce_vault` | shredder line, feed table south-east of her spot (6.5, 4.5), plan cabinet in the NE corner, ledger shelf, degausser |
 | `sorensen_office` | 2×2 | E (row 2) | `room_hce_office` (door E) | `room_hq_director` | desk lamp, kettle, wall of binders, floor safe, framed certificate, keypad by the door |
@@ -142,7 +143,7 @@ Returning voices are copied exactly from their last mission (HaX from m08's phon
 To approve before any generation (one at a time, PixelLab first):
 
 1. **Characters:** ten new character sets (§1.2): nine full sets (Sorensen, Noor, Tran, Old Coyote, Dillard, Quintero, Kowalczyk, Malhotra, Arakawa) and a Tesseract set that m10 needs anyway. Each is a Gemini concept portrait (metered) then the PixelLab pipeline (bust, talk run, visemes, 8-direction walk with six animations).
-2. **Room maps:** ten `room_m09_*` maps (§2), built from shipped maps by the dressing pass; new prop art only where §4 says so.
+2. **Room maps:** eleven `room_m09_*` maps (§2), built from shipped maps by the dressing pass; new prop art only where §4 says so.
 3. **Backgrounds:** two cutscene backgrounds (§3), 400×400.
 4. **Object art:** the optional rows in §4; the trolleys and the bins are the two the design asked for.
 5. **Sound:** one shredder loop (§5).

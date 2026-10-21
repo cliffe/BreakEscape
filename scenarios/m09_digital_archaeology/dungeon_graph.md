@@ -11,10 +11,10 @@ Helena, Montana, after hours. Last night a courier carried the Architect's order
 | Story aims | 6 |
 | Total tasks | 27 (5 optional) |
 | VM flag challenges | 4 |
-| Physical locks | 10 |
+| Physical locks | 11 |
 | AND-gate convergences | 0 |
-| Rooms | 10 |
-| Puzzle graph nodes / edges | 55 / 62 |
+| Rooms | 11 |
+| Puzzle graph nodes / edges | 57 / 63 |
 | Story graph nodes / edges | 6 / 5 |
 
 ## Critical Path
@@ -71,6 +71,8 @@ flowchart TD
 
   door_front_desk["Front Desk -- Staff Only Beyond This Point<br/>Key lock"]
   front_desk("Front Desk -- Staff Only Beyond This Point")
+  door_staff_passage["Staff Only -- Card Access<br/>RFID lock"]
+  staff_passage("Staff Only -- Card Access")
   door_restricted_stacks["Restricted Stacks -- Series R<br/>RFID lock"]
   restricted_stacks("Restricted Stacks -- Series R")
   door_restricted_cage["Restricted Cage -- Authorised Staff Only<br/>RFID lock"]
@@ -93,13 +95,13 @@ flowchart TD
   catalogue_salvage_cage{"Catalogue: salvage cage"}
   npc_noor_haddad{"Noor Haddad"}
   staff_card_n_haddad{"Staff Card, N. Haddad"}
-  reading_room("Reading Room")
   open_stacks("Open Stacks -- Client Deposits")
   lock_hl_box["Harwick & Lowe, Dead Files<br/>Password lock"]
   placement_record_hl2015_0477{"Placement Record, HL2015-0477"}
   harwick_lowe_dead_files{"Harwick & Lowe, Dead Files"}
   npc_cody_old_coyote{"Cody Old Coyote"}
   key_ring_dock_office{"Key Ring, Dock Office"}
+  reading_room("Reading Room")
   field_laptop["Field Laptop"]
   safetynet_drop_terminal{"SAFETYNET Drop Terminal"}
   training_notebook_scan{"Training Notebook (scan)"}
@@ -126,6 +128,7 @@ flowchart TD
   server_closet("IT -- Authorised Contractors Only")
 
   door_front_desk --> front_desk
+  door_staff_passage --> staff_passage
   door_restricted_stacks --> restricted_stacks
   door_restricted_cage --> restricted_cage
   door_sorensen_office --> sorensen_office
@@ -145,7 +148,7 @@ flowchart TD
   catalogue_salvage_cage --> door_salvage_cage
   front_desk --> npc_noor_haddad
   npc_noor_haddad --> staff_card_n_haddad
-  staff_card_n_haddad --> reading_room
+  staff_card_n_haddad --> door_staff_passage
   open_stacks --> lock_hl_box
   lock_hl_box -.-> placement_record_hl2015_0477
   open_stacks -.-> harwick_lowe_dead_files
@@ -188,8 +191,8 @@ flowchart TD
   open_stacks --> reading_room
   open_stacks --> server_closet
 
-  class door_front_desk,door_restricted_stacks,door_restricted_cage,door_sorensen_office,door_tape_room,door_salvage_cage,lock_enrolment_crate,lock_director_safe,lock_hl_box,lock_plan_cabinet lock
-  class front_desk,restricted_stacks,restricted_cage,sorensen_office,tape_room,salvage_cage,loading_dock,reading_room,open_stacks,server_closet room
+  class door_front_desk,door_staff_passage,door_restricted_stacks,door_restricted_cage,door_sorensen_office,door_tape_room,door_salvage_cage,lock_enrolment_crate,lock_director_safe,lock_hl_box,lock_plan_cabinet lock
+  class front_desk,staff_passage,restricted_stacks,restricted_cage,sorensen_office,tape_room,salvage_cage,loading_dock,open_stacks,reading_room,server_closet room
   class lock_pick_kit,rfid_cloner,fingerprint_kit,cyberchef_workstation,pin_cracker_kowalczyk_s,catalogue_salvage_cage,placement_record_hl2015_0477,harwick_lowe_dead_files,safetynet_drop_terminal,training_notebook_scan,rubber_stamp,candidate_assessment_intake_2011,plan_cabinet,the_reading_1_viral_dynamics,floor_safe,rent_ledger,lease_abstract_and_construction_file,shelf_marks,crate_stencilled_beta item
   class npc_agent_hax,npc_noor_haddad,staff_card_n_haddad,npc_cody_old_coyote,key_ring_dock_office,key_card_tape_store key
   class field_laptop,field_kit_link,vmch_submit_catalogue_flag,vmch_submit_ledger_flag,vmch_submit_owner_flag,vmch_submit_control_flag vm
@@ -266,6 +269,8 @@ flowchart TD
 
   door_front_desk["Front Desk -- Staff Only Beyond This Point<br/>Key lock"]
   front_desk("Front Desk -- Staff Only Beyond This Point")
+  door_staff_passage["Staff Only -- Card Access<br/>RFID lock"]
+  staff_passage("Staff Only -- Card Access")
   door_restricted_stacks["Restricted Stacks -- Series R<br/>RFID lock"]
   restricted_stacks("Restricted Stacks -- Series R")
   door_restricted_cage["Restricted Cage -- Authorised Staff Only<br/>RFID lock"]
@@ -288,13 +293,13 @@ flowchart TD
   catalogue_salvage_cage{"Catalogue: salvage cage"}
   npc_noor_haddad{"Noor Haddad"}
   staff_card_n_haddad{"Staff Card, N. Haddad"}
-  reading_room("Reading Room")
   open_stacks("Open Stacks -- Client Deposits")
   lock_hl_box["Harwick & Lowe, Dead Files<br/>Password lock"]
   placement_record_hl2015_0477{"Placement Record, HL2015-0477"}
   harwick_lowe_dead_files{"Harwick & Lowe, Dead Files"}
   npc_cody_old_coyote{"Cody Old Coyote"}
   key_ring_dock_office{"Key Ring, Dock Office"}
+  reading_room("Reading Room")
   field_laptop["Field Laptop"]
   safetynet_drop_terminal{"SAFETYNET Drop Terminal"}
   training_notebook_scan{"Training Notebook (scan)"}
@@ -327,6 +332,7 @@ flowchart TD
   aim_report_in{{"Report To Netherton"}}
 
   door_front_desk --> front_desk
+  door_staff_passage --> staff_passage
   door_restricted_stacks --> restricted_stacks
   door_restricted_cage --> restricted_cage
   door_sorensen_office --> sorensen_office
@@ -346,7 +352,7 @@ flowchart TD
   catalogue_salvage_cage --> door_salvage_cage
   front_desk --> npc_noor_haddad
   npc_noor_haddad --> staff_card_n_haddad
-  staff_card_n_haddad --> reading_room
+  staff_card_n_haddad --> door_staff_passage
   open_stacks --> lock_hl_box
   lock_hl_box -.-> placement_record_hl2015_0477
   open_stacks -.-> harwick_lowe_dead_files
@@ -404,8 +410,8 @@ flowchart TD
   vmfl_submit_owner_flag -.-> aim_take_tomb_beta
   vmfl_submit_control_flag -.-> aim_take_tomb_beta
 
-  class door_front_desk,door_restricted_stacks,door_restricted_cage,door_sorensen_office,door_tape_room,door_salvage_cage,lock_enrolment_crate,lock_director_safe,lock_hl_box,lock_plan_cabinet lock
-  class front_desk,restricted_stacks,restricted_cage,sorensen_office,tape_room,salvage_cage,loading_dock,reading_room,open_stacks,server_closet room
+  class door_front_desk,door_staff_passage,door_restricted_stacks,door_restricted_cage,door_sorensen_office,door_tape_room,door_salvage_cage,lock_enrolment_crate,lock_director_safe,lock_hl_box,lock_plan_cabinet lock
+  class front_desk,staff_passage,restricted_stacks,restricted_cage,sorensen_office,tape_room,salvage_cage,loading_dock,open_stacks,reading_room,server_closet room
   class lock_pick_kit,rfid_cloner,fingerprint_kit,cyberchef_workstation,pin_cracker_kowalczyk_s,catalogue_salvage_cage,placement_record_hl2015_0477,harwick_lowe_dead_files,safetynet_drop_terminal,training_notebook_scan,rubber_stamp,candidate_assessment_intake_2011,plan_cabinet,the_reading_1_viral_dynamics,floor_safe,rent_ledger,lease_abstract_and_construction_file,shelf_marks,crate_stencilled_beta item
   class npc_agent_hax,npc_noor_haddad,staff_card_n_haddad,npc_cody_old_coyote,key_ring_dock_office,key_card_tape_store key
   class field_laptop,field_kit_link,vmch_submit_catalogue_flag,vmch_submit_ledger_flag,vmch_submit_owner_flag,vmch_submit_control_flag vm
@@ -447,6 +453,7 @@ flowchart TD
   front_desk["Front Desk -- Staff Only Beyond This Point<br/>(locked)"]
   open_stacks("Open Stacks -- Client Deposits")
   server_closet("IT -- Authorised Contractors Only")
+  staff_passage["Staff Only -- Card Access<br/>(locked)"]
   reading_room("Reading Room")
   restricted_stacks["Restricted Stacks -- Series R<br/>(locked)"]
   restricted_cage["Restricted Cage -- Authorised Staff Only<br/>(locked)"]
@@ -456,9 +463,10 @@ flowchart TD
 
   loading_dock --> open_stacks
   loading_dock --> front_desk
-  front_desk --> reading_room
+  front_desk --> staff_passage
   open_stacks --> reading_room
   open_stacks --> server_closet
+  staff_passage --> reading_room
   reading_room --> restricted_stacks
   restricted_stacks --> restricted_cage
   restricted_stacks --> sorensen_office
@@ -466,7 +474,7 @@ flowchart TD
   tape_room --> salvage_cage
 
   class loading_dock,open_stacks,server_closet,reading_room room
-  class front_desk,restricted_stacks,restricted_cage,sorensen_office,tape_room,salvage_cage lock
+  class front_desk,staff_passage,restricted_stacks,restricted_cage,sorensen_office,tape_room,salvage_cage lock
   class node_start start
 ```
 
@@ -499,6 +507,7 @@ flowchart TD
   front_desk["Front Desk -- Staff Only Beyond This Point<br/>(locked)"]
   open_stacks("Open Stacks -- Client Deposits")
   server_closet("IT -- Authorised Contractors Only")
+  staff_passage["Staff Only -- Card Access<br/>(locked)"]
   reading_room("Reading Room")
   restricted_stacks["Restricted Stacks -- Series R<br/>(locked)"]
   restricted_cage["Restricted Cage -- Authorised Staff Only<br/>(locked)"]
@@ -586,9 +595,10 @@ flowchart TD
 
   loading_dock --> open_stacks
   loading_dock --> front_desk
-  front_desk --> reading_room
+  front_desk --> staff_passage
   open_stacks --> reading_room
   open_stacks --> server_closet
+  staff_passage --> reading_room
   reading_room --> restricted_stacks
   restricted_stacks --> restricted_cage
   restricted_stacks --> sorensen_office
@@ -674,7 +684,7 @@ flowchart TD
   rc_enrolment_crate_77 --> rc_enrolment_binders_78
 
   class loading_dock,open_stacks,server_closet,reading_room room
-  class front_desk,restricted_stacks,restricted_cage,sorensen_office,tape_room,salvage_cage lock
+  class front_desk,staff_passage,restricted_stacks,restricted_cage,sorensen_office,tape_room,salvage_cage lock
   class rc_incident_book_1,rc_m09_catalogue_field_guide_3,rc_m09_ledger_field_guide_4,rc_m09_tomb_beta_field_guide_5,rc_m09_archive_code_guide_6,rc_catalogue_salvage_line_7,rc_trolley_list_20,rc_noor_desk_box_21,rc_noor_staff_card_23,rc_hl_bay_label_24,rc_hl_placing_sheet_26,rc_dock_office_key_28,rc_tape_side_console_30,rc_field_laptop_32,rc_drop_terminal_33,rc_drop_terminal_screen_34,rc_case_file_35,rc_notebook_scan_36,rc_sorensen_stamp_37,rc_derek_file_39,rc_letters_40,rc_nightshade_copy_41,rc_cage_shredder_42,rc_feed_table_box_43,rc_nightshade_file_45,rc_printed_ledger_46,rc_sorensen_stacks_card_48,rc_derek_file_50,rc_letters_51,rc_nightshade_copy_52,rc_the_reading_54,rc_the_reading_2_55,rc_the_reading_3_56,rc_the_reading_4_57,rc_the_reading_last_page_58,rc_master_schedule_59,rc_tape_room_keycard_60,rc_rent_book_61,rc_lease_file_62,rc_danny_sheet_63,rc_refit_ledger_64,rc_deck_controller_65,rc_clerk_certificate_66,rc_shelf_code_legend_67,rc_alpha_tape_deck_68,rc_alpha_annotations_69,rc_tomb_beta_rack_71,rc_beta_asset_tag_72,rc_field_kit_link_73,rc_tomb_beta_station_74,rc_albion_folder_75,rc_mirror_job_printout_76,rc_enrolment_binders_78 item
   class rc_npc_agent_hax_2,rc_npc_the_recruiter_8,rc_npc_agent_0x47_nightshade_9,rc_npc_david_torres_10,rc_npc_gary_whitlock_11,rc_npc_director_magnus_netherton_12,rc_npc_agent_hax_13,rc_npc_agent_0x2d_anchor_14,rc_npc_agent_0x5e_lantern_15,rc_npc_officer_dev_malhotra_16,rc_npc_officer_kenji_arakawa_17,rc_npc_director_magnus_netherton_18,rc_npc_director_magnus_netherton_19,rc_npc_noor_haddad_22,rc_npc_cody_old_coyote_27,rc_npc_lyle_dillard_29,rc_npc_jesse_tran_31,rc_npc_margaret_sorensen_38,rc_npc_margaret_sorensen_47,rc_npc_margaret_sorensen_49,rc_npc_dr_adrian_tesseract_recording_70 npc
   class rc_hl_box_25,rc_plan_cabinet_44,rc_director_safe_53,rc_enrolment_crate_77 container

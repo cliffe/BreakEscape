@@ -35,7 +35,7 @@ gy -4   +-----------------+-------------------+-------------------+
 gy -2   +-----------------+-------------------+-------------------+---------------------+---+
                           |  READING ROOM     =  OPEN STACKS (4x2 warehouse floor)       =SC |
                           |  drop terminal    |  Old Coyote's round, H&L boxes          |   |
-gy  0                     +---- rfid ---------+-------------------+---------------------+---+
+gy  0                     + STAFF PASSAGE rfid+-------------------+---------------------+---+
                           |  FRONT DESK       =  LOADING DOCK     |  start
                           |  Noor             |  key door W, shutter N
 gy  2                     +-------------------+-------------------+
@@ -48,9 +48,10 @@ gy  2                     +-------------------+-------------------+
 | Room | gx, gy | Size | Connections (lock on the door into the room) |
 |---|---|---|---|
 | `loading_dock` (start) | 0, 0 | 2×2 | N `open_stacks` (shutter, open); W `front_desk` (office door, key: picks) |
-| `front_desk` | −2, 0 | 2×2 | E `loading_dock`; N `reading_room` (staff door, RFID: Noor's card, cloned or given) |
+| `front_desk` | −2, 0 | 2×2 | E `loading_dock`; N `staff_passage` (staff door, RFID: Noor's card, cloned or given; stage 9) |
+| `staff_passage` (stage 9) | −2, −1 | 2×1 | S `front_desk`; N `reading_room` (open) |
 | `open_stacks` | 0, −2 | 4×2 | S `loading_dock`; W `reading_room` (open); E `server_closet` (open) |
-| `reading_room` | −2, −2 | 2×2 | S `front_desk`; E `open_stacks`; N `restricted_stacks` |
+| `reading_room` | −2, −2 | 2×1 (stage 9; was 2×2) | S `staff_passage`; E `open_stacks`; N `restricted_stacks` |
 | `server_closet` | 4, −2 | 1×1 | W `open_stacks` |
 | `restricted_stacks` | −2, −4 | 2×2 | S `reading_room` (RFID `stacks_release`: HaX's `unlockDoor` on flag 1); E `restricted_cage`; W `sorensen_office`; N `tape_room` |
 | `restricted_cage` | 0, −4 | 2×2 | W `restricted_stacks` (RFID `stacks_card`: Sorensen's card) |
@@ -85,7 +86,7 @@ Room types are placeholders. No shipped room type is a records warehouse; the ne
 
 ### 3.2 `front_desk`
 
-- **Size and doors.** 2×2. E: the dock. N: the staff door into the reading room, `lockType: "rfid"`, `requires: "reading_staff_door"`.
+- **Size and doors.** 2×2. E: the dock. N: the staff door into the staff passage (§3.11), whose room lock is `lockType: "rfid"`, `requires: "reading_staff_door"` (stage 9: a lock belongs to the room behind the door, so it can't sit on the reading room, §3.11).
 - **Lighting.** Fluorescent over the counter, the rest dim; Noor's desk lamp.
 - **NPC.** `noor_haddad` (person, walking) **on the floor by the trolleys**, about (6.5, 5.5), not behind the counter, so the player can reach her (review m5). `rfidCard: { card_id: "reading_staff_door", rfid_protocol: "EM4100" }` (an easy card) and `#clone_keycard:reading_staff_door` in her hub on **every** branch, as a choice that reads as standing close while she checks her list: the cloner's first use of the night, before Sorensen's harder card (review D-01). Warned in time, she hands over `noor_staff_card` (`keycard`, `opens_lock: "reading_staff_door"`) with `#give_item`; a knock-out drops it. Leaves on `noor_told` (`setVisible: false` on her own mapping; her desk and its objects stay). `globalVarOnKO: "noor_ko"`; `taskOnKO: "meet_the_clerk"`. No `los` block.
 - **Objects.** `trolley_list` (notes: the destruction schedule's copy, series numbers, "Series R" on every line) and the two trolleys, both with variants that empty in three steps on `flag1_submitted`, `flag2_submitted` and `cage_opened` (review D-04); `noor_desk_box` under her desk, a readable object whose `textVariants` show the legacy placement files on `m05_found_pipeline_list && !m05_recruiter_deal_accepted` and S6 §1's base otherwise ("RETURNS FOR RE-SHELVING. County deeds, 1971 to 1978."; stage 8 m-09: stage 9 copies object strings from S6 only).
@@ -113,7 +114,7 @@ Room types are placeholders. No shipped room type is a records warehouse; the ne
 
 ### 3.5 `reading_room`
 
-- **Size and doors.** 2×2. S: the staff door from the front desk. E: the open stacks. N: the restricted stacks' outer door (`rfid`, `requires: "stacks_release"`; no card in the world; HaX's `unlockDoor` on flag 1, S4 §4 row 1; refusal text before it, S4 §6.6).
+- **Size and doors.** 2×1 since stage 9 (10×6; the staff passage's north wall covers the bottom two rows, so objects sit on rows 2–3). S (south-east corner): the staff passage. E: the open stacks. N: the restricted stacks' outer door (`rfid`, `requires: "stacks_release"`; no card in the world; HaX's `unlockDoor` on flag 1, S4 §4 row 1; refusal text before it, S4 §6.6).
 - **Lighting.** The only warm room: green-shaded lamps, a radiator that knocks.
 - **Objects** (the drop terminal is a reading desk with the field kit on it; review D-13 thinned this room):
   - `field_laptop`: `vm-launcher` (the attack VM).
@@ -201,6 +202,13 @@ Room types are placeholders. No shipped room type is a records warehouse; the ne
 - **Tier 1 here.** `m02_gary_protected` (the keypad call); the identity scene's forms play here.
 - **Tasks here.** `open_salvage_cage`, `submit_owner_flag`, `hear_the_name`, `submit_control_flag`, `hear_the_mirror_job`, `send_the_notice` (optional; the send is in HaX's hub).
 
+### 3.11 `staff_passage` (stage 9)
+
+- **Why it exists.** The engine keeps one lock per room, not per door: a door into a room takes that room's `locked`/`lockType`/`requires` (`doors.js` reads the connected room; `game.rb validate_unlock` checks the room). An RFID lock on the reading room would have locked route B's open door from the open stacks too. So the staff door opens into this passage instead, and the passage opens into the reading room. Route A meets Noor's card; route B never meets the lock.
+- **Size and doors.** 2×1 (10×6) at (−2, −1), between the front desk and the reading room. S (south-west corner): the front desk; N (north-east corner, odd grid sum): the reading room. Room lock `rfid`, `requires: "reading_staff_door"`. Only floor rows 2–3 show (the front desk's north wall covers the rest). No NPCs, no objects; dressing only (a staff corridor: noticeboard, coat hooks).
+- **Cost.** The reading room drops from 2×2 to 2×1 to make room; its five objects fit on two rows. Nothing else moves: `predict_door_sides.py`, `check_door_alignment.py` (eleven connections OK), `check_room_walls.py` and `room_depth.py` were re-run (the passage and the reading room are both depth 2; every other depth is unchanged).
+- **Placeholder map** `room_qdc_hall`; the new map is `room_m09_staff_passage` (ASSET_LIST §2).
+
 ## 4. Lock graph and boss-key audit
 
 ### 4.1 The dungeon graph in text
@@ -245,7 +253,7 @@ Depth is doors from the start room on the shortest route (dock 0; front desk and
 | Lock | Type | Seen | Key | Verdict |
 |---|---|---|---|---|
 | Dock office door | key | 0 | 0 (picks, start kit) | ✅ by design: a capability from m01 being spent |
-| Staff door, front desk → reading room | RFID | 1 | 1 (Noor's card, cloned in conversation on every branch, or handed over) | ❌ same room, accepted: the cloner's easy first use, a social beat; route B always works |
+| Staff door, front desk → staff passage (stage 9) | RFID | 1 | 1 (Noor's card, cloned in conversation on every branch, or handed over) | ❌ same room, accepted: the cloner's easy first use, a social beat; route B always works |
 | Restricted stacks outer door | RFID (release) | 2 | 2 (flag 1, VM) | ✅ boss-key: the VM work is the hunt; HaX's refusal line says so |
 | Cage gate | RFID | 3 | 3 (Sorensen's card, cloned across the counter) | ❌ same room, accepted: the hunt is social (bluff, recognition, standing close), m08's beat made harder by the mesh and a harder card |
 | Plan cabinet | biometric | 4 | 3 (the stamp on the hatch shelf) | ✅ boss-key for a player who meets the reader first; ⚠️ key-before-lock for one who lifts the stamp on sight, which HaX's "the gate takes her card, the cabinet takes a print" gives a reason for |
@@ -288,7 +296,7 @@ Every tool the player has used in m01–m08 is in the kit, and each gets at leas
 | Combat | m01 on | Tran, the called guard, Sorensen if pushed, anyone the player chooses | every knock-out leaves the mission finishable |
 | VM | every mission | **four flags**, two stations, two launchers onto the same attack VM | §9 |
 
-Lock types on the map: key (2), RFID (4: the staff door, the outer door, the gate, the tape room), biometric (1), PIN (1), password (3: the office, the salvage keypad, the H&L box), plus the VM flags.
+Lock types on the map: key (2), RFID (4: the staff door (on the staff passage since stage 9), the outer door, the gate, the tape room), biometric (1), PIN (1), password (3: the office, the salvage keypad, the H&L box), plus the VM flags.
 
 ## 6. Progressive unlocking and backtracking
 
@@ -543,3 +551,9 @@ Review: `REVIEW_R3.md` (2 majors, 4 minors); S4 §18 has the full table.
 ## 17. Stage 8 folded in
 
 From `../stage_8/REVIEW_R1.md` and `finale/STAGE_8_RULINGS.md`, 2026-10-21; the full list is `scenarios/m09_digital_archaeology/CONTRACT.md` §15. m-01: Old Coyote's override and HaX's "guard to your door" text take the told/KO guards and a relay on entering the open stacks (§3.3). m-09: object strings come from S6 only (§3.2, §3.6). m-12: the three branch callers stay out of `npcIds`, like the Recruiter (§3.1, §8). Ruling 1: `sorensen_door` also hosts the hatch route's default handover (§3.7, §8).
+
+## 18. Stage 9 change
+
+- **The staff passage** (§2 table, §3.2, §3.5, §3.11, §4.2, §5): S5's staff door put an RFID lock on the reading room, but the engine locks rooms, not doors, so it would also have shut route B. Built at stage 9 as a 2×1 `staff_passage` between the front desk and a 2×1 reading room. Chosen over moving Noor's card to a cabinet because a cabinet would make the card optional on route A, and over a 1×1 vestibule because a narrower room between two 2-wide rooms breaks the north/south door alignment. CONTRACT §15 records it. No S6 string changes: the lock id `reading_staff_door` and the card's name stand, and Noor's "The staff door's around the side." still fits.
+- **The salvage cage's objects** (§3.10) sit on rows 2–3, not across four rows: the tape room's north wall covers the cage's bottom two rows, as it now covers the reading room's.
+

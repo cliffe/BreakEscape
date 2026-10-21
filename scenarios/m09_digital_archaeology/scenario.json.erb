@@ -25,12 +25,13 @@
 #   [SORENSEN'S OFFICE]=[RESTRICTED STACKS]=[RESTRICTED CAGE]
 #    password (HaX)      rfid stacks_release   rfid stacks_card (her card)
 #                        (HaX on flag 1)
-#                       [READING ROOM]=====[OPEN STACKS 4x2]=====[CLOSET 1x1]
-#                       rfid reading_staff_door   (shutter, open)
-#                       [FRONT DESK]=======[LOADING DOCK] start
+#                       [READING ROOM 2x1]=[OPEN STACKS 4x2]=====[CLOSET 1x1]
+#                       [STAFF PASSAGE 2x1] rfid reading_staff_door (Noor's card)
+#                       [FRONT DESK]=======[LOADING DOCK] start  (dock->stacks: shutter, open)
 #                        key dock_office_door (picks)
 #
-# CRITICAL PATH: dock -> reading room (flag 1) -> restricted stacks -> hatch
+# CRITICAL PATH: dock -> reading room (flag 1; route A via the front desk
+# and the staff passage, route B via the open stacks) -> restricted stacks -> hatch
 # (clone her card, lift her print) -> cage -> plan cabinet (Nightshade's file)
 # -> flag 2 -> the Recruiter's call (outside the cage) -> office (HaX opens
 # it) -> safe (PIN, Kowalczyk's cracker or the rent ledger) -> tape room
@@ -947,7 +948,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
 <%# =========================================================================
     FRONT DESK (S5 §3.2). Route A: picks on the dock's office door, then
     Noor's card (cloned on every branch, or handed over warned in time) on
-    the staff door into the reading room. PLACEHOLDER map: room_reception. %>
+    the staff door into the staff passage, which leads on to the reading
+    room (stage 9 change, S5 §3.11). PLACEHOLDER map: room_reception. %>
     "front_desk": {
       "type": "room_reception",
       "door_sign": "Front Desk -- Staff Only Beyond This Point",
@@ -958,7 +960,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       "difficulty": "easy",
       "connections": {
         "east": "loading_dock",
-        "north": "reading_room"
+        "north": "staff_passage"
       },
       "npcs": [
         {
@@ -994,8 +996,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "card_id": "reading_staff_door",
               "rfid_protocol": "EM4100",
               "opens_lock": "reading_staff_door",
-              "observations": "Noor's staff card. It opens the staff door into the reading room.",
-              "puzzle_graph_unlocks": ["reading_room"]
+              "observations": "Noor's staff card. It opens the staff door behind the front desk.",
+              "puzzle_graph_unlocks": ["staff_passage"]
             }
           ],
           "globalVarOnKO": "noor_ko",
@@ -1308,21 +1310,40 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     },
 
 <%# =========================================================================
-    READING ROOM (S5 §3.5). The drop terminal: the field laptop (the attack
-    VM), the flag station for flags 1-2, the live screen, HaX's case file and
-    the notebook scan. The only warm room.
-    STAGE 9 DEVIATION: S5 has an RFID staff door (Noor's card) from the
-    front desk and an open door from the open stacks. A lock belongs to the
-    room, not the door (doors.js reads the connected room; game.rb
-    validate_unlock checks the room), so one lock would shut both routes.
-    The room is left unlocked so route B (the guard) always works; Noor's
-    clone and card stay in her ink with nothing to open. For the
-    orchestrator (stage 9 report). PLACEHOLDER map: room_uni_special. %>
-    "reading_room": {
-      "type": "room_uni_special",
-      "door_sign": "Reading Room",
+    STAFF PASSAGE (stage 9 change; S5 §3.11). A lock belongs to a room, not
+    a door (doors.js reads the connected room's lock; game.rb validate_unlock
+    checks the room), so S5's RFID staff door straight into the reading room
+    would also have locked route B's open door from the stacks. The staff
+    door now opens into this 2x1 passage behind the front desk, and the
+    passage opens into the reading room: route A needs Noor's card, route B
+    never meets the lock. The reading room shrinks to 2x1 to make the room.
+    Only two floor rows show (the front desk's north wall covers the rest).
+    PLACEHOLDER map: room_qdc_hall. %>
+    "staff_passage": {
+      "type": "room_qdc_hall",
+      "door_sign": "Staff Only -- Card Access",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "reading_staff_door",
       "connections": {
         "south": "front_desk",
+        "north": "reading_room"
+      },
+      "objects": []
+    },
+
+<%# =========================================================================
+    READING ROOM (S5 §3.5). The drop terminal: the field laptop (the attack
+    VM), the flag station for flags 1-2, the live screen, HaX's case file and
+    the notebook scan. The only warm room. 2x1 since stage 9 (the staff
+    passage sits below it); the passage's north wall covers the bottom two
+    rows, so every object is on rows 2-3, clear of the NW and SW doors.
+    PLACEHOLDER map: room_library_1x2gu. %>
+    "reading_room": {
+      "type": "room_library_1x2gu",
+      "door_sign": "Reading Room",
+      "connections": {
+        "south": "staff_passage",
         "east": "open_stacks",
         "north": "restricted_stacks"
       },
@@ -1332,7 +1353,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "vm-launcher",
           "id": "field_laptop",
           "name": "Field Laptop",
-          "position": { "x": 3, "y": 4 },
+          "position": { "x": 3.2, "y": 2.4 },
           "takeable": false,
           "observations": "Your field kit, set up on a reading desk: a laptop on the archive's network, quiet enough not to show up on anyone's screen.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
@@ -1345,7 +1366,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "safetynet_flag_terminal1",
           "id": "drop_terminal",
           "name": "SAFETYNET Drop Terminal",
-          "position": { "x": 5, "y": 4 },
+          "position": { "x": 4.8, "y": 2.4 },
           "takeable": false,
           "observations": "The drop terminal. Anything you pull off the catalogue server goes to HaX through here.",
           "acceptsVms": ["catalogue_server"],
@@ -1363,7 +1384,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "monitor_stand1",
           "id": "drop_terminal_screen",
           "name": "SAFETYNET Drop Terminal",
-          "position": { "x": 7, "y": 4 },
+          "position": { "x": 6.4, "y": 2.4 },
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -1391,7 +1412,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "case-file",
           "id": "case_file",
           "name": "Case File, Helena",
-          "position": { "x": 2.5, "y": 7 },
+          "position": { "x": 4, "y": 3.5 },
           "takeable": false,
           "readable": true,
           "observations": "A typed case file in HaX's name. Item 4 has a scan of its own on the next desk.",
@@ -1407,7 +1428,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "notes_notebook1",
           "id": "notebook_scan",
           "name": "Training Notebook (scan)",
-          "position": { "x": 4.5, "y": 7 },
+          "position": { "x": 6, "y": 3.5 },
           "takeable": false,
           "readable": true,
           "observations": "A scanned page from a student's notebook. Two hands: the student's, and a teacher's in the margin. In the margin, the g in 'again' loops back on itself, and the 7 is crossed.",
@@ -2062,7 +2083,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     SALVAGE CAGE (S5 §3.10). The decoded keypad code. Tomb Beta's server,
     its own flag station (flags 3-4 only) and a second launcher onto the same
     attack VM. Objects spaced along the floor (slot_audit decides final
-    spots). PLACEHOLDER map: room_hq_intel (10x6, door S). %>
+    spots). Only rows 2-3 show: the tape room's north wall covers rows 4-5.
+    PLACEHOLDER map: room_hq_intel (10x6, door S). %>
     "salvage_cage": {
       "type": "room_hq_intel",
       "door_sign": "Salvage -- Bay 12",
@@ -2079,7 +2101,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "server_rack1",
           "id": "tomb_beta_rack",
           "name": "Rack Server",
-          "position": { "x": 1.5, "y": 3 },
+          "position": { "x": 1.6, "y": 2.4 },
           "takeable": false,
           "observations": "A rack server, still running, fans loud in the cold. Asset tag: TOMB BETA. Nobody has stamped anything in here."
         },
@@ -2089,7 +2111,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "notes_tucked1",
           "id": "beta_asset_tag",
           "name": "Property Label",
-          "position": { "x": 2.9, "y": 3 },
+          "position": { "x": 2.6, "y": 3.5 },
           "takeable": false,
           "readable": true,
           "observations": "A service property label, half hidden under the TOMB BETA sticker. Signed out, and never signed back in.",
@@ -2101,7 +2123,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "vm-launcher",
           "id": "field_kit_link",
           "name": "Field Kit Link",
-          "position": { "x": 4.3, "y": 3 },
+          "position": { "x": 3.6, "y": 2.4 },
           "takeable": false,
           "observations": "Your field kit, plugged into Tomb Beta's rack and linked to the drop terminal.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
@@ -2114,7 +2136,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "safetynet_flag_terminal1",
           "id": "tomb_beta_station",
           "name": "Tomb Beta Drop Link",
-          "position": { "x": 5.7, "y": 3 },
+          "position": { "x": 5, "y": 2.4 },
           "takeable": false,
           "observations": "A drop link wired into Tomb Beta's rack. It takes what you pull off this server, and nothing else.",
           "acceptsVms": ["tomb_beta_server"],
@@ -2129,7 +2151,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "notes5",
           "id": "albion_folder",
           "name": "Printed Folder: VH-2017-0312",
-          "position": { "x": 7.1, "y": 3 },
+          "position": { "x": 6.4, "y": 2.4 },
           "takeable": false,
           "readable": true,
           "observations": "Printer tray, empty.",
@@ -2146,7 +2168,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "notes1",
           "id": "mirror_job_printout",
           "name": "Mirror Job Printout",
-          "position": { "x": 7.1, "y": 4.5 },
+          "position": { "x": 7.4, "y": 3.5 },
           "takeable": false,
           "readable": true,
           "observations": "Printer tray, empty.",
@@ -2164,7 +2186,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "supply_boxes1",
           "id": "enrolment_crate",
           "name": "Crate, Stencilled BETA",
-          "position": { "x": 5.7, "y": 4.5 },
+          "position": { "x": 4.4, "y": 3.5 },
           "takeable": false,
           "locked": true,
           "lockType": "key",

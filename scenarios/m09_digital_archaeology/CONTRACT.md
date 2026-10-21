@@ -705,4 +705,6 @@ For the orchestrator. None stops the writers; each says what the writers do mean
 - CC 2 / ruling 18: the Recruiter's "Agent 0x00" and "Goodnight, agent." stand.
 - `// VM hint` comments untouched.
 
+**Stage 9 (build) change: the staff passage.** The engine locks rooms, not doors, so S5's RFID staff door on the reading room would also have locked route B's open door from the open stacks. A new 2×1 room, `staff_passage`, sits between the front desk and the reading room (now 2×1) and carries the lock (`rfid`, `requires: "reading_staff_door"`). Noor's card and clone open it on route A; route B never meets it. No ink, knot, global or S6 string changes ("The staff door's around the side." still fits). S5 §3.11 and §18 record the layout.
+
 **Voiced counts after stage 8**: group A calls 56 distinct (HaX 53, Netherton 3; one new HaX line, one Netherton line reworded); the Recruiter 14 and B1's HaX 17, unchanged; briefing 91 character lines plus 8 Narrator (7 new: Netherton 3, HaX 4; 2 reworded); debrief 50 plus 16 Narrator (2 reworded); Sorensen 2 new lines (B5), 1 Narrator line reworded (B4); Noor 1 reworded.

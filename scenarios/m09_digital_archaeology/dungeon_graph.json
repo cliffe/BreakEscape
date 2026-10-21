@@ -15,6 +15,18 @@
       "optional": false
     },
     {
+      "id": "door_staff_passage",
+      "label": "Staff Only -- Card Access<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "staff_passage",
+      "label": "Staff Only -- Card Access",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "door_restricted_stacks",
       "label": "Restricted Stacks -- Series R<br/>RFID lock",
       "kind": "lock",
@@ -147,12 +159,6 @@
       "optional": false
     },
     {
-      "id": "reading_room",
-      "label": "Reading Room",
-      "kind": "room",
-      "optional": false
-    },
-    {
       "id": "open_stacks",
       "label": "Open Stacks -- Client Deposits",
       "kind": "room",
@@ -187,6 +193,12 @@
       "label": "Key Ring, Dock Office",
       "kind": "key",
       "optional": true
+    },
+    {
+      "id": "reading_room",
+      "label": "Reading Room",
+      "kind": "room",
+      "optional": false
     },
     {
       "id": "field_laptop",
@@ -340,6 +352,11 @@
       "soft": false
     },
     {
+      "from": "door_staff_passage",
+      "to": "staff_passage",
+      "soft": false
+    },
+    {
       "from": "door_restricted_stacks",
       "to": "restricted_stacks",
       "soft": false
@@ -436,7 +453,7 @@
     },
     {
       "from": "staff_card_n_haddad",
-      "to": "reading_room",
+      "to": "door_staff_passage",
       "soft": false
     },
     {
