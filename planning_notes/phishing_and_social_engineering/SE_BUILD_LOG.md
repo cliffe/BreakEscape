@@ -93,6 +93,10 @@ Fix round 2 (opus48): T2-1 fixed with an applied-marker global `se_mail_applied`
 
 `build_log/P4-T.md`. T4-1 (blocker, confirmed by the orchestrator in `person-chat-pretext.js`): a call records its outcome and shows the debrief only on `complete(true)`; Esc, ink END and a report close with `complete(false)` or teardown, so the outcome is never written and the session stays open. T4-2 (major, confirmed in `pretext-judge.js` `claimValue`): the judge reads blanks by blank name, the card stores them by fact id. T4-3: slice asks grant only globals, so a call never feeds the mail loop. T4-4: a granted ask is offered again. Minors T4-5 to T4-11 in the file. R3 regression over m01-m08, lab_scanning and sis01: no blocker or major (Grok's comparison; m01 combat-number differences attributed to the combat session's d9d2bf59). Fix round waits for the Phase 2 and 3 reviews.
 
+### Phase 2, round 1 (P2-T, grok): 0 blocker, 1 major, 5 minor
+
+`build_log/P2-T.md`. The Phase 1a playtest passes with facts found by browsing (game 2949); bridge-2 15/15 (game 2950). F1 (major): addresses inside selectable blocks render in GNF, because `.minigame-container button` (minigames-framework.css) beats `.ob-block { font: inherit }`, and `_lines()` marks only staff addresses and metadata as `ob-readable`. Minors: site tabs show ids, Teague's headshot 404s, no ready toast when browsing grants the last fact, stale stand-in line in mission.json, `pages[].path` unlinted and `pages[].url` missing from 00 §11.
+
 ## Questions for the user
 
 - **How to build the rest of Phase 4** (call preparation screen P4-C, call UI P4-E, its bridge and playtest). The orchestrator's brief for P4-C was stopped by a safety classifier.
