@@ -125,3 +125,12 @@ Orchestrator rulings for the R1 fix passes:
 - Noted, not ours: `story_design/theme_songs/m09_digital_archaeology.md` modified and an untracked draft beside it (the user's own work); agents leave it alone.
 - m10 R1 fix pass: 62 fixed, 1 moved (W24), 1 superseded by F11 (W31). Head start at the outer lock; countdown objects read a story-beat global; talk-down claims react to the last answer, decoys strong but aimed wrong, exchange 3 "clean hands"; pause under his hand; lethal trigger is his hand on the fallback key; F11 justified + cold (`ending = executed`, AGENT 0x00: IN CUSTODY); whodunit clue 3 is the cloner record, three-beat accusation; silent Nightshade door decision; HaX answers Tesseract on every branch; Netherton and Tesseract speak; HaX pays m09's promise at 06:00 (he asked her to go with him). 33 proposed arc changes. Files checked intact (author used a section-replace script).
 - Orchestrator rulings: WREN has a single goal, the key (m10 W7); m09's "plays both ends" is replaced (m09 R2 pass applies it). FINALE_ARC D-11 is reworded by the arc-keeper to cover only the justified lethal version; the cold version follows F11.
+
+### Stages 1+2 round 2
+| Mission / review | Blocker | Major | Minor | Verdict |
+|---|---|---|---|---|
+| m09 writing (`m09.../stage_1/REVIEW_R2_WRITING.md`) | 0 | 2 | 15 | not clean: 21/27 R1 fixed; N-01 double-cross is the one best answer (price it aloud), N-02 06:00 "same minute" vs city-by-city (key = everywhere at once); confession's key lines sound written; stale stage-2 lines |
+| m10 writing (`m10.../stage_1/REVIEW_R2_WRITING.md`) | 0 | 8 | 13 | not clean: 29/35 R1 resolved; the deciding concession doesn't concede (N10), cold-start player can win by picking the long button (N2/N3), "afterwards" overused and HaX's "the rest" self-labelling (N4), pause vs six (N5), "I read files" contradicts m07's "I prefer to watch" (N7), Imran's phone (N6) |
+| m09 structure (`m09.../stage_1/REVIEW_R2_STRUCTURE.md`) | 0 | 3 | 12 | not clean: the night's order and guarantees aren't enforced (R2-S01 flag order, R2-S02 empty exports / skippable identity scene, R2-S03 schedule clue optional); arc changes: accept 8, tweak 6, modify 3, add 6; 14 engine items for stages 4–5 |
+
+Rulings sent with m09's R2 fix pass: WREN single goal; reviewer's locks for the order; HaX refuses "Ninety-nine" in m09 (matches m10); "the rest" (he asked her to go with him; she said no, but it took till morning) is only promised in m09, paid in m10; budget stated as a range (85 with field guides, 95–100 without).
