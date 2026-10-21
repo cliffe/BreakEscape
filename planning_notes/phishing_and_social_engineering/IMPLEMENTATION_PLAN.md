@@ -63,7 +63,8 @@ tree.
   and task gates can be proved with it.
 - **Playtest models.** Every playtest is Sonnet, except the builder's (P5-T), which is Haiku, by the
   user's rule that builder details go to Haiku only.
-- **Commits.** Commit as each phase completes, but only when the user asks. Engine first, then the
+- **Commits.** The orchestrator commits at the end of each design-implement-review iteration (user,
+  2026-10-21: standing authority for this build). Engine first, then the
   scenarios that rely on it, one commit per logical group. Run the node and Rails suites before
   every engine commit. No attribution lines.
 - **Shared tree.** No `git stash`, `checkout --` or `reset`. Compare with `git show HEAD:<path>`.
@@ -1099,7 +1100,9 @@ Notes that hold for the table:
   `core/game.js`, `show.html.erb`, `scripts/minigame-data-schemas.json`) add only their own block and
   re-read the file just before editing.
 - Validator lints go in the packet's own `scripts/validate_social/<area>.rb` (0.7).
-- Image generation is never inside a packet. Each asset is a separate request to the user.
+- Image generation is never inside a packet. The first batch (the new Slice rows) is authorised
+  (user, 2026-10-21); every later round of art, or a redo of a batch-1 image, is asked for first.
+  Wiring packets that copy placeholder sprites never overwrite a file that already exists.
 
 | Id | Phase | Scope | Model | Inputs | Outputs | Gate |
 |----|-------|-------|-------|--------|---------|------|
@@ -1221,11 +1224,12 @@ No question is open now.
 Things no agent does, gathered in one place so the orchestrator can batch them into one question
 (AGENTS.md "Asking the user for input"):
 
-- **Commits**, at the end of each phase, including the regenerated `package-lock.json` (P0-K).
+- **Commits**: authorised per iteration (2026-10-21); the regenerated `package-lock.json` (P0-K) is
+  committed with its iteration.
 - **Pushing a branch** so the new CI job runs; CI is proved green only there.
 - **`db:seed` on deployed instances**, so `lab_games` (the lab and `lab_tesseract_trials`) and the
   slice's `testing` label take effect. The dev database is seeded by the agents.
-- **Each image**, one at a time with sign-off (PixelLab), and **the Gemini concept portraits and
+- **Each image after batch 1** (batch 1, the new Slice rows, is authorised), and **the Gemini concept portraits and
   POV concepts**, which are metered: scope and cost agreed before any run (ASSETS §8).
 - **Voice audio**: words signed off, then the cost agreed, before any TTS (Phase 8).
 - **The timed human playtest** of the lab (§2.6): who runs it (the user or a student volunteer),

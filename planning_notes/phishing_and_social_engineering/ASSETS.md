@@ -1,7 +1,8 @@
 # Asset list: phishing and social engineering plan
 
-**Images are generated one at a time, with the user's sign-off between each.** Nothing in this list has been
-generated. PixelLab is the default (flat subscription); Gemini (metered) is only for the non-pixel concept
+**Images are generated one at a time, with the user's sign-off between each.** Exception (user,
+2026-10-21): batch 1, the new Slice rows, may be generated with PixelLab and Gemini without per-image
+sign-off; later rounds are asked for first. Batch 1 status is in `SE_BUILD_LOG.md`. PixelLab is the default (flat subscription); Gemini (metered) is only for the non-pixel concept
 portraits and POV room concepts, and its use is confirmed with the user before any run. Sprites are made at
 their target size, never resized down (standing rule).
 

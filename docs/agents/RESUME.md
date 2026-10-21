@@ -1,3 +1,7 @@
+# Resume note: social-engineering build (started 2026-10-21)
+
+Brief `docs/agents/SE_BUILD_BRIEF.md`; plan and log `planning_notes/phishing_and_social_engineering/IMPLEMENTATION_PLAN.md`, `SE_BUILD_LOG.md` (its "Resume" section holds the current status).
+
 # Resume note: finale m09 + m10 (started 2026-10-20)
 
 Brief `docs/agents/FINALE_BRIEF.md`; log `scenarios/FINALE_DEV_LOG.md`; pending `scenarios/FINALE_DECISIONS_PENDING.md`. Outputs under `planning_notes/overall_story_plan/mission_initializations/finale/`, `.../m09_digital_archaeology/`, `.../m10_full_disclosure/`.
