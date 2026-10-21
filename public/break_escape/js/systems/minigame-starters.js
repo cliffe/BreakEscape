@@ -539,7 +539,8 @@ export function startPinMinigame(lockable, type, correctPin, callback) {
         correctPin: correctPin,
         // Scenario option (doors keep it on doorProperties), default 3
         maxAttempts: lockable?.maxAttempts || lockable?.scenarioData?.maxAttempts || lockable?.doorProperties?.maxAttempts || undefined, // undefined: the minigame default (5), or no limit with a PIN cracker
-        pinLength: correctPin ? correctPin.length : 4, // Default to 4 if null (server-side validation)
+        // The server strips `requires`, so a non-4 PIN declares its length (pinLength is not secret)
+        pinLength: correctPin ? correctPin.length : (lockable?.scenarioData?.pinLength || lockable?.doorProperties?.pinLength || 4),
         hasPinCracker: hasPinCracker,
         allowBackspace: true,
         lockable: lockable,

@@ -343,7 +343,7 @@ def check_unknown_fields(json_data)
     voice ttsVoice sender timestamp avatar sprite
     collection_group onRead onPickup onInteract
     lockType requires opens_lock key_id keyPins card_id difficulty
-    passwordHint showHint showKeyboard maxAttempts
+    passwordHint showHint showKeyboard maxAttempts pinLength
     postitNote showPostit
     hasFingerprint fingerprintOwner fingerprintDifficulty fingerprintQuality
     fingerprintOwnerName fingerprintPattern fingerprintSurface fingerprintCandidates biometricMatchThreshold
