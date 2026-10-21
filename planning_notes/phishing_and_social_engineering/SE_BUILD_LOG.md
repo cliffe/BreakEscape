@@ -4,7 +4,7 @@ Brief: `docs/agents/SE_BUILD_BRIEF.md`. Plan: `IMPLEMENTATION_PLAN.md`. Artefact
 
 ## Resume
 
-Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a closed (`5e2889ff`). Phase 1 closed. Next: Phases 2 (OSINT), 3 (triage) and 4 (pretext calls) in parallel. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
+Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a closed (`5e2889ff`). Phase 1 closed (`391b7dd7`). Phases 2-4 wave 1 running: P2-A, P2-B, P2-C, P3-A, P3-B, P3-C, P3-D, P3-E, P4-A, P4-B, P4-D, P4-F, P4-G (shared notes `build_log/P2_4_COMMON.md`). Next: P2-W, P3-W, P4-C, P4-E, P4-T0, the bridge scripts, reviews and playtests per phase. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
 
 ## User instructions for this build (2026-10-21)
 
