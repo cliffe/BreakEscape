@@ -250,14 +250,17 @@ module BreakEscape
   # and then as the phone voices it: no narration, no player lines.
   class TtsLineExtractorVoicedCallTest < ActiveSupport::TestCase
     CALL = 'test/fixtures/files/ink_line_walker/phone_call_host.json'.freeze
+    HUB_CALL = 'test/fixtures/files/ink_line_walker/phone_call_hub.json'.freeze
     HAX_VOICE = { 'name' => 'Aoede', 'style' => 'Calm handler.', 'language' => 'en-GB' }.freeze
     DIRECTOR_VOICE = { 'name' => 'Charon', 'style' => 'Weary director.', 'language' => 'en-GB' }.freeze
     NARRATOR_VOICE = { 'name' => 'Algenib', 'style' => 'Noir.', 'language' => 'en-GB' }.freeze
 
-    def scenario(mapping: {}, timed: nil)
+    def scenario(mapping: {}, timed: nil, story: CALL, current: nil)
       hax = { 'id' => 'agent_0x99', 'displayName' => 'Agent HaX', 'npcType' => 'phone',
-              'voice' => HAX_VOICE, 'storyPath' => CALL,
-              'eventMappings' => [{ 'eventPattern' => 'game_loaded', 'conversationMode' => 'phone-chat' }.merge(mapping)] }
+              'voice' => HAX_VOICE, 'storyPath' => story,
+              'eventMappings' => [{ 'eventPattern' => 'game_loaded', 'conversationMode' => 'phone-chat',
+                                    'targetKnot' => 'call' }.merge(mapping)] }
+      hax['currentKnot'] = current if current
       hax['timedConversation'] = timed if timed
       {
         'narrator' => { 'id' => 'narrator', 'voice' => NARRATOR_VOICE },
@@ -300,6 +303,30 @@ module BreakEscape
       service = TtsService.new
       entry = extractor.entries.find { |e| e.npc_id == 'director_netherton' }
       assert_equal service.cache_key_for("Put her on when she's done.", 'Charon', 'Weary director.', 'en-GB'), entry.key
+    end
+
+    # F20: only the call's own knots, up to the contact's home knot (currentKnot)
+    test "a voiced call voices only its own knots: the hub reply and a hub topic are left out" do
+      data = scenario(mapping: { 'voiced' => true }, story: HUB_CALL, current: 'hub')
+      extractor = TtsLineExtractor.new('walker_test', data)
+      assert_equal [
+        ['agent_0x99', "Don't hang up."],
+        ['agent_0x99', 'Here is the plan.'],
+        ['agent_0x99', 'Back to your desk.']
+      ], extractor.entries.map { |e| [e.npc_id, e.text] }
+      refute extractor.spoken_by?('agent_0x99', 'Nothing yet.')
+      refute extractor.spoken_by?('agent_0x99', 'The vault is sealed.')
+      ink = JSON.parse(File.read(Engine.root.join(HUB_CALL)))
+      assert_equal Set.new(%w[call briefing]), TtsLineExtractor.call_knots(data.dig('rooms', 'office', 'npcs', 0), ink)
+    end
+
+    test "the call boundary is the home knot: with home 'start' the hub is reached, and no targetKnot voices nothing" do
+      entries = entries_for(scenario(mapping: { 'voiced' => true }, story: HUB_CALL))
+      assert_includes entries, ['agent_0x99', 'Nothing yet.']
+      assert_includes entries, ['agent_0x99', 'The vault is sealed.']
+      extractor = TtsLineExtractor.new('walker_test', scenario(mapping: { 'voiced' => true, 'targetKnot' => nil }, story: HUB_CALL, current: 'hub'))
+      assert_empty extractor.entries
+      assert(extractor.notes.any? { |n| n.reason.include?('no targetKnot') })
     end
   end
 end

@@ -14,7 +14,7 @@ module BreakEscape
   # by the batch, except a phone contact with a voiced call (`voiced: true` on a
   # phone-chat eventMapping or on its timedConversation, F17): its story is a
   # host like a person-chat one, read as phone-call-voice.js voices it (no
-  # narration).
+  # narration), but only the lines in the call's own knots (call_knots, F20).
   class TtsLineExtractor
     Entry = Struct.new(:npc_id, :text, :voice, :source, :path, :key, keyword_init: true)
     Note = Struct.new(:source, :path, :text, :reason, keyword_init: true)
@@ -89,6 +89,76 @@ module BreakEscape
       Array(npc['eventMappings']).any? do |m|
         m.is_a?(Hash) && m['voiced'] == true && m['conversationMode'] == 'phone-chat'
       end
+    end
+
+    # The knots a voiced call's lines come from (F20): those reachable from the
+    # call's start knots (the targetKnot of each voiced phone-chat mapping and of
+    # a voiced timedConversation) by diverts, tunnels, function calls and
+    # choices, without entering the contact's home knot (its currentKnot,
+    # default "start": the knot the phone opens on outside a call). Hub topics
+    # and texts outside the set are not voiced. phone-call-voice.js
+    # voicedCallKnots applies the same rule in the client.
+    def self.call_knots(npc, ink)
+      root = ink.is_a?(Hash) ? ink['root'] : nil
+      named = root.is_a?(Array) ? root.last : nil
+      knots = Set.new
+      return knots unless named.is_a?(Hash)
+
+      known = ->(name) { name != 'global decl' && named[name].is_a?(Array) }
+      home = knot_name(npc['currentKnot'] || 'start')
+      queue = call_start_knots(npc).select { |k| known.call(k) }
+      until queue.empty?
+        knot = queue.shift
+        next unless knots.add?(knot)
+
+        divert_targets(named[knot]).each do |target|
+          nxt = knot_name(target)
+          queue << nxt if nxt != home && known.call(nxt) && !knots.include?(nxt)
+        end
+      end
+      knots
+    end
+
+    def self.call_start_knots(npc)
+      knots = []
+      timed = npc['timedConversation']
+      knots << knot_name(timed['targetKnot']) if timed.is_a?(Hash) && timed['voiced'] == true && timed['targetKnot']
+      Array(npc['eventMappings']).each do |m|
+        next unless m.is_a?(Hash) && m['voiced'] == true && m['conversationMode'] == 'phone-chat'
+
+        target = m['targetKnot'] || m['knot']
+        knots << knot_name(target) if target
+      end
+      knots.uniq
+    end
+
+    DIVERT_KEYS = %w[-> ->t-> f() ^-> *].freeze
+
+    # Absolute divert, tunnel, function-call and choice targets in a container.
+    # Relative targets (".^.c-0") stay in the knot; a variable divert can't be followed.
+    def self.divert_targets(node, out = [])
+      case node
+      when Array
+        node.each { |n| divert_targets(n, out) }
+      when Hash
+        node.each do |key, value|
+          if DIVERT_KEYS.include?(key)
+            out << value if value.is_a?(String) && !value.start_with?('.') && !node['var']
+          elsif value.is_a?(Array) || value.is_a?(Hash)
+            divert_targets(value, out)
+          end
+        end
+      end
+      out
+    end
+
+    def self.knot_name(path)
+      path.to_s.split('.').first.to_s
+    end
+
+    # The knot of a walker line path ("root.forced_call.second[0].c-0" -> "forced_call").
+    def self.line_knot(path)
+      path.to_s[/\Aroot\.([^.\[(]+)/, 1]
     end
 
     # The client's character registry: player first, then every scenario NPC.
@@ -229,12 +299,20 @@ module BreakEscape
         end
 
         walker = InkLineWalker.from_file(ink_path, variables: @variables, dynamic: dynamic_variables)
-        lines = walker.lines
+        phone = npc['npcType'] == 'phone'
+        # A voiced call: only the lines in the call's own knots (F20)
+        call = phone ? self.class.call_knots(npc, JSON.parse(File.read(ink_path))) : nil
+        if call&.empty?
+          @notes << Note.new(source: host_id, path: npc['storyPath'], reason: 'voiced call has no targetKnot in its story; nothing voiced')
+        end
+        in_call = ->(path) { call.nil? || call.include?(self.class.line_knot(path)) }
+        lines = walker.lines.select { |line| in_call.call(line.path) }
         walker.unresolved.each do |u|
+          next unless in_call.call(u.path)
+
           @notes << Note.new(source: host_id, path: "#{File.basename(ink_path)}:#{u.path}", text: u.text, reason: u.reason)
         end
 
-        phone = npc['npcType'] == 'phone'
         lines.each do |line|
           npc_id, text = resolve(line, host_id)
           # A voiced phone call shows narration muted and doesn't voice it

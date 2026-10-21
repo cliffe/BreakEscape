@@ -244,6 +244,8 @@ export default class NPCManager {
       npcType: 'phone',  // Default to phone-based NPC
       itemsHeld: []  // Initialize empty inventory for NPC item giving
     }, realOpts);
+    // The knot the phone opens on outside a call, kept before any jump moves currentKnot: a voiced call stops voicing there (F20)
+    if (entry.homeKnot === undefined) entry.homeKnot = entry.currentKnot || 'start';
     
     // Only set default phoneId for phone NPCs (not person NPCs)
     if (entry.npcType === 'phone' && !entry.phoneId) {

@@ -152,3 +152,73 @@ Not checked in the browser: hearing the audio (headless, so only the media event
 - **No preload** of the next line, unlike person-chat. Each line is fetched when its bubble appears; a cached clip came back within a few ms locally.
 - `voice.fx` for a speaker is set on the call's own `TTSManager` the first time they speak and stays set for the rest of that phone session.
 - The tap-to-play `voice:` messages keep their own `TTSManager`. If the player taps one during a voiced call, both can play at once.
+
+## 8. Only the call is voiced (F20)
+
+2026-10-21. Approved as F20 ("voice only the calls"). Nothing committed. This replaces the first two items of section 7: the batch no longer voices the contact's whole phone story, and an open voiced phone no longer voices hub replies after the call. Section 4's npc-manager patch has since been applied (its six `voiced` lines are in the live file).
+
+### The rule
+
+A voiced call's lines are those in its **call knots**: the start knots (the `targetKnot`, or `knot`, of every phone-chat eventMapping with `voiced: true`, and of a `timedConversation` with `voiced: true`), plus every knot they reach through diverts, tunnels, function calls and choices, **never entering the contact's home knot**. The home knot is the scenario's `currentKnot` for that contact (default `start`): the knot the phone opens on outside a call. Stitches count as their knot. A start knot that is itself the home knot is still a call knot. Variable diverts can't be followed and relative targets stay inside the knot. A voiced contact with no start knot voices nothing (the extractor records a note).
+
+I picked the home knot over an ink tag such as `#end_call` because every phone contact already has one and no ink has to change. In the trial, `forced_call` (with its `second` stitch) is the call, and `hub` with its "Nothing yet." reply is not.
+
+Both sides apply this rule:
+
+- **Batch** (`TtsLineExtractor`): `call_knots(npc, ink)` walks the compiled story's root-level knots. `each_host_line` keeps only walker lines (and unresolved notes) whose path starts in a call knot. `spoken_lines` uses the same filter, so the co-speaker check on the endpoint narrows with it. Person-chat hosts are unchanged. `for_scenario("test_finale_calls_credits")` now lists six lines; "Nothing yet." is gone.
+- **Client**: when a voiced phone loads a contact's story, the minigame sets `conversation.callKnots = voicedCallKnots(storyJson, callStartKnots(npc), callHomeKnot(npc))`. After each Continue, `PhoneChatConversation.stepKnot(story)` reads the knot of the step's first text in inkjs's output stream, and the step's lines go into `conversation.callLines` when that knot is a call knot (the reopen re-run's `collectSteps` records the knot too). `_speakCallLine` returns at once for a line that isn't in `callLines`. The line is still drawn and recorded as before. With nothing in the call, no TTS request is made, so a keyed server generates nothing outside the call on demand. Because the check is per line, a resume needs no state. A topic knot that the call also reaches is voiced from the hub too, which the batch has already covered.
+- **Opening not preloaded**: when a timed call is delivered, `currentKnot` moves to the call's knot, and the phone's intro preload (`PhoneChatConversation._preloadOpeningOnce`) used to play that knot's opening into the history. The open then redrew those lines from the history, so they were never spoken. The preload now returns early when its entry knot is a voiced call's start knot (and not the contact's home knot). The call then opens at its knot, and `_showStoryLine` shows and speaks the opening. Unvoiced phones, and a voiced contact's home-knot texts, preload as before. `callStartKnots` moved to `phone-chat-speaker.js` so the conversation can use it without a new import. `phone-call-voice.js` re-exports it.
+- **Home knot at run time**: `currentKnot` moves with every knot jump (a timed delivery sets it to the call's knot), so `registerNPC` keeps the scenario value as `homeKnot` (one line). `callHomeKnot` reads `homeKnot` first.
+
+Same request, same cache key. Person-chat, unvoiced phones, and lines redrawn from the history are unchanged.
+
+### Files
+
+| File | Change |
+|---|---|
+| `public/break_escape/js/minigames/phone-chat/phone-call-voice.js` | Imports and re-exports `callStartKnots`; after `isVoicedCall`: `callHomeKnot`, `voicedCallKnots`. |
+| `public/break_escape/js/minigames/phone-chat/phone-chat-speaker.js` | New `callStartKnots` at the end of the file. |
+| `public/break_escape/js/minigames/phone-chat/phone-chat-conversation.js` | Constructor `callKnots`/`callLines`; `loadStory` keeps `storyJson`; `continue()` notes the step; re-run `forEach` notes each fresh step; `collectSteps` records `knot`; new `stepKnot`, `_noteCallStep`, `isCallLine`; `_preloadOpeningOnce` skips a voiced call's knot. The speaker import line adds `callStartKnots`. No new module import, so the tests that copy this file with only the speaker import rewritten still load it. |
+| `public/break_escape/js/minigames/phone-chat/phone-chat-minigame.js` | Import line; after `loadStory`, set `callKnots` on a voiced call; first line of `_speakCallLine` skips non-call lines. |
+| `public/break_escape/js/systems/npc-manager.js` | `registerNPC`: `entry.homeKnot` (one line plus comment). The other hunk in this file (`mailScheduler.tick`) is the peer's. |
+| `app/services/break_escape/tts_line_extractor.rb` | Class comment; `self.call_knots`, `self.call_start_knots`, `self.divert_targets`, `self.knot_name`, `self.line_knot`; `each_host_line` filters a phone host to its call knots. |
+| `test/fixtures/files/ink_line_walker/phone_call_hub.ink` / `.json` | New fixture: home `hub` with a reply and a `vault_topic`; `call` → `briefing` → choice → `-> hub`. |
+| `test/unit/break_escape/ink_line_walker_test.rb` | The mapping in the voiced-call helper now has `targetKnot: "call"`; two new tests (hub reply and hub topic not extracted or accepted, `call_knots` is `{call, briefing}`; home `start` reaches the hub; no `targetKnot` voices nothing, with a note). |
+| `test/js/finale-voiced-calls.test.mjs` | Four new tests. One covers a delivered timed voiced call through the real npc-manager: the preload returns 0 and leaves the thread empty, the call opens at its knot, and the first line is requested; an unvoiced timed call still preloads its two lines. The other three: (knot set and start/home knots; a real inkjs run through `PhoneChatConversation` marks the three call lines and not "Nothing yet." / "The vault is sealed."; the fake minigame draws a hub line but requests only the call line), and the npc-manager test checks `homeKnot` survives the call moving `currentKnot`. |
+| `README_scenario_design.md` | "Voiced phone calls": a new bullet with the rule; the cost bullet no longer says the whole story is voiced. |
+
+### Tests
+
+```
+$ node --test test/js/finale-voiced-calls.test.mjs
+# tests 16  # pass 16  # fail 0  # skipped 0
+
+$ node --test test/js/        (Node 18.19.1, after the preload fix)
+# tests 1061  # pass 1057  # fail 4
+  engine-fixes-pass3, engine-fixes-round4, event-mapping-unlock-door, session-overlay-pause:
+  each passes alone (6/6, 4/4, 4/4, 6/6); the Node 18 runner's deserialise error.
+
+$ bin/rails test
+705 runs, 5 failures, 7 errors, 1 skip: all 12 in the peer's untracked mail_state tests
+(test/models/break_escape/mail_state_test.rb, test/controllers/break_escape/mail_state_sync_test.rb),
+with game.rb mail_state being edited during the run. Before the preload fix: 705 runs, 0 failures.
+$ bin/rails test test/unit/break_escape/ink_line_walker_test.rb
+31 runs, 146 assertions, 0 failures, 0 errors, 0 skips
+
+$ node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json
+Total problems: 0
+
+$ ruby scripts/validate_scenario.rb scenarios/<m>/scenario.json.erb --skip-ink --no-graph
+m01-m08: all exit 0. test_finale_calls_credits: the same two deliberate warnings.
+```
+
+### Browser check
+
+Keyless :3001, headless Chromium 1148. The repo's Playwright is now 1.64, which needs Node 20, so the harness wouldn't start; I drove the page with a scratch `playwright-core@1.49.1`. Game 2866: the scenario's own timed call opened (voiced through npc-manager), I chose "I trust you." then "Roll the credits.", and the call requested "Good. Second question." and "That's all I needed." (503, accepted, no key). I then opened the voiced phone on `hub` and picked "Anything else?". "Nothing yet." was drawn in the thread, `conversation.callKnots` was `["forced_call"]`, and no TTS request followed: none in the page's fetch log, and none in `tmp/keyless-3001.log` (only the two call lines are logged as `POST /games/2866/tts`). The closing card covered the phone in the screenshot, so the thread was checked through the DOM.
+
+After the preload fix, game 2869 ran the same steps. The server log has five `POST /games/2869/tts` requests in call order: "You ran this mostly solo.", "Don't hang up. First question.", "Put her on when she's done." (as `director_netherton`), "Good. Second question.", "That's all I needed.". The hub's "Nothing yet." was drawn but not requested.
+
+### Found, not changed
+
+- (Fixed, see "Opening not preloaded".) Before that fix, the scenario-driven call's first three lines made no TTS request in games 2866 and 2868. The F17 browser check had opened the call with `startMinigame` directly, so it didn't catch this.
+- The endpoint still accepts a contact's own line from anywhere in its story (`InkTextValidator`). Only the client keeps hub lines from being requested. Narrowing the endpoint too would be a further change.

@@ -17,7 +17,7 @@ import { classifyPhoneLine, displayPhoneLine, phoneStepLines } from './phone-cha
 import { choiceIndexFromKey } from './phone-chat-choices.js';
 import { whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
 import { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS } from './phone-call-lock.js';
-import { isVoicedCall, phoneLineVoice, PhoneCallVoice } from './phone-call-voice.js';
+import { isVoicedCall, phoneLineVoice, PhoneCallVoice, voicedCallKnots, callStartKnots, callHomeKnot } from './phone-call-voice.js';
 import TTSManager from '../../systems/tts-manager.js';
 
 export class PhoneChatMinigame extends MinigameScene {
@@ -432,6 +432,10 @@ export class PhoneChatMinigame extends MinigameScene {
             this.ui.showNotification('Failed to load conversation', 'error');
             return;
         }
+        // A voiced call speaks only its own knots, up to the contact's home knot (F20)
+        if (isVoicedCall(this.params)) {
+            this.conversation.callKnots = voicedCallKnots(this.conversation.storyJson, callStartKnots(npc), callHomeKnot(npc));
+        }
         
         // Set conversation as active
         this.isConversationActive = true;
@@ -784,6 +788,8 @@ export class PhoneChatMinigame extends MinigameScene {
      * @param {string} raw - the line as printed (its entry in _pendingNpcMessages)
      */
     async _speakCallLine(line, raw) {
+        // Only the call's own lines: a hub reply or text after the call stays silent (F20)
+        if (this.conversation?.callKnots && !this.conversation.isCallLine(raw)) return;
         const contact = this.npcManager.getNPC(this.currentNPCId);
         const voice = phoneLineVoice(displayPhoneLine(line.type, line.text, contact), contact, this.npcManager.npcs);
         if (!voice) return;

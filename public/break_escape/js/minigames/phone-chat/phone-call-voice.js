@@ -16,11 +16,72 @@
  * Only phone-chat-speaker.js is imported (it has no imports), so node tests can load this.
  */
 
-import { otherSpeaker } from './phone-chat-speaker.js';
+import { otherSpeaker, callStartKnots } from './phone-chat-speaker.js';
+
+export { callStartKnots };
 
 /** True when the phone was opened as a voiced call. Off unless the scenario says so. */
 export function isVoicedCall(params) {
     return !!params && params.voiced === true;
+}
+
+/*
+ * Where a voiced call ends (F20). A call voices only the lines in its own knots: those
+ * reachable from its start knots (the targetKnot of each voiced phone-chat mapping and of a
+ * voiced timedConversation) by diverts, tunnels, function calls and choices, without
+ * entering the contact's home knot (the knot the phone opens on outside a call: the
+ * scenario's currentKnot, default "start"). Hub topics and texts outside that set stay
+ * silent. TtsLineExtractor.call_knots applies the same rule to the batch.
+ */
+const knotName = (path) => String(path || '').split('.')[0];
+const DIVERT_KEYS = ['->', '->t->', 'f()', '^->', '*'];
+// callStartKnots lives in phone-chat-speaker.js so the conversation's preload can use it too
+
+/** The knot the contact's phone opens on outside a call (registerNPC keeps it as homeKnot). */
+export function callHomeKnot(npc) {
+    return knotName(npc?.homeKnot || npc?.currentKnot || 'start');
+}
+
+function divertTargets(node, out) {
+    if (Array.isArray(node)) {
+        node.forEach(n => divertTargets(n, out));
+    } else if (node && typeof node === 'object') {
+        for (const [key, value] of Object.entries(node)) {
+            if (DIVERT_KEYS.includes(key)) {
+                // Relative targets (".^.c-0") stay in the knot; a variable divert can't be followed
+                if (typeof value === 'string' && !value.startsWith('.') && !node.var) out.push(value);
+            } else if (value && typeof value === 'object') {
+                divertTargets(value, out);
+            }
+        }
+    }
+    return out;
+}
+
+/**
+ * The knots of a voiced call in a compiled ink story.
+ * @param {Object} storyJson - the compiled story
+ * @param {Iterable<string>} startKnots - from callStartKnots
+ * @param {string} homeKnot - from callHomeKnot; never entered (unless it is a start knot)
+ * @returns {Set<string>}
+ */
+export function voicedCallKnots(storyJson, startKnots, homeKnot) {
+    const root = storyJson?.root;
+    const named = Array.isArray(root) ? root[root.length - 1] : null;
+    const knots = new Set();
+    if (!named || typeof named !== 'object' || Array.isArray(named)) return knots;
+    const known = name => name !== 'global decl' && Array.isArray(named[name]);
+    const queue = [...(startKnots || [])].map(knotName).filter(known);
+    while (queue.length) {
+        const knot = queue.shift();
+        if (knots.has(knot)) continue;
+        knots.add(knot);
+        for (const target of divertTargets(named[knot], [])) {
+            const next = knotName(target);
+            if (next !== homeKnot && known(next) && !knots.has(next)) queue.push(next);
+        }
+    }
+    return knots;
 }
 
 // person-chat-minigame.js stripSpeakerPrefix: a leftover "Two Words: " / "Three Word Name: "

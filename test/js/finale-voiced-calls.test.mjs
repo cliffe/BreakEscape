@@ -12,6 +12,7 @@ import { readFileSync, writeFileSync, mkdtempSync, existsSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { createRequire } from 'node:module';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -25,7 +26,7 @@ writeFileSync(join(dir, 'phone-call-voice.mjs'), read('minigames/phone-chat/phon
     .replace("'./phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"));
 const speaker = await import(pathToFileURL(join(dir, 'phone-chat-speaker.mjs')).href);
 const voice = await import(pathToFileURL(join(dir, 'phone-call-voice.mjs')).href);
-const { isVoicedCall, phoneLineVoice, PhoneCallVoice } = voice;
+const { isVoicedCall, phoneLineVoice, PhoneCallVoice, voicedCallKnots, callStartKnots, callHomeKnot } = voice;
 
 const HAX = { id: 'agent_0x99', displayName: 'Agent HaX', voice: { name: 'Aoede' } };
 const DIRECTOR = { id: 'director_netherton', displayName: 'Director Netherton', voice: { name: 'Charon', fx: 'radio' } };
@@ -256,6 +257,86 @@ test('wiring: lines redrawn on a reopen are not voiced; close stops and teardown
     assert.match(read('systems/tts-manager.js'), /blob = await ApiClient\.getTTS\(npcId, text\);/);
 });
 
+// ---- F20: a voiced call voices only its own knots, up to the contact's home knot ----
+
+const hubCallJson = JSON.parse(readFileSync(join(here, '../fixtures/files/ink_line_walker/phone_call_hub.json'), 'utf8').replace(/^\uFEFF/, ''));
+const HUB_HAX = {
+    id: 'agent_0x99', currentKnot: 'hub', homeKnot: 'hub',
+    timedConversation: { targetKnot: 'call', voiced: true },
+    eventMappings: [
+        { conversationMode: 'phone-chat', targetKnot: 'call.again', voiced: true },
+        { conversationMode: 'phone-chat', targetKnot: 'hub' },
+        { conversationMode: 'person-chat', targetKnot: 'vault_topic', voiced: true }
+    ]
+};
+
+test("the call's knots: reachable from its start knots by diverts and choices, never entering the home knot", () => {
+    assert.deepEqual([...callStartKnots(HUB_HAX)], ['call'], 'voiced phone-chat targets only, by knot');
+    assert.deepEqual([...callStartKnots({ id: 'x', eventMappings: {} })], []);
+    assert.equal(callHomeKnot({ ...HUB_HAX, currentKnot: 'call' }), 'hub', 'homeKnot wins over a moved currentKnot');
+    assert.equal(callHomeKnot({ currentKnot: 'hub' }), 'hub');
+    assert.equal(callHomeKnot({}), 'start');
+    assert.deepEqual([...voicedCallKnots(hubCallJson, ['call'], 'hub')].sort(), ['briefing', 'call']);
+    // With no boundary in the way, the briefing's divert reaches the hub and its topic
+    assert.deepEqual([...voicedCallKnots(hubCallJson, ['call'], 'start')].sort(), ['briefing', 'call', 'hub', 'vault_topic']);
+    assert.deepEqual([...voicedCallKnots(hubCallJson, [], 'hub')], [], 'no start knot, nothing voiced');
+    assert.deepEqual([...voicedCallKnots(null, ['call'], 'hub')], []);
+});
+
+writeFileSync(join(dir, 'ink-engine.mjs'), read('systems/ink/ink-engine.js'));
+writeFileSync(join(dir, 'phone-chat-conversation.mjs'), read('minigames/phone-chat/phone-chat-conversation.js')
+    .replace("'./phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"));
+
+test('a real story: call lines are marked, the hub reply and hub topic after the call are not', async () => {
+    globalThis.window = globalThis.window || {};
+    window.gameState = window.gameState || { globalVariables: {} };
+    globalThis.inkjs = createRequire(import.meta.url)(join(here, '../../public/break_escape/assets/vendor/ink.js'));
+    const quiet = console.log;
+    console.log = () => {};
+    try {
+        const { default: InkEngine } = await import(pathToFileURL(join(dir, 'ink-engine.mjs')).href);
+        const { default: PhoneChatConversation } = await import(pathToFileURL(join(dir, 'phone-chat-conversation.mjs')).href);
+        const npcManager = { getNPC: () => ({ ...HUB_HAX }), npcs: new Map() };
+        const conv = new PhoneChatConversation(HUB_HAX.id, npcManager, new InkEngine(HUB_HAX.id));
+        assert.equal(await conv.loadStory(hubCallJson), true);
+        conv.callKnots = voicedCallKnots(conv.storyJson, callStartKnots(HUB_HAX), callHomeKnot(HUB_HAX));
+        conv.engine.goToKnot('call');
+        const shownLines = [];
+        let r = conv.continue();
+        shownLines.push(r.text.trim());
+        while (r.canContinue && !(r.choices?.length)) { r = conv.continue(); shownLines.push(r.text.trim()); }
+        r = conv.makeChoice(0);                        // "Got it." → reply, then the hub
+        shownLines.push(r.text.trim());
+        while (r.canContinue && !(r.choices?.length)) { r = conv.continue(); if (r.text) shownLines.push(r.text.trim()); }
+        r = conv.makeChoice(0);                        // hub: "Anything else?"
+        shownLines.push(r.text.trim());
+        while (r.canContinue && !(r.choices?.length)) { r = conv.continue(); if (r.text) shownLines.push(r.text.trim()); }
+        r = conv.makeChoice(1);                        // hub: "The vault?" → vault_topic
+        if (r.text) shownLines.push(r.text.trim());
+        while (r.canContinue && !(r.choices?.length)) { r = conv.continue(); if (r.text) shownLines.push(r.text.trim()); }
+        const said = shownLines.filter(Boolean);
+        assert.deepEqual(said, ["Agent HaX: Don't hang up.", 'Agent HaX: Here is the plan.', 'Agent HaX: Back to your desk.',
+            'Agent HaX: Nothing yet.', 'Agent HaX: The vault is sealed.']);
+        assert.deepEqual(said.map(l => conv.isCallLine(l)), [true, true, true, false, false]);
+    } finally {
+        console.log = quiet;
+    }
+});
+
+test('a voiced call: a hub line after the call is drawn but not voiced', async () => {
+    const tts = new FakeTTS();
+    const { mg, log } = fakeMinigame({ voiced: true, tts });
+    const callLines = new Set(["Agent HaX: Back to your desk."]);
+    mg.conversation = { callKnots: new Set(['call', 'briefing']), isCallLine: raw => callLines.has(raw.trim()) };
+    const run = mg.present(['Agent HaX: Back to your desk.', 'Agent HaX: Nothing yet.']);
+    await tick(); await tick();
+    tts.end();
+    await run;
+    assert.deepEqual(tts.played, [['agent_0x99', 'Back to your desk.']], 'only the call line was requested');
+    assert.deepEqual(historyTexts(log), ['Agent HaX: Back to your desk.', 'Agent HaX: Nothing yet.']);
+    assert.match(mgSrc, /if \(isVoicedCall\(this\.params\)\) \{\n\s+this\.conversation\.callKnots = voicedCallKnots\(this\.conversation\.storyJson, callStartKnots\(npc\), callHomeKnot\(npc\)\);/);
+});
+
 // npc-manager.js carries `voiced` from an eventMapping or timedConversation to the phone.
 // NPC_MANAGER_SRC can point at a patched copy; the test is skipped until the live file has it.
 const nmPath = process.env.NPC_MANAGER_SRC || join(js, 'systems/npc-manager.js');
@@ -300,6 +381,9 @@ test('npc-manager passes voiced from a mapping and a timedConversation to phone-
         } finally {
             globalThis.setTimeout = realSetTimeout;
         }
+        // F20: the scenario's currentKnot is kept as homeKnot after the call moved currentKnot
+        assert.equal(m.getNPC('hax').homeKnot, 'hub');
+        assert.notEqual(m.getNPC('hax').currentKnot, 'hub');
         assert.deepEqual(started.map(s => [s[0], s[2].npcId, s[2].voiced, s[2].disableClose]), [
             ['phone-chat', 'hax', true, true],
             ['phone-chat', 'hax', false, false],
@@ -308,5 +392,67 @@ test('npc-manager passes voiced from a mapping and a timedConversation to phone-
         ]);
     } finally {
         console.log = quiet;
+    }
+});
+
+// F20: a delivered timed voiced call is not preloaded into the thread, so the call opens
+// at its knot and _showStoryLine shows and speaks the first line. An unvoiced one still is.
+test('a delivered timed voiced call is not preloaded and its first line is requested', async () => {
+    writeFileSync(join(dir, 'npc-los.mjs'), read('systems/npc-los.js'));
+    writeFileSync(join(dir, 'npc-manager.mjs'), nmSrc.replace("'./npc-los.js'", "'./npc-los.mjs'")
+        .replace("'../minigames/phone-chat/phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"));
+    globalThis.window = { gameState: { globalVariables: {} } };
+    globalThis.inkjs = createRequire(import.meta.url)(join(here, '../../public/break_escape/assets/vendor/ink.js'));
+    const quiet = console.log;
+    console.log = () => {};
+    try {
+        const { default: NPCManager } = await import(pathToFileURL(join(dir, 'npc-manager.mjs')).href);
+        const { default: InkEngine } = await import(pathToFileURL(join(dir, 'ink-engine.mjs')).href);
+        const { default: PhoneChatConversation } = await import(pathToFileURL(join(dir, 'phone-chat-conversation.mjs')).href);
+        const m = new NPCManager(makeDispatcher(), null);
+        const contact = (id, voiced) => ({ id, displayName: 'Agent HaX', npcType: 'phone', phoneId: 'player_phone',
+            currentKnot: 'hub', storyJSON: hubCallJson,
+            timedConversation: { delay: 0, targetKnot: 'call', ...(voiced ? { voiced: true } : {}) } });
+        m.registerNPC(contact('hax', true));
+        m.registerNPC(contact('plain', false));
+        const started = [];
+        window.MinigameFramework = { currentMinigame: null, startMinigame: (...a) => started.push(a), endMinigame() {} };
+        const realSetTimeout = globalThis.setTimeout;
+        globalThis.setTimeout = (cb) => { cb(); return 0; };
+        try {
+            for (const c of m.timedConversations) m._deliverTimedConversation(c);
+        } finally {
+            globalThis.setTimeout = realSetTimeout;
+        }
+        const hax = m.getNPC('hax');
+        assert.equal(hax.currentKnot, 'call', 'delivery moved currentKnot to the call');
+        // No startKnot in the params: the phone opens at currentKnot, here the call
+        assert.deepEqual(started.map(s => [s[2].npcId, s[2].voiced]), [['hax', true], ['plain', false]]);
+        // The phone's opening preload (run as the phone opens): skipped for the voiced call only
+        assert.equal(await PhoneChatConversation.preloadOpening(hax, m, new InkEngine('pre')), 0);
+        assert.deepEqual(m.getConversationHistory('hax'), []);
+        assert.equal(PhoneChatConversation.isPreloadedOpening(hax, 'call', []), false, 'opens at the knot, not from history');
+        assert.equal(await PhoneChatConversation.preloadOpening(m.getNPC('plain'), m, new InkEngine('pre2')), 2, 'unvoiced: preloaded as before');
+        assert.deepEqual(m.getConversationHistory('plain').map(x => x.text), ["Agent HaX: Don't hang up.", 'Agent HaX: Here is the plan.']);
+        // The home knot still preloads for a voiced contact (here it has no lines: choices only)
+        assert.equal(PhoneChatConversation.isPreloadedOpening(hax, 'hub', []), false);
+
+        // openConversation's path: load, set the call's knots, go to the knot, continue, show
+        const conv = new PhoneChatConversation('hax', m, new InkEngine('hax'));
+        await conv.loadStory(hax.storyJSON);
+        conv.callKnots = voicedCallKnots(conv.storyJson, callStartKnots(hax), callHomeKnot(hax));
+        conv.engine.goToKnot('call');
+        const first = conv.continue();
+        const tts = new FakeTTS();
+        const { mg } = fakeMinigame({ voiced: true, tts });
+        mg.conversation = conv;
+        const run = mg.present([first.text.trim()]);
+        await tick(); await tick();
+        tts.end();
+        await run;
+        assert.deepEqual(tts.played, [['agent_0x99', "Don't hang up."]], 'the first line of the call is requested');
+    } finally {
+        console.log = quiet;
+        delete window.MinigameFramework;
     }
 });

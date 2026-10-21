@@ -7,7 +7,7 @@
  * @module phone-chat-conversation
  */
 
-import { phoneStepLines } from './phone-chat-speaker.js';
+import { phoneStepLines, callStartKnots } from './phone-chat-speaker.js';
 
 // A preload in progress, per NPC entry. The inventory (on pickup) and the phone-chat
 // minigame (on open) both preload; a second caller waits for the first instead of
@@ -41,6 +41,9 @@ export default class PhoneChatConversation {
         this.storyEnded = false;
         // Set false for throwaway preload runs so ink writes don't leak into window.gameState.globalVariables
         this.observeGlobals = true;
+        // Voiced call (F20): the call's knots (set by the minigame) and the lines printed from them
+        this.callKnots = null;
+        this.callLines = new Set();
         
         console.log(`💬 PhoneChatConversation initialized for NPC: ${npcId}`);
     }
@@ -77,6 +80,7 @@ export default class PhoneChatConversation {
             
             // Load into InkEngine
             this.engine.loadStory(storyJson);
+            this.storyJson = storyJson; // read for a voiced call's knots (F20)
             
             // Note: We don't set npc_name variable here because it causes issues with state serialization.
             // The NPC display name is handled in the UI layer instead.
@@ -338,6 +342,7 @@ export default class PhoneChatConversation {
         
         try {
             const result = this.engine.continue();
+            this._noteCallStep(result.text, result.tags, PhoneChatConversation.stepKnot(this.engine.story));
 
             // Process tags for side effects (like #exit_conversation)
             if (result.tags && result.tags.length > 0) {
@@ -654,6 +659,7 @@ export default class PhoneChatConversation {
         fresh.forEach(step => {
             tags.push(...step.tags);
             messages.push(...phoneStepLines(step.text, step.tags));
+            this._noteCallStep(step.text, step.tags, step.knot);
         });
         if (tags.length > 0) this.processTags(tags);
 
@@ -752,6 +758,10 @@ export default class PhoneChatConversation {
         window.npcConversationStateManager?.applyEngineVariables?.(npc.id, tempConversation.engine?.story, { channel: 'phone-preload' });
 
         const entryKnot = npc.currentKnot || 'start';
+        // A voiced call's knot is not preloaded: its opening is shown and spoken when the
+        // call opens (F20). The contact's home knot still preloads as before.
+        const callKnot = entryKnot.split('.')[0];
+        if (callKnot !== (npc.homeKnot || 'start').split('.')[0] && callStartKnots(npc).has(callKnot)) return 0;
         tempConversation.goToEntryKnot(entryKnot);
 
         // Accumulate all intro messages and game action tags until we hit choices or end
@@ -871,9 +881,34 @@ export default class PhoneChatConversation {
         const steps = [];
         while (story.canContinue && steps.length < limit) {
             const text = story.Continue() || '';
-            steps.push({ text, tags: [...(story.currentTags || [])] });
+            steps.push({ text, tags: [...(story.currentTags || [])], knot: PhoneChatConversation.stepKnot(story) });
         }
         return steps;
+    }
+
+    /**
+     * The knot the last Continue()'s line came from: the path of its first text in the
+     * output stream. Null when no text sits in the story (a line printed from a variable).
+     */
+    static stepKnot(story) {
+        const stream = story?.state?.outputStream || [];
+        for (const obj of stream) {
+            if (obj && obj.parent && typeof obj.value === 'string' && obj.value.trim()) {
+                return String(obj.path?.toString?.() || '').split('.')[0] || null;
+            }
+        }
+        return null;
+    }
+
+    /** Voiced call (F20): remember a step's lines when they came from one of the call's knots. */
+    _noteCallStep(text, tags, knot) {
+        if (!this.callKnots || !knot || !this.callKnots.has(knot)) return;
+        phoneStepLines(text, tags).forEach(line => this.callLines.add(line));
+    }
+
+    /** True when a line printed in this session came from the voiced call's knots (F20). */
+    isCallLine(raw) {
+        return this.callLines.has(String(raw || '').trim());
     }
 
     static sameStep(a, b) {

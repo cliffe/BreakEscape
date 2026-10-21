@@ -186,3 +186,22 @@ export function otherSpeaker(text, contact, knownNames) {
     }
     return null;
 }
+
+/**
+ * The start knots of a contact's voiced calls (F20): the targetKnot (or knot) of each
+ * phone-chat eventMapping and of a timedConversation with `voiced: true`, as knot names.
+ * Used by phone-call-voice.js (the call's knots) and the conversation's opening preload.
+ * @param {Object} npc - the NPC entry
+ * @returns {Set<string>}
+ */
+export function callStartKnots(npc) {
+    const knotOf = path => String(path || '').split('.')[0];
+    const knots = new Set();
+    const timed = npc?.timedConversation;
+    if (timed && timed.voiced === true && timed.targetKnot) knots.add(knotOf(timed.targetKnot));
+    for (const m of (Array.isArray(npc?.eventMappings) ? npc.eventMappings : [])) {
+        const target = m && (m.targetKnot || m.knot);
+        if (m && m.voiced === true && m.conversationMode === 'phone-chat' && target) knots.add(knotOf(target));
+    }
+    return knots;
+}
