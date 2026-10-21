@@ -14,7 +14,7 @@ Helena, Montana, after hours. Last night a courier carried the Architect's order
 | Physical locks | 11 |
 | AND-gate convergences | 1 |
 | Rooms | 11 |
-| Puzzle graph nodes / edges | 59 / 66 |
+| Puzzle graph nodes / edges | 64 / 71 |
 | Story graph nodes / edges | 6 / 5 |
 
 ## Critical Path
@@ -111,6 +111,11 @@ flowchart TD
   candidate_assessment_intake_2011{"Candidate Assessment, Intake 2011"}
   plan_cabinet{"Plan Cabinet"}
   the_reading_1_viral_dynamics{"The Reading, 1: Viral Dynamics"}
+  the_reading_2_the_innocents{"The Reading, 2: The Innocents"}
+  the_reading_3_albion{"The Reading, 3: Albion"}
+  the_reading_4_portland{"The Reading, 4: Portland"}
+  the_reading_last_page{"The Reading, Last Page"}
+  destruction_schedule_master{"Destruction Schedule (master)"}
   key_card_tape_store{"Key Card, Tape Store"}
   floor_safe{"Floor Safe"}
   rent_ledger{"Rent Ledger"}
@@ -169,6 +174,11 @@ flowchart TD
   restricted_cage --> plan_cabinet
   sorensen_office --> lock_director_safe
   lock_director_safe --> the_reading_1_viral_dynamics
+  lock_director_safe --> the_reading_2_the_innocents
+  lock_director_safe --> the_reading_3_albion
+  lock_director_safe --> the_reading_4_portland
+  lock_director_safe --> the_reading_last_page
+  lock_director_safe --> destruction_schedule_master
   lock_director_safe --> key_card_tape_store
   key_card_tape_store --> door_tape_room
   sorensen_office --> floor_safe
@@ -198,7 +208,7 @@ flowchart TD
 
   class door_front_desk,door_staff_passage,door_restricted_stacks,door_restricted_cage,door_sorensen_office,door_tape_room,door_salvage_cage,lock_enrolment_crate,lock_director_safe,lock_hl_box,lock_plan_cabinet lock
   class front_desk,staff_passage,restricted_stacks,restricted_cage,sorensen_office,tape_room,salvage_cage,loading_dock,open_stacks,reading_room,server_closet room
-  class lock_pick_kit,rfid_cloner,fingerprint_kit,cyberchef_workstation,pin_cracker_kowalczyk_s,catalogue_salvage_cage,placement_record_hl2015_0477,harwick_lowe_dead_files,safetynet_drop_terminal,drop_terminal_screen,training_notebook_scan,rubber_stamp,candidate_assessment_intake_2011,plan_cabinet,the_reading_1_viral_dynamics,floor_safe,rent_ledger,lease_abstract_and_construction_file,shelf_marks,crate_stencilled_beta item
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,cyberchef_workstation,pin_cracker_kowalczyk_s,catalogue_salvage_cage,placement_record_hl2015_0477,harwick_lowe_dead_files,safetynet_drop_terminal,drop_terminal_screen,training_notebook_scan,rubber_stamp,candidate_assessment_intake_2011,plan_cabinet,the_reading_1_viral_dynamics,the_reading_2_the_innocents,the_reading_3_albion,the_reading_4_portland,the_reading_last_page,destruction_schedule_master,floor_safe,rent_ledger,lease_abstract_and_construction_file,shelf_marks,crate_stencilled_beta item
   class npc_agent_hax,npc_noor_haddad,staff_card_n_haddad,npc_cody_old_coyote,key_ring_dock_office,key_card_tape_store key
   class field_laptop,field_kit_link,vmch_submit_catalogue_flag,vmch_submit_ledger_flag,vmch_submit_owner_flag,vmch_submit_control_flag vm
   class andgate1 gate
@@ -315,6 +325,11 @@ flowchart TD
   candidate_assessment_intake_2011{"Candidate Assessment, Intake 2011"}
   plan_cabinet{"Plan Cabinet"}
   the_reading_1_viral_dynamics{"The Reading, 1: Viral Dynamics"}
+  the_reading_2_the_innocents{"The Reading, 2: The Innocents"}
+  the_reading_3_albion{"The Reading, 3: Albion"}
+  the_reading_4_portland{"The Reading, 4: Portland"}
+  the_reading_last_page{"The Reading, Last Page"}
+  destruction_schedule_master{"Destruction Schedule (master)"}
   key_card_tape_store{"Key Card, Tape Store"}
   floor_safe{"Floor Safe"}
   rent_ledger{"Rent Ledger"}
@@ -379,6 +394,11 @@ flowchart TD
   restricted_cage --> plan_cabinet
   sorensen_office --> lock_director_safe
   lock_director_safe --> the_reading_1_viral_dynamics
+  lock_director_safe --> the_reading_2_the_innocents
+  lock_director_safe --> the_reading_3_albion
+  lock_director_safe --> the_reading_4_portland
+  lock_director_safe --> the_reading_last_page
+  lock_director_safe --> destruction_schedule_master
   lock_director_safe --> key_card_tape_store
   key_card_tape_store --> door_tape_room
   sorensen_office --> floor_safe
@@ -423,7 +443,7 @@ flowchart TD
 
   class door_front_desk,door_staff_passage,door_restricted_stacks,door_restricted_cage,door_sorensen_office,door_tape_room,door_salvage_cage,lock_enrolment_crate,lock_director_safe,lock_hl_box,lock_plan_cabinet lock
   class front_desk,staff_passage,restricted_stacks,restricted_cage,sorensen_office,tape_room,salvage_cage,loading_dock,open_stacks,reading_room,server_closet room
-  class lock_pick_kit,rfid_cloner,fingerprint_kit,cyberchef_workstation,pin_cracker_kowalczyk_s,catalogue_salvage_cage,placement_record_hl2015_0477,harwick_lowe_dead_files,safetynet_drop_terminal,drop_terminal_screen,training_notebook_scan,rubber_stamp,candidate_assessment_intake_2011,plan_cabinet,the_reading_1_viral_dynamics,floor_safe,rent_ledger,lease_abstract_and_construction_file,shelf_marks,crate_stencilled_beta item
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,cyberchef_workstation,pin_cracker_kowalczyk_s,catalogue_salvage_cage,placement_record_hl2015_0477,harwick_lowe_dead_files,safetynet_drop_terminal,drop_terminal_screen,training_notebook_scan,rubber_stamp,candidate_assessment_intake_2011,plan_cabinet,the_reading_1_viral_dynamics,the_reading_2_the_innocents,the_reading_3_albion,the_reading_4_portland,the_reading_last_page,destruction_schedule_master,floor_safe,rent_ledger,lease_abstract_and_construction_file,shelf_marks,crate_stencilled_beta item
   class npc_agent_hax,npc_noor_haddad,staff_card_n_haddad,npc_cody_old_coyote,key_ring_dock_office,key_card_tape_store key
   class field_laptop,field_kit_link,vmch_submit_catalogue_flag,vmch_submit_ledger_flag,vmch_submit_owner_flag,vmch_submit_control_flag vm
   class andgate1 gate

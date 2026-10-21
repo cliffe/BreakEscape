@@ -65,6 +65,9 @@ VAR start_debrief = false
 VAR debrief_notice_before = false
 VAR report_done = false
 VAR catalogue_guide_offered = false
+// Synced scenario global (playtest R1 A-M3): set on the dock call's last line,
+// so a reload before it rings the call again.
+VAR dock_done = false
 VAR catalogue_guide_hint_given = false
 VAR ledger_guide_offered = false
 VAR ledger_guide_hint_given = false
@@ -75,6 +78,7 @@ VAR archive_code_guide_hint_given = false
 
 // ---- Ink-local (CONTRACT §5.4; nothing outside this file reads them) ----
 VAR dock_heard = false
+VAR catalogue_topic_given = false
 VAR series_topic_given = false
 VAR tran_topic_given = false
 VAR name_topic_given = false
@@ -142,16 +146,27 @@ Night guard. Twenty-four. Not ours, not theirs. Don't hurt him.
 {raid_team_answer == "quintero":
     Quintero's going to hate that she was right if this goes badly. Let's not.
 }
+// Playtest R1 A-M4: both replies say where the way in is.
 + [The office door. I'll pick it.]
-    Good. That puts you past the front desk and nowhere near his torch.
+    Good. It's the west door. That's the front desk, and nowhere near his torch.
 + [The shutter. I'll time his round.]
-    His torch crosses the far end of the floor. Go when it's gone.
+    It's up on the north side, in the corner. His torch crosses the far end of the floor. Go when it's gone.
 -
 + [Who else is inside?]
     Margaret Sorensen runs the place. County clerk for twenty years before this.
 -
 A clerk's on tonight, and an IT contractor, Jesse Tran.
--> tran_warning ->
+// Playtest R1 A-m1: the Tran warning inline (it came after the close from
+// the tunnel), with the done flag on the last line.
+#set_global:dock_done:true
+{
+- m01_completed and not m01_maya_ko:
+    Maya's list has a Tran on it.
+- m01_maya_ko:
+    Maya Chen would have flagged him. We don't have Maya's names.
+- else:
+    Viral Dynamics' staff files have a Tran in them.
+}
 #exit_conversation
 -> DONE
 
@@ -504,8 +519,8 @@ It isn't my call. It isn't yours either. If you're going to, don't ask me first.
 #unlock_task:hear_the_mirror_job
 That job on his box still copies to Tomb Gamma. It's the Publication.
 He's giving it away. At oh-six-hundred it starts going out, city by city.
-There's a key on here that sends it everywhere in the same minute.
-Then why build the key?
+// Playtest R1 C-m-5: the question is hers, in the same bubble.
+There's a key on here that sends it everywhere in the same minute. Then why build the key?
 He'll call it full disclosure.
 // The D-02 line, once, split at its sentence breaks for the 25-word cap.
 + [Isn't it?]
@@ -728,7 +743,9 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     The gate takes her card, the cabinet takes a print.
     -> support_hub
 // 16. VM help, flag 1 (fixed).
-+ {not flag1_submitted} [The catalogue. What am I looking for?]
+// Playtest R1 A-m5: retires once asked; the status ladder carries it after.
++ {not flag1_submitted and not catalogue_topic_given} [The catalogue. What am I looking for?]
+    ~ catalogue_topic_given = true
     The catalogue's the index. Find the part that isn't public.
     -> support_hub
 // 17. Tran.
@@ -849,6 +866,9 @@ Sent. He'll read it tonight.
     The hatch. Talk to her across the counter, and take what you can off her.
 - flag1_submitted:
     The restricted stacks, through the reading room. Series R is in there.
+// Playtest R1 A-M2: the laptop's set up (its click offers the guide).
+- catalogue_guide_offered:
+    The laptop's live. Get into the catalogue server, then bring what you find to the drop terminal.
 - else:
     Get inside, set up the laptop on a reading desk, and get into the catalogue.
 }

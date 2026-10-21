@@ -116,13 +116,17 @@ end
 hax_maps = []
 
 # M1 (CONTRACT §5.5): the dock call after the briefing. Not forced, unvoiced.
-hax_maps << call_map("conversation_closed:briefing_cutscene", "!globalVars.flag1_submitted && !globalVars.dock_rung", "dock",
+# Playtest R1 A-M1: the ring targets `start` (which diverts to `dock` until
+# dock_heard), the knot the phone preloads, so the opening shows once.
+# Targeting `dock` played the preloaded lines a second time.
+hax_maps << call_map("conversation_closed:briefing_cutscene", "!globalVars.flag1_submitted && !globalVars.dock_done", "start",
                      delay: 2000, forced: false, once: true,
-                     comment: "M1: Beat 1.1 at the dock. start also diverts to dock until dock_heard, so the lines can't be missed (stage 8 m-14: only before flag 1).").merge("setGlobal" => { "dock_rung" => true })
-# Walkthrough R1 m-02: a reload during the briefing skips its replay
-# (skipIfGlobal), so its close never fires; ring the dock call on load instead.
-hax_maps << call_map("game_loaded", "globalVars.briefing_played && !globalVars.flag1_submitted && !globalVars.dock_rung", "dock",
-                     delay: 2000, forced: false, once: true).merge("setGlobal" => { "dock_rung" => true })
+                     comment: "M1: Beat 1.1 at the dock. start also diverts to dock until dock_heard, so the lines can't be missed (stage 8 m-14: only before flag 1).")
+# Walkthrough R1 m-02 and playtest R1 A-M3: a reload before the dock call is
+# finished (during the briefing, or mid-call) rings it again, back at the
+# unanswered choice (resume), until its last line sets dock_done.
+hax_maps << call_map("game_loaded", "globalVars.briefing_played && !globalVars.flag1_submitted && !globalVars.dock_done", "start",
+                     delay: 2000, forced: false, resume: true)
 
 # Act 1 tasks.
 hax_maps << { "eventPattern" => "room_entered:front_desk", "onceOnly" => true, "completeTask" => "get_inside" }
@@ -304,7 +308,11 @@ hax_maps << text_map("global_variable_changed:danny_sheet_read", "value === true
                      "\"Loose end, resolved.\" I rang. He's alive, and still hiding from them. Good.")
 # The legacy box remark: once, and only while the Series L sheets show
 # (stage 9: the feed box's gone state and Noor's base box show other text).
-hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true && globalVars.legacy_files_saved && !globalVars.legacy_remark_sent",
+# Impl review R1 m-01: not over the empty feed tray on the warned-in-time
+# route (there the remark belongs to Noor's box), so two arms.
+hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true && globalVars.legacy_files_saved && !globalVars.m05_found_pipeline_list && !globalVars.legacy_remark_sent",
+                     "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
+hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true && globalVars.legacy_files_saved && globalVars.m05_recruiter_deal_accepted && !globalVars.legacy_remark_sent",
                      "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
 hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true && !globalVars.legacy_clock_run && !globalVars.legacy_files_saved && !globalVars.legacy_remark_sent",
                      "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
@@ -336,7 +344,7 @@ rec_maps << call_map("room_exited", "data.roomId === 'restricted_cage' && #{ring
                      comment: "Ring (a): walking out of the cage with the ledger read.")
 rec_maps << call_map("global_variable_changed:ledger_read_heard", "value === true && #{ring_c}", "call", delay: 3000, voiced: true, once: true,
                      comment: "Ring (b): the ledger read closes with the cage already open and the player outside it.")
-rec_maps << call_map("room_entered", "data.roomId !== 'restricted_cage' && #{ring_c}", "call", voiced: true,
+rec_maps << call_map("room_entered", "data.roomId !== 'restricted_cage' && #{ring_c}", "call", voiced: true, once: true,
                      comment: "Ring (c), backstop: any room entry outside the cage (also on load).")
 re1 = "globalVars.recruiter_call_started && !globalVars.recruiter_said_yes && !globalVars.recruiter_gone && !globalVars.deck_choice_made"
 re2 = "globalVars.recruiter_said_yes && !globalVars.sleeper_named && !globalVars.deck_choice_made"
@@ -377,7 +385,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
 
 <%# Music (S4 §10). 'victory' carries the closing card and credits
     (texts/C_texts_and_credits.md §2-§3, the F14 format) and fires on the
-    debrief's last line (report_done), after report_to_netherton completes. %>
+    debrief's close (debrief_closed, after report_done on its last line), when
+    report_to_netherton completes too (lesson 46). %>
   "music": {
     "events": [
       { "trigger": "game_loaded", "condition": "!globalVars.briefing_played", "playlist": "cutscene", "fade": false },
@@ -392,7 +401,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       { "trigger": "global_variable_changed:tesseract_call_done", "condition": "value === true", "playlist": "noir", "fade": true },
       { "trigger": "global_variable_changed:start_debrief", "condition": "value === true", "playlist": "cutscene", "fade": true },
       {
-        "trigger": "global_variable_changed:report_done",
+        "_comment": "Stage 9 (lesson 46): on debrief_closed, set when the debrief closes after its last line (or on the next room entry after a reload), not on report_done, so the card doesn't cover the pen.",
+        "trigger": "global_variable_changed:debrief_closed",
         "condition": "value === true",
         "playlist": "victory",
         "autoStop": true,
@@ -906,7 +916,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           }
         },
         {
-          "_comment": "The debrief (C2): a hidden person-chat at the Helena hangar, opened when HaX's '[Bring me in.]' sets start_debrief (it re-emits). Keyed on !report_done, so a reload anywhere inside it reopens it at start; the ink replays safely (S4 §6.5). report_to_netherton and report_done are on its last line. PLACEHOLDER background (ASSET_LIST §3).",
+          "_comment": "The debrief (C2): a hidden person-chat at the Helena hangar, opened when HaX's '[Bring me in.]' sets start_debrief (it re-emits). Keyed on !report_done, so a reload anywhere inside it reopens it at start; the ink replays safely (S4 §6.5). report_done is on its last line; report_to_netherton completes when it closes (lesson 46). PLACEHOLDER background (ASSET_LIST §3).",
           "id": "closing_debrief",
           "displayName": "Director Magnus Netherton",
           "npcType": "person",
@@ -937,6 +947,20 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "cooldown": 0
             },
             {
+              "_comment": "Stage 9 (lesson 46): the final task completes when the debrief closes, after its last line, so the conclusion screen can't cover it. debrief_closed rolls the card and credits.",
+              "eventPattern": "conversation_closed:closing_debrief",
+              "condition": "globalVars.report_done && !globalVars.debrief_closed",
+              "setGlobal": { "debrief_closed": true },
+              "completeTask": "report_to_netherton"
+            },
+            {
+              "_comment": "The same after a reload between the last line and the close.",
+              "eventPattern": "room_entered",
+              "condition": "globalVars.report_done && !globalVars.debrief_closed",
+              "setGlobal": { "debrief_closed": true },
+              "completeTask": "report_to_netherton"
+            },
+            {
               "_comment": "Backstop (S4 §5): a reload after start_debrief and before report_done reopens the debrief on the next room entry (fires on load too).",
               "eventPattern": "room_entered",
               "condition": "globalVars.start_debrief && !globalVars.report_done",
@@ -957,6 +981,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "position": { "x": 2.5, "y": 3.5 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "text": "MON. SHREDDER RUNNING, NIGHT. MRS. S SAYS SCHEDULED. NOTED.\nTUE. SAME. NOTED.\nWED. SAME.\nTHU. SAME.\nFRI. SAME. NOBODY READS THIS.",
           "observations": "A guard's log in block capitals. The same entry, five nights running."
         }
@@ -1038,6 +1063,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "position": { "x": 3.5, "y": 6 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
           "observations": "A printed run sheet clipped to the trolley rail.",
           "text": "DESTROY. Series R, 48 boxes.\nR-114 to R-129\nR-130 to R-145\nR-146 to R-161\nCertificate to follow.",
           "textVariants": [
@@ -1055,6 +1082,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "position": { "x": 2, "y": 3.5 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
           "observations": "A box of returns under the clerk's desk.",
           "observationVariants": [
             { "condition": "globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted", "value": "A records box, lid taped. Its label: Series L, boxes 1 to 3. Hold for M.S." }
@@ -1141,6 +1170,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           },
           "los": {
             "enabled": true,
+            "visualize": true,
             "range": 150,
             "angle": 120,
             "challengeOnSight": {
@@ -1292,6 +1322,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           },
           "los": {
             "enabled": true,
+            "visualize": true,
             "range": 150,
             "angle": 120,
             "challengeOnSight": {
@@ -1357,9 +1388,10 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     the notebook scan. The only warm room. 2x1 since stage 9 (the staff
     passage sits below it); the passage's north wall covers the bottom two
     rows, so every object is on rows 2-3, clear of the NW and SW doors.
-    PLACEHOLDER map: room_library_1x2gu. %>
+    PLACEHOLDER map: room_uni_office (playtest R1). %>
     "reading_room": {
-      "type": "room_library_1x2gu",
+      "_comment": "Playtest R1: room_library_1x2gu's table and shelf stood at the south-east door (the staff passage) and its furniture overlapped the pinned objects. room_uni_office keeps all three door spots clear.",
+      "type": "room_uni_office",
       "door_sign": "Reading Room",
       "connections": {
         "south": "staff_passage",
@@ -1372,7 +1404,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "vm-launcher",
           "id": "field_laptop",
           "name": "Field Laptop",
-          "position": { "x": 3.2, "y": 2.4 },
+          "position": { "x": 2.8, "y": 2.4 },
           "takeable": false,
           "observations": "Your field kit, set up on a reading desk: a laptop on the archive's network, quiet enough not to show up on anyone's screen.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
@@ -1385,7 +1417,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "safetynet_flag_terminal1",
           "id": "drop_terminal",
           "name": "SAFETYNET Drop Terminal",
-          "position": { "x": 4.8, "y": 2.4 },
+          "position": { "x": 6.3, "y": 2.6 },
           "takeable": false,
           "observations": "The drop terminal. Anything you pull off the catalogue server goes to HaX through here.",
           "acceptsVms": ["catalogue_server"],
@@ -1403,7 +1435,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "monitor_stand1",
           "id": "drop_terminal_screen",
           "name": "Drop Terminal Screen",
-          "position": { "x": 6.4, "y": 2.4 },
+          "position": { "x": 7.5, "y": 2.6 },
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -1431,9 +1463,10 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "case-file",
           "id": "case_file",
           "name": "Case File, Helena",
-          "position": { "x": 4, "y": 3.5 },
+          "position": { "x": 3.6, "y": 3.5 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "observations": "A typed case file in HaX's name. Item 4 has a scan of its own on the next desk.",
           "text": "CASE FILE -- HELENA. 0x99. Not for circulation.\n1. Intercept, day 10: the order, photographed.\n2. The wall, copied.\n3. Raid team, Montana: four names.\n4. Training notebook, 2011: scan, filed separately.",
           "textVariants": [
@@ -1447,9 +1480,10 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "notes_notebook1",
           "id": "notebook_scan",
           "name": "Training Notebook (scan)",
-          "position": { "x": 6, "y": 3.5 },
+          "position": { "x": 4.9, "y": 3.5 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "observations": "A scanned page from a student's notebook. Two hands: the student's, and a teacher's in the margin. In the margin, the g in 'again' loops back on itself, and the 7 is crossed.",
           "text": "SAFETYNET STRATEGY -- STRAT-204 -- 17 October 2011\nWk 7. Disclosure: who does it serve?\nIn the margin, another hand: Wk 7. Ask who it hurts first. Then ask again, afterwards.",
           "onRead": { "setVariable": { "notebook_read": true } },
@@ -1558,6 +1592,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "fingerprintOwner": "Margaret Sorensen",
           "fingerprintCandidates": ["Noor Haddad", "Jesse Tran", "Cody Old Coyote"],
           "fingerprintDifficulty": "medium",
+          "fingerprintSurface": "glossy_dark",
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": ["plan_cabinet"]
         }
@@ -1570,9 +1605,10 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     records share one name and voice: the cage one can be knocked down and
     holds only her card; the hidden koImmune one hosts Victoria's door scene
     and the hatch route's default handover (stage 8 ruling 1).
-    PLACEHOLDER map: room_hce_vault. %>
+    PLACEHOLDER map: room_qdc_security (playtest R1 B1). %>
     "restricted_cage": {
-      "type": "room_hce_vault",
+      "_comment": "Playtest R1 B1 (blocker): room_hce_vault's cabinets stand across its west wall, so the generated west door sat above the walkable floor and the cage was one-way. room_qdc_security's own door is on the west wall, row 2.",
+      "type": "room_qdc_security",
       "door_sign": "Restricted Cage -- Authorised Staff Only",
       "locked": true,
       "lockType": "rfid",
@@ -1589,7 +1625,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "displayName": "Margaret Sorensen",
           "npcType": "person",
           "gender": "female",
-          "position": { "x": 6.5, "y": 4.5 },
+          "position": { "x": 3.6, "y": 4.6 },
           "spriteSheet": "female_office_worker",
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
           "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
@@ -1696,7 +1732,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "shredder1",
           "id": "cage_shredder",
           "name": "Cross-Cut Shredder",
-          "position": { "x": 4.5, "y": 2.8 },
+          "position": { "x": 3.2, "y": 3.1 },
           "takeable": false,
           "observations": "An industrial cross-cut shredder. It has been running since before you landed."
         },
@@ -1706,9 +1742,11 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "office-misc-box1",
           "id": "feed_table_box",
           "name": "The Last Box",
-          "position": { "x": 7.8, "y": 6.2 },
+          "position": { "x": 4.6, "y": 6.0 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
           "observations": "An open box on the feed table. She is working through it sheet by sheet.",
           "observationVariants": [
             { "condition": "globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted", "value": "The feed tray is empty. The last box never came up." },
@@ -1729,7 +1767,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "plan_chest2",
           "id": "plan_cabinet",
           "name": "Plan Cabinet",
-          "position": { "x": 7.8, "y": 2.8 },
+          "position": { "x": 8.4, "y": 2.9 },
           "takeable": false,
           "locked": true,
           "lockType": "biometric",
@@ -1757,9 +1795,11 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "sprite": "binders1",
           "id": "printed_ledger",
           "name": "Initiative Ledger, Print Copy",
-          "position": { "x": 2.5, "y": 3 },
+          "position": { "x": 8.3, "y": 5.5 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
           "observations": "A ring binder of rows in the archive's cipher. The live copy will have the key.",
           "observationVariants": [
             { "condition": "globalVars.ledger_page_seen && globalVars.sorensen_fate === 'left'", "value": "Strips. She got to it." },
@@ -1833,6 +1873,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "type": "notes",
               "id": "the_reading_2",
               "name": "The Reading, 2: The Innocents",
+              "puzzle_graph_role": "evidence",
               "takeable": true,
               "readable": true,
               "observations": "The second page of the file, in the same hand.",
@@ -1849,6 +1890,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "type": "notes",
               "id": "the_reading_3",
               "name": "The Reading, 3: Albion",
+              "puzzle_graph_role": "evidence",
               "takeable": true,
               "readable": true,
               "observations": "The third page of the file, in the same hand.",
@@ -1863,6 +1905,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "type": "notes",
               "id": "the_reading_4",
               "name": "The Reading, 4: Portland",
+              "puzzle_graph_role": "evidence",
               "takeable": true,
               "readable": true,
               "observations": "The fourth page of the file, in the same hand.",
@@ -1878,6 +1921,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "type": "notes",
               "id": "the_reading_last_page",
               "name": "The Reading, Last Page",
+              "puzzle_graph_role": "evidence",
               "takeable": true,
               "readable": true,
               "observations": "The last page. A pencilled line in the margin, older than the ink.",
@@ -1888,6 +1932,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "type": "notes",
               "id": "master_schedule",
               "name": "Destruction Schedule (master)",
+              "puzzle_graph_role": "evidence",
               "takeable": true,
               "readable": true,
               "observations": "The order's schedule, ticked room by room in pencil.",
@@ -1916,6 +1961,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "position": { "x": 2.5, "y": 4 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "observations": "A monthly ledger. Every page is headed with the same date.",
           "text": "RENT LEDGER -- SITE 2, MT. Lessee: Big Sky Holdings LLC. Lease start: 06/02/16\nDue / received / amount / remitter\n07/01/16 -- 06/29/16 -- $4,250.00 -- acct ending 4471\n08/01/16 -- 07/29/16 -- $4,250.00 -- acct ending 4471\nPaid early, every month since. Same account.",
           "onRead": { "setVariable": { "rent_ledger_read": true } },
@@ -1944,6 +1990,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "position": { "x": 5.9, "y": 4 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "observations": "A two-line memo on Zero Day paper.",
           "text": "FOSTER, D. No further action.",
           "textVariants": [
@@ -1961,6 +2008,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "position": { "x": 7.5, "y": 4 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "observations": "Construction draws for the bunker's refit.",
           "text": "BUILD-OUT -- SITE 2, MT\nDraws 1 to 9 -- lessee's own account -- paid in full.",
           "textVariants": [
@@ -2087,6 +2135,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "position": { "x": 7.2, "y": 5.5 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
           "observations": "A box of blank label stock.",
           "observationVariants": [
             { "condition": "globalVars.deck_pulled === 'alpha_tapes' && globalVars.identity_scene_done", "value": "Typed sheets, stencilled ALPHA, with one enciphered line at the foot." }
@@ -2135,6 +2185,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "position": { "x": 2.6, "y": 3.5 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "observations": "A service property label, half hidden under the TOMB BETA sticker. Signed out, and never signed back in.",
           "text": "PROPERTY OF THE SERVICE. NOT FOR DISPOSAL.\nASSET 0412. Rack server, 2U.\nIssued to: Strategy Directorate.\nReturned: --",
           "onRead": { "setVariable": { "asset_tag_read": true } }
@@ -2175,6 +2226,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "position": { "x": 6.4, "y": 2.4 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
           "observations": "Printer tray, empty.",
           "observationVariants": [
             { "condition": "globalVars.flag3_submitted", "value": "Three documents printed off the box, stapled together." }
@@ -2192,6 +2245,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "position": { "x": 7.4, "y": 3.5 },
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
           "observations": "Printer tray, empty.",
           "observationVariants": [
             { "condition": "globalVars.flag4_submitted", "value": "Two pages in the printer tray. The first is signed." }
@@ -2365,7 +2420,9 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "legacy_remark_sent": false,
     "reeves_sheet_read": false,
     "asset_tag_read": false,
-    "dock_rung": false,
+    "dock_done": false,
+    "debrief_closed": false,
+    "noor_met": false,
     "archive_guard_ko": false
   }
 }

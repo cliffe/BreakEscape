@@ -15,7 +15,7 @@ VAR noor_told = false
 VAR ledger_page_seen = false
 
 // Ink-local.
-VAR noor_met = false
+VAR noor_met = false   // Synced scenario global (the debrief reads it; playtest R1 C-m-6)
 VAR noor_cover = ""          // "contractor" / "auditor" / "safetynet" (not-warned form only)
 VAR noor_tell_signposted = false
 VAR noor_list_checked = false
@@ -78,20 +78,20 @@ VAR hub_quiet = false
     }
 }
 ~ hub_quiet = false
-// HaX signposts the tell once, the first time it can show.
-// R3 B-R3-01: only once a tell button can show.
-{not noor_tell_signposted and not (m05_found_pipeline_list and not m05_recruiter_deal_accepted) and not noor_told and (noor_asked_peg or ledger_page_seen):
-    ~ noor_tell_signposted = true
-    Agent HaX: Tell her and she's a witness. She goes tonight, and she doesn't ring her dad for a while.
-}
-// Sticky on every branch: standing close while she checks her list.
-+ [Which boxes are next on that list?]
-    #clone_keycard:reading_staff_door
+// Playtest R1 B-m6: HaX's cost line moved into `reach`, after the player
+// has told her, so it no longer hints at the choice.
+// Playtest R1 B-M2 / A-m5: the clone choice says what it is, Noor answers
+// first, and the clone runs on a narrator beat (m08 Netherton's pattern).
+// Sticky so a cancelled read can be tried again.
++ [Lean in over her list, close to the card on her belt.]
     {noor_list_checked:
         Noor Haddad: Same list. Fewer boxes.
     - else:
         Noor Haddad: Series R. Forty-eight boxes, and she wants every one gone tonight.
     }
+    Narrator: You lean in to read the list. Her staff card hangs at her belt, a hand's width from the cloner in your jacket.
+    #clone_keycard:reading_staff_door
+    Narrator: She doesn't look up from the list.
     ~ noor_list_checked = true
     -> back
 + {not noor_asked_peg} [How long have you worked for Sorensen?]
@@ -114,6 +114,10 @@ VAR hub_quiet = false
 // She reaches for her phone; the player stops her (MC §4.2, R2-07).
 === reach ===
 Narrator: She has her phone out. Her thumb is already on his number.
+{not noor_tell_signposted:
+    ~ noor_tell_signposted = true
+    Agent HaX: She's a witness now. She goes tonight, and she doesn't ring her dad for a while.
+}
 Agent HaX: Don't let her ring from here.
 + [Not tonight. Not from here.]
     #set_global:noor_told:true

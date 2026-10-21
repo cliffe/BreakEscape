@@ -7,7 +7,7 @@ Stage 9 pastes these as `sendTimedMessage` mappings on `agent_0x99` (unvoiced, n
 | # | Text | Trigger (stage 9) | Notes |
 |---|---|---|---|
 | A3-01 | That reader's on the catalogue server. Get me in there and I'll open it. | `door_unlock_failed`, `data.connectedRoom === 'restricted_stacks'` | `onceOnly`. **Fixed** |
-| A3-02 | Her keypad's off the card system. Leave it for now. | `door_unlock_failed`, `data.connectedRoom === 'sorensen_office'` | `onceOnly`. **Fixed** |
+| A3-02 | Her keypad's off the card system. Leave it for now. | `door_unlock_failed`, `data.connectedRoom === 'sorensen_office'` | `onceOnly`. **Fixed**. **Superseded by A3-02b at stage 9** (impl review R1 m-04): after the deck HaX opens the door, so this trigger has no state left to fire in. Don't paste it back. |
 | A3-03 | That reader wants a real card. Hers will be somewhere she trusts. | `door_unlock_failed`, `data.connectedRoom === 'tape_room'`, with `globalVars.deck_choice_made` (stage 9, walkthrough R1 m-03) | `onceOnly`. **Fixed** |
 | A3-02b | Her keypad's off the card system. There's no code to find for it. Leave it for now. | `door_unlock_attempt`, `data.connectedRoom === 'sorensen_office' && !globalVars.deck_choice_made` (stage 9, walkthrough R1 m-03: replaces A3-02's failure trigger, which needed a wrong try) | `onceOnly` |
 | A3-03b | That reader wants her own card, and she hasn't left it lying about. Leave it for now. | `door_unlock_attempt`, `data.connectedRoom === 'tape_room' && !globalVars.deck_choice_made` (stage 9, m-03) | `onceOnly` |

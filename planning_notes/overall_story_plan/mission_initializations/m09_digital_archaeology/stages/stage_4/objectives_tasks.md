@@ -883,3 +883,8 @@ Source: `../stage_8/REVIEW_R1.md` (m09-R) and the finale's stage 8 files, applie
 | m-09 | The stamp's purge line is S6's string | §4 |
 | m-14 | No dock call on a first open after flag 1 | §6.6 |
 | SC 2, 3; BP F-03, F-06, F-07; VT 1, 2; SR minor 4 | String changes in the ink, copied here where S4 quotes them | as quoted |
+
+## 23. Stage 9 notes (for the arc-keeper)
+
+Globals the build added or changed, recorded in CONTRACT §15: `noor_box_read`, `legacy_remark_sent`, `alpha_annotations_opened` (the annotation sheet's `onRead` now sets this; HaX promotes it to `alpha_annotations_read` only while the readable variant shows, so §5's row "`alpha_annotations.onRead` sets `alpha_annotations_read`" no longer holds), `archive_guard_ko`, `dock_done`, `debrief_closed`, `noor_met`. `report_to_netherton` (§3.6) completes when the debrief closes, not on its last line (lesson 46), and the card and credits (§9) trigger on `debrief_closed`.
+

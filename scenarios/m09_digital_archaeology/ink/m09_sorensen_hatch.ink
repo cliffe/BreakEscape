@@ -22,6 +22,9 @@ VAR hatch_met = false
 VAR hatch_leaned = false
 VAR hatch_asked_wren = false
 VAR hub_quiet = false
+// Playtest R1 B-M1: the bin is chosen once; this local closes the buttons
+// at once (the #set_global reaches the story too late for the next menu).
+VAR bin_pulled = false
 
 === start ===
 {hatch_met: -> hub}
@@ -80,14 +83,16 @@ Agent HaX: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwri
 }
 ~ hub_quiet = false
 // The bin choice (MC §3.1). Each button gives the file and tips the other.
-+ {not bin_chosen} [Pull Derek's file through.]
++ {not bin_chosen and not bin_pulled} [Pull Derek's file through.]
+    ~ bin_pulled = true
     #give_item:notes:derek_file
     #set_global:cage_bin:derek_file
     #set_global:bin_chosen:true
     Margaret Sorensen: Of course. He'd want to be read.
     Narrator: She passes the file through the hatch and tips the other bin into the feed without looking at it.
     -> back
-+ {not bin_chosen and not m08_nightshade_tidied} [Pull the letters through.]
++ {not bin_chosen and not bin_pulled and not m08_nightshade_tidied} [Pull the letters through.]
+    ~ bin_pulled = true
     #give_item:notes:letters
     #set_global:cage_bin:letters
     #set_global:bin_chosen:true
@@ -98,7 +103,8 @@ Agent HaX: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwri
         Agent HaX: That's the warning we didn't have.
     }
     -> back
-+ {not bin_chosen and m08_nightshade_tidied} [Pull Nightshade's copy through.]
++ {not bin_chosen and not bin_pulled and m08_nightshade_tidied} [Pull Nightshade's copy through.]
+    ~ bin_pulled = true
     #give_item:notes:nightshade_copy
     #set_global:cage_bin:nightshade_copy
     #set_global:bin_chosen:true
@@ -107,14 +113,18 @@ Agent HaX: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwri
     Agent HaX: So that's what he had time to clear.
     -> back
 // Sticky, before and after the bin: her card is on a reel at her hip.
-+ [What's in tonight's run?]
-    #clone_keycard:stacks_card
+// Playtest R1 B-M2: the choice says what it is; she answers first, and the
+// clone runs on a narrator beat. Sticky so a failed read can be retried.
++ [Lean on the counter, close to her card reel. Ask what's in tonight's run.]
     {hatch_leaned:
         Margaret Sorensen: Less than when you last asked. Careful of the ink, it doesn't come out of a cuff.
     - else:
         Margaret Sorensen: Series R, to the last box.
         Margaret Sorensen: Take the print if you like. By the time it matters, the shredder will have caught up.
     }
+    Narrator: You lean on the counter. The card reel at her hip swings a hand's width from the cloner in your jacket.
+    #clone_keycard:stacks_card
+    Narrator: She goes on stamping.
     ~ hatch_leaned = true
     -> back
 + {ledger_read_heard and not hatch_asked_wren} [Who's WREN?]

@@ -26,6 +26,7 @@ VAR legacy_files_saved = false
 // Local to m09.
 VAR noor_told = false
 VAR noor_ko = false
+VAR noor_met = false
 VAR old_coyote_ko = false
 VAR sorensen_fate = "left"
 VAR tran_outcome = "left"
@@ -214,8 +215,11 @@ Director Magnus Netherton: You read it. You decide. I will sign whichever.
     - m05_found_pipeline_list and not m05_recruiter_deal_accepted:
         // Warned back in September: she knew what she was on before tonight.
         Director Magnus Netherton: Miss Haddad went home at the end of her shift. She knew what list she was on before you arrived.
-    - else:
+    - noor_met:
         Director Magnus Netherton: Miss Haddad went home and rang her father. She is still on a list, and she does not know it.
+    // Playtest R1 C-m-6: a player who never met her hears who she is.
+    - else:
+        Director Magnus Netherton: The clerk on the front desk went home and rang her father. Noor Haddad. She is on one of the Recruiter's lists, and she does not know it.
     }
     ~ said = said + 1
 }
@@ -282,8 +286,10 @@ Agent HaX: I still owe you the rest. When this is over.
 - else:
     Director Magnus Netherton: If I bench anyone tonight, WREN knows we know. They come. You watch them.
 }
-// Beat 8: the last image. Task and report_done directly above it (lesson 46).
-#complete_task:report_to_netherton
+// Beat 8: the last image. report_done directly above it. Stage 9 (lesson 46,
+// m10 walkthrough): the task completes and the credits roll when this
+// conversation closes (closing_debrief's mappings, debrief_closed), so the
+// conclusion screen can't cover the last line.
 #set_global:report_done:true
 {
 - recruiter_offer == "double_crossed":

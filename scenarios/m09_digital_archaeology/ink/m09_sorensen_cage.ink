@@ -27,7 +27,10 @@ VAR hub_quiet = false
 Narrator: She feeds another sheaf into the shredder and doesn't turn round.
 Margaret Sorensen: It's only paper. The people are where they've always been, at their desks, doing what they were placed to do.
 Margaret Sorensen: Paper was the only thing that could ever have hurt them. So the paper goes.
-Margaret Sorensen: Torres cost us one hospital bill, and he got us within an afternoon of a nation's dispatch keys. I'd call that good value. So would you, if you were honest.
+// Playtest R1 B-m2: Torres only for a player who played m05.
+{m05_completed:
+    Margaret Sorensen: Torres cost us one hospital bill, and he got us within an afternoon of a nation's dispatch keys. I'd call that good value. So would you, if you were honest.
+}
 -> back
 
 === back ===
@@ -67,7 +70,8 @@ Margaret Sorensen: Torres cost us one hospital bill, and he got us within an aft
     {sorensen_fate == "talked":
         Narrator: She keeps writing.
     - else:
-        Margaret Sorensen: The gate sticks.
+        // Playtest R1 B-m1: was "The gate sticks."
+        Margaret Sorensen: Pull the gate to on your way out.
     }
     #exit_conversation
     -> back

@@ -255,6 +255,36 @@
       "optional": false
     },
     {
+      "id": "the_reading_2_the_innocents",
+      "label": "The Reading, 2: The Innocents",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "the_reading_3_albion",
+      "label": "The Reading, 3: Albion",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "the_reading_4_portland",
+      "label": "The Reading, 4: Portland",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "the_reading_last_page",
+      "label": "The Reading, Last Page",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "destruction_schedule_master",
+      "label": "Destruction Schedule (master)",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "key_card_tape_store",
       "label": "Key Card, Tape Store",
       "kind": "key",
@@ -556,6 +586,31 @@
     {
       "from": "lock_director_safe",
       "to": "the_reading_1_viral_dynamics",
+      "soft": false
+    },
+    {
+      "from": "lock_director_safe",
+      "to": "the_reading_2_the_innocents",
+      "soft": false
+    },
+    {
+      "from": "lock_director_safe",
+      "to": "the_reading_3_albion",
+      "soft": false
+    },
+    {
+      "from": "lock_director_safe",
+      "to": "the_reading_4_portland",
+      "soft": false
+    },
+    {
+      "from": "lock_director_safe",
+      "to": "the_reading_last_page",
+      "soft": false
+    },
+    {
+      "from": "lock_director_safe",
+      "to": "destruction_schedule_master",
       "soft": false
     },
     {
