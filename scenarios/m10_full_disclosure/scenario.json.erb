@@ -474,6 +474,18 @@ voices = {
   minder: { 'name' => 'Sulafat', 'style' => "SAFETYNET van-team minder. #{rp} Calm, low, practical.", 'language' => 'en-GB' }
 }
 voice = ->(key) { voices.fetch(key).to_json }
+# Walkthrough R1b-M1: once the night has closed, nobody in the raid can be
+# talked to (the credits can be closed and play resumes). Each NPC hides itself:
+# on the change (its room loaded), on load, and on entering its room.
+after_end = lambda do |room|
+  [
+    { 'eventPattern' => 'global_variable_changed:closing_done', 'condition' => 'value === true', 'setVisible' => false, 'delayMs' => 500 },
+    # game_loaded only for the start room: later rooms' mappings register when the room loads, and room_entered covers them.
+    (room == 'forward_post' ? { 'eventPattern' => 'game_loaded', 'condition' => 'globalVars.closing_done === true', 'setVisible' => false } : nil),
+    { 'eventPattern' => "room_entered:#{room}", 'condition' => 'globalVars.closing_done === true', 'setVisible' => false }
+  ].compact
+end
+after_end_json = ->(room) { after_end.(room).map(&:to_json).join(', ') + ',' }
 %>
 <%
 # --- The closing card and the credits (S6 3; CONTRACT 5.9; credits_sections.json)
@@ -1082,8 +1094,8 @@ end
     landed point (rebuttal or record) takes it to a quieter noir track, two or
     three to silence. At each exchange the later ones are still "", so "not
     landed" for an earlier exchange is === 'miss'. Credits: one entry per
-    closing NPC and ending, on that NPC's conversation_closed with
-    closing_done; six_oclock has none for scorched (the hearing's carries it).
+    ending, on night_closed (set when the last closing scene closes after
+    closing_done: six_oclock, or the hearing on scorched, or the Citadel).
     victory for arrest / surrender / lethal; end for executed / scorched /
     joined (MISSION FAILED on joined). %>
   "music": {
@@ -1112,8 +1124,8 @@ end
 <% [['six_oclock', 'arrest', 'victory', true], ['six_oclock', 'surrender', 'victory', true], ['six_oclock', 'lethal', 'victory', true],
     ['six_oclock', 'executed', 'end', false], ['hearing', 'scorched', 'end', true], ['citadel', 'joined', 'end', false]].each_with_index do |(npc, ending, playlist, teaser), ei| %>
       {
-        "trigger": "conversation_closed:<%= npc %>",
-        "condition": "globalVars.closing_done === true && globalVars.ending === '<%= ending %>'",
+        "trigger": "global_variable_changed:night_closed",
+        "condition": "value === true && globalVars.ending === '<%= ending %>'",
         "playlist": "<%= playlist %>",
         "autoStop": true,
         "disableClose": true,
@@ -1277,6 +1289,7 @@ end
       "order": 5,
       "missionConclusion": true,
       "concludeRequires": { "tasksCompleted": ["submit_flag_1", "submit_flag_2", "submit_flag_3", "submit_flag_4"] },
+      <%# Walkthrough R1 M-2 / R1b (PASS2 lesson 46; m09's debrief_closed pattern): close_the_night completes when the closing scene CLOSES (HaX's mappings set night_closed), not on its last line, so the conclusion screen can't cover that line. The card and credits trigger on night_closed. %>
       "conclusionScreen": { "type": "bond_visualiser" },
       "unlockCondition": { "aimCompleted": "reach_the_core" },
       "tasks": [
@@ -1326,6 +1339,7 @@ end
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_director_netherton.json",
           "currentKnot": "start",
+          "puzzle_graph_actions": [{ "id": "tether_question", "label": "The tether, on the silent branch (door_scene_done)" }, { "id": "split_line", "label": "The split line" }],
           "voice": <%= voice.(:netherton) %>,
           "koImmune": true,
           <%# ASSET_LIST 3: no background yet for the forward post at night (plain frame). %>
@@ -1334,9 +1348,12 @@ end
             "targetKnot": "start",
             "waitForEvent": "game_loaded",
             "skipIfGlobal": "briefing_played",
-            "setGlobalOnStart": "briefing_played"
+            "setGlobalOnStart": "briefing_played",
+            "disableClose": true
           },
           "eventMappings": [
+            <%# Walkthrough R1 m-1: a reload before the aside's last line reopens his router (briefing or aside), so aside_done and the WREN aim always land. %>
+            { "eventPattern": "game_loaded", "condition": "globalVars.briefing_played === true && !globalVars.aside_done", "conversationMode": "person-chat", "targetKnot": "start", "disableClose": true, "delayMs": 2000 },
             <%# The split (OT 6): the second of door_scene_done and the gate console's first use; catch-ups on load and on a try at the blast door. %>
             { "eventPattern": "global_variable_changed:door_scene_done", "condition": "value === true && globalVars.gate_console_used === true && !globalVars.split_started", "conversationMode": "person-chat", "targetKnot": "split_line", "delayMs": 1500 },
             { "eventPattern": "global_variable_changed:gate_console_used", "condition": "value === true && globalVars.door_scene_done === true && !globalVars.split_started", "conversationMode": "person-chat", "targetKnot": "split_line", "delayMs": 1500 },
@@ -1429,6 +1446,9 @@ end
 <% end %>
 <%# --- Field guides, offered on the first use of each stage's console (CONTRACT 2.5) --- %>
             { "eventPattern": "object_interacted", "condition": "data.objectType === 'vm-launcher' && data.roomId === 'forward_post' && !globalVars.gate_console_used", "setGlobal": { "gate_console_used": true, "guide1_offered": true } },
+            <%# Walkthrough R1 M-1: flag 1 submitted with the VM already open elsewhere counts as the console's use, so the split (and the breach) can't stall. %>
+            { "eventPattern": "global_variable_changed:flag1_submitted", "condition": "value === true && !globalVars.gate_console_used", "setGlobal": { "gate_console_used": true } },
+            { "eventPattern": "game_loaded", "condition": "globalVars.flag1_submitted === true && !globalVars.gate_console_used", "setGlobal": { "gate_console_used": true } },
             { "eventPattern": "object_interacted", "condition": "data.objectType === 'vm-launcher' && data.roomId === 'server_hall' && !globalVars.guide2_offered", "setGlobal": { "guide2_offered": true } },
             { "eventPattern": "object_interacted", "condition": "data.objectType === 'vm-launcher' && data.roomId === 'server_hall' && globalVars.flag2_submitted === true && !globalVars.guide3_offered", "setGlobal": { "guide3_offered": true } },
             <%# Stage 8 m-7: the hatch's first use offers guide 3 too, so flag 3 can come first. T-34. %>
@@ -1445,13 +1465,14 @@ end
             { "eventPattern": "door_unlocked_by_npc", "condition": "data.roomId === 'blast_tunnel' && data.npcId === 'agent_0x99' && !globalVars.breach_open", "setGlobal": { "breach_open": true } },
             { "eventPattern": "door_unlock_failed:blast_tunnel", "condition": "!globalVars.door_scene_done", "bark": "Netherton won't call it till the table's settled." },
             { "eventPattern": "door_unlock_failed:blast_tunnel", "condition": "!globalVars.flag1_submitted", "bark": "Their monitoring first. Then we go." },
-            { "eventPattern": "door_unlock_failed:blast_tunnel", "condition": "globalVars.flag1_submitted === true && !globalVars.pair_back && !globalVars.arakawa_ko", "bark": "Arakawa's still on the phone. Quintero's waiting on him." },
+            { "eventPattern": "door_unlock_failed:blast_tunnel", "condition": "globalVars.flag1_submitted === true && globalVars.split_started === true && !globalVars.pair_back && !globalVars.arakawa_ko", "bark": "Arakawa's still on the phone. Quintero's waiting on him." },
             <%# The pair back (OT 6): the second of Arakawa's call and flag 1. %>
             { "eventPattern": "global_variable_changed:arakawa_call_done", "condition": "value === true && globalVars.flag1_submitted === true && !globalVars.pair_back", "setGlobal": { "pair_back": true } },
             { "eventPattern": "global_variable_changed:flag1_submitted", "condition": "value === true && globalVars.arakawa_call_done === true && !globalVars.pair_back", "setGlobal": { "pair_back": true } },
             { "eventPattern": "game_loaded", "condition": "globalVars.arakawa_call_done === true && globalVars.flag1_submitted === true && !globalVars.pair_back", "setGlobal": { "pair_back": true } },
             <%# Arakawa down before or during his call (R3-M3): nobody makes it, so HaX closes it. %>
-<% %w[conversation_closed:director_netherton npc_ko:arakawa_gate game_loaded door_unlock_failed:blast_tunnel].each do |ev| %>
+<%# Walkthrough R1b-m3: npc_ko fires before globalVarOnKO sets arakawa_ko, so the KO arm listens for the global's change. %>
+<% %w[conversation_closed:director_netherton global_variable_changed:arakawa_ko game_loaded door_unlock_failed:blast_tunnel].each do |ev| %>
             { "eventPattern": "<%= ev %>", "condition": "globalVars.split_started === true && globalVars.arakawa_ko === true && !globalVars.arakawa_call_done", "setGlobal": { "arakawa_call_done": true } },
 <% end %>
             { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true && !globalVars.nightshade_tethered && !globalVars.override_held", "setGlobal": { "breach_announced": true } },
@@ -1461,6 +1482,8 @@ end
             { "eventPattern": "game_loaded", "condition": "globalVars.blast_tunnel_entered === true && !globalVars.tripwire_armed && !globalVars.inner_door_open", "unlockDoor": "security_office", "delayMs": 1500 },
             { "eventPattern": "door_unlock_failed:security_office", "condition": "!globalVars.tripwire_armed && !globalVars.inner_door_open", "unlockDoor": "security_office", "cooldown": 0 },
             { "eventPattern": "door_unlock_failed:security_office", "condition": "globalVars.tripwire_armed === true && !globalVars.tripwire_tripped", "setGlobal": { "tripwire_tripped": true, "wren_warned": true, "security_alerted": true } },
+            <%# Walkthrough R1 m-2: every later try at the locked inner door points at the ladder. %>
+            { "eventPattern": "door_unlock_failed:security_office", "condition": "globalVars.tripwire_tripped === true && !globalVars.ladder_used && !globalVars.inner_door_open", "bark": "The ladder at the guard post. Up and round." },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Guard Post Ladder' && data.roomId === 'blast_tunnel' && globalVars.tripwire_armed === true && !globalVars.ladder_used", "cooldown": 0, "setGlobal": { "ladder_used": true, "tripwire_tripped": true, "wren_warned": true, "security_alerted": true } },
             { "eventPattern": "global_variable_changed:ladder_used", "condition": "value === true && !globalVars.inner_door_open", "unlockDoor": "security_office", "delayMs": 1500 },
             { "eventPattern": "game_loaded", "condition": "globalVars.ladder_used === true && !globalVars.inner_door_open", "unlockDoor": "security_office", "delayMs": 1500 },
@@ -1509,7 +1532,7 @@ end
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && !globalVars.cut_by_hand && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2500, "message": "Shutter's dead. The hall's next." } },
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.cut_by_hand === true && !globalVars.phone_voice_is_hax && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2500, "message": "Shutter's dead. The hall's next." } },
 <%# --- The server hall: the console, the shares, the schedule (OT 6; CONTRACT 3.3) --- %>
-            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Release Console Controls' && data.roomId === 'server_hall' && globalVars.flag2_submitted === true && !globalVars.hax_jammed", "cooldown": 0, "conversationMode": "phone-chat", "targetKnot": "console" },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Release Console Controls' && data.roomId === 'server_hall' && globalVars.flag2_submitted === true && !globalVars.hax_jammed && globalVars.ending === ''", "cooldown": 0, "conversationMode": "phone-chat", "targetKnot": "console" },
             { "eventPattern": "global_variable_changed:head_start_killed", "condition": "value === 'zero_day'", "setGlobal": { "share_zero_day": "stopped" } },
             { "eventPattern": "global_variable_changed:head_start_killed", "condition": "value === 'trace' && globalVars.share_zero_day === 'live'", "setGlobal": { "share_zero_day": "traced" } },
             { "eventPattern": "global_variable_changed:head_start_killed", "condition": "value === 'ghost' && globalVars.share_resale === 'live'", "setGlobal": { "share_resale": "stopped" } },
@@ -1571,7 +1594,12 @@ end
             { "eventPattern": "global_variable_changed:ending", "condition": "value !== ''", "onceOnly": true, "completeTask": "decide_his_end" },
             { "eventPattern": "global_variable_changed:ending", "condition": "value === 'joined'", "onceOnly": true, "sendTimedMessage": { "delay": 3000, "message": "0x00." } },
             { "eventPattern": "global_variable_changed:six_done", "condition": "value === true && globalVars.ending === 'executed'", "onceOnly": true, "sendTimedMessage": { "delay": 30000, "message": "I'll be at the board. I don't know what I'll say." } },
-<%# --- Tasks from the story globals (CONTRACT 3.1: only two tasks complete by tag) --- %>
+<%# --- The end of the night (walkthrough R1 M-2, R1b; m09's debrief_closed): the last closing scene's close completes close_the_night and rolls the credits; a reload between its last line and its close catches up on the next room entry. --- %>
+<% %w[six_oclock hearing citadel].each do |npc| %>
+            { "eventPattern": "conversation_closed:<%= npc %>", "condition": "globalVars.closing_done === true && !globalVars.night_closed", "setGlobal": { "night_closed": true }, "completeTask": "close_the_night" },
+<% end %>
+            { "eventPattern": "room_entered", "condition": "globalVars.closing_done === true && !globalVars.night_closed", "setGlobal": { "night_closed": true }, "completeTask": "close_the_night" },
+<%# --- Tasks from the story globals (CONTRACT 3.1: only take_the_briefing completes by tag) --- %>
             { "eventPattern": "global_variable_changed:door_scene_done", "condition": "value === true", "onceOnly": true, "completeTask": "settle_the_table" },
             { "eventPattern": "global_variable_changed:ghost_call_done", "condition": "value === true", "onceOnly": true, "completeTask": "answer_the_handset" },
             { "eventPattern": "global_variable_changed:clue_door_log", "condition": "value === true", "onceOnly": true, "completeTask": "read_the_door_log" },
@@ -1620,6 +1648,7 @@ end
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_nightshade.json",
           "currentKnot": "table",
+          "puzzle_graph_actions": [{ "id": "settle_the_table", "label": "The door scene at the table (door_scene_done)" }],
           "voice": <%= voice.(:nightshade) %>,
           "koImmune": true,
           "behavior": { "initiallyHidden": true },
@@ -1647,6 +1676,7 @@ end
             }
           ],
           "eventMappings": [
+            <%= after_end_json.('forward_post') %>
             { "eventPattern": "game_loaded", "condition": "globalVars.m08_nightshade_triple_agent === true && !globalVars.nightshade_taken_in", "setVisible": true },
             { "eventPattern": "game_loaded", "condition": "globalVars.m08_nightshade_arrested === true && !globalVars.m08_nightshade_ko_before_fate && !globalVars.m08_nightshade_triple_agent", "setVisible": true },
             <%# Taken in (shown branch, "Come with us"): he goes with the team at the breach and reappears at the outer lock. %>
@@ -1693,6 +1723,7 @@ end
             }
           ],
           "eventMappings": [
+            <%= after_end_json.('forward_post') %>
             { "eventPattern": "game_loaded", "condition": "!globalVars.m08_nightshade_triple_agent && !globalVars.m08_nightshade_arrested && !globalVars.breach_open", "setVisible": true },
             { "eventPattern": "game_loaded", "condition": "!globalVars.m08_nightshade_triple_agent && globalVars.m08_nightshade_ko_before_fate === true && !globalVars.breach_open", "setVisible": true },
             { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true", "setVisible": false },
@@ -1738,6 +1769,7 @@ end
             }
           ],
           "eventMappings": [
+            <%= after_end_json.('forward_post') %>
             { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true && globalVars.nightshade_tethered === true", "setVisible": true },
             { "eventPattern": "game_loaded", "condition": "globalVars.breach_open === true && globalVars.nightshade_tethered === true", "setVisible": true }
           ],
@@ -1759,6 +1791,7 @@ end
           "koImmune": true,
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
+            <%= after_end_json.('forward_post') %>
             { "eventPattern": "game_loaded", "condition": "globalVars.m09_recruiter_offer !== 'taken' && globalVars.m09_recruiter_offer !== 'double_crossed' && !globalVars.split_started", "setVisible": true },
             { "eventPattern": "game_loaded", "condition": "globalVars.m09_recruiter_offer !== 'taken' && globalVars.m09_recruiter_offer !== 'double_crossed' && globalVars.pair_back === true && !globalVars.breach_open", "setVisible": true },
             { "eventPattern": "global_variable_changed:split_started", "condition": "value === true", "setVisible": false, "delayMs": 500 },
@@ -1783,6 +1816,7 @@ end
           "koImmune": true,
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
+            <%= after_end_json.('forward_post') %>
             { "eventPattern": "game_loaded", "condition": "globalVars.m09_recruiter_offer === 'taken'", "setVisible": true }
           ],
           "observations": "Kowalczyk in the second van, cuffed to the rail. She watches the table through the open door."
@@ -1801,6 +1835,7 @@ end
           "voice": <%= voice.(:quintero) %>,
           "koImmune": true,
           "eventMappings": [
+            <%= after_end_json.('forward_post') %>
             { "eventPattern": "global_variable_changed:split_started", "condition": "value === true", "setVisible": false, "delayMs": 500 },
             { "eventPattern": "global_variable_changed:pair_back", "condition": "value === true && !globalVars.breach_open", "setVisible": true },
             { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true", "setVisible": false },
@@ -1823,6 +1858,7 @@ end
           "voice": <%= voice.(:arakawa) %>,
           "koImmune": true,
           "eventMappings": [
+            <%= after_end_json.('forward_post') %>
             { "eventPattern": "global_variable_changed:split_started", "condition": "value === true", "setVisible": false, "delayMs": 500 },
             { "eventPattern": "game_loaded", "condition": "globalVars.split_started === true", "setVisible": false }
           ],
@@ -1840,10 +1876,12 @@ end
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_arakawa.json",
           "currentKnot": "gate",
+          "puzzle_graph_actions": [{ "id": "arakawa_call", "label": "Arakawa's call, then the pair back" }],
           "voice": <%= voice.(:arakawa) %>,
           "globalVarOnKO": "arakawa_ko",
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 120, "attackDamage": 8, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('forward_post') %>
             { "eventPattern": "conversation_closed:director_netherton", "condition": "globalVars.split_started === true && !globalVars.arakawa_call_done && !globalVars.arakawa_ko", "setVisible": true, "conversationMode": "person-chat", "targetKnot": "gate", "delayMs": 1500 },
             { "eventPattern": "game_loaded", "condition": "globalVars.split_started === true && !globalVars.arakawa_call_done && !globalVars.arakawa_ko", "setVisible": true, "conversationMode": "person-chat", "targetKnot": "gate", "delayMs": 1500 },
             { "eventPattern": "door_unlock_failed:blast_tunnel", "condition": "globalVars.split_started === true && !globalVars.arakawa_call_done && !globalVars.arakawa_ko", "setVisible": true, "conversationMode": "person-chat", "targetKnot": "gate", "delayMs": 1500, "cooldown": 0 },
@@ -1869,6 +1907,7 @@ end
           "globalVarOnKO": "arakawa_ko",
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 120, "attackDamage": 8, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('forward_post') %>
             { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true && globalVars.nightshade_tethered === true && !globalVars.arakawa_ko && globalVars.officer_out !== 'arakawa'", "setVisible": true },
             { "eventPattern": "game_loaded", "condition": "globalVars.breach_open === true && globalVars.nightshade_tethered === true && !globalVars.arakawa_ko && globalVars.officer_out !== 'arakawa'", "setVisible": true },
             { "eventPattern": "global_variable_changed:officer_out", "condition": "value === 'arakawa'", "setVisible": false, "delayMs": 500 }
@@ -1888,11 +1927,14 @@ end
           "voice": <%= voice.(:minder) %>,
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 120, "attackDamage": 8, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('forward_post') %>
             { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true && globalVars.nightshade_tethered === true && globalVars.arakawa_ko === true", "setVisible": true },
             { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true && globalVars.nightshade_tethered === true && globalVars.officer_out === 'arakawa'", "setVisible": true },
             { "eventPattern": "game_loaded", "condition": "globalVars.breach_open === true && globalVars.nightshade_tethered === true && globalVars.arakawa_ko === true", "setVisible": true },
             { "eventPattern": "game_loaded", "condition": "globalVars.breach_open === true && globalVars.nightshade_tethered === true && globalVars.officer_out === 'arakawa'", "setVisible": true },
-            { "eventPattern": "global_variable_changed:officer_out", "condition": "value === 'arakawa' && globalVars.breach_open === true && globalVars.nightshade_tethered === true", "setVisible": true, "delayMs": 500 }
+            { "eventPattern": "global_variable_changed:officer_out", "condition": "value === 'arakawa' && globalVars.breach_open === true && globalVars.nightshade_tethered === true", "setVisible": true, "delayMs": 500 },
+            <%# Walkthrough R1b-m6: Arakawa knocked out at the blast door after the breach. %>
+            { "eventPattern": "global_variable_changed:arakawa_ko", "condition": "value === true && globalVars.breach_open === true && globalVars.nightshade_tethered === true", "setVisible": true, "delayMs": 500 }
           ],
           "observations": "One of the van team, standing by the blast door with Nightshade."
         },
@@ -1909,6 +1951,9 @@ end
           "currentKnot": "post",
           "voice": <%= voice.(:malhotra) %>,
           "koImmune": true,
+          "eventMappings": [
+            <%= after_end.('forward_post').map(&:to_json).join(', ') %>
+          ],
           "observations": "Officer Malhotra at the van door, headset on, badge on the step beside him."
         },
         {
@@ -1928,6 +1973,7 @@ end
           ],
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 120, "attackDamage": 6, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('forward_post') %>
             { "eventPattern": "global_variable_changed:vector_on_team", "condition": "value === true", "setVisible": true },
             { "eventPattern": "game_loaded", "condition": "globalVars.vector_on_team === true", "setVisible": true }
           ],
@@ -1947,6 +1993,7 @@ end
           "globalVarOnKO": "phantom_ko",
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 120, "attackDamage": 6, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('forward_post') %>
             { "eventPattern": "global_variable_changed:phantom_on_team", "condition": "value === true", "setVisible": true },
             { "eventPattern": "game_loaded", "condition": "globalVars.phantom_on_team === true", "setVisible": true }
           ],
@@ -1965,6 +2012,9 @@ end
           "currentKnot": "post",
           "voice": <%= voice.(:minder) %>,
           "behavior": { "hostile": { "chaseSpeed": 120, "attackDamage": 8, "pauseToAttack": true } },
+          "eventMappings": [
+            <%= after_end.('forward_post').map(&:to_json).join(', ') %>
+          ],
           "observations": "One of the van team, stamping warmth into his feet."
         },
         {
@@ -1981,6 +2031,7 @@ end
           "koImmune": true,
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
+            <%= after_end_json.('forward_post') %>
             { "eventPattern": "game_loaded", "condition": "globalVars.m04_voltage_captured === true && !globalVars.breach_open", "setVisible": true },
             { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true", "setVisible": false }
           ],
@@ -2156,6 +2207,7 @@ end
           "name": "Folding Table",
           "takeable": false,
           "position": { "x": 7, "y": 6 },
+          "puzzle_graph_links": [{ "from": "action_settle_the_table", "to": "door_blast_tunnel" }, { "from": "action_tether_question", "to": "door_blast_tunnel", "dashed": true }, { "from": "action_split_line", "to": "action_arakawa_call" }, { "from": "action_arakawa_call", "to": "door_blast_tunnel" }],
           "observations": "A folding table under a work lamp. Maps, radios, coffee going cold, and the breaching case at one end."
         },
         {
@@ -2225,7 +2277,7 @@ end
         {
           "type": "vm-launcher",
           "id": "gate_console",
-          "name": "Field Console",
+          "name": "Field Console (Gate)",
           "takeable": false,
           "position": { "x": 14, "y": 3 },
           "observations": "The field console, racked by the gate. It talks to their gate terminal.",
@@ -2294,18 +2346,23 @@ raid = {
 }
 raid_guard = lambda do |p|
   g = "globalVars.breach_open === true && !globalVars.#{p}_ko && globalVars.officer_out !== '#{p}'"
-  g += " && globalVars.whodunit_live === true && globalVars.accused !== 'kowalczyk' && !globalVars.kowalczyk_gone_ahead" if p == 'kowalczyk'
+  # Walkthrough R1b-M3: never again once she has come through his door.
+  g += " && globalVars.whodunit_live === true && globalVars.accused !== 'kowalczyk' && !globalVars.kowalczyk_gone_ahead && !globalVars.wren_entering && !globalVars.wren_at_core && globalVars.ending === ''" if p == 'kowalczyk'
   g
 end
 raid_copy = lambda do |p, id, room, knot, x, y, arms, look|
   r = raid[p]
-  maps = arms.map do |arm|
+  maps = after_end.(room)
+  maps += arms.map do |arm|
     { 'eventPattern' => "room_entered:#{room}", 'condition' => [raid_guard.(p), arm].compact.join(' && '), 'setVisible' => true }
   end
+  # Walkthrough R1 m-3: gone when the player moves on, as vector_so (they are "a room ahead").
+  maps << { 'eventPattern' => 'room_exited', 'condition' => "data.roomId === '#{room}'", 'setVisible' => false }
   maps << { 'eventPattern' => 'global_variable_changed:officer_out', 'condition' => "value === '#{p}'", 'setVisible' => false, 'delayMs' => 500 }
   if p == 'kowalczyk'
     maps << { 'eventPattern' => 'global_variable_changed:accused', 'condition' => "value === 'kowalczyk'", 'setVisible' => false, 'delayMs' => 500 }
     maps << { 'eventPattern' => 'global_variable_changed:kowalczyk_gone_ahead', 'condition' => 'value === true', 'setVisible' => false, 'delayMs' => 500 }
+    maps << { 'eventPattern' => 'global_variable_changed:wren_entering', 'condition' => 'value === true', 'setVisible' => false }
   end
   {
     'id' => id, 'displayName' => r[:name], 'npcType' => 'person',
@@ -2352,6 +2409,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           },
           "los": { "enabled": true, "range": 150, "angle": 110, "visualize": true, "challengeOnSight": { "cooldown": 20000, "rooms": ["blast_tunnel"] } },
           "eventMappings": [
+            <%= after_end_json.('blast_tunnel') %>
             { "eventPattern": "room_entered:blast_tunnel", "condition": "!globalVars.nightshade_tethered && !globalVars.nightshade_map_used && !globalVars.override_held", "setVisible": true },
             { "eventPattern": "player_spotted:tunnel_guard", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "tunnel", "cooldown": 0 }
           ],
@@ -2371,6 +2429,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "behavior": { "initiallyHidden": true, "facePlayer": false, "hostile": { "chaseSpeed": 130, "attackDamage": 10, "pauseToAttack": true } },
           "los": { "enabled": false },
           "eventMappings": [
+            <%= after_end_json.('blast_tunnel') %>
             { "eventPattern": "room_entered:blast_tunnel", "condition": "globalVars.nightshade_tethered === true", "setVisible": true }
           ],
           "observations": "The guard at the kettle, his back to the tunnel, waiting for it to boil."
@@ -2462,6 +2521,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           },
           "los": { "enabled": true, "range": 160, "angle": 110, "visualize": false },
           "eventMappings": [
+            <%= after_end_json.('security_office') %>
             { "eventPattern": "room_entered:security_office", "condition": "globalVars.security_alerted === true", "setPatrolSpeed": 95 },
             <%# RL 3: picking the fitter's locker under his eye is the quiet route's intended risk (systems/lockpick-catch.js). %>
             { "eventPattern": "lockpick_used_in_view", "conversationMode": "person-chat", "targetKnot": "duty", "cooldown": 250 }
@@ -2482,6 +2542,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "voice": <%= voice.(:guard_f) %>,
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 130, "attackDamage": 9, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('security_office') %>
             { "eventPattern": "room_entered:security_office", "condition": "!globalVars.m06_assets_seized", "setVisible": true }
           ],
           "observations": "The second duty guard at the monitors, your face on three of them."
@@ -2503,6 +2564,7 @@ not_tethered = '!globalVars.nightshade_tethered'
             { "type": "notes", "id": "vector_cupboard_code", "name": "Records cupboard: Vector's code", "takeable": true, "readable": true, "text": "<%= cupboard_pin %>", "puzzle_graph_role": "clue", "puzzle_graph_unlocks": "lock_records_cupboard", "puzzle_graph_optional": true }
           ],
           "eventMappings": [
+            <%= after_end_json.('security_office') %>
             { "eventPattern": "room_entered:security_office", "condition": "globalVars.vector_on_team === true && !globalVars.vector_ko && globalVars.officer_out !== 'vector'", "setVisible": true },
             { "eventPattern": "room_exited", "condition": "data.roomId === 'security_office'", "setVisible": false },
             { "eventPattern": "global_variable_changed:officer_out", "condition": "value === 'vector'", "setVisible": false, "delayMs": 500 }
@@ -2724,6 +2786,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_imran.json",
           "currentKnot": "workshop",
+          "puzzle_graph_actions": [{ "id": "opens_power_room", "label": "Talked round, or a card cloned" }],
           "voice": <%= voice.(:imran) %>,
           "unlockable": ["power_room"],
 <% if card %>
@@ -2731,6 +2794,7 @@ not_tethered = '!globalVars.nightshade_tethered'
 <% end %>
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 120, "attackDamage": 6, "pauseToAttack": true, "fightStyle": "cower", "fleeSpeed": 110 } },
           "eventMappings": [
+            <%= after_end_json.('workshop_floor') %>
             { "eventPattern": "room_entered:workshop_floor", "condition": "<%= cond %>", "setVisible": true }
           ],
           "observations": "Imran at his bench under the casualty sheet, a soldering iron cooling in its stand."
@@ -2750,6 +2814,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "globalVarOnKO": "gary_ko",
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 110, "attackDamage": 5, "pauseToAttack": true, "fightStyle": "cower", "fleeSpeed": 110 } },
           "eventMappings": [
+            <%= after_end_json.('workshop_floor') %>
             { "eventPattern": "room_entered:workshop_floor", "condition": "globalVars.m02_completed === true && globalVars.m02_gary_protected === true", "setVisible": true }
           ],
           "observations": "Gary Whitlock in a SAFETYNET lanyard, standing on the stair landing as if he isn't sure he's allowed further."
@@ -2764,12 +2829,14 @@ not_tethered = '!globalVars.nightshade_tethered'
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_gary.json",
           "currentKnot": "tech",
+          "puzzle_graph_actions": [{ "id": "opens_power_room", "label": "Talked round, or a card cloned" }],
           "voice": <%= voice.(:gary) %>,
           "globalVarOnKO": "gary_ko",
           "unlockable": ["power_room"],
           "rfidCard": { "card_id": "tg_power_room_card", "rfid_protocol": "EM4100", "name": "Power Room Card, Gary Whitlock" },
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 110, "attackDamage": 5, "pauseToAttack": true, "fightStyle": "cower", "fleeSpeed": 110 } },
           "eventMappings": [
+            <%= after_end_json.('workshop_floor') %>
             { "eventPattern": "room_entered:workshop_floor", "condition": "globalVars.m02_completed === true && !globalVars.m02_gary_protected && !globalVars.m02_exposed_hospital", "setVisible": true }
           ],
           "observations": "Gary Whitlock at the next bench in a technician's fleece, not looking up."
@@ -2791,6 +2858,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           },
           "los": { "enabled": true, "range": 150, "angle": 110, "visualize": false, "challengeOnSight": { "cooldown": 30000, "rooms": ["workshop_floor"] } },
           "eventMappings": [
+            <%= after_end_json.('workshop_floor') %>
             { "eventPattern": "player_spotted:workshop_guard", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "workshop", "cooldown": 0 }
           ],
           "observations": "The floor guard walking the bench row, hand never far from his belt."
@@ -2894,6 +2962,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "name": "Cracker Rack",
           "takeable": false,
           "position": { "x": 8, "y": 8 },
+          "puzzle_graph_links": [{ "from": "action_opens_power_room", "to": "door_power_room", "dashed": true }],
           "observations": "Racks of half-built PIN crackers in matte casings. No stores labels. A batch sticker inside each battery door: G-19."
         }
       ]
@@ -2924,9 +2993,11 @@ not_tethered = '!globalVars.nightshade_tethered'
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_wendell.json",
           "currentKnot": "wendell",
+          "puzzle_graph_actions": [{ "id": "cut_the_shutter", "label": "The shutter cut: slot-holder or the phone voice" }],
           "voice": <%= voice.(:wendell) %>,
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 90, "attackDamage": 6, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('power_room') %>
             { "eventPattern": "room_entered:power_room", "condition": "!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped", "setVisible": true }
           ],
           "observations": "Wendell Briggs at the panel, a thermos on the switchgear and a cap pushed back on his head."
@@ -2944,6 +3015,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "voice": <%= voice.(:wendell) %>,
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 90, "attackDamage": 6, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('power_room') %>
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.m04_voltage_escaped === true && !globalVars.m04_static_left", "setVisible": true },
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.m04_voltage_escaped === true && globalVars.m04_static_left_alone === true", "setVisible": true }
           ],
@@ -2959,10 +3031,12 @@ not_tethered = '!globalVars.nightshade_tethered'
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_voltage.json",
           "currentKnot": "captured",
+          "puzzle_graph_actions": [{ "id": "cut_the_shutter", "label": "The shutter cut: slot-holder or the phone voice" }],
           "voice": <%= voice.(:voltage) %>,
           "koImmune": true,
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
+            <%= after_end_json.('power_room') %>
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.m04_voltage_captured === true", "setVisible": true }
           ],
           "observations": "Voltage, cuffed in front, looking at the switchgear the way other men look at old photographs."
@@ -2977,9 +3051,11 @@ not_tethered = '!globalVars.nightshade_tethered'
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_voltage.json",
           "currentKnot": "escaped",
+          "puzzle_graph_actions": [{ "id": "cut_the_shutter", "label": "The shutter cut: slot-holder or the phone voice" }],
           "voice": <%= voice.(:voltage) %>,
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 140, "attackDamage": 14, "pauseToAttack": true, "fightStyle": "guarded" } },
           "eventMappings": [
+            <%= after_end_json.('power_room') %>
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.m04_voltage_escaped === true", "setVisible": true }
           ],
           "observations": "Voltage at the switchgear, sleeves rolled, not turning round."
@@ -2997,6 +3073,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "voice": <%= voice.(:static) %>,
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 135, "attackDamage": 12, "pauseToAttack": true, "fightStyle": "slugger" } },
           "eventMappings": [
+            <%= after_end_json.('power_room') %>
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.m04_static_left === true && !globalVars.m04_static_left_alone", "setVisible": true }
           ],
           "observations": "Static between you and Voltage, arms folded, watching your hands."
@@ -3013,6 +3090,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "takeable": false,
           "readable": true,
           "position": "as-type:aes_esd_station",
+          "puzzle_graph_links": [{ "from": "action_cut_the_shutter", "to": "door_gallery" }],
           "observations": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it.",
           "observationVariants": [
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.gallery_camera_blinded === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED. Under it, a smaller switch thrown the other way: GALLERY CAMERA: OFF." },
@@ -3096,6 +3174,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "globalVarOnKO": "asante_ko",
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 110, "attackDamage": 5, "pauseToAttack": true, "fightStyle": "cower", "fleeSpeed": 110 } },
           "eventMappings": [
+            <%= after_end_json.('server_hall') %>
             { "eventPattern": "room_entered:server_hall", "condition": "!globalVars.m07_completed", "setVisible": true },
             { "eventPattern": "room_entered:server_hall", "condition": "globalVars.m07_mercer_ko === true", "setVisible": true },
             { "eventPattern": "room_entered:server_hall", "condition": "globalVars.m07_mercer_fate === 'arrested'", "setVisible": true }
@@ -3116,6 +3195,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "globalVarOnKO": "mercer_ko",
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 125, "attackDamage": 10, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('server_hall') %>
             { "eventPattern": "room_entered:server_hall", "condition": "<%= mercer_here %>", "setVisible": true }
           ],
           "observations": "Dr Mercer at the release console, as calm as a man reading a timetable."
@@ -3140,6 +3220,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           },
           "los": { "enabled": true, "range": 160, "angle": 110, "visualize": false, "challengeOnSight": { "cooldown": 30000, "rooms": ["server_hall"] } },
           "eventMappings": [
+            <%= after_end_json.('server_hall') %>
             { "eventPattern": "player_spotted:<%= gid %>", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "<%= gid.sub('hall_guard_', 'hall_') %>", "cooldown": 0 }
           ],
           "observations": "<%= look %>"
@@ -3175,7 +3256,7 @@ not_tethered = '!globalVars.nightshade_tethered'
         {
           "type": "vm-launcher",
           "id": "hall_console",
-          "name": "Field Console",
+          "name": "Field Console (Server Hall)",
           "takeable": false,
           "position": { "x": 8, "y": 4 },
           "observations": "The field console, racked between two of the old map tables.",
@@ -3302,10 +3383,12 @@ not_tethered = '!globalVars.nightshade_tethered'
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_victoria.json",
           "currentKnot": "start",
+          "puzzle_graph_actions": [{ "id": "opened_from_inside", "label": "Opened from inside (Victoria or Vos)" }],
           "voice": <%= voice.(:victoria) %>,
           "unlockable": ["core"],
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 120, "attackDamage": 8, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('gallery') %>
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate === 'recruited' && globalVars.victoria_gallery !== 'walked'", "setVisible": true },
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate === 'escaped' && !globalVars.m03_sterling_on_call_seen && globalVars.victoria_gallery !== 'walked'", "setVisible": true },
             <%# She leaves back down the gallery stair, past the player: after selling the raid (trusted on a live or traced share), or on "[Go.]". %>
@@ -3327,6 +3410,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "voice": <%= voice.(:victoria) %>,
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 125, "attackDamage": 12, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('gallery') %>
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate === 'escaped' && globalVars.m03_sterling_on_call_seen === true && globalVars.victoria_gallery !== 'talked_down'", "setVisible": true },
             { "eventPattern": "conversation_closed:victoria_threat", "condition": "globalVars.victoria_gallery === 'talked_down'", "setVisible": false }
           ],
@@ -3342,6 +3426,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_vos.json",
           "currentKnot": "gallery",
+          "puzzle_graph_actions": [{ "id": "opened_from_inside", "label": "Opened from inside (Victoria or Vos)" }],
           "voice": <%= voice.(:vos) %>,
           "unlockable": ["core"],
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 110, "attackDamage": 6, "pauseToAttack": true } },
@@ -3349,6 +3434,7 @@ not_tethered = '!globalVars.nightshade_tethered'
             { "type": "notes", "id": "vos_code_card", "name": "Visitor's Code Card", "takeable": true, "readable": true, "text": "TOMB GAMMA. VISITOR: ZERO DAY.\nOuter lock: <%= outer_lock_pin %>.\nTonight only.", "puzzle_graph_role": "clue", "puzzle_graph_unlocks": "core", "puzzle_graph_optional": true }
           ],
           "eventMappings": [
+            <%= after_end_json.('gallery') %>
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate !== 'recruited' && globalVars.m03_victoria_fate !== 'escaped'", "setVisible": true }
           ],
           "observations": "Pieter Vos by the slit windows with a briefcase at his feet, checking his watch against the lock panel."
@@ -3379,13 +3465,14 @@ not_tethered = '!globalVars.nightshade_tethered'
             "challengeOnSight": { "cooldown": 15000, "rooms": ["gallery"], "requireGlobal": "at_keypad", "skipIfGlobal": ["lock_guard_challenged"] }
           },
           "eventMappings": [
+            <%= after_end_json.('gallery') %>
             { "eventPattern": "door_unlock_attempt", "condition": "data.connectedRoom === 'core'", "cooldown": 0, "setGlobal": { "at_keypad": true } },
             { "eventPattern": "room_exited", "condition": "data.roomId === 'gallery' && globalVars.at_keypad === true", "setGlobal": { "at_keypad": false } },
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.at_keypad === true", "setGlobal": { "at_keypad": false } },
             { "eventPattern": "player_spotted:lock_guard", "conversationMode": "person-chat", "targetKnot": "challenge", "cooldown": 0 },
             { "eventPattern": "door_unlock_attempt", "condition": "data.connectedRoom === 'core' && !globalVars.lock_guard_known && !globalVars.fonoti_ko", "onceOnly": true, "bark": "That takes the shift code. It's on my card, and it stays there." },
             { "eventPattern": "door_unlocked", "condition": "data.connectedRoom === 'core' && globalVars.ghost_gift === 'code' && !globalVars.outer_lock_open && !globalVars.fonoti_ko", "onceOnly": true, "bark": "Who gave out the code?" },
-            { "eventPattern": "room_entered:gallery", "condition": "globalVars.imran_outcome === 'talked_round' && globalVars.gallery_camera_blinded === true && !globalVars.fonoti_ko", "onceOnly": true, "bark": "Where's Farah? She was on till six.", "barkDelay": 4000 },
+            { "eventPattern": "room_entered:gallery", "condition": "globalVars.imran_outcome === 'talked_round' && globalVars.gallery_camera_blinded === true && !globalVars.fonoti_ko", "onceOnly": true, "delayMs": 4000, "bark": "Where's Farah? She was on till six." },
             { "eventPattern": "conversation_closed:lock_guard", "condition": "globalVars.lock_guard_challenged === true", "targetKnot": "talk" }
           ],
           "observations": "A big man walking the walkway slowly, a code card clipped to his belt."
@@ -3403,9 +3490,10 @@ not_tethered = '!globalVars.nightshade_tethered'
           "voice": <%= voice.(:guard_m) %>,
           "behavior": { "hostile": { "chaseSpeed": 130, "attackDamage": 10, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('gallery') %>
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.gallery_camera_blinded === true", "onceOnly": true, "bark": "Camera's dead again. I'll go and look." },
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.gallery_camera_blinded === true", "setVisible": false, "delayMs": 3500 },
-            { "eventPattern": "room_entered:gallery", "condition": "globalVars.imran_outcome === 'talked_round' && !globalVars.gallery_camera_blinded", "onceOnly": true, "bark": "Where's Farah? She was on till six.", "barkDelay": 4000 }
+            { "eventPattern": "room_entered:gallery", "condition": "globalVars.imran_outcome === 'talked_round' && !globalVars.gallery_camera_blinded", "onceOnly": true, "delayMs": 4000, "bark": "Where's Farah? She was on till six." }
           ],
           "observations": "The monitor post's guard, B. Haugen by the rota, with one eye on a small screen."
         },
@@ -3422,6 +3510,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "voice": <%= voice.(:farah) %>,
           "behavior": { "hostile": { "chaseSpeed": 130, "attackDamage": 9, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('gallery') %>
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.imran_outcome === 'talked_round'", "setVisible": false }
           ],
           "observations": "The floor post's guard, Farah Qureshi, near the end of a long shift."
@@ -3442,6 +3531,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "voice": <%= voice.(vkey) %>,
           "behavior": { "initiallyHidden": true, "hostile": { "startHostile": true, "chaseSpeed": 140, "attackDamage": 12, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('gallery') %>
             { "eventPattern": "conversation_closed:victoria_gallery", "condition": "globalVars.victoria_gallery === 'trusted' && globalVars.share_zero_day !== 'stopped' && !globalVars.nightshade_taken_in", "setVisible": true, "delayMs": 1500 },
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.victoria_gallery === 'trusted' && globalVars.share_zero_day !== 'stopped' && !globalVars.nightshade_taken_in", "setVisible": true }
           ],
@@ -3463,11 +3553,14 @@ not_tethered = '!globalVars.nightshade_tethered'
           "globalVarOnKO": "quintero_ko",
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 120, "attackDamage": 8, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('gallery') %>
 <% q = "!globalVars.quintero_ko && globalVars.officer_out !== 'quintero'" %>
             { "eventPattern": "global_variable_changed:outer_lock_open", "condition": "value === true && <%= q %> && !globalVars.nightshade_tethered", "setVisible": true },
             { "eventPattern": "global_variable_changed:outer_lock_open", "condition": "value === true && <%= q %> && globalVars.m09_sleeper_named !== true", "setVisible": true },
-            { "eventPattern": "room_entered:gallery", "condition": "globalVars.outer_lock_open === true && <%= q %> && !globalVars.nightshade_tethered", "setVisible": true },
-            { "eventPattern": "room_entered:gallery", "condition": "globalVars.outer_lock_open === true && <%= q %> && globalVars.m09_sleeper_named !== true", "setVisible": true }
+            { "eventPattern": "room_entered:gallery", "condition": "globalVars.outer_lock_open === true && <%= q %> && !globalVars.nightshade_tethered && !globalVars.quintero_enters_core", "setVisible": true },
+            { "eventPattern": "room_entered:gallery", "condition": "globalVars.outer_lock_open === true && <%= q %> && globalVars.m09_sleeper_named !== true && !globalVars.quintero_enters_core", "setVisible": true },
+            <%# Walkthrough R1b-m5: one Quintero at a time; at the beat she is in the core. %>
+            { "eventPattern": "global_variable_changed:quintero_enters_core", "condition": "value === true", "setVisible": false }
           ],
           "observations": "Quintero at the outer lock, her back to the door, facing the stair."
         },
@@ -3485,6 +3578,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "voice": <%= voice.(:minder) %>,
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 120, "attackDamage": 8, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('gallery') %>
 <% %w[globalVars.quintero_ko\ ===\ true globalVars.officer_out\ ===\ 'quintero' globalVars.nightshade_tethered\ ===\ true\ &&\ globalVars.m09_sleeper_named\ ===\ true].each do |arm| %>
             { "eventPattern": "global_variable_changed:outer_lock_open", "condition": "value === true && <%= arm %>", "setVisible": true },
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.outer_lock_open === true && <%= arm %>", "setVisible": true },
@@ -3531,6 +3625,7 @@ not_tethered = '!globalVars.nightshade_tethered'
             }
           ],
           "eventMappings": [
+            <%= after_end_json.('gallery') %>
             { "eventPattern": "global_variable_changed:outer_lock_open", "condition": "value === true && globalVars.nightshade_taken_in === true", "setVisible": true, "bark": "Go on. I've got the door." },
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.outer_lock_open === true && globalVars.nightshade_taken_in === true", "setVisible": true },
             { "eventPattern": "conversation_closed:victoria_gallery", "condition": "globalVars.victoria_gallery === 'trusted' && globalVars.share_zero_day !== 'stopped' && globalVars.nightshade_taken_in === true", "onceOnly": true, "bark": "Boots on the stair, then Nightshade's voice on the intercom, and the boots stop." }
@@ -3596,6 +3691,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "name": "Slit Windows",
           "takeable": false,
           "position": { "x": 3, "y": 2 },
+          "puzzle_graph_links": [{ "from": "action_opened_from_inside", "to": "door_core", "dashed": true }],
           "observations": "Slit windows down into the core. Bare concrete, one console, and the top of a grey head that doesn't look up."
         }
       ]
@@ -3657,6 +3753,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "koImmune": true,
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
+            <%= after_end_json.('core') %>
             { "eventPattern": "room_entered:core", "condition": "globalVars.m09_recruiter_offer === 'double_crossed' && !globalVars.wren_at_core", "setVisible": true },
             { "eventPattern": "global_variable_changed:wren_at_core", "condition": "value === true", "setVisible": false, "delayMs": 500 }
           ],
@@ -3677,6 +3774,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "koImmune": true,
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
+            <%= after_end_json.('core') %>
             { "eventPattern": "global_variable_changed:wren_entering", "condition": "value === true && !globalVars.wren_at_core", "setVisible": true },
             { "eventPattern": "global_variable_changed:wren_stopped", "condition": "value === true", "setVisible": false },
             { "eventPattern": "global_variable_changed:wren_at_core", "condition": "value === true && globalVars.wren_entering === true", "setVisible": false, "delayMs": 500 }
@@ -3698,6 +3796,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "globalVarOnKO": "quintero_ko",
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 120, "attackDamage": 8, "pauseToAttack": true } },
           "eventMappings": [
+            <%= after_end_json.('core') %>
             { "eventPattern": "global_variable_changed:quintero_enters_core", "condition": "value === true && !globalVars.quintero_ko", "setVisible": true },
             { "eventPattern": "room_entered:core", "condition": "globalVars.quintero_enters_core === true && !globalVars.quintero_ko", "setVisible": true }
           ],
@@ -3754,7 +3853,7 @@ not_tethered = '!globalVars.nightshade_tethered'
         {
           "type": "vm-launcher",
           "id": "core_console_vm",
-          "name": "Field Console",
+          "name": "Field Console (Core)",
           "takeable": false,
           "position": { "x": 2, "y": 6 },
           "observations": "The field console, racked by the host terminal. The last one.",
@@ -3988,6 +4087,7 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "close_zero_day": "",
 <%# --- JSON-only --- %>
     "teaser_enabled": false,
+    "night_closed": false,
     "asante_ko": false
   }
 }

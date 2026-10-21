@@ -450,19 +450,16 @@ Narrator: On the table, the screen turns over to six. Nothing happens.
 - ending == "arrest":
     #set_global:six_done:true
     #set_global:closing_done:true
-    #complete_task:close_the_night
     Agent HaX: I said no. It took me till morning.
 - ending == "surrender":
     Agent HaX: I said no. It took me till morning.
     #set_global:six_done:true
     #set_global:closing_done:true
-    #complete_task:close_the_night
     Agent HaX: He asked who taught you. I said I did.
 - else:
     Agent HaX: I said no. It took me till morning.
     #set_global:six_done:true
     #set_global:closing_done:true
-    #complete_task:close_the_night
     Agent HaX: There'll be a board. I'll be sitting next to you.
 }
 ~ six_quiet = true
@@ -523,7 +520,6 @@ Director Magnus Netherton: I will not put my name under this one. You will be he
 === executed_close ===
 #set_global:six_done:true
 #set_global:closing_done:true
-#complete_task:close_the_night
 Director Magnus Netherton: Take 0x00 to the second van. Nobody discusses tonight with them until the board sits.
 ~ six_quiet = true
 #exit_conversation

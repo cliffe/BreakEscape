@@ -19,7 +19,6 @@ Director Magnus Netherton: He told her it had to be one of ours. He was right, a
 -
 Narrator: On the next screen, the casualty count climbs. Nobody turns it off.
 #set_global:closing_done:true
-#complete_task:close_the_night
 Director Magnus Netherton: Find 0x00. Bring them in, and bring them to me.
 ~ cit_quiet = true
 #exit_conversation

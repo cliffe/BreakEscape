@@ -47,7 +47,6 @@ Agent HaX: The night he left, he asked me to go with him.
 Agent HaX: I said no. It took me till morning.
 Narrator: Someone behind the table reads out your designation.
 #set_global:closing_done:true
-#complete_task:close_the_night
 { hax_asked_database:
     Agent HaX: They'll ask me if I'd have stopped you. I'll tell them you asked, and I said it was yours.
 - else:

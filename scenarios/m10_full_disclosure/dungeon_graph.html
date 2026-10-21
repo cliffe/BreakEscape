@@ -142,8 +142,8 @@
       <tr><th>AND-gate convergences</th><td class="val">1</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">10</td></tr>
       <tr><th>Rooms</th><td class="val">8</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">60 / 79</td></tr>
-      <tr><th>Story nodes / edges</th><td class="val">10 / 8</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">77 / 108</td></tr>
+      <tr><th>Story nodes / edges</th><td class="val">7 / 6</td></tr>
     </table>
   </div>
 
@@ -193,8 +193,15 @@
   breaching_case_sign_out_sheet{"Breaching Case: Sign-Out Sheet"}
   citadel_incident_file_v_47{"Citadel Incident File V-47"}
   helena_s_plans_tomb_gamma_as_built{"Helena's Plans: Tomb Gamma, As Built"}
-  field_console["Field Console"]
+  field_console_gate["Field Console (Gate)"]
   gate_terminal{"Gate Terminal"}
+  npc_director_magnus_netherton{"Director Magnus Netherton"}
+  action_tether_question>"The tether, on the silent branch (door_scene_done)"]
+  action_split_line>"The split line"]
+  npc_agent_0x47_nightshade{"Agent 0x47 'Nightshade'"}
+  action_settle_the_table>"The door scene at the table (door_scene_done)"]
+  npc_officer_kenji_arakawa{"Officer Kenji Arakawa"}
+  action_arakawa_call>"Arakawa's call, then the pair back"]
   npc_agent_0x23_vector{"Agent 0x23 'Vector'"}
   records_cupboard_vector_s_code{"Records cupboard: Vector's code"}
   npc_ghost{"Ghost"}
@@ -214,14 +221,24 @@
   lock_model_terminal["Bench Terminal: Casualty Model<br/>Password lock"]
   asante_s_corrected_model{"Asante's Corrected Model"}
   bench_log_outgoing{"Bench Log: Outgoing"}
+  npc_imran_siddiqui{"Imran Siddiqui"}
+  action_opens_power_room>"Talked round, or a card cloned"]
+  npc_gary_whitlock{"Gary Whitlock"}
+  npc_wendell_briggs{"Wendell Briggs"}
+  action_cut_the_shutter>"The shutter cut: slot-holder or the phone voice"]
+  npc_voltage_critical_mass{"Voltage (Critical Mass)"}
   server_hall("Server Hall")
+  field_console_server_hall["Field Console (Server Hall)"]
   release_console{"Release Console"}
   sealed_section_hatch{"Sealed Section Hatch"}
   keypad_face_plate{"Keypad Face Plate"}
+  npc_victoria_sterling{"Victoria Sterling"}
+  action_opened_from_inside>"Opened from inside (Victoria or Vos)"]
   npc_pieter_vos{"Pieter Vos"}
   visitor_s_code_card{"Visitor's Code Card"}
   npc_sione_fonoti{"Sione Fonoti"}
   gallery_shift_code_card{"Gallery Shift Code Card"}
+  field_console_core["Field Console (Core)"]
   andgate1((" + "))
   vmch_submit_flag_1["Get a foothold on the security monitoring host and submit the flag at the gate terminal"]
   vmfl_submit_flag_1{"Flag 1 Flag"}
@@ -248,9 +265,16 @@
   forward_post --> breaching_case_sign_out_sheet
   forward_post --> citadel_incident_file_v_47
   forward_post --> helena_s_plans_tomb_gamma_as_built
-  forward_post --> field_console
+  forward_post --> field_console_gate
   forward_post --> gate_terminal
   gate_terminal --> door_blast_tunnel
+  forward_post --> npc_director_magnus_netherton
+  npc_director_magnus_netherton --> action_tether_question
+  npc_director_magnus_netherton --> action_split_line
+  forward_post --> npc_agent_0x47_nightshade
+  npc_agent_0x47_nightshade --> action_settle_the_table
+  forward_post --> npc_officer_kenji_arakawa
+  npc_officer_kenji_arakawa --> action_arakawa_call
   forward_post --> npc_agent_0x23_vector
   npc_agent_0x23_vector -.-> records_cupboard_vector_s_code
   records_cupboard_vector_s_code -.-> lock_lock_records_cupboard
@@ -284,19 +308,34 @@
   workshop_floor --> lock_model_terminal
   lock_model_terminal --> asante_s_corrected_model
   workshop_floor --> bench_log_outgoing
-  server_hall --> field_console
+  workshop_floor --> npc_imran_siddiqui
+  npc_imran_siddiqui --> action_opens_power_room
+  workshop_floor --> npc_imran_siddiqui
+  npc_imran_siddiqui --> action_opens_power_room
+  workshop_floor --> npc_gary_whitlock
+  npc_gary_whitlock --> action_opens_power_room
+  power_room --> npc_wendell_briggs
+  npc_wendell_briggs --> action_cut_the_shutter
+  power_room --> npc_voltage_critical_mass
+  npc_voltage_critical_mass --> action_cut_the_shutter
+  power_room --> npc_voltage_critical_mass
+  npc_voltage_critical_mass --> action_cut_the_shutter
+  server_hall --> field_console_server_hall
   server_hall --> release_console
   server_hall --> sealed_section_hatch
   sealed_section_hatch --> door_gallery
   gallery -.-> keypad_face_plate
   keypad_face_plate -.-> door_core
+  gallery --> npc_victoria_sterling
+  npc_victoria_sterling --> action_opened_from_inside
   gallery --> npc_pieter_vos
   npc_pieter_vos -.-> visitor_s_code_card
   visitor_s_code_card -.-> door_core
+  npc_pieter_vos --> action_opened_from_inside
   gallery --> npc_sione_fonoti
   npc_sione_fonoti -.-> gallery_shift_code_card
   gallery_shift_code_card -.-> door_core
-  core --> field_console
+  core --> field_console_core
   sealed_section_hatch -.-> andgate1
   andgate1 --> door_gallery
   release_console --> andgate1
@@ -310,13 +349,21 @@
   vmfl_submit_flag_3 --> door_gallery
   vmch_submit_flag_4 --> vmfl_submit_flag_4
   vmfl_submit_flag_3 -.-> vmch_submit_flag_4
-  field_console --> vmch_submit_flag_1
+  field_console_gate --> vmch_submit_flag_1
+  action_settle_the_table --> door_blast_tunnel
+  action_tether_question -.-> door_blast_tunnel
+  action_split_line --> action_arakawa_call
+  action_arakawa_call --> door_blast_tunnel
+  action_opens_power_room -.-> door_power_room
+  action_cut_the_shutter --> door_gallery
+  action_opened_from_inside -.-> door_core
 
   class door_blast_tunnel,door_security_office,door_workshop_floor,door_power_room,door_gallery,door_core,lock_fitter_locker,lock_lock_records_cupboard,lock_records_cupboard,lock_model_terminal lock
   class blast_tunnel,security_office,workshop_floor,power_room,gallery,core,forward_post,server_hall room
   class lock_pick_kit,rfid_cloner,fingerprint_kit,pin_cracker_kowalczyk_s,breaching_case_sign_out_sheet,citadel_incident_file_v_47,helena_s_plans_tomb_gamma_as_built,gate_terminal,records_cupboard_vector_s_code,records_cupboard_ghost_s_code,outer_lock_maintenance_code,monitoring_desk_door_log,gallery_shift_rota,alarm_log_refit_to_date,records_cupboard,fitter_s_locker,casualty_sheet,margin_strip,asante_s_corrected_model,bench_log_outgoing,release_console,sealed_section_hatch,keypad_face_plate,visitor_s_code_card,gallery_shift_code_card item
-  class field_console,vmch_submit_flag_1,vmch_submit_flag_2,vmch_submit_flag_3,vmch_submit_flag_4 vm
-  class npc_agent_0x23_vector,npc_ghost,guard_post_ladder,duty_handset,spare_power_room_card,npc_pieter_vos,npc_sione_fonoti key
+  class field_console_gate,field_console_server_hall,field_console_core,vmch_submit_flag_1,vmch_submit_flag_2,vmch_submit_flag_3,vmch_submit_flag_4 vm
+  class npc_director_magnus_netherton,npc_agent_0x47_nightshade,npc_officer_kenji_arakawa,npc_agent_0x23_vector,npc_ghost,guard_post_ladder,duty_handset,spare_power_room_card,npc_imran_siddiqui,npc_gary_whitlock,npc_wendell_briggs,npc_voltage_critical_mass,npc_victoria_sterling,npc_pieter_vos,npc_sione_fonoti key
+  class action_tether_question,action_split_line,action_settle_the_table,action_arakawa_call,action_opens_power_room,action_cut_the_shutter,action_opened_from_inside action
   class andgate1 gate
   class vmfl_submit_flag_1,vmfl_submit_flag_2,vmfl_submit_flag_3,vmfl_submit_flag_4 flag
 
@@ -347,22 +394,16 @@
   aim_reach_the_core{{"Reach The Core"}}
   aim_end_it{{"End It"}}
   aim_find_the_sleeper{{"Find The Sleeper (Optional)"}}
-  story_talk_to_agent_0x47_nightshade>"Talk to Agent 0x47 'Nightshade'"]
-  story_use>"Use"]
-  story_door_unlock_failed_blast_tunnel>"door unlock failed blast tunnel"]
 
   aim_breach_the_perimeter -.-> aim_get_below_ground
   aim_get_below_ground -.-> aim_cut_the_gallery_power
   aim_cut_the_gallery_power -.-> aim_find_the_release
   aim_find_the_release -.-> aim_reach_the_core
   aim_reach_the_core -.-> aim_end_it
-  story_talk_to_agent_0x47_nightshade -.->|whodunit_open| aim_find_the_sleeper
-  story_use -.->|whodunit_open| aim_find_the_sleeper
-  story_door_unlock_failed_blast_tunnel -.->|whodunit_open| aim_find_the_sleeper
+  aim_breach_the_perimeter -.->|whodunit_open| aim_find_the_sleeper
 
   class aim_breach_the_perimeter,aim_get_below_ground,aim_cut_the_gallery_power,aim_find_the_release,aim_reach_the_core,aim_end_it critical
-  class aim_find_the_sleeper aim
-  class story_talk_to_agent_0x47_nightshade,story_use,story_door_unlock_failed_blast_tunnel action`,
+  class aim_find_the_sleeper aim`,
       integrated: `flowchart TD
 
   classDef room      fill:#0f2d2d,stroke:#22ddcc,color:#a0ffee
@@ -405,8 +446,15 @@
   breaching_case_sign_out_sheet{"Breaching Case: Sign-Out Sheet"}
   citadel_incident_file_v_47{"Citadel Incident File V-47"}
   helena_s_plans_tomb_gamma_as_built{"Helena's Plans: Tomb Gamma, As Built"}
-  field_console["Field Console"]
+  field_console_gate["Field Console (Gate)"]
   gate_terminal{"Gate Terminal"}
+  npc_director_magnus_netherton{"Director Magnus Netherton"}
+  action_tether_question>"The tether, on the silent branch (door_scene_done)"]
+  action_split_line>"The split line"]
+  npc_agent_0x47_nightshade{"Agent 0x47 'Nightshade'"}
+  action_settle_the_table>"The door scene at the table (door_scene_done)"]
+  npc_officer_kenji_arakawa{"Officer Kenji Arakawa"}
+  action_arakawa_call>"Arakawa's call, then the pair back"]
   npc_agent_0x23_vector{"Agent 0x23 'Vector'"}
   records_cupboard_vector_s_code{"Records cupboard: Vector's code"}
   npc_ghost{"Ghost"}
@@ -426,14 +474,24 @@
   lock_model_terminal["Bench Terminal: Casualty Model<br/>Password lock"]
   asante_s_corrected_model{"Asante's Corrected Model"}
   bench_log_outgoing{"Bench Log: Outgoing"}
+  npc_imran_siddiqui{"Imran Siddiqui"}
+  action_opens_power_room>"Talked round, or a card cloned"]
+  npc_gary_whitlock{"Gary Whitlock"}
+  npc_wendell_briggs{"Wendell Briggs"}
+  action_cut_the_shutter>"The shutter cut: slot-holder or the phone voice"]
+  npc_voltage_critical_mass{"Voltage (Critical Mass)"}
   server_hall("Server Hall")
+  field_console_server_hall["Field Console (Server Hall)"]
   release_console{"Release Console"}
   sealed_section_hatch{"Sealed Section Hatch"}
   keypad_face_plate{"Keypad Face Plate"}
+  npc_victoria_sterling{"Victoria Sterling"}
+  action_opened_from_inside>"Opened from inside (Victoria or Vos)"]
   npc_pieter_vos{"Pieter Vos"}
   visitor_s_code_card{"Visitor's Code Card"}
   npc_sione_fonoti{"Sione Fonoti"}
   gallery_shift_code_card{"Gallery Shift Code Card"}
+  field_console_core["Field Console (Core)"]
   andgate1((" + "))
   vmch_submit_flag_1["Get a foothold on the security monitoring host and submit the flag at the gate terminal"]
   vmfl_submit_flag_1{"Flag 1 Flag"}
@@ -450,9 +508,6 @@
   aim_reach_the_core{{"Reach The Core"}}
   aim_end_it{{"End It"}}
   aim_find_the_sleeper{{"Find The Sleeper (Optional)"}}
-  story_talk_to_agent_0x47_nightshade>"Talk to Agent 0x47 'Nightshade'"]
-  story_use>"Use"]
-  story_door_unlock_failed_blast_tunnel>"door unlock failed blast tunnel"]
 
   door_blast_tunnel --> blast_tunnel
   door_security_office --> security_office
@@ -470,9 +525,16 @@
   forward_post --> breaching_case_sign_out_sheet
   forward_post --> citadel_incident_file_v_47
   forward_post --> helena_s_plans_tomb_gamma_as_built
-  forward_post --> field_console
+  forward_post --> field_console_gate
   forward_post --> gate_terminal
   gate_terminal --> door_blast_tunnel
+  forward_post --> npc_director_magnus_netherton
+  npc_director_magnus_netherton --> action_tether_question
+  npc_director_magnus_netherton --> action_split_line
+  forward_post --> npc_agent_0x47_nightshade
+  npc_agent_0x47_nightshade --> action_settle_the_table
+  forward_post --> npc_officer_kenji_arakawa
+  npc_officer_kenji_arakawa --> action_arakawa_call
   forward_post --> npc_agent_0x23_vector
   npc_agent_0x23_vector -.-> records_cupboard_vector_s_code
   records_cupboard_vector_s_code -.-> lock_lock_records_cupboard
@@ -506,19 +568,34 @@
   workshop_floor --> lock_model_terminal
   lock_model_terminal --> asante_s_corrected_model
   workshop_floor --> bench_log_outgoing
-  server_hall --> field_console
+  workshop_floor --> npc_imran_siddiqui
+  npc_imran_siddiqui --> action_opens_power_room
+  workshop_floor --> npc_imran_siddiqui
+  npc_imran_siddiqui --> action_opens_power_room
+  workshop_floor --> npc_gary_whitlock
+  npc_gary_whitlock --> action_opens_power_room
+  power_room --> npc_wendell_briggs
+  npc_wendell_briggs --> action_cut_the_shutter
+  power_room --> npc_voltage_critical_mass
+  npc_voltage_critical_mass --> action_cut_the_shutter
+  power_room --> npc_voltage_critical_mass
+  npc_voltage_critical_mass --> action_cut_the_shutter
+  server_hall --> field_console_server_hall
   server_hall --> release_console
   server_hall --> sealed_section_hatch
   sealed_section_hatch --> door_gallery
   gallery -.-> keypad_face_plate
   keypad_face_plate -.-> door_core
+  gallery --> npc_victoria_sterling
+  npc_victoria_sterling --> action_opened_from_inside
   gallery --> npc_pieter_vos
   npc_pieter_vos -.-> visitor_s_code_card
   visitor_s_code_card -.-> door_core
+  npc_pieter_vos --> action_opened_from_inside
   gallery --> npc_sione_fonoti
   npc_sione_fonoti -.-> gallery_shift_code_card
   gallery_shift_code_card -.-> door_core
-  core --> field_console
+  core --> field_console_core
   sealed_section_hatch -.-> andgate1
   andgate1 --> door_gallery
   release_console --> andgate1
@@ -532,15 +609,20 @@
   vmfl_submit_flag_3 --> door_gallery
   vmch_submit_flag_4 --> vmfl_submit_flag_4
   vmfl_submit_flag_3 -.-> vmch_submit_flag_4
-  field_console --> vmch_submit_flag_1
+  field_console_gate --> vmch_submit_flag_1
+  action_settle_the_table --> door_blast_tunnel
+  action_tether_question -.-> door_blast_tunnel
+  action_split_line --> action_arakawa_call
+  action_arakawa_call --> door_blast_tunnel
+  action_opens_power_room -.-> door_power_room
+  action_cut_the_shutter --> door_gallery
+  action_opened_from_inside -.-> door_core
   aim_breach_the_perimeter -.-> aim_get_below_ground
   aim_get_below_ground -.-> aim_cut_the_gallery_power
   aim_cut_the_gallery_power -.-> aim_find_the_release
   aim_find_the_release -.-> aim_reach_the_core
   aim_reach_the_core -.-> aim_end_it
-  story_talk_to_agent_0x47_nightshade -.->|whodunit_open| aim_find_the_sleeper
-  story_use -.->|whodunit_open| aim_find_the_sleeper
-  story_door_unlock_failed_blast_tunnel -.->|whodunit_open| aim_find_the_sleeper
+  aim_breach_the_perimeter -.->|whodunit_open| aim_find_the_sleeper
   vmfl_submit_flag_1 -.-> aim_breach_the_perimeter
   door_blast_tunnel -.-> aim_breach_the_perimeter
   door_security_office -.-> aim_get_below_ground
@@ -555,13 +637,13 @@
   class door_blast_tunnel,door_security_office,door_workshop_floor,door_power_room,door_gallery,door_core,lock_fitter_locker,lock_lock_records_cupboard,lock_records_cupboard,lock_model_terminal lock
   class blast_tunnel,security_office,workshop_floor,power_room,gallery,core,forward_post,server_hall room
   class lock_pick_kit,rfid_cloner,fingerprint_kit,pin_cracker_kowalczyk_s,breaching_case_sign_out_sheet,citadel_incident_file_v_47,helena_s_plans_tomb_gamma_as_built,gate_terminal,records_cupboard_vector_s_code,records_cupboard_ghost_s_code,outer_lock_maintenance_code,monitoring_desk_door_log,gallery_shift_rota,alarm_log_refit_to_date,records_cupboard,fitter_s_locker,casualty_sheet,margin_strip,asante_s_corrected_model,bench_log_outgoing,release_console,sealed_section_hatch,keypad_face_plate,visitor_s_code_card,gallery_shift_code_card item
-  class field_console,vmch_submit_flag_1,vmch_submit_flag_2,vmch_submit_flag_3,vmch_submit_flag_4 vm
-  class npc_agent_0x23_vector,npc_ghost,guard_post_ladder,duty_handset,spare_power_room_card,npc_pieter_vos,npc_sione_fonoti key
+  class field_console_gate,field_console_server_hall,field_console_core,vmch_submit_flag_1,vmch_submit_flag_2,vmch_submit_flag_3,vmch_submit_flag_4 vm
+  class npc_director_magnus_netherton,npc_agent_0x47_nightshade,npc_officer_kenji_arakawa,npc_agent_0x23_vector,npc_ghost,guard_post_ladder,duty_handset,spare_power_room_card,npc_imran_siddiqui,npc_gary_whitlock,npc_wendell_briggs,npc_voltage_critical_mass,npc_victoria_sterling,npc_pieter_vos,npc_sione_fonoti key
+  class action_tether_question,action_split_line,action_settle_the_table,action_arakawa_call,action_opens_power_room,action_cut_the_shutter,action_opened_from_inside action
   class andgate1 gate
   class vmfl_submit_flag_1,vmfl_submit_flag_2,vmfl_submit_flag_3,vmfl_submit_flag_4 flag
   class aim_breach_the_perimeter,aim_get_below_ground,aim_cut_the_gallery_power,aim_find_the_release,aim_reach_the_core,aim_end_it critical
   class aim_find_the_sleeper aim
-  class story_talk_to_agent_0x47_nightshade,story_use,story_door_unlock_failed_blast_tunnel action
 
   classDef optional stroke-dasharray:5 2
   class lock_pick_kit,pin_cracker_kowalczyk_s,records_cupboard_vector_s_code,records_cupboard_ghost_s_code,outer_lock_maintenance_code,guard_post_ladder,gallery_shift_rota,alarm_log_refit_to_date,records_cupboard,fitter_s_locker,keypad_face_plate,visitor_s_code_card,gallery_shift_code_card optional
@@ -640,7 +722,7 @@
   rc_incident_file_4{"Citadel Incident File V-47"}
   rc_helena_plans_5{"Helena's Plans: Tomb Gamma, As Built"}
   rc_projection_desk_6{"Projection Desk"}
-  rc_gate_console_7{"Field Console"}
+  rc_gate_console_7{"Field Console (Gate)"}
   rc_gate_terminal_8{"Gate Terminal"}
   rc_gate_hut_9{"Gate Hut"}
   rc_van_one_10{"The Van"}
@@ -736,7 +818,7 @@
   rc_npc_agent_0x2d_anchor_100("Agent 0x2D 'Anchor'")
   rc_plotting_board_101{"Plotting Board"}
   rc_clock_server_hall_102{"Release Console Screen"}
-  rc_hall_console_103{"Field Console"}
+  rc_hall_console_103{"Field Console (Server Hall)"}
   rc_release_console_104{"Release Console"}
   rc_release_console_controls_105{"Release Console Controls"}
   rc_schedule_terminal_106{"Release Schedule: Staging Copy"}
@@ -771,7 +853,7 @@
   rc_key_console_135{"His Console"}
   rc_clock_core_136{"Key Console Readout"}
   rc_core_host_terminal_137{"Core Host Terminal"}
-  rc_core_console_vm_138{"Field Console"}
+  rc_core_console_vm_138{"Field Console (Core)"}
   rc_core_files_139{"Core Host: File Index"}
   rc_service_door_140{"Service Door"}
   rc_npc_dr_adrian_tesseract_141("Dr Adrian Tesseract")

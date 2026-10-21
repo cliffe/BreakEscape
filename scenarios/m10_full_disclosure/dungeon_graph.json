@@ -135,8 +135,8 @@
       "optional": false
     },
     {
-      "id": "field_console",
-      "label": "Field Console",
+      "id": "field_console_gate",
+      "label": "Field Console (Gate)",
       "kind": "vm",
       "optional": false
     },
@@ -144,6 +144,48 @@
       "id": "gate_terminal",
       "label": "Gate Terminal",
       "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_director_magnus_netherton",
+      "label": "Director Magnus Netherton",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_tether_question",
+      "label": "The tether, on the silent branch (door_scene_done)",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "action_split_line",
+      "label": "The split line",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "npc_agent_0x47_nightshade",
+      "label": "Agent 0x47 'Nightshade'",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_settle_the_table",
+      "label": "The door scene at the table (door_scene_done)",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "npc_officer_kenji_arakawa",
+      "label": "Officer Kenji Arakawa",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_arakawa_call",
+      "label": "Arakawa's call, then the pair back",
+      "kind": "action",
       "optional": false
     },
     {
@@ -261,9 +303,51 @@
       "optional": false
     },
     {
+      "id": "npc_imran_siddiqui",
+      "label": "Imran Siddiqui",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_opens_power_room",
+      "label": "Talked round, or a card cloned",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "npc_gary_whitlock",
+      "label": "Gary Whitlock",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "npc_wendell_briggs",
+      "label": "Wendell Briggs",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_cut_the_shutter",
+      "label": "The shutter cut: slot-holder or the phone voice",
+      "kind": "action",
+      "optional": false
+    },
+    {
+      "id": "npc_voltage_critical_mass",
+      "label": "Voltage (Critical Mass)",
+      "kind": "key",
+      "optional": false
+    },
+    {
       "id": "server_hall",
       "label": "Server Hall",
       "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "field_console_server_hall",
+      "label": "Field Console (Server Hall)",
+      "kind": "vm",
       "optional": false
     },
     {
@@ -283,6 +367,18 @@
       "label": "Keypad Face Plate",
       "kind": "item",
       "optional": true
+    },
+    {
+      "id": "npc_victoria_sterling",
+      "label": "Victoria Sterling",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "action_opened_from_inside",
+      "label": "Opened from inside (Victoria or Vos)",
+      "kind": "action",
+      "optional": false
     },
     {
       "id": "npc_pieter_vos",
@@ -307,6 +403,12 @@
       "label": "Gallery Shift Code Card",
       "kind": "item",
       "optional": true
+    },
+    {
+      "id": "field_console_core",
+      "label": "Field Console (Core)",
+      "kind": "vm",
+      "optional": false
     },
     {
       "id": "andgate1",
@@ -446,7 +548,7 @@
     },
     {
       "from": "forward_post",
-      "to": "field_console",
+      "to": "field_console_gate",
       "soft": false
     },
     {
@@ -457,6 +559,41 @@
     {
       "from": "gate_terminal",
       "to": "door_blast_tunnel",
+      "soft": false
+    },
+    {
+      "from": "forward_post",
+      "to": "npc_director_magnus_netherton",
+      "soft": false
+    },
+    {
+      "from": "npc_director_magnus_netherton",
+      "to": "action_tether_question",
+      "soft": false
+    },
+    {
+      "from": "npc_director_magnus_netherton",
+      "to": "action_split_line",
+      "soft": false
+    },
+    {
+      "from": "forward_post",
+      "to": "npc_agent_0x47_nightshade",
+      "soft": false
+    },
+    {
+      "from": "npc_agent_0x47_nightshade",
+      "to": "action_settle_the_table",
+      "soft": false
+    },
+    {
+      "from": "forward_post",
+      "to": "npc_officer_kenji_arakawa",
+      "soft": false
+    },
+    {
+      "from": "npc_officer_kenji_arakawa",
+      "to": "action_arakawa_call",
       "soft": false
     },
     {
@@ -625,8 +762,68 @@
       "soft": false
     },
     {
+      "from": "workshop_floor",
+      "to": "npc_imran_siddiqui",
+      "soft": false
+    },
+    {
+      "from": "npc_imran_siddiqui",
+      "to": "action_opens_power_room",
+      "soft": false
+    },
+    {
+      "from": "workshop_floor",
+      "to": "npc_imran_siddiqui",
+      "soft": false
+    },
+    {
+      "from": "npc_imran_siddiqui",
+      "to": "action_opens_power_room",
+      "soft": false
+    },
+    {
+      "from": "workshop_floor",
+      "to": "npc_gary_whitlock",
+      "soft": false
+    },
+    {
+      "from": "npc_gary_whitlock",
+      "to": "action_opens_power_room",
+      "soft": false
+    },
+    {
+      "from": "power_room",
+      "to": "npc_wendell_briggs",
+      "soft": false
+    },
+    {
+      "from": "npc_wendell_briggs",
+      "to": "action_cut_the_shutter",
+      "soft": false
+    },
+    {
+      "from": "power_room",
+      "to": "npc_voltage_critical_mass",
+      "soft": false
+    },
+    {
+      "from": "npc_voltage_critical_mass",
+      "to": "action_cut_the_shutter",
+      "soft": false
+    },
+    {
+      "from": "power_room",
+      "to": "npc_voltage_critical_mass",
+      "soft": false
+    },
+    {
+      "from": "npc_voltage_critical_mass",
+      "to": "action_cut_the_shutter",
+      "soft": false
+    },
+    {
       "from": "server_hall",
-      "to": "field_console",
+      "to": "field_console_server_hall",
       "soft": false
     },
     {
@@ -656,6 +853,16 @@
     },
     {
       "from": "gallery",
+      "to": "npc_victoria_sterling",
+      "soft": false
+    },
+    {
+      "from": "npc_victoria_sterling",
+      "to": "action_opened_from_inside",
+      "soft": false
+    },
+    {
+      "from": "gallery",
       "to": "npc_pieter_vos",
       "soft": false
     },
@@ -668,6 +875,11 @@
       "from": "visitor_s_code_card",
       "to": "door_core",
       "soft": true
+    },
+    {
+      "from": "npc_pieter_vos",
+      "to": "action_opened_from_inside",
+      "soft": false
     },
     {
       "from": "gallery",
@@ -686,7 +898,7 @@
     },
     {
       "from": "core",
-      "to": "field_console",
+      "to": "field_console_core",
       "soft": false
     },
     {
@@ -755,9 +967,44 @@
       "soft": true
     },
     {
-      "from": "field_console",
+      "from": "field_console_gate",
       "to": "vmch_submit_flag_1",
       "soft": false
+    },
+    {
+      "from": "action_settle_the_table",
+      "to": "door_blast_tunnel",
+      "soft": false
+    },
+    {
+      "from": "action_tether_question",
+      "to": "door_blast_tunnel",
+      "soft": true
+    },
+    {
+      "from": "action_split_line",
+      "to": "action_arakawa_call",
+      "soft": false
+    },
+    {
+      "from": "action_arakawa_call",
+      "to": "door_blast_tunnel",
+      "soft": false
+    },
+    {
+      "from": "action_opens_power_room",
+      "to": "door_power_room",
+      "soft": true
+    },
+    {
+      "from": "action_cut_the_shutter",
+      "to": "door_gallery",
+      "soft": false
+    },
+    {
+      "from": "action_opened_from_inside",
+      "to": "door_core",
+      "soft": true
     }
   ]
 }
