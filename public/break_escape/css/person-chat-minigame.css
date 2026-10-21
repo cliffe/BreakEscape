@@ -526,3 +526,27 @@
         display: none;
     }
 }
+
+/* Influence header and tells (06 N4). Sits above the speaker name. */
+.person-chat-header.se-chat-header {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.se-chat-header .influence-bar {
+    max-width: 340px;
+}
+
+.se-chat-header .pretext-tells {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+    max-height: 7.5em;
+    overflow: auto;
+    font-family: 'GNF', monospace;
+    font-size: 14px;
+}
+
+.se-chat-header .pretext-tells li {
+    margin: 0 0 4px;
+}

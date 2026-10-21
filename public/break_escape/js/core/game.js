@@ -21,6 +21,7 @@ import { SpriteEffectsSystem } from '../systems/sprite-effects.js';
 import { AttackTelegraphSystem } from '../systems/attack-telegraph.js';
 import { HealthUI } from '../ui/health-ui.js';
 import { NPCHealthBars } from '../ui/npc-health-bars.js';
+import { NPCInfluencePips } from '../ui/npc-influence-pips.js';
 import { GameOverScreen } from '../ui/game-over-screen.js';
 import { createPlayerHUD } from '../ui/hud.js';
 import { PlayerCombat } from '../systems/player-combat.js';
@@ -1697,6 +1698,7 @@ export async function create() {
         window.healthUI.updateHP(window.playerHealth.getHP(), window.playerHealth.getMaxHP());
     }
     window.npcHealthBars = new NPCHealthBars(this);
+    window.npcInfluencePips = new NPCInfluencePips(this);
     window.gameOverScreen = new GameOverScreen();
     
     initCombatDebug();
@@ -2163,6 +2165,9 @@ export function update() {
     }
     if (window.npcHealthBars) {
         window.npcHealthBars.update();
+    }
+    if (window.npcInfluencePips) {
+        window.npcInfluencePips.update();
     }
     if (window.playerHUD) {
         window.playerHUD.update();

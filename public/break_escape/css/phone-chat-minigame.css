@@ -855,6 +855,47 @@
     background: transparent;
 }
 
+/* Influence bar and tells in the conversation header (06 N4). */
+.conversation-header .se-chat-header {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.conversation-header .influence-bar {
+    max-width: 280px;
+}
+
+.conversation-header .pretext-tells {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 4.5em;
+    overflow: auto;
+    font-size: 13px;
+}
+
+/* Render-only tell. Not part of the contact's saved history. */
+.message-bubble.pretext-tell {
+    align-self: center;
+    max-width: 90%;
+    background: transparent;
+    border-style: dashed;
+    font-style: italic;
+}
+
+.conversation-avatar[data-band="1"] {
+    filter: sepia(0.55) saturate(1.6);
+}
+
+.conversation-avatar[data-band="2"],
+.conversation-avatar[data-band="3"],
+.conversation-avatar[data-band="4"] {
+    filter: sepia(0.45) hue-rotate(-40deg) saturate(2.2);
+}
+
 .phone-terminal-theme .back-button:hover {
     background: rgba(0, 255, 65, 0.08);
 }

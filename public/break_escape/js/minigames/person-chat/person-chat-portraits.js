@@ -10,6 +10,7 @@
 
 import { ASSETS_PATH } from '../../config.js';
 import { textToVisemes, scaleTimeline, holdTimeline, visemeAt, buildVisemeColumnMap, isBlinking, seedFrom } from './lip-sync.js';
+import { influenceTintFilter } from '../../ui/pretext-chrome.js';
 
 // Sprite sheets with no derivable portrait (e.g. prop sprites like hospital beds).
 // Remembered after the first failed lookup so later conversations skip the 404s.
@@ -125,6 +126,7 @@ export default class PersonChatPortraits {
         this._visemesPending = false; // Sheet still loading: hold rendering so the talk image doesn't flash
         this._visemeTimeline = null;  // Cached timeline for the line now playing
         this._visemeTimelineKey = null;
+        this._influenceBand = 0; // 0 calm, 1 wary, 2 refusing, 3 reported, 4 locked (06 N4 tint)
         
         console.log(`🖼️ Portrait renderer created for NPC: ${npc.id}${background ? ` with background: ${background}` : ''}`);
     }
@@ -828,6 +830,7 @@ export default class PersonChatPortraits {
             
             // Draw the sprite frame scaled to fill canvas with optional flip
             this.ctx.imageSmoothingEnabled = false;
+            this._setBandFilter();
             
             if (this.flipped) {
                 // Save current state, flip horizontally, draw, restore
@@ -852,8 +855,10 @@ export default class PersonChatPortraits {
                     scaledWidth, scaledHeight // Destination size (scaled)
                 );
             }
+            this._clearBandFilter();
             
         } catch (error) {
+            this._clearBandFilter();
             console.error('❌ Error rendering portrait:', error);
             this.renderPlaceholder();
         }
@@ -1010,6 +1015,7 @@ export default class PersonChatPortraits {
             const y = (canvasHeight - scaledHeight) / 2;
 
             this.ctx.imageSmoothingEnabled = false;
+            this._setBandFilter();
 
             if (this.flipped) {
                 this.ctx.save();
@@ -1024,10 +1030,35 @@ export default class PersonChatPortraits {
                     srcX, srcY, srcW, srcH,                  // source crop
                     x, y, scaledWidth, scaledHeight);         // dest
             }
+            this._clearBandFilter();
         } catch (error) {
+            this._clearBandFilter();
             console.error('❌ Error drawing spriteTalk image:', error);
             this.renderPlaceholder();
         }
+    }
+
+    /**
+     * Influence band tint (06 N4). Calm and the player portrait are left as drawn.
+     * The filter applies only to the drawImage that follows, not the room background.
+     */
+    setInfluenceBand(band) {
+        const next = (typeof band === 'number' && band > 0) ? band : 0;
+        if (this._influenceBand === next) return;
+        this._influenceBand = next;
+        if (this.canvas) this.render();
+    }
+
+    _setBandFilter() {
+        if (!this.ctx) return;
+        try {
+            this.ctx.filter = influenceTintFilter(this._influenceBand, this.npc?.id === 'player');
+        } catch (e) { /* a canvas without filter support draws untinted */ }
+    }
+
+    _clearBandFilter() {
+        if (!this.ctx) return;
+        try { this.ctx.filter = 'none'; } catch (e) { /* ignore */ }
     }
     
     /**

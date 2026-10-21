@@ -914,6 +914,10 @@
         },
         "storyPath": { "type": "string" },
         "currentKnot": { "type": "string" },
+        "callId": {
+          "type": "string",
+          "description": "When set, talking to this NPC opens pretext-prep for this social.pretextNpcs call instead of plain dialogue. The character's person channel is this NPC."
+        },
         "avatar": { "type": "string" },
         "phoneId": { "type": "string" },
         "phoneTheme": {

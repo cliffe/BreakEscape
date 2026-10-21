@@ -17,6 +17,25 @@ export function isHeld(globals, factId) {
     return isTrue(globals?.[INTEL_PREFIX + factId]);
 }
 
+/**
+ * Fact ids a pretext ask grants (`grants.intel`). Those are "From the call"
+ * on the board (03 N1), not recon finds, and they are not readiness slots.
+ */
+export function callGrantedFactIds(social) {
+    const ids = new Set();
+    const calls = Array.isArray(social?.pretextNpcs) ? social.pretextNpcs : [];
+    for (const call of calls) {
+        const asks = call && call.asks && typeof call.asks === 'object' ? call.asks : null;
+        if (!asks) continue;
+        for (const ask of Object.values(asks)) {
+            const intel = ask && ask.grants && ask.grants.intel;
+            if (!Array.isArray(intel)) continue;
+            for (const id of intel) if (typeof id === 'string' && id) ids.add(id);
+        }
+    }
+    return ids;
+}
+
 /** A fact whose every blank value is stale (or one flagged `stale: true`). */
 export function isStaleFact(fact) {
     if (!fact) return false;
@@ -138,6 +157,7 @@ export function buildBoardModel(social, globals) {
 
     const heldIds = Object.keys(facts).filter((id) => isHeld(g, id));
     const heldLive = heldIds.filter((id) => !isStaleFact(facts[id]));
+    const callFacts = callGrantedFactIds(social);
     const provided = (ids, type) => ids.flatMap((id) =>
         (facts[id].provides || []).filter((e) => e && e.type === type && e.kind !== 'stale'));
 
@@ -146,6 +166,10 @@ export function buildBoardModel(social, globals) {
     const targets = targetIds.map((id) => {
         const person = byId.get(id) || { id };
         const subjectFacts = heldIds.filter((f) => facts[f].subject === id);
+        const fromCallIds = subjectFacts.filter((f) => callFacts.has(f));
+        const foundIds = subjectFacts.filter((f) => !callFacts.has(f));
+        // Role and address still read call facts: the player holds them.
+        // Only the card's lists are split, so a call fact is not also a recon find.
         const subjectLive = subjectFacts.filter((f) => !isStaleFact(facts[f]));
 
         const namedBy = heldLive.some((f) => (facts[f].provides || []).some(
@@ -175,8 +199,9 @@ export function buildBoardModel(social, globals) {
             identified,
             role,
             address,
-            factIds: subjectFacts,
-            facts: subjectFacts.map((f) => ({ id: f, text: facts[f].text || '', stale: isStaleFact(facts[f]) })),
+            factIds: foundIds,
+            facts: foundIds.map((f) => ({ id: f, text: facts[f].text || '', stale: isStaleFact(facts[f]) })),
+            fromCall: fromCallIds.map((f) => ({ id: f, text: facts[f].text || '' })),
             slots,
             emptySlots: slots.filter((s) => !s.done).map((s) => s.label),
             ready,
@@ -203,13 +228,16 @@ export function buildBoardModel(social, globals) {
     }
     const contacts = [...contactMap.values()];
 
-    const companyIds = heldIds.filter((f) => facts[f].subject === 'company');
+    const companyIds = heldIds.filter((f) => facts[f].subject === 'company' && !callFacts.has(f));
+    const companyCallIds = heldIds.filter((f) => facts[f].subject === 'company' && callFacts.has(f));
     const company = {
         factIds: companyIds.filter((f) => !isStaleFact(facts[f])),
-        staleIds: companyIds.filter((f) => isStaleFact(facts[f]))
+        staleIds: companyIds.filter((f) => isStaleFact(facts[f])),
+        fromCallIds: companyCallIds
     };
     company.facts = company.factIds.map((f) => ({ id: f, text: facts[f].text || '' }));
     company.stale = company.staleIds.map((f) => ({ id: f, text: facts[f].text || '' }));
+    company.fromCall = companyCallIds.map((f) => ({ id: f, text: facts[f].text || '' }));
 
     const ready = targets.filter((t) => t.ready).map((t) => t.id);
     return {

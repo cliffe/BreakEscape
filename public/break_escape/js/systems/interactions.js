@@ -641,11 +641,14 @@ function startPretextCall(callId, { npcId = null, channel } = {}) {
     const characterId = call.character;
     if (socialChannelLocked(characterId, channel)) return; // refuse before pretext-prep opens
     const recordNpcId = npcId || svc.getCharacterConfig?.(characterId)?.channels?.[channel] || null;
-    if (!window.MinigameFramework) {
-        console.warn('[interactions] MinigameFramework unavailable for pretext call:', callId);
+    // The starter (minigame-starters.js) sets requiresKeyboardInput before
+    // startMinigame reads params. P4-D's phone and NPC checks below are the
+    // only callId checks.
+    if (typeof window.startPretextPrepMinigame !== 'function') {
+        console.warn('[interactions] pretext-prep starter unavailable for call:', callId);
         return;
     }
-    window.MinigameFramework.startMinigame('pretext-prep', null, { callId, character: characterId, npcId: recordNpcId });
+    window.startPretextPrepMinigame({ callId, character: characterId, npcId: recordNpcId });
 }
 
 export function handleObjectInteraction(sprite) {
@@ -1418,11 +1421,14 @@ export function handleObjectInteraction(sprite) {
     
     // SE pretext call (06 N5, 00 S10): a desk phone carrying a callId opens
     // pretext-prep. Placed ABOVE the phone gate below, which admits only a phone
-    // with text/voice/npcIds, so a desk phone with just a { callId } would never
+    // with text/voice/npcIds, so a desk phone with just a callId would never
     // reach a branch placed inside it (an engine change, 00 §11). The lockout is
     // checked inside startPretextCall, before the pretext card opens.
-    if (data.type === 'phone' && data.callId) {
-        startPretextCall(data.callId, { channel: 'phone' });
+    // The phone schema stores callId under minigameData. A top-level callId is
+    // still accepted. This is the branch P4-D placed.
+    const phoneCallId = data.minigameData?.callId || data.callId;
+    if (data.type === 'phone' && phoneCallId) {
+        startPretextCall(phoneCallId, { channel: 'phone' });
         return;
     }
 

@@ -14,6 +14,7 @@
 import PersonChatPortraits from './person-chat-portraits.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { portraitFor } from '../../utils/portrait-variants.js';
+import { ChatInfluence } from '../../ui/pretext-chrome.js';
 
 export default class PersonChatUI {
     /**
@@ -657,7 +658,31 @@ export default class PersonChatUI {
             this.portraitRenderer.destroy();
             this.portraitRenderer = null;
         }
+        this._chatInfluence?.destroy();
+        this._chatInfluence = null;
     }
+
+    /**
+     * Influence bar and tells for a social character (06 N4, P4-E).
+     * A non-social NPC, which is every m01 to m08 conversation, mounts nothing.
+     */
+    _social() {
+        if (!this._chatInfluence) {
+            this._chatInfluence = new ChatInfluence({
+                parent: () => this.elements?.talkRightArea || null,
+                mount: 'person-chat',
+                place: 'start',
+                headerClass: 'person-chat-header',
+                onBand: (band) => this.portraitRenderer?.setInfluenceBand?.(band)
+            });
+        }
+        return this._chatInfluence;
+    }
+
+    mountInfluenceBar(npcId) { return this._social().mountBar(npcId); }
+    mountPretext(opts) { return this._social().mountPretext(opts); }
+    refreshPretext() { return this._social().refresh(); }
+    socialHeaderState() { return this._chatInfluence ? this._chatInfluence.state() : null; }
 
     /**
      * Show a notification message with auto-fade

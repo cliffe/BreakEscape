@@ -14,9 +14,10 @@
  * the only thing that turns a line into influence entries. This module applies
  * those entries through the service and records them on the session.
  *
- * It mounts no influence bar and no live tells panel: those are P4-E's DOM
- * components in person-chat-ui.js / phone-chat-ui.js. This module draws only the
- * end-of-call debrief panel (N7), in its own element.
+ * The live bar and tells are the chat UI's (person-chat-ui.js / phone-chat-ui.js,
+ * P4-E). This module tells that UI to mount them once the session exists, and
+ * to refresh the tells after each line. It draws the end-of-call debrief (N7)
+ * in its own element.
  *
  * A chat opened with no `pretextCallId` never reaches any of this, so person-chat
  * and phone-chat behave exactly as before for m01 to m08 (back-compat 2 to 8).
@@ -504,7 +505,10 @@ export async function attachPretext(minigame, { chat, judge: injected = null } =
     service.bindInfluenceExternals?.(engine, { npcId, characterId: spec.character, channel: chat, runId });
     const resolved = await resolveJudge(injected);
     const mergedSpec = mergeSpec(spec, service.getCharacterConfig?.(spec.character));
-    const { pretext_say, pretext_ask } = makePretextExternals({ service, spec: mergedSpec, session, ctx, judge: resolved });
+    const { pretext_say, pretext_ask } = makePretextExternals({
+        service, spec: mergedSpec, session, ctx, judge: resolved,
+        onChange: () => minigame.ui?.refreshPretext?.()
+    });
     engine.bindExternalFunction('pretext_say', pretext_say);
     engine.bindExternalFunction('pretext_ask', pretext_ask);
 
@@ -539,6 +543,7 @@ export async function attachPretext(minigame, { chat, judge: injected = null } =
     handle.teardown = () => { minigame.complete = originalComplete; };
 
     minigame._pretext = handle;
+    minigame.ui?.mountPretext?.({ session, spec: mergedSpec, characterId: spec.character });
     return handle;
 }
 

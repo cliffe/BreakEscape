@@ -17,6 +17,7 @@ export { MailClientMinigame } from './mail-client/mail-client-minigame.js';
 export { IntelBoardMinigame } from './intel-board/intel-board-minigame.js';
 export { OsintBrowserMinigame } from './osint-browser/osint-browser-minigame.js';
 export { InboxTriageMinigame } from './inbox-triage/inbox-triage-minigame.js';
+export { PretextPrepMinigame } from './pretext-prep/pretext-prep-minigame.js';
 export { PinMinigame, startPinMinigame } from './pin/pin-minigame.js';
 export { PasswordMinigame } from './password/password-minigame.js';
 export { TextFileMinigame, returnToTextFileAfterNotes } from './text-file/text-file-minigame.js';
@@ -103,6 +104,7 @@ import { MailClientMinigame } from './mail-client/mail-client-minigame.js';
 import { IntelBoardMinigame } from './intel-board/intel-board-minigame.js';
 import { OsintBrowserMinigame } from './osint-browser/osint-browser-minigame.js';
 import { InboxTriageMinigame } from './inbox-triage/inbox-triage-minigame.js';
+import { PretextPrepMinigame } from './pretext-prep/pretext-prep-minigame.js';
 
 // Import the PIN minigame
 import { PinMinigame, startPinMinigame } from './pin/pin-minigame.js';
@@ -169,6 +171,7 @@ MinigameFramework.registerScene('mail-client', MailClientMinigame);
 MinigameFramework.registerScene('intel-board', IntelBoardMinigame);
 MinigameFramework.registerScene('osint-browser', OsintBrowserMinigame);
 MinigameFramework.registerScene('inbox-triage', InboxTriageMinigame);
+MinigameFramework.registerScene('pretext-prep', PretextPrepMinigame);
 MinigameFramework.registerScene('pin', PinMinigame);
 MinigameFramework.registerScene('password', PasswordMinigame);
 MinigameFramework.registerScene('text-file', TextFileMinigame);

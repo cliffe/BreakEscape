@@ -233,8 +233,9 @@ test('getTestState reports the board', () => {
     assert.deepEqual(b.ready, ['hampshire']);
     assert.equal(b.scopeNote, true);
     const p = b.targets.find((t) => t.id === 'pierce');
-    assert.deepEqual(Object.keys(p).sort(), ['address', 'emptySlots', 'facts', 'id', 'identified', 'name',
+    assert.deepEqual(Object.keys(p).sort(), ['address', 'emptySlots', 'facts', 'fromCall', 'id', 'identified', 'name',
         'role', 'slots', 'status'].sort());
+    assert.deepEqual(p.fromCall, []);
     assert.equal(p.name, 'Melanie Pierce');
     assert.equal(p.status, 'not_ready');
     assert.deepEqual(p.facts, ['pierce_role']);

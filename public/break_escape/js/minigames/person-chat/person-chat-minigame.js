@@ -205,6 +205,7 @@ export class PersonChatMinigame extends MinigameScene {
         }, this.npcManager);
 
         this.ui.render();
+        this.ui.mountInfluenceBar(this.npcId);
 
         // Pass TTSManager to the portrait renderer so mouth animation can be
         // driven by real audio amplitude (noise gate on TTS audio only –
@@ -259,7 +260,8 @@ export class PersonChatMinigame extends MinigameScene {
                 canContinue: continueVisible && choices.length === 0,
                 awaitingChoice: choices.length > 0,
                 ended: !!this.conversation?.storyEnded
-            }
+            },
+            se: this.ui?.socialHeaderState?.() || null
         };
     }
 
@@ -1715,13 +1717,13 @@ export class PersonChatMinigame extends MinigameScene {
      * This is called by the base class before the minigame is removed
      */
     cleanup() {
-        // End the influence ledger run and unwrap ChooseChoiceIndex / the pretext
-        // close interceptor (no-op for a non-social or non-pretext conversation).
-        this._endSocialRun();
-
         // Drop an auto-advance held for the session-resume overlay
         this._releaseOverlayHold?.();
         this._releaseOverlayHold = null;
+
+        // End the influence ledger run and unwrap ChooseChoiceIndex / the pretext
+        // close interceptor (no-op for a non-social or non-pretext conversation).
+        this._endSocialRun();
 
         // Stop and destroy TTS
         if (this.ttsManager) {

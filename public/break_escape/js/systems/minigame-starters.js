@@ -1184,3 +1184,19 @@ window.startOsintBrowserMinigame = startOsintBrowserMinigame;
 
 // Inbox triage (P3-W): the starter lives in triage-starter.js so tests can load it alone.
 window.startInboxTriageMinigame = startInboxTriageMinigame;
+
+// Pretext preparation (P4-T0). The callId branches in interactions.js call this
+// after the lockout check. socialOverlayParams sets requiresKeyboardInput and
+// disableClose before startMinigame reads them. The overlay draws its own Close.
+export function startPretextPrepMinigame(params = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Call preparation unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    window.MinigameFramework.startMinigame('pretext-prep', null, socialOverlayParams(params));
+}
+window.startPretextPrepMinigame = startPretextPrepMinigame;

@@ -16,6 +16,7 @@ import { messageClockText } from '../../systems/game-clock.js';
 import { hasHiddenChoicesBelow, numberedChoiceText } from './phone-chat-choices.js';
 import { createBottomPin } from './phone-chat-scroll.js';
 import { portraitFor } from '../../utils/portrait-variants.js';
+import { ChatInfluence } from '../../ui/pretext-chrome.js';
 
 export default class PhoneChatUI {
     /**
@@ -572,7 +573,37 @@ export default class PhoneChatUI {
             // Fallback to old method
             this.elements.npcName.textContent = npcName;
         }
+        this.mountInfluenceBar(npcId);
     }
+
+    /**
+     * Influence bar and tells for a social contact (06 N4, P4-E).
+     * Tells also land in the thread as render-only bubbles, not history.
+     * A non-social contact mounts nothing.
+     */
+    _social() {
+        if (!this._chatInfluence) {
+            this._chatInfluence = new ChatInfluence({
+                parent: () => this.elements?.conversationHeader || null,
+                messages: () => this.elements?.messagesContainer || null,
+                mount: 'phone-chat',
+                place: 'end',
+                onBand: (band) => {
+                    const header = this.elements?.conversationHeader;
+                    if (!header) return;
+                    header.dataset.band = String(band);
+                    const img = header.querySelector('.conversation-avatar');
+                    if (img) img.dataset.band = String(band);
+                }
+            });
+        }
+        return this._chatInfluence;
+    }
+
+    mountInfluenceBar(npcId) { return this._social().mountBar(npcId); }
+    mountPretext(opts) { return this._social().mountPretext(opts); }
+    refreshPretext() { return this._social().refresh(); }
+    socialHeaderState() { return this._chatInfluence ? this._chatInfluence.state() : null; }
     
     /**
      * Add a message bubble to the conversation
@@ -959,6 +990,8 @@ export default class PhoneChatUI {
      * Cleanup and remove UI
      */
     cleanup() {
+        this._chatInfluence?.destroy();
+        this._chatInfluence = null;
         // Stop and destroy TTS manager
         this.ttsManager.destroy();
 

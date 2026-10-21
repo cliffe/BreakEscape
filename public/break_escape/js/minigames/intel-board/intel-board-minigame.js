@@ -322,6 +322,16 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         }
         card.appendChild(found);
 
+        if (t.fromCall && t.fromCall.length) {
+            card.appendChild(h('h4', { class: 'ib-subh', text: 'From the call' }));
+            const calls = h('ul', { class: 'ib-facts ib-from-call', 'aria-label': 'From the call' });
+            for (const f of t.fromCall) {
+                calls.appendChild(h('li', { class: 'ib-fact', 'data-fact': f.id },
+                    icon('mark-tick'), h('span', { class: 'ib-fact-text', text: f.text })));
+            }
+            card.appendChild(calls);
+        }
+
         if (t.slots.length) {
             const check = h('ul', { class: 'ib-check', 'aria-label': 'Readiness checklist' });
             for (const s of t.slots) {
@@ -375,6 +385,15 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         } else {
             const ul = h('ul', { class: 'ib-facts' });
             for (const f of m.company.facts) {
+                ul.appendChild(h('li', { class: 'ib-fact', 'data-fact': f.id },
+                    icon('mark-tick'), h('span', { class: 'ib-fact-text', text: f.text })));
+            }
+            card.appendChild(ul);
+        }
+        if (m.company.fromCall && m.company.fromCall.length) {
+            card.appendChild(h('h4', { class: 'ib-subh', text: 'From the call' }));
+            const ul = h('ul', { class: 'ib-facts ib-from-call', 'aria-label': 'From the call' });
+            for (const f of m.company.fromCall) {
                 ul.appendChild(h('li', { class: 'ib-fact', 'data-fact': f.id },
                     icon('mark-tick'), h('span', { class: 'ib-fact-text', text: f.text })));
             }
@@ -448,11 +467,16 @@ export class IntelBoardMinigame extends SocialOverlayScene {
                 targets: m.targets.map((t) => ({
                     id: t.id, name: t.name, identified: t.identified, role: t.role, address: t.address,
                     status: t.status, facts: [...t.factIds], emptySlots: [...t.emptySlots],
+                    fromCall: (t.fromCall || []).map((f) => f.id),
                     slots: t.slots.map((s) => ({ label: s.label, done: s.done }))
                 })),
                 influence: this._bars.map((b) => b.getState()),
                 contacts: m.contacts.map((c) => c.id),
-                company: { facts: [...m.company.factIds], stale: [...m.company.staleIds] }
+                company: {
+                    facts: [...m.company.factIds],
+                    stale: [...m.company.staleIds],
+                    fromCall: [...(m.company.fromCallIds || [])]
+                }
             } : null
         };
     }

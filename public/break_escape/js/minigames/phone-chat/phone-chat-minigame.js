@@ -111,7 +111,8 @@ export class PhoneChatMinigame extends MinigameScene {
                 })),
                 awaitingChoice: choiceButtons.length > 0,
                 ended: !!this.conversation?.storyEnded
-            }
+            },
+            se: this.ui?.socialHeaderState?.() || null
         };
     }
 
@@ -1321,10 +1322,10 @@ export class PhoneChatMinigame extends MinigameScene {
         // A conversation still open at teardown counts as closed (closeConversation()
         // clears currentNPCId/conversation, so this can't double-emit)
         this._flushPendingMessages();
-        this._endSocialRun();      // end any live influence run (00 §8)
         this._emitConversationClosed(this.currentNPCId);
         this._callVoice?.destroy();
         this._callVoice = null;
+        this._endSocialRun();      // end any live influence run (00 §8)
 
         if (this.ui) {
             this.ui.cleanup();
