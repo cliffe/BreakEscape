@@ -109,6 +109,10 @@ Fix round 1 for Phases 2-4 sent to grok with a one-line brief (P2-T, P3-T, P4-T 
 
 `scenarios/lab_social_engineering/REVIEW_R1.md`. Engine audit verified claim by claim. R1-M1: the §4 table still had 22 tasks. R1-M2: with `test_account` required, a student who lands Hampshire from guest could be stuck without a cue. Decision: `test_account` is the first active task in `phish_easy` ("Set up an address to send from"), stated plainly by Ruth and the objective; no hard block on guest. Folding in by the planner (opus48).
 
+### Lab plan, round 2 (opus48): 0 blocker, 1 major, 4 minor
+
+`scenarios/lab_social_engineering/REVIEW_R2.md`. All round 1 findings confirmed closed. R2-M1: the plan relied on a live red-flag meter that is not built and had no owner. Decision: build it, in P6-M (row updated). Minors: in-voice replies for Hampshire's likely failures, the metadata step named in the task and Ruth's hint, "see Ruth for the key" at locked doors, and a sharper, shorter opening with a real choice. Folding in by the planner.
+
 ## Questions for the user
 
 - **How to build the rest of Phase 4** (call preparation screen P4-C, call UI P4-E, its bridge and playtest). The orchestrator's brief for P4-C was stopped by a safety classifier.
@@ -229,6 +233,8 @@ Fix round 1 for Phases 2-4 sent to grok with a one-line brief (P2-T, P3-T, P4-T 
 - **P6-A finished** (opus48): `scenarios/lab_social_engineering/PLAN.md`, 15 sections (rooms, cast, 8 aims and 22 tasks, stages 0-7 and debrief, voice and ink, hand-offs, art and audio, cut order, playtest scripts L1-L6 and F1-F13, packets, checks, risks). Orchestrator decisions on its questions: Q1 add a `test_account` task completed on `acct_freemail` (23 tasks); Q2 keep the working title "Phishing and Social Engineering" (user may rename); Q3 open with `timedConversation` + `waitForEvent: game_loaded`, fix the §5 sentence; Q4 ENV read with a constant fallback. Review rounds on opus48 next.
 
 - **P5-C** (opus48): `validate_social/landing.rb` (the 07 N6 and N7 lints, the `expectedLink.brandId` cross-check, a punycode encoder, reuse of `HostLint` and `ctx.raw`, a confusables table, `wordings` must have one `match` and at least one `slips`), `social.landingPages` schema entry. Tests 24/24; validator glob 100/100; slice output byte-identical. Contract it set: defender strings at `strings["domainTier<N>Defender"]`; P5-D and the lab must use those keys and `slips: true`.
+
+- **P5-D** (opus48): builder overlay (steps 1-5, score panel, Attach and Attach anyway, Case file launch, concept cards, persistence through the writer), CSS. Test 13/13; social and validator glob 623/623. Contracts it set, accepted by the orchestrator: a page lists held facts in `pretext.facts` (fact ids); pages author `fields` and `extraSensitiveFields`; `{firstName}` comes from `social.people[].forms.first`. P5-G's fixture page and the lab must author these.
 
 ## Review rounds
 

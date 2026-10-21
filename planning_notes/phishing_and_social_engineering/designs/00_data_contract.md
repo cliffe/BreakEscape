@@ -1731,6 +1731,8 @@ others; `02` N8 and `07` §1 and N6 refer to this list instead of restating it:
 |-------|-------|
 | `domain`, `browserDomain`, `realDomain`, `linkText` | landing-page domain menu and page definitions (`07`), `phishTargets[].expectedLink.realDomain` |
 | `sites[].url` | OSINT sites (`02`) |
+| `pages[].url` | an OSINT page's own address, when set (`02`; address-bar.js uses it ahead of the site url) |
+| `pages[].path` | an OSINT page path appended to the site url (`02`) |
 | `address` | `social.people[]`, the OSINT staff-block rows, a `provides` entry of type `address`, `mailClient.accounts[]` (and each `createMenu[]` entry), `landingPages[].capture.address` (`07`) |
 | `addresses[]` | `mailClient.contacts[]` |
 | `text` | `social.conceptCards[]`; host-shaped tokens (`.example` rule) and brand words (denylist and fold-and-match); other card prose is reviewed by hand |
