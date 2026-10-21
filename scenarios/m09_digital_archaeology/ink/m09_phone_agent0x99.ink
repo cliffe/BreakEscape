@@ -183,10 +183,10 @@ The ledger's live. Twenty-three placements, forty-seven candidates.
 And a legacy section, older than any list we've ever had off them.
 One legacy entry, codename WREN. Updated on day ten, in Sorensen's hand. "Assigned TF Null, Montana operation."
 + [TF Null. That's the raid team.]
-    That's one of the four you met at the briefing.
+    WREN's on our team. One of the four you met at the briefing.
 + [Who is WREN?]
     The entry doesn't say who. It says where.
-    That's one of the four you met at the briefing.
+    WREN's on our team. One of the four you met at the briefing.
 -
 I've told the Director. He'll say nothing to them. Neither will you.
 // m05, at most one line (CONTRACT §2.1); arrest, combat_nonlethal and
@@ -319,7 +319,7 @@ Her card for the tape room will be in that office.
 {not hand_matched:
     #complete_task:match_the_hand
     #set_global:hand_matched:true
-    You never told me about the writing on Nightshade's file. I put it beside my old course notebook. Same hand.
+    You never told me about the writing on Nightshade's file. I put it beside the margins in my old course notebook. Same hand.
 }
 Tomb Beta's owner. It's one of ours. A SAFETYNET staff credential.
 Issued before he left us. Never revoked. The name on it is...
@@ -386,9 +386,11 @@ I don't know if saying it would have saved them. I didn't say it.
 #set_global:identity_scene_done:true
 #complete_task:hear_the_name
 // Script edit R2 follow-up: the first half of the other answers' Reading
-// form, one clip shared.
+// form, one clip shared. R3 A-R3-01: her own turn after it, so "Yes. I
+// should have." reads as not telling.
 {reading_told_hax:
     He wrote that I'd cover for you.
+    I covered for him.
 }
 Yes. I should have.
 You get all of it from now on.

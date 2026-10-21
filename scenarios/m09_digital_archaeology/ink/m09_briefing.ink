@@ -220,6 +220,9 @@ Narrator: She walks the wall fast, like someone who has rehearsed it.
 }
 // The two names: HaX doesn't read them (row 100).
 Narrator: The last two cards have a photograph each and nothing written under them. HaX stops in front of them.
+// R3 I-5: one player beat in the long run to the first choice.
++ [Who are the last two?]
+-
 Director Magnus Netherton: I will read those two myself. Later.
 -> the_suspect
 

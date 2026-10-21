@@ -79,7 +79,8 @@ VAR hub_quiet = false
 }
 ~ hub_quiet = false
 // HaX signposts the tell once, the first time it can show.
-{not noor_tell_signposted and not (m05_found_pipeline_list and not m05_recruiter_deal_accepted) and not noor_told:
+// R3 B-R3-01: only once a tell button can show.
+{not noor_tell_signposted and not (m05_found_pipeline_list and not m05_recruiter_deal_accepted) and not noor_told and (noor_asked_peg or ledger_page_seen):
     ~ noor_tell_signposted = true
     Agent HaX: Tell her and she's a witness. She goes tonight, and she doesn't ring her dad for a while.
 }

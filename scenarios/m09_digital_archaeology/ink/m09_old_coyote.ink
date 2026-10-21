@@ -47,10 +47,13 @@ VAR hub_quiet = false
     Cody Old Coyote: Knock yourself out.
     #exit_conversation
     -> back
-// R2 B-R2-03: deny the audit only once the player has claimed it.
+// R2 B-R2-03 / R3 B-R3-03: each truth button says something true for the
+// cover the player gave (none, auditor, contractor).
 + {not old_coyote_told and coyote_cover == "auditor"} [I'm not an auditor. You don't want to see tonight.]
     -> truth
-+ {not old_coyote_told and coyote_cover != "auditor"} [Go and sit in your truck. You don't want to see tonight.]
++ {not old_coyote_told and coyote_cover == "contractor"} [I'm not here for the shredder. Go and sit in your truck.]
+    -> truth_plain
++ {not old_coyote_told and coyote_cover == ""} [You don't want to be a witness tonight. Go and sit in your truck.]
     -> truth_plain
 
 // Shared by the challenge and the hub.
@@ -96,7 +99,9 @@ Cody Old Coyote: Figured. I'll be in the truck.
     -> back
 + {not old_coyote_told and coyote_cover == "auditor"} [I'm not an auditor. You don't want to see tonight.]
     -> truth
-+ {not old_coyote_told and coyote_cover != "auditor"} [Go and sit in your truck. You don't want to see tonight.]
++ {not old_coyote_told and coyote_cover == "contractor"} [I'm not here for the shredder. Go and sit in your truck.]
+    -> truth_plain
++ {not old_coyote_told and coyote_cover == ""} [You don't want to be a witness tonight. Go and sit in your truck.]
     -> truth_plain
 + [I'll let you get on with your round.]
     Cody Old Coyote: Fence isn't going anywhere.

@@ -212,7 +212,7 @@ Director Magnus Netherton: You read it. You decide. I'll sign whichever.
         // Warned in the spring: she knew what she was on before tonight.
         Director Magnus Netherton: Miss Haddad went home at the end of her shift. She knew what list she was on before you arrived.
     - else:
-        Director Magnus Netherton: Miss Haddad went home and rang her father. She is still on a list, and she doesn't know it.
+        Director Magnus Netherton: Miss Haddad went home and rang her father. She is still on a list, and she does not know it.
     }
     ~ said = said + 1
 }
@@ -238,6 +238,11 @@ Director Magnus Netherton: Agent 0x19, Callum Fraser. Agent 0x6B, Ana Lúcia Fer
 Narrator: He reads the first name off the card. He doesn't look down for the second.
 // The order, and his reply to the stance at the pen (N-07).
 Narrator: He lays the Montana order on a crate and uncaps a pen.
+// R3 I-7: the ruthless save, remembered once (pays off the briefing's
+// "Nobody mentions why.").
+{m08_netherton_ko:
+    Director Magnus Netherton: You put me on the floor at the Citadel. Nobody has mentioned it. I am mentioning it once.
+}
 {
 - memo_stance == "yes_albion":
     Director Magnus Netherton: Then I sign for him too.
