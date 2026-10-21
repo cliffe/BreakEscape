@@ -775,6 +775,7 @@ Bag it. That's what we work from next.
 // safe is told so; the else branch is the original line, word for word.
 === topic_teacher ===
 ~ teacher_discussed = true
+#set_global:teacher_discussed:true
 ...Read me that again.
 Narrator: You read it back to her. The line stays quiet for longer than she usually lets it.
 // PASS 4 round 2 (re-review F1): branch on whether the player actually heard

@@ -665,6 +665,7 @@ Agent HaX: Ransomware Incorporated is still operational.
 
 === insider_rolled_up ===
 #speaker:agent_0x99
+#set_global:reeves_fate:arrested
 
 Agent HaX: And you got the one Ghost planted inside. Graham Reeves, badge SC-4471.
 
@@ -689,6 +690,7 @@ Agent HaX: Underpaid, ignored, radicalised by the same negligence he helped puni
 
 === insider_neutralised_ko ===
 #speaker:agent_0x99
+#set_global:reeves_fate:ko
 
 {insider_identified:
     Agent HaX: And you put down the inside asset yourself. Graham Reeves, badge SC-4471.
@@ -704,6 +706,7 @@ Agent HaX: Underpaid, ignored, radicalised by the same negligence he helped puni
 
 === insider_flagged ===
 #speaker:agent_0x99
+#set_global:reeves_fate:flagged
 
 Agent HaX: You identified Ghost's inside asset -- Graham Reeves, night security supervisor, badge SC-4471. You didn't get to close it out yourself, but your identification was enough.
 
@@ -713,6 +716,7 @@ Agent HaX: SAFETYNET moved on your identification and picked Reeves up before he
 
 === insider_escaped ===
 #speaker:agent_0x99
+#set_global:reeves_fate:escaped
 #set_global:insider_asset_escaped:true
 
 // Round 1 (B4): only claim Ghost said it if the player heard it.
@@ -738,6 +742,7 @@ Agent HaX: Vanished. No trace. The same way Ghost went. That one's on the clock 
 
 === insider_missed_wrong ===
 #speaker:agent_0x99
+#set_global:reeves_fate:missed
 
 Agent HaX: One loose end. Ghost wasn't bluffing about an inside affiliate -- there was one. And you spent your suspicion on the wrong person.
 
@@ -749,6 +754,7 @@ Agent HaX: It happens. The evidence pointed where they wanted it to point. But i
 
 === insider_unnoticed ===
 #speaker:agent_0x99
+#set_global:reeves_fate:unnoticed
 
 Agent HaX: One thing we never closed. Ghost said someone in that building confirmed their operational timing. An ENTROPY affiliate.
 
