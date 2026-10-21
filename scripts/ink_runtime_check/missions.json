@@ -1530,5 +1530,762 @@
         "room": "scada_control_room"
       }
     ]
+  },
+  "m10_full_disclosure": {
+    "globals": {
+      "ending": "",
+      "database_outcome": "",
+      "sleeper_caught": false,
+      "wrong_accusation": false,
+      "head_start_out": "",
+      "partial_release": "none",
+      "media_story_ran": false,
+      "raid_clock": "t0145",
+      "flag1_submitted": false,
+      "flag2_submitted": false,
+      "flag3_submitted": false,
+      "flag4_submitted": false,
+      "briefing_played": false,
+      "briefing_done": false,
+      "aside_done": false,
+      "whodunit_live": true,
+      "whodunit_open": false,
+      "door_scene_done": false,
+      "gate_console_used": false,
+      "split_started": false,
+      "pair_back": false,
+      "arakawa_call_done": false,
+      "breach_open": false,
+      "inner_door_open": false,
+      "stair_open": false,
+      "gallery_open": false,
+      "outer_lock_open": false,
+      "breach_announced": false,
+      "tripwire_armed": false,
+      "tripwire_tripped": false,
+      "wren_warned": false,
+      "security_alerted": false,
+      "ladder_used": false,
+      "override_held": false,
+      "plans_read": false,
+      "payment_read": false,
+      "forward_post_entered": false,
+      "blast_tunnel_entered": false,
+      "security_office_entered": false,
+      "workshop_entered": false,
+      "power_room_entered": false,
+      "server_hall_entered": false,
+      "gallery_entered": false,
+      "core_entered": false,
+      "ghost_call_done": false,
+      "ghost_watch_on_route": false,
+      "door_log_given": false,
+      "signout_read": false,
+      "what_went_out_given": false,
+      "clue_door_log": false,
+      "clue_alibi": false,
+      "clue_bench_log": false,
+      "casualty_sheet_read": false,
+      "margin_note_read": false,
+      "phone_voice_is_hax": false,
+      "cut_by_hand": false,
+      "cut_step": 0,
+      "gallery_shutter_cut": false,
+      "voltage_print_lifted": false,
+      "keypad_dusted": false,
+      "backdoor_channel_live": false,
+      "hax_jammed": false,
+      "at_keypad": false,
+      "lock_guard_challenged": false,
+      "lock_guard_known": false,
+      "gallery_rota_read": false,
+      "core_greeted": false,
+      "flag4_heard": false,
+      "case_heard": false,
+      "wren_entering": false,
+      "wren_stopped": false,
+      "quintero_enters_core": false,
+      "six_done": false,
+      "closing_done": false,
+      "vector_on_team": false,
+      "phantom_on_team": false,
+      "guide1_offered": false,
+      "guide2_offered": false,
+      "guide3_offered": false,
+      "guide4_offered": false,
+      "guide1_given": false,
+      "guide2_given": false,
+      "guide3_given": false,
+      "guide4_given": false,
+      "quintero_stance": "",
+      "nightshade_taken_in": false,
+      "payment_checked": false,
+      "nightshade_map_used": false,
+      "nightshade_deal": "",
+      "nightshade_tethered": false,
+      "ghost_sale": "",
+      "ghost_gift": "",
+      "ghost_answer": "",
+      "imran_outcome": "",
+      "gary_outcome": "",
+      "voltage_outcome": "",
+      "wendell_outcome": "",
+      "server_hall_warned": false,
+      "gallery_camera_blinded": false,
+      "asante_outcome": "untouched",
+      "asante_confirmed_sheet": false,
+      "victoria_line_deal": "",
+      "vos_secret_known": false,
+      "victoria_line_done": false,
+      "vos_secret_used": false,
+      "victoria_gallery": "",
+      "vos_outcome": "",
+      "head_start_killed": "",
+      "share_zero_day": "live",
+      "share_resale": "none",
+      "backdoor_closed": false,
+      "accused": "",
+      "officer_out": "",
+      "wren_held": false,
+      "kowalczyk_gone_ahead": false,
+      "kowalczyk_ko": false,
+      "quintero_ko": false,
+      "arakawa_ko": false,
+      "vector_ko": false,
+      "phantom_ko": false,
+      "malhotra_recalled": false,
+      "arakawa_recalled": false,
+      "quintero_recalled": false,
+      "vector_recalled": false,
+      "phantom_recalled": false,
+      "fonoti_ko": false,
+      "gary_ko": false,
+      "mercer_ko": false,
+      "wren_at_core": false,
+      "quintero_wounded": false,
+      "kowalczyk_answer": "",
+      "exchange_1": "",
+      "exchange_2": "",
+      "exchange_3": "",
+      "points_landed": 0,
+      "console_choice": "",
+      "join_step": 0,
+      "cold_lowered": false,
+      "fire_held": false,
+      "hax_asked_database": false,
+      "close_secure_cell": "",
+      "close_cell_name": "",
+      "close_cells": "",
+      "close_human": "",
+      "close_zero_day": "",
+      "teaser_enabled": false,
+      "asante_ko": false,
+      "m01_final_choice": "",
+      "m01_player_launched_attack": false,
+      "m01_maya_ko": false,
+      "m01_kevin_ko": false,
+      "m01_sarah_ko": false,
+      "m02_ghost_deal_accepted": false,
+      "m02_exposed_hospital": false,
+      "m02_ghost_deal_refused": false,
+      "m02_ghost_keys_used": false,
+      "m02_gary_protected": false,
+      "m02_reeves_fate": "",
+      "m02_insider_asset_arrested": false,
+      "m02_insider_asset_escaped": false,
+      "m02_patient_assaulted": false,
+      "m02_receptionist_ko": false,
+      "m02_ward_nurse_ko": false,
+      "m02_raval_ko": false,
+      "m02_gary_ko": false,
+      "m02_dr_kim_ko": false,
+      "m02_bed4_manually_stabilised": false,
+      "m02_patient_bed4_deceased": false,
+      "m03_victoria_fate": "",
+      "m03_sterling_on_call_seen": false,
+      "m03_guard_bribed": false,
+      "m03_guard_knocked_out": false,
+      "m03_receptionist_ko": false,
+      "m03_danny_ko": false,
+      "m04_voltage_captured": false,
+      "m04_voltage_escaped": false,
+      "m04_voltage_print_on_bypass": false,
+      "m04_static_left": false,
+      "m04_static_left_alone": false,
+      "m04_vance_is_ally": false,
+      "m04_disclosure_choice": "",
+      "m04_crew_lost": false,
+      "m04_robert_vance_ko": false,
+      "m04_security_guard_ko": false,
+      "m05_entropy_program_exposed": false,
+      "m05_elena_treatment_funded": false,
+      "m05_final_choice": "",
+      "m05_found_pipeline_list": false,
+      "m05_recruiter_deal_accepted": false,
+      "m05_recruiter_deal_confessed": false,
+      "m05_lisa_ko": false,
+      "m05_owen_ko": false,
+      "m05_halloran_ko": false,
+      "m05_patricia_ko": false,
+      "m06_assets_seized": false,
+      "m06_satoshi_stance": "",
+      "m06_monitoring_enabled": false,
+      "m06_guard_ko": false,
+      "m06_trader_ko": false,
+      "m06_analyst_ko": false,
+      "m07_elena_outcome": "",
+      "m07_mercer_fate": "",
+      "m07_mercer_ko": false,
+      "m07_hollis_resolved": "",
+      "m07_debrief_stance": "",
+      "m07_team_assignment": "",
+      "m07_team_redirected": false,
+      "m07_countdown_expired": false,
+      "m07_architect_echo_heard": false,
+      "m07_elena_ko": false,
+      "m08_nightshade_triple_agent": false,
+      "m08_triple_agent_first_payment": false,
+      "m08_nightshade_arrested": false,
+      "m08_nightshade_ko_before_fate": false,
+      "m08_accused_vector": false,
+      "m08_accused_phantom": false,
+      "m08_vector_apologised": false,
+      "m08_phantom_apologised": false,
+      "m08_vector_hostile": false,
+      "m08_phantom_hostile": false,
+      "m08_offduty_agent_ko": false,
+      "m08_analyst_ko": false,
+      "m08_athena_ko": false,
+      "m08_netherton_ko": false,
+      "m08_hax_ko": false,
+      "m08_named_on_evidence": false,
+      "m09_nightshade_shown_file": false,
+      "m09_sleeper_named": false,
+      "m09_recruiter_offer": "",
+      "m09_deck_pulled": "",
+      "m09_sleeper_shortlist": false,
+      "m09_recruiter_secret": "",
+      "m09_reading_finished": false,
+      "m09_albion_notified": false,
+      "m09_cage_bin": "",
+      "m09_legacy_files_saved": false,
+      "m09_hax_confession_answer": "",
+      "m09_alpha_annotations_read": false,
+      "m01_completed": false,
+      "m02_completed": false,
+      "m03_completed": false,
+      "m04_completed": false,
+      "m05_completed": false,
+      "m06_completed": false,
+      "m07_completed": false,
+      "m08_completed": false,
+      "m09_completed": false
+    },
+    "npcs": [
+      {
+        "id": "director_netherton",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_director_netherton.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "hax_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_hax_post.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "agent_0x99",
+        "npcType": "phone",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_phone_agent0x99.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "nightshade_table",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_nightshade.json",
+        "currentKnot": "table",
+        "room": "forward_post"
+      },
+      {
+        "id": "nightshade_van",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_nightshade.json",
+        "currentKnot": "van",
+        "room": "forward_post"
+      },
+      {
+        "id": "nightshade_blast",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_nightshade.json",
+        "currentKnot": "blast",
+        "room": "forward_post"
+      },
+      {
+        "id": "kowalczyk_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk.json",
+        "currentKnot": "post",
+        "room": "forward_post"
+      },
+      {
+        "id": "kowalczyk_van",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk.json",
+        "currentKnot": "van",
+        "room": "forward_post"
+      },
+      {
+        "id": "quintero_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_quintero.json",
+        "currentKnot": "post",
+        "room": "forward_post"
+      },
+      {
+        "id": "arakawa_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_arakawa.json",
+        "currentKnot": "post",
+        "room": "forward_post"
+      },
+      {
+        "id": "arakawa_gate",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_arakawa.json",
+        "currentKnot": "gate",
+        "room": "forward_post"
+      },
+      {
+        "id": "arakawa_blast",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_arakawa.json",
+        "currentKnot": "blast",
+        "room": "forward_post"
+      },
+      {
+        "id": "minder_blast",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_minders.json",
+        "currentKnot": "blast",
+        "room": "forward_post"
+      },
+      {
+        "id": "malhotra_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_malhotra.json",
+        "currentKnot": "post",
+        "room": "forward_post"
+      },
+      {
+        "id": "vector_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_vector.json",
+        "currentKnot": "post",
+        "room": "forward_post"
+      },
+      {
+        "id": "phantom_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_phantom.json",
+        "currentKnot": "post",
+        "room": "forward_post"
+      },
+      {
+        "id": "minder_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_minders.json",
+        "currentKnot": "post",
+        "room": "forward_post"
+      },
+      {
+        "id": "voltage_van",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_voltage.json",
+        "currentKnot": "van",
+        "room": "forward_post"
+      },
+      {
+        "id": "ghost_phone",
+        "npcType": "phone",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_ghost_phone.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "victoria_line",
+        "npcType": "phone",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_victoria_line.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "vance_phone",
+        "npcType": "phone",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_vance_phone.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "elena_phone",
+        "npcType": "phone",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_elena_phone.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "recruiter_phone",
+        "npcType": "phone",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_recruiter_phone.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "six_oclock",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_six_oclock.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "hearing",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_hearing.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "citadel",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_citadel.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "tunnel_guard",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "tunnel",
+        "room": "blast_tunnel"
+      },
+      {
+        "id": "tunnel_guard_kettle",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "kettle",
+        "room": "blast_tunnel"
+      },
+      {
+        "id": "duty_guard",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "duty",
+        "room": "security_office"
+      },
+      {
+        "id": "duty_guard_b",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "duty_b",
+        "room": "security_office"
+      },
+      {
+        "id": "vector_so",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_vector.json",
+        "currentKnot": "so",
+        "room": "security_office"
+      },
+      {
+        "id": "kowalczyk_so",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk.json",
+        "currentKnot": "so",
+        "room": "security_office"
+      },
+      {
+        "id": "arakawa_so",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_arakawa.json",
+        "currentKnot": "so",
+        "room": "security_office"
+      },
+      {
+        "id": "quintero_so",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_quintero.json",
+        "currentKnot": "so",
+        "room": "security_office"
+      },
+      {
+        "id": "imran",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_imran.json",
+        "currentKnot": "workshop",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "imran_watched",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_imran.json",
+        "currentKnot": "workshop",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "gary_consultant",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_gary.json",
+        "currentKnot": "consultant",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "gary_tech",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_gary.json",
+        "currentKnot": "tech",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "workshop_guard",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "workshop",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "kowalczyk_ws",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk.json",
+        "currentKnot": "ws",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "arakawa_ws",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_arakawa.json",
+        "currentKnot": "ws",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "quintero_ws",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_quintero.json",
+        "currentKnot": "ws",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "wendell",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_wendell.json",
+        "currentKnot": "wendell",
+        "room": "power_room"
+      },
+      {
+        "id": "wendell_far",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_wendell.json",
+        "currentKnot": "far",
+        "room": "power_room"
+      },
+      {
+        "id": "voltage_power_captured",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_voltage.json",
+        "currentKnot": "captured",
+        "room": "power_room"
+      },
+      {
+        "id": "voltage_power",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_voltage.json",
+        "currentKnot": "escaped",
+        "room": "power_room"
+      },
+      {
+        "id": "static_power",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_static.json",
+        "currentKnot": "power",
+        "room": "power_room"
+      },
+      {
+        "id": "kowalczyk_pr",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk.json",
+        "currentKnot": "pr",
+        "room": "power_room"
+      },
+      {
+        "id": "arakawa_pr",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_arakawa.json",
+        "currentKnot": "pr",
+        "room": "power_room"
+      },
+      {
+        "id": "quintero_pr",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_quintero.json",
+        "currentKnot": "pr",
+        "room": "power_room"
+      },
+      {
+        "id": "asante",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_asante.json",
+        "currentKnot": "hall",
+        "room": "server_hall"
+      },
+      {
+        "id": "mercer",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_mercer.json",
+        "currentKnot": "hall",
+        "room": "server_hall"
+      },
+      {
+        "id": "hall_guard_a",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "hall_a",
+        "room": "server_hall"
+      },
+      {
+        "id": "hall_guard_b",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "hall_b",
+        "room": "server_hall"
+      },
+      {
+        "id": "kowalczyk_hall",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk.json",
+        "currentKnot": "hall",
+        "room": "server_hall"
+      },
+      {
+        "id": "arakawa_hall",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_arakawa.json",
+        "currentKnot": "hall",
+        "room": "server_hall"
+      },
+      {
+        "id": "quintero_hall",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_quintero.json",
+        "currentKnot": "hall",
+        "room": "server_hall"
+      },
+      {
+        "id": "victoria_gallery",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_victoria.json",
+        "currentKnot": "start",
+        "room": "gallery"
+      },
+      {
+        "id": "victoria_threat",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_victoria.json",
+        "currentKnot": "threat",
+        "room": "gallery"
+      },
+      {
+        "id": "vos",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_vos.json",
+        "currentKnot": "gallery",
+        "room": "gallery"
+      },
+      {
+        "id": "lock_guard",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_fonoti.json",
+        "currentKnot": "talk",
+        "room": "gallery"
+      },
+      {
+        "id": "monitor_guard",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "monitor",
+        "room": "gallery"
+      },
+      {
+        "id": "farah_guard",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "farah",
+        "room": "gallery"
+      },
+      {
+        "id": "reinforcement_a",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "reinforcement",
+        "room": "gallery"
+      },
+      {
+        "id": "reinforcement_b",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "reinforcement",
+        "room": "gallery"
+      },
+      {
+        "id": "quintero_lock",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_quintero.json",
+        "currentKnot": "lock",
+        "room": "gallery"
+      },
+      {
+        "id": "minder_lock",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_minders.json",
+        "currentKnot": "lock",
+        "room": "gallery"
+      },
+      {
+        "id": "nightshade_lock",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_nightshade.json",
+        "currentKnot": "lock",
+        "room": "gallery"
+      },
+      {
+        "id": "tesseract",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_tesseract.json",
+        "currentKnot": "start",
+        "room": "core"
+      },
+      {
+        "id": "kowalczyk_core_waiting",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk_core.json",
+        "currentKnot": "start",
+        "room": "core"
+      },
+      {
+        "id": "kowalczyk_core",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk_core.json",
+        "currentKnot": "start",
+        "room": "core"
+      },
+      {
+        "id": "quintero_core",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_quintero.json",
+        "currentKnot": "core",
+        "room": "core"
+      }
+    ]
   }
 }

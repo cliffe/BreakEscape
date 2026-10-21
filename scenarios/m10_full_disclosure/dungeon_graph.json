@@ -1,0 +1,763 @@
+{
+  "scenario": "m10_full_disclosure",
+  "start_room": "forward_post",
+  "nodes": [
+    {
+      "id": "door_blast_tunnel",
+      "label": "Blast Door<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "blast_tunnel",
+      "label": "Blast Door",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_security_office",
+      "label": "Inner Door<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "security_office",
+      "label": "Inner Door",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_workshop_floor",
+      "label": "Stair B<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "workshop_floor",
+      "label": "Stair B",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_power_room",
+      "label": "Power Room<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "power_room",
+      "label": "Power Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_gallery",
+      "label": "Gallery Stair<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "gallery",
+      "label": "Gallery Stair",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_core",
+      "label": "Outer Lock<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "core",
+      "label": "Outer Lock",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "forward_post",
+      "label": "Forward Post",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_pick_kit",
+      "label": "Lock Pick Kit",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "lock_fitter_locker",
+      "label": "Fitter Locker",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "rfid_cloner",
+      "label": "RFID Cloner",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "fingerprint_kit",
+      "label": "Fingerprint Kit",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "pin_cracker_kowalczyk_s",
+      "label": "PIN Cracker (Kowalczyk's)",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "lock_lock_records_cupboard",
+      "label": "Lock Records Cupboard",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "breaching_case_sign_out_sheet",
+      "label": "Breaching Case: Sign-Out Sheet",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "citadel_incident_file_v_47",
+      "label": "Citadel Incident File V-47",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "helena_s_plans_tomb_gamma_as_built",
+      "label": "Helena's Plans: Tomb Gamma, As Built",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "field_console",
+      "label": "Field Console",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "gate_terminal",
+      "label": "Gate Terminal",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_agent_0x23_vector",
+      "label": "Agent 0x23 'Vector'",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "records_cupboard_vector_s_code",
+      "label": "Records cupboard: Vector's code",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "npc_ghost",
+      "label": "Ghost",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "records_cupboard_ghost_s_code",
+      "label": "Records cupboard: Ghost's code",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "outer_lock_maintenance_code",
+      "label": "Outer lock: maintenance code",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "guard_post_ladder",
+      "label": "Guard Post Ladder",
+      "kind": "key",
+      "optional": true
+    },
+    {
+      "id": "monitoring_desk_door_log",
+      "label": "Monitoring Desk: Door Log",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "duty_handset",
+      "label": "Duty Handset",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lock_records_cupboard",
+      "label": "Records Cupboard<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "gallery_shift_rota",
+      "label": "Gallery Shift Rota",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "alarm_log_refit_to_date",
+      "label": "Alarm Log, Refit to Date",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "records_cupboard",
+      "label": "Records Cupboard",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "spare_power_room_card",
+      "label": "Spare Power-Room Card",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "fitter_s_locker",
+      "label": "Fitter's Locker",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "casualty_sheet",
+      "label": "Casualty Sheet",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "margin_strip",
+      "label": "Margin Strip",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_model_terminal",
+      "label": "Bench Terminal: Casualty Model<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "asante_s_corrected_model",
+      "label": "Asante's Corrected Model",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "bench_log_outgoing",
+      "label": "Bench Log: Outgoing",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "server_hall",
+      "label": "Server Hall",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "release_console",
+      "label": "Release Console",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "sealed_section_hatch",
+      "label": "Sealed Section Hatch",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "keypad_face_plate",
+      "label": "Keypad Face Plate",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "npc_pieter_vos",
+      "label": "Pieter Vos",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "visitor_s_code_card",
+      "label": "Visitor's Code Card",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "npc_sione_fonoti",
+      "label": "Sione Fonoti",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "gallery_shift_code_card",
+      "label": "Gallery Shift Code Card",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "andgate1",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag_1",
+      "label": "Get a foothold on the security monitoring host and submit the flag at the gate terminal",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag_1",
+      "label": "Flag 1 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag_2",
+      "label": "Take the staging schedule and submit the flag at the release console",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag_2",
+      "label": "Flag 2 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag_3",
+      "label": "Get out of the release service onto its host and submit the flag at the sealed section's hatch",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag_3",
+      "label": "Flag 3 Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
+      "id": "vmch_submit_flag_4",
+      "label": "Take the core host and submit it at its terminal",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_flag_4",
+      "label": "Flag 4 Flag",
+      "kind": "flag",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_blast_tunnel",
+      "to": "blast_tunnel",
+      "soft": false
+    },
+    {
+      "from": "door_security_office",
+      "to": "security_office",
+      "soft": false
+    },
+    {
+      "from": "door_workshop_floor",
+      "to": "workshop_floor",
+      "soft": false
+    },
+    {
+      "from": "door_power_room",
+      "to": "power_room",
+      "soft": false
+    },
+    {
+      "from": "door_gallery",
+      "to": "gallery",
+      "soft": false
+    },
+    {
+      "from": "door_core",
+      "to": "core",
+      "soft": false
+    },
+    {
+      "from": "forward_post",
+      "to": "lock_pick_kit",
+      "soft": true
+    },
+    {
+      "from": "lock_pick_kit",
+      "to": "lock_fitter_locker",
+      "soft": true
+    },
+    {
+      "from": "forward_post",
+      "to": "rfid_cloner",
+      "soft": false
+    },
+    {
+      "from": "forward_post",
+      "to": "fingerprint_kit",
+      "soft": false
+    },
+    {
+      "from": "forward_post",
+      "to": "pin_cracker_kowalczyk_s",
+      "soft": true
+    },
+    {
+      "from": "pin_cracker_kowalczyk_s",
+      "to": "door_core",
+      "soft": true
+    },
+    {
+      "from": "pin_cracker_kowalczyk_s",
+      "to": "lock_lock_records_cupboard",
+      "soft": true
+    },
+    {
+      "from": "forward_post",
+      "to": "breaching_case_sign_out_sheet",
+      "soft": false
+    },
+    {
+      "from": "forward_post",
+      "to": "citadel_incident_file_v_47",
+      "soft": false
+    },
+    {
+      "from": "forward_post",
+      "to": "helena_s_plans_tomb_gamma_as_built",
+      "soft": false
+    },
+    {
+      "from": "forward_post",
+      "to": "field_console",
+      "soft": false
+    },
+    {
+      "from": "forward_post",
+      "to": "gate_terminal",
+      "soft": false
+    },
+    {
+      "from": "gate_terminal",
+      "to": "door_blast_tunnel",
+      "soft": false
+    },
+    {
+      "from": "forward_post",
+      "to": "npc_agent_0x23_vector",
+      "soft": false
+    },
+    {
+      "from": "npc_agent_0x23_vector",
+      "to": "records_cupboard_vector_s_code",
+      "soft": true
+    },
+    {
+      "from": "records_cupboard_vector_s_code",
+      "to": "lock_lock_records_cupboard",
+      "soft": true
+    },
+    {
+      "from": "forward_post",
+      "to": "npc_ghost",
+      "soft": false
+    },
+    {
+      "from": "npc_ghost",
+      "to": "records_cupboard_ghost_s_code",
+      "soft": true
+    },
+    {
+      "from": "records_cupboard_ghost_s_code",
+      "to": "lock_lock_records_cupboard",
+      "soft": true
+    },
+    {
+      "from": "npc_ghost",
+      "to": "outer_lock_maintenance_code",
+      "soft": true
+    },
+    {
+      "from": "outer_lock_maintenance_code",
+      "to": "door_core",
+      "soft": true
+    },
+    {
+      "from": "blast_tunnel",
+      "to": "guard_post_ladder",
+      "soft": true
+    },
+    {
+      "from": "guard_post_ladder",
+      "to": "door_security_office",
+      "soft": true
+    },
+    {
+      "from": "security_office",
+      "to": "monitoring_desk_door_log",
+      "soft": false
+    },
+    {
+      "from": "security_office",
+      "to": "duty_handset",
+      "soft": false
+    },
+    {
+      "from": "duty_handset",
+      "to": "door_workshop_floor",
+      "soft": false
+    },
+    {
+      "from": "security_office",
+      "to": "lock_records_cupboard",
+      "soft": false
+    },
+    {
+      "from": "lock_records_cupboard",
+      "to": "gallery_shift_rota",
+      "soft": true
+    },
+    {
+      "from": "gallery_shift_rota",
+      "to": "door_core",
+      "soft": true
+    },
+    {
+      "from": "lock_records_cupboard",
+      "to": "alarm_log_refit_to_date",
+      "soft": true
+    },
+    {
+      "from": "alarm_log_refit_to_date",
+      "to": "lock_lock_records_cupboard",
+      "soft": true
+    },
+    {
+      "from": "security_office",
+      "to": "records_cupboard",
+      "soft": true
+    },
+    {
+      "from": "records_cupboard",
+      "to": "door_core",
+      "soft": true
+    },
+    {
+      "from": "security_office",
+      "to": "lock_fitter_locker",
+      "soft": false
+    },
+    {
+      "from": "lock_fitter_locker",
+      "to": "spare_power_room_card",
+      "soft": false
+    },
+    {
+      "from": "spare_power_room_card",
+      "to": "door_power_room",
+      "soft": false
+    },
+    {
+      "from": "security_office",
+      "to": "fitter_s_locker",
+      "soft": true
+    },
+    {
+      "from": "fitter_s_locker",
+      "to": "door_power_room",
+      "soft": true
+    },
+    {
+      "from": "security_office",
+      "to": "npc_agent_0x23_vector",
+      "soft": false
+    },
+    {
+      "from": "npc_agent_0x23_vector",
+      "to": "records_cupboard_vector_s_code",
+      "soft": true
+    },
+    {
+      "from": "records_cupboard_vector_s_code",
+      "to": "lock_lock_records_cupboard",
+      "soft": true
+    },
+    {
+      "from": "workshop_floor",
+      "to": "casualty_sheet",
+      "soft": false
+    },
+    {
+      "from": "workshop_floor",
+      "to": "margin_strip",
+      "soft": false
+    },
+    {
+      "from": "workshop_floor",
+      "to": "lock_model_terminal",
+      "soft": false
+    },
+    {
+      "from": "lock_model_terminal",
+      "to": "asante_s_corrected_model",
+      "soft": false
+    },
+    {
+      "from": "workshop_floor",
+      "to": "bench_log_outgoing",
+      "soft": false
+    },
+    {
+      "from": "server_hall",
+      "to": "field_console",
+      "soft": false
+    },
+    {
+      "from": "server_hall",
+      "to": "release_console",
+      "soft": false
+    },
+    {
+      "from": "server_hall",
+      "to": "sealed_section_hatch",
+      "soft": false
+    },
+    {
+      "from": "sealed_section_hatch",
+      "to": "door_gallery",
+      "soft": false
+    },
+    {
+      "from": "gallery",
+      "to": "keypad_face_plate",
+      "soft": true
+    },
+    {
+      "from": "keypad_face_plate",
+      "to": "door_core",
+      "soft": true
+    },
+    {
+      "from": "gallery",
+      "to": "npc_pieter_vos",
+      "soft": false
+    },
+    {
+      "from": "npc_pieter_vos",
+      "to": "visitor_s_code_card",
+      "soft": true
+    },
+    {
+      "from": "visitor_s_code_card",
+      "to": "door_core",
+      "soft": true
+    },
+    {
+      "from": "gallery",
+      "to": "npc_sione_fonoti",
+      "soft": false
+    },
+    {
+      "from": "npc_sione_fonoti",
+      "to": "gallery_shift_code_card",
+      "soft": true
+    },
+    {
+      "from": "gallery_shift_code_card",
+      "to": "door_core",
+      "soft": true
+    },
+    {
+      "from": "core",
+      "to": "field_console",
+      "soft": false
+    },
+    {
+      "from": "sealed_section_hatch",
+      "to": "andgate1",
+      "soft": true
+    },
+    {
+      "from": "andgate1",
+      "to": "door_gallery",
+      "soft": false
+    },
+    {
+      "from": "release_console",
+      "to": "andgate1",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag_1",
+      "to": "vmfl_submit_flag_1",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag_1",
+      "to": "door_blast_tunnel",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag_2",
+      "to": "vmfl_submit_flag_2",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag_1",
+      "to": "vmch_submit_flag_2",
+      "soft": true
+    },
+    {
+      "from": "vmfl_submit_flag_2",
+      "to": "door_gallery",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag_3",
+      "to": "vmfl_submit_flag_3",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag_2",
+      "to": "vmch_submit_flag_3",
+      "soft": true
+    },
+    {
+      "from": "vmfl_submit_flag_3",
+      "to": "door_gallery",
+      "soft": false
+    },
+    {
+      "from": "vmch_submit_flag_4",
+      "to": "vmfl_submit_flag_4",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_flag_3",
+      "to": "vmch_submit_flag_4",
+      "soft": true
+    },
+    {
+      "from": "field_console",
+      "to": "vmch_submit_flag_1",
+      "soft": false
+    }
+  ]
+}
