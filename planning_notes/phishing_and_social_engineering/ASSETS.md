@@ -197,7 +197,7 @@ not generated.
 
 | ID | Asset | Used in | Status | Generator | Tier |
 |----|-------|---------|--------|-----------|------|
-| FONT1 | Source Sans 3 Regular, Latin subset WOFF2 | 00 §6; README Fonts | New | upstream font file | Slice |
+| FONT1 | Source Sans 3 Regular, Latin subset WOFF2. **Landed (P0-L):** the API serves one variable-weight file per subset, so FONT1 and FONT2 are one file, `fonts/SourceSans3/SourceSans3-latin.woff2`, and FONT4 and FONT5 are `SourceSans3-cyrillic.woff2` (100 Cyrillic code points, all 21 confusables in `00` §6); provenance in `build_log/P0-L_fonts.md` | 00 §6; README Fonts | New | upstream font file | Slice |
 | FONT2 | Source Sans 3 Bold, Latin subset WOFF2 | 00 §6 | New | upstream font file | Slice |
 | FONT3 | OFL 1.1 licence text beside the files | 00 §6 | New | font file | Slice |
 | FONT4 | Source Sans 3 Regular, Cyrillic subset WOFF2, for the lab's one homograph example. Bundled in Phase 0 with the Latin files (settled 2026-10-21) | 00 §6; README X | New | upstream font file | Slice |

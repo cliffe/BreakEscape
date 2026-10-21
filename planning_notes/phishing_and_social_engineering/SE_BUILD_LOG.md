@@ -28,6 +28,9 @@ Status (2026-10-21): Phase 0 wave 1 started (P0-A, P0-A1 to P0-A9, P0-B, P0-P); 
 
 - **P0-P** (Haiku): doc edits, verified and committed `c526f89a`.
 - **P0-A** (Sonnet): baselines in `build_log/baselines/` at HEAD 1f13ee91, Node 18.19.1. Full suite 748 pass; every file passes alone; `engine-fixes-pass3` (3/3 full runs) and `engine-fixes-round4` (1/3) fail on the Node 18 structured-clone runner error, so both are quarantined (plan 0.7 updated). reopencheck 0 problems; 244 route outputs exit 0 (m03's driver prints no verdict); m01 inkcheck start-path only.
+- **P0-A7** (Sonnet): m07 browser baseline, game 2804, verify-run progress; `team_assigned` chain observed in order; phone thread identical after reload (unread badge clears, `timedMessages` empties: compare thread text, not engine fields). 3 unidentified 404s.
+- **P0-A6** (Sonnet): m06 baseline, game 2808, verify-run progress; Irina unspaced popups "+ Influence: Dr. Irina Volkova" (trust 0→30, then 35 after reload); `server_passphrase_known` mapping sends one HaX message; zero errors. Ink vars read null outside an open conversation (cache cleared on reload). `irina_trust` (number) not in verify-run's globals list.
+- **P0-L** (Sonnet): Source Sans 3 bundled as two variable files plus OFL.txt; SHA-256s re-checked by the orchestrator and match `build_log/P0-L_fonts.md`; fonts.css +41 lines, nothing existing changed. F6: canvas text needs `document.fonts.load` with the real string before create or `setText`.
 
 ## Review rounds
 
