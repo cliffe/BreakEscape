@@ -19,6 +19,10 @@ module ValidateSocial
       return [] if slots.nil? && !board['people'].is_a?(Array)
 
       issues = []
+      # The board persists its "seen ready" state to se_board_state (00 §11; board-model STATE_KEY);
+      # when a board exists it must be declared, or the object is silently not synced to ink (N-1).
+      d = Mail.declared_written(ctx, 'se_board_state', 'the intel board recon state')
+      issues << d if d
       slots = {} unless slots.is_a?(Hash)
       issues << err('social.intelBoard.readinessSlots must be an object keyed by target id') if board.key?('readinessSlots') && !board['readinessSlots'].is_a?(Hash)
 

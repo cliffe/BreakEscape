@@ -368,7 +368,10 @@ export class StateSync {
       this.confirm(changes, Date.now(), notSaved);
       this.lastError = null;
       console.log('✓ State synced to server');
-      return { ok: true, error: null };
+      // A run that left a capped section refused is not fully confirmed (N-4): the
+      // saved sections are confirmed above, but syncConfirmed must not report success
+      // while a section stays unsaved and is resent on every sync.
+      return { ok: notSaved.length === 0, error: null };
     } catch (error) {
       // Nothing is marked confirmed, so the next sync sends it again
       this.lastError = error;

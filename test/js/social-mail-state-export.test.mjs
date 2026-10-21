@@ -273,7 +273,9 @@ test('a refused mailState (notSaved) is not confirmed and is sent again; the res
   const warnings = [];
   console.warn = (...a) => warnings.push(a.join(' '));
   try {
-    assert.equal(await sync.sync(), true);
+    // A run that left a section refused is not fully confirmed (N-4), even though the
+    // rest of the run is confirmed and the refused section is resent.
+    assert.equal(await sync.sync(), false);
     const again = sync.buildChanges();
     assert.ok(again.body.mailState['mailboxes.guest.welcome'], 'mailState is resent');
     assert.equal(again.body.globalVariables, undefined, 'globals were confirmed');

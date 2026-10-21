@@ -359,6 +359,10 @@ export class MailClientMinigame extends SocialOverlayScene {
         }
         if (sendInfo) {
             this.recordSend(sendInfo.gameResult);
+            // A judged send clears the saved draft so reopening Compose starts fresh,
+            // not on the last send's choices (P1-T). The open composer keeps its form
+            // in memory for an Edit & resend.
+            if (sendInfo.result) this._clearDraft();
             if (sendInfo.result && this._checklistTiming() === 'onSend') {
                 this._showChecklist(sendInfo);
             } else {
@@ -374,17 +378,29 @@ export class MailClientMinigame extends SocialOverlayScene {
         this._dismissChecklist();
         const showReplyToNote = !!sendInfo.claimedFrom && !this._claimedFromNoticeShown;
         if (showReplyToNote) this._claimedFromNoticeShown = true;
+        // A data-only target (no character) has a text job scheduled, so a reply is coming.
+        const showReplyPending = !!(sendInfo.target && !sendInfo.target.character
+            && sendInfo.result && sendInfo.result.open && sendInfo.result.open.opened !== false);
         const panel = renderChecklist(sendInfo.result, sendInfo.target, {
             claimedFrom: sendInfo.claimedFrom,
             account: this.account,
             showReplyToNote,
+            showReplyPending,
             onEdit: () => this._dismissChecklist()
         });
         this.root.appendChild(panel);
         this.checklistPanel = panel;
         this._popChecklist = this.pushLayer(() => this._dismissChecklist(), 'checklist');
-        const edit = panel.querySelector('.mail-checklist-edit');
-        edit?.focus?.();
+        const action = panel.querySelector('.mail-checklist-edit, .mail-checklist-done');
+        action?.focus?.();
+    }
+
+    /** Clear the saved draft for the open account (P1-T: a send resets the composer). */
+    _clearDraft() {
+        const id = this.account?.id;
+        if (!id) return;
+        if (this.scheduler?.setDraft) this.scheduler.setDraft(id, null);
+        else if (this.mailState.drafts) delete this.mailState.drafts[id];
     }
 
     _dismissChecklist() {

@@ -23,6 +23,7 @@ import { evaluateMessage, CANONICAL } from '../../systems/phish-rules.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import { heldFactIds, heldProvides } from './mail-composer.js';
 
+const ICON = '/break_escape/assets/icons/';
 const BODY_PARTS = ['greeting', 'pretext', 'ask'];
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -62,12 +63,14 @@ export function applyFactorBias(target, globals = {}) {
     let changed = false;
     if (boost) {
         for (const [globalName, factor] of Object.entries(boost)) {
-            if (globals[globalName] && req.has(factor)) { req.delete(factor); adv.add(factor); changed = true; }
+            // Compare with === true (N-5): an influence global is a number, where 0 is
+            // falsy and a negative value is truthy; only an explicit true flips a factor.
+            if (globals[globalName] === true && req.has(factor)) { req.delete(factor); adv.add(factor); changed = true; }
         }
     }
     if (strict) {
         for (const [globalName, factor] of Object.entries(strict)) {
-            if (globals[globalName] && !req.has(factor)) { req.add(factor); adv.delete(factor); changed = true; }
+            if (globals[globalName] === true && !req.has(factor)) { req.add(factor); adv.delete(factor); changed = true; }
         }
     }
     if (!changed) return target;
@@ -239,7 +242,10 @@ export function performSend(scene, message) {
     writeGlobal(`phish_${target.id}_attempts`, m.sent);
 
     // A data-only target gets a text job; a character target's ink reply is Phase 1b.
-    if (!isStr(target.character)) {
+    // An unopened send gets no job at all (00 §10 "Timing and delivery", J-1): nothing
+    // made the target open it, so there is no reply. The opened-but-failed path keeps
+    // its first-failed-factor reply.
+    if (!isStr(target.character) && result.open && result.open.opened !== false) {
         const outcomeGlobal = target.outcome && target.outcome.setGlobal;
         const firstGlobal = isObject(outcomeGlobal) ? Object.keys(outcomeGlobal)[0] : (isStr(outcomeGlobal) ? outcomeGlobal : null);
         scheduler?.scheduleTextJob({
@@ -312,13 +318,37 @@ function cl(tag, className, text) {
     return node;
 }
 
+/** A pass/fail mark drawn from the batch-1 icons/mark-*.png art (01 N17, "marks paired with words"). */
+function markIcon(pass) {
+    const img = document.createElement('img');
+    img.className = 'mail-check-mark';
+    img.src = `${ICON}${pass ? 'mark-tick' : 'mark-cross'}.png`;
+    img.alt = '';
+    img.setAttribute('aria-hidden', 'true');
+    img.width = 16;
+    img.height = 16;
+    return img;
+}
+
+/** Strip a leading ✓/✗ glyph an authored line may carry, so the png mark is never doubled. */
+function stripMark(s) {
+    return String(s == null ? '' : s).replace(/^\s*[✓✔✗✘]\s*/u, '');
+}
+
+function checkRow(pass, line) {
+    const row = cl('li', `mail-check-row ${pass ? 'pass' : 'fail'}`);
+    row.append(markIcon(pass), cl('span', 'mail-check-text', stripMark(line)));
+    return row;
+}
+
 /**
  * The teaching checklist shown after a send in training mode (01 §3, N17): the
- * open-check row, each judged factor with ✓/✗ and a reason, advisory lines, the
- * landing banner, and (once per client) the reply-to note. `onEdit` dismisses it
- * so the player can edit and resend.
+ * open-check row, each judged factor marked with the mark-*.png art and a reason,
+ * advisory lines, the landing banner, a note that a reply may land, and (once per
+ * client) the reply-to note. A failed send offers "Edit & resend"; a landed send
+ * offers "Done" instead (01 §3; `onEdit` dismisses the panel in both cases).
  */
-export function renderChecklist(result, target, { claimedFrom = null, account = null, showReplyToNote = false, onEdit = null } = {}) {
+export function renderChecklist(result, target, { claimedFrom = null, account = null, showReplyToNote = false, showReplyPending = false, onEdit = null } = {}) {
     const panel = cl('div', 'mail-checklist');
     panel.setAttribute('role', 'status');
     panel.setAttribute('aria-live', 'polite');
@@ -328,21 +358,24 @@ export function renderChecklist(result, target, { claimedFrom = null, account = 
     panel.appendChild(banner);
 
     const list = cl('ul', 'mail-checklist-rows');
-    const openRow = cl('li', `mail-check-row ${result.open.opened ? 'pass' : 'fail'}`);
-    openRow.textContent = (result.open.opened ? '✓ ' : '✗ ') + (result.openLine || (result.open.opened ? 'They would open it' : 'They did not open it'));
-    list.appendChild(openRow);
+    list.appendChild(checkRow(result.open.opened,
+        result.openLine || (result.open.opened ? 'They would open it' : 'They did not open it')));
 
     for (const f of arr(result.factors)) {
         if (f.mode !== 'required') continue;
-        const row = cl('li', `mail-check-row ${f.pass ? 'pass' : 'fail'}`);
-        row.textContent = (f.pass ? '✓ ' : '✗ ') + (f.line || '');
-        list.appendChild(row);
+        list.appendChild(checkRow(f.pass, f.line || ''));
     }
     panel.appendChild(list);
 
     const advisory = arr(result.factors).filter((f) => f.mode === 'advisory' && !f.pass);
     for (const f of advisory) {
-        panel.appendChild(cl('p', 'mail-checklist-advisory', `Advisory: ${f.line || ''}`));
+        panel.appendChild(cl('p', 'mail-checklist-advisory', `Advisory: ${stripMark(f.line)}`));
+    }
+
+    // Tell the player the reply is on its way, so closing the client right after a
+    // send is not a dead end (P1-T T4). Only when a reply is actually scheduled.
+    if (showReplyPending) {
+        panel.appendChild(cl('p', 'mail-checklist-reply', 'A reply may land in your inbox in a moment.'));
     }
 
     if (showReplyToNote && claimedFrom && account) {
@@ -350,9 +383,13 @@ export function renderChecklist(result, target, { claimedFrom = null, account = 
             `In real life this reply would go to ${claimedFrom}'s inbox unless you set a reply-to; here it comes to ${account.address || account.id}.`));
     }
 
-    const edit = cl('button', 'mail-checklist-edit minigame-button', 'Edit & resend');
-    edit.type = 'button';
-    if (typeof onEdit === 'function') edit.addEventListener('click', () => onEdit());
-    panel.appendChild(edit);
+    // After a landing there is nothing to resend, so offer "Done" rather than
+    // "Edit & resend" (P1-T T9). Both just dismiss the teaching panel.
+    const label = result.landed ? 'Done' : 'Edit & resend';
+    const cls = result.landed ? 'mail-checklist-done' : 'mail-checklist-edit';
+    const button = cl('button', `${cls} minigame-button`, label);
+    button.type = 'button';
+    if (typeof onEdit === 'function') button.addEventListener('click', () => onEdit());
+    panel.appendChild(button);
     return panel;
 }

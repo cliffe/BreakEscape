@@ -51,7 +51,18 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                     // Flip-only (social-intel.js): a repeat grant does nothing, so the
                     // toast shows once, beside the note the grant adds.
                     const granted = grantFact(action.fact, { source });
-                    if (granted.granted) window.gameAlert?.(`Noted: ${granted.label}`, 'info', 'Noted', 4000);
+                    if (granted.granted) {
+                        // Title "Noted", body the fact label: the toast reads "Noted: <label>"
+                        // once, not doubled (P1-T T5).
+                        window.gameAlert?.(granted.label, 'info', 'Noted', 4000);
+                        // If this fact just made a target ready, point the player at the
+                        // mail terminal, the one place to act on it (P1-T T8).
+                        const newlyReady = granted.readiness?.newlyReady || [];
+                        if (newlyReady.length) {
+                            window.gameAlert?.('You know enough to approach now — write to them from a mail terminal.',
+                                'success', 'Ready to approach', 6000);
+                        }
+                    }
                 }
                 break;
 

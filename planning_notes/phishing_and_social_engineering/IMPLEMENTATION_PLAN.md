@@ -246,9 +246,11 @@ reviewer checks the whole slice before the playtest.
   fact is granted, the picker offers it, and Send enables.
 - `bin/rails test test/models/break_escape/mail_state_test.rb
   test/controllers/break_escape/mail_state_sync_test.rb` passes, and so does the whole suite.
-- `ruby scripts/validate_scenario.rb scenarios/test_social_slice --strict-social --no-graph
-  --skip-ink` exits 0. A `git status --porcelain` snapshot and SHA-256 hashes of the files under
-  `scenarios/`, taken before the run and compared after it, show no change.
+- `ruby scripts/validate_scenario.rb scenarios/test_social_slice/scenario.json.erb --strict-social
+  --no-graph --skip-ink` exits 0 (pass the `scenario.json.erb` path, not the directory: the
+  directory form fails the structure check for want of a `mission.json`, O-1). A
+  `git status --porcelain` snapshot and SHA-256 hashes of the files under `scenarios/`, taken before
+  the run and compared after it, show no change.
 - After `bin/rails db:seed`, a Sonnet playtest on :3001 (`new-game.rb test_social_slice`) shows,
   step by step:
   1. Before any fact, the To list does not offer Hampshire. After the careers stand-in only, she

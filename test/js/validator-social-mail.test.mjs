@@ -60,6 +60,27 @@ test('a clean mail and board scenario raises nothing', { skip }, () => {
   assert.deepEqual(lint('sm_clean'), []);
 });
 
+test('a board that does not declare se_board_state is flagged (N-1)', { skip }, () => {
+  const script = `require ${JSON.stringify(join(root, 'scripts/validate_social.rb'))}
+    json = { 'globalVariables' => { 'target_ready_h' => false },
+             'social' => { 'intelBoard' => { 'people' => ['h'],
+               'readinessSlots' => { 'h' => [{ 'label' => 'L', 'needsIntel' => ['f'],
+                 'goalString' => 'g', 'doneString' => 'd' }] } },
+               'intelFacts' => { 'f' => { 'text' => 't', 'subject' => 'h' } } } }
+    ctx = ValidateSocial::Context.new(json: json, repo_root: '.', social: json['social'])
+    puts JSON.generate(ValidateSocial::Board.check(ctx))`;
+  const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env });
+  assert.equal(r.status, 0, r.stderr);
+  const out = JSON.parse(r.stdout.trim().split('\n').pop());
+  assert.ok(out.some((s) => /se_board_state/.test(s)), 'missing se_board_state is flagged');
+  // Declaring it clears the error.
+  const script2 = script.replace("'target_ready_h' => false", "'target_ready_h' => false, 'se_board_state' => {}");
+  const r2 = spawnSync('ruby', ['-e', script2], { encoding: 'utf8', env });
+  assert.equal(r2.status, 0, r2.stderr);
+  const out2 = JSON.parse(r2.stdout.trim().split('\n').pop());
+  assert.ok(!out2.some((s) => /se_board_state/.test(s)), 'declaring se_board_state clears it');
+});
+
 test('without a social key the mail and board lints do not run', { skip }, () => {
   assert.deepEqual(lint('sm_nosocial'), []);
   const script = `require ${JSON.stringify(join(root, 'scripts/validate_social.rb'))}

@@ -123,8 +123,14 @@
     padding: 22px 14px 12px;
     color: #2a2118;
     background: transparent;
-    border: 6px solid transparent;
-    border-image: url('/break_escape/assets/ui/social/board-card.png') 3 fill / 6px / 0 stretch;
+    border-style: solid;
+    border-width: 6px 12px 12px 6px;
+    border-color: transparent;
+    /* The art has a folded (dog-eared) bottom-right corner. The right and bottom slices
+       take in its full 6px so the fold sits inside the fixed corner slice, drawn once at
+       its natural 2x, instead of being cropped and smeared along the edge by a uniform
+       3px slice (P1-T T7). */
+    border-image: url('/break_escape/assets/ui/social/board-card.png') 3 6 6 3 fill / 6px 12px 12px 6px / 0 stretch;
     image-rendering: pixelated;
     list-style: none;
 }

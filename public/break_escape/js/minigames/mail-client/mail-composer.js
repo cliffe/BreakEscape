@@ -250,6 +250,10 @@ export class MailComposer {
         this.slots = {};
         this.attachment = null;
         for (const part of PARTS) {
+            // The pretext is the player's deliberate choice (01 §2): leave it unchosen so
+            // the composer opens with Send disabled until they pick one (P1-T). Every other
+            // part is defaulted (From is forced, greeting/ask usually have one option).
+            if (part === 'pretext' && this.templateSet(part).length > 1) continue;
             const set = this.templateSet(part);
             if (set.length) this.choice[part] = set[0];
         }
@@ -329,6 +333,13 @@ export class MailComposer {
             // A non-target contact can be written to but is never judged (01 §2 To).
             this.gate = { ok: !!this.contactId, reason: this.contactId ? null : 'no-recipient',
                 line: this.contactId ? '' : 'Pick someone to write to.' };
+            return this.gate;
+        }
+        // The pretext is chosen deliberately: block Send until the player picks one, so a
+        // single click never lands on the default wording (P1-T). preSendGate does not
+        // see an unchosen part, so the composer gates it here.
+        if (this.templateSet('pretext').length > 1 && !isStr(this.choice.pretext)) {
+            this.gate = { ok: false, reason: 'pretext-unchosen', line: 'Choose how to word your message.' };
             return this.gate;
         }
         const options = {};
@@ -511,7 +522,15 @@ export class MailComposer {
             row.dataset.part = part;
             const label = part.charAt(0).toUpperCase() + part.slice(1);
             row.appendChild(el('span', 'mail-compose-label', label));
-            this._renderPartSelect(row, part);
+            if (set.length <= 1) {
+                // A single option is not a choice: show the wording as plain text and
+                // record it, not a greyed-out disabled control (P1-T).
+                if (!this.choice[part]) this.choice[part] = set[0];
+                const only = templateOf(this.templates, set[0]);
+                row.appendChild(el('p', 'mail-compose-value mail-compose-fixed', only ? only.text : set[0]));
+            } else {
+                this._renderPartSelect(row, part);
+            }
             this.root.appendChild(row);
             this._renderPartBlanks(part);
         }
@@ -522,6 +541,14 @@ export class MailComposer {
         const select = el('select', 'mail-compose-template');
         select.dataset.part = part;
         select.setAttribute('aria-label', `${part} wording`);
+        if (!isStr(this.choice[part])) {
+            // No option chosen yet (the pretext): a placeholder the player must act on.
+            const ph = el('option', null, 'Choose how to word this…');
+            ph.value = '';
+            ph.disabled = true;
+            ph.selected = true;
+            select.appendChild(ph);
+        }
         for (const id of set) {
             const tpl = templateOf(this.templates, id);
             const opt = el('option', null, tpl ? tpl.text : id);
@@ -529,7 +556,6 @@ export class MailComposer {
             if (id === this.choice[part]) opt.selected = true;
             select.appendChild(opt);
         }
-        if (set.length <= 1) select.disabled = true;
         select.addEventListener('change', () => this.chooseTemplate(part, select.value));
         row.appendChild(select);
     }

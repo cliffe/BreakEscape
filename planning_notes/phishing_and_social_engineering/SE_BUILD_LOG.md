@@ -4,7 +4,7 @@ Brief: `docs/agents/SE_BUILD_BRIEF.md`. Plan: `IMPLEMENTATION_PLAN.md`. Artefact
 
 ## Resume
 
-Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a: A, B, C, D, E1, E2, G, H, I, W landed (uncommitted). Running: P1-S (mail save size). Next: commit, then P1-F (opus48), P1-T0, P1-R, P1-T. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
+Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a closed (slice playtest passes; review and fix round done). Next: Phase 1b. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
 
 ## User instructions for this build (2026-10-21)
 
@@ -76,6 +76,12 @@ All 15 round 1 findings closed (R-12 by deferral). Node 926/930 (pass3 quarantin
 
 **Targeted check B** (games 2849, 2858): no superseded-instance warning in either m03 cloner beat; both saves set their globals and tasks; m05 Patricia shows her name and in-person bust. **Phase 0 closed** and the fix round committed (only this build's hunks staged in the two files shared with the finale session).
 
+### Phase 1a, round 1 (P1-R, opus48): 0 blocker, 1 major, 6 minor
+
+`build_log/P1-R_review.md`. Verdict: ship. J-1 (major): `performSend` queues a reply job for a data-only target that never opened the mail, against 00 §10; no effect on Hampshire. Minors N-1 to N-6 and O-1 (the Done-when validator command needs the file path). No m01-m08 regression. P1-A's ten gaps, P1-F's boost/strict and the composer/bridge boundary endorsed. Fix round 1 (opus48) takes these plus the ten P1-T UI items; decisions in its brief: locked-pickup limited to `mail_terminal`, `syncConfirmed` treats refused sections as unconfirmed, composer opens with no pretext chosen.
+
+Fix round 1 (opus48): all of J-1, N-1 to N-6, O-1 and the ten UI items fixed (table in the review file). Social and validator tests 280/280, Rails 714/0, slice validator exit 0, bridge 37/37. Orchestrator checked the screenshots (solid panels, icon ticks, reply line, Done button, composer opens unchosen). The board repetition was fixed in slice data (distinct `doneString`s), keeping 03's two lists. Queued for 1b: the composer shows both "Send as" and "From" with the same address; the bridge generator in scratch is stale (the committed `.jsonl` is the source now). **Phase 1a closed.**
+
 ## Questions for the user
 
 - **How to build the composer (P1-E2).** See the stop above.
@@ -123,6 +129,8 @@ All 15 round 1 findings closed (R-12 by deferral). Node 926/930 (pass3 quarantin
 - **P1-F** (opus48): N-02 fixed in `startMinigame` (drains a minigame opened by a parent's onComplete during an interrupt; test 2/2); `notifyNewMail` hooked to `mail_delivered`; shell seeding sets `seeded: true`; new `mail-bridge.js` (judge, sent record, text job for data-only targets, metrics, attempts, checklist, drafts persisted); `mail_terminal` in PICKUP_THEN_INTERACT_TYPES with the locked-pickup rule, branch moved after the lock check. Test 11/11; suite 1079/1082 (runner flake). Browser gate (game 2878): terminal opens the client, a landed send writes one sent record and one job, the sync carries per-message keys and seeded stubs. Choices for P1-R: `boostIfGlobal` makes a factor advisory and `strictIfGlobal` required (designs silent); mail-channel lockout check left to Phase 4.
 
 - **P1-T0** (Sonnet): `tools/playtest/se/bridge-1a.jsonl`, 37 boolean evals (A mail client, B board, C composer, E Esc order, D reload, F send and reply). Game 2882: 36/37. D3 fails for real: the server draft whitelist drops `contactId`, so the composer resets a restored draft after reload; sent to the P1-F agent to fix both ends. Running notes: Playwright here needs the Node 24 binary and a wrapper for the cached chromium; reload via `?skip_resume=1`.
+
+- **P1-T** (Sonnet, games 2886 and 2887): steps 1-6 pass; bridge 37/37; verify-run `--tasks` 2 completed; one POST per task. 0 blocker, 0 major, 10 minor UI findings (`build_log/P1-T.md`). Orchestrator checked the screenshots: the result/compose panels are see-through (the form shows under "It landed."), ticks doubled ("✓ ✓") and drawn as text not the `mark-tick` art, board cards repeat each line under Done:/Missing: and show a corner artefact, the mail Close sits on its own row. Plus: toast "Noted: Noted:", no "reply coming" line, Edit & resend after a landing, no prompt after the third fact, composer defaults to the landing template. For the fix round with P1-R.
 
 ## Review rounds
 

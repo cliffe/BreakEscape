@@ -69,6 +69,12 @@ portal) or `outside` (a decoy outside the company). `trusts` ids in `04` resolve
 `portal` is valid. The validator checks that every `<person>_<form>` value in `intelFacts` names a
 person and form that exist here, and that every `<person>_address` resolves to an `address`.
 
+An optional `avatar` on a person names the headshot the board's people card and the mail reader show
+for them (the key of an `assets/characters/<avatar>.png`, aligned with the `02` N6 headshot
+convention; `hampshire_headshot` for Chris). It is optional: with none, the card and reader fall back
+to the default icon. A seeded message's `from` (§10a) takes the same optional `avatar` key, naming the
+icon shown beside that sender in the inbox.
+
 **Name-form ids.** A name blank holds one form of a person's name. Forms are ids of the shape
 `<person>_<form>`, with forms `first`, `short`, `formal` and `full`: `pierce_first` (Melanie),
 `pierce_short` (Mel), `pierce_formal` (Ms Pierce), `pierce_full` (Melanie Pierce). The same shape

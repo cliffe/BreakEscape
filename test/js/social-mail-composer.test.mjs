@@ -111,13 +111,19 @@ test('an address blank builds <person>_address from a held sender name plus the 
     assert.deepEqual(opts, []);
 });
 
-test("Hampshire's blank-free templates send at once, with no picker", () => {
+test('Hampshire opens with the pretext unchosen; Send waits until one is picked', () => {
     const { composer, host, sends } = makeComposer(grant('hampshire_careers'),
         { contacts: [{ id: 'hampshire', name: 'Chris Hampshire', role: 'Careers', addresses: ['careers@ledgerwell.example'], targetId: 'hampshire' }] });
-    const s = composer.getState();
+    let s = composer.getState();
     assert.equal(s.targetId, 'hampshire');
     assert.deepEqual(s.blanks, []);                       // no blanks at all
     assert.equal(host.querySelector('.mail-blank'), null); // nothing to pick
+    // The pretext is a deliberate choice, so Send is disabled until the player picks one (P1-T).
+    assert.equal(s.sendEnabled, false);
+    assert.equal(s.gateReason, 'pretext-unchosen');
+    assert.equal(host.querySelector('.mail-compose-send').disabled, true);
+    composer.chooseTemplate('pretext', 'pretext_apply');
+    s = composer.getState();
     assert.equal(s.sendEnabled, true);
     assert.equal(host.querySelector('.mail-compose-send').disabled, false);
     host.querySelector('.mail-compose-send').click();
@@ -125,11 +131,15 @@ test("Hampshire's blank-free templates send at once, with no picker", () => {
     assert.equal(sends[0].targetId, 'hampshire');
     assert.deepEqual(sends[0].headerFrom, { account: true }); // from_own is forced
     assert.equal(sends[0].templates.from, 'from_own');
+    assert.equal(sends[0].templates.pretext, 'pretext_apply');
 });
 
 test('with no evidence held, Send is disabled and the neutral line shows, naming no fact', () => {
     const { composer, host } = makeComposer({},
         { contacts: [{ id: 'pierce', name: 'Melanie Pierce', role: 'Finance', addresses: ['m.pierce@ledgerwell.example'], targetId: 'pierce' }] });
+    // Pick a blank-free pretext so the gate reaches the empty greeting-name blank, not the
+    // pretext-unchosen gate (P1-T: the pretext now opens unchosen).
+    composer.chooseTemplate('pretext', 'pretext_invoice');
     const s = composer.getState();
     assert.equal(s.targetId, 'pierce');
     assert.equal(s.sendEnabled, false);

@@ -207,22 +207,38 @@ test('a failing send (no attachment): did-not-land record, outcome global stays 
     assert.equal(rec.attachment, null);
     assert.deepEqual(scheduler.state.metrics.hampshire, { sent: 1, failed: 1, landed: 0, firstTryLanded: false });
     assert.ok(host.querySelector('.mail-checklist-banner.not-landed'));
-    // The failed-attachment factor reads as a cross.
-    const rows = [...host.querySelectorAll('.mail-check-row')].map((r) => r.textContent);
-    assert.ok(rows.some((t) => t.startsWith('✗')), 'a failed factor is marked');
+    // A failed factor reads as a cross: a .fail row with the mark-cross.png art, and the
+    // authored ✓/✗ glyph stripped from the text so the mark is never doubled (P1-T T3).
+    const failRow = host.querySelector('.mail-check-row.fail');
+    assert.ok(failRow, 'a failed factor row is present');
+    assert.match(failRow.querySelector('.mail-check-mark').getAttribute('src'), /mark-cross\.png$/);
+    assert.doesNotMatch(failRow.querySelector('.mail-check-text').textContent, /^\s*[✓✗]/, 'no doubled glyph');
 
     clock = 15000;
     scheduler.tick(clock);
     assert.equal(window.gameState.globalVariables.phish_hampshire_landed, false, 'a failed send never sets the outcome');
 });
 
-test('Edit & resend dismisses the checklist, keeping the client open', () => {
+test('a failed send offers Edit & resend, which dismisses the checklist, keeping the client open', () => {
+    clock = 0;
+    const { scene, host } = openClient();
+    scene._handleComposeSend(message({ attachment: null, attachmentKind: null }));
+    assert.ok(host.querySelector('.mail-checklist'));
+    assert.equal(host.querySelector('.mail-checklist-done'), null, 'no Done on a failed send');
+    host.querySelector('.mail-checklist-edit').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    assert.equal(host.querySelector('.mail-checklist'), null, 'dismissed');
+});
+
+test('a landed send offers Done, not Edit & resend, and notes a reply may come', () => {
     clock = 0;
     const { scene, host } = openClient();
     scene._handleComposeSend(message());
-    assert.ok(host.querySelector('.mail-checklist'));
-    host.querySelector('.mail-checklist-edit').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-    assert.equal(host.querySelector('.mail-checklist'), null, 'dismissed');
+    assert.ok(host.querySelector('.mail-checklist-banner.landed'));
+    assert.equal(host.querySelector('.mail-checklist-edit'), null, 'no Edit & resend after a landing');
+    assert.ok(host.querySelector('.mail-checklist-done'), 'Done button shown');
+    assert.ok(host.querySelector('.mail-checklist-reply'), 'a reply-pending line is shown');
+    host.querySelector('.mail-checklist-done').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    assert.equal(host.querySelector('.mail-checklist'), null, 'Done dismisses the panel');
 });
 
 test('a non-target recipient is stored in Sent but never judged or delivered', () => {
@@ -234,6 +250,60 @@ test('a non-target recipient is stored in Sent but never judged or delivered', (
     assert.equal(rec.landed, null);
     assert.equal(scheduler.state.jobs.length, 0, 'no delivery job');
     assert.equal(host.querySelector('.mail-checklist'), null, 'no checklist');
+});
+
+// ── J-1 / N-6: the open check gates the data-only text job ───────────────────
+
+// A bare scene for performSend, with a scheduler that records scheduleTextJob calls.
+function bareScene(sc, { account } = {}) {
+    const acct = account || { id: 'guest', address: 'guest@workstation.example', displayName: 'Operator', person: null, mailbox: 'guest', spoofsFrom: true };
+    const jobs = [];
+    const mailState = { mailboxes: {}, metrics: {} };
+    const scheduler = {
+        scheduleTextJob(job) { jobs.push(job); },
+        addMessage(mailboxId, record) {
+            const box = mailState.mailboxes[mailboxId] || (mailState.mailboxes[mailboxId] = { messages: [] });
+            const stored = { ...record, id: `m${box.messages.length}`, mailbox: mailboxId };
+            box.messages.push(stored);
+            return stored;
+        }
+    };
+    window.gameState = { globalVariables: {} };
+    return { scene: { scheduler, social: sc, globals: {}, account: acct, accounts: [acct], config: { payloadKit: [] }, mailState, checklistTiming: () => 'onSend' }, jobs };
+}
+
+test('an unopened data-only send schedules no text job (J-1); an opened-but-failed one delivers the fail reply', () => {
+    // A closed inbox (trusts []) whose subject topic it does not open on: the open check fails.
+    const closed = {
+        people: [{ id: 'gate', kind: 'cast', address: 'gate@ledgerwell.example', forms: { full: 'Gate Keeper' } }],
+        intelFacts: {},
+        templates: { from_own: { part: 'from', text: '{account_name}', slots: [] } },
+        phishTargets: [{
+            id: 'gate', address: 'gate@ledgerwell.example', character: null,
+            subjects: [{ id: 's1', text: 'Hi', topic: 'general' }],
+            interests: { topics: ['recruitment'] },
+            templateSets: { from: ['from_own'], greeting: [], pretext: [], ask: [] },
+            primedFor: { trusts: [] },
+            requiredFactors: ['senderTrust'], advisoryFactors: [],
+            replies: { landed: 'thanks' }, outcome: { setGlobal: { phish_gate_landed: true } }
+        }]
+    };
+    const { scene, jobs } = bareScene(closed);
+    const info = bridge.performSend(scene, {
+        fromAccount: 'guest', to: 'gate@ledgerwell.example', targetId: 'gate', subject: 's1',
+        headerFrom: { account: true }, templates: { from: 'from_own' }, slots: {}, attachment: null, link: null
+    });
+    assert.equal(info.result.open.opened, false, 'the closed inbox did not open it');
+    assert.equal(jobs.length, 0, 'no text job for an unopened data-only send');
+
+    // An opened (trusts "*") but failing send (no attachment) still gets a job with the fail reply.
+    const { scene: s2, jobs: jobs2 } = bareScene(social());
+    const info2 = bridge.performSend(s2, message({ attachment: null, attachmentKind: null }));
+    assert.equal(info2.result.open.opened, true);
+    assert.equal(info2.result.landed, false);
+    assert.equal(jobs2.length, 1, 'an opened-but-failed send still schedules a reply');
+    assert.ok(typeof jobs2[0].text === 'string' && jobs2[0].text.length > 0, 'the reply carries the first failed factor line');
+    assert.notEqual(jobs2[0].text, 'Thanks, received.');
 });
 
 test('draft change persists to the scheduler, one per account', () => {

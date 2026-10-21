@@ -780,11 +780,12 @@ export function handleObjectInteraction(sprite) {
         'mail_terminal'   // SE: a takeable mail terminal is carried and opened from inventory (00 S14)
     ]);
     if (sprite.scenarioData.takeable && PICKUP_THEN_INTERACT_TYPES.has(sprite.scenarioData.type)) {
-        // A locked takeable device must be unlocked before it is picked up and
-        // opened from inventory, or the lock is skipped entirely (the pickup
-        // re-enters this handler with no lock test). Send it to the unlock flow
-        // first; once unlocked it is picked up on the next interaction (00 S14).
-        if (sprite.scenarioData.locked === true) {
+        // A locked takeable mail terminal must be unlocked before it is picked up and
+        // opened from inventory, or the lock is skipped entirely (the pickup re-enters
+        // this handler with no lock test). Send it to the unlock flow first; once
+        // unlocked it is picked up on the next interaction (00 S14). Scoped to
+        // mail_terminal (N-3): the other pickup types keep their prior behaviour.
+        if (sprite.scenarioData.type === 'mail_terminal' && sprite.scenarioData.locked === true) {
             handleUnlock(sprite, 'item');
             return;
         }

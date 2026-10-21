@@ -291,6 +291,14 @@ export class MailScheduler {
     const box = this.ensureMailbox(mailboxId);
     const message = pick({ ...record, mailbox: mailboxId }, MAIL_MESSAGE_FIELDS);
     if (!message.id) message.id = newId('msg');
+    // Stamp a time on any record that carries none (a Sent record from the bridge), so
+    // the list row shows one like a reply or seeded mail does (P1-T T10). Replies and
+    // seeded mail already set their own time, so this leaves them untouched.
+    if (!message.time) {
+      const stamp = this._clockStamp();
+      message.time = stamp.time;
+      if (message.gameTime == null) message.gameTime = stamp.gameTime;
+    }
     box.messages.push(message);
     this._recount(box);
     return message;

@@ -44,12 +44,13 @@
 /* Toolbar */
 .mail-toolbar {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 8px;
 }
-.mail-account { display: flex; align-items: center; gap: 6px; min-width: 0; margin-right: auto; }
-.mail-account-label { font-family: var(--se-font-readable); font-size: 15px; overflow-wrap: anywhere; }
+.mail-account { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 0 1 auto; margin-right: 8px; }
+/* The label shrinks and ellipses so the whole toolbar, Close included, stays on one row. */
+.mail-account-label { font-family: var(--se-font-readable); font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mail-folders { display: flex; gap: 4px; }
 .mail-client .minigame-button,
 .mail-client .se-overlay-close {
@@ -57,6 +58,8 @@
     min-width: 44px;
     padding: 6px 12px;
 }
+/* Close sits at the right of the header row, never wrapped to its own line (P1-T). */
+.mail-toolbar .se-overlay-close { margin-left: auto; }
 .mail-folder-btn { display: inline-flex; align-items: center; gap: 6px; }
 .mail-folder-btn.active { outline: 2px solid var(--ui-accent, #ffcc44); }
 .mail-folder-count {
@@ -189,6 +192,18 @@
 
 .mail-back { display: none; margin-bottom: 8px; }
 
+/* A floating panel over the reader must be fully opaque, or the list and reader
+   beneath it show through (the theme --ui-surface tokens are translucent). The
+   solid base under the tinted surface layer keeps the theme colour while blocking
+   everything behind (P1-T T1). */
+.mail-checklist,
+.mail-contacts-panel,
+.mail-composer,
+.mail-picker-list {
+    background-color: #10152a;
+    background-image: linear-gradient(var(--ui-surface, rgba(24, 30, 48, 1)), var(--ui-surface, rgba(24, 30, 48, 1)));
+}
+
 /* Send checklist (01 §3, N17): the teaching layer over the composer */
 .mail-checklist {
     position: absolute;
@@ -199,7 +214,6 @@
     gap: 6px;
     padding: 14px;
     overflow-y: auto;
-    background: var(--ui-panel-bg, rgba(22, 28, 44, 0.98));
     border: 2px solid var(--ui-border, #42506f);
     border-radius: 6px;
     font-family: var(--se-font-readable);
@@ -209,12 +223,16 @@
 .mail-checklist-banner.landed { color: var(--ui-success, #6ee08f); }
 .mail-checklist-banner.not-landed { color: var(--ui-danger, #ff7a6b); }
 .mail-checklist-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.mail-check-row { font-size: 16px; line-height: 1.35; }
+.mail-check-row { display: flex; align-items: flex-start; gap: 6px; font-size: 16px; line-height: 1.35; }
+.mail-check-mark { width: 16px; height: 16px; flex: none; margin-top: 2px; image-rendering: pixelated; }
+.mail-check-text { min-width: 0; }
 .mail-check-row.pass { color: var(--ui-success, #6ee08f); }
 .mail-check-row.fail { color: var(--ui-danger, #ff7a6b); }
 .mail-checklist-advisory { margin: 2px 0 0; font-size: 14px; color: var(--ui-warn, #e6b04d); }
+.mail-checklist-reply { margin: 6px 0 0; font-size: 15px; color: var(--ui-accent, #ffcc44); }
 .mail-checklist-replyto { margin: 4px 0 0; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
-.mail-checklist-edit { align-self: flex-start; margin-top: 8px; }
+.mail-checklist-edit,
+.mail-checklist-done { align-self: flex-start; margin-top: 8px; }
 
 /* Contacts panel */
 .mail-contacts-panel {
@@ -226,7 +244,6 @@
     gap: 8px;
     padding: 12px;
     overflow-y: auto;
-    background: var(--ui-surface, rgba(24, 30, 48, 0.98));
     border: 2px solid var(--ui-line, #4c5b80);
 }
 .mail-contacts-title { margin: 0; font-family: var(--ui-heading-font, 'GNF', monospace); font-size: 16px; }
@@ -249,7 +266,7 @@
    readable font; the blank picker is a listbox. */
 .mail-composer {
     position: absolute;
-    inset: 56px 16px 16px;
+    inset: 16px;
     z-index: 3;
     display: flex;
     flex-direction: column;
@@ -257,7 +274,6 @@
     padding: 16px;
     overflow: auto;
     box-sizing: border-box;
-    background: var(--ui-surface, rgba(24, 30, 48, 0.98));
     border: 2px solid var(--ui-line, #4c5b80);
 }
 .mail-compose-title { margin: 0; font-family: var(--ui-heading-font, 'GNF', monospace); font-size: 16px; }
@@ -271,6 +287,7 @@
 }
 .mail-compose-value,
 .mail-compose-from-own { margin: 0; font-family: var(--se-font-readable); font-size: 16px; overflow-wrap: anywhere; }
+.mail-compose-fixed { flex: 1 1 auto; min-width: 180px; }
 .mail-compose-hint { color: var(--ui-text-dim, #a8b2c8); font-size: 14px; }
 .mail-burned { color: var(--ui-text-dim, #a8b2c8); text-decoration: line-through; }
 .mail-compose-note { margin: 0; font-family: var(--se-font-readable); font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
@@ -309,7 +326,6 @@
     max-height: 70%;
     min-width: 240px;
     overflow: auto;
-    background: var(--ui-surface, rgba(24, 30, 48, 0.99));
     border: 2px solid var(--ui-line, #4c5b80);
 }
 .mail-picker-option {
@@ -330,6 +346,8 @@
 
 @media (max-width: 767px) {
     .mail-client { height: 85vh; max-height: none; padding: 8px; }
+    /* Narrow: the toolbar may wrap again rather than squeeze everything onto one row. */
+    .mail-toolbar { flex-wrap: wrap; }
     .mail-reader { grid-template-columns: 1fr; }
     .mail-reader.has-selection .mail-list-pane { display: none; }
     .mail-reader:not(.has-selection) .mail-read-pane { display: none; }

@@ -216,14 +216,16 @@ test('applyActions grant_fact grants, toasts "Noted: <label>" once, and repeats 
     applyActions([{ type: 'grant_fact', fact: 'hampshire_careers' }], { source: 'object_interact' });
     assert.equal(window.gameState.globalVariables.se_intel_hampshire_careers, true);
     assert.equal(toasts.length, 1);
-    assert.equal(toasts[0][0], 'Noted: the careers inbox is open');
+    // Title "Noted", body the label: the toast reads "Noted: <label>" once, not doubled (P1-T T5).
+    assert.equal(toasts[0][0], 'the careers inbox is open');
+    assert.equal(toasts[0][2], 'Noted');
     assert.equal(notes.length, 1);
     applyActions([{ type: 'grant_fact', fact: 'hampshire_careers' }]);
     assert.equal(toasts.length, 1);
     assert.equal(notes.length, 1);
     // label falls back to the fact text
     applyActions([{ type: 'grant_fact', fact: 'careers_attachment' }]);
-    assert.equal(toasts[1][0], 'Noted: Chris takes .odt and .docx files.');
+    assert.equal(toasts[1][0], 'Chris takes .odt and .docx files.');
     // set_global still emits on every call
     emitted.length = 0;
     applyActions([{ type: 'set_global', key: 'k', value: 1 }, { type: 'set_global', key: 'k', value: 1 }]);
