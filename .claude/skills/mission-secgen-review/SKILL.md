@@ -11,7 +11,7 @@ review and is known working — read it when you need a correct reference for ho
 should look.
 
 **This skill reads SecGen directly.** The project's usual rules (don't open the SecGen XML;
-delegate SecGen to a Haiku subagent) are **suspended for this skill**. You read the SecGen
+delegate SecGen to an `opus48` subagent) are **suspended for this skill**. You read the SecGen
 scenario XML and its referenced Puppet modules yourself. This is infrastructure and
 consistency review of the author's own authorised educational content; it is not an exploit
 walkthrough, so keep notes at the level of "which account owns which file" and "what sudo
