@@ -110,7 +110,9 @@ Dr. Irina Volkova: Back again. What do you need?
 
 === first_meeting_scene ===
 #speaker:irina_volkova
-~ first_meeting = false
+// Engine robustness audit (m01-m08): the met flag is set in each opening choice, not
+// before the opening, so an Esc (this knot owns the choices, so a reopen re-runs it) or a
+// reload at these choices brings the opening back instead of skipping to the hub.
 // Review M1: the only other route to this task was taskOnKO.
 #complete_task:meet_irina
 Narrator: A sharp-eyed woman in her mid-thirties looks up from three monitors of transaction graphs.
@@ -120,11 +122,13 @@ Dr. Irina Volkova: You must be the FCA. Dr Irina Volkova, Chief Technology Offic
 Dr. Irina Volkova: A supervisory visit. Always a pleasure, I'm sure.
 
 + [Thanks for making the time, Dr Volkova. I know these visits are a nuisance.]
+    ~ first_meeting = false
     ~ irina_trust += 15
     #influence_increased
     -> professional_response
 
 + [Let's be quick. I need your servers, your logs and your wallets.]
+    ~ first_meeting = false
     ~ irina_trust -= 5
     #influence_decreased
     ~ irina_suspicious = true
@@ -132,6 +136,7 @@ Dr. Irina Volkova: A supervisory visit. Always a pleasure, I'm sure.
     -> suspicious_response
 
 + [Thirty-seven papers and nearly three thousand citations. I've read some of your work.]
+    ~ first_meeting = false
     ~ irina_trust += 25
     #influence_increased
     -> academic_response

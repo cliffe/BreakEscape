@@ -43,6 +43,12 @@ Nurse Raval: If it's the computers you're here for, get on with it.
     -> DONE
 
 === bed4_assist ===
+// Engine robustness audit (m01-m08): a reopen resumes here, not at start, so check
+// again. Mr Pryce may have died on the timer, or been bagged at his bedside, while
+// this chat was closed; start then gives her usual lines.
+{not (bed4_manually_stabilised == false and patient_bed4_deceased == false and (patient_bed4_state == "distressed" or patient_bed4_state == "critical")):
+    -> start
+}
 Nurse Raval: He's fighting the vent. The bag's on the frame and I need both hands.
 
 * [Give me the bag. I'll breathe for him.]

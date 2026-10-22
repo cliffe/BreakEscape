@@ -9,7 +9,7 @@ Track cryptocurrency payments from previous ENTROPY operations to the Crypto Ana
 | Metric | Value |
 |---|---|
 | Story aims | 6 |
-| Total tasks | 27 (7 optional) |
+| Total tasks | 28 (8 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 13 |
 | AND-gate convergences | 0 |

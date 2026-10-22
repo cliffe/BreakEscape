@@ -112,6 +112,12 @@ Mr Pryce: Long time... fourteen minutes.
 // Reached only while distressed/critical and not yet stabilised.
 // ===========================================
 === emergency ===
+// Engine robustness audit (m01-m08): a reopen resumes here, not at start or hub, so
+// check again that he still needs saving. He may have died on the timer, or Nurse
+// Raval's bag may have saved him, while this chat was closed. hub routes the rest.
+{patient_bed4_deceased or bed4_manually_stabilised or (patient_bed4_state != "distressed" and patient_bed4_state != "critical"):
+    -> hub
+}
 Narrator: The ventilator alarm is going: a hard, repeating tone, with no relay to carry it to the desk. Mr Pryce's chest is fighting the machine.
 
 { patient_bed4_state == "critical":

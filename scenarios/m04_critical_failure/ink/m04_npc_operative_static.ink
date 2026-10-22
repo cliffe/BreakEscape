@@ -30,7 +30,6 @@ VAR static_quiet = false
 // ===========================================
 
 === static_voltage_support ===
-~ static_challenged = true
 
 Narrator: He steps out from behind the plant-room door frame, putting himself squarely between you and the man at the laptop.
 
@@ -43,6 +42,9 @@ ENTROPY Operative 'Static': He doesn't need long. I just need you to be slow.
 -> static_standoff
 
 === static_standoff ===
+// Engine robustness audit (m01-m08): set here, after his opening lines, so an Esc and a
+// reload during them replay the challenge instead of opening on bare choices.
+~ static_challenged = true
 * [You're standing in a room that's about to catch fire.]
     ENTROPY Operative 'Static': Then we'd better be quick.
     -> static_refuses

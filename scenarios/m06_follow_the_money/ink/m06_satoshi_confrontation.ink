@@ -52,10 +52,11 @@ VAR pitch_heard = false  // Dialogue C1 (D6-21): the full freeze-or-watch pitch 
 }
 {
 - not confrontation_started and not satoshi_confronted:
-    ~ confrontation_started = true
+    // Engine robustness audit (m01-m08): confrontation_started and satoshi_confronted are
+    // set in each opening choice. These choices belong to start, so an Esc and a reopen
+    // re-run start; set up front, they skipped the confrontation for "Back again."
     // Review M2: complete at the top so an early close can't strand the task.
     #complete_task:confront_satoshi
-    #set_variable:satoshi_confronted=true
     #set_variable:satoshi_spoken=true
 
     #speaker:narrator
@@ -87,18 +88,26 @@ VAR pitch_heard = false  // Dialogue C1 (D6-21): the full freeze-or-watch pitch 
     Satoshi Nakamoto II: SAFETYNET, right? So you've worked out what this place is for.
 
     + [You're funding ENTROPY. Every cell we've hit runs its money through this exchange.]
+        ~ confrontation_started = true
+        #set_variable:satoshi_confronted=true
         -> evidence_reveal
 
     + {found_architects_fund} [The Architect's Fund. $12.8 million to go out, and you costed the dead.]
+        ~ confrontation_started = true
+        #set_variable:satoshi_confronted=true
         ~ shown_evidence = true
         -> casualties_discussion
 
     // PASS 3 P4: the codename is on the fund's authorisation line.
     + {found_architects_fund} [Or should I call you Satoshi's Ghost? You signed the fund with it.]
+        ~ confrontation_started = true
+        #set_variable:satoshi_confronted=true
         ~ shown_evidence = true
         -> ghost_name
 
     + [I'm detaining you. Laundering and terrorist financing.]
+        ~ confrontation_started = true
+        #set_variable:satoshi_confronted=true
         -> arrest_attempt
 - not asset_choice_made:
     { not hub_quiet:

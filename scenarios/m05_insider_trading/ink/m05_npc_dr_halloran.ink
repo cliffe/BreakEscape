@@ -62,7 +62,9 @@ VAR spare_badge_taken = false // Synced scenario global (puzzle R2, R2-2): the p
 {not first_meeting:
     -> hub
 }
-~ first_meeting = false
+// Engine robustness audit (m01-m08): the met flag is set in each opening choice, not
+// before the opening, so an Esc (this knot owns the choices, so a reopen re-runs it) or a
+// reload at these choices brings the opening back instead of skipping to the hub.
 #speaker:narrator
 Narrator: A woman in her mid-forties looks up from a whiteboard dense with lattice notation.
 
@@ -72,16 +74,19 @@ Dr Ruth Halloran: You're the consultant. Ruth Halloran. I run Heisenberg.
 Dr Ruth Halloran: Find whoever did this, and quickly. And I hope to God you're wrong about my team.
 
 + [Walk me through what was taken. It'll help me narrow it down.]
+    ~ first_meeting = false
     // No tag here: heisenberg_explanation's own tag lands on the same line,
     // and two tags would show two popups (D5-6).
     ~ halloran_influence += 10
     -> heisenberg_explanation
 
 + [I need to talk to everyone with access to Heisenberg.]
+    ~ first_meeting = false
     Dr Ruth Halloran: My team didn't do this.
     -> defensive_response
 
 + [Could you have missed someone behaving differently?]
+    ~ first_meeting = false
     ~ halloran_influence -= 5
     #influence_decreased
     Dr Ruth Halloran: I know my people.

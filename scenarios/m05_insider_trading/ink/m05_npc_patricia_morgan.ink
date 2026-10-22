@@ -85,7 +85,9 @@ VAR final_choice = "" // Synced scenario global: Torres' fate; set by m05_torres
 {not first_meeting:
     -> hub
 }
-~ first_meeting = false
+// Engine robustness audit (m01-m08): the met flag is set in each opening choice, not
+// before the opening, so an Esc (this knot owns the choices, so a reopen re-runs it) or a
+// reload at these choices brings the opening back instead of skipping to the hub.
 #speaker:narrator
 Narrator: A woman in her early fifties looks up from a wall of access logs. Military bearing, and a mug of tea gone cold by the keyboard.
 
@@ -93,17 +95,20 @@ Narrator: A woman in her early fifties looks up from a wall of access logs. Mili
 Patricia Morgan: You'll be the consultant. Patricia Morgan, Chief Security Officer. Thanks for coming at short notice.
 
 + [Fill me in. What have you found so far?]
+    ~ first_meeting = false
     ~ patricia_influence += 1
     #influence_increased
     -> briefing_details
 
 + [Skip the pleasantries. What access can you give me?]
+    ~ first_meeting = false
     ~ patricia_influence += 1
     #influence_increased
     Patricia Morgan: Direct. Good.
     -> provide_access
 
 + [I've been briefed. Quantum-safe keys, an inside job, and it ends tonight.]
+    ~ first_meeting = false
     ~ patricia_influence += 2
     #influence_increased
     Patricia Morgan: Then we can skip a step.

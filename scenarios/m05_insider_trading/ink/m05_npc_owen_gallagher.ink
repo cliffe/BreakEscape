@@ -63,7 +63,9 @@ VAR owen_refused_password = false // Synced scenario global (pass 5 puzzle R1, P
 {not first_meeting:
     -> hub
 }
-~ first_meeting = false
+// Engine robustness audit (m01-m08): the met flag is set in each opening choice, not
+// before the opening, so an Esc (this knot owns the choices, so a reopen re-runs it) or a
+// reload at these choices brings the opening back instead of skipping to the hub.
 #speaker:narrator
 Narrator: A bearded man in his late twenties at a workstation, three terminals of logs scrolling past, a staff badge on a lanyard round his neck. He swivels to face you.
 
@@ -73,11 +75,13 @@ Owen Gallagher: Alright. You're the security consultant? Owen Gallagher, sysadmi
 Owen Gallagher: Finally. Someone to fix our mess who isn't me.
 
 + [What can you tell me about the data leaving the building?]
+    ~ first_meeting = false
     ~ owen_influence += 10
     #influence_increased
     -> network_situation
 
 + [I'll need your help with access. Logs, badges, that kind of thing.]
+    ~ first_meeting = false
     ~ asked_access = true
     ~ owen_influence += 5
     #influence_increased
@@ -85,6 +89,7 @@ Owen Gallagher: Finally. Someone to fix our mess who isn't me.
     -> hub
 
 + [Point me at the logs. I'll take it from here.]
+    ~ first_meeting = false
     Owen Gallagher: Right. Terminal's over there. Shout if you need anything.
     ~ hub_quiet = true
     -> hub

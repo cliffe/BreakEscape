@@ -49,7 +49,9 @@ VAR final_choice = "" // Synced scenario global: Torres' fate; set by m05_torres
 {not first_meeting:
     -> hub
 }
-~ first_meeting = false
+// Engine robustness audit (m01-m08): the met flag is set in each opening choice, not
+// before the opening, so an Esc (this knot owns the choices, so a reopen re-runs it) or a
+// reload at these choices brings the opening back instead of skipping to the hub.
 #speaker:narrator
 Narrator: A woman in her early thirties by the break room counter. Coffee going cold, a collection tin at her elbow.
 
@@ -59,17 +61,20 @@ Lisa Park: Hi. You're the security person, right? Everyone's been whispering.
 Lisa Park: Lisa Park, marketing. I don't go near the crypto stuff, but I sit by the kettle. I notice things.
 
 + [What have you noticed lately?]
+    ~ first_meeting = false
     // No tag here: ask_office_mood's own tag lands on the same line, and two
     // tags would show two popups (D5-6).
     ~ lisa_influence += 10
     -> ask_office_mood
 
 + [Who's the collection tin for?]
+    ~ first_meeting = false
     ~ lisa_influence += 5
     #influence_increased
     -> torres_sympathy
 
 + [Sorry, I'm short on time. Cleared staff first.]
+    ~ first_meeting = false
     Lisa Park: No, totally. Good luck with it.
     ~ hub_quiet = true
     #exit_conversation

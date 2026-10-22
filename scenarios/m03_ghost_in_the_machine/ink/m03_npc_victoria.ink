@@ -101,12 +101,17 @@ VAR cloner_deflection = ""
     // Pass 4 (fix 2): a knocked-out receptionist doesn't go unnoticed. Feeds the
     // P4 suspicion logic, and opens the "eager recruit" walk-back.
     { receptionist_ko:
-        ~ victoria_suspicious = victoria_suspicious + 10
+        // Engine robustness audit: counted once, as this opening can now replay after a reload.
+        { not suspicion_warned:
+            ~ victoria_suspicious = victoria_suspicious + 10
+        }
         ~ suspicion_warned = true
         Victoria Sterling: Our receptionist isn't at her desk. You didn't pass her on the way in?
         Narrator: She says it lightly. She watches your face the whole time she says it.
     }
-    ~ recruitment_discussed = true
+    // Engine robustness audit (m01-m08): recruitment_discussed is set in philosophy_intro,
+    // after her first question is answered, so an Esc and a reload at that question bring
+    // the recruitment pitch back instead of skipping to the hub.
     -> first_impression
 }
 { recruitment_discussed && not victoria_card_cloned:
@@ -152,6 +157,7 @@ Victoria Sterling: Competent is cheap. That's not why you're here.
     -> philosophy_intro
 
 === philosophy_intro ===
+~ recruitment_discussed = true
 #speaker:victoria_sterling
 // D4-1 sweep / D4-12: a day knot re-entered at night (a reopen lands on the knot
 // that owns the saved choices) hands over to start, which routes by phase.

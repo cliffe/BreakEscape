@@ -73,7 +73,9 @@ VAR password_hints_found = false
 -> first_meeting
 
 === first_meeting ===
-~ met_gary = true
+// Engine robustness audit (m01-m08): the met flag is set in each opening choice, not
+// before the opening, so an Esc and a reload at these choices bring the opening back
+// instead of skipping to the hub.
 
 Narrator: Two dead terminals, a cold mug with a skin on it, and a printed stack of his own emails squared up beside the keyboard.
 
@@ -84,16 +86,19 @@ Gary Whitlock: If you're the police, I've told your mate everything twice.
 Gary Whitlock: And if you're the board, I've put it all in writing. Seven times.
 
 * [Seven times. I know.]
+    ~ met_gary = true
     ~ gary_influence += 15
     # influence_increased
     -> open_solidarity
 
 * [I'm the incident responder. Talk me through what you've got.]
+    ~ met_gary = true
     ~ gary_influence += 8
     # influence_increased
     -> open_professional
 
 * [You're the administrator. This is your estate. How did it get this bad?]
+    ~ met_gary = true
     ~ gary_influence -= 18
     # influence_decreased
     -> open_blame
