@@ -90,7 +90,9 @@ VAR legacy_topic_given = false
 VAR alpha_topic_given = false
 VAR nightshade_file_decided = false
 VAR reading_told_hax_asked = false
-VAR keypad_topic_asked = false
+// Puzzle chains R1 P1: the keypad topic in three tiers (was a boolean,
+// keypad_topic_asked).
+VAR keypad_topic_asks = 0
 VAR confession_heard = false
 // Shadows for topics that write a global by tag and return to the hub: a
 // #set_global reaches this story only after ink has built the next choice
@@ -517,7 +519,8 @@ Our watch sits on that kit. Send it, the vendor starts a fix, and the watch come
 }
 It isn't my call. It isn't yours either. If you're going to, don't ask me first.
 {deck_pulled == "alpha_tapes":
-    His tapes are on the bench next door. When you want them.
+    // Puzzle chains R1 P3: the scene can play in the cage (file fetched late).
+    His tapes are on the bench in the tape room. When you want them.
 }
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
@@ -600,7 +603,8 @@ He'll call it full disclosure.
 }
 
 = realisation_choice
-+ [Her schedule. This room isn't on it.]
+// Puzzle chains R1 P3: the schedule ticks the cage; it's his cage it skips.
++ [Her schedule. His cage has no tick.]
     #set_global:hour_read_done:true
     No. It isn't. He shredded everyone but himself.
     -> read_close
@@ -712,17 +716,24 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 // 5. The salvage keypad. First ask quotes the coded line (S6 §2.3), each its
 // own text; the last line is split at its sentence break for the 25-word cap.
 + {salvage_keypad_seen and not salvage_opened} [The keypad on the cage.]
-    {not keypad_topic_asked:
-        ~ keypad_topic_asked = true
+    // Puzzle chains R1 P1 (F1): tier 1 points at the room, tier 2 gives the
+    // rule (stage 6 C-02's wording), tier 3 gives the tool. Supersedes S6 §2.3
+    // and S4 §7.1 row 5 for this topic.
+    ~ keypad_topic_asks = keypad_topic_asks + 1
+    {
+    - keypad_topic_asks == 1:
         Catalogue line from flag one.
         SALVAGE CAGE ACCESS
         MSJMQAEGDZNVI
-        Just the code, not the label. The key is the salvage bay's word, on the chart in the tape room, by the keypad.
+        Just the code, not the label. It's their own code. Archives key things to the shelves. Look at the wall by that keypad.
         {gary_called:
             Gary told you how.
         - else:
             If the cipher's new to you, ask me for the archive-code field guide.
         }
+    - keypad_topic_asks == 2:
+        The key is the salvage bay's word, on the chart by the keypad.
+        It's Vigenère.
     - else:
         Vigenère Decode, on your workstation. Key: the salvage bay's word. Capitals in, capitals out.
     }
@@ -802,7 +813,13 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 + {not tran_topic_given and not cage_opened and tran_outcome == "left"} [Tran.]
     ~ tran_topic_given = true
     -> tran_warning ->
-    He's wiping tapes from the server closet off the open stacks. You'd need something he wants to talk him off it. Otherwise it's a fight.
+    // Puzzle chains R1 P4: on tidied there is no paper lever (Nightshade burned it).
+    {m08_nightshade_tidied:
+        He's wiping tapes from the server closet off the open stacks.
+        Nothing on him tonight that I can use. It's a fight, or you leave him to it.
+    - else:
+        He's wiping tapes from the server closet off the open stacks. You'd need something he wants to talk him off it. Otherwise it's a fight.
+    }
     -> support_hub
 // 18. Field guides, one button.
 + {(catalogue_guide_offered and not catalogue_guide_hint_given) or (ledger_guide_offered and not ledger_guide_hint_given) or (tomb_beta_guide_offered and not tomb_beta_guide_hint_given) or (archive_code_guide_offered and not archive_code_guide_hint_given)} [I need a field guide.]

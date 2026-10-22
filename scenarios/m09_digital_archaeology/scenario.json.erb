@@ -309,6 +309,12 @@ hax_maps.concat(hax_rerings("globalVars.recruiter_gone && !globalVars.deck_choic
 # Alignment R2 n1: the Albion folder's onRead also fires on "PRINTER READY",
 # so the memo counts as read only when flag 3 has printed it.
 hax_maps << { "eventPattern" => "global_variable_changed:albion_folder_opened", "condition" => "value === true && globalVars.flag3_submitted", "onceOnly" => true, "setGlobal" => { "memo_read" => true } }
+# Puzzle chains R1 P2: the H&L lid's unlock, for Torres' rings and his pointer.
+hax_maps << { "eventPattern" => "item_unlocked", "condition" => "data.itemId === 'hl_box'", "onceOnly" => true, "setGlobal" => { "hl_box_opened" => true } }
+# Puzzle chains R1 P6 (F6): route A's staff door after Noor has gone home with
+# her card, tried from the front desk side.
+hax_maps << text_map("door_unlock_failed:staff_passage", "data.roomId === 'front_desk' && globalVars.noor_told && !globalVars.staff_card_cloned",
+                     "She took her card home with her. The shutter's still up.")
 # The Alpha annotations (stage 7 A-05): the sheet's onRead also fires on the
 # blank-stock read, so the export is set only when the readable variant shows.
 hax_maps << { "eventPattern" => "global_variable_changed:alpha_annotations_opened", "condition" => "value === true && globalVars.deck_pulled === 'alpha_tapes' && globalVars.identity_scene_done", "onceOnly" => true, "setGlobal" => { "alpha_annotations_read" => true } }
@@ -862,8 +868,15 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "currentKnot": "start",
           "eventMappings": [
 <%= jgen([
-  call_map("object_interacted", "data.objectName === 'Harwick & Lowe, Dead Files' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called", "call", delay: 1500, forced: false, once: true),
-  call_map("global_variable_changed:reading_found", "value === true && globalVars.m05_torres_turned && !globalVars.torres_called", "call", delay: 8000, forced: false, once: true)
+  # Puzzle chains R1 P2 (F2): the box ring skips once the lid has opened
+  # (hl_box_opened, set synchronously on item_unlocked), so a retry in the
+  # 500 ms keypad-to-container gap can't shut the opened box; a second ring
+  # waits for the open container and plays after the sheet is read.
+  call_map("object_interacted", "data.objectName === 'Harwick & Lowe, Dead Files' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called && !globalVars.hl_box_opened", "call", delay: 1500, forced: false, once: true),
+  call_map("item_unlocked", "data.itemId === 'hl_box' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called", "call", delay: 1500, forced: false, once: true),
+  # P7 (F7): the fallback rings on leaving the office (was 8 s after
+  # reading_found, which could shut the safe between page reads).
+  call_map("room_exited", "data.roomId === 'sorensen_office' && globalVars.reading_found && globalVars.m05_torres_turned && !globalVars.torres_called", "call", delay: 1500, forced: false, once: true)
 ]) %>
           ]
         },
@@ -1324,7 +1337,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "observations": "HARWICK & LOWE, EXEC SEARCH (CLOSED). RETENTION 25 YRS."
         },
         {
-          "_comment": "S6 §1.3. The lid takes the file number from flag 2 (password HL2015-0477; P10). Torres rings as it is opened on the turned branch (object_interacted on this name).",
+          "_comment": "S6 §1.3. The lid takes the file number from flag 2 (password HL2015-0477; P10). Torres rings on the turned branch: on the first click while the lid is shut (object_interacted on this name), else as it opens (item_unlocked on hl_box; puzzle chains R1 P2).",
           "type": "safe",
           "sprite": "supply_boxes1",
           "id": "hl_box",
@@ -2523,6 +2536,7 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "debrief_closed": false,
     "stacks_card_cloned": false,
     "staff_card_cloned": false,
+    "hl_box_opened": false,
     "noor_met": false,
     "albion_folder_opened": false,
     "memo_read": false,

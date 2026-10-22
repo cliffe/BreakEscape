@@ -11,6 +11,7 @@ Stage 9 pastes these as `sendTimedMessage` mappings on `agent_0x99` (unvoiced, n
 | A3-03 | That reader wants a real card. Hers will be somewhere she trusts. | `door_unlock_failed`, `data.connectedRoom === 'tape_room'`, with `globalVars.deck_choice_made` (stage 9, walkthrough R1 m-03) | `onceOnly`. **Fixed** |
 | A3-02b | Her keypad's off the card system. There's no code to find for it. Leave it for now. | `door_unlock_attempt`, `data.connectedRoom === 'sorensen_office' && !globalVars.deck_choice_made` (stage 9, walkthrough R1 m-03: replaces A3-02's failure trigger, which needed a wrong try) | `onceOnly` |
 | A3-03b | That reader wants her own card, and she hasn't left it lying about. Leave it for now. | `door_unlock_attempt`, `data.connectedRoom === 'tape_room' && !globalVars.deck_choice_made` (stage 9, m-03) | `onceOnly` |
+| A3-03c | She took her card home with her. The shutter's still up. | `door_unlock_failed:staff_passage`, `data.roomId === 'front_desk' && globalVars.noor_told && !globalVars.staff_card_cloned` | `onceOnly`. Puzzle chains R1 P6: Noor has gone home without her card being cloned, so the staff door stays shut and the player needs to know why |
 
 ## 2. The night's beats
 

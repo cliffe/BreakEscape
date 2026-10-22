@@ -10,6 +10,7 @@
 
 // m09 global (CONTRACT §5.3): read by A1 hub 5.
 VAR gary_called = false
+VAR salvage_opened = false   // Synced scenario global (puzzle chains R1 P5)
 
 === start ===
 // Home stub: not reached by the call; shows only if the player opens his thread after it.
@@ -20,10 +21,15 @@ VAR gary_called = false
 
 === call ===
 #set_global:gary_called:true
-It's Gary. Whitlock, from St. Catherine's. HaX says you're stood at a keypad in a tape library.
-Seen codes like that. Archives key them to the shelf scheme.
-Read it like a shelf mark, not a number. Vigenère, and the bay's word is the key.
-There'll be a chart near the keypad.
+// Puzzle chains R1 P5: a player who opened the door at the first try.
+{salvage_opened:
+    It's Gary. Whitlock, from St. Catherine's. HaX says you're through that keypad already. Didn't need me, then.
+- else:
+    It's Gary. Whitlock, from St. Catherine's. HaX says you're stood at a keypad in a tape library.
+    Seen codes like that. Archives key them to the shelf scheme.
+    Read it like a shelf mark, not a number. Vigenère, and the bay's word is the key.
+    There'll be a chart near the keypad.
+}
 + [How's the new job?]
     Director of Cyber Security, me. They gave me a lanyard with my name spelt right. That's how you know it's serious.
     #exit_conversation

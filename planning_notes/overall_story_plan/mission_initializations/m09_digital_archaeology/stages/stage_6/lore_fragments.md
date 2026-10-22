@@ -333,7 +333,7 @@ Only the second line is ciphertext. The first is the catalogue label; it says wh
 The player can solve it with no Gary and no prior missions (C-03).
 
 - **The legend itself** (every route): "House rule: cage and keypad codes use the bay word." A careful player needs nothing else but the operation's name, which the field guide gives.
-- **HaX, hub topic 5**, `salvage_keypad_seen and not salvage_opened` (S4 §7.1). Her texts carry no prefix and no colon at the start of a line, so the label line can't be mistaken for a speaker. Fixed strings:
+- **HaX, hub topic 5**, `salvage_keypad_seen and not salvage_opened` (S4 §7.1). **Superseded (m09 puzzle chains R1 P1): the topic now has three tiers (room, then the bay word and "It's Vigenère.", then the tool); the strings below are history. See `scenarios/m09_digital_archaeology/CONTRACT.md` §2.1 row 5 and §15. Do not restore them.** Her texts carry no prefix and no colon at the start of a line, so the label line can't be mistaken for a speaker. Fixed strings:
   - First ask (C-02, C-04): "Catalogue line from flag one." / "SALVAGE CAGE ACCESS" / "MSJMQAEGDZNVI" / "Just the code, not the label. The key is the salvage bay's word, on the chart in the tape room, by the keypad. If the cipher's new to you, ask me for the archive-code field guide."
   - Asked again, while the keypad is still shut (C-03; ink visit count): "Vigenère Decode, on your workstation. Key: the salvage bay's word. Capitals in, capitals out."
   - On `gary_called`, the first ask ends "Gary told you how." in place of its last sentence.
