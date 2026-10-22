@@ -44,7 +44,8 @@ globalThis.document = {
         removeChild(el) { this.children = this.children.filter(c => c !== el); }
     }
 };
-globalThis.navigator = { userAgent: 'node' };
+// Node 21+ has a read-only navigator getter, so define it rather than assign.
+Object.defineProperty(globalThis, 'navigator', { value: { userAgent: 'node' }, configurable: true, writable: true });
 globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
 globalThis.window = { innerWidth: 1280, gameState: { globalVariables: {} } };
 

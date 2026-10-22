@@ -72,7 +72,8 @@ globalThis.localStorage = {
 };
 globalThis.window = { gameState: { globalVariables: {} } };
 globalThis.document = { getElementById: () => null };
-globalThis.navigator = { userAgent: 'node' };
+// Node 21+ has a read-only navigator getter, so define it rather than assign.
+Object.defineProperty(globalThis, 'navigator', { value: { userAgent: 'node' }, configurable: true, writable: true });
 window.innerWidth = 1400;
 
 const { default: NPCManager } = await import(npcManagerUrl);
