@@ -1111,8 +1111,8 @@ function updatePlayerKeyboardMovement() {
         if (player.isMoving) {
             player.isMoving = false;
             const animDir = getAnimationKey(player.direction);
-            player.anims.stop(); // Stop current animation
-            // Don't interrupt special animations: punch, death, hit, etc.
+            // Don't interrupt special animations: punch, death, hit, etc. A punch
+            // plays out and then returns to idle itself (player-combat.js).
             const currentAnim = player.anims.currentAnim?.key || '';
             if (!currentAnim.includes('punch') && !currentAnim.includes('jab') &&
                 !currentAnim.includes('death') && !currentAnim.includes('taking-punch')) {
@@ -1310,8 +1310,8 @@ function updatePlayerMouseMovement() {
         if (player.isMoving) {
             player.isMoving = false;
             const animDir = getAnimationKey(player.direction);
-            player.anims.stop(); // Stop current animation
-            // Don't interrupt special animations: punch, death, hit, etc.
+            // Don't interrupt special animations: punch, death, hit, etc. A punch
+            // plays out and then returns to idle itself (player-combat.js).
             const currentAnim = player.anims.currentAnim?.key || '';
             if (!currentAnim.includes('punch') && !currentAnim.includes('jab') &&
                 !currentAnim.includes('death') && !currentAnim.includes('taking-punch')) {
