@@ -32,7 +32,8 @@ export const AVOID_CELL_COST = 20;
 export const ROUTE_AROUND_MIN_HEIGHT = 40;
 export const ROUTE_AROUND_PROP_PATTERN =
     /vending|kiosk|atm|photocopier|water_cooler|fridge|locker|filing|cabinet|shel(f|ves)|bookcase|rack|server/;
-const NEVER_AVOID_PATTERN = /plant|planter|fig/;
+// Plants (walked through), signs ("server_sign") and the PIN cracker ("rack" in "cracker").
+const NEVER_AVOID_PATTERN = /plant|planter|fig|_sign|pin-cracker/;
 
 /** Sprite key without frame digits or extension: "vending_machine2" -> "vending_machine". */
 export function avoidBaseKey(sprite) {

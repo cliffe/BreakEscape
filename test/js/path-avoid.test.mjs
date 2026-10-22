@@ -87,6 +87,9 @@ test('which objects are avoided', () => {
     assert.equal(prefersAvoid(prop('server_rack', 80, { hasWheels: true })), false, 'wheels win');
     assert.equal(prefersAvoid(prop('key_cabinet', 60, { elevation: 20 })), false, 'wall-hung props are skipped');
     assert.equal(prefersAvoid(prop('desk_office', 60)), false, 'unlisted props are not avoided');
+    assert.equal(prefersAvoid(prop('hq_server_sign', 45)), false, 'server signs are not servers');
+    assert.equal(prefersAvoid(prop('pin-cracker-large', 45)), false, '"rack" inside "cracker" does not count');
+    assert.equal(prefersAvoid(prop('student_lockers1', 62)), true);
     assert.equal(prefersAvoid(prop('vending_machine', 60, { scenarioData: { preferAvoid: false } })), false, 'scenario false wins');
     assert.equal(prefersAvoid(vending(0, 0, { visible: false })), false, 'hidden or taken objects are ignored');
 });
