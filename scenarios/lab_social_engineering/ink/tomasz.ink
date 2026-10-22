@@ -116,6 +116,7 @@ Tomasz: That report's got three fixes in it. I'll get budget for one this year, 
 
 === debrief_close ===
 Tomasz: Gareth wanted your whole report pinned up in the kitchen. I've talked him down to the executive summary. Thanks for playing it straight.
+#set_global:engagement_closed:true
 #complete_task:closing_debrief
 #exit_conversation
 -> END

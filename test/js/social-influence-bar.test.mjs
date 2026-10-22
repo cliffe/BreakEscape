@@ -135,6 +135,24 @@ test('a change written from ink alone (global event, no influence event) moves t
     bar.destroy();
 });
 
+test('setChangeFromTurn shows a pretext turn total, not the last entry (R6 F1)', () => {
+    setup();
+    const bar = mount({ characterId: 'pierce' });
+    // A wrong-team line applies two entries in one turn: +10 intern, then -30 team. The chat's
+    // tells row shows the sum (-20); the bar's "Last change" must match, not show the -30 entry.
+    bar.setChangeFromTurn([{ delta: 10, reason: 'intern' }, { delta: -30, reason: 'team' }]);
+    assert.match(bar.el.querySelector('.ib-infl-change').textContent, /Last change: -20 team/,
+        'turn total with the leading (largest) factor');
+    // The correction turn nets +20.
+    bar.setChangeFromTurn([{ delta: 10, reason: 'team' }, { delta: 10, reason: 'candour' }]);
+    assert.match(bar.el.querySelector('.ib-infl-change').textContent, /Last change: \+20/);
+    // An ask row with no influence entries leaves the existing line untouched.
+    const before = bar.el.querySelector('.ib-infl-change').textContent;
+    bar.setChangeFromTurn([]);
+    assert.equal(bar.el.querySelector('.ib-infl-change').textContent, before);
+    bar.destroy();
+});
+
 test('destroy unsubscribes and removes the bar', () => {
     setup();
     const bar = mount({ characterId: 'priya' });

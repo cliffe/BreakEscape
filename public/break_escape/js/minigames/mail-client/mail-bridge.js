@@ -610,8 +610,13 @@ export function renderChecklist(result, target, { claimedFrom = null, account = 
 
     // Tell the player the reply is on its way, so closing the client right after a
     // send is not a dead end (P1-T T4). Only when a reply is actually scheduled.
+    // On a landing the banner reads "It landed", but the step that depends on this
+    // send only ticks off once the reply is delivered a few seconds later, so say
+    // plainly that the wait is expected and what it completes (lab R6 F6).
     if (showReplyPending) {
-        panel.appendChild(cl('p', 'mail-checklist-reply', 'A reply may land in your inbox in a moment.'));
+        panel.appendChild(cl('p', 'mail-checklist-reply', result.landed
+            ? 'Their reply is on its way. This step ticks off when it arrives, in a moment.'
+            : 'A reply may land in your inbox in a moment.'));
     }
 
     if (showReplyToNote && claimedFrom && account) {

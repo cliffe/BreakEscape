@@ -32,7 +32,7 @@
       "order": 0,
       "tasks": [
         { "taskId": "scope_cards", "title": "Sort the scope cards on the RoE sheet", "type": "manual", "status": "active" },
-        { "taskId": "stop_rule", "title": "Answer the stop-rule question", "type": "manual", "status": "active" }
+        { "taskId": "stop_rule", "title": "Answer the stop-rule, then get Gareth to sign", "type": "manual", "status": "active" }
       ]
     },
     {
@@ -218,7 +218,9 @@
     "triage_percent": 0,
     "triage_reportRate": 0,
     "triage_done": false,
-    "triage_pass": false
+    "triage_pass": false,
+
+    "engagement_closed": false
   },
 
   "social": {
@@ -658,6 +660,7 @@
         "character": "pierce",
         "address": "m.pierce@ledgerwell.example",
         "displayName": "Melanie Pierce",
+        "role": "Finance (new starter)",
         "subjects": [
           { "id": "s_balance", "text": "For your review", "topic": "finance" },
           { "id": "s_quick", "text": "Quick one", "topic": "general" }
@@ -716,7 +719,7 @@
         "character": "lord",
         "address": "s.lord@ledgerwell.example",
         "displayName": "Sofia Lord",
-        "role": "Finance",
+        "role": "Finance (intern)",
         "subjects": [
           { "id": "s_payslip", "text": "Your payslip is ready", "topic": "payroll" },
           { "id": "s_hi", "text": "Hi", "topic": "general" }
@@ -1119,7 +1122,7 @@
             "why": "Gareth's one condition is no names in anything he reads. Name people and they stop reporting." },
           { "id": "how_far", "step": "measures", "correct": true,
             "text": "How far each attempt gets: sent, landed, failed, page visits and the call outcome.",
-            "why": "Each one points at a step in a process that could have stopped it." },
+            "why": "Count these and the report shows how far each attempt got, without naming a single person." },
           { "id": "passwords_collected", "step": "measures", "correct": false,
             "text": "How many passwords you collected.",
             "why": "We record that a sign-in happened, never what was typed. No password leaves the test." },
@@ -1160,10 +1163,10 @@
             "rootCauses": [
               { "id": "no_verification_script", "correct": true,
                 "text": "No script telling the desk to verify a caller before sharing details",
-                "why": "Dev checked what his policy told him to check: a name and a team. Both were on public pages." },
+                "why": "The service desk checked what its policy told it to check: a name and a team. Both were on public pages." },
               { "id": "dev_fault", "correct": false, "blame": true,
-                "text": "Dev should not have given anything away",
-                "why": "Dev followed the policy he was given; the missing call-back rule is the gap." }
+                "text": "The service desk operator should not have given anything away",
+                "why": "The operator followed the policy they were given; the missing call-back rule is the gap." }
             ],
             "controls": [
               { "id": "callback_on_file", "correct": true,
@@ -1177,7 +1180,7 @@
             "rootCauses": [
               { "id": "no_way_to_check", "correct": true,
                 "text": "Staff have no easy way to check an address or report a suspect page",
-                "why": "Sofia had no bookmark to compare against and no button to press if she was unsure." },
+                "why": "The intern had no bookmark to compare against and no button to press when unsure." },
               { "id": "intern_naive", "correct": false, "blame": true,
                 "text": "The new intern was too green to spot it",
                 "why": "Naming the intern as the cause misses the missing control." }
@@ -1261,7 +1264,7 @@
           ],
           "eventMappings": [
             { "eventPattern": "global_variable_changed:roe_scope_done", "condition": "value === true", "onceOnly": true, "completeTask": "scope_cards" },
-            { "eventPattern": "global_variable_changed:roe_stoprule_done", "condition": "value === true", "onceOnly": true, "completeTask": "stop_rule" },
+            { "eventPattern": "global_variable_changed:fairbairn_condition_heard", "condition": "value === true", "onceOnly": true, "completeTask": "stop_rule" },
             { "eventPattern": "global_variable_changed:plan_objective_done", "condition": "value === true", "onceOnly": true, "completeTask": "pick_objectives" },
             { "eventPattern": "global_variable_changed:plan_measures_done", "condition": "value === true", "onceOnly": true, "completeTask": "pick_measures" },
             { "eventPattern": "global_variable_changed:se_intel_email_pattern", "condition": "value === true", "onceOnly": true, "completeTask": "email_pattern_found" },

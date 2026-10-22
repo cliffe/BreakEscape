@@ -31,6 +31,11 @@ VAR phish_lord_landed = false
 VAR report_filed = false
 VAR triage_pass = false
 VAR profile_done = false
+VAR engagement_closed = false
+
+// Ink-local: show a stage's standalone pointer once per thread, not after every
+// reply (lab R6 F3). Reset nowhere: the globals only move forward.
+VAR stage7_seen = false
 
 === start ===
 -> hub
@@ -45,7 +50,8 @@ VAR profile_done = false
 - not phish_lord_landed: -> stage5
 - not report_filed: -> stage6
 - not (triage_pass and profile_done): -> stage7
-- else: -> stage_done
+- not engagement_closed: -> stage_done
+- else: -> closed
 }
 
 // Each stage checks it is still the current one on entry. The engine resumes a
@@ -191,7 +197,10 @@ Ruth Adeyemi: Sending's done. The report desk, in this room.
 // ---- Stage 7: defender flip ----
 === stage7 ===
 { triage_pass and profile_done: -> hub }
-Ruth Adeyemi: Blue Team room. If that door's locked, I've got the key — come and see me. Tomasz will set you off.
+{ not stage7_seen:
+    ~ stage7_seen = true
+    Ruth Adeyemi: Blue Team room next. Tomasz will set you off.
+}
 + {not fairbairn_payoff_heard} [Has Gareth seen the report?]
     Ruth Adeyemi: He's reading it. Go by the window, he wants a word.
     -> stage7
@@ -209,10 +218,18 @@ Ruth Adeyemi: Blue Team room. If that door's locked, I've got the key — come a
     -> hub
 
 === stage_done ===
+{ engagement_closed: -> hub }
 Ruth Adeyemi: That's the lot. Go and let Tomasz close it out with you.
 + {not fairbairn_payoff_heard} [Anything for Gareth?]
     Ruth Adeyemi: He's read your report. Go and hear what he thinks, by the window.
     -> stage_done
 + [Will do.] #exit_conversation
     Ruth Adeyemi: Good work.
+    -> hub
+
+// ---- After Tomasz's debrief: the engagement is closed, so stop pointing at him ----
+=== closed ===
+Ruth Adeyemi: That's the engagement closed. Nothing more from me — good work today.
++ [Thanks.] #exit_conversation
+    Ruth Adeyemi: Any time.
     -> hub

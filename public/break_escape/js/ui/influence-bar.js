@@ -180,6 +180,26 @@ export class InfluenceBar {
         this.changeText = this._changeLine(best.delta, best.reason);
     }
 
+    /**
+     * Show one pretext turn's net change as the "Last change" line, overriding the
+     * per-entry live events. A pretext line applies several factor entries at once
+     * (person-chat-pretext), and the chat's tells row shows their sum; the bar must
+     * show the same number, not the last single entry (lab R6 F1). The reason word
+     * is taken from the largest-magnitude entry — the factor the tells row leads with
+     * — with ties going to the later entry, as the live path already did.
+     */
+    setChangeFromTurn(entries) {
+        const list = Array.isArray(entries)
+            ? entries.filter((e) => isObject(e) && typeof e.delta === 'number')
+            : [];
+        if (!list.length) return;
+        const total = list.reduce((n, e) => n + e.delta, 0);
+        let lead = list[0];
+        for (const e of list) if (Math.abs(e.delta) >= Math.abs(lead.delta)) lead = e;
+        this.changeText = this._changeLine(total, lead.reason);
+        this.update();
+    }
+
     /** The "Last change: +N reason" line, shared by live events and the log seed. */
     _changeLine(delta, reason) {
         const sign = delta > 0 ? '+' : '';

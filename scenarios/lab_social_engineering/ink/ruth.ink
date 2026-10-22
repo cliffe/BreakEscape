@@ -82,7 +82,7 @@ Ruth Adeyemi: Read the rules of engagement on the board. Properly. Gareth will b
 { roe_scope_done:
     #complete_task:scope_cards
 }
-{ roe_stoprule_done:
+{ fairbairn_condition_heard:
     #complete_task:stop_rule
 }
 { plan_objective_done:

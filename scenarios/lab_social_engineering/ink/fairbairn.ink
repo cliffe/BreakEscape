@@ -71,7 +71,7 @@ Gareth Fairbairn: One condition. No names in anything I read. If someone clicks,
 === payoff ===
 ~ said_payoff = true
 Gareth Fairbairn: I've read your report. Not one name in it, just like I asked.
-Gareth Fairbairn: She'll read it too, the one who nearly paid that invoice. Nothing in it points at her. Thank you.
+Gareth Fairbairn: She'll read it too, the one who nearly wired that invoice to a fake supplier last quarter. Nothing in it points at her. Thank you.
 #set_global:fairbairn_payoff_heard:true
 ~ quiet = true
 ->->

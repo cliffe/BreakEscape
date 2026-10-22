@@ -89,3 +89,33 @@ test('Ruth hands over each key once on a hub reopen and never re-gives it after 
     r = reopen(saved, blue);
     assert.deepEqual(r.gives, [], 'Blue Team key not re-given');
 });
+
+test('stop_rule completes only once Gareth has signed, not when the sheet alone is done (R6 F5)', { skip }, () => {
+    // Get past the opening briefing to the hub once, then reuse that saved state.
+    const s = new Story(json);
+    s.ChoosePathString('start');
+    while (s.canContinue) s.Continue();          // briefing, stops on Gareth's question
+    if (s.currentChoices.length) s.ChooseChoiceIndex(0);
+    while (s.canContinue) s.Continue();          // brief_close -> hub
+    const atHub = s.state.ToJson();
+
+    const stopRuleCompletes = (globalsToSet) => {
+        const g = new Story(json);
+        g.state.LoadJson(atHub);
+        for (const [k, v] of Object.entries(globalsToSet)) {
+            if (g.variablesState.GlobalVariableExistsWithName(k)) g.variablesState[k] = v;
+        }
+        g.ChoosePathString('hub');               // re-runs the recheck tunnel
+        const tags = [];
+        while (g.canContinue) { g.Continue(); for (const t of g.currentTags) tags.push(t); }
+        return tags.includes('complete_task:stop_rule');
+    };
+
+    // Sheet finished (both steps answered) but Gareth has not signed: stop_rule stays open,
+    // so the authorise aim does not complete and the sign scene cannot be skipped.
+    assert.equal(stopRuleCompletes({ roe_signed: true, roe_scope_done: true, roe_stoprule_done: true }), false,
+        'stop_rule stays open until the signature');
+    // Gareth signs (fairbairn_condition_heard): stop_rule completes.
+    assert.equal(stopRuleCompletes({ roe_signed: true, roe_scope_done: true, roe_stoprule_done: true, fairbairn_condition_heard: true }), true,
+        'stop_rule completes on the signature');
+});

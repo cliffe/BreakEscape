@@ -227,6 +227,21 @@ test('the worked example: analyst 68 Getting there, with the headline numbers an
     assert.equal($(s, '.tri-again'), null, '68 meets passPercent 60: no retry');
 });
 
+test('result with no flags ticked hides the per-factor breakdown, leaving only the "nothing to grade" note (R6 triage card)', () => {
+    const s = open(makeSet());
+    click($(s, '.tri-start'));
+    verdict(s, 'm1_it', 'trust');
+    verdict(s, 'm2_payroll', 'report');   // right call, no chips
+    verdict(s, 'm3_parcel', 'delete');    // no chips
+    verdict(s, 'm4_jed', 'report');       // no chips
+    click($(s, '.tri-next'));
+    assert.equal(state(s).step, 'result');
+    // No flag ticked anywhere, so the "Sender address: caught 0 of N" lines must not print.
+    assert.equal($(s, '.tri-skills'), null, 'no skill-by-skill breakdown when no flag was ticked');
+    assert.match($(s, '.tri-weakest').textContent, /nothing to grade skill by skill/i);
+    assert.doesNotMatch($(s, '.tri-weakest').textContent, /caught 0 of/i);
+});
+
 test('the same answers under the awareness profile give 86 and hide false alarms', () => {
     const s = open(makeSet({ scoringProfile: 'awareness', stage: 'training' }));
     playWorkedExample(s);

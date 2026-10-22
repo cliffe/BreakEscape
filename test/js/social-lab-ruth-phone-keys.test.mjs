@@ -57,13 +57,17 @@ test('stage 3 (Operations) opener points the student to Ruth for the key', { ski
     assert.match(t, /come and see me|I've got the key/i, 'points back to Ruth');
 });
 
-test('stage 7 (Blue Team) opener names the key and Ruth', { skip }, () => {
+test('stage 7 (Blue Team) opener points to Tomasz and does NOT re-offer the key the student already holds (R6 F3)', { skip }, () => {
+    // Stage 7 is only reached once report_filed is true, and Ruth hands the Blue Team key
+    // at report_filed, so the key is in the ring by now. The opener must not tell the
+    // student to come to Ruth for a key they already have (lab R6 F3).
     const t = opener({ ...base,
         roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
         phish_pierce_landed: true, landing_payroll_login_built: true, pretext_call_done: true,
         phish_lord_landed: true, report_filed: true });
-    assert.match(t, /key/i, 'names the key');
-    assert.match(t, /come and see me|I've got the key/i, 'points back to Ruth');
+    assert.match(t, /Blue Team|Tomasz/i, 'points to the Blue Team room / Tomasz');
+    assert.doesNotMatch(t, /come and see me|I've got the key|if that door's locked/i,
+        'does not re-offer the key, which was handed at report_filed');
 });
 
 test('stage 4: the "Dev flagged" line shows while the call is still unmade, and stops once it succeeds', { skip }, () => {
@@ -81,4 +85,44 @@ test('stage 4: the "Dev flagged" line shows while the call is still unmade, and 
         phish_pierce_landed: true, pretext_call_reported: true, pretext_call_done: true,
         landing_payroll_login_built: false });
     assert.doesNotMatch(recovered, /flagged that last call/i, 'flagged line clears after a clean second call');
+});
+
+const allDone = {
+    roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
+    phish_pierce_landed: true, landing_payroll_login_built: true, pretext_call_done: true,
+    phish_lord_landed: true, report_filed: true, triage_pass: true, profile_done: true
+};
+
+test('once the engagement is closed the phone stops pointing at Tomasz, with a closed line instead (R6 F2)', { skip }, () => {
+    // Before the debrief: both halves done but not yet closed — it still sends you to Tomasz.
+    const open_ = opener({ ...base, ...allDone });
+    assert.match(open_, /let Tomasz close it out/i, 'before the debrief it still points at Tomasz');
+    // After Tomasz's debrief sets engagement_closed, the phone no longer points at him.
+    const closed = opener({ ...base, ...allDone, engagement_closed: true });
+    assert.doesNotMatch(closed, /let Tomasz close it out|That's the lot/i, 'no longer sends you to Tomasz');
+    assert.match(closed, /engagement closed/i, 'a closed-engagement line instead');
+});
+
+test('stage 7 pointer is printed once, not after every reply (R6 F3)', { skip }, () => {
+    const s = new Story(json);
+    const g = { ...base,
+        roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
+        phish_pierce_landed: true, landing_payroll_login_built: true, pretext_call_done: true,
+        phish_lord_landed: true, report_filed: true };
+    for (const [k, v] of Object.entries(g)) {
+        if (s.variablesState.GlobalVariableExistsWithName(k)) s.variablesState[k] = v;
+    }
+    s.ChoosePathString('start');
+    let all = '';
+    const drain = () => { while (s.canContinue) all += s.Continue(); };
+    drain();
+    // Ask a few hint questions in a row; the standalone pointer must not reprint each time.
+    for (let i = 0; i < 3; i++) {
+        const idx = s.currentChoices.findIndex((c) => !/Thanks\./.test(c.text));
+        if (idx < 0) break;
+        s.ChooseChoiceIndex(idx);
+        drain();
+    }
+    const count = (all.match(/Blue Team room next/g) || []).length;
+    assert.equal(count, 1, 'the Blue Team pointer appears exactly once across the thread');
 });

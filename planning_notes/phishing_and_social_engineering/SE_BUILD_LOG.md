@@ -846,3 +846,76 @@ No C3 items skipped.
 - All 4 touched lab ink files recompiled to `.json` (dev/lord/pierce recompiled identically, no diff).
 - Engine changes are all SE-only paths (social-influence service, pretext debrief, inbox-triage), none
   installed or reached by m01–m10; no shipped mission scenario, ink or audio touched.
+
+## Lab fix round 8 — R6 findings (2026-10-22)
+
+Brief: `scenarios/lab_social_engineering/playtests/FIX_ROUND_R6.md`, detail in `playtests/R6.md`.
+R6 passed 5 of 6 checks; all findings minor. opus48. Not committed. Each logic fix proved on the
+compiled ink / live DOM path, not asserted from a solution guide.
+
+### Findings (live-path proofs)
+
+- **F5 — Gareth's signature was skippable.** The `authorise` aim completed from the RoE sheet alone,
+  before Gareth signed. Re-pointed the `stop_rule` task to complete on `fairbairn_condition_heard`
+  (the sign scene) instead of `roe_stoprule_done`: `scenario.json.erb` eventMapping and `ruth.ink`
+  recheck both now key on it; the task is retitled "Answer the stop-rule, then get Gareth to sign".
+  Still 23 tasks. Proof: `social-lab-ruth-keys` new case drives ruth.json's recheck — stop_rule stays
+  open with the sheet done, completes once `fairbairn_condition_heard` is set.
+- **F6 — dead wait after a landed send.** The checklist banner reads "It landed" but the completing
+  global (and the task tick) only lands with the delayed reply. Pierce/Lord own that global in their
+  `on_email` ink (one owner per target, per PLAN §4), so kept the single-owner design and took the
+  brief's second option: `mail-bridge.js renderChecklist` now, on a landed send with a reply scheduled,
+  says "Their reply is on its way. This step ticks off when it arrives, in a moment." (all three targets
+  go through this). Proof: `social-mail-bridge` landed-send test asserts the new wording.
+- **F2 — Ruth's phone pointed at Tomasz after the close.** Added `engagement_closed` (declared in
+  `globalVariables`, set by `tomasz.ink` `debrief_close`); `ruth_phone.ink` routes to a new `closed`
+  knot once it is set, with a closed-engagement line instead of "Go and let Tomasz close it out".
+  Proof: `social-lab-ruth-phone-keys` new case — the Tomasz pointer shows before the close, the
+  closed line after.
+- **F3 — Ruth's phone repeated the stage-7 pointer after every reply, and offered a key already held.**
+  Stage 7 is only reached once `report_filed`, so the Blue Team key is in the ring; dropped
+  "If that door's locked, I've got the key — come and see me" and gated the pointer behind a
+  `stage7_seen` once-flag → "Blue Team room next. Tomasz will set you off.", printed once.
+  Proof: `social-lab-ruth-phone-keys` — the pointer appears exactly once across three hint questions;
+  the existing stage-7 test updated to assert no key is re-offered.
+- **F1 — Dev call bar "Last change" disagreed with the tells row.** The bar showed the last single
+  influence entry; the tells row shows the turn total. Added `InfluenceBar.setChangeFromTurn(entries)`
+  (sum of the turn's deltas, reason from the largest-magnitude entry) and called it from
+  `pretext-chrome.js ChatInfluence.refresh()`, so the bar matches the tells row. Proof:
+  `social-influence-bar` new case — +10/-30 shows "-20 team", not "-30".
+- **F4 — plan board success text reused the report's wording.** `scenario.json.erb` plan
+  `measures[how_far].why` "Each one points at a step in a process that could have stopped it." →
+  "Count these and the report shows how far each attempt got, without naming a single person."
+- **F7 — triage 60/100 for a right verdict with no flags.** No change: `05` §"Per-message score"
+  specifies a phish verdict = 60 and reasons = `40 × (caught − false)/F` = 0 when nothing is ticked, so
+  60 is correct. Left as-is per the brief ("change it only if it contradicts the doc").
+- **Report, two "Finance" rows.** `labelBy: "role"` resolved both Pierce and Lord to "Finance"
+  (Lord's phishTarget `role` overrode the contact's "Finance intern"). Gave the phishTargets distinct
+  report roles — Pierce "Finance (new starter)", Lord "Finance (intern)". phishTarget.role is read
+  only by the report resolver (mail UI uses the contact role), so no other display changed. Proof:
+  covered by `social-engagement-report` (green).
+- **Report, pairing feedback named "Sofia" and "Dev".** `scenario.json.erb` findings: the service-desk
+  cause/control whys and the look-alike-page why now use roles ("the service desk", "the operator",
+  "the intern"), no names.
+- **Triage card, "caught 0 of N" with no flags.** `inbox-triage-minigame.js`: when no flag was ticked
+  (no catch and no false claim), the per-factor `.tri-skills` breakdown is hidden entirely and only the
+  "nothing to grade skill by skill" line prints. Proof: `social-triage-ui` new case.
+- **Gareth's "the one who nearly paid that invoice".** `fairbairn.ink` payoff → "the one who nearly
+  wired that invoice to a fake supplier last quarter", tying it to the opening's near-miss rather than
+  the student's balance-sheet spoof.
+
+### Gates
+
+- Node (per file, to dodge the known whole-dir runner flake): all touched files green —
+  `social-influence-bar` (new F1 case), `social-mail-bridge` (F6), `social-triage-ui` (triage card),
+  `social-lab-ruth-phone-keys` (F2, F3, updated stage-7), `social-lab-ruth-keys` (F5),
+  `social-triage-scoring`, `social-triage-weakest`, `social-engagement-report`, `validator-social-lab`.
+  Whole `social-*`/`validator-social-*` set: 709 tests, all green per file; one non-deterministic
+  whole-dir flake on `social-mail-runner` (untouched file; passes alone and on re-run).
+- Validator: `validate_scenario.rb scenarios/lab_social_engineering/scenario.json.erb --no-graph
+  --skip-ink --strict-social` → schema passed, exit 0, no errors (standard lab suggestions and the two
+  pre-existing phone-avatar recommended-field notes only).
+- All 4 touched lab ink files recompiled to `.json` (ruth, ruth_phone, fairbairn, tomasz).
+- Engine changes are SE-only paths (influence bar's new method + pretext-chrome refresh, mail-client
+  checklist, inbox-triage result card); none reached by m01–m10. No shipped mission scenario, ink,
+  audio, or lab room art touched.

@@ -284,7 +284,11 @@ test('a landed send offers Done, not Edit & resend, and notes a reply may come',
     assert.ok(host.querySelector('.mail-checklist-banner.landed'));
     assert.equal(host.querySelector('.mail-checklist-edit'), null, 'no Edit & resend after a landing');
     assert.ok(host.querySelector('.mail-checklist-done'), 'Done button shown');
-    assert.ok(host.querySelector('.mail-checklist-reply'), 'a reply-pending line is shown');
+    const reply = host.querySelector('.mail-checklist-reply');
+    assert.ok(reply, 'a reply-pending line is shown');
+    // R6 F6: on a landing the line must say the step completes when the reply arrives,
+    // so the student knows the wait is expected and not a dead end.
+    assert.match(reply.textContent, /on its way|ticks off when it arrives/i);
     host.querySelector('.mail-checklist-done').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
     assert.equal(host.querySelector('.mail-checklist'), null, 'Done dismisses the panel');
 });
