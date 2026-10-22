@@ -396,6 +396,26 @@ module ValidateSocial
       msg ? [err(msg)] : []
     end
 
+    # A page `path` is the part appended after the site's host (the address bar shows
+    # `site.url` + `path`), so it carries no host of its own and a normal path such as
+    # "/careers" must pass. It is still linted like free text for an accidentally embedded
+    # host or real brand: any host-shaped token in it must be ASCII, end .example and name
+    # no real brand, and no real brand word may appear (00 §11; gap 15 — a path is not a host).
+    def self.lint_path(ctx, value, where)
+      return [] if value.nil?
+      return [err("#{where} is missing or empty")] unless value.is_a?(String) && !value.strip.empty?
+
+      issues = []
+      issues << err("#{where} #{value.inspect} contains a non-ASCII character in the source text") unless value.ascii_only? || ascii_ok?(ctx, value)
+      HostLint.host_tokens(value).each do |tok|
+        issues << err("#{where} #{value.inspect} holds the host-shaped token '#{tok}'; a host in a path must be ASCII, end .example and name no real brand")
+      end
+      HostLint.brand_words(value).each do |w|
+        issues << err("#{where} #{value.inspect} names the real brand '#{w}'; paths use invented, .example hosts")
+      end
+      issues
+    end
+
     def self.host_fields(ctx)
       issues = []
       s = ctx.social
@@ -411,7 +431,7 @@ module ValidateSocial
         sites(osint).each do |site|
           Mail.hash_list(site['pages']).each do |pg|
             issues.concat(lint_field(ctx, pg['url'], "social.osint.sites[#{site['id']}].pages[#{pg['id']}].url")) if pg.key?('url')
-            issues.concat(lint_field(ctx, pg['path'], "social.osint.sites[#{site['id']}].pages[#{pg['id']}].path")) if pg.key?('path')
+            issues.concat(lint_path(ctx, pg['path'], "social.osint.sites[#{site['id']}].pages[#{pg['id']}].path")) if pg.key?('path')
           end
         end
       end

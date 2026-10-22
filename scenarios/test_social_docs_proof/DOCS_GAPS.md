@@ -64,3 +64,64 @@ be read.
     name); `tools/playtest/new-game.rb` resolves `<mission>` by `BreakEscape::Mission.name`. `mission.json`
     is optional metadata. None of this is in the three docs. Confirmed by reading `db/seeds.rb` and
     `new-game.rb`.
+
+---
+
+## Closure log — 2026-10-22
+
+Every gap checked against the code before writing. Fixes are in the three docs unless a code/schema/lint
+fix was the right place.
+
+1. **CLOSED** (doc). `room_it` is not broken: `core/game.js:91` registers the key `room_it` → `room_IT.json`.
+   The misleading claim "the `type` must match a file in `assets/rooms/`" was corrected in
+   README_scenario_design.md "Available Room Types" — the type is a Phaser cache key from `game.js`, the
+   match is case-sensitive, and the filename may differ (`room_it` → `room_IT.json`).
+2. **CLOSED** (doc, no change needed). The SE sections now cover the authoring mechanics directly and both
+   name `00` as the companion contract (general intro and attack intro). Where they still point to `00`
+   (the channel-tell library §2, the email identity model §10a), `00` is one of the three source docs and
+   the pointer is to the single-source canonical list — not duplicated into the README, which would drift.
+3. **CLOSED** (doc). Added a worked "minimal mail client" example (one account, one mailbox, a
+   `mail_terminal` with `accountIds`) to README_scenario_design.md, mail-client section.
+4. **CLOSED** (doc). Resolved by the data-only worked example (see gap 17): only `replies.landed` and
+   `outcome.setGlobal` plus the required `factorStrings` are needed; no `social.characters` entry, no
+   `emailRecord`.
+5. **CLOSED** (doc, already covered). README recon-board text already states `intelBoard.people` ids must
+   be `phishTargets` ids and that non-target contacts named by a held fact appear in the contacts strip.
+   The reading in the gap is confirmed; no change needed.
+6. **CLOSED** (doc). Checked the code: `#influence_increased`/`#influence_decreased` are popup-only and
+   never move the value (`chat-helpers.js` lines 204/218), even for a social character; only
+   `#influence_gained/_lost/:N` and `se_influence()` move it (`applySocialInfluenceTag`). Added a "use one
+   mechanism per change, don't combine" note to README_scenario_design.md "Moving influence" and a
+   cross-reference note in README_ink_best_practices.md's influence section.
+7. **CLOSED** (doc). Added a worked "pip-only display" example (`bar: false, number: false, pip: true`,
+   needs a person NPC with a walk sprite) to the Influence section.
+8. **CLOSED** (doc). `setGlobalPrefix` is used verbatim (`resolvePrefix` in `triage-starter.js`); `{stage}`
+   is an optional token, replaced only if present. The lab's `"triage_"` gives `triage_pass`. Clarified the
+   triage `outcome` row.
+9. **CLOSED** (doc). Added "What makes a folder playable" to README_scenario_design.md "Basic Structure":
+   `scenario.json.erb` + a seeded `Mission` row; `mission.json` optional. (See gap 19.)
+10. **OUT OF SCOPE** (not one of the three docs). The harness Node path
+    (`~/.cache/ms-playwright-go/1.57.0/node`) belongs to the playtest-scenario skill doc, which this packet
+    may not edit (`.claude/skills/*`). The answer is recorded here; flagged to the orchestrator for the
+    skill owner.
+11. **CLOSED** (doc). `pretextRelevant` reads `primedFor.distinctiveValues` against `minDistinct`
+    (`judgePretext`), not `interests.topics` (which drive only the open gate). Corrected the factor table
+    and the `interests.topics` row in README_scenario_design.md; `00` §2 was already right.
+12. **CLOSED** (doc). Schema and lint agree: `missing`/`wrong-type` are **sibling** object keys
+    (`{ fail, redFlag }`) of the top-level `fail` (a string), not nested inside `fail`. The doc was
+    ambiguous ("nests"); corrected the `factorStrings` row and added a worked `attachmentPlausible` example.
+13. **CLOSED** (doc). Schema `minimum: 1` and `judgePretext` floor at 1 — there is no zero. A target that
+    needs no distinctive relevance drops `pretextRelevant` from its required factors rather than setting
+    `minDistinct: 0`. Clarified the `primedFor` paragraph.
+14. **CLOSED** (doc). `mailboxes[].owner` must be a `social.people` id (`validate_social/mail.rb:554`).
+    Documented the constraint on the `mailboxes[]` row.
+15. **CLOSED** (lint fix). A `pages[].path` is a URL path, not a host, so `/careers` must pass. Fixed
+    `scripts/validate_social/osint.rb`: paths now get a path-aware lint (`lint_path`) that still rejects an
+    embedded non-`.example` host or real brand but no longer requires the whole value to be a host. Updated
+    the osint validator test; clarified the doc rows for `path` and the host-lint gotcha.
+16. **CLOSED** (doc). `connections` is schema-required on every room; a lone start room needs
+    `"connections": {}`. Added to the Room Connections "Key Points".
+17. **CLOSED** (doc). Added the data-only phishing-target worked example (see gap 4).
+18. **CLOSED** (doc). A `_v2` walk sheet does not imply a `_v2_talk.png`; `spriteTalk`/`spriteVisemes` must
+    be set explicitly (usually the non-`_v2` names). Added to the `spriteTalk` row.
+19. **CLOSED** (doc). Folder requirements documented (see gap 9).

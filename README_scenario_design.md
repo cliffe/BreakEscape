@@ -78,6 +78,14 @@ The validator performs three phases:
 ## Scenario Structure Constraints
 
 ### Basic Structure
+
+**What makes a folder playable.** A scenario lives in `scenarios/<name>/` and needs two things to be loadable:
+
+- a `scenario.json.erb` (the scenario itself). `db/seeds.rb` scans `scenarios/*`, skips any folder with no `scenario.json.erb`, and keys the `Mission` database row on the folder name, so the folder name is the mission id.
+- that seeded `Mission` row. `tools/playtest/new-game.rb <mission>` resolves `<mission>` by `BreakEscape::Mission.name` (the folder name), so a folder that has never been seeded cannot be started. Re-run the seeds after adding a folder.
+
+`mission.json` is **optional** metadata (title, labsheet links and so on); it is not required for the scenario to load, and nothing fails if it is absent.
+
 - Each scenario must have a `scenario_brief` that explains the mission
 - Each scenario must define a top-level `startRoom` field (not nested under `player`) naming the room where the player begins
 - Optionally set a top-level `startPosition` (tile coordinates) to spawn the player at a specific location within `startRoom`. If omitted the player is placed at the room centre:
@@ -103,6 +111,7 @@ Rooms can connect in **four directions**: `north`, `south`, `east`, `west`
 ```
 
 **Key Points**:
+- `connections` is **required on every room by the schema**, including a lone start room with nowhere to go. A single-room scenario still needs `"connections": {}` on that room, or schema validation fails.
 - All directions support both single connections (string) and multiple connections (array)
 - The room layout algorithm positions rooms using breadth-first traversal
 - Multiple rooms in the same direction are positioned side-by-side (N/S) or stacked (E/W)
@@ -230,7 +239,7 @@ With only a `start`, the in-game clock runs at wall speed, so after 25 minutes o
 - Pick the rate from the story's own clock: the time the opening names, the time a late scene names, and how long a typical run takes to get there. Anchors then pin the scenes whose time the dialogue states, so a slow player doesn't see 18:00 when the ink says "gone eight".
 ### Available Room Types
 
-The `type` field of each room must match a file in `public/break_escape/assets/rooms/`. Available types:
+The `type` field of each room must be one of the room keys registered in `public/break_escape/js/core/game.js` (`this.load.tilemapTiledJSON('<type>', 'rooms/<file>.json')`). The key usually matches the map filename, but not always — and the match is **case-sensitive**: `room_it` is a valid type that loads `assets/rooms/room_IT.json`, so looking for a lowercase `room_it.json` finds nothing. Add a new type by registering its key in `game.js`, not by dropping a file into `assets/rooms/`. Available types:
 
 | Room Type | Description |
 |-----------|-------------|
@@ -1003,7 +1012,7 @@ In-world characters with sprites that the player can walk up to and interact wit
 |-------|-------------|
 | `position` | `{ "x": tiles_from_left, "y": tiles_from_top }`. Omit only if `behavior.initiallyHidden: true`. |
 | `spriteSheet` | Character sprite name (see `public/break_escape/assets/characters/`) |
-| `spriteTalk` | Portrait image for dialogue box. Optional — defaults to `assets/characters/{spriteSheet}_talk.png`, then `{spriteSheet}_headshot.png`. Only set it for off-convention filenames. |
+| `spriteTalk` | Portrait image for dialogue box. Optional — defaults to `assets/characters/{spriteSheet}_talk.png`, then `{spriteSheet}_headshot.png`. Only set it for off-convention filenames. **A `_v2` walk sheet is off-convention:** a `spriteSheet` of `female_office_worker_v2` derives `female_office_worker_v2_talk.png`, which does not exist — the talk/viseme art is usually `female_office_worker_talk.png` (no `_v2`). Set `spriteTalk` (and `spriteVisemes`) explicitly for any `_v2` sheet, or the dialogue portrait silently falls back and the validator warns. |
 | `spriteVisemes` | Optional lip-sync portrait: `assets/characters/<key>_visemes.png` (one row of 128px mouth-shape cells) with `<key>_visemes.json` beside it naming each column. While TTS plays, mouth shapes follow the line's text; falls back to `spriteTalk` if absent or unloadable. See `docs/SPRITE_SYSTEM.md`. |
 | `portraitVariants` | Optional alternative portraits: `[{ "name": "ko", "ko": true, "spriteTalk": "...", "spriteVisemes": "...", "avatar": "..." }]`. The first entry whose `condition` (globalVars syntax, `&&` and `||`) and/or `ko` (NPC knocked out) holds replaces those fields in person-chat and the phone avatar; ink `# portrait:<name>` / `# portrait:base` forces one for the rest of a conversation. See `docs/SPRITE_SYSTEM.md`. |
 | `spriteStyle` | Optional look over the world sprite, for holograms and ghosts: `{ "alpha": 0.8, "glow": "#7fe8ff", "flicker": true }`. `alpha` (0.3-1) makes it see-through, `glow` adds a soft outline glow and lights the floor round the NPC (`"light": false` turns the light off, or set `{ "radius", "intensity" }`), `flicker` adds a rare flash-safe dip (off under reduced motion). The frames stay as drawn and the look holds through every animation and a knockout. m08's ATHENA uses it. See `docs/SPRITE_SYSTEM.md`. |
@@ -2015,6 +2024,8 @@ Pierce and Lord, reached only by mail, have a single `wary` threshold and `min: 
 
 The tags behave this way only for an NPC that belongs to a `social.characters` entry; every other NPC keeps the old popup.
 
+**Use exactly one mechanism per change — do not combine them.** The three above each move the value: a direct `~ char_influence += N`, a `#influence_gained[:N]` / `#influence_lost[:N]` / `#influence:N` tag, and `se_influence(delta, reason)`. Pairing a direct `+= N` with a `#influence_gained:N` on the same line moves the value **twice**. The generic `#influence_increased` / `#influence_decreased` tags from `README_ink_best_practices.md` are a different thing: for a social character they are **popup-only** (they show a toast and never touch the value), so do not reach for them to "show" a `+=`. For a social character, prefer the `#influence_gained` / `#influence_lost` tags — they move the value and show the character's own toast in one step.
+
 **What the player sees.** `influenceDisplay` takes `{ bar?, number?, pip? }`, each `true` by default. Put it on `social.influenceDisplay` for the scenario, or on a character's `influence.display` to override key by key. `bar: false` hides the bar everywhere and takes the number with it; `number: false` keeps the bar and drops the printed value; `pip: false` turns off the world pip. Display never changes the mechanics: thresholds, effects, the pretext tells panel and the debrief still run. Neither the lab nor the slice sets these keys, so a sketch:
 
 ```json
@@ -2023,6 +2034,29 @@ The tags behave this way only for an NPC that belongs to a `social.characters` e
   "characters": { "quinn": { "influence": { "start": 0, "display": { "pip": false } } } }
 }
 ```
+
+*Worked example — a pip-only display.* To show a character's standing **only** as the small pip above their walk sprite (no bar, no number anywhere), turn the bar and number off and leave the pip on. The pip appears once influence has moved from `start`, so a fresh game shows nothing until the first change:
+
+```json
+"social": {
+  "characters": {
+    "quinn": {
+      "displayName": "Quinn",
+      "channels": { "person": "quinn_npc" },
+      "influence": {
+        "global": "quinn_influence", "start": 0,
+        "display": { "bar": false, "number": false, "pip": true }
+      },
+      "thresholds": [
+        { "id": "wary", "at": -30, "icon": "wary",
+          "effects": [ { "type": "setGlobal", "global": "quinn_wary", "value": true, "clearOnRearm": true } ] }
+      ]
+    }
+  }
+}
+```
+
+The bar (and with it the number) is gone from the reading pane, the person card and the chat header; the pip is the only feedback. `quinn_npc` must be a real person NPC with a walk sprite in a room, because the pip is drawn on that sprite — a phone- or mail-only character has nowhere to draw it. Declare `quinn_influence` (default `0`, matching `start`) and `quinn_wary` (default `false`) in `globalVariables`. `display` can also be set scenario-wide on `social.influenceDisplay`; the per-character block overrides it key by key.
 
 **Lockouts.** A lockout is stored in two declared globals, `<character>_lockout_until` (elapsed ms; `-1` for a global or permanent lockout; `0` none) and `<character>_lockout_channel` (`person`, `phone`, `email`, `all` or `""`), so it survives a reload with no server change. While it holds, the locked channels refuse before anything opens: talking to the person NPC or ringing the phone contact (including a pretext call) shows "<name> flagged the last attempt and won't talk to you for now — give it a while, then try again more carefully.", and a send to a character locked out on email shows "<name> will not read your mail right now." and is neither judged nor counted. Nothing ticks the timer: a timed lockout lifts the next time the player tries that channel after the wait, and a `until.global` lockout lifts as soon as that global turns true.
 
@@ -2165,7 +2199,7 @@ An in-world browser for researching the target company (design `02`). The player
 | `type` | `company-site` (has `pages[]`), `social` (has `profiles[]`, one page per person) or `document` (has `fields[]`, its properties panel) |
 | `card` | A concept card id shown with the site |
 | `logo`, `logoAlt` | An image under `assets/osint/` |
-| `pages[]` | `{ id, title, path?, url?, showIf?, blocks[] }`. `path` is appended to the site's url in the address bar; `url` replaces it |
+| `pages[]` | `{ id, title, path?, url?, showIf?, blocks[] }`. `path` is appended to the site's url in the address bar (e.g. `path: "/careers"` shows `ledgerwell.example/careers`), so it is a plain URL path and may start with `/`; `url` replaces the whole address instead |
 | `profiles[]` | `{ person, name?, avatar?, handle?, bio?, showIf?, posts[], blocks[] }`; `person` is a `people` id |
 | `fields[]` | `{ id, label, value, fact? }`, the document's metadata |
 
@@ -2199,7 +2233,7 @@ Gotchas:
 
 - **Give every site a `name`.** Without one the tab shows the raw id (lab playtest P2-T).
 - **Every fact needs exactly one granting element, and its `source` must name it.** Facts that come from a call or a mail highlight are exempt.
-- **Hosts are linted.** `sites[].url`, `pages[].url`, `pages[].path`, staff `address` and fact `provides[].address` must be `.example` and ASCII, and no real brand may appear in them or in concept-card text.
+- **Hosts are linted.** `sites[].url`, `pages[].url`, staff `address` and fact `provides[].address` must be `.example` and ASCII, and no real brand may appear in them or in concept-card text. A `pages[].path` is a URL path, not a host, so a plain `/careers` passes; it is still checked for an accidentally embedded host (which must be ASCII and end `.example`) or a real brand.
 - **Teach that lookups can mislead.** The lab's name search returns a namesake (a decoy fact) and its handle search returns nothing. Both are deliberate, and both rely on tools being cheap to try.
 
 ### Inbox triage (`social.triageSets`)
@@ -2211,7 +2245,7 @@ A `triage-workstation` object opens a set by `minigameData.triageSetId`. `conclu
 | Set field | What it does |
 |---|---|
 | `id`, `messages[]`, `outcome` | Required |
-| `outcome` | `{ setGlobalPrefix, passPercent }`. The four result globals are `<prefix>percent`, `<prefix>reportRate`, `<prefix>pass` and `<prefix>done`. `{stage}` in the prefix is replaced by the stage (`triage_{stage}_`) |
+| `outcome` | `{ setGlobalPrefix, passPercent }`. The four result globals are `<prefix>percent`, `<prefix>reportRate`, `<prefix>pass` and `<prefix>done`. The prefix is used **verbatim**: the lab sets `"setGlobalPrefix": "triage_"`, giving `triage_pass`, `triage_done`, and so on (that is why its task keys on `triage_pass`). `{stage}` is an **optional token** inside the prefix, replaced by the effective stage only if you write it — use it when one set runs at several stages and needs distinct globals, e.g. `"triage_{stage}_"` → `triage_pre_pass` / `triage_post_pass`. |
 | `title`, `brief` | Header and the Brief step's text |
 | `stage` | `pre`, `post`, `training` or `mission` (default `mission`). A `pre` or `post` set that is already done reopens read-only |
 | `scoringProfile` | `analyst` (the lab) or `awareness` (default). Analyst marks down false flags and wrongly reported real mail |
@@ -2410,7 +2444,7 @@ The in-game email app (design `01`, `00` §10a). The player composes and sends m
 | Field | Shape | Purpose |
 |---|---|---|
 | `accounts[]` | see below | The sending identities the player can send as. |
-| `mailboxes[]` | `{ id, owner? }` | The mailboxes (folders) the client shows. |
+| `mailboxes[]` | `{ id, owner? }` | The mailboxes (folders) the client shows. `owner`, when set, **must be a `social.people` id** (`validate_social/mail.rb` errors on anything else — an account id fails); omit it when the mailbox has no single owning person. A mailbox id must not contain a dot (ids are saved as dotted keys). |
 | `contacts[]` | see below | The address book, revealed entry by entry as intel is earned. |
 | `seededMessages[]` | see below | Mail placed before play, in an inbox or Sent folder, or scheduled for later. |
 | `payloadKit[]` | `{ id, kind, label, landingPageId? }` | The attachments and links the composer can attach. |
@@ -2436,6 +2470,34 @@ The in-game email app (design `01`, `00` §10a). The player composes and sends m
 **`seededMessages[]`** (`mail-data.js normaliseSeeded`, `mail-scheduler.js`) — pre-placed mail. `id`, `mailbox`, `folder` (`inbox`/`sent`), `from` (a string, passed through whole, or `{ name, address, avatar }`), `to`, `subject`, `body`, `time`, `unread`, `gameTime`. A message can be scheduled with `deliverAt { afterSeconds, global }` rather than appearing at the start, threaded with `thread`, sent from a named account with `fromAccount`, carry `links[]` (`{ id, linkText, destination, realDomain, ... }`), `attachments[]` (`{ id, kind, label, kitId? }`) and `highlights[]` (`{ id, text, grants }` — a span that grants an intel global when read).
 
 **`payloadKit[]`** — the attachments the composer offers. `kind` is one of `document`, `pdf`, `spreadsheet`, `archive`, `image` or `link`; any other value draws as a document. A `link` kind points at a landing page with `landingPageId`.
+
+*Worked example — a minimal mail client.* The smallest client that can send: one sending account, the mailbox it reads and sends from, and a `mail_terminal` object that lists that account in `accountIds`. The account's `mailbox` must be one of the `mailboxes[]` ids, and every id in a `mail_terminal`'s `accountIds` must be a real `accounts[]` id:
+
+```json
+"social": {
+  "mailClient": {
+    "mailboxes": [ { "id": "guest_inbox" } ],
+    "accounts": [
+      { "id": "guest", "kind": "given", "mailbox": "guest_inbox",
+        "address": "you@tarnside.example", "displayName": "You",
+        "person": null, "spoofsFrom": true }
+    ],
+    "payloadKit": [
+      { "id": "kit_cv", "kind": "document", "label": "My CV" }
+    ]
+  }
+}
+```
+
+The object that opens it, placed on a desk PC in a room:
+
+```json
+{ "type": "mail_terminal", "name": "Workstation",
+  "position": "as-type:pc",
+  "minigameData": { "accountIds": ["guest"], "defaultAccount": "guest" } }
+```
+
+The sprite `assets/objects/mail_terminal.png` must exist (a missing one is a social lint error). `mailboxes[]` here has no `owner` because the guest inbox belongs to no `social.people` person; set `owner` only to a `social.people` id. This client has no `contacts[]` or `seededMessages[]` — both are optional. A composed email still needs a `social.templates` set and at least one `social.phishTargets` entry whose `address` the player sends to (next sections).
 
 ### The composer templates (`social.templates`)
 
@@ -2470,7 +2532,7 @@ The seven factors:
 | `senderTrust` | The `From` identity is one the target acts on (`primedFor.trusts`; `"*"` trusts anyone). |
 | `senderAuth` | The sender authentication would survive — derived from `senderAuth` (SPF/DKIM alignment and `dmarcPolicy`). |
 | `addressedTo` | The greeting addresses the target an acceptable way (`addressedAs`). |
-| `pretextRelevant` | The pretext matches a topic in `interests.topics`. |
+| `pretextRelevant` | The pretext's chosen and implied slot values include at least `primedFor.minDistinct` of the target's `primedFor.distinctiveValues` (counted in `judgePretext`). It does **not** read `interests.topics` — those drive only the open gate (below). A target that requires `pretextRelevant` therefore needs at least one `distinctiveValue`; a target with none can never pass it. |
 | `attachmentPlausible` | The attached payload matches `primedFor.expectedAttachment` (missing or wrong-type otherwise). |
 | `urgencyCalibrated` | The pretext's `urgency` is at or below `urgency.advisoryMax`. |
 | `linkCredible` | The link uses the brand/host in `expectedLink` at a convincing enough tier (judged with the landing page). |
@@ -2485,7 +2547,7 @@ A target declares which factors are mandatory and which only advise, as `require
 | `emailReplyDelay` | number | Seconds before the reply lands. |
 | `redFlagMeter` | boolean | Whether the red-flag meter is shown for this target. |
 | `subjects[]` | `{ id, text, topic }` | The subject lines the composer offers. |
-| `interests.topics[]` | string[] | Topics the target will open mail about (the `open` gate and `pretextRelevant`). |
+| `interests.topics[]` | string[] | Topics the target will open mail about — the `open` gate only. (It does **not** feed `pretextRelevant`, which reads `primedFor.distinctiveValues`.) |
 | `templateSets` | `{ from[], greeting[], pretext[], ask[] }` | Template ids offered per part. |
 | `primedFor` | see below | What makes a believable email for this person. |
 | `addressedAs[]` | string[] | Intel-fact ids for the accepted greetings. |
@@ -2494,14 +2556,61 @@ A target declares which factors are mandatory and which only advise, as `require
 | `urgency.advisoryMax` | `"low"`/`"medium"`/`"high"` | Highest urgency that still passes `urgencyCalibrated`. |
 | `expectedLink` | `{ brandId, realDomain }` | For a target that requires `linkCredible`, the brand and real host a credible link must use. |
 | `requiresIntelToAttempt[]` | string[] | Globals that must be set before the target can be attempted. |
-| `factorStrings` | per-factor `{ pass, fail, redFlag }` | Authored feedback. `attachmentPlausible` nests `missing` and `wrong-type`; `redFlag` may be `null`; an `open` entry covers the open gate. Empty strings are a lint error. |
+| `factorStrings` | per-factor `{ pass, fail, redFlag }` | Authored feedback, keyed by factor id (plus `open`). Each entry's `pass` and `fail` are **strings** and `redFlag` is a string or `null`; an absent key or `null` takes the canonical line. `attachmentPlausible` may add **sibling** keys `missing` and `wrong-type` — each an object `{ fail, redFlag }` (a failure state, so no `pass`) that sits **beside** the top-level `pass`/`fail`/`redFlag`, not nested inside `fail`. The top-level `fail` stays a plain string. Empty strings are a lint error (omit the key, or use `null`, for the canonical line). See the worked example below. |
 | `hints[]` | string[] | A hint ladder: the engine shows `hints[priorFailures - 1]`, so the first entry is the softest rung. |
 | `hintsByFactor` | factor id → string or variants | An opt-in hint keyed to the factor that actually failed (`phish-rules.js selectFactorHint`). `senderTrust` reads `{ spoof, ownFrom, forced }`; `linkCredible` reads `{ missing, wrong }`; any other factor reads `{ spoof, forced }`. Linted by `validate_social/options.rb`. |
 | `replies.landed` | string | The reply text sent when the email lands (the judge reads `landed`). |
 | `outcome.setGlobal` | global → value, or one global name | Set on a landing; the client sets the first to `true`. |
 | `boostIfGlobal` / `strictIfGlobal` | global → factor id | Relax or tighten one factor when a global holds. Both act on a copy of the target; `boostIfGlobal` has no in-scenario use. |
 
-**`primedFor`** — `trusts[]` (sender identities the target acts on), `distinctiveValues[]` and `genericValues[]` (the facts that make the email specific), `minDistinct` (how many distinctive values are needed), `expectedAttachment` (a payload `kind`), and `story` (a plain-English description of the one believable email, for authors).
+**`primedFor`** — `trusts[]` (sender identities the target acts on), `distinctiveValues[]` and `genericValues[]` (the facts that make the email specific), `minDistinct` (how many distinctive values `pretextRelevant` needs), `expectedAttachment` (a payload `kind`), and `story` (a plain-English description of the one believable email, for authors).
+
+`minDistinct` is **at least 1**: the schema sets `minimum: 1`, and `judgePretext` floors an absent or zero value at 1. There is no "zero distinctive values needed" setting. A target that should land with no distinctive relevance (a permissive or data-only target) must simply **not** list `pretextRelevant` among its required factors — drop it, or mark it advisory — rather than set `minDistinct: 0`.
+
+*Worked example — the `attachmentPlausible` strings in `factorStrings`.* The attachment factor is the one factor whose failure has two states. Its entry keeps the normal `pass`/`fail`/`redFlag` and adds `missing` and `wrong-type` as **sibling** objects (each a failure, so each has only `fail` and an optional `redFlag`). The top-level `fail` is the general line; the state objects override it for the two specific failures:
+
+```json
+"factorStrings": {
+  "attachmentPlausible": {
+    "pass": "The attachment is exactly what I asked for.",
+    "fail": "That file isn't what I expected.",
+    "redFlag": null,
+    "missing": { "fail": "You said you'd attach the sheet, but there's nothing here." },
+    "wrong-type": { "fail": "Why would you send me that file type?", "redFlag": "Attachment type doesn't fit the stated purpose" }
+  },
+  "open": { "pass": "✓ They would open it", "fail": "Nothing about the sender or subject made them open it." }
+}
+```
+
+The top-level `fail` stays a string: nesting `missing`/`wrong-type` **inside** `fail` is rejected by the schema (`fail of type object did not match string`). Omit a key, or set it to `null`, to take the canonical line; an empty string is a lint error.
+
+*Worked example — a data-only phishing target.* A target with no NPC behind it (no `character`, no `emailRecord`) needs only `replies.landed` and `outcome.setGlobal`, plus the `factorStrings` the lint requires. There is no `social.characters` entry and no ink story: when the email opens and lands, `mail-bridge.js` schedules a text job that delivers `replies.landed` and sets the first `outcome.setGlobal` key to `true`. A target must have exactly one outcome owner, so a data-only target must **not** also carry a `character` (that is a lint error):
+
+```json
+{
+  "id": "clerk",
+  "address": "records@ledgerwell.example",
+  "displayName": "Records desk",
+  "subjects": [ { "id": "s_request", "text": "Records request", "topic": "records" } ],
+  "interests": { "topics": ["records"] },
+  "templateSets": {
+    "from": ["from_own"], "greeting": ["greet_generic"],
+    "pretext": ["pretext_records"], "ask": ["ask_send_file"]
+  },
+  "primedFor": { "trusts": ["*"], "distinctiveValues": [], "genericValues": [] },
+  "requiredFactors": ["senderTrust", "addressedTo"],
+  "addressedAs": ["clerk_role"],
+  "factorStrings": {
+    "open": { "pass": "✓ They would open it", "fail": "Nothing made them open it." },
+    "senderTrust": { "pass": "✓ Sender looked trusted", "fail": "Who is this?", "redFlag": null },
+    "addressedTo": { "pass": "✓ Addressed by name", "fail": "This has no name on it.", "redFlag": null }
+  },
+  "replies": { "landed": "Request received, we'll action it." },
+  "outcome": { "setGlobal": { "phish_clerk_landed": true } }
+}
+```
+
+The open inbox trusts every sender (`trusts: ["*"]`), so the message opens and `senderTrust` passes without recon. `pretextRelevant` is deliberately **not** in `requiredFactors` (this target has no distinctive values to match — see the `minDistinct` note above). A task keys on the landing global `phish_clerk_landed`, not on the mail minigame closing; declare that global (default `false`). `factorStrings` must give a non-empty `pass`/`fail` for each evaluated factor and an `open` entry.
 
 ### Pretext calls (`social.pretextNpcs`)
 

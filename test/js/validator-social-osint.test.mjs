@@ -158,11 +158,15 @@ test('00 section 11 lint field list: host-only .example on url and address field
   has(/createMenu\[c1\]\.address "tarnside/, 0);
 });
 
-test('F6/R-11: a page `path` is linted like a host (§11 field list), a clean .example path passes', { skip }, () => {
-  const bad = mutated((s) => { s.social.osint.sites[0].pages[0].path = 'ledgerwell.com/profile'; });
-  assert.equal(hits(lint(bad), /❌.*pages\[team\]\.path "ledgerwell\.com\/profile": host 'ledgerwell\.com' does not end \.example/).length, 1);
-  const good = mutated((s) => { s.social.osint.sites[0].pages[0].path = 'ledgerwell.example/team/profile'; });
-  assert.equal(hits(lint(good), /pages\[team\]\.path/).length, 0, 'a .example page path raises nothing');
+test('gap 15: a page `path` is a URL path, not a host — a plain path passes, an embedded bad host or brand still fails', { skip }, () => {
+  for (const ok of ['/careers', 'careers', 'careers/jobs', 'ledgerwell.example/team/profile']) {
+    const good = mutated((s) => { s.social.osint.sites[0].pages[0].path = ok; });
+    assert.equal(hits(lint(good), /pages\[team\]\.path/).length, 0, `a clean path (${ok}) raises nothing`);
+  }
+  const badHost = mutated((s) => { s.social.osint.sites[0].pages[0].path = 'ledgerwell.com/profile'; });
+  assert.equal(hits(lint(badHost), /❌.*pages\[team\]\.path "ledgerwell\.com\/profile" holds the host-shaped token 'ledgerwell\.com'/).length, 1);
+  const badBrand = mutated((s) => { s.social.osint.sites[0].pages[0].path = 'paypal.example/login'; });
+  assert.ok(hits(lint(badBrand), /❌.*pages\[team\]\.path/).length >= 1, 'a real brand in a .example host inside the path still fails');
 });
 
 test('00 section 11: denylist with fold-and-match, on hosts', { skip }, () => {

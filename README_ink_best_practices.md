@@ -1164,6 +1164,8 @@ Every NPC can track an **influence** variable representing your relationship wit
 
 **CRITICAL REQUIREMENT**: You MUST include `# influence_increased` after every `influence +=` statement and `# influence_decreased` after every `influence -=` statement. These tags are required for the game to display visual feedback to players. This applies regardless of the variable name used (e.g., `influence`, `marcus_influence`, `rapport`, `favour`). A `+= 0` no-op needs no tag (nothing changed).
 
+> **Social-engineering characters are different.** The rule above is for ordinary NPCs. A character with a `social.characters` entry (the mail/pretext influence system — see `README_scenario_design.md`, "Influence") uses a separate tag family, `#influence_gained[:N]` / `#influence_lost[:N]` / `#influence:N`, that **moves the value itself**. For those characters, move the value exactly one way (a direct `~ char_influence += N`, or one of those tags, or `se_influence()`) and do not add a second. `#influence_increased` / `#influence_decreased` on a social character are popup-only (they never change the value), so do not pair them with a `+=` to "show" it — use `#influence_gained` / `#influence_lost`, which move the value and show the toast together.
+
 ### Implementation
 
 #### 1. Declare the Influence Variable
