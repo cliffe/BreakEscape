@@ -1,0 +1,802 @@
+{
+  "scenario_id": "awareness_e2_cv_lures",
+  "scenario_name": "CV lures: both sides",
+  "scenario_brief": "Awareness episode E2. You're on an authorised exercise at Tarrowby Logistics, a fictional haulier. First you're on the red team: research the open vacancy and the recruiter, then send one job application with a CV attached that looks like any other candidate's. Then you swap seats and cover the recruitment inbox the same kind of message lands in. Only the inbox is scored.",
+  "endGoal": "Send the application email, then sort the recruitment inbox at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "red_team_aim",
+      "title": "Send the application email",
+      "description": "Research Tarrowby's open vacancy and its recruiter Fatima Begum, then send one job application with a CV attached to the recruitment team.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "land_recruiter_contact",
+          "title": "Land your application on the recruiter",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "recruitment_inbox_aim",
+      "title": "Cover the recruitment inbox",
+      "description": "Sort the recruitment inbox at the training kiosk.",
+      "status": "active",
+      "order": 1,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e2_cv_lures_defend_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "CV lures episode done",
+        "body": "You've written your application, seen it from the other side and sorted the recruitment inbox, so this episode is finished."
+      },
+      "tasks": [
+        {
+          "taskId": "sort_recruitment_inbox",
+          "title": "Sort the recruitment inbox",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e2_cv_lures_state": {},
+    "se_awareness_records": [],
+    "episode_e2_cv_lures_defend_percent": 0,
+    "episode_e2_cv_lures_defend_reportRate": 0,
+    "episode_e2_cv_lures_defend_done": false,
+    "episode_e2_cv_lures_defend_pass": false,
+    "se_osint_state": {},
+    "se_intel_tarrowby_recruiter": false,
+    "se_intel_tarrowby_vacancy": false,
+    "se_intel_tarrowby_hiring_manager": false,
+    "se_intel_tarrowby_cv_request": false,
+    "phish_recruiter_contact_landed": false,
+    "phish_recruiter_contact_attempts": 0
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "e2_recruitment_inbox",
+        "playerSentAuth": { "accounts": { "analyst": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "{account_address}" } } },
+        "title": "Tarrowby recruitment inbox",
+        "brief": "You're covering Tarrowby's recruitment inbox while Fatima is in interviews. Six messages are waiting, and attachments show as labels. For each one, choose Trust, Report or Delete, then tick what you noticed. Reporting a real message never costs you anything.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": false,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "enable_content_prompt"
+        ],
+        "flagChips": {
+          "enable_content_prompt": "It asks me to turn on editing or content to see it"
+        },
+        "outcome": {
+          "setGlobalPrefix": "episode_e2_cv_lures_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e2_agency_shortlist",
+            "from": {
+              "name": "Roseanne Wadsworth",
+              "address": "roseanne.wadsworth@kettlewick.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Shortlist: warehouse supervisor (nights)",
+            "time": "08:40",
+            "body": "Morning Fatima,\nAs promised on Friday, here are my three candidates for Colin's night supervisor role. All three have done nights before and can start within a month. Let me know who he'd like to meet and I'll set up the times.\nBest,\nRoseanne\nKettlewick Talent",
+            "attachments": [
+              {
+                "id": "cv1",
+                "label": "Shortlist_CV_1.pdf",
+                "kind": "pdf"
+              },
+              {
+                "id": "cv2",
+                "label": "Shortlist_CV_2.pdf",
+                "kind": "pdf"
+              },
+              {
+                "id": "cv3",
+                "label": "Shortlist_CV_3.pdf",
+                "kind": "pdf"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "kettlewick.example",
+              "replyTo": "roseanne.wadsworth@kettlewick.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "lookalike_domain": "kettlewick.example is the agency's real domain, the one Tarrowby already deals with.",
+                "attachmentPlausible": "Three PDFs for three shortlisted candidates is exactly what she said she'd send, and PDFs open in the viewer without asking for anything.",
+                "default": "The agency you already use, writing from its real address, following up a conversation you know about."
+              }
+            }
+          },
+          {
+            "id": "e2_portfolio_lookalike",
+            "from": {
+              "name": "Liam Baxter",
+              "address": "liam.baxter@inboxly.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "CV attached: warehouse supervisor",
+            "time": "09:05",
+            "body": "Hello,\nPlease find my CV attached for the warehouse supervisor job. If the attachment doesn't come through, I've also put my CV and portfolio on your careers portal:\n{{link:cv}}\nYou'll need to sign in with your Tarrowby account to see it.\nThanks,\nLiam Baxter",
+            "links": [
+              {
+                "id": "cv",
+                "text": "tarrowby-careers.example/cv/4471",
+                "destination": "https://tarrowby-careers.example/cv/4471"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "liam.baxter@inboxly.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "attachmentPlausible"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "The link goes to tarrowby-careers.example, not tarrowby.example. Tarrowby's own sites all end in tarrowby.example; an extra word with a hyphen makes it someone else's",
+                "attachmentPlausible": "It says the CV is attached, but nothing is. The 'portfolio' link is there to replace it, and it wants your Tarrowby sign-in"
+              },
+              "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password, so whoever runs tarrowby-careers.example could read the recruitment inbox and every candidate's details in it.",
+              "reportReply": "Thanks. Tarrowby has no careers portal on that address, and no candidate needs your password to send a CV. We've blocked tarrowby-careers.example."
+            }
+          },
+          {
+            "id": "e2_cv_pdf",
+            "from": {
+              "name": "Tendai Moyo",
+              "address": "tendai.moyo@inboxly.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Application: warehouse supervisor (nights)",
+            "time": "09:30",
+            "body": "Dear Fatima,\nI saw Tarrowby's post asking for CVs for the night supervisor role, and I'd like to apply. I've run a night shift of twenty pickers at a supermarket distribution centre for the last four years. My CV is attached as a PDF.\nI'm free for interview any weekday.\nKind regards,\nTendai Moyo",
+            "attachments": [
+              {
+                "id": "cv",
+                "label": "Tendai_Moyo_CV.pdf",
+                "kind": "pdf"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "tendai.moyo@inboxly.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderTrust": "Candidates apply from their personal email, so an inboxly.example address is normal here. The name and the address match.",
+                "attachmentPlausible": "It says the CV is attached, and it is: one PDF, which opens in the viewer.",
+                "addressedTo": "It's addressed to Fatima by name and names the job.",
+                "default": "A personal address is normal for a candidate. The CV is attached, the email names the job and the person, and it asks for nothing but an interview."
+              }
+            }
+          },
+          {
+            "id": "e2_enable_content",
+            "from": {
+              "name": "Jordan Kerr",
+              "address": "jordan.kerr.cv@quickpost-mail.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Job application",
+            "time": "10:10",
+            "body": "Dear Hiring Manager,\nPlease find my CV attached for the vacancy.\nFor my privacy the document is protected. When it opens, click Enable Editing and then Enable Content at the top of the page, and the CV will appear.\nRegards,\nJordan Kerr",
+            "attachments": [
+              {
+                "id": "cv",
+                "label": "CV_JKerr_protected.docx",
+                "kind": "document"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quickpost-mail.example",
+              "replyTo": "jordan.kerr.cv@quickpost-mail.example"
+            },
+            "factorStrings": {
+              "enable_content_prompt": {
+                "redFlag": "The document asks you to enable editing or content before it will show anything"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "enable_content_prompt",
+                "addressedTo"
+              ],
+              "perFlagNote": {
+                "enable_content_prompt": "A real CV shows up as soon as you open it. 'Click Enable Editing and then Enable Content' is the step the file needs you to take before it can run anything",
+                "addressedTo": "'Dear Hiring Manager' and 'the vacancy', with no name and no job: it could have gone to any company with any job open"
+              },
+              "ifTrusted": "Switching on content would let the document run a small program on your computer, which could give whoever sent it a way into Tarrowby's network.",
+              "reportReply": "Thanks. That file was set up to run a hidden program once content was switched on. We've blocked the sender and checked nobody else opened it."
+            }
+          },
+          {
+            "id": "e2_cv_docx",
+            "from": {
+              "name": "Darius Petrauskas",
+              "address": "darius.petrauskas@inboxly.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "HGV driver (Class 1): application",
+            "time": "10:45",
+            "body": "Hello Fatima,\nI'm applying for the Class 1 driver job on your website. I have twelve years of general haulage and a clean licence. My CV is attached as a Word document.\nThank you,\nDarius Petrauskas",
+            "attachments": [
+              {
+                "id": "cv",
+                "label": "Darius_Petrauskas_CV.docx",
+                "kind": "document"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "darius.petrauskas@inboxly.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "enable_content_prompt": "It's a Word file, which is normal for a CV. In the viewer it shows the whole CV read-only and asks you to switch nothing on.",
+                "attachmentPlausible": "A CV attached to an application is what you'd expect, and a Word document is a common way to send one.",
+                "senderTrust": "Candidates apply from their personal email, so an inboxly.example address is normal here.",
+                "default": "A named job, a named person, a CV that's really attached, and nothing to switch on or sign in to."
+              }
+            }
+          },
+          {
+            "id": "e2_colin_interviews",
+            "from": {
+              "name": "Colin Mather",
+              "address": "colin.mather@tarrowby.example"
+            },
+            "to": "recruitment@tarrowby.example",
+            "subject": "Night supervisor interviews: Thursday?",
+            "time": "11:20",
+            "body": "Hi both,\nThanks for the shortlist from Kettlewick. Could we see all three on Thursday morning? I'm on site from seven. Put them in the recruitment system as usual and I'll pick up the details there.\nColin\nWarehouse Manager, Normanton",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "colin.mather@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderTrust": "Colin's real Tarrowby address, and it's his vacancy.",
+                "default": "The hiring manager, from his own address, asking for interviews through the normal system. Nothing to open, pay or sign in to."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e2_cv_lures",
+      "role": "hr_recruitment",
+      "company": "tarrowby_logistics",
+      "brand": {
+        "name": "Tarrowby Logistics",
+        "logoText": "TARROWBY",
+        "accent": "#3b5b8c"
+      },
+      "variant": "full",
+      "durationTargetMin": 13,
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: one job application email to the recruitment contact you find, and the Tarrowby recruitment inbox. Nothing you write leaves the game, and the attachment is a label, not a file.",
+      "stages": [
+        "brief",
+        "osint",
+        "write",
+        "flip",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "sort_recruitment_inbox",
+      "attack": {
+        "target": "recruiter_contact",
+        "siteIds": [
+          "tarrowby_site",
+          "tarrowby_social"
+        ],
+        "accountIds": [
+          "analyst"
+        ],
+        "defaultAccount": "analyst",
+        "showRedFlagMeter": true,
+        "maxMessages": 1,
+        "scored": false
+      },
+      "defend": {
+        "setId": "e2_recruitment_inbox",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. First you're on the red team: look at what Tarrowby has posted about its open jobs, then write one job application to its recruitment team, with an attachment picked from a list of labels. Nothing real is attached or sent. Then you swap seats and sort a recruitment inbox like the one your email landed in. Only the inbox is scored.",
+        "flipHeading": "Now it lands on you",
+        "flipIntro": "This is the application you just sent, as Tarrowby's recruitment team would see it. The parts picked out below are what make it believable.",
+        "flipDefenderLine": "Jun in HR opened it between two interviews, with forty applications still to read. It looked like one more CV for the warehouse job, so he opened the attachment and did what it asked. People who fall for messages like this are not stupid: this one was built to look right.",
+        "flipNoSend": "Your application didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives in a recruitment inbox, and you're the one opening it.",
+        "noBlameLine": "Nobody is marked down for a miss here. Every one of these messages was built to look right, and opening attachments from strangers is part of a recruiter's job. The people who get caught out are busy, not careless.",
+        "mondayCard": "On Monday: read CVs in the viewer, and if a document asks you to enable editing or content, don't. If a CV is 'too big to attach' and sits behind a link that wants you to sign in, ask the candidate to send it as an attachment instead. Then report anything odd the way your organisation asks you to.",
+        "defendOnly": "You went straight to the inbox this time. These messages were written by people whose job is to make them look right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine.",
+        "conceptPanel": {
+          "heading": "Why 'enable content' matters",
+          "text": "Office documents can carry macros, small programs that run inside the file. Many organisations now block macros in files that arrive from the internet, so this trick works less often than it used to. The lure still turns up, though, because it only has to work once. Reading a CV in the viewer is always enough; a real CV never needs you to switch anything on."
+        }
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "people": [
+      {
+        "id": "fatima",
+        "kind": "cast",
+        "address": "fatima.begum@tarrowby.example",
+        "forms": {
+          "first": "Fatima",
+          "formal": "Ms Begum",
+          "full": "Fatima Begum"
+        }
+      },
+      {
+        "id": "colin",
+        "kind": "cast",
+        "address": "colin.mather@tarrowby.example",
+        "forms": {
+          "first": "Colin",
+          "formal": "Mr Mather",
+          "full": "Colin Mather"
+        }
+      },
+      {
+        "id": "jun",
+        "kind": "cast",
+        "address": "jun.watanabe@tarrowby.example",
+        "forms": {
+          "first": "Jun",
+          "full": "Jun Watanabe"
+        }
+      }
+    ],
+    "intelFacts": {
+      "tarrowby_recruiter": {
+        "text": "Fatima Begum is Tarrowby's Recruitment Lead, and CVs for current vacancies are sent straight to her.",
+        "subject": "fatima",
+        "source": "blk_recruiter",
+        "provides": [],
+        "reduceNote": "Naming one person as the inbox for every CV tells an attacker exactly who opens attachments from strangers, and who to aim a malicious CV at."
+      },
+      "tarrowby_vacancy": {
+        "text": "Tarrowby is advertising a Warehouse Operative vacancy, reference WHO-114.",
+        "subject": "colin",
+        "source": "blk_vacancy",
+        "provides": [
+          {
+            "type": "reference",
+            "value": "vacancy_who114",
+            "label": "the Warehouse Operative role (WHO-114)",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "A public vacancy reference gives a fraudster the exact role to quote, so an application lands as expected."
+      },
+      "tarrowby_hiring_manager": {
+        "text": "Colin Mather is Tarrowby's Warehouse Manager and the hiring manager for the open warehouse roles.",
+        "subject": "colin",
+        "source": "blk_hiring_mgr",
+        "provides": [
+          {
+            "type": "name",
+            "value": "mather_full",
+            "label": "Colin Mather",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "Publishing the hiring manager's name lets a candidate name-drop the right person, which makes a cold application feel expected."
+      },
+      "tarrowby_cv_request": {
+        "text": "A Tarrowby recruitment post asks people to email their CV straight in for the warehouse roles.",
+        "subject": "fatima",
+        "source": "post_cv_request",
+        "provides": [],
+        "reduceNote": "A post inviting the public to email CVs trains staff to open unsolicited attachments; point applicants at an upload portal instead."
+      }
+    },
+    "templates": {
+      "from_own": {
+        "part": "from",
+        "text": "{account_name} <{account_address}>",
+        "slots": []
+      },
+      "greet_generic": {
+        "part": "greeting",
+        "text": "Hello,",
+        "slots": []
+      },
+      "pretext_application": {
+        "part": "pretext",
+        "text": "I'd like to apply for {vacancy}, which I understand {hiring_manager} is recruiting for. My CV is attached for your review.",
+        "slots": [
+          {
+            "id": "vacancy",
+            "type": "reference",
+            "label": "which vacancy"
+          },
+          {
+            "id": "hiring_manager",
+            "type": "name",
+            "label": "the hiring manager"
+          }
+        ],
+        "urgency": "high"
+      },
+      "pretext_general": {
+        "part": "pretext",
+        "text": "I wanted to introduce myself and tell you a little about my background, in case anything suitable comes up.",
+        "slots": [],
+        "urgency": "low"
+      },
+      "ask_review": {
+        "part": "ask",
+        "text": "Could you confirm you have received my CV and let me know the next steps before the closing date today?",
+        "slots": [],
+        "urgency": "medium"
+      }
+    },
+    "mailClient": {
+      "accounts": [
+        {
+          "id": "analyst",
+          "address": "a.rendell.jobs@inboxly.example",
+          "displayName": "Alex Rendell",
+          "kind": "given",
+          "person": null,
+          "mailbox": "analyst",
+          "spoofsFrom": false
+        }
+      ],
+      "mailboxes": [
+        {
+          "id": "analyst"
+        }
+      ],
+      "contacts": [
+        {
+          "id": "fatima",
+          "person": "fatima",
+          "name": "Fatima Begum",
+          "addresses": [
+            "fatima.begum@tarrowby.example"
+          ],
+          "role": "Recruitment Lead",
+          "revealedBy": "se_intel_tarrowby_recruiter",
+          "targetId": "recruiter_contact"
+        }
+      ],
+      "payloadKit": [
+        {
+          "id": "kit_cv",
+          "kind": "document",
+          "label": "CV (Word document)"
+        },
+        {
+          "id": "kit_portfolio_zip",
+          "kind": "archive",
+          "label": "Portfolio (zip archive)"
+        }
+      ],
+      "seededMessages": [
+        {
+          "id": "brief",
+          "mailbox": "analyst",
+          "from": {
+            "name": "Red team lead",
+            "address": "lead@redteam.example",
+            "avatar": "npc_neutral"
+          },
+          "to": "a.rendell.jobs@inboxly.example",
+          "subject": "Authorised exercise: Tarrowby Logistics",
+          "body": "Hello,\n\nThis is the authorised Tarrowby Logistics exercise. In scope: this inbox and the recruitment team on it. Research the open vacancy and the recruiter, then send one candidate email with a CV attached. Nothing leaves this account.\n\nRed team lead",
+          "time": "09:04",
+          "unread": true,
+          "folder": "inbox"
+        }
+      ],
+      "checklistTiming": "onSend",
+      "bodyMode": "templates",
+      "freeTextFlavour": false,
+      "showRedFlagMeter": true
+    },
+    "osint": {
+      "profile": "awareness",
+      "sites": [
+        {
+          "id": "tarrowby_site",
+          "name": "Tarrowby Logistics",
+          "url": "tarrowby.example",
+          "type": "company-site",
+          "pages": [
+            {
+              "id": "team",
+              "title": "Our people",
+              "blocks": [
+                {
+                  "id": "blk_recruiter",
+                  "kind": "staff",
+                  "person": "fatima",
+                  "name": "Fatima Begum",
+                  "role": "Recruitment Lead",
+                  "address": "fatima.begum@tarrowby.example",
+                  "fact": "tarrowby_recruiter"
+                },
+                {
+                  "id": "blk_hiring_mgr",
+                  "kind": "staff",
+                  "person": "colin",
+                  "name": "Colin Mather",
+                  "role": "Warehouse Manager",
+                  "address": "colin.mather@tarrowby.example",
+                  "fact": "tarrowby_hiring_manager"
+                },
+                {
+                  "id": "blk_hr_assistant",
+                  "kind": "staff",
+                  "person": "jun",
+                  "name": "Jun Watanabe",
+                  "role": "HR Assistant",
+                  "address": "jun.watanabe@tarrowby.example"
+                }
+              ]
+            },
+            {
+              "id": "careers",
+              "title": "Careers",
+              "blocks": [
+                {
+                  "id": "blk_vacancy",
+                  "kind": "p",
+                  "text": "Now hiring: Warehouse Operative (ref WHO-114), reporting to Warehouse Manager Colin Mather. Apply now.",
+                  "fact": "tarrowby_vacancy"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tarrowby_social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "type": "social",
+          "profiles": [
+            {
+              "person": "fatima",
+              "posts": [
+                {
+                  "id": "post_cv_request",
+                  "text": "We're hiring across the warehouse! Don't wait for the portal — just email your CV straight to me and I'll take a look.",
+                  "fact": "tarrowby_cv_request"
+                },
+                {
+                  "id": "post_fatima_other",
+                  "text": "Three new starters through the door this month. Best part of the job."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "phishTargets": [
+      {
+        "id": "recruiter_contact",
+        "address": "fatima.begum@tarrowby.example",
+        "displayName": "Fatima Begum",
+        "role": "Recruitment Lead",
+        "subjects": [
+          {
+            "id": "s_application",
+            "text": "Application — Warehouse Operative (WHO-114)",
+            "topic": "recruitment"
+          },
+          {
+            "id": "s_other",
+            "text": "Quick note",
+            "topic": "general"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "recruitment"
+          ]
+        },
+        "emailReplyDelay": 6,
+        "redFlagMeter": true,
+        "urgency": {
+          "advisoryMax": "low"
+        },
+        "templateSets": {
+          "from": [
+            "from_own"
+          ],
+          "greeting": [
+            "greet_generic"
+          ],
+          "pretext": [
+            "pretext_application",
+            "pretext_general"
+          ],
+          "ask": [
+            "ask_review"
+          ]
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "vacancy_who114"
+          ],
+          "minDistinct": 1,
+          "trusts": [
+            "*"
+          ],
+          "expectedAttachment": "document",
+          "story": "a CV sent in for the warehouse vacancy she is actively recruiting for"
+        },
+        "requiredFactors": [
+          "pretextRelevant",
+          "attachmentPlausible"
+        ],
+        "advisoryFactors": [
+          "urgencyCalibrated"
+        ],
+        "factorStrings": {
+          "open": {
+            "pass": "✓ She opens CVs from applicants she does not know",
+            "fail": "Nothing about the message made her open it.",
+            "redFlag": null
+          },
+          "pretextRelevant": {
+            "pass": "✓ Ties to the vacancy she is recruiting for",
+            "fail": "No vacancy she can match this to, so no reason to treat it as an application.",
+            "redFlag": null
+          },
+          "attachmentPlausible": {
+            "pass": "✓ A CV is exactly what she expects to receive",
+            "missing": {
+              "fail": "No CV is attached, so there is nothing for her to open.",
+              "redFlag": null
+            },
+            "wrong-type": {
+              "fail": "An archive is not what an applicant sends; she would hesitate to open it, so the lure is weaker.",
+              "redFlag": null
+            }
+          },
+          "urgencyCalibrated": {
+            "pass": "✓ The pressure reads as believable"
+          }
+        },
+        "replies": {
+          "landed": "Thanks for your application — I'll open your CV and pass it to the hiring manager."
+        },
+        "hints": [
+          "What is Tarrowby actually advertising, and what reference does the vacancy carry?",
+          "Name the vacancy she is recruiting for so the application reads as expected.",
+          "Recruiters expect a CV; attach the document, not an archive they would hesitate to open."
+        ],
+        "outcome": {
+          "setGlobal": {
+            "phish_recruiter_contact_landed": true
+          }
+        }
+      }
+    ]
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_office",
+      "door_sign": "Training Room",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "fatima_begum",
+          "displayName": "Fatima Begum",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/awareness_e2_cv_lures/ink/fatima_begum.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:phish_recruiter_contact_landed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "land_recruiter_contact"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e2_cv_lures_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "sort_recruitment_inbox"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "position": {
+            "x": 6,
+            "y": 2
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen training kiosk for the Tarrowby Logistics exercise: first the red-team brief and research, then the recruitment inbox.",
+          "minigameData": {
+            "episodeId": "e2_cv_lures"
+          }
+        }
+      ]
+    }
+  }
+}

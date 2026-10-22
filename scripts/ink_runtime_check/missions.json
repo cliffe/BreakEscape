@@ -3092,5 +3092,41 @@
         "room": "training_room"
       }
     ]
+  },
+  "awareness_e4_exec_whaling": {
+    "globals": {
+      "episode_e4_exec_whaling_defend_percent": 0,
+      "episode_e4_exec_whaling_defend_reportRate": 0,
+      "episode_e4_exec_whaling_defend_done": false,
+      "episode_e4_exec_whaling_defend_pass": false,
+      "phish_exec_pa_landed": false
+    },
+    "npcs": [
+      {
+        "id": "thandiwe_moyo",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e4_exec_whaling/ink/thandiwe_moyo.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e2_cv_lures": {
+    "globals": {
+      "episode_e2_cv_lures_defend_percent": 0,
+      "episode_e2_cv_lures_defend_reportRate": 0,
+      "episode_e2_cv_lures_defend_done": false,
+      "episode_e2_cv_lures_defend_pass": false,
+      "phish_recruiter_contact_landed": false
+    },
+    "npcs": [
+      {
+        "id": "fatima_begum",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e2_cv_lures/ink/fatima_begum.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
   }
 }

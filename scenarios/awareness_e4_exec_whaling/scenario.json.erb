@@ -1,0 +1,727 @@
+{
+  "scenario_id": "awareness_e4_exec_whaling",
+  "scenario_name": "Executive whaling: both sides",
+  "scenario_brief": "Awareness episode E4. You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. First you're on the red team: research what's public about the managing partner, Catherine Merrin, and her trip this week, then write one email to her PA that looks as if it came from her. Then you swap seats and cover the PA's inbox the same kind of message lands in, including a voicemail in a voice that sounds like hers. Only the inbox is scored.",
+  "endGoal": "Send the lookalike email, then sort the PA's inbox at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "red_team_aim",
+      "title": "Send the lookalike email",
+      "description": "Research Catherine Merrin and her trip, then send one email to her PA, Tomás Carvalho, that looks as if it came from her.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "land_exec_pa",
+          "title": "Land your email on the PA",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "pa_inbox_aim",
+      "title": "Cover the PA's inbox",
+      "description": "Sort the PA's inbox at the training kiosk.",
+      "status": "active",
+      "order": 1,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e4_exec_whaling_defend_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Executive whaling episode done",
+        "body": "You've written your message, seen it from the other side and worked through the PA's inbox, so this episode is finished."
+      },
+      "tasks": [
+        {
+          "taskId": "sort_pa_inbox",
+          "title": "Sort the PA's inbox",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e4_exec_whaling_state": {},
+    "se_awareness_records": [],
+    "episode_e4_exec_whaling_defend_percent": 0,
+    "episode_e4_exec_whaling_defend_reportRate": 0,
+    "episode_e4_exec_whaling_defend_done": false,
+    "episode_e4_exec_whaling_defend_pass": false,
+    "se_osint_state": {},
+    "se_intel_ms_managing_partner": false,
+    "se_intel_ms_pa_name": false,
+    "se_intel_ms_exec_calendar": false,
+    "se_intel_ms_exec_travel_email": false,
+    "se_intel_ms_travel_post": false,
+    "phish_exec_pa_landed": false,
+    "phish_exec_pa_attempts": 0
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "e4_pa_inbox",
+        "playerSentAuth": { "accounts": { "analyst": { "spf": "pass", "dkim": "fail", "dmarc": "fail", "envelopeFrom": "bounce.merrinsallow.example", "replyTo": "{account_address}" } } },
+        "title": "Merrin & Sallow PA inbox",
+        "brief": "You're Tomás Carvalho, PA to Catherine Merrin, the managing partner, and she flies to Lisbon this morning. Five emails and voicemails are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. A voice you know is not proof on its own. Checking or reporting something real never costs you anything.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "changed_bank_details",
+          "secrecy_or_bypass",
+          "vish_callback_pressure",
+          "borrowed_authority",
+          "reply_to_differs"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "episode_e4_exec_whaling_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e4_wrenfield_itinerary",
+            "from": {
+              "name": "Wrenfield Travel",
+              "address": "bookings@wrenfieldtravel.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Itinerary: Catherine Merrin, Lisbon, Tuesday to Thursday",
+            "time": "07:15",
+            "body": "Hello Tomás,\nHere is Catherine's itinerary for this week.\nTuesday: flight from London City at 09:55, landing in Lisbon at 12:40 local time.\nWednesday: speaking at the Lisbon Design Forum, 10:00.\nThursday: flight home at 18:20.\nThe hotel and flights are paid on the Merrin & Sallow account as usual, so there is nothing to pay.\nKind regards,\nMariam at Wrenfield Travel",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "wrenfieldtravel.example",
+              "replyTo": "bookings@wrenfieldtravel.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "pretextRelevant": "Booking Catherine's travel is part of your job, and Wrenfield is the agent the firm uses.",
+                "changed_bank_details": "It mentions payment only to say there's nothing to pay: the account is the usual one.",
+                "default": "It's from Wrenfield's real address, it matches a trip you booked, and it asks you for nothing. Notice how much of it is also on Catherine's public posts: the forum, the date, the flight time. Anyone can find those."
+              }
+            }
+          },
+          {
+            "id": "e4_boarding_payment",
+            "from": {
+              "name": "Catherine Merrin",
+              "address": "catherine.merrin.travel@inboxly.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "About to board: need this paid before I land",
+            "time": "09:41",
+            "body": "Tomás,\nThey're boarding us now and my work email won't load at the gate, so I'm on this one.\nThe Lisbon studio we're partnering with needs the £24,600 retainer today or we lose the slot. Their details: Atelier Ribeira, account ending 3381. Please pay it this morning.\nKeep it between us for now and don't send it through Yasmin. She'll want the approval form and there isn't time. I'll sign it off when I land.\nI'll be in the air for three hours, so email rather than ring.\nCatherine\nSent from my phone",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "catherine.merrin.travel@inboxly.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "secrecy_or_bypass",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "Catherine's name, but on a personal inbox at inboxly.example, not merrinsallow.example. 'My work email won't load' is there to explain that away",
+                "secrecy_or_bypass": "'Keep it between us' and 'don't send it through Yasmin' skip the approval that would catch this",
+                "urgencyCalibrated": "'Before I land' and 'three hours in the air' leave no time to check and steer you away from ringing her. The flight time came from her public posts"
+              },
+              "ifTrusted": "£24,600 would go to an account the sender controls. The real Catherine never asked for it.",
+              "reportReply": "Thanks. Catherine didn't send it. Her real address is on merrinsallow.example, and Yasmin has warned the rest of the office."
+            }
+          },
+          {
+            "id": "e4_vm_gate",
+            "kind": "voicemail",
+            "from": {
+              "name": "Catherine Merrin",
+              "address": "Number withheld"
+            },
+            "subject": "Voicemail from Catherine Merrin",
+            "time": "09:48",
+            "duration": "0:24",
+            "audio": {
+              "clipId": "VO7_e4_vm_gate"
+            },
+            "transcript": [
+              {
+                "who": "Catherine",
+                "text": "Tomás, it's Catherine. Did you get my email? They're closing the gate, so I'll be quick. Please get that retainer out to Atelier Ribeira this morning. Don't bother Yasmin with it, I'll square it with her myself. And don't ring back, my phone's going off. Just text me when it's gone. Thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "vish_callback_pressure",
+                "secrecy_or_bypass"
+              ],
+              "perFlagNote": {
+                "vish_callback_pressure": "The number is withheld and she tells you not to ring back, so you can't check it on the number in your contacts. That is the one check a copied voice can't pass",
+                "secrecy_or_bypass": "'Don't bother Yasmin with it' keeps finance, the people who would check, out of it"
+              },
+              "ifTrusted": "The voicemail would have made the fake email look confirmed, and the retainer would have gone to the sender's account.",
+              "reportReply": "Thanks. Catherine was already through security when this was left, and her phone was off. The voice sounded like hers, which is why the number and the request matter more than the voice."
+            }
+          },
+          {
+            "id": "e4_vm_landed",
+            "kind": "voicemail",
+            "from": {
+              "name": "Catherine Merrin",
+              "address": "Catherine (mobile), in your contacts"
+            },
+            "subject": "Voicemail from Catherine Merrin",
+            "time": "13:05",
+            "duration": "0:22",
+            "audio": {
+              "clipId": "VO7_e4_vm_landed"
+            },
+            "transcript": [
+              {
+                "who": "Catherine",
+                "text": "Hi Tomás, it's me, just landed. Could you move Thursday's Brackenmoor call to Friday morning? Oskar knows. Nothing urgent. Ring me on the mobile if anything comes up, I'll have it on all afternoon. Thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "vish_callback_pressure": "She asks you to ring her, on the mobile number already in your contacts.",
+                "secrecy_or_bypass": "A diary move is an ordinary PA job. Nothing is kept from anyone and no step is skipped.",
+                "default": "The same voice as the last voicemail, and that's the point: the voice proved nothing either time. This one comes from her number in your contacts, asks for something you'd do anyway, and invites a call back. If you wanted to be sure, ringing her mobile would be a fine Verify."
+              }
+            }
+          },
+          {
+            "id": "e4_wrenfield_lookalike",
+            "from": {
+              "name": "Wrenfield Travel Accounts",
+              "address": "accounts@wrenfield-travel.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Lisbon hotel: card payment declined, please pay by transfer today",
+            "time": "14:20",
+            "body": "Dear Tomás,\nThe card payment for Ms Merrin's hotel in Lisbon was declined this morning. To keep the room, please pay the balance of £1,860 by bank transfer today.\nWe have moved to a new bank, so please use these details, not the ones on file:\nAccount name: Wrenfield Travel Ltd\nAccount number ending 0492\nKind regards,\nWrenfield Travel Accounts",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.wrenfield-travel.example",
+              "replyTo": "accounts@wrenfield-travel.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "changed_bank_details"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "This morning's itinerary came from wrenfieldtravel.example. This one is wrenfield-travel.example, with an added hyphen",
+                "changed_bank_details": "'Use these details, not the ones on file' is the commonest invoice-fraud move. The itinerary said everything was paid on the firm's account. The safe step is to ring Wrenfield on the number you already hold"
+              },
+              "ifTrusted": "£1,860 would go to an account the sender controls, and the hotel was already paid.",
+              "reportReply": "Thanks. Wrenfield say they sent nothing and the hotel is paid. The look-alike address has been blocked."
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e4_exec_whaling",
+      "role": "executive",
+      "company": "merrin_sallow",
+      "brand": {
+        "name": "Merrin & Sallow Architects",
+        "logoText": "MERRIN & SALLOW",
+        "accent": "#8a5a2b"
+      },
+      "variant": "full",
+      "durationTargetMin": 13,
+      "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional practice. In scope: one email to Catherine Merrin's PA, and the PA's inbox and voicemail. Nothing you write leaves the game.",
+      "stages": [
+        "brief",
+        "osint",
+        "write",
+        "flip",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "sort_pa_inbox",
+      "attack": {
+        "target": "exec_pa",
+        "siteIds": [
+          "merrinsallow_site",
+          "merrinsallow_social"
+        ],
+        "accountIds": [
+          "analyst"
+        ],
+        "defaultAccount": "analyst",
+        "showRedFlagMeter": true,
+        "maxMessages": 1,
+        "scored": false
+      },
+      "defend": {
+        "setId": "e4_pa_inbox",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. First you're on the red team: look at what's public about Catherine Merrin, the managing partner, and her trip this week, then write one short email to her PA, Tomás Carvalho, that looks as if it came from her. Then you swap seats: you're Tomás, with emails and voicemails waiting while Catherine travels. Only Tomás's inbox is scored.",
+        "flipHeading": "Now you're the PA",
+        "flipIntro": "This is the email you just sent, as Tomás saw it on his phone. The lines picked out below are what make it believable.",
+        "flipDefenderLine": "Tomás read it ten minutes before Catherine's flight was due to leave, with two meetings to set up. It fitted her day and sounded like her, so he opened the payment form. People who fall for messages like this are not stupid: this one was built to look right.",
+        "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, messages like it arrive in Tomás's inbox and voicemail, and you're the one reading them.",
+        "noBlameLine": "Nobody is marked down for a miss here. Every one of these messages was built to look and sound right, and the people who act on them are busy and trying to help, not careless.",
+        "mondayCard": "On Monday: if someone senior asks you to pay, buy or send something in a hurry, or to keep it from finance, check before you act, even when it's their voice on a voicemail. Ring them on the number already in your contacts, or ask finance, then report the message the way your organisation asks you to.",
+        "defendOnly": "You went straight to the inbox this time. These messages were made by people whose job is to make them look and sound right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine.",
+        "voicePanel": {
+          "heading": "A voice is not proof",
+          "text": "A voice can be copied. Recordings of someone speaking in public, such as a talk or an interview, can be used to make new sentences in a voice that sounds like theirs. So a familiar voice on a voicemail or a call doesn't tell you who is speaking. What still works is the route: ring the person back on a number you already hold, or check with someone who would know, such as finance."
+        }
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "people": [
+      {
+        "id": "catherine",
+        "kind": "cast",
+        "address": "catherine.merrin@merrinsallow.example",
+        "forms": {
+          "first": "Catherine",
+          "formal": "Ms Merrin",
+          "full": "Catherine Merrin"
+        }
+      },
+      {
+        "id": "tomas",
+        "kind": "cast",
+        "address": "tomas.carvalho@merrinsallow.example",
+        "forms": {
+          "first": "Tomás",
+          "full": "Tomás Carvalho"
+        }
+      }
+    ],
+    "intelFacts": {
+      "ms_managing_partner": {
+        "text": "Catherine Merrin is the managing partner at Merrin & Sallow and signs off the practice's spending.",
+        "subject": "catherine",
+        "source": "blk_partner",
+        "provides": [
+          {
+            "type": "name",
+            "about": "sender",
+            "value": "catherine_full",
+            "label": "Catherine Merrin",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "Naming who at the top can authorise money hands an attacker the identity whose authority is worth borrowing."
+      },
+      "ms_pa_name": {
+        "text": "Tomás Carvalho is Catherine Merrin's executive assistant and runs her diary and day-to-day payments while she travels.",
+        "subject": "tomas",
+        "source": "blk_pa",
+        "provides": [],
+        "reduceNote": "Publishing who handles an executive's diary and payments tells an attacker exactly whom to send the request to."
+      },
+      "ms_exec_calendar": {
+        "text": "The events page shows Catherine Merrin is chairing the Westgate regeneration review offsite this week.",
+        "subject": "catherine",
+        "source": "blk_calendar",
+        "provides": [
+          {
+            "type": "reference",
+            "value": "ms_offsite",
+            "label": "the Westgate offsite",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "A public diary tells an attacker when the executive is unreachable and gives a believable reason to be emailing on the move."
+      },
+      "ms_exec_travel_email": {
+        "text": "Catherine's speaker bio says that while she is travelling she takes urgent enquiries at catherine.merrin@inboxly.example.",
+        "subject": "catherine",
+        "source": "blk_bio",
+        "provides": [
+          {
+            "type": "address",
+            "value": "catherine_address",
+            "label": "catherine.merrin@inboxly.example",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "An executive's personal or travel email in public lets an attacker send as a name staff trust, on a channel nobody can check against the company address book."
+      },
+      "ms_travel_post": {
+        "text": "Catherine posted that she is between sites all week and barely online.",
+        "subject": "catherine",
+        "source": "post_offsite",
+        "provides": [],
+        "reduceNote": "A post confirming the executive is away and distracted gives the attacker both the window and the urgency to work with."
+      }
+    },
+    "templates": {
+      "ms_from": {
+        "part": "from",
+        "text": "{sender_name} <{sender_address}>",
+        "slots": [
+          {
+            "id": "sender_name",
+            "type": "name",
+            "about": "sender",
+            "label": "sender's name"
+          },
+          {
+            "id": "sender_address",
+            "type": "address",
+            "label": "sender's address"
+          }
+        ]
+      },
+      "ms_greet": {
+        "part": "greeting",
+        "text": "Tomás,",
+        "slots": []
+      },
+      "ms_pretext_pay_now": {
+        "part": "pretext",
+        "text": "I'm about to board for {trip} and I'll have no signal for a few hours. There's a contractor invoice that has to be settled today or we lose the slot. Can you push it through from the practice account? Keep it between us for now, no need to trouble finance, and I'll square it with them when I land.",
+        "slots": [
+          {
+            "id": "trip",
+            "type": "reference",
+            "label": "which trip"
+          }
+        ],
+        "urgency": "high"
+      },
+      "ms_pretext_diary": {
+        "part": "pretext",
+        "text": "When you get a moment, could you send me next week's diary?",
+        "slots": [],
+        "urgency": "low"
+      },
+      "ms_ask_confirm": {
+        "part": "ask",
+        "text": "Drop me a line here once it's gone through.",
+        "slots": [],
+        "urgency": "medium"
+      }
+    },
+    "mailClient": {
+      "accounts": [
+        {
+          "id": "analyst",
+          "address": "analyst@merrinsallow.example",
+          "displayName": "Red-team analyst",
+          "kind": "given",
+          "person": null,
+          "mailbox": "analyst",
+          "spoofsFrom": true
+        }
+      ],
+      "mailboxes": [
+        {
+          "id": "analyst"
+        }
+      ],
+      "contacts": [
+        {
+          "id": "tomas",
+          "person": "tomas",
+          "name": "Tomás Carvalho",
+          "addresses": [
+            "tomas.carvalho@merrinsallow.example"
+          ],
+          "role": "Executive Assistant",
+          "revealedBy": "se_intel_ms_pa_name",
+          "targetId": "exec_pa"
+        }
+      ],
+      "seededMessages": [
+        {
+          "id": "brief",
+          "mailbox": "analyst",
+          "from": {
+            "name": "Red team lead",
+            "address": "lead@redteam.example",
+            "avatar": "npc_neutral"
+          },
+          "to": "analyst@merrinsallow.example",
+          "subject": "Authorised exercise: Merrin & Sallow",
+          "body": "Hello,\n\nThis is the authorised Merrin & Sallow exercise. In scope: this inbox and the people on it. Research the partner and her PA, then write one message. Nothing leaves this account.\n\nRed team lead",
+          "time": "08:41",
+          "unread": true,
+          "folder": "inbox"
+        }
+      ],
+      "checklistTiming": "onSend",
+      "bodyMode": "templates",
+      "freeTextFlavour": false,
+      "showRedFlagMeter": true
+    },
+    "osint": {
+      "profile": "awareness",
+      "sites": [
+        {
+          "id": "merrinsallow_site",
+          "name": "Merrin & Sallow Architects",
+          "url": "merrinsallow.example",
+          "type": "company-site",
+          "pages": [
+            {
+              "id": "people",
+              "title": "Our people",
+              "blocks": [
+                {
+                  "id": "blk_partner",
+                  "kind": "staff",
+                  "person": "catherine",
+                  "name": "Catherine Merrin",
+                  "role": "Managing Partner",
+                  "address": "catherine.merrin@merrinsallow.example",
+                  "fact": "ms_managing_partner"
+                },
+                {
+                  "id": "blk_pa",
+                  "kind": "staff",
+                  "person": "tomas",
+                  "name": "Tomás Carvalho",
+                  "role": "Executive Assistant to Catherine Merrin",
+                  "address": "tomas.carvalho@merrinsallow.example",
+                  "fact": "ms_pa_name"
+                }
+              ]
+            },
+            {
+              "id": "events",
+              "title": "Events & talks",
+              "blocks": [
+                {
+                  "id": "blk_calendar",
+                  "kind": "p",
+                  "text": "This week: Catherine Merrin chairs the Westgate regeneration review offsite.",
+                  "fact": "ms_exec_calendar"
+                },
+                {
+                  "id": "blk_bio",
+                  "kind": "p",
+                  "text": "Speaker: Catherine Merrin. While she is travelling, urgent enquiries reach her at catherine.merrin@inboxly.example.",
+                  "fact": "ms_exec_travel_email"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "merrinsallow_social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "type": "social",
+          "profiles": [
+            {
+              "person": "catherine",
+              "posts": [
+                {
+                  "id": "post_offsite",
+                  "text": "Three sites in two days, living out of a suitcase again. Barely online this week.",
+                  "fact": "ms_travel_post"
+                },
+                {
+                  "id": "post_catherine_other",
+                  "text": "The new footbridge model came back from the workshop. Worth every late night."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "phishTargets": [
+      {
+        "id": "exec_pa",
+        "address": "tomas.carvalho@merrinsallow.example",
+        "displayName": "Tomás Carvalho",
+        "role": "Executive Assistant",
+        "subjects": [
+          {
+            "id": "s_payment",
+            "text": "Payment - needs doing today",
+            "topic": "finance"
+          },
+          {
+            "id": "s_other",
+            "text": "Quick one",
+            "topic": "general"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "finance"
+          ]
+        },
+        "emailReplyDelay": 6,
+        "redFlagMeter": true,
+        "urgency": {
+          "advisoryMax": "low"
+        },
+        "templateSets": {
+          "from": [
+            "ms_from"
+          ],
+          "greeting": [
+            "ms_greet"
+          ],
+          "pretext": [
+            "ms_pretext_pay_now",
+            "ms_pretext_diary"
+          ],
+          "ask": [
+            "ms_ask_confirm"
+          ]
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "ms_offsite"
+          ],
+          "minDistinct": 1,
+          "trusts": [
+            "catherine"
+          ],
+          "story": "a payment the managing partner has personally asked for while she is travelling and out of contact"
+        },
+        "requiredFactors": [
+          "senderTrust",
+          "pretextRelevant"
+        ],
+        "advisoryFactors": [
+          "urgencyCalibrated"
+        ],
+        "factorStrings": {
+          "open": {
+            "pass": "✓ He would open it",
+            "fail": "Nothing about the sender or the subject made him open it.",
+            "redFlag": null
+          },
+          "senderTrust": {
+            "pass": "✓ It reads as his boss",
+            "fail": "He does not act on money from a stranger. The request has to look like it is from Catherine.",
+            "redFlag": null
+          },
+          "pretextRelevant": {
+            "pass": "✓ Fits a trip he knows she is on",
+            "fail": "No trip he can match this to, so a rushed payment from the road reads as odd.",
+            "redFlag": null
+          },
+          "urgencyCalibrated": {
+            "pass": "✓ The pressure reads as believable"
+          }
+        },
+        "replies": {
+          "landed": "Will do, Catherine. I'll get it paid this afternoon and keep it off the finance thread. Safe travels."
+        },
+        "hints": [
+          "Whose name would make the PA act on a payment without checking?",
+          "What trip is she publicly on this week, so an email from the road reads as expected?",
+          "Set the From line to Catherine's name and her travel email, and tie the message to the Westgate offsite."
+        ],
+        "outcome": {
+          "setGlobal": {
+            "phish_exec_pa_landed": true
+          }
+        }
+      }
+    ]
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_office",
+      "door_sign": "Training Room",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "thandiwe_moyo",
+          "displayName": "Thandiwe Moyo",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/awareness_e4_exec_whaling/ink/thandiwe_moyo.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:phish_exec_pa_landed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "land_exec_pa"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e4_exec_whaling_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "sort_pa_inbox"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "position": {
+            "x": 6,
+            "y": 2
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen training kiosk for the Merrin & Sallow exercise: first the red-team brief and research, then the PA's inbox.",
+          "minigameData": {
+            "episodeId": "e4_exec_whaling"
+          }
+        }
+      ]
+    }
+  }
+}
