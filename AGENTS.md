@@ -136,6 +136,17 @@ Everything else goes into the approval log for the user: engine or server change
   3. Ask through the question tool with **checkbox options**: a short label, a one-line trade-off, the recommended option first, related questions batched into one call. The user often answers in the free-text field, so read the answer carefully rather than assuming one of the boxes.
   4. Carry on with independent work while waiting.
   5. When the user answers, move the item from the pending file into the log with their choice.
+- **For visual picks, or many decisions at once, publish a review page** (the user's preferred way, 2026-10-22). Build one HTML artifact and send the link; it replaces the question tool for these. The first one was the lab bust picker (`https://claude.ai/artifact/51uFp9kwkZiVviLY7NBkwW`).
+  - **When to use it:** choosing between images (bust variants, concepts, backgrounds, props), or a batch of decisions that each need a picture or a paragraph of context.
+  - **What goes on it:**
+    - One row per subject (character, room, finding), with the reference image (the concept, or the current state) beside the options.
+    - Pixel art scaled up 2× with `image-rendering: pixelated`. This is a review thumbnail only, never a game asset.
+    - Images embedded as data URIs.
+    - Each option clickable, as a radio card with its variant id, plus a "none of these, make more" option.
+    - A one-line note under each option giving the agent's view, with its recommendation marked "suggested". The user still makes every pick.
+  - **How the user answers:** a "Copy picks" box at the bottom collects the answers as `key: choice` lines that the user pastes back. Picks persist in localStorage, so the page can be reopened.
+  - **When options are added:** republish the same file path. The link stays the same and a regenerating script builds the page again.
+  - **Agents waiting on the picks:** pause any paid step that depends on them, then resume each agent with its picks.
 - Ask only when the answer changes what happens next. Otherwise pick the conventional default and mention it.
 - When the user says "use your best judgement", decide, act, and say what you chose.
 - Report outcomes plainly: what passed, what failed with evidence, what was skipped. A static check isn't a browser test, so say which one you ran.

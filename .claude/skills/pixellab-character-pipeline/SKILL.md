@@ -52,6 +52,8 @@ Work files live in `tmp/pixellab/<name>/` (git-ignored). `state.json` there reco
 
 `pick <name> bust b03` installs `<name>_talk_init.png`.
 
+**When the user picks the busts**, especially for several characters at once, publish a review page as AGENTS.md "Asking the user for input" describes, rather than pointing them to the contact sheets. Show each concept beside its `bust/b*.png` variants at 2× pixelated, with a note and a "suggested" mark per variant, and a "Copy picks" box. Stop before `talk` until the picks come back.
+
 ## Stage 2a: talk sheet (the current engine default)
 
 `talk <name> --variants 2` (about 2 generations each, 1–3 minutes). The house talk prompt is the default `--action`. The API returns 9 frames. `f00` is a copy of the start frame, so choose from `f01`–`f08`. The contact sheet has a **mouth-zoom** row under each variant: choose three clearly different shapes (for example "ah", "oo", "ee") with the eyes and head still.
