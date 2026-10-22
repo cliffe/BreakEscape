@@ -422,3 +422,8 @@ the orchestrator passes it to that wave's owner.
 - **P7-Y2:**
   - Use `awarenessEpisode.mfa`, not `attack.pushStream`.
   - E3 sets `attack.callId` and keeps `write` in its stages.
+- **P7-Y1:**
+  - **Decision (orchestrator), the defendOnly E3 claims gap:** each `defend.calls[].claims[]` entry may carry its own `label`. The lint resolves claims against `pretextNpcs` `knows` when the shell has them. In a defendOnly shell without them, it requires a `label` on each claim and skips `callsFrom`. `role-swap.js` prefers `claim.label`, then the intelFacts label. P7-S's defend.json and the E3 defendOnly shell get labels added.
+  - **Strings:** the runner's fixed defend text ("Go through the inbox…") reads wrongly for page and call sets. It needs a per-set or per-episode `strings.defendIntro`.
+  - **Generator drift:** `gen_e1_shells.py` still redeclares the imported names on post shells, which the committed shells don't. Fix it with the conclusionScreen change.
+  - **conclusionScreen:** all ten Y1 shells need the training success screen, through `gen_e3_e5_shells.py`.
