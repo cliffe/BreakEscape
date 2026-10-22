@@ -1692,6 +1692,49 @@ def check_lock_credentials(json_data)
   issues
 end
 
+# ─────────────────────────────────────────────────────────────
+# PIN locks the pad can't open. The PIN pad (minigames/pin/pin-minigame.js)
+# has digit keys only and takes exactly `pinLength` digits, 4 if none is sent.
+# The PIN never reaches the client, so the server sends its length as
+# pinLength (Game.set_pin_length!), overriding an authored pinLength. So:
+#   - a PIN with anything but digits can never be typed;
+#   - an authored pinLength that disagrees with the PIN is wrong (the server
+#     ignores it; before Game.set_pin_length! it made the lock unsolvable);
+#   - a locked PIN lock with no PIN is checked against "" and never opens,
+#     unless something else (an unlock_door event, a flag reward) opens it.
+# ─────────────────────────────────────────────────────────────
+def check_pin_locks(json_data)
+  issues = []
+  walk = lambda do |node, path|
+    case node
+    when Array then node.each_with_index { |n, i| walk.call(n, "#{path}[#{i}]") }
+    when Hash
+      if node['lockType'] == 'pin'
+        where = "'#{path}'#{node['name'] ? " (#{node['name']})" : ''}"
+        pin = node['requires']
+        declared = node['pinLength']
+        if pin.nil? || pin.to_s.empty?
+          if node['locked']
+            issues << "⚠️ WARNING: #{where} is a locked PIN lock with no 'requires' PIN. The server checks guesses " \
+                      "against an empty PIN, so the pad never opens it; only an unlock_door event or flag reward can."
+          end
+        elsif !pin.is_a?(String) && !pin.is_a?(Integer)
+          issues << "❌ INVALID: #{where} PIN lock 'requires' must be a string of digits, got #{pin.class}."
+        elsif pin.to_s !~ /\A\d+\z/
+          issues << "❌ INVALID: #{where} PIN '#{pin}' has characters other than digits. The PIN pad has keys 0-9 " \
+                    "only, so it can never be entered. Use lockType 'password' for letters, or a digits-only PIN."
+        elsif !declared.nil? && declared != pin.to_s.length
+          issues << "❌ INVALID: #{where} has pinLength #{declared.inspect} but its PIN is #{pin.to_s.length} digits. " \
+                    "The server sends the PIN's own length, so remove pinLength (it is not needed) or fix the PIN."
+        end
+      end
+      node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") }
+    end
+  end
+  walk.call(json_data, '')
+  issues
+end
+
 def check_common_issues(json_data, valid_item_types = nil)
   issues = []
 
@@ -5240,6 +5283,7 @@ def main
     puts "Checking for common issues..."
     common_issues = check_common_issues(json_data, valid_item_types)
     common_issues += check_lock_credentials(json_data)
+    common_issues += check_pin_locks(json_data)
     common_issues += check_engine_limits(json_data)
     common_issues += check_recurring_bugs(json_data, repo_root)
     common_issues += check_unheard_room_triggers(json_data, repo_root)

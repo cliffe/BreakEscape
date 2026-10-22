@@ -526,7 +526,9 @@ export function createDoorSpritesForRoom(roomId, position) {
             showHint: lockProps.showHint ?? connectedRoomData?.showHint ?? null,
             postitNote: lockProps.postitNote ?? connectedRoomData?.postitNote ?? null,
             showPostit: lockProps.showPostit ?? connectedRoomData?.showPostit ?? null,
-            showKeyboard: lockProps.showKeyboard ?? connectedRoomData?.showKeyboard ?? null
+            showKeyboard: lockProps.showKeyboard ?? connectedRoomData?.showKeyboard ?? null,
+            // Digits on the PIN pad: the server sends the PIN's length, never the PIN
+            pinLength: lockProps.pinLength ?? connectedRoomData?.pinLength ?? null
         };
 
         // Debug door properties

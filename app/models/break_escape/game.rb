@@ -769,8 +769,10 @@ module BreakEscape
           # light leaks under a closed door into a lit room (but not into a dark motion room).
           # lockedHint: the door's "how to get the key" line (not secret); unlock-system.js
           # appends it to the locked toast, so it must survive the bootstrap filter (lab R3 F1).
+          # pinLength: digits on a PIN door's pad (not secret); the controller fills it from
+          # `requires` when it strips the PIN, so a 5-digit door gets a 5-digit pad.
           %w[type connections locked lockType requires difficulty door_sign keyPins lockedHint ambientSound ambientVolume
-             maxAttempts passwordHint showHint postitNote showPostit showKeyboard chatBackground lighting].each do |field|
+             maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength chatBackground lighting].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
 
@@ -1199,6 +1201,15 @@ module BreakEscape
       secret = lock['requires'].to_s
       guess = attempt.to_s
       secret.present? && guess != secret && guess.casecmp?(secret)
+    end
+
+    # Tell the client how many digits a PIN lock takes, since `requires` (the PIN)
+    # is stripped before it gets there. The PIN pad defaults to 4 without this, so
+    # a 5-digit PIN could never be typed. Call before deleting `requires`.
+    def self.set_pin_length!(lock)
+      return unless lock.is_a?(Hash) && lock['lockType'] == 'pin' && lock['requires'].present?
+
+      lock['pinLength'] = lock['requires'].to_s.length
     end
 
     def self.mastermind_feedback(secret, guess)
@@ -2734,6 +2745,7 @@ module BreakEscape
           obj['flagUnlockedAt'] = station['name'] if station && station['name'].present?
         end
 
+        self.class.set_pin_length!(obj)
         if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
           obj.delete('requires')
         end

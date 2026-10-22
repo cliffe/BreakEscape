@@ -1531,6 +1531,7 @@ module BreakEscape
         # - bluetooth: requires device MAC/name (e.g., "00:11:22:33:44:55")
         # - rfid: requires card IDs (e.g., ["master_keycard"])
         lock_type = obj['lockType']
+        BreakEscape::Game.set_pin_length!(obj) # PIN pad length, before the PIN goes
         if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
           obj.delete('requires')
         end
