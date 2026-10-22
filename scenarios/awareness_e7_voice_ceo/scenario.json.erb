@@ -1,0 +1,730 @@
+{
+  "scenario_id": "awareness_e7_voice_ceo",
+  "scenario_name": "Voice and the CEO: both sides",
+  "scenario_brief": "Awareness episode E7, the cross-role finale. You're on an authorised exercise at Brightwell Foods, a fictional food manufacturer. First you're on the red team: research what's public about the chief executive, then script one voicemail in his voice that pushes accounts payable to release an urgent payment. Nobody judges how real it would sound. Then you swap seats and cover the finance office's phone and inbox, where a call like that lands. Only the inbox side is scored.",
+  "endGoal": "Script the CEO voicemail, then cover the finance line at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "red_team_aim",
+      "title": "Script the CEO voicemail",
+      "description": "Research what's public about Brightwell's chief executive, then script one voicemail in his voice to the accounts payable clerk asking for an urgent payment. You are not scored on how it sounds.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "land_ceo_voice_target",
+          "title": "Land your script on accounts payable",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "finance_line_aim",
+      "title": "Cover the finance line",
+      "description": "Sort the finance office's voicemails and emails at the training kiosk.",
+      "status": "active",
+      "order": 1,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e7_voice_ceo_defend_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Voice and the CEO episode done",
+        "body": "You've scripted the call, seen it from the other side and covered the finance line, so this episode is finished. Whoever's voice it is, ringing back on a number you already hold is what settles it."
+      },
+      "tasks": [
+        {
+          "taskId": "check_finance_line",
+          "title": "Cover the finance line",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e7_voice_ceo_state": {},
+    "se_awareness_records": [],
+    "episode_e7_voice_ceo_defend_percent": 0,
+    "episode_e7_voice_ceo_defend_reportRate": 0,
+    "episode_e7_voice_ceo_defend_done": false,
+    "episode_e7_voice_ceo_defend_pass": false,
+    "se_osint_state": {},
+    "se_intel_brightwell_ceo": false,
+    "se_intel_brightwell_ceo_travel": false,
+    "se_intel_brightwell_payments_clerk": false,
+    "se_intel_brightwell_open_payment": false,
+    "phish_ceo_voice_target_landed": false,
+    "phish_ceo_voice_target_attempts": 0
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "e7_finance_line",
+        "playerSentAuth": { "accounts": { "analyst": { "spf": "pass", "dkim": "fail", "dmarc": "fail", "envelopeFrom": "bounce.brightwellfoods.example", "replyTo": "{account_address}" } } },
+        "title": "Finance office: phone and inbox",
+        "brief": "You're covering the finance office's phone and inbox on Friday afternoon while the team is in the quarter-end meeting. Three voicemails and two emails have come in. For each one, choose Trust, Report, Delete or Verify (ring the person back on a number you already hold), then tick what you noticed. Nobody will ask whether a voice sounded real: what counts is what each message asks you to do. Reporting a real message never costs you anything.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "vish_callback_pressure",
+          "secrecy_or_bypass",
+          "borrowed_authority",
+          "changed_bank_details"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "episode_e7_voice_ceo_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e7_vm_ravinder_train",
+            "kind": "voicemail",
+            "from": {
+              "name": "Ravinder Sandhu",
+              "address": "07700 900418"
+            },
+            "time": "13:05",
+            "duration": "0:24",
+            "audio": {
+              "clipId": "VO8_ravinder_train"
+            },
+            "transcript": [
+              {
+                "who": "Ravinder",
+                "text": "Hi, it's Ravinder. I'm on the train back from Leeds, so the signal comes and goes. I approved the oat flour invoices in the system before I left, so they're fine for Monday's run. Nothing for you to do. If Adaeze needs me, I'm on my mobile. Thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "borrowed_authority": "It's the chief executive, but he isn't using that to skip anything: the invoices went through the normal approval in the system.",
+                "default": "It came from Ravinder's mobile, which is already in the office contacts. It asks you to do nothing, and he tells you to ring that same mobile if anyone needs him. If you wanted to check, ringing him back on it would be a fine Verify."
+              }
+            }
+          },
+          {
+            "id": "e7_vm_ravinder_cloned",
+            "kind": "voicemail",
+            "from": {
+              "address": "07700 900771"
+            },
+            "time": "14:48",
+            "duration": "0:38",
+            "audio": {
+              "clipId": "VO8_ravinder_cloned"
+            },
+            "transcript": [
+              {
+                "who": "Caller",
+                "text": "Hi, it's Ravinder. I'm on a borrowed phone, mine's died, so don't bother trying my mobile."
+              },
+              {
+                "who": "Caller",
+                "text": "The Leeds site: the agent needs the deposit, eighteen thousand four hundred, before five today or it goes to the other bidder. I'm emailing you the details now."
+              },
+              {
+                "who": "Caller",
+                "text": "Keep it between us until the board announces it, and don't wait for Adaeze. I'm signing it off myself. I'm going into a meeting, so just email me when it's gone. Thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "vish_callback_pressure",
+                "secrecy_or_bypass",
+                "borrowed_authority"
+              ],
+              "perFlagNote": {
+                "vish_callback_pressure": "'Don't bother trying my mobile' and 'just email me' shut off the one check that works whoever is speaking: ringing Ravinder back on the number you already hold. The borrowed phone is the excuse",
+                "secrecy_or_bypass": "'Keep it between us' and 'don't wait for Adaeze' ask you to skip the approval that would catch this, and 'before five today' leaves no time to ask anyone",
+                "borrowed_authority": "The chief executive's own voice is doing the job the approval process should do. It sounded like him, and a voice on its own doesn't prove who is speaking"
+              },
+              "ifTrusted": "£18,400 would go to an account the caller controls. Ravinder was on the train from Leeds and never made this call.",
+              "reportReply": "Thanks. We rang Ravinder on his usual mobile: he hadn't called, and there is no deposit due on a Leeds site. We've warned finance and the other directors' assistants."
+            }
+          },
+          {
+            "id": "e7_vm_lindiwe_gate",
+            "kind": "voicemail",
+            "from": {
+              "name": "Lindiwe Mokoena",
+              "address": "0116 496 0214"
+            },
+            "time": "15:20",
+            "duration": "0:31",
+            "audio": {
+              "clipId": "VO8_lindiwe_gate"
+            },
+            "transcript": [
+              {
+                "who": "Lindiwe",
+                "text": "Hi, it's Lindiwe on the chilled unit. Sorry to land this on you. The Harlow driver's at the gate and says their system has our account on hold, so he's to take the cartons back."
+              },
+              {
+                "who": "Lindiwe",
+                "text": "I've told him we don't pay anything at the gate. Could someone in finance ring Harlow on the number in the supplier file and find out what's going on? I'm on extension 2214, or my mobile's on the staff list. Cheers."
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "secrecy_or_bypass": "She's in a hurry, but she asks you to follow the process, not skip it: no paying at the gate, and a call to Harlow on the number already on file.",
+                "vish_callback_pressure": "She gives you two ways to ring her back, her extension and the mobile on the staff list.",
+                "default": "It's Lindiwe's own extension, it asks for no payment, and what she wants is the safe check itself. Ringing Harlow on the supplier-file number, or ringing her back on 2214, is the right kind of Verify."
+              }
+            }
+          },
+          {
+            "id": "e7_ceo_wire",
+            "from": {
+              "name": "Ravinder Sandhu",
+              "address": "ravinder.sandhu.private@inboxly.example"
+            },
+            "to": "finance@brightwellfoods.example",
+            "subject": "Need this paid today",
+            "time": "15:31",
+            "body": "Are you at your desk? I need a payment of £18,400 made today to secure a new site in Leeds. I've left you a voicemail about it too. It's confidential until the board announces it, so please keep it to yourself and don't put it through the usual approval. I'll sign it off when I'm back.\nI'm in meetings all afternoon, so reply here rather than calling.\nRavinder\nSent from my phone",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "ravinder.sandhu.private@inboxly.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "secrecy_or_bypass",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name is the chief executive's, but the address is a personal inbox at inboxly.example, not brightwellfoods.example. The voicemail it mentions doesn't make it more real: a fake voice and a fake email can come from the same sender",
+                "secrecy_or_bypass": "'Keep it to yourself' and 'don't put it through the usual approval' ask you to skip the check that would catch this",
+                "urgencyCalibrated": "'Today' and 'in meetings all afternoon' leave no time to check, and steer you away from ringing him"
+              },
+              "ifTrusted": "£18,400 would go to an account the sender controls. The real Ravinder never asked for it.",
+              "reportReply": "Thanks. Ravinder knows nothing about it, and his real address is on brightwellfoods.example. The voicemail came from the same people, so we've reported both."
+            }
+          },
+          {
+            "id": "e7_bank_confirmed",
+            "from": {
+              "name": "Adaeze Okafor",
+              "address": "adaeze.okafor@brightwellfoods.example"
+            },
+            "to": "finance@brightwellfoods.example",
+            "subject": "Marsh End Eggs: new bank details (confirmed by phone)",
+            "time": "15:44",
+            "body": "Hi team,\nMarsh End Eggs wrote last week to say they've changed bank. Before acting on it, I rang them on the number in our supplier file (not the one on their letter) and spoke to Joyce in their accounts office. She confirmed the new account.\nI've updated the supplier record and signed off the change, so their next invoice can go to the new account in Friday's run.\nConfirmed by phone: Adaeze Okafor, 21 October\nAdaeze",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "brightwellfoods.example",
+              "replyTo": "adaeze.okafor@brightwellfoods.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "changed_bank_details": "It is a bank change, but it was checked the safe way: Adaeze rang Marsh End on the number already in the supplier file, not one from their letter, and logged it. That's the same check that would have stopped the Leeds deposit.",
+                "senderTrust": "The address is Adaeze's real Brightwell one, and the name matches it.",
+                "default": "It comes from your own finance manager, it doesn't hurry you, and it tells you how the change was confirmed. If you still wanted to check, ringing Adaeze on her extension would be a fine Verify."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e7_voice_ceo",
+      "role": "everyone",
+      "company": "brightwell_foods",
+      "brand": {
+        "name": "Brightwell Foods",
+        "logoText": "BRIGHTWELL",
+        "accent": "#2f6f5e"
+      },
+      "variant": "full",
+      "durationTargetMin": 14,
+      "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: one practice voicemail script in the voice of a fictional chief executive, and three voicemails and two emails on the finance office's line. No real person's voice is used, and nothing you write leaves the game.",
+      "stages": [
+        "brief",
+        "osint",
+        "write",
+        "flip",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "check_finance_line",
+      "attack": {
+        "target": "ceo_voice_target",
+        "siteIds": [
+          "brightwell_e7_site",
+          "brightwell_e7_social"
+        ],
+        "accountIds": [
+          "analyst"
+        ],
+        "defaultAccount": "analyst",
+        "showRedFlagMeter": true,
+        "maxMessages": 1,
+        "scored": false
+      },
+      "defend": {
+        "setId": "e7_finance_line",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. First you're on the red team: write the script for a short voicemail in the voice of Brightwell's chief executive, Ravinder Sandhu, asking for something he would never ask for on the phone. Nobody judges how real it would sound. Then you swap seats: you're covering the finance office's phone and inbox, with three voicemails and two emails waiting. Only the second part is scored.",
+        "flipHeading": "Now it's on your phone",
+        "flipIntro": "This is the voicemail you scripted, as the finance office would find it. The lines picked out below are what make it believable.",
+        "flipDefenderLine": "It came in at ten to five on a Friday, in a voice the finance office hears every week. Whoever picked it up had the payment half set up before the message ended. People who fall for calls like this are not stupid: a voice you know is hard to doubt, and this one was built to sound right.",
+        "flipNoSend": "Your script didn't go out this time, so there's nothing of yours to show. Next, the same kind of voicemail reaches the finance office's phone, and you're the one listening.",
+        "noBlameLine": "Nobody is marked down for a miss here. A voice you know is hard to doubt, and these messages were made to use that. The people who act on calls like them are busy and trusting, not careless.",
+        "mondayCard": "On Monday: a voice you recognise is not proof of who is calling, and neither is an email that backs it up. If a call or voicemail asks for money, secrecy or a skipped step, ring the person back on a number you already hold, then report it the way your organisation asks you to.",
+        "defendOnly": "You went straight to the phone and inbox this time. A familiar voice feels like proof, and these messages were made to use that. People who fall for calls like these are not stupid. Each card shows what gave the fake ones away, why the real ones were fine, and why ringing back on a number you already hold works whoever is speaking.",
+        "defendIntro": "Go through the voicemails and emails and decide what to do with each one. Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Take your time: there is no trick to it, just the habits that catch these.",
+        "voicePanel": {
+          "heading": "How a voice gets copied",
+          "text": "Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. If you can't reach the person to check, ask someone who would know, such as the finance manager."
+        }
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "people": [
+      {
+        "id": "ravinder",
+        "kind": "cast",
+        "address": "ravinder.sandhu@brightwellfoods.example",
+        "forms": {
+          "first": "Ravinder",
+          "formal": "Mr Sandhu",
+          "full": "Ravinder Sandhu"
+        }
+      },
+      {
+        "id": "tom",
+        "kind": "cast",
+        "address": "tom.reilly@brightwellfoods.example",
+        "forms": {
+          "first": "Tom",
+          "full": "Tom Reilly"
+        }
+      }
+    ],
+    "intelFacts": {
+      "brightwell_ceo": {
+        "text": "Ravinder Sandhu is Brightwell Foods' chief executive and often speaks at food-industry events.",
+        "subject": "ravinder",
+        "source": "blk_ceo",
+        "provides": [
+          {
+            "type": "name",
+            "about": "sender",
+            "value": "ravinder_full",
+            "label": "Ravinder Sandhu",
+            "kind": "distinctive"
+          },
+          {
+            "type": "address",
+            "value": "ravinder_address",
+            "label": "ravinder.sandhu@brightwellfoods.example",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "Recordings of a leader speaking in public are the raw material for a cloned voice; the voice is no longer private once it is on a conference stage."
+      },
+      "brightwell_ceo_travel": {
+        "text": "Ravinder Sandhu posted that he is away at a trade show this week with a packed schedule.",
+        "subject": "ravinder",
+        "source": "post_tradeshow",
+        "provides": [],
+        "reduceNote": "A post that puts a leader out of the office with no time to talk gives a caller a believable reason to be rushed and hard to reach back."
+      },
+      "brightwell_payments_clerk": {
+        "text": "Tom Reilly in accounts payable releases Brightwell's supplier payments.",
+        "subject": "tom",
+        "source": "blk_ap_clerk",
+        "provides": [],
+        "reduceNote": "Naming the person who actually releases payments tells an attacker exactly whom to call, not just whom to email."
+      },
+      "brightwell_open_payment": {
+        "text": "Quarter-end note: a large supplier payment is due to go out this week once it is signed off.",
+        "subject": "tom",
+        "source": "blk_payment",
+        "provides": [
+          {
+            "type": "reference",
+            "value": "payment_ref",
+            "label": "the supplier payment due this week",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "A known pending payment lets a caller name the exact thing they want pushed through, so the request sounds like business as usual."
+      }
+    },
+    "templates": {
+      "caller_ceo": {
+        "part": "from",
+        "text": "{sender_name} <{sender_address}>",
+        "slots": [
+          {
+            "id": "sender_name",
+            "type": "name",
+            "about": "sender",
+            "label": "whose voice the call uses"
+          },
+          {
+            "id": "sender_address",
+            "type": "address",
+            "label": "the line it comes from"
+          }
+        ]
+      },
+      "greet_rushed": {
+        "part": "greeting",
+        "text": "Tom, it's me, I've only got a minute between sessions.",
+        "slots": []
+      },
+      "pretext_ceo_payment": {
+        "part": "pretext",
+        "text": "I need {payment} pushed through today while I'm off-site. It's signed off at my end, I just can't get to a desk to do it myself.",
+        "slots": [
+          {
+            "id": "payment",
+            "type": "reference",
+            "label": "which payment"
+          }
+        ],
+        "urgency": "high"
+      },
+      "pretext_catchup": {
+        "part": "pretext",
+        "text": "Just checking the month-end numbers are on track before I'm back.",
+        "slots": [],
+        "urgency": "low"
+      },
+      "ask_pay_now": {
+        "part": "ask",
+        "text": "Release it today, and keep it between us until I'm back and can explain.",
+        "slots": [],
+        "urgency": "high"
+      }
+    },
+    "mailClient": {
+      "accounts": [
+        {
+          "id": "analyst",
+          "address": "analyst@brightwellfoods.example",
+          "displayName": "Red-team analyst",
+          "kind": "given",
+          "person": null,
+          "mailbox": "analyst",
+          "spoofsFrom": true
+        }
+      ],
+      "mailboxes": [
+        {
+          "id": "analyst"
+        }
+      ],
+      "contacts": [
+        {
+          "id": "tom",
+          "person": "tom",
+          "name": "Tom Reilly",
+          "addresses": [
+            "tom.reilly@brightwellfoods.example"
+          ],
+          "role": "Accounts Payable",
+          "revealedBy": "se_intel_brightwell_payments_clerk",
+          "targetId": "ceo_voice_target"
+        }
+      ],
+      "seededMessages": [
+        {
+          "id": "brief",
+          "mailbox": "analyst",
+          "from": {
+            "name": "Red team lead",
+            "address": "lead@redteam.example",
+            "avatar": "npc_neutral"
+          },
+          "to": "analyst@brightwellfoods.example",
+          "subject": "Authorised exercise: Brightwell Foods (finale)",
+          "body": "Hello,\n\nThis is the Brightwell Foods finale. In scope: this inbox and the people on it. Research what's public about the chief executive, then prepare one short call script. The exercise's voice tool reads it aloud in an in-world voice; no real person is used, nothing leaves this account, and you are not scored on how it sounds.\n\nRed team lead",
+          "time": "09:04",
+          "unread": true,
+          "folder": "inbox"
+        }
+      ],
+      "checklistTiming": "onSend",
+      "bodyMode": "templates",
+      "freeTextFlavour": false,
+      "showRedFlagMeter": true
+    },
+    "osint": {
+      "profile": "awareness",
+      "sites": [
+        {
+          "id": "brightwell_e7_site",
+          "name": "Brightwell Foods",
+          "url": "brightwellfoods.example",
+          "type": "company-site",
+          "pages": [
+            {
+              "id": "leadership",
+              "title": "Leadership",
+              "blocks": [
+                {
+                  "id": "blk_ceo",
+                  "kind": "staff",
+                  "person": "ravinder",
+                  "name": "Ravinder Sandhu",
+                  "role": "Chief Executive",
+                  "address": "ravinder.sandhu@brightwellfoods.example",
+                  "fact": "brightwell_ceo"
+                }
+              ]
+            },
+            {
+              "id": "team",
+              "title": "Our team",
+              "blocks": [
+                {
+                  "id": "blk_ap_clerk",
+                  "kind": "staff",
+                  "person": "tom",
+                  "name": "Tom Reilly",
+                  "role": "Accounts Payable",
+                  "address": "tom.reilly@brightwellfoods.example",
+                  "fact": "brightwell_payments_clerk"
+                }
+              ]
+            },
+            {
+              "id": "finance_news",
+              "title": "Finance update",
+              "blocks": [
+                {
+                  "id": "blk_payment",
+                  "kind": "p",
+                  "text": "Quarter-end: a large supplier payment is due to go out this week once it is signed off.",
+                  "fact": "brightwell_open_payment"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "brightwell_e7_social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "type": "social",
+          "profiles": [
+            {
+              "person": "ravinder",
+              "posts": [
+                {
+                  "id": "post_tradeshow",
+                  "text": "At the trade show all week — back to back, so bear with me on email. Great to see so many suppliers here.",
+                  "fact": "brightwell_ceo_travel"
+                },
+                {
+                  "id": "post_ravinder_other",
+                  "text": "Twenty-five years of the chilled range this month. Proud of the whole team."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "phishTargets": [
+      {
+        "id": "ceo_voice_target",
+        "address": "tom.reilly@brightwellfoods.example",
+        "displayName": "Tom Reilly",
+        "role": "Accounts Payable",
+        "subjects": [
+          {
+            "id": "s_payment",
+            "text": "Urgent payment",
+            "topic": "finance"
+          },
+          {
+            "id": "s_other",
+            "text": "Quick word",
+            "topic": "general"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "finance"
+          ]
+        },
+        "emailReplyDelay": 6,
+        "redFlagMeter": true,
+        "urgency": {
+          "advisoryMax": "low"
+        },
+        "templateSets": {
+          "from": [
+            "caller_ceo"
+          ],
+          "greeting": [
+            "greet_rushed"
+          ],
+          "pretext": [
+            "pretext_ceo_payment",
+            "pretext_catchup"
+          ],
+          "ask": [
+            "ask_pay_now"
+          ]
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "payment_ref"
+          ],
+          "minDistinct": 1,
+          "trusts": [
+            "ravinder"
+          ],
+          "story": "a rushed call that sounds like the chief executive, pushing a payment he can explain later"
+        },
+        "requiredFactors": [
+          "senderTrust",
+          "pretextRelevant"
+        ],
+        "advisoryFactors": [
+          "urgencyCalibrated"
+        ],
+        "factorStrings": {
+          "open": {
+            "pass": "✓ He would take the call",
+            "fail": "Nothing about the caller or the reason made him act on it.",
+            "redFlag": null
+          },
+          "senderTrust": {
+            "pass": "✓ It sounds like the chief executive he knows",
+            "fail": "He does not place this voice as the chief executive, so a rushed payment request carries no weight.",
+            "redFlag": null
+          },
+          "pretextRelevant": {
+            "pass": "✓ Ties to a payment he is already expecting to release",
+            "fail": "No payment he can match this to, so no reason to act on it.",
+            "redFlag": null
+          },
+          "urgencyCalibrated": {
+            "pass": "✓ The pressure reads as believable"
+          }
+        },
+        "replies": {
+          "landed": "Of course — I'll release it now and keep it quiet until you're back."
+        },
+        "hints": [
+          "Whose voice would a clerk in accounts payable act on without a second thought?",
+          "What payment is already due this week, so the request sounds like normal business?",
+          "Name the chief executive and tie the call to the payment on file; the rush then does the rest."
+        ],
+        "outcome": {
+          "setGlobal": {
+            "phish_ceo_voice_target_landed": true
+          }
+        }
+      }
+    ]
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_office",
+      "door_sign": "Training Room",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "agnieszka_duda",
+          "displayName": "Agnieszka Duda",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/awareness_e7_voice_ceo/ink/agnieszka_duda.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:phish_ceo_voice_target_landed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "land_ceo_voice_target"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e7_voice_ceo_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "check_finance_line"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "position": {
+            "x": 6,
+            "y": 2
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen training kiosk for the Brightwell Foods finale: first the red-team brief and research, then the finance office's phone and inbox.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e7_voice_ceo_defend_done",
+              "value": "A touch-screen training kiosk for the Brightwell Foods finale. The script's written and the voicemails and emails are all dealt with."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e7_voice_ceo"
+          }
+        }
+      ]
+    }
+  }
+}

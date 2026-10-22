@@ -3200,5 +3200,23 @@
         "room": "training_room"
       }
     ]
+  },
+  "awareness_e7_voice_ceo": {
+    "globals": {
+      "episode_e7_voice_ceo_defend_percent": 0,
+      "episode_e7_voice_ceo_defend_reportRate": 0,
+      "episode_e7_voice_ceo_defend_done": false,
+      "episode_e7_voice_ceo_defend_pass": false,
+      "phish_ceo_voice_target_landed": false
+    },
+    "npcs": [
+      {
+        "id": "agnieszka_duda",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e7_voice_ceo/ink/agnieszka_duda.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
   }
 }
