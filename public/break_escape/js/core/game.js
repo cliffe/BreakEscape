@@ -351,6 +351,7 @@ export function preload() {
     this.load.image('case-file', 'objects/case-file.png');
     this.load.image('osint-workstation', 'objects/osint-workstation.png');
     this.load.image('triage-workstation', 'objects/triage-workstation.png');
+    this.load.image('kiosk', 'objects/kiosk.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');

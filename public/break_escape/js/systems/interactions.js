@@ -1094,6 +1094,16 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // Awareness episode kiosk (P7-H): runs the episode named in minigameData.episodeId.
+    if (sprite.scenarioData.type === 'kiosk') {
+        if (window.startEpisodeRunner) {
+            window.startEpisodeRunner(sprite);
+        } else {
+            window.gameAlert('Kiosk unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
     // Landing-page builder workstation (P5-G): opens the page named in
     // minigameData.landingPageId (07 section 6). The id is hyphenated (D3).
     if (sprite.scenarioData.type === 'page-builder') {

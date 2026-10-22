@@ -14,7 +14,8 @@ import { resolveObjectField } from '../utils/conditional-text.js';
 import { socialOverlayParams } from '../minigames/framework/social-overlay.js';
 import { startInboxTriageMinigame } from './triage-starter.js';
 import { withLockedHint } from '../utils/locked-hint.js';
-export { startInboxTriageMinigame };
+import { startEpisodeRunner } from './episode-starter.js';
+export { startInboxTriageMinigame, startEpisodeRunner };
 
 // Maps Phaser texture keys to their actual filenames (where key !== filename stem)
 const TEXTURE_KEY_TO_FILE = {
@@ -1186,6 +1187,9 @@ window.startOsintBrowserMinigame = startOsintBrowserMinigame;
 
 // Inbox triage (P3-W): the starter lives in triage-starter.js so tests can load it alone.
 window.startInboxTriageMinigame = startInboxTriageMinigame;
+
+// Awareness episode kiosk (P7-H): episode-starter.js holds the starter.
+window.startEpisodeRunner = startEpisodeRunner;
 
 // Landing-page builder (P5-G): the workstation opens the page named in
 // minigameData.landingPageId. The overlay derives the target from the page's single
