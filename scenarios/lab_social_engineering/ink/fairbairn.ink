@@ -21,6 +21,7 @@ VAR quiet = false
 { met: -> hub }
 ~ met = true
 Gareth Fairbairn: We weren't introduced properly. Gareth. Forty years I've had this firm, and I hired most of that floor myself.
+~ quiet = true
 -> hub
 
 // Play a pending scene if one is due, then return to the hub body. Run as a tunnel
@@ -47,7 +48,10 @@ Gareth Fairbairn: We weren't introduced properly. Gareth. Forty years I've had t
     -> why
 + [I'll leave you to it.]
     #exit_conversation
-    { roe_signed:
+    {
+    - report_filed:
+        Gareth Fairbairn: Aye. Tomasz is through there. I think he's enjoying this more than he lets on.
+    - roe_signed:
         Gareth Fairbairn: Aye. Go gently with them.
     - else:
         Gareth Fairbairn: Aye. Mind the sheet.

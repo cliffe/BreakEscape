@@ -716,3 +716,118 @@ real applicants write from webmail), item 23 (`mission.json` edited), item 27 (e
   the additive `lockedHint` on `doorProperties` (null default → identical behaviour); the rest are
   SE-only (phishTargets/social consumers, the SE influence bar, the SE mail checklist, the opt-in report
   `labelBy`).
+
+## Lab fix round 7 — R5 findings (Part A) + dialogue review C3 (Part B) (2026-10-22)
+
+Source: `scenarios/lab_social_engineering/playtests/FIX_ROUND_R5.md`, detail in `R5.md` and
+`DIALOGUE_REVIEW_C3.md`. Polish round. Each logic fix is proven on the real code path with a Node test.
+
+### Part A — R5 findings
+
+- **F1 — Dev's bar carries a stale "Last change" when the first call ended on net 0.** Root cause:
+  person-chat-pretext resets influence to the character's start with reason `new_call`; when the
+  previous call ended on the start value the reset is 0→0, and `social-influence.js` `_commit`'s emit
+  guard (`previous !== value || crossed || rearmed`) suppressed the `npc_influence_changed` event, so a
+  bar mounted *before* the reset never got the `new_call` event that clears its seeded line. (The log
+  seed and the live handler already special-case `new_call`; only the emission was missing.) Fix: in
+  `_commit`, also emit when the entry's reason is `new_call` (a call boundary always announces itself,
+  even at 0 delta). Narrow — a non-boundary 0→0 write stays silent. Proof:
+  `test/js/social-influence-new-call.test.mjs` (3 tests: 0→0 boundary emits + logs; non-boundary no-op
+  silent; real −30→0 boundary unchanged). The bar's consumption of that event is already covered by
+  `social-influence-bar.test.mjs` ("live: a new_call reset event clears a stale change line").
+- **F2 — bar and log disagree ("+10 candour" vs "+20 CALM ✓ Corrected").** The disagreeing "+10
+  candour" on the bar is the stale first-call line surfacing at the second call's open; once F1 clears
+  the bar at the call boundary it is gone, so the disagreement goes with it. The residual within-call
+  granularity difference (the bar shows the last single influence entry, the debrief shows the turn
+  total) is the pre-existing R4 D12 cosmetic, explicitly "not changed" there; left as-is — reconciling
+  it needs a design decision on bar aggregation, out of a polish round.
+- **F3 / J5 — call debrief says "You got what you came for." over a refused ask.** `got_it` means at
+  least one ask was granted, but the same call can have had an ask refused (an earlier grant, a later
+  refusal). Fix is display-only in `person-chat-pretext.js` `renderDebrief`: when the outcome is
+  `got_it` and `session.refusals > 0`, the line reads "You got some of what you came for." `outcomeFor`
+  and the payload globals are untouched. Proof: `test/js/social-pretext-debrief.test.mjs`.
+- **F4 — Ruth's phone-list preview shows her oldest line, not her newest.** Investigated, not fixed.
+  Root cause: Ruth's phone is a looping hint hub; only the preloaded opening line is persisted to the
+  shared phone conversation history, so the contact-list preview (which reads that history) keeps
+  showing the opening while the live thread regenerates later stage lines from the engine each open.
+  Dev's row is correct because a pretext call persists its lines. A fix means changing how the shared
+  phone-chat history/preview works (`phone-chat-conversation.js` / `phone-chat-ui.js`), which is used
+  by m01–m10's support hubs — a regression risk the brief forbids in a polish round. R5 already marks
+  this as the unchanged second half of R4 F6. Left for the orchestrator to schedule as its own item.
+- **J1 — Ruth stale after Fairbairn's payoff.** `ruth.ink` `keys`: the blue-team key hand-over line
+  now branches on `fairbairn_payoff_heard` (declared as a synced global), so a student who has already
+  heard Gareth is not sent back to him.
+- **J2 — Ruth's phone keeps pointing at Gareth after the payoff.** Combined with C3 item 5 (below).
+- **J3 — end card claims staff "keep reporting", which the report says it cannot see.** `scenario.json.erb`
+  end-screen body reworded to "…Gareth keeps his staff, and now he knows where the gaps are." (NB: C3's
+  "considered and left alone" preferred keeping the end-screen "keep reporting" line; R5 J3 in Part A
+  asks to reword it, and its reasoning is sound, so Part A wins. Logged as a deliberate choice between
+  the two reviews.)
+- **J4 — "Finance intern" row names Sofia (the only intern).** Added `"role": "Finance"` to the `lord`
+  phishTarget so the engagement report labels her row "Finance" (the report prefers a phishTarget's
+  role over the contact's). The intel-board contact keeps "Finance intern" for the pretext. Report rows
+  are now Careers / Finance / Finance — no unique role identifies a person. Verified by parsing the
+  resolved scenario.
+- **J8 — Ruth gives away Melanie's pretext.** `ruth.ink` `topic_account`: the spoiler "borrow a name
+  she already trusts" is replaced with "you'll have to work out what gets past her" — keeps the nudge,
+  drops the answer the Pierce misses are built around.
+- **J10 — triage Result card says "Sender address (caught 0 of 3)" when no flags were ticked.**
+  `inbox-triage-minigame.js`: when no flag was named anywhere (no catch in `flagRecall` and no false
+  claim in `falseByFactor`), the weakest-skill line reads "You didn't name any flags on these
+  messages, so there's nothing to grade skill by skill. …" instead of a 0-of-N skill. Proof:
+  `test/js/social-triage-weakest.test.mjs` (no-flags case + control with a flag ticked).
+- **J6 — "five fixes"** = C3 item 6 (below). **J7** (door toast "Requires key." + specific hint read
+  twice): left — it works, the hint is correctly placed, and the generic line comes from the shared
+  door-lock system used by m01–m10. **J9** (Fairbairn's two goodbyes): recorded as fine; C3 item 4 adds
+  a third post-payoff branch before them, which is consistent with J9.
+
+### Part B — dialogue review C3 (16 proposals), all applied
+
+1. `tomasz.ink` `debrief_close`: kitchen line → "…I've talked him down to the executive summary." (drops
+   the third "no names" and the bad idea of pinning a security report in the staff kitchen).
+2. `tomasz.ink` `debrief` (`dev_reported && got_it` branch): "your call-back" → "your second call"
+   (removes the clash with "a call-back rule").
+3. `ruth.ink` `hub` (`pretext_call_reported && not pretext_call_done`): the ambiguous "He knows it was
+   us" → "Gareth promised to look into it, with a straight face. Give the desk a while to calm down."
+4. `fairbairn.ink` goodbye: added a `report_filed` branch ("…Tomasz is through there. I think he's
+   enjoying this more than he lets on.") above the existing signed/else branches, so the last line
+   after the payoff points onward rather than saying "Go gently with them" after the attack is over.
+5 / J2. `ruth_phone.ink`: declared `VAR fairbairn_payoff_heard` and gated both "Has Gareth seen the
+   report?" (stage7) and "Anything for Gareth?" (stage_done) on `not fairbairn_payoff_heard`.
+6 / J6. `tomasz.ink` `debrief`: "five fixes" → "three fixes" (matches the three report findings/controls).
+7. `ruth.ink` `topic_plan`: deleted the second no-names line (it repeated the first); kept `~ quiet`.
+8. `scenario.json.erb` `measures[names].why`: "Gareth's one rule." → "Gareth's one condition is no names
+   in anything he reads." (states the rule for a student who reached the plan without hearing Gareth).
+9. `ruth.ink` `topic_scope`: dropped the "you're not testing, you're breaking the law" X-you're-Y line
+   (the law is stated at the signing) → "If something isn't on it, ask me before you try it."
+10. `fairbairn.ink` `start`: added `~ quiet = true` after the introduction so "Yes?" does not follow it.
+11. `tomasz.ink` `start` and `hub`: removed the Midlands/Scots tag "mind" from both lines (Dev's/Gareth's
+    voice, not Tomasz's).
+12. `ruth.ink` `hub` (`phish_lord_landed && not report_filed`): "gave us them" → "gave us all three".
+13. `ruth.ink` `topic_recon`: PDF-properties hint → "open the published PDF's properties. The author
+    field shows how usernames are built." (matches the phone hint fixed in cycle 2).
+14. `scenario.json.erb` triage `own_lord` `urgencyCalibrated` note: "A payslip 'ready now'…" → "A payslip
+    waiting to be read is the pull to click before checking the address." (the student's own send never
+    said "ready now").
+15. `scenario.json.erb` `fwd_balance_sheet` body: "as promised" → "a few days early for once" (the real
+    sheet arrives Monday after a Friday promise; removes the date contradiction).
+16. `mission.json` description: removed the "for a client whose…" phrasing that read as a second company,
+    and the design-brief word "Deterministic".
+
+No C3 items skipped.
+
+### Gates
+
+- Node (per file, to avoid the known whole-dir runner IPC flake): all green —
+  `social-influence`, `social-influence-bar`, `social-influence-pip`, `social-influence-new-call` (new),
+  `social-pretext-session/-prep/-first-menu/-judge`, `social-pretext-debrief` (new),
+  `social-triage-scoring/-ui/-starter`, `social-triage-weakest` (new), `social-lord-triage-e2e`,
+  `social-engagement-report`, `social-lab-ruth-keys`, `social-lab-ruth-phone-keys`,
+  `social-lab-fairbairn-scenes`, `social-lab-ruth-payoff-lines` (new: proves J1, C3 item 4 and item 5
+  on the compiled ink), `validator-social-lab/-triage/-pretext`.
+- Validator: `validate_scenario.rb scenarios/lab_social_engineering/scenario.json.erb --no-graph
+  --skip-ink --strict-social` → schema passed, no errors (standard lab suggestions and the two
+  pre-existing phone-avatar recommended-field notes only).
+- All 4 touched lab ink files recompiled to `.json` (dev/lord/pierce recompiled identically, no diff).
+- Engine changes are all SE-only paths (social-influence service, pretext debrief, inbox-triage), none
+  installed or reached by m01–m10; no shipped mission scenario, ink or audio touched.

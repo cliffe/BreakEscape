@@ -730,9 +730,16 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 const weak = weakestFactor(result.perFactor);
                 if (weak) {
                     const nudges = isObj(this.set.nudges) ? this.set.nudges : {};
-                    p.appendChild(el('p', 'tri-weakest',
-                        `Weakest skill: ${skillName(weak.id)} (caught ${weak.caught} of ${weak.caught + weak.missed}). ` +
-                        (nudges[weak.id] || 'Practise it in the mail client, then look it up in your lab sheet.')));
+                    // "Weakest skill: Sender address (caught 0 of 3)" reads as if the
+                    // student tried and failed, when they ticked no flags at all. In that
+                    // case there is nothing to grade skill by skill (lab R5 J10). Any flag
+                    // ticked shows up as a catch (flagRecall) or a false claim (falseByFactor).
+                    const namedAnyFlags = (result.flagRecall?.caught || 0) > 0
+                        || Object.keys(result.falseByFactor || {}).length > 0;
+                    p.appendChild(el('p', 'tri-weakest', namedAnyFlags
+                        ? `Weakest skill: ${skillName(weak.id)} (caught ${weak.caught} of ${weak.caught + weak.missed}). ` +
+                          (nudges[weak.id] || 'Practise it in the mail client, then look it up in your lab sheet.')
+                        : 'You didn\'t name any flags on these messages, so there\'s nothing to grade skill by skill. Tick what looks off next time, then check your lab sheet.'));
                 }
             }
         }

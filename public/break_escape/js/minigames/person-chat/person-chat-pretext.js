@@ -444,7 +444,13 @@ export function renderDebrief(container, { session, spec, onDone } = {}) {
     const outcome = document.createElement('p');
     outcome.className = 'pretext-debrief-outcome';
     const outcomeText = { got_it: 'You got what you came for.', reported: 'The call was reported.', walked_away: 'You rang off.' };
-    outcome.textContent = outcomeText[outcomeFor(session)] || '';
+    const outcomeKey = outcomeFor(session);
+    // `got_it` means at least one ask was granted, but the call may also have had an
+    // ask refused (an earlier grant, a later refusal). Saying "You got what you came
+    // for." over a refused ask misleads (lab R5 F3). Word the partial case plainly.
+    outcome.textContent = (outcomeKey === 'got_it' && session.refusals > 0)
+        ? 'You got some of what you came for.'
+        : (outcomeText[outcomeKey] || '');
     panel.appendChild(outcome);
 
     const list = document.createElement('ol');

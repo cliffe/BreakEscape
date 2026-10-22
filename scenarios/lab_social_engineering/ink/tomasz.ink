@@ -32,7 +32,7 @@ Tomasz: You're the one giving me a headache this week. Good. I asked for it.
 Tomasz: Tomasz. I run security here, me and half a person's budget.
 {
 - triage_pass and profile_done and not fairbairn_payoff_heard:
-    Tomasz: You've beaten me to both. Gareth's been asking after you, mind. See him first if you like, then we'll close this out.
+    Tomasz: You've beaten me to both. Gareth's been asking after you. See him first if you like, then we'll close this out.
 - triage_pass and profile_done:
     Tomasz: You've beaten me to both — the inbox triaged and the fixes picked. Keen. Sit down and we'll close this out.
 - else:
@@ -46,7 +46,7 @@ Tomasz: Tomasz. I run security here, me and half a person's budget.
 - quiet:
     ~ quiet = false
 - triage_pass and profile_done and not fairbairn_payoff_heard:
-    Tomasz: Both done. Gareth's been asking after you, mind. See him first if you like, then we'll close this out.
+    Tomasz: Both done. Gareth's been asking after you. See him first if you like, then we'll close this out.
 - triage_pass and profile_done:
     Tomasz: Both done. Sit down, let's close this out.
 - triage_pass:
@@ -93,7 +93,7 @@ Tomasz: Here's what it showed. An open inbox trusts anyone, a From line is just 
 }
 {
 - dev_reported and pretext_service_desk_call_outcome == "got_it":
-    Tomasz: Dev reported the first call — credit to him — but your call-back still got the date. A call-back rule to a number on file stops both.
+    Tomasz: Dev reported the first call — credit to him — but your second call still got the date. A call-back rule to a number on file stops both.
 - dev_reported:
     Tomasz: And Dev reported you. Credit to him — but a call-back rule would have caught it without him noticing a thing.
 - pretext_service_desk_call_outcome == "got_it" and pretext_service_desk_call_lowest >= 0:
@@ -103,7 +103,7 @@ Tomasz: Here's what it showed. An open inbox trusts anyone, a From line is just 
 - else:
     Tomasz: And Dev gave you enough to write Sofia's email. A call-back to a number on file stops every line of that.
 }
-Tomasz: That report's got five fixes in it. I'll get budget for one this year, if I'm lucky. Which would you pick?
+Tomasz: That report's got three fixes in it. I'll get budget for one this year, if I'm lucky. Which would you pick?
 + [A call-back rule on the service desk.]
     Tomasz: Cheapest fix on the list, and it would have stopped Sofia's whole chain. Good pick.
     -> debrief_close
@@ -115,7 +115,7 @@ Tomasz: That report's got five fixes in it. I'll get budget for one this year, i
     -> debrief_close
 
 === debrief_close ===
-Tomasz: Gareth's pinning your report up in the kitchen. No names on it, so nobody's hiding from it. Thanks for playing it straight.
+Tomasz: Gareth wanted your whole report pinned up in the kitchen. I've talked him down to the executive summary. Thanks for playing it straight.
 #complete_task:closing_debrief
 #exit_conversation
 -> END

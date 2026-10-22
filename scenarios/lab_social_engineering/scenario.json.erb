@@ -124,7 +124,7 @@
       "conclusionScreen": {
         "type": "end_screen",
         "title": "ENGAGEMENT CLOSED",
-        "body": "You phished Ledgerwell, then turned round and defended it. The report names no one, and the fixes are written. Gareth keeps his staff, and his staff keep reporting.",
+        "body": "You phished Ledgerwell, then turned round and defended it. The report names no one, and the fixes are written. Gareth keeps his staff, and now he knows where the gaps are.",
         "buttonText": "Return to Missions",
         "outcome": "success"
       },
@@ -716,6 +716,7 @@
         "character": "lord",
         "address": "s.lord@ledgerwell.example",
         "displayName": "Sofia Lord",
+        "role": "Finance",
         "subjects": [
           { "id": "s_payslip", "text": "Your payslip is ready", "topic": "payroll" },
           { "id": "s_hi", "text": "Hi", "topic": "general" }
@@ -878,7 +879,7 @@
                 "senderTrust": "The From address claims to be the payroll portal, but the message did not come from Ledgerwell.",
                 "senderAuth": "The authentication results are the sending account's own, not the portal's — the real domain did not send this.",
                 "linkCredible": "The link text says the real portal, but the address goes to a look-alike domain.",
-                "urgencyCalibrated": "A payslip 'ready now' is the pressure to click without checking."
+                "urgencyCalibrated": "A payslip waiting to be read is the pull to click before checking the address."
               },
               "headerNote": "The header results come from the account this was really sent from, not from the portal it claims to be.",
               "ifTrusted": "Sofia would have signed in on the look-alike page and handed over her portal password.",
@@ -953,7 +954,7 @@
             "to": "finance@ledgerwell.example",
             "subject": "Q3 balance sheet",
             "time": "09:45",
-            "body": "Mel, Q3 balance sheet as promised. Sent via the finance list so the team gets a copy too.\n\nJed",
+            "body": "Mel, Q3 balance sheet, a few days early for once. Sent via the finance list so the team gets a copy too.\n\nJed",
             "attachments": [ { "id": "q3", "label": "Q3-balance-sheet.xlsx", "kind": "spreadsheet" } ],
             "auth": {
               "spf": "fail", "dkim": "pass", "dmarc": "pass",
@@ -1115,7 +1116,7 @@
         "measures": [
           { "id": "names", "step": "measures", "correct": false, "blame": true,
             "text": "Which named staff fell for it.",
-            "why": "Gareth's one rule. Name people and they stop reporting." },
+            "why": "Gareth's one condition is no names in anything he reads. Name people and they stop reporting." },
           { "id": "how_far", "step": "measures", "correct": true,
             "text": "How far each attempt gets: sent, landed, failed, page visits and the call outcome.",
             "why": "Each one points at a step in a process that could have stopped it." },

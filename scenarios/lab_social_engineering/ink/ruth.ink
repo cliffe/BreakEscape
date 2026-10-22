@@ -33,6 +33,7 @@ VAR target_ready_pierce = false
 VAR target_ready_lord = false
 VAR osint_done = false
 VAR fairbairn_condition_heard = false
+VAR fairbairn_payoff_heard = false
 VAR acct_freemail = false
 VAR phish_hampshire_landed = false
 VAR phish_pierce_landed = false
@@ -152,7 +153,11 @@ Ruth Adeyemi: Read the rules of engagement on the board. Properly. Gareth will b
 { report_filed and not blue_team_key_given:
     ~ blue_team_key_given = true
     #give_item:key:blue_team_key
-    Ruth Adeyemi: Report's filed. Gareth's reading it now, so go and see him. Then the Blue Team room: Tomasz has the other half.
+    { fairbairn_payoff_heard:
+        Ruth Adeyemi: Report's filed, and Gareth's read it. The Blue Team room next: Tomasz has the other half.
+    - else:
+        Ruth Adeyemi: Report's filed. Gareth's reading it now, so go and see him. Then the Blue Team room: Tomasz has the other half.
+    }
     ~ quiet = true
 }
 ->->
@@ -176,13 +181,13 @@ Ruth Adeyemi: Read the rules of engagement on the board. Properly. Gareth will b
 - operations_key_given and not phish_pierce_landed:
     Ruth Adeyemi: Delivered isn't landed. It lands when they'd open the file or click the link, the way they would a real one.
 - pretext_call_reported and not pretext_call_done:
-    Ruth Adeyemi: Dev's manager rang Gareth about a dodgy call. He knows it was us. The desk's on guard now, so give it a while.
+    Ruth Adeyemi: Dev's manager rang Gareth about a dodgy call. Gareth promised to look into it, with a straight face. Give the desk a while to calm down.
 - phish_pierce_landed and not (landing_payroll_login_built and pretext_call_done):
     Ruth Adeyemi: Sofia's the careful one. You'll want a look-alike page and a call to the service desk.
 - (landing_payroll_login_built and pretext_call_done) and not phish_lord_landed:
     Ruth Adeyemi: You've got the page and the call. Now write to Sofia.
 - phish_lord_landed and not report_filed:
-    Ruth Adeyemi: Sofia checked the sender, the portal's name and the date. All three were right. Her own service desk gave us them. That's your finding.
+    Ruth Adeyemi: Sofia checked the sender, the portal's name and the date. All three were right. Her own service desk gave us all three. That's your finding.
 - report_filed and not (triage_pass and profile_done):
     Ruth Adeyemi: Tomasz has the other half of this for you, in the Blue Team room.
 - else:
@@ -208,26 +213,25 @@ Ruth Adeyemi: Read the rules of engagement on the board. Properly. Gareth will b
     -> hub
 
 === topic_scope ===
-Ruth Adeyemi: Only what that sheet signs off. Step outside it and you're not testing any more, you're breaking the law.
+Ruth Adeyemi: Only what that sheet signs off. If something isn't on it, ask me before you try it.
 Ruth Adeyemi: Sort the scope cards, answer the stop-rule, and Gareth signs.
 ~ quiet = true
 -> hub
 
 === topic_plan ===
 Ruth Adeyemi: Decide that before you send a thing. Count how far each attempt got. Who fell for it is the one thing we never count.
-Ruth Adeyemi: Name a staff member in a success measure and you've already broken Gareth's one rule.
 ~ quiet = true
 -> hub
 
 === topic_recon ===
 Ruth Adeyemi: Fill the three cards from public sources. The "Missing" rows tell you where to look.
-Ruth Adeyemi: And read the published PDF's properties — who made it, and how. That's the username pattern.
+Ruth Adeyemi: And open the published PDF's properties. The author field shows how usernames are built.
 ~ quiet = true
 -> hub
 
 === topic_account ===
 Ruth Adeyemi: Real applicants write from webmail, so a throwaway address looks like one and passes every check. It's still logged against the job.
-Ruth Adeyemi: Chris's careers inbox takes anything. Melanie's trickier — borrow a name she already trusts.
+Ruth Adeyemi: Chris's careers inbox takes anything. Melanie's trickier — you'll have to work out what gets past her.
 ~ quiet = true
 -> hub
 

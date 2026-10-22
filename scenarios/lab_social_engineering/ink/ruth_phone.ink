@@ -14,6 +14,7 @@
 
 VAR roe_signed = false
 VAR fairbairn_condition_heard = false
+VAR fairbairn_payoff_heard = false
 VAR plan_done = false
 VAR osint_done = false
 VAR se_intel_username_convention = false
@@ -191,7 +192,7 @@ Ruth Adeyemi: Sending's done. The report desk, in this room.
 === stage7 ===
 { triage_pass and profile_done: -> hub }
 Ruth Adeyemi: Blue Team room. If that door's locked, I've got the key — come and see me. Tomasz will set you off.
-+ [Has Gareth seen the report?]
++ {not fairbairn_payoff_heard} [Has Gareth seen the report?]
     Ruth Adeyemi: He's reading it. Go by the window, he wants a word.
     -> stage7
 + {not triage_pass} [The inbox triage?]
@@ -209,7 +210,7 @@ Ruth Adeyemi: Blue Team room. If that door's locked, I've got the key — come a
 
 === stage_done ===
 Ruth Adeyemi: That's the lot. Go and let Tomasz close it out with you.
-+ [Anything for Gareth?]
++ {not fairbairn_payoff_heard} [Anything for Gareth?]
     Ruth Adeyemi: He's read your report. Go and hear what he thinks, by the window.
     -> stage_done
 + [Will do.] #exit_conversation

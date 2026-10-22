@@ -467,7 +467,13 @@ class SocialInfluenceService {
 
         const last = entries[entries.length - 1] || {};
         const band = this.getBand(config.id);
-        if (previous !== value || crossed.length || rearmed.length) {
+        // A call boundary (person-chat-pretext's `new_call` reset) always announces
+        // itself, even when it resets the value to a start it already held (0 to 0,
+        // when the previous call ended on the starting value). The bar's "Last change"
+        // from the previous call is cleared by this event's `new_call` reason; without
+        // the announcement a bar mounted before the reset keeps a stale line (lab R5 F1).
+        const boundary = last.reason === 'new_call';
+        if (previous !== value || crossed.length || rearmed.length || boundary) {
             this._emit('npc_influence_changed', {
                 character: config.id,
                 npcId: ctx?.npcId ?? null,
