@@ -201,3 +201,11 @@ Gallagher and Farah are not used, because they clash with existing scenarios.
 ## Additions from E7 defend (2026-10-22)
 - **Lindiwe Mokoena:** chilled-unit site lead, early 30s, Black South African.
 - **Phone numbers (Ofcom drama ranges):** Ravinder Sandhu's mobile is 07700 900418, the cloned call comes from 07700 900771, and Lindiwe's extension is 0116 496 0214.
+
+## Additions from E6 defend (2026-10-22)
+The full list is under `_brandAdditions` in `awareness/e6/defend.json`.
+- **Tarrowby cast:** Bogdan Ionescu, Shauna Lofthouse, Eilidh Strachan, Dev Mistry, Lerato Dlamini, Chidi Okeke, Callum Whiteley and Marjorie Ackroyd.
+- **Hosts:** the real Tarrowby hosts `staff.`, `hr.`, `facilities.`, `forms.` and `guest.`.
+- **Look-alikes:** `tarrowby-parking`, `-charging` and `-wifi`.
+- **Third parties:** Parceline, FuelWise, Telvoro, PCN Services, `shrtn.example`, ShiftPlanner and PaySuite.
+- **Pre-ship check:** Tarrowby, Parceline, FuelWise, Telvoro, ShiftPlanner and PaySuite still need the real-business web search.

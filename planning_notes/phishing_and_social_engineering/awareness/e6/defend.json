@@ -1,0 +1,581 @@
+{
+  "_about": "Defend fragment for awareness episode E6 (texts and QR codes on a work phone, general staff on the move). Tarrowby Logistics and everyone in it are fictional; every web address ends .example and every phone number is in Ofcom's 07700 900xxx drama range. Copy triageSets and the awarenessEpisode keys into the E6 shells. Episode id assumed here: e6_texts_and_qr (defend-only e6_texts_and_qr_defend). Brand roster: ../BRAND_SET.md (Tarrowby is assigned to E2 and E6).",
+  "_brandAdditions": {
+    "_use": "For BRAND_SET.md section 3 (Tarrowby Logistics). Colin Mather, Jun Watanabe and Fatima Begum are used as BRAND_SET proposes; Roseanne Clarke is left for E2.",
+    "cast": [
+      "Bogdan Ionescu: HGV driver, the colleague fooled in the flip line. 50s, Romanian, in Bradford fifteen years",
+      "Shauna Lofthouse: transport planner. 40s, white, from Keighley. Genuine in e6_shift_moved and form A row 10; spoofed in form A row 6",
+      "Eilidh Strachan: facilities manager. 50s, Scottish, from Aberdeen. Named on the genuine canteen notice (e6_canteen_qr); genuine in form B row 5",
+      "Dev Mistry: IT service desk analyst. 30s, Gujarati-British, grew up in Leicester. Named in e6_mfa_scan's notes as the number to ring; genuine in form B row 10",
+      "Lerato Dlamini: health and safety adviser. 30s, South African, from Durban. Genuine in form A row 1",
+      "Chidi Okeke: fleet coordinator. 40s, Nigerian-British. Genuine in form A row 9",
+      "Callum Whiteley: warehouse operative. early 20s, white, from Bradford. Genuine in form B row 9",
+      "Marjorie Ackroyd: payroll officer. 60s, white, from Wakefield. Named in form B row 8"
+    ],
+    "nameCheck": "Ionescu, Lofthouse, Strachan, Mistry, Dlamini, Okeke, Whiteley and Ackroyd had no hits in scenarios, planning_notes, docs or public/break_escape/js on 2026-10-22. Asante, Nwosu, Iqbal and Oyelaran were rejected because they are already in use.",
+    "realHosts": "staff.tarrowby.example (the staff app), hr.tarrowby.example, facilities.tarrowby.example, forms.tarrowby.example, guest.tarrowby.example. Depot: Shipley; sites named: Bradford Road, Halifax, Leeds.",
+    "lookalikes": "Episode: tarrowbey.example (in the roster), tarrowby-parking.example (added word). Forms: tarrowby-charging.example, tarrowby-wifi.example (added word).",
+    "thirdParties": "Parceline (parceline-redelivery.example), a courier name on a fake fee text; FuelWise (fuelwise-rewards.example), a fuel-card offer nobody asked for; Telvoro (telvoro-billing.example), a mobile network Tarrowby does not use; PCN Services (pcn-settle.example), a fake parking-charge sender; shrtn.example, an invented link shortener; ShiftPlanner (shiftplanner-mail.example) and PaySuite (paysuite-mail.example), the genuine rota and payroll providers that send Tarrowby mail for it.",
+    "preShipCheck": "Web-search Tarrowby, Parceline, FuelWise, Telvoro, ShiftPlanner and PaySuite for real businesses of the same name before release."
+  },
+  "_formPairing": {
+    "_use": "Item n in form A matches item n in form B on kind, phish or genuine, flags, header results and difficulty. Per form: 10 items (4 phish, 6 genuine; 4 texts, 2 QR notices, 4 emails); flags unexpected_qr 1, lookalike_domain 1, senderTrust 1, secrecy_or_bypass 1, urgencyCalibrated 1, senderAuth 1, reply_to_differs 1, smish_shortlink_urgency 1, reply_stop_trick 1 (9 in all); difficulty 5 easy, 4 medium, 1 hard. Each form's look-alike QR notice (row 2) is followed by a real Tarrowby notice on the same subject (row 3).",
+    "rows": [
+      "1 | sms | genuine | (no header) | easy | A: Lerato, new hi-vis vests | B: Colin, early start tomorrow",
+      "2 | qr | phish | unexpected_qr, lookalike_domain | (no header) | medium | A: EV charging 'scan to pay' (tarrowby-charging) | B: staff Wi-Fi 'scan and sign in' (tarrowby-wifi)",
+      "3 | qr | genuine | (no header) | medium | A: the real EV charging guide (facilities.tarrowby) | B: the real guest Wi-Fi sign (guest.tarrowby)",
+      "4 | email | phish | senderTrust, secrecy_or_bypass, urgencyCalibrated | all pass (freemail owns its domain) | easy | A: 'Colin' wants you to text his personal number | B: 'Fatima' wants voucher codes texted to her",
+      "5 | sms | genuine, honest link | (no header) | easy | A: Jun, benefits deadline (hr.tarrowby) | B: Eilidh, car park closed (facilities.tarrowby)",
+      "6 | email | phish, spoofed From | senderAuth, reply_to_differs | SPF fail, DKIM none, DMARC fail | hard | A: spoofed Shauna wants drivers' mobile numbers | B: spoofed Jun wants new starters' mobile numbers",
+      "7 | sms | phish | smish_shortlink_urgency, reply_stop_trick | (no header) | medium | A: Telvoro 'bill payment failed' | B: PCN Services 'unpaid parking charge'",
+      "8 | email | genuine, fail-but-fine | SPF fail, DKIM and DMARC pass | medium | A: next week's rota via ShiftPlanner | B: payslip notice via PaySuite",
+      "9 | sms | genuine | (no header) | easy | A: Chidi, pool van booked | B: Callum, running late for handover",
+      "10 | email | genuine | all pass | easy | A: Shauna, Christmas rota requests | B: Dev, staff app update tonight"
+    ]
+  },
+  "triageSets": [
+    {
+      "id": "e6_phone_messages",
+      "_prefix": "Prefix for the full episode (id e6_texts_and_qr). The defend-only shell (id e6_texts_and_qr_defend) sets episode_e6_texts_and_qr_defend_defend_ instead, as E1, E3 and E5 do. No stage on purpose, as in E1.",
+      "_order": "Teaching order, so a likely miss is followed by a similar item (11 section 4.3): fake text, then a real text; fake QR notice, then a real one; then a QR code in an email; then a second fake text that adds the reply-STOP trick.",
+      "title": "Tarrowby work phone",
+      "brief": "It's your break at Tarrowby's Shipley depot, and six things are waiting on your work phone: texts, two printed notices you passed on site, and an email. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. On a notice, press 'Where does this code go?' to see the address behind the code. Reporting a real message never costs you anything.",
+      "scoringProfile": "awareness",
+      "verifyVerdict": true,
+      "feedbackMode": "immediate",
+      "headerPanel": "off",
+      "glossary": "closed",
+      "channelTells": ["unexpected_qr", "smish_shortlink_urgency", "reply_stop_trick", "lookalike_domain"],
+      "outcome": { "setGlobalPrefix": "episode_e6_texts_and_qr_defend_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "e6_parcel_fee",
+          "kind": "sms",
+          "from": { "address": "07700 900583" },
+          "time": "10:02",
+          "body": "Parceline: we couldn't deliver your parcel. A £1.45 redelivery fee is due by 6pm today or it goes back to the sender: {{link:fee}}",
+          "links": [ { "id": "fee", "text": "shrtn.example/Pk3x9", "destination": "https://parceline-redelivery.example/fee" } ],
+          "truth": {
+            "isPhish": true,
+            "flags": ["smish_shortlink_urgency"],
+            "perFlagNote": {
+              "smish_shortlink_urgency": "A text from a number you don't have saved, a shortened link that hides where it goes, and 'by 6pm today'. A small fee is the hook: the page behind it asks for your card details, not £1.45"
+            },
+            "ifTrusted": "The link opens a payment page that collects your card number. The fee is never the point; the card details are.",
+            "reportReply": "Thanks. That link went to a card-collecting page, not a courier. We've added the number to the block list for Tarrowby phones."
+          }
+        },
+        {
+          "id": "e6_shift_moved",
+          "kind": "sms",
+          "from": { "name": "Shauna Lofthouse (Transport)", "address": "07700 900412" },
+          "time": "10:15",
+          "earlier": [
+            { "text": "Thanks for covering Tuesday. Shauna", "time": "Mon 16:40" }
+          ],
+          "body": "Hi, Thursday's Halifax run now starts at 6am, not 7. It's updated on the staff app. No need to reply. Shauna",
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "smish_shortlink_urgency": "There's no link at all. It points you to the staff app you already use, so you can check it there.",
+              "default": "It's from Shauna's number, which is already saved on your phone with earlier messages in the thread. It tells you about a change and asks you to do nothing except turn up."
+            }
+          }
+        },
+        {
+          "id": "e6_parking_permit",
+          "kind": "qr",
+          "subject": "Staff parking permits: register by Friday",
+          "time": "10:20",
+          "body": "All staff vehicles need a new 2027 permit. Scan to register your number plate and pay the £5 admin fee. Unregistered vehicles may be ticketed from Monday.",
+          "qr": {
+            "destination": "https://tarrowby-parking.example/permit",
+            "location": "Taped to the barrier at the staff car park entrance",
+            "caption": "Tarrowby Facilities"
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["unexpected_qr", "lookalike_domain"],
+            "perFlagNote": {
+              "unexpected_qr": "A taped-on notice with a code and a fee is exactly where you can't see the address before you scan. Anyone can stick a notice to a barrier",
+              "lookalike_domain": "The code goes to tarrowby-parking.example. Tarrowby's own pages are on tarrowby.example; the added word makes it a different site"
+            },
+            "ifTrusted": "The page would take your card details for a permit that doesn't exist, and your number plate to make the next message look real.",
+            "reportReply": "Thanks. Facilities didn't put that up, and staff parking is free. We've taken the notices down and checked the other gates."
+          }
+        },
+        {
+          "id": "e6_canteen_qr",
+          "kind": "qr",
+          "subject": "How was lunch? Rate this week's menu",
+          "time": "10:24",
+          "body": "Two quick questions. No sign-in, no names. Results go up on the canteen board on Friday.",
+          "qr": {
+            "destination": "https://forms.tarrowby.example/canteen-menu",
+            "location": "Printed on the table cards in the canteen",
+            "caption": "Put up by Eilidh Strachan, Facilities"
+          },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "unexpected_qr": "A QR code is fine when you'd expect one, it comes from someone you know, and it goes to Tarrowby's own domain. This one asks for no password and no card.",
+              "lookalike_domain": "forms.tarrowby.example is a page on Tarrowby's real domain; the part before tarrowby.example is just the name of the page.",
+              "default": "Printed table cards in the canteen, signed by the facilities manager, going to forms.tarrowby.example and asking nothing personal."
+            }
+          }
+        },
+        {
+          "id": "e6_mfa_scan",
+          "_worked": "The worked item for this set (F = 3). Report or Verify + all three = 100; Report + two = 87; Delete + all three = 70; Trust + none = 0.",
+          "from": { "name": "Tarrowby IT Service Desk", "address": "it-servicedesk@tarrowbey.example" },
+          "to": "all-staff@tarrowby.example",
+          "subject": "Action needed: scan to keep your work sign-in",
+          "time": "10:31",
+          "body": "Your sign-in security check runs out at midnight tonight.\nTo keep access to email and the staff app, scan the QR code in this email with your phone camera and confirm your details.\nIf you don't, your account will be locked and you'll need to visit IT in person.\nIT Service Desk",
+          "attachments": [ { "label": "scan-to-confirm.png", "kind": "image" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.tarrowbey.example", "replyTo": "it-servicedesk@tarrowbey.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["unexpected_qr", "lookalike_domain", "urgencyCalibrated"],
+            "perFlagNote": {
+              "unexpected_qr": "A code in an email does what a link does, but you can't read where it goes, and it moves you onto your phone, away from the checks on your work mail",
+              "lookalike_domain": "The sender is tarrowbey.example, with an extra e. Tarrowby's IT desk writes from tarrowby.example",
+              "urgencyCalibrated": "'Midnight tonight' and 'your account will be locked' are there to make you scan before you think"
+            },
+            "ifTrusted": "The code opens a copy of the Tarrowby sign-in page. Whoever made it gets your password and the code from your authenticator app.",
+            "reportReply": "Thanks. That wasn't us: our address is tarrowby.example, and we never ask you to scan anything to keep your sign-in. If you're unsure, ring Dev or anyone on the IT desk on the number on the intranet."
+          }
+        },
+        {
+          "id": "e6_fuel_card_offer",
+          "kind": "sms",
+          "from": { "address": "07700 900702" },
+          "time": "10:40",
+          "body": "FUELWISE: as a professional driver you've been picked for a free £250 fuel card. Claim before midnight: {{link:claim}} Reply STOP to opt out",
+          "links": [ { "id": "claim", "text": "shrtn.example/Fw25x", "destination": "https://fuelwise-rewards.example/claim" } ],
+          "truth": {
+            "isPhish": true,
+            "flags": ["smish_shortlink_urgency", "reply_stop_trick"],
+            "perFlagNote": {
+              "smish_shortlink_urgency": "An offer you never asked for, from a number you don't have, with a shortened link and 'before midnight'",
+              "reply_stop_trick": "Replying STOP tells the sender this number is live and someone reads it, so you get more of these. Don't reply at all; report it and delete it"
+            },
+            "ifTrusted": "The claim page asks for your name, address and bank card 'to post the fuel card'. A reply of STOP would mark your number as one worth texting again.",
+            "reportReply": "Thanks. There's no FuelWise offer. We've blocked the number, and nobody needs to reply STOP to it."
+          }
+        }
+      ]
+    },
+    {
+      "id": "mobile_form_a",
+      "_form": "Mobile parallel form A. Authored as pre; the BA check pair launches it as post (minigameData.stage). Item n here matches item n in mobile_form_b; the table is in _formPairing above.",
+      "title": "Work phone check",
+      "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "stage": "pre",
+      "pairedWith": "mobile_form_b",
+      "scoringProfile": "awareness",
+      "feedbackMode": "end",
+      "headerPanel": "collapsed",
+      "glossary": "closed",
+      "channelTells": ["unexpected_qr", "smish_shortlink_urgency", "reply_stop_trick", "lookalike_domain", "secrecy_or_bypass", "reply_to_differs"],
+      "outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "ma_hivis_vests",
+          "kind": "sms",
+          "from": { "name": "Lerato Dlamini (H&S)", "address": "07700 900144" },
+          "time": "07:05",
+          "body": "Morning. The new hi-vis vests are in the gatehouse. Please pick yours up before Monday's shift. Lerato",
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "A saved contact from health and safety, a routine reminder, and nothing to tap, pay or sign in to."
+            }
+          }
+        },
+        {
+          "id": "ma_ev_charging_pay",
+          "kind": "qr",
+          "subject": "EV charging: scan to pay",
+          "body": "New payment system for the staff charging bays. Scan to register your card. Vehicles left charging without registering will be clamped from Monday.",
+          "qr": {
+            "destination": "https://tarrowby-charging.example/pay",
+            "location": "Stuck to the charger post in the staff car park"
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["unexpected_qr", "lookalike_domain"],
+            "perFlagNote": {
+              "unexpected_qr": "A sticker on a charger asking for card details is where a fake code is easiest to place and hardest to check",
+              "lookalike_domain": "tarrowby-charging.example is not Tarrowby's domain; the added word makes it someone else's site"
+            },
+            "ifTrusted": "The page would collect your card details for a charging fee that doesn't exist.",
+            "reportReply": "Thanks. Staff charging is free and has no sticker. We've removed it."
+          }
+        },
+        {
+          "id": "ma_ev_charging_guide",
+          "kind": "qr",
+          "subject": "EV charging bays: how to use them",
+          "body": "Charging is free for staff. Plug in and tap your staff pass on the reader. Scan for the full guide and the booking rota.",
+          "qr": {
+            "destination": "https://facilities.tarrowby.example/ev-charging",
+            "location": "Laminated sign in a wall holder beside the charging bays",
+            "caption": "Questions: Eilidh Strachan, Facilities, ext. 2210"
+          },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "unexpected_qr": "The code goes to facilities.tarrowby.example, Tarrowby's own domain, and the sign asks for no card and no password.",
+              "lookalike_domain": "facilities.tarrowby.example is a page on the real domain.",
+              "default": "A fixed sign from Facilities with a named contact, a guide rather than a payment, and Tarrowby's real domain behind the code."
+            }
+          }
+        },
+        {
+          "id": "ma_colin_personal_number",
+          "from": { "name": "Colin Mather", "address": "colin.mather.tby@inboxly.example" },
+          "to": "you@tarrowby.example",
+          "subject": "Quick favour, text me",
+          "time": "08:12",
+          "body": "Are you on shift? I'm stuck with a customer and need a favour sorted before 12. Text me on my personal number, 07700 900871, not my work one, and keep it between us for now.\nColin",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "colin.mather.tby@inboxly.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "perFlagNote": {
+              "senderTrust": "The warehouse manager's name on a personal inbox at inboxly.example, not tarrowby.example",
+              "secrecy_or_bypass": "'Not my work one' and 'keep it between us' move you off the channels Tarrowby can see",
+              "urgencyCalibrated": "'Before 12' and 'stuck with a customer' leave no time to walk over and ask him"
+            },
+            "ifTrusted": "Once you text that number, the 'favour' follows: usually gift cards or a payment, from someone who isn't Colin.",
+            "reportReply": "Thanks. Colin didn't send it. His only address is on tarrowby.example."
+          }
+        },
+        {
+          "id": "ma_benefits_deadline",
+          "kind": "sms",
+          "from": { "name": "Jun Watanabe (HR)", "address": "07700 900233" },
+          "time": "09:00",
+          "body": "Hi, a reminder from HR: benefit choices close on Friday. You can do it in the staff app under Benefits, or at {{link:benefits}}. Jun",
+          "links": [ { "id": "benefits", "text": "hr.tarrowby.example/benefits", "destination": "https://hr.tarrowby.example/benefits" } ],
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "smish_shortlink_urgency": "The link is written out in full and goes where it says, to hr.tarrowby.example. Friday is the normal deadline, and you can use the staff app instead.",
+              "default": "A saved contact in HR, an honest link to Tarrowby's own domain, and a way to do it without the link at all."
+            }
+          }
+        },
+        {
+          "id": "ma_drivers_numbers_spoof",
+          "from": { "name": "Shauna Lofthouse", "address": "shauna.lofthouse@tarrowby.example" },
+          "to": "shipley.depot@tarrowby.example",
+          "subject": "Drivers' mobile numbers for the new rota app",
+          "time": "09:41",
+          "body": "Hi,\nThe new rota app needs every driver's mobile number. Could you reply with the list from the depot contact sheet? I'm at the Leeds site today.\nThanks,\nShauna",
+          "auth": { "spf": "fail", "dkim": "none", "dmarc": "fail", "envelopeFrom": "mailer.quickpost-mail.example", "replyTo": "shauna.planning@quickpost-mail.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderAuth", "reply_to_differs"],
+            "perFlagNote": {
+              "senderAuth": "SPF and DMARC both failed for tarrowby.example: Tarrowby's own servers didn't send this",
+              "reply_to_differs": "Replies go to shauna.planning@quickpost-mail.example, not to Shauna's Tarrowby address"
+            },
+            "headerNote": "Open the details: the From shows Shauna's real address, but the checks failed and the reply-to points somewhere else.",
+            "ifTrusted": "A list of drivers' mobile numbers is exactly what a run of fake texts needs.",
+            "reportReply": "Thanks. Shauna is in Shipley today and didn't send it. There is no new rota app."
+          }
+        },
+        {
+          "id": "ma_phone_bill_failed",
+          "kind": "sms",
+          "from": { "name": "Telvoro", "address": "07700 900964" },
+          "time": "10:15",
+          "body": "Telvoro: your last bill payment failed. Update your card within 24 hrs to avoid disconnection: {{link:pay}} Reply STOP to opt out",
+          "links": [ { "id": "pay", "text": "shrtn.example/Tv8k2", "destination": "https://telvoro-billing.example/update" } ],
+          "truth": {
+            "isPhish": true,
+            "flags": ["smish_shortlink_urgency", "reply_stop_trick"],
+            "perFlagNote": {
+              "smish_shortlink_urgency": "A shortened link, a 24-hour deadline and a threat to cut you off. Your work phone's bill is paid by Tarrowby, so there's nothing of yours to fail",
+              "reply_stop_trick": "Replying STOP confirms the number is live and read. Don't reply; report it"
+            },
+            "ifTrusted": "The page would take your card details for a bill you don't pay.",
+            "reportReply": "Thanks. Tarrowby phones aren't on Telvoro. We've blocked the number."
+          }
+        },
+        {
+          "id": "ma_rota_next_week",
+          "from": { "name": "Tarrowby Rota", "address": "rota@tarrowby.example" },
+          "to": "you@tarrowby.example",
+          "subject": "Your shifts for the week of 3 November",
+          "time": "11:02",
+          "body": "Your shifts for next week are now in the staff app under Rota. If anything looks wrong, speak to Shauna in Transport.\nTarrowby Rota",
+          "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "send.shiftplanner-mail.example", "replyTo": "rota@tarrowby.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "senderAuth": "SPF failed because the rota service, ShiftPlanner, sends it for Tarrowby, but DKIM passed and DMARC passed for tarrowby.example.",
+              "default": "Tarrowby's real domain, nothing to click, and it sends you to the staff app and to a person you know."
+            },
+            "headerNote": "One failed check on its own is a clue, not proof. Services that send mail for a company often break SPF while DKIM still passes."
+          }
+        },
+        {
+          "id": "ma_pool_van",
+          "kind": "sms",
+          "from": { "name": "Chidi Okeke (Fleet)", "address": "07700 900318" },
+          "time": "11:30",
+          "body": "Pool van TBY-14 is yours tomorrow, 7am to 3pm. Keys at the gatehouse. Chidi",
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "A saved contact in the fleet team confirming a booking, with nothing to tap and nothing to send back."
+            }
+          }
+        },
+        {
+          "id": "ma_christmas_rota",
+          "from": { "name": "Shauna Lofthouse", "address": "shauna.lofthouse@tarrowby.example" },
+          "to": "all-staff@tarrowby.example",
+          "subject": "Christmas rota: requests open",
+          "time": "12:10",
+          "body": "Hi all,\nRequests for the Christmas and New Year rota are open until 14 November. Put them in the staff app under Rota, the same as last year.\nShauna",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "shauna.lofthouse@tarrowby.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "urgencyCalibrated": "There's a date, but it's three weeks off and the process is the usual one.",
+              "default": "Shauna's real address, a note to everyone, and the normal route through the staff app."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "mobile_form_b",
+      "_form": "Mobile parallel form B. Authored as post; the BA check pair launches it as pre (minigameData.stage). Item n here matches item n in mobile_form_a; the table is in _formPairing above.",
+      "title": "Work phone check",
+      "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "stage": "post",
+      "pairedWith": "mobile_form_a",
+      "scoringProfile": "awareness",
+      "feedbackMode": "end",
+      "headerPanel": "collapsed",
+      "glossary": "closed",
+      "channelTells": ["unexpected_qr", "smish_shortlink_urgency", "reply_stop_trick", "lookalike_domain", "secrecy_or_bypass", "reply_to_differs"],
+      "outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "mb_early_start",
+          "kind": "sms",
+          "from": { "name": "Colin Mather (Warehouse)", "address": "07700 900527" },
+          "time": "07:05",
+          "body": "Morning. Could you start at 6 tomorrow instead of 7? Two extra trailers coming in. Let me know either way. Colin",
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "A saved contact, your own manager, asking about a shift. There's no link, no money and no secret, and you can answer him in person."
+            }
+          }
+        },
+        {
+          "id": "mb_staff_wifi_signin",
+          "kind": "qr",
+          "subject": "Free Wi-Fi for staff: scan to connect",
+          "body": "Sign in once with your Tarrowby email and password to get Wi-Fi on your phone anywhere on site.",
+          "qr": {
+            "destination": "https://tarrowby-wifi.example/login",
+            "location": "Printed sheet taped to the canteen microwave"
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["unexpected_qr", "lookalike_domain"],
+            "perFlagNote": {
+              "unexpected_qr": "A taped-up sheet asking for your work password behind a code is where you can't check the address first",
+              "lookalike_domain": "tarrowby-wifi.example is not Tarrowby's domain; the added word makes it someone else's site"
+            },
+            "ifTrusted": "Your Tarrowby email and password would go to whoever put the sheet up.",
+            "reportReply": "Thanks. IT didn't put that up, and Wi-Fi never needs your work password. We've taken it down."
+          }
+        },
+        {
+          "id": "mb_guest_wifi_sign",
+          "kind": "qr",
+          "subject": "Guest Wi-Fi",
+          "body": "Network: Tarrowby-Guest. Scan to open the guest terms page. No sign-in needed. Staff phones connect automatically and don't need this.",
+          "qr": {
+            "destination": "https://guest.tarrowby.example/terms",
+            "location": "Framed sign on the reception desk",
+            "caption": "Changed monthly by IT. Questions: Dev Mistry, IT Service Desk"
+          },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "unexpected_qr": "The code goes to guest.tarrowby.example, Tarrowby's own domain, and the page asks for nothing but a tick on the terms.",
+              "lookalike_domain": "guest.tarrowby.example is a page on the real domain.",
+              "default": "A framed sign on reception, a named contact in IT, and no password asked for."
+            }
+          }
+        },
+        {
+          "id": "mb_fatima_vouchers",
+          "from": { "name": "Fatima Begum", "address": "fatima.begum.hr@quickpost-mail.example" },
+          "to": "you@tarrowby.example",
+          "subject": "Welcome vouchers for Monday's new drivers",
+          "time": "08:12",
+          "body": "Are you free? I need six £50 shopping vouchers for the new drivers starting Monday. Could you buy them on your card today and text the codes to me on 07700 900790? I'll sort your expenses. Keep it quiet so it's a surprise.\nFatima",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "fatima.begum.hr@quickpost-mail.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "perFlagNote": {
+              "senderTrust": "The recruitment lead's name on a personal inbox at quickpost-mail.example, not tarrowby.example",
+              "secrecy_or_bypass": "'Keep it quiet' and 'on your card' skip the normal way Tarrowby buys things",
+              "urgencyCalibrated": "'Today' leaves no time to ask Fatima in person"
+            },
+            "ifTrusted": "£300 of voucher codes would go to the sender, and vouchers can't be traced or clawed back.",
+            "reportReply": "Thanks. Fatima didn't send it. Her address is on tarrowby.example, and HR never asks staff to buy vouchers."
+          }
+        },
+        {
+          "id": "mb_car_park_closed",
+          "kind": "sms",
+          "from": { "name": "Eilidh Strachan (Facilities)", "address": "07700 900276" },
+          "time": "09:00",
+          "body": "Facilities: the staff car park is being resurfaced on Monday. Please park at the Bradford Road site; there's a map at {{link:map}}. Eilidh",
+          "links": [ { "id": "map", "text": "facilities.tarrowby.example/parking", "destination": "https://facilities.tarrowby.example/parking" } ],
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "smish_shortlink_urgency": "The link is written out in full and goes where it says, to facilities.tarrowby.example, and it's only a map. Monday is notice, not pressure.",
+              "default": "A saved contact in Facilities, an honest link to Tarrowby's own domain, and nothing to pay or sign in to."
+            }
+          }
+        },
+        {
+          "id": "mb_new_starters_spoof",
+          "from": { "name": "Jun Watanabe", "address": "jun.watanabe@tarrowby.example" },
+          "to": "shipley.depot@tarrowby.example",
+          "subject": "New starters' mobile numbers",
+          "time": "09:41",
+          "body": "Hi,\nCould you reply with the mobile numbers of the drivers who started this month? The induction app needs them and I can't get into the HR system from home.\nThanks,\nJun",
+          "auth": { "spf": "fail", "dkim": "none", "dmarc": "fail", "envelopeFrom": "mailer.inboxly.example", "replyTo": "jun.w.hr@inboxly.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderAuth", "reply_to_differs"],
+            "perFlagNote": {
+              "senderAuth": "SPF and DMARC both failed for tarrowby.example: Tarrowby's own servers didn't send this",
+              "reply_to_differs": "Replies go to jun.w.hr@inboxly.example, not to Jun's Tarrowby address"
+            },
+            "headerNote": "Open the details: the From shows Jun's real address, but the checks failed and the reply-to points somewhere else.",
+            "ifTrusted": "New drivers' mobile numbers would go to someone planning to text them, at the point they know least about how Tarrowby works.",
+            "reportReply": "Thanks. Jun is in the office and didn't send it. There is no induction app."
+          }
+        },
+        {
+          "id": "mb_parking_charge",
+          "kind": "sms",
+          "from": { "name": "PCN Services", "address": "07700 900649" },
+          "time": "10:15",
+          "body": "Parking Charge Notice: £60 unpaid at Leeds Station car park. Pay within 24 hrs or it rises to £120: {{link:pay}} Reply STOP to opt out",
+          "links": [ { "id": "pay", "text": "shrtn.example/Pc4n9", "destination": "https://pcn-settle.example/pay" } ],
+          "truth": {
+            "isPhish": true,
+            "flags": ["smish_shortlink_urgency", "reply_stop_trick"],
+            "perFlagNote": {
+              "smish_shortlink_urgency": "A shortened link, a 24-hour deadline and a fine that doubles. Real parking charges come by post with a reference you can look up yourself",
+              "reply_stop_trick": "Replying STOP confirms the number is live and read. Don't reply; report it"
+            },
+            "ifTrusted": "The page would take your card details for a fine that was never issued.",
+            "reportReply": "Thanks. That isn't a real notice. We've blocked the number."
+          }
+        },
+        {
+          "id": "mb_payslip_notice",
+          "from": { "name": "Tarrowby Payroll", "address": "payroll@tarrowby.example" },
+          "to": "you@tarrowby.example",
+          "subject": "Your October payslip is in the staff app",
+          "time": "11:02",
+          "body": "Your October payslip is now in the staff app under Pay. Any questions, ring Marjorie Ackroyd in payroll on ext. 2145.\nTarrowby Payroll",
+          "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.paysuite-mail.example", "replyTo": "payroll@tarrowby.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "senderAuth": "SPF failed because the payroll service, PaySuite, sends it for Tarrowby, but DKIM passed and DMARC passed for tarrowby.example.",
+              "default": "Tarrowby's real domain, nothing to click, and it sends you to the staff app and to a named person on an internal extension."
+            },
+            "headerNote": "One failed check on its own is a clue, not proof. Services that send mail for a company often break SPF while DKIM still passes."
+          }
+        },
+        {
+          "id": "mb_running_late",
+          "kind": "sms",
+          "from": { "name": "Callum Whiteley", "address": "07700 900381" },
+          "time": "11:30",
+          "body": "Running 10 mins late for handover, stuck behind a tractor on the A650. Sorry! Callum",
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "A saved contact telling you he's late. It asks for nothing."
+            }
+          }
+        },
+        {
+          "id": "mb_staff_app_update",
+          "from": { "name": "Dev Mistry", "address": "dev.mistry@tarrowby.example" },
+          "to": "all-staff@tarrowby.example",
+          "subject": "Staff app update tonight, 10pm to 11pm",
+          "time": "12:10",
+          "body": "Hi all,\nThe staff app will be updated tonight between 10pm and 11pm. You don't need to do anything. If the app asks you to sign in again tomorrow, open it from your home screen as usual.\nDev\nIT Service Desk",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "dev.mistry@tarrowby.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "urgencyCalibrated": "There's a time, but it's a planned update and 'you don't need to do anything'.",
+              "default": "IT's real address, a planned change, no link and no code, and it tells you to use the app the way you always do."
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "awarenessEpisode": {
+    "role": "mobile",
+    "company": "tarrowby_logistics",
+    "brand": { "name": "Tarrowby Logistics", "logoText": "TARROWBY", "accent": "#3b5b8c" },
+    "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: one practice message aimed at Tarrowby staff on their phones, and six items on a Tarrowby work phone. Nothing you write leaves the game.",
+    "defend": { "setId": "e6_phone_messages", "reportAlwaysVisible": true },
+    "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
+    "strings": {
+      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier in West Yorkshire. First you're on the red team: look at what's public about Tarrowby, then write one message aimed at Tarrowby staff on their phones, choosing the story and whether it arrives as a text or as a printed notice with a QR code. Then you swap seats and go through what's waiting on a Tarrowby work phone. Only the phone is scored.",
+      "flipHeading": "Now it lands on you",
+      "flipIntro": "This is the message you just wrote, as a Tarrowby driver would see it on their phone. The parts picked out below are what make it believable.",
+      "flipDefenderLine": "Bogdan read it in his cab at the Halifax drop, between unloading and his next slot. On a small screen it looked like something Tarrowby would send, so he tapped through. People who fall for messages like this are not stupid: this one was built to look right.",
+      "flipNoSend": "Your message didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives on a Tarrowby work phone, and you're the one reading it.",
+      "noBlameLine": "Nobody is marked down for a miss here. Every one of these was built to look right, and the people who tap on them are reading a small screen between jobs, not being careless.",
+      "mondayCard": "On Monday: if a text, a notice or an email wants you to scan a code or tap a short link to pay, sign in or confirm something, stop. Don't reply, not even STOP. Open the app or site the way you normally would, or ring the sender on a number you already hold, then report the message the way your organisation asks you to.",
+      "defendOnly": "You went straight to the phone this time. These messages were written by people whose job is to make them look right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine."
+    },
+    "_defendOnly": {
+      "_use": "Strings for the defend-only shell (e6_texts_and_qr_defend), which has no OSINT, write or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",
+      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier in West Yorkshire. It's your break at the Shipley depot, and six things are waiting on your work phone: texts, two printed notices you passed on site, and an email. Some are real and some were built to trick you. Sort them, and report or check anything that doesn't sit right. Reporting a real message never costs you anything.",
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: six items on a Tarrowby work phone."
+    }
+  }
+}
