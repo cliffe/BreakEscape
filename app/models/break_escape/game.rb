@@ -2731,9 +2731,24 @@ module BreakEscape
       end
     end
 
+    # Authoring-only fields for the puzzle-graph generator
+    # (scripts/validate_scenario.rb). They name solutions and describe the
+    # puzzle chain, so the client never gets them. The exceptions are the
+    # two fields the client reads: puzzle_graph_role and puzzle_graph_unlocks
+    # (public/break_escape/js/systems/consumables.js, hasScenarioRole).
+    PUZZLE_GRAPH_CLIENT_KEYS = %w[puzzle_graph_role puzzle_graph_unlocks].freeze
+
+    def self.strip_puzzle_graph_keys!(hash)
+      hash.delete_if do |k, _|
+        k.is_a?(String) && k.start_with?('puzzle_graph_') && !PUZZLE_GRAPH_CLIENT_KEYS.include?(k)
+      end
+    end
+
     def filter_requires_and_contents_recursive(obj)
       case obj
       when Hash
+        self.class.strip_puzzle_graph_keys!(obj)
+
         # Remove 'requires' for exploitable lock types (key/pin/password)
         # Keep it for biometric/bluetooth/rfid since they reference collectible items, not answers
         # - biometric: requires fingerprint owner name (e.g., "Mrs Moo")
@@ -2792,6 +2807,8 @@ module BreakEscape
         obj['npcs']&.each { |n| filter_requires_and_contents_recursive(n) }
         obj['tableItems']&.each { |t| filter_requires_and_contents_recursive(t) }
         obj['itemsHeld']&.each { |i| filter_requires_and_contents_recursive(i) }
+        # Unlocked containers keep their contents in the room payload.
+        obj['contents'].each { |c| filter_requires_and_contents_recursive(c) } if obj['contents'].is_a?(Array)
 
       when Array
         obj.each { |item| filter_requires_and_contents_recursive(item) }
