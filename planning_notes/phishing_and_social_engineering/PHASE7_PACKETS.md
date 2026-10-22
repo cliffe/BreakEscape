@@ -372,3 +372,6 @@ the orchestrator passes it to that wave's owner.
   - **Ids:** `e5_signin_pages`, `e5_links_inbox`, `general_form_a` and `general_form_b`.
   - **Flip view:** E5's flip shows a built page, not an email, so the flip view needs a page path.
   - **Red flags:** "session expired" and "password manager didn't fill in" are not library tells, so they are left out of the chips. They would need adding to `00` §2 and `triage-flags.js` to become scored chips.
+- **P7-U: GAP, the runner has no build stage.** E5's attack needs the landing-page builder between OSINT and write, but the runner's child launches cover only OSINT, mail and triage. Add a `build` stage (launch `landing-page-builder` with the episode's `landingPageId` and target) in the runner (P7-P or a new packet), with schema and lint (stage order `osint` → `build` → `write`), before P7-Y2.
+  - **Globals the E5 shell must declare:** `phish_sso_staff_landed` and `_attempts`; `se_intel_quayholt_sso_portal`, `_it_desk`, `_sso_migration` and `_staff_claims`; `landing_sso_login_built` and `_domain`.
+  - **Tells:** a good send stores the landing tells `domain`, `formOrigin` and `hoverMismatch`, plus `senderTrust` and `linkCredible`.
