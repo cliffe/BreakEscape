@@ -90,7 +90,26 @@ test('verify is awareness only; counted separately from reportRate', () => {
     assert.equal(r.percent, 100);
     assert.equal(r.verifyCount, 1);
     assert.equal(r.reportRate, 0);
-    assert.equal(r.phishCaught, 0); // verify is not Report or Delete
+    assert.equal(r.reportCount, 0); // verify is not a report (05 Decisions)
+    assert.equal(r.phishCaught, 1); // but it catches the phish: it scores 100
+});
+
+test('verify on a phish counts as caught; verify on real mail is not a false alarm', () => {
+    const r = scoreTriage({
+        messages,
+        answers: [
+            { id: 'm1_it', verdict: 'verify', flags: [] },
+            { id: 'm2_payroll', verdict: 'verify', flags: [] },
+            { id: 'm3_parcel', verdict: 'report', flags: [] },
+            { id: 'm4_jed', verdict: 'trust', flags: [] },
+        ],
+    });
+    assert.equal(r.phishTotal, 2);
+    assert.equal(r.phishCaught, 2);
+    assert.equal(r.reportCount, 1);
+    assert.equal(r.reportRate, 0.5);
+    assert.equal(r.verifyCount, 2);
+    assert.equal(r.falseAlarms, 0);
 });
 
 test('unknown verdict or profile throws', () => {

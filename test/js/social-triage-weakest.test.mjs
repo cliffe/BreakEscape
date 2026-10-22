@@ -119,6 +119,81 @@ test('J10 control: ticking at least one flag keeps the "Weakest skill:" line', (
     assert.doesNotMatch(weak.textContent, /didn't name any flags/);
 });
 
+const LAB_LINE = 'Practise it in the mail client, then look it up in your lab sheet.';
+function openWith(set, params = {}) {
+    current?.cleanup();
+    document.body.innerHTML = '';
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const scene = new InboxTriageMinigame(container, { set, social: { triageSets: [set] }, ...params });
+    scene._sceneType = 'inbox-triage';
+    window.MinigameFramework.currentMinigame = scene;
+    scene.init();
+    scene.start();
+    current = scene;
+    return scene;
+}
+function playWeakest(s, chips = ['senderTrust']) {
+    click($(s, '.tri-start'));
+    verdict(s, 'm1_it', 'trust');
+    verdict(s, 'm2_payroll', 'report', chips);
+    verdict(s, 'm3_parcel', 'delete');
+    click($(s, '.tri-next'));
+    assert.equal(state(s).step, 'result');
+    return $(s, '.tri-weakest').textContent;
+}
+
+test('weakest skill: a lab set (analyst, no skin) keeps the mail client and lab sheet line', () => {
+    const line = playWeakest(openWith(makeSet()));
+    assert.ok(line.endsWith(LAB_LINE), line);
+    assert.match(playWeakest(openWith(makeSet()), []), /check your lab sheet/);
+});
+
+test('weakest skill: the awareness skin and the awareness profile use staff-training wording', () => {
+    const runs = [
+        ['awareness skin on an analyst set', () => openWith(makeSet(), { skin: 'awareness' })],
+        ['awareness profile, no skin', () => openWith(makeSet({ scoringProfile: 'awareness' }))],
+        ['both', () => openWith(makeSet({ scoringProfile: 'awareness' }), { skin: 'awareness' })]
+    ];
+    for (const [name, make] of runs) {
+        const line = playWeakest(make());
+        assert.match(line, /^Weakest skill:/, name);
+        assert.doesNotMatch(line, /lab sheet|mail client/, name);
+        assert.match(line, /IT or security team/, name);
+    }
+    const none = playWeakest(openWith(makeSet({ scoringProfile: 'awareness' })), []);
+    assert.match(none, /didn't name any flags/);
+    assert.doesNotMatch(none, /lab sheet/);
+    // an authored nudge still wins over either default
+    const nudged = playWeakest(openWith(makeSet({ nudges: { senderTrust: 'Hover first.' } }), { skin: 'awareness' }));
+    assert.ok(nudged.endsWith('Hover first.'), nudged);
+});
+
+test('result summary: a phish answered Verify (or Ring back) counts as caught, not as reported', () => {
+    const m = msgs();
+    m.push({ id: 'm4_call', kind: 'call', callerId: 'IT Service Desk', from: { name: 'IT Service Desk' }, subject: 'Incoming call',
+        transcript: [{ who: 'Caller', text: 'Read me the code from your phone.' }],
+        truth: { isPhish: true, flags: ['secrecy_or_bypass'], perFlagNote: { secrecy_or_bypass: 'asks for the code' } } });
+    const s = openWith(makeSet({ scoringProfile: 'awareness', verifyVerdict: true, channelTells: ['secrecy_or_bypass'], messages: m }));
+    click($(s, '.tri-start'));
+    verdict(s, 'm1_it', 'trust');
+    verdict(s, 'm2_payroll', 'verify');
+    verdict(s, 'm3_parcel', 'report');
+    click($(s, '.mail-row[data-id="m4_call"]'));
+    const ringBack = $(s, '.tri-verdict[data-verdict="verify"]');
+    assert.ok(ringBack, 'the call card has a verify-style action');
+    click(ringBack);
+    click($(s, '.tri-confirm'));
+    click($(s, '.tri-next'));
+    assert.equal(state(s).step, 'result');
+    const num = (k) => $(s, `.tri-numbers dd[data-number="${k}"]`)?.textContent;
+    assert.equal(num('phishCaught'), '3 of 3');
+    assert.equal(num('reported'), '1 of 3', 'Verify is not a report (05 Decisions)');
+    assert.equal(num('verify'), '2');
+    assert.equal(s.result.phishCaught, 3);
+    assert.equal(s.result.reportRate, 1 / 3);
+});
+
 test('enable_content_prompt is a library tell: chip label, red flag and a skill name in words', async () => {
     const F = await import(pathToFileURL(join(dir, 'minigames/inbox-triage/triage-flags.js')));
     assert.ok(F.CHANNEL_TELLS.enable_content_prompt);

@@ -10,7 +10,8 @@ matching the rules the shells have to meet now:
   - `se_awareness_records` is declared as [] (the store writes an array);
   - the defend-only shells set strings.defendIntro, because the runner's default line talks
     about an inbox, which is wrong for a work phone or a voicemail line;
-  - E7 sets strings.voicePanel (the debrief's "a voice is not proof" panel).
+  - E7 sets strings.voicePanel (the debrief panel on how a voice gets copied; the defendOnly
+    line and the Monday card already say a voice is not proof and to ring back).
 
 E7 has no check missions: its role is everyone, and it reuses the general-staff forms
 (awareness_{pre,post}_general_{ab,ba}), which already have shells.
@@ -78,7 +79,12 @@ def host_npc(host, done_global, task_id, ink_path):
 
 
 def kiosk(ep_id, observations):
-    return {
+    """observations: a string, or (before, after) where `after` shows once the round is done
+    (observationVariants on episode_<id>_defend_done, so the kiosk stops saying items are waiting)."""
+    done_obs = None
+    if isinstance(observations, tuple):
+        observations, done_obs = observations
+    obj = {
         'type': 'kiosk',
         'id': 'training_kiosk',
         'name': 'Training kiosk',
@@ -88,8 +94,12 @@ def kiosk(ep_id, observations):
         'active': True,
         'locked': False,
         'observations': observations,
-        'minigameData': {'episodeId': ep_id},
     }
+    if done_obs:
+        obj['observationVariants'] = [
+            {'condition': f'globalVars.episode_{ep_id}_defend_done', 'value': done_obs}]
+    obj['minigameData'] = {'episodeId': ep_id}
+    return obj
 
 
 def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, host, ink_name,
@@ -231,7 +241,8 @@ EPISODES = {
             'endGoal': 'Go through the six items on the work phone at the training kiosk.',
             'aim': ('work_phone_aim', 'Check the work phone', 'Go through the six items on the work phone at the training kiosk.'),
             'task': ('check_work_phone', 'Check the work phone'),
-            'kiosk': 'A touch-screen kiosk set up as a Tarrowby work phone, with texts, notices and an email waiting.',
+            'kiosk': ('A touch-screen kiosk set up as a Tarrowby work phone, with texts, notices and an email waiting.',
+             'A touch-screen kiosk set up as a Tarrowby work phone. The texts, notices and email are all dealt with.'),
             'display': 'Awareness E6: Texts and QR codes (phone only)',
             'desc': "An eight-minute awareness episode for staff with a work phone, on the defending side only. Six items on a phone at Tarrowby Logistics, a fictional haulier: texts, printed notices with QR codes and an email. Some are real and some were built to trick you. Each answer is explained, and reporting a real message never costs you anything.",
             'minutes': 8,
@@ -262,14 +273,15 @@ EPISODES = {
             'endGoal': 'Go through the voicemails and emails at the training kiosk.',
             'aim': ('finance_line_aim', 'Cover the finance line', 'Go through the three voicemails and two emails at the training kiosk.'),
             'task': ('check_finance_line', 'Cover the finance line'),
-            'kiosk': "A touch-screen kiosk showing the finance office's phone and inbox, with voicemails and emails waiting.",
+            'kiosk': ("A touch-screen kiosk showing the finance office's phone and inbox, with voicemails and emails waiting.",
+             "A touch-screen kiosk showing the finance office's phone and inbox. The voicemails and emails are all dealt with."),
             'display': 'Awareness E7: Voice and the CEO (phone and inbox only)',
             'desc': "An eight-minute awareness episode for all staff, on the defending side only. Cover the finance office's phone and inbox at Brightwell Foods, a fictional company: three voicemails, one of them in a copied voice, and two emails. Each answer is explained, and ringing someone back on a number you already hold never costs you anything.",
             'minutes': 8,
             'defendIntro': "Go through the voicemails and emails and decide what to do with each one. Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Take your time: there is no trick to it, just the habits that catch these.",
             'voicePanel': {
-                'heading': 'A voice is not proof',
-                'text': "A voice can be copied. Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. So a familiar voice on a voicemail or a call doesn't tell you who is speaking, and an email that backs it up doesn't either. What still works is the route: ring the person back on a number you already hold, or check with someone who would know, such as the finance manager.",
+                'heading': 'How a voice gets copied',
+                'text': "Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. If you can't reach the person to check, ask someone who would know, such as the finance manager.",
             },
             'conclusion': ('Finance line done', "You've been through all five messages and finished this episode."),
         },

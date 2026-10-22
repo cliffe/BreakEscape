@@ -76,7 +76,12 @@ def host_npc(host, done_global, task_id, ink_path):
 
 
 def kiosk(ep_id, observations):
-    return {
+    """observations: a string, or (before, after) where `after` shows once the round is done
+    (observationVariants on episode_<id>_defend_done, so the kiosk stops saying items are waiting)."""
+    done_obs = None
+    if isinstance(observations, tuple):
+        observations, done_obs = observations
+    obj = {
         'type': 'kiosk',
         'id': 'training_kiosk',
         'name': 'Training kiosk',
@@ -86,8 +91,12 @@ def kiosk(ep_id, observations):
         'active': True,
         'locked': False,
         'observations': observations,
-        'minigameData': {'episodeId': ep_id},
     }
+    if done_obs:
+        obj['observationVariants'] = [
+            {'condition': f'globalVars.episode_{ep_id}_defend_done', 'value': done_obs}]
+    obj['minigameData'] = {'episodeId': ep_id}
+    return obj
 
 
 def success_screen(title, body):
@@ -176,7 +185,8 @@ def defend_only():
         ('sort_payments_inbox', 'Sort the payments inbox'),
         done, globals_, {'triageSets': [s], 'awarenessEpisode': ep},
         HOSTS['adaeze'], 'adaeze_okafor',
-        "A touch-screen kiosk showing Brightwell's payments inbox. Five messages are waiting.",
+        ("A touch-screen kiosk showing Brightwell's payments inbox. Five messages are waiting.",
+             "A touch-screen kiosk showing Brightwell's payments inbox. All five messages are sorted."),
         success_screen('Payments inbox done', "You've sorted all five messages and finished this episode."))
     meta = {
         'display_name': 'Awareness E1: Invoice fraud (inbox only)',

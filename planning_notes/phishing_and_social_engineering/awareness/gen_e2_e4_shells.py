@@ -116,7 +116,8 @@ EPISODES = {
             'endGoal': 'Sort the six messages at the training kiosk.',
             'aim': ('recruitment_inbox_aim', 'Cover the recruitment inbox', 'Sort the recruitment inbox at the training kiosk.'),
             'task': ('sort_recruitment_inbox', 'Sort the recruitment inbox'),
-            'kiosk': 'A touch-screen kiosk showing the Tarrowby recruitment inbox. Six messages are waiting.',
+            'kiosk': ('A touch-screen kiosk showing the Tarrowby recruitment inbox. Six messages are waiting.',
+             'A touch-screen kiosk showing the Tarrowby recruitment inbox. All six messages are sorted.'),
             'display': 'Awareness E2: CV lures (inbox only)',
             'desc': "An eight-minute awareness episode for HR and recruitment staff, on the inbox side only. Cover the recruitment inbox at Tarrowby Logistics, a fictional company: six messages, applications and CVs among them, some real and some built to trick you. Each answer is explained, and reporting a real message never costs you anything.",
             'minutes': 8,
@@ -153,7 +154,8 @@ EPISODES = {
             'endGoal': 'Work through the five emails and voicemails at the training kiosk.',
             'aim': ('pa_inbox_aim', "Cover the PA's inbox", "Work through the PA's emails and voicemails at the training kiosk."),
             'task': ('sort_pa_inbox', "Sort the PA's inbox"),
-            'kiosk': "A touch-screen kiosk showing Tomás Carvalho's inbox. Five emails and voicemails are waiting.",
+            'kiosk': ("A touch-screen kiosk showing Tomás Carvalho's inbox. Five emails and voicemails are waiting.",
+             "A touch-screen kiosk showing Tomás Carvalho's inbox. The emails and voicemails are all dealt with."),
             'display': 'Awareness E4: Executive whaling (inbox only)',
             'desc': "An eight-minute awareness episode for executive assistants and PAs, on the inbox side only. Sit in the PA's seat at Merrin & Sallow Architects, a fictional practice, while the managing partner travels: five emails and voicemails, some real and some made to trick you, one in a copied voice. Each answer is explained, and checking or reporting a real message never costs you anything.",
             'minutes': 8,
@@ -235,7 +237,12 @@ def host_npc(host, done_global, task_id, ink_path):
 
 
 def kiosk(ep_id, observations):
-    return {
+    """observations: a string, or (before, after) where `after` shows once the round is done
+    (observationVariants on episode_<id>_defend_done, so the kiosk stops saying items are waiting)."""
+    done_obs = None
+    if isinstance(observations, tuple):
+        observations, done_obs = observations
+    obj = {
         'type': 'kiosk',
         'id': 'training_kiosk',
         'name': 'Training kiosk',
@@ -245,8 +252,12 @@ def kiosk(ep_id, observations):
         'active': True,
         'locked': False,
         'observations': observations,
-        'minigameData': {'episodeId': ep_id},
     }
+    if done_obs:
+        obj['observationVariants'] = [
+            {'condition': f'globalVars.episode_{ep_id}_defend_done', 'value': done_obs}]
+    obj['minigameData'] = {'episodeId': ep_id}
+    return obj
 
 
 def scenario(mission, name, brief, end_goal, aim, task, done, ending, globals_, social, host,

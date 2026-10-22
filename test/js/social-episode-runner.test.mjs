@@ -878,3 +878,35 @@ test('defend intro: strings.defendIntro replaces the line; without it the defaul
     assert.equal(panelText().includes('inbox'), false);
     assert.equal(cur().container.querySelector('.er-launch').textContent, 'Open the pages');
 });
+
+test('defend button follows the set kind (phone, voice) even when strings.defendIntro is set', () => {
+    const kinds = (...k) => ({ messages: k.map((kind, i) => ({ id: `m${i}`, kind })) });
+    // E6-like: three texts, two QR notices, one email; E7-like: three voicemails, two emails
+    assert.equal(defendSetKind(kinds('sms', 'sms', 'qr', 'qr', 'email', 'sms')), 'phone');
+    assert.equal(defendSetKind(kinds('voicemail', 'voicemail', 'voicemail', 'email', 'email')), 'voice');
+    assert.equal(defendSetKind(kinds('push', 'sms', 'email')), 'phone');
+    assert.equal(defendSetKind(kinds('voicemail', 'email')), 'messages', 'a tie is messages');
+    assert.equal(defendSetKind(kinds('sms', 'voicemail', 'email')), 'messages', 'no group ahead is messages');
+    for (const variant of ['full', 'defendOnly']) {
+        assert.equal(defendCopy({ variant }, kinds('sms', 'qr', 'email')).button, 'Open the phone');
+        assert.equal(defendCopy({ variant }, kinds('voicemail', 'voicemail', 'email')).button, 'Open the voicemail');
+        assert.ok(!defendCopy({ variant }, kinds('voicemail', 'voicemail')).text.includes('inbox'));
+        assert.ok(!defendCopy({ variant }, kinds('sms', 'sms')).text.includes('inbox'));
+    }
+
+    const intro = 'Go through the voicemails and emails and decide what to do with each one.';
+    const runs = [
+        ['e7_fixture_defend', ['voicemail', 'voicemail', 'voicemail', 'email', 'email'], 'Open the voicemail'],
+        ['e6_fixture_defend', ['sms', 'sms', 'qr', 'qr', 'email', 'sms'], 'Open the phone']
+    ];
+    for (const [id, ks, button] of runs) {
+        const ep = { ...fullEpisode(), id, variant: 'defendOnly', strings: { ...fullEpisode().strings, defendIntro: intro } };
+        setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief'] } });
+        window.gameScenario.social.triageSets = [{ ...defendSet(), messages: ks.map((kind, i) => ({
+            id: `x${i}`, kind, from: 'A', subject: 's', body: 'b', transcript: [{ who: 'A', text: 't' }] })) }];
+        open(ep);
+        assert.equal(epState().stage, 'defend');
+        assert.equal(cur().container.querySelector('.er-text').textContent, intro, 'the authored line is kept');
+        assert.equal(cur().container.querySelector('.er-launch').textContent, button, `${id}: the button fits the set`);
+    }
+});

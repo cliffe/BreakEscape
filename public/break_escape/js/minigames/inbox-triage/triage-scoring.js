@@ -13,6 +13,9 @@
  * profile   'analyst' | 'awareness' (default 'awareness', the mission default in 05).
  *           'verify' is awareness only; an analyst set that sends it throws.
  *
+ * phishCaught counts phish answered Report, Delete or Verify; reportCount (and reportRate)
+ * counts Report only.
+ *
  * Each message is worth 100: 60 for the verdict, 40 for the reasons. Per-message scores are
  * rounded to whole points (halves up) and the round percent is the mean of those, halves up.
  */
@@ -136,7 +139,10 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         if (verdict === 'verify') verifyCount += 1;
         if (isPhish) {
             phishTotal += 1;
-            if (verdict === 'report' || verdict === 'delete') phishCaught += 1;
+            // Verify (or a verify-style action, such as Ring back) catches the phish: it scores
+            // like Report and the card calls it sound. It is not a report, so reportCount stays
+            // Report only (05 "Extensions for the awareness episodes").
+            if (verdict === 'report' || verdict === 'delete' || verdict === 'verify') phishCaught += 1;
             if (verdict === 'report') reportCount += 1;
             flagsCaught += caught.length;
             flagsAuthored += authoredFlags.length;

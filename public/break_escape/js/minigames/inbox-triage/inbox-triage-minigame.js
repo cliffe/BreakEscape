@@ -711,6 +711,25 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         return [...this.answers.values()];
     }
 
+    /**
+     * The result screen's pointer lines. A lab set (analyst profile, no skin) sends the
+     * student to the mail client and the lab sheet; the awareness product (the episode
+     * runner's skin, or an awareness-profile set) has neither, so it points at the
+     * learner's own inbox and their security team instead.
+     */
+    _resultCopy() {
+        if (this.awarenessSkin || this.profile === 'awareness') {
+            return {
+                weakest: 'Look for it in the next messages you get at work, and if you are not sure, ask your IT or security team.',
+                noFlags: 'Next time, tick what looks off. The review cards show what gave each fake one away.'
+            };
+        }
+        return {
+            weakest: 'Practise it in the mail client, then look it up in your lab sheet.',
+            noFlags: 'Tick what looks off next time, then check your lab sheet.'
+        };
+    }
+
     _score() {
         return scoreTriage({
             messages: this.messages, answers: this._answerList(), profile: this.profile,
@@ -810,11 +829,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                         const nudges = isObj(this.set.nudges) ? this.set.nudges : {};
                         p.appendChild(el('p', 'tri-weakest',
                             `Weakest skill: ${skillName(weak.id)} (caught ${weak.caught} of ${weak.caught + weak.missed}). ` +
-                            (nudges[weak.id] || 'Practise it in the mail client, then look it up in your lab sheet.')));
+                            (nudges[weak.id] || this._resultCopy().weakest)));
                     }
                 } else {
                     p.appendChild(el('p', 'tri-weakest',
-                        'You didn\'t name any flags on these messages, so there\'s nothing to grade skill by skill. Tick what looks off next time, then check your lab sheet.'));
+                        'You didn\'t name any flags on these messages, so there\'s nothing to grade skill by skill. ' + this._resultCopy().noFlags));
                 }
             }
         }

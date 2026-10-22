@@ -100,7 +100,8 @@ EPISODES = {
             'endGoal': 'Take the four calls and the sign-in prompt at the training kiosk.',
             'aim': ('service_desk_aim', 'Cover the service desk', 'Work through the service desk queue at the training kiosk.'),
             'task': ('work_service_desk_queue', 'Work through the service desk queue'),
-            'kiosk': "A touch-screen kiosk showing the Quayholt service desk queue. Four calls are waiting, and a phone beside it shows a sign-in prompt.",
+            'kiosk': ("A touch-screen kiosk showing the Quayholt service desk queue. Four calls are waiting, and a phone beside it shows a sign-in prompt.",
+             'A touch-screen kiosk showing the Quayholt service desk queue. The calls and the sign-in prompt are all dealt with.'),
             'display': 'Awareness E3: Helpdesk reset (service desk only)',
             'desc': "An eight-minute awareness episode for IT service desk staff, on the defending side only. Sit in the service desk seat at Quayholt Insurance, a fictional company: four callers want password resets or changes to their sign-in, and a sign-in prompt turns up on your own phone. Each answer is explained, and ringing back a real caller never costs you anything.",
             'minutes': 8,
@@ -134,7 +135,8 @@ EPISODES = {
             'endGoal': 'Check the five pages at the training kiosk.',
             'aim': ('signin_pages_aim', 'Check the sign-in pages', 'Check the five pages at the training kiosk.'),
             'task': ('check_signin_pages', 'Check the sign-in pages'),
-            'kiosk': 'A touch-screen kiosk with five web pages open, each reached from a link in a Quayholt inbox.',
+            'kiosk': ('A touch-screen kiosk with five web pages open, each reached from a link in a Quayholt inbox.',
+             'A touch-screen kiosk with five web pages open, each reached from a link in a Quayholt inbox. You have checked them all.'),
             'display': 'Awareness E5: Sign-in pages (pages only)',
             'desc': "An eight-minute awareness episode for all staff, on the defending side only. Five web pages from links in an inbox at Quayholt Insurance, a fictional company: some are the real sign-in, some were built to collect passwords. Each answer is explained, and reporting a real page never costs you anything.",
             'minutes': 8,
@@ -200,7 +202,12 @@ def host_npc(host, done_global, task_id, ink_path):
 
 
 def kiosk(ep_id, observations):
-    return {
+    """observations: a string, or (before, after) where `after` shows once the round is done
+    (observationVariants on episode_<id>_defend_done, so the kiosk stops saying items are waiting)."""
+    done_obs = None
+    if isinstance(observations, tuple):
+        observations, done_obs = observations
+    obj = {
         'type': 'kiosk',
         'id': 'training_kiosk',
         'name': 'Training kiosk',
@@ -210,8 +217,12 @@ def kiosk(ep_id, observations):
         'active': True,
         'locked': False,
         'observations': observations,
-        'minigameData': {'episodeId': ep_id},
     }
+    if done_obs:
+        obj['observationVariants'] = [
+            {'condition': f'globalVars.episode_{ep_id}_defend_done', 'value': done_obs}]
+    obj['minigameData'] = {'episodeId': ep_id}
+    return obj
 
 
 def success_screen(title, body):

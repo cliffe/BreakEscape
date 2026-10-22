@@ -19,7 +19,8 @@
 //            held ids
 //   defend   opens the triage starter with the defend set (role-swap calls merged in, 11 N15)
 //            and the awareness skin; its onComplete records the round. The panel line is
-//            strings.defendIntro, else a default that fits the set (messages, pages or calls)
+//            strings.defendIntro, else a default; the heading and button fit the set
+//            (messages, pages, calls, phone or voice)
 //   check    (check missions) the same, with defend.stage ('pre' or 'post')
 //   debrief  drawn here with renderDebrief (P7-B); Finish closes the runner
 //
@@ -81,6 +82,14 @@ const ROLE_SWAP_DEFEND_ONLY_COPY = Object.freeze({ heading: 'Take the calls', te
 // The defend stage when the round is mostly sign-in pages (E5).
 const PAGES_COPY = Object.freeze({ heading: 'Defend', text: 'Now you are the one following the links. Look at each page and decide what to do with it.', button: 'Open the pages' });
 const PAGES_DEFEND_ONLY_COPY = Object.freeze({ heading: 'Defend', text: 'Look at each page and decide what to do with it. Take your time: there is no trick to it, just the habits that catch these.', button: 'Open the pages' });
+// The defend stage when the round is mostly texts, QR notices and sign-in prompts on a work phone (E6).
+const PHONE_COPY = Object.freeze({ heading: 'Defend', text: 'Now it lands on your phone. Go through the texts and notices and decide what to do with each one.', button: 'Open the phone' });
+const PHONE_DEFEND_ONLY_COPY = Object.freeze({ heading: 'Defend', text: 'Go through the phone and decide what to do with each text and notice. Take your time: there is no trick to it, just the habits that catch these.', button: 'Open the phone' });
+// The defend stage when the round is mostly voicemails (E7).
+const VOICE_COPY = Object.freeze({ heading: 'Defend', text: 'Now you are the one picking up the messages. Go through the voicemails and decide what to do with each one.', button: 'Open the voicemail' });
+const VOICE_DEFEND_ONLY_COPY = Object.freeze({ heading: 'Defend', text: 'Go through the voicemails and decide what to do with each one. Take your time: there is no trick to it, just the habits that catch these.', button: 'Open the voicemail' });
+// Message kinds read as a work phone (11 E6; push is the authenticator prompt).
+const PHONE_KINDS = new Set(['sms', 'qr', 'push']);
 const FINISHED_TEXT = 'You have finished this exercise. You can close this window.';
 const CALL_WAIT_MS = 300;                 // how often the call watcher looks for the chat closing
 const CALL_WAIT_LIMIT = 4 * 60 * 60 * 1000 / CALL_WAIT_MS; // gives up after four hours (a reopen still resumes)
@@ -99,35 +108,42 @@ export function facilitatorPrompt(strings, key) {
 }
 
 /**
- * What the defend round is: 'calls', 'pages' or 'messages' (the default). An episode with
- * defend.calls is the role swap, so 'calls' whatever else the set holds. Otherwise the most
- * common of call, page and everything else in the set, with a tie read as 'messages'.
+ * What the defend round is: 'calls', 'pages', 'phone', 'voice' or 'messages' (the default).
+ * An episode with defend.calls is the role swap, so 'calls' whatever else the set holds.
+ * Otherwise the most common group in the set: call; page; phone (sms, qr, push); voice
+ * (voicemail); everything else (email, playerSent) as messages. A tie is read as 'messages'.
  */
 export function defendSetKind(set, episode) {
     if (Array.isArray(episode?.defend?.calls) && episode.defend.calls.length) return 'calls';
     const list = Array.isArray(set?.messages) ? set.messages.filter(isObj) : [];
-    let calls = 0, pages = 0;
+    const n = { calls: 0, pages: 0, phone: 0, voice: 0, messages: 0 };
     for (const m of list) {
-        if (m.kind === 'call') calls++;
-        else if (m.kind === 'page') pages++;
+        if (m.kind === 'call') n.calls++;
+        else if (m.kind === 'page') n.pages++;
+        else if (PHONE_KINDS.has(m.kind)) n.phone++;
+        else if (m.kind === 'voicemail') n.voice++;
+        else n.messages++;
     }
-    const other = list.length - calls - pages;
-    if (calls > pages && calls > other) return 'calls';
-    if (pages > calls && pages > other) return 'pages';
-    return 'messages';
+    const top = ['calls', 'pages', 'phone', 'voice'].find((k) => Object.keys(n).every((o) => o === k || n[k] > n[o]));
+    return top || 'messages';
 }
 
+const DEFEND_COPY = Object.freeze({
+    calls: [ROLE_SWAP_COPY, ROLE_SWAP_DEFEND_ONLY_COPY],
+    pages: [PAGES_COPY, PAGES_DEFEND_ONLY_COPY],
+    phone: [PHONE_COPY, PHONE_DEFEND_ONLY_COPY],
+    voice: [VOICE_COPY, VOICE_DEFEND_ONLY_COPY],
+    messages: [STAGE_COPY.defend, DEFEND_ONLY_COPY]
+});
+
 /**
- * The defend stage's panel copy. The heading and button fit the set; the line is
- * strings.defendIntro when the episode sets it, else the default for the set and variant.
+ * The defend stage's panel copy. The heading and button always follow the set's kind
+ * (messages, pages, calls, phone or voice); the line is strings.defendIntro when the episode
+ * sets it, else the default for the set and variant.
  */
 export function defendCopy(episode, set) {
     const defendOnly = variantOf(episode) === 'defendOnly';
-    const kind = defendSetKind(set, episode);
-    let copy;
-    if (kind === 'calls') copy = defendOnly ? ROLE_SWAP_DEFEND_ONLY_COPY : ROLE_SWAP_COPY;
-    else if (kind === 'pages') copy = defendOnly ? PAGES_DEFEND_ONLY_COPY : PAGES_COPY;
-    else copy = defendOnly ? DEFEND_ONLY_COPY : STAGE_COPY.defend;
+    const copy = DEFEND_COPY[defendSetKind(set, episode)][defendOnly ? 1 : 0];
     const intro = isObj(episode?.strings) ? episode.strings.defendIntro : null;
     return isStr(intro) ? { ...copy, text: intro } : copy;
 }

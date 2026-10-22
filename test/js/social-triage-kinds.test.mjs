@@ -165,7 +165,7 @@ test('scoring through the mapped rows: a push Deny and report counts as Report; 
     assert.equal(r.reportCount, 2, 'sms Report and push Deny and report');
     assert.equal(r.verifyCount, 2, 'voicemail Verify and call Ring back');
     assert.equal(r.phishTotal, 6);
-    assert.equal(r.phishCaught, 3, 'Report or Delete only; Verify is not a catch');
+    assert.equal(r.phishCaught, 5, 'Report, Delete or Verify (voicemail Verify and call Ring back count as caught)');
 });
 
 // ── the overlay ─────────────────────────────────────────────────────────────

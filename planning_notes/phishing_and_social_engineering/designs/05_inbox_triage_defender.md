@@ -231,8 +231,8 @@ chosen to be kind to a pre-test:
 | 60–84 | Getting there: a few tells slipped past |
 | 0–59 | Worth practising: here's where to look first |
 
-The **headline numbers** are computed alongside: `phishCaught` (phish with verdict Report or
-Delete), `reportRate` (phish with verdict Report ÷ phish), `falseAlarms` (real mail reported or
+The **headline numbers** are computed alongside: `phishCaught` (phish with verdict Report,
+Delete or Verify), `reportRate` (phish with verdict Report ÷ phish), `falseAlarms` (real mail reported or
 deleted), `flagRecall` (caught ÷ authored flags across phish), and `perFactor` (caught and missed
 per factor). `reportRate` is deliberately separate from `phishCaught`: the book's Ch. 9 point is
 that reporting, not merely not-clicking, is what a defender programme measures.
@@ -541,8 +541,9 @@ The awareness episodes (`11` §6.4) use four additions, all data on the same com
 
 - **Verify verdict.** A set with `verifyVerdict: true` shows a fourth button, **Verify** ("I would check
   this by ringing a number I already hold"), for the episodes that teach it. In the `awareness`
-  profile it scores like Report (60 on a phish, 60 on real mail, reasons unchanged). `reportRate`
-  still counts Report only; the result adds `verifyCount`. Sets that do not enable it behave as
+  profile it scores like Report (60 on a phish, 60 on real mail, reasons unchanged). A phish
+  answered Verify counts as caught (`phishCaught`). `reportRate` still counts Report only; the
+  result adds `verifyCount`. Sets that do not enable it behave as
   described above, and `analyst` sets never enable it.
 - **Non-email kinds.** A message has a `kind`, default `email`. The others are `sms`, `voicemail`,
   `qr`, `page`, `call` and `push`. Each renders through a small per-kind surface in the reading pane (a text bubble,
@@ -768,6 +769,15 @@ Decisions taken (the OQ numbers are kept because other docs cite them):
 - OQ7: An email's chip list is always the seven factors plus the set's enabled channel tells and
   "Nothing looks wrong"; a non-email kind shows its enabled channel tells plus "Nothing looks wrong".
   Showing only relevant chips would give the answers away.
+- Verify on a phish (Phase 7 follow-up, 2026-10-22): it counts towards `phishCaught`, since it
+  scores like Report and its card calls it sound; before this the result said "not caught" for
+  a full-marks answer. It does **not** count towards `reportRate` ("Reported rather than just
+  deleted"). Ringing the sender back on a number you hold stops the fraud against you, but it
+  tells nobody else: the security team can't pull the message from other inboxes or warn the
+  next person, which is the Ch. 9 point `reportRate` exists to measure. Counting it would also
+  let a cohort that learnt to verify, and not to report, show a rise in the pre/post report rate
+  it hasn't earned. The result screen shows verifies on their own line ("Checked by another
+  route").
 - OQ8: The header panel teaches SPF / DKIM / DMARC at concept level only and is authored literals.
   A reviewer should check the three definitions above against a reputable concept source (RFC 7208,
   6376, 7489 overviews) before build; the "pass is not a trust verdict" and "fail is a clue" lines
