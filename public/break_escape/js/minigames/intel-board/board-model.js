@@ -79,6 +79,78 @@ export function readDefenderPicks(globals) {
     return out;
 }
 
+/** The indicator marks saved in se_board_state: { indicator id: 'block' | 'allow' }. Junk is dropped. */
+export function readIndicatorMarks(globals) {
+    const raw = readBoardState(globals).defender;
+    const marks = raw && typeof raw === 'object' && raw.indicators && typeof raw.indicators === 'object' ? raw.indicators : {};
+    const out = {};
+    for (const [k, v] of Object.entries(marks)) if (v === 'block' || v === 'allow') out[k] = v;
+    return out;
+}
+
+/**
+ * The tells of what the player sent (00 §10a): for each tell id, the latest sent record carrying it.
+ * Every mailbox's Sent folder is searched; seeded stubs and quick replies carry no tells and are skipped.
+ * "Latest" is by gameTime, then by position. Pure.
+ *
+ * @returns {Map<string, { to: string, subject: string, targetId: string|null }>}
+ */
+export function sentTells(mailState) {
+    const best = new Map();
+    const boxes = mailState && typeof mailState === 'object' && mailState.mailboxes && typeof mailState.mailboxes === 'object'
+        ? mailState.mailboxes : {};
+    let order = 0;
+    for (const box of Object.values(boxes)) {
+        for (const rec of Array.isArray(box?.messages) ? box.messages : []) {
+            order += 1;
+            if (!rec || typeof rec !== 'object' || rec.folder !== 'sent' || rec.seeded === true || rec.kind === 'quickReply') continue;
+            const time = Number.isFinite(rec.gameTime) ? rec.gameTime : 0;
+            for (const t of Array.isArray(rec.tells) ? rec.tells : []) {
+                if (typeof t !== 'string' || !t) continue;
+                const cur = best.get(t);
+                if (cur && (cur.time > time || (cur.time === time && cur.order > order))) continue;
+                best.set(t, { time, order, to: typeof rec.to === 'string' ? rec.to : '',
+                    subject: typeof rec.subject === 'string' ? rec.subject : '',
+                    targetId: typeof rec.targetId === 'string' ? rec.targetId : null });
+            }
+        }
+    }
+    const out = new Map();
+    for (const [t, v] of best) out.set(t, { to: v.to, subject: v.subject, targetId: v.targetId });
+    return out;
+}
+
+/**
+ * The optional indicators step (03 "Defender mode"; off unless `engagement.defender.indicators` is
+ * authored). Each entry is `{ id, tell, text, block, why, step? }`. An indicator is shown only when a
+ * sent record carries its `tell`, so the list is read from what the player really sent. The player
+ * marks each shown indicator Block or Let through; the mark matching `block` is right and locks, a
+ * wrong one shows `why` and can be changed. Pure.
+ */
+export function buildIndicatorItems(block, globals, mailState) {
+    const list = Array.isArray(block?.indicators) ? block.indicators : [];
+    const marks = readIndicatorMarks(globals);
+    const seen = sentTells(mailState);
+    return list.filter((ind) => ind && typeof ind.id === 'string' && ind.id && typeof ind.tell === 'string')
+        .map((ind) => {
+            const right = ind.block === true ? 'block' : 'allow';
+            const marked = marks[ind.id] || null;
+            const sentIn = seen.get(ind.tell) || null;
+            return {
+                id: ind.id,
+                tell: ind.tell,
+                step: typeof ind.step === 'string' ? ind.step : null,
+                text: ind.text || '',
+                why: ind.why || '',
+                right,
+                marked,
+                shown: !!sentIn,
+                sentIn,
+                done: marked === right
+            };
+        });
+}
+
 /**
  * Defender mode (03 "Defender mode"; 00 §11 "Engagement mode blocks"). Pure.
  *
@@ -90,12 +162,18 @@ export function readDefenderPicks(globals) {
  * every item bound to it is done; the block is done when every declared step is done, or, with no
  * `steps[]`, when every item is. An empty list is never done. Which globals still need setting is
  * returned as `toSet` (names not already true), steps first, then the block's `onCompleteGlobal`.
+ *
+ * Indicators (`buildIndicatorItems`, from `mailState`) are not mitigation items. They gate nothing
+ * unless one names a declared step: that step then waits for its shown indicators too. A hidden
+ * indicator (no sent record carries its tell) is skipped. A step bound only to hidden ones is
+ * `vacuous`: it does not hold up the block, and its own global is not set until one shows.
  */
-export function buildDefenderModel(social, globals) {
+export function buildDefenderModel(social, globals, mailState = null) {
     const g = globals || {};
     const block = social?.engagement?.defender || {};
     const facts = social?.intelFacts || {};
     const picks = readDefenderPicks(g);
+    const indicators = buildIndicatorItems(block, g, mailState);
     const list = Array.isArray(block.factMitigations) ? block.factMitigations : [];
 
     const items = list.filter((fm) => fm && typeof fm.intel === 'string').map((fm) => {
@@ -119,19 +197,29 @@ export function buildDefenderModel(social, globals) {
     const stepDecls = Array.isArray(block.steps) ? block.steps.filter((s) => s && s.id) : [];
     const steps = stepDecls.map((s) => {
         const bound = items.filter((i) => i.step === s.id);
-        return { id: s.id, onCompleteGlobal: s.onCompleteGlobal || null,
-            done: bound.length > 0 && bound.every((i) => i.done) };
+        const boundInd = indicators.filter((i) => i.step === s.id);
+        const live = [...bound, ...boundInd.filter((i) => i.shown)];
+        // Bound only to hidden indicators: nothing to judge yet. The step does not hold up the
+        // block, but its own global waits until an indicator shows and is marked (no early latch).
+        const vacuous = bound.length === 0 && boundInd.length > 0 && live.length === 0;
+        return { id: s.id, onCompleteGlobal: s.onCompleteGlobal || null, vacuous,
+            done: live.length > 0 && live.every((i) => i.done) };
     });
-    const complete = items.length > 0 && (steps.length ? steps.every((s) => s.done) : items.every((i) => i.done));
+    const complete = items.length > 0 && (steps.length ? steps.every((s) => s.done || s.vacuous) : items.every((i) => i.done));
 
     const toSet = [];
     for (const s of steps) if (s.done && s.onCompleteGlobal && !isTrue(g[s.onCompleteGlobal])) toSet.push(s.onCompleteGlobal);
     if (complete && block.onCompleteGlobal && !isTrue(g[block.onCompleteGlobal])) toSet.push(block.onCompleteGlobal);
 
+    const shownInd = indicators.filter((i) => i.shown);
     return {
         title: block.title || 'Exposure review',
         intro: block.intro || '',
         items,
+        indicators,
+        indicatorsIntro: typeof block.indicatorsIntro === 'string' ? block.indicatorsIntro : '',
+        indicatorsDone: shownInd.filter((i) => i.done).length,
+        indicatorsShown: shownInd.length,
         steps,
         complete,
         doneCount: items.filter((i) => i.done).length,

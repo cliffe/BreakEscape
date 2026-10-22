@@ -172,7 +172,15 @@ export class MailClientMinigame extends SocialOverlayScene {
             judgedVisible: (rec) => !this._judgePending(rec),
             // Opening a message is the player attending to the inbox, so the arrival
             // notice has served its purpose and is cleared (A11: it lingered).
-            onOpen: (rec) => { this._clearNotice(); this._markRead(rec); }
+            onOpen: (rec) => { this._clearNotice(); this._markRead(rec); },
+            // Thread follow-ups under the open reply (01 N8): "Choose a reply" or the
+            // judged composer, from mailState.threads[key].expects.
+            afterBody: (rec, pane) => this._renderFollowups(rec, pane),
+            // Highlights (01 N16, 00 §10a): a marked span saves as evidence (grantFact,
+            // with the highlight id as the fact source) or, with no grants, to the notepad;
+            // any other selection goes to the notepad.
+            onHighlight: (highlight) => this._saveHighlight(highlight),
+            onSaveSelection: (text) => this._saveSelection(text)
         });
         this._refresh();
     }
@@ -629,11 +637,17 @@ export class MailClientMinigame extends SocialOverlayScene {
         if (this.composeOpen) this.closeCompose(); else this.openCompose();
     }
 
-    openCompose() {
+    /**
+     * Open the composer. `extra` carries a judged follow-up (01 N8, #compose_reply):
+     * `{ forceTargetId, inReplyTo, presetContactId }` fixes the target and recipient and
+     * threads the reply. A fresh crafted message passes nothing.
+     */
+    openCompose(extra = {}) {
         if (this.composeOpen || !this.account) return;
         this.composeOpen = true;
         const social = this.social;
-        const draft = this.mailState.drafts && this.mailState.drafts[this.account.id];
+        // A judged follow-up does not reuse the unsent draft of a fresh message.
+        const draft = extra.forceTargetId ? null : (this.mailState.drafts && this.mailState.drafts[this.account.id]);
         this.composer = new MailComposer(this.root, {
             people: social.people,
             templates: social.templates,
@@ -648,6 +662,9 @@ export class MailClientMinigame extends SocialOverlayScene {
             contacts: this.contacts(),
             globals: this.globals,
             draft,
+            forceTargetId: extra.forceTargetId || null,
+            inReplyTo: extra.inReplyTo || '',
+            presetContactId: extra.presetContactId || null,
             meterDefault: this.config.showRedFlagMeter === true,
             evaluate: (message) => this._liveJudge(message),
             pushLayer: (close, name) => this.pushLayer(close, name),
@@ -860,6 +877,150 @@ export class MailClientMinigame extends SocialOverlayScene {
         this._refresh();
     }
 
+    // ── thread follow-ups (N8) ────────────────────────────────────────────────
+
+    /** The thread record and key for the open message. */
+    _threadFor(rec) {
+        const key = rec && typeof rec.thread === 'string' ? rec.thread : null;
+        return { key, thread: key ? (this.mailState?.threads?.[key] || null) : null };
+    }
+
+    /** Is `rec` the newest inbox message of its thread, so a pending follow-up belongs to it? */
+    _isLatestInThread(rec) {
+        const key = rec && rec.thread;
+        if (!key || !this.account) return false;
+        const list = this.mailState?.mailboxes?.[this.account.mailbox]?.messages;
+        if (!Array.isArray(list)) return false;
+        let latest = null;
+        for (const m of list) {
+            if (m.folder === 'sent' || m.thread !== key) continue;
+            if (!latest || (m.gameTime || 0) >= (latest.gameTime || 0)) latest = m;
+        }
+        return !!latest && latest.id === rec.id;
+    }
+
+    /**
+     * The one follow-up control under an open inbox reply (01 N8, 00 §10): "Choose a
+     * reply" lists the ink's options, or "Write your reply. This one is judged" opens
+     * the judged composer for a #compose_reply target. Exactly one, from
+     * threads[key].expects, only on the newest reply of the thread.
+     */
+    _renderFollowups(rec, pane) {
+        if (!rec || rec.folder === 'sent' || rec.kind === 'quickReply') return;
+        const { key, thread } = this._threadFor(rec);
+        const expects = thread && thread.expects;
+        if (!key || !expects || !this._isLatestInThread(rec)) return;
+
+        const wrap = el('div', 'mail-followup');
+        if (expects.mode === 'compose' && typeof expects.targetId === 'string') {
+            const btn = el('button', 'mail-followup-compose minigame-button', 'Write your reply. This one is judged');
+            btn.type = 'button';
+            this.addEventListener(btn, 'click', () => this.openComposeReply(expects.targetId, rec.id));
+            wrap.appendChild(btn);
+        } else if (expects.mode === 'choices' && Array.isArray(expects.options) && expects.options.length) {
+            wrap.appendChild(el('p', 'mail-followup-label', 'Choose a reply'));
+            const list = el('div', 'mail-followup-options');
+            list.setAttribute('role', 'group');
+            list.setAttribute('aria-label', 'Choose a reply');
+            expects.options.forEach((text, i) => {
+                const opt = el('button', 'mail-followup-option minigame-button', text);
+                opt.type = 'button';
+                opt.dataset.choice = String(i);
+                this.addEventListener(opt, 'click', () => this.pickReplyOption(key, i, rec));
+                list.appendChild(opt);
+            });
+            wrap.appendChild(list);
+        } else {
+            return;
+        }
+        pane.appendChild(wrap);
+    }
+
+    /**
+     * The player picks an unscored ink reply option (01 N8). Writes a quickReply Sent
+     * record, queues the continuation ink job (the runner loads the stored position and
+     * ChooseChoiceIndex) after the reply delay, and clears the expectation while keeping
+     * the stored position, so the control does not linger; the continuation sets a fresh
+     * expectation on its own reply.
+     */
+    pickReplyOption(threadKey, index, rec) {
+        const thread = this.mailState?.threads?.[threadKey];
+        const options = thread && thread.expects && Array.isArray(thread.expects.options) ? thread.expects.options : [];
+        const text = options[index];
+        if (typeof text !== 'string') return false;
+
+        const account = this.account;
+        const quick = {
+            kind: 'quickReply',
+            thread: threadKey,
+            folder: 'sent',
+            fromAccount: account ? account.id : null,
+            from: { name: account ? (account.displayName || account.address || '') : '', address: account ? (account.address || '') : '' },
+            to: (rec && rec.from && rec.from.address) ? rec.from.address : '',
+            targetId: null,
+            subject: (rec && rec.subject) ? (/^re:/i.test(rec.subject) ? rec.subject : `Re: ${rec.subject}`) : '',
+            templates: {}, slots: {}, body: text,
+            attachment: null, link: null, landed: null, tells: [], read: true
+        };
+        if (this.scheduler?.addMessage) this.scheduler.addMessage(account ? account.mailbox : null, quick);
+
+        if (this.scheduler?.setThread) {
+            const kept = {};
+            if (thread && typeof thread.position === 'string') kept.position = thread.position;
+            if (thread && Array.isArray(thread.choices)) kept.choices = thread.choices;
+            this.scheduler.setThread(threadKey, Object.keys(kept).length ? kept : null);
+        }
+
+        // Lazy import keeps the runner (and its ink engine) off the shell's static graph.
+        import('../../systems/mail-runner.js').then((m) => {
+            try {
+                m.scheduleChoiceReply(this.scheduler, {
+                    threadKey, choiceIndex: index, msgId: rec ? rec.id : null, scenario: { social: this.social }
+                });
+            } catch (err) { console.error('mail scheduleChoiceReply failed:', err); }
+        }).catch((err) => console.error('mail could not load mail-runner:', err));
+
+        this._refresh();
+        this._changed({ type: 'quickReply', mailbox: account ? account.mailbox : null, id: quick.id });
+        return true;
+    }
+
+    /** Open the composer for a judged follow-up (#compose_reply target), pre-addressed to the thread. */
+    openComposeReply(targetId, inReplyToId) {
+        const target = resolveTarget(this.social, targetId);
+        if (!target) return false;
+        const character = target.character;
+        const contact = this.contacts().find((c) => c && (c.targetId === targetId || c.character === character)) || null;
+        if (this.composeOpen) this.closeCompose(false);
+        this.openCompose({ forceTargetId: targetId, inReplyTo: inReplyToId || '', presetContactId: contact ? contact.id : null });
+        return true;
+    }
+
+    // ── highlights (N16) ──────────────────────────────────────────────────────
+
+    /** Save a highlighted span: grant its fact (source = highlight id), else save its text to the notepad. */
+    _saveHighlight(highlight) {
+        if (!highlight) return;
+        if (typeof highlight.grants === 'string' && highlight.grants) {
+            // Lazy import keeps social-intel off the shell's static graph (as the runner is).
+            import('../../systems/social-intel.js').then((m) => {
+                try { m.grantFact(highlight.grants, { source: highlight.id || 'highlight' }); this._refresh(); }
+                catch (err) { console.error('mail grantFact failed:', err); }
+            }).catch((err) => console.error('mail could not load social-intel:', err));
+        } else if (typeof highlight.text === 'string') {
+            this._saveSelection(highlight.text);
+            this._refresh();
+        }
+    }
+
+    /** Send a free selection to the notepad (01 N16). */
+    _saveSelection(text) {
+        if (typeof text !== 'string' || !text) return;
+        if (typeof window !== 'undefined' && typeof window.addNote === 'function') {
+            try { window.addNote('Note', text, false); } catch (err) { console.error('mail addNote failed:', err); }
+        }
+    }
+
     // ── close, result, return ────────────────────────────────────────────────
 
     /** The composer calls this after a send with the 01 §3 gameResult transform. */
@@ -897,6 +1058,10 @@ export class MailClientMinigame extends SocialOverlayScene {
         const reader = this.reader?.getState?.() || null;
         const narrow = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
             ? window.matchMedia(NARROW_QUERY).matches : false;
+        // The open reply's one follow-up expectation (01 N8), for the bridge check.
+        const selRec = this.reader?.selected?.() || null;
+        const ft = selRec ? this._threadFor(selRec) : { thread: null };
+        const followup = (selRec && ft.thread && ft.thread.expects && this._isLatestInThread(selRec)) ? ft.thread.expects : null;
         return {
             ...super.getTestState(),
             mail: {
@@ -922,6 +1087,8 @@ export class MailClientMinigame extends SocialOverlayScene {
                 detailsOpen: reader?.detailsOpen ?? false,
                 linkNote: reader?.linkNote ?? '',
                 messages: reader?.messages ?? [],
+                highlights: reader?.highlights ?? [],
+                followup,
                 contactsOpen: this.contactsOpen,
                 contacts: this.contacts().map((c) => c.id),
                 sentThisSession: this.sentThisSession,

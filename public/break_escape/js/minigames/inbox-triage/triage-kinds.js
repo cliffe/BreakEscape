@@ -1,0 +1,389 @@
+// Non-email message kinds for inbox triage (SE design 05 N1 "Non-email kinds", N10 `call`
+// and `push`; 11 N12 to N14 for the look of each surface).
+//
+// A triage message has a `kind`, default `email`. The others are `sms`, `voicemail`, `qr`,
+// `page`, `call` and `push`. Each is drawn in its own style in the reading pane (a phone text
+// thread, a voicemail card with a transcript, a printed notice with a QR code, a browser card,
+// a call transcript, an MFA prompt) in place of the email head and body, with the same
+// `truth`, notes and scoring. None of them has `auth`, so the header panel is hidden, and the
+// chips are only the set's enabled channel tells (05 OQ7).
+//
+// `call` and `push` replace the verdict buttons with their own actions. Each action scores
+// through an existing verdict row, so the scorer is unchanged:
+//   call: comply = trust, escalate = report, refuse = delete, verify_callback = verify
+//   push: approve = trust, deny = delete, deny_report = report
+//
+// Every string the player reads goes in with textContent. The QR code is a decorative
+// pattern drawn from the message id: it encodes nothing and cannot be scanned.
+
+const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+const isStr = (v) => typeof v === 'string' && v.length > 0;
+
+export const EMAIL_KINDS = Object.freeze(['email', 'playerSent']);
+export const NON_EMAIL_KINDS = Object.freeze(['sms', 'voicemail', 'qr', 'page', 'call', 'push']);
+
+export function kindOf(rec) {
+    return isStr(rec?.kind) ? rec.kind : 'email';
+}
+
+export function isNonEmail(recOrKind) {
+    const k = typeof recOrKind === 'string' ? recOrKind : kindOf(recOrKind);
+    return NON_EMAIL_KINDS.includes(k);
+}
+
+/** Short word for the kind, used in the message list and the brief. */
+export const KIND_LABEL = Object.freeze({
+    email: 'Email', sms: 'Text', voicemail: 'Voicemail', qr: 'QR notice',
+    page: 'Web page', call: 'Call', push: 'Sign-in prompt'
+});
+
+const VERDICT_ACTIONS = Object.freeze({
+    trust: { id: 'trust', verdict: 'trust', label: 'Trust', past: 'Trusted', hint: "This is real. I'd open it or act on it." },
+    report: { id: 'report', verdict: 'report', label: 'Report', past: 'Reported', hint: 'This is a phish. Send it to security.' },
+    delete: { id: 'delete', verdict: 'delete', label: 'Delete', past: 'Deleted', hint: 'This is junk. Bin it.' },
+    verify: { id: 'verify', verdict: 'verify', label: 'Verify', past: 'Verified', hint: 'I would check this by ringing a number I already hold.' }
+});
+
+/** 05 N10: the four call actions, each mapped to a verdict row. */
+export const CALL_ACTIONS = Object.freeze([
+    { id: 'comply', verdict: 'trust', label: 'Comply', past: 'Complied', hint: 'Do what the caller asks.' },
+    { id: 'escalate', verdict: 'report', label: 'Escalate', past: 'Escalated', hint: 'Pass the call to security.' },
+    { id: 'refuse', verdict: 'delete', label: 'Refuse', past: 'Refused', hint: 'Say no and hang up.' },
+    { id: 'verify_callback', verdict: 'verify', label: 'Ring back', past: 'Rang back', hint: 'Hang up and ring back on a number you already hold.' }
+]);
+
+/** 05 N10: the three MFA prompt actions, each mapped to a verdict row. */
+export const PUSH_ACTIONS = Object.freeze([
+    { id: 'approve', verdict: 'trust', label: 'Approve', past: 'Approved', hint: 'Yes, this is me signing in.' },
+    { id: 'deny', verdict: 'delete', label: 'Deny', past: 'Denied', hint: 'No, block this sign-in.' },
+    { id: 'deny_report', verdict: 'report', label: 'Deny and report', past: 'Denied and reported', hint: 'Block it and tell security someone has my password.' }
+]);
+
+/**
+ * The buttons under a message, in order. Email and the other kinds get the verdicts
+ * (Verify only when the set enables it); `call` and `push` get their own actions.
+ */
+export function actionsFor(kind, verifyEnabled = false) {
+    if (kind === 'call') return CALL_ACTIONS.filter((a) => verifyEnabled || a.verdict !== 'verify');
+    if (kind === 'push') return PUSH_ACTIONS;
+    const out = [VERDICT_ACTIONS.trust, VERDICT_ACTIONS.report, VERDICT_ACTIONS.delete];
+    if (verifyEnabled) out.push(VERDICT_ACTIONS.verify);
+    return out;
+}
+
+/** The action a player took, by id, else the verdict's own action. */
+export function actionById(kind, actionId, verdict) {
+    const all = [...CALL_ACTIONS, ...PUSH_ACTIONS, ...Object.values(VERDICT_ACTIONS)];
+    const pool = kind === 'call' ? CALL_ACTIONS : kind === 'push' ? PUSH_ACTIONS : Object.values(VERDICT_ACTIONS);
+    return pool.find((a) => a.id === actionId) || pool.find((a) => a.verdict === verdict)
+        || all.find((a) => a.verdict === verdict) || VERDICT_ACTIONS.trust;
+}
+
+/** Map an action id to the verdict it scores as. Throws on an action the kind does not have. */
+export function verdictForAction(kind, actionId) {
+    const a = actionsFor(kind, true).find((x) => x.id === actionId);
+    if (!a) throw new RangeError(`triage-kinds: "${actionId}" is not an action for a ${kind} message`);
+    return a.verdict;
+}
+
+/**
+ * The review card's verdict line for a call or a push, where the email wording
+ * ("This one was a phish") reads oddly. null for every other kind.
+ */
+export function kindVerdictLine(kind, isPhish, verdict) {
+    if (kind === 'push') {
+        return (isPhish ? {
+            trust: "Approving let someone else into the account. They already have the password; the prompt was the last check.",
+            delete: "Denying kept them out, but nobody was told that someone has your password.",
+            report: 'Right call: denied and reported. Someone has your password, and security can now reset it.'
+        } : {
+            trust: 'Right call. You started this sign-in, so approving it is fine.',
+            delete: "That one was yours. Denying it only means signing in again.",
+            report: "That one was yours, but reporting a prompt you aren't sure about is never wrong."
+        })[verdict] || null;
+    }
+    if (kind === 'call') {
+        return (isPhish ? {
+            trust: 'Not this time. The caller was not who they said.',
+            report: 'Right call: escalated. Security can warn everyone else this caller might try.',
+            delete: 'Safe, but nobody was warned. Escalating tells security this caller is working through the office.',
+            verify: 'Right call: ringing back on a number you already hold is how you check.'
+        } : {
+            trust: 'Right call. This caller was genuine.',
+            report: 'That caller was genuine, but escalating when unsure is never wrong.',
+            delete: 'That caller was genuine. Hanging up without offering a safe way to check left them stuck.',
+            verify: 'Checking first is fine. This caller was genuine, and ringing back confirmed it.'
+        })[verdict] || null;
+    }
+    return null;
+}
+
+/** A list subject for a kind that has none of its own. */
+export function defaultSubject(msg) {
+    const kind = kindOf(msg);
+    const first = (s) => {
+        const t = String(s || '').replace(/\{\{link:[^}]*\}\}/g, '').replace(/\s+/g, ' ').trim();
+        return t.length > 48 ? `${t.slice(0, 45)}...` : t;
+    };
+    switch (kind) {
+    case 'sms': return first(msg.body) || 'Text message';
+    case 'voicemail': return isStr(msg.duration) ? `Voicemail (${msg.duration})` : 'Voicemail';
+    case 'qr': return 'Printed notice';
+    case 'page': return isObj(msg.page) && isStr(msg.page.heading) ? msg.page.heading : 'Web page';
+    case 'call': return 'Incoming call';
+    case 'push': return isObj(msg.push) && isStr(msg.push.app) ? `${msg.push.app}: sign-in request` : 'Sign-in request';
+    default: return '';
+    }
+}
+
+/** The host part of a URL-ish string, without scheme, path or port. */
+export function hostOf(url) {
+    const s = String(url || '').trim().replace(/^[a-z][a-z0-9+.-]*:\/\//i, '');
+    return s.split(/[/?#]/)[0].replace(/:\d+$/, '').toLowerCase();
+}
+
+// ── decorative patterns (pure) ──────────────────────────────────────────────────
+
+/** A small deterministic hash of a string (FNV-1a, 32-bit). */
+export function hashString(s) {
+    let h = 0x811c9dc5;
+    const str = String(s || '');
+    for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h >>> 0;
+}
+
+/**
+ * A QR-looking grid (size x size booleans) with the three finder squares in place and
+ * pseudo-random cells elsewhere, seeded from `seed`. It encodes nothing.
+ */
+export function qrPattern(seed, size = 21) {
+    let x = hashString(seed) || 1;
+    const next = () => { x ^= x << 13; x >>>= 0; x ^= x >>> 17; x ^= x << 5; x >>>= 0; return x; };
+    const grid = Array.from({ length: size }, () => Array(size).fill(false));
+    const finder = (r0, c0) => {
+        for (let r = 0; r < 7; r++) {
+            for (let c = 0; c < 7; c++) {
+                const edge = r === 0 || r === 6 || c === 0 || c === 6;
+                const core = r >= 2 && r <= 4 && c >= 2 && c <= 4;
+                grid[r0 + r][c0 + c] = edge || core;
+            }
+        }
+    };
+    const inFinder = (r, c) => (r < 8 && c < 8) || (r < 8 && c >= size - 8) || (r >= size - 8 && c < 8);
+    for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+            if (!inFinder(r, c)) grid[r][c] = (next() & 3) === 0 || (next() & 1) === 1;
+        }
+    }
+    finder(0, 0);
+    finder(0, size - 7);
+    finder(size - 7, 0);
+    return grid;
+}
+
+/** Bar heights (1 to 9) for the voicemail's static waveform, seeded from `seed`. */
+export function waveBars(seed, count = 28) {
+    let h = hashString(seed) || 7;
+    const out = [];
+    for (let i = 0; i < count; i++) {
+        h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d) >>> 0;
+        out.push(1 + (h % 9));
+    }
+    return out;
+}
+
+// ── DOM surfaces ────────────────────────────────────────────────────────────────
+
+function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+}
+
+function heading(text) {
+    // .mail-subject so the reader's select() focuses it, as it does an email's subject
+    const h = el('h2', 'mail-subject tri-kind-title', text);
+    return h;
+}
+
+function transcriptList(lines, className) {
+    const ol = el('ol', className);
+    for (const line of Array.isArray(lines) ? lines : []) {
+        if (!isObj(line) || !isStr(line.text)) continue;
+        const li = el('li', `tri-line tri-line-${line.who === 'you' ? 'you' : 'them'}`);
+        li.append(el('span', 'tri-line-who', isStr(line.who) ? (line.who === 'you' ? 'You' : line.who) : 'Caller'),
+            el('span', 'tri-line-text', line.text));
+        ol.appendChild(li);
+    }
+    return ol;
+}
+
+function senderName(rec) {
+    return rec?.from?.name || rec?.from?.address || '';
+}
+
+function sms(rec, h) {
+    const box = el('section', 'tri-kind tri-kind-sms tri-phone');
+    box.setAttribute('aria-label', 'Text message');
+    const top = el('div', 'tri-phone-top');
+    top.append(heading(senderName(rec) || 'Unknown sender'));
+    if (rec.from?.name && rec.from?.address) top.appendChild(el('p', 'tri-phone-number', rec.from.address));
+    top.appendChild(el('p', 'tri-kind-label', 'Text message'));
+    box.appendChild(top);
+    const thread = el('div', 'tri-sms-thread');
+    for (const prior of Array.isArray(rec.earlier) ? rec.earlier : []) {
+        if (!isObj(prior) || !isStr(prior.text)) continue;
+        const b = el('div', 'tri-sms-bubble tri-sms-earlier');
+        b.appendChild(el('p', 'tri-sms-text', prior.text));
+        if (isStr(prior.time)) b.appendChild(el('p', 'tri-sms-time', prior.time));
+        thread.appendChild(b);
+    }
+    const bubble = el('div', 'tri-sms-bubble');
+    const body = h.bodyNode(rec);
+    body.classList.add('tri-sms-text');
+    bubble.appendChild(body);
+    if (rec.time) bubble.appendChild(el('p', 'tri-sms-time', rec.time));
+    thread.appendChild(bubble);
+    box.appendChild(thread);
+    return box;
+}
+
+function voicemail(rec) {
+    const box = el('section', 'tri-kind tri-kind-voicemail');
+    box.setAttribute('aria-label', 'Voicemail');
+    box.appendChild(el('p', 'tri-kind-label', 'Voicemail'));
+    box.appendChild(heading(senderName(rec) || 'Unknown caller'));
+    const meta = el('p', 'tri-vm-meta');
+    const bits = [];
+    if (rec.from?.name && rec.from?.address) bits.push(rec.from.address);
+    if (rec.time) bits.push(rec.time);
+    if (isStr(rec.duration)) bits.push(rec.duration);
+    meta.textContent = bits.join(' · ');
+    box.appendChild(meta);
+    const wave = el('div', 'tri-vm-wave');
+    wave.setAttribute('aria-hidden', 'true');
+    for (const n of waveBars(rec.id)) {
+        const bar = el('span', 'tri-vm-bar');
+        bar.style.height = `${n * 3}px`;
+        wave.appendChild(bar);
+    }
+    box.appendChild(wave);
+    box.appendChild(el('h3', 'tri-vm-heading', 'Transcript'));
+    if (Array.isArray(rec.transcript) && rec.transcript.length) {
+        box.appendChild(transcriptList(rec.transcript, 'tri-transcript'));
+    } else {
+        box.appendChild(el('p', 'tri-vm-text', rec.body || ''));
+    }
+    return box;
+}
+
+function qr(rec, h) {
+    const q = isObj(rec.qr) ? rec.qr : {};
+    const box = el('section', 'tri-kind tri-kind-qr tri-notice');
+    box.setAttribute('aria-label', 'Printed notice');
+    if (isStr(q.location)) box.appendChild(el('p', 'tri-kind-label', `Seen: ${q.location}`));
+    else box.appendChild(el('p', 'tri-kind-label', 'Printed notice'));
+    box.appendChild(heading(rec.subject || 'Notice'));
+    if (rec.body) box.appendChild(el('p', 'tri-notice-text', rec.body));
+    const code = el('div', 'tri-qr');
+    code.setAttribute('role', 'img');
+    code.setAttribute('aria-label', 'A QR code');
+    const grid = qrPattern(rec.id);
+    code.style.setProperty('--tri-qr-size', String(grid.length));
+    for (const row of grid) for (const on of row) code.appendChild(el('span', on ? 'tri-qr-cell on' : 'tri-qr-cell'));
+    box.appendChild(code);
+    if (isStr(q.caption)) box.appendChild(el('p', 'tri-qr-caption', q.caption));
+    const where = el('button', 'tri-qr-where minigame-button', 'Where does this code go?');
+    where.type = 'button';
+    where.addEventListener('click', () => h.showLink(q.destination || 'nowhere the notice says'));
+    box.appendChild(where);
+    return box;
+}
+
+function page(rec, h) {
+    const p = isObj(rec.page) ? rec.page : {};
+    const box = el('section', 'tri-kind tri-kind-page tri-browser');
+    box.setAttribute('aria-label', 'Web page');
+    const bar = el('div', 'tri-browser-bar');
+    if (p.padlock === true) {
+        const lock = el('button', 'tri-padlock minigame-button', 'Padlock');
+        lock.type = 'button';
+        lock.setAttribute('aria-label', 'Padlock: what does it mean?');
+        lock.addEventListener('click', () => h.showNote(
+            `The padlock means the connection to ${hostOf(p.url)} is encrypted. It says nothing about who runs ${hostOf(p.url)}.`));
+        bar.appendChild(lock);
+    } else {
+        bar.appendChild(el('span', 'tri-no-padlock', 'Not secure'));
+    }
+    const addr = el('button', 'tri-address minigame-button', p.url || '');
+    addr.type = 'button';
+    addr.setAttribute('aria-label', `Address bar: ${p.url || ''}`);
+    addr.addEventListener('click', () => h.showNote(`Full address: ${p.url || ''}. The site is ${hostOf(p.url)}.`));
+    bar.appendChild(addr);
+    box.appendChild(bar);
+    const view = el('div', 'tri-browser-view');
+    view.appendChild(heading(p.heading || rec.subject || 'Web page'));
+    if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
+    const fields = Array.isArray(p.fields) ? p.fields.filter(isStr) : [];
+    if (fields.length) {
+        const form = el('div', 'tri-page-form');
+        form.setAttribute('aria-label', 'Sign-in form (nothing can be typed)');
+        for (const f of fields) {
+            const row = el('div', 'tri-page-field');
+            row.append(el('span', 'tri-page-field-label', f), el('span', 'tri-page-field-box'));
+            form.appendChild(row);
+        }
+        if (isStr(p.button)) form.appendChild(el('span', 'tri-page-button', p.button));
+        view.appendChild(form);
+    }
+    box.appendChild(view);
+    return box;
+}
+
+function call(rec) {
+    const box = el('section', 'tri-kind tri-kind-call');
+    box.setAttribute('aria-label', 'Phone call');
+    box.appendChild(el('p', 'tri-kind-label', 'Incoming call'));
+    box.appendChild(heading(rec.callerId || senderName(rec) || 'Unknown caller'));
+    const meta = [];
+    if (rec.from?.address) meta.push(rec.from.address);
+    if (rec.time) meta.push(rec.time);
+    if (meta.length) box.appendChild(el('p', 'tri-call-meta', meta.join(' · ')));
+    box.appendChild(transcriptList(rec.transcript, 'tri-transcript tri-call-transcript'));
+    return box;
+}
+
+function push(rec) {
+    const p = isObj(rec.push) ? rec.push : {};
+    const box = el('section', 'tri-kind tri-kind-push tri-phone');
+    box.setAttribute('aria-label', 'Sign-in prompt');
+    box.appendChild(el('p', 'tri-kind-label', p.app || 'Authenticator'));
+    box.appendChild(heading(p.request || 'Are you trying to sign in?'));
+    const dl = el('dl', 'tri-push-details');
+    const add = (k, v) => { if (isStr(v)) dl.append(el('dt', null, k), el('dd', null, v)); };
+    add('Account', p.account);
+    add('Time', rec.time);
+    add('Location', p.location);
+    add('Device', p.device);
+    box.appendChild(dl);
+    return box;
+}
+
+const SURFACES = { sms, voicemail, qr, page, call, push };
+
+/**
+ * The reading-pane surface for a non-email message, or null for email.
+ * `h` holds the reader's helpers: bodyNode(rec) (the body with hover-able link chips),
+ * showLink(dest) and showNote(text) (both write the pane's status line).
+ */
+export function renderKindSurface(rec, h) {
+    const fn = SURFACES[kindOf(rec)];
+    if (!fn) return null;
+    const node = fn(rec, h);
+    node.dataset.kindSurface = kindOf(rec);
+    return node;
+}

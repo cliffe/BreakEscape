@@ -262,6 +262,69 @@ module ValidateSocial
       issues.concat(defender_globals(ctx, block, where))
       issues.concat(mitigation_checks(ctx, block['factMitigations'], where))
       issues << err("#{where}.indicators must be an array when authored (it is off by default)") if block.key?('indicators') && !block['indicators'].is_a?(Array)
+      issues.concat(indicator_checks(ctx, block, where)) if block['indicators'].is_a?(Array)
+      issues
+    end
+
+    # The tells a send can carry (systems/phish-rules.js computeTells, 00 section 10a). An indicator
+    # shows only when a sent record carries its tell, so any other id would never show.
+    SENT_TELLS = %w[senderTrust senderAuth linkCredible urgencyCalibrated].freeze
+
+    # The optional indicators step (03 "Defender mode"): `[ { id, tell, text, block, why, step? } ]`.
+    # An indicator gates profile_done only through a declared step it names; with steps declared,
+    # every mitigation and indicator names one, and every step has an item.
+    def self.indicator_checks(ctx, block, where)
+      issues = []
+      list = block['indicators']
+      return issues if list.empty?
+
+      declared = block['steps'].is_a?(Array) ? block['steps'].filter_map { |s| s['id'] if s.is_a?(Hash) && !Mail.blank?(s['id']) } : nil
+      seen = Set.new
+      list.each_with_index do |ind, i|
+        unless ind.is_a?(Hash)
+          issues << err("#{where}.indicators[#{i}] must be an object")
+          next
+        end
+        w = "#{where}.indicators[#{ind['id'] || i}]"
+        if Mail.blank?(ind['id'])
+          issues << err("#{where}.indicators[#{i}] has no id")
+        elsif !seen.add?(ind['id'])
+          issues << err("#{where}.indicators: id '#{ind['id']}' is used more than once")
+        end
+        if Mail.blank?(ind['tell'])
+          issues << err("#{w} has no tell; an indicator is shown only when a sent message carries its tell")
+        elsif !SENT_TELLS.include?(ind['tell'])
+          issues << warn_("#{w}.tell '#{ind['tell']}' is not a tell a send records (#{SENT_TELLS.join(', ')}); the indicator would never show")
+        end
+        issues << err("#{w}.text is empty; the card would show a blank heading") if Mail.blank?(ind['text'])
+        issues << err("#{w}.why is empty; a mark shows why it is right or wrong") if Mail.blank?(ind['why'])
+        issues << err("#{w}.block must be true or false (whether to block on it)") unless [true, false].include?(ind['block'])
+        if declared.nil?
+          issues << err("#{w} names step '#{ind['step']}', but #{where} declares no steps") unless ind['step'].nil?
+        elsif !ind['step'].nil? && !declared.include?(ind['step'])
+          issues << err("#{w} names step '#{ind['step']}', which #{where}.steps does not declare")
+        end
+      end
+      issues << err("#{where}.indicatorsIntro must be a string") if block.key?('indicatorsIntro') && !block['indicatorsIntro'].is_a?(String)
+      unless Mail.mail_client(ctx).is_a?(Hash) && !Mail.mail_client(ctx).empty?
+        issues << warn_("#{where}.indicators: the scenario has no social.mailClient, so nothing is ever sent and no indicator would show")
+      end
+      return issues if declared.nil?
+
+      # With steps declared, an indicator with no step gates nothing, which is allowed; a mitigation
+      # with no step would never count towards the block, so it must name one.
+      Mail.hash_list(block['factMitigations']).each do |m|
+        w = "#{where}.factMitigations[#{m['intel'] || '?'}]"
+        if m['step'].nil?
+          issues << err("#{w} has no step; #{where} declares steps, so it would never count towards #{block['onCompleteGlobal'] || 'the block'}")
+        elsif !declared.include?(m['step'])
+          issues << err("#{w} names step '#{m['step']}', which #{where}.steps does not declare")
+        end
+      end
+      used = Mail.hash_list(block['factMitigations']).map { |m| m['step'] } + Mail.hash_list(list).map { |x| x['step'] }
+      declared.uniq.each do |sid|
+        issues << err("#{where}.steps: step '#{sid}' has no items; it could never be done") unless used.include?(sid)
+      end
       issues
     end
 

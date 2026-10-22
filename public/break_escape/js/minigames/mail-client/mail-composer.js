@@ -210,6 +210,10 @@ export class MailComposer {
     // ── state ──────────────────────────────────────────────────────────────
 
     get target() {
+        // A judged follow-up (01 N8 "Write your reply. This one is judged",
+        // #compose_reply:<targetId>) forces the target: the thread names a phishTargets
+        // entry of the same character, judged like any other send, with inReplyTo set.
+        if (isStr(this.opts.forceTargetId)) return this.targets.get(this.opts.forceTargetId) || null;
         const c = this.contacts.find((x) => x && x.id === this.contactId);
         return c && isStr(c.targetId) ? this.targets.get(c.targetId) || null : null;
     }
@@ -252,6 +256,21 @@ export class MailComposer {
 
     _selectDefaultContact() {
         if (this.contactId) return;
+        // A judged follow-up opens pre-addressed to the character it answers (01 N8):
+        // the host passes presetContactId (the contact of the reply's character), so the
+        // To line is fixed and the player writes straight back into the thread.
+        if (isStr(this.opts.presetContactId)) {
+            const preset = this.contacts.find((c) => c && c.id === this.opts.presetContactId);
+            if (preset) {
+                if (this._draftRestored) {
+                    this.contactId = preset.id;
+                    if (!this.toAddress) this.toAddress = arr(preset.addresses)[0] || '';
+                } else {
+                    this.selectContact(preset.id, false);
+                }
+                return;
+            }
+        }
         const withTarget = this.contacts.find((c) => c && isStr(c.targetId));
         const first = withTarget || this.contacts[0] || null;
         if (!first) return;
@@ -459,7 +478,9 @@ export class MailComposer {
         return {
             fromAccount: this.account ? this.account.id : null,
             to: this.toAddress || '',
-            targetId: this.contact && isStr(this.contact.targetId) ? this.contact.targetId : null,
+            targetId: isStr(this.opts.forceTargetId)
+                ? this.opts.forceTargetId
+                : (this.contact && isStr(this.contact.targetId) ? this.contact.targetId : null),
             subject: this.subjectId || null,
             headerFrom,
             templates: { ...this.choice },
@@ -468,7 +489,10 @@ export class MailComposer {
             attachmentKind: kit ? kit.kind : null,
             link: linkKit ? linkKit.id : null,
             linkText: linkPage && isStr(linkPage.linkText) ? linkPage.linkText : null,
-            linkInfo: null
+            linkInfo: null,
+            // A judged follow-up carries the id of the reply it answers (00 §10,
+            // email_in_reply_to); empty for a fresh crafted message.
+            inReplyTo: isStr(this.opts.inReplyTo) ? this.opts.inReplyTo : ''
         };
     }
 

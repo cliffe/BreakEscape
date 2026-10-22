@@ -18,6 +18,14 @@
 #   - `playerSentAuth`: a row per account id and per landing-page domain id, placeholders limited
 #     to {account_address} and {domain}; `domainFrom` on `playerSent` entries only
 #
+# Phase 7 (05 N1 non-email kinds, N10, N11):
+#   - each non-email kind's own fields (sms number and text, voicemail transcript, qr destination,
+#     page url, call transcript, push app); fields that belong to another kind are ignored (warning)
+#   - a non-email message's truth.flags are channel tells only (its chips leave out the seven email
+#     factors), its `auth` is ignored, and a set holding one should enable some channel tells
+#   - `comparison` (false or { prePrefix?, requireGlobal? }): only on a set that runs as post, a pre
+#     prefix it can resolve, pre globals declared or imported, and a declared or imported flag
+#
 # Returns an array of issue strings starting with "❌" (error, fails --strict-social) or "⚠️"
 # (warning), in the style of validate_scenario.rb. Runs only when the scenario has a `social` key.
 module ValidateSocial
@@ -39,6 +47,11 @@ module ValidateSocial
     CHIP_STYLES = %w[plain technical character].freeze
     AUTH_VALUES = %w[pass fail none].freeze
     NON_EMAIL_KINDS = %w[sms voicemail qr page call push].freeze
+    # The fields each non-email kind reads (triage-kinds.js). Any of them on another kind is ignored.
+    KIND_FIELDS = {
+      'sms' => %w[earlier], 'voicemail' => %w[duration transcript], 'qr' => %w[qr],
+      'page' => %w[page], 'call' => %w[callerId transcript], 'push' => %w[push]
+    }.freeze
     KINDS = (%w[email playerSent] + NON_EMAIL_KINDS).freeze
     # The four globals a set writes, with the declared type each takes.
     RESULT_GLOBALS = { 'percent' => :number, 'reportRate' => :number, 'done' => :bool, 'pass' => :bool }.freeze
@@ -101,6 +114,7 @@ module ValidateSocial
       issues.concat(profile_checks(set, where))
       issues.concat(message_checks(ctx, set, universe, where))
       issues.concat(player_sent_auth_checks(ctx, set, where))
+      issues.concat(comparison_checks(ctx, set, where))
       if set.key?('pairedWith')
         pw = set['pairedWith']
         if !pw.is_a?(String) || !by_id.key?(pw)
@@ -250,6 +264,9 @@ module ValidateSocial
 
       issues = []
       seen = {}
+      if msgs.any? { |m| m.is_a?(Hash) && NON_EMAIL_KINDS.include?(kind(m)) } && (universe - FACTORS).empty?
+        issues << warn_("#{where} holds non-email messages but enables no channelTells; their chip list would offer only 'Nothing looks wrong'")
+      end
       msgs.each_with_index do |m, i|
         unless m.is_a?(Hash)
           issues << err("#{where}.messages[#{i}] must be an object")
@@ -299,10 +316,140 @@ module ValidateSocial
 
         issues << err("#{mw}.#{f} is empty or missing; the reader would show a blank line") if blank?(m[f])
       end
-      issues.concat(link_checks(m, mw)) if email
+      issues.concat(link_checks(m, mw)) if email || k == 'sms'
       issues.concat(attachment_checks(m, mw))
-      issues.concat(auth_checks(m, email, mw)) if email || m.key?('auth')
+      if email
+        issues.concat(auth_checks(m, email, mw))
+      elsif m.key?('auth')
+        issues << warn_("#{mw} is a #{k} message with 'auth'; only email has a header panel, so it is ignored")
+      end
+      issues.concat(kind_field_checks(m, k, mw))
       issues.concat(truth_checks(m, universe, mw))
+      issues
+    end
+
+    # ---- non-email kinds (05 N1, N10) ---------------------------------------
+
+    def self.kind_field_checks(m, k, mw)
+      issues = []
+      own = KIND_FIELDS[k] || []
+      KIND_FIELDS.values.flatten.uniq.each do |f|
+        next if own.include?(f) || !m.key?(f)
+
+        issues << warn_("#{mw} has '#{f}', which a #{k} message does not read; it is ignored")
+      end
+      return issues unless NON_EMAIL_KINDS.include?(k)
+
+      factors = Mail.list(m.dig('truth', 'flags')).select { |f| FACTORS.include?(f) }
+      factors.each do |f|
+        issues << err("#{mw}.truth.flags: '#{f}' is an email factor; a #{k} message offers only the set's channel tells as chips, so it could never be ticked")
+      end
+      who = !blank?(m.dig('from', 'name')) || !blank?(m.dig('from', 'address')) || (m['from'].is_a?(String) && !m['from'].empty?)
+      case k
+      when 'sms'
+        issues << err("#{mw}.from.address is empty; a text message shows the sender's number") if blank?(m.dig('from', 'address'))
+        issues << err("#{mw}.body is empty; the text bubble would be blank") if blank?(m['body'])
+        Mail.list(m['earlier']).each_with_index do |e, i|
+          issues << err("#{mw}.earlier[#{i}].text is empty") unless e.is_a?(Hash) && !blank?(e['text'])
+        end
+      when 'voicemail'
+        issues << err("#{mw}: a voicemail needs from.name or from.address (the caller)") unless who
+        if m.key?('transcript')
+          issues.concat(transcript_checks(m['transcript'], "#{mw}.transcript"))
+        elsif blank?(m['body'])
+          issues << err("#{mw}: a voicemail needs a body or a transcript; the card would show no words")
+        end
+        issues << err("#{mw}.duration is empty") if m.key?('duration') && blank?(m['duration'])
+      when 'qr'
+        q = m['qr']
+        if !q.is_a?(Hash) || blank?(q['destination'])
+          issues << err("#{mw}.qr.destination is missing; 'Where does this code go?' would have nothing to show")
+        end
+        issues << warn_("#{mw}.subject is empty; the notice would be headed 'Notice'") if blank?(m['subject'])
+      when 'page'
+        pg = m['page']
+        if !pg.is_a?(Hash) || blank?(pg['url'])
+          issues << err("#{mw}.page.url is missing; the address bar would be blank")
+        else
+          issues << err("#{mw}.page.padlock must be true or false") if pg.key?('padlock') && ![true, false].include?(pg['padlock'])
+          issues << err("#{mw}.page.fields must be an array of non-empty labels") if pg.key?('fields') && !(pg['fields'].is_a?(Array) && pg['fields'].all? { |f| !blank?(f) })
+        end
+      when 'call'
+        issues.concat(transcript_checks(m['transcript'], "#{mw}.transcript", required: true))
+        issues << warn_("#{mw} has no callerId or from; the card would say 'Unknown caller'") if blank?(m['callerId']) && !who
+      when 'push'
+        pu = m['push']
+        issues << err("#{mw}.push.app is missing; the prompt would not say which app is asking") if !pu.is_a?(Hash) || blank?(pu['app'])
+        issues << warn_("#{mw}.time is empty; the prompt's time is often the tell (an odd hour)") if blank?(m['time'])
+      end
+      issues
+    end
+
+    def self.transcript_checks(lines, where, required: false)
+      unless lines.is_a?(Array) && !lines.empty?
+        return required || !lines.nil? ? [err("#{where} must be a non-empty array of { who, text }")] : []
+      end
+
+      lines.each_with_index.filter_map do |l, i|
+        err("#{where}[#{i}] needs a non-empty text") unless l.is_a?(Hash) && !blank?(l['text'])
+      end
+    end
+
+    # ---- the pre/post comparison (05 N11) -------------------------------------
+
+    # Whether the set runs at the post stage: its own stage, or a workstation launching it as post.
+    def self.runs_as_post?(ctx, set)
+      stages = []
+      Mail.each_object(ctx.json) do |obj, _|
+        md = obj['minigameData']
+        next unless obj['type'] == 'triage-workstation' && md.is_a?(Hash) && md['triageSetId'] == set['id']
+
+        stages << (md['stage'] || set['stage'])
+      end
+      stages << set['stage'] if stages.empty?
+      stages.include?('post')
+    end
+
+    def self.comparison_checks(ctx, set, where)
+      return [] unless set.key?('comparison') || runs_as_post?(ctx, set)
+
+      c = set['comparison']
+      return [] if c == false
+      return [err("#{where}.comparison must be false or an object { prePrefix?, requireGlobal? }")] if set.key?('comparison') && !c.is_a?(Hash)
+
+      c ||= {}
+      issues = []
+      post = runs_as_post?(ctx, set)
+      issues << warn_("#{where}.comparison is set but the set never runs as post; the panel only shows after a post round") if set.key?('comparison') && !post
+      prefix = set.dig('outcome', 'setGlobalPrefix') if set['outcome'].is_a?(Hash)
+      pre = c['prePrefix']
+      if c.key?('prePrefix')
+        if blank?(pre) || !pre.is_a?(String) || pre =~ /[{}]/ || !"#{pre}done".match?(GLOBAL_NAME_RE)
+          issues << err("#{where}.comparison.prePrefix '#{pre}' must be a literal global-name prefix (no braces)")
+          pre = nil
+        end
+      elsif prefix.is_a?(String) && prefix.include?('{stage}')
+        pre = prefix.gsub('{stage}', 'pre')
+      else
+        issues << warn_("#{where} runs as post but its setGlobalPrefix has no {stage} token and comparison has no prePrefix; no comparison would show (set comparison.prePrefix, or comparison: false)") if post
+        pre = nil
+      end
+      if pre && post
+        %w[done percent reportRate].each do |suffix|
+          name = "#{pre}#{suffix}"
+          next if ctx.own_globals.key?(name) || ctx.import_names.include?(name)
+
+          issues << warn_("#{where}: the comparison reads '#{name}', which is neither declared nor imported; the post round would always say 'No baseline'")
+        end
+      end
+      if c.key?('requireGlobal')
+        g = c['requireGlobal']
+        if blank?(g) || !g.is_a?(String) || !g.match?(GLOBAL_NAME_RE)
+          issues << err("#{where}.comparison.requireGlobal must be a global name")
+        elsif !ctx.own_globals.key?(g) && !ctx.import_names.include?(g)
+          issues << err("#{where}.comparison.requireGlobal '#{g}' is neither declared nor imported; the comparison could never show")
+        end
+      end
       issues
     end
 

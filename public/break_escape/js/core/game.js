@@ -43,6 +43,7 @@ import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture 
 import { mailScheduler } from '../systems/mail-scheduler.js';  // Mail jobs and mailState (social missions)
 import '../systems/mail-runner.js';  // Registers the ink-job runner on the mail scheduler (P1-J); self-installs on import after mailScheduler
 import { notifyNewMail } from '../minigames/mail-client/mail-notification.js';  // HUD/bark for delivered mail (P1-F)
+import { watchReadinessGlobals } from '../systems/social-intel.js';  // needsGlobal readiness slots re-check on a global change
 
 // Global variables that will be set by main.js
 let gameScenario;
@@ -1639,6 +1640,9 @@ export async function create() {
     // first load. A mission with no social.mailClient and nothing saved stays inactive
     // and sends no mailState (00 S9). Jobs restart their countdown from remainingMs.
     mailScheduler.init({ scenario: gameScenario, saved: gameScenario.savedMailState || null });
+    // Readiness slots that wait on a global (needsGlobal) re-check when it changes. A
+    // scenario with no such slot (every shipped mission) installs nothing.
+    watchReadinessGlobals({ scenario: gameScenario });
     // A delivered reply or timed message raises the mail notification (01 N14,
     // 00 S9): appended silently when a client is open on that mailbox, a toast
     // otherwise. Hooked once per page (P1-F, P1-C follow-up).

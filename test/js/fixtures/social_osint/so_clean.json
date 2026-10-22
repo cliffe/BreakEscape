@@ -1,4 +1,6 @@
 {
+ "scenario_brief": "OSINT lint fixture: every fact has one award path.",
+ "startRoom": "lab",
  "globalVariables": {
   "se_intel_pierce_role": false,
   "se_intel_email_pattern": false,
@@ -10,9 +12,12 @@
  },
  "rooms": {
   "lab": {
+   "type": "room_office",
+   "connections": {},
    "objects": [
     {
      "id": "ws1",
+     "name": "Recon workstation",
      "type": "osint-workstation",
      "minigameData": {
       "siteIds": [
@@ -23,6 +28,7 @@
     },
     {
      "id": "ws2",
+     "name": "Spare workstation",
      "type": "osint-workstation",
      "minigameData": {}
     }
@@ -132,6 +138,8 @@
   "pretextNpcs": [
    {
     "id": "call_lord",
+    "character": "lord",
+    "callId": "call_lord",
     "asks": {
      "portal_name": {
       "grants": {

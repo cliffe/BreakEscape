@@ -474,6 +474,26 @@ module ValidateSocial
       if number?(infl['min']) && number?(infl['max']) && number?(infl['start']) && !(infl['min']..infl['max']).cover?(infl['start'])
         issues << "❌ SOCIAL: #{where}.influence start (#{infl['start']}) lies outside min..max"
       end
+      # influence.start agrees with the influence global's initial value and each channel story's
+      # VAR default. The engine reads the global first and falls back to start, so a mismatch
+      # means the meter starts somewhere the author did not write (MECHANICS_AUDIT M3/M4 follow-up).
+      if number?(infl['start'])
+        decl = ctx.all_globals[infl_global]
+        if ctx.all_globals.key?(infl_global) && number?(decl) && decl.to_f != infl['start'].to_f
+          issues << "❌ SOCIAL: #{where}.influence start (#{infl['start']}) does not match globalVariables #{infl_global} (#{decl}); " \
+                    'the game starts the meter at the global, so make the two agree'
+        end
+        unless ctx.all_globals.key?(infl_global)
+          (stories[id] || {}).each do |chan, (label, src)|
+            src_lit, ty = ink_vars(ink_files(src))[infl_global]
+            next unless ty == :number && !literal_matches?(src_lit, infl['start'])
+
+            rel = src.sub("#{ctx.repo_root}/", '')
+            issues << "❌ SOCIAL: #{rel} VAR #{infl_global} = #{src_lit} but #{where}.influence start is #{infl['start']} " \
+                      "(channel '#{chan}', #{label}); the default must match"
+          end
+        end
+      end
 
       # clearOnRearm only on boolean targets
       thresholds.each do |t|

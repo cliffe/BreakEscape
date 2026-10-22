@@ -265,7 +265,7 @@ test('getTestState has the documented shape and is plain JSON', () => {
     // P1-L added burned, contactRecords, creatable, createChoice, createMenu, createOpen, switcher, unreadByAccount
     assert.deepEqual(Object.keys(s.mail).sort(), ['account', 'accounts', 'burned', 'contactRecords', 'contacts',
         'contactsOpen', 'creatable', 'createChoice', 'createMenu', 'createOpen', 'detailsOpen',
-        'folder', 'linkNote', 'messages', 'narrow', 'notice', 'selectedId', 'sentThisSession', 'switcher',
+        'folder', 'followup', 'highlights', 'linkNote', 'messages', 'narrow', 'notice', 'selectedId', 'sentThisSession', 'switcher',
         'unread', 'unreadByAccount']);
     assert.deepEqual(s.mail.messages[0], { id: 'lookalike', who: 'Payroll <b>Team</b>', subject: 'Hours <script>x</script>', time: '09:00', unread: true });
     assert.deepEqual(s.mail.account, { id: 'guest', address: 'guest@workstation.example', displayName: 'Operator', mailbox: 'guest' });

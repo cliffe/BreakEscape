@@ -24,8 +24,14 @@
 // se_board_state.defender.picks, so a reload shows them again. The block's
 // onCompleteGlobal (profile_done) and any step globals are set through the
 // shared writer on the false-to-true flip, and again on open if the saved picks
-// were complete but the global never landed. No typing, no indicators step
-// (engagement.defender.indicators is not read; the lab authors none).
+// were complete but the global never landed. No typing.
+//
+// The optional indicators step (engagement.defender.indicators; the lab
+// authors none): below the exposures, one card per authored indicator whose
+// `tell` is in a record the player sent (mailState, 00 §10a). The player marks
+// it Block or Let through; the right mark locks, a wrong one shows `why`.
+// Marks are ids in se_board_state.defender.indicators. Indicators gate
+// profile_done only through a declared step they name (board-model.js).
 //
 // Scope and plan modes (03 "Modes"; 00 §11): sorting cards (in or out), question cards and single-select
 // picks, all "pick one of these buttons". A right answer locks; a wrong pick shows its `why` and can be
@@ -97,11 +103,16 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         return (typeof window !== 'undefined' ? window.gameState?.globalVariables : null) || {};
     }
 
+    /** The live mailState (00 §10a), read for the defender indicators step only. */
+    get mailState() {
+        return this.params.mailState || (typeof window !== 'undefined' ? window.mailState : null) || null;
+    }
+
     /** Re-read the globals and draw the board again (called on open). */
     rebuild() {
         this.model = buildBoardModel(this.social, this.globals);
         if (this.mode === 'defender') {
-            this.dmodel = buildDefenderModel(this.social, this.globals);
+            this.dmodel = buildDefenderModel(this.social, this.globals, this.mailState);
             this._applyDefenderCompletion();
         } else if (ENGAGEMENT_MODES.includes(this.mode)) {
             this.emodel = buildEngagementModel(this.social, this.globals, this.mode);
@@ -206,14 +217,85 @@ export class IntelBoardMinigame extends SocialOverlayScene {
             for (const item of d.items) list.appendChild(this._exposureCard(item));
             body.appendChild(list);
         }
+        if (d.indicatorsShown) body.appendChild(this._indicatorSection(d));
 
         this.root = h('div', { class: 'ib-root', tabindex: '-1', 'data-mode': 'defender' }, head, live, body);
         this.gameContainer.appendChild(this.root);
 
         if (focusIntel) {
-            const btn = this.root.querySelector(`[data-exposure="${focusIntel}"] [data-option="${focusOpt}"]`);
+            const btn = this.root.querySelector(`[data-exposure="${focusIntel}"] [data-option="${focusOpt}"]`)
+                || this.root.querySelector(`[data-indicator="${focusIntel}"] [data-mark="${focusOpt}"]`);
             btn?.focus?.();
         }
+    }
+
+    /** The optional indicators step: one card per shown indicator, Block or Let through. */
+    _indicatorSection(d) {
+        const section = h('section', { class: 'ib-section ib-indicators', 'aria-labelledby': 'ib-ind-head' },
+            h('h3', { id: 'ib-ind-head', class: 'ib-h', text: 'Indicators to block' }),
+            h('p', { class: 'ib-scope-note', text: `${d.indicatorsIntro
+                || 'Each of these was in mail you sent during the engagement. Would you block incoming mail on it?'} ` +
+                `${d.indicatorsDone} of ${d.indicatorsShown} indicators marked.` }));
+        const list = h('ul', { class: 'ib-exposures', 'aria-label': 'Indicators' });
+        for (const ind of d.indicators) if (ind.shown) list.appendChild(this._indicatorCard(ind));
+        section.appendChild(list);
+        return section;
+    }
+
+    _indicatorCard(ind) {
+        const headingId = `ib-ind-${ind.id}`;
+        const state = ind.done ? 'done' : (ind.marked ? 'wrong' : 'open');
+        const card = h('li', { class: `ib-card ib-exposure ib-indicator is-${state}`, 'data-indicator': ind.id,
+            'data-state': state, 'aria-labelledby': headingId },
+            h('div', { class: 'ib-card-head' },
+                h('h4', { id: headingId, class: 'ib-name', text: ind.text || ind.id }),
+                h('span', { class: `ib-status ${ind.done ? 'ready' : 'not-ready'}` },
+                    icon(ind.done ? 'board-ready' : 'board-not-ready'),
+                    h('span', { class: 'ib-status-word', text: ind.done ? 'Marked' : 'Not marked' }))));
+        const s = ind.sentIn;
+        if (s && (s.to || s.subject)) {
+            const where = [s.to ? `to ${s.to}` : '', s.subject ? `"${s.subject}"` : ''].filter(Boolean).join(', ');
+            card.appendChild(h('p', { class: 'ib-reduce', text: `Seen in your mail ${where}` }));
+        }
+        const opts = h('ul', { class: 'ib-options', role: 'group', 'aria-labelledby': headingId });
+        for (const [mark, label] of [['block', 'Block'], ['allow', 'Let through']]) {
+            const chosen = ind.marked === mark;
+            const btn = h('button', { type: 'button', class: `ib-option minigame-button${chosen ? ' is-chosen' : ''}`,
+                'data-mark': mark, 'aria-pressed': String(chosen), disabled: ind.done && !chosen ? true : false,
+                text: label });
+            this.addEventListener(btn, 'click', (e) => {
+                e.preventDefault?.();
+                e.stopPropagation?.();
+                this.markIndicator(ind.id, mark);
+            });
+            opts.appendChild(h('li', { class: 'ib-option-row' }, btn));
+        }
+        card.appendChild(opts);
+        if (ind.marked) {
+            const word = ind.done ? 'Right:' : 'Not quite:';
+            card.appendChild(h('p', { class: `ib-feedback ${ind.done ? 'good' : 'bad'}`, role: 'status' },
+                icon(ind.done ? 'mark-tick' : 'mark-cross'),
+                h('span', { class: 'ib-word', text: word }),
+                h('span', { class: 'ib-why', text: ind.why })));
+        }
+        return card;
+    }
+
+    /** Mark one shown indicator 'block' or 'allow'. A right mark locks; a hidden or unknown id is ignored. */
+    markIndicator(id, mark) {
+        if (this.mode !== 'defender' || !this.dmodel || (mark !== 'block' && mark !== 'allow')) return false;
+        const ind = this.dmodel.indicators.find((i) => i.id === id);
+        if (!ind || !ind.shown || ind.done) return false;
+        const state = readBoardState(this.globals);
+        const marks = { ...(state.defender?.indicators || {}), [id]: mark };
+        this._writeState({ ...state, defender: { ...(state.defender || {}), indicators: marks } });
+        this.dmodel = buildDefenderModel(this.social, this.globals, this.mailState);
+        const now = this.dmodel.indicators.find((i) => i.id === id);
+        this._liveText = now.done ? `Right. ${now.why}` : `Not quite. ${now.why}`;
+        const flipped = this._applyDefenderCompletion();
+        if (flipped) this._liveText += ' Exposure review complete.';
+        this._renderDefender(id, mark);
+        return true;
     }
 
     _exposureCard(item) {
@@ -266,7 +348,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         const state = readBoardState(this.globals);
         const picks = { ...(state.defender?.picks || {}), [intel]: optionId };
         this._writeState({ ...state, defender: { ...(state.defender || {}), picks } });
-        this.dmodel = buildDefenderModel(this.social, this.globals);
+        this.dmodel = buildDefenderModel(this.social, this.globals, this.mailState);
         const now = this.dmodel.items.find((i) => i.intel === intel);
         this._liveText = now.done ? `Good choice. ${now.picked.why}` : `Not enough. ${now.picked.why}`;
         const flipped = this._applyDefenderCompletion();
@@ -282,7 +364,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         const blockName = this.social?.engagement?.defender?.onCompleteGlobal;
         for (const name of due) writeGlobal(name, true, { openChat: false });
         window.stateSync?.sync?.();
-        this.dmodel = buildDefenderModel(this.social, this.globals);
+        this.dmodel = buildDefenderModel(this.social, this.globals, this.mailState);
         return due.includes(blockName);
     }
 
@@ -714,6 +796,9 @@ export class IntelBoardMinigame extends SocialOverlayScene {
                     facts: this.dmodel.items.map((i) => ({
                         intel: i.intel, reduceNote: i.reduceNote, picked: i.pickedId, done: i.done,
                         options: i.options.map((o) => o.id)
+                    })),
+                    indicators: this.dmodel.indicators.map((i) => ({
+                        id: i.id, tell: i.tell, step: i.step, shown: i.shown, marked: i.marked, done: i.done
                     }))
                 } : null,
                 title: m.title,

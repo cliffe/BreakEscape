@@ -78,10 +78,18 @@ export const SKILL_NAMES = Object.freeze({
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
-/** The ids a set shows as chips for an email, in the fixed order: seven factors, then enabled channel tells. */
-export function chipIdsFor(set) {
-    const tells = (Array.isArray(set?.channelTells) ? set.channelTells : []).filter((id) => CHANNEL_TELLS[id]);
-    return [...FACTOR_ORDER, ...tells];
+const NON_EMAIL = ['sms', 'voicemail', 'qr', 'page', 'call', 'push'];
+
+/**
+ * The ids a set shows as chips, in the fixed order. An email (the default kind) gets the
+ * seven factors, then the enabled channel tells. A non-email kind gets only the enabled
+ * channel tells, because the email factors do not apply to it (05 OQ7). A scenario-local
+ * tell counts as enabled when the set gives it a `flagChips` label (00 section 2).
+ */
+export function chipIdsFor(set, kind = 'email') {
+    const local = (id) => isObj(set?.flagChips) && isStr(set.flagChips[id]) && !FACTOR_ORDER.includes(id);
+    const tells = (Array.isArray(set?.channelTells) ? set.channelTells : []).filter((id) => CHANNEL_TELLS[id] || local(id));
+    return NON_EMAIL.includes(kind) ? tells : [...FACTOR_ORDER, ...tells];
 }
 
 /** The chip label for one id: the set's `flagChips` override, else the built-in table for its `chipStyle`. */

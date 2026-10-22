@@ -87,6 +87,59 @@ export function evaluateReadiness(readinessSlots, globals = globalsOf(), { peopl
     return result;
 }
 
+/** Every global named by a readiness slot's needsGlobal, once each, in slot order. */
+export function readinessGlobalNames(readinessSlots) {
+    const names = new Set();
+    for (const slots of Object.values(readinessSlots || {})) {
+        for (const slot of Array.isArray(slots) ? slots : []) {
+            for (const name of Array.isArray(slot?.needsGlobal) ? slot.needsGlobal : []) {
+                if (typeof name === 'string' && name) names.add(name);
+            }
+        }
+    }
+    return [...names];
+}
+
+/**
+ * A needsGlobal slot is re-checked when the global it names changes, not only when a fact
+ * is granted. Subscribes one listener per named global to `global_variable_changed:<name>`
+ * (once per dispatcher and name), and runs evaluateReadiness once now, so a value restored
+ * from a save counts. A scenario with no needsGlobal slot (every shipped mission) gets no
+ * listener and no write. A target that becomes ready from a change shows the same
+ * "Ready to approach" toast as a fact grant. Called from game.js after the globals load.
+ *
+ * @param {Object} [opts]
+ * @param {Object} [opts.scenario]    defaults to window.gameScenario
+ * @param {Object} [opts.dispatcher]  defaults to window.eventDispatcher
+ * @returns {string[]} the global names watched
+ */
+export function watchReadinessGlobals({ scenario = null, dispatcher = null } = {}) {
+    const events = dispatcher || ((typeof window !== 'undefined') ? window.eventDispatcher : null);
+    const names = readinessGlobalNames(socialOf(scenario)?.social?.intelBoard?.readinessSlots);
+    if (!names.length || typeof events?.on !== 'function') return [];
+
+    // Read the board at event time: the scenario object is the one loaded when the change lands.
+    const recheck = ({ toast }) => {
+        const board = socialOf(null)?.social?.intelBoard || socialOf(scenario)?.social?.intelBoard;
+        const globals = globalsOf();
+        if (!board?.readinessSlots || !globals) return null;
+        const res = evaluateReadiness(board.readinessSlots, globals, { people: board.people });
+        if (toast && res.newlyReady.length && typeof window !== 'undefined') {
+            window.gameAlert?.(readyToastText(res.newlyReady), 'success', 'Ready to approach', 6000);
+        }
+        return res;
+    };
+
+    if (!events.__readinessWatched) events.__readinessWatched = new Set();
+    for (const name of names) {
+        if (events.__readinessWatched.has(name)) continue;
+        events.__readinessWatched.add(name);
+        events.on(`global_variable_changed:${name}`, () => recheck({ toast: true }));
+    }
+    recheck({ toast: false });
+    return names;
+}
+
 /**
  * Display label for a fact: its own `label` if the scenario gives one, else its text.
  */
@@ -158,4 +211,39 @@ export function grantFact(id, { scenario = null, engine = null, npcId = null, so
         ? evaluateReadiness(board.readinessSlots, globals, { people: board.people, engine, npcId })
         : null;
     return { granted: true, id: bare, label, subject, readiness };
+}
+
+// How to act on a ready target, per channel (the keys of social.characters.<id>.channels).
+const READY_CHANNEL_TEXT = {
+    email: 'write to them from a mail terminal',
+    phone: 'call them',
+    person: 'go and talk to them in person'
+};
+
+/**
+ * The body of the "Ready to approach" toast for the targets that have just become ready.
+ * `social.intelBoard.readyToast` overrides it. Otherwise it is built from each target's
+ * channels in social.characters (email, then phone, then person); a target with no character
+ * entry is a phishTargets mail target, so it reads as email.
+ *
+ * @param {string[]} targetIds  readiness.newlyReady
+ * @param {Object} [scenario]   the scenario (defaults to window.gameScenario)
+ * @returns {string}
+ */
+export function readyToastText(targetIds, scenario = null) {
+    const social = socialOf(scenario)?.social || null;
+    const custom = social?.intelBoard?.readyToast;
+    if (typeof custom === 'string' && custom.trim()) return custom;
+    const chars = social?.characters || {};
+    const used = new Set();
+    for (const id of targetIds || []) {
+        const channels = chars[id]?.channels;
+        const keys = (channels && typeof channels === 'object')
+            ? Object.keys(READY_CHANNEL_TEXT).filter((k) => channels[k])
+            : ['email'];
+        (keys.length ? keys : ['email']).forEach((k) => used.add(k));
+    }
+    if (!used.size) used.add('email');
+    const ways = Object.keys(READY_CHANNEL_TEXT).filter((k) => used.has(k)).map((k) => READY_CHANNEL_TEXT[k]);
+    return `You know enough to approach now — ${ways.join(', or ')}.`;
 }

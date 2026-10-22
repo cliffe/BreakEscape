@@ -25,7 +25,7 @@
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';
-import { grantFact } from '../../systems/social-intel.js';
+import { grantFact, readyToastText } from '../../systems/social-intel.js';
 import { formatAddress } from './address-bar.js';
 import { createConceptCard } from './concept-card.js';
 import {
@@ -614,7 +614,7 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
                 // itself, so the same line has to fire here (P2-T F4).
                 const newlyReady = res.readiness?.newlyReady || [];
                 if (newlyReady.length) {
-                    window.gameAlert?.('You know enough to approach now — write to them from a mail terminal.',
+                    window.gameAlert?.(readyToastText(newlyReady, this.params.social ? { social: this.params.social } : null),
                         'success', 'Ready to approach', 6000);
                 }
             } else if (isHeld(this.globals, fact)) {

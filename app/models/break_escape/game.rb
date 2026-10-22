@@ -2326,6 +2326,12 @@ module BreakEscape
         if expects.is_a?(Hash) && %w[choices compose].include?(expects['mode'])
           entry['expects'] = { 'mode' => expects['mode'] }
           entry['expects']['targetId'] = expects['targetId'] if expects['targetId'].is_a?(String) && expects['targetId'].length <= 100
+          # The "Choose a reply" option texts (01 N8): kept so the follow-up control
+          # survives a reload before the player picks. Bounded in count and length.
+          if expects['options'].is_a?(Array)
+            opts = expects['options'].select { |o| o.is_a?(String) }.first(10).map { |o| o[0, MAX_MAIL_STRING] }
+            entry['expects']['options'] = opts unless opts.empty?
+          end
         end
         clean[key] = entry
       end

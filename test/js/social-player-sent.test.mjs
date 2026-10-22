@@ -16,7 +16,7 @@ const js = join(here, '../../public/break_escape/js');
 
 const dir = mkdtempSync(join(tmpdir(), 'social-player-sent-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
-for (const rel of ['minigames/inbox-triage/triage-messages.js', 'minigames/mail-client/mail-data.js']) {
+for (const rel of ['minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-kinds.js', 'minigames/mail-client/mail-data.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }

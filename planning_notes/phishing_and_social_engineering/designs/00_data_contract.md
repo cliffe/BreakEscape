@@ -979,7 +979,7 @@ minutes with Dev reset to his start, so both band flags clear on the lift (`06` 
 2026-10-22: Dev's `start` moved from -10 to 0 so a student who has done nothing wrong sees a neutral
 bar, and his `recoverTo: -30` was dropped as dead config, because every new call resets him to
 `start` anyway (lab fix round R1-follow-up). The lab's `globalVariables` still declare
-`dev_influence: -10`; the service starts from `influence.start`, so the two should be made equal.)
+`dev_influence: -10`; the service starts from `influence.start`, so the two should be made equal. They were (c54ad1f3), and since 2026-10-22 the validator fails a `start` that differs from the declared global or, with no global declared, from a channel story's `VAR` default.)
 Ruth, Fairbairn and Tomasz are
 ordinary story NPCs with no `social.characters` entry and no bar.
 
@@ -1704,7 +1704,7 @@ name and the browser reads one object:
                   "seededMessages": [...], "payloadKit": [...] },   // §10a, 01
   "conceptCards": [ ... ],    // 02, 07: { id, title, text, image? }, plain-text teaching cards
   "osint": { ... },           // 02; a lookup's `unlockedBy` is { "visited": "<siteId>" | "<siteId.pageId>" } or { "fact": "<factId>" }
-  "intelBoard": { "title": "...", "people": [...], "readinessSlots": { ... } },   // 03, §4
+  "intelBoard": { "title": "...", "readyToast": "...", "people": [...], "readinessSlots": { ... } },   // 03, §4; readyToast optional (default built from the target's channels)
   "phishTargets": [ ... ],    // 04, §7
   "triageSets": [ ... ],      // 05; each set holds its own flagChips
   "landingPages": [ ... ],    // 07
@@ -1802,7 +1802,9 @@ Completion per mode: `scope` when every sorting card is placed correctly and eve
 (`kind: "question"`, options `{id, text, correct, why}`) is answered; `plan` when the pick of each step the block declares is correct (the lab has two single-select picks, the objective and the
 success measure; the targets are the scope cards, not a pick); `defender` when each fact in `engagement.defender.factMitigations`
 has a `good` option chosen. `defender` has no indicators step unless `engagement.defender.indicators`
-is authored (off by default). `factMitigations` is `[ { intel, options: [ { id, text, good, why } ] } ]`
+is authored (off by default): `[ { id, tell, text, block, why, step? } ]`, each shown only when a sent record's `tells`
+holds its `tell`, marked Block or Let through, gating the block only through a declared step it names
+(README "The intel board"). `factMitigations` is `[ { intel, options: [ { id, text, good, why } ] } ]`
 and lives only in `engagement`; `intelBoard` holds the title, `people` (ids) and `readinessSlots`.
 `scopeNote` lives in `engagement`.
 
@@ -2074,7 +2076,7 @@ general mechanics" and "Social-engineering: attack mechanics".
 | Closed `social` schema | Every block in `scripts/scenario-schema.json` lists the keys the engine or a lint reads; any other key fails the schema, except keys starting with `_` (notes). Schema errors under `/social` are reported as social lint errors, so they fail the run only under `--strict-social` | M3, `316dee74`; `validate_social.rb` `split_schema_errors` |
 | Late-option lints | `hintsByFactor`, `labelBy`, `checklistTiming`, `mirrorToBehavior` and `lockedHint` each have a lint (`scripts/validate_social/options.rb`); `lockedHint` is linted in every scenario | M3 |
 | Object name collision | A warning when a locked object's lookup key (`id`, else `name`) is matched first by another object's `id` or `name`; the unlock endpoint takes the first hit | M7, `e99068bf` |
-| Reserved keys | `mailClient.bodyMode`, `mailClient.freeTextFlavour`, `engagement.client`, `engagement.defender.indicators` and `people[].kind` are accepted but read by no code; the non-email triage kinds are accepted and drawn as email | M4a review; README "Reserved keys" |
+| Reserved keys | `mailClient.bodyMode`, `mailClient.freeTextFlavour` and `people[].kind` are accepted but read by no code (`engagement.defender.indicators` is built, 2026-10-22); pretext `tuning.feedbackMode`, `tuning.showTechniqueNames` and `tells.bands` are read by the validator only. `engagement.client` left the schema (2026-10-22; the lab keeps it as the note `_client`). The non-email triage kinds are no longer reserved: since Phase 7 each is drawn in its own style (`triage-kinds.js`) | M4a review; README "Reserved keys" |
 
 **Doors and objects (engine-wide, opt-in)**
 

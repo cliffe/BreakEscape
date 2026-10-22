@@ -846,7 +846,7 @@ Hampshire's reply is a text job from her target's authored `replies` (no ink sto
 
 ```jsonc
 "engagement": {
-  "client": "Ledgerwell Ltd (fictional)",
+  "_client": "Ledgerwell Ltd (fictional)",   // a note: no code reads it (renamed from client 2026-10-22)
   "scopeNote": "Authorised exercise for Ledgerwell Ltd (fictional). In scope: work email to named staff, the published service-desk line, public OSINT.",
   "roe": {
     "inScope":  [ "work email to named staff", "published service-desk phone line", "public OSINT" ],

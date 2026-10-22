@@ -150,8 +150,11 @@ test('05 N5: call, push and Verify belong to awareness sets', { skip }, () => {
   j.social.triageSets[0].verifyVerdict = true;
   j.social.triageSets[0].channelTells = ['vish_callback_pressure', 'unrequested_mfa_push'];
   j.social.triageSets[0].messages.push(
-    { kind: 'call', id: 'c', truth: { isPhish: true, flags: ['vish_callback_pressure'], perFlagNote: { vish_callback_pressure: 'n' } } },
-    { kind: 'push', id: 'p', truth: { isPhish: true, flags: ['unrequested_mfa_push'], perFlagNote: { unrequested_mfa_push: 'n' } } });
+    // Phase 7: each kind carries the fields its surface draws (a call transcript, a push app)
+    { kind: 'call', id: 'c', callerId: 'IT', transcript: [{ who: 'Caller', text: 'Read me the code.' }],
+      truth: { isPhish: true, flags: ['vish_callback_pressure'], perFlagNote: { vish_callback_pressure: 'n' } } },
+    { kind: 'push', id: 'p', time: '03:12', push: { app: 'Authenticator' },
+      truth: { isPhish: true, flags: ['unrequested_mfa_push'], perFlagNote: { unrequested_mfa_push: 'n' } } });
   assert.deepEqual(lintJson(j), []);
   // a call without verifyVerdict is refused even in an awareness set
   j.social.triageSets[0].verifyVerdict = false;
@@ -250,6 +253,9 @@ test('05 N5: the stage launch parameter, workstation pointers and the four resul
   expectIn(out, /global 'triage_post_(percent|reportRate|done|pass)'/, 4);
   // declaring them, with the right types, clears it
   Object.assign(j.globalVariables, { triage_post_percent: 0, triage_post_reportRate: 0, triage_post_done: false, triage_post_pass: false });
+  // a post round also reads the pre globals for its comparison (05 N11), so those want declaring too
+  expectIn(lintJson(j), /the comparison reads 'triage_pre_(done|percent|reportRate)'/, 3);
+  Object.assign(j.globalVariables, { triage_pre_percent: 0, triage_pre_reportRate: 0, triage_pre_done: false });
   assert.deepEqual(lintJson(j), []);
 });
 

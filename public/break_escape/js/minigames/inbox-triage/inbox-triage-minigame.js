@@ -1,4 +1,5 @@
-// Inbox triage overlay (SE design 05 N1, email kind only; packet P3-B).
+// Inbox triage overlay (SE design 05 N1; packet P3-B. Phase 7: the non-email kinds, N10's
+// call and push actions and N11's pre/post comparison).
 //
 // The defender's seat: sort a fixed set of incoming messages into Trust, Report or
 // Delete, name the red flags that made you say so, read feedback, see a score. The
@@ -8,7 +9,11 @@
 // Steps: 1 Brief, 2 Sort, 3 Review, 4 Result. The reading pane is the mail client's
 // own MailReader (read-only: no Compose, no Send), so a fix to how the mail client
 // shows a From line fixes this too. Scoring is the pure scorer in triage-scoring.js.
-// Replayed player mail (`playerSent`) is built by triage-messages.js.
+// Replayed player mail (`playerSent`) is built by triage-messages.js. Messages of kind
+// sms, voicemail, qr, page, call and push are drawn by triage-kinds.js in their own style
+// (no header panel, chips from the set's channel tells only); call and push swap the verdict
+// buttons for their own actions, scored through the existing verdict rows. A post-stage
+// round shows the comparison from triage-comparison.js on its result step.
 //
 // Starter params (P3-C passes them; all optional unless marked):
 //   set               object    the triage set; else resolved from triageSetId
@@ -42,6 +47,11 @@ import { buildHeaderPanel } from './header-panel.js';
 import {
     FACTOR_ORDER, NONE_ID, chipIdsFor, chipLabel, redFlagString, skillName
 } from './triage-flags.js';
+import {
+    kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, KIND_LABEL,
+    CALL_ACTIONS, PUSH_ACTIONS
+} from './triage-kinds.js';
+import { comparisonFor, comparisonText } from './triage-comparison.js';
 
 const ICON = '/break_escape/assets/icons/';
 const NARROW_QUERY = '(max-width: 767px)';
@@ -88,6 +98,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         this.sheet = null;
         this.view = { glossaryOpen: false, explain: null };
         this.result = null;
+        this.comparison = null;
         this.stored = null;
         this.saving = false;
         this.saveFailed = false;
@@ -179,9 +190,13 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             noDetails: this.set.headerPanel === 'off',
             detailsRenderer: (rec) => this._headerPanel(rec),
             afterBody: (rec, pane) => this._afterBody(rec, pane),
+            // Non-email kinds (05 N1, N10) draw their own surface; email keeps the reader's layout.
+            paneRenderer: (rec, h) => (isNonEmail(rec) ? renderKindSurface(rec, h) : null),
+            rowTag: (rec) => (isNonEmail(rec) ? KIND_LABEL[kindOf(rec)] : null),
             rowBadge: (rec) => {
                 const a = this.answers.get(rec.id);
-                return a ? VERDICT_PAST[a.verdict] : null;
+                if (!a) return null;
+                return isNonEmail(rec) ? actionById(kindOf(rec), a.action, a.verdict).past : VERDICT_PAST[a.verdict];
             },
             emptyText: 'There is nothing to sort in this round.',
             onOpen: (rec) => this._onOpen(rec)
@@ -281,6 +296,14 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const verdicts = ['trust', 'report', 'delete', ...(this.verifyEnabled ? ['verify'] : [])];
         for (const v of verdicts) dl.append(el('dt', null, VERDICT_LABEL[v]), el('dd', null, VERDICT_HINT[v]));
         p.appendChild(dl);
+        // Calls and sign-in prompts have their own buttons (05 N10); say so before the round.
+        const kinds = new Set(this.messages.map((m) => kindOf(m)));
+        for (const [kind, lead, actions] of [['call', 'On a call', CALL_ACTIONS], ['push', 'On a sign-in prompt', PUSH_ACTIONS]]) {
+            if (!kinds.has(kind)) continue;
+            const shown = actions.filter((a) => kind !== 'call' || this.verifyEnabled || a.verdict !== 'verify');
+            p.appendChild(el('p', `tri-brief-kind tri-brief-${kind}`,
+                `${lead}: ${shown.map((a) => `${a.label} (${a.hint.replace(/\.$/, '').toLowerCase()})`).join('; ')}.`));
+        }
 
         p.appendChild(el('p', 'tri-brief-score', 'Right call is most of the score; naming the flags is the rest.'));
         let when;
@@ -346,20 +369,23 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             const group = el('div', 'tri-verdicts');
             group.setAttribute('role', 'group');
             group.setAttribute('aria-label', 'Your verdict');
-            const verdicts = ['trust', 'report', 'delete', ...(this.verifyEnabled ? ['verify'] : [])];
-            for (const v of verdicts) {
+            // Email and most kinds: Trust, Report, Delete (and Verify). A call or a push has its
+            // own actions, each scored through one of those verdict rows (05 N10).
+            for (const a of actionsFor(kindOf(rec), this.verifyEnabled)) {
+                const v = a.verdict;
                 const btn = el('button', `tri-verdict minigame-button verdict-${v}`);
                 btn.type = 'button';
                 btn.dataset.verdict = v;
-                btn.append(icon(VERDICT_ICON[v]), el('span', 'tri-verdict-word', VERDICT_LABEL[v]),
-                    el('span', 'tri-verdict-hint', VERDICT_HINT[v]));
-                btn.addEventListener('click', () => this._openSheet(rec, v));
+                btn.dataset.action = a.id;
+                btn.append(icon(VERDICT_ICON[v]), el('span', 'tri-verdict-word', a.label),
+                    el('span', 'tri-verdict-hint', a.hint));
+                btn.addEventListener('click', () => this._openSheet(rec, v, a.id));
                 group.appendChild(btn);
             }
             box.appendChild(group);
         } else {
             const lock = el('p', 'tri-locked');
-            lock.append(icon('mark-tick'), el('span', null, `Your verdict: ${VERDICT_LABEL[ans.verdict]}. It is locked.`));
+            lock.append(icon('mark-tick'), el('span', null, `Your verdict: ${this._actionLabel(rec, ans)}. It is locked.`));
             box.appendChild(lock);
             if (this.feedbackMode === 'immediate') {
                 box.appendChild(this._card(rec));
@@ -386,10 +412,16 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     // ── the "What made you say that?" sheet ────────────────────────────────────
 
     _chipIds(rec) {
-        return chipIdsFor(this.set);
+        return chipIdsFor(this.set, kindOf(rec));
     }
 
-    _openSheet(rec, verdict) {
+    /** The word for what the player did: the call or push action's label, else the verdict's. */
+    _actionLabel(rec, ans) {
+        if (!ans) return '';
+        return isNonEmail(rec) ? actionById(kindOf(rec), ans.action, ans.verdict).label : VERDICT_LABEL[ans.verdict];
+    }
+
+    _openSheet(rec, verdict, action = verdict) {
         if (this.sheet || this.answers.has(rec.id)) return;
         const ids = this._chipIds(rec);
         const backdrop = el('div', 'tri-sheet-backdrop');
@@ -398,7 +430,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         sheet.setAttribute('aria-modal', 'true');
         sheet.setAttribute('aria-labelledby', 'tri-sheet-title');
         sheet.appendChild(Object.assign(el('h3', 'tri-sheet-title', 'What made you say that?'), { id: 'tri-sheet-title' }));
-        sheet.appendChild(el('p', 'tri-sheet-chosen', `You chose: ${VERDICT_LABEL[verdict]}. Tick anything you noticed.`));
+        sheet.appendChild(el('p', 'tri-sheet-chosen', `You chose: ${this._actionLabel(rec, { verdict, action })}. Tick anything you noticed.`));
 
         const fs = el('fieldset', 'tri-chips');
         fs.appendChild(el('legend', 'mail-sr-only', 'What made you say that?'));
@@ -438,7 +470,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
         this.root.appendChild(backdrop);
         this.stageEl.inert = true;
-        this.sheet = { messageId: rec.id, verdict, el: backdrop, inputs, returnFocus: document.activeElement };
+        this.sheet = { messageId: rec.id, verdict, action, el: backdrop, inputs, returnFocus: document.activeElement };
         this._popSheet = this.pushLayer(() => this._closeSheet(true), 'chip-sheet');
         inputs.values().next().value?.focus?.();
     }
@@ -459,9 +491,12 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const flags = [...s.inputs.entries()].filter(([id, i]) => i.checked && id !== NONE_ID).map(([id]) => id);
         const opened = this.openedAt.get(s.messageId);
         const ms = Number.isFinite(opened) ? Math.max(0, Date.now() - opened) : 0;
-        this.answers.set(s.messageId, { id: s.messageId, verdict: s.verdict, flags, ms });
+        const answer = { id: s.messageId, verdict: s.verdict, flags, ms };
+        if (s.action && s.action !== s.verdict) answer.action = s.action;
+        this.answers.set(s.messageId, answer);
         this._closeSheet(false);
-        this._announce(`Verdict locked: ${VERDICT_LABEL[s.verdict]}.`);
+        const rec = this.messages.find((m) => m.id === s.messageId);
+        this._announce(`Verdict locked: ${this._actionLabel(rec, answer)}.`);
         this.progressEl.textContent = `${this.answers.size} of ${this.messages.length} sorted`;
 
         if (this.answers.size >= this.messages.length) {
@@ -485,6 +520,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _verdictLine(rec, verdict) {
         const phish = rec.truth.isPhish === true;
         const aware = this.profile === 'awareness';
+        const own = kindVerdictLine(kindOf(rec), phish, verdict);
+        if (own) return own;
         if (phish) {
             return {
                 report: 'Right call: reported. A report warns everyone else.',
@@ -520,6 +557,13 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         return this._isRight(rec, verdict) ? 'right' : 'wrong';
     }
 
+    /** A card's title: the subject, led by the sender for a non-email kind (two calls both read "Incoming call"). */
+    _cardTitle(rec) {
+        const subject = rec.subject || '(no subject)';
+        const who = rec.from?.name || rec.from?.address || '';
+        return isNonEmail(rec) && who && who !== subject ? `${who} · ${subject}` : subject;
+    }
+
     /** One review card (05 step 3): verdict line, caught and missed flags, false flags, what would have happened. */
     _card(rec) {
         const ans = this.answers.get(rec.id);
@@ -527,14 +571,15 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const truth = rec.truth;
         const card = el('article', 'tri-review-card');
         card.dataset.messageId = rec.id;
-        const title = el('h3', 'tri-card-title', rec.subject || '(no subject)');
+        card.dataset.kind = kindOf(rec);
+        const title = el('h3', 'tri-card-title', this._cardTitle(rec));
         title.tabIndex = -1;
         card.appendChild(title);
 
         const tone = this._verdictTone(rec, ans.verdict);
         const verdict = el('p', `tri-card-verdict ${tone}`);
         verdict.append(icon(tone === 'wrong' ? 'mark-cross' : 'mark-tick'),
-            el('span', null, `You chose ${VERDICT_LABEL[ans.verdict]}. ${this._verdictLine(rec, ans.verdict)}`));
+            el('span', null, `You chose ${this._actionLabel(rec, ans)}. ${this._verdictLine(rec, ans.verdict)}`));
         card.appendChild(verdict);
 
         const notes = isObj(truth.perFlagNote) ? truth.perFlagNote : {};
@@ -612,7 +657,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const sel = el('select', 'tri-jump-select');
         sel.id = 'tri-jump-select';
         for (const { m } of scored) {
-            const o = el('option', null, m.subject || m.id);
+            const o = el('option', null, this._cardTitle(m) || m.id);
             o.value = m.id;
             sel.appendChild(o);
         }
@@ -676,7 +721,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // Per-answer ms stays in memory (05): the starter writes only the four globals.
             answers: s.perMessage.map((pm) => {
                 const a = this.answers.get(pm.id) || {};
-                return { id: pm.id, verdict: pm.verdict, flags: a.flags || [], score: pm.score, ms: a.ms ?? 0 };
+                const out = { id: pm.id, verdict: pm.verdict, flags: a.flags || [], score: pm.score, ms: a.ms ?? 0 };
+                if (a.action) out.action = a.action;
+                return out;
             })
         };
     }
@@ -748,6 +795,18 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                         'You didn\'t name any flags on these messages, so there\'s nothing to grade skill by skill. Tick what looks off next time, then check your lab sheet.'));
                 }
             }
+        }
+        // 05 N11: after a post round, compare with the pre round's imported globals, or say
+        // there is no baseline. Shown on a fresh round and on the read-only reopen alike.
+        this.comparison = comparisonFor(this.set, this.stage, this.globals, { percent, reportRate });
+        const cmpText = comparisonText(this.comparison);
+        if (cmpText) {
+            const box = el('section', `tri-compare ${this.comparison.baseline ? 'has-baseline' : 'no-baseline'}`);
+            box.dataset.baseline = this.comparison.baseline ? 'true' : 'false';
+            box.setAttribute('aria-label', cmpText.heading);
+            box.appendChild(el('h4', 'tri-compare-title', cmpText.heading));
+            for (const line of cmpText.lines) box.appendChild(el('p', 'tri-compare-line', line));
+            p.appendChild(box);
         }
         if (this.stage === 'pre') p.appendChild(el('p', 'tri-come-back', 'Come back for the follow-up after your training.'));
 
@@ -875,8 +934,14 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 detailsOpen: reader?.detailsOpen ?? false,
                 linkNote: reader?.linkNote ?? '',
                 headerState: { ...this.view },
+                surface: this.reader?.readPane?.querySelector?.('[data-kind-surface]')?.dataset.kindSurface || null,
+                actionButtons: [...(this.reader?.readPane?.querySelectorAll?.('.tri-verdict') || [])]
+                    .map((b) => b.dataset.action),
+                comparison: this.step === 'result' && this.comparison ? JSON.parse(JSON.stringify(this.comparison)) : null,
                 messages: this.messages.map((m) => ({
                     id: m.id,
+                    kind: kindOf(m),
+                    action: this.answers.get(m.id)?.action || null,
                     who: m.from?.name || m.from?.address || '',
                     address: m.from?.address || '',
                     subject: m.subject || '',

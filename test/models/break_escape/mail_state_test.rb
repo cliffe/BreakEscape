@@ -100,6 +100,21 @@ module BreakEscape
       refute mail.key?('threads')
     end
 
+    # P9 (01 N8): the "Choose a reply" options are kept so the follow-up control
+    # survives a reload before the player picks; junk is dropped and the list bounded.
+    test 'a choices thread keeps its option texts, bounded and string-only' do
+      options = ['x' * 2000] + Array.new(12, 'opt') + [2, nil, { 'a' => 1 }]
+      @game.merge_mail_state!('threads.wex:guest' => {
+                                'position' => '{"inkSaveVersion":10}',
+                                'expects' => { 'mode' => 'choices', 'options' => options }
+                              })
+      kept = mail.dig('threads', 'wex:guest', 'expects')
+      assert_equal 'choices', kept['mode']
+      assert kept['options'].all? { |o| o.is_a?(String) }, 'only string options survive'
+      assert_operator kept['options'].length, :<=, 10
+      assert_operator kept['options'].first.length, :<=, 1000
+    end
+
     test 'a null key removes it; jobs, drafts and metrics replace whole' do
       @game.merge_mail_state!('jobs' => [{ 'jobId' => 'j1', 'kind' => 'text', 'remainingMs' => 5000 }],
                               'metrics' => { 'pierce' => { 'sent' => 1, 'failed' => 1, 'landed' => 0, 'firstTryLanded' => false } },

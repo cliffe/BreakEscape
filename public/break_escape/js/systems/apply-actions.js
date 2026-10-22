@@ -1,6 +1,6 @@
 import { displayDashes } from '../utils/display-dashes.js';
 import { writeGlobal } from './global-writer.js';
-import { grantFact } from './social-intel.js';
+import { grantFact, readyToastText } from './social-intel.js';
 
 /**
  * Shared action executor for scenario-defined action descriptors.
@@ -56,10 +56,11 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                         // once, not doubled (P1-T T5).
                         window.gameAlert?.(granted.label, 'info', 'Noted', 4000);
                         // If this fact just made a target ready, point the player at the
-                        // mail terminal, the one place to act on it (P1-T T8).
+                        // place to act on it (P1-T T8): the target's channel, or the
+                        // scenario's intelBoard.readyToast.
                         const newlyReady = granted.readiness?.newlyReady || [];
                         if (newlyReady.length) {
-                            window.gameAlert?.('You know enough to approach now — write to them from a mail terminal.',
+                            window.gameAlert?.(readyToastText(newlyReady),
                                 'success', 'Ready to approach', 6000);
                         }
                     }

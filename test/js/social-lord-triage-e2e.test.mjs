@@ -31,7 +31,7 @@ for (const rel of [
     'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js',
     'minigames/mail-client/mail-data.js',
     'minigames/landing-page-builder/landing-page-model.js',
-    'minigames/inbox-triage/triage-messages.js'
+    'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-kinds.js'
 ]) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));

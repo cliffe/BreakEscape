@@ -35,6 +35,36 @@ function fromLine(rec) {
     return { name, address };
 }
 
+/**
+ * Split `text` into plain runs and highlighted runs (01 N16, 00 §10a "Highlights
+ * and saved evidence"). Each highlight's `text` is an exact substring of the body
+ * (the validator checks it). The first, non-overlapping occurrence of each is
+ * marked; overlaps and misses are left as plain text. Pure, exported for tests.
+ * @returns {Array<{text:string}|{text:string, highlight:object}>}
+ */
+export function markHighlights(text, highlights) {
+    const body = typeof text === 'string' ? text : '';
+    const spans = [];
+    for (const h of Array.isArray(highlights) ? highlights : []) {
+        if (!h || typeof h.text !== 'string' || !h.text) continue;
+        const idx = body.indexOf(h.text);
+        if (idx === -1) continue;
+        const end = idx + h.text.length;
+        if (spans.some((s) => idx < s.end && end > s.start)) continue; // no overlaps
+        spans.push({ start: idx, end, highlight: h });
+    }
+    spans.sort((a, b) => a.start - b.start);
+    const out = [];
+    let pos = 0;
+    for (const s of spans) {
+        if (s.start > pos) out.push({ text: body.slice(pos, s.start) });
+        out.push({ text: body.slice(s.start, s.end), highlight: s.highlight });
+        pos = s.end;
+    }
+    if (pos < body.length) out.push({ text: body.slice(pos) });
+    return out.length ? out : [{ text: body }];
+}
+
 export class MailReader {
     /**
      * @param {HTMLElement} parent
@@ -56,6 +86,10 @@ export class MailReader {
      * @param {(record: object) => Node|null} [opts.detailsRenderer]  builds the details panel (the header panel)
      * @param {(record: object, pane: HTMLElement) => void} [opts.afterBody]  appends controls under the message
      * @param {(record: object) => string|null} [opts.rowBadge]  a short word shown in the list row
+     * @param {(record: object) => string|null} [opts.rowTag]  a kind word shown before the row's subject
+     * @param {(record: object, h: object) => Node|null} [opts.paneRenderer]  draws a non-email message
+     *        in place of the subject, headers, details and body; h is { bodyNode, showLink, showNote }.
+     *        null keeps the email layout. The status line and afterBody still follow.
      */
     constructor(parent, opts = {}) {
         this.opts = opts;
@@ -151,6 +185,8 @@ export class MailReader {
             const top = el('span', 'mail-row-top');
             top.append(el('span', 'mail-row-who', who), el('span', 'mail-row-time', rec.time || ''));
             const sub = el('span', 'mail-row-subject', rec.subject || '(no subject)');
+            const tag = this.opts.rowTag ? this.opts.rowTag(rec) : null;
+            if (tag) sub.prepend(el('span', 'mail-row-tag', tag), document.createTextNode(' '));
             const body = el('span', 'mail-row-body');
             body.append(top, sub);
             row.append(mark, body);
@@ -203,6 +239,22 @@ export class MailReader {
         back.type = 'button';
         back.addEventListener('click', () => this.back());
         pane.appendChild(back);
+
+        const custom = this.opts.paneRenderer ? this.opts.paneRenderer(rec, {
+            bodyNode: (r) => this._bodyNode(r),
+            showLink: (dest) => this._showLink(dest),
+            showNote: (text) => { this.linkNote = text; if (this.linkStatus) this.linkStatus.textContent = text; }
+        }) : null;
+        if (custom) {
+            pane.appendChild(custom);
+            const note = el('p', 'mail-link-status');
+            note.setAttribute('aria-live', 'polite');
+            note.textContent = this.linkNote;
+            pane.appendChild(note);
+            this.linkStatus = note;
+            if (this.opts.afterBody) this.opts.afterBody(rec, pane);
+            return;
+        }
 
         pane.appendChild(el('h2', 'mail-subject', rec.subject || '(no subject)'));
 
@@ -277,6 +329,9 @@ export class MailReader {
         pane.appendChild(status);
         this.linkStatus = status;
 
+        // "Add selection to notepad" (01 N16): offered whenever the host wired it.
+        if (typeof this.opts.onSaveSelection === 'function') pane.appendChild(this._selectionControl());
+
         if (this.folder === 'sent') pane.appendChild(this._sentNote(rec));
         if (this.opts.afterBody) this.opts.afterBody(rec, pane);
     }
@@ -286,7 +341,7 @@ export class MailReader {
         const links = new Map((Array.isArray(rec.links) ? rec.links : []).map((l) => [l.id, l]));
         for (const part of splitBody(rec.body)) {
             if (part.text !== undefined) {
-                body.appendChild(document.createTextNode(part.text));
+                this._appendTextRuns(body, part.text, rec);
                 continue;
             }
             const link = links.get(part.link);
@@ -304,6 +359,48 @@ export class MailReader {
             body.appendChild(chip);
         }
         return body;
+    }
+
+    /**
+     * Append a run of body text, marking the author's highlight spans (01 N16, 00
+     * §10a) as clickable "Save as evidence" chips when the host wired onHighlight.
+     * Plain text otherwise, so the mail client's ordinary mail and the triage reader
+     * are unchanged.
+     */
+    _appendTextRuns(container, text, rec) {
+        const highlights = Array.isArray(rec.highlights) ? rec.highlights : [];
+        if (!highlights.length || typeof this.opts.onHighlight !== 'function') {
+            container.appendChild(document.createTextNode(text));
+            return;
+        }
+        for (const run of markHighlights(text, highlights)) {
+            if (!run.highlight) { container.appendChild(document.createTextNode(run.text)); continue; }
+            const mark = el('button', 'mail-highlight');
+            mark.type = 'button';
+            mark.dataset.highlightId = run.highlight.id || '';
+            mark.textContent = run.text;
+            mark.title = 'Save as evidence';
+            mark.setAttribute('aria-label', `Highlighted: ${run.text}. Save as evidence.`);
+            mark.addEventListener('click', () => {
+                try { this.opts.onHighlight(run.highlight, rec); } catch (e) { console.error('mail onHighlight failed:', e); }
+            });
+            container.appendChild(mark);
+        }
+    }
+
+    /** "Add selection to notepad" (01 N16): sends the current text selection to the notes API. */
+    _selectionControl() {
+        const btn = el('button', 'mail-save-selection minigame-button', 'Add selection to notepad');
+        btn.type = 'button';
+        btn.addEventListener('click', () => {
+            let text = '';
+            try { text = (typeof window !== 'undefined' && window.getSelection) ? String(window.getSelection() || '').trim() : ''; }
+            catch (e) { text = ''; }
+            if (!text) { this._showLink('Select some text in the message first.'); return; }
+            try { this.opts.onSaveSelection(text); } catch (e) { console.error('mail onSaveSelection failed:', e); }
+            this._showLink('Saved to your notepad.');
+        });
+        return btn;
     }
 
     _linkPrefix() {
@@ -372,6 +469,8 @@ export class MailReader {
             selectedId: this.selectedId,
             detailsOpen: this.detailsOpen,
             linkNote: this.linkNote,
+            // Highlight chips rendered in the open message (01 N16), for the bridge check.
+            highlights: [...(this.readPane?.querySelectorAll?.('.mail-highlight') || [])].map((b) => b.dataset.highlightId),
             influence: this.influenceBar ? this.influenceBar.getState() : null,
             messages: this.records.map((r) => ({
                 id: r.id,

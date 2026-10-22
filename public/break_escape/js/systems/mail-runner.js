@@ -605,6 +605,41 @@ export function scheduleInkReply(scheduler, { target, message, result, account =
     return scheduler.addJob(job, delay);
 }
 
+/**
+ * Queue the continuation of a reply thread when the player picks one of the ink
+ * reply options (01 N8 "Choose a reply"; 00 §10 "Replies, reply choices and
+ * chasers"). The thread's stored position holds the choices; this runs the story
+ * again from it, picking `choiceIndex`, after the character's reply delay. The
+ * thread key is `<character>:<accountId>`, so the character and account are read
+ * from it. Returns the stored job, or null when the thread names no known
+ * character email record.
+ *
+ * @param {Object} scheduler
+ * @param {Object} opts
+ * @param {string}  opts.threadKey   "<character>:<accountId>"
+ * @param {number}  opts.choiceIndex the index of the picked option
+ * @param {string}  [opts.msgId]     the reply being continued (for Re: threading)
+ * @param {Object}  [opts.scenario]  defaults to window.gameScenario
+ */
+export function scheduleChoiceReply(scheduler, { threadKey, choiceIndex, msgId = null, scenario = null } = {}) {
+    if (!scheduler || !isStr(threadKey) || !Number.isInteger(choiceIndex) || choiceIndex < 0) return null;
+    const colon = threadKey.lastIndexOf(':');
+    if (colon <= 0) return null;
+    const character = threadKey.slice(0, colon);
+    const accountId = threadKey.slice(colon + 1);
+    const sc = scenario || (typeof window !== 'undefined' ? window.gameScenario : null) || null;
+    const npcId = sc?.social?.characters?.[character]?.channels?.email;
+    if (!isStr(npcId)) {
+        console.warn(`[MailRunner] thread ${threadKey} has no character email record; cannot continue it`);
+        return null;
+    }
+    ensureInstalled(scheduler);
+    const job = buildInkJob({ character, npcId, accountId, msgId, vars: {}, choice: choiceIndex });
+    job.thread = threadKey; // keep the exact key so the stored position is loaded
+    const delay = typeof scheduler.replyDelayMs === 'function' ? scheduler.replyDelayMs({ character }) : undefined;
+    return scheduler.addJob(job, delay);
+}
+
 // Install against the live scheduler on import, so an ink job restored from a save
 // after a reload has a handler before the mail client is ever opened. A one-line
 // `import './systems/mail-runner.js'` at game start (core/game.js, P1-W wiring)

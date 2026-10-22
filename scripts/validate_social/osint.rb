@@ -156,8 +156,13 @@ module ValidateSocial
       end
       walk(osint, 'social.osint') do |h, path|
         if h.key?('showIf')
-          Array(h['showIf']).each do |g|
-            issues << err("#{path}.showIf '#{g}' is not a global declared in globalVariables; the block would never show") unless g.is_a?(String) && ctx.all_globals.key?(g)
+          # one global name (02: "showIf names a global"); osint-model.js showIfHolds reads only
+          # a string and treats anything else as "always show"
+          g = h['showIf']
+          if !g.is_a?(String)
+            issues << err("#{path}.showIf must be one global name (a string), not #{g.inspect}; the browser ignores anything else and always shows the block")
+          elsif !ctx.all_globals.key?(g)
+            issues << err("#{path}.showIf '#{g}' is not a global declared in globalVariables; the block would never show")
           end
         end
         if h.key?('card') && !cards.include?(h['card'])
