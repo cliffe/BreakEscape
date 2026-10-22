@@ -441,6 +441,17 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 - **Lab re-run R6** (Sonnet, games 3202 and 3207, `playtests/R6.md`): start to end screen, 23/23, score 100. 5 of 6 checks pass: Dev's net-0 boundary and refused-ask debrief, no post-payoff Gareth pointers, the end card, the Melanie spoiler gone, the triage no-flags card. Fail: Ruth's phone still points to Tomasz after the close (low harm, it sits under the end card). Student view: good pacing, always clear except after the scope cards. Worst moments: the silent wait after the Lord send (F6), the skippable Gareth signature (F5), the abrupt end. Fix round 8 on opus48: `playtests/FIX_ROUND_R6.md`.
 - **User decision:** generate both POV chat backgrounds (Engagement Office, Blue Team) as a batch, after dressing and lighting.
 
+- **User direction (2026-10-22):** get all the new mechanics fully featured and well tested first. The full AGENTS.md multi-skill polish of the scenarios comes after. No new dialogue, rooms or art cycles are queued; the two in-flight POV backgrounds (already approved) finish. Next is a mechanics completeness audit (`MECHANICS_AUDIT.md`).
+
+- **Lab re-run R7** (Sonnet, game 3214, `playtests/R7.md`): start to end, 23/23, score 100, 0 blocker, 0 major; all six round-8 checks pass. The new rooms read as their purpose (Blue Team strongest), and the signs read at native size. Minors queued for the mechanics or polish passes:
+  - Dev's bar shows the raw id "payslip_date".
+  - The "Finance (new starter)" row can be read as Sofia, since Dev's call line calls her the new starter.
+  - Recon's decor desk has a brighter monitor than the real OSINT PC.
+  - The harness left the player on the Blue Team wall strip.
+  - The Operations chairs are crowded.
+  - Recon is dark for a second on entry (motion light).
+  - The plan board's "Count these" has no clear referent.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
