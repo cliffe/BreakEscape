@@ -1,0 +1,283 @@
+#!/usr/bin/env python3
+"""P7-J: build the five E1 shells (defend-only + four check missions) from P7-E's fragment."""
+import copy
+import json
+import os
+import sys
+
+REPO = '/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape'
+FRAG = json.load(open(f'{REPO}/planning_notes/phishing_and_social_engineering/awareness/e1/defend.json'))
+SETS = {s['id']: s for s in FRAG['triageSets']}
+EP = FRAG['awarenessEpisode']
+
+HOSTS = {
+    'adaeze': {
+        'id': 'adaeze_okafor', 'displayName': 'Adaeze Okafor',
+        'sprite': 'female_blowse',
+        'about': "Brightwell's finance manager, 40s, Nigerian-British, came up through accounts payable (BRAND_SET.md). Placeholder sprite until P7-Z3.",
+    },
+    'graham': {
+        'id': 'graham_whitfield', 'displayName': 'Graham Whitfield',
+        'sprite': 'male_office_worker',
+        'about': "Brightwell's finance training lead, early 60s, white, from Halifax; unhurried and kind. New for P7-J (not yet in BRAND_SET.md). Placeholder sprite until P7-Z3.",
+    },
+    'farah': {
+        'id': 'farah_qureshi', 'displayName': 'Farah Qureshi',
+        'sprite': 'female_scientist',
+        'about': "Brightwell's learning and development coordinator, early 30s, British Pakistani, from Leicester; brisk and friendly. New for P7-J (not yet in BRAND_SET.md). Placeholder sprite until P7-Z3.",
+    },
+}
+
+PLAYER = {
+    'id': 'player',
+    'displayName': 'Learner',
+    'spriteSheet': 'female_office_worker_v2',
+    'spriteTalk': 'assets/characters/female_office_worker_talk.png',
+    'spriteConfig': {'idleFrameRate': 6, 'walkFrameRate': 12},
+}
+
+CYBOK = [{'ka': 'HF', 'topic': 'Human Factors',
+          'keywords': ['Phishing', 'Security awareness', 'Invoice fraud', 'Usable security']}]
+
+
+def strip_private(obj):
+    return {k: v for k, v in obj.items() if not k.startswith('_')}
+
+
+def clean_set(set_id, stage=None, comparison=None):
+    s = strip_private(copy.deepcopy(SETS[set_id]))
+    s.pop('pairedWith', None)
+    if stage:
+        s['stage'] = stage
+    if comparison:
+        s['comparison'] = comparison
+    return s
+
+
+def host_npc(host, done_global, task_id, ink_path):
+    key = host['sprite']
+    return {
+        'id': host['id'],
+        'displayName': host['displayName'],
+        'npcType': 'person',
+        'position': {'x': 3, 'y': 3},
+        'spriteSheet': f'{key}_v2',
+        'spriteTalk': f'assets/characters/{key}_talk.png',
+        'spriteVisemes': f'assets/characters/{key}_visemes.png',
+        'storyPath': ink_path,
+        'currentKnot': 'start',
+        'eventMappings': [{
+            'eventPattern': f'global_variable_changed:{done_global}',
+            'condition': 'value === true',
+            'onceOnly': True,
+            'completeTask': task_id,
+        }],
+    }
+
+
+def kiosk(ep_id, observations):
+    return {
+        'type': 'kiosk',
+        'id': 'training_kiosk',
+        'name': 'Training kiosk',
+        'position': {'x': 6, 'y': 2},
+        'takeable': False,
+        'interactable': True,
+        'active': True,
+        'locked': False,
+        'observations': observations,
+        'minigameData': {'episodeId': ep_id},
+    }
+
+
+def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, host, ink_name,
+             kiosk_obs, extra=None):
+    ink_path = f'scenarios/{mission}/ink/{ink_name}.json'
+    ep_id = social['awarenessEpisode']['id']
+    sc = {
+        'scenario_id': mission,
+        'scenario_name': name,
+        'scenario_brief': brief,
+        'endGoal': end_goal,
+        'version': '1.0',
+        'disableAttacks': True,
+        'startRoom': 'training_room',
+        'player': PLAYER,
+        'objectives': [{
+            'aimId': aim[0],
+            'title': aim[1],
+            'description': aim[2],
+            'status': 'active',
+            'order': 0,
+            'missionConclusion': True,
+            'concludeRequires': {'globals': [done]},
+            'tasks': [{'taskId': task[0], 'title': task[1], 'type': 'custom', 'status': 'active'}],
+        }],
+        'globalVariables': globals_,
+    }
+    if extra:
+        sc.update(extra)
+    sc['social'] = social
+    sc['rooms'] = {
+        'training_room': {
+            'type': 'room_office',
+            'door_sign': 'Training Room',
+            'connections': {},
+            'npcs': [host_npc(host, done, task[0], ink_path)],
+            'objects': [kiosk(ep_id, kiosk_obs)],
+        }
+    }
+    return sc
+
+
+def brand_block():
+    return {k: copy.deepcopy(EP[k]) for k in ('role', 'company', 'brand')}
+
+
+def defend_only():
+    mission = 'awareness_e1_invoice_fraud_defend'
+    ep_id = 'e1_invoice_fraud_defend'
+    prefix = f'episode_{ep_id}_defend_'
+    done = f'{prefix}done'
+    s = clean_set('e1_payments_inbox')
+    s['outcome']['setGlobalPrefix'] = prefix
+    strings = copy.deepcopy(EP['strings'])
+    strings['brief'] = EP['_defendOnly']['brief']
+    ep = {
+        'id': ep_id, **brand_block(),
+        'variant': 'defendOnly',
+        'durationTargetMin': 8,
+        'scopeNote': EP['_defendOnly']['scopeNote'],
+        'stages': ['brief', 'defend', 'debrief'],
+        'conclusionTaskId': 'sort_payments_inbox',
+        'defend': {'setId': 'e1_payments_inbox', 'stage': None, 'reportAlwaysVisible': True},
+        'strings': strings,
+        'debrief': copy.deepcopy(EP['debrief']),
+    }
+    globals_ = {
+        f'episode_{ep_id}_state': {},
+        'se_awareness_records': {},
+        f'{prefix}percent': 0,
+        f'{prefix}reportRate': 0,
+        done: False,
+        f'{prefix}pass': False,
+    }
+    sc = scenario(
+        mission, 'Invoice fraud: the payments inbox',
+        "Awareness episode E1, inbox only. You're covering the payments inbox at Brightwell Foods, a fictional food manufacturer, before the afternoon payment run. Five messages are waiting: sort them, and report or check anything that doesn't sit right.",
+        'Sort the five messages in the payments inbox at the training kiosk.',
+        ('payments_inbox_aim', 'Cover the payments inbox', 'Sort the payments inbox at the training kiosk.'),
+        ('sort_payments_inbox', 'Sort the payments inbox'),
+        done, globals_, {'triageSets': [s], 'awarenessEpisode': ep},
+        HOSTS['adaeze'], 'adaeze_okafor',
+        "A touch-screen kiosk showing Brightwell's payments inbox. Five messages are waiting.")
+    meta = {
+        'display_name': 'Awareness E1: Invoice fraud (inbox only)',
+        'description': "An eight-minute awareness episode for finance staff, on the inbox side only. Cover the payments inbox at Brightwell Foods, a fictional company, before the afternoon payment run: five messages, some real and some built to trick you. Each answer is explained, and reporting a real message never costs you anything.",
+        'difficulty_level': 1,
+        'secgen_scenario': None,
+        'collection': 'training',
+        'ui_theme': 'general',
+        'estimated_duration_minutes': 8,
+        'cybok': CYBOK,
+    }
+    return mission, sc, meta
+
+
+def check(pair, stage):
+    mission = f'awareness_{stage}_finance_{pair}'
+    ep_id = f'{stage}_finance_{pair}'
+    form = {('ab', 'pre'): 'finance_form_a', ('ab', 'post'): 'finance_form_b',
+            ('ba', 'pre'): 'finance_form_b', ('ba', 'post'): 'finance_form_a'}[(pair, stage)]
+    comparison = {'requireGlobal': 'pre_check_completed'} if stage == 'post' else None
+    s = clean_set(form, stage=stage, comparison=comparison)
+    prefix = f'triage_{stage}_'
+    done = f'{prefix}done'
+    ep = {
+        'id': ep_id, **brand_block(),
+        'variant': 'full',
+        'durationTargetMin': 4,
+        'scopeNote': 'Authorised exercise at Brightwell Foods, a fictional company. In scope: ten messages from the Brightwell payments inbox.',
+        'stages': ['check'],
+        'conclusionTaskId': 'finish_check',
+        'defend': {'setId': form, 'stage': stage, 'reportAlwaysVisible': True},
+    }
+    globals_ = {
+        f'episode_{ep_id}_state': {},
+        'se_awareness_records': {},
+        f'{prefix}percent': 0,
+        f'{prefix}reportRate': 0,
+        done: False,
+        f'{prefix}pass': False,
+    }
+    extra = {}
+    pre_mission = f'awareness_pre_finance_{pair}'
+    if stage == 'pre':
+        extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_done']
+    else:
+        globals_.update({'triage_pre_percent': 0, 'triage_pre_reportRate': 0, 'triage_pre_done': False,
+                         'pre_check_completed': False})
+        extra['importGlobals'] = [
+            {'from': pre_mission, 'var': 'triage_pre_percent', 'as': 'triage_pre_percent', 'default': 0},
+            {'from': pre_mission, 'var': 'triage_pre_reportRate', 'as': 'triage_pre_reportRate', 'default': 0},
+            {'from': pre_mission, 'var': 'triage_pre_done', 'as': 'triage_pre_done', 'default': False},
+            {'from': pre_mission, 'completed': 'pre_check_completed'},
+        ]
+    host = HOSTS['graham' if pair == 'ab' else 'farah']
+    letters = pair.upper()
+    first, second = (letters[0], letters[1])
+    if stage == 'pre':
+        name = f'Payments inbox check: before ({letters})'
+        brief = (f"The first of two short checks for finance staff at Brightwell Foods, a fictional company (pair {letters}, form {first}). "
+                 "Ten messages from a payments inbox: decide what to do with each one. Your result is saved so the second check can compare with it.")
+        aim = ('first_check_aim', 'Do the first check', 'Sort ten messages at the training kiosk.')
+        task = ('finish_check', 'Finish the first check')
+        display = f'Awareness check: finance, before ({letters})'
+        desc = (f"A four-minute check for finance staff, taken before the awareness episodes (pair {letters}). "
+                "Ten messages from the payments inbox of Brightwell Foods, a fictional company. The result is kept so the "
+                f"matching after-check (awareness_post_finance_{pair}) can show how the two compare.")
+        obs = 'A touch-screen kiosk with ten messages from a payments inbox, ready for the first check.'
+    else:
+        name = f'Payments inbox check: after ({letters})'
+        brief = (f"The second of two short checks for finance staff at Brightwell Foods, a fictional company (pair {letters}, form {second}). "
+                 "Ten new messages from a payments inbox. If you took the first check, the end screen shows how the two compare.")
+        aim = ('second_check_aim', 'Do the second check', 'Sort ten messages at the training kiosk.')
+        task = ('finish_check', 'Finish the second check')
+        display = f'Awareness check: finance, after ({letters})'
+        desc = (f"A four-minute check for finance staff, taken after the awareness episodes (pair {letters}). "
+                "Ten new messages from the payments inbox of Brightwell Foods, a fictional company, matched to the "
+                f"first check (awareness_pre_finance_{pair}). The end screen compares the two results when the first check was finished.")
+        obs = 'A touch-screen kiosk with ten messages from a payments inbox, ready for the second check.'
+    ink_name = f"{host['id'].split('_')[0]}_{stage}"
+    sc = scenario(mission, name, brief, 'Sort the ten messages at the training kiosk.', aim, task, done,
+                  globals_, {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, extra)
+    meta = {
+        'display_name': display,
+        'description': desc,
+        'difficulty_level': 1,
+        'secgen_scenario': None,
+        'collection': 'training',
+        'ui_theme': 'general',
+        'estimated_duration_minutes': 4,
+        'cybok': CYBOK,
+    }
+    return mission, sc, meta
+
+
+def main():
+    out = sys.argv[1] if len(sys.argv) > 1 else REPO + '/scenarios'
+    built = [defend_only()] + [check(p, st) for p in ('ab', 'ba') for st in ('pre', 'post')]
+    for mission, sc, meta in built:
+        d = os.path.join(out, mission)
+        os.makedirs(os.path.join(d, 'ink'), exist_ok=True)
+        with open(os.path.join(d, 'scenario.json.erb'), 'w') as f:
+            json.dump(sc, f, indent=2, ensure_ascii=False)
+            f.write('\n')
+        with open(os.path.join(d, 'mission.json'), 'w') as f:
+            json.dump(meta, f, indent=2, ensure_ascii=False)
+            f.write('\n')
+        print('wrote', d)
+
+
+if __name__ == '__main__':
+    main()
