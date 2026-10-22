@@ -83,6 +83,8 @@ export class NPCHealthBars {
     const graphics = this.scene.add.graphics();
     graphics.setDepth(overlayDepth(850));
     graphics.setPosition(Math.round(npcSprite.x), Math.round(npcSprite.y + offsetY));
+    // A hidden NPC (initiallyHidden, hidden by a mapping) shows no bar (m10 R3 G2)
+    graphics.setVisible(npcSprite.visible !== false);
 
     this.healthBars.set(npcId, {
       graphics,
@@ -209,6 +211,9 @@ export class NPCHealthBars {
         Math.round(healthBar.npcSprite.x),
         Math.round(healthBar.npcSprite.y + offsetY)
       );
+      // Follow the NPC's visibility too: an initiallyHidden hostile's bar drew over the
+      // room while the NPC itself was hidden, giving the ambush away (m10 R3 G2)
+      healthBar.graphics.setVisible(healthBar.npcSprite.visible !== false);
 
       // Redraws only when the HP (or theme) changed
       this.updateHealthBar(npcId);
