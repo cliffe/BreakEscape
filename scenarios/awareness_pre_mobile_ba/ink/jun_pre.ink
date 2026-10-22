@@ -19,9 +19,9 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { triage_pre_done:
-        Jun Watanabe: That's your first check saved. You'll do another after the training, and see how the two compare.
+        Jun Watanabe: Lovely, first check saved. There's a matching one after the training, and you'll see how the two stack up.
     - else:
-        Jun Watanabe: Morning. Before the training there's a short check on the kiosk: ten texts, notices and emails from a Tarrowby work phone. Just do what you'd normally do.
+        Jun Watanabe: Hiya. There's a short check on the kiosk before we start: ten texts, notices and emails from a work phone. Just go with what you'd normally do.
     }
 }
 + [Thanks.]

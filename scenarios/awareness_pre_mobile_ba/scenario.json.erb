@@ -62,7 +62,7 @@
       {
         "id": "mobile_form_b",
         "title": "Work phone check",
-        "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+        "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. Tarrowby's own sites end in tarrowby.example. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
         "stage": "pre",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
@@ -87,7 +87,7 @@
             "kind": "sms",
             "from": {
               "name": "Colin Mather (Warehouse)",
-              "address": "07700 900527"
+              "address": "Colin (mobile), in your contacts"
             },
             "time": "07:05",
             "body": "Morning. Could you start at 6 tomorrow instead of 7? Two extra trailers coming in. Let me know either way. Colin",
@@ -180,7 +180,7 @@
             "kind": "sms",
             "from": {
               "name": "Eilidh Strachan (Facilities)",
-              "address": "07700 900276"
+              "address": "Eilidh (mobile), in your contacts"
             },
             "time": "09:00",
             "body": "Facilities: the staff car park is being resurfaced on Monday. Please park at the Bradford Road site; there's a map at {{link:map}}. Eilidh",
@@ -203,41 +203,39 @@
           {
             "id": "mb_new_starters_spoof",
             "from": {
-              "name": "Jun Watanabe",
-              "address": "jun.watanabe@tarrowby.example"
+              "name": "Colin Mather",
+              "address": "colin.mather@tarrowby-team.example"
             },
             "to": "shipley.depot@tarrowby.example",
             "subject": "New starters' mobile numbers",
             "time": "09:41",
-            "body": "Hi,\nCould you reply with the mobile numbers of the drivers who started this month? The induction app needs them and I can't get into the HR system from home.\nThanks,\nJun",
+            "body": "Hi,\nCould you reply with the mobile numbers of the drivers who started this month? The induction app needs them and I can't get into the system from home.\nThanks,\nColin",
             "auth": {
-              "spf": "fail",
-              "dkim": "none",
-              "dmarc": "fail",
-              "envelopeFrom": "mailer.inboxly.example",
-              "replyTo": "jun.w.hr@inboxly.example"
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby-team.example",
+              "replyTo": "colin.mather@tarrowby-team.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderAuth",
-                "reply_to_differs"
+                "senderTrust",
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "senderAuth": "Tarrowby's own mail system didn't send this, even though the From line shows a real Tarrowby address",
-                "reply_to_differs": "Replies go to jun.w.hr@inboxly.example, not to Jun's Tarrowby address"
+                "senderTrust": "The name on the From line looks right, but the address isn't on tarrowby.example at all.",
+                "lookalike_domain": "tarrowby-team.example looks like Tarrowby, but the added word makes it a different domain. Tarrowby's own mail comes from tarrowby.example."
               },
-              "headerNote": "Open the details: the From shows Jun's real address, but Tarrowby's mail system didn't send it, and a reply would go to an outside inbox.",
               "ifTrusted": "New drivers' mobile numbers would go to someone planning to text them, at the point they know least about how Tarrowby works.",
-              "reportReply": "Thanks. Jun is in the office and didn't send it. There is no induction app."
+              "reportReply": "Thanks. Colin is on the floor and didn't send it. His address is on tarrowby.example, and there is no induction app."
             }
           },
           {
             "id": "mb_parking_charge",
             "kind": "sms",
             "from": {
-              "name": "PCN Services",
-              "address": "07700 900649"
+              "address": "07700 900649 (not in your contacts)"
             },
             "time": "10:15",
             "body": "Parking Charge Notice: £60 unpaid at Leeds Station car park. Pay within 24 hrs or it rises to £120: {{link:pay}} Reply STOP to opt out",
@@ -273,20 +271,18 @@
             "time": "11:02",
             "body": "Your October payslip is now in the staff app under Pay. Any questions, ring Marjorie Ackroyd in payroll on ext. 2145.\nTarrowby Payroll",
             "auth": {
-              "spf": "fail",
+              "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "bounce.paysuite-mail.example",
+              "envelopeFrom": "tarrowby.example",
               "replyTo": "payroll@tarrowby.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "One of the mail checks didn't line up because the payroll service, PaySuite, sends this for Tarrowby, but the rest confirm it really is from tarrowby.example.",
-                "default": "Tarrowby's real domain, nothing to click, and it sends you to the staff app and to a named person on an internal extension."
-              },
-              "headerNote": "One check not lining up on its own is a clue, not proof. A service that sends mail for a company often trips one check while the rest still confirm the domain."
+                "default": "It comes from Tarrowby's own address, there's nothing to click, and it points you to the staff app and a named person on an internal extension."
+              }
             }
           },
           {
@@ -294,7 +290,7 @@
             "kind": "sms",
             "from": {
               "name": "Callum Whiteley",
-              "address": "07700 900381"
+              "address": "Callum (mobile), in your contacts"
             },
             "time": "11:30",
             "body": "Running 10 mins late for handover, stuck behind a tractor on the A650. Sorry! Callum",

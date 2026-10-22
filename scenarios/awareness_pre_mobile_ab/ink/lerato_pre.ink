@@ -19,13 +19,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { triage_pre_done:
-        Lerato Dlamini: That's your first check saved. You'll do another after the training, and see how the two compare.
+        Lerato Dlamini: Good, that's your before check logged. We'll run the same kind of check after the training and line the two up.
     - else:
-        Lerato Dlamini: Morning. Before the training there's a short check on the kiosk: ten texts, notices and emails from a Tarrowby work phone. Just do what you'd normally do.
+        Lerato Dlamini: Morning. Before the training there's a short check on the kiosk: ten texts, notices and emails from a Tarrowby work phone. Treat them the way you would on a normal shift.
     }
 }
 + [Thanks.]
-    Lerato Dlamini: No problem.
+    Lerato Dlamini: Any time.
     ~ hub_quiet = true
     #exit_conversation
     -> hub

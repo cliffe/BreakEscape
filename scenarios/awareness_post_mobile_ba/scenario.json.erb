@@ -81,7 +81,7 @@
       {
         "id": "mobile_form_a",
         "title": "Work phone check",
-        "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+        "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. Tarrowby's own sites end in tarrowby.example. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
         "stage": "post",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
@@ -106,7 +106,7 @@
             "kind": "sms",
             "from": {
               "name": "Lerato Dlamini (H&S)",
-              "address": "07700 900144"
+              "address": "Lerato (mobile), in your contacts"
             },
             "time": "07:05",
             "body": "Morning. The new hi-vis vests are in the gatehouse. Please pick yours up before Monday's shift. Lerato",
@@ -199,7 +199,7 @@
             "kind": "sms",
             "from": {
               "name": "Jun Watanabe (HR)",
-              "address": "07700 900233"
+              "address": "Jun (mobile), in your contacts"
             },
             "time": "09:00",
             "body": "Hi, a reminder from HR: benefit choices close on Friday. You can do it in the staff app under Benefits, or at {{link:benefits}}. Jun",
@@ -223,40 +223,38 @@
             "id": "ma_drivers_numbers_spoof",
             "from": {
               "name": "Shauna Lofthouse",
-              "address": "shauna.lofthouse@tarrowby.example"
+              "address": "shauna.lofthouse@tarrowby-depot.example"
             },
             "to": "shipley.depot@tarrowby.example",
             "subject": "Drivers' mobile numbers for the new rota app",
             "time": "09:41",
             "body": "Hi,\nThe new rota app needs every driver's mobile number. Could you reply with the list from the depot contact sheet? I'm at the Leeds site today.\nThanks,\nShauna",
             "auth": {
-              "spf": "fail",
-              "dkim": "none",
-              "dmarc": "fail",
-              "envelopeFrom": "mailer.quickpost-mail.example",
-              "replyTo": "shauna.planning@quickpost-mail.example"
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby-depot.example",
+              "replyTo": "shauna.lofthouse@tarrowby-depot.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderAuth",
-                "reply_to_differs"
+                "senderTrust",
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "senderAuth": "Tarrowby's own mail system didn't send this, even though the From line shows a real Tarrowby address",
-                "reply_to_differs": "Replies go to shauna.planning@quickpost-mail.example, not to Shauna's Tarrowby address"
+                "senderTrust": "The name on the From line looks right, but the address isn't on tarrowby.example at all.",
+                "lookalike_domain": "tarrowby-depot.example looks like Tarrowby, but the added word makes it a different domain. Tarrowby's own mail comes from tarrowby.example."
               },
-              "headerNote": "Open the details: the From shows Shauna's real address, but Tarrowby's mail system didn't send it, and a reply would go to an outside inbox.",
               "ifTrusted": "A list of drivers' mobile numbers is exactly what a run of fake texts needs.",
-              "reportReply": "Thanks. Shauna is in Shipley today and didn't send it. There is no new rota app."
+              "reportReply": "Thanks. Shauna is in Shipley today and didn't send it. Her address is on tarrowby.example, and there is no new rota app."
             }
           },
           {
             "id": "ma_phone_bill_failed",
             "kind": "sms",
             "from": {
-              "name": "Telvoro",
-              "address": "07700 900964"
+              "address": "07700 900964 (not in your contacts)"
             },
             "time": "10:15",
             "body": "Telvoro: your last bill payment failed. Update your card within 24 hrs to avoid disconnection: {{link:pay}} Reply STOP to opt out",
@@ -292,20 +290,18 @@
             "time": "11:02",
             "body": "Your shifts for next week are now in the staff app under Rota. If anything looks wrong, speak to Shauna in Transport.\nTarrowby Rota",
             "auth": {
-              "spf": "fail",
+              "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "send.shiftplanner-mail.example",
+              "envelopeFrom": "tarrowby.example",
               "replyTo": "rota@tarrowby.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "One of the mail checks didn't line up because the rota service, ShiftPlanner, sends this for Tarrowby, but the rest confirm it really is from tarrowby.example.",
-                "default": "Tarrowby's real domain, nothing to click, and it sends you to the staff app and to a person you know."
-              },
-              "headerNote": "One check not lining up on its own is a clue, not proof. A service that sends mail for a company often trips one check while the rest still confirm the domain."
+                "default": "It comes from Tarrowby's own address, there's nothing to click, and it points you to the staff app and a person you know. A rota note like this asks you to do nothing but check your shifts."
+              }
             }
           },
           {
@@ -313,7 +309,7 @@
             "kind": "sms",
             "from": {
               "name": "Chidi Okeke (Fleet)",
-              "address": "07700 900318"
+              "address": "Chidi (mobile), in your contacts"
             },
             "time": "11:30",
             "body": "Pool van TBY-14 is yours tomorrow, 7am to 3pm. Keys at the gatehouse. Chidi",

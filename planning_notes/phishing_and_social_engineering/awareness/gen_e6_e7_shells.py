@@ -208,18 +208,31 @@ LINES = {
         "Grab a seat, you're on your break. The kiosk's set up like a work phone, with texts, a couple of notices from the yard and an email. No rush.",
         "That's the phone cleared. If a text or a notice wants a code scanned or a short link tapped, open the app yourself instead.",
         'Thanks, Chidi.', 'Any time.'),
-    ('e6', 'pre'): (
-        "Morning. Before the training there's a short check on the kiosk: ten texts, notices and emails from a Tarrowby work phone. Just do what you'd normally do.",
-        "That's your first check saved. You'll do another after the training, and see how the two compare.",
-        'Thanks.', 'No problem.'),
-    ('e6', 'post'): (
-        "Welcome back. Ten new items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
-        "That's the second check saved. Thanks for doing both.",
-        'Thanks.', 'No problem.'),
     ('e7', 'defend'): (
         "Thanks for covering the phones while we're in the quarter-end meeting. Three voicemails and two emails have come in on the kiosk. Take your time with each.",
         "All five done, thanks. Whoever's voice it is, ringing back on the number we already hold settles it.",
         'Thanks, Agnieszka.', 'See you after the meeting.'),
+}
+
+# C2-m18: the check hosts said word-for-word identical lines. Give each host (and each
+# stage) its own, so the before and after welcomes read as two different people.
+CHECK_LINES = {
+    ('lerato_dlamini', 'pre'): (
+        "Morning. Before the training there's a short check on the kiosk: ten texts, notices and emails from a Tarrowby work phone. Treat them the way you would on a normal shift.",
+        "Good, that's your before check logged. We'll run the same kind of check after the training and line the two up.",
+        'Thanks.', 'Any time.'),
+    ('lerato_dlamini', 'post'): (
+        "You're back. Ten fresh items on the kiosk, the same idea as the first check. The end screen lines this one up against the one you did before.",
+        "That's both checks logged. Thanks for sitting them; it helps us see what the training shifted.",
+        'Thanks.', 'Any time.'),
+    ('jun_watanabe', 'pre'): (
+        "Hiya. There's a short check on the kiosk before we start: ten texts, notices and emails from a work phone. Just go with what you'd normally do.",
+        "Lovely, first check saved. There's a matching one after the training, and you'll see how the two stack up.",
+        'Thanks.', 'No problem.'),
+    ('jun_watanabe', 'post'): (
+        "Welcome back. Ten new items waiting on the kiosk, same as last time. If you did the first check, the end screen shows the two side by side.",
+        "That's the second check in. Thanks for doing both; it all helps.",
+        'Thanks.', 'No problem.'),
 }
 
 EPISODES = {
@@ -246,7 +259,7 @@ EPISODES = {
             'display': 'Awareness E6: Texts and QR codes (phone only)',
             'desc': "An eight-minute awareness episode for staff with a work phone, on the defending side only. Six items on a phone at Tarrowby Logistics, a fictional haulier: texts, printed notices with QR codes and an email. Some are real and some were built to trick you. Each answer is explained, and reporting a real message never costs you anything.",
             'minutes': 8,
-            'defendIntro': "Go through the work phone and decide what to do with each text, notice and email. On a notice, check where the code goes before you would scan it. Take your time. Each one comes down to a habit or two, and that's all you need here.",
+            'defendIntro': "Go through the work phone and decide what to do with each text, notice and email. On a notice, check where the code goes before you would scan it. There's no clock on you here; the whole job is one or two small habits.",
             'conclusion': ('Work phone done', "You've been through all six items and finished this episode."),
         },
         'check': {
@@ -278,7 +291,7 @@ EPISODES = {
             'display': 'Awareness E7: Voice and the CEO (phone and inbox only)',
             'desc': "An eight-minute awareness episode for all staff, on the defending side only. Cover the finance office's phone and inbox at Brightwell Foods, a fictional company: three voicemails, one of them in a copied voice, and two emails. Each answer is explained, and ringing someone back on a number you already hold never costs you anything.",
             'minutes': 8,
-            'defendIntro': "Go through the voicemails and emails and decide what to do with each one. Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Take your time. Each one comes down to a habit or two, and that's all you need here.",
+            'defendIntro': "Go through the voicemails and emails and decide what to do with each one. Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Work through them at your own pace; it all comes back to ringing the person yourself.",
             'voicePanel': {
                 'heading': 'A voice is not proof',
                 'text': "A voice can be copied. Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. So a familiar voice on a voicemail or a call doesn't tell you who is speaking. What still works is the route: ring the person back on a number you already hold, or check with someone who would know, such as the finance manager.",
@@ -435,7 +448,7 @@ def check(ekey, pair, stage):
                        {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, conclusion, extra)
     meta = meta_for(display, desc, c['minutes'], cfg['cybok'])
     when = 'before' if stage == 'pre' else 'after'
-    ink = ink_source(f"Awareness check, {word}, {when} ({letters})", host, done, LINES[(ekey, stage)])
+    ink = ink_source(f"Awareness check, {word}, {when} ({letters})", host, done, CHECK_LINES[(host['id'], stage)])
     return mission, sc, meta, ink_name, ink
 
 

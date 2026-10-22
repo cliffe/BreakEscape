@@ -64,8 +64,14 @@
       "urgency": "high" },
     "pretext_bulletin": { "part": "pretext", "text": "Here is this month's depot bulletin, no action needed.", "slots": [],
       "urgency": "low" },
+    "pretext_qr_permit_calm": { "part": "pretext",
+      "text": "When you get a chance, we've moved the depot car park onto {scheme}, so staff need to register their vehicle. You can scan the QR code below with your phone camera, or do it from the staff app, whichever suits.",
+      "slots": [ { "id": "scheme", "type": "reference", "label": "which permit scheme" } ],
+      "urgency": "low" },
     "ask_scan": { "part": "ask", "text": "Can you scan it today so I can tick you off the list? You don't want to be clamped on Monday.", "slots": [],
-      "urgency": "medium" }
+      "urgency": "medium" },
+    "ask_scan_calm": { "part": "ask", "text": "No rush on it, just sometime this week so I can keep the list up to date.", "slots": [],
+      "urgency": "low" }
   },
 
   "mailClient": {
@@ -133,8 +139,8 @@
       "templateSets": {
         "from": ["from_named"],
         "greeting": ["greet_generic"],
-        "pretext": ["pretext_qr_permit", "pretext_bulletin"],
-        "ask": ["ask_scan"]
+        "pretext": ["pretext_qr_permit", "pretext_qr_permit_calm", "pretext_bulletin"],
+        "ask": ["ask_scan", "ask_scan_calm"]
       },
       "primedFor": {
         "distinctiveValues": ["yardpass"],
@@ -146,7 +152,7 @@
       "advisoryFactors": ["urgencyCalibrated"],
       "factorStrings": {
         "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
-        "senderTrust": { "pass": "✓ From Facilities, who she'd expect a parking notice from", "fail": "She does not recognise this sender. Depot notices reach her from Facilities, not from a name she has never seen.", "redFlag": null },
+        "senderTrust": { "pass": "✓ From Facilities, who she'd expect a parking notice from", "fail": "She does not recognise this sender. Depot notices reach her from Facilities, not from a name she has never seen.", "redFlag": "The From line carries Dev Acharya's real Facilities address, so it reads as the depot notice she acts on, but it was forged: Facilities never sent it, and a From line can be set to show any name and address." },
         "pretextRelevant": { "pass": "✓ Ties to the new parking permit she was told to register for", "fail": "No change she can match this to, so no reason to scan anything.", "redFlag": null },
         "urgencyCalibrated": { "pass": "✓ The Friday deadline reads as believable" }
       },

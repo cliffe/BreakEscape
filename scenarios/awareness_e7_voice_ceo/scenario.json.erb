@@ -1,8 +1,8 @@
 {
   "scenario_id": "awareness_e7_voice_ceo",
   "scenario_name": "Voice and the CEO: both sides",
-  "scenario_brief": "Awareness episode E7, the cross-role finale. You're on an authorised exercise at Brightwell Foods, a fictional food manufacturer. First you're on the red team: research what's public about the chief executive, then script one voicemail in his voice that pushes accounts payable to release an urgent payment. Nobody judges how real it would sound. Then you swap seats and cover the finance office's phone and inbox, where a call like that lands. Only the inbox side is scored.",
-  "endGoal": "Script the CEO voicemail, then cover the finance line at the training kiosk.",
+  "scenario_brief": "Awareness episode E7, the cross-role finale. You're on an authorised exercise at Brightwell Foods, a fictional food manufacturer. First you're on the red team: research what's public about the chief executive, then write the email in his name that would go with a cloned-voice call, pushing accounts payable to release an urgent payment. Then you swap seats and cover the finance office's phone and inbox, where a call and an email like that land together. Only the inbox side is scored.",
+  "endGoal": "Write the message in the CEO's name, then cover the finance line at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
   "startRoom": "training_room",
@@ -19,8 +19,8 @@
   "objectives": [
     {
       "aimId": "red_team_aim",
-      "title": "Script the CEO voicemail",
-      "description": "Research what's public about Brightwell's chief executive, then script one voicemail in his voice to the accounts payable clerk asking for an urgent payment. You are not scored on how it sounds.",
+      "title": "Write the message for the cloned-voice call",
+      "description": "Research what's public about Brightwell's chief executive, then write the email in his name to the accounts payable clerk, the message that would go with a cloned-voice call asking for an urgent payment. You are not scored on how convincing it is.",
       "status": "active",
       "order": 0,
       "tasks": [
@@ -47,7 +47,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "Voice and the CEO episode done",
-        "body": "You've scripted the call, seen it from the other side and covered the finance line, so this episode is finished. Whoever's voice it is, ringing back on a number you already hold is what settles it."
+        "body": "You've seen both sides of a cloned-voice payment request and covered the finance line, so this episode is finished. Whoever's voice it is, ringing back on a number you already hold is what settles it."
       },
       "tasks": [
         {
@@ -271,7 +271,7 @@
       },
       "variant": "full",
       "durationTargetMin": 14,
-      "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: one practice voicemail script in the voice of a fictional chief executive, and three voicemails and two emails on the finance office's line. No real person's voice is used, and nothing you write leaves the game.",
+      "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: one practice message written in the name of a fictional chief executive, and three voicemails and two emails on the finance office's line. No real person's voice is used, and nothing you write leaves the game.",
       "stages": [
         "brief",
         "osint",
@@ -301,15 +301,16 @@
         "reportAlwaysVisible": true
       },
       "strings": {
-        "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. First you're on the red team: write the script for a short voicemail in the voice of Brightwell's chief executive, Ravinder Sandhu, asking for something he would never ask for on the phone. Nobody judges how real it would sound. Then you swap seats: you're covering the finance office's phone and inbox, with three voicemails and two emails waiting. Only the second part is scored.",
-        "flipHeading": "Now it's on your phone",
-        "flipIntro": "This is the voicemail you scripted, as the finance office would find it. The lines picked out below are what make it believable.",
-        "flipDefenderLine": "It landed at ten to five on a Friday, in the voice the finance office hears every week. By the end of the message the payment was half set up. A voice you know is hard to argue with, and copying it is the whole trick; acting on it is no lapse of sense.",
-        "flipNoSend": "Your script didn't go out this time, so there's nothing of yours to show. Next, the same kind of voicemail reaches the finance office's phone, and you're the one listening.",
+        "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. First you're on the red team: write the email in the name of Brightwell's chief executive, Ravinder Sandhu, the message that would go with a cloned-voice call to accounts payable, asking for something he would never ask for. Then you swap seats: you're covering the finance office's phone and inbox, with three voicemails and two emails waiting. Only the second part is scored.",
+        "flipHeading": "Now it lands on you",
+        "flipIntro": "This is the message you wrote, as Tom in the finance office would find it. The lines picked out below are what make it believable.",
+        "flipDefenderLine": "It reached Tom at ten to five on a Friday, in the chief executive's name, right after a voicemail in a voice just like his. By the end of the message the payment was half set up. A name and a voice you know are hard to argue with, and copying them is the whole trick; acting on it is no lapse of sense.",
+        "flipNoSend": "Your message didn't go out this time, so there's nothing of yours to show. Next, the same kind of message reaches the finance office, and you're the one reading it.",
+        "flipMissed": "There's nothing extra to replay from this one, so here is the same kind of message as it would reach the finance office. The defence is the same either way.",
         "noBlameLine": "Nobody is marked down for a miss here. A familiar voice is hard to doubt, and these calls were built to lean on exactly that trust. Anyone can be caught by one.",
         "mondayCard": "On Monday: a voice you recognise is not proof of who is calling, and neither is an email that backs it up. If a call or voicemail asks for money, secrecy or a skipped step, ring the person back on a number you already hold, then report it the way your organisation asks you to.",
         "defendOnly": "You went straight to the phone and inbox this time. A familiar voice feels like proof, and these messages were made to use that. People who fall for calls like these are not stupid. Each card shows what gave the fake ones away, why the real ones were fine, and why ringing back on a number you already hold works whoever is speaking.",
-        "defendIntro": "Go through the voicemails and emails and decide what to do with each one. Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Take your time. Each one comes down to a habit or two, and that's all you need here.",
+        "defendIntro": "Go through the voicemails and emails and decide what to do with each one. Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Work through them at your own pace; it all comes back to ringing the person yourself.",
         "voicePanel": {
           "heading": "A voice is not proof",
           "text": "A voice can be copied. Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. So a familiar voice on a voicemail or a call doesn't tell you who is speaking. What still works is the route: ring the person back on a number you already hold, or check with someone who would know, such as the finance manager."
@@ -412,7 +413,7 @@
       },
       "greet_rushed": {
         "part": "greeting",
-        "text": "Tom, it's me, I've only got a minute between sessions.",
+        "text": "Tom, it's me, I've only got a minute between site visits.",
         "slots": []
       },
       "pretext_ceo_payment": {
@@ -481,7 +482,7 @@
           },
           "to": "analyst@brightwellfoods.example",
           "subject": "Authorised exercise: Brightwell Foods (finale)",
-          "body": "Hello,\n\nThis is the Brightwell Foods finale. In scope: this inbox and the people on it. Research what's public about the chief executive, then prepare one short call script. The exercise's voice tool reads it aloud in an in-world voice; no real person is used, nothing leaves this account, and you are not scored on how it sounds.\n\nRed team lead",
+          "body": "Hello,\n\nThis is the Brightwell Foods finale. In scope: this inbox and the people on it. Research what's public about the chief executive, then write one short message: the email in his name that would go with a cloned-voice call. No real person is used, nothing leaves this account, and you are not scored on how convincing it is.\n\nRed team lead",
           "time": "09:04",
           "unread": true,
           "folder": "inbox"
@@ -638,7 +639,7 @@
           "senderTrust": {
             "pass": "✓ It sounds like the chief executive he knows",
             "fail": "He does not place this voice as the chief executive, so a rushed payment request carries no weight.",
-            "redFlag": null
+            "redFlag": "The From line carries Ravinder Sandhu's real Brightwell address, so it reads as the chief executive, but it was forged: Ravinder never sent it, and a From line can be set to show any name and address."
           },
           "pretextRelevant": {
             "pass": "✓ Ties to a payment he is already expecting to release",
@@ -646,7 +647,8 @@
             "redFlag": null
           },
           "urgencyCalibrated": {
-            "pass": "✓ The pressure reads as believable"
+            "pass": "✓ The pressure reads as believable",
+            "fail": "The pressure is the point of this call; the debrief shows why it works."
           }
         },
         "replies": {
@@ -717,7 +719,7 @@
           "observationVariants": [
             {
               "condition": "globalVars.episode_e7_voice_ceo_defend_done",
-              "value": "A touch-screen training kiosk for the Brightwell Foods finale. The script's written and the voicemails and emails are all dealt with."
+              "value": "A touch-screen training kiosk for the Brightwell Foods finale. The message is written and the voicemails and emails are all dealt with."
             }
           ],
           "minigameData": {

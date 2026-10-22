@@ -14,21 +14,21 @@
     ],
     "nameCheck": "Ionescu, Lofthouse, Strachan, Solanki, Dlamini, Okeke, Whiteley and Ackroyd had no hits in scenarios, planning_notes, docs or public/break_escape/js on 2026-10-22. Asante, Nwosu, Iqbal and Oyelaran were rejected because they are already in use.",
     "realHosts": "staff.tarrowby.example (the staff app), hr.tarrowby.example, facilities.tarrowby.example, forms.tarrowby.example, guest.tarrowby.example. Depot: Shipley; sites named: Bradford Road, Halifax, Leeds.",
-    "lookalikes": "Episode: tarrowbey.example (in the roster), tarrowby-parking.example (added word). Forms: tarrowby-charging.example, tarrowby-wifi.example (added word).",
+    "lookalikes": "Episode: tarrowbey.example (in the roster), tarrowby-parking.example (added word). Forms: tarrowby-charging.example, tarrowby-wifi.example (QR notices, added word), tarrowby-depot.example, tarrowby-team.example (row-6 look-alike sender domains, added word).",
     "thirdParties": "Parceline (parceline-redelivery.example), a courier name on a fake fee text; FuelWise (fuelwise-rewards.example), a fuel-card offer nobody asked for; Telvoro (telvoro-billing.example), a mobile network Tarrowby does not use; PCN Services (pcn-settle.example), a fake parking-charge sender; shrtn.example, an invented link shortener; ShiftPlanner (shiftplanner-mail.example) and PaySuite (paysuite-mail.example), the genuine rota and payroll providers that send Tarrowby mail for it.",
     "preShipCheck": "Web-search Tarrowby, Parceline, FuelWise, Telvoro, ShiftPlanner and PaySuite for real businesses of the same name before release."
   },
   "_formPairing": {
-    "_use": "Item n in form A matches item n in form B on kind, phish or genuine, flags, header results and difficulty. Per form: 10 items (4 phish, 6 genuine; 4 texts, 2 QR notices, 4 emails); flags unexpected_qr 1, lookalike_domain 1, senderTrust 1, secrecy_or_bypass 1, urgencyCalibrated 1, senderAuth 1, reply_to_differs 1, smish_shortlink_urgency 1, reply_stop_trick 1 (9 in all); difficulty 5 easy, 4 medium, 1 hard. Each form's look-alike QR notice (row 2) is followed by a real Tarrowby notice on the same subject (row 3).",
+    "_use": "Item n in form A matches item n in form B on kind, phish or genuine, flags and difficulty. Per form: 10 items (4 phish, 6 genuine; 4 texts, 2 QR notices, 4 emails); flags unexpected_qr 1, lookalike_domain 2 (row 2 QR, row 6 email), senderTrust 2 (row 4, row 6), secrecy_or_bypass 1, urgencyCalibrated 1, smish_shortlink_urgency 1, reply_stop_trick 1 (9 in all); difficulty 6 easy, 4 medium. C2-M6: no row is scored on the header panel any more, so every tell is visible on the message face (row 6 is a look-alike sender domain, row 8 a plainly genuine internal mail). Texts follow the episode contact convention (C2-m13): genuine ones show a saved contact, fakes show a bare number not in your contacts. Each form's look-alike QR notice (row 2) is followed by a real Tarrowby notice on the same subject (row 3); the brief says Tarrowby's sites end in tarrowby.example (C2-m12).",
     "rows": [
       "1 | sms | genuine | (no header) | easy | A: Lerato, new hi-vis vests | B: Colin, early start tomorrow",
       "2 | qr | phish | unexpected_qr, lookalike_domain | (no header) | medium | A: EV charging 'scan to pay' (tarrowby-charging) | B: staff Wi-Fi 'scan and sign in' (tarrowby-wifi)",
       "3 | qr | genuine | (no header) | medium | A: the real EV charging guide (facilities.tarrowby) | B: the real guest Wi-Fi sign (guest.tarrowby)",
       "4 | email | phish | senderTrust, secrecy_or_bypass, urgencyCalibrated | all pass (freemail owns its domain) | easy | A: 'Colin' wants you to text his personal number | B: 'Fatima' wants voucher codes texted to her",
       "5 | sms | genuine, honest link | (no header) | easy | A: Jun, benefits deadline (hr.tarrowby) | B: Eilidh, car park closed (facilities.tarrowby)",
-      "6 | email | phish, spoofed From | senderAuth, reply_to_differs | SPF fail, DKIM none, DMARC fail | hard | A: spoofed Shauna wants drivers' mobile numbers | B: spoofed Jun wants new starters' mobile numbers",
-      "7 | sms | phish | smish_shortlink_urgency, reply_stop_trick | (no header) | medium | A: Telvoro 'bill payment failed' | B: PCN Services 'unpaid parking charge'",
-      "8 | email | genuine, fail-but-fine | SPF fail, DKIM and DMARC pass | medium | A: next week's rota via ShiftPlanner | B: payslip notice via PaySuite",
+      "6 | email | phish, look-alike sender domain | senderTrust, lookalike_domain | all pass (attacker owns the look-alike domain) | medium | A: 'Shauna' on tarrowby-depot.example wants drivers' mobile numbers | B: 'Colin' on tarrowby-team.example wants new starters' mobile numbers",
+      "7 | sms | phish | smish_shortlink_urgency, reply_stop_trick | (no header) | medium | A: 'bill payment failed' (number, not in contacts) | B: 'unpaid parking charge' (number, not in contacts)",
+      "8 | email | genuine | all pass | easy | A: next week's rota | B: payslip notice",
       "9 | sms | genuine | (no header) | easy | A: Chidi, pool van booked | B: Callum, running late for handover",
       "10 | email | genuine | all pass | easy | A: Shauna, Christmas rota requests | B: Nilesh, staff app update tonight"
     ]
@@ -173,7 +173,7 @@
       "id": "mobile_form_a",
       "_form": "Mobile parallel form A. Authored as pre; the BA check pair launches it as post (minigameData.stage). Item n here matches item n in mobile_form_b; the table is in _formPairing above.",
       "title": "Work phone check",
-      "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. Tarrowby's own sites end in tarrowby.example. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
       "stage": "pre",
       "pairedWith": "mobile_form_b",
       "scoringProfile": "awareness",
@@ -187,7 +187,7 @@
         {
           "id": "ma_hivis_vests",
           "kind": "sms",
-          "from": { "name": "Lerato Dlamini (H&S)", "address": "07700 900144" },
+          "from": { "name": "Lerato Dlamini (H&S)", "address": "Lerato (mobile), in your contacts" },
           "time": "07:05",
           "body": "Morning. The new hi-vis vests are in the gatehouse. Please pick yours up before Monday's shift. Lerato",
           "truth": {
@@ -261,7 +261,7 @@
         {
           "id": "ma_benefits_deadline",
           "kind": "sms",
-          "from": { "name": "Jun Watanabe (HR)", "address": "07700 900233" },
+          "from": { "name": "Jun Watanabe (HR)", "address": "Jun (mobile), in your contacts" },
           "time": "09:00",
           "body": "Hi, a reminder from HR: benefit choices close on Friday. You can do it in the staff app under Benefits, or at {{link:benefits}}. Jun",
           "links": [ { "id": "benefits", "text": "hr.tarrowby.example/benefits", "destination": "https://hr.tarrowby.example/benefits" } ],
@@ -276,28 +276,27 @@
         },
         {
           "id": "ma_drivers_numbers_spoof",
-          "from": { "name": "Shauna Lofthouse", "address": "shauna.lofthouse@tarrowby.example" },
+          "from": { "name": "Shauna Lofthouse", "address": "shauna.lofthouse@tarrowby-depot.example" },
           "to": "shipley.depot@tarrowby.example",
           "subject": "Drivers' mobile numbers for the new rota app",
           "time": "09:41",
           "body": "Hi,\nThe new rota app needs every driver's mobile number. Could you reply with the list from the depot contact sheet? I'm at the Leeds site today.\nThanks,\nShauna",
-          "auth": { "spf": "fail", "dkim": "none", "dmarc": "fail", "envelopeFrom": "mailer.quickpost-mail.example", "replyTo": "shauna.planning@quickpost-mail.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby-depot.example", "replyTo": "shauna.lofthouse@tarrowby-depot.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderAuth", "reply_to_differs"],
+            "flags": ["senderTrust", "lookalike_domain"],
             "perFlagNote": {
-              "senderAuth": "Tarrowby's own mail system didn't send this, even though the From line shows a real Tarrowby address",
-              "reply_to_differs": "Replies go to shauna.planning@quickpost-mail.example, not to Shauna's Tarrowby address"
+              "senderTrust": "The name on the From line looks right, but the address isn't on tarrowby.example at all.",
+              "lookalike_domain": "tarrowby-depot.example looks like Tarrowby, but the added word makes it a different domain. Tarrowby's own mail comes from tarrowby.example."
             },
-            "headerNote": "Open the details: the From shows Shauna's real address, but Tarrowby's mail system didn't send it, and a reply would go to an outside inbox.",
             "ifTrusted": "A list of drivers' mobile numbers is exactly what a run of fake texts needs.",
-            "reportReply": "Thanks. Shauna is in Shipley today and didn't send it. There is no new rota app."
+            "reportReply": "Thanks. Shauna is in Shipley today and didn't send it. Her address is on tarrowby.example, and there is no new rota app."
           }
         },
         {
           "id": "ma_phone_bill_failed",
           "kind": "sms",
-          "from": { "name": "Telvoro", "address": "07700 900964" },
+          "from": { "address": "07700 900964 (not in your contacts)" },
           "time": "10:15",
           "body": "Telvoro: your last bill payment failed. Update your card within 24 hrs to avoid disconnection: {{link:pay}} Reply STOP to opt out",
           "links": [ { "id": "pay", "text": "shrtn.example/Tv8k2", "destination": "https://telvoro-billing.example/update" } ],
@@ -319,21 +318,19 @@
           "subject": "Your shifts for the week of 3 November",
           "time": "11:02",
           "body": "Your shifts for next week are now in the staff app under Rota. If anything looks wrong, speak to Shauna in Transport.\nTarrowby Rota",
-          "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "send.shiftplanner-mail.example", "replyTo": "rota@tarrowby.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "rota@tarrowby.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "senderAuth": "One of the mail checks didn't line up because the rota service, ShiftPlanner, sends this for Tarrowby, but the rest confirm it really is from tarrowby.example.",
-              "default": "Tarrowby's real domain, nothing to click, and it sends you to the staff app and to a person you know."
-            },
-            "headerNote": "One check not lining up on its own is a clue, not proof. A service that sends mail for a company often trips one check while the rest still confirm the domain."
+              "default": "It comes from Tarrowby's own address, there's nothing to click, and it points you to the staff app and a person you know. A rota note like this asks you to do nothing but check your shifts."
+            }
           }
         },
         {
           "id": "ma_pool_van",
           "kind": "sms",
-          "from": { "name": "Chidi Okeke (Fleet)", "address": "07700 900318" },
+          "from": { "name": "Chidi Okeke (Fleet)", "address": "Chidi (mobile), in your contacts" },
           "time": "11:30",
           "body": "Pool van TBY-14 is yours tomorrow, 7am to 3pm. Keys at the gatehouse. Chidi",
           "truth": {
@@ -367,7 +364,7 @@
       "id": "mobile_form_b",
       "_form": "Mobile parallel form B. Authored as post; the BA check pair launches it as pre (minigameData.stage). Item n here matches item n in mobile_form_a; the table is in _formPairing above.",
       "title": "Work phone check",
-      "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. Tarrowby's own sites end in tarrowby.example. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
       "stage": "post",
       "pairedWith": "mobile_form_a",
       "scoringProfile": "awareness",
@@ -381,7 +378,7 @@
         {
           "id": "mb_early_start",
           "kind": "sms",
-          "from": { "name": "Colin Mather (Warehouse)", "address": "07700 900527" },
+          "from": { "name": "Colin Mather (Warehouse)", "address": "Colin (mobile), in your contacts" },
           "time": "07:05",
           "body": "Morning. Could you start at 6 tomorrow instead of 7? Two extra trailers coming in. Let me know either way. Colin",
           "truth": {
@@ -455,7 +452,7 @@
         {
           "id": "mb_car_park_closed",
           "kind": "sms",
-          "from": { "name": "Eilidh Strachan (Facilities)", "address": "07700 900276" },
+          "from": { "name": "Eilidh Strachan (Facilities)", "address": "Eilidh (mobile), in your contacts" },
           "time": "09:00",
           "body": "Facilities: the staff car park is being resurfaced on Monday. Please park at the Bradford Road site; there's a map at {{link:map}}. Eilidh",
           "links": [ { "id": "map", "text": "facilities.tarrowby.example/parking", "destination": "https://facilities.tarrowby.example/parking" } ],
@@ -470,28 +467,27 @@
         },
         {
           "id": "mb_new_starters_spoof",
-          "from": { "name": "Jun Watanabe", "address": "jun.watanabe@tarrowby.example" },
+          "from": { "name": "Colin Mather", "address": "colin.mather@tarrowby-team.example" },
           "to": "shipley.depot@tarrowby.example",
           "subject": "New starters' mobile numbers",
           "time": "09:41",
-          "body": "Hi,\nCould you reply with the mobile numbers of the drivers who started this month? The induction app needs them and I can't get into the HR system from home.\nThanks,\nJun",
-          "auth": { "spf": "fail", "dkim": "none", "dmarc": "fail", "envelopeFrom": "mailer.inboxly.example", "replyTo": "jun.w.hr@inboxly.example" },
+          "body": "Hi,\nCould you reply with the mobile numbers of the drivers who started this month? The induction app needs them and I can't get into the system from home.\nThanks,\nColin",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby-team.example", "replyTo": "colin.mather@tarrowby-team.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderAuth", "reply_to_differs"],
+            "flags": ["senderTrust", "lookalike_domain"],
             "perFlagNote": {
-              "senderAuth": "Tarrowby's own mail system didn't send this, even though the From line shows a real Tarrowby address",
-              "reply_to_differs": "Replies go to jun.w.hr@inboxly.example, not to Jun's Tarrowby address"
+              "senderTrust": "The name on the From line looks right, but the address isn't on tarrowby.example at all.",
+              "lookalike_domain": "tarrowby-team.example looks like Tarrowby, but the added word makes it a different domain. Tarrowby's own mail comes from tarrowby.example."
             },
-            "headerNote": "Open the details: the From shows Jun's real address, but Tarrowby's mail system didn't send it, and a reply would go to an outside inbox.",
             "ifTrusted": "New drivers' mobile numbers would go to someone planning to text them, at the point they know least about how Tarrowby works.",
-            "reportReply": "Thanks. Jun is in the office and didn't send it. There is no induction app."
+            "reportReply": "Thanks. Colin is on the floor and didn't send it. His address is on tarrowby.example, and there is no induction app."
           }
         },
         {
           "id": "mb_parking_charge",
           "kind": "sms",
-          "from": { "name": "PCN Services", "address": "07700 900649" },
+          "from": { "address": "07700 900649 (not in your contacts)" },
           "time": "10:15",
           "body": "Parking Charge Notice: £60 unpaid at Leeds Station car park. Pay within 24 hrs or it rises to £120: {{link:pay}} Reply STOP to opt out",
           "links": [ { "id": "pay", "text": "shrtn.example/Pc4n9", "destination": "https://pcn-settle.example/pay" } ],
@@ -513,21 +509,19 @@
           "subject": "Your October payslip is in the staff app",
           "time": "11:02",
           "body": "Your October payslip is now in the staff app under Pay. Any questions, ring Marjorie Ackroyd in payroll on ext. 2145.\nTarrowby Payroll",
-          "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.paysuite-mail.example", "replyTo": "payroll@tarrowby.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "payroll@tarrowby.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "senderAuth": "One of the mail checks didn't line up because the payroll service, PaySuite, sends this for Tarrowby, but the rest confirm it really is from tarrowby.example.",
-              "default": "Tarrowby's real domain, nothing to click, and it sends you to the staff app and to a named person on an internal extension."
-            },
-            "headerNote": "One check not lining up on its own is a clue, not proof. A service that sends mail for a company often trips one check while the rest still confirm the domain."
+              "default": "It comes from Tarrowby's own address, there's nothing to click, and it points you to the staff app and a named person on an internal extension."
+            }
           }
         },
         {
           "id": "mb_running_late",
           "kind": "sms",
-          "from": { "name": "Callum Whiteley", "address": "07700 900381" },
+          "from": { "name": "Callum Whiteley", "address": "Callum (mobile), in your contacts" },
           "time": "11:30",
           "body": "Running 10 mins late for handover, stuck behind a tractor on the A650. Sorry! Callum",
           "truth": {
