@@ -240,6 +240,7 @@ module ValidateSocial
         issues.concat(target_sender_auth(t, where))
         issues.concat(target_expected_link(t, where))
         issues.concat(target_requires_intel(ctx, t, where))
+        issues.concat(target_sender_values(ctx, t, tpls, where))
         issues.concat(target_factor_bias(ctx, t, where))
       end
       issues
@@ -520,6 +521,65 @@ module ValidateSocial
         issues << err("#{where}.senderAuth publishes auth but has no dmarcPolicy (none, quarantine or reject)")
       elsif sa.key?('dmarcPolicy') && !%w[none quarantine reject].include?(sa['dmarcPolicy'])
         issues << err("#{where}.senderAuth.dmarcPolicy '#{sa['dmarcPolicy']}' must be none, quarantine or reject")
+      end
+      issues
+    end
+
+    # Suffixes phish-rules.js personOfValue resolves to a person id.
+    NAME_SUFFIXES = %w[_first _short _formal _full _address].freeze
+
+    def self.person_of_value(v)
+      return nil unless v.is_a?(String)
+
+      suf = NAME_SUFFIXES.find { |x| v.end_with?(x) && v.length > x.length }
+      suf && v[0...-suf.length]
+    end
+
+    # The From part's name and address blanks offer the `provides` values of type name (about matching
+    # the slot's) and address. The judge turns each into a person with personOfValue, so a value without
+    # one of NAME_SUFFIXES resolves to nobody and can never satisfy senderTrust. That is fine for a decoy.
+    # It is an error only when senderTrust is required and the slot offers no value that resolves to a
+    # person in primedFor.trusts (the correct answer could not be composed). Any other unresolvable value
+    # is a warning. An open inbox (trusts ['*']) never reads the From person, so it is skipped; address
+    # entries carrying a `rule` are derived by the composer and count as able to reach a trusted person.
+    def self.target_sender_values(ctx, t, tpls, where)
+      trusts = list(t.dig('primedFor', 'trusts'))
+      return [] if trusts == ['*']
+
+      required = list(t['requiredFactors']).include?('senderTrust') ||
+                 hash_list(t['factors']).any? { |f| f['id'] == 'senderTrust' && f['mode'] == 'required' }
+      listed = required || list(t['advisoryFactors']).include?('senderTrust') ||
+               hash_list(t['factors']).any? { |f| f['id'] == 'senderTrust' }
+      return [] unless listed
+
+      provides = facts(ctx).flat_map do |fid, f|
+        hash_list(f['provides']).select { |p| %w[name address].include?(p['type']) && p['value'].is_a?(String) }
+                                .map { |p| [fid, p] }
+      end
+      issues = []
+      list(t.dig('templateSets', 'from')).uniq.each do |tn|
+        hash_list(tpls.dig(tn, 'slots')).each do |slot|
+          next unless %w[name address].include?(slot['type'])
+
+          offered = provides.select do |_, p|
+            p['type'] == slot['type'] && (p['type'] == 'address' || norm_about(slot['about']) == norm_about(p['about']))
+          end
+          derived = offered.any? { |_, p| p['rule'].is_a?(String) && !p['rule'].empty? }
+          offered = offered.reject { |_, p| p['rule'].is_a?(String) && !p['rule'].empty? }
+          bad = offered.reject { |_, p| person_of_value(p['value']) }
+          next if bad.empty?
+
+          reaches = derived || offered.any? { |_, p| trusts.include?(person_of_value(p['value'])) }
+          names = bad.map { |fid, p| "'#{p['value']}' (social.intelFacts.#{fid})" }.uniq.join(', ')
+          cannot = "does not end in #{NAME_SUFFIXES.join(', ')}, so personOfValue cannot resolve it to a person"
+          if required && !reaches
+            issues << err("#{where}: the From blank '#{slot['id']}' of template '#{tn}' offers no value that resolves to a trusted person " \
+                          "(#{trusts.join(', ')}), so senderTrust can never pass; #{names} #{cannot}")
+          else
+            issues << warn_("#{where}: From blank '#{slot['id']}' of template '#{tn}' offers #{names}, which #{cannot} " \
+                            'and can never satisfy senderTrust (fine for a decoy)')
+          end
+        end
       end
       issues
     end

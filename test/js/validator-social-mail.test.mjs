@@ -371,6 +371,45 @@ test('T2-8: boostIfGlobal/strictIfGlobal pointed at a non-boolean global is warn
   assert.deepEqual(bias({ id: 'x', boostIfGlobal: { undeclared_flag: 'senderTrust' } }, {}), []);
 });
 
+test('sender-name provides personOfValue cannot resolve (itdesk_name): error only when no trusted person is reachable, otherwise a warning', { skip }, () => {
+  const RE = /offers no value that resolves to a trusted person \(baker\).*'itdesk_name'.*personOfValue cannot resolve/;
+  // the fixture is sm_clean with baker_full renamed itdesk_name: the only route to Jed, and senderTrust is required
+  const found = lint('sm_sender_name');
+  assert.equal(found.filter((s) => RE.test(s) && s.startsWith('❌')).length, 1, found.join('\n'));
+  assert.deepEqual(found.filter((s) => !RE.test(s)), lint('sm_clean'));
+  assert.deepEqual(lint('sm_clean').filter((s) => /personOfValue/.test(s)), []);
+  const bad = cli('sm_sender_name', '--strict-social');
+  assert.equal(bad.status, 1, bad.stdout + bad.stderr);
+  assert.match(bad.stdout, /personOfValue cannot resolve/);
+  const social = (over, provides) => ({
+    intelFacts: { f: { provides: provides || [{ type: 'name', about: 'sender', value: 'itdesk_name', kind: 'distinctive' }] } },
+    templates: { from_named: { part: 'from', text: '{sender_name}', slots: [{ id: 'sender_name', type: 'name', about: 'sender' }] } },
+    phishTargets: [{ id: 'x', primedFor: { trusts: ['baker'] }, templateSets: { from: ['from_named'] }, ...over }]
+  });
+  const run = (s) => mailCall("ValidateSocial::Mail.target_sender_values(ctx, social['phishTargets'][0], social['templates'], 'w')", s);
+  const REQ = { requiredFactors: ['senderTrust'] };
+  const decoy = { type: 'name', about: 'sender', value: 'itdesk_name' };
+  const good = { type: 'name', about: 'sender', value: 'baker_full' };
+  const errs = (r) => r.filter((m) => m.startsWith('❌')).length;
+  const warns = (r) => r.filter((m) => m.startsWith('⚠️')).length;
+  let r = run(social(REQ));
+  assert.deepEqual([errs(r), warns(r)], [1, 0]);
+  // a decoy beside a resolvable trusted value is a warning, not an error (test_social_slice shape)
+  r = run(social(REQ, [decoy, good]));
+  assert.deepEqual([errs(r), warns(r)], [0, 1]);
+  // a resolvable value for the wrong person does not count as reaching a trusted one
+  r = run(social(REQ, [decoy, { type: 'name', about: 'sender', value: 'other_full' }]));
+  assert.deepEqual([errs(r), warns(r)], [1, 0]);
+  // advisory senderTrust: a warning
+  r = run(social({ advisoryFactors: ['senderTrust'] }));
+  assert.deepEqual([errs(r), warns(r)], [0, 1]);
+  assert.deepEqual(run(social({})), []);
+  assert.deepEqual(run(social({ ...REQ, primedFor: { trusts: ['*'] } })), []);
+  assert.deepEqual(run(social(REQ, [{ type: 'name', about: 'sender', value: 'itdesk_full' }])), []); // resolves to a person, nothing to flag
+  assert.deepEqual(run(social(REQ, [{ type: 'name', about: 'recipient', value: 'itdesk_name' }])), []);
+  assert.deepEqual(run(social(REQ, [{ type: 'address', rule: 'sender', value: 'x' }])), []);
+});
+
 test('--strict-social: exit 1 on the broken fixture, 0 on the clean one and on a social-free one', { skip }, () => {
   const bad = cli('sm_broken', '--strict-social');
   assert.equal(bad.status, 1, bad.stdout + bad.stderr);
