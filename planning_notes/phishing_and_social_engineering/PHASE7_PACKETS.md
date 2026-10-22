@@ -359,3 +359,11 @@ the orchestrator passes it to that wave's owner.
   - **Globals the shell must declare:** `se_intel_brightwell_finance_manager`, `_harlow_supplier_contact`, `_brightwell_open_invoice`, `_brightwell_quarter_end`, `se_osint_state`, `phish_supplier_contact_landed` and `_attempts`. Something must read `_landed`.
   - **New slot type:** `reference`.
   - **Tells:** a good send stores `[senderTrust, urgencyCalibrated]`. The channel tells (`changed_bank_details`, `secrecy_or_bypass`) are on the defend side only.
+- **P7-N:**
+  - The doubled defendOnly prefix is kept, because it matches `defendPrefix()`.
+  - The optional strings (`stageIntro`, `heading`, `finish`, `continue`) are NOT in the schema until the runner and views read them.
+  - `attack.layout` (phone) is in.
+- **P7-X, for P7-P, P7-W3 and P7-S:**
+  - `mfa` must sit after `write` or after `flip`. Pass `episode.mfa` `{pushes, approvesAt, mode}` to the authenticator.
+  - The call conversion copies `notes` into `truth` (`perFlagNote`, `whyFine`).
+  - Claims resolve against every `pretextNpcs` `knows` id, unless `defend.callsFrom` names one call.
