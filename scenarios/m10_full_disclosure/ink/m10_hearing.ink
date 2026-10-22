@@ -49,6 +49,10 @@ Agent HaX: He still knows. But the map's gone. He's one man with a memory now.
 + { m09_completed } [You said you'd tell me the rest.]
 + [(Wait for them to call you.)]
 -
+// R3-m6: m09's Reading payoff, as at 06:00 (the same string).
+{ m09_completed and m09_reading_told_hax:
+    Agent HaX: You showed me what he wrote about you in Helena. So you get this.
+}
 Agent HaX: The night he left, he asked me to go with him.
 Agent HaX: I said no. It took me till morning.
 Narrator: Someone behind the table reads out your designation.

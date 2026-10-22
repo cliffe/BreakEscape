@@ -438,3 +438,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - m09 alignment R6: 0/0/2 (Victoria-route 'She's still feeding it.' after the cage is opened; contract doc cells).
 - m09 alignment R6 fixes and contract sweep: §2.3 regenerated from the build (47 HaX texts), 10 stale cells fixed, 6 missing texts added; §3.7/§4.5 already matched.
 - m10 alignment R3: 0/1/10 (St. Catherine's season line false on secured/scorched; Noor double row; KO'd Vector/Phantom credits; dead closing texts and Join toast gap; hearing lacks Reading payoff; Elena funded vs 'count her'; small wording). Credits merge order kept.
+- m10 alignment R3 ink fixes: St. Catherine's season line by database_outcome; three-message van line; hearing Reading payoff; funded-arrest sting; Citadel road line; dead-text comments; contract note.

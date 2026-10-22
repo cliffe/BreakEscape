@@ -1046,5 +1046,18 @@ Applied 2026-10-21 by the m10 fixer from `finale/STAGE_8_RULINGS.md` and the rev
 - R2-M5: Noor's ELSEWHERE rows are exclusive (every holding row prints): told → "Noor Haddad: told in time. A witness in Great Falls, safe tonight."; m05's list kept and not told or knocked out → "Noor Haddad: warned in October. Back at the archive."; knocked out and not told → "Noor Haddad: woke at her own desk. Still asking who hit her." (warning); otherwise two rows (`!m05_found_pipeline_list`, `m05_recruiter_deal_accepted`) → "Noor Haddad: never told. Still on the list."
 - R2-m10: the 06:00 texts (T-47 to T-56) skip on `six_open`, and T-57 on `citadel_open`; the scenes carry those beats, so no toast lands between scenes or over the card.
 - R2-m13: a reload during the exchanges restores the talk-down score: `game_loaded` twins after the "Steel Shadows" twin, one per order-valid exchange state with a landed point (one landed: "Shadow In E Minor"; two or more: `silence`).
-- R2-m14: the SAFETYNET merge now puts each person's SAFETYNET conditional clauses first, then their IN THIS OPERATION conditional clauses, then the SAFETYNET default. The 25 IN THIS OPERATION clauses that could never print under that order are deleted from the ERB (HaX's ending clauses and `fire_held`; Netherton's joined, executed and scorched; Quintero's KO, wrong accusation and wound; Arakawa's and Malhotra's wrong accusation; Vector's and Phantom's on-team four). HaX's SAFETYNET default "Handler." is removed from `credits_sections.json` and the ERB copy (every ending has its own clause). Kowalczyk's IN THIS OPERATION clauses stay: on Join she is still listed there. Netherton's SAFETYNET default doesn't print on executed or scorched; it does on the other three.
+- R2-m14: the SAFETYNET merge now puts each person's SAFETYNET conditional clauses first, then their IN THIS OPERATION conditional clauses, then the SAFETYNET default. The 25 IN THIS OPERATION clauses that could never print under that order (correction, R3-m10: two of them, Netherton's and HaX's Join clauses, did print, because `safetynet_join` has no conditionals; its defaults now say the same) are deleted from the ERB (HaX's ending clauses and `fire_held`; Netherton's joined, executed and scorched; Quintero's KO, wrong accusation and wound; Arakawa's and Malhotra's wrong accusation; Vector's and Phantom's on-team four). HaX's SAFETYNET default "Handler." is removed from `credits_sections.json` and the ERB copy (every ending has its own clause). Kowalczyk's IN THIS OPERATION clauses stay: on Join she is still listed there. Netherton's SAFETYNET default doesn't print on executed or scorched; it does on the other three.
 - R2-m17: the music and carry-over comments in the ERB now match the code.
+
+**Alignment round 3 (ink side; `ALIGNMENT_REVIEW_F_R3.md`).**
+- **R3-M1:** the St. Catherine's season line has three fixed forms by `database_outcome`:
+  - secured: "…They still aren't. That was my signature too.";
+  - both_wiped: "…They were on the map we just burned.";
+  - disclosed: "…They will be now.".
+  None of the other season lines depends on the database outcome.
+- **R3-m5:** on executed with a double-cross, the van line is "In the van, your phone lights three times. Two numbers with no name, which you don't open. Then HaX.".
+- **R3-m6:** the hearing's `the_rest` carries the `reading_told_hax` line (the same string as at 06:00).
+- **R3-m7:** on an arrest with the treatment funded, the sting is "You handed Torres to the police, and your service paid his wife's bills afterwards. Cheaper than paying them before.".
+- **R3-m9:** the Citadel's phone line is "Somewhere on a road out of Montana, your phone lights. One message from HaX. '0x00.' You don't answer.".
+- **R3-m3:** the ink and texts comments no longer call T-47 to T-56 the thread's record. Since R2-m10 they are inert (skipped on `six_open`). Deleting the mappings is the builder's call.
+- **Corrected above:** the R2-m14 note.

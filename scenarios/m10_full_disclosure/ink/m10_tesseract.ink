@@ -554,6 +554,9 @@ Dr Adrian Tesseract: That's about me. I asked about a price.
     Dr Adrian Tesseract: David Torres lay by his server rack for forty minutes. Twenty would have saved him. I have him as one, too.
 - m05_final_choice == "turn_double_agent":
     Dr Adrian Tesseract: Torres sends me nothing now. I assume he sends it to you.
+// R3-m7: on a funded arrest the credits say her treatment goes on.
+- m05_final_choice == "arrest" and m05_elena_treatment_funded:
+    Dr Adrian Tesseract: You handed Torres to the police, and your service paid his wife's bills afterwards. Cheaper than paying them before.
 - m05_final_choice == "arrest":
     Dr Adrian Tesseract: You handed Torres to the police for paying his wife's hospital bills. I count her as well.
 - m05_final_choice == "public_exposure":

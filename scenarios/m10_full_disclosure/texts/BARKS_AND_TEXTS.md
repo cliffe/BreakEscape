@@ -100,23 +100,23 @@ Voltage's print match ("I told you it'd be waiting. It was.") and the Alpha tape
 
 ## 6. 06:00 and after
 
-Alignment A2 (2026-10-22): the 06:00 rows T-47 to T-55 also play inside the scene now (`m10_six_oclock.ink` `phone_beat`, read by the narrator), T-56 inside `executed_close` and T-57 inside the Citadel's opening. These rows stay as the thread's record; their timing no longer carries the beat.
+Alignment A2 (2026-10-22): the 06:00 rows T-47 to T-55 also play inside the scene now (`m10_six_oclock.ink` `phone_beat`, read by the narrator), T-56 inside `executed_close` and T-57 inside the Citadel's opening. Since R2-m10 they are skipped on `six_open` / `citadel_open`, so T-47 to T-56 never deliver (R3-m3: inert by design, or delete them); T-57 can still toast on Join (R3-m4).
 
 Ghost's, the Recruiter's and HaX's executed texts arrive as the 06:00 scene closes: trigger `global_variable_changed:six_done` with `value === true` (sent during the scene, they land in the thread as it closes; SE §3.5, S5-6). `six_done` is never set on Join.
 
 | # | Speaker | Text | Condition (with `six_done`) | Notes |
 |---|---|---|---|---|
-| T-47 | `ghost_phone` | Neither was this. Clean exit. | `globalVars.ghost_answer === 'not_why'` | kept. **Fixed** (MC §3.2) |
-| T-48 | `ghost_phone` | Mine will be too. Clean exit. | `globalVars.ghost_answer === 'card_unsigned'` | kept. **Fixed** |
-| T-49 | `ghost_phone` | I did. They didn't know who I was. Clean exit. | `globalVars.ghost_answer === 'ask_them'` | kept. **Fixed** |
-| T-50 | `ghost_phone` | Clean. I noticed. | `globalVars.ghost_answer === 'hospitals'` | refused, the code. **Fixed** |
-| T-51 | `ghost_phone` | You checked. Most don't. | `globalVars.ghost_answer === 'trust'` | refused, the card. **Fixed** |
-| T-52 | `ghost_phone` | Left on a quiet day, as you asked. First sale I ever turned down. Clean exit. | `globalVars.ghost_sale === 'stopped' && globalVars.ghost_answer === ''` | the selling branches, talked out. New (m10 R1 M-5) |
-| T-53 | `ghost_phone` | Five buyers paid for nothing, and you have their names. I kept the money. Clean exit. | `globalVars.ghost_sale === 'bait' && globalVars.head_start_killed === 'ghost'` | the bait, resale killed at the console. New (M-5) |
-| T-54 | `ghost_phone` | Sold. You watched who bought it. I hope the names were worth it. Clean exit. | `globalVars.ghost_sale === 'bait' && globalVars.head_start_killed !== 'ghost'` | the bait, the resale went out. New (M-5) |
-| T-55 | `recruiter_phone` | I'll remember the shape of you. | `globalVars.m09_recruiter_offer === 'double_crossed'` | `delayMs: 5000`. **Fixed** (SE §3.5; `m10_recruiter_phone.ink` exists only to carry it) |
-| T-56 | `agent_0x99` | I'll be at the board. I don't know what I'll say. | `globalVars.ending === 'executed'` | `delayMs: 30000`: "later, a message" (SE §3.1). **Fixed** |
-| T-57 | `agent_0x99` | 0x00. | `global_variable_changed:ending` with `value === 'joined'` (not on `six_done`) | `delayMs: 3000`. Her designation, nothing else, unanswered (SE §3.1; FA §4.6 Join row). The credit reads "Handler. Her last message to 0x00 went unanswered." (ruling 9) |
+| T-47 | `ghost_phone` | Neither was this. Clean exit. | `globalVars.ghost_answer === 'not_why'` | kept. **Fixed** (MC §3.2) **Cut** (alignment R3-m3: the closing scene carries it; the mapping is deleted) |
+| T-48 | `ghost_phone` | Mine will be too. Clean exit. | `globalVars.ghost_answer === 'card_unsigned'` | kept. **Fixed** **Cut** (alignment R3-m3: the closing scene carries it; the mapping is deleted) |
+| T-49 | `ghost_phone` | I did. They didn't know who I was. Clean exit. | `globalVars.ghost_answer === 'ask_them'` | kept. **Fixed** **Cut** (alignment R3-m3: the closing scene carries it; the mapping is deleted) |
+| T-50 | `ghost_phone` | Clean. I noticed. | `globalVars.ghost_answer === 'hospitals'` | refused, the code. **Fixed** **Cut** (alignment R3-m3: the closing scene carries it; the mapping is deleted) |
+| T-51 | `ghost_phone` | You checked. Most don't. | `globalVars.ghost_answer === 'trust'` | refused, the card. **Fixed** **Cut** (alignment R3-m3: the closing scene carries it; the mapping is deleted) |
+| T-52 | `ghost_phone` | Left on a quiet day, as you asked. First sale I ever turned down. Clean exit. | `globalVars.ghost_sale === 'stopped' && globalVars.ghost_answer === ''` | the selling branches, talked out. New (m10 R1 M-5) **Cut** (alignment R3-m3: the closing scene carries it; the mapping is deleted) |
+| T-53 | `ghost_phone` | Five buyers paid for nothing, and you have their names. I kept the money. Clean exit. | `globalVars.ghost_sale === 'bait' && globalVars.head_start_killed === 'ghost'` | the bait, resale killed at the console. New (M-5) **Cut** (alignment R3-m3: the closing scene carries it; the mapping is deleted) |
+| T-54 | `ghost_phone` | Sold. You watched who bought it. I hope the names were worth it. Clean exit. | `globalVars.ghost_sale === 'bait' && globalVars.head_start_killed !== 'ghost'` | the bait, the resale went out. New (M-5) **Cut** (alignment R3-m3: the closing scene carries it; the mapping is deleted) |
+| T-55 | `recruiter_phone` | I'll remember the shape of you. | `globalVars.m09_recruiter_offer === 'double_crossed'` | `delayMs: 5000`. **Fixed** (SE §3.5; `m10_recruiter_phone.ink` exists only to carry it) **Cut** (alignment R3-m3: the closing scene carries it; the mapping is deleted) |
+| T-56 | `agent_0x99` | I'll be at the board. I don't know what I'll say. | `globalVars.ending === 'executed'` | `delayMs: 30000`: "later, a message" (SE §3.1). **Fixed** **Cut** (alignment R3-m3: the closing scene carries it; the mapping is deleted) |
+| T-57 | `agent_0x99` | 0x00. | `global_variable_changed:ending` with `value === 'joined'` (not on `six_done`) | `delayMs: 3000`. Her designation, nothing else, unanswered (SE §3.1; FA §4.6 Join row). The credit reads "Handler. Her last message to 0x00 went unanswered." (ruling 9) Alignment R3-m4: `skipIfGlobal: "console_choice"`, so the text never arrives; the Citadel narrates it. |
 
 ## 7. Not placed here
 

@@ -20,8 +20,8 @@ VAR cit_quiet = false
 === opening ===
 ~ citadel_open = true
 Narrator: The Citadel, an hour later. Netherton is on the wall screen from Montana. Beside him, HaX's channel is still open. Nobody has spoken on it.
-// Alignment A2: HaX's "0x00." inside the scene (T-57 stays as the record).
-Narrator: On your phone, one message from HaX. '0x00.' You don't answer.
+// Alignment A2: HaX's "0x00." inside the scene. R3-m9: placed where the player is, not at the Citadel.
+Narrator: Somewhere on a road out of Montana, your phone lights. One message from HaX. '0x00.' You don't answer.
 Director Magnus Netherton: He said it had to be one of ours. He was right, and I signed for that agent myself.
 // Alignment m5: one line on what the player betrayed, by a short fixed priority.
 {
