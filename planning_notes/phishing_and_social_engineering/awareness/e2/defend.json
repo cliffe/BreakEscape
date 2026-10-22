@@ -268,11 +268,9 @@
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "colin.mather.depot@inboxly.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "flags": ["senderTrust"],
             "perFlagNote": {
-              "senderTrust": "Colin's name on a personal inbox at inboxly.example, not tarrowby.example",
-              "secrecy_or_bypass": "'Keep it between us' and 'HR will only slow it down' ask you to skip the people who would check",
-              "urgencyCalibrated": "'Before 3' leaves no time to ring Colin and ask"
+              "senderTrust": "Colin's name on a personal inbox at inboxly.example, not tarrowby.example"
             },
             "ifTrusted": "Two people's passport scans would go to a stranger, which is enough to open accounts in their names.",
             "reportReply": "Thanks. Colin has his laptop and didn't send this. Passport copies only ever go through the onboarding system."
@@ -467,11 +465,9 @@
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "deborah.haldane.hr@quickpost-mail.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "flags": ["senderTrust"],
             "perFlagNote": {
-              "senderTrust": "Deborah's name on a personal inbox at quickpost-mail.example, not tarrowby.example",
-              "secrecy_or_bypass": "'Don't copy payroll in' cuts out the people who would check",
-              "urgencyCalibrated": "'Before 5' leaves no time to ring Deborah and ask"
+              "senderTrust": "Deborah's name on a personal inbox at quickpost-mail.example, not tarrowby.example"
             },
             "ifTrusted": "New starters' bank details would go to a stranger, who could use them to divert their first pay.",
             "reportReply": "Thanks. Deborah didn't send this. Bank details only ever go to payroll, through the onboarding system."
@@ -602,7 +598,7 @@
       "flipNoSend": "Your application didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives in a recruitment inbox, and you're the one opening it.",
       "noBlameLine": "No one is keeping score against you here. Every one of these was built to look right, and opening attachments from strangers is a recruiter's whole job. A miss here is a sign of a busy inbox, nothing more.",
       "mondayCard": "On Monday: read CVs in the viewer, and if a document asks you to enable editing or content, don't. If a CV 'doesn't come through' and sits behind a link that wants you to sign in, ask the candidate to send it as an attachment instead. Then report anything odd the way your organisation asks you to.",
-      "defendOnly": "You went straight to the inbox this time. These were built by people who know exactly what a real application looks like, and opening a CV is a recruiter's job, not a lapse. Each card shows what gave the fakes away, and why the genuine applicants were fine."
+      "defendOnly": "These were built by people who know exactly what a real application looks like, and opening a CV is a recruiter's job, not a lapse. Any you were caught out by are shown below, with what gave each one away."
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e2_cv_lures_defend), which has no OSINT, write or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",

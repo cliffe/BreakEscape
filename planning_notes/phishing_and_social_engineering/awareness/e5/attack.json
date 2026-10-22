@@ -125,7 +125,7 @@
       "title": "Quayholt single sign-on",
       "profile": "awareness",
       "tellCounter": true,
-      "linkText": "quayholt.example/sso",
+      "linkText": "quayholt-sso.example",
       "pretext": { "brandId": "quayholt", "purposeId": "expired",
                    "facts": ["sso_portal_name", "sso_migration"] },
       "fields": ["email", "password", "one_time_code"],
@@ -216,8 +216,8 @@
         "trusts": ["itdesk"],
         "story": "an IT notice that she must sign in again while single sign-on is moved to a new provider"
       },
-      "requiredFactors": ["senderTrust", "linkCredible"],
-      "advisoryFactors": ["pretextRelevant", "urgencyCalibrated", "senderAuth"],
+      "requiredFactors": ["senderTrust", "linkCredible", "pretextRelevant"],
+      "advisoryFactors": ["urgencyCalibrated", "senderAuth"],
       "factorStrings": {
         "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
         "senderTrust": { "pass": "✓ From the IT service desk she acts on", "fail": "She does not recognise this sender. IT notices reach her from the service desk address.", "redFlag": "The From line carries the service desk's real address, so it reads as the IT notice Hana trusts, but it was forged: the service desk never sent it." },

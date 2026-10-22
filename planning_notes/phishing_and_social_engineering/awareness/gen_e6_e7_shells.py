@@ -47,9 +47,21 @@ def strip_private(obj):
     return obj
 
 
+# B1 (CHECK_PARITY_AUDIT): explicit, stable reorder of each form's canonical `messages`
+# (new[i] = old[order[i]]), so forms A and B no longer share one per-slot pattern. Verified
+# (seed 20261022): phish in different ordinal slots across A/B, no phish flag-signature at the same
+# slot. Scoring is per item, so a pure reorder changes no counts.
+PERMUTE = {
+    'mobile_form_a': [3, 9, 2, 1, 6, 8, 5, 4, 7, 0],
+    'mobile_form_b': [5, 4, 9, 0, 8, 3, 1, 2, 6, 7],
+}
+
+
 def clean_set(sets, set_id, stage=None, comparison=None):
     s = strip_private(copy.deepcopy(sets[set_id]))
     s.pop('pairedWith', None)
+    if set_id in PERMUTE and isinstance(s.get('messages'), list):
+        s['messages'] = [s['messages'][i] for i in PERMUTE[set_id]]
     if stage:
         s['stage'] = stage
     if comparison:

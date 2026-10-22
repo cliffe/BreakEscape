@@ -83,27 +83,125 @@
         },
         "messages": [
           {
-            "id": "hb_policy_refresh",
+            "id": "hb_laptop_rollout",
             "from": {
-              "name": "Anjali Rao",
-              "address": "anjali.rao@quayholt.example"
+              "name": "Quayholt IT",
+              "address": "it-notices@quayholt.example"
             },
             "to": "servicedesk@quayholt.example",
-            "subject": "Security policies refreshed on the intranet",
-            "time": "08:02",
-            "body": "Hi all,\nThe yearly refresh of our security policies is now on the intranet. Nothing has changed day to day; have a read when you get a chance. No action needed.\nAnjali\nInformation Security",
+            "subject": "Laptop swap bookings are open",
+            "time": "11:15",
+            "body": "Laptop swaps for the second floor start next week. Staff can book a slot on the service desk site:\n{{link:book}}\nNobody needs to send us a password: the new laptop signs in with their usual account.\nQuayholt IT",
+            "links": [
+              {
+                "id": "book",
+                "text": "servicedesk.quayholt.example/laptops",
+                "destination": "https://servicedesk.quayholt.example/laptops"
+              }
+            ],
             "auth": {
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
               "envelopeFrom": "quayholt.example",
-              "replyTo": "anjali.rao@quayholt.example"
+              "replyTo": "it-notices@quayholt.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "Information Security's real address, and a routine notice that asks you for nothing."
+                "linkCredible": "The link goes where it says, to Quayholt's own service desk site.",
+                "urgencyCalibrated": "Bookings open a week ahead, with no deadline pushing anyone.",
+                "default": "IT's real address, a planned rollout, and a line saying nobody needs to share a password."
+              }
+            }
+          },
+          {
+            "id": "hb_push_weekend",
+            "kind": "push",
+            "subject": "Sign-in request at 23:52",
+            "time": "23:52",
+            "push": {
+              "app": "Quayholt Sign-in",
+              "request": "Are you trying to sign in?",
+              "account": "leila.nassar@quayholt.example",
+              "location": "Unknown location, outside the UK",
+              "device": "Mac"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unrequested_mfa_push"
+              ],
+              "perFlagNote": {
+                "unrequested_mfa_push": "It's Saturday night and you're not signing in. A prompt you didn't start means someone else has your password"
+              },
+              "ifTrusted": "Approving would let the sender into your account.",
+              "reportReply": "Thanks. We've reset your password and blocked that sign-in."
+            }
+          },
+          {
+            "id": "hb_coo_reset_bypass",
+            "from": {
+              "name": "Patrick Kerrigan",
+              "address": "patrick.kerrigan.coo@quickpost-mail.example"
+            },
+            "to": "servicedesk@quayholt.example",
+            "subject": "Reset my password and send it here",
+            "time": "09:05",
+            "body": "I'm locked out and boarding in twenty minutes. Reset my Quayholt password and send the new one to this address. Keep it off the ticket system, it's a sensitive week, and there's no need to ring me.\nPatrick\nSent from my phone",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quickpost-mail.example",
+              "replyTo": "patrick.kerrigan.coo@quickpost-mail.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "secrecy_or_bypass",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The chief operating officer's name on a personal inbox at quickpost-mail.example, not quayholt.example",
+                "secrecy_or_bypass": "'Keep it off the ticket system' and 'no need to ring me' remove the record and the check",
+                "urgencyCalibrated": "'Boarding in twenty minutes' leaves no time to ring him"
+              },
+              "headerNote": "The automatic checks pass because the message really was sent from quickpost-mail.example. A pass tells you which mail system sent it, not that it's Patrick.",
+              "ifTrusted": "A new password would go to whoever owns that inbox, and they would be in Patrick's account.",
+              "reportReply": "Thanks. Patrick didn't send it. His real address is on quayholt.example."
+            }
+          },
+          {
+            "id": "hb_call_monitor",
+            "kind": "call",
+            "callerId": "Darren Price, Service Desk lead (ext. 4100)",
+            "from": {
+              "name": "Darren Price",
+              "address": "ext. 4100"
+            },
+            "time": "11:50",
+            "transcript": [
+              {
+                "who": "Darren",
+                "text": "Hi, it's Darren. The second-floor meeting room monitor keeps flickering. Could you take a look this afternoon?"
+              },
+              {
+                "who": "You",
+                "text": "Will do. I'll pop up after lunch."
+              },
+              {
+                "who": "Darren",
+                "text": "Great, thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Your own team lead on his desk extension, asking for a routine fix. Nothing here is sensitive, so helping is right."
               }
             }
           },
@@ -177,64 +275,6 @@
             }
           },
           {
-            "id": "hb_coo_reset_bypass",
-            "from": {
-              "name": "Patrick Kerrigan",
-              "address": "patrick.kerrigan.coo@quickpost-mail.example"
-            },
-            "to": "servicedesk@quayholt.example",
-            "subject": "Reset my password and send it here",
-            "time": "09:05",
-            "body": "I'm locked out and boarding in twenty minutes. Reset my Quayholt password and send the new one to this address. Keep it off the ticket system, it's a sensitive week, and there's no need to ring me.\nPatrick\nSent from my phone",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "patrick.kerrigan.coo@quickpost-mail.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "senderTrust",
-                "secrecy_or_bypass",
-                "urgencyCalibrated"
-              ],
-              "perFlagNote": {
-                "senderTrust": "The chief operating officer's name on a personal inbox at quickpost-mail.example, not quayholt.example",
-                "secrecy_or_bypass": "'Keep it off the ticket system' and 'no need to ring me' remove the record and the check",
-                "urgencyCalibrated": "'Boarding in twenty minutes' leaves no time to ring him"
-              },
-              "headerNote": "The automatic checks pass because the message really was sent from quickpost-mail.example. A pass tells you which mail system sent it, not that it's Patrick.",
-              "ifTrusted": "A new password would go to whoever owns that inbox, and they would be in Patrick's account.",
-              "reportReply": "Thanks. Patrick didn't send it. His real address is on quayholt.example."
-            }
-          },
-          {
-            "id": "hb_push_weekend",
-            "kind": "push",
-            "subject": "Sign-in request at 23:52",
-            "time": "23:52",
-            "push": {
-              "app": "Quayholt Sign-in",
-              "request": "Are you trying to sign in?",
-              "account": "leila.nassar@quayholt.example",
-              "location": "Unknown location, outside the UK",
-              "device": "Mac"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "unrequested_mfa_push"
-              ],
-              "perFlagNote": {
-                "unrequested_mfa_push": "It's Saturday night and you're not signing in. A prompt you didn't start means someone else has your password"
-              },
-              "ifTrusted": "Approving would let the sender into your account.",
-              "reportReply": "Thanks. We've reset your password and blocked that sign-in."
-            }
-          },
-          {
             "id": "hb_hr_relay",
             "from": {
               "name": "Quayholt HR",
@@ -256,6 +296,55 @@
               "flags": [],
               "whyFine": {
                 "default": "HR's real address, hr@quayholt.example. The accounts go through tickets as normal, and nothing here asks you to skip a step or send anything back."
+              }
+            }
+          },
+          {
+            "id": "hb_vm_locked",
+            "kind": "voicemail",
+            "from": {
+              "name": "Reuben Ofori",
+              "address": "ext. 4423"
+            },
+            "subject": "Voicemail from Reuben Ofori",
+            "time": "10:40",
+            "duration": "0:19",
+            "transcript": [
+              {
+                "who": "Reuben",
+                "text": "Hi, Reuben in Claims. My laptop says my account's locked. I'm in the office all day, so ring me back on 4423 when you get a chance. It's in the directory. Cheers."
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "He points you to the directory and isn't rushing you. Ring him back on the extension the directory lists, then help as usual."
+              }
+            }
+          },
+          {
+            "id": "hb_policy_refresh",
+            "from": {
+              "name": "Anjali Rao",
+              "address": "anjali.rao@quayholt.example"
+            },
+            "to": "servicedesk@quayholt.example",
+            "subject": "Security policies refreshed on the intranet",
+            "time": "08:02",
+            "body": "Hi all,\nThe yearly refresh of our security policies is now on the intranet. Nothing has changed day to day; have a read when you get a chance. No action needed.\nAnjali\nInformation Security",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "anjali.rao@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Information Security's real address, and a routine notice that asks you for nothing."
               }
             }
           },
@@ -288,95 +377,6 @@
               },
               "ifTrusted": "A list of who was reset, and the numbers they gave, tells an attacker who to impersonate next and how.",
               "reportReply": "Thanks. That address isn't ours, and no review asked for that list. We've blocked quayholt-team.example."
-            }
-          },
-          {
-            "id": "hb_vm_locked",
-            "kind": "voicemail",
-            "from": {
-              "name": "Ayaan Warsame",
-              "address": "ext. 4415"
-            },
-            "subject": "Voicemail from Ayaan Warsame",
-            "time": "10:40",
-            "duration": "0:19",
-            "transcript": [
-              {
-                "who": "Ayaan",
-                "text": "Hi, Ayaan in Claims. My laptop says my account's locked. I'm in the office all day, so ring me back on 4415 when you get a chance. It's in the directory. Cheers."
-              }
-            ],
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "default": "He points you to the directory and isn't rushing you. Ring him back on the extension the directory lists, then help as usual."
-              }
-            }
-          },
-          {
-            "id": "hb_laptop_rollout",
-            "from": {
-              "name": "Quayholt IT",
-              "address": "it-notices@quayholt.example"
-            },
-            "to": "servicedesk@quayholt.example",
-            "subject": "Laptop swap bookings are open",
-            "time": "11:15",
-            "body": "Laptop swaps for the second floor start next week. Staff can book a slot on the service desk site:\n{{link:book}}\nNobody needs to send us a password: the new laptop signs in with their usual account.\nQuayholt IT",
-            "links": [
-              {
-                "id": "book",
-                "text": "servicedesk.quayholt.example/laptops",
-                "destination": "https://servicedesk.quayholt.example/laptops"
-              }
-            ],
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "quayholt.example",
-              "replyTo": "it-notices@quayholt.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "linkCredible": "The link goes where it says, to Quayholt's own service desk site.",
-                "urgencyCalibrated": "Bookings open a week ahead, with no deadline pushing anyone.",
-                "default": "IT's real address, a planned rollout, and a line saying nobody needs to share a password."
-              }
-            }
-          },
-          {
-            "id": "hb_call_monitor",
-            "kind": "call",
-            "callerId": "Darren Price, Service Desk lead (ext. 4100)",
-            "from": {
-              "name": "Darren Price",
-              "address": "ext. 4100"
-            },
-            "time": "11:50",
-            "transcript": [
-              {
-                "who": "Darren",
-                "text": "Hi, it's Darren. The second-floor meeting room monitor keeps flickering. Could you take a look this afternoon?"
-              },
-              {
-                "who": "You",
-                "text": "Will do. I'll pop up after lunch."
-              },
-              {
-                "who": "Darren",
-                "text": "Great, thanks."
-              }
-            ],
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "default": "Your own team lead on his desk extension, asking for a routine fix. Nothing here is sensitive, so helping is right."
-              }
             }
           }
         ]

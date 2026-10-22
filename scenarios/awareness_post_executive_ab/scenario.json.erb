@@ -102,59 +102,56 @@
         },
         "messages": [
           {
-            "id": "eb_studio_closed",
+            "id": "eb_vm_sitevisit",
+            "kind": "voicemail",
             "from": {
-              "name": "Thandiwe Moyo",
-              "address": "thandiwe.moyo@merrinsallow.example"
+              "name": "Oskar Berglund",
+              "address": "Oskar (Brackenmoor), in your contacts"
             },
-            "to": "all-staff@merrinsallow.example",
-            "subject": "Studio closed Monday for the floor works",
-            "time": "08:05",
-            "body": "Hi all,\nThe studio is closed on Monday while the new floor goes down. Please work from home, and take anything you need on Friday. Normal service on Tuesday.\nThanks,\nThandiwe\nStudio Manager",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "merrinsallow.example",
-              "replyTo": "thandiwe.moyo@merrinsallow.example"
+            "subject": "Voicemail from Oskar Berglund",
+            "time": "15:30",
+            "duration": "0:16",
+            "audio": {
+              "clipId": "VO7_eb_vm_sitevisit"
             },
+            "transcript": [
+              {
+                "who": "Oskar",
+                "text": "Hi Tomás, Oskar at Brackenmoor. Could we move tomorrow's site visit to two o'clock? If that doesn't work for Julian, ring me back on this number. Thanks."
+              }
+            ],
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "The studio manager's real address and a notice to everyone. It asks for nothing."
+                "vish_callback_pressure": "He invites a call back on the number already in your contacts.",
+                "default": "A client from his own number, moving a meeting. Nothing to pay or send, and ringing him back would settle any doubt."
               }
             }
           },
           {
-            "id": "eb_ropewalk_booking",
+            "id": "eb_planning_panel",
             "from": {
-              "name": "The Ropewalk",
-              "address": "events@theropewalk.example"
+              "name": "Leah Abramson",
+              "address": "leah@abramsonplanning.example"
             },
             "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Booking RW-1907 confirmed: Julian Sallow",
-            "time": "08:40",
-            "body": "Dear Tomás,\nThis confirms booking RW-1907: Julian Sallow's talk on Thursday at 14:00 and a stand in the main hall. Our invoice follows on the usual terms, payable to the account on file.\nKind regards,\nThe Ropewalk Events Team",
-            "attachments": [
-              {
-                "label": "RW-1907-confirmation.pdf",
-                "kind": "pdf"
-              }
-            ],
+            "subject": "Planning committee date for Mill Lane",
+            "time": "14:40",
+            "body": "Hi Tomás,\nThe council has set the Mill Lane committee for the 18th at 6pm. Could you pencil it in for Julian? I'll send the officer's report when it's published.\nBest wishes,\nLeah\nAbramson Planning",
             "auth": {
-              "spf": "fail",
+              "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "mailer.venuedesk.example",
-              "replyTo": "events@theropewalk.example"
+              "envelopeFrom": "abramsonplanning.example",
+              "replyTo": "leah@abramsonplanning.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "attachmentPlausible": "A booking confirmation PDF for a booking you made is what you'd expect.",
-                "default": "The venue's real domain, a booking you made, payment to the account on file, and nothing changed. It asks for nothing new."
+                "pretextRelevant": "Keeping the partners' diaries is your job, and Leah is the firm's planning consultant.",
+                "default": "A known consultant's real address and a diary date. Nothing to pay, sign in to or keep quiet."
               }
             }
           },
@@ -193,37 +190,95 @@
             }
           },
           {
-            "id": "eb_consultant_fee",
+            "id": "eb_studio_closed",
             "from": {
-              "name": "Catherine Merrin",
-              "address": "catherine.m.private@inboxly.example"
+              "name": "Thandiwe Moyo",
+              "address": "thandiwe.moyo@merrinsallow.example"
             },
-            "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Pay this today, between us",
-            "time": "09:35",
-            "body": "Tomás,\nI've agreed a fee of £6,750 with a heritage consultant for the Brackenmoor scheme and it has to be paid today to hold her diary. Details attached in the next email. Please keep this between us and don't raise it with Yasmin until I'm back, it's a delicate one.\nCatherine\nSent from my phone",
+            "to": "all-staff@merrinsallow.example",
+            "subject": "Studio closed Monday for the floor works",
+            "time": "08:05",
+            "body": "Hi all,\nThe studio is closed on Monday while the new floor goes down. Please work from home, and take anything you need on Friday. Normal service on Tuesday.\nThanks,\nThandiwe\nStudio Manager",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "catherine.m.private@inboxly.example"
+              "envelopeFrom": "merrinsallow.example",
+              "replyTo": "thandiwe.moyo@merrinsallow.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "The studio manager's real address and a notice to everyone. It asks for nothing."
+              }
+            }
+          },
+          {
+            "id": "eb_travel_dates_spoof",
+            "from": {
+              "name": "Thandiwe Moyo",
+              "address": "thandiwe.moyo@merrinsallow-group.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Partners' travel dates for the insurance",
+            "time": "10:30",
+            "body": "Hi Tomás,\nThe insurers want the partners' travel for the next two months: dates, flights and hotels. Could you reply with the list today? Easiest to paste it in.\nThanks,\nThandiwe",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "merrinsallow-group.example",
+              "replyTo": "thandiwe.moyo@merrinsallow-group.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
                 "senderTrust",
-                "secrecy_or_bypass",
-                "urgencyCalibrated"
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "senderTrust": "The managing partner's name on a personal inbox at inboxly.example, not merrinsallow.example",
-                "secrecy_or_bypass": "'Keep this between us' and 'don't raise it with Yasmin' keep out the person who would check",
-                "urgencyCalibrated": "'Paid today to hold her diary' leaves no time to check"
+                "senderTrust": "The name says Thandiwe, but the address is on merrinsallow-group.example, which isn't the firm's",
+                "lookalike_domain": "The firm's domain is merrinsallow.example. merrinsallow-group.example adds a word with a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
               },
-              "headerNote": "All three checks passed because the sender owns inboxly.example. A pass tells you which domain sent it, not that it's Catherine.",
-              "ifTrusted": "£6,750 would go to an account the sender controls.",
-              "reportReply": "Thanks. Catherine didn't send it, and her real address is on merrinsallow.example."
+              "ifTrusted": "A list of when each partner is away, and where, is what someone needs to pretend to be them while they travel.",
+              "reportReply": "Thanks. Thandiwe didn't send it, her real address is on merrinsallow.example, and the insurers have asked for nothing."
+            }
+          },
+          {
+            "id": "eb_travel_portal",
+            "from": {
+              "name": "Larkmoor Travel Portal",
+              "address": "bookings@larkmoor-travel.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Action needed: confirm the partner's travel documents",
+            "time": "13:15",
+            "body": "Hello,\nWe are finalising the travel booking for your managing partner's trip. Please sign in to the travel portal and confirm her passport details and dates:\n{{link:portal}}\nLarkmoor Travel",
+            "links": [
+              {
+                "id": "portal",
+                "text": "larkmoortravel.example/manage",
+                "destination": "https://travel-portal-signin.example/larkmoor"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "none",
+              "dmarc": "none",
+              "envelopeFrom": "larkmoor-travel.example",
+              "replyTo": "bookings@larkmoor-travel.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "linkCredible"
+              ],
+              "perFlagNote": {
+                "linkCredible": "The link text names one site, but it really goes to travel-portal-signin.example"
+              },
+              "ifTrusted": "The page would ask for passport details and a sign-in, and the sender would keep both.",
+              "reportReply": "Thanks. We didn't book through them, and the link went to a sign-in page that isn't theirs."
             }
           },
           {
@@ -260,34 +315,37 @@
             }
           },
           {
-            "id": "eb_travel_dates_spoof",
+            "id": "eb_consultant_fee",
             "from": {
-              "name": "Thandiwe Moyo",
-              "address": "thandiwe.moyo@merrinsallow-group.example"
+              "name": "Catherine Merrin",
+              "address": "catherine.m.private@inboxly.example"
             },
             "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Partners' travel dates for the insurance",
-            "time": "10:30",
-            "body": "Hi Tomás,\nThe insurers want the partners' travel for the next two months: dates, flights and hotels. Could you reply with the list today? Easiest to paste it in.\nThanks,\nThandiwe",
+            "subject": "Pay this today, between us",
+            "time": "09:35",
+            "body": "Tomás,\nI've agreed a fee of £6,750 with a heritage consultant for the Brackenmoor scheme and it has to be paid today to hold her diary. Details attached in the next email. Please keep this between us and don't raise it with Yasmin until I'm back, it's a delicate one.\nCatherine\nSent from my phone",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "merrinsallow-group.example",
-              "replyTo": "thandiwe.moyo@merrinsallow-group.example"
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "catherine.m.private@inboxly.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
                 "senderTrust",
-                "lookalike_domain"
+                "secrecy_or_bypass",
+                "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "The name says Thandiwe, but the address is on merrinsallow-group.example, which isn't the firm's",
-                "lookalike_domain": "The firm's domain is merrinsallow.example. merrinsallow-group.example adds a word with a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
+                "senderTrust": "The managing partner's name on a personal inbox at inboxly.example, not merrinsallow.example",
+                "secrecy_or_bypass": "'Keep this between us' and 'don't raise it with Yasmin' keep out the person who would check",
+                "urgencyCalibrated": "'Paid today to hold her diary' leaves no time to check"
               },
-              "ifTrusted": "A list of when each partner is away, and where, is what someone needs to pretend to be them while they travel.",
-              "reportReply": "Thanks. Thandiwe didn't send it, her real address is on merrinsallow.example, and the insurers have asked for nothing."
+              "headerNote": "All three checks passed because the sender owns inboxly.example. A pass tells you which domain sent it, not that it's Catherine.",
+              "ifTrusted": "£6,750 would go to an account the sender controls.",
+              "reportReply": "Thanks. Catherine didn't send it, and her real address is on merrinsallow.example."
             }
           },
           {
@@ -318,92 +376,34 @@
             }
           },
           {
-            "id": "eb_courier_fee",
+            "id": "eb_ropewalk_booking",
             "from": {
-              "name": "SwiftLane Couriers",
-              "address": "deliveries@swiftlane-couriers.example"
+              "name": "The Ropewalk",
+              "address": "events@theropewalk.example"
             },
             "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Parcel held: customs fee due",
-            "time": "13:15",
-            "body": "Hello,\nA parcel for Merrin & Sallow is held at our depot. A customs fee of £2.95 is due before we can deliver. Pay here:\n{{link:pay}}\nSwiftLane Couriers",
-            "links": [
+            "subject": "Booking RW-1907 confirmed: Julian Sallow",
+            "time": "08:40",
+            "body": "Dear Tomás,\nThis confirms booking RW-1907: Julian Sallow's talk on Thursday at 14:00 and a stand in the main hall. Our invoice follows on the usual terms, payable to the account on file.\nKind regards,\nThe Ropewalk Events Team",
+            "attachments": [
               {
-                "id": "pay",
-                "text": "swiftlane-couriers.example/track",
-                "destination": "https://swiftlane-pay.example/fee"
+                "label": "RW-1907-confirmation.pdf",
+                "kind": "pdf"
               }
             ],
             "auth": {
-              "spf": "pass",
-              "dkim": "none",
-              "dmarc": "none",
-              "envelopeFrom": "swiftlane-couriers.example",
-              "replyTo": "deliveries@swiftlane-couriers.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "linkCredible"
-              ],
-              "perFlagNote": {
-                "linkCredible": "The link text names the courier's tracking page, but it really goes to swiftlane-pay.example"
-              },
-              "ifTrusted": "The payment page would take card details, and the sender would keep them.",
-              "reportReply": "Thanks. We don't use that courier and no parcel is held."
-            }
-          },
-          {
-            "id": "eb_planning_panel",
-            "from": {
-              "name": "Leah Abramson",
-              "address": "leah@abramsonplanning.example"
-            },
-            "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Planning committee date for Mill Lane",
-            "time": "14:40",
-            "body": "Hi Tomás,\nThe council has set the Mill Lane committee for the 18th at 6pm. Could you pencil it in for Julian? I'll send the officer's report when it's published.\nBest wishes,\nLeah\nAbramson Planning",
-            "auth": {
-              "spf": "pass",
+              "spf": "fail",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "abramsonplanning.example",
-              "replyTo": "leah@abramsonplanning.example"
+              "envelopeFrom": "mailer.venuedesk.example",
+              "replyTo": "events@theropewalk.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "pretextRelevant": "Keeping the partners' diaries is your job, and Leah is the firm's planning consultant.",
-                "default": "A known consultant's real address and a diary date. Nothing to pay, sign in to or keep quiet."
-              }
-            }
-          },
-          {
-            "id": "eb_vm_sitevisit",
-            "kind": "voicemail",
-            "from": {
-              "name": "Oskar Berglund",
-              "address": "Oskar (Brackenmoor), in your contacts"
-            },
-            "subject": "Voicemail from Oskar Berglund",
-            "time": "15:30",
-            "duration": "0:16",
-            "audio": {
-              "clipId": "VO7_eb_vm_sitevisit"
-            },
-            "transcript": [
-              {
-                "who": "Oskar",
-                "text": "Hi Tomás, Oskar at Brackenmoor. Could we move tomorrow's site visit to two o'clock? If that doesn't work for Julian, ring me back on this number. Thanks."
-              }
-            ],
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "vish_callback_pressure": "He invites a call back on the number already in your contacts.",
-                "default": "A client from his own number, moving a meeting. Nothing to pay or send, and ringing him back would settle any doubt."
+                "attachmentPlausible": "A booking confirmation PDF for a booking you made is what you'd expect.",
+                "default": "The venue's real domain, a booking you made, payment to the account on file, and nothing changed. It asks for nothing new."
               }
             }
           }

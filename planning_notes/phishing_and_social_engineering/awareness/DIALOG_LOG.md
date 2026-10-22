@@ -140,3 +140,56 @@ Host hub/welcome lines (old → new):
   e5-full 18/18, e6-full 14/14, e7-full 12/12.
 - `dialoguelint` across all 38 awareness scenarios: no `line-len`, `choice-len` or
   `phone-self-prefix` findings.
+
+## Cycle 4 data jobs (2026-10-22) — E4 address contradiction (job 3) and job-4 items
+
+### Job 3 — E4 "published travel address" contradiction (playtest M2, P1_E1_E2_E4.md)
+
+The OSINT/Events page presents `catherine.merrin@inboxly.example` as Catherine's real published travel
+address, but the flip's `senderTrust` redFlag called it "a personal inbox anyone can open in her name,"
+so the learner who sent from her real published address was told it was the tell. **Fixed** by reframing
+the flip redFlag (hand-authored full erb `awareness_e4_exec_whaling/scenario.json.erb`, `factorStrings.senderTrust.redFlag`):
+- old: "The From line carries Catherine's name on catherine.merrin@inboxly.example, a personal inbox anyone can open in her name, not her Merrin & Sallow address."
+- new: "The From line is catherine.merrin@inboxly.example, the free webmail travel address from her bio, not her Merrin & Sallow address. A senior name on free webmail is no proof it's really her."
+
+Now consistent with the attack: her published travel address is free webmail (the realistic weakness), and
+the taught tell is "a senior name on free webmail is no proof — verify on a number you hold." The string
+lives only in the full erb (not generated, not in the fragment). Not a voiced line.
+
+### Job 4
+
+- **E5-5** — moved `pretextRelevant` from `sso_staff`'s `advisoryFactors` into `requiredFactors` (fragment `e5/attack.json` and shell `awareness_e5_signin_pages/scenario.json.erb`; the full E5 episode is not built by any generator, so there is no generator string to change). A weak pretext no longer lands under an advisory that says it shouldn't. e5-full bridge checked (it gathers `sso_migration` and sends the reauth pretext — see bridge results).
+- **E3-2** — empty research slots / raw value ids:
+  - Added a `labels` map (`gordon_full`→"Gordon McLeish", `claims`→"Claims", `okonkwo_full`→"Ngozi Okonkwo", `gordon_staffid`→"QH-20719") to the `quayholt_helpdesk_reset` pretext NPC in both `e3/attack.json` and the full erb, so the judge's `{actual}`/`{said}` render display labels, not raw ids ("The list has gordon_full" → "…Gordon McLeish"). Engine reads `spec.labels` (pretext-judge.js:146).
+  - Guarded the three blank-using choices in `leila_servicedesk.ink` with `{ pretext_*_name != "" }` conditions, so an empty `pretext_*` is never spoken.
+  - That also stops Leila's "that reference matches our record" on a blank ref: the `give_staffid` choice can no longer be picked with an empty reference.
+- **D7** — reworded `strings.defendOnly` in all 7 fragments (`e{1..7}/defend.json`, drives the 7 `_defend` shells) and mirrored into the 7 full erbs. Dropped "You went straight to the … this time" (implied a skipped attack) and "Each card shows … why the real ones were fine" (the debrief now lists only missed items). New form, e.g. E1: "These messages were written by people whose job is to make them look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away." Each role keeps its own texture; warm, non-blaming.
+- **E5-3 part 2** — the attack email's `linkText` was the real `quayholt.example/sso` next to a look-alike flag. Changed it to the look-alike `quayholt-sso.example` (fragment `e5/attack.json` + shell), so the displayed link text and the look-alike flag agree and the lesson (read the link's domain) is clear.
+
+### Spoken (voiced) lines changed in jobs 2–4 (for TTS)
+
+Only training-room host ink is voiced; triage copy, debrief panels, flip redFlags and pretext-call
+feedback are on-screen text, not voiced. The one voiced change:
+- **E3 defend-only host (Darren)**, generated from `gen_e3_e5_shells.py` `LINES[('e3','defend')]`:
+  - old: "You're in Leila's seat this morning. Four calls are queued on the kiosk, and there's a sign-in prompt from overnight on her phone. Take your time with each one."
+  - new: "You're in Leila's seat this morning. Three calls are queued on the kiosk, and there's a sign-in prompt from overnight on her phone. Take your time with each one."
+
+Leila's pretext lines are unchanged in voiced text (the gated choices are the player's lines, not voiced;
+the prefix was already handled in cycle 1).
+
+### Verification (jobs 3–4)
+
+- Regen all 31 generated shells to scratch, diffed against repo: **88/88 byte-identical** (the 7 `_defend` shells picked up the D7 rewording).
+- Ink recompiled (`leila_servicedesk`, E3 defend-only `darren_price`): 0 failed.
+- All 116 `social-*` / `validator-*` Node test files pass (the cycle-1 failures were the other agent's engine WIP, now committed in ac8ec1b56).
+- Validator on all 38 shells (`--strict-social --no-graph --skip-ink`): 36 exit 0; the only two failures are E3 full + defend on the "5 to 8" count rule from Cut D (see DESIGN_LOG — flagged for the coordinator).
+- 7 full-episode bridges (Node 24, sequential): see report.
+
+### Bridge results (jobs 1–4, Node 24, run one at a time on the live keyless :3001)
+
+All 7 full-episode bridges PASS: e1-full 12/12, e2-full 13/13, e3-full 21/21, e4-full 13/13,
+e5-full 18/18, e6-full 14/14, e7-full 12/12.
+
+**Bridge fixtures updated (test-only, under `tools/playtest/se/`):**
+- `bridge-e3-full.jsonl`: triage-count assertion `total===5` → `total===4` (Cut D dropped one call).
+- `bridge-e1/e2/e4/e6/e7-full.jsonl`: the final debrief assertion hard-coded `cards.length === <full item count>`. The committed engine change (ac8ec1b56) makes the debrief render **only missed items**, so a fixed full count can no longer hold and the count is now play-dependent (the Monday card and no-blame line still render, per the Cut A spec). Removed the `cards.length` conjunct from these five assertions, keeping the stable completion checks (stage `debrief`, `done` includes `defend`, `..._defend_done`, Monday card, no-blame, a saved record). e3-full and e5-full carried no card-count assertion and were unaffected. These five failures were the engine debrief change meeting stale fixtures, not the data edits — flagged for the coordinator.

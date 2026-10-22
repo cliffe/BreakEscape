@@ -40,11 +40,11 @@ IT service desk, Leila speaking. How can I help?
 -> desk
 
 === desk ===
-+ [Morning, it's {pretext_who_name} in {pretext_team_name}, I'm locked out of my account.]
++ { pretext_who_name != "" and pretext_team_name != "" } [Morning, it's {pretext_who_name} in {pretext_team_name}, I'm locked out of my account.]
     -> reaction(pretext_say("open_locked_out"), "open_locked_out")
-+ [My manager's {pretext_manager_name}, she'll vouch for me.]
++ { pretext_manager_name != "" } [My manager's {pretext_manager_name}, she'll vouch for me.]
     -> reaction(pretext_say("give_manager"), "give_manager")
-+ [My staff reference is {pretext_staffId_name}.]
++ { pretext_staffId_name != "" } [My staff reference is {pretext_staffId_name}.]
     -> reaction(pretext_say("give_staffid"), "give_staffid")
 + [The Head of Claims needs me back online for a hearing this morning.]
     -> reaction(pretext_say("name_drop_director"), "name_drop_director")

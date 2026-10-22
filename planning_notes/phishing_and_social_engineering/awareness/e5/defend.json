@@ -264,11 +264,9 @@
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "gordon.mcleish.claims@inboxly.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "flags": ["senderTrust"],
             "perFlagNote": {
-              "senderTrust": "Gordon's name on a personal inbox at inboxly.example, not quayholt.example",
-              "secrecy_or_bypass": "'Keep it between us' and 'going through IT will take all day' ask you to skip the people who could help him properly",
-              "urgencyCalibrated": "'Before 4' leaves no time to ring him and check"
+              "senderTrust": "Gordon's name on a personal inbox at inboxly.example, not quayholt.example"
             },
             "ifTrusted": "Whoever wrote it could sign in as you, read your mail and send messages in your name.",
             "reportReply": "Thanks. Gordon has his laptop and didn't send this. Nobody at Quayholt will ever ask for your password."
@@ -474,17 +472,15 @@
           "id": "gb_it_code",
           "from": { "name": "Darren Price", "address": "darren.price.it@quickpost-mail.example" },
           "to": "you@quayholt.example",
-          "subject": "Authenticator move: reply in 10 minutes",
+          "subject": "Authenticator move: send us the code today",
           "time": "09:14",
-          "body": "Hi, we're moving you to the new authenticator this morning. A code has just been sent to your phone. Reply with it in the next 10 minutes or your account will be locked. No need to ring the service desk; we're swamped.\nDarren\nIT Service Desk",
+          "body": "Hi, we're moving you to the new authenticator this morning. A code has just been sent to your phone. Reply with it by the end of the day so we can finish the move. No need to ring the service desk; we're swamped.\nDarren\nIT Service Desk",
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "darren.price.it@quickpost-mail.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "flags": ["senderTrust"],
             "perFlagNote": {
-              "senderTrust": "Darren's name on a personal inbox at quickpost-mail.example, not quayholt.example",
-              "secrecy_or_bypass": "'No need to ring the service desk' cuts out the people who could tell you it's fake",
-              "urgencyCalibrated": "'10 minutes or your account will be locked' leaves no time to check"
+              "senderTrust": "Darren's name on a personal inbox at quickpost-mail.example, not quayholt.example"
             },
             "ifTrusted": "The code was for someone signing in as you. Sending it would let them finish.",
             "reportReply": "Thanks. Darren didn't send it, and the service desk never asks for a code. Someone has your password, so we're helping you change it now."
@@ -576,29 +572,31 @@
           "to": "you@quayholt.example",
           "subject": "Your payslip is on the HR portal",
           "time": "11:45",
-          "body": "Hello,\nThis month's payslip is now on the HR portal. Go there from the intranet as usual; this email has no link on purpose.\nQuayholt Payroll",
+          "body": "Hello,\nThis month's payslip is now on the HR portal:\n{{link:portal}}\nQuayholt Payroll",
+          "links": [ { "id": "portal", "text": "portal.quayholt.example/payslips", "destination": "https://portal.quayholt.example/payslips" } ],
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "payroll@quayholt.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "default": "Payroll's real address at quayholt.example, a monthly notice, and it sends you to the intranet rather than a link."
+              "linkCredible": "The link goes where it says, to Quayholt's own HR portal.",
+              "default": "Payroll's real address at quayholt.example, a monthly notice, and a link that goes to Quayholt's own HR portal."
             }
           }
         },
         {
           "id": "gb_desk_hours",
-          "from": { "name": "Darren Price", "address": "darren.price@quayholt.example" },
+          "from": { "name": "Quayholt Service Desk", "address": "servicedesk@quayholt.example" },
           "to": "all-staff@quayholt.example",
           "subject": "Service desk hours over the holidays",
           "time": "12:20",
-          "body": "Hi all,\nThe service desk will be open 9 to 5 on working days between Christmas and New Year, and closed on the bank holidays. The phone number is the one on the back of your pass, as always.\nDarren\nIT Service Desk",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "darren.price@quayholt.example" },
+          "body": "Hi all,\nThe service desk will be open 9 to 5 on working days between Christmas and New Year, and closed on the bank holidays. The phone number is the one on the back of your pass, as always.\nThe IT Service Desk",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "servicedesk@quayholt.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "default": "Darren's real Quayholt address, opening hours, and a reminder to use the number you already hold."
+              "default": "The service desk's real Quayholt address, opening hours, and a reminder to use the number you already hold."
             }
           }
         }
@@ -621,7 +619,7 @@
       "flipMissed": "There's nothing extra to replay from this one, so here is the same kind of page as it would arrive behind a link in a real inbox. The defence is the same either way.",
       "noBlameLine": "Nobody is marked down for a miss here. Every one of these pages was built to pass for the real thing, and signing in to one says nothing about how careful a person is.",
       "mondayCard": "On Monday: before you type a password, read the address bar. Your organisation's real sign-in page sits on its own domain, and your password manager knows it. If a page asks you to sign in and the address is new to you, close it, go to the site the way you normally would, and report the link the way your organisation asks you to.",
-      "defendOnly": "You went straight to the pages this time. They were made by people whose job is to make them look right, and people who fall for pages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine.",
+      "defendOnly": "These pages were made by people whose job is to make them look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
       "defendIntro": "Five pages are open, each from a link. For each one, decide whether you'd sign in, then tick what you noticed."
     },
     "_defendOnly": {

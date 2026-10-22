@@ -44,9 +44,22 @@ def strip_private(obj):
     return {k: v for k, v in obj.items() if not k.startswith('_')}
 
 
+# B1 (CHECK_PARITY_AUDIT): break the fixed per-slot pattern between forms A and B. Each list is an
+# explicit, stable reorder of the fragment's canonical `messages` order (new[i] = old[order[i]]), so a
+# learner who takes one form cannot answer the other from slot position and flag shape. Verified
+# (seed 20261022): the phish land in different ordinal slots in A vs B and no phish flag-signature
+# sits at the same slot across the two forms. Scoring is per item, so a pure reorder changes no counts.
+PERMUTE = {
+    'finance_form_a': [6, 5, 9, 0, 3, 4, 7, 1, 8, 2],
+    'finance_form_b': [8, 6, 4, 1, 7, 0, 3, 9, 2, 5],
+}
+
+
 def clean_set(set_id, stage=None, comparison=None):
     s = strip_private(copy.deepcopy(SETS[set_id]))
     s.pop('pairedWith', None)
+    if set_id in PERMUTE and isinstance(s.get('messages'), list):
+        s['messages'] = [s['messages'][i] for i in PERMUTE[set_id]]
     if stage:
         s['stage'] = stage
     if comparison:

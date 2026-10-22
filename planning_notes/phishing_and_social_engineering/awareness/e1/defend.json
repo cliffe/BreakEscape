@@ -454,10 +454,10 @@
           "truth": {
             "isPhish": true,
             "flags": [
-              "linkCredible"
+              "senderTrust"
             ],
             "perFlagNote": {
-              "linkCredible": "The link text says merrowlogistics.example, but it goes to docshare-login.example"
+              "senderTrust": "Brightwell doesn't use Merrow Logistics, so an invoice-share from a supplier you've never dealt with is the tell, whatever the link looks like"
             },
             "ifTrusted": "The link opens a sign-in page that collects your email password.",
             "reportReply": "Thanks. We don't use Merrow, and the link went to a sign-in page we've now blocked."
@@ -795,10 +795,10 @@
           "truth": {
             "isPhish": true,
             "flags": [
-              "linkCredible"
+              "senderTrust"
             ],
             "perFlagNote": {
-              "linkCredible": "The link text says fernhillbusinessbank.example, but it goes to fernhill-secure-login.example"
+              "senderTrust": "Brightwell doesn't bank with Fernhill, so an alert from a bank that isn't yours is the tell, whatever the link looks like"
             },
             "ifTrusted": "The link opens a sign-in page that collects banking passwords.",
             "reportReply": "Thanks. Brightwell doesn't bank with Fernhill, and we've blocked the sign-in page."
@@ -890,7 +890,7 @@
       "flipMissed": "There's nothing extra to replay from this one, so here is the same kind of message as it would arrive in a real inbox. The defence is the same either way.",
       "noBlameLine": "Nobody is marked down for a miss here. Every one of these was written by someone whose job is making it look right, and anyone working at pace can act on one.",
       "mondayCard": "On Monday: if an email asks you to change bank details or to pay in a hurry, don't reply and don't use any number in the email. Ring the person on a number you already hold, then report the email the way your organisation asks you to.",
-      "defendOnly": "You went straight to the inbox this time. These messages were written by people whose job is to make them look right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine."
+      "defendOnly": "These messages were written by people whose job is to make them look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away."
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e1_invoice_fraud_defend), which has no OSINT, write or flip stage. P7-J copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are simply never shown).",

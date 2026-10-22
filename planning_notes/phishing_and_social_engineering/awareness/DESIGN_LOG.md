@@ -162,3 +162,41 @@ Fixes the three findings in `DESIGN_REVIEW_C3.md` — two latent generator drift
 
 - Playtest-round: E3/E5 13-minute timing (C1 M11/m25), E7 urgency-meter wording / E6 calm route (C2-M2), E2's careful-send flip (C2-M1).
 - Logged engine/product: m23 (chip hide), m26 (Monday-card slot), E7 defend button copy. Art: C2-m24 (Leila avatar).
+
+## Cycle 4 data jobs (2026-10-22) — check-form parity (CHECK_PARITY_AUDIT) and E3 timing trims (TIMING_TRIM_PLAN)
+
+Orchestrator-tasked data jobs. All check-form content edits live in the fragments (`e{1..6}/defend.json`);
+the 24 check shells were regenerated and copied in, and a fresh regen is byte-identical.
+
+### Job 1 — check-form parity
+
+| # | Sev | Finding | Outcome |
+|---|-----|---------|---------|
+| B1 | Blocker | A and B shared one fixed slot order and per-slot flag signature in all six roles | **Fixed.** Added an explicit, stable `PERMUTE` reorder of each form's `messages` to every generator (seed-verified lists; new[i]=old[order[i]]). For all six roles the phish now land in different ordinal slots in A vs B and no phish flag-signature sits at the same slot. Scoring is per item, so counts/difficulty/multiset are unchanged; verified on the shells (10/10 items, matched phish count and flag multiset per role). |
+| M1 | Major | Executive pos-4 gift-card trope (A) vs plausible consultant fee (B) | **Fixed.** Rewrote `ea_gift_cards` → `ea_venue_deposit` (a plausible £4,200 venue deposit, keep-it-quiet, pay-before-11) to match B's register; same three flags. |
+| M2 | Major | Executive pos-8 role-plausible speaker portal (A) vs stock courier-fee smish (B) | **Fixed.** Rewrote `eb_courier_fee` → `eb_travel_portal` (a role-plausible travel-document confirm-your-sign-in link) mirroring `ea_speaker_portal`; same `linkCredible`. |
+| M3 | Major | general/HR/mobile pos-4 BEC scored `secrecy_or_bypass`+`urgencyCalibrated`, not taught by E5/E2/E6 | **Fixed (orchestrator decision).** Dropped both flags from `ga_manager_signin`, `gb_it_code`, `ha_passport_scans`, `hb_bank_details`, `ma_colin_personal_number`, `mb_fatima_vouchers`, leaving `senderTrust` (taught via the seven factors); removed the now-unscored perFlagNotes. Executive (E4) keeps secrecy/urgency — its episode teaches them. |
+| m4 | Minor | Finance pos-8 scored `linkCredible`, not rehearsed by E1 ("no link") | **Fixed (orchestrator decision).** Dropped `linkCredible` from `fa_invoice_share`/`fb_bank_portal`; re-scored as `senderTrust` (an unknown supplier/bank E1's lesson covers), perFlagNote reworded. No item left tell-less. |
+| m1 | Minor | general pos-4 B urgency ("10 minutes or locked") sharper than A | **Fixed.** Softened `gb_it_code` to "send us the code today / by the end of the day". |
+| m2 | Minor | general pos-9 genuine link in A, none in B | **Fixed.** Gave `gb_payslip_notice` a genuine HR-portal link so both forms evaluate one genuine link at pos 9. |
+| m7 | Minor | A named sender both fraudster and genuine | **Part fixed, part by decision.** Finance Ravinder Sandhu kept as fraudster-in-A / genuine-in-B (orchestrator decision — a spoofed name doesn't make the real person always suspect). General Darren Price was phish (B pos4) AND genuine (B pos10) in the *same* form; repointed the genuine `gb_desk_hours` to the "Quayholt Service Desk" team address. |
+| m8 | Minor | Autofill a perfect page predictor (general) | **Deferred.** Equal across A and B (audit: "parity is not harmed"); a discrimination note, not a parity fix. |
+| m3 | Minor | Finance pos-4 CEO wire (A) vs voucher (B) register | **Accepted.** Both textbook; permutation also removes the "pos-4 is always the BEC" cue. |
+| m5 | Minor | Helpdesk pos-4 disable-MFA (A) vs reset-and-send (B) | **Accepted.** Both authority/secrecy bypass asks within tolerance; E3 teaches them. |
+| m6 | Minor | Mobile pos-4 vague favour (A) vs voucher (B) | **Accepted.** After the M3 flag drop both score only `senderTrust`; residual directness gap is minor and the permutation breaks the slot cue. |
+| m9 | Minor | Helpdesk Ayaan Warsame/ext 4415 reused genuine in both forms | **Fixed.** Form-B voicemail re-cast as Reuben Ofori, ext. 4423 (unique). |
+
+### Job 2 — E3 timing trims (data cuts only; Cuts A and C are engine, done by another agent)
+
+| Cut | Outcome |
+|-----|---------|
+| D | **Done.** Dropped `e3_call_new_starter` (Chen Jiayi); E3 defend set 5→4 items. Rippled every "four calls" count to "three" across the generator (defend-only brief/endGoal/ending/kiosk/host line + mission desc), the fragment (set brief, scopeNote, `_defendOnly`, defendIntro, authoring notes) and the full erb; "same four facts" (facts, not calls) left intact. Cast notes updated (fragment `_brandAdditions`, BRAND_SET.md). **Bridge updated:** `bridge-e3-full.jsonl` assertion `total===5` → `total===4`. |
+| E | **Done.** Trimmed once-read feedback keeping every tell: `e3_call_gordon_impostor` reportReply (dropped the conference-photo sentence) and its `vish_callback_pressure` perFlagNote (two clauses → one), and the push reportReply. Fragment + full erb. |
+| F | **Done.** Tightened `strings.brief` (~88→~62 words, and fixed the call count), `flipDefenderLine` (73→~53) and `flipMissed` (shortened; it near-duplicated `flipNoSend`). Fragment + full erb. |
+
+### Verification (jobs 1–2)
+
+- Regen all 31 generated shells to scratch, diffed every `scenario.json.erb`/`mission.json`/generated `.ink` against the repo: **88/88 byte-identical**.
+- Ink recompiled (E3 full + E3 defend-only): 0 failed.
+- A/B parity re-checked on the shells: 10/10 items, matched phish counts and flag multiset per role; phish slots differ A↔B for all six roles.
+- **Open item for the coordinator:** Cut D (4 items, an explicit orchestrator decision) trips the validator's `--strict-social` rule "an episode's defend set has 5 to 8" on `awareness_e3_helpdesk_reset` and `_defend` (the only two of 38 that fail; all others exit 0). `scripts/validate_scenario.rb` is a shared file another agent is mid-edit on, and relaxing the range is an engine/tooling change — not edited here. The coordinator should decide: relax the social-lint lower bound to 4 for awareness episodes, or revert Cut D.

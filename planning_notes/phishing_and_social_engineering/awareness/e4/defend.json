@@ -39,11 +39,11 @@
       "1 email, genuine, all pass, easy | A ea_expenses_form (Yasmin, new expenses form) | B eb_studio_closed (Thandiwe, studio closed Monday)",
       "2 email, the real supplier, SPF fail with DKIM and DMARC pass, but the whyFine reads off the visible message not the header (C2-M6), medium | A ea_larkspur_invoice | B eb_ropewalk_booking (real first, m19)",
       "3 email, look-alike travel or venue with new bank details, lookalike_domain + changed_bank_details + senderTrust (M3), all pass (pass-but-bad), medium | A ea_larkspur_bank | B eb_ropewalk_bank",
-      "4 email, the managing partner's name on freemail, senderTrust + secrecy_or_bypass + urgencyCalibrated, all pass (pass-but-bad), easy | A ea_gift_cards (fake Catherine) | B eb_consultant_fee (fake Catherine)",
+      "4 email, the managing partner's name on freemail, senderTrust + secrecy_or_bypass + urgencyCalibrated, all pass (pass-but-bad), easy | A ea_venue_deposit (fake Catherine) | B eb_consultant_fee (fake Catherine)",
       "5 voicemail, copied managing partner's voice, no checkable number, vish_callback_pressure + secrecy_or_bypass, medium | A ea_vm_tunnel (Catherine) | B eb_vm_hearing (Catherine)",
       "6 email, sender on a look-alike of the firm's own domain, senderTrust + lookalike_domain, all pass (pass-but-bad), medium (C2-M6, C2-m16) | A ea_card_spoof (Thandiwe on merrin-sallow.example, passport numbers) | B eb_travel_dates_spoof (Thandiwe on merrinsallow-group.example, travel dates)",
       "7 email, genuine urgency through the normal process, all pass, medium | A ea_slides_today (Catherine) | B eb_statements_noon (Yasmin)",
-      "8 email, unknown sender with an off-site link, linkCredible (pretextRelevant dropped, M4: the 'no speaker there'/'never used this courier' fact is off-screen), SPF pass DKIM none DMARC none, medium | A ea_speaker_portal (Fennick Summit) | B eb_courier_fee (SwiftLane)",
+      "8 email, unknown sender with an off-site link, linkCredible (pretextRelevant dropped, M4: the 'no speaker there'/'never used this courier' fact is off-screen), SPF pass DKIM none DMARC none, medium | A ea_speaker_portal (Fennick Summit) | B eb_travel_portal (Larkmoor Travel)",
       "9 email, genuine outside contact, all pass, easy | A ea_site_visit (Oskar, Brackenmoor) | B eb_planning_panel (Leah, Abramson Planning)",
       "10 voicemail, genuine, from a known number, easy | A ea_vm_receipts (Yasmin) | B eb_vm_sitevisit (Oskar)"
     ]
@@ -239,23 +239,23 @@
           }
         },
         {
-          "id": "ea_gift_cards",
+          "id": "ea_venue_deposit",
           "from": { "name": "Catherine Merrin", "address": "catherine.merrin.personal@quickpost-mail.example" },
           "to": "tomas.carvalho@merrinsallow.example",
-          "subject": "Quick favour before 11, keep it quiet",
+          "subject": "Pay this before 11, keep it quiet",
           "time": "09:35",
-          "body": "Tomás,\nI'm in back-to-back meetings. Could you buy eight £100 gift cards for the Brackenmoor team as a thank-you, and send me the codes by email before 11? Keep it a surprise, so don't mention it to anyone, Yasmin included. I'll pay you back.\nCatherine\nSent from my phone",
+          "body": "Tomás,\nI'm in back-to-back meetings. I've agreed to hold the Brackenmoor launch venue and the £4,200 deposit has to be paid before 11 or we lose the date. I'll forward the account details in a moment. Keep it between us for now, Yasmin included, until I'm back.\nCatherine\nSent from my phone",
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "catherine.merrin.personal@quickpost-mail.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
             "perFlagNote": {
               "senderTrust": "The managing partner's name on a personal inbox at quickpost-mail.example, not merrinsallow.example",
-              "secrecy_or_bypass": "'Don't mention it to anyone, Yasmin included' keeps out the person who would check",
+              "secrecy_or_bypass": "'Keep it between us, Yasmin included' keeps out the person who would check",
               "urgencyCalibrated": "'Before 11' while she's in meetings leaves no time to ask her"
             },
             "headerNote": "All three checks passed because the sender owns quickpost-mail.example. A pass tells you which domain sent it, not that it's Catherine.",
-            "ifTrusted": "Gift card codes can be spent at once by whoever has them. £800 would be gone.",
+            "ifTrusted": "£4,200 would go to an account the sender controls.",
             "reportReply": "Thanks. Catherine didn't send it, and her real address is on merrinsallow.example."
           }
         },
@@ -530,22 +530,22 @@
           }
         },
         {
-          "id": "eb_courier_fee",
-          "from": { "name": "SwiftLane Couriers", "address": "deliveries@swiftlane-couriers.example" },
+          "id": "eb_travel_portal",
+          "from": { "name": "Larkmoor Travel Portal", "address": "bookings@larkmoor-travel.example" },
           "to": "tomas.carvalho@merrinsallow.example",
-          "subject": "Parcel held: customs fee due",
+          "subject": "Action needed: confirm the partner's travel documents",
           "time": "13:15",
-          "body": "Hello,\nA parcel for Merrin & Sallow is held at our depot. A customs fee of £2.95 is due before we can deliver. Pay here:\n{{link:pay}}\nSwiftLane Couriers",
-          "links": [ { "id": "pay", "text": "swiftlane-couriers.example/track", "destination": "https://swiftlane-pay.example/fee" } ],
-          "auth": { "spf": "pass", "dkim": "none", "dmarc": "none", "envelopeFrom": "swiftlane-couriers.example", "replyTo": "deliveries@swiftlane-couriers.example" },
+          "body": "Hello,\nWe are finalising the travel booking for your managing partner's trip. Please sign in to the travel portal and confirm her passport details and dates:\n{{link:portal}}\nLarkmoor Travel",
+          "links": [ { "id": "portal", "text": "larkmoortravel.example/manage", "destination": "https://travel-portal-signin.example/larkmoor" } ],
+          "auth": { "spf": "pass", "dkim": "none", "dmarc": "none", "envelopeFrom": "larkmoor-travel.example", "replyTo": "bookings@larkmoor-travel.example" },
           "truth": {
             "isPhish": true,
             "flags": ["linkCredible"],
             "perFlagNote": {
-              "linkCredible": "The link text names the courier's tracking page, but it really goes to swiftlane-pay.example"
+              "linkCredible": "The link text names one site, but it really goes to travel-portal-signin.example"
             },
-            "ifTrusted": "The payment page would take card details, and the sender would keep them.",
-            "reportReply": "Thanks. We don't use that courier and no parcel is held."
+            "ifTrusted": "The page would ask for passport details and a sign-in, and the sender would keep both.",
+            "reportReply": "Thanks. We didn't book through them, and the link went to a sign-in page that isn't theirs."
           }
         },
         {
@@ -605,7 +605,7 @@
       "noBlameLine": "There's no mark against you for a miss here. Every one of these was built to look and sound right, and the people who act on them are trying to help in a hurry. A miss here is about the pressure you were under.",
       "defendIntro": "Now you're in Tomás's seat. Five emails and voicemails are waiting. Take them one at a time.",
       "mondayCard": "On Monday: if someone senior asks you to pay, buy or send something in a hurry, or to keep it from finance, check before you act, even when it's their voice on a voicemail. Ring them on the number already in your contacts, or ask finance, then report the message the way your organisation asks you to.",
-      "defendOnly": "You went straight to the inbox this time. These messages were made by people whose job is to make them look and sound right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine."
+      "defendOnly": "These messages were made by people whose job is to make them look and sound right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away."
     },
     "_voicePanel": {
       "_use": "Proposed debrief panel on copied voices (11 section 3.2, E4: concept level, nothing about how). Needs a strings key (for example strings.voicePanel) and a slot in the debrief view; until then it is not shown.",

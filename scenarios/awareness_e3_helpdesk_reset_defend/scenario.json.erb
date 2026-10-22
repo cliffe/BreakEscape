@@ -1,8 +1,8 @@
 {
   "scenario_id": "awareness_e3_helpdesk_reset_defend",
   "scenario_name": "Helpdesk reset: the service desk queue",
-  "scenario_brief": "Awareness episode E3, service desk only. You're in Leila Nassar's seat on the IT service desk at Quayholt Insurance, a fictional insurer. Four calls are waiting and a sign-in prompt from overnight is still on your phone: help the real callers, and ring back or escalate anything that doesn't sit right.",
-  "endGoal": "Take the four calls and the sign-in prompt at the training kiosk.",
+  "scenario_brief": "Awareness episode E3, service desk only. You're in Leila Nassar's seat on the IT service desk at Quayholt Insurance, a fictional insurer. Three calls are waiting and a sign-in prompt from overnight is still on your phone: help the real callers, and ring back or escalate anything that doesn't sit right.",
+  "endGoal": "Take the three calls and the sign-in prompt at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
   "startRoom": "training_room",
@@ -32,7 +32,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "Service desk queue done",
-        "body": "You've worked through all four calls and the sign-in prompt, and finished this episode."
+        "body": "You've worked through all three calls and the sign-in prompt, and finished this episode."
       },
       "tasks": [
         {
@@ -57,7 +57,7 @@
       {
         "id": "e3_service_desk_queue",
         "title": "Quayholt service desk",
-        "brief": "You're on the Quayholt IT service desk in Leila Nassar's seat. You started at 07:00 and it's mid-morning now: four calls are waiting, and a sign-in prompt from overnight is still on your own phone. For each call, choose Comply, Ring back (hang up and ring the number already on file), Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report. Ringing back a real caller never costs you anything.",
+        "brief": "You're on the Quayholt IT service desk in Leila Nassar's seat. You started at 07:00 and it's mid-morning now: three calls are waiting, and a sign-in prompt from overnight is still on your own phone. For each call, choose Comply, Ring back (hang up and ring the number already on file), Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report. Ringing back a real caller never costs you anything.",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
@@ -94,7 +94,7 @@
                 "unrequested_mfa_push": "That prompt arrived at 02:14, when you were asleep and nowhere near a sign-in, so someone else has your password and is hoping you'll tap Approve"
               },
               "ifTrusted": "Approving would let the sender into your account, with your service desk access, from a computer you've never used.",
-              "reportReply": "Thanks. We've reset your password and blocked that sign-in. Someone was trying your account, and the prompt is what stopped them."
+              "reportReply": "Thanks. We've reset your password and blocked that sign-in. The prompt is what stopped them."
             }
           }
         ]
@@ -111,7 +111,7 @@
       },
       "variant": "defendOnly",
       "durationTargetMin": 8,
-      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: four calls and one sign-in prompt in the service desk seat.",
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: three calls and one sign-in prompt in the service desk seat.",
       "stages": [
         "brief",
         "defend",
@@ -178,11 +178,11 @@
             ],
             "notes": {
               "perFlagNote": {
-                "vish_callback_pressure": "His name, team, manager and staff number were all right, and all of them can be found online. Then he turned down the one check that works, a callback to the number on file, and asked for the new password on this call instead",
+                "vish_callback_pressure": "His name, team, manager and staff number were all right and all findable online; the tell was refusing the callback to the number on file and asking for the new password on the call",
                 "borrowed_authority": "Ngozi and 'the board at ten' are there to make checking feel like holding things up"
               },
               "ifTrusted": "The caller would have Gordon's account: his email, the claims system, and a way to ring the desk again as Gordon.",
-              "reportReply": "Thanks. We rang Gordon's mobile on file. He's at the conference and hadn't called. His staff number was on a conference photo, so we've asked for it to come down."
+              "reportReply": "Thanks. We rang Gordon's mobile on file. He's at the conference and hadn't called."
             }
           },
           {
@@ -295,52 +295,15 @@
               "ifTrusted": "Gordon's sign-in prompts would go to the caller's phone, so the caller could approve their own sign-ins as Gordon.",
               "reportReply": "Thanks. There's no Josh Henley at Quayholt, and Ngozi hasn't signed anything off. Gordon's account is unchanged."
             }
-          },
-          {
-            "id": "e3_call_new_starter",
-            "genuine": true,
-            "callerId": "Chen Jiayi, Claims (ext. 4431)",
-            "claims": [
-              {
-                "fact": "team",
-                "value": "claims",
-                "label": "Claims"
-              },
-              {
-                "fact": "manager",
-                "value": "okonkwo_full",
-                "label": "Ngozi Okonkwo"
-              }
-            ],
-            "tells": [],
-            "transcript": [
-              {
-                "who": "Jiayi",
-                "text": "Hi, sorry to bother you. I'm Chen Jiayi, I started in Claims last week. I've got a new phone and my sign-in prompts still go to the old one."
-              },
-              {
-                "who": "You",
-                "text": "No bother. Let me see what I can do."
-              },
-              {
-                "who": "Jiayi",
-                "text": "You'll want to check it's me first. My manager is Ngozi Okonkwo, or you can ring me back on my desk, 4431. Whatever's easiest."
-              }
-            ],
-            "notes": {
-              "whyFine": {
-                "default": "She asks for something sensitive, but she offers the checks herself, gives you her manager and her extension, and doesn't hurry you. Ring her back on the number on file and help."
-              }
-            }
           }
         ]
       },
       "strings": {
-        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. You're on the IT service desk in Leila Nassar's seat. Four calls are waiting and a sign-in prompt from overnight is still on your phone. Some callers are who they say, and some are reading facts they found online. Help the real ones, and ring back or escalate anything that doesn't sit right. Ringing back a real caller never costs you anything.",
+        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. You're on the IT service desk in Leila Nassar's seat. Three calls are waiting and a sign-in prompt from overnight is still on your phone. Some callers are who they say, and some are reading facts they found online. Help the real ones, and ring back or escalate anything that doesn't sit right. Ringing back a real caller never costs you anything.",
         "noBlameLine": "Nothing here counts against you. These callers rehearse sounding right, and a service desk that tries to help them is doing its job under pressure.",
         "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password or move someone's sign-in prompts, hang up and ring them back on the number already on file, not one they give you. If a sign-in prompt arrives that you didn't start, deny it and report it the way your organisation asks you to.",
-        "defendOnly": "You went straight to the service desk this time. These calls were made by people whose job is to sound right, and people who fall for calls like these are not stupid. Each card shows what gave the impostors away, and why the real callers were fine.",
-        "defendIntro": "You're in Leila's seat. Four calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time."
+        "defendOnly": "These calls were made by people whose job is to sound right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
+        "defendIntro": "You're in Leila's seat. Three calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time."
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
@@ -390,7 +353,7 @@
           "interactable": true,
           "active": true,
           "locked": false,
-          "observations": "A touch-screen kiosk showing the Quayholt service desk queue. Four calls are waiting, and a phone beside it shows a sign-in prompt.",
+          "observations": "A touch-screen kiosk showing the Quayholt service desk queue. Three calls are waiting, and a phone beside it shows a sign-in prompt.",
           "observationVariants": [
             {
               "condition": "globalVars.episode_e3_helpdesk_reset_defend_defend_done",

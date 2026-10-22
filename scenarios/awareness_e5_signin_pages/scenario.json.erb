@@ -329,7 +329,7 @@
         "flipMissed": "There's nothing extra to replay from this one, so here is the same kind of page as it would arrive behind a link in a real inbox. The defence is the same either way.",
         "noBlameLine": "Nobody is marked down for a miss here. Every one of these pages was built to pass for the real thing, and signing in to one says nothing about how careful a person is.",
         "mondayCard": "On Monday: before you type a password, read the address bar. Your organisation's real sign-in page sits on its own domain, and your password manager knows it. If a page asks you to sign in and the address is new to you, close it, go to the site the way you normally would, and report the link the way your organisation asks you to.",
-        "defendOnly": "You went straight to the pages this time. They were made by people whose job is to make them look right, and people who fall for pages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine.",
+        "defendOnly": "These pages were made by people whose job is to make them look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
         "flipPageIntro": "This is the sign-in page you built, as Hana Novak, the claims handler you sent it to, would meet it after following the link. The parts picked out below are what make it believable.",
         "defendIntro": "Now you're the one reading your inbox. Five pages are open, each from a link. For each one, decide whether you'd sign in, then tick what you noticed."
       },
@@ -624,7 +624,7 @@
         "title": "Quayholt single sign-on",
         "profile": "awareness",
         "tellCounter": true,
-        "linkText": "quayholt.example/sso",
+        "linkText": "quayholt-sso.example",
         "pretext": {
           "brandId": "quayholt",
           "purposeId": "expired",
@@ -843,10 +843,10 @@
         },
         "requiredFactors": [
           "senderTrust",
-          "linkCredible"
+          "linkCredible",
+          "pretextRelevant"
         ],
         "advisoryFactors": [
-          "pretextRelevant",
           "urgencyCalibrated",
           "senderAuth"
         ],

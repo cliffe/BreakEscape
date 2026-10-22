@@ -1,9 +1,9 @@
 {
-  "_about": "P7-S defend fragment for awareness episode E3 (helpdesk vishing and MFA fatigue, service desk role). Quayholt Insurance and everyone in it are fictional; every address ends .example. The learner sits in Leila Nassar's service desk seat. The four calls live in awarenessEpisode.defend.calls (the role swap converts them into call messages, P7-P); the defend set itself holds the one push item, so the merged set has 5. Copy triageSets and the awarenessEpisode keys into the E3 shells (P7-Y1, P7-Y2). Episode id chosen here: e3_helpdesk_reset (no id was pinned). Brand roster: ../BRAND_SET.md; new names are under _brandAdditions.",
+  "_about": "P7-S defend fragment for awareness episode E3 (helpdesk vishing and MFA fatigue, service desk role). Quayholt Insurance and everyone in it are fictional; every address ends .example. The learner sits in Leila Nassar's service desk seat. The three calls live in awarenessEpisode.defend.calls (the role swap converts them into call messages, P7-P); the defend set itself holds the one push item, so the merged set has 4. Copy triageSets and the awarenessEpisode keys into the E3 shells (P7-Y1, P7-Y2). Episode id chosen here: e3_helpdesk_reset (no id was pinned). Brand roster: ../BRAND_SET.md; new names are under _brandAdditions.",
   "_brandAdditions": {
     "_use": "For BRAND_SET.md section 3 (Quayholt Insurance). Leila Nassar, Darren Price, Gordon McLeish and Anjali Rao are used as BRAND_SET proposes; Ngozi Okonkwo and the staff number QH-20719 are the P7-Q pins. E5's Owen Treharne, Niamh Doherty, Sofia Marchetti, Pauline Hendry, Ayaan Warsame and Hana Novak appear in the forms.",
     "cast": [
-      "Chen Jiayi: claims handler in her second week, the genuine caller in e3_call_new_starter. Mid 20s, Chinese, came to Bristol to study and stayed",
+      "Reuben Ofori: claims handler, the genuine voicemail caller in helpdesk_form_b (hb_vm_locked, ext. 4423). Replaced Chen Jiayi (whose e3_call_new_starter call was dropped in the TIMING_TRIM_PLAN Cut D)",
       "Helen Achterberg: chief executive. 50s, Dutch-British. Impersonated on freemail in helpdesk_form_a row 4",
       "Patrick Kerrigan: chief operating officer. 60s, Irish, from Cork. Impersonated on freemail in helpdesk_form_b row 4",
       "Josh Henley: a name an impostor gives (e3_call_on_behalf); nobody of that name works at Quayholt"
@@ -29,9 +29,9 @@
     {
       "id": "e3_service_desk_queue",
       "_prefix": "Prefix for the full episode (id e3_helpdesk_reset). The defend-only shell (id e3_helpdesk_reset_defend) sets episode_e3_helpdesk_reset_defend_defend_ instead, as E1 and E5 do. No stage on purpose, as in E1.",
-      "_calls": "The four calls are in awarenessEpisode.defend.calls; the role swap (P7-P) merges them into this set as call messages, so the round has 5 items.",
+      "_calls": "The three calls are in awarenessEpisode.defend.calls; the role swap (P7-P) merges them into this set as call messages, so the round has 4 items.",
       "title": "Quayholt service desk",
-      "brief": "You're on the Quayholt IT service desk in Leila Nassar's seat. You started at 07:00 and it's mid-morning now: four calls are waiting, and a sign-in prompt from overnight is still on your own phone. For each call, choose Comply, Ring back (hang up and ring the number already on file), Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report. Ringing back a real caller never costs you anything.",
+      "brief": "You're on the Quayholt IT service desk in Leila Nassar's seat. You started at 07:00 and it's mid-morning now: three calls are waiting, and a sign-in prompt from overnight is still on your own phone. For each call, choose Comply, Ring back (hang up and ring the number already on file), Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report. Ringing back a real caller never costs you anything.",
       "scoringProfile": "awareness",
       "verifyVerdict": true,
       "feedbackMode": "immediate",
@@ -58,7 +58,7 @@
               "unrequested_mfa_push": "That prompt arrived at 02:14, when you were asleep and nowhere near a sign-in, so someone else has your password and is hoping you'll tap Approve"
             },
             "ifTrusted": "Approving would let the sender into your account, with your service desk access, from a computer you've never used.",
-            "reportReply": "Thanks. We've reset your password and blocked that sign-in. Someone was trying your account, and the prompt is what stopped them."
+            "reportReply": "Thanks. We've reset your password and blocked that sign-in. The prompt is what stopped them."
           }
         }
       ]
@@ -426,12 +426,12 @@
         {
           "id": "hb_vm_locked",
           "kind": "voicemail",
-          "from": { "name": "Ayaan Warsame", "address": "ext. 4415" },
-          "subject": "Voicemail from Ayaan Warsame",
+          "from": { "name": "Reuben Ofori", "address": "ext. 4423" },
+          "subject": "Voicemail from Reuben Ofori",
           "time": "10:40",
           "duration": "0:19",
           "transcript": [
-            { "who": "Ayaan", "text": "Hi, Ayaan in Claims. My laptop says my account's locked. I'm in the office all day, so ring me back on 4415 when you get a chance. It's in the directory. Cheers." }
+            { "who": "Reuben", "text": "Hi, Reuben in Claims. My laptop says my account's locked. I'm in the office all day, so ring me back on 4423 when you get a chance. It's in the directory. Cheers." }
           ],
           "truth": {
             "isPhish": false,
@@ -486,12 +486,12 @@
     "role": "helpdesk",
     "company": "quayholt_insurance",
     "brand": { "name": "Quayholt Insurance", "logoText": "QUAYHOLT", "accent": "#6b4c9a" },
-    "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: one practice call to the Quayholt IT service desk, a practice run of sign-in prompts, and four calls and one prompt in the service desk seat. Nothing you say leaves the game.",
+    "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: one practice call to the Quayholt IT service desk, a practice run of sign-in prompts, and three calls and one prompt in the service desk seat. Nothing you say leaves the game.",
     "defend": {
       "setId": "e3_service_desk_queue",
       "reportAlwaysVisible": true,
       "callsFrom": "quayholt_helpdesk_reset",
-      "_calls": "Order is the teaching order: the impostor who borrows Gordon's findable facts, then the real Gordon (same four facts, only the callback tells them apart), then a second impostor who offers his own number, then a straightforward genuine caller. Claim values are the P7-Q knows value ids; the call card shows their labels (gordon_full Gordon McLeish, claims Claims, okonkwo_full Ngozi Okonkwo, gordon_staffid QH-20719). Both impostors give correct facts on purpose: findable facts are not secrets.",
+      "_calls": "Order is the teaching order: the impostor who borrows Gordon's findable facts, then the real Gordon (same four facts, only the callback tells them apart), then a second impostor who offers his own number. Claim values are the P7-Q knows value ids; the call card shows their labels (gordon_full Gordon McLeish, claims Claims, okonkwo_full Ngozi Okonkwo, gordon_staffid QH-20719). Both impostors give correct facts on purpose: findable facts are not secrets.",
       "calls": [
         {
           "id": "e3_call_gordon_impostor",
@@ -513,11 +513,11 @@
           ],
           "notes": {
             "perFlagNote": {
-              "vish_callback_pressure": "His name, team, manager and staff number were all right, and all of them can be found online. Then he turned down the one check that works, a callback to the number on file, and asked for the new password on this call instead",
+              "vish_callback_pressure": "His name, team, manager and staff number were all right and all findable online; the tell was refusing the callback to the number on file and asking for the new password on the call",
               "borrowed_authority": "Ngozi and 'the board at ten' are there to make checking feel like holding things up"
             },
             "ifTrusted": "The caller would have Gordon's account: his email, the claims system, and a way to ring the desk again as Gordon.",
-            "reportReply": "Thanks. We rang Gordon's mobile on file. He's at the conference and hadn't called. His staff number was on a conference photo, so we've asked for it to come down."
+            "reportReply": "Thanks. We rang Gordon's mobile on file. He's at the conference and hadn't called."
           }
         },
         {
@@ -571,46 +571,26 @@
             "ifTrusted": "Gordon's sign-in prompts would go to the caller's phone, so the caller could approve their own sign-ins as Gordon.",
             "reportReply": "Thanks. There's no Josh Henley at Quayholt, and Ngozi hasn't signed anything off. Gordon's account is unchanged."
           }
-        },
-        {
-          "id": "e3_call_new_starter",
-          "genuine": true,
-          "callerId": "Chen Jiayi, Claims (ext. 4431)",
-          "claims": [
-            { "fact": "team", "value": "claims", "label": "Claims" },
-            { "fact": "manager", "value": "okonkwo_full", "label": "Ngozi Okonkwo" }
-          ],
-          "tells": [],
-          "transcript": [
-            { "who": "Jiayi", "text": "Hi, sorry to bother you. I'm Chen Jiayi, I started in Claims last week. I've got a new phone and my sign-in prompts still go to the old one." },
-            { "who": "You", "text": "No bother. Let me see what I can do." },
-            { "who": "Jiayi", "text": "You'll want to check it's me first. My manager is Ngozi Okonkwo, or you can ring me back on my desk, 4431. Whatever's easiest." }
-          ],
-          "notes": {
-            "whyFine": {
-              "default": "She asks for something sensitive, but she offers the checks herself, gives you her manager and her extension, and doesn't hurry you. Ring her back on the number on file and help."
-            }
-          }
         }
       ]
     },
     "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
     "strings": {
-      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: look at what Quayholt and its staff have put online, then ring the IT service desk as Gordon McLeish, a claims manager who's locked out, and try to talk the agent, Leila Nassar, into a password reset. You'll also watch what happens when someone fills a phone with sign-in prompts. Then you swap seats: you're Leila, taking four calls and one prompt on your own phone. Only Leila's seat is scored.",
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First, the red team: see what Quayholt's staff have put online, then ring the IT service desk as Gordon McLeish, a locked-out claims manager, and try to talk Leila Nassar into a password reset. Then swap seats: you're Leila, taking three calls and an overnight sign-in prompt. Only Leila's seat is scored.",
       "flipHeading": "Now you're the one answering",
       "flipIntro": "This is your call as Leila heard it on the service desk. The lines picked out below are what made it believable.",
-      "flipDefenderLine": "Mid-morning, three more calls holding, Leila picked this one up. The caller had Gordon's name, his team, his manager and his staff number, every answer right, and he sounded rushed, so she reached for the reset. Anyone in that seat might have: he had done his homework, and the call was built to sound like an ordinary morning. The callback was the one thing that would have told him from the real Gordon.",
+      "flipDefenderLine": "Mid-morning, more calls holding, Leila picked this one up. The caller had Gordon's name, team, manager and staff number, every answer right, and sounded rushed, so she reached for the reset. Anyone might have: he'd done his homework. The callback was the one thing that would have told him from the real Gordon.",
       "flipNoSend": "Your call didn't get through this time, so there's nothing of yours to show. Next, the same kind of call comes in to the service desk, and you're the one answering.",
-      "flipMissed": "There's nothing extra to replay from this one, so here is the same kind of call as it would reach a real service desk. The defence is the same either way.",
+      "flipMissed": "There's nothing extra to replay here, so here is the same kind of call as it reaches a real service desk.",
       "noBlameLine": "Nothing here counts against you. These callers rehearse sounding right, and a service desk that tries to help them is doing its job under pressure.",
       "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password or move someone's sign-in prompts, hang up and ring them back on the number already on file, not one they give you. If a sign-in prompt arrives that you didn't start, deny it and report it the way your organisation asks you to.",
-      "defendOnly": "You went straight to the service desk this time. These calls were made by people whose job is to sound right, and people who fall for calls like these are not stupid. Each card shows what gave the impostors away, and why the real callers were fine.",
-      "defendIntro": "You're in Leila's seat. Four calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time."
+      "defendOnly": "These calls were made by people whose job is to sound right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
+      "defendIntro": "You're in Leila's seat. Three calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time."
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e3_helpdesk_reset_defend), which has no OSINT, write, mfa or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",
-      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. You're on the IT service desk in Leila Nassar's seat. Four calls are waiting and a sign-in prompt from overnight is still on your phone. Some callers are who they say, and some are reading facts they found online. Help the real ones, and ring back or escalate anything that doesn't sit right. Ringing back a real caller never costs you anything.",
-      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: four calls and one sign-in prompt in the service desk seat."
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. You're on the IT service desk in Leila Nassar's seat. Three calls are waiting and a sign-in prompt from overnight is still on your phone. Some callers are who they say, and some are reading facts they found online. Help the real ones, and ring back or escalate anything that doesn't sit right. Ringing back a real caller never costs you anything.",
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: three calls and one sign-in prompt in the service desk seat."
     }
   }
 }

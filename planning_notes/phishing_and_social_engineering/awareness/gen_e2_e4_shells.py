@@ -243,9 +243,23 @@ def panels(ekey, frag, EP):
     return out
 
 
+# B1 (CHECK_PARITY_AUDIT): explicit, stable reorder of each form's canonical `messages`
+# (new[i] = old[order[i]]), so forms A and B no longer share one per-slot pattern. Verified
+# (seed 20261022): phish in different ordinal slots across A/B, no phish flag-signature at the same
+# slot. Scoring is per item, so a pure reorder changes no counts.
+PERMUTE = {
+    'hr_form_a': [5, 8, 7, 0, 2, 6, 4, 3, 9, 1],
+    'hr_form_b': [2, 4, 5, 7, 0, 8, 3, 1, 6, 9],
+    'executive_form_a': [3, 7, 6, 8, 4, 2, 9, 5, 1, 0],
+    'executive_form_b': [9, 8, 2, 0, 5, 7, 4, 3, 6, 1],
+}
+
+
 def clean_set(sets, set_id, stage=None, comparison=None):
     s = strip_private(copy.deepcopy(sets[set_id]))
     s.pop('pairedWith', None)
+    if set_id in PERMUTE and isinstance(s.get('messages'), list):
+        s['messages'] = [s['messages'][i] for i in PERMUTE[set_id]]
     if stage:
         s['stage'] = stage
     if comparison:

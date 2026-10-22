@@ -57,7 +57,7 @@ HOSTS = {
 # Defend-host lines: (before, after, choice, reply). One welcome line; the kiosk does the rest.
 LINES = {
     ('e3', 'defend'): (
-        "You're in Leila's seat this morning. Four calls are queued on the kiosk, and there's a sign-in prompt from overnight on her phone. Take your time with each one.",
+        "You're in Leila's seat this morning. Three calls are queued on the kiosk, and there's a sign-in prompt from overnight on her phone. Take your time with each one.",
         "That's the queue cleared, thanks. If a caller won't let you ring them back, that tells you most of what you need.",
         'Thanks, Darren.', 'Shout if you need me.'),
     ('e5', 'defend'): (
@@ -125,16 +125,16 @@ EPISODES = {
                    'keywords': ['Social engineering', 'Vishing', 'MFA fatigue', 'Security awareness']}],
         'defend': {
             'name': 'Helpdesk reset: the service desk queue',
-            'brief': "Awareness episode E3, service desk only. You're in Leila Nassar's seat on the IT service desk at Quayholt Insurance, a fictional insurer. Four calls are waiting and a sign-in prompt from overnight is still on your phone: help the real callers, and ring back or escalate anything that doesn't sit right.",
-            'endGoal': 'Take the four calls and the sign-in prompt at the training kiosk.',
+            'brief': "Awareness episode E3, service desk only. You're in Leila Nassar's seat on the IT service desk at Quayholt Insurance, a fictional insurer. Three calls are waiting and a sign-in prompt from overnight is still on your phone: help the real callers, and ring back or escalate anything that doesn't sit right.",
+            'endGoal': 'Take the three calls and the sign-in prompt at the training kiosk.',
             'aim': ('service_desk_aim', 'Cover the service desk', 'Work through the service desk queue at the training kiosk.'),
             'task': ('work_service_desk_queue', 'Work through the service desk queue'),
-            'kiosk': ("A touch-screen kiosk showing the Quayholt service desk queue. Four calls are waiting, and a phone beside it shows a sign-in prompt.",
+            'kiosk': ("A touch-screen kiosk showing the Quayholt service desk queue. Three calls are waiting, and a phone beside it shows a sign-in prompt.",
              'A touch-screen kiosk showing the Quayholt service desk queue. The calls and the sign-in prompt are all dealt with.'),
             'display': 'Awareness E3: Helpdesk reset (service desk only)',
-            'desc': "An eight-minute awareness episode for IT service desk staff, on the defending side only. Sit in the service desk seat at Quayholt Insurance, a fictional company: four callers want password resets or changes to their sign-in, and a sign-in prompt turns up on your own phone. Each answer is explained, and ringing back a real caller never costs you anything.",
+            'desc': "An eight-minute awareness episode for IT service desk staff, on the defending side only. Sit in the service desk seat at Quayholt Insurance, a fictional company: three callers want password resets or changes to their sign-in, and a sign-in prompt turns up on your own phone. Each answer is explained, and ringing back a real caller never costs you anything.",
             'minutes': 8,
-            'ending': ('Service desk queue done', "You've worked through all four calls and the sign-in prompt, and finished this episode."),
+            'ending': ('Service desk queue done', "You've worked through all three calls and the sign-in prompt, and finished this episode."),
         },
         'check': {
             'items_pre': 'Ten items from the IT service desk queue: calls, a voicemail, emails and a sign-in prompt.',
@@ -199,9 +199,23 @@ def load(ekey):
     return {s['id']: s for s in frag['triageSets']}, frag['awarenessEpisode']
 
 
+# B1 (CHECK_PARITY_AUDIT): explicit, stable reorder of each form's canonical `messages`
+# (new[i] = old[order[i]]), so forms A and B no longer share one per-slot pattern. Verified
+# (seed 20261022): phish in different ordinal slots across A/B, no phish flag-signature at the same
+# slot. Scoring is per item, so a pure reorder changes no counts.
+PERMUTE = {
+    'helpdesk_form_a': [3, 2, 1, 6, 8, 5, 7, 9, 4, 0],
+    'helpdesk_form_b': [8, 4, 3, 9, 1, 2, 5, 7, 0, 6],
+    'general_form_a': [0, 1, 7, 2, 6, 3, 8, 5, 9, 4],
+    'general_form_b': [1, 5, 0, 6, 7, 4, 3, 8, 9, 2],
+}
+
+
 def clean_set(sets, set_id, stage=None, comparison=None):
     s = strip_private(copy.deepcopy(sets[set_id]))
     s.pop('pairedWith', None)
+    if set_id in PERMUTE and isinstance(s.get('messages'), list):
+        s['messages'] = [s['messages'][i] for i in PERMUTE[set_id]]
     if stage:
         s['stage'] = stage
     if comparison:

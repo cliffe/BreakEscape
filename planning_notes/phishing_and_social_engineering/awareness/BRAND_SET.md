@@ -195,7 +195,7 @@ Gallagher and Farah are not used, because they clash with existing scenarios.
 - **Check-mission hosts (P7-J):**
   - Graham Whitfield, early 60s, white British, Halifax.
   - Farah Qureshi, early 30s, British Pakistani, Leicester.
-- **E3 (P7-S), Quayholt:** Chen Jiayi, Helen Achterberg and Patrick Kerrigan. The full list is under `_brandAdditions` in `awareness/e3/defend.json`.
+- **E3 (P7-S), Quayholt:** Helen Achterberg and Patrick Kerrigan (Chen Jiayi dropped with Cut D; Reuben Ofori added as the helpdesk_form_b genuine voicemail caller). The full list is under `_brandAdditions` in `awareness/e3/defend.json`.
 - **E3 alias:** "Josh Henley", the impostor caller.
 
 ## Additions from E7 defend (2026-10-22)

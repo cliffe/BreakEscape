@@ -248,11 +248,9 @@
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "colin.mather.tby@inboxly.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "flags": ["senderTrust"],
             "perFlagNote": {
-              "senderTrust": "The warehouse manager's name on a personal inbox at inboxly.example, not tarrowby.example",
-              "secrecy_or_bypass": "'Not my work one' and 'keep it between us' move you off the channels Tarrowby can see",
-              "urgencyCalibrated": "'Before 12' and 'stuck with a customer' leave no time to walk over and ask him"
+              "senderTrust": "The warehouse manager's name on a personal inbox at inboxly.example, not tarrowby.example"
             },
             "ifTrusted": "Once you text that number, the 'favour' follows: usually gift cards or a payment, from someone who isn't Colin.",
             "reportReply": "Thanks. Colin didn't send it. His only address is on tarrowby.example."
@@ -439,11 +437,9 @@
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "fatima.begum.hr@quickpost-mail.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "flags": ["senderTrust"],
             "perFlagNote": {
-              "senderTrust": "The recruitment lead's name on a personal inbox at quickpost-mail.example, not tarrowby.example",
-              "secrecy_or_bypass": "'Keep it quiet' and 'on your card' skip the normal way Tarrowby buys things",
-              "urgencyCalibrated": "'Today' leaves no time to ask Fatima in person"
+              "senderTrust": "The recruitment lead's name on a personal inbox at quickpost-mail.example, not tarrowby.example"
             },
             "ifTrusted": "£300 of voucher codes would go to the sender, and vouchers can't be traced or clawed back.",
             "reportReply": "Thanks. Fatima didn't send it. Her address is on tarrowby.example, and HR never asks staff to buy vouchers."
@@ -567,7 +563,7 @@
       "flipNoSend": "Your message didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives on a Tarrowby work phone, and you're the one reading it.",
       "noBlameLine": "Nobody is marked down for a miss here. These were built to look like Tarrowby's own messages, and they land on a phone you're reading between jobs. Catching them is a habit, not a test of how clever you are.",
       "mondayCard": "On Monday: if a text, a notice or an email wants you to scan a code or tap a short link to pay, sign in or confirm something, stop. Don't reply, not even STOP. Open the app or site the way you normally would, or ring the sender on a number you already hold, then report the message the way your organisation asks you to.",
-      "defendOnly": "You went straight to the phone this time. These messages were written by people whose job is to make them look right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine."
+      "defendOnly": "These messages were written by people whose job is to make them look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away."
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e6_texts_and_qr_defend), which has no OSINT, write or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",

@@ -135,168 +135,6 @@
             }
           },
           {
-            "id": "ga_benefits_lookalike",
-            "kind": "page",
-            "subject": "From an email: 'Benefits window closes Friday'",
-            "time": "08:50",
-            "body": "Choose your benefits for next year before Friday, or your current choices will lapse. This is a secure page: check for the padlock, then sign in with your Quayholt account.",
-            "page": {
-              "url": "https://quayholt-benefits.example/signin",
-              "padlock": true,
-              "certificate": {
-                "issuedTo": "quayholt-benefits.example",
-                "issuer": "Open Certs Ltd"
-              },
-              "autofill": "none",
-              "heading": "Quayholt Staff Benefits",
-              "fields": [
-                "Work email",
-                "Password"
-              ],
-              "button": "Sign in"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "lookalike_domain",
-                "padlock_myth"
-              ],
-              "perFlagNote": {
-                "lookalike_domain": "Quayholt's benefits site is benefits.quayholt.example; this is quayholt-benefits.example, a different site with a hyphen, and your password manager offered nothing",
-                "padlock_myth": "The page tells you to check for the padlock, but the padlock was issued to quayholt-benefits.example. It shows the connection is private, not who you're talking to"
-              },
-              "ifTrusted": "Your Quayholt password would go to whoever runs quayholt-benefits.example.",
-              "reportReply": "Thanks. That isn't our benefits site, and nothing lapses on Friday. We've blocked it."
-            }
-          },
-          {
-            "id": "ga_manager_signin",
-            "from": {
-              "name": "Gordon McLeish",
-              "address": "gordon.mcleish.claims@inboxly.example"
-            },
-            "to": "you@quayholt.example",
-            "subject": "Quick favour, are you in?",
-            "time": "09:14",
-            "body": "Are you at your desk? I'm on a site visit and locked out of my laptop. Could you send me your Quayholt sign-in so I can pull the claims report before 4? Keep it between us; going through IT will take all day.\nGordon",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "gordon.mcleish.claims@inboxly.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "senderTrust",
-                "secrecy_or_bypass",
-                "urgencyCalibrated"
-              ],
-              "perFlagNote": {
-                "senderTrust": "Gordon's name on a personal inbox at inboxly.example, not quayholt.example",
-                "secrecy_or_bypass": "'Keep it between us' and 'going through IT will take all day' ask you to skip the people who could help him properly",
-                "urgencyCalibrated": "'Before 4' leaves no time to ring him and check"
-              },
-              "ifTrusted": "Whoever wrote it could sign in as you, read your mail and send messages in your name.",
-              "reportReply": "Thanks. Gordon has his laptop and didn't send this. Nobody at Quayholt will ever ask for your password."
-            }
-          },
-          {
-            "id": "ga_leave_portal",
-            "from": {
-              "name": "Sofia Marchetti",
-              "address": "sofia.marchetti@quayholt.example"
-            },
-            "to": "all-staff@quayholt.example",
-            "subject": "Next year's leave is now on the HR portal",
-            "time": "09:40",
-            "body": "Hi all,\nNext year's annual leave allowance is now showing on the HR portal, so you can start booking.\n{{link:leave}}\nYou can also reach it from the intranet home page.\nSofia\nHR",
-            "links": [
-              {
-                "id": "leave",
-                "text": "hr.quayholt.example/leave",
-                "destination": "https://hr.quayholt.example/leave"
-              }
-            ],
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "quayholt.example",
-              "replyTo": "sofia.marchetti@quayholt.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "linkCredible": "The link goes where it says, to the HR portal on Quayholt's own domain, and you could reach it from the intranet instead.",
-                "default": "HR's real address, a routine notice, and no hurry."
-              }
-            }
-          },
-          {
-            "id": "ga_payroll_spoof",
-            "from": {
-              "name": "Payroll Team",
-              "address": "payroll@quayholt-payroll.example"
-            },
-            "to": "you@quayholt.example",
-            "subject": "Payroll record check",
-            "time": "10:05",
-            "body": "Hi,\nWe're moving to a new payroll system and a few records don't match. Could you reply with your staff number and your home postcode so we can fix yours before the next run?\nThanks,\nThe Payroll Team",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "quayholt-payroll.example",
-              "replyTo": "payroll@quayholt-payroll.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "senderTrust",
-                "lookalike_domain"
-              ],
-              "perFlagNote": {
-                "senderTrust": "Payroll writes to you from quayholt.example, the address your payslips come from, not from a sender you don't recognise",
-                "lookalike_domain": "Read the address: it ends in quayholt-payroll.example, not quayholt.example. The added word makes a separate domain anyone can register"
-              },
-              "ifTrusted": "Your staff number and postcode are what a caller needs to sound like you when they ring the service desk to reset your password.",
-              "reportReply": "Thanks. That address isn't ours, and payroll isn't changing systems. We've blocked quayholt-payroll.example."
-            }
-          },
-          {
-            "id": "ga_expenses_timeout",
-            "kind": "page",
-            "subject": "Back at your desk: the expenses tab you left open",
-            "time": "10:30",
-            "body": "Your session timed out after 30 minutes without activity. Sign in again to carry on with your claim.",
-            "page": {
-              "url": "https://expenses.quayholt.example/claims",
-              "padlock": true,
-              "certificate": {
-                "issuedTo": "expenses.quayholt.example",
-                "issuer": "Open Certs Ltd"
-              },
-              "autofill": "filled",
-              "heading": "Quayholt Expenses",
-              "fields": [
-                "Work email",
-                "Password"
-              ],
-              "button": "Sign in"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "lookalike_domain": "expenses.quayholt.example ends in quayholt.example, Quayholt's own domain.",
-                "default": "A timed-out session is normal when a tab is left open. You opened this one yourself, the address is Quayholt's, and your password manager filled it in."
-              }
-            }
-          },
-          {
             "id": "ga_solicitor_share",
             "from": {
               "name": "Ashcombe Solicitors",
@@ -333,6 +171,100 @@
             }
           },
           {
+            "id": "ga_benefits_lookalike",
+            "kind": "page",
+            "subject": "From an email: 'Benefits window closes Friday'",
+            "time": "08:50",
+            "body": "Choose your benefits for next year before Friday, or your current choices will lapse. This is a secure page: check for the padlock, then sign in with your Quayholt account.",
+            "page": {
+              "url": "https://quayholt-benefits.example/signin",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "quayholt-benefits.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "autofill": "none",
+              "heading": "Quayholt Staff Benefits",
+              "fields": [
+                "Work email",
+                "Password"
+              ],
+              "button": "Sign in"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "padlock_myth"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "Quayholt's benefits site is benefits.quayholt.example; this is quayholt-benefits.example, a different site with a hyphen, and your password manager offered nothing",
+                "padlock_myth": "The page tells you to check for the padlock, but the padlock was issued to quayholt-benefits.example. It shows the connection is private, not who you're talking to"
+              },
+              "ifTrusted": "Your Quayholt password would go to whoever runs quayholt-benefits.example.",
+              "reportReply": "Thanks. That isn't our benefits site, and nothing lapses on Friday. We've blocked it."
+            }
+          },
+          {
+            "id": "ga_expenses_timeout",
+            "kind": "page",
+            "subject": "Back at your desk: the expenses tab you left open",
+            "time": "10:30",
+            "body": "Your session timed out after 30 minutes without activity. Sign in again to carry on with your claim.",
+            "page": {
+              "url": "https://expenses.quayholt.example/claims",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "expenses.quayholt.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "autofill": "filled",
+              "heading": "Quayholt Expenses",
+              "fields": [
+                "Work email",
+                "Password"
+              ],
+              "button": "Sign in"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "lookalike_domain": "expenses.quayholt.example ends in quayholt.example, Quayholt's own domain.",
+                "default": "A timed-out session is normal when a tab is left open. You opened this one yourself, the address is Quayholt's, and your password manager filled it in."
+              }
+            }
+          },
+          {
+            "id": "ga_manager_signin",
+            "from": {
+              "name": "Gordon McLeish",
+              "address": "gordon.mcleish.claims@inboxly.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Quick favour, are you in?",
+            "time": "09:14",
+            "body": "Are you at your desk? I'm on a site visit and locked out of my laptop. Could you send me your Quayholt sign-in so I can pull the claims report before 4? Keep it between us; going through IT will take all day.\nGordon",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "gordon.mcleish.claims@inboxly.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust"
+              ],
+              "perFlagNote": {
+                "senderTrust": "Gordon's name on a personal inbox at inboxly.example, not quayholt.example"
+              },
+              "ifTrusted": "Whoever wrote it could sign in as you, read your mail and send messages in your name.",
+              "reportReply": "Thanks. Gordon has his laptop and didn't send this. Nobody at Quayholt will ever ask for your password."
+            }
+          },
+          {
             "id": "ga_staff_survey",
             "from": {
               "name": "Quayholt People Team",
@@ -366,6 +298,37 @@
             }
           },
           {
+            "id": "ga_payroll_spoof",
+            "from": {
+              "name": "Payroll Team",
+              "address": "payroll@quayholt-payroll.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Payroll record check",
+            "time": "10:05",
+            "body": "Hi,\nWe're moving to a new payroll system and a few records don't match. Could you reply with your staff number and your home postcode so we can fix yours before the next run?\nThanks,\nThe Payroll Team",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt-payroll.example",
+              "replyTo": "payroll@quayholt-payroll.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "lookalike_domain"
+              ],
+              "perFlagNote": {
+                "senderTrust": "Payroll writes to you from quayholt.example, the address your payslips come from, not from a sender you don't recognise",
+                "lookalike_domain": "Read the address: it ends in quayholt-payroll.example, not quayholt.example. The added word makes a separate domain anyone can register"
+              },
+              "ifTrusted": "Your staff number and postcode are what a caller needs to sound like you when they ring the service desk to reset your password.",
+              "reportReply": "Thanks. That address isn't ours, and payroll isn't changing systems. We've blocked quayholt-payroll.example."
+            }
+          },
+          {
             "id": "ga_laptop_swap",
             "from": {
               "name": "Leila Nassar",
@@ -387,6 +350,39 @@
               "flags": [],
               "whyFine": {
                 "default": "The service desk's real address, a booking in person, and 'no need to send anything'."
+              }
+            }
+          },
+          {
+            "id": "ga_leave_portal",
+            "from": {
+              "name": "Sofia Marchetti",
+              "address": "sofia.marchetti@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "Next year's leave is now on the HR portal",
+            "time": "09:40",
+            "body": "Hi all,\nNext year's annual leave allowance is now showing on the HR portal, so you can start booking.\n{{link:leave}}\nYou can also reach it from the intranet home page.\nSofia\nHR",
+            "links": [
+              {
+                "id": "leave",
+                "text": "hr.quayholt.example/leave",
+                "destination": "https://hr.quayholt.example/leave"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "sofia.marchetti@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "linkCredible": "The link goes where it says, to the HR portal on Quayholt's own domain, and you could reach it from the intranet instead.",
+                "default": "HR's real address, a routine notice, and no hurry."
               }
             }
           }
