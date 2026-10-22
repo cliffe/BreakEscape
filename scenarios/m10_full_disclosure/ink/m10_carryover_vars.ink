@@ -122,7 +122,12 @@ VAR m09_kowalczyk_reply = ""      // warm / flat: thanks for the cracker at the 
 VAR m09_sorensen_fate = ""        // left / talked / ko (m09's default is "left"; read only with m09_completed)
 VAR m09_tran_outcome = ""         // left / talked / ko (as above)
 VAR m09_noor_told = false
-VAR m09_alpha_clip_played = false   // heard "build your own way out first" on the Alpha tape
+VAR m09_alpha_clip_played = false
+// m09 alignment R2 (m10 R2-M4): the four exports m09 added for m10
+VAR m09_reading_told_hax = false
+VAR m09_noor_ko = false
+VAR m09_old_coyote_ko = false
+VAR m09_debrief_notice_before = false   // heard "build your own way out first" on the Alpha tape
 VAR m09_alpha_annotations_read = false   // twelfth m09 export (stage 8 ruling 5); Tier 2: gates the Tomb Alpha notes answer
 
 // completed
@@ -332,6 +337,10 @@ VAR close_zero_day = ""
 { m08_offduty_agent_ko or m08_analyst_ko or m08_athena_ko or m08_netherton_ko or m08_hax_ko:
     ~ n = n + 1
 }
+// R2-M4: m09, the night before (its default "left" never counts).
+{ m09_completed and (m09_noor_ko or m09_old_coyote_ko or m09_sorensen_fate == "ko" or m09_tran_outcome == "ko"):
+    ~ n = n + 1
+}
 ~ return n
 
 // The door scene's four-way branch (MC §3.1). "shown" / "unshown" / "arrested" / "silent".
@@ -472,14 +481,17 @@ VAR close_zero_day = ""
 
 // Alignment A5 (ruling D1 c): the one season line at 06:00, Netherton's, chosen
 // by the first heavy import that applies. Returns a key; the scene prints the
-// fixed line. "" on a cold start (no line).
+// fixed line. "" on a cold start (no line). R2-M3: when m09's memo line will
+// follow (it is about Albion), the Albion keys are skipped, so a full season
+// hears St. Catherine's, Austin, the mole or the first week instead.
 === function season_line()
+~ temp memo = m09_completed and m09_memo_stance != ""
 {
-- m04_completed and m04_disclosure_choice == "full":
+- not memo and m04_completed and m04_disclosure_choice == "full":
     ~ return "albion_full"
-- m04_completed and m04_disclosure_choice == "partial":
+- not memo and m04_completed and m04_disclosure_choice == "partial":
     ~ return "albion_half"
-- m04_completed and m04_disclosure_choice == "quiet":
+- not memo and m04_completed and m04_disclosure_choice == "quiet":
     ~ return "albion_quiet"
 - m02_completed and m02_exposed_hospital:
     ~ return "stcath_exposed"
@@ -489,6 +501,8 @@ VAR close_zero_day = ""
     ~ return "austin_covered"
 - m07_completed and m07_team_assignment != "":
     ~ return "austin_uncovered"
+- m07_completed:
+    ~ return "denver"
 - m08_completed:
     ~ return "mole"
 - m01_completed and m01_player_aborted_attack:

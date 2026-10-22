@@ -1015,3 +1015,24 @@ Applied 2026-10-21 by the m10 fixer from `finale/STAGE_8_RULINGS.md` and the rev
 - Noor Haddad: warned in time. Still at the archive. (`globalVars.m09_completed === true && globalVars.m09_noor_told === true`)
 - Noor Haddad: never told. Still on the list. (`globalVars.m09_completed === true && !globalVars.m09_noor_told`)
 - `combat_lethal` (m05) has no Torres row.
+
+**Alignment round 2 (ink side; `ALIGNMENT_REVIEW_F_R2.md`).**
+- **R2-M2:** Elena is Torres's wife. The stings now read "…for paying his wife's hospital bills. I count her as well." and "…His wife reads them in a hospital bed."
+- **R2-M3:** `season_line()` skips the three Albion keys when m09's memo line will follow, and gains a `denver` key (`m07_completed`, no team).
+- **R2-M4, the m09 exports:**
+  - New imports: `m09_reading_told_hax`, `m09_noor_ko`, `m09_old_coyote_ko`, `m09_debrief_notice_before` (all false, Tier 2).
+  - `ko_pattern()` gains an m09 arm (Noor, Old Coyote, Sorensen or Tran knocked out, with `m09_completed`).
+  - In `the_rest`, HaX on `reading_told_hax`: "You showed me what he wrote about you in Helena. So you get this."
+  - At the database, HaX on `debrief_notice_before`: "You sent his notice before anyone asked you to. This is that letter, a thousand times."
+- **R2-m1:** `case` now resumes on `tess_case_step` (0 pitch, 1 records, 2 the Recruiter), with "Where was I. Your record." on a resume. Each record writes `tess_rec_<name>` and `tess_rec` on its pick, in the new knot `case_records`.
+- **R2-m2:** when he asks about the memo, the menu offers only the memo answer and "[I'm not saying it for you.]" ("No. You said it for Magnus. That's how it starts.").
+- **R2-m3:** "[Then you should have sent your notice.]" is cut.
+- **R2-m4:** "Since your first day." is folded into the lead line ("…I've watched you since your first day.").
+- **R2-m5:** at most one ledger sting between the point and his reply (bed four, else m05).
+- **R2-m6:** `austin_uncovered` now says "since Austin". Denver gets its own line: "In Denver you held the team in the air all night. Tonight you went in."
+- **R2-m7:** Voltage escaped: "You let me walk out of Albion. March to tonight, I never said a word. Put that in too."
+- **R2-m8:** recruited Victoria knocked out: "You asked nicely in Cardiff. Tonight you didn't bother. I'll want a doctor, and then a lawyer."
+- **R2-m9:** executed: "In the van, your phone lights twice. A number with no name, which you don't open. Then HaX."
+- **R2-m12:** `season` opens with "[Sir?]" / "[(Wait.)]" so Netherton never runs five lines. It returns at once when it has nothing to say.
+- **R2-m16:** "He said it had to be one of ours…" and "Whitlock came to the table…".
+- **R2-m17:** the ink comments are fixed (the `tess_*` VAR comments, the case header, the executed knot's comment).

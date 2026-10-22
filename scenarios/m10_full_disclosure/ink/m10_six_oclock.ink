@@ -226,7 +226,7 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 - voltage_outcome == "stood_down_print":
     Voltage (Critical Mass): You lifted my thumb at Albion and kept it for tonight. I'm still annoyed about it.
 - voltage_outcome == "talked_down" and m04_voltage_escaped:
-    Voltage (Critical Mass): *flatly* You let me walk out of Albion, and I never said a word since. Put that in too.
+    Voltage (Critical Mass): *flatly* You let me walk out of Albion. March to tonight, I never said a word. Put that in too.
 - voltage_outcome == "talked_down":
     Voltage (Critical Mass): *flatly* March to tonight, and I never said a word. Put that in too.
 - voltage_outcome == "fought" or voltage_outcome == "ko":
@@ -295,6 +295,8 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 === walk_victoria ===
 ~ six_vic = true
 {
+- victoria_gallery == "ko" and m03_victoria_fate == "recruited":
+    Victoria Sterling: You asked nicely in Cardiff. Tonight you didn't bother. I'll want a doctor, and then a lawyer.
 - victoria_gallery == "ko":
     Victoria Sterling: You never did learn to ask first. Not in Cardiff, not here. I'll want a doctor, and then a lawyer.
 - m03_victoria_fate == "recruited":
@@ -501,6 +503,10 @@ Director Magnus Netherton: I know. I kept it to one page.
 + { m09_completed } [You said you'd tell me the rest.]
 + [(Stand with her.)]
 -
+// R2-M4: m09's Reading, shown to her in Helena.
+{ m09_completed and m09_reading_told_hax:
+    Agent HaX: You showed me what he wrote about you in Helena. So you get this.
+}
 Agent HaX: The night he left, he asked me to go with him.
 Narrator: On the table, the screen turns over to six. Nothing happens.
 {
@@ -561,8 +567,8 @@ Director Magnus Netherton: Nobody holds the map now. Not him, not the buyers, no
 #exit_conversation
 -> finished
 
-// MC §8.3: no walkabout, no rest, no HaX. The screen carries Social
-// Fabric's story as the object's own text; no narrator reads it.
+// MC §8.3: no walkabout, no rest, no HaX in person. The screen's story is read
+// in the scene by Narrator[none] lines (alignment A2, user ruling).
 === executed ===
 Narrator: The forward post at six. The screen on the table isn't showing the clock any more.
 Director Magnus Netherton: I will not put my name under this one. You will be held until the board sits.
@@ -584,7 +590,8 @@ Narrator[none]: One paragraph: a SAFETYNET agent shot a man in a converted Cold 
 === executed_close ===
 Director Magnus Netherton: Take 0x00 to the second van. Nobody discusses tonight with them until the board sits.
 // Alignment A2: HaX's later message inside the scene (T-56 stays as the thread's record).
-Narrator: In the van, your phone lights once. HaX.
+// R2-m9: Ghost's and the Recruiter's last words, accounted for and left unread.
+Narrator: In the van, your phone lights twice. A number with no name, which you don't open. Then HaX.
 #set_global:six_done:true
 #set_global:closing_done:true
 Narrator: 'I'll be at the board. I don't know what I'll say.'
@@ -614,6 +621,13 @@ Narrator: 'I'll be at the board. I don't know what I'll say.'
 // Nothing on a cold start. Before "the rest", and before the suspension.
 === season ===
 ~ temp key = season_line()
+{ key == "" and not (m09_completed and m09_memo_stance != ""):
+    ->->
+}
+// R2-m12: a breath before he adds it up, so he never runs five lines.
++ [Sir?]
++ [(Wait.)]
+-
 {
 - key == "albion_full":
     Director Magnus Netherton: You told Albion's public the truth. That is why the Council let me run this raid at all.
@@ -628,7 +642,9 @@ Narrator: 'I'll be at the board. I don't know what I'll say.'
 - key == "austin_covered":
     Director Magnus Netherton: You covered Austin when the numbers said otherwise. You did the same tonight.
 - key == "austin_uncovered":
-    Director Magnus Netherton: Eleven counties have dropped calls since Denver. Tonight is the first night I can tell them why.
+    Director Magnus Netherton: Eleven counties have dropped calls since Austin. Tonight is the first night I can tell them why.
+- key == "denver":
+    Director Magnus Netherton: In Denver you held the team in the air all night. Tonight you went in.
 - key == "mole":
     Director Magnus Netherton: You caught one of ours at his own desk. Tonight you walked through his door and came back.
 - key == "first_week_button":

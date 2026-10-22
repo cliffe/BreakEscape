@@ -14,8 +14,13 @@ INCLUDE m10_carryover_vars.ink
 // File-locals (tess_ prefix; never a scenario global's name)
 VAR tess_quiet = false      // set before every exit, so a reopen of `parked` re-routes
 VAR tess_menu = false       // set before every divert into a choices-only menu; a reopen finds it false and re-routes
-VAR tess_bridge = false
-VAR tess_rec = 0          // record lines read in `case` (alignment A6: two at most)     // true only on the first pass through exch_bridge
+VAR tess_bridge = false     // true only on the first pass through exch_bridge
+VAR tess_rec = 0            // record lines read in `case` (alignment A6: two at most)
+VAR tess_case_step = 0      // R2-m1: 1 once the pitch is done, 2 once the records are; a reload resumes there
+VAR tess_rec_albion = false // each record, written on its pick
+VAR tess_rec_derek = false
+VAR tess_rec_debrief = false
+VAR tess_rec_cold = false
 
 === start ===
 -> core_router
@@ -198,9 +203,17 @@ Agent HaX: And the line into our vault is open from here. We left it open.
 -> core_router
 
 // FA §4.1 step 1; SE §2.2; MC §6.2. The Publication, the offer every player
-// hears, his evidence (three record lines at most, two before an answer), then
-// the Recruiter beat. A choice at least every three lines.
+// hears, his record (two lines at most, each answered; alignment A6), then the
+// Recruiter beat. A choice at least every three lines. R2-m1: resumes by
+// tess_case_step, so a reload never replays the pitch or a finished record.
 === case ===
+{
+- tess_case_step >= 2:
+    -> case_recruiter
+- tess_case_step == 1:
+    Dr Adrian Tesseract: Where was I. Your record.
+    -> case_records
+}
 Dr Adrian Tesseract: All four. Good. Now it's my turn.
 + [Go on, then.]
 + [Step away from the console first.]
@@ -229,34 +242,37 @@ Dr Adrian Tesseract: Either you press it, or I get a courtroom. I've costed both
 + [I'm not pressing anything.]
 + [Why would I?]
 -
+~ tess_case_step = 1
 { m07_completed:
-    Dr Adrian Tesseract: I told you once I prefer to watch. I've watched.
+    Dr Adrian Tesseract: I told you once I prefer to watch. I've watched you since your first day.
 - else:
-    Dr Adrian Tesseract: I prefer to watch. I've watched you.
+    Dr Adrian Tesseract: I prefer to watch. I've watched you since your first day.
 }
+-> case_records
+
 // Alignment A6: two record lines at most, by the arc's priority (Albion and
 // his memo, then Derek, then the m07 debrief), each answered in the player's
 // own voice with his one-line reply. Satoshi moved to the Join offer, the
 // frozen bank to his arrival. A cold start hears nothing m01-specific (A4, m1).
-~ tess_rec = 0
-{ m04_completed or (m09_completed and m09_memo_stance != ""):
+=== case_records ===
+{ not tess_rec_albion and (m04_completed or (m09_completed and m09_memo_stance != "")):
     -> rec_albion ->
 }
-{ tess_rec < 2 and m01_completed:
+{ tess_rec < 2 and not tess_rec_derek and m01_completed:
     -> rec_derek ->
 }
-{ tess_rec < 2 and m07_completed and m07_debrief_stance != "":
+{ tess_rec < 2 and not tess_rec_debrief and m07_completed and m07_debrief_stance != "":
     -> rec_debrief ->
 }
-{ tess_rec == 0:
+{ tess_rec == 0 and not tess_rec_cold:
     -> rec_cold ->
 }
-Dr Adrian Tesseract: Since your first day.
+~ tess_case_step = 2
 -> case_recruiter
 
 // Record 1: Albion, and what the player told Netherton about his memo (m09 A1).
 === rec_albion ===
-~ tess_rec = tess_rec + 1
+~ temp memo = m09_completed and m09_memo_stance != ""
 {
 - m04_completed and m04_disclosure_choice == "full":
     Dr Adrian Tesseract: You told them the truth, and they audited every site. That was my lesson, delivered by you.
@@ -268,31 +284,33 @@ Dr Adrian Tesseract: Since your first day.
     Dr Adrian Tesseract: Albion. A site left open because someone decided the hole was worth more than the fix. I argued against that, once.
 }
 {
-- m09_completed and m09_memo_stance == "yes_albion":
+- memo and m09_memo_stance == "yes_albion":
     Dr Adrian Tesseract: You told Magnus I was right about Albion. Say it to me.
-- m09_completed and m09_memo_stance == "no":
+- memo:
     Dr Adrian Tesseract: You told Magnus I was wrong about all of it. Even Albion?
 }
-+ { m09_completed and m09_memo_stance == "yes_albion" } [About Albion, yes. About tonight, no.]
+// R2-m2: when he asks about the memo, only the memo answer and a decline.
++ { memo and m09_memo_stance == "yes_albion" } [About Albion, yes. About tonight, no.]
     Dr Adrian Tesseract: That's the first honest thing your service has said to me in seven years.
-+ { m09_completed and m09_memo_stance == "no" } [Even Albion. You knew, and you kept it nine years.]
++ { memo and m09_memo_stance == "no" } [Even Albion. You knew, and you kept it nine years.]
     Dr Adrian Tesseract: I did. So did your service. Then we were both wrong.
-+ { m04_completed and m04_disclosure_choice == "full" } [They had a right to know.]
++ { not memo and m04_disclosure_choice == "full" } [They had a right to know.]
     Dr Adrian Tesseract: They did. So does everyone else, at six.
-+ { m04_completed and m04_disclosure_choice == "partial" } [I told them what they could use.]
++ { not memo and m04_disclosure_choice == "partial" } [I told them what they could use.]
     Dr Adrian Tesseract: That's what we told ourselves, for nine years.
-+ { m04_completed and m04_disclosure_choice == "quiet" } [I bought time to fix it.]
++ { not memo and m04_disclosure_choice == "quiet" } [I bought time to fix it.]
     Dr Adrian Tesseract: So did we. Nine years of it.
-+ { not m04_completed and m09_memo_stance == "" } [Then you should have sent your notice.]
-    Dr Adrian Tesseract: Yes. I should have.
-+ [That was my call. Not yours.]
++ { memo } [I'm not saying it for you.]
+    Dr Adrian Tesseract: No. You said it for Magnus. That's how it starts.
++ { not memo } [That was my call. Not yours.]
     Dr Adrian Tesseract: It was. I'm only reading it back.
 -
+~ tess_rec_albion = true
+~ tess_rec = tess_rec + 1
 ->->
 
 // Record 2: Derek, only for a player who met him (A4).
 === rec_derek ===
-~ tess_rec = tess_rec + 1
 {
 - m01_final_choice == "fight":
     Dr Adrian Tesseract: You beat a marketing manager and called it a war.
@@ -320,11 +338,12 @@ Dr Adrian Tesseract: Since your first day.
 + [That was my first day.]
     Dr Adrian Tesseract: It was. I've been reading since.
 -
+~ tess_rec_derek = true
+~ tess_rec = tess_rec + 1
 ->->
 
 // Record 3: the m07 debrief, if fewer than two have played.
 === rec_debrief ===
-~ tess_rec = tess_rec + 1
 {
 - m07_debrief_stance == "defended":
     Dr Adrian Tesseract: 'I'd make it again.' You would. I counted on it.
@@ -346,11 +365,12 @@ Dr Adrian Tesseract: Since your first day.
 + [That was my call. Not yours.]
     Dr Adrian Tesseract: It was. I'm only reading it back.
 -
+~ tess_rec_debrief = true
+~ tess_rec = tess_rec + 1
 ->->
 
 // No record to read: the two dead agents, which every player shares.
 === rec_cold ===
-~ tess_rec = tess_rec + 1
 Dr Adrian Tesseract: Two of yours died at the sites nobody covered. I've read their names.
 + { m07_completed or m09_completed } [Callum Fraser. Ana Lúcia Ferreira.]
     Dr Adrian Tesseract: Yes. You say them better than I do.
@@ -358,6 +378,8 @@ Dr Adrian Tesseract: Two of yours died at the sites nobody covered. I've read th
     Dr Adrian Tesseract: Then we agree on the price, if nothing else.
 + [(Say nothing.)]
 -
+~ tess_rec_cold = true
+~ tess_rec = tess_rec + 1
 ->->
 
 // FA row 31 (ruling 14): Ghost's words in his mouth; HaX's own m02 line back.
@@ -523,19 +545,19 @@ Dr Adrian Tesseract: That's about me. I asked about a price.
 
 // Ledger sting (SE §2.1): stings, decides nothing.
 === exch_1_sting ===
-{ m02_completed and m02_patient_bed4_deceased:
-    Dr Adrian Tesseract: Bed four at St. Catherine's. I have him as one. You were in the building.
-}
-// Alignment A3: m05, by Torres's fate. Stings, decides nothing.
+// R2-m5: one sting at most between the point and his reply: bed four, else m05.
 {
+- m02_completed and m02_patient_bed4_deceased:
+    Dr Adrian Tesseract: Bed four at St. Catherine's. I have him as one. You were in the building.
+// Alignment A3: m05, by Torres's fate. Stings, decides nothing.
 - m05_final_choice == "combat_lethal":
     Dr Adrian Tesseract: David Torres lay by his server rack for forty minutes. Twenty would have saved him. I have him as one, too.
 - m05_final_choice == "turn_double_agent":
     Dr Adrian Tesseract: Torres sends me nothing now. I assume he sends it to you.
 - m05_final_choice == "arrest":
-    Dr Adrian Tesseract: You handed Torres to the police for paying his daughter's bills. I count her as well.
+    Dr Adrian Tesseract: You handed Torres to the police for paying his wife's hospital bills. I count her as well.
 - m05_final_choice == "public_exposure":
-    Dr Adrian Tesseract: You put Torres's name in the papers. His daughter reads them.
+    Dr Adrian Tesseract: You put Torres's name in the papers. His wife reads them in a hospital bed.
 - m05_final_choice == "combat_nonlethal":
     Dr Adrian Tesseract: You put Torres down, then stayed with him till help came. I noticed that too.
 }
@@ -984,7 +1006,10 @@ Agent HaX: Keep them, and the infusion pumps in a hundred and forty hospitals ar
 -> database_ops ->
 Director Magnus Netherton: Both of them run through holes on that list. Patch the holes and we lose the way in. I will sign it.
 Agent HaX: That's coordinated disclosure. Vendors first, quietly, with time to fix. The ones nobody can patch go to the operators, with workarounds.
-{ m09_albion_notified:
+{
+- m09_albion_notified and m09_debrief_notice_before:
+    Agent HaX: You sent his notice before anyone asked you to. This is that letter, a thousand times.
+- m09_albion_notified:
     Agent HaX: You burned the Critical Mass watch for one letter. This is that letter, a thousand times.
 }
 // Playtest full 1 m-3: each prompt gets its own lead-in; the purge warning
