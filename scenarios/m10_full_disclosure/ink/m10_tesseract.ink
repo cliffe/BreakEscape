@@ -187,11 +187,12 @@ Dr Adrian Tesseract: Finish on my box first. I'll keep.
 // his own mapping on flag4_submitted, or on a walk-up after a reload.
 === flag4_lines ===
 // Educational R1: HaX tells the player about the notice; no line promises a file on his box.
+// VM gating F13 (supersedes the Educational R1 rewording): the unsent notice is a story artefact on the core host.
 { m09_completed:
-    Agent HaX: He kept the notice from Helena. Nine years, and never sent.
+    Agent HaX: The notice from Helena is on his box too. Nine years, and never sent.
 - else:
     Agent HaX: He argued for the vendor nine years ago and lost.
-    Agent HaX: He wrote a notice to the vendor himself, and he never sent it.
+    Agent HaX: The notice he wrote to the vendor is on his box. He never sent it.
 }
 Agent HaX: I've got his box. If anything goes out from that console, I can try to kill the feed. Try.
 + [Only try?]
@@ -221,19 +222,37 @@ Agent HaX: And the line into our vault is open from here. We left it open.
 Dr Adrian Tesseract: All four. Good. Now it's my turn.
 // Scenario design R1 M1: the ending rule. Once, before the case commits: what this
 // starts, at most one loose end from HaX, and a way out that sets nothing.
-{ not tess_warned:
+{
+- not tess_warned:
     ~ tess_warned = true
     Dr Adrian Tesseract: Once I start, we finish tonight, here, one way or another. If there's something you'd like to see to first, go. I'll keep.
     // Scenario design R2 M1: the costliest loose end first (the backdoor), then WREN (or the door log that names her), then the sheet.
     {
     - backdoor_channel_live and not backdoor_closed:
+        ~ tess_loose = "backdoor"
         Agent HaX: His backdoor's still open. The console in the hall closes it.
     - whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "" and clue_door_log:
+        ~ tess_loose = "wren"
         Agent HaX: We still haven't named WREN.
     - whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "":
+        ~ tess_loose = "wren"
         Agent HaX: We never read the office's door log.
     - not casualty_sheet_read:
-        Agent HaX: You never read his sheet. It's on the workshop bench.
+        ~ tess_loose = "sheet"
+        Agent HaX: You never read his sheet. It's pinned above the workshop bench.
+    }
+- not tess_loose2_said:
+    // Scenario design R3 n3: after "Not yet", the next loose end still open (once), not the one already named.
+    ~ tess_loose2_said = true
+    {
+    - tess_loose != "backdoor" and backdoor_channel_live and not backdoor_closed:
+        Agent HaX: His backdoor's still open. The console in the hall closes it.
+    - tess_loose != "wren" and whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "" and clue_door_log:
+        Agent HaX: We still haven't named WREN.
+    - tess_loose != "wren" and whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "":
+        Agent HaX: We never read the office's door log.
+    - tess_loose != "sheet" and not casualty_sheet_read:
+        Agent HaX: You never read his sheet. It's pinned above the workshop bench.
     }
 }
 + [Go on, then.]
@@ -810,7 +829,7 @@ Dr Adrian Tesseract: Somebody has to be the during. Better me.
     -> core_router
 // slot 4 (ruling 5: the notes answer needs the optional annotation read): the Tomb Alpha notes > what HaX does with the line > plain decoy
 // Puzzle chains P4: what an m09 player who opened the sheet saw.
-+ { tapes } [Your Alpha notes made students decode it themselves. Now you'd do it for everyone.]
++ { tapes } [Your Alpha notes made students work it out. Now you'd hand everyone the answer.]
     ~ exchange_3 = "record"
     -> ko_sting ->
     -> first_landed ->

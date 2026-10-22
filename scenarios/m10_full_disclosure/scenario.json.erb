@@ -176,6 +176,19 @@ model_password = 'DOUBLECOUNT'
 cupboard_pin = '2817'
 outer_lock_pin = '6083'
 
+# --- VM gating, F12 (FINALE_VM_GATING_HANDOFF.md B5) ---------------------------
+# PLACEHOLDER (VM): these strings must equal what the SecGen build creates for the
+# monitoring host (gates flag 1), the release host (gates flag 3) and the core
+# host (gates flag 4). The scenario binding carries only flags (flags_for_vm), not
+# account names, passwords or keys, so they are fixed strings here, as m01's
+# password list and m09's logins are. Not checked against the VM: Opus agents don't
+# open the VM plan. The opus48 agent or the user replaces them.
+monitor_login_user = 'PLACEHOLDER_monitor_user'
+monitor_login_password = 'PLACEHOLDER_monitor_password'
+release_login_user = 'PLACEHOLDER_release_user'
+release_login_password = 'PLACEHOLDER_release_password'
+core_access_key = 'PLACEHOLDER_core_access_key'
+
 # --- Readable strings, copied from S6 (stage 6 lore_fragments.md) ------------
 # Fixed text only. Each block is emitted with j.(), which escapes it for JSON.
 txt = {}
@@ -1711,7 +1724,11 @@ end
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.m04_robert_vance_ko === true && !globalVars.m04_voltage_captured && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 6000, "message": "I rang Vance. He said no. He said you'd know why." } },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Tool Roll' && data.roomId === 'power_room' && globalVars.m04_static_left_alone === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Static got out of Albion on his own. That's his." } },
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true", "onceOnly": true, "completeTask": "cut_the_shutter" },
-            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2500, "message": "Shutter's dead. The hall's next." } },
+            <%# Dialogue R3 m4: one shutter text, first match wins (each sets shutter_text_sent): the stair open when flags 2 and 3 are in; a short "The hall's next." after a voice already said the shutter is dead (Vance, Elena, captured Voltage); otherwise as before. %>
+            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && !globalVars.shutter_text_sent && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "shutter_text_sent": true }, "sendTimedMessage": { "delay": 2500, "message": "Shutter's dead. The stair's open." } },
+            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.cut_step === 3 && !globalVars.phone_voice_is_hax && !globalVars.shutter_text_sent && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "shutter_text_sent": true }, "sendTimedMessage": { "delay": 2500, "message": "The hall's next." } },
+            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.voltage_outcome === 'by_hand' && !globalVars.shutter_text_sent && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "shutter_text_sent": true }, "sendTimedMessage": { "delay": 2500, "message": "The hall's next." } },
+            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && !globalVars.shutter_text_sent && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "shutter_text_sent": true }, "sendTimedMessage": { "delay": 2500, "message": "Shutter's dead. The hall's next." } },
             <%# Puzzle chains P2: one "Shutter's dead" text on every cut (the NPC cuts, HaX's talk-through, after Vance's or Elena's cut_done call). The isolator's click at step 2 is the pull: cut_step first, so cut_done's cut_step === 3 test holds when the cut's change fires. %>
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && data.roomId === 'power_room' && globalVars.cut_step === 2 && !globalVars.gallery_shutter_cut", "cooldown": 0, "setGlobal": { "cut_step": 3, "gallery_shutter_cut": true } },
 <%# --- The server hall: the console, the shares, the schedule (OT 6; CONTRACT 3.3) --- %>
@@ -1719,10 +1736,10 @@ end
             { "eventPattern": "global_variable_changed:head_start_killed", "condition": "value === 'zero_day'", "setGlobal": { "share_zero_day": "stopped" } },
             { "eventPattern": "global_variable_changed:head_start_killed", "condition": "value === 'trace' && globalVars.share_zero_day === 'live'", "setGlobal": { "share_zero_day": "traced" } },
             <%# Playtest R1 m-4: a reload still spawns at the forward post (engine); once the raid is below ground, HaX points back down. %>
-            { "eventPattern": "room_entered:forward_post", "condition": "globalVars.breach_open === true && globalVars.ending === '' && !globalVars.hax_jammed", "cooldown": 600000, "sendTimedMessage": { "delay": 2500, "message": "Everything below is still open. Ask me where we are." } },
+            { "eventPattern": "room_entered:forward_post", "condition": "globalVars.breach_open === true && globalVars.ending === '' && !globalVars.hax_jammed && !data.previousRoom", "cooldown": 600000, "sendTimedMessage": { "delay": 2500, "message": "Everything below is still open. Ask me where we are." } },
             <%# Playtest R1 M-1: withdrawing Zero Day's order before four (Vos's secret, Victoria's picks) stops a traced share too: nothing goes, so there is nothing to follow. HaX says so (once), when she can reach the player. %>
-            { "eventPattern": "global_variable_changed:share_zero_day", "condition": "value === 'stopped' && globalVars.head_start_killed === 'trace' && !globalVars.trace_loss_told && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "trace_loss_told": true }, "sendTimedMessage": { "delay": 2500, "message": "Your trace is gone. Their order was pulled before it went, so there was nothing to follow. Zero Day got nothing instead." } },
-            { "eventPattern": "global_variable_changed:hax_jammed", "condition": "value === false && globalVars.share_zero_day === 'stopped' && globalVars.head_start_killed === 'trace' && !globalVars.trace_loss_told", "onceOnly": true, "setGlobal": { "trace_loss_told": true }, "sendTimedMessage": { "delay": 4000, "message": "Your trace is gone. Their order was pulled before it went, so there was nothing to follow. Zero Day got nothing instead." } },
+            { "eventPattern": "global_variable_changed:share_zero_day", "condition": "value === 'stopped' && globalVars.head_start_killed === 'trace' && !globalVars.trace_loss_told && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "trace_loss_told": true }, "sendTimedMessage": { "delay": 2500, "message": "Your trace is gone. Zero Day's order was pulled before it went, so there's nothing to follow. They got nothing." } },
+            { "eventPattern": "global_variable_changed:hax_jammed", "condition": "value === false && globalVars.share_zero_day === 'stopped' && globalVars.head_start_killed === 'trace' && !globalVars.trace_loss_told", "onceOnly": true, "setGlobal": { "trace_loss_told": true }, "sendTimedMessage": { "delay": 7000, "message": "Your trace is gone. Zero Day's order was pulled before it went, so there's nothing to follow. They got nothing." } },
             { "eventPattern": "global_variable_changed:head_start_killed", "condition": "value === 'ghost' && globalVars.share_resale === 'live'", "setGlobal": { "share_resale": "stopped" } },
             { "eventPattern": "global_variable_changed:head_start_killed", "condition": "value !== ''", "onceOnly": true, "completeTask": "use_the_console" },
             { "eventPattern": "global_variable_changed:flag2_submitted", "condition": "value === true && globalVars.backdoor_channel_live === true", "onceOnly": true, "unlockTask": "close_the_backdoor" },
@@ -1835,7 +1852,7 @@ end
             <%# Educational R1 E-m7: once the cracker's source is known, steer towards the keypad's own evidence (the outer lock stays a PIN lock). %>
             { "eventPattern": "global_variable_changed:sleeper_caught", "condition": "value === true && globalVars.workshop_entered === true && !globalVars.cracker_text_sent && !globalVars.outer_lock_open && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "cracker_text_sent": true }, "sendTimedMessage": { "delay": 6000, "message": "Her cracker came off his bench. I wouldn't trust it at his door. The worn keys and the rota will get you in.", "skipIfGlobal": "outer_lock_open" } },
             <%# Scenario design R2 m1: T-59 needs the bench in the player's world, so never during the briefing on a taken save. The twin speaks on entering the workshop when the sleeper was caught earlier; cracker_text_sent keeps it to once. %>
-            { "eventPattern": "room_entered:workshop_floor", "condition": "globalVars.sleeper_caught === true && !globalVars.cracker_text_sent && !globalVars.outer_lock_open && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "cracker_text_sent": true }, "sendTimedMessage": { "delay": 6000, "message": "Her cracker came off his bench. I wouldn't trust it at his door. The worn keys and the rota will get you in.", "skipIfGlobal": "outer_lock_open" } },
+            { "eventPattern": "room_entered:workshop_floor", "condition": "globalVars.sleeper_caught === true && !globalVars.cracker_text_sent && !globalVars.outer_lock_open && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "cracker_text_sent": true }, "sendTimedMessage": { "delay": 10000, "message": "Her cracker came off his bench. I wouldn't trust it at his door. The worn keys and the rota will get you in.", "skipIfGlobal": "outer_lock_open" } },
             <%# Educational R1 E-m5: a recognition rung for the Base64 strip (m02 taught the shape). %>
             { "eventPattern": "global_variable_changed:casualty_sheet_read", "condition": "value === true && globalVars.m02_completed === true && !globalVars.margin_note_read && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 30000, "message": "Upper and lower case, digits, no spaces. You've seen that shape before.", "skipIfGlobal": "margin_note_read" } },
             <%# Dialogue R2 m5: a cold start hasn't met the shape in m02. %>
@@ -1843,7 +1860,7 @@ end
             { "eventPattern": "global_variable_changed:clue_bench_log", "condition": "value === true && globalVars.whodunit_live === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "That's a cloner in our own breaching kit. The case's sign-out sheet is on the table up here. Want the names?" } },
             <%# Puzzle chains P5: the rack seen is the evidence Kowalczyk's fourth card needs; a pointer if the bench log is read first. %>
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Cracker Rack' && data.roomId === 'workshop_floor' && !globalVars.cracker_rack_seen", "cooldown": 0, "setGlobal": { "cracker_rack_seen": true } },
-            { "eventPattern": "global_variable_changed:clue_bench_log", "condition": "value === true && !globalVars.cracker_rack_seen && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 3500, "message": "Have a look at that rack in the corner bay.", "skipIfGlobal": "cracker_rack_seen" } },
+            { "eventPattern": "global_variable_changed:clue_bench_log", "condition": "value === true && !globalVars.cracker_rack_seen && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 10000, "message": "Have a look at that rack in the corner bay.", "skipIfGlobal": "cracker_rack_seen" } },
             { "eventPattern": "global_variable_changed:clue_bench_log", "condition": "value === true && globalVars.clue_door_log === true && globalVars.clue_alibi === true && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 6000, "message": "That's three things that point somewhere. Your call, and you don't have to make it.", "skipIfGlobal": "hax_jammed" } },
             { "eventPattern": "global_variable_changed:clue_alibi", "condition": "value === true && globalVars.clue_door_log === true && globalVars.clue_bench_log === true && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 6000, "message": "That's three things that point somewhere. Your call, and you don't have to make it.", "skipIfGlobal": "hax_jammed" } },
             { "eventPattern": "global_variable_changed:clue_door_log", "condition": "value === true && globalVars.clue_alibi === true && globalVars.clue_bench_log === true && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 12000, "message": "That's three things that point somewhere. Your call, and you don't have to make it.", "skipIfGlobal": "hax_jammed" } },
@@ -2578,6 +2595,19 @@ end
           "takeable": false,
           "position": "as-type:m10_van_step",
           "observations": "The second van. A steel rail along one wall, for cuffs."
+        },
+        {
+          "_comment": "VM gating F12 (handoff B5 item 1): the monitoring host's service login, a tag hanging off the gate console, so flag 1 needs this find. PLACEHOLDER position (tile, beside the console's trestle; dressing to confirm) and PLACEHOLDER (VM) strings.",
+          "type": "notes",
+          "id": "monitor_maintenance_tag",
+          "name": "Maintenance Tag",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 15, "y": 4 },
+          "observations": "A laminated maintenance tag on a cable tie, cut from the gate console's power lead.",
+          "text": "TOMB GAMMA SECURITY MONITORING. Service login, for maintenance only.\nUser: <%= monitor_login_user %>\nPassword: <%= monitor_login_password %>\nDo not remove.",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_unlocks": "gate_terminal"
         }
       ]
     },
@@ -3262,6 +3292,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "voice": <%= voice.(:wendell) %>,
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 90, "attackDamage": 6, "pauseToAttack": true } },
           "eventMappings": [
+            <%# Puzzle chains R2 n2: he watches the player pull the breaker he was asked not to touch. %>
+            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.wendell_outcome === 'worked_round' && globalVars.cut_step === 3", "onceOnly": true, "bark": "Your funeral. I didn't see a thing." },
             <%# Scenario design R1 m3: a click on the isolator before anyone has asked him. %>
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.cut_step !== 2 && !globalVars.m04_voltage_escaped && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut && !globalVars.cut_by_hand && globalVars.wendell_outcome !== 'told' && globalVars.wendell_outcome !== 'worked_round'", "bark": "Hands off my panel. Ask, if you want a breaker." },
             <%= after_end_json.('power_room') %>
@@ -3304,6 +3336,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "koImmune": true,
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
+            <%# Puzzle chains R2 n6: a click before talking to him gets his offer (his existing opener line). %>
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.m04_voltage_captured === true && globalVars.cut_step !== 2 && !globalVars.gallery_shutter_cut && globalVars.voltage_outcome !== 'by_hand' && globalVars.voltage_outcome !== 'his_hands'", "bark": "Let me do it. It's quicker. Or do it yourself, and I'll tell you which one's the gallery camera." },
             <%# Puzzle chains P2: his success line becomes a bark on the player's pull. %>
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.voltage_outcome === 'by_hand'", "onceOnly": true, "bark": "That's it. Shutter's dead. You'll want to say you did it alone. You did." },
             <%= after_end_json.('power_room') %>
@@ -3369,15 +3403,15 @@ not_tethered = '!globalVars.nightshade_tethered'
           "observations": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it.",
           "observationVariants": [
             <%# Puzzle chains P2: the player's own pull (cut_step 3); the NPC cuts keep the variants below. %>
-            { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3 && globalVars.gallery_camera_blinded === true", "value": "Key a quarter right. The third breaker from the left down, where you pulled it. GALLERY SHUTTER: ISOLATED. Under the row, the painted toggle thrown: GALLERY CAMERA: OFF." },
-            { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3", "value": "Key a quarter right. The third breaker from the left down, where you pulled it. GALLERY SHUTTER: ISOLATED." },
+            { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3 && globalVars.gallery_camera_blinded === true", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED. Under the row, the painted toggle thrown: GALLERY CAMERA: OFF." },
+            { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.gallery_camera_blinded === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED. Under it, a smaller switch thrown the other way: GALLERY CAMERA: OFF." },
             { "condition": "globalVars.gallery_shutter_cut === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED." }
           ],
           "text": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it.",
           "textVariants": [
-            { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3 && globalVars.gallery_camera_blinded === true", "value": "Key a quarter right. The third breaker from the left down, where you pulled it. GALLERY SHUTTER: ISOLATED. Under the row, the painted toggle thrown: GALLERY CAMERA: OFF." },
-            { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3", "value": "Key a quarter right. The third breaker from the left down, where you pulled it. GALLERY SHUTTER: ISOLATED." },
+            { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3 && globalVars.gallery_camera_blinded === true", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED. Under the row, the painted toggle thrown: GALLERY CAMERA: OFF." },
+            { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.gallery_camera_blinded === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED. Under it, a smaller switch thrown the other way: GALLERY CAMERA: OFF." },
             { "condition": "globalVars.gallery_shutter_cut === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED." }
           ]
@@ -3635,6 +3669,19 @@ not_tethered = '!globalVars.nightshade_tethered'
           "flagRewards": [
             { "type": "emit_event", "event_name": "flag_3_in", "description": "Flag 3: out of the release service onto its host" }
           ]
+        },
+        {
+          "_comment": "VM gating F12 (handoff B5 item 2): the release host's operator login, behind the power-room card (the hall is past the power room), so flag 3 needs this find. PLACEHOLDER position (tile, open floor by the east racks; dressing to confirm) and PLACEHOLDER (VM) strings.",
+          "type": "notes",
+          "id": "release_operator_card",
+          "name": "Operator's Duty Card",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 17, "y": 5 },
+          "observations": "A duty card dropped by the racks. Release service, operator on shift.",
+          "text": "RELEASE SERVICE. OPERATOR ON SHIFT.\nHost login: <%= release_login_user %>\nPassword: <%= release_login_password %>\nSign the log at handover.",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_unlocks": "sealed_hatch"
         },
         {
           "type": "pnw_portable_printer1",
@@ -4002,6 +4049,19 @@ not_tethered = '!globalVars.nightshade_tethered'
           "position": "as-type:m10_slit_window",
           "puzzle_graph_links": [{ "from": "action_opened_from_inside", "to": "door_core", "dashed": true }],
           "observations": "Slit windows down into the core. Bare concrete, one console, and the top of a grey head that doesn't look up."
+        },
+        {
+          "_comment": "VM gating F12 (handoff B5 item 3): the core host's access key, in the gallery, so it is reachable only after the gallery stair and flag 4 needs this find. PLACEHOLDER position (tile, on the walkway; dressing to confirm) and PLACEHOLDER (VM) string.",
+          "type": "notes",
+          "id": "core_access_key",
+          "name": "Core Access Key",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 3, "y": 3 },
+          "observations": "A sealed key envelope clipped to the walkway rail, stamped CORE. ACCESS.",
+          "text": "CORE. ACCESS KEY. ONE HOLDER.\n<%= core_access_key %>\nReturn to the console on shift change.",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_unlocks": "core_host_terminal"
         }
       ]
     },
@@ -4301,6 +4361,9 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "clue_alibi": false,
     "ns_borrow_hint": false,
     "cracker_rack_seen": false,
+    "tess_loose": "",
+    "shutter_text_sent": false,
+    "tess_loose2_said": false,
     "trace_loss_told": false,
     "tess_rec": 0,
     "tess_rec_albion": false,

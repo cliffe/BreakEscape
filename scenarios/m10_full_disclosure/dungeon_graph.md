@@ -11,10 +11,10 @@ Tomb Gamma is a Cold War bunker under the Montana hills, and the man behind ENTR
 | Story aims | 7 |
 | Total tasks | 28 (8 optional) |
 | VM flag challenges | 4 |
-| Physical locks | 10 |
+| Physical locks | 12 |
 | AND-gate convergences | 1 |
 | Rooms | 8 |
-| Puzzle graph nodes / edges | 77 / 108 |
+| Puzzle graph nodes / edges | 82 / 114 |
 | Story graph nodes / edges | 7 / 6 |
 
 ## Critical Path
@@ -93,6 +93,7 @@ flowchart TD
   helena_s_plans_tomb_gamma_as_built{"Helena's Plans: Tomb Gamma, As Built"}
   field_console_gate["Field Console (Gate)"]
   gate_terminal{"Gate Terminal"}
+  maintenance_tag{"Maintenance Tag"}
   npc_director_magnus_netherton{"Director Magnus Netherton"}
   action_tether_question>"The tether, on the silent branch (door_scene_done)"]
   action_split_line>"The split line"]
@@ -129,7 +130,11 @@ flowchart TD
   field_console_server_hall["Field Console (Server Hall)"]
   release_console{"Release Console"}
   sealed_section_hatch{"Sealed Section Hatch"}
+  operator_s_duty_card{"Operator's Duty Card"}
+  lock_sealed_hatch["Sealed Hatch"]
   keypad_face_plate{"Keypad Face Plate"}
+  core_access_key{"Core Access Key"}
+  lock_core_host_terminal["Core Host Terminal"]
   npc_victoria_sterling{"Victoria Sterling"}
   action_opened_from_inside>"Opened from inside (Victoria or Vos)"]
   npc_pieter_vos{"Pieter Vos"}
@@ -166,6 +171,8 @@ flowchart TD
   forward_post --> field_console_gate
   forward_post --> gate_terminal
   gate_terminal --> door_blast_tunnel
+  forward_post --> maintenance_tag
+  maintenance_tag --> gate_terminal
   forward_post --> npc_director_magnus_netherton
   npc_director_magnus_netherton --> action_tether_question
   npc_director_magnus_netherton --> action_split_line
@@ -222,8 +229,12 @@ flowchart TD
   server_hall --> release_console
   server_hall --> sealed_section_hatch
   sealed_section_hatch --> door_gallery
+  server_hall --> operator_s_duty_card
+  operator_s_duty_card --> lock_sealed_hatch
   gallery -.-> keypad_face_plate
   keypad_face_plate -.-> door_core
+  gallery --> core_access_key
+  core_access_key --> lock_core_host_terminal
   gallery --> npc_victoria_sterling
   npc_victoria_sterling --> action_opened_from_inside
   gallery --> npc_pieter_vos
@@ -256,11 +267,11 @@ flowchart TD
   action_cut_the_shutter --> door_gallery
   action_opened_from_inside -.-> door_core
 
-  class door_blast_tunnel,door_security_office,door_workshop_floor,door_power_room,door_gallery,door_core,lock_fitter_locker,lock_lock_records_cupboard,lock_records_cupboard,lock_model_terminal lock
+  class door_blast_tunnel,door_security_office,door_workshop_floor,door_power_room,door_gallery,door_core,lock_fitter_locker,lock_lock_records_cupboard,lock_records_cupboard,lock_model_terminal,lock_sealed_hatch,lock_core_host_terminal lock
   class blast_tunnel,security_office,workshop_floor,power_room,gallery,core,forward_post,server_hall room
   class lock_pick_kit,rfid_cloner,fingerprint_kit,pin_cracker_kowalczyk_s,breaching_case_sign_out_sheet,citadel_incident_file_v_47,helena_s_plans_tomb_gamma_as_built,gate_terminal,records_cupboard_vector_s_code,records_cupboard_ghost_s_code,outer_lock_maintenance_code,monitoring_desk_door_log,gallery_shift_rota,alarm_log_refit_to_date,records_cupboard,fitter_s_locker,casualty_sheet,margin_strip,asante_s_corrected_model,bench_log_outgoing,release_console,sealed_section_hatch,keypad_face_plate,visitor_s_code_card,gallery_shift_code_card item
   class field_console_gate,field_console_server_hall,field_console_core,vmch_submit_flag_1,vmch_submit_flag_2,vmch_submit_flag_3,vmch_submit_flag_4 vm
-  class npc_director_magnus_netherton,npc_agent_0x47_nightshade,npc_officer_kenji_arakawa,npc_agent_0x23_vector,npc_ghost,guard_post_ladder,duty_handset,spare_power_room_card,npc_imran_siddiqui,npc_gary_whitlock,npc_wendell_briggs,npc_voltage_critical_mass,npc_victoria_sterling,npc_pieter_vos,npc_sione_fonoti key
+  class maintenance_tag,npc_director_magnus_netherton,npc_agent_0x47_nightshade,npc_officer_kenji_arakawa,npc_agent_0x23_vector,npc_ghost,guard_post_ladder,duty_handset,spare_power_room_card,npc_imran_siddiqui,npc_gary_whitlock,npc_wendell_briggs,npc_voltage_critical_mass,operator_s_duty_card,core_access_key,npc_victoria_sterling,npc_pieter_vos,npc_sione_fonoti key
   class action_tether_question,action_split_line,action_settle_the_table,action_arakawa_call,action_opens_power_room,action_cut_the_shutter,action_opened_from_inside action
   class andgate1 gate
   class vmfl_submit_flag_1,vmfl_submit_flag_2,vmfl_submit_flag_3,vmfl_submit_flag_4 flag
@@ -360,6 +371,7 @@ flowchart TD
   helena_s_plans_tomb_gamma_as_built{"Helena's Plans: Tomb Gamma, As Built"}
   field_console_gate["Field Console (Gate)"]
   gate_terminal{"Gate Terminal"}
+  maintenance_tag{"Maintenance Tag"}
   npc_director_magnus_netherton{"Director Magnus Netherton"}
   action_tether_question>"The tether, on the silent branch (door_scene_done)"]
   action_split_line>"The split line"]
@@ -396,7 +408,11 @@ flowchart TD
   field_console_server_hall["Field Console (Server Hall)"]
   release_console{"Release Console"}
   sealed_section_hatch{"Sealed Section Hatch"}
+  operator_s_duty_card{"Operator's Duty Card"}
+  lock_sealed_hatch["Sealed Hatch"]
   keypad_face_plate{"Keypad Face Plate"}
+  core_access_key{"Core Access Key"}
+  lock_core_host_terminal["Core Host Terminal"]
   npc_victoria_sterling{"Victoria Sterling"}
   action_opened_from_inside>"Opened from inside (Victoria or Vos)"]
   npc_pieter_vos{"Pieter Vos"}
@@ -440,6 +456,8 @@ flowchart TD
   forward_post --> field_console_gate
   forward_post --> gate_terminal
   gate_terminal --> door_blast_tunnel
+  forward_post --> maintenance_tag
+  maintenance_tag --> gate_terminal
   forward_post --> npc_director_magnus_netherton
   npc_director_magnus_netherton --> action_tether_question
   npc_director_magnus_netherton --> action_split_line
@@ -496,8 +514,12 @@ flowchart TD
   server_hall --> release_console
   server_hall --> sealed_section_hatch
   sealed_section_hatch --> door_gallery
+  server_hall --> operator_s_duty_card
+  operator_s_duty_card --> lock_sealed_hatch
   gallery -.-> keypad_face_plate
   keypad_face_plate -.-> door_core
+  gallery --> core_access_key
+  core_access_key --> lock_core_host_terminal
   gallery --> npc_victoria_sterling
   npc_victoria_sterling --> action_opened_from_inside
   gallery --> npc_pieter_vos
@@ -546,11 +568,11 @@ flowchart TD
   door_gallery -.-> aim_reach_the_core
   vmfl_submit_flag_4 -.-> aim_reach_the_core
 
-  class door_blast_tunnel,door_security_office,door_workshop_floor,door_power_room,door_gallery,door_core,lock_fitter_locker,lock_lock_records_cupboard,lock_records_cupboard,lock_model_terminal lock
+  class door_blast_tunnel,door_security_office,door_workshop_floor,door_power_room,door_gallery,door_core,lock_fitter_locker,lock_lock_records_cupboard,lock_records_cupboard,lock_model_terminal,lock_sealed_hatch,lock_core_host_terminal lock
   class blast_tunnel,security_office,workshop_floor,power_room,gallery,core,forward_post,server_hall room
   class lock_pick_kit,rfid_cloner,fingerprint_kit,pin_cracker_kowalczyk_s,breaching_case_sign_out_sheet,citadel_incident_file_v_47,helena_s_plans_tomb_gamma_as_built,gate_terminal,records_cupboard_vector_s_code,records_cupboard_ghost_s_code,outer_lock_maintenance_code,monitoring_desk_door_log,gallery_shift_rota,alarm_log_refit_to_date,records_cupboard,fitter_s_locker,casualty_sheet,margin_strip,asante_s_corrected_model,bench_log_outgoing,release_console,sealed_section_hatch,keypad_face_plate,visitor_s_code_card,gallery_shift_code_card item
   class field_console_gate,field_console_server_hall,field_console_core,vmch_submit_flag_1,vmch_submit_flag_2,vmch_submit_flag_3,vmch_submit_flag_4 vm
-  class npc_director_magnus_netherton,npc_agent_0x47_nightshade,npc_officer_kenji_arakawa,npc_agent_0x23_vector,npc_ghost,guard_post_ladder,duty_handset,spare_power_room_card,npc_imran_siddiqui,npc_gary_whitlock,npc_wendell_briggs,npc_voltage_critical_mass,npc_victoria_sterling,npc_pieter_vos,npc_sione_fonoti key
+  class maintenance_tag,npc_director_magnus_netherton,npc_agent_0x47_nightshade,npc_officer_kenji_arakawa,npc_agent_0x23_vector,npc_ghost,guard_post_ladder,duty_handset,spare_power_room_card,npc_imran_siddiqui,npc_gary_whitlock,npc_wendell_briggs,npc_voltage_critical_mass,operator_s_duty_card,core_access_key,npc_victoria_sterling,npc_pieter_vos,npc_sione_fonoti key
   class action_tether_question,action_split_line,action_settle_the_table,action_arakawa_call,action_opens_power_room,action_cut_the_shutter,action_opened_from_inside action
   class andgate1 gate
   class vmfl_submit_flag_1,vmfl_submit_flag_2,vmfl_submit_flag_3,vmfl_submit_flag_4 flag
@@ -653,142 +675,145 @@ flowchart TD
   rc_gate_hut_9{"Gate Hut"}
   rc_van_one_10{"The Van"}
   rc_van_two_11{"The Second Van"}
-  rc_npc_director_magnus_netherton_12("Director Magnus Netherton")
-  rc_npc_agent_hax_13("Agent HaX")
+  rc_monitor_maintenance_tag_12{"Maintenance Tag"}
+  rc_npc_director_magnus_netherton_13("Director Magnus Netherton")
   rc_npc_agent_hax_14("Agent HaX")
-  rc_m10_guide_flag1_15{"SAFETYNET Field Guide: The Monitoring Host"}
-  rc_m10_guide_flag2_16{"SAFETYNET Field Guide: The Staging Copy"}
-  rc_m10_guide_flag3_17{"SAFETYNET Field Guide: Out of the Container"}
-  rc_m10_guide_flag4_18{"SAFETYNET Field Guide: The Core Host"}
-  rc_npc_agent_0x47_nightshade_19("Agent 0x47 'Nightshade'")
-  rc_nightshade_payment_20{"Nightshade's Payment: The Defences"}
-  rc_alarm_override_21{"Nightshade's Override Key"}
-  rc_npc_agent_0x47_nightshade_22("Agent 0x47 'Nightshade'")
-  rc_nightshade_payment_23{"Nightshade's Payment: The Defences"}
-  rc_alarm_override_24{"Nightshade's Override Key"}
-  rc_npc_agent_0x47_nightshade_25("Agent 0x47 'Nightshade'")
-  rc_nightshade_payment_26{"Nightshade's Payment: The Defences"}
-  rc_alarm_override_27{"Nightshade's Override Key"}
-  rc_npc_agent_0x5e_lantern_28("Agent 0x5E 'Lantern'")
+  rc_npc_agent_hax_15("Agent HaX")
+  rc_m10_guide_flag1_16{"SAFETYNET Field Guide: The Monitoring Host"}
+  rc_m10_guide_flag2_17{"SAFETYNET Field Guide: The Staging Copy"}
+  rc_m10_guide_flag3_18{"SAFETYNET Field Guide: Out of the Container"}
+  rc_m10_guide_flag4_19{"SAFETYNET Field Guide: The Core Host"}
+  rc_npc_agent_0x47_nightshade_20("Agent 0x47 'Nightshade'")
+  rc_nightshade_payment_21{"Nightshade's Payment: The Defences"}
+  rc_alarm_override_22{"Nightshade's Override Key"}
+  rc_npc_agent_0x47_nightshade_23("Agent 0x47 'Nightshade'")
+  rc_nightshade_payment_24{"Nightshade's Payment: The Defences"}
+  rc_alarm_override_25{"Nightshade's Override Key"}
+  rc_npc_agent_0x47_nightshade_26("Agent 0x47 'Nightshade'")
+  rc_nightshade_payment_27{"Nightshade's Payment: The Defences"}
+  rc_alarm_override_28{"Nightshade's Override Key"}
   rc_npc_agent_0x5e_lantern_29("Agent 0x5E 'Lantern'")
-  rc_npc_agent_0x2d_anchor_30("Agent 0x2D 'Anchor'")
-  rc_npc_officer_kenji_arakawa_31("Officer Kenji Arakawa")
+  rc_npc_agent_0x5e_lantern_30("Agent 0x5E 'Lantern'")
+  rc_npc_agent_0x2d_anchor_31("Agent 0x2D 'Anchor'")
   rc_npc_officer_kenji_arakawa_32("Officer Kenji Arakawa")
   rc_npc_officer_kenji_arakawa_33("Officer Kenji Arakawa")
-  rc_npc_minder_34("Minder")
-  rc_npc_officer_dev_malhotra_35("Officer Dev Malhotra")
-  rc_npc_agent_0x23_vector_36("Agent 0x23 'Vector'")
-  rc_vector_cupboard_code_37{"Records cupboard: Vector's code"}
-  rc_npc_agent_0x88_phantom_38("Agent 0x88 'Phantom'")
-  rc_npc_minder_39("Minder")
-  rc_npc_voltage_critical_mass_40("Voltage (Critical Mass)")
-  rc_npc_ghost_41("Ghost")
-  rc_ghost_cupboard_code_42{"Records cupboard: Ghost's code"}
-  rc_ghost_lock_code_43{"Outer lock: maintenance code"}
-  rc_npc_victoria_sterling_44("Victoria Sterling")
-  rc_npc_robert_vance_45("Robert Vance")
-  rc_npc_elena_rodriguez_46("Elena Rodriguez")
-  rc_npc_director_magnus_netherton_47("Director Magnus Netherton")
-  rc_npc_agent_hax_48("Agent HaX")
-  rc_npc_director_magnus_netherton_49("Director Magnus Netherton")
-  rc_npc_imran_siddiqui_50("Imran Siddiqui")
-  rc_npc_gary_whitlock_51("Gary Whitlock")
-  rc_npc_wendell_briggs_52("Wendell Briggs")
-  rc_npc_dr_adrian_tesseract_53("Dr Adrian Tesseract")
-  rc_clock_blast_door_54{"Blast Door Panel"}
-  rc_tunnel_rota_55{"Tunnel Post Rota"}
-  rc_post_ladder_56{"Guard Post Ladder"}
-  rc_npc_guard_57("Guard")
+  rc_npc_officer_kenji_arakawa_34("Officer Kenji Arakawa")
+  rc_npc_minder_35("Minder")
+  rc_npc_officer_dev_malhotra_36("Officer Dev Malhotra")
+  rc_npc_agent_0x23_vector_37("Agent 0x23 'Vector'")
+  rc_vector_cupboard_code_38{"Records cupboard: Vector's code"}
+  rc_npc_agent_0x88_phantom_39("Agent 0x88 'Phantom'")
+  rc_npc_minder_40("Minder")
+  rc_npc_voltage_critical_mass_41("Voltage (Critical Mass)")
+  rc_npc_ghost_42("Ghost")
+  rc_ghost_cupboard_code_43{"Records cupboard: Ghost's code"}
+  rc_ghost_lock_code_44{"Outer lock: maintenance code"}
+  rc_npc_victoria_sterling_45("Victoria Sterling")
+  rc_npc_robert_vance_46("Robert Vance")
+  rc_npc_elena_rodriguez_47("Elena Rodriguez")
+  rc_npc_director_magnus_netherton_48("Director Magnus Netherton")
+  rc_npc_agent_hax_49("Agent HaX")
+  rc_npc_director_magnus_netherton_50("Director Magnus Netherton")
+  rc_npc_imran_siddiqui_51("Imran Siddiqui")
+  rc_npc_gary_whitlock_52("Gary Whitlock")
+  rc_npc_wendell_briggs_53("Wendell Briggs")
+  rc_npc_dr_adrian_tesseract_54("Dr Adrian Tesseract")
+  rc_clock_blast_door_55{"Blast Door Panel"}
+  rc_tunnel_rota_56{"Tunnel Post Rota"}
+  rc_post_ladder_57{"Guard Post Ladder"}
   rc_npc_guard_58("Guard")
-  rc_alarm_panel_59{"Alarm Board"}
-  rc_wanted_photo_60{"Shift Notes: Photo"}
-  rc_duty_board_61{"Duty Board"}
-  rc_door_log_62{"Monitoring Desk: Door Log"}
-  rc_duty_handset_63{"Duty Handset"}
-  rc_records_cupboard_64[["Records Cupboard"]]
-  rc_gallery_rota_65{"Gallery Shift Rota"}
-  rc_alarm_log_66{"Alarm Log, Refit to Date"}
-  rc_fitter_locker_67[["Fitter's Locker"]]
-  rc_fitter_spare_card_68{"Spare Power-Room Card"}
-  rc_clock_security_69{"Duty Screen"}
-  rc_npc_guard_70("Guard")
+  rc_npc_guard_59("Guard")
+  rc_alarm_panel_60{"Alarm Board"}
+  rc_wanted_photo_61{"Shift Notes: Photo"}
+  rc_duty_board_62{"Duty Board"}
+  rc_door_log_63{"Monitoring Desk: Door Log"}
+  rc_duty_handset_64{"Duty Handset"}
+  rc_records_cupboard_65[["Records Cupboard"]]
+  rc_gallery_rota_66{"Gallery Shift Rota"}
+  rc_alarm_log_67{"Alarm Log, Refit to Date"}
+  rc_fitter_locker_68[["Fitter's Locker"]]
+  rc_fitter_spare_card_69{"Spare Power-Room Card"}
+  rc_clock_security_70{"Duty Screen"}
   rc_npc_guard_71("Guard")
-  rc_npc_agent_0x23_vector_72("Agent 0x23 'Vector'")
-  rc_vector_cupboard_code_73{"Records cupboard: Vector's code"}
-  rc_npc_agent_0x5e_lantern_74("Agent 0x5E 'Lantern'")
-  rc_npc_officer_kenji_arakawa_75("Officer Kenji Arakawa")
-  rc_npc_agent_0x2d_anchor_76("Agent 0x2D 'Anchor'")
-  rc_casualty_sheet_77{"Casualty Sheet"}
-  rc_casualty_margin_note_78{"Margin Strip"}
-  rc_model_terminal_79[["Bench Terminal: Casualty Model"]]
-  rc_asante_model_80{"Asante's Corrected Model"}
-  rc_bench_log_81{"Bench Log: Outgoing"}
-  rc_clock_workshop_82{"Shift Clock"}
-  rc_cracker_rack_83{"Cracker Rack"}
-  rc_npc_imran_siddiqui_84("Imran Siddiqui")
+  rc_npc_guard_72("Guard")
+  rc_npc_agent_0x23_vector_73("Agent 0x23 'Vector'")
+  rc_vector_cupboard_code_74{"Records cupboard: Vector's code"}
+  rc_npc_agent_0x5e_lantern_75("Agent 0x5E 'Lantern'")
+  rc_npc_officer_kenji_arakawa_76("Officer Kenji Arakawa")
+  rc_npc_agent_0x2d_anchor_77("Agent 0x2D 'Anchor'")
+  rc_casualty_sheet_78{"Casualty Sheet"}
+  rc_casualty_margin_note_79{"Margin Strip"}
+  rc_model_terminal_80[["Bench Terminal: Casualty Model"]]
+  rc_asante_model_81{"Asante's Corrected Model"}
+  rc_bench_log_82{"Bench Log: Outgoing"}
+  rc_clock_workshop_83{"Shift Clock"}
+  rc_cracker_rack_84{"Cracker Rack"}
   rc_npc_imran_siddiqui_85("Imran Siddiqui")
-  rc_npc_gary_whitlock_86("Gary Whitlock")
+  rc_npc_imran_siddiqui_86("Imran Siddiqui")
   rc_npc_gary_whitlock_87("Gary Whitlock")
-  rc_npc_guard_88("Guard")
-  rc_npc_agent_0x5e_lantern_89("Agent 0x5E 'Lantern'")
-  rc_npc_officer_kenji_arakawa_90("Officer Kenji Arakawa")
-  rc_npc_agent_0x2d_anchor_91("Agent 0x2D 'Anchor'")
-  rc_shutter_isolator_92{"Shutter Isolator"}
-  rc_clock_power_93{"Load Board"}
-  rc_bypass_panel_94{"Bypass Panel"}
-  rc_static_kit_95{"Tool Roll"}
-  rc_npc_wendell_briggs_96("Wendell Briggs")
+  rc_npc_gary_whitlock_88("Gary Whitlock")
+  rc_npc_guard_89("Guard")
+  rc_npc_agent_0x5e_lantern_90("Agent 0x5E 'Lantern'")
+  rc_npc_officer_kenji_arakawa_91("Officer Kenji Arakawa")
+  rc_npc_agent_0x2d_anchor_92("Agent 0x2D 'Anchor'")
+  rc_shutter_isolator_93{"Shutter Isolator"}
+  rc_clock_power_94{"Load Board"}
+  rc_bypass_panel_95{"Bypass Panel"}
+  rc_static_kit_96{"Tool Roll"}
   rc_npc_wendell_briggs_97("Wendell Briggs")
-  rc_npc_voltage_critical_mass_98("Voltage (Critical Mass)")
+  rc_npc_wendell_briggs_98("Wendell Briggs")
   rc_npc_voltage_critical_mass_99("Voltage (Critical Mass)")
-  rc_npc_entropy_operative_static_100("ENTROPY Operative 'Static'")
-  rc_npc_agent_0x5e_lantern_101("Agent 0x5E 'Lantern'")
-  rc_npc_officer_kenji_arakawa_102("Officer Kenji Arakawa")
-  rc_npc_agent_0x2d_anchor_103("Agent 0x2D 'Anchor'")
-  rc_plotting_board_104{"Plotting Board"}
-  rc_clock_server_hall_105{"Release Console Screen"}
-  rc_hall_console_106{"Field Console (Server Hall)"}
-  rc_release_console_107{"Release Console"}
-  rc_release_console_controls_108{"Release Console Controls"}
-  rc_schedule_terminal_109{"Release Schedule: Staging Copy"}
-  rc_sealed_hatch_110{"Sealed Section Hatch"}
-  rc_uplink_printer_111{"Uplink Printer"}
-  rc_npc_dr_abena_asante_112("Dr Abena Asante")
-  rc_npc_dr_james_mercer_113("Dr. James Mercer")
-  rc_npc_guard_114("Guard")
-  rc_npc_guard_115("Guard")
-  rc_npc_agent_0x5e_lantern_116("Agent 0x5E 'Lantern'")
-  rc_npc_officer_kenji_arakawa_117("Officer Kenji Arakawa")
-  rc_npc_agent_0x2d_anchor_118("Agent 0x2D 'Anchor'")
-  rc_clock_gallery_119{"Lock Panel"}
-  rc_lock_keypad_plate_120{"Keypad Face Plate"}
-  rc_farah_chair_121{"Floor Post Chair"}
-  rc_slit_window_122{"Slit Windows"}
-  rc_npc_victoria_sterling_123("Victoria Sterling")
-  rc_npc_victoria_sterling_124("Victoria Sterling")
-  rc_npc_pieter_vos_125("Pieter Vos")
-  rc_vos_code_card_126{"Visitor's Code Card"}
-  rc_npc_sione_fonoti_127("Sione Fonoti")
-  rc_gallery_code_card_128{"Gallery Shift Code Card"}
-  rc_npc_guard_129("Guard")
-  rc_npc_guard_130("Guard")
-  rc_npc_guard_131("Guard")
+  rc_npc_voltage_critical_mass_100("Voltage (Critical Mass)")
+  rc_npc_entropy_operative_static_101("ENTROPY Operative 'Static'")
+  rc_npc_agent_0x5e_lantern_102("Agent 0x5E 'Lantern'")
+  rc_npc_officer_kenji_arakawa_103("Officer Kenji Arakawa")
+  rc_npc_agent_0x2d_anchor_104("Agent 0x2D 'Anchor'")
+  rc_plotting_board_105{"Plotting Board"}
+  rc_clock_server_hall_106{"Release Console Screen"}
+  rc_hall_console_107{"Field Console (Server Hall)"}
+  rc_release_console_108{"Release Console"}
+  rc_release_console_controls_109{"Release Console Controls"}
+  rc_schedule_terminal_110{"Release Schedule: Staging Copy"}
+  rc_sealed_hatch_111{"Sealed Section Hatch"}
+  rc_release_operator_card_112{"Operator's Duty Card"}
+  rc_uplink_printer_113{"Uplink Printer"}
+  rc_npc_dr_abena_asante_114("Dr Abena Asante")
+  rc_npc_dr_james_mercer_115("Dr. James Mercer")
+  rc_npc_guard_116("Guard")
+  rc_npc_guard_117("Guard")
+  rc_npc_agent_0x5e_lantern_118("Agent 0x5E 'Lantern'")
+  rc_npc_officer_kenji_arakawa_119("Officer Kenji Arakawa")
+  rc_npc_agent_0x2d_anchor_120("Agent 0x2D 'Anchor'")
+  rc_clock_gallery_121{"Lock Panel"}
+  rc_lock_keypad_plate_122{"Keypad Face Plate"}
+  rc_farah_chair_123{"Floor Post Chair"}
+  rc_slit_window_124{"Slit Windows"}
+  rc_core_access_key_125{"Core Access Key"}
+  rc_npc_victoria_sterling_126("Victoria Sterling")
+  rc_npc_victoria_sterling_127("Victoria Sterling")
+  rc_npc_pieter_vos_128("Pieter Vos")
+  rc_vos_code_card_129{"Visitor's Code Card"}
+  rc_npc_sione_fonoti_130("Sione Fonoti")
+  rc_gallery_code_card_131{"Gallery Shift Code Card"}
   rc_npc_guard_132("Guard")
-  rc_npc_agent_0x2d_anchor_133("Agent 0x2D 'Anchor'")
-  rc_npc_minder_134("Minder")
-  rc_npc_agent_0x47_nightshade_135("Agent 0x47 'Nightshade'")
-  rc_nightshade_payment_136{"Nightshade's Payment: The Defences"}
-  rc_alarm_override_137{"Nightshade's Override Key"}
-  rc_key_console_138{"His Console"}
-  rc_clock_core_139{"Key Console Readout"}
-  rc_core_host_terminal_140{"Core Host Terminal"}
-  rc_core_console_vm_141{"Field Console (Core)"}
-  rc_core_files_142{"Core Host: File Index"}
-  rc_service_door_143{"Service Door"}
-  rc_npc_dr_adrian_tesseract_144("Dr Adrian Tesseract")
-  rc_npc_agent_0x5e_lantern_145("Agent 0x5E 'Lantern'")
-  rc_npc_agent_0x5e_lantern_146("Agent 0x5E 'Lantern'")
-  rc_npc_agent_0x2d_anchor_147("Agent 0x2D 'Anchor'")
+  rc_npc_guard_133("Guard")
+  rc_npc_guard_134("Guard")
+  rc_npc_guard_135("Guard")
+  rc_npc_agent_0x2d_anchor_136("Agent 0x2D 'Anchor'")
+  rc_npc_minder_137("Minder")
+  rc_npc_agent_0x47_nightshade_138("Agent 0x47 'Nightshade'")
+  rc_nightshade_payment_139{"Nightshade's Payment: The Defences"}
+  rc_alarm_override_140{"Nightshade's Override Key"}
+  rc_key_console_141{"His Console"}
+  rc_clock_core_142{"Key Console Readout"}
+  rc_core_host_terminal_143{"Core Host Terminal"}
+  rc_core_console_vm_144{"Field Console (Core)"}
+  rc_core_files_145{"Core Host: File Index"}
+  rc_service_door_146{"Service Door"}
+  rc_npc_dr_adrian_tesseract_147("Dr Adrian Tesseract")
+  rc_npc_agent_0x5e_lantern_148("Agent 0x5E 'Lantern'")
+  rc_npc_agent_0x5e_lantern_149("Agent 0x5E 'Lantern'")
+  rc_npc_agent_0x2d_anchor_150("Agent 0x2D 'Anchor'")
 
   forward_post --> blast_tunnel
   blast_tunnel --> security_office
@@ -808,147 +833,150 @@ flowchart TD
   forward_post --> rc_gate_hut_9
   forward_post --> rc_van_one_10
   forward_post --> rc_van_two_11
-  forward_post --> rc_npc_director_magnus_netherton_12
-  forward_post --> rc_npc_agent_hax_13
+  forward_post --> rc_monitor_maintenance_tag_12
+  forward_post --> rc_npc_director_magnus_netherton_13
   forward_post --> rc_npc_agent_hax_14
-  rc_npc_agent_hax_14 --> rc_m10_guide_flag1_15
-  rc_npc_agent_hax_14 --> rc_m10_guide_flag2_16
-  rc_npc_agent_hax_14 --> rc_m10_guide_flag3_17
-  rc_npc_agent_hax_14 --> rc_m10_guide_flag4_18
-  forward_post --> rc_npc_agent_0x47_nightshade_19
-  rc_npc_agent_0x47_nightshade_19 --> rc_nightshade_payment_20
-  rc_npc_agent_0x47_nightshade_19 --> rc_alarm_override_21
-  forward_post --> rc_npc_agent_0x47_nightshade_22
-  rc_npc_agent_0x47_nightshade_22 --> rc_nightshade_payment_23
-  rc_npc_agent_0x47_nightshade_22 --> rc_alarm_override_24
-  forward_post --> rc_npc_agent_0x47_nightshade_25
-  rc_npc_agent_0x47_nightshade_25 --> rc_nightshade_payment_26
-  rc_npc_agent_0x47_nightshade_25 --> rc_alarm_override_27
-  forward_post --> rc_npc_agent_0x5e_lantern_28
+  forward_post --> rc_npc_agent_hax_15
+  rc_npc_agent_hax_15 --> rc_m10_guide_flag1_16
+  rc_npc_agent_hax_15 --> rc_m10_guide_flag2_17
+  rc_npc_agent_hax_15 --> rc_m10_guide_flag3_18
+  rc_npc_agent_hax_15 --> rc_m10_guide_flag4_19
+  forward_post --> rc_npc_agent_0x47_nightshade_20
+  rc_npc_agent_0x47_nightshade_20 --> rc_nightshade_payment_21
+  rc_npc_agent_0x47_nightshade_20 --> rc_alarm_override_22
+  forward_post --> rc_npc_agent_0x47_nightshade_23
+  rc_npc_agent_0x47_nightshade_23 --> rc_nightshade_payment_24
+  rc_npc_agent_0x47_nightshade_23 --> rc_alarm_override_25
+  forward_post --> rc_npc_agent_0x47_nightshade_26
+  rc_npc_agent_0x47_nightshade_26 --> rc_nightshade_payment_27
+  rc_npc_agent_0x47_nightshade_26 --> rc_alarm_override_28
   forward_post --> rc_npc_agent_0x5e_lantern_29
-  forward_post --> rc_npc_agent_0x2d_anchor_30
-  forward_post --> rc_npc_officer_kenji_arakawa_31
+  forward_post --> rc_npc_agent_0x5e_lantern_30
+  forward_post --> rc_npc_agent_0x2d_anchor_31
   forward_post --> rc_npc_officer_kenji_arakawa_32
   forward_post --> rc_npc_officer_kenji_arakawa_33
-  forward_post --> rc_npc_minder_34
-  forward_post --> rc_npc_officer_dev_malhotra_35
-  forward_post --> rc_npc_agent_0x23_vector_36
-  rc_npc_agent_0x23_vector_36 --> rc_vector_cupboard_code_37
-  forward_post --> rc_npc_agent_0x88_phantom_38
-  forward_post --> rc_npc_minder_39
-  forward_post --> rc_npc_voltage_critical_mass_40
-  forward_post --> rc_npc_ghost_41
-  rc_npc_ghost_41 --> rc_ghost_cupboard_code_42
-  rc_npc_ghost_41 --> rc_ghost_lock_code_43
-  forward_post --> rc_npc_victoria_sterling_44
-  forward_post --> rc_npc_robert_vance_45
-  forward_post --> rc_npc_elena_rodriguez_46
-  forward_post --> rc_npc_director_magnus_netherton_47
-  forward_post --> rc_npc_agent_hax_48
-  forward_post --> rc_npc_director_magnus_netherton_49
-  forward_post --> rc_npc_imran_siddiqui_50
-  forward_post --> rc_npc_gary_whitlock_51
-  forward_post --> rc_npc_wendell_briggs_52
-  forward_post --> rc_npc_dr_adrian_tesseract_53
-  blast_tunnel --> rc_clock_blast_door_54
-  blast_tunnel --> rc_tunnel_rota_55
-  blast_tunnel --> rc_post_ladder_56
-  blast_tunnel --> rc_npc_guard_57
+  forward_post --> rc_npc_officer_kenji_arakawa_34
+  forward_post --> rc_npc_minder_35
+  forward_post --> rc_npc_officer_dev_malhotra_36
+  forward_post --> rc_npc_agent_0x23_vector_37
+  rc_npc_agent_0x23_vector_37 --> rc_vector_cupboard_code_38
+  forward_post --> rc_npc_agent_0x88_phantom_39
+  forward_post --> rc_npc_minder_40
+  forward_post --> rc_npc_voltage_critical_mass_41
+  forward_post --> rc_npc_ghost_42
+  rc_npc_ghost_42 --> rc_ghost_cupboard_code_43
+  rc_npc_ghost_42 --> rc_ghost_lock_code_44
+  forward_post --> rc_npc_victoria_sterling_45
+  forward_post --> rc_npc_robert_vance_46
+  forward_post --> rc_npc_elena_rodriguez_47
+  forward_post --> rc_npc_director_magnus_netherton_48
+  forward_post --> rc_npc_agent_hax_49
+  forward_post --> rc_npc_director_magnus_netherton_50
+  forward_post --> rc_npc_imran_siddiqui_51
+  forward_post --> rc_npc_gary_whitlock_52
+  forward_post --> rc_npc_wendell_briggs_53
+  forward_post --> rc_npc_dr_adrian_tesseract_54
+  blast_tunnel --> rc_clock_blast_door_55
+  blast_tunnel --> rc_tunnel_rota_56
+  blast_tunnel --> rc_post_ladder_57
   blast_tunnel --> rc_npc_guard_58
-  security_office --> rc_alarm_panel_59
-  security_office --> rc_wanted_photo_60
-  security_office --> rc_duty_board_61
-  security_office --> rc_door_log_62
-  security_office --> rc_duty_handset_63
-  security_office --> rc_records_cupboard_64
-  rc_records_cupboard_64 --> rc_gallery_rota_65
-  rc_records_cupboard_64 --> rc_alarm_log_66
-  security_office --> rc_fitter_locker_67
-  rc_fitter_locker_67 --> rc_fitter_spare_card_68
-  security_office --> rc_clock_security_69
-  security_office --> rc_npc_guard_70
+  blast_tunnel --> rc_npc_guard_59
+  security_office --> rc_alarm_panel_60
+  security_office --> rc_wanted_photo_61
+  security_office --> rc_duty_board_62
+  security_office --> rc_door_log_63
+  security_office --> rc_duty_handset_64
+  security_office --> rc_records_cupboard_65
+  rc_records_cupboard_65 --> rc_gallery_rota_66
+  rc_records_cupboard_65 --> rc_alarm_log_67
+  security_office --> rc_fitter_locker_68
+  rc_fitter_locker_68 --> rc_fitter_spare_card_69
+  security_office --> rc_clock_security_70
   security_office --> rc_npc_guard_71
-  security_office --> rc_npc_agent_0x23_vector_72
-  rc_npc_agent_0x23_vector_72 --> rc_vector_cupboard_code_73
-  security_office --> rc_npc_agent_0x5e_lantern_74
-  security_office --> rc_npc_officer_kenji_arakawa_75
-  security_office --> rc_npc_agent_0x2d_anchor_76
-  workshop_floor --> rc_casualty_sheet_77
-  workshop_floor --> rc_casualty_margin_note_78
-  workshop_floor --> rc_model_terminal_79
-  rc_model_terminal_79 --> rc_asante_model_80
-  workshop_floor --> rc_bench_log_81
-  workshop_floor --> rc_clock_workshop_82
-  workshop_floor --> rc_cracker_rack_83
-  workshop_floor --> rc_npc_imran_siddiqui_84
+  security_office --> rc_npc_guard_72
+  security_office --> rc_npc_agent_0x23_vector_73
+  rc_npc_agent_0x23_vector_73 --> rc_vector_cupboard_code_74
+  security_office --> rc_npc_agent_0x5e_lantern_75
+  security_office --> rc_npc_officer_kenji_arakawa_76
+  security_office --> rc_npc_agent_0x2d_anchor_77
+  workshop_floor --> rc_casualty_sheet_78
+  workshop_floor --> rc_casualty_margin_note_79
+  workshop_floor --> rc_model_terminal_80
+  rc_model_terminal_80 --> rc_asante_model_81
+  workshop_floor --> rc_bench_log_82
+  workshop_floor --> rc_clock_workshop_83
+  workshop_floor --> rc_cracker_rack_84
   workshop_floor --> rc_npc_imran_siddiqui_85
-  workshop_floor --> rc_npc_gary_whitlock_86
+  workshop_floor --> rc_npc_imran_siddiqui_86
   workshop_floor --> rc_npc_gary_whitlock_87
-  workshop_floor --> rc_npc_guard_88
-  workshop_floor --> rc_npc_agent_0x5e_lantern_89
-  workshop_floor --> rc_npc_officer_kenji_arakawa_90
-  workshop_floor --> rc_npc_agent_0x2d_anchor_91
-  power_room --> rc_shutter_isolator_92
-  power_room --> rc_clock_power_93
-  power_room --> rc_bypass_panel_94
-  power_room --> rc_static_kit_95
-  power_room --> rc_npc_wendell_briggs_96
+  workshop_floor --> rc_npc_gary_whitlock_88
+  workshop_floor --> rc_npc_guard_89
+  workshop_floor --> rc_npc_agent_0x5e_lantern_90
+  workshop_floor --> rc_npc_officer_kenji_arakawa_91
+  workshop_floor --> rc_npc_agent_0x2d_anchor_92
+  power_room --> rc_shutter_isolator_93
+  power_room --> rc_clock_power_94
+  power_room --> rc_bypass_panel_95
+  power_room --> rc_static_kit_96
   power_room --> rc_npc_wendell_briggs_97
-  power_room --> rc_npc_voltage_critical_mass_98
+  power_room --> rc_npc_wendell_briggs_98
   power_room --> rc_npc_voltage_critical_mass_99
-  power_room --> rc_npc_entropy_operative_static_100
-  power_room --> rc_npc_agent_0x5e_lantern_101
-  power_room --> rc_npc_officer_kenji_arakawa_102
-  power_room --> rc_npc_agent_0x2d_anchor_103
-  server_hall --> rc_plotting_board_104
-  server_hall --> rc_clock_server_hall_105
-  server_hall --> rc_hall_console_106
-  server_hall --> rc_release_console_107
-  server_hall --> rc_release_console_controls_108
-  server_hall --> rc_schedule_terminal_109
-  server_hall --> rc_sealed_hatch_110
-  server_hall --> rc_uplink_printer_111
-  server_hall --> rc_npc_dr_abena_asante_112
-  server_hall --> rc_npc_dr_james_mercer_113
-  server_hall --> rc_npc_guard_114
-  server_hall --> rc_npc_guard_115
-  server_hall --> rc_npc_agent_0x5e_lantern_116
-  server_hall --> rc_npc_officer_kenji_arakawa_117
-  server_hall --> rc_npc_agent_0x2d_anchor_118
-  gallery --> rc_clock_gallery_119
-  gallery --> rc_lock_keypad_plate_120
-  gallery --> rc_farah_chair_121
-  gallery --> rc_slit_window_122
-  gallery --> rc_npc_victoria_sterling_123
-  gallery --> rc_npc_victoria_sterling_124
-  gallery --> rc_npc_pieter_vos_125
-  rc_npc_pieter_vos_125 --> rc_vos_code_card_126
-  gallery --> rc_npc_sione_fonoti_127
-  rc_npc_sione_fonoti_127 --> rc_gallery_code_card_128
-  gallery --> rc_npc_guard_129
-  gallery --> rc_npc_guard_130
-  gallery --> rc_npc_guard_131
+  power_room --> rc_npc_voltage_critical_mass_100
+  power_room --> rc_npc_entropy_operative_static_101
+  power_room --> rc_npc_agent_0x5e_lantern_102
+  power_room --> rc_npc_officer_kenji_arakawa_103
+  power_room --> rc_npc_agent_0x2d_anchor_104
+  server_hall --> rc_plotting_board_105
+  server_hall --> rc_clock_server_hall_106
+  server_hall --> rc_hall_console_107
+  server_hall --> rc_release_console_108
+  server_hall --> rc_release_console_controls_109
+  server_hall --> rc_schedule_terminal_110
+  server_hall --> rc_sealed_hatch_111
+  server_hall --> rc_release_operator_card_112
+  server_hall --> rc_uplink_printer_113
+  server_hall --> rc_npc_dr_abena_asante_114
+  server_hall --> rc_npc_dr_james_mercer_115
+  server_hall --> rc_npc_guard_116
+  server_hall --> rc_npc_guard_117
+  server_hall --> rc_npc_agent_0x5e_lantern_118
+  server_hall --> rc_npc_officer_kenji_arakawa_119
+  server_hall --> rc_npc_agent_0x2d_anchor_120
+  gallery --> rc_clock_gallery_121
+  gallery --> rc_lock_keypad_plate_122
+  gallery --> rc_farah_chair_123
+  gallery --> rc_slit_window_124
+  gallery --> rc_core_access_key_125
+  gallery --> rc_npc_victoria_sterling_126
+  gallery --> rc_npc_victoria_sterling_127
+  gallery --> rc_npc_pieter_vos_128
+  rc_npc_pieter_vos_128 --> rc_vos_code_card_129
+  gallery --> rc_npc_sione_fonoti_130
+  rc_npc_sione_fonoti_130 --> rc_gallery_code_card_131
   gallery --> rc_npc_guard_132
-  gallery --> rc_npc_agent_0x2d_anchor_133
-  gallery --> rc_npc_minder_134
-  gallery --> rc_npc_agent_0x47_nightshade_135
-  rc_npc_agent_0x47_nightshade_135 --> rc_nightshade_payment_136
-  rc_npc_agent_0x47_nightshade_135 --> rc_alarm_override_137
-  core --> rc_key_console_138
-  core --> rc_clock_core_139
-  core --> rc_core_host_terminal_140
-  core --> rc_core_console_vm_141
-  core --> rc_core_files_142
-  core --> rc_service_door_143
-  core --> rc_npc_dr_adrian_tesseract_144
-  core --> rc_npc_agent_0x5e_lantern_145
-  core --> rc_npc_agent_0x5e_lantern_146
-  core --> rc_npc_agent_0x2d_anchor_147
+  gallery --> rc_npc_guard_133
+  gallery --> rc_npc_guard_134
+  gallery --> rc_npc_guard_135
+  gallery --> rc_npc_agent_0x2d_anchor_136
+  gallery --> rc_npc_minder_137
+  gallery --> rc_npc_agent_0x47_nightshade_138
+  rc_npc_agent_0x47_nightshade_138 --> rc_nightshade_payment_139
+  rc_npc_agent_0x47_nightshade_138 --> rc_alarm_override_140
+  core --> rc_key_console_141
+  core --> rc_clock_core_142
+  core --> rc_core_host_terminal_143
+  core --> rc_core_console_vm_144
+  core --> rc_core_files_145
+  core --> rc_service_door_146
+  core --> rc_npc_dr_adrian_tesseract_147
+  core --> rc_npc_agent_0x5e_lantern_148
+  core --> rc_npc_agent_0x5e_lantern_149
+  core --> rc_npc_agent_0x2d_anchor_150
 
   class forward_post,server_hall room
   class blast_tunnel,security_office,workshop_floor,power_room,gallery,core lock
-  class rc_clock_forward_post_1,rc_kit_table_2,rc_case_signout_sheet_3,rc_incident_file_4,rc_helena_plans_5,rc_projection_desk_6,rc_gate_console_7,rc_gate_terminal_8,rc_gate_hut_9,rc_van_one_10,rc_van_two_11,rc_m10_guide_flag1_15,rc_m10_guide_flag2_16,rc_m10_guide_flag3_17,rc_m10_guide_flag4_18,rc_nightshade_payment_20,rc_alarm_override_21,rc_nightshade_payment_23,rc_alarm_override_24,rc_nightshade_payment_26,rc_alarm_override_27,rc_vector_cupboard_code_37,rc_ghost_cupboard_code_42,rc_ghost_lock_code_43,rc_clock_blast_door_54,rc_tunnel_rota_55,rc_post_ladder_56,rc_alarm_panel_59,rc_wanted_photo_60,rc_duty_board_61,rc_door_log_62,rc_duty_handset_63,rc_gallery_rota_65,rc_alarm_log_66,rc_fitter_spare_card_68,rc_clock_security_69,rc_vector_cupboard_code_73,rc_casualty_sheet_77,rc_casualty_margin_note_78,rc_asante_model_80,rc_bench_log_81,rc_clock_workshop_82,rc_cracker_rack_83,rc_shutter_isolator_92,rc_clock_power_93,rc_bypass_panel_94,rc_static_kit_95,rc_plotting_board_104,rc_clock_server_hall_105,rc_hall_console_106,rc_release_console_107,rc_release_console_controls_108,rc_schedule_terminal_109,rc_sealed_hatch_110,rc_uplink_printer_111,rc_clock_gallery_119,rc_lock_keypad_plate_120,rc_farah_chair_121,rc_slit_window_122,rc_vos_code_card_126,rc_gallery_code_card_128,rc_nightshade_payment_136,rc_alarm_override_137,rc_key_console_138,rc_clock_core_139,rc_core_host_terminal_140,rc_core_console_vm_141,rc_core_files_142,rc_service_door_143 item
-  class rc_npc_director_magnus_netherton_12,rc_npc_agent_hax_13,rc_npc_agent_hax_14,rc_npc_agent_0x47_nightshade_19,rc_npc_agent_0x47_nightshade_22,rc_npc_agent_0x47_nightshade_25,rc_npc_agent_0x5e_lantern_28,rc_npc_agent_0x5e_lantern_29,rc_npc_agent_0x2d_anchor_30,rc_npc_officer_kenji_arakawa_31,rc_npc_officer_kenji_arakawa_32,rc_npc_officer_kenji_arakawa_33,rc_npc_minder_34,rc_npc_officer_dev_malhotra_35,rc_npc_agent_0x23_vector_36,rc_npc_agent_0x88_phantom_38,rc_npc_minder_39,rc_npc_voltage_critical_mass_40,rc_npc_ghost_41,rc_npc_victoria_sterling_44,rc_npc_robert_vance_45,rc_npc_elena_rodriguez_46,rc_npc_director_magnus_netherton_47,rc_npc_agent_hax_48,rc_npc_director_magnus_netherton_49,rc_npc_imran_siddiqui_50,rc_npc_gary_whitlock_51,rc_npc_wendell_briggs_52,rc_npc_dr_adrian_tesseract_53,rc_npc_guard_57,rc_npc_guard_58,rc_npc_guard_70,rc_npc_guard_71,rc_npc_agent_0x23_vector_72,rc_npc_agent_0x5e_lantern_74,rc_npc_officer_kenji_arakawa_75,rc_npc_agent_0x2d_anchor_76,rc_npc_imran_siddiqui_84,rc_npc_imran_siddiqui_85,rc_npc_gary_whitlock_86,rc_npc_gary_whitlock_87,rc_npc_guard_88,rc_npc_agent_0x5e_lantern_89,rc_npc_officer_kenji_arakawa_90,rc_npc_agent_0x2d_anchor_91,rc_npc_wendell_briggs_96,rc_npc_wendell_briggs_97,rc_npc_voltage_critical_mass_98,rc_npc_voltage_critical_mass_99,rc_npc_entropy_operative_static_100,rc_npc_agent_0x5e_lantern_101,rc_npc_officer_kenji_arakawa_102,rc_npc_agent_0x2d_anchor_103,rc_npc_dr_abena_asante_112,rc_npc_dr_james_mercer_113,rc_npc_guard_114,rc_npc_guard_115,rc_npc_agent_0x5e_lantern_116,rc_npc_officer_kenji_arakawa_117,rc_npc_agent_0x2d_anchor_118,rc_npc_victoria_sterling_123,rc_npc_victoria_sterling_124,rc_npc_pieter_vos_125,rc_npc_sione_fonoti_127,rc_npc_guard_129,rc_npc_guard_130,rc_npc_guard_131,rc_npc_guard_132,rc_npc_agent_0x2d_anchor_133,rc_npc_minder_134,rc_npc_agent_0x47_nightshade_135,rc_npc_dr_adrian_tesseract_144,rc_npc_agent_0x5e_lantern_145,rc_npc_agent_0x5e_lantern_146,rc_npc_agent_0x2d_anchor_147 npc
-  class rc_records_cupboard_64,rc_fitter_locker_67,rc_model_terminal_79 container
+  class rc_clock_forward_post_1,rc_kit_table_2,rc_case_signout_sheet_3,rc_incident_file_4,rc_helena_plans_5,rc_projection_desk_6,rc_gate_console_7,rc_gate_terminal_8,rc_gate_hut_9,rc_van_one_10,rc_van_two_11,rc_monitor_maintenance_tag_12,rc_m10_guide_flag1_16,rc_m10_guide_flag2_17,rc_m10_guide_flag3_18,rc_m10_guide_flag4_19,rc_nightshade_payment_21,rc_alarm_override_22,rc_nightshade_payment_24,rc_alarm_override_25,rc_nightshade_payment_27,rc_alarm_override_28,rc_vector_cupboard_code_38,rc_ghost_cupboard_code_43,rc_ghost_lock_code_44,rc_clock_blast_door_55,rc_tunnel_rota_56,rc_post_ladder_57,rc_alarm_panel_60,rc_wanted_photo_61,rc_duty_board_62,rc_door_log_63,rc_duty_handset_64,rc_gallery_rota_66,rc_alarm_log_67,rc_fitter_spare_card_69,rc_clock_security_70,rc_vector_cupboard_code_74,rc_casualty_sheet_78,rc_casualty_margin_note_79,rc_asante_model_81,rc_bench_log_82,rc_clock_workshop_83,rc_cracker_rack_84,rc_shutter_isolator_93,rc_clock_power_94,rc_bypass_panel_95,rc_static_kit_96,rc_plotting_board_105,rc_clock_server_hall_106,rc_hall_console_107,rc_release_console_108,rc_release_console_controls_109,rc_schedule_terminal_110,rc_sealed_hatch_111,rc_release_operator_card_112,rc_uplink_printer_113,rc_clock_gallery_121,rc_lock_keypad_plate_122,rc_farah_chair_123,rc_slit_window_124,rc_core_access_key_125,rc_vos_code_card_129,rc_gallery_code_card_131,rc_nightshade_payment_139,rc_alarm_override_140,rc_key_console_141,rc_clock_core_142,rc_core_host_terminal_143,rc_core_console_vm_144,rc_core_files_145,rc_service_door_146 item
+  class rc_npc_director_magnus_netherton_13,rc_npc_agent_hax_14,rc_npc_agent_hax_15,rc_npc_agent_0x47_nightshade_20,rc_npc_agent_0x47_nightshade_23,rc_npc_agent_0x47_nightshade_26,rc_npc_agent_0x5e_lantern_29,rc_npc_agent_0x5e_lantern_30,rc_npc_agent_0x2d_anchor_31,rc_npc_officer_kenji_arakawa_32,rc_npc_officer_kenji_arakawa_33,rc_npc_officer_kenji_arakawa_34,rc_npc_minder_35,rc_npc_officer_dev_malhotra_36,rc_npc_agent_0x23_vector_37,rc_npc_agent_0x88_phantom_39,rc_npc_minder_40,rc_npc_voltage_critical_mass_41,rc_npc_ghost_42,rc_npc_victoria_sterling_45,rc_npc_robert_vance_46,rc_npc_elena_rodriguez_47,rc_npc_director_magnus_netherton_48,rc_npc_agent_hax_49,rc_npc_director_magnus_netherton_50,rc_npc_imran_siddiqui_51,rc_npc_gary_whitlock_52,rc_npc_wendell_briggs_53,rc_npc_dr_adrian_tesseract_54,rc_npc_guard_58,rc_npc_guard_59,rc_npc_guard_71,rc_npc_guard_72,rc_npc_agent_0x23_vector_73,rc_npc_agent_0x5e_lantern_75,rc_npc_officer_kenji_arakawa_76,rc_npc_agent_0x2d_anchor_77,rc_npc_imran_siddiqui_85,rc_npc_imran_siddiqui_86,rc_npc_gary_whitlock_87,rc_npc_gary_whitlock_88,rc_npc_guard_89,rc_npc_agent_0x5e_lantern_90,rc_npc_officer_kenji_arakawa_91,rc_npc_agent_0x2d_anchor_92,rc_npc_wendell_briggs_97,rc_npc_wendell_briggs_98,rc_npc_voltage_critical_mass_99,rc_npc_voltage_critical_mass_100,rc_npc_entropy_operative_static_101,rc_npc_agent_0x5e_lantern_102,rc_npc_officer_kenji_arakawa_103,rc_npc_agent_0x2d_anchor_104,rc_npc_dr_abena_asante_114,rc_npc_dr_james_mercer_115,rc_npc_guard_116,rc_npc_guard_117,rc_npc_agent_0x5e_lantern_118,rc_npc_officer_kenji_arakawa_119,rc_npc_agent_0x2d_anchor_120,rc_npc_victoria_sterling_126,rc_npc_victoria_sterling_127,rc_npc_pieter_vos_128,rc_npc_sione_fonoti_130,rc_npc_guard_132,rc_npc_guard_133,rc_npc_guard_134,rc_npc_guard_135,rc_npc_agent_0x2d_anchor_136,rc_npc_minder_137,rc_npc_agent_0x47_nightshade_138,rc_npc_dr_adrian_tesseract_147,rc_npc_agent_0x5e_lantern_148,rc_npc_agent_0x5e_lantern_149,rc_npc_agent_0x2d_anchor_150 npc
+  class rc_records_cupboard_65,rc_fitter_locker_68,rc_model_terminal_80 container
   class node_start start
 ```

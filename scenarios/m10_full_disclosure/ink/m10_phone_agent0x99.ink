@@ -26,6 +26,7 @@ VAR hax_backdoor_asked = false
 VAR hax_console_asked = false
 VAR hax_vault_asked = false
 VAR hax_hatch_asked = false
+VAR hax_alibi_told = false  // scenario design R3: the alibi breakdown has been given (independent of clue_alibi)
 VAR hax_monitor_asked = false  // educational R1 (E-m6): the flag-1 concept steer
 VAR hax_box_asked = false      // educational R1 (E-m6): the flag-4 concept steer
 VAR hax_suspect = ""
@@ -95,8 +96,9 @@ VAR hax_suspect = ""
 + {officer_out == "vector" and clue_alibi and not gallery_open} [Bring Vector back.] -> recall_vector
 + {officer_out == "phantom" and clue_alibi and not gallery_open} [Bring Phantom back.] -> recall_phantom
 + {clue_bench_log and whodunit_live and not signout_read} [Who signed for the case?] -> signout
-+ {clue_door_log and door_log_given and whodunit_live and not clue_alibi} [Who was where at ten past?] -> alibi
-+ {clue_door_log and whodunit_live and not clue_alibi and not door_log_given} [The door log.] -> door_log
+// Scenario design R3 ruling: the breakdown shows on m09 shortlist saves too (the shortlist sets clue_alibi at the aside).
++ {clue_door_log and door_log_given and whodunit_live and not hax_alibi_told} [Who was where at ten past?] -> alibi
++ {clue_door_log and whodunit_live and not hax_alibi_told and not door_log_given} [The door log.] -> door_log
 + {flag1_submitted and not power_room_entered and not hax_power_asked} [The power room?] -> power_room_topic
 + {door_scene_done and not flag1_submitted and not hax_monitor_asked} [Their monitoring. Where do I start?] -> monitor_topic
 + {flag1_submitted and m06_assets_seized and not workshop_entered and not hax_fence_asked} [The fence.] -> fence
@@ -116,18 +118,22 @@ VAR hax_suspect = ""
 {
 - ending != "" and ending != "joined":
     It's done. Come up when you're ready.
+// Scenario design R3 m1: the core stage names the room, for a player who reloaded at the post.
 - database_outcome != "":
-    It's him now.
+    The core. It's him now.
 - console_choice != "":
-    The database. Then him.
+    The core. The database, then him.
 - exchange_3 != "":
-    Your call on his console.
+    The core. Your call on his console.
 - flag4_submitted:
-    Hear him out.
+    The core. Hear him out.
 - outer_lock_open:
-    You're in. His box first.
+    The core. You're in. His box first.
 - gallery_open:
     Up the stair. The lock's at the end.
+// Dialogue R3 n8: the pull waiting, whatever else is done.
+- cut_step == 2 and not gallery_shutter_cut:
+    Third from the left in the power room. Go and pull it.
 - flag2_submitted and flag3_submitted and not gallery_shutter_cut:
     The shutter's still live. Power room.
 - flag2_submitted:
@@ -137,17 +143,20 @@ VAR hax_suspect = ""
 - gallery_shutter_cut:
     Server hall's through there.
 // Dialogue R1 m15, puzzle chains P1: in the power room, the job is the shutter, and who does it.
-- power_room_entered and not gallery_shutter_cut and not cut_by_hand:
+// Puzzle chains R2 m2: captured Voltage's own talk-through counts as by hand.
+- power_room_entered and not gallery_shutter_cut and not cut_by_hand and voltage_outcome != "by_hand":
     The shutter's on whoever runs that room. Talk to them first.
-- power_room_entered and not gallery_shutter_cut and cut_by_hand:
+- power_room_entered and not gallery_shutter_cut and (cut_by_hand or voltage_outcome == "by_hand"):
     The shutter's ours now.
     {
     - cut_step == 2:
         Third from the left. Go and pull it.
+    - voltage_outcome == "by_hand":
+        He's talking you through it.
     - phone_voice_is_hax:
         Ask me and I'll talk you through it.
     - else:
-        Pick up when they ring.
+        Go to the isolator. They'll ring.
     }
 - workshop_entered:
     Get to the power room. Then the shutter.
@@ -269,6 +278,7 @@ The log says Malhotra's badge. Malhotra was on with me at ten past.
 // form holds whether he went down before his call or after it.
 === alibi ===
 ~ clue_alibi = true
+~ hax_alibi_told = true
 {
 - arakawa_ko:
     Arakawa was at the gate with you at ten past, upright or not.
@@ -284,6 +294,10 @@ The log says Malhotra's badge. Malhotra was on with me at ten past.
     I had Malhotra. Netherton had Phantom at the table.
 - else:
     I had Malhotra, on the line.
+}
+// Scenario design R3 n2: Nightshade's hint, where it belongs.
+{ns_borrow_hint:
+    Nightshade said they always borrow a badge. Ten past two is when it was borrowed.
 }
 So who wasn't where somebody could see them at ten past?
 + [Quintero and Kowalczyk. They were in the tunnel.]
@@ -368,6 +382,10 @@ Go on. Who?
 - else:
     Get Phantom back first.
 }
+// Scenario design R3 m2: where the recall comes from.
+{clue_door_log and not clue_alibi:
+    Ask me who was where at ten past. That's how we clear them.
+}
 -> support_hub
 
 // Right. Written on the pick. wren_held when someone can hold her before the
@@ -419,6 +437,10 @@ I'll put it to Netherton.
     Director Magnus Netherton: Phantom, step away from the table, please.
     Agent 0x88 'Phantom': Ask me for my list next time. It has a name on it, and it isn't mine.
     Director Magnus Netherton: Then I am a pair of hands short. Carry on.
+}
+// Scenario design R3 m2: where the recall comes from.
+{clue_door_log and not clue_alibi:
+    Ask me who was where at ten past. That's how we clear them.
 }
 -> support_hub
 
@@ -536,15 +558,19 @@ It's holding a batch for the moment anyone stops his release. Close it at the co
 === hatch_topic ===
 ~ hax_hatch_asked = true
 Sealed section, east end of the hall. A Cold War maintenance hatch, painted over, and somebody's opened it since.
-// Educational R1: "the disarm" read as something found on the machine; flag 3's effect in game is the stair.
+// VM gating F12/F13 (supersedes the Educational R1 removal): the disarm is a story artefact on the release host,
+// and the steer names its find (the operator's duty card). No technique.
 The release service runs in a container on the host under it.
-Get out of the container onto that host. That opens the way up to him.
+Get out of the container onto that host. His disarm sits on that box.
+One of his operators dropped a duty card by the east racks. The login's on it.
 -> support_hub
 
 === monitor_topic ===
 ~ hax_monitor_asked = true
 Their monitoring watches the cameras and the doors. It's still software, and software has holes.
 Get a foothold on it and their own eyes work for us.
+// VM gating F12: the steer names its find.
+There's a maintenance tag on the gate console's lead. Their service login's on it.
 -> support_hub
 
 === box_topic ===
@@ -552,6 +578,8 @@ Get a foothold on it and their own eyes work for us.
 // Dialogue R2 n4: same concept as opus48's checked lines, no new technical detail; leaves "He always builds his own way out first" to the core.
 He walled his box off, the same way the release service was. You've broken out of one of those tonight.
 He'll have left himself a way out. Find it.
+// VM gating F12: the steer names its find.
+There's a key envelope on the gallery rail, stamped CORE. That's your way onto his box.
 -> support_hub
 
 // After flag 4 (MC §6.1): the feed, and the vault line with the purge.
@@ -735,7 +763,8 @@ A key switch and a breaker row, labelled GALLERY SHUTTER.
     ~ cut_step = 1
     -> cut_step_1
 + [Give me a minute.]
-    Ring me when you're standing at it.
+    // Puzzle chains R2 n3: she rings back herself (the one-time re-ring on close).
+    I'll ring you back when you're at it.
     #exit_conversation
     -> DONE
 
@@ -769,10 +798,11 @@ Top row. The third breaker from the left feeds the shutter.
 + {not gallery_camera_blinded} [And the gallery camera?]
     ~ gallery_camera_blinded = true
     // Puzzle chains P9: a toggle under the row, as the isolator and the other voices have it.
-    The painted toggle under the row. Down. Their monitor up there just went dark.
+    The painted toggle under the row. Flick it down, and their monitor up there goes dark.
     -> cut_breakers
 // Puzzle chains P2: the player pulls the breaker at the isolator (its click writes the cut); the call ends on the instruction.
-+ [Going to it.]
+// Dialogue R3 m1: a question, so the instruction answers it.
++ [Anything else before I pull it?]
     Third from the left. Go and pull it.
     -> hax_close_got
 

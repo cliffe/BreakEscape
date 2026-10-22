@@ -147,6 +147,12 @@
       "optional": false
     },
     {
+      "id": "maintenance_tag",
+      "label": "Maintenance Tag",
+      "kind": "key",
+      "optional": false
+    },
+    {
       "id": "npc_director_magnus_netherton",
       "label": "Director Magnus Netherton",
       "kind": "key",
@@ -363,10 +369,34 @@
       "optional": false
     },
     {
+      "id": "operator_s_duty_card",
+      "label": "Operator's Duty Card",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lock_sealed_hatch",
+      "label": "Sealed Hatch",
+      "kind": "lock",
+      "optional": false
+    },
+    {
       "id": "keypad_face_plate",
       "label": "Keypad Face Plate",
       "kind": "item",
       "optional": true
+    },
+    {
+      "id": "core_access_key",
+      "label": "Core Access Key",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lock_core_host_terminal",
+      "label": "Core Host Terminal",
+      "kind": "lock",
+      "optional": false
     },
     {
       "id": "npc_victoria_sterling",
@@ -559,6 +589,16 @@
     {
       "from": "gate_terminal",
       "to": "door_blast_tunnel",
+      "soft": false
+    },
+    {
+      "from": "forward_post",
+      "to": "maintenance_tag",
+      "soft": false
+    },
+    {
+      "from": "maintenance_tag",
+      "to": "gate_terminal",
       "soft": false
     },
     {
@@ -842,6 +882,16 @@
       "soft": false
     },
     {
+      "from": "server_hall",
+      "to": "operator_s_duty_card",
+      "soft": false
+    },
+    {
+      "from": "operator_s_duty_card",
+      "to": "lock_sealed_hatch",
+      "soft": false
+    },
+    {
       "from": "gallery",
       "to": "keypad_face_plate",
       "soft": true
@@ -850,6 +900,16 @@
       "from": "keypad_face_plate",
       "to": "door_core",
       "soft": true
+    },
+    {
+      "from": "gallery",
+      "to": "core_access_key",
+      "soft": false
+    },
+    {
+      "from": "core_access_key",
+      "to": "lock_core_host_terminal",
+      "soft": false
     },
     {
       "from": "gallery",

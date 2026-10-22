@@ -36,8 +36,12 @@ Gary Whitlock: That casing on the rack. I had one of those behind my server cabi
 // Alignment R10-m3: seen only once the pointer to Imran has played (Esc at the first choice replays the opener).
 ~ gary_c_seen = true
 // Playtest R1 m-3: not "talk to him first" over a knocked-out Imran.
-{ imran_outcome == "ko":
+{
+- imran_outcome == "ko":
     Gary Whitlock: That's Imran on the floor at the far bench. I trained him.
+// Dialogue R3 m3: a cloned card settles him; nothing left to talk him round to.
+- imran_outcome == "card_cloned":
+    Gary Whitlock: That's Imran at the far bench. I trained him.
 - else:
     Gary Whitlock: That's Imran at the far bench. I trained him. Talk him round or take him in, but talk to him first.
 }
@@ -60,7 +64,12 @@ Gary Whitlock: That casing on the rack. I had one of those behind my server cabi
     }
 }
 + [I'll see you upstairs.]
-    Gary Whitlock: I'll be the one with the lanyard.
+    // Dialogue R3 n3: no joke over a knocked-out Imran.
+    {imran_outcome == "ko":
+        Gary Whitlock: I'll be with him.
+    - else:
+        Gary Whitlock: I'll be the one with the lanyard.
+    }
     ~ gary_quiet = true
     #exit_conversation
     -> consultant_rest

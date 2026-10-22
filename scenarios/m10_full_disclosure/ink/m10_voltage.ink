@@ -190,7 +190,8 @@ Voltage (Critical Mass): Breaker row. Third from the left is the shutter. Leave 
     Voltage (Critical Mass): The small toggle under the row, painted over. Down. That's their camera on the walkway.
     -> cut_p2_menu
 // Puzzle chains P2: the player pulls it at the isolator (its click writes the cut); his success line is a bark on the cut.
-+ [Going to it.]
+// Dialogue R3 m1: a question, so the instruction answers it.
++ [Anything else before I pull it?]
     Voltage (Critical Mass): Third from the left. Go and pull it yourself. I'll watch.
     ~ volt_quiet = true
     #exit_conversation

@@ -73,7 +73,8 @@ Breaker row. The shutter's third from the left, the big one. Don't touch the oth
     Small toggle under the row, painted over. Flick it down. That's their camera on the gallery.
     -> cut_2_menu
 // Puzzle chains P2: the player pulls it at the isolator; the call ends on the instruction (resume lands back here).
-+ [Going to it.]
+// Dialogue R3 m1: a question, so the instruction answers it.
++ [Anything else before I pull it?]
     Third from the left, the big one. Go and pull it. Nothing else.
     -> cut_2_go
 = cut_2_go

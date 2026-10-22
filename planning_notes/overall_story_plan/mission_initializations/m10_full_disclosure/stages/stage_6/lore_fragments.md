@@ -356,7 +356,9 @@ Variants, same for both:
 **`shutter_isolator`** (`as-type:aes_esd_station`; readable). Name: "Shutter Isolator". Carries: what the room is for, and afterwards what was done in it. Changed by: the cut, and the camera switch inside the by-hand cut.
 
 - Default, before the cut (replaces RL's, W-18; the talk-through is HaX's and Voltage's to offer, not the object's): "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it."
-- Variants, same for both, in order:
+- Variants, same for both, in order (the first two added by puzzle chains P2: the player's own pull, `cut_step` 3; `addToNotes: false`):
+  0a. `globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3 && globalVars.gallery_camera_blinded === true`: "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED. Under the row, the painted toggle thrown: GALLERY CAMERA: OFF."
+  0b. `globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3`: "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED."
   1. `globalVars.gallery_shutter_cut === true && globalVars.gallery_camera_blinded === true`: "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED. Under it, a smaller switch thrown the other way: GALLERY CAMERA: OFF."
   2. `globalVars.gallery_shutter_cut === true`: "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED."
 
@@ -585,7 +587,7 @@ A SAFETYNET agent shot a man in a converted Cold War bunker in Montana tonight. 
 
 ### 1.10 Items: the start kit and what the night hands over
 
-**Kowalczyk's PIN cracker** (start kit, `type: "pin-cracker"`, `id: kowalczyk_cracker`). Name: "PIN Cracker (Kowalczyk's)". Never a clue (FA row 118); its casing is the suspicion beat at the cracker rack.
+**Kowalczyk's PIN cracker** (start kit, `type: "pin-cracker"`, `id: kowalczyk_cracker`). Name: "PIN Cracker (Kowalczyk's)". Never a clue (FA row 118); its casing is the suspicion beat at the cracker rack. Puzzle chains P5: once the rack has been looked at (`cracker_rack_seen`), each provenance variant gains a closing sentence, "Inside the battery door, where his bench puts its batch sticker, there's a clean square where one was peeled off." (first, ahead of the existing variants).
 
 - Default observations (`m09_completed`, the usual case): "Matte casing, no stores label. Halina Kowalczyk handed it to you before Helena: 'This one's mine. Never been through stores, never been near him.'" (m09's line whole, R1C-m18a.)
 - Variant `!globalVars.m09_completed && !globalVars.m08_completed`, first (FA §4.0 drops the last clause for a player who never met Nightshade): "Matte casing, no stores label. Halina Kowalczyk handed it to you at the briefing: 'This one's mine. Never been through stores.'"

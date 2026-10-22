@@ -308,6 +308,7 @@ m10 has no audio yet, so none of these costs a clip now. The dialogue phase owns
 - **W8. The tripwire's ladder is a one-click, same-room way round.** Kept. It's the table's consequence (the alarm, Kowalczyk warned, the guards quicker; erb:1644-1647, 2735), not a puzzle, and HaX's call explains it in one breath (phone:636-639).
 - **W9. `use_the_console` can't complete when both shares were stopped before the first console use.** Not counted. It needs the player to climb to the gallery, deal with Victoria or Vos, and come back down before opening the lock. The task is optional and true ("kill one share, or trace one": there was nothing to do).
 - **W10. The door log's `!flag1_submitted` variant is unreachable** (flag 1 precedes the breach; erb:2860, 2864). Harmless.
+- **W11. P3's remaining line ("Two thousand one hundred. Her figure. I knew that too.") is declined** (round 2 n4). The decode already pays where the argument is decided: the sharper exchange-1 rebuttal ("Asante corrected your sheet…") needs `margin_note_read` or Asante's confirmation, the read sheet gates the plain rebuttal (SD m4), and the optional `decode_the_margin` task and T-24a/b, T-60 frame it. A second voiced concession inside the same arm would repeat the point he has just conceded ("*pause* I knew.") without changing a result. Don't re-propose.
 
 ---
 
