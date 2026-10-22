@@ -176,12 +176,16 @@ Night guard. Twenty-four. Not ours, not theirs. Don't hurt him.
 - m01_completed and not m01_maya_ko:
     #set_global:dock_done:true
     A clerk's on tonight, and an IT contractor, Jesse Tran. Maya's list has a Tran on it.
+    // Scenario design R3 m1: the first job, said aloud.
+    Once you're in, set the laptop up in the reading room and get me into their catalogue. It's how we find out what she's burning.
 - m01_maya_ko:
     #set_global:dock_done:true
     A clerk's on tonight, and an IT contractor, Jesse Tran. Maya Chen would have flagged him. We don't have Maya's names.
+    Once you're in, set the laptop up in the reading room and get me into their catalogue. It's how we find out what she's burning.
 - else:
     #set_global:dock_done:true
     A clerk's on tonight, and an IT contractor, Jesse Tran. Viral Dynamics' staff files have a Tran in them.
+    Once you're in, set the laptop up in the reading room and get me into their catalogue. It's how we find out what she's burning.
 }
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
@@ -209,6 +213,8 @@ The catalogue keeps something else live. Their ledger.
 -
 Her card's on a reel at her hip. You've done this before.
 I've sent you the odd one. Salvage cage, their own code.
+// Scenario design R3 m2: name Act 3's target where the line is handed over.
+The catalogue calls what's in there Tomb Beta. It's still drawing power, and it isn't on her schedule.
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
 + [Got it.]
@@ -581,8 +587,9 @@ There's a key on here that sends it everywhere in the same minute. Then why buil
 He'll call it full disclosure.
 // The D-02 line, once, split at its sentence breaks for the 25-word cap.
 + [Isn't it?]
-    Full disclosure is one researcher publishing one flaw after the vendor stops answering.
-    His notice was the coordinated kind: vendor first, time to fix it. This is every weapon we hold, handed out at once.
+    // Educational R1 E-M1/E-m1: "usually" and "to everyone" restored; coordinated ends with the public.
+    Full disclosure is one researcher publishing one flaw, in full, to everyone. Usually because the vendor stopped answering.
+    His notice was the coordinated kind: vendor first, time to fix it, then the public. This is every weapon we hold, handed out at once.
 -
 + [Who gets it first?]
     The cells. Oh-four-hundred, UTC. Two hours ahead of everyone else.
@@ -687,11 +694,17 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 // the send and the hold are its answers (notice_ask).
 + {identity_scene_done and not albion_notified and not notice_sent_here} [His notice.]
     Still on his box. Say the word.
+    // Educational R1 E-m3: incident disclosure (m04) and vulnerability disclosure, kept apart.
+    {m04_disclosure_choice != "":
+        Albion's inquiry was about what happened. This is about the hole itself, and who else has it.
+    }
     -> notice_ask
 // 3. The name (SE §4.4), once.
 + {identity_scene_done and not name_topic_given} [About the name.]
     ~ name_topic_given = true
     He told us to call him Adrian on the course. None of us ever managed it.
+    // Educational R1 E-M4 (wording checked against the VM plan by the opus48 agent).
+    When someone leaves, their accounts and their kit go the same day. His were never revoked. Seven years on, the credential still works.
     That's all you get tonight. The rest is afterwards.
     -> support_hub
 // 3b. The Alpha decode. Script edit R1 A-05: gated on a read of the annotation
@@ -731,9 +744,11 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
             If the cipher's new to you, ask me for the archive-code field guide.
         }
     - keypad_topic_asks == 2:
-        It's Vigenère.
+        // Educational R1 E-M2: the season's first keyed cipher, against m02's encodings.
+        It's Vigenère. A cipher this time, not an encoding. Without the key, nobody reads it.
         The key is the salvage bay's word, on the chart by the keypad.
     - else:
+        ROT13 moved every letter thirteen places. This moves each letter by the next letter of the key.
         Vigenère Decode, on your workstation. Key: the salvage bay's word. Capitals in, capitals out.
     }
     -> support_hub
@@ -858,6 +873,8 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     -> support_hub
 + [Not yet.]
     It keeps. So does the hole.
+    // Educational R1 E-m2: the equities call, named as a real practice.
+    Every service that finds a hole makes this call: keep it to use, or tell the vendor. We kept this one nine years.
     -> support_hub
 
 === reading_ask ===
@@ -938,6 +955,10 @@ Sent. He'll read it tonight.
     Her office. Get the safe open, and her card for the tape room is in it.
 - flag2_submitted and cage_opened:
     Step out of the cage. Someone's been waiting for you to come up for air.
+// Scenario design R1 m1 (R2 n4, R3 n1: above the hatch and flag-2 rows): Victoria's m03 payoff,
+// until the code is asked for.
+- stacks_entered and m03_victoria_fate == "recruited" and not maintenance_code_used and not cage_opened:
+    Victoria's people can open that gate. Ask me.
 // Dialogue R1 m5: a player who has already talked at the hatch.
 - flag2_submitted and hatch_talked and not cage_opened:
     The gate, beside her hatch. If you didn't clone her card, go back to the counter.
@@ -947,10 +968,6 @@ Sent. He'll read it tonight.
     Flag two. The ledger's still on the catalogue server.
 - cage_opened:
     The plan cabinet takes her print. It's on her stamp, on the hatch shelf. Then flag two, the ledger.
-// Scenario design R1 m1 (R2 n4: above the hatch row): Victoria's m03 payoff,
-// until the code is asked for.
-- stacks_entered and m03_victoria_fate == "recruited" and not maintenance_code_used and not cage_opened:
-    Victoria's people can open that gate. Ask me.
 // Walkthrough R1 m-04: after the hatch, name the gate and the cabinet.
 - hatch_talked and not cage_opened:
     Clone her card at the hatch if you haven't. The gate's beside her, and the cabinet inside takes her print.

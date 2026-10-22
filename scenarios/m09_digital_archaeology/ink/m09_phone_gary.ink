@@ -27,7 +27,7 @@ VAR salvage_opened = false   // Synced scenario global (puzzle chains R1 P5)
 - else:
     It's Gary. Whitlock, from St. Catherine's. HaX says you're stood at a keypad in a tape library.
     Seen codes like that. Archives key them to the shelf scheme.
-    Read it like a shelf mark, not a number. Vigenère, and the bay's word is the key.
+    Read it like a shelf mark, not a number. Vigenère: every letter shifted by the next letter of the bay's word.
     There'll be a chart near the keypad.
 }
 + [How's the new job?]

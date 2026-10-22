@@ -259,7 +259,9 @@ hax_maps << { "eventPattern" => "game_loaded", "condition" => "globalVars.deck_c
 hax_maps << call_map("global_variable_changed:deck_choice_made", "value === true && !globalVars.afterwards_heard", "afterwards", delay: 2500, forced: false, once: true)
 hax_maps << { "eventPattern" => "room_entered:sorensen_office", "onceOnly" => true, "setGlobal" => { "office_entered" => true } }
 hax_maps << text_map("room_entered:sorensen_office", "globalVars.sleeper_named", "Her cracker. Use it anyway.")
-hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.sleeper_named", "Safe's open. Kowalczyk will want to hear about her toy.")
+# Educational R1 E-m9: credit the lease-date deduction when the ledger was read.
+hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.sleeper_named && !globalVars.rent_ledger_read", "Safe's open. Kowalczyk will want to hear about her toy.")
+hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.sleeper_named && globalVars.rent_ledger_read", "Lease date. People pick numbers they'll never forget. So can we.")
 %w[taken double_crossed].each do |offer|
   hax_maps << text_map("global_variable_changed:office_entered", "value === true && globalVars.recruiter_offer === '#{offer}'",
                        "Sale. WREN. To Agent 0x00. Consideration, one deck. Booked.", delay: 20000, set: { "invoice_booked" => true })
@@ -267,12 +269,16 @@ hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.slee
                        "She's booked you. You're in her ledger now.", delay: 20000, msg_delay: 5000)
 end
 hax_maps << { "eventPattern" => "room_entered:tape_room", "onceOnly" => true, "setGlobal" => { "tape_room_entered" => true } }
+# Scenario design R3 m2: the salvage cage's server, named at the tape room door (A3-42).
+hax_maps << text_map("room_entered:tape_room", nil, "The salvage cage is through there. Tomb Beta's server. Still running.", msg_delay: 5000)
 # Scenario design R1 n2: the card in hand retires the status ladder's safe row.
 hax_maps << { "eventPattern" => "item_picked_up:keycard", "condition" => "data.itemId === 'tape_room_keycard'", "onceOnly" => true, "setGlobal" => { "tape_card_held" => true } }
 
 # The salvage keypad and Tomb Beta's server (S4 §4 rows 7-8, §7.2).
 hax_maps << { "eventPattern" => "door_unlock_attempt", "condition" => "data.connectedRoom === 'salvage_cage'", "onceOnly" => true, "setGlobal" => { "salvage_keypad_seen" => true } }
 hax_maps << { "eventPattern" => "door_unlocked", "condition" => "data.connectedRoom === 'salvage_cage'", "onceOnly" => true, "setGlobal" => { "salvage_opened" => true } }
+# Educational R1 E-M2: the Kerckhoffs point the chart makes (A3-37).
+hax_maps << text_map("global_variable_changed:salvage_opened", "value === true", "She never wrote a code down. She hung the key beside the lock. A cipher is only as safe as its key.", delay: 2000)
 hax_maps << text_map("global_variable_changed:salvage_keypad_seen", "value === true && !globalVars.m02_gary_protected",
                      "If the cipher's new to you, there's an archive-code field guide. Ask me.", set: { "archive_code_guide_offered" => true })
 hax_maps << { "eventPattern" => "global_variable_changed:salvage_keypad_seen", "condition" => "value === true && globalVars.m02_gary_protected", "onceOnly" => true, "setGlobal" => { "archive_code_guide_offered" => true } }
@@ -352,6 +358,14 @@ hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true 
                      "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
 hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true && !globalVars.legacy_clock_run && !globalVars.legacy_files_saved && !globalVars.legacy_remark_sent",
                      "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
+# Educational R1 E-M3: name the motives the notes column shows (A3-38), after the remark.
+hax_maps << text_map("global_variable_changed:legacy_remark_sent", "value === true", "Read the notes column. Money, a son, a drink, a lonely night. That's how she chose them, and how she kept them.", delay: 5000)
+# Educational R1 E-M3: the recruiter's method, once Noor has been told (A3-39).
+hax_maps << text_map("global_variable_changed:noor_told", "value === true", "That's how they start. A kindness, then a need they already knew about.", delay: 3000)
+# Educational R1 E-M4: leavers' access is now a line in HaX's "[About the name.]" topic
+# (the opus48-checked wording), so the A3-40 text is withdrawn rather than said twice.
+# Educational R1 E-n1: the guard's log (A3-41).
+hax_maps << text_map("global_variable_changed:incident_log_read", "value === true", "Five nights of warnings, and nobody read them. A log nobody reads is a diary.")
 hax_maps << text_map("global_variable_changed:noor_box_read", "value === true && globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted && !globalVars.legacy_remark_sent",
                      "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
 [["surrender", "There's your why. He was told to."], ["expose", "He wanted your headlines."],
@@ -1068,7 +1082,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "readable": true,
           "readDisplay": "gameDisplay",
           "text": "MON. SHREDDER RUNNING, NIGHT. MRS. S SAYS SCHEDULED. NOTED.\nTUE. SAME. NOTED.\nWED. SAME.\nTHU. SAME.\nFRI. SAME. NOBODY READS THIS.",
-          "observations": "A guard's log in block capitals. The same entry, five nights running."
+          "observations": "A guard's log in block capitals. The same entry, five nights running.",
+          "onRead": { "setVariable": { "incident_log_read": true } }
         }
       ]
     },
@@ -2224,7 +2239,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "readable": true,
           "readDisplay": "gameDisplay",
           "observations": "A framed chart of the archive's shelf marks, beside the salvage keypad.",
-          "text": "MOUNTAIN STATES RECORDS & RETENTION -- SHELF MARKS\nBay 1 ....... Reading room ..... COTTONWOOD\nBays 2 to 9 . Open stacks ...... MERIDIAN\nBay 10 ...... Restricted ....... WATCHTOWER\nBay 11 ...... Tape store ....... STANDBY\nBay 12 ...... Salvage .......... BONEYARD\nHouse rule: cage and keypad codes use the bay word. Never write a code down. M.S.",
+          "text": "MOUNTAIN STATES RECORDS & RETENTION -- SHELF MARKS\nBay 1 ....... Reading room ..... COTTONWOOD\nBays 2 to 9 . Open stacks ...... MERIDIAN\nBay 10 ...... Restricted ....... WATCHTOWER\nBay 11 ...... Tape store ....... STANDBY\nBay 12 ...... Salvage .......... BONEYARD\nHouse rule: each keypad takes its own bay's word. Never write a code down. M.S.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": ["salvage_cage"],
           "puzzle_graph_and_with": "Catalogue: salvage cage",
@@ -2559,6 +2574,7 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "noor_card_given": false,
     "noor_cover": "",
     "deed_found": false,
+    "incident_log_read": false,
     "tape_card_held": false,
     "albion_folder_opened": false,
     "memo_read": false,

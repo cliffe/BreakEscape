@@ -41,32 +41,32 @@
     {
       "ka": "AB",
       "topic": "Characterisation of Adversaries",
-      "keywords": ["THE INSIDER THREAT"]
+      "keywords": ["THE INSIDER THREAT", "SOCIAL ENGINEERING"]
     },
     {
       "ka": "C",
       "topic": "Symmetric Cryptography",
-      "keywords": ["ENCODING", "VIGENERE CIPHER"]
+      "keywords": ["CIPHER(S) - POLYALPHABETIC"]
     },
     {
-      "ka": "SOIM",
-      "topic": "Fundamental Concepts",
-      "keywords": ["VULNERABILITY ANALYSIS", "PENETRATION TESTING - SOFTWARE TOOLS"]
+      "ka": "LR",
+      "topic": "Ethics",
+      "keywords": ["vulnerability testing", "VULNERABILITY DISCLOSURE", "PUBLIC DISCLOSURE"]
     },
     {
       "ka": "SSL",
-      "topic": "Vulnerability Disclosure",
-      "keywords": ["coordinated vulnerability disclosure", "full disclosure"]
+      "topic": "Motivations for Secure Software Lifecycle",
+      "keywords": ["customers don’t apply patches", "VULNERABILITY RESPONSE AND DISCLOSURE"]
     },
     {
-      "ka": "CPS",
-      "topic": "Physical Security",
-      "keywords": ["Physical access control"]
+      "ka": "OSV",
+      "topic": "Primitives for Isolation and Mediation",
+      "keywords": ["physical access and secure deletion", "authentication and identification", "PRIVILEGE ESCALATION"]
     },
     {
       "ka": "NS",
       "topic": "Networking Applications",
-      "keywords": ["NMAP", "PORT SCANNING", "SERVICE FINGERPRINTING"]
+      "keywords": ["NMAP", "PORT SCANNING"]
     },
     {
       "ka": "WAM",
@@ -79,9 +79,9 @@
       "keywords": ["CVES AND CWES"]
     },
     {
-      "ka": "OSV",
-      "topic": "Primitives for Isolation and Mediation",
-      "keywords": ["PRIVILEGE ESCALATION", "ATTACKS AGAINST SUDO", "Linux security model"]
+      "ka": "SOIM",
+      "topic": "Fundamental Concepts",
+      "keywords": ["VULNERABILITY ANALYSIS", "PENETRATION TESTING - SOFTWARE TOOLS"]
     }
   ],
   "secgen": {

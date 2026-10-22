@@ -193,3 +193,4 @@ No audio exists yet, so nothing is orphaned by the change. The officers' m09 and
 - 2026-10-22 m09 scenario design R1: +2 voiced (Netherton Sun River line; narrator file glance). m09 now 371 voiced entries.
 - 2026-10-22 m09 scenario design R2: +2 voiced Netherton lines, 1 reworded (Sun River three arms).
 - 2026-10-22 m09 dialogue R1: 373 → 376 voiced lines; 10 reworded, 3 new (13 clips).
+- 2026-10-22 m09 educational R1 + scenario design R3: 2 Netherton lines reworded; count stays 376.

@@ -307,7 +307,7 @@ Director Magnus Netherton: Quintero leads on the ground. Kowalczyk breaches. Mal
 Agent 0x2D 'Anchor': One agent, no cover, in a building that's burning paper. If it goes wrong, I go into Montana a day late and one short.
 Agent 0x2D 'Anchor': Orders don't fall off couriers, Director.
 // Stage 8 ruling 11 (VT 2): no "again"; m10's "Twice now" counts this as the first.
-Director Magnus Netherton: This one didn't. Noted.
+Director Magnus Netherton: This one didn't, Quintero. Noted.
 // C-7: Malhotra's hidden re-vetting (m10) shows nothing here. He asks, is
 // refused, and drops it at once, keen to be seen to be useful.
 Officer Dev Malhotra: If something goes wrong in there, I'd like to hear it go wrong.

@@ -264,7 +264,7 @@ Narrator: He reads the first name off the card. He doesn't look down for the sec
 - deed_found:
     Director Magnus Netherton: Sun River. A civil defence bunker Tesseract's people leased from the state in 2016. Mrs Sorensen's own file gave us the address. That is where the order sends us.
 - m08_tomb_gamma_location_known:
-    Director Magnus Netherton: Sun River. Nightshade's coordinate, and a lease Tesseract's people took in 2016. That is where the order sends us.
+    Director Magnus Netherton: Sun River. Nightshade's coordinate, and a lease in Mrs Sorensen's office that Tesseract's people took in 2016. That is where the order sends us.
 - else:
     Director Magnus Netherton: Sun River. Analysis found the lease an hour ago. It was in Mrs Sorensen's office all night. That is where the order sends us.
 }
