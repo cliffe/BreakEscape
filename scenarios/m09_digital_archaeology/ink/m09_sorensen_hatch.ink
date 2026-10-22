@@ -38,6 +38,11 @@ VAR stacks_card_cloned = false
 Narrator: She looks up before you can say who you are.
 Margaret Sorensen: The lease-holder's auditor. Of course. There's a chair on your side.
 Narrator: She stamps a box DESTROYED and slides it back toward the noise.
+-> opening
+
+// Puzzle chains R6 m2: the opening choices own their knot (like Noor's cover), so
+// a reopen after an Esc here comes back to them and then recognition, not the hub.
+=== opening ===
 + [That's right. They want tonight's run checked against the schedule.]
     Margaret Sorensen: Then you'll find it in order. I've never sent a box anywhere it wasn't due.
     -> recognition

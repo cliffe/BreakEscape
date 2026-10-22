@@ -33,17 +33,19 @@ VAR hub_quiet = false
         Cody Old Coyote: You again.
     }
 }
-+ {coyote_challenges == 1} [Lease-holder's audit. Sorensen knows I'm here.]
++ {coyote_cover == ""} [Lease-holder's audit. Sorensen knows I'm here.]
     ~ coyote_cover = "auditor"
     Cody Old Coyote: She didn't tell me. She doesn't tell me much. Go ahead.
     #exit_conversation
     -> back
-+ {coyote_challenges == 1} [Shredder contractor. It's been jamming.]
++ {coyote_cover == ""} [Shredder contractor. It's been jamming.]
     ~ coyote_cover = "contractor"
     Cody Old Coyote: It hasn't jammed once all week. Believe me, I'd know. Go on.
     #exit_conversation
     -> back
-+ {coyote_challenges > 1} [Same as before. Carry on.]
+// Puzzle chains R6 m3: keyed on the cover, not the count, so an Esc on the first
+// challenge doesn't put "Same as before" in the mouth of a player who gave none.
++ {coyote_cover != ""} [Same as before. Carry on.]
     Cody Old Coyote: Knock yourself out.
     #exit_conversation
     -> back

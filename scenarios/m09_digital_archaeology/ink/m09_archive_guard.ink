@@ -6,7 +6,9 @@
 // ===========================================
 
 === start ===
-Lyle Dillard: Dillard, Statewide Security. Stay where you are.
+// Puzzle chains R6 m1: the tag sits above his line (m03 Terry Mott's order), so
+// an Esc or a reload on the line still leaves him hostile.
 #hostile:archive_guard
+Lyle Dillard: Dillard, Statewide Security. Stay where you are.
 #exit_conversation
 -> DONE
