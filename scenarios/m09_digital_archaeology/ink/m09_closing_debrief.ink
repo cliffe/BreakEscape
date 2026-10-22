@@ -7,8 +7,10 @@
 // replays as one short bridging line (S4 §6.5, C-9).
 // Speakers: Director Magnus Netherton, Agent 0x5E 'Lantern', Agent HaX (on the
 // line, through hax_voice), Narrator.
-// Entry knot: start. debrief_played on the first line; report_to_netherton and
-// report_done directly above the last line. Ends #exit_conversation, -> DONE.
+// Entry knot: start. debrief_played on the first line; report_done directly
+// above the last line. report_to_netherton completes, and debrief_closed rolls
+// the card and credits, when the conversation closes (closing_debrief's
+// mappings; lesson 46). Ends #exit_conversation, -> DONE.
 // Contract §4.2; story arc §7; moral choices §3.5, §4.7, §8.
 // SAFETYNET doesn't arrest: the police make the arrests (C-4).
 // ================================================

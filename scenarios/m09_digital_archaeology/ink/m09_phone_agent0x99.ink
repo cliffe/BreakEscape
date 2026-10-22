@@ -797,7 +797,8 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     The catalogue's the index. Find the part that isn't public.
     -> support_hub
 // 17. Tran.
-+ {not tran_topic_given and not cage_opened} [Tran.]
+// Alignment R4 r4-2: not once Tran is talked off the wipe or down.
++ {not tran_topic_given and not cage_opened and tran_outcome == "left"} [Tran.]
     ~ tran_topic_given = true
     -> tran_warning ->
     He's wiping tapes from the server closet off the open stacks. You'd need something he wants to talk him off it. Otherwise it's a fight.
