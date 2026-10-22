@@ -165,3 +165,98 @@ to be reverted; our checks adapt to it.
 
 - `test/js/social-lab-ruth-keys.test.mjs` — the two starting-state setups now reach
   `brief_close` by choosing the briefing option (adapts to 9d6a7fba). No production code changed.
+
+---
+
+## Cycle 2 — DIALOG_REVIEW_C2.md + R11 browser-pass findings — 2026-10-22
+
+Caps unchanged (30 person / 25 phone). Snapshot baseline for `tagdiff --old` is the same
+cycle-1 pre-edit snapshot; cycle-1 diffs (the W1 set_global tag) still show against it and
+are already explained above.
+
+### Severity table
+
+| ID | Sev | Where | Outcome |
+|----|-----|-------|---------|
+| m-C2-1 | minor | ruth.ink:67 (Gareth) | Fixed — dropped the "read that sheet properly" echo of brief_close; "Good answer. Get it right and I'll put my name to it." |
+| m-C2-2 | minor (optional) | ruth.ink:213 (Ruth) | Fixed — removed the double "all three"; "…All three were right. Her own service desk handed us every one. That's your finding." Kept the lesson (the three facts she checked map to the three the desk gave); used a full stop, not the reviewer's em dash, per house style |
+| w-C2-1 | worth-considering | ruth.ink:220 (Ruth hub else) | Done — third alternation now "Still here. Earning my fee." (was "Still here. Good."), giving her the boss-but-fond dry beat her castmates have |
+| R11 F1 | minor | ruth.ink:198, ruth_phone.ink:151 | Fixed — the lockout line was gated `not pretext_call_done`, which the date already set, so it never showed on the date→reported→portal route. Re-gated both on `pretext_call_reported and not (se_intel_lord_portal_name and se_intel_lord_payslip_date)`: the lockout now shows whenever Dev was reported and both facts aren't held, and clears once they are. Line text unchanged (no re-voice) |
+| R11 F3 | minor | ruth.ink:194 | Fixed — the throwaway nag was gated only `not phish_hampshire_landed`, so it showed after Melanie or Sofia landed from the guest account. Now `not (phish_hampshire_landed or phish_pierce_landed or phish_lord_landed)` — gone once any target has landed |
+| R11 F4 | trivial | ruth.ink topic_account | Fixed — split the Chris/Melanie line into two conditional lines: Chris's clause shows only `not phish_hampshire_landed`, Melanie's only `not phish_pierce_landed`. No more "Melanie's trickier" after she's landed |
+| R11 F5 | minor | ruth.ink hub (new branch + topic_report gate) and scenario.json.erb objectives | Fixed — see below |
+
+### R11 F5 — Sofia landed out of order (two parts)
+
+- **Dialogue:** added a hub branch above the throwaway / "delivered isn't landed" branches,
+  gated `phish_lord_landed and not (phish_hampshire_landed and phish_pierce_landed)`:
+  *"Sofia's in, but the report needs all three. Whoever's left still has to act before you can
+  write it up."* Also gated the "What goes in the report?" hub choice on all three landed (was
+  just `phish_lord_landed`), so the report topic no longer appears on the Sofia-first route.
+  The phone needed nothing: its stage3 already points at the remaining sends when Careers/Melanie
+  aren't both landed.
+- **Objective data fix (authorised: "make it if it's in scenario.json.erb objectives"):** the
+  "report" aim unlocked on `aimCompleted: "phish_hard"` (landing Sofia), which announced
+  "New Objective: Write the report" even though the report workstation needs `sends_done`
+  (all three). Changed its `unlockCondition` to `{ "globalVariable": "sends_done", "equals": true }`.
+  This scenario sets `"social"`, so `game.js:1694` runs the objectives manager with
+  `liveGlobalUnlock`, and `objectives-manager.js watchGlobalUnlocks` opens the aim the moment
+  `sends_done` flips (the three `setGlobal: sends_done` eventMappings, scenario L1409-1411).
+  On the normal route Sofia lands last, so `sends_done` and `phish_hard` complete together and
+  the timing is unchanged; on the P2 route the aim stays story-gated (hidden) until all three
+  land, so no premature announcement. No engine change.
+
+### Spoken-line changes (old → new) — for TTS
+
+1. **ruth.ink — Gareth (m-C2-1)**
+   - OLD: `Good answer. Show me you've read that sheet properly and I'll put my name to it.`
+   - NEW: `Good answer. Get it right and I'll put my name to it.`
+2. **ruth.ink — Ruth (m-C2-2)**
+   - OLD: `Sofia checked the sender, the portal's name and the date. All three were right. Her own service desk gave us all three. That's your finding.`
+   - NEW: `Sofia checked the sender, the portal's name and the date. All three were right. Her own service desk handed us every one. That's your finding.`
+3. **ruth.ink — Ruth (w-C2-1, hub `else` alternation, third option only)**
+   - OLD: `Still here. Good.`  (within `{&Need me?|Something else?|Still here. Good.}`)
+   - NEW: `Still here. Earning my fee.`
+4. **ruth.ink — Ruth (R11 F5, NEW hub line)**
+   - NEW: `Sofia's in, but the report needs all three. Whoever's left still has to act before you can write it up.`
+5. **ruth.ink — Ruth (R11 F4, topic_account split)** — one combined line became two standalone
+   conditional lines; the Chris sentence is now voiced on its own:
+   - OLD (one line): `Chris's careers inbox takes anything. Melanie's trickier — you'll have to work out what gets past her.`
+   - NEW (line a, shows `not phish_hampshire_landed`): `Chris's careers inbox takes anything.`
+   - NEW (line b, shows `not phish_pierce_landed`): `Melanie's trickier — you'll have to work out what gets past her.`
+
+R11 F1's lockout lines (ruth.ink:199, ruth_phone.ink:152) changed only in their gating
+condition, not their spoken text, so they need no re-voicing.
+
+### Checks run
+
+- **compile-ink.sh:** 7/7, 0 failed (expected `-> END` warnings only).
+- **tagdiff --old (vs cycle-1 snapshot):** ruth.ink — 10 structural diffs, all intended (the
+  cycle-1 W1 tag; the F5 branch condition; F3/F1 condition rewrites; the two F4 topic_account
+  conditions; the topic_report choice-gate change). ruth_phone.ink — 2 diffs, the F1 condition
+  swap only (prose unchanged). No unintended structural change.
+- **dialoguelint:** only the known fairbairn phone-self-prefix false positive (not actioned).
+  No line-length errors; ruth max 25, ruth_phone max 23 — within caps.
+- **validator --strict-social:** no errors; no missing recommended fields; only the three
+  pre-existing `mutuallyExclusiveGlobals` warnings (left alone, per brief). `overpromised_anonymity`
+  and the new `sends_done` objective gate trigger nothing.
+- **loopcheck (200 steps × 6 strategies):** clean on ruth@start, ruth@hub, ruth_phone@hub,
+  ruth_phone@stage4 — the changed conditions create no starved knot.
+- **Lab Node tests (test/js/social-lab-*):** 14/14 pass. `social-lab-ruth-phone-keys` stage-4
+  test was updated to F1's new route (the lockout persists until both Dev facts are held, not
+  until the first successful call) — a deliberate route change, so the test was adapted rather
+  than the code. (The separate `social-gap-*` untracked workstream failures from the follow-up
+  are unchanged and out of scope.)
+- **bridge-6 (headless, Node 24, run on its own):** 36/36 PASS (the lone benign reload
+  `waitFor` navigation warning as before). Note: bridge-6 does not cover the P2 (Sofia-first)
+  route, so the F5 objective-timing fix is verified by the engine wiring (social →
+  liveGlobalUnlock → watchGlobalUnlocks on sends_done) and loopcheck, not by a P2 browser run;
+  a blind P2 playtest would confirm it live.
+
+### Files changed this cycle
+
+- `scenarios/lab_social_engineering/ink/ruth.ink` (m-C2-1, m-C2-2, w-C2-1, F1, F3, F4, F5) and recompiled `ruth.json`
+- `scenarios/lab_social_engineering/ink/ruth_phone.ink` (F1) and recompiled `ruth_phone.json`
+- `scenarios/lab_social_engineering/scenario.json.erb` (F5 report-aim unlockCondition → sends_done)
+- `test/js/social-lab-ruth-phone-keys.test.mjs` (stage-4 test adapted to F1's new route)
+- `scenarios/lab_social_engineering/DIALOG_LOG.md` (this section)

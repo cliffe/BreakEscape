@@ -70,21 +70,32 @@ test('stage 7 (Blue Team) opener points to Tomasz and does NOT re-offer the key 
         'does not re-offer the key, which was handed at report_filed');
 });
 
-test('stage 4: the "Dev flagged" line shows while the call is still unmade, and stops once it succeeds', { skip }, () => {
-    // Reported, call not yet successfully made (page not built): the flagged line shows.
+test('stage 4: the "Dev flagged" lockout shows while Dev is still needed after a report, and clears once both facts are held (R11 F1)', { skip }, () => {
+    // Reported, and neither Dev fact held yet: the lockout line shows.
     const stuck = opener({ ...base,
         roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true,
         phish_hampshire_landed: true, phish_pierce_landed: true, pretext_call_reported: true, pretext_call_done: false,
         landing_payroll_login_built: false });
-    assert.match(stuck, /flagged that last call/i, 'flagged line shows while the call is unmade');
+    assert.match(stuck, /flagged that last call/i, 'lockout shows while Dev is still needed');
 
-    // A clean call-back succeeded (pretext_call_done) but the page is not built yet, so stage 4
-    // is still current: the flagged line must be gone (R2 F6-c).
+    // A later call got one fact (the date) but not the portal, still reported: the lockout must
+    // persist. The old gate on `not pretext_call_done` cleared it after the first success, hiding
+    // the lockout on the date-first route while the portal was still missing and Dev was locked out.
+    const partial = opener({ ...base,
+        roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true,
+        phish_hampshire_landed: true, phish_pierce_landed: true, pretext_call_reported: true, pretext_call_done: true,
+        se_intel_lord_payslip_date: true, se_intel_lord_portal_name: false,
+        landing_payroll_login_built: false });
+    assert.match(partial, /flagged that last call/i, 'lockout persists while a Dev fact is still missing');
+
+    // Both facts now held: the lockout clears (Dev is no longer needed), even though the page is
+    // not built yet, so stage 4 is still current and falls through to "Call's done. Now the page."
     const recovered = opener({ ...base,
         roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true,
         phish_hampshire_landed: true, phish_pierce_landed: true, pretext_call_reported: true, pretext_call_done: true,
+        se_intel_lord_portal_name: true, se_intel_lord_payslip_date: true,
         landing_payroll_login_built: false });
-    assert.doesNotMatch(recovered, /flagged that last call/i, 'flagged line clears after a clean second call');
+    assert.doesNotMatch(recovered, /flagged that last call/i, 'lockout clears once both Dev facts are held');
 });
 
 const allDone = {

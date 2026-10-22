@@ -148,7 +148,7 @@ Operations now. If that door's locked, I've got the key — come and see me.
 === stage4 ===
 { landing_payroll_login_built and pretext_call_done: -> hub }
 {
-- pretext_call_reported and not pretext_call_done:
+- pretext_call_reported and not (se_intel_lord_portal_name and se_intel_lord_payslip_date):
     Dev flagged that last call to his manager. Leave it a while, then try again — softer, and have your facts straight.
 - pretext_call_done:
     Call's done. Now the page.

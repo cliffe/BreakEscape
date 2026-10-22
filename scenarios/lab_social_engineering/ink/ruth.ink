@@ -64,7 +64,7 @@ Ruth Adeyemi: Ledgerwell's a small finance firm. Last quarter one of Gareth's te
 Ruth Adeyemi: He isn't angry at her. He's scared the next one gets through. We find out how far it would get before a real one does.
 Gareth Fairbairn: Before you start. This test of yours. Is it going to make my people look stupid?
 + [It's about the gaps in your process, not catching anyone out.]
-    Gareth Fairbairn: Good answer. Show me you've read that sheet properly and I'll put my name to it.
+    Gareth Fairbairn: Good answer. Get it right and I'll put my name to it.
     -> brief_close
 + [Don't worry, nobody will ever know it was them.]
     Ruth Adeyemi: Careful. We can't promise nobody finds out. Logs exist. We can promise the report blames no one.
@@ -191,11 +191,13 @@ Ruth Adeyemi: Read the rules of engagement. The sheet on the table. Properly. Ga
     Ruth Adeyemi: Case file's full, but you haven't read the Q3 PDF's properties. Check the author field. Then Operations is yours.
 - plan_done and not (osint_done and se_intel_username_convention):
     Ruth Adeyemi: Recon's through the west door. Public pages only. If you'd need a password to see it, it's off the sheet.
-- operations_key_given and not acct_freemail and not phish_hampshire_landed:
+- phish_lord_landed and not (phish_hampshire_landed and phish_pierce_landed):
+    Ruth Adeyemi: Sofia's in, but the report needs all three. Whoever's left still has to act before you can write it up.
+- operations_key_given and not acct_freemail and not (phish_hampshire_landed or phish_pierce_landed or phish_lord_landed):
     Ruth Adeyemi: Mail's in Operations. Make your throwaway address before you write to anyone.
 - operations_key_given and not (phish_hampshire_landed and phish_pierce_landed):
     Ruth Adeyemi: Delivered isn't landed. It lands when they'd open the file or click the link, the way they would a real one.
-- pretext_call_reported and not pretext_call_done:
+- pretext_call_reported and not (se_intel_lord_portal_name and se_intel_lord_payslip_date):
     Ruth Adeyemi: Dev's manager rang Gareth about a dodgy call. Gareth kept a straight face. Give the desk a minute, then ring back softer.
 - phish_hampshire_landed and phish_pierce_landed and pretext_call_done and not landing_payroll_login_built:
     Ruth Adeyemi: Call's done. Now the page: a look-alike of her payroll portal.
@@ -210,14 +212,14 @@ Ruth Adeyemi: Read the rules of engagement. The sheet on the table. Properly. Ga
 - (landing_payroll_login_built and pretext_call_done) and not phish_lord_landed:
     Ruth Adeyemi: You've got the page and the call. Now write to Sofia.
 - phish_lord_landed and not report_filed:
-    Ruth Adeyemi: Sofia checked the sender, the portal's name and the date. All three were right. Her own service desk gave us all three. That's your finding.
+    Ruth Adeyemi: Sofia checked the sender, the portal's name and the date. All three were right. Her own service desk handed us every one. That's your finding.
     Ruth Adeyemi: Write it up at the report workstation, just there.
 - report_filed and not (triage_pass and profile_done):
     Ruth Adeyemi: Tomasz has the other half of this for you, in the Blue Team room.
 - report_filed:
     Ruth Adeyemi: Both halves done. Tomasz is waiting in the Blue Team room to close it out with you.
 - else:
-    Ruth Adeyemi: {&Need me?|Something else?|Still here. Good.}
+    Ruth Adeyemi: {&Need me?|Something else?|Still here. Earning my fee.}
 }
 + {not roe_signed} [What am I actually allowed to do here?]
     -> topic_scope
@@ -229,7 +231,7 @@ Ruth Adeyemi: Read the rules of engagement. The sheet on the table. Properly. Ga
     -> topic_account
 + {phish_hampshire_landed and phish_pierce_landed and not phish_lord_landed} [How do I reach Sofia?]
     -> topic_hard
-+ {phish_lord_landed and not report_filed} [What goes in the report?]
++ {phish_hampshire_landed and phish_pierce_landed and phish_lord_landed and not report_filed} [What goes in the report?]
     -> topic_report
 + {report_filed} [Anything left?]
     -> topic_defend
@@ -257,7 +259,12 @@ Ruth Adeyemi: And open the published PDF's properties. The author field shows ho
 
 === topic_account ===
 Ruth Adeyemi: Real applicants write from webmail, so a throwaway address looks like one and passes every check. It's still logged against the job.
-Ruth Adeyemi: Chris's careers inbox takes anything. Melanie's trickier — you'll have to work out what gets past her.
+{ not phish_hampshire_landed:
+    Ruth Adeyemi: Chris's careers inbox takes anything.
+}
+{ not phish_pierce_landed:
+    Ruth Adeyemi: Melanie's trickier — you'll have to work out what gets past her.
+}
 ~ quiet = true
 -> hub
 

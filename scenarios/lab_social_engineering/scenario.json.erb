@@ -107,7 +107,13 @@
       "description": "Answer two questions on the campaign results, then pair each finding with a cause and a control. No names.",
       "status": "locked",
       "order": 6,
-      "unlockCondition": { "aimCompleted": "phish_hard" },
+      <%# R11 F5: gate on sends_done (all three landed), not aimCompleted:phish_hard
+          (Sofia alone). Landing Sofia out of order (P2 route) completed phish_hard
+          and announced this objective while the report workstation still refused,
+          since it too requires sends_done. social scenarios run liveGlobalUnlock, so
+          the aim opens the moment sends_done flips; on the normal route Sofia lands
+          last, so the timing is unchanged. %>
+      "unlockCondition": { "globalVariable": "sends_done", "equals": true },
       "tasks": [
         { "taskId": "results_reviewed", "title": "Answer the two questions on the campaign results", "type": "manual", "status": "active" },
         { "taskId": "findings_paired", "title": "Pair each finding with a cause and a control", "type": "manual", "status": "active" }
