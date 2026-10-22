@@ -1237,7 +1237,10 @@
     "engagement_office": {
       "type": "room_se_engagement",
       "door_sign": "Engagement Office",
-      "chatBackground": "assets/backgrounds/rooms/m03_conference_room_01_blended.png",
+      "chatBackground": [
+        { "x": [0, 0.5], "image": "assets/backgrounds/rooms/lab_se_engagement_office_left_blended.png" },
+        { "x": [0.5, 1], "image": "assets/backgrounds/rooms/lab_se_engagement_office_blended.png" }
+      ],
       "lighting": {
         "emitters": {
           "power_panel": { "color": "#7dffa0", "radius": 14, "intensity": 0.4, "effect": null },
@@ -1463,7 +1466,7 @@
     "blue_team_room": {
       "type": "room_se_blueteam",
       "door_sign": "Blue Team Room",
-      "chatBackground": "assets/backgrounds/rooms/m04_security_office_blended.png",
+      "chatBackground": "assets/backgrounds/rooms/lab_se_blue_team_blended.png",
       "lighting": {
         "ambient": "#b2b8c8",
         "emitters": {
