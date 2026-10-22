@@ -20,6 +20,15 @@
 // Overlay rules (00 §6): requiresKeyboardInput, its own Close, Esc through
 // SocialOverlayScene. Close and Esc are a normal exit, so they never emit minigame_failed.
 //
+// Facilitated mode (11 N5, §5.3; packet P7-I), when episode.facilitated is true:
+//   - each stage panel shows the group prompt strings.facilitator[<stage id>];
+//   - the debrief on the shared screen hides the per-learner score (the round percent, the
+//     headline and each card's score); the triage round itself is done individually;
+//   - after each stage but the last, a pause panel (strings.facilitator.pause, then the
+//     finished stage's prompt again) waits for Continue before the next stage. The pause
+//     is held in memory only (a child's return or the triage reopen carries pauseAfter),
+//     so a reopen from the kiosk goes straight to the stage.
+//
 // Test seams: params.deps may replace renderStepStrip, renderFlipView, renderDebrief,
 // measure (recordTriageResult), startTriage, write (writeGlobal) and now.
 
@@ -48,6 +57,32 @@ const STAGE_COPY = Object.freeze({
 });
 const FINISHED_TEXT = 'You have finished this exercise. You can close this window.';
 const LAUNCH_FAILED = 'That did not open. Close this window and try the kiosk again.';
+const PAUSE_COPY = Object.freeze({
+    heading: 'Pause',
+    text: 'Stop here and talk it over as a group before the next step.',
+    prompt: 'For the group:',
+    next: 'Next step'
+});
+
+/** The facilitator's prompt for a stage (strings.facilitator[stage]), or null. */
+export function facilitatorPrompt(strings, key) {
+    const f = isObj(strings?.facilitator) ? strings.facilitator : null;
+    return f && isStr(f[key]) ? f[key] : null;
+}
+
+/** The triage result as the shared screen shows it in facilitated mode: no per-learner score. */
+export function hideScore(result) {
+    if (!isObj(result)) return result;
+    const { percent, headline, pass, ...rest } = result;
+    if (Array.isArray(rest.answers)) {
+        rest.answers = rest.answers.map((a) => {
+            if (!isObj(a)) return a;
+            const { score, ...keep } = a;
+            return keep;
+        });
+    }
+    return rest;
+}
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -72,6 +107,13 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this.strip = null;
         this.view = null;
         this.state = null;
+        this.pauseAfter = null;
+        this._launching = null;
+    }
+
+    /** 11 N5: a facilitated (workshop) run. */
+    get facilitated() {
+        return this.episode.facilitated === true;
     }
 
     // ── data ─────────────────────────────────────────────────────────────────
@@ -130,6 +172,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         root.setAttribute('role', 'region');
         root.setAttribute('aria-label', 'Exercise');
         applyBrand(root, this.episode.brand);
+        if (this.facilitated) root.classList.add('er-facilitated');
         this.root = root;
 
         const bar = el('div', 'er-bar');
@@ -143,6 +186,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this.gameContainer.appendChild(root);
 
         this.state = this._readState();
+        // A pause carried back by a child's return or the triage reopen; only for a stage
+        // that is done, and never once the episode has finished.
+        const after = this.params.pauseAfter;
+        this.pauseAfter = this.facilitated && isStr(after) && this.state.stage && this.state.done.includes(after)
+            ? after : null;
         this.strip = this.deps.renderStepStrip(this.stripHost, {
             stages: stagesFor(this.episode), current: this.state.stage, done: this.state.done,
             brand: this.episode.brand
@@ -179,7 +227,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this._destroyView();
         const stage = this.state.stage;
         this.strip?.update?.({ current: stage, done: this.state.done });
-        if (stage === 'brief') this._renderBrief();
+        if (this.pauseAfter && stage) this._renderPause();
+        else if (stage === 'brief') this._renderBrief();
         else if (stage === 'flip') this._renderFlip();
         else if (stage === 'debrief') this._renderDebrief();
         else if (stage && STAGE_COPY[stage]) this._renderLaunch(stage);
@@ -194,6 +243,30 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         if (isStr(text)) panel.appendChild(el('p', 'er-text', text));
         this.body.appendChild(panel);
         return panel;
+    }
+
+    /** The facilitator's prompt for a stage, as an aside, in facilitated mode only. */
+    _groupPrompt(host, stage) {
+        if (!this.facilitated || !host) return null;
+        const prompt = facilitatorPrompt(this.strings, stage);
+        if (!prompt) return null;
+        const aside = el('aside', 'er-facilitator');
+        aside.setAttribute('aria-label', 'Prompt for the group');
+        aside.append(el('span', 'er-facilitator-label', PAUSE_COPY.prompt), el('span', 'er-facilitator-text', prompt));
+        return aside;
+    }
+
+    _renderPause() {
+        const after = this.pauseAfter;
+        const panel = this._panel(PAUSE_COPY.heading, facilitatorPrompt(this.strings, 'pause') || PAUSE_COPY.text);
+        panel.classList.add('er-pause');
+        const prompt = this._groupPrompt(panel, after);
+        if (prompt) panel.appendChild(prompt);
+        this._button(panel, PAUSE_COPY.next, () => {
+            this.pauseAfter = null;
+            this._render();
+            this._focus();
+        }, 'er-resume');
     }
 
     _button(panel, label, onClick, cls = '') {
@@ -211,12 +284,16 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         const ep = this.episode;
         const panel = this._panel(ep.brand?.name || this.params.title || 'Brief', this.strings.brief);
         if (isStr(ep.scopeNote)) panel.appendChild(el('p', 'er-scope', ep.scopeNote));
+        const prompt = this._groupPrompt(panel, 'brief');
+        if (prompt) panel.appendChild(prompt);
         this._button(panel, 'Start', () => this._complete('brief'), 'er-start');
     }
 
     _renderLaunch(stage) {
         const copy = STAGE_COPY[stage];
         const panel = this._panel(copy.heading, copy.text);
+        const prompt = this._groupPrompt(panel, stage);
+        if (prompt) panel.appendChild(prompt);
         this.notice = el('p', 'er-notice');
         this.notice.setAttribute('aria-live', 'polite');
         panel.appendChild(this.notice);
@@ -242,11 +319,19 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             strings: this.strings,
             onContinue: () => this._complete('flip')
         });
+        this._prependPrompt('flip');
+    }
+
+    /** Above a P7-B view, the stage's group prompt (facilitated mode). */
+    _prependPrompt(stage) {
+        const prompt = this._groupPrompt(this.body, stage);
+        if (prompt) this.body.insertBefore(prompt, this.body.firstChild);
     }
 
     _renderDebrief() {
         const stored = this.state.defend || {};
-        const result = isObj(this.params.triageResult) ? this.params.triageResult : { ...stored, answers: [] };
+        const raw = isObj(this.params.triageResult) ? this.params.triageResult : { ...stored, answers: [] };
+        const result = this.facilitated ? hideScore(raw) : raw;
         this.view = this.deps.renderDebrief(this.body, {
             result,
             set: this.defendSet,
@@ -257,6 +342,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 this.close();
             }
         });
+        this._prependPrompt('debrief');
     }
 
     _renderFinished() {
@@ -266,6 +352,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
 
     _complete(stageId, patch = {}) {
         this._saveState(completeStage(this.episode, this._readState(), stageId, patch));
+        this.pauseAfter = this.facilitated && this.state.stage ? stageId : null;
         if (this.gameState.isActive) {
             this._render();
             this._focus();
@@ -278,6 +365,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         const spec = childLaunch(this.episode, stage);
         if (!spec) return;
         let child = null;
+        this._launching = stage; // read by returnParams() while launchChild builds returnTo
         if (spec.kind === 'osint') {
             child = this.launchChild(spec.sceneType, {
                 ...spec.params,
@@ -298,6 +386,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         } else if (spec.kind === 'triage') {
             child = this._launchTriage(stage, spec.options);
         }
+        this._launching = null;
         if (!child && this.gameState.isActive && this.notice) this.notice.textContent = LAUNCH_FAILED;
     }
 
@@ -308,12 +397,13 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
 
     /** The params this runner reopens with. */
     _reopenParams(extra = {}) {
-        const { suspended, triageResult, resume, ...base } = this.params;
+        const { suspended, triageResult, resume, pauseAfter, ...base } = this.params;
         return { ...base, ...extra, resume: true, suspended: false };
     }
 
+    /** A child's return is a normal exit, so its stage is done: pause after it when facilitated. */
     returnParams() {
-        return { resume: true, triageResult: null };
+        return { resume: true, triageResult: null, pauseAfter: this.facilitated ? this._launching : null };
     }
 
     /**
@@ -355,7 +445,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         if (!state.stage) return; // a check mission ends with the triage result screen
         const fw = win().MinigameFramework;
         if (!fw?.startMinigame) return;
-        fw.startMinigame('episode-runner', null, { ...reopenBase, triageResult: result });
+        fw.startMinigame('episode-runner', null, {
+            ...reopenBase, triageResult: result, pauseAfter: episode.facilitated === true ? stage : null
+        });
     }
 
     // ── exit and test bridge ─────────────────────────────────────────────────
@@ -373,7 +465,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 variant: variantOf(this.episode),
                 stage: s.stage,
                 done: [...s.done],
-                sentHeld: !!s.sent
+                sentHeld: !!s.sent,
+                facilitated: this.facilitated,
+                paused: !!(this.pauseAfter && s.stage)
             }
         };
     }

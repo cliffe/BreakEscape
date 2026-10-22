@@ -74,6 +74,9 @@ test('sent is held by write and cleared by the flip', () => {
         slots: { blank_supplier: 'Harlow', blank_ref: 'INV-1' }, body: 'free text never kept' });
     assert.deepEqual(sent, { recordId: 'sent_1', targetId: 'supplier_contact', templateId: 'tpl_invoice',
         blankIds: ['blank_supplier', 'blank_ref'] });
+    // the pretext is the template held when the record has one (P7-I)
+    assert.equal(M.sentFromRecord({ id: 'sent_2', templates: { from: 'from_own', pretext: 'pretext_invoice' } }).templateId,
+        'pretext_invoice');
     s = M.completeStage(ep, s, 'write', { sent });
     assert.equal(s.stage, 'flip');
     assert.equal(s.sent.recordId, 'sent_1');

@@ -152,14 +152,18 @@ export function childLaunch(episode, stage) {
     return null;
 }
 
-/** The ids the write stage holds for the flip; never the message text (11 §5.2). */
+/**
+ * The ids the write stage holds for the flip; never the message text (11 §5.2).
+ * templateId is the pretext the learner chose (the part that varies), else the first template.
+ */
 export function sentFromRecord(rec, targetId = null) {
     if (!isObj(rec)) return null;
-    const templates = isObj(rec.templates) ? Object.values(rec.templates).filter(isStr) : [];
+    const parts = isObj(rec.templates) ? rec.templates : {};
+    const templates = Object.values(parts).filter(isStr);
     return {
         recordId: isStr(rec.id) ? rec.id : null,
         targetId: isStr(rec.targetId) ? rec.targetId : (isStr(targetId) ? targetId : null),
-        templateId: templates[0] ?? null,
+        templateId: isStr(parts.pretext) ? parts.pretext : (templates[0] ?? null),
         blankIds: isObj(rec.slots) ? Object.keys(rec.slots) : []
     };
 }

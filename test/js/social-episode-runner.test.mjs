@@ -1,8 +1,8 @@
 // Awareness episode runner (SE design 11 N1; PHASE7_PACKETS §2.3, packet P7-A).
 // The real runner, starter, episode model and minigame framework (return-to included) in a
-// jsdom document. The children (OSINT browser, mail client, triage) are stub overlays and the
-// views and measurement store are stubs passed as params.deps, so this does not depend on
-// P7-B's or P7-C's behaviour.
+// jsdom document. The children (OSINT browser, mail client, triage) are stub overlays. Most
+// cases pass stub views and a stub store as params.deps; the P7-I cases at the end run the
+// real P7-B views and the real P7-C store, and the facilitated mode (11 N5).
 // Run with: bundle exec node --test test/js/social-episode-runner.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -417,4 +417,188 @@ test('with the real P7-B views the flip and debrief render and move on', () => {
     click('.aw-finish');
     assert.equal(cur(), null);
     assert.equal(failed().length, 0);
+});
+
+// ── P7-I: the real P7-B views and P7-C store together ─────────────────────────
+
+test('with the real views and the real store, a round is recorded once and the debrief shows it', () => {
+    const ep = fullEpisode();
+    const realDeps = { startTriage: deps.startTriage, now: deps.now }; // real views, write and measure
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
+    startEpisodeRunner(kiosk(ep.id), { deps: realDeps });
+    click('.er-launch');
+    cur().gameResult = { setId: 'fixture_inbox', percent: 80, reportRate: 0.5, verifyCount: 0,
+        answers: [{ id: 'm1', verdict: 'report', flags: [], score: 80, ms: 1200 }] };
+    cur().complete(true);
+    assert.equal(epState().stage, 'debrief');
+    const records = window.gameState.globalVariables.se_awareness_records;
+    assert.ok(Array.isArray(records), 'the store wrote its blocks');
+    assert.equal(records.length, 1);
+    assert.equal(records[0].key, 'episode:fixture_inbox');
+    assert.equal(records[0].episodeId, 'e1_fixture');
+    assert.equal(records[0].variant, 'full');
+    assert.equal(records[0].percent, 80);
+    assert.equal(records[0].items.length, 1);
+    assert.ok(cur().container.textContent.includes('Round score: 80%'));
+    assert.ok(cur().container.querySelector('.aw-card-score'));
+    click('.aw-finish');
+
+    // a second round on the same key keeps the first answer
+    window.gameState.globalVariables[M.stateKey(ep.id)] = { v: 1, done: ['brief', 'osint', 'write', 'flip'] };
+    startEpisodeRunner(kiosk(ep.id), { deps: realDeps });
+    click('.er-launch');
+    cur().gameResult = { setId: 'fixture_inbox', percent: 20, reportRate: 0, verifyCount: 0,
+        answers: [{ id: 'm1', verdict: 'trust', flags: [], score: 0, ms: 500 }] };
+    cur().complete(true);
+    const after = window.gameState.globalVariables.se_awareness_records;
+    assert.equal(after.length, 1);
+    assert.equal(after[0].percent, 80);
+    assert.equal(failed().length, 0);
+});
+
+// ── P7-I: facilitated mode (11 N5) ────────────────────────────────────────────
+
+const facilitatedEpisode = () => ({
+    ...fullEpisode(),
+    facilitated: true,
+    strings: {
+        ...fullEpisode().strings,
+        facilitator: {
+            brief: 'Who would <i>you</i> target first?',
+            osint: 'What did you find that helps?',
+            write: 'What would make you suspicious of this?',
+            flip: 'What does the sender want you to do next?',
+            defend: 'Do this one on your own.',
+            debrief: 'Compare your answers.',
+            pause: 'Talk it over.'
+        }
+    }
+});
+const panelText = () => cur().container.querySelector('.er-body').textContent;
+const resume = () => click('.er-resume');
+
+test('a facilitated episode shows each stage prompt and pauses between stages', () => {
+    const ep = facilitatedEpisode();
+    setup(ep);
+    open(ep);
+    assert.equal(epState().facilitated, true);
+    assert.ok(cur().container.querySelector('.er-root.er-facilitated'));
+    // the prompt goes in as text
+    assert.ok(panelText().includes('Who would <i>you</i> target first?'));
+    assert.equal(cur().container.querySelector('.er-facilitator i'), null);
+
+    click('.er-start');
+    assert.equal(epState().stage, 'osint');
+    assert.equal(epState().paused, true);
+    assert.ok(cur().container.querySelector('.er-pause'));
+    assert.equal(cur().container.querySelector('.er-launch'), null, 'no launch while paused');
+    assert.ok(panelText().includes('Talk it over.'));
+    assert.ok(panelText().includes('Who would <i>you</i> target first?'), 'the pause repeats the finished stage prompt');
+    resume();
+    assert.equal(epState().paused, false);
+    assert.ok(panelText().includes('What did you find that helps?'));
+
+    click('.er-launch');
+    assert.equal(scene(), 'osint-browser');
+    closeChild();
+    assert.equal(scene(), 'episode-runner');
+    assert.equal(epState().stage, 'write');
+    assert.equal(epState().paused, true, 'a child return pauses');
+    resume();
+    assert.ok(panelText().includes('What would make you suspicious of this?'));
+
+    click('.er-launch');
+    assert.equal(cur().params.maxSends, 1);
+    closeChild();
+    assert.equal(epState().stage, 'flip');
+    assert.equal(epState().paused, true);
+    assert.equal(calls.flip.length, 0, 'the flip waits for the pause');
+    resume();
+    assert.equal(calls.flip.length, 1);
+    assert.ok(calls.flip[0].message);
+    assert.ok(panelText().includes('What does the sender want you to do next?'));
+    click('.stub-continue');
+    assert.equal(epState().stage, 'defend');
+    assert.equal(epState().paused, true);
+    resume();
+
+    click('.er-launch');
+    assert.equal(scene(), 'inbox-triage');
+    const result = { setId: 'fixture_inbox', percent: 80, headline: 'Good work', pass: true, reportRate: 0.5, verifyCount: 1,
+        answers: [{ id: 'm1', verdict: 'report', flags: [], score: 80, ms: 900 }] };
+    cur().gameResult = result;
+    cur().complete(true);
+    assert.equal(scene(), 'episode-runner');
+    assert.equal(epState().stage, 'debrief');
+    assert.equal(epState().paused, true, 'the triage reopen pauses');
+    assert.equal(calls.measure.length, 1, 'the round is still recorded in full');
+    assert.equal(calls.measure[0].result.percent, 80);
+    resume();
+
+    const shown = calls.debrief.at(-1).result;
+    assert.equal('percent' in shown, false, 'no round score on the shared screen');
+    assert.equal('headline' in shown, false);
+    assert.equal('score' in shown.answers[0], false);
+    assert.equal(shown.reportRate, 0.5);
+    assert.equal(result.percent, 80, 'the triage result itself is not changed');
+    click('.stub-finish');
+    assert.equal(cur(), null, 'no pause after the last stage');
+    assert.deepEqual(stored(ep.id).done, ['brief', 'osint', 'write', 'flip', 'defend', 'debrief']);
+    assert.equal(failed().length, 0);
+});
+
+test('a facilitated reopen from the kiosk goes straight to the stage', () => {
+    const ep = facilitatedEpisode();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint'] } });
+    open(ep);
+    assert.equal(epState().stage, 'write');
+    assert.equal(epState().paused, false);
+    assert.ok(cur().container.querySelector('.er-launch'));
+    // a stale pauseAfter for a stage not done is ignored
+    while (FW.currentMinigame) FW.forceCloseMinigame();
+    startEpisodeRunner(kiosk(ep.id), { deps, pauseAfter: 'write' });
+    assert.equal(epState().paused, false);
+});
+
+test('a facilitated debrief with the real view hides the score; an unfacilitated one shows it', () => {
+    const result = { setId: 'fixture_inbox', percent: 80, reportRate: 0.5, verifyCount: 0,
+        answers: [{ id: 'm1', verdict: 'trust', flags: [], score: 100, ms: 900 }] };
+    const realViews = { measure: deps.measure, startTriage: deps.startTriage, now: deps.now };
+    for (const facilitated of [true, false]) {
+        const ep = { ...facilitatedEpisode(), facilitated };
+        setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
+        startEpisodeRunner(kiosk(ep.id), { deps: realViews });
+        if (facilitated) assert.ok(panelText().includes('Do this one on your own.'));
+        else assert.equal(cur().container.querySelector('.er-facilitator'), null, 'no prompts unless facilitated');
+        click('.er-launch');
+        cur().gameResult = result;
+        cur().complete(true);
+        if (facilitated) resume();
+        else assert.equal(epState().paused, false, 'never paused unless facilitated');
+        const text = panelText();
+        assert.ok(cur().container.querySelector('.aw-debrief'));
+        assert.equal(text.includes('Round score'), !facilitated);
+        assert.equal(!!cur().container.querySelector('.aw-card-score'), !facilitated);
+        assert.equal(text.includes('Compare your answers.'), facilitated);
+        click('.aw-finish');
+        assert.equal(cur(), null);
+    }
+});
+
+test('a facilitated defendOnly episode pauses between its three stages', () => {
+    const ep = { ...facilitatedEpisode(), id: 'e1_fixture_defend', variant: 'defendOnly' };
+    setup(ep);
+    open(ep);
+    click('.er-start');
+    assert.equal(epState().stage, 'defend');
+    assert.equal(epState().paused, true);
+    resume();
+    click('.er-launch');
+    cur().gameResult = { setId: 'fixture_inbox', percent: 100, reportRate: 1, answers: [] };
+    cur().complete(true);
+    assert.equal(epState().stage, 'debrief');
+    assert.equal(epState().paused, true);
+    resume();
+    assert.equal(calls.debrief.at(-1).variant, 'defendOnly');
+    assert.equal(calls.flip.length, 0);
 });

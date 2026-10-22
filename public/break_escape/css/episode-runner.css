@@ -62,6 +62,23 @@
 }
 .er-button:focus-visible { outline: 3px solid var(--aw-ink); outline-offset: 2px; }
 
+/* Facilitated mode (11 N5, P7-I): the group prompt and the pause between stages. Large
+   enough to read from across a room on a shared screen. */
+.er-facilitator {
+    display: block;
+    margin: 12px 16px 0;
+    padding: 10px 14px;
+    max-width: 60ch;
+    font-size: 18px;
+    background: #fff;
+    border: 2px dashed var(--aw-accent);
+    border-radius: 4px;
+}
+.er-panel .er-facilitator { margin: 12px 0 0; }
+.er-facilitator-label { display: block; font-size: 14px; font-weight: 700; color: var(--aw-accent); }
+.er-facilitator-text { display: block; font-weight: 600; }
+.er-pause .er-text { font-size: 18px; }
+
 @media (max-width: 767px) {
     .er-bar { flex-wrap: wrap; }
     .er-panel { padding: 12px; }
