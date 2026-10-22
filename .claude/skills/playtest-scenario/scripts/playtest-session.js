@@ -29,6 +29,7 @@
  *   {"cmd":"mg","action":"clickText","args":["Continue"]}
  *   {"cmd":"mg","action":"clickCanvas","args":[420,300]}   (nested Phaser canvas)
  *   {"cmd":"mg","action":"type","args":[0,"Hospital1987",{"submit":true}]}
+ *   {"cmd":"select","field":"template","option":"urgent"}    (set a <select>; also mg action "select")
  *   {"cmd":"waitFor","kind":"global","name":"bernie_gave_key"}
  *   {"cmd":"waitFor","kind":"task","id":"sign_in_at_reception"}
  *   {"cmd":"waitFor","kind":"minigame","id":"person-chat"}
@@ -222,7 +223,31 @@ function substituteFlags(node, at) {
   const pause = (ms) => ms ? page.waitForTimeout(ms) : Promise.resolve();
 
   /** Compact state: everything needed for one decision, without the bulk. */
+  /**
+   * Wait (bounded) for the player sprite. Right after a reload getState() throws
+   * "Cannot read properties of null (reading 'x')" until it exists.
+   */
+  async function waitForPlayer(timeoutMs = 15000) {
+    const t0 = Date.now();
+    let last = null;
+    for (;;) {
+      const r = await page.evaluate(() => {
+        try {
+          if (!window.__test) return { ok: false, why: 'no __test yet' };
+          const s = window.__test.getState();
+          return s && s.player ? { ok: true } : { ok: false, why: 'no player in state' };
+        } catch (e) { return { ok: false, why: String(e.message || e) }; }
+      }).catch(e => ({ ok: false, why: String(e.message || e) }));
+      if (r.ok) return { ready: true };
+      last = r.why;
+      if (Date.now() - t0 >= timeoutMs) return { ready: false, reason: last, waitedMs: Date.now() - t0 };
+      await page.waitForTimeout(400);
+    }
+  }
+
   async function brief() {
+    const w = await waitForPlayer();
+    if (!w.ready) return { ready: false, reason: 'player-not-ready', detail: w.reason, waitedMs: w.waitedMs };
     const { _aims, ...b } = await page.evaluate(() => {
       const s = window.__test.getState();
       return {
@@ -275,7 +300,35 @@ function substituteFlags(node, at) {
     // A hub that offers the same menu again would otherwise loop on choice 1.
     const seenMenus = new Map();
     const exitRe = /\b(bye|goodbye|leave|later|that's all|that's it|nothing|done|go|thanks)\b/i;
+    const pw = await waitForPlayer();
+    if (!pw.ready) return { trace, settled: false, ready: false, reason: 'player-not-ready', detail: pw.reason };
+    // An ending screen is a terminal state: credits (state.missionEnd) or an end
+    // card whose only buttons leave the game. Stop there rather than click it.
+    const endCheck = () => page.evaluate(() => {
+      const s = window.__test.getState();
+      if (s.missionEnd) return { kind: 'credits', text: String(s.missionEnd.creditsText || '').slice(0, 200),
+                                 closable: !!s.missionEnd.closable };
+      const bl = s.blockingUi;
+      if (!bl) return null;
+      const labels = bl.buttons.map(b => b.label);
+      const head = String(bl.text || '').split('\n')[0];
+      const leaveRe = /return to missions|back to missions|exit (game|mission)|main menu|leave game/i;
+      const endRe = /engagement closed|mission (complete|ended|over|concluded)|the end\b|case closed|credits/i;
+      const resumeRe = /tutorial|resume|session/i;
+      if (resumeRe.test(bl.classes || '') || resumeRe.test(bl.text || '')) return null;
+      const onlyLeaves = labels.length > 0 && labels.every(l => leaveRe.test(l));
+      const hasEndText = endRe.test(bl.text || '') || endRe.test(bl.classes || '');
+      if (onlyLeaves || (hasEndText && labels.some(l => leaveRe.test(l)))) {
+        return { kind: 'end-card', text: head, buttons: labels };
+      }
+      return null;
+    }).catch(() => null);
     for (let i = 0; i < maxSteps; i++) {
+      const ended = await endCheck();
+      if (ended) {
+        trace.push(`ending screen (${ended.kind}): left alone`);
+        return { trace, settled: true, ended: true, endKind: ended.kind, endScreen: ended, state: await brief() };
+      }
       const mg = await page.evaluate(() => window.__test.getState().activeMinigame);
       if (mg) {
         clear = 0;
@@ -389,6 +442,15 @@ function substituteFlags(node, at) {
     },
     dismiss: async (c) => {
       const r = await page.evaluate(l => window.__test.dismissBlockingUi(l), c.label || null);
+      await pause(speed.step);
+      return r;
+    },
+
+    // Set a <select> in the open minigame: {"cmd":"select","field":"template","option":"urgent"}
+    // field = index among mg getState().fields, or text matching the select's
+    // id/name/class/label; option = value, or option text (exact, then substring).
+    select: async (c) => {
+      const r = await page.evaluate(([f, o]) => window.__test.minigame.select(f, o), [c.field, c.option]);
       await pause(speed.step);
       return r;
     },

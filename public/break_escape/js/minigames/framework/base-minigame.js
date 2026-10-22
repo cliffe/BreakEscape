@@ -191,9 +191,11 @@ export class MinigameScene {
         };
 
         // .tri-chip: the inbox triage flag chips (a label round a checkbox); the
-        // class is only in that overlay. Keep in step with test-bridge clickControl.
+        // class is only in that overlay. [role="option"]: the mail composer and
+        // pretext-prep blank-picker rows; .mail-create-option: the mail Create-account
+        // radio rows. Keep in step with test-bridge clickControl.
         const controls = Array.from(
-            root.querySelectorAll('button, [role="button"], a[href], .clickable, input[type="button"], input[type="submit"], .tri-chip')
+            root.querySelectorAll('button, [role="button"], a[href], .clickable, input[type="button"], input[type="submit"], .tri-chip, [role="option"], .mail-create-option')
         ).filter(visible).slice(0, 60).map((el, i) => ({
             index: i,
             label: (el.innerText || el.value || el.getAttribute('aria-label') || '').trim().slice(0, 120),
