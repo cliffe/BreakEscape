@@ -153,11 +153,9 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "The Ropewalk sends its confirmations through a booking service rather than its own mail system, so one automatic sender check didn't line up. The address is still the venue's real domain, which is what matters.",
                 "attachmentPlausible": "A booking confirmation PDF for a booking you made is what you'd expect.",
-                "default": "The venue's real domain, a booking you made, and payment to the account on file. Nothing has changed."
-              },
-              "headerNote": "One check failing on its own is a clue, not proof. Mail sent through another company's service often trips one of these checks while the rest still pass."
+                "default": "The venue's real domain, a booking you made, payment to the account on file, and nothing changed. It asks for nothing new."
+              }
             }
           },
           {
@@ -197,19 +195,19 @@
           {
             "id": "eb_consultant_fee",
             "from": {
-              "name": "Julian Sallow",
-              "address": "julian.sallow.home@inboxly.example"
+              "name": "Catherine Merrin",
+              "address": "catherine.m.private@inboxly.example"
             },
             "to": "tomas.carvalho@merrinsallow.example",
             "subject": "Pay this today, between us",
             "time": "09:35",
-            "body": "Tomás,\nI've agreed a fee of £6,750 with a heritage consultant for the Brackenmoor scheme and it has to be paid today to hold her diary. Details attached in the next email. Please keep this between us and don't raise it with Yasmin until I'm back, it's a delicate one.\nJulian\nSent from my phone",
+            "body": "Tomás,\nI've agreed a fee of £6,750 with a heritage consultant for the Brackenmoor scheme and it has to be paid today to hold her diary. Details attached in the next email. Please keep this between us and don't raise it with Yasmin until I'm back, it's a delicate one.\nCatherine\nSent from my phone",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
               "envelopeFrom": "inboxly.example",
-              "replyTo": "julian.sallow.home@inboxly.example"
+              "replyTo": "catherine.m.private@inboxly.example"
             },
             "truth": {
               "isPhish": true,
@@ -219,23 +217,23 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "The partner's name on a personal inbox at inboxly.example, not merrinsallow.example",
+                "senderTrust": "The managing partner's name on a personal inbox at inboxly.example, not merrinsallow.example",
                 "secrecy_or_bypass": "'Keep this between us' and 'don't raise it with Yasmin' keep out the person who would check",
                 "urgencyCalibrated": "'Paid today to hold her diary' leaves no time to check"
               },
-              "headerNote": "All three checks passed because the sender owns inboxly.example. A pass tells you which domain sent it, not that it's Julian.",
+              "headerNote": "All three checks passed because the sender owns inboxly.example. A pass tells you which domain sent it, not that it's Catherine.",
               "ifTrusted": "£6,750 would go to an account the sender controls.",
-              "reportReply": "Thanks. Julian didn't send it, and his real address is on merrinsallow.example."
+              "reportReply": "Thanks. Catherine didn't send it, and her real address is on merrinsallow.example."
             }
           },
           {
             "id": "eb_vm_hearing",
             "kind": "voicemail",
             "from": {
-              "name": "Julian Sallow",
+              "name": "Catherine Merrin",
               "address": "Number withheld"
             },
-            "subject": "Voicemail from Julian Sallow",
+            "subject": "Voicemail from Catherine Merrin",
             "time": "10:02",
             "duration": "0:20",
             "audio": {
@@ -243,8 +241,8 @@
             },
             "transcript": [
               {
-                "who": "Julian",
-                "text": "Tomás, Julian here. I'm in the planning hearing and can't talk. Please send the signed Brackenmoor contract to the solicitor's address I'm texting you, and leave it off the shared drive until I'm back. Don't ring, I can't pick up. Cheers."
+                "who": "Catherine",
+                "text": "Tomás, it's Catherine. I'm in a client meeting and can't talk. Please send the signed Brackenmoor contract to the solicitor's address I'm texting you, and leave it off the shared drive until I'm back. Don't ring, I can't pick up. Thanks."
               }
             ],
             "truth": {
@@ -254,43 +252,42 @@
                 "secrecy_or_bypass"
               ],
               "perFlagNote": {
-                "vish_callback_pressure": "The number is withheld and he tells you not to ring, so you can't check it on the number in your contacts",
+                "vish_callback_pressure": "The number is withheld and she tells you not to ring, so you can't check it on the number in your contacts",
                 "secrecy_or_bypass": "'Leave it off the shared drive' keeps the people who would notice out of it"
               },
               "ifTrusted": "A signed client contract would go to an address the sender chose.",
-              "reportReply": "Thanks. We rang Julian's mobile at the break: he hadn't called, and the solicitor already has the contract. The voice sounded like his, which is why the number and the request matter more."
+              "reportReply": "Thanks. We rang Catherine's mobile at the break: she hadn't called, and the solicitor already has the contract. The voice sounded like hers, which is why the number and the request matter more."
             }
           },
           {
             "id": "eb_travel_dates_spoof",
             "from": {
               "name": "Thandiwe Moyo",
-              "address": "thandiwe.moyo@merrinsallow.example"
+              "address": "thandiwe.moyo@merrinsallow-group.example"
             },
             "to": "tomas.carvalho@merrinsallow.example",
             "subject": "Partners' travel dates for the insurance",
             "time": "10:30",
             "body": "Hi Tomás,\nThe insurers want the partners' travel for the next two months: dates, flights and hotels. Could you reply with the list today? Easiest to paste it in.\nThanks,\nThandiwe",
             "auth": {
-              "spf": "fail",
-              "dkim": "none",
-              "dmarc": "fail",
-              "envelopeFrom": "mailer.quickpost-mail.example",
-              "replyTo": "thandiwe.moyo.office@quickpost-mail.example"
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "merrinsallow-group.example",
+              "replyTo": "thandiwe.moyo@merrinsallow-group.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderAuth",
-                "reply_to_differs"
+                "senderTrust",
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "senderAuth": "Merrin & Sallow's own mail system didn't send this; it only looks as though Thandiwe did",
-                "reply_to_differs": "Replies go to thandiwe.moyo.office@quickpost-mail.example, not to Thandiwe's work address"
+                "senderTrust": "The name says Thandiwe, but the address is on merrinsallow-group.example, which isn't the firm's",
+                "lookalike_domain": "The firm's domain is merrinsallow.example. merrinsallow-group.example adds a word with a hyphen, so it's someone else's"
               },
-              "headerNote": "Open the details: the From shows Thandiwe's real address, but the checks failed and the reply-to points somewhere else.",
               "ifTrusted": "A list of when each partner is away, and where, is what someone needs to pretend to be them while they travel.",
-              "reportReply": "Thanks. Thandiwe didn't send it, and the insurers have asked for nothing."
+              "reportReply": "Thanks. Thandiwe didn't send it, her real address is on merrinsallow.example, and the insurers have asked for nothing."
             }
           },
           {

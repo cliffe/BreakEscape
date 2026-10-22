@@ -1,6 +1,6 @@
 // ================================================
 // Awareness check, executive, before (AB): Yasmin Chaudhry (person, Training Room)
-// Merrin & Sallow's finance controller, 40s, British Pakistani (BRAND_SET.md). Runs the before-and-after checks; she is the person a PA should ring about money. Her name is spoofed in form A row 6. Placeholder sprite until P7-Z3.
+// Merrin & Sallow's finance controller, 40s, British Pakistani (BRAND_SET.md). Hosts the AB check pair; she is the person a PA should ring about money. No longer impersonated in either check form (C2-m16). Placeholder sprite until P7-Z3.
 // One welcome line; the kiosk does the rest. The record carries the mapping that
 // completes the task when triage_pre_done changes (11 S5.1), so the ink only reads that global.
 // Resting point is the hub (m03 hub_quiet pattern): the goodbye parks there
@@ -19,12 +19,12 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { triage_pre_done:
-        Yasmin Chaudhry: That's your first check saved. You'll do another after the training, and see how the two compare.
+        Yasmin Chaudhry: That's your first check saved. You'll take the second after the training, and the two get compared.
     - else:
-        Yasmin Chaudhry: Hello. Before the training there's a short check on the kiosk: ten emails and voicemails of the kind a PA gets. Just do what you'd normally do.
+        Yasmin Chaudhry: Hello. Before the training there's a short check on the kiosk: ten emails and voicemails of the kind a PA gets. Do what you'd normally do with them.
     }
 }
-+ [Thanks.]
++ [Thanks, Yasmin.]
     Yasmin Chaudhry: You're welcome.
     ~ hub_quiet = true
     #exit_conversation

@@ -134,11 +134,9 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "Larkspur sends its invoices through a booking service rather than its own mail system, so one automatic sender check didn't line up. The address is still Larkspur's real domain, which is what matters.",
                 "attachmentPlausible": "An invoice PDF for a trip you booked is what you'd expect.",
-                "default": "Larkspur's real domain, a trip you booked, and payment to the account on file. Nothing has changed."
-              },
-              "headerNote": "One check failing on its own is a clue, not proof. Mail sent through another company's service often trips one of these checks while the rest still pass."
+                "default": "Larkspur's real domain, a trip you booked, payment to the account on file, and nothing changed. It asks for nothing new."
+              }
             }
           },
           {
@@ -245,33 +243,32 @@
           {
             "id": "ea_card_spoof",
             "from": {
-              "name": "Yasmin Chaudhry",
-              "address": "yasmin.chaudhry@merrinsallow.example"
+              "name": "Thandiwe Moyo",
+              "address": "thandiwe.moyo@merrin-sallow.example"
             },
             "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Catherine's card details for the hotel hold",
+            "subject": "Partners' passport numbers for the travel insurer",
             "time": "10:30",
-            "body": "Hi Tomás,\nThe Milan hotel needs a card to hold the rooms. Could you reply with the long number, expiry and security code from Catherine's company card? I'm out of the office and can't get to the file.\nThanks,\nYasmin",
+            "body": "Hi Tomás,\nThe travel insurer needs the partners' passport numbers to add this trip. Could you reply with Catherine's and Julian's from the file? I'm off-site and can't get to it.\nThanks,\nThandiwe",
             "auth": {
-              "spf": "fail",
-              "dkim": "none",
-              "dmarc": "fail",
-              "envelopeFrom": "mailer.inboxly.example",
-              "replyTo": "yasmin.chaudhry.finance@inboxly.example"
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "merrin-sallow.example",
+              "replyTo": "thandiwe.moyo@merrin-sallow.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderAuth",
-                "reply_to_differs"
+                "senderTrust",
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "senderAuth": "Merrin & Sallow's own mail system didn't send this; it only looks as though Yasmin did",
-                "reply_to_differs": "Replies go to yasmin.chaudhry.finance@inboxly.example, not to Yasmin's work address"
+                "senderTrust": "The name says Thandiwe, but the address is on merrin-sallow.example, which isn't the firm's",
+                "lookalike_domain": "The firm's domain is merrinsallow.example. merrin-sallow.example adds a hyphen, so it's someone else's"
               },
-              "headerNote": "Open the details: the From shows Yasmin's real address, but the checks failed and the reply-to points somewhere else.",
-              "ifTrusted": "Whoever owns that inbox could spend on Catherine's company card.",
-              "reportReply": "Thanks. Yasmin is at her desk and didn't send it. Finance would never ask for card details by email."
+              "ifTrusted": "The partners' passport numbers would go to a stranger, enough to set up travel or accounts in their names.",
+              "reportReply": "Thanks. Thandiwe didn't send it, her real address is on merrinsallow.example, and passport numbers never go out by email."
             }
           },
           {

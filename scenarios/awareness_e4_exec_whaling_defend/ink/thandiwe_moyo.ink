@@ -1,6 +1,6 @@
 // ================================================
 // Awareness E4, defend only: Thandiwe Moyo (person, Training Room)
-// Merrin & Sallow's studio manager, 30s, Zimbabwean-British (e4/defend.json _brandAdditions). Settles the learner into Tomás's seat. Placeholder sprite until P7-Z3.
+// Merrin & Sallow's studio manager, 30s, Zimbabwean-British (e4/defend.json _brandAdditions). Settles the learner into Tomás's seat for the episode. Impersonated on a look-alike firm domain in both check forms (row 6, C2-M6), but she hosts no check mission, so no check host is spoofed (C2-m16). Placeholder sprite until P7-Z3.
 // One welcome line; the kiosk does the rest. The record carries the mapping that
 // completes the task when episode_e4_exec_whaling_defend_defend_done changes (11 S5.1), so the ink only reads that global.
 // Resting point is the hub (m03 hub_quiet pattern): the goodbye parks there

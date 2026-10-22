@@ -19,13 +19,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { triage_post_done:
-        Jun Watanabe: That's the second check saved. Thanks for doing both.
+        Jun Watanabe: That's the pair of them in. Thanks for sitting both.
     - else:
-        Jun Watanabe: Welcome back. Ten new emails on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.
+        Jun Watanabe: You're back. Ten fresh ones on the kiosk, same drill. If you did the first check, the end screen puts the two side by side.
     }
 }
-+ [Thanks.]
-    Jun Watanabe: No problem.
++ [Thanks, Jun.]
+    Jun Watanabe: No bother.
     ~ hub_quiet = true
     #exit_conversation
     -> hub

@@ -2,7 +2,7 @@
   "scenario_id": "awareness_e4_exec_whaling",
   "scenario_name": "Executive whaling: both sides",
   "scenario_brief": "Awareness episode E4. You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. First you're on the red team: research what's public about the managing partner, Catherine Merrin, and her trip this week, then write one email to her PA that looks as if it came from her. Then you swap seats and cover the PA's inbox the same kind of message lands in, including a voicemail in a voice that sounds like hers. Only the inbox is scored.",
-  "endGoal": "Send the lookalike email, then sort the PA's inbox at the training kiosk.",
+  "endGoal": "Send the email in Catherine's name, then sort the PA's inbox at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
   "startRoom": "training_room",
@@ -19,7 +19,7 @@
   "objectives": [
     {
       "aimId": "red_team_aim",
-      "title": "Send the lookalike email",
+      "title": "Send the email in Catherine's name",
       "description": "Research Catherine Merrin and her trip, then send one email to her PA, Tomás Carvalho, that looks as if it came from her.",
       "status": "active",
       "order": 0,
@@ -152,7 +152,7 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "Catherine's name, but on a personal inbox at inboxly.example, not merrinsallow.example. 'My work email won't load' is there to explain that away",
+                "senderTrust": "Her published travel address is catherine.merrin@inboxly.example. This is catherine.merrin.travel@inboxly.example, a different inbox, and anyone can open a free one in her name",
                 "secrecy_or_bypass": "'Keep it between us' and 'don't send it through Yasmin' skip the approval that would catch this",
                 "urgencyCalibrated": "'Before I land' and 'three hours in the air' leave no time to check and steer you away from ringing her. The flight time came from her public posts"
               },
@@ -304,6 +304,7 @@
         "flipIntro": "This is the email you just sent, as Tomás saw it on his phone. The lines picked out below are what make it believable.",
         "flipDefenderLine": "Ten minutes before the flight, two meetings still to set up, Tomás read it. It fitted her day and it sounded like her, so he opened the payment form. Being fooled by something built this well is not a sign of carelessness.",
         "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, messages like it arrive in Tomás's inbox and voicemail, and you're the one reading them.",
+        "flipMissed": "There's nothing extra to replay from this careful message, so there's nothing of yours to show from the other side. The defence is the same either way: next, messages like it arrive in Tomás's inbox and voicemail, and you're the one reading them.",
         "noBlameLine": "Nobody is marked down for a miss here. Every one of these was built to look and sound right, and the people who act on them are trying to help in a hurry. A miss is about the pressure, not the person.",
         "defendIntro": "Now you're in Tomás's seat. Five emails and voicemails are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed.",
         "mondayCard": "On Monday: if someone senior asks you to pay, buy or send something in a hurry, or to keep it from finance, check before you act, even when it's their voice on a voicemail. Ring them on the number already in your contacts, or ask finance, then report the message the way your organisation asks you to.",
@@ -580,7 +581,7 @@
               "posts": [
                 {
                   "id": "post_offsite",
-                  "text": "Off to Lisbon Tuesday for the Design Forum — speaking Wednesday morning, home Thursday. 09:55 flight out. Barely online till then.",
+                  "text": "Off to Lisbon Tuesday for the Design Forum, speaking Wednesday morning, home Thursday. 09:55 flight out. Barely online till then.",
                   "fact": "ms_travel_post"
                 },
                 {
@@ -664,7 +665,7 @@
           "senderTrust": {
             "pass": "✓ It reads as his boss",
             "fail": "He does not act on money from a stranger. The request has to look like it is from Catherine.",
-            "redFlag": null
+            "redFlag": "The From line carries Catherine's name on catherine.merrin@inboxly.example, a personal inbox anyone can open in her name, not her Merrin & Sallow address."
           },
           "pretextRelevant": {
             "pass": "✓ Fits a trip he knows she is on",
@@ -676,7 +677,7 @@
           }
         },
         "replies": {
-          "landed": "Will do, Catherine. I'll get it paid this afternoon and keep it off the finance thread. Safe travels."
+          "landed": "Will do, Catherine. I'll get it sorted and drop you a line once it's done. Safe travels."
         },
         "hints": [
           "Whose name would make the PA act on a payment without checking?",

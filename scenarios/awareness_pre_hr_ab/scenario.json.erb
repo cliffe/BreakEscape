@@ -254,32 +254,31 @@
             "id": "ha_agency_spoof",
             "from": {
               "name": "Roseanne Wadsworth",
-              "address": "roseanne.wadsworth@kettlewick.example"
+              "address": "roseanne.wadsworth@kettlewick-talent.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "Shortlisted candidates: travel bookings",
             "time": "10:15",
             "body": "Hi Fatima,\nI'm booking travel for the shortlisted drivers. Could you reply with each one's home address and mobile number so I can send their tickets?\nThanks,\nRoseanne\nKettlewick Talent",
             "auth": {
-              "spf": "fail",
-              "dkim": "none",
-              "dmarc": "fail",
-              "envelopeFrom": "mailer.inboxly.example",
-              "replyTo": "roseanne.kettlewick@inboxly.example"
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "kettlewick-talent.example",
+              "replyTo": "roseanne.wadsworth@kettlewick-talent.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderAuth",
-                "reply_to_differs"
+                "senderTrust",
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "senderAuth": "Kettlewick's own mail system didn't send this; it only looks as though Roseanne did.",
-                "reply_to_differs": "Replies go to roseanne.kettlewick@inboxly.example, not to Roseanne's Kettlewick address"
+                "senderTrust": "The name says Roseanne at Kettlewick, but the address is on kettlewick-talent.example, which isn't the agency's",
+                "lookalike_domain": "Kettlewick's real domain is kettlewick.example. kettlewick-talent.example adds a word with a hyphen, so it's someone else's"
               },
-              "headerNote": "Open the details: the From shows Roseanne's real address, but the checks failed and the reply-to points somewhere else.",
               "ifTrusted": "Candidates' home addresses and phone numbers would go to a stranger, who could then ring them pretending to be Tarrowby.",
-              "reportReply": "Thanks. Roseanne didn't send it, and Kettlewick doesn't book candidates' travel."
+              "reportReply": "Thanks. Roseanne didn't send it, kettlewick-talent.example isn't the agency's, and Kettlewick doesn't book candidates' travel."
             }
           },
           {
@@ -374,11 +373,9 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "The recruitment system sends on Tarrowby's behalf through an outside service, so one automatic sender check didn't line up, but the message still comes from Tarrowby's real domain.",
                 "linkCredible": "The link goes where it says, to Tarrowby's own recruitment system.",
-                "default": "The recruitment system's usual notice, linking to Tarrowby's own address."
-              },
-              "headerNote": "One check failing on its own is a clue, not proof. Mail sent through an outside service often trips one of these checks while the rest still pass."
+                "default": "The recruitment system's usual automatic notice, from Tarrowby's own address, linking to the system you already use. It asks for nothing."
+              }
             }
           },
           {

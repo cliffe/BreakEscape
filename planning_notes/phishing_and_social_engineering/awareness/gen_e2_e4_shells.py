@@ -49,15 +49,15 @@ HOSTS = {
     },
     'thandiwe': {
         'id': 'thandiwe_moyo', 'displayName': 'Thandiwe Moyo', 'sprite': 'female_scientist',
-        'about': "Merrin & Sallow's studio manager, 30s, Zimbabwean-British (e4/defend.json _brandAdditions). Settles the learner into Tomás's seat. Placeholder sprite until P7-Z3.",
+        'about': "Merrin & Sallow's studio manager, 30s, Zimbabwean-British (e4/defend.json _brandAdditions). Settles the learner into Tomás's seat for the episode. Impersonated on a look-alike firm domain in both check forms (row 6, C2-M6), but she hosts no check mission, so no check host is spoofed (C2-m16). Placeholder sprite until P7-Z3.",
     },
     'yasmin': {
         'id': 'yasmin_chaudhry', 'displayName': 'Yasmin Chaudhry', 'sprite': 'female_blowse',
-        'about': "Merrin & Sallow's finance controller, 40s, British Pakistani (BRAND_SET.md). Runs the before-and-after checks; she is the person a PA should ring about money. Her name is spoofed in form A row 6. Placeholder sprite until P7-Z3.",
+        'about': "Merrin & Sallow's finance controller, 40s, British Pakistani (BRAND_SET.md). Hosts the AB check pair; she is the person a PA should ring about money. No longer impersonated in either check form (C2-m16). Placeholder sprite until P7-Z3.",
     },
     'julian': {
         'id': 'julian_sallow', 'displayName': 'Julian Sallow', 'sprite': 'male_office_worker',
-        'about': "Merrin & Sallow's co-founding partner, 60s, Black British of Jamaican heritage (e4/defend.json _brandAdditions). Hosts the check for the PAs. He is impersonated in form B rows 4 and 5. Placeholder sprite until P7-Z3.",
+        'about': "Merrin & Sallow's co-founding partner, 60s, Black British of Jamaican heritage (e4/defend.json _brandAdditions). Hosts the BA check pair, and is no longer impersonated in either check form (C2-m16). Placeholder sprite until P7-Z3.",
     },
 }
 
@@ -87,6 +87,44 @@ LINES = {
         "Welcome back. Ten new emails and voicemails on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
         "That's the second check saved. Thanks for doing both.",
         'Thanks.', "You're welcome."),
+}
+
+# C2-m18: the check hosts had identical pre and post lines per episode. Give each host
+# (jun, ibrahim, yasmin, julian) their own wording so the ten check hosts don't read as
+# one template. Keyed by (host_key, stage); each is (before, after, choice, reply).
+CHECK_LINES = {
+    ('jun', 'pre'): (
+        "Morning. Before the training there's a quick check on the kiosk, ten emails off the recruitment inbox. Treat them the way you would any morning.",
+        "Brilliant, that's your first one saved. There's a second after the training, and you'll see how the two line up.",
+        'Thanks, Jun.', 'No bother.'),
+    ('jun', 'post'): (
+        "You're back. Ten fresh ones on the kiosk, same drill. If you did the first check, the end screen puts the two side by side.",
+        "That's the pair of them in. Thanks for sitting both.",
+        'Thanks, Jun.', 'No bother.'),
+    ('ibrahim', 'pre'): (
+        "Hello. There's a short check on the kiosk before the training: ten emails of the sort that land in recruitment. Just handle them as you normally would.",
+        "Good, your first check is logged. You'll do the matching one after the training and see the two compared.",
+        'Thanks, Ibrahim.', 'Any time.'),
+    ('ibrahim', 'post'): (
+        "Welcome back. Ten new ones on the kiosk, same as before. Did the first check? The end screen shows how they compare.",
+        "That's both logged. Thanks for doing the pair.",
+        'Thanks, Ibrahim.', 'Any time.'),
+    ('yasmin', 'pre'): (
+        "Hello. Before the training there's a short check on the kiosk: ten emails and voicemails of the kind a PA gets. Do what you'd normally do with them.",
+        "That's your first check saved. You'll take the second after the training, and the two get compared.",
+        'Thanks, Yasmin.', "You're welcome."),
+    ('yasmin', 'post'): (
+        "Welcome back. Ten new emails and voicemails on the kiosk, same idea. If you took the first check, the end screen compares them.",
+        "That's the second one in. Thank you for taking both.",
+        'Thanks, Yasmin.', "You're welcome."),
+    ('julian', 'pre'): (
+        "Good of you to sit this. Before the training there's a short check on the kiosk: ten emails and voicemails a PA might get. Just deal with them as you would.",
+        "That's your first check recorded. There's a second after the training, and you'll see how the two stand together.",
+        'Thanks, Julian.', 'Not at all.'),
+    ('julian', 'post'): (
+        "Back with us. Ten more on the kiosk, the same sort as before. If you did the first, the end screen sets them side by side.",
+        "Both done. We're grateful you sat the pair.",
+        'Thanks, Julian.', 'Not at all.'),
 }
 
 CHECK_ENDINGS = {
@@ -480,7 +518,7 @@ def check(ekey, pair, stage):
     }
     when = 'before' if stage == 'pre' else 'after'
     header = f"Awareness check, {word}, {when} ({letters})"
-    ink = ink_source(header, host, done, LINES[(ekey, stage)])
+    ink = ink_source(header, host, done, CHECK_LINES[(cfg['check_hosts'][pair], stage)])
     return mission, sc, meta, ink_name, ink
 
 

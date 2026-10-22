@@ -20,7 +20,7 @@
     {
       "aimId": "red_team_aim",
       "title": "Send the application email",
-      "description": "Research Tarrowby's open vacancy and its recruiter Fatima Begum, then send one job application with a CV attached to the recruitment team.",
+      "description": "Research Tarrowby's open vacancy and its recruiter Fatima Begum, then send one job application with a CV attached to her.",
       "status": "active",
       "order": 0,
       "tasks": [
@@ -363,13 +363,14 @@
         "reportAlwaysVisible": true
       },
       "strings": {
-        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. First you're on the red team: look at what Tarrowby has posted about its open jobs, then write one job application to its recruitment team, with an attachment picked from a list of labels. Nothing real is attached or sent. Then you swap seats and sort a recruitment inbox like the one your email landed in. Only the inbox is scored.",
+        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. First you're on the red team: look at what Tarrowby has posted about its open jobs, then write one job application to its recruiter, Fatima Begum, with an attachment picked from a list of labels. Nothing real is attached or sent. Then you swap seats and sort a recruitment inbox like the one your email landed in. Only the inbox is scored.",
         "flipHeading": "Now it lands on you",
         "flipIntro": "This is the application you just sent, the way it looked to Fatima, Tarrowby's recruitment lead. The parts picked out below are what make it believable.",
         "flipDefenderLine": "Fatima opened it between two interviews, forty applications still unread. One more CV for the warehouse job, from someone who named the role, so she opened the attachment. Anyone that busy would. Being taken in by a message built this carefully is not carelessness.",
         "flipNoSend": "Your application didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives in a recruitment inbox, and you're the one opening it.",
+        "flipMissed": "There's nothing extra to replay from this careful application, so there's nothing of yours to show from the other side. The defence is the same either way: next, the same kind of message lands in a recruitment inbox, and you're the one opening it.",
         "noBlameLine": "Nobody is marked down for a miss here. Every one of these was built to look right, and opening attachments from strangers is a recruiter's whole job. A miss here is a sign of a busy inbox, nothing more.",
-        "mondayCard": "On Monday: read CVs in the viewer, and if a document asks you to enable editing or content, don't. If a CV is 'too big to attach' and sits behind a link that wants you to sign in, ask the candidate to send it as an attachment instead. Then report anything odd the way your organisation asks you to.",
+        "mondayCard": "On Monday: read CVs in the viewer, and if a document asks you to enable editing or content, don't. If a CV 'doesn't come through' and sits behind a link that wants you to sign in, ask the candidate to send it as an attachment instead. Then report anything odd the way your organisation asks you to.",
         "defendOnly": "You went straight to the inbox this time. These messages were written by people whose job is to make them look right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine.",
         "conceptPanel": {
           "heading": "Why 'enable content' matters",
@@ -498,7 +499,7 @@
       },
       "ask_calm": {
         "part": "ask",
-        "text": "No rush at all — take a look whenever you have a chance.",
+        "text": "No rush at all. Take a look whenever you have a chance.",
         "slots": [],
         "urgency": "low"
       }
@@ -633,7 +634,7 @@
               "posts": [
                 {
                   "id": "post_cv_request",
-                  "text": "We're hiring across the warehouse! Don't wait for the portal — just email your CV straight to me and I'll take a look.",
+                  "text": "We're hiring across the warehouse! Don't wait for the portal, just email your CV straight to me and I'll take a look.",
                   "fact": "tarrowby_cv_request"
                 },
                 {
@@ -655,7 +656,7 @@
         "subjects": [
           {
             "id": "s_application",
-            "text": "Application — Warehouse Operative (WHO-114)",
+            "text": "Application: Warehouse Operative (WHO-114)",
             "topic": "recruitment"
           },
           {
@@ -735,7 +736,7 @@
           }
         },
         "replies": {
-          "landed": "Thanks for your application — I'll open your CV and pass it to the hiring manager."
+          "landed": "Thanks for your application. I'll open your CV and pass it to the hiring manager."
         },
         "hints": [
           "What is Tarrowby actually advertising, and what reference does the vacancy carry?",

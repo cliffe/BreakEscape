@@ -19,13 +19,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { triage_pre_done:
-        Jun Watanabe: That's your first check saved. You'll do another after the training, and see how the two compare.
+        Jun Watanabe: Brilliant, that's your first one saved. There's a second after the training, and you'll see how the two line up.
     - else:
-        Jun Watanabe: Hi. Before the training there's a short check on the kiosk: ten emails from the recruitment inbox. Just do what you'd normally do with them.
+        Jun Watanabe: Morning. Before the training there's a quick check on the kiosk, ten emails off the recruitment inbox. Treat them the way you would any morning.
     }
 }
-+ [Thanks.]
-    Jun Watanabe: No problem.
++ [Thanks, Jun.]
+    Jun Watanabe: No bother.
     ~ hub_quiet = true
     #exit_conversation
     -> hub

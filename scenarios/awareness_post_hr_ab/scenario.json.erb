@@ -272,32 +272,31 @@
             "id": "hb_onboarding_spoof",
             "from": {
               "name": "Thanh Nguyen",
-              "address": "thanh.nguyen@tarrowby.example"
+              "address": "thanh.nguyen@tarrowby-onboarding.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "Right-to-work copies for the onboarding file",
             "time": "10:15",
             "body": "Hi Fatima,\nThe onboarding file for Monday's starters is missing their right-to-work copies. Could you reply with their passport scans attached so I can finish it?\nThanks,\nThanh\nOnboarding",
             "auth": {
-              "spf": "fail",
-              "dkim": "none",
-              "dmarc": "fail",
-              "envelopeFrom": "mailer.quickpost-mail.example",
-              "replyTo": "thanh.onboarding@quickpost-mail.example"
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby-onboarding.example",
+              "replyTo": "thanh.nguyen@tarrowby-onboarding.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderAuth",
-                "reply_to_differs"
+                "senderTrust",
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "senderAuth": "Tarrowby's own mail system didn't send this; it only looks as though Thanh did.",
-                "reply_to_differs": "Replies go to thanh.onboarding@quickpost-mail.example, not to Thanh's Tarrowby address"
+                "senderTrust": "The name says Thanh at Tarrowby, but the address is on tarrowby-onboarding.example, which isn't Tarrowby's",
+                "lookalike_domain": "Tarrowby's own sites end in tarrowby.example. tarrowby-onboarding.example adds a word with a hyphen, so it's someone else's"
               },
-              "headerNote": "Open the details: the From shows Thanh's real address, but the checks failed and the reply-to points somewhere else.",
               "ifTrusted": "The new starters' passport scans would go to a stranger.",
-              "reportReply": "Thanks. Thanh didn't send it, and the onboarding file is complete."
+              "reportReply": "Thanks. Thanh didn't send it, tarrowby-onboarding.example isn't ours, and the onboarding file is complete."
             }
           },
           {
@@ -329,26 +328,26 @@
           {
             "id": "hb_shortlist_missing",
             "from": {
-              "name": "Roseanne Wadsworth",
-              "address": "roseanne.wadsworth@kettlewick-talent.example"
+              "name": "Gareth Ingram",
+              "address": "gareth.ingram@quickpost-mail.example"
             },
             "to": "jobs@tarrowby.example",
-            "subject": "Driver shortlist: three CVs attached",
+            "subject": "CV attached: warehouse operative",
             "time": "11:05",
-            "body": "Hi,\nThree CVs for the driver roles are attached. If they don't come through, they're on our client portal:\n{{link:list}}\nSign in with your work email to view them.\nRoseanne",
+            "body": "Hi,\nMy CV is attached for the warehouse operative job. If it hasn't come through, it's also on your careers page here:\n{{link:cv}}\nSign in with your work email to view it.\nGareth",
             "links": [
               {
-                "id": "list",
-                "text": "kettlewick-talent.example/shortlist/88",
-                "destination": "https://kettlewick-talent.example/shortlist/88"
+                "id": "cv",
+                "text": "tarrowby-jobs.example/cv/3307",
+                "destination": "https://tarrowby-jobs.example/cv/3307"
               }
             ],
             "auth": {
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "kettlewick-talent.example",
-              "replyTo": "roseanne.wadsworth@kettlewick-talent.example"
+              "envelopeFrom": "quickpost-mail.example",
+              "replyTo": "gareth.ingram@quickpost-mail.example"
             },
             "truth": {
               "isPhish": true,
@@ -357,11 +356,11 @@
                 "attachmentPlausible"
               ],
               "perFlagNote": {
-                "lookalike_domain": "Kettlewick's real domain is kettlewick.example. kettlewick-talent.example adds a word with a hyphen, so it's someone else's",
-                "attachmentPlausible": "It says three CVs are attached, but nothing is, and the link that replaces them wants you to sign in"
+                "lookalike_domain": "Read it slowly: tarrowby-jobs.example isn't tarrowby.example. Tarrowby's own sites end in tarrowby.example; an added word with a hyphen makes it someone else's",
+                "attachmentPlausible": "It says the CV is attached, but nothing is, and the link that replaces it wants you to sign in"
               },
               "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password.",
-              "reportReply": "Thanks. Roseanne didn't send it, and kettlewick-talent.example isn't the agency's. We've blocked it."
+              "reportReply": "Thanks. tarrowby-jobs.example isn't ours, and we've blocked it."
             }
           },
           {
@@ -385,10 +384,8 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "The onboarding provider sends on Tarrowby's behalf through an outside service, so one automatic sender check didn't line up, but the message still comes from Tarrowby's real domain.",
-                "default": "The onboarding system's usual notice, and it sends you to the intranet rather than a link."
-              },
-              "headerNote": "One check failing on its own is a clue, not proof. Mail sent through an outside service often trips one of these checks while the rest still pass."
+                "default": "The onboarding system's usual automatic notice. It names the real company, carries no link on purpose, and sends you to the intranet you already use. It asks for nothing."
+              }
             }
           },
           {
