@@ -375,3 +375,19 @@ the orchestrator passes it to that wave's owner.
 - **P7-U: GAP, the runner has no build stage.** E5's attack needs the landing-page builder between OSINT and write, but the runner's child launches cover only OSINT, mail and triage. Add a `build` stage (launch `landing-page-builder` with the episode's `landingPageId` and target) in the runner (P7-P or a new packet), with schema and lint (stage order `osint` → `build` → `write`), before P7-Y2.
   - **Globals the E5 shell must declare:** `phish_sso_staff_landed` and `_attempts`; `se_intel_quayholt_sso_portal`, `_it_desk`, `_sso_migration` and `_staff_claims`; `landing_sso_login_built` and `_domain`.
   - **Tells:** a good send stores the landing tells `domain`, `formOrigin` and `hoverMismatch`, plus `senderTrust` and `linkCredible`.
+- **P7-Q, for P7-S, P7-P, P7-Y2 and P7-X:**
+  - **The `knows` ids P7-S must use:**
+    - `who` (`gordon_full`)
+    - `team` (`claims`)
+    - `manager` (`okonkwo_full`)
+    - `staffId` (`gordon_staffid`)
+  - **The attack-to-defend tell map:**
+    - `name_drop_director` → `borrowed_authority`
+    - `cant_callback` → `vish_callback_pressure`
+    - `skip_verification` → `secrecy_or_bypass`
+    - the push stream → `unrequested_mfa_push`
+  - **Character:** the helpdesk character is `leila`, Leila Nassar. The learner attacks her, then sits in her seat for the defend.
+  - **GAP, two mismatches the runner and schema must reconcile before P7-Y2:**
+    - **Call stage:** E3's attack is a pretext call, but its stage list uses `write`, which launches mail. The runner needs a call stage that launches pretext-prep with the episode's `callId`, or `write` has to choose mail or call from the attack block.
+    - **Naming:** P7-Q authored `attack.pushStream`, while P7-X's schema has `awarenessEpisode.mfa`. Pick one; `mfa` is the one validated now.
+  - **Order:** together with P7-U's `build` gap, the runner needs `osint → build? → write(mail|call) → mfa? → flip → defend → debrief`.
