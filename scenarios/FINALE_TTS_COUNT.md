@@ -184,3 +184,4 @@ No audio exists yet, so nothing is orphaned by the change. The officers' m09 and
 4. Skill rule 1: generate only once the dialogue is signed off. Both missions are still in editorial passes (git status shows `scenarios/m10_full_disclosure/scenario.json.erb` modified).
 
 - 2026-10-22 m10 alignment R4: +1 Netherton line (scorched 'whole map' form), 1 Netherton line reworded (both-wiped St. Catherine's). Recount before generation.
+- 2026-10-22 m10 alignment R5: 1 Netherton line (scorched St. Catherine's ending) and 1 narrator line (Citadel close) reworded; no new lines.
