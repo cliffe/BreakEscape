@@ -460,10 +460,10 @@ voices = {
   vance: { 'name' => 'Orus', 'style' => 'Operations manager and OT engineer at a grid battery site, mid-fifties. Speak with a consistent North-East English (Teesside) accent throughout -- do not shift to any other accent. Firm, low-to-mid pitch; brisk, clipped pace. Tonight he is on a phone line from Teesside, talking an agent through 1960s switchgear he has never seen.', 'language' => 'en-GB' },
   elena: { 'name' => 'Leda', 'style' => 'A grid engineer in her early thirties who helped build an outage believing nobody would be hurt, and turned. Consistent Californian American accent with Mexican-American Spanish inflection throughout -- do not shift to any other accent. Mid-range pitch. Tonight she is on the line from custody: the technical sentences come out steady and fast, the ones about herself do not.', 'language' => 'en-US' },
   ghost: { 'name' => 'Iapetus', 'style' => 'ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.', 'language' => 'en-GB', 'fx' => 'voice-distortion' },
-  kowalczyk: { 'name' => 'Autonoe', 'style' => 'Breaching lead, forty-seven, eleven years in SAFETYNET. Consistent West London accent with her Polish family\'s vowels throughout -- do not shift to any other accent. Warm, quick, mid pitch; the team\'s easy laugh, and under it someone who has already decided.', 'language' => 'en-GB' },
-  quintero: { 'name' => 'Gacrux', 'style' => 'Raid lead, fifty-two, Mexican-American from El Paso. Consistent West Texas American accent throughout -- do not shift to any other accent. Low, dry, unhurried; says less than she thinks and means all of it.', 'language' => 'en-US' },
+  kowalczyk: { 'name' => 'Pulcherrima', 'style' => 'SAFETYNET breaching lead in her late forties, Polish-British, grew up in Ealing. Consistent West London English accent throughout -- do not shift to any other accent. Warm, funny, practical; the one joke in a tense room. Nothing in her voice gives anything away.', 'language' => 'en-GB' },
+  quintero: { 'name' => 'Kore', 'style' => 'SAFETYNET raid leader in her fifties, from El Paso, Texas. Consistent West Texas American accent with a light Mexican-American lilt throughout -- do not shift to any other accent. Low, steady, dry; few words, unsentimental and fierce about her people.', 'language' => 'en-US' },
   arakawa: { 'name' => 'Achird', 'style' => 'US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Pacific Northwest American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home.', 'language' => 'en-US' },
-  malhotra: { 'name' => 'Zubenelgenubi', 'style' => 'Comms officer, thirty-three, British-Indian from Hounslow. Consistent West London accent throughout -- do not shift to any other accent. Quick, precise, slightly too formal on the net.', 'language' => 'en-GB' },
+  malhotra: { 'name' => 'Zubenelgenubi', 'style' => 'SAFETYNET comms officer in his thirties, British-Indian, from Hounslow. Consistent West London English accent throughout -- do not shift to any other accent. Precise, a little anxious about any gap in coverage; jokes only about kit.', 'language' => 'en-GB' },
   imran: { 'name' => 'Puck', 'style' => 'Hospital IT technician turned bench hand, twenty-six, British-Pakistani. Consistent Birmingham accent throughout -- do not shift to any other accent. Quick and bitter; clever, sacked, and sure the other side is no worse.', 'language' => 'en-GB' },
   wendell: { 'name' => 'Algieba', 'style' => 'Power-room technician, sixty-three, white Montanan. Consistent rural Montana American accent throughout -- do not shift to any other accent. Slow, laconic, low; a man who has kept old machines running for forty years and asks no questions about who pays.', 'language' => 'en-US' },
   asante: { 'name' => 'Callirrhoe', 'style' => 'Systems lead, forty-five, Ghanaian-British from Peckham. Consistent South London accent throughout -- do not shift to any other accent. Crisp, exact, a little impatient; a true believer in the software who wants the numbers honest.', 'language' => 'en-GB' },
@@ -1340,6 +1340,7 @@ end
     end (east) is the gate, its terminal and the blast door. ========== %>
     "forward_post": {
       "type": "room_m10_forward",
+      "chatBackground": [{"x": [0, 0.45], "image": "assets/backgrounds/rooms/m10_forward_post_west_blended.png"}, {"x": [0.45, 0.7], "image": "assets/backgrounds/rooms/m10_forward_post_centre_blended.png"}, {"x": [0.7, 1], "image": "assets/backgrounds/rooms/m10_forward_post_east_blended.png"}],
       "lighting": {"mode": "on", "ambient": "#a4b0d0", "panels": false, "lights": [{"x": 16.4, "y": 3.4, "color": "#ffc070", "radius": 120, "intensity": 0.85}, {"x": 9.0, "y": 6.2, "color": "#fff0d0", "radius": 100, "intensity": 0.6}, {"x": 3.1, "y": 3.3, "color": "#ffb060", "radius": 44, "intensity": 0.55}, {"x": 2.75, "y": 7.2, "color": "#ffb060", "radius": 44, "intensity": 0.55}, {"x": 6.0, "y": 8.4, "color": "#eef2ff", "radius": 40, "intensity": 0.3}], "emitters": {"outdoor-lamp": {"color": "#ffc070", "radius": 16, "intensity": 0.8, "above": true, "offsetY": -20}, "m10_work_lamp": {"color": "#fff0d0", "radius": 14, "intensity": 0.8, "above": true, "offsetY": -20}, "m10_field_screen": {"color": "#9fd4ff", "radius": 18, "intensity": 0.45, "effect": "screen", "above": true}, "m10_field_screen_dark": {"intensity": 0}, "m10_field_screen_curve": {"color": "#ffb0a0", "radius": 18, "intensity": 0.45, "effect": "screen", "above": true}, "safetynet_flag_terminal": {"color": "#9fd4ff", "radius": 18, "intensity": 0.4, "effect": "screen", "above": true}, "vm-launcher": {"color": "#9fd4ff", "radius": 18, "intensity": 0.4, "effect": "screen", "above": true}, "m10_gate_post": [{"condition": "globalVars.m06_assets_seized === true", "intensity": 0}, {"color": "#ffd090", "radius": 22, "intensity": 0.6, "above": true, "offsetX": 10, "offsetY": -10}], "m10_van1": {"color": "#ffb060", "radius": 30, "intensity": 0.75, "above": true, "floorTint": 0.3, "offsetX": 7, "offsetY": 0}, "m10_van2": {"color": "#ffb060", "radius": 30, "intensity": 0.75, "above": true, "floorTint": 0.3, "offsetX": 0, "offsetY": -5}}},
       "door_sign": "Forward Post",
       "connections": { "east": "blast_tunnel" },
@@ -1362,6 +1363,7 @@ end
           "timedConversation": {
             "delay": 0,
             "targetKnot": "start",
+            "background": "assets/backgrounds/rooms/m10_forward_post_west_blended.png",
             "waitForEvent": "game_loaded",
             "skipIfGlobal": "briefing_played",
             "setGlobalOnStart": "briefing_played",
@@ -2189,8 +2191,8 @@ end
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
 <% %w[arrest surrender lethal executed scorched].each do |ending| %>
-            { "eventPattern": "conversation_closed:tesseract", "condition": "globalVars.ending === '<%= ending %>' && !globalVars.closing_done && !globalVars.six_done", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "start", "disableClose": true, "delayMs": 1500 },
-            { "eventPattern": "game_loaded", "condition": "globalVars.ending === '<%= ending %>' && !globalVars.closing_done && !globalVars.six_done", "conversationMode": "person-chat", "targetKnot": "start", "disableClose": true, "delayMs": 2500 },
+            { "eventPattern": "conversation_closed:tesseract", "condition": "globalVars.ending === '<%= ending %>' && !globalVars.closing_done && !globalVars.six_done", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/m10_six_oclock_blended.png", "disableClose": true, "delayMs": 1500 },
+            { "eventPattern": "game_loaded", "condition": "globalVars.ending === '<%= ending %>' && !globalVars.closing_done && !globalVars.six_done", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/m10_six_oclock_blended.png", "disableClose": true, "delayMs": 2500 },
 <% end %>
             { "eventPattern": "conversation_closed:six_oclock", "condition": "globalVars.six_done === true", "targetKnot": "start" }
           ]
@@ -2210,8 +2212,8 @@ end
           "koImmune": true,
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
-            { "eventPattern": "global_variable_changed:six_done", "condition": "value === true && globalVars.ending === 'scorched' && !globalVars.closing_done", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/hq3.png", "disableClose": true, "delayMs": 1500 },
-            { "eventPattern": "game_loaded", "condition": "globalVars.ending === 'scorched' && globalVars.six_done === true && !globalVars.closing_done", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/hq3.png", "disableClose": true, "delayMs": 2500 }
+            { "eventPattern": "global_variable_changed:six_done", "condition": "value === true && globalVars.ending === 'scorched' && !globalVars.closing_done", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/m10_hearing_blended.png", "disableClose": true, "delayMs": 1500 },
+            { "eventPattern": "game_loaded", "condition": "globalVars.ending === 'scorched' && globalVars.six_done === true && !globalVars.closing_done", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/m10_hearing_blended.png", "disableClose": true, "delayMs": 2500 }
           ]
         },
         {
@@ -2228,8 +2230,8 @@ end
           "koImmune": true,
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
-            { "eventPattern": "conversation_closed:tesseract", "condition": "globalVars.ending === 'joined' && !globalVars.closing_done", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/hq1.png", "disableClose": true, "delayMs": 1500 },
-            { "eventPattern": "game_loaded", "condition": "globalVars.ending === 'joined' && !globalVars.closing_done", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/hq1.png", "disableClose": true, "delayMs": 2500 }
+            { "eventPattern": "conversation_closed:tesseract", "condition": "globalVars.ending === 'joined' && !globalVars.closing_done", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/m10_citadel_blended.png", "disableClose": true, "delayMs": 1500 },
+            { "eventPattern": "game_loaded", "condition": "globalVars.ending === 'joined' && !globalVars.closing_done", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/m10_citadel_blended.png", "disableClose": true, "delayMs": 2500 }
           ]
         },
 <%# Implementation R1 (playtest C F2, D m-2): a "Name:" prefix resolves only
@@ -2471,6 +2473,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     unlockDoor mapping (the validator's warning is intended). ============ %>
     "blast_tunnel": {
       "type": "room_m10_tunnel",
+      "chatBackground": "assets/backgrounds/rooms/m10_blast_tunnel_blended.png",
       "lighting": {"mode": "on", "ambient": "#aeb2bc", "panels": false, "lights": [{"x": 2.0, "y": 3.1, "color": "#ffd9a0", "radius": 60, "intensity": 0.75}, {"x": 5.3, "y": 3.1, "color": "#ffd9a0", "radius": 60, "intensity": 0.75}, {"x": 8.1, "y": 3.1, "color": "#ffd9a0", "radius": 60, "intensity": 0.75}], "emitters": {"m10_caged_lamp": {"color": "#ffd9a0", "radius": 12, "intensity": 0.8, "above": true, "offsetY": 4}, "m10_door_panel": {"color": "#ffb040", "radius": 8, "intensity": 0.5, "above": true}, "kettle": {"color": "#ff8a3a", "radius": 8, "intensity": 0.5, "above": true}}},
       "door_sign": "Blast Door",
       "locked": true,
@@ -2585,6 +2588,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     warning is intended). Stair B south is a story door (Ghost's call). ===== %>
     "security_office": {
       "type": "room_m10_security",
+      "chatBackground": "assets/backgrounds/rooms/m10_security_office_blended.png",
       "lighting": {"mode": "on", "ambient": "#b2b8c8", "emitters": {"fire_alarm_point": {"intensity": 0}, "m10_readout_side": {"color": "#ffb040", "radius": 10, "intensity": 0.5, "above": true}}},
       "door_sign": "Inner Door",
       "locked": true,
@@ -2858,6 +2862,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     (CONTRACT 7 item 6), so imran_watched carries no rfidCard. ============ %>
     "workshop_floor": {
       "type": "room_m10_workshop",
+      "chatBackground": [{"x": [0.5, 1], "image": "assets/backgrounds/rooms/m10_workshop_floor_blended.png"}, {"x": [0, 0.5], "image": "assets/backgrounds/rooms/m10_workshop_floor_left_blended.png"}],
       "lighting": {"mode": "on", "ambient": "#b4b8c4", "emitters": {"m10_caged_lamp": {"color": "#ffd9a0", "radius": 12, "intensity": 0.6, "above": true, "offsetY": 4}, "office-misc-lamp": {"color": "#ffcf8a", "radius": 50, "intensity": 0.7, "above": true}, "m10_cracker_rack": {"color": "#6dffb0", "radius": 20, "intensity": 0.3, "leds": 0.5}}},
       "door_sign": "Stair B",
       "locked": true,
@@ -3071,6 +3076,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     escaped branch (HaX's mapping and the text variants). ================== %>
     "power_room": {
       "type": "room_m10_power",
+      "chatBackground": [{"x": [0.5, 1], "image": "assets/backgrounds/rooms/m10_power_room_blended.png"}, {"x": [0, 0.5], "image": "assets/backgrounds/rooms/m10_power_room_left_blended.png"}],
       "lighting": {"mode": "motion", "ambient": "#b0b4bc", "darkAmbient": "#141a24", "emitters": {"m10_caged_lamp": {"intensity": 0}, "m10_load_board": {"color": "#ffb347", "radius": 30, "intensity": 0.45, "leds": 0.3, "ledColor": "#ffb347"}, "m10_bypass_panel": {"color": "#7dffa0", "radius": 8, "intensity": 0.45, "above": true}, "m10_key_isolator": [{"condition": "globalVars.gallery_shutter_cut === true", "color": "#7dffa0", "radius": 8, "intensity": 0.45, "above": true}, {"color": "#ffb040", "radius": 8, "intensity": 0.45, "above": true}], "aes_battery_rack": {"color": "#7dffa8", "radius": 26, "intensity": 0.3, "leds": 0.5, "ledColor": "#7dffa8"}, "pnw_batteries": {"color": "#7dffa8", "radius": 26, "intensity": 0.3, "leds": 0.5, "ledColor": "#7dffa8"}}},
       "door_sign": "Power Room",
       "locked": true,
@@ -3257,6 +3263,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     door (flags 2 and 3 and the cut). ===================================== %>
     "server_hall": {
       "type": "room_m10_hall",
+      "chatBackground": [{"x": [0, 0.7], "image": "assets/backgrounds/rooms/m10_server_hall_left_blended.png"}, {"x": [0.7, 1], "image": "assets/backgrounds/rooms/m10_server_hall_blended.png"}],
       "lighting": {"mode": "on", "ambient": "#a8b0c4", "emitters": {"hq_rack": {"color": "#6dffb0", "radius": 34, "intensity": 0.4, "effect": "blink", "leds": 0.7}, "m10_plotting_board": {"color": "#9fc8ff", "radius": 44, "intensity": 0.3, "above": true, "hueKeep": false}, "m10_readout": {"color": "#ffb040", "radius": 10, "intensity": 0.5, "above": true}, "m10_console_controls": {"color": "#ffb040", "radius": 10, "intensity": 0.5, "above": true}, "m10_hatch": {"color": "#7dffa0", "radius": 6, "intensity": 0.45, "above": true, "offsetX": 6, "offsetY": 4}, "m10_caged_lamp": {"color": "#ffd9a0", "radius": 12, "intensity": 0.8, "above": true, "offsetY": 4}, "vm-launcher": {"color": "#9fd4ff", "radius": 18, "intensity": 0.4, "effect": "screen", "above": true}, "safetynet_flag_terminal": {"color": "#9fd4ff", "radius": 18, "intensity": 0.4, "effect": "screen", "above": true}, "aes_round_terminal": {"color": "#7dffa0", "radius": 16, "intensity": 0.35, "effect": "screen", "above": true}}},
       "door_sign": "Server Hall",
       "connections": { "west": "power_room", "east": "gallery" },
@@ -3482,6 +3489,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     stair but HaX's unlockDoor mapping (intended validator warning). ====== %>
     "gallery": {
       "type": "room_m10_gallery",
+      "chatBackground": [{"x": [0, 0.6], "image": "assets/backgrounds/rooms/m10_gallery_left_blended.png"}, {"x": [0.6, 1], "image": "assets/backgrounds/rooms/m10_gallery_blended.png"}],
       "lighting": {"mode": "on", "ambient": "#a8b0c0", "panels": false, "lights": [{"x": 3.6, "y": 3.0, "color": "#ffd090", "radius": 52, "intensity": 0.5}, {"x": 5.5, "y": 3.0, "color": "#ffd090", "radius": 52, "intensity": 0.5}, {"x": 3.7, "y": 2.4, "color": "#c8d8f0", "radius": 60, "intensity": 0.35}], "emitters": {"m10_caged_lamp": {"color": "#ffd9a0", "radius": 12, "intensity": 0.8, "above": true, "offsetY": 4}, "m10_slit_window": {"color": "#c8d8f0", "radius": 56, "intensity": 0.4, "above": true, "floorTint": 0.5, "offsetY": 20}, "m10_door_panel": {"color": "#ffb040", "radius": 8, "intensity": 0.5, "above": true}}},
       "door_sign": "Gallery Stair",
       "locked": true,
@@ -3832,6 +3840,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     he is hidden (stage 8 m-8; no down pose yet, ASSET_LIST 8). ============ %>
     "core": {
       "type": "room_m10_core",
+      "chatBackground": "assets/backgrounds/rooms/m10_core_blended.png",
       "lighting": {"mode": "on", "ambient": "#aeb2bc", "panels": false, "lights": [{"x": 2.3, "y": 2.6, "color": "#ece8dc", "radius": 80, "intensity": 0.5}, {"x": 6.9, "y": 2.6, "color": "#ece8dc", "radius": 80, "intensity": 0.5}], "emitters": {"m10_caged_lamp": {"color": "#ece8dc", "radius": 12, "intensity": 0.7, "above": true, "offsetY": 4}, "m10_key_console": {"color": "#8fb0d0", "radius": 18, "intensity": 0.45, "effect": "screen", "above": true, "offsetX": -10, "offsetY": -10}, "m10_wall_screen": {"color": "#a0c0e0", "radius": 24, "intensity": 0.4, "effect": "screen", "above": true}, "m10_readout": {"color": "#ffb040", "radius": 10, "intensity": 0.5, "above": true}, "vm-launcher": {"color": "#9fd4ff", "radius": 18, "intensity": 0.4, "effect": "screen", "above": true}, "safetynet_flag_terminal": {"color": "#9fd4ff", "radius": 18, "intensity": 0.4, "effect": "screen", "above": true}}},
       "door_sign": "Outer Lock",
       "locked": true,

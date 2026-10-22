@@ -134,3 +134,19 @@ Review: `LIGHTING_REVIEW_R2.md` (0 blockers, 3 majors, 5 minors, 2 notes; "appro
 Validator (`--skip-ink --no-graph`): exit 0, 0 errors. Every room reports its planned mode and ambient in the tour log.
 
 **Open:** a browser check (the power room's strike on entry, one reload); `docs/agents/LIGHTING_LOG.md` m10 entry (added below this round); the engine's emitter-follows-room-state flag (review R1 M3) if the power room's wall bulbs should light with the tubes.
+
+## Browser check (round 2)
+
+Headless Chromium on the keyless :3001 server, fresh games (3307 for the walk and room shots, 3310 for the reload test), all rooms unlocked server-side. Shots in `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/357ec00d-b30d-461a-b003-c0026290b3a0/scratchpad/m10_light_check/` (`r2-*` from game 3307, `g2-*` from game 3310). Doors the walk could not open (blast tunnel to security office, server hall to gallery, gallery to core: story locks) were opened with `window.unlockDoor`, so the walk is not a real route.
+
+1. **Power room strike on entry: passes.** From the workshop with the door open the room is dark: the load board's amber lamps, green battery LEDs and the bypass box glow show, the rest is near black (`02-power-before-door-open.png`, `g2-reload-power-before-entry.png`; `motion:false`). Walking in, the tubes strike over about a second (`03-power-after-enter-0s.png` is mid-fade, `03-power-after-enter-2s.png` fully lit, `motion:true`) and the worker appears.
+2. **Reload.** Always-lit rooms come back lit (`on:true` for the forward post, and each room as loaded). The power room comes back dark and lights again on entry when it has not been entered before the reload (game 3310: `g2-reload-power-before-entry.png`, `g2-reload-power-after-2s.png`). **Finding:** if the player has already been in the power room (global `power_room_entered` true, its occupant revealed), then after a reload the room is lit as soon as it loads, before the player enters (game 3307: `r2-power-before-door-open.png`). The cause is the engine's NPC motion trigger (`npcInRoom`): the worker is visible from load, so the sensor sees him. Not a bug in the lighting block; it only means the dark-through-the-door look happens once per game, not after a reload that follows a first visit. Reload was done by stopping and restarting the browser session on the same game (a page reload through the harness hung its bootstrap).
+3. **Each room with the player inside** (`r2-<room>.png`, the player stands at the entry doorway so the neighbour shows too). Nothing too dark to read.
+   - forward post: lit, three pools; vans' side doors warm, table and field desk legible (`g2-reload-forward_post.png`).
+   - blast tunnel: three floor pools, darker between; guard post, rota and wall panel readable.
+   - security office: even grey, monitor wall glowing, readable. A board bark ("BLAST DOOR 1: OPEN...") covers the lower middle of the shot, not a lighting issue.
+   - workshop floor: strip-lit, bench lamp warm, PC screen blue, benches and rack readable. The south edge sits under the inventory bar.
+   - power room: lit after strike; red floor, plant-room sign and batteries readable. Wall bulbs read as lit although the room was dark (known open item, emitter does not follow the room's state).
+   - server hall: low blue-grey, plotting-board desk, rack LEDs and the console row visible; the dimmest lit room but readable.
+   - gallery: cool pool under the slit windows, mesh floor readable, guards' torch cone green.
+   - core: grey concrete, two caged bulbs, key console and screens readable. The entry cutscene (Tesseract) opens on arrival; shot taken after closing it.

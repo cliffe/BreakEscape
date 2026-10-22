@@ -157,10 +157,10 @@ These are the `voice` blocks `scenario.json.erb` ships with. Returning character
 
 | Speaker | Voice | Style (accent from CONTRACT §5.2 and SE §4) |
 |---|---|---|
-| Agent 0x5E 'Lantern' (Halina Kowalczyk) | Autonoe | "Breaching lead, forty-seven, eleven years in SAFETYNET. Consistent West London accent with her Polish family's vowels throughout -- do not shift to any other accent. Warm, quick, mid pitch; the team's easy laugh, and under it someone who has already decided." **Shared with m09** |
-| Agent 0x2D 'Anchor' (Marisol Quintero) | Gacrux | "Raid lead, fifty-two, Mexican-American from El Paso. Consistent West Texas American accent throughout -- do not shift to any other accent. Low, dry, unhurried; says less than she thinks and means all of it." **Shared with m09** |
-| Officer Kenji Arakawa | Achird | "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Pacific Northwest American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home." **Shared with m09** |
-| Officer Dev Malhotra | Zubenelgenubi | "Comms officer, thirty-three, British-Indian from Hounslow. Consistent West London accent throughout -- do not shift to any other accent. Quick, precise, slightly too formal on the net." **Shared with m09** |
+| Agent 0x5E 'Lantern' (Halina Kowalczyk) | Pulcherrima | "SAFETYNET breaching lead in her late forties, Polish-British, grew up in Ealing. Consistent West London English accent throughout -- do not shift to any other accent. Warm, funny, practical; the one joke in a tense room. Nothing in her voice gives anything away." **Same voice and style as m09** |
+| Agent 0x2D 'Anchor' (Marisol Quintero) | Kore | "SAFETYNET raid leader in her fifties, from El Paso, Texas. Consistent West Texas American accent with a light Mexican-American lilt throughout -- do not shift to any other accent. Low, steady, dry; few words, unsentimental and fierce about her people." **Same voice and style as m09** |
+| Officer Kenji Arakawa | Achird | "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Pacific Northwest American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home." **Same voice and style as m09** (Achird also voices m09's Cody Old Coyote; no unused male voice remains) |
+| Officer Dev Malhotra | Zubenelgenubi | "SAFETYNET comms officer in his thirties, British-Indian, from Hounslow. Consistent West London English accent throughout -- do not shift to any other accent. Precise, a little anxious about any gap in coverage; jokes only about kit." **Same voice and style as m09** |
 | Imran Siddiqui | Puck | "Hospital IT technician turned bench hand, twenty-six, British-Pakistani. Consistent Birmingham accent throughout -- do not shift to any other accent. Quick and bitter; clever, sacked, and sure the other side is no worse." |
 | Wendell Briggs | Algieba | "Power-room technician, sixty-three, white Montanan. Consistent rural Montana American accent throughout -- do not shift to any other accent. Slow, laconic, low; a man who has kept old machines running for forty years and asks no questions about who pays." |
 | Dr Abena Asante | Callirrhoe | "Systems lead, forty-five, Ghanaian-British from Peckham. Consistent South London accent throughout -- do not shift to any other accent. Crisp, exact, a little impatient; a true believer in the software who wants the numbers honest." |
@@ -170,7 +170,7 @@ These are the `voice` blocks `scenario.json.erb` ships with. Returning character
 | Farah Qureshi (`farah_guard`, `Guard:` prefix) | Zephyr | "Night-shift floor guard, Pakistani-American. Consistent General American accent throughout. Tired, sharp, near the end of a long shift." |
 | Minder (SAFETYNET van team) | Sulafat | "SAFETYNET van-team minder. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, low, practical." |
 
-The `six_oclock`, `hearing` and `citadel` scene NPCs carry Netherton's voice block (their own lines are prefixed by speaker, and the narrator has its own block, §7).
+The `six_oclock` and `citadel` scene NPCs carry Netherton's voice block; the `hearing` host carries HaX's (Aoede), because it speaks only HaX lines. Their own lines are prefixed by speaker, and the narrator has its own block (§7).
 
 ## 7. The narrator voice block
 
@@ -184,6 +184,6 @@ Algenib is the narrator in every mission (voice bible); the style follows m07 an
 ## 8. Open items for the user
 
 1. **Art scope** (no generation until approved): about 12 new portraits and 11 walk sheets (§1.2), 3 new room maps plus a dressed or new server hall (§2), 4 scene backgrounds (§3), and a handful of bunker props (§4: vans, gate hut, plotting board, key console, service door, keypad plate). Five of the characters (Tesseract and the four raid officers) also serve m09.
-2. **Sprite keys shared with m09**: the m09 and m10 builds must use one key and one voice block each for Kowalczyk, Quintero, Arakawa and Malhotra (cast rule: recurring characters keep their own key). This list proposes `halina_kowalczyk`, `marisol_quintero`, `kenji_arakawa`, `dev_malhotra` and the voices in §6.2; the orchestrator reconciles with the m09 build.
+2. **Sprite keys shared with m09**: the m09 and m10 builds use one key and one voice block each for Kowalczyk, Quintero, Arakawa and Malhotra (cast rule: recurring characters keep their own key); reconciled 2026-10-22, see §6.2. This list proposes `halina_kowalczyk`, `marisol_quintero`, `kenji_arakawa`, `dev_malhotra` and the voices in §6.2; the orchestrator reconciles with the m09 build.
 3. **Voice clashes** among returning characters (§6.1) are kept as they are; the tts-audio stage decides.
 4. **Tesseract's posture after his ending**: hidden on every ending for now (stage 8 m-8 allows a down pose on `lethal` and `executed` once the art exists).
