@@ -88,11 +88,12 @@ test('minigameClosedByDamage is true just after a damage close, false later', as
 test('lockpick failure toasts check minigameClosedByDamage', () => {
     const starters = readFileSync(join(here, '../../public/break_escape/js/systems/minigame-starters.js'), 'utf8');
     const unlock = readFileSync(join(here, '../../public/break_escape/js/systems/unlock-system.js'), 'utf8');
-    for (const [name, text, msg] of [['minigame-starters', starters, "'Failed to pick the lock.', 'error', 'Lockpicking'"], ['unlock-system', unlock, "'Failed to pick the lock. Try again.'"]]) {
-        const i = text.indexOf(msg);
-        assert.ok(i > 0, `${name}: toast present`);
-        assert.match(text.slice(i - 200, i), /minigameClosedByDamage/, `${name}: toast guarded`);
-    }
+    // The starter no longer toasts (closing is not a failure; lockpick-close-toast.test.mjs),
+    // so the one remaining toast, in unlock-system, carries the guard.
+    assert.doesNotMatch(starters, /gameAlert\('Failed to pick the lock/);
+    const i = unlock.indexOf("'Failed to pick the lock. Try again.'");
+    assert.ok(i > 0, 'unlock-system: toast present');
+    assert.match(unlock.slice(i - 200, i), /minigameClosedByDamage/, 'unlock-system: toast guarded');
 });
 
 // F2: the other failure toasts on close paths (wrong key, PIN, password) are guarded too.

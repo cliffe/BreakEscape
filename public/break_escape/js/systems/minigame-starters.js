@@ -77,8 +77,8 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
                 window.gameAlert('Successfully picked the lock!', 'success', 'Lock Picked', 2000);
                 callback(true);
             } else {
-                window.gameAlert('Failed to pick the lock.', 'error', 'Pick Failed', 2000);
-                callback(false);
+                // A real failed attempt: the caller (unlock-system.js) shows the one toast
+                callback(false, { failed: true });
             }
         }, 1000);
         return;
@@ -206,13 +206,11 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
                 window.gameAlert('Successfully picked the lock!', 'success', 'Lockpicking', 4000);
                 callback(true);
             } else {
-                console.log('LOCKPICK FAILED');
-                // Closed because the player was hit (player-damage-interrupt.js): that
-                // shows its own notice, so no "failed" toast on top of it.
-                if (!window.minigameClosedByDamage?.()) {
-                    window.gameAlert('Failed to pick the lock.', 'error', 'Lockpicking', 4000);
-                }
-                callback(false);
+                // The Phaser lockpick game has no failed-attempt state: it only ends
+                // unsuccessfully when closed (Close, ×, Esc, or a hit). Closing is not a
+                // failure, so no "Failed to pick the lock" toast here or in the caller.
+                console.log('LOCKPICK CLOSED');
+                callback(false, { cancelled: true });
             }
         }
     });

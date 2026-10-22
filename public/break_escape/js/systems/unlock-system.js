@@ -214,7 +214,7 @@ export function handleUnlock(lockable, type) {
                     finalDifficulty: difficulty
                 });
                 
-                startLockpickingMinigame(lockable, window.game, difficulty, async (success) => {
+                startLockpickingMinigame(lockable, window.game, difficulty, async (success, outcome) => {
                     if (success) {
                         // Notify server of successful lockpick to update player_state and get room/container data
                         const serverResponse = await notifyServerUnlock(lockable, type, 'lockpick');
@@ -224,7 +224,8 @@ export function handleUnlock(lockable, type) {
                         }, 100);
                     } else {
                         console.log('LOCKPICK FAILED');
-                        if (!window.minigameClosedByDamage?.()) {
+                        // Closing the minigame (outcome.cancelled) is not a failed attempt: no toast
+                        if (!outcome?.cancelled && !window.minigameClosedByDamage?.()) {
                             window.gameAlert('Failed to pick the lock. Try again.', 'error', 'Pick Failed', 3000);
                         }
                     }
