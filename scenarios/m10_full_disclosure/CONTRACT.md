@@ -996,3 +996,4 @@ Applied 2026-10-21 by the m10 fixer from `finale/STAGE_8_RULINGS.md` and the rev
   - m9: HaX's "He's watched every job you've done".
   - m12: the recall topics sit after "[I know who WREN is.]" and hide once `gallery_open`.
 - **S6:** the photo's hand is "sloping" (m09's clue). The ERB copy is the builder's.
+- Executed screen (user ruling, no engine change): the two `Screen:` lines are now `Narrator[none]:` lines that describe the screen ("The screen reads: …" and "One paragraph: …"), voiced by the narrator. No Screen speaker is needed.

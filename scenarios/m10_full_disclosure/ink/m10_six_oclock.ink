@@ -567,11 +567,11 @@ Director Magnus Netherton: Nobody holds the map now. Not him, not the buyers, no
 Narrator: The forward post at six. The screen on the table isn't showing the clock any more.
 Director Magnus Netherton: I will not put my name under this one. You will be held until the board sits.
 // Alignment A2 (ruling D2): the screen inside the scene, as on-screen text
-// (speaker Screen, unvoiced). Still no narrator reads it.
+// (user ruling: Narrator[none] lines describing the screen; no engine change).
 + [(Look at the screen.)]
 -
-Screen: SOCIAL FABRIC. LIVE. SAFETYNET AGENT SHOOTS UNARMED MAN IN MONTANA BUNKER.
-Screen: A SAFETYNET agent shot a man in a converted Cold War bunker in Montana tonight. He was not moving. His hands were empty, and in plain sight.
+Narrator[none]: The screen reads: Social Fabric, live. SAFETYNET agent shoots unarmed man in Montana bunker. Under it, your photo.
+Narrator[none]: One paragraph: a SAFETYNET agent shot a man in a converted Cold War bunker in Montana tonight. He was not moving. His hands were empty, and in plain sight.
 + [(Say nothing.)]
 + [Sir...]
 -
