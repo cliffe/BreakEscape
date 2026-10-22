@@ -218,7 +218,8 @@ module ValidateSocial
         want = "episode_#{ep['id']}_defend_"
         prefix = set.dig('outcome', 'setGlobalPrefix')
         if prefix != want
-          issues << err("#{where} outcome.setGlobalPrefix is #{prefix.inspect}; it must be '#{want}', so its done global is '#{want}done'")
+          extra = ep['variant'] == 'defendOnly' ? " (a defendOnly id already ends in '_defend', so the prefix reads '_defend_defend_'; the runner's defendPrefix() builds it the same way)" : ''
+          issues << err("#{where} outcome.setGlobalPrefix is #{prefix.inspect}; it must be '#{want}', so its done global is '#{want}done'#{extra}")
         end
       end
       issues

@@ -49,7 +49,7 @@ module ValidateSocial
     NON_EMAIL_KINDS = %w[sms voicemail qr page call push].freeze
     # The fields each non-email kind reads (triage-kinds.js). Any of them on another kind is ignored.
     KIND_FIELDS = {
-      'sms' => %w[earlier], 'voicemail' => %w[duration transcript], 'qr' => %w[qr],
+      'sms' => %w[earlier], 'voicemail' => %w[duration transcript audio], 'qr' => %w[qr],
       'page' => %w[page], 'call' => %w[callerId transcript], 'push' => %w[push]
     }.freeze
     KINDS = (%w[email playerSent] + NON_EMAIL_KINDS).freeze
@@ -107,7 +107,7 @@ module ValidateSocial
       issues << err("#{where} has a 'mailbox' field; a set holds its own messages inline and has no mailbox") if set.key?('mailbox')
       issues.concat(enum_checks(set, where))
       issues << err("#{where}.title is empty") if set.key?('title') && blank?(set['title'])
-      issues.concat(outcome_checks(set, where))
+      issues.concat(outcome_checks(set, where, episode_set: episode_set_ids(ctx).include?(set['id'])))
       universe = flag_universe(set, where, issues)
       issues.concat(chip_checks(set, universe, where))
       issues.concat(band_checks(set, where))
@@ -153,7 +153,15 @@ module ValidateSocial
 
     # ---- outcome globals -----------------------------------------------------
 
-    def self.outcome_checks(set, where)
+    # The set ids named by social.awarenessEpisode.defend.setId. An episode's set is launched by
+    # the episode runner, not by a triage-workstation, and must have passPercent 0 (awareness.rb).
+    def self.episode_set_ids(ctx)
+      ep = ctx.social.is_a?(Hash) ? ctx.social['awarenessEpisode'] : nil
+      sid = ep.is_a?(Hash) && ep['defend'].is_a?(Hash) ? ep['defend']['setId'] : nil
+      sid.is_a?(String) && !sid.empty? ? Set[sid] : Set.new
+    end
+
+    def self.outcome_checks(set, where, episode_set: false)
       issues = []
       o = set['outcome']
       unless o.is_a?(Hash)
@@ -177,7 +185,7 @@ module ValidateSocial
       pp = o['passPercent']
       if !pp.is_a?(Integer) || pp.negative? || pp > 100
         issues << err("#{where}.outcome.passPercent must be a whole number from 0 to 100")
-      elsif pp.zero? && %w[training mission].include?(set['stage'])
+      elsif pp.zero? && !episode_set && %w[training mission].include?(set['stage'])
         issues << warn_("#{where}.outcome.passPercent is 0 on a #{set['stage']} set; every round would count as a pass and 'Try again' would never be offered. " \
                         '0 is for check sets (pre, post)')
       end
@@ -360,6 +368,9 @@ module ValidateSocial
           issues << err("#{mw}: a voicemail needs a body or a transcript; the card would show no words")
         end
         issues << err("#{mw}.duration is empty") if m.key?('duration') && blank?(m['duration'])
+        if m.key?('audio') && (!m['audio'].is_a?(Hash) || blank?(m['audio']['clipId']))
+          issues << err("#{mw}.audio.clipId is empty or missing; name the clip as { clipId: 'VO6' }")
+        end
       when 'qr'
         q = m['qr']
         if !q.is_a?(Hash) || blank?(q['destination'])
@@ -373,6 +384,7 @@ module ValidateSocial
         else
           issues << err("#{mw}.page.padlock must be true or false") if pg.key?('padlock') && ![true, false].include?(pg['padlock'])
           issues << err("#{mw}.page.fields must be an array of non-empty labels") if pg.key?('fields') && !(pg['fields'].is_a?(Array) && pg['fields'].all? { |f| !blank?(f) })
+          issues.concat(certificate_checks(pg['certificate'], "#{mw}.page.certificate")) if pg.key?('certificate')
         end
       when 'call'
         issues.concat(transcript_checks(m['transcript'], "#{mw}.transcript", required: true))
@@ -383,6 +395,23 @@ module ValidateSocial
         issues << warn_("#{mw}.time is empty; the prompt's time is often the tell (an odd hour)") if blank?(m['time'])
       end
       issues
+    end
+
+    # "issued to" is a host name: dotted labels of letters, digits and hyphens, with an optional
+    # leading wildcard label. No scheme, path, port, space or underscore.
+    HOSTNAME_RE = /\A(\*\.)?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+\z/i.freeze
+
+    def self.certificate_checks(cert, where)
+      return [err("#{where} must be an object { issuedTo, issuer?, note? }")] unless cert.is_a?(Hash)
+
+      issued = cert['issuedTo']
+      if blank?(issued)
+        [err("#{where}.issuedTo is missing; the certificate check would show no host")]
+      elsif !issued.is_a?(String) || !issued.match?(HOSTNAME_RE)
+        [err("#{where}.issuedTo '#{issued}' does not look like a host name (for example 'sso.example.com'); give the host alone, with no scheme, path or port")]
+      else
+        []
+      end
     end
 
     def self.transcript_checks(lines, where, required: false)
@@ -885,6 +914,7 @@ module ValidateSocial
         md = obj['minigameData']
         launched << md['triageSetId'] if obj['type'] == 'triage-workstation' && md.is_a?(Hash)
       end
+      launched.merge(episode_set_ids(ctx))
       sets.filter_map do |s|
         next if launched.include?(s['id'])
         next if s['pairedWith'] && launched.include?(s['pairedWith'])

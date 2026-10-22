@@ -1623,6 +1623,14 @@
           }
         },
         "duration": {"type": "string", "description": "voicemail: display length such as 0:41"},
+        "audio": {
+          "description": "voicemail only: names the audio clip for the voicemail card. Ignored until the player control (P7-Z2) exists, so content can name its clip now",
+          "type": "object",
+          "required": ["clipId"],
+          "properties": {"clipId": {"type": "string", "minLength": 1}},
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
         "callerId": {"type": "string", "description": "call: the caller id line"},
         "transcript": {
           "description": "call (required) and voicemail (optional, else body): the lines spoken",
@@ -1650,6 +1658,19 @@
           "properties": {
             "url": {"type": "string"},
             "padlock": {"type": "boolean"},
+            "certificate": {
+              "description": "The certificate check: who the certificate was issued to (a host name). It proves the connection is encrypted to that host, not that the host is the organisation it claims to be",
+              "type": "object",
+              "required": ["issuedTo"],
+              "properties": {
+                "issuedTo": {"type": "string", "description": "A host name, linted"},
+                "issuer": {"type": "string"},
+                "note": {"type": "string", "description": "Replaces the card's line on what the certificate does not prove"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "autofill": {"type": "string", "enum": ["filled", "none"], "description": "Whether the password manager filled the fields in. 'none' shows the 'did not fill this in' cue"},
             "heading": {"type": "string"},
             "fields": {"type": "array", "items": {"type": "string"}},
             "button": {"type": "string"}
@@ -1722,6 +1743,7 @@
             "siteIds": {"type": "array", "items": {"type": "string"}},
             "accountIds": {"type": "array", "items": {"type": "string"}},
             "defaultAccount": {"type": "string"},
+            "layout": {"type": "string", "enum": ["phone"], "description": "Passed to the mail client: puts its narrow layout in a phone frame on any viewport"},
             "showRedFlagMeter": {"type": "boolean"},
             "maxMessages": {"type": "integer", "minimum": 1},
             "scored": {"type": "boolean"}
