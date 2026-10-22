@@ -27,6 +27,9 @@ import { COMBAT_CONFIG } from '../config/combat-config.js';
 import { hostileMayChase, resolveChaseRange, shouldCloseInDirectly, CLOSE_IN_MARGIN } from './npc-chase-leash.js';
 import { resolveFightStyle, pickFleeHeading } from './fight-styles.js';
 
+// How long an NPC's "can I see the player to turn to them" answer is reused (canSeePlayerToFace)
+const FACE_SIGHT_MS = 150;
+
 /**
  * NPCBehaviorManager - Manages all NPC behaviors
  *
@@ -743,7 +746,8 @@ class NPCBehavior {
         }
 
         // Priority 3: Maintain Personal Space
-        if (this.config.personalSpace.enabled && distanceSq < this.config.personalSpace.distanceSq) {
+        // (none of the turn-to-player states fire through a wall: canSeePlayerToFace)
+        if (this.config.personalSpace.enabled && distanceSq < this.config.personalSpace.distanceSq && this.canSeePlayerToFace(playerPos)) {
             return 'maintain_space';
         }
 
@@ -752,14 +756,14 @@ class NPCBehavior {
             // Check if player is in interaction range - if so, face player instead (configurable).
             // A scripted goToAndStay move (patrolOverride) never pauses: a nurse answering
             // an alarm must reach the bed even when the player is standing beside it.
-            if (this.config.patrol.pauseForPlayer && !this._stopOnArrival && distanceSq < this.config.facePlayerDistanceSq && this.config.facePlayer) {
+            if (this.config.patrol.pauseForPlayer && !this._stopOnArrival && distanceSq < this.config.facePlayerDistanceSq && this.config.facePlayer && this.canSeePlayerToFace(playerPos)) {
                 return 'face_player';
             }
             return 'patrol';
         }
 
         // Priority 1: Face Player
-        if (this.config.facePlayer && distanceSq < this.config.facePlayerDistanceSq) {
+        if (this.config.facePlayer && distanceSq < this.config.facePlayerDistanceSq && this.canSeePlayerToFace(playerPos)) {
             return 'face_player';
         }
 
@@ -846,8 +850,34 @@ class NPCBehavior {
         return { x: this.sprite.x, y: this.sprite.y };
     }
 
+    /**
+     * May this NPC turn towards the player? Not through a wall. An NPC with an
+     * los block uses its sight occlusion (walls, closed doors and tall props;
+     * los.occlusion: false sees through all of it); any other NPC only the
+     * walls-and-closed-doors test. Both from npc-sight-occlusion.js, feet to
+     * feet. Cached for FACE_SIGHT_MS.
+     */
+    canSeePlayerToFace(playerPos) {
+        const occ = window.npcSightOcclusion;
+        if (!occ || !playerPos) return true;
+        const now = Date.now();
+        if (this._faceSightAt !== undefined && now - this._faceSightAt < FACE_SIGHT_MS) return this._faceSightClear;
+        const los = window.npcManager?.getNPC?.(this.npcId)?.los;
+        const from = this.npcBodyPos();
+        let clear = true;
+        if (los && typeof los === 'object') {
+            if (los.occlusion !== false && typeof occ.isClearBetween === 'function') clear = occ.isClearBetween(from, playerPos);
+        } else if (typeof occ.isWallClearBetween === 'function') {
+            clear = occ.isWallClearBetween(from, playerPos);
+        }
+        this._faceSightAt = now;
+        this._faceSightClear = clear;
+        return clear;
+    }
+
     facePlayer(playerPos) {
         if (!this.config.facePlayer || !playerPos) return;
+        if (!this.canSeePlayerToFace(playerPos)) return; // wall between
 
         const { x: nx, y: ny } = this.npcBodyPos();
         const dx = playerPos.x - nx;

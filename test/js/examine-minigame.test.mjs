@@ -40,7 +40,8 @@ const stubs = {
     './npc-reach.js': dataUrl('export function npcReachDistSq() { return 0; }'),
     './examine.js': examineUrl,
     './combat-input.js': dataUrl(readFileSync(join(js, 'systems/combat-input.js'), 'utf8')),
-    './consumables.js': dataUrl(readFileSync(join(js, 'systems/consumables.js'), 'utf8'))
+    './consumables.js': dataUrl(readFileSync(join(js, 'systems/consumables.js'), 'utf8')),
+    './interaction-walls.js': dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8'))
 };
 
 const started = [];

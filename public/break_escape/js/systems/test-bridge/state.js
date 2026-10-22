@@ -15,6 +15,8 @@
 
 import { isWorldPointOnScreen, getCanvas } from './input.js';
 import { staticNpcBodyDistSq } from '../npc-reach.js';
+// Reach also needs no wall between (interactions.js asks the same function)
+import { interactionLineClear } from '../interaction-walls.js';
 // The engine's own door placement: door sprites (doors.js) and the wall gaps
 // cut for them (collision.js) both come from this one function, so a doorway
 // computed with it is where the gap really is, sprite or no sprite.
@@ -261,7 +263,8 @@ function describeObject(sprite, roomId, px, py, mx, my) {
         y: round(sprite.y),
         distance: round(d),
         interactDistance: round(di),
-        inRange: di <= INTERACTION_RANGE,
+        inRange: di <= INTERACTION_RANGE && interactionLineClear(window.player, sprite),
+        wallBetween: di <= INTERACTION_RANGE && !interactionLineClear(window.player, sprite),
         onScreen: isWorldPointOnScreen(sprite.x, sprite.y),
         state: {
             locked: data.locked ?? null,
@@ -336,7 +339,8 @@ function describeNPC(sprite, roomId, px, py, mx, my) {
         interactDistance: round(di),
         // A KO'd NPC is skipped by tryInteractWithNearest, so it is not
         // interactable even when physically in range.
-        inRange: di <= INTERACTION_RANGE && !ko,
+        inRange: di <= INTERACTION_RANGE && !ko && interactionLineClear(window.player, sprite),
+        wallBetween: di <= INTERACTION_RANGE && !interactionLineClear(window.player, sprite),
         onScreen: isWorldPointOnScreen(sprite.x, sprite.y),
         state: {
             hostile,

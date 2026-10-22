@@ -5,6 +5,7 @@ import { createPlayer, updatePlayerMovement, movePlayerToPoint, facePlayerToward
 import { initializePathfinder } from './pathfinding.js';
 import { initializeInventory, processInitialInventoryItems } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
+import { wallClearFrom, findClearStandPoint } from '../systems/interaction-walls.js';
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu } from '../ui/interaction-menu.js';
 import { resolveObjectField, evaluateGlobalCondition } from '../utils/conditional-text.js';
@@ -2038,8 +2039,14 @@ export async function create() {
                     const stopShortOffset = TILE_SIZE * 0.75;
                     const normalizedDx = dx / distance;
                     const normalizedDy = dy / distance;
-                    movePlayerToPoint(npcAtPosition.x - normalizedDx * stopShortOffset,
-                                      npcBottomY - normalizedDy * stopShortOffset);
+                    let stand = { x: npcAtPosition.x - normalizedDx * stopShortOffset,
+                                  y: npcBottomY - normalizedDy * stopShortOffset };
+                    // Through a wall, "stop short on my side" lands behind the wall:
+                    // walk round to a spot on the NPC's side instead (interaction-walls.js)
+                    if (!wallClearFrom(stand, npcAtPosition)) {
+                        stand = findClearStandPoint(npcAtPosition, player, window.pathfindingManager, INTERACTION_RANGE) || stand;
+                    }
+                    movePlayerToPoint(stand.x, stand.y);
                 }
             }
             return;
@@ -2090,7 +2097,8 @@ export async function create() {
                                     const reachAfter = (p) => Math.hypot(p.x - footDx - obj.x, p.y - footDy - obj.y);
                                     const walk = (p) => Math.hypot(p.x - (player.x + footDx), p.y - (player.y + footDy));
                                     const aimed = pfm.findNearestWalkableWorldCell(target.x, target.y);
-                                    if (!aimed || reachAfter(aimed) > INTERACTION_RANGE - 4) {
+                                    // (or the aimed spot is behind a wall: interaction-walls.js)
+                                    if (!aimed || reachAfter(aimed) > INTERACTION_RANGE - 4 || !wallClearFrom(aimed, obj)) {
                                         let best = aimed, bestReach = aimed ? reachAfter(aimed) : Infinity, bestWalk = aimed ? walk(aimed) : Infinity;
                                         for (let a = 0; a < 16; a++) {
                                             const ang = (a / 16) * Math.PI * 2;
@@ -2099,7 +2107,7 @@ export async function create() {
                                                     obj.x + Math.cos(ang) * r + footDx, obj.y + Math.sin(ang) * r + footDy, 3);
                                                 if (!c) continue;
                                                 const ra = reachAfter(c), wk = walk(c);
-                                                const ok = ra <= INTERACTION_RANGE - 4, bestOk = bestReach <= INTERACTION_RANGE - 4;
+                                                const ok = ra <= INTERACTION_RANGE - 4 && wallClearFrom(c, obj), bestOk = bestReach <= INTERACTION_RANGE - 4 && wallClearFrom(best, obj);
                                                 if ((ok && (!bestOk || wk < bestWalk)) || (!ok && !bestOk && ra < bestReach)) {
                                                     best = c; bestReach = ra; bestWalk = wk;
                                                 }

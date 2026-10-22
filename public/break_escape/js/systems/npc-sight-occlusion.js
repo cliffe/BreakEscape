@@ -39,6 +39,7 @@ export const SIGHT_BLOCKING_MIN_HEIGHT = 50;
 export const SIGHT_BLOCKING_PROP_PATTERN = /rack|shel(f|ves)|bookcase|vending|locker|filing|cabinet|inverter|chiller/;
 const VALIDATE_MS = 250;
 const TILE = 32;
+const VISUAL_TOP = 2;   // back wall rows (constants.js VISUAL_TOP_TILES; no import, tests load this file alone)
 
 const CELL_WALL = 1;
 const CELL_DOOR = 2;
@@ -335,8 +336,16 @@ function roomSignature(room, ext, props) {
     return `${ext.x},${ext.y}|${wallCount}|${doors}|${c}|${p}`;
 }
 
-/** Build a room's sight grid from its loaded state (window.rooms[id]). */
-export function buildRoomSightGrid(room, props = blockingProps(room)) {
+/**
+ * Build a room's sight grid from its loaded state (window.rooms[id]).
+ * thinBackWall (default): mark the back wall rows (the top VISUAL_TOP rows) by
+ * their bottom 8px only, like the south row. Rooms stack with those two rows
+ * overlapping the room to the north, whose occupants walk over that wall face;
+ * a full-tile back wall hid someone standing at the foot of the north room from
+ * a person in that same room. Seen from inside the room nothing changes: a ray
+ * going north still stops at the wall's foot.
+ */
+export function buildRoomSightGrid(room, props = blockingProps(room), { thinBackWall = true } = {}) {
     const ext = roomExtent(room);
     if (!ext) return null;
     const grid = createGrid(ext.x, ext.y, ext.cols * ext.tw, ext.rows * ext.th);
@@ -346,8 +355,10 @@ export function buildRoomSightGrid(room, props = blockingProps(room)) {
             const tx = tiles[i], ty = tiles[i + 1];
             // The south wall row is walkable floor in the 3/4 view: its collision box
             // (collision.js) sits on the tile's bottom edge, so only that edge blocks.
-            const southRow = ty === ext.rows - 1 && tx > 0 && tx < ext.cols - 1;
-            const h = southRow ? 8 : ext.th;
+            const inner = tx > 0 && tx < ext.cols - 1;
+            const southRow = ty === ext.rows - 1 && inner;
+            const backRow = thinBackWall && ty < VISUAL_TOP && inner;   // see the doc comment
+            const h = (southRow || backRow) ? 8 : ext.th;
             markRectFull(grid, { x: ext.x + tx * ext.tw, y: ext.y + (ty + 1) * ext.th - h, w: ext.tw, h }, CELL_WALL);
         }
     }
@@ -411,29 +422,35 @@ export function targetGroundPoint(target) {
 export class SightOcclusion {
     constructor() {
         this._cache = new Map();   // roomId -> { grid, sig, checkedAt, room }
+        this._wallCache = new Map(); // same, walls-only grids (isWallClearBetween)
         this.builds = 0;           // grids built (tests, perf checks)
     }
 
-    reset() { this._cache.clear(); }
+    reset() { this._cache.clear(); this._wallCache.clear(); }
 
     invalidate(roomId) {
-        if (roomId === undefined) this._cache.clear();
-        else this._cache.delete(roomId);
+        if (roomId === undefined) { this._cache.clear(); this._wallCache.clear(); }
+        else { this._cache.delete(roomId); this._wallCache.delete(roomId); }
     }
 
     _rooms() {
         return (typeof window !== 'undefined' && window.rooms) || {};
     }
 
-    /** The cached grid of one room, rebuilt if anything blocking changed. */
-    gridFor(roomId, now = Date.now()) {
+    /**
+     * The cached grid of one room, rebuilt if anything blocking changed.
+     * wallsOnly: walls and closed doors, no props (interaction reach, and NPCs
+     * without an los block turning to face the player).
+     */
+    gridFor(roomId, now = Date.now(), wallsOnly = false) {
+        const cache = wallsOnly ? this._wallCache : this._cache;
         const room = this._rooms()[roomId];
-        if (!room) { this._cache.delete(roomId); return null; }
-        let entry = this._cache.get(roomId);
+        if (!room) { cache.delete(roomId); return null; }
+        let entry = cache.get(roomId);
         if (entry && entry.room === room && now - entry.checkedAt < VALIDATE_MS) return entry.grid;
         const ext = roomExtent(room);
         if (!ext) return null;
-        const props = blockingProps(room);
+        const props = wallsOnly ? [] : blockingProps(room);
         const sig = roomSignature(room, ext, props);
         if (entry && entry.room === room && entry.sig === sig) {
             entry.checkedAt = now;
@@ -442,18 +459,18 @@ export class SightOcclusion {
         const grid = buildRoomSightGrid(room, props);
         this.builds++;
         entry = { grid, sig, checkedAt: now, room };
-        this._cache.set(roomId, entry);
+        cache.set(roomId, entry);
         return grid;
     }
 
     /** Grids of every loaded room touching the box. */
-    gridsNear(minX, minY, maxX, maxY, now = Date.now()) {
+    gridsNear(minX, minY, maxX, maxY, now = Date.now(), wallsOnly = false) {
         const out = [];
         for (const [id, room] of Object.entries(this._rooms())) {
             const ext = roomExtent(room);
             if (!ext) continue;
             if (maxX < ext.x || maxY < ext.y || minX > ext.x + ext.cols * ext.tw || minY > ext.y + ext.rows * ext.th) continue;
-            const g = this.gridFor(id, now);
+            const g = this.gridFor(id, now, wallsOnly);
             if (g) out.push(g);
         }
         return out;
@@ -463,6 +480,13 @@ export class SightOcclusion {
     isClearBetween(a, b) {
         if (!a || !b) return true;
         const grids = this.gridsNear(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.max(a.x, b.x), Math.max(a.y, b.y));
+        return segmentClear(grids, a.x, a.y, b.x, b.y);
+    }
+
+    /** True when no wall or closed door lies between two floor points (props ignored). */
+    isWallClearBetween(a, b) {
+        if (!a || !b) return true;
+        const grids = this.gridsNear(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.max(a.x, b.x), Math.max(a.y, b.y), Date.now(), true);
         return segmentClear(grids, a.x, a.y, b.x, b.y);
     }
 

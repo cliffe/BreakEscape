@@ -16,6 +16,7 @@ import { npcReachDistSq } from './npc-reach.js';
 import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
+import { interactionLineClear } from './interaction-walls.js';
 
 let gameRef = null;
 
@@ -250,7 +251,8 @@ export function checkObjectInteractions() {
             const dy = obj.y - py;
             const distanceSq = dx * dx + dy * dy;
 
-            if (distanceSq <= INTERACTION_RANGE_SQ) {
+            // In range and no wall between (interaction-walls.js)
+            if (distanceSq <= INTERACTION_RANGE_SQ && interactionLineClear(player, obj)) {
                 if (!obj.isHighlighted) {
                     obj.isHighlighted = true;
                     // Only apply tint if this is a sprite (has setTint method)
@@ -386,7 +388,7 @@ export function checkObjectInteractions() {
                 const npcDy = sprite.y - py;
                 const distanceSq = npcReachDistSq(player, sprite, npcDx * npcDx + npcDy * npcDy);
 
-                if (distanceSq <= INTERACTION_RANGE_SQ && sprite.visible) {
+                if (distanceSq <= INTERACTION_RANGE_SQ && sprite.visible && interactionLineClear(player, sprite)) {
                     if (!sprite.isHighlighted) {
                         sprite.isHighlighted = true;
                         // Add talk icon indicator for NPC (created on first highlight)
@@ -1426,6 +1428,11 @@ export function handleObjectInteraction(sprite) {
             });
             return;
         }
+        // In range but on the far side of a wall (interaction-walls.js)
+        if (!interactionLineClear(player, sprite)) {
+            console.log('INTERACTION_BLOCKED_BY_WALL', { objectName: sprite.name, objectId: sprite.objectId || sprite.npcId });
+            return;
+        }
     }
     
     const data = sprite.scenarioData;
@@ -1880,12 +1887,13 @@ export function tryInteractWithNearest() {
     let best = null;
     let bestScore = Infinity;
 
-    function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null) {
+    function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null, target = npcSprite) {
         const dx = objX - px;
         const dy = objY - py;
         const plainSq = dx * dx + dy * dy;
         const distSq = npcSprite ? npcReachDistSq(player, npcSprite, plainSq) : plainSq;
         if (distSq > rangeSq) return;
+        if (target && !interactionLineClear(player, target)) return; // wall between
         const dist = Math.sqrt(distSq);
         const score = angularDiff(objX, objY) * 1000 + dist;
         if (score < bestScore) { bestScore = score; best = { objX, objY, handleFn }; }
@@ -1900,7 +1908,7 @@ export function tryInteractWithNearest() {
         if (room.objects) {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
-                consider(obj.x, obj.y, () => handleObjectInteraction(obj));
+                consider(obj.x, obj.y, () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj);
             });
         }
 
@@ -1957,8 +1965,8 @@ export function tryInteractWithNPC(npcSprite) {
     const distanceSq = npcReachDistSq(player, npcSprite, getInteractionDistance(player, npcSprite.x, npcSprite.y));
     const distance = Math.sqrt(distanceSq);
 
-    // Only interact if within range
-    if (distance <= INTERACTION_RANGE) {
+    // Only interact if within range, with no wall between
+    if (distance <= INTERACTION_RANGE && interactionLineClear(player, npcSprite)) {
         // Check if NPC is hostile - if so, trigger punch instead of conversation
         const npcId = npcSprite.npcId;
         if (npcId && window.npcHostileSystem && window.npcHostileSystem.isNPCHostile(npcId)) {
@@ -1980,14 +1988,16 @@ export function tryInteractWithNPC(npcSprite) {
 }
 
 // Simple range check for click-based interactions (no direction offset).
-// Returns true if the given sprite is within INTERACTION_RANGE of the player centre.
+// Returns true if the given sprite is within INTERACTION_RANGE of the player centre
+// and no wall stands between them (so a click through a wall walks there instead).
 export function isObjectInInteractionRange(sprite) {
     const player = window.player;
     if (!player || !sprite) return false;
     const dx = sprite.x - player.x;
     const dy = sprite.y - player.y;
     const distSq = dx * dx + dy * dy;
-    return (sprite._isNPC ? npcReachDistSq(player, sprite, distSq) : distSq) <= INTERACTION_RANGE_SQ;
+    if ((sprite._isNPC ? npcReachDistSq(player, sprite, distSq) : distSq) > INTERACTION_RANGE_SQ) return false;
+    return interactionLineClear(player, sprite);
 }
 
 // Export for global access
