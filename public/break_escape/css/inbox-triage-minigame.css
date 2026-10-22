@@ -364,6 +364,29 @@
 .tri-page-field-box { display: block; height: 28px; background: #ffffff; border: 2px solid #8792ad; }
 .tri-page-button { align-self: flex-start; padding: 6px 14px; font-weight: 700; color: #ffffff; background: #3b5bcc; border: 2px solid #233b8f; }
 
+/* 11 N14: phone body around an sms thread */
+.tri-phone-frame { border-radius: 0; border-width: 6px; border-color: #1c2440; padding-top: 6px; }
+.tri-phone-status { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 12px; color: var(--ui-text-dim, #a8b2c8); }
+.tri-phone-speaker { display: block; width: 48px; height: 6px; background: #1c2440; border: 2px solid #3a4566; }
+.tri-phone-battery { justify-self: end; display: block; width: 22px; height: 10px; border: 2px solid #a8b2c8; background: linear-gradient(90deg, #a8b2c8 70%, transparent 70%); }
+.tri-phone-clock { justify-self: start; }
+
+/* 11 N14: printed poster with tape */
+.tri-poster { position: relative; margin-top: 14px; border-color: #8f845f; background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.025) 0 2px, transparent 2px 4px); }
+.tri-poster-tape { position: absolute; top: -10px; width: 44px; height: 16px; background: rgba(214, 205, 150, 0.85); border: 2px solid rgba(143, 132, 95, 0.8); }
+.tri-poster-tape-left { left: 10px; transform: rotate(-8deg); }
+.tri-poster-tape-right { right: 10px; transform: rotate(7deg); }
+
+/* 11 N13: certificate check and autofill cue on the page card */
+.tri-cert-btn { flex: none; min-height: 36px; font-size: 13px; }
+.tri-cert-panel { padding: 8px 12px; background: #fff8dc; border-bottom: 2px solid #8792ad; color: #1d2333; }
+.tri-cert-panel p { margin: 2px 0; }
+.tri-cert-issued { font-weight: 700; overflow-wrap: anywhere; }
+.tri-cert-not { font-size: 14px; }
+.tri-autofill { margin: 8px 0 0; font-size: 14px; font-weight: 700; }
+.tri-autofill-none { color: #8f2a1f; }
+.tri-autofill-filled { color: #1f6b3a; }
+
 /* MFA prompt */
 .tri-kind-push .tri-kind-title { text-align: center; }
 .tri-kind-push .tri-kind-label { text-align: center; }

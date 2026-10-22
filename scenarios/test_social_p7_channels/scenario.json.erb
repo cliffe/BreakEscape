@@ -88,6 +88,7 @@
             "from": { "name": "Dana Okafor (CEO)", "address": "+44 20 7946 0000" },
             "time": "08:30",
             "duration": "0:41",
+            "audio": { "clipId": "VO6" },
             "body": "Hi, it's Dana. I'm about to board. Can you pay the Halden invoice to the new account in the email before ten? Don't loop finance in, they'll only slow it down.",
             "truth": {
               "isPhish": true,
@@ -122,6 +123,8 @@
             "page": {
               "url": "https://ledgerwell-sso.example/login",
               "padlock": true,
+              "certificate": { "issuedTo": "ledgerwell-sso.example", "issuer": "Open Certs Ltd" },
+              "autofill": "none",
               "heading": "Ledgerwell Single Sign-On",
               "fields": ["Email", "Password"],
               "button": "Sign in"

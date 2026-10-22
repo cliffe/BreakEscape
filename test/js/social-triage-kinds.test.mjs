@@ -347,3 +347,118 @@ test('push wording on a genuine prompt, and a call Comply on an impostor', () =>
     act(s, 'call_helpdesk', 'comply');
     assert.match($(s, '.tri-review-card[data-message-id="call_helpdesk"] .tri-card-verdict').textContent, /You chose Comply\. Not this time\. The caller was not who they said\./);
 });
+
+// ── P7-L: certificate check, autofill cue, phone and poster looks, voicemail audio slot ──
+
+const certSet = (page, extra = {}) => {
+    const set = makeSet();
+    set.messages = set.messages.map((m) => (m.id === 'page_sso' ? { ...m, page: { ...m.page, ...page }, ...extra } : m));
+    return set;
+};
+
+test('page card: a Certificate check shows who it was issued to and what it does not prove', () => {
+    const s = open(certSet({ certificate: { issuedTo: 'ledgerwell-sso.example', issuer: 'Open Certs Ltd' } }));
+    click($(s, '.tri-start'));
+    pick(s, 'page_sso');
+    const btn = $(s, '.tri-cert-btn');
+    const panel = $(s, '.tri-cert-panel');
+    assert.ok(btn && panel);
+    assert.equal(panel.hidden, true, 'closed until asked');
+    assert.equal(btn.getAttribute('aria-expanded'), 'false');
+    click(btn);
+    assert.equal(panel.hidden, false);
+    assert.equal(btn.getAttribute('aria-expanded'), 'true');
+    assert.equal($(s, '.tri-cert-issued').textContent, 'Issued to: ledgerwell-sso.example');
+    assert.equal($(s, '.tri-cert-issuer').textContent, 'Issued by: Open Certs Ltd');
+    assert.match($(s, '.tri-cert-not').textContent, /does not prove the site is honest/);
+    click(btn);
+    assert.equal(panel.hidden, true);
+    // an authored note replaces the default line
+    const t = open(certSet({ certificate: { issuedTo: 'x.example', note: 'It only says x.example paid for a certificate.' } }));
+    click($(t, '.tri-start'));
+    pick(t, 'page_sso');
+    click($(t, '.tri-cert-btn'));
+    assert.equal($(t, '.tri-cert-not').textContent, 'It only says x.example paid for a certificate.');
+    assert.equal($(t, '.tri-cert-issuer'), null);
+});
+
+test('page card: no certificate button without a certificate, or without a padlock; the old padlock note is unchanged', () => {
+    const a = open(makeSet());
+    click($(a, '.tri-start'));
+    pick(a, 'page_sso');
+    assert.equal($(a, '.tri-cert-btn'), null);
+    assert.equal($(a, '.tri-cert-panel'), null);
+    const b = open(certSet({ padlock: false, certificate: { issuedTo: 'x.example' } }));
+    click($(b, '.tri-start'));
+    pick(b, 'page_sso');
+    assert.equal($(b, '.tri-cert-btn'), null, 'a page with no padlock has no certificate to check');
+    const c = open(certSet({ certificate: { issuedTo: 'x.example' } }));
+    click($(c, '.tri-start'));
+    pick(c, 'page_sso');
+    click($(c, '.tri-padlock'));
+    assert.match(state(c).linkNote, /connection to ledgerwell-sso\.example is encrypted/);
+});
+
+test('page card: the autofill cue appears for none and filled only', () => {
+    const none = open(certSet({ autofill: 'none' }));
+    click($(none, '.tri-start'));
+    pick(none, 'page_sso');
+    assert.equal($(none, '.tri-autofill-none').textContent, 'Your password manager did not fill this in.');
+    const filled = open(certSet({ autofill: 'filled' }));
+    click($(filled, '.tri-start'));
+    pick(filled, 'page_sso');
+    assert.equal($(filled, '.tri-autofill-none'), null);
+    assert.equal($(filled, '.tri-autofill-filled').textContent, 'Your password manager filled this in.');
+    const plain = open(certSet({ autofill: 'maybe' }));
+    click($(plain, '.tri-start'));
+    pick(plain, 'page_sso');
+    assert.equal($(plain, '.tri-autofill'), null, 'an unknown value draws nothing');
+});
+
+test('sms phone frame and QR poster decoration are aria-hidden and add no text to read', () => {
+    const s = open(makeSet());
+    click($(s, '.tri-start'));
+    pick(s, 'sms_parcel');
+    const status = $(s, '.tri-kind-sms .tri-phone-status');
+    assert.ok(status);
+    assert.equal(status.getAttribute('aria-hidden'), 'true');
+    assert.equal(status.querySelector('.tri-phone-clock').textContent, '08:02');
+    pick(s, 'push_odd');
+    assert.equal($(s, '.tri-kind-push .tri-phone-status'), null, 'the sign-in prompt keeps its own look');
+    pick(s, 'qr_parking');
+    assert.ok($(s, '.tri-kind-qr.tri-poster'));
+    assert.equal($$(s, '.tri-poster-tape').length, 2);
+    assert.ok($$(s, '.tri-poster-tape').every((t) => t.getAttribute('aria-hidden') === 'true'));
+});
+
+test('voicemail audio.clipId is accepted and ignored: transcript-only, no player, scoring unchanged', () => {
+    const set = makeSet();
+    set.messages = set.messages.map((m) => (m.id === 'vm_ceo' ? { ...m, audio: { clipId: 'VO6' } } : m));
+    const s = open(set);
+    click($(s, '.tri-start'));
+    pick(s, 'vm_ceo');
+    assert.equal(s.messages.find((m) => m.id === 'vm_ceo').audio.clipId, 'VO6', 'the field survives the normaliser');
+    assert.equal($(s, '.tri-kind-voicemail').dataset.audioClip, 'VO6');
+    assert.equal($$(s, '.tri-kind-voicemail audio, .tri-kind-voicemail button').length, 0, 'no play control yet');
+    assert.match($(s, '.tri-vm-text, .tri-transcript').textContent, /boarding now|loop finance/);
+    const bare = open(makeSet());
+    click($(bare, '.tri-start'));
+    pick(bare, 'vm_ceo');
+    assert.equal($(bare, '.tri-kind-voicemail').dataset.audioClip, undefined);
+});
+
+test('reportAlwaysVisible: on the sort step every unanswered message of every kind offers an enabled Report action', () => {
+    const s = open(makeSet());
+    click($(s, '.tri-start'));
+    for (const m of state(s).messages) {
+        pick(s, m.id);
+        const rep = $$(s, '.tri-verdict').find((b) => b.dataset.verdict === 'report');
+        assert.ok(rep, `${m.id} (${m.kind}) shows a Report action`);
+        assert.equal(rep.disabled, false, `${m.id} Report is enabled`);
+        assert.equal(rep.hidden, false);
+    }
+    // it stays on offer after other messages are answered
+    act(s, 'sms_parcel', 'trust');
+    pick(s, 'qr_parking');
+    assert.ok($$(s, '.tri-verdict').some((b) => b.dataset.verdict === 'report'));
+});

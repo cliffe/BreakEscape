@@ -227,8 +227,14 @@ function senderName(rec) {
 }
 
 function sms(rec, h) {
-    const box = el('section', 'tri-kind tri-kind-sms tri-phone');
+    const box = el('section', 'tri-kind tri-kind-sms tri-phone tri-phone-frame');
     box.setAttribute('aria-label', 'Text message');
+    // 11 N14: a phone body (speaker slot, status bar) around the thread. Decoration only.
+    const status = el('div', 'tri-phone-status');
+    status.setAttribute('aria-hidden', 'true');
+    status.append(el('span', 'tri-phone-clock', isStr(rec.time) ? rec.time : ''), el('span', 'tri-phone-speaker'),
+        el('span', 'tri-phone-battery'));
+    box.appendChild(status);
     const top = el('div', 'tri-phone-top');
     top.append(heading(senderName(rec) || 'Unknown sender'));
     if (rec.from?.name && rec.from?.address) top.appendChild(el('p', 'tri-phone-number', rec.from.address));
@@ -255,6 +261,9 @@ function sms(rec, h) {
 function voicemail(rec) {
     const box = el('section', 'tri-kind tri-kind-voicemail');
     box.setAttribute('aria-label', 'Voicemail');
+    // 11 N12: `audio: { clipId }` is reserved for the voicemail player (N12-audio). It draws
+    // nothing yet; the card stays transcript-only. The id is kept on the card for content checks.
+    if (isObj(rec.audio) && isStr(rec.audio.clipId)) box.dataset.audioClip = rec.audio.clipId;
     box.appendChild(el('p', 'tri-kind-label', 'Voicemail'));
     box.appendChild(heading(senderName(rec) || 'Unknown caller'));
     const meta = el('p', 'tri-vm-meta');
@@ -283,8 +292,14 @@ function voicemail(rec) {
 
 function qr(rec, h) {
     const q = isObj(rec.qr) ? rec.qr : {};
-    const box = el('section', 'tri-kind tri-kind-qr tri-notice');
+    const box = el('section', 'tri-kind tri-kind-qr tri-notice tri-poster');
     box.setAttribute('aria-label', 'Printed notice');
+    // 11 N14: a poster on a wall (tape at the corners, a pinned look). Decoration only.
+    for (const pos of ['left', 'right']) {
+        const tape = el('span', `tri-poster-tape tri-poster-tape-${pos}`);
+        tape.setAttribute('aria-hidden', 'true');
+        box.appendChild(tape);
+    }
     if (isStr(q.location)) box.appendChild(el('p', 'tri-kind-label', `Seen: ${q.location}`));
     else box.appendChild(el('p', 'tri-kind-label', 'Printed notice'));
     box.appendChild(heading(rec.subject || 'Notice'));
@@ -324,7 +339,32 @@ function page(rec, h) {
     addr.setAttribute('aria-label', `Address bar: ${p.url || ''}`);
     addr.addEventListener('click', () => h.showNote(`Full address: ${p.url || ''}. The site is ${hostOf(p.url)}.`));
     bar.appendChild(addr);
+    // 11 N13: `page.certificate: { issuedTo, issuer?, note? }` adds a Certificate check to a page
+    // with a padlock: who the certificate was issued to, and what it does not prove.
+    const cert = isObj(p.certificate) && isStr(p.certificate.issuedTo) ? p.certificate : null;
+    let certPanel = null;
+    if (cert && p.padlock === true) {
+        const btn = el('button', 'tri-cert-btn minigame-button', 'Certificate');
+        btn.type = 'button';
+        btn.setAttribute('aria-expanded', 'false');
+        btn.setAttribute('aria-label', 'Certificate: who is this site registered to?');
+        bar.appendChild(btn);
+        certPanel = el('div', 'tri-cert-panel');
+        certPanel.hidden = true;
+        certPanel.setAttribute('role', 'region');
+        certPanel.setAttribute('aria-label', 'Certificate details');
+        certPanel.appendChild(el('p', 'tri-cert-issued', `Issued to: ${cert.issuedTo}`));
+        if (isStr(cert.issuer)) certPanel.appendChild(el('p', 'tri-cert-issuer', `Issued by: ${cert.issuer}`));
+        certPanel.appendChild(el('p', 'tri-cert-not',
+            isStr(cert.note) ? cert.note
+                : 'A certificate does not prove the site is honest, or that it is the one you meant to visit.'));
+        btn.addEventListener('click', () => {
+            certPanel.hidden = !certPanel.hidden;
+            btn.setAttribute('aria-expanded', certPanel.hidden ? 'false' : 'true');
+        });
+    }
     box.appendChild(bar);
+    if (certPanel) box.appendChild(certPanel);
     const view = el('div', 'tri-browser-view');
     view.appendChild(heading(p.heading || rec.subject || 'Web page'));
     if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
@@ -339,6 +379,13 @@ function page(rec, h) {
         }
         if (isStr(p.button)) form.appendChild(el('span', 'tri-page-button', p.button));
         view.appendChild(form);
+        // 11 N13: `page.autofill` is 'none' (the password manager offered nothing here) or
+        // 'filled'. Only 'none' is a cue; 'filled' is shown quietly so the two can be told apart.
+        if (p.autofill === 'none') {
+            view.appendChild(el('p', 'tri-autofill tri-autofill-none', 'Your password manager did not fill this in.'));
+        } else if (p.autofill === 'filled') {
+            view.appendChild(el('p', 'tri-autofill tri-autofill-filled', 'Your password manager filled this in.'));
+        }
     }
     box.appendChild(view);
     return box;
