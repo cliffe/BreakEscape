@@ -36,7 +36,7 @@ window.gameState = { globalVariables: {} };
 
 const mod = (rel) => import(pathToFileURL(join(dir, rel)));
 const { renderStepStrip, renderWordmark } = await mod('minigames/episode-runner/step-strip.js');
-const { renderFlipView } = await mod('minigames/episode-runner/flip-view.js');
+const { renderFlipView, tellSentence } = await mod('minigames/episode-runner/flip-view.js');
 const { renderDebrief } = await mod('minigames/episode-runner/debrief-view.js');
 const { redFlagString } = await mod('minigames/inbox-triage/triage-flags.js');
 
@@ -92,6 +92,13 @@ test('flip lists exactly the stored tells with their canonical strings', () => {
     assert.equal(continued, 1);
     flip.destroy();
     assert.equal(h.querySelector('.aw-flip'), null);
+});
+
+test('a tell id with no sentence renders a neutral phrase, not the raw id', () => {
+    const phrase = tellSentence('notARealTell', sent());
+    assert.notEqual(phrase, 'notARealTell');
+    assert.ok(phrase.length > 0);
+    assert.equal(tellSentence('formOrigin', sent()).includes('different site'), true);
 });
 
 test('flip with message null shows flipNoSend and no tells', () => {

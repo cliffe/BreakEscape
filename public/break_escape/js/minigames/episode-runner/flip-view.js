@@ -56,10 +56,13 @@ function el(tag, className, text) {
 const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const str = (strings, key) => (strings && typeof strings[key] === 'string' && strings[key]) ? strings[key] : DEFAULTS[key];
 
-/** The sentence for a tell id: the library's, else the page tells', else the id. */
+const UNKNOWN_TELL = 'Something about this one did not add up.';
+
+/** The sentence for a tell id: the library's, else the page tells', else a neutral phrase (never the raw id). */
 export function tellSentence(id, message) {
     const s = redFlagString(id, message);
-    return s === id && PAGE_TELLS[id] ? PAGE_TELLS[id] : s;
+    if (s !== id) return s;
+    return PAGE_TELLS[id] || UNKNOWN_TELL;
 }
 
 export function renderFlipView(container, { message = null, page = null, call = null, missed = false, strings = {}, onContinue } = {}) {

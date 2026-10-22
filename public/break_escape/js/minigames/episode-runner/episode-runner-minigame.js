@@ -111,7 +111,8 @@ export function facilitatorPrompt(strings, key) {
  * What the defend round is: 'calls', 'pages', 'phone', 'voice' or 'messages' (the default).
  * An episode with defend.calls is the role swap, so 'calls' whatever else the set holds.
  * Otherwise the most common group in the set: call; page; phone (sms, qr, push); voice
- * (voicemail); everything else (email, playerSent) as messages. A tie is read as 'messages'.
+ * (voicemail); everything else (email, playerSent) as messages. A tie is read as 'messages', unless
+ * the set holds no email or playerSent at all: then the first tied non-email group wins.
  */
 export function defendSetKind(set, episode) {
     if (Array.isArray(episode?.defend?.calls) && episode.defend.calls.length) return 'calls';
@@ -125,7 +126,15 @@ export function defendSetKind(set, episode) {
         else n.messages++;
     }
     const top = ['calls', 'pages', 'phone', 'voice'].find((k) => Object.keys(n).every((o) => o === k || n[k] > n[o]));
-    return top || 'messages';
+    if (top) return top;
+    // A tie among the non-email groups, with no email in the set, takes the first of them
+    // (calls, pages, phone, voice) rather than reading as the inbox.
+    if (n.messages === 0) {
+        const keys = ['calls', 'pages', 'phone', 'voice'];
+        const max = Math.max(...keys.map((k) => n[k]));
+        if (max > 0) return keys.find((k) => n[k] === max);
+    }
+    return 'messages';
 }
 
 const DEFEND_COPY = Object.freeze({

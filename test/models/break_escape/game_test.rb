@@ -30,6 +30,24 @@ module BreakEscape
       assert @game.mission
     end
 
+    test "an array-valued global survives merge_global_variables! unchanged" do
+      records = [
+        { "stage" => "pre", "setId" => "s1", "caught" => 3, "total" => 5 },
+        { "stage" => "post", "setId" => "s1", "caught" => 5, "total" => 5 }
+      ]
+      @game.merge_global_variables!("se_awareness_records" => records, "other" => 1)
+      @game.save!
+      assert_equal records, @game.reload.player_state["globalVariables"]["se_awareness_records"]
+
+      # A later sync that resends a longer array replaces it whole; an unrelated sync leaves it be.
+      longer = records + [{ "stage" => "post", "setId" => "s2", "caught" => 4, "total" => 5 }]
+      @game.merge_global_variables!("se_awareness_records" => longer)
+      @game.save!
+      @game.merge_global_variables!("other" => 2)
+      @game.save!
+      assert_equal longer, @game.reload.player_state["globalVariables"]["se_awareness_records"]
+    end
+
     test "NPC drop persists the full held item definition and survives pickup" do
       device = { 'type' => 'launch-device', 'name' => 'Launch Device', 'id' => 'entropy_launch_device',
                  'mode' => 'launch-abort', 'flags' => ['abort'], 'onLaunch' => { 'setGlobal' => { 'x' => true } } }

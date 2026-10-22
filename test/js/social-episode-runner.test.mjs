@@ -845,6 +845,9 @@ test('defend intro: strings.defendIntro replaces the line; without it the defaul
     assert.equal(defendSetKind(kinds('page', 'page', 'page', 'email')), 'pages');
     assert.equal(defendSetKind(kinds('call', 'call', 'push')), 'calls');
     assert.equal(defendSetKind(kinds('page', 'email')), 'messages', 'a tie is messages');
+    assert.equal(defendSetKind(kinds('page', 'sms')), 'pages', 'a tie with no email takes the non-email kind');
+    assert.equal(defendSetKind(kinds('sms', 'sms', 'page', 'page')), 'pages', 'tie order: pages before phone');
+    assert.equal(defendSetKind(kinds('page', 'sms', 'email')), 'messages', 'a tie with an email stays messages');
     assert.equal(defendSetKind(null, { defend: { calls: [{ id: 'c' }] } }), 'calls');
     assert.equal(defendSetKind(kinds('call', 'email', 'email'), { defend: { calls: [{ id: 'c' }] } }), 'calls',
         'the role swap reads as calls even when the set has more emails');

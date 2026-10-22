@@ -600,3 +600,7 @@ documentation is README_scenario_design.md "Awareness episodes", and the contrac
 **Still held or open.** N7 (the cloned-voice TTS style) and the audio half of N12 wait for the user, so voicemail
 items are transcripts. PixelLab art is not made (CSS wordmark and placeholder sprites). The E7 full shell waits for
 the audio decision. The measurement records are written and nothing reads them back yet; `toXapi` is unused.
+
+**Reload on the debrief.** A reload while the debrief is on screen keeps the numeric summary (it lives in
+`state.defend`) but not the per-message review cards, because the answers are not persisted. This is by design:
+no free text or per-message detail is stored, and the mission has already concluded by this point.
