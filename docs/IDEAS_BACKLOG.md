@@ -18,8 +18,6 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 ## Engine and UI
 
 From the PIN cracker fix (2026-10-10), found but not fixed:
-- **biometric_breach's 5-digit PIN can't be entered** (S). Its PIN is `72958` (`scenarios/biometric_breach/scenario.json.erb:290`) but the PIN starter assumes 4 digits when the server withholds the PIN (`systems/minigame-starters.js:535`). Send the length, not the PIN.
-- **Door PINs reach the client at startup** (S). `filtered_scenario_for_bootstrap` in `game.rb` keeps rooms' `requires`, so a player can read door PINs from the startup data.
 - **`window.startPinMinigame` name clash** (S). `minigames/index.js:202` overrides the starter from `minigame-starters.js:915` with the demo helper. The game imports the starter directly, so only callers of the global are affected.
 - **Unrouted `api/games_controller.rb#unlock`** (S). Dead code with its own unlock logic; remove it or route it.
 
@@ -39,7 +37,6 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **Resume in the room you left** (engine fixer; M). Reload always respawns at `startRoom`; see P10 in the pass-4 log.
   - Also on a KO (m06 struggling run A, 2026-10-13): a knocked-out player respawns in reception, five rooms from the fight, with the hostile NPC still hostile.
 - **One-line object captions cut off** (m07 blind run A; S). Long observation text in the bottom caption is truncated at 1400x1000 ("Somebody has already…"), hiding clue text such as a rating-plate serial. Wrap to two lines or open a dialog when the text overflows.
-- **Phone-chat number keys stop at 5** (m07 dialogue browser check, 2026-10-14; S). `phone-chat-minigame.js` `handleKeyPress` maps keys 1–5 only, but hubs show up to 9 choices, so choices 6–9 (often "Where do I stand?") can only be clicked. Map 1–9. Also (m07 fix-check N3, 2026-10-14): the choice pane scrolls (scrollHeight 342, clientHeight 224 with six choices) and shows no scroll cue, so choices 5–6 ("Where do I stand?", "I'll call you back.") sit out of sight; add a cue (fade, arrow or scrollbar) or keep the exit choice visible.
 - **A hit closes the phone** (m05/m07 browser checks, 2026-10-14; S–M). `player-damage-interrupt.js` closes any open minigame on damage, so a player being chased can't read HaX's fight-controls texts or use a phone way out (m05 "Send Security"). Pause NPC attacks while the phone is open, or don't close the phone on damage. **Done 2026-10-17 (a73b1175):** the phone stays open on a hit and attacks carry on (no free shield); a KO closes it.
 - **Punch cone misses with single-arrow facing** (m07 puzzle browser check, 2026-10-14; S). The ±30° punch cone means attackers standing ~45° off a cardinal facing are mostly missed unless the player holds two arrow keys (1 of ~25 vs 11 of 11). Widen the cone, auto-face the nearest hostile on a punch, or show a cue.
 - **All-optional aims complete on their first task** (m07 fixer, 2026-10-14; S). `objectives-manager.js:847`: an aim whose tasks are all optional is marked complete as soon as one task is, so it folds early. Complete it only when every task is settled. m07 works round it by making the tasks required.
@@ -60,7 +57,6 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 
 
 - **Engine minors from the m06 regression (2026-10-13; S each):**
-  - **Hostile NPC HP after a reload:** it isn't saved. Dani went from 30 to 100 HP and was still hostile.
   - **Objectives panel:** with several aims open it clips the later tasks and shows no scrollbar. It also covers the left of the room.
   - **Hearts row:** it overlaps the inventory bar.
 - **HaX's headshot avatar** (art, 2026-10-13; S). The phone and toast avatar `agent_hax_headshot.png` still shows her old look, because it's cut from the walk sprite. Her bust was glowed up (option A). Make a headshot from the new bust, or redo her walk sprite to match.
@@ -72,8 +68,6 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **KO item drops land on top of each other** (m06 dressing, 2026-10-13; S). Items dropped by a knocked-out NPC land about 8 px apart, so picking one up opens a pick-one menu. Spread drops at least 32 px.
 
 - **Follow-ups from the backlog batch (2026-10-22):**
-  - **Playtest harness needs Node 20** (S). Playwright 1.64.1 refuses Node 18.19.1, the machine's Node. Install Node 20+ or pin an older Playwright.
-  - **m02: Gary's catch fires for the IT door pick** (S). His `lockpick_used_in_view` mapping has no target condition, so picking the IT door from the staff room plays his "That's my filing cabinet" line (he now has `los.occlusion: false` so the cabinet catch always fires). Condition the mapping on the cabinet.
   - **Sight-blocking prop list** (S). Fig plants, x-ray scanners, the DVR stack and `brochure_rack` don't block sight; flag any with `blocksSight: true` where a mission wants cover.
 
 ## Story and missions
