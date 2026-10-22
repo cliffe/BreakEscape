@@ -4315,6 +4315,34 @@ def carry_over_import_name(entry)
   prefix && entry['var'].is_a?(String) ? "#{prefix}_#{entry['var']}" : nil
 end
 
+# A triage set writes camelCase result globals (<setGlobalPrefix>reportRate), and a post check
+# imports the pre check's. Those names are set by the set's prefix, not chosen, so the lower_snake_case
+# rule does not apply to them: the prefix with {stage} filled by pre or post (or left as is) plus a
+# result suffix, the comparison.prePrefix, and the fixed baseline names the comparison reads.
+CARRY_OVER_PRE_NAMES = %w[triage_pre_percent triage_pre_reportRate triage_pre_done].freeze
+CARRY_OVER_RESULT_NAME_RE = /\A[A-Za-z_][A-Za-z0-9_]*\z/.freeze
+
+def carry_over_triage_result_name?(json_data, name)
+  return false unless name.is_a?(String) && name.match?(CARRY_OVER_RESULT_NAME_RE)
+  return true if CARRY_OVER_PRE_NAMES.include?(name)
+
+  sets = json_data.is_a?(Hash) ? json_data.dig('social', 'triageSets') : nil
+  return false unless sets.is_a?(Array)
+
+  sets.any? do |set|
+    next false unless set.is_a?(Hash)
+
+    prefixes = []
+    prefix = set.dig('outcome', 'setGlobalPrefix')
+    if prefix.is_a?(String) && !prefix.empty?
+      prefixes += prefix.include?('{stage}') ? %w[pre post training mission].map { |st| prefix.gsub('{stage}', st) } : [prefix]
+    end
+    pre = set.dig('comparison', 'prePrefix')
+    prefixes << pre if pre.is_a?(String) && !pre.empty?
+    prefixes.any? { |pf| TRIAGE_RESULT_SUFFIXES.any? { |suf| name == "#{pf}#{suf}" } }
+  end
+end
+
 # Before the other checks run: the imports become declared globals (with their
 # defaults), so every "is this global declared?" check accepts them. Returns the
 # original import list.
@@ -4553,7 +4581,7 @@ def check_carry_over(json_data, repo_root, mission_name, scenarios_dir, imports,
       issues << "❌ ERROR: #{at}: \"as\" is required when \"from\" (#{from}) doesn't start with an mNN_ or sisNN_ prefix."
       next
     end
-    if name !~ CARRY_OVER_NAME_RE || name.start_with?('global_')
+    if (name !~ CARRY_OVER_NAME_RE && !carry_over_triage_result_name?(json_data, name)) || name.start_with?('global_')
       issues << "❌ ERROR: #{at}: imported name '#{name}' must be lower_snake_case with a prefix (e.g. m06_assets_seized), " \
                 "and must not start with global_."
     end

@@ -37,7 +37,8 @@ module ValidateSocial
     # 00 section 2 "Channel tells".
     CHANNEL_TELLS = %w[lookalike_domain changed_bank_details unexpected_qr unrequested_mfa_push
                        smish_shortlink_urgency vish_callback_pressure secrecy_or_bypass
-                       borrowed_authority reply_to_differs reply_stop_trick padlock_myth].freeze
+                       borrowed_authority reply_to_differs reply_stop_trick padlock_myth
+                       enable_content_prompt].freeze
     STAGES = %w[pre post training mission].freeze
     LAUNCH_STAGES = %w[pre post].freeze
     PROFILES = %w[analyst awareness].freeze
@@ -435,6 +436,11 @@ module ValidateSocial
 
         stages << (md['stage'] || set['stage'])
       end
+      # A check mission's kiosk launches the set at awarenessEpisode.defend.stage (the set itself
+      # may omit `stage`).
+      ep = ctx.social.is_a?(Hash) ? ctx.social['awarenessEpisode'] : nil
+      defend = ep.is_a?(Hash) ? ep['defend'] : nil
+      stages << defend['stage'] if defend.is_a?(Hash) && defend['setId'] == set['id'] && defend['stage'].is_a?(String)
       stages << set['stage'] if stages.empty?
       stages.include?('post')
     end

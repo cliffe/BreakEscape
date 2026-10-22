@@ -15,7 +15,7 @@
 # what binds the set to the episode: ids, counts, the done global, the host NPC and the carry-over.
 module ValidateSocial
   module Awareness
-    STAGES = %w[brief osint write flip defend debrief check mfa].freeze
+    STAGES = %w[brief osint build write flip defend debrief check mfa].freeze
     STAGES_BY_VARIANT = {
       'full' => %w[brief osint write flip defend debrief],
       'defendOnly' => %w[brief defend debrief]
@@ -23,6 +23,9 @@ module ValidateSocial
     # Wave 3 (E3): the push-stream beat, an unscored attack demonstration. It sits straight after
     # `write` or straight after `flip`, never in a defendOnly or check shell.
     MFA_AFTER = %w[write flip].freeze
+    # E5: the landing-page builder, straight after `osint` and before `write`. It needs
+    # attack.landingPageId and is never in a defendOnly or check shell.
+    BUILD_AFTER = 'osint'
     CHECK_STAGES = %w[pre post].freeze
     EPISODE_MESSAGES = (5..8)
     CHECK_MESSAGES = 10
@@ -48,6 +51,7 @@ module ValidateSocial
       issues.concat(stage_checks(ep))
       issues.concat(id_suffix_checks(ep))
       issues.concat(attack_checks(ctx, ep)) if full?(ep)
+      issues.concat(string_checks(ep))
       issues.concat(mfa_checks(ep))
       set = defend_set(ctx, ep, issues)
       done = nil
@@ -58,6 +62,7 @@ module ValidateSocial
       end
       issues.concat(conclusion_checks(ctx, ep, done)) if done
       issues.concat(state_global_checks(ctx, id))
+      issues.concat(check_mission_checks(ctx, ep, set)) if check_mission?(ep) && set
       issues.concat(carry_over_checks(ctx, ep, set)) if check_mission?(ep) && set
       issues
     end
@@ -133,9 +138,11 @@ module ValidateSocial
       elsif STAGES_BY_VARIANT.key?(ep['variant'])
         want = STAGES_BY_VARIANT[ep['variant']]
         unless stage_orders(ep['variant'], want).include?(stages)
-          extra = ep['variant'] == 'full' ? " (or the same with 'mfa' straight after 'write' or straight after 'flip')" : ''
+          extra = ep['variant'] == 'full' ? " (or the same with 'build' straight after 'osint', and/or 'mfa' straight after 'write' or straight after 'flip')" : ''
           issues << err("variant '#{ep['variant']}' has stages #{stages.inspect}; it must be #{want.inspect}#{extra}")
         end
+      elsif !ep.key?('variant')
+        issues << err("variant is missing; it is full or defendOnly (only a check mission, stages [\"check\"], may leave it out)")
       else
         issues << err("variant '#{ep['variant']}' must be full or defendOnly")
       end
@@ -143,13 +150,16 @@ module ValidateSocial
     end
 
     # The stage lists a variant may author: its own order, and for a full episode that order with
-    # `mfa` inserted after `write` or after `flip`.
+    # `build` inserted after `osint` and/or `mfa` inserted after `write` or after `flip`.
     def self.stage_orders(variant, want)
       return [want] unless variant == 'full'
 
-      [want] + MFA_AFTER.map do |after|
-        i = want.index(after)
-        want[0..i] + ['mfa'] + want[(i + 1)..]
+      bases = [want, want.dup.insert(want.index(BUILD_AFTER) + 1, 'build')]
+      bases.flat_map do |base|
+        [base] + MFA_AFTER.map do |after|
+          i = base.index(after)
+          base[0..i] + ['mfa'] + base[(i + 1)..]
+        end
       end
     end
 
@@ -171,13 +181,23 @@ module ValidateSocial
       return [err('a full episode needs an attack block (target, siteIds, accountIds)')] unless atk.is_a?(Hash)
 
       issues = []
-      issues << err("attack.maxMessages is #{atk['maxMessages'].inspect}; it must be 1 (one send, then the flip)") unless atk['maxMessages'] == 1
+      # A call attack (E3) places a pretext call, not a mail send: no mail account, no send cap.
+      by_call = atk.key?('callId')
+      unless by_call
+        issues << err("attack.maxMessages is #{atk['maxMessages'].inspect}; it must be 1 (one send, then the flip)") unless atk['maxMessages'] == 1
+      end
+      # Unscored always: the attack beat is a demonstration or a checklist (E7's cloned-voice script
+      # is modelled as an unscored mail write). Nothing here reads a mail score, so an unscored
+      # attack needs no relaxation.
       issues << err("attack.scored is #{atk['scored'].inspect}; it must be false (the write stage is never scored)") unless atk['scored'] == false
+      issues.concat(call_and_page_checks(ctx, ep, atk))
 
       target = atk['target']
       targets = Mail.hash_list(ctx.social['phishTargets'])
       found = targets.find { |t| t['id'] == target }
-      if Mail.blank?(target) || found.nil?
+      if by_call && !atk.key?('target')
+        found = nil
+      elsif Mail.blank?(target) || found.nil?
         issues << err("attack.target '#{target}' is not a social.phishTargets id")
       else
         delay = found['emailReplyDelay']
@@ -197,9 +217,73 @@ module ValidateSocial
       Array(atk['accountIds']).each do |aid|
         issues << err("attack.accountIds '#{aid}' is not a social.mailClient.accounts id") unless account_ids.include?(aid)
       end
-      issues << err('attack.accountIds is empty; the mail client would open with no account') if Array(atk['accountIds']).empty?
+      issues << err('attack.accountIds is empty; the mail client would open with no account') if Array(atk['accountIds']).empty? && !by_call
       if atk.key?('defaultAccount') && !Array(atk['accountIds']).include?(atk['defaultAccount'])
         issues << err("attack.defaultAccount '#{atk['defaultAccount']}' is not in attack.accountIds")
+      end
+      issues
+    end
+
+    # attack.callId (a call attack) and attack.landingPageId with the `build` stage (a page attack).
+    def self.call_and_page_checks(ctx, ep, atk)
+      issues = []
+      stages = Array(ep['stages'])
+      if atk.key?('callId')
+        call_id = atk['callId']
+        ids = Mail.hash_list(ctx.social['pretextNpcs']).filter_map { |n| n['callId'] }
+        if Mail.blank?(call_id) || !ids.include?(call_id)
+          issues << err("attack.callId '#{call_id}' is not a callId in social.pretextNpcs")
+        end
+      end
+
+      page_id = atk['landingPageId']
+      if stages.include?('build') && !atk.key?('landingPageId')
+        issues << err("stages lists 'build' but attack.landingPageId is missing; the builder would open on no page")
+      end
+      if atk.key?('landingPageId')
+        issues << warn_("attack.landingPageId is set but stages has no 'build'; the page is never built") unless stages.include?('build')
+        pages = Mail.hash_list(ctx.social['landingPages'])
+        page = pages.find { |pg| pg['id'] == page_id }
+        if Mail.blank?(page_id) || page.nil?
+          issues << err("attack.landingPageId '#{page_id}' is not a social.landingPages id")
+        elsif atk.key?('target') && !(page['targets'].is_a?(Hash) && page['targets'].key?(atk['target']))
+          issues << err("attack.landingPageId '#{page_id}' has no targets entry for attack.target '#{atk['target']}'; the builder could not aim the page at them")
+        end
+      end
+      issues
+    end
+
+    # ---- strings ---------------------------------------------------------------------
+
+    FACILITATOR_KEYS = %w[brief osint build write mfa flip defend debrief check pause].freeze
+
+    def self.string_checks(ep)
+      strings = ep['strings']
+      return [] unless strings.is_a?(Hash)
+
+      issues = []
+      %w[conceptPanel voicePanel].each do |key|
+        next unless strings.key?(key)
+
+        v = strings[key]
+        text = v.is_a?(Hash) ? v['text'] : v
+        issues << err("strings.#{key} has no text; the debrief would show an empty panel") if !text.is_a?(String) || text.strip.empty?
+      end
+      if strings.key?('facilitator')
+        f = strings['facilitator']
+        if f.is_a?(Hash)
+          f.each_key do |k|
+            next if FACILITATOR_KEYS.include?(k) || k.to_s.start_with?('_')
+
+            issues << err("strings.facilitator.#{k} is not a stage id or 'pause' (#{FACILITATOR_KEYS.join(', ')})")
+          end
+          stages = Array(ep['stages'])
+          (stages & FACILITATOR_KEYS).each do |st|
+            issues << warn_("strings.facilitator has no line for stage '#{st}'; a facilitated run would show nothing for it") unless f.key?(st)
+          end if ep['facilitated'] == true
+        else
+          issues << err('strings.facilitator must be an object { <stageId>: string, pause: string }')
+        end
       end
       issues
     end
@@ -390,6 +474,10 @@ module ValidateSocial
       end
       universe = Triage.flag_universe(set, where, [])
       knows = knows_for(ctx, defend, issues)
+      # A defendOnly shell has no attack, so it may carry no pretextNpcs for the claims to resolve
+      # against. Then each claim says what it shows (claim.label) and callsFrom is not read.
+      labels_only = knows.nil?
+      labels = labels_only ? {} : value_labels(ctx)
       taken = Mail.hash_list(set['messages']).filter_map { |m| m['id'] }
       seen = []
       calls.each_with_index do |c, i|
@@ -411,7 +499,7 @@ module ValidateSocial
           issues << err("#{w}.genuine must be true or false")
           next
         end
-        issues.concat(claim_checks(c, w, knows))
+        issues.concat(claim_checks(c, w, knows, labels))
         issues.concat(call_message_checks(c, w, universe))
       end
       issues << err('defend.calls has no genuine call; refusing every caller would win. Include a genuine (ideally awkward) caller') if calls.all? { |c| c.is_a?(Hash) && c['genuine'] == false }
@@ -423,9 +511,23 @@ module ValidateSocial
       v.is_a?(Hash) ? v : {}
     end
 
+    # intelFacts provides { value => label }, the way role-swap.js reads it (object keyed by id, or array).
+    def self.value_labels(ctx)
+      raw = ctx.social['intelFacts']
+      facts = raw.is_a?(Hash) ? raw.values : Array(raw)
+      facts.each_with_object({}) do |f, out|
+        Array(f.is_a?(Hash) ? f['provides'] : nil).each do |p|
+          out[p['value']] ||= p['label'] if p.is_a?(Hash) && p['value'].is_a?(String) && p['label'].is_a?(String)
+        end
+      end
+    end
+
     # The knows hash claims resolve against: the named pretext call's, or every pretext call's.
+    # nil when a defendOnly shell has no pretextNpcs: the claims then carry their own labels.
     def self.knows_for(ctx, defend, issues)
       npcs = Mail.hash_list(ctx.social['pretextNpcs'])
+      return nil if npcs.empty? && ctx.social.dig('awarenessEpisode', 'variant') == 'defendOnly'
+
       if defend.key?('callsFrom')
         found = npcs.find { |n| n['callId'] == defend['callsFrom'] }
         if found.nil?
@@ -437,7 +539,7 @@ module ValidateSocial
       npcs.each_with_object({}) { |n, all| all.merge!(hash_of(n['knows'])) { |_, a, _| a } }
     end
 
-    def self.claim_checks(c, w, knows)
+    def self.claim_checks(c, w, knows, labels = {})
       claims = c['claims']
       return [] if claims.nil?
       return [err("#{w}.claims must be an array of { fact, value }")] unless claims.is_a?(Array)
@@ -449,6 +551,15 @@ module ValidateSocial
         out = []
         fact = cl['fact']
         out << err("#{cw}.value is missing; say what the caller claims") if Mail.blank?(cl['value'])
+        out << err("#{cw}.label must be a non-empty string") if cl.key?('label') && Mail.blank?(cl['label'])
+        if knows.nil?
+          out << err("#{cw}.fact is missing") if Mail.blank?(fact)
+          out << err("#{cw}.label is missing; this shell has no social.pretextNpcs, so nothing else tells the card what '#{cl['value']}' reads as") if Mail.blank?(cl['label'])
+          next out
+        end
+        if Mail.blank?(cl['label']) && !Mail.blank?(cl['value']) && !labels.key?(cl['value'].to_s)
+          out << warn_("#{cw}: value '#{cl['value']}' has no label (no claim.label, and no social.intelFacts provides carries it); the card would show the raw id")
+        end
         if Mail.blank?(fact)
           out << err("#{cw}.fact is missing")
         elsif !knows.key?(fact)
@@ -476,16 +587,56 @@ module ValidateSocial
       issues
     end
 
+    # The state global is an object that starts empty. The records global is written as an array by
+    # the store and older shells declare it as an object, so it may start as [] or {}.
     def self.state_global_checks(ctx, id)
       ["episode_#{id}_state", 'se_awareness_records'].filter_map do |name|
         v = ctx.all_globals[name]
-        next if v.is_a?(Hash) && v.empty?
+        empty_ok = (v.is_a?(Hash) && v.empty?) || (name == 'se_awareness_records' && v.is_a?(Array) && v.empty?)
+        next if empty_ok
 
+        want = name == 'se_awareness_records' ? '[] (or {}, which the reader also takes)' : '{}'
         if ctx.all_globals.key?(name)
-          err("global '#{name}' is declared as #{v.inspect}; it must be {} (an object that starts empty)")
+          err("global '#{name}' is declared as #{v.inspect}; it must be #{want} (it starts empty)")
         else
-          err("global '#{name}' is not declared in globalVariables; declare it as {} (an undeclared name is not saved)")
+          err("global '#{name}' is not declared in globalVariables; declare it as #{want} (an undeclared name is not saved)")
         end
+      end
+    end
+
+    # ---- check missions: the set binds to defend.stage (S5.2) ----------------------
+
+    def self.check_mission_checks(ctx, ep, set)
+      issues = []
+      stage = ep.dig('defend', 'stage')
+      if set.key?('stage') && CHECK_STAGES.include?(stage) && set['stage'] != stage
+        issues << err("defend set '#{set['id']}' has stage #{set['stage'].inspect} but defend.stage is #{stage.inspect}; a check mission runs its set at the one stage it names")
+      end
+      if set.key?('pairedWith')
+        partner = Mail.hash_list(ctx.social['triageSets']).find { |t| t['id'] == set['pairedWith'] }
+        if partner
+          issues << err("defend set '#{set['id']}' has pairedWith '#{set['pairedWith']}', which is in the same game; a check mission holds one form, and its partner form is a separate mission")
+        end
+      end
+      issues.concat(pre_redeclared(ctx)) if stage == 'post'
+      issues
+    end
+
+    # A pre export the post check imports must not also be declared in its own globalVariables
+    # (carry-over rejects the collision; this names the cause). Reads the original declaration from
+    # ctx.raw, because prepare_carry_over_globals has already merged the imports into globalVariables.
+    def self.pre_redeclared(ctx)
+      return [] if ctx.raw.nil?
+
+      declared = begin
+        g = JSON.parse(ctx.raw)['globalVariables']
+        g.is_a?(Hash) ? g.keys : []
+      rescue JSON::ParserError
+        []
+      end
+      imported = Array(ctx.imports || ctx.json['importGlobals']).select { |e| e.is_a?(Hash) }.filter_map { |e| ValidateSocial.import_name(e) }
+      (declared & imported).map do |n|
+        err("the post check declares '#{n}' in globalVariables and also imports it; the import declares it, so leave the declaration out")
       end
     end
 

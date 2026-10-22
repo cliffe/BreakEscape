@@ -46,7 +46,7 @@ const call = (id, genuine, extra = {}) => ({
   genuine,
   callerId: '+44 20 7946 0000',
   transcript: [{ who: 'Caller', text: 'I am locked out, please reset it now.' }],
-  claims: [{ fact: 'employee_id', value: 'e4417' }],
+  claims: [{ fact: 'employee_id', value: 'e4417', label: 'E4417' }],
   ...(genuine
     ? { notes: { whyFine: { default: 'The caller took the callback.' } } }
     : { tells: ['vish_callback_pressure'], notes: { perFlagNote: { vish_callback_pressure: 'Would not take a callback.' } } }),
@@ -209,20 +209,20 @@ test('defend.calls claims: the fact must be a knows id of the pretext call', { s
   expectIn(lint(j), /claims must be an array of \{ fact, value \}/);
   // a wrong value on an impostor is the point; on a genuine caller it is a warning, and accept counts
   j = e3();
-  ep(j).defend.calls[0].claims = [{ fact: 'employee_id', value: 'e0000' }];
+  ep(j).defend.calls[0].claims = [{ fact: 'employee_id', value: 'e0000', label: 'E0000' }];
   assert.deepEqual(lint(j), []);
   j = e3();
-  ep(j).defend.calls[2].claims = [{ fact: 'employee_id', value: 'e0000' }];
+  ep(j).defend.calls[2].claims = [{ fact: 'employee_id', value: 'e0000', label: 'E0000' }];
   expectIn(lint(j), /⚠️.*a genuine caller claims 'e0000' for 'employee_id'/);
   j = e3();
-  ep(j).defend.calls[2].claims = [{ fact: 'manager', value: 'adaeze' }];
+  ep(j).defend.calls[2].claims = [{ fact: 'manager', value: 'adaeze', label: 'Adaeze' }];
   assert.deepEqual(lint(j), []);
 });
 
 test('defend.callsFrom names the pretext call claims resolve against', { skip }, () => {
   let j = e3();
   j.social.pretextNpcs.push({ callId: 'other', character: 'x', knows: { shoe_size: { value: '9', grade: 'lesser' } } });
-  ep(j).defend.calls[0].claims = [{ fact: 'shoe_size', value: '9' }];
+  ep(j).defend.calls[0].claims = [{ fact: 'shoe_size', value: '9', label: 'Nine' }];
   assert.deepEqual(lint(j), []);
   ep(j).defend.callsFrom = 'helpdesk_call';
   expectIn(lint(j), /claims\[0\]\.fact 'shoe_size' is not a knows id/);

@@ -1711,7 +1711,7 @@
     "socialAwarenessEpisode": {
       "type": "object",
       "description": "An awareness episode (design 11 S5.1, PHASE7_PACKETS S2.1; the episode runner reads it). Linted by scripts/validate_social/awareness.rb. A defend-only episode uses id '<full id>_defend'. A check mission uses stages ['check'] and defend.stage 'pre' or 'post'.",
-      "required": ["id", "variant", "stages", "defend"],
+      "required": ["id", "stages", "defend"],
       "properties": {
         "id": {"type": "string"},
         "role": {"type": "string"},
@@ -1727,12 +1727,12 @@
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },
-        "variant": {"type": "string", "enum": ["full", "defendOnly"]},
+        "variant": {"type": "string", "enum": ["full", "defendOnly"], "description": "Optional on a check mission (stages [\"check\"]); required for the other two kinds (awareness.rb says so)"},
         "durationTargetMin": {"type": "number", "minimum": 0},
         "scopeNote": {"type": "string"},
         "stages": {
           "type": "array",
-          "items": {"type": "string", "enum": ["brief", "osint", "write", "flip", "defend", "debrief", "check", "mfa"]}
+          "items": {"type": "string", "enum": ["brief", "osint", "build", "write", "flip", "defend", "debrief", "check", "mfa"]}
         },
         "conclusionTaskId": {"type": "string", "description": "The task the host NPC's mapping completes; passed to the triage starter"},
         "attack": {
@@ -1743,6 +1743,8 @@
             "siteIds": {"type": "array", "items": {"type": "string"}},
             "accountIds": {"type": "array", "items": {"type": "string"}},
             "defaultAccount": {"type": "string"},
+            "landingPageId": {"type": "string", "description": "A social.landingPages id whose targets lists attack.target. Launched by the 'build' stage (osint, build, write)"},
+            "callId": {"type": "string", "description": "A social.pretextNpcs callId. The write stage then places this pretext call instead of sending mail, so accountIds and defaultAccount are not needed"},
             "layout": {"type": "string", "enum": ["phone"], "description": "Passed to the mail client: puts its narrow layout in a phone frame on any viewport"},
             "showRedFlagMeter": {"type": "boolean"},
             "maxMessages": {"type": "integer", "minimum": 1},
@@ -1773,7 +1775,11 @@
                     "items": {
                       "type": "object",
                       "required": ["fact", "value"],
-                      "properties": {"fact": {"type": "string"}, "value": {"type": "string"}},
+                      "properties": {
+                        "fact": {"type": "string"},
+                        "value": {"type": "string"},
+                        "label": {"type": "string", "description": "What the card shows for this claim. Wins over the intelFacts provides label. Required in a defendOnly shell that has no pretextNpcs"}
+                      },
                       "patternProperties": {"^_": {}},
                       "additionalProperties": false
                     }
@@ -1811,7 +1817,37 @@
             "flipNoSend": {"type": "string"},
             "noBlameLine": {"type": "string"},
             "mondayCard": {"type": "string"},
-            "defendOnly": {"type": "string"}
+            "defendOnly": {"type": "string"},
+            "defendIntro": {"type": "string", "description": "Replaces the runner's fixed defend-stage intro, which talks about an inbox (wrong for a page or call set)"},
+            "flipMissed": {"type": "string", "description": "The flip's line after a send that did not land"},
+            "flipPageIntro": {"type": "string", "description": "The flip's intro when it shows a built landing page"},
+            "flipCallIntro": {"type": "string", "description": "The flip's intro when it shows a pretext call"},
+            "continue": {"type": "string", "description": "The label of the Continue button"},
+            "facilitator": {
+              "type": "object",
+              "description": "Facilitator notes: one string per stage id (brief, osint, build, write, mfa, flip, defend, debrief, check) plus 'pause'",
+              "properties": {
+                "brief": {"type": "string"}, "osint": {"type": "string"}, "build": {"type": "string"},
+                "write": {"type": "string"}, "mfa": {"type": "string"}, "flip": {"type": "string"},
+                "defend": {"type": "string"}, "debrief": {"type": "string"}, "check": {"type": "string"}, "pause": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "conceptPanel": {
+              "description": "A short concept panel for the debrief (E2: macros). A string, or { heading, text }",
+              "oneOf": [
+                {"type": "string"},
+                {"type": "object", "required": ["text"], "properties": {"heading": {"type": "string"}, "text": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}
+              ]
+            },
+            "voicePanel": {
+              "description": "A short debrief panel on copied voices (E4, E7: concept level only). A string, or { heading, text }",
+              "oneOf": [
+                {"type": "string"},
+                {"type": "object", "required": ["text"], "properties": {"heading": {"type": "string"}, "text": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}
+              ]
+            }
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false

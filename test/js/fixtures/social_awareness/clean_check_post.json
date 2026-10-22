@@ -41,15 +41,11 @@
   ],
   "globalVariables": {
     "episode_c_stub_state": {},
-    "se_awareness_records": {},
+    "se_awareness_records": [],
     "triage_post_percent": 0,
     "triage_post_reportRate": 0,
     "triage_post_done": false,
-    "triage_post_pass": false,
-    "triage_pre_percent": 0,
-    "triage_pre_reportRate": 0,
-    "triage_pre_done": false,
-    "pre_check_completed": false
+    "triage_post_pass": false
   },
   "social": {
     "triageSets": [
