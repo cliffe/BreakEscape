@@ -354,3 +354,8 @@ the orchestrator passes it to that wave's owner.
   - The optional "Send another push" button counts towards `sent`.
 - **P7-G:** `sentIds` and its new test fields appear only in episode mode (`maxSends`, a phone layout, or carried ids).
 - **P7-L:** its schema fields went to P7-N. The Report-button animation was left for P7-I.
+- **P7-F, for P7-K and P7-O:**
+  - **Target and sender:** the target `supplier_contact` is the recipient Adaeze Okafor, the finance manager. The spoofed sender is Derek Mason, Harlow.
+  - **Globals the shell must declare:** `se_intel_brightwell_finance_manager`, `_harlow_supplier_contact`, `_brightwell_open_invoice`, `_brightwell_quarter_end`, `se_osint_state`, `phish_supplier_contact_landed` and `_attempts`. Something must read `_landed`.
+  - **New slot type:** `reference`.
+  - **Tells:** a good send stores `[senderTrust, urgencyCalibrated]`. The channel tells (`changed_bank_details`, `secrecy_or_bypass`) are on the defend side only.
