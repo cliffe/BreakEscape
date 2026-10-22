@@ -2041,7 +2041,7 @@ boardroom_pin = "0417"
               "eventPattern": "lockpick_used_in_view",
               "targetKnot": "on_cabinet_picked",
               "conversationMode": "person-chat",
-              "condition": "!globalVars.accused_wrong_suspect",
+              "condition": "!globalVars.accused_wrong_suspect && data.lockable.scenarioData.id === 'it_filing_cabinet'",
               "onceOnly": true
             }
           ],
