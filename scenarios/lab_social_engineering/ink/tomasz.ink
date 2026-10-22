@@ -4,8 +4,11 @@
 // thirties, dry and practical, no budget, glad of the test. He is the no-blame
 // voice at the close. He sets the triage exercise, then gives the closing debrief
 // once triage_pass and profile_done are both set (PLAN §5 stage 7 and "Closing
-// debrief"). The debrief ends with #complete_task:closing_debrief and
-// #exit_conversation, which completes the mission-conclusion aim.
+// debrief"). "Debrief me" first goes through debrief_confirm, the point-of-no-
+// return warning. The debrief ends with #set_global:engagement_closed,
+// #complete_task:closing_debrief and #exit_conversation, which completes the
+// mission-conclusion aim; the scenario's music event on conversation_closed:tomasz
+// (guarded on engagement_closed) then rolls the credits.
 //
 // Branches use fixed strings only (no printed variables), because Tomasz is voiced
 // (PLAN §6). The player is never named aloud. Person lines stay under 30 words.
@@ -57,7 +60,7 @@ Tomasz: Tomasz. I run security here, me and half a person's budget.
     Tomasz: Come back when you've finished the exercise. Both halves.
 }
 + {triage_pass and profile_done} [Debrief me.]
-    -> debrief
+    -> debrief_confirm
 + {triage_done and not explained_own} [Two of those emails were mine.]
     -> own_mail
 + {not explained_dev} [Dev on the service desk — what's the gap?]
@@ -85,6 +88,24 @@ Tomasz: Dev's good at his job. The policy let him hand that out, so the policy's
 Tomasz: We're writing Dev a script, not a warning. Call back on a number we hold.
 ~ quiet = true
 -> hub
+
+// Point of no return (user rule: warn before the ending, offer a way back).
+// The debrief ends in the credits, so the player gets one chance to go and
+// finish anything first. "Not yet" returns to the hub; the debrief is still
+// there whenever they come back.
+=== debrief_confirm ===
+Tomasz: Once we start, that's the engagement closed. Report goes to Gareth and nobody sends anything else.
+{ not fairbairn_payoff_heard:
+    Tomasz: Gareth still wants a word, by the way. Anything left to do, do it first.
+- else:
+    Tomasz: Anything left to do, do it first.
+}
++ [Go ahead. Close it out.]
+    -> debrief
++ [Not yet, I want to finish something.]
+    Tomasz: Fine. I'll be here.
+    ~ quiet = true
+    -> hub
 
 === debrief ===
 Tomasz: Here's what it showed. An open inbox trusts anyone, a From line is just a label, and a padlock only tells you nobody's listening in.

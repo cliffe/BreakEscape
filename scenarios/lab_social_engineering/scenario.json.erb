@@ -6,6 +6,7 @@
   "version": "1.0",
   "show_scenario_brief": "on_resume",
   "disableAttacks": true,
+  "creditsTheme": "cyber",
   "startRoom": "engagement_office",
 
   "gameClock": { "start": "Mon 08:00" },
@@ -121,13 +122,11 @@
       "unlockCondition": { "aimCompleted": "report" },
       "missionConclusion": true,
       "concludeRequires": {},
-      "conclusionScreen": {
-        "type": "end_screen",
-        "title": "ENGAGEMENT CLOSED",
-        "body": "You phished Ledgerwell, then turned round and defended it. The report names no one, and the fixes are written. Gareth keeps his staff, and now he knows where the gaps are.",
-        "buttonText": "Return to Missions",
-        "outcome": "success"
-      },
+      <%# Shipped-mission ending (m02-m10): Tomasz warns first (debrief_confirm),
+          the debrief's last line completes closing_debrief, and the credits roll
+          from the music event on conversation_closed:tomasz. bond_visualiser here
+          only re-opens the credits screen on a reload after the ending. %>
+      "conclusionScreen": { "type": "bond_visualiser" },
       "tasks": [
         { "taskId": "enter_blue_team", "title": "Go into the Blue Team Room", "type": "enter_room", "targetRoom": "blue_team_room", "status": "active" },
         { "taskId": "triage_passed", "title": "Pass the inbox triage", "type": "manual", "status": "active" },
@@ -136,6 +135,48 @@
       ]
     }
   ],
+
+  <%# The ending. Tomasz's chat closes many times, so the credits wait for
+      engagement_closed, set on the debrief's last line. The closing card keeps
+      the sentiment of the old ENGAGEMENT CLOSED end card. %>
+  "music": {
+    "events": [
+      {
+        "trigger": "conversation_closed:tomasz",
+        "condition": "globalVars.engagement_closed === true",
+        "playlist": "victory",
+        "track": "Ghost in the Wire",
+        "autoStop": true,
+        "disableClose": true,
+        "fade": true,
+        "statusText": "CLOSED",
+        "closingCard": {
+          "lines": [
+            "You phished Ledgerwell, then turned round and defended it.",
+            "The report names no one, and the fixes are written.",
+            "Gareth keeps his staff, and now he knows where the gaps are."
+          ]
+        },
+        "credits": [
+          { "text": "ENGAGEMENT CLOSED", "style": "title" },
+          { "text": "LEDGERWELL LTD — PHISHING AND SOCIAL ENGINEERING TEST", "style": "subtitle" },
+          { "text": "" },
+          { "section": "THE ENGAGEMENT", "lines": [
+            { "text": "Scope: signed by Gareth Fairbairn before anything was sent" },
+            { "text": "Phishing: Careers, Melanie Pierce and Sofia Lord all acted on a message" },
+            { "text": "Service desk: Dev reported the first call; a second call still got the date", "condition": "globalVars.dev_reported && globalVars.pretext_service_desk_call_outcome === 'got_it'" },
+            { "text": "Service desk: Dev reported the call", "condition": "globalVars.dev_reported && globalVars.pretext_service_desk_call_outcome !== 'got_it'" },
+            { "text": "Service desk: Dev gave out what Sofia's email needed", "condition": "!globalVars.dev_reported" },
+            { "text": "Report: filed, with no names in it" }
+          ] },
+          { "section": "THE DEFENCE", "lines": [
+            { "text": "Inbox triage: passed" },
+            { "text": "Defender profile: a fix chosen for each fact" }
+          ] }
+        ]
+      }
+    ]
+  },
 
   "globalVariables": {
     "briefing_heard": false,
