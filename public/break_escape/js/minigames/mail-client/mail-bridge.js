@@ -500,6 +500,12 @@ function linkRecordOf(message) {
 
 function buildRecord({ message, result, account, social, labels, subjectText, target, accountId }) {
     const header = resolveHeaderDisplay(message, account, labels);
+    // The unscored free-text flavour (01 §2 Body, 00 §13) is shown in the sent mail, so it is
+    // appended to the stored body. The judge never reads the body, and the mail runner writes
+    // no ink variable from it, so the templated slots alone still decide the result.
+    const templatedBody = renderBodyText(message, social.templates, account, labels);
+    const freeText = isStr(message.freeText) && message.freeText.trim().length ? message.freeText : '';
+    const body = freeText ? (templatedBody ? `${templatedBody}\n\n${freeText}` : freeText) : templatedBody;
     const record = {
         id: null,
         thread: target ? threadKey(target, accountId) : null,
@@ -511,7 +517,7 @@ function buildRecord({ message, result, account, social, labels, subjectText, ta
         subject: subjectText || '',
         templates: { ...(message.templates || {}) },
         slots: { ...(message.slots || {}) },
-        body: renderBodyText(message, social.templates, account, labels),
+        body,
         attachment: isStr(message.attachment) ? { kitId: message.attachment, kind: message.attachmentKind || null } : null,
         link: linkRecordOf(message),
         landed: result ? result.landed : null,

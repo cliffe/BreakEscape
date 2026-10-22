@@ -157,6 +157,16 @@ module BreakEscape
       refute mail.dig('drafts', 'guest').key?('nope')
     end
 
+    test 'freeText is kept in the draft whitelist so an unsent free-text flavour draft restores (01 §2 Body)' do
+      @game.merge_mail_state!('drafts' => { 'guest' => {
+        'to' => 'careers@ledgerwell.example', 'subject' => 's_hello',
+        'templates' => { 'pretext' => 'pretext_apply' }, 'slots' => {},
+        'freeText' => 'A line in my own words.', 'nope' => 'x'
+      } })
+      assert_equal 'A line in my own words.', mail.dig('drafts', 'guest', 'freeText')
+      refute mail.dig('drafts', 'guest').key?('nope')
+    end
+
     test 'bad records are dropped: a message that is not an object, a job with no id or an unknown kind' do
       @game.merge_mail_state!(
         'mailboxes.guest.bad' => 'string',

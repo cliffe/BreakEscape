@@ -2462,7 +2462,7 @@ The mechanics write globals; the characters who comment on them are ordinary ink
 What runs:
 
 - **For every scenario**: aim `unlockCondition` keys (anything other than `aimCompleted`, `aimsCompleted`, `globalVariable` and `equals` leaves the aim unlocked from the start); object ids unique across rooms; a warning when a locked object's id or name is matched first by another object; the `lockedHint` checks. They print for any scenario but fail a run only for a social one under the flag.
-- **With a `social` key**: the closed schema; declared and not-imported globals; an ink fallback for every `EXTERNAL` in a social story; sprites for the social object types; the character lints above (`syncedVars` declared, the influence `VAR` in every channel story with a matching default, `influence.start` equal to the influence global's declared value (and to the `VAR` default when no global is declared), thresholds ordered, `min` below `max`, `clearOnRearm` only on booleans, a lockout expiry or `alternativeRoute`, the `recoverTo` rule, `influenceDisplay` keys); then one file per area under `scripts/validate_social/`: `mail.rb`, `osint.rb`, `board.rb`, `triage.rb`, `pretext.rb`, `landing.rb`, `lab.rb` and `options.rb` (`hintsByFactor`, `labelBy`, `checklistTiming`, `mirrorToBehavior`).
+- **With a `social` key**: the closed schema; declared and not-imported globals; an ink fallback for every `EXTERNAL` in a social story; sprites for the social object types; the character lints above (`syncedVars` declared, the influence `VAR` in every channel story with a matching default, `influence.start` equal to the influence global's declared value (and to the `VAR` default when no global is declared), thresholds ordered, `min` below `max`, `clearOnRearm` only on booleans, a lockout expiry or `alternativeRoute`, the `recoverTo` rule, `influenceDisplay` keys); then one file per area under `scripts/validate_social/`: `mail.rb`, `osint.rb`, `board.rb`, `triage.rb`, `pretext.rb`, `landing.rb`, `lab.rb` and `options.rb` (`hintsByFactor`, `labelBy`, `checklistTiming`, `bodyMode`/`freeTextFlavour`, `mirrorToBehavior`).
 
 Both social scenarios pass with exit 0 today. Fix every `❌`; read every `⚠️`.
 
@@ -2472,8 +2472,6 @@ The closed schema accepts these keys so existing data stays valid, but no engine
 
 | Key | Where | Status |
 |---|---|---|
-| `mailClient.bodyMode` | `01` | Reserved for the free-text body mode in design `01`. The lab and slice author `"templates"`, which is the only behaviour |
-| `mailClient.freeTextFlavour` | `01` | Reserved with `bodyMode`. Free text, when built, stays unscored and unread (`00` §13) |
 | `triageSets[].chipStyle: "character"` | `05` | Accepted, drawn as `plain` |
 | `people[].kind` | `00` §1 | Not read. A note for authors (`cast` or `sender`) |
 | `characters.<id>.syncedVars`, `alternativeRoute` | `00` §8 | Read by the validator only (see [Influence](#influence-socialcharacters-and-socialinfluencedisplay)) |
@@ -2522,7 +2520,8 @@ The in-game email app (design `01`, `00` §10a). The player composes and sends m
 | `payloadKit[]` | `{ id, kind, label, landingPageId? }` | The attachments and links the composer can attach. |
 | `checklistTiming` | `"onSend"` \| `"withReply"` | When the send checklist appears (default `onSend`). Linted by `validate_social/options.rb`. |
 | `showRedFlagMeter` | boolean | Show the per-send red-flag meter. |
-| `bodyMode`, `freeTextFlavour` | — | Documented in design `01`; no engine code reads them yet. |
+| `bodyMode` | `"templates"` \| `"freeText"` | Body composition (default `templates`). `freeText` adds one unscored free-text box under the template parts; the templated slots still decide the result. Linted by `validate_social/options.rb`. |
+| `freeTextFlavour` | boolean | Alternate switch for the free-text box, equivalent to `bodyMode: "freeText"`. The box shows when either is set. Its text is shown in the sent message but never judged and never read by the ink (`00` §13). |
 
 **`accounts[]`** — each is a sending identity:
 
@@ -2573,7 +2572,7 @@ The sprite `assets/objects/mail_terminal.png` must exist (a missing one is a soc
 
 ### The composer templates (`social.templates`)
 
-The composer builds an email body from four named fragments — a `from` line, a `greeting`, a `pretext` and an `ask` — rather than free text. `social.templates` is a map keyed by template id (an id starting with `_` is ignored by the schema). Each phishing target's `templateSets` lists which template ids are offered for each part, so different targets expose different wording.
+The composer builds an email body from four named fragments — a `from` line, a `greeting`, a `pretext` and an `ask`. These scored parts always decide the send. `social.templates` is a map keyed by template id (an id starting with `_` is ignored by the schema). Each phishing target's `templateSets` lists which template ids are offered for each part, so different targets expose different wording. When `mailClient.bodyMode` is `"freeText"` (or `freeTextFlavour` is true) the composer also shows one free-text box; its text is shown in the sent mail but is never judged and never read by the ink, so it is flavour on top of the templated parts.
 
 | Field | Type | Notes |
 |---|---|---|

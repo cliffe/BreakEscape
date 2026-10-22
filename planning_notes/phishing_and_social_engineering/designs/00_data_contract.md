@@ -2074,9 +2074,9 @@ general mechanics" and "Social-engineering: attack mechanics".
 | Addition | Contract | Source |
 |---|---|---|
 | Closed `social` schema | Every block in `scripts/scenario-schema.json` lists the keys the engine or a lint reads; any other key fails the schema, except keys starting with `_` (notes). Schema errors under `/social` are reported as social lint errors, so they fail the run only under `--strict-social` | M3, `316dee74`; `validate_social.rb` `split_schema_errors` |
-| Late-option lints | `hintsByFactor`, `labelBy`, `checklistTiming`, `mirrorToBehavior` and `lockedHint` each have a lint (`scripts/validate_social/options.rb`); `lockedHint` is linted in every scenario | M3 |
+| Late-option lints | `hintsByFactor`, `labelBy`, `checklistTiming`, `bodyMode`/`freeTextFlavour`, `mirrorToBehavior` and `lockedHint` each have a lint (`scripts/validate_social/options.rb`); `lockedHint` is linted in every scenario | M3; `bodyMode`/`freeTextFlavour` added 2026-10-22 with the free-text body mode |
 | Object name collision | A warning when a locked object's lookup key (`id`, else `name`) is matched first by another object's `id` or `name`; the unlock endpoint takes the first hit | M7, `e99068bf` |
-| Reserved keys | `mailClient.bodyMode`, `mailClient.freeTextFlavour` and `people[].kind` are accepted but read by no code (`engagement.defender.indicators` is built, 2026-10-22); pretext `tuning.feedbackMode`, `tuning.showTechniqueNames` and `tells.bands` are read by the validator only. `engagement.client` left the schema (2026-10-22; the lab keeps it as the note `_client`). The non-email triage kinds are no longer reserved: since Phase 7 each is drawn in its own style (`triage-kinds.js`) | M4a review; README "Reserved keys" |
+| Reserved keys | `people[].kind` is accepted but read by no code (`mailClient.bodyMode` and `mailClient.freeTextFlavour` are built, 2026-10-22, the free-text body mode; `engagement.defender.indicators` is built, 2026-10-22); pretext `tuning.feedbackMode`, `tuning.showTechniqueNames` and `tells.bands` are read by the validator only. `engagement.client` left the schema (2026-10-22; the lab keeps it as the note `_client`). The non-email triage kinds are no longer reserved: since Phase 7 each is drawn in its own style (`triage-kinds.js`) | M4a review; README "Reserved keys" |
 
 **Doors and objects (engine-wide, opt-in)**
 

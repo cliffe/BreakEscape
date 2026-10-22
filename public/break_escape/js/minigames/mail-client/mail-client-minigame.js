@@ -666,6 +666,11 @@ export class MailClientMinigame extends SocialOverlayScene {
             inReplyTo: extra.inReplyTo || '',
             presetContactId: extra.presetContactId || null,
             meterDefault: this.config.showRedFlagMeter === true,
+            // Free-text flavour body (01 §2, 00 §13): the scenario turns the extra box on
+            // with mailClient.bodyMode "freeText" or freeTextFlavour; the composer keeps it
+            // unscored and unread.
+            bodyMode: this.config.bodyMode,
+            freeTextFlavour: this.config.freeTextFlavour === true,
             evaluate: (message) => this._liveJudge(message),
             pushLayer: (close, name) => this.pushLayer(close, name),
             onSend: (message, composer) => this._handleComposeSend(message, composer),

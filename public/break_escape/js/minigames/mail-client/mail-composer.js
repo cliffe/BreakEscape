@@ -182,6 +182,14 @@ export class MailComposer {
         // evaluateMessage); absent, the composer judges from phish-rules directly.
         this.meterDefault = opts.meterDefault === true;
         this.evaluate = typeof opts.evaluate === 'function' ? opts.evaluate : null;
+        // Free-text flavour body (01 §2 "Body", §N "Free-text flavour"; 00 §10, §13): when
+        // the scenario turns it on (mailClient.bodyMode "freeText" or freeTextFlavour true),
+        // the composer shows one extra box under the template parts. Whatever the player types
+        // rides on the message as `freeText` and is shown in the sent mail, but it is never
+        // judged (phish-rules reads only the template slots) and never reaches the ink (the
+        // mail runner writes no variable from it), so the templated parts still decide the send.
+        this.freeTextEnabled = opts.bodyMode === 'freeText' || opts.freeTextFlavour === true;
+        this.freeText = '';
 
         this.heldIds = heldFactIds(this.intelFacts, this.globals);
         this.entries = heldProvides(this.heldIds, this.intelFacts);
@@ -325,6 +333,16 @@ export class MailComposer {
         this.attachment = isStr(kitId) ? kitId : null;
         this._emitChange();
         this.render();
+    }
+
+    /**
+     * Update the unscored free-text flavour (01 §2 Body). It changes no gate, no judged
+     * factor and no meter, so it does not re-render (that would drop the caret mid-type);
+     * it only updates state and saves the draft.
+     */
+    setFreeText(text) {
+        this.freeText = typeof text === 'string' ? text : '';
+        this._emitChange();
     }
 
     /** The landing-page definition for a `link` kit, or null. */
@@ -490,6 +508,9 @@ export class MailComposer {
             link: linkKit ? linkKit.id : null,
             linkText: linkPage && isStr(linkPage.linkText) ? linkPage.linkText : null,
             linkInfo: null,
+            // Unscored flavour (01 §2 Body, 00 §13): carried so the sent mail shows it, read by
+            // neither the judge nor the ink. Only present when the scenario enabled the box.
+            freeText: this.freeTextEnabled && isStr(this.freeText) ? this.freeText : null,
             // A judged follow-up carries the id of the reply it answers (00 §10,
             // email_in_reply_to); empty for a fresh crafted message.
             inReplyTo: isStr(this.opts.inReplyTo) ? this.opts.inReplyTo : ''
@@ -548,6 +569,7 @@ export class MailComposer {
         if (isObject(draft.slots)) this.slots = { ...draft.slots };
         if (isStr(draft.attachment)) this.attachment = draft.attachment;
         if (isStr(draft.link)) this.link = draft.link;
+        if (isStr(draft.freeText)) this.freeText = draft.freeText;
         if (isStr(draft.contactId)) this.contactId = draft.contactId;
         // A draft saved before contactId was persisted (or a non-target one)
         // still names its recipient by address: recover it from `to` (D3).
@@ -569,7 +591,8 @@ export class MailComposer {
             templates: { ...this.choice },
             slots: { ...this.slots },
             attachment: this.attachment,
-            link: this.link
+            link: this.link,
+            freeText: this.freeTextEnabled && isStr(this.freeText) ? this.freeText : ''
         };
     }
 
@@ -614,6 +637,7 @@ export class MailComposer {
             this._renderFrom();
             this._renderSubject();
             this._renderBody();
+            this._renderFreeText();
             this._renderAttach();
             this._renderLink();
             this._renderMeter();
@@ -823,6 +847,33 @@ export class MailComposer {
             wrap.appendChild(field);
         }
         this.root.appendChild(wrap);
+    }
+
+    /**
+     * The unscored free-text flavour box (01 §2 Body). Shown only when the scenario enabled it.
+     * A label and help line say plainly that it is not checked, so the player never mistakes it
+     * for a judged part. Typing updates state without a re-render, so the caret stays put.
+     */
+    _renderFreeText() {
+        if (!this.freeTextEnabled) return;
+        const row = el('div', 'mail-compose-row mail-compose-freetext-row');
+        const id = 'mail-compose-freetext';
+        const label = el('label', 'mail-compose-label', 'Your own words');
+        label.htmlFor = id;
+        const field = el('div', 'mail-compose-freetext-field');
+        const area = el('textarea', 'mail-compose-freetext');
+        area.id = id;
+        area.rows = 3;
+        area.placeholder = 'Add anything in your own words (optional).';
+        area.value = isStr(this.freeText) ? this.freeText : '';
+        const help = el('p', 'mail-compose-freetext-help',
+            'Flavour only. This is shown in the message but is not checked, and the recipient never reads it to decide.');
+        help.id = 'mail-compose-freetext-help';
+        area.setAttribute('aria-describedby', help.id);
+        area.addEventListener('input', () => this.setFreeText(area.value));
+        field.append(area, help);
+        row.append(label, field);
+        this.root.appendChild(row);
     }
 
     _renderAttach() {
@@ -1044,6 +1095,8 @@ export class MailComposer {
             slots: { ...this.slots },
             attachment: this.attachment,
             link: this.link,
+            freeTextEnabled: this.freeTextEnabled,
+            freeText: this.freeTextEnabled && isStr(this.freeText) ? this.freeText : '',
             linkKits: this.linkKitsForTarget().map((k) => ({ id: k.id, built: !!(this._recordOf(k) && this._recordOf(k).built === true) })),
             blanks,
             picker,

@@ -2076,7 +2076,7 @@ module BreakEscape
     ].freeze
     MAIL_JOB_KINDS = %w[ink text seed].freeze
     MAIL_JOB_STRING_KEYS = %w[character npcId accountId msgId knot targetId messageId mailbox global outcomeGlobal].freeze
-    MAIL_DRAFT_KEYS = %w[to subject templates slots attachment link targetId headerFrom contactId].freeze
+    MAIL_DRAFT_KEYS = %w[to subject templates slots attachment link targetId headerFrom contactId freeText].freeze
     MAIL_METRIC_COUNTS = %w[sent failed landed].freeze
 
     # Merge the mail client's keyed section (00 §10a "Persistence"). Keys:

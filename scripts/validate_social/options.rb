@@ -27,6 +27,7 @@ module ValidateSocial
     HINT_VARIANTS_OTHER = %w[spoof forced].freeze
     LABEL_BY = %w[name role].freeze
     CHECKLIST_TIMINGS = %w[onSend withReply].freeze
+    BODY_MODES = %w[templates freeText].freeze
 
     def self.check(ctx)
       return [] unless ctx.social.is_a?(Hash)
@@ -35,6 +36,7 @@ module ValidateSocial
       issues.concat(hints_by_factor(ctx))
       issues.concat(label_by(ctx))
       issues.concat(checklist_timing(ctx))
+      issues.concat(body_mode(ctx))
       issues.concat(mirror_to_behavior(ctx))
       issues
     end
@@ -171,6 +173,38 @@ module ValidateSocial
 
       [err("social.mailClient.checklistTiming is #{v.inspect}; it must be \"onSend\" (the default) or \"withReply\". " \
            'Any other value means the send checklist is never shown')]
+    end
+
+    # ---- bodyMode / freeTextFlavour --------------------------------------------
+
+    # The composer shows the unscored free-text box when bodyMode is "freeText" or
+    # freeTextFlavour is true (mail-composer.js freeTextEnabled). Either way the box is
+    # flavour: never judged, never read by the ink (00 §13). The lint only guards the two
+    # keys; the "no ink reads it" rule holds structurally, since no scenario field routes
+    # the free text anywhere (the engine writes no global or ink VAR from it).
+    def self.body_mode(ctx)
+      mc = ctx.social['mailClient']
+      return [] unless mc.is_a?(Hash)
+
+      issues = []
+      if mc.key?('bodyMode')
+        v = mc['bodyMode']
+        unless BODY_MODES.include?(v)
+          issues << err("social.mailClient.bodyMode is #{v.inspect}; it must be \"templates\" (the default, scored template parts only) " \
+                        'or "freeText" (the template parts plus an unscored free-text box). Any other value is read as "templates"')
+        end
+      end
+      if mc.key?('freeTextFlavour')
+        f = mc['freeTextFlavour']
+        unless f == true || f == false
+          issues << err("social.mailClient.freeTextFlavour must be true or false (got #{type_name(f)}); the composer treats anything but true as off")
+        end
+        if f == true && mc['bodyMode'] == 'templates'
+          issues << warn_('social.mailClient.freeTextFlavour is true but bodyMode is "templates"; the free-text box still shows. ' \
+                          'Set bodyMode to "freeText" (or drop it) so the two keys agree')
+        end
+      end
+      issues
     end
 
     # ---- mirrorToBehavior ------------------------------------------------------

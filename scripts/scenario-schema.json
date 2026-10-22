@@ -383,8 +383,8 @@
               "description": "When the send checklist shows (mail-client-minigame.js _checklistTiming; default onSend). Linted by validate_social/options.rb"
             },
             "showRedFlagMeter": {"type": "boolean"},
-            "bodyMode": {"type": "string", "description": "Documented in design 01; no code reads it yet"},
-            "freeTextFlavour": {"type": "boolean", "description": "Documented in design 01; no code reads it yet"}
+            "bodyMode": {"type": "string", "enum": ["templates", "freeText"], "description": "Body composition (design 01 §2 Body; mail-composer.js). templates (default): scored template parts only. freeText: the template parts plus one unscored free-text box; the templated slots still decide the result. Linted by validate_social/options.rb"},
+            "freeTextFlavour": {"type": "boolean", "description": "Alternate switch for the unscored free-text box (design 01 §2 Body); equivalent to bodyMode freeText. The box is shown when either is set. Its text is shown in the sent mail but never judged and never read by the ink (00 §13). Linted by validate_social/options.rb"}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
@@ -2699,6 +2699,14 @@
         "restartOnRetalk": {
           "type": "boolean",
           "description": "Default true: an NPC whose ink story has ended (-> END / -> DONE) restarts at its start knot when talked to again. Set false for one-shot scenes (final choices, confrontations, debriefs) that must not replay."
+        },
+        "reopenRefreshesHub": {
+          "type": "boolean",
+          "description": "Person-chat, opt-in, default false. A conversation closed on a topic's last line resumes part-way through that topic; if finishing it reaches the hub's choices with nothing said (an ink `quiet` flag the topic set), the hub is re-entered once so it shows its current line, not the old topic line (person-chat-reopen.js refreshHubAfterMidKnotReopen)."
+        },
+        "livePreview": {
+          "type": "boolean",
+          "description": "Phone contact, opt-in, default false. For a looping hint hub: the contact list previews the line that opening the thread would add now (a dry run of the reopen under today's globals), instead of the thread's last line from the previous open (PhoneChatConversation.previewReopen)."
         },
         "gender": {
           "type": "string",
