@@ -5,6 +5,7 @@
 // ================================================
 
 VAR met_tom = false
+VAR tom_gave = false // ink-local: task and items already handed over
 VAR asked_cryptosecure = false
 VAR asked_terminal = false
 VAR told_keys = false
@@ -20,11 +21,15 @@ VAR corridor_open = false
 
 === start ===
 { met_tom: -> hub }
-#complete_task:get_lab_laptop
-#give_item:workstation:lab_laptop
-#give_item:notes:fn01_bits_bytes_bases
-#give_item:notes:fn02_ascii_encodings
-#give_item:notes:fn03_hex
+// The task and gives fire once: a replayed #give_item reports "NPC has no items to give".
+{ not tom_gave:
+    ~ tom_gave = true
+    #complete_task:get_lab_laptop
+    #give_item:workstation:lab_laptop
+    #give_item:notes:fn01_bits_bytes_bases
+    #give_item:notes:fn02_ascii_encodings
+    #give_item:notes:fn03_hex
+}
 Dr Tom Shaw: Right then. You'll be one of mine. Tom Shaw. I look after the first-years this week.
 Narrator: He slides a battered department laptop across the desk.
 Dr Tom Shaw: That's yours for the year. CyberChef's on it. No rocket science, just base two.
