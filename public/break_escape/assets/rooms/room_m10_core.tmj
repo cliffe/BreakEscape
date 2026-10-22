@@ -354,21 +354,21 @@
    "name": "tables",
    "objects": [
     {
-     "gid": 110,
-     "height": 41,
-     "id": 7,
+     "gid": 1034,
+     "height": 39,
+     "id": 10,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 32,
+     "width": 51,
      "x": 36.0,
      "y": 170.0
     },
     {
      "gid": 1112,
      "height": 43,
-     "id": 9,
+     "id": 12,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -390,9 +390,45 @@
    "name": "items",
    "objects": [
     {
+     "gid": 1414,
+     "height": 11,
+     "id": 2,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 23,
+     "x": 134.0,
+     "y": 26.0
+    },
+    {
+     "gid": 1373,
+     "height": 12,
+     "id": 3,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 10,
+     "x": 70.0,
+     "y": 24.0
+    },
+    {
+     "gid": 1373,
+     "height": 12,
+     "id": 4,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 10,
+     "x": 214.0,
+     "y": 24.0
+    },
+    {
      "gid": 1023,
      "height": 56,
-     "id": 3,
+     "id": 6,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -404,7 +440,7 @@
     {
      "gid": 316,
      "height": 26,
-     "id": 6,
+     "id": 9,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -440,7 +476,7 @@
     {
      "gid": 1374,
      "height": 18,
-     "id": 2,
+     "id": 5,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -452,7 +488,7 @@
     {
      "gid": 1391,
      "height": 36,
-     "id": 4,
+     "id": 7,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -464,7 +500,7 @@
     {
      "gid": 1384,
      "height": 70,
-     "id": 11,
+     "id": 14,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -488,19 +524,19 @@
     {
      "gid": 1340,
      "height": 24,
-     "id": 8,
+     "id": 11,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 23,
      "x": 40.0,
-     "y": 146.22
+     "y": 147.38
     },
     {
      "gid": 382,
      "height": 23,
-     "id": 10,
+     "id": 13,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -534,7 +570,7 @@
    "objects": [
     {
      "height": 16.0,
-     "id": 5,
+     "id": 8,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -552,7 +588,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 12,
+ "nextobjectid": 15,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -2985,7 +3021,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 598,
+   "tilecount": 607,
    "tileheight": 60,
    "tiles": [
     {
@@ -6575,6 +6611,60 @@
      "image": "../objects/m10_generator1.png",
      "imageheight": 26,
      "imagewidth": 34
+    },
+    {
+     "id": 608,
+     "image": "../objects/m10_portal_head1.png",
+     "imageheight": 46,
+     "imagewidth": 64
+    },
+    {
+     "id": 609,
+     "image": "../objects/m10_blast_leaf1.png",
+     "imageheight": 64,
+     "imagewidth": 18
+    },
+    {
+     "id": 610,
+     "image": "../objects/m10_key_isolator1.png",
+     "imageheight": 28,
+     "imagewidth": 24
+    },
+    {
+     "id": 611,
+     "image": "../objects/m10_wall_phone1.png",
+     "imageheight": 24,
+     "imagewidth": 14
+    },
+    {
+     "id": 612,
+     "image": "../objects/m10_coat_hooks1.png",
+     "imageheight": 36,
+     "imagewidth": 16
+    },
+    {
+     "id": 613,
+     "image": "../objects/m10_sign_core1.png",
+     "imageheight": 11,
+     "imagewidth": 23
+    },
+    {
+     "id": 614,
+     "image": "../objects/m10_fire_buckets1.png",
+     "imageheight": 22,
+     "imagewidth": 24
+    },
+    {
+     "id": 615,
+     "image": "../objects/m10_tool_roll1.png",
+     "imageheight": 12,
+     "imagewidth": 26
+    },
+    {
+     "id": 616,
+     "image": "../objects/m10_steel_stand1.png",
+     "imageheight": 36,
+     "imagewidth": 30
     }
    ],
    "tilewidth": 60

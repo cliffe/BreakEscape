@@ -81,18 +81,6 @@
                  "width":78,
                  "x":176,
                  "y":104
-                }, 
-                {
-                 "gid":110,
-                 "height":41,
-                 "id":13,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":32,
-                 "x":176,
-                 "y":164
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -144,7 +132,7 @@
                 {
                  "gid":888,
                  "height":61,
-                 "id":11,
+                 "id":10,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -152,6 +140,30 @@
                  "width":29,
                  "x":258,
                  "y":100
+                }, 
+                {
+                 "gid":1413,
+                 "height":36,
+                 "id":13,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":13,
+                 "y":214
+                }, 
+                {
+                 "gid":1415,
+                 "height":22,
+                 "id":14,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":78,
+                 "y":252
                 }, 
                 {
                  "gid":828,
@@ -225,6 +237,18 @@
                  "y":56
                 }, 
                 {
+                 "gid":1412,
+                 "height":24,
+                 "id":12,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":14,
+                 "x":292,
+                 "y":124
+                }, 
+                {
                  "gid":1401,
                  "height":40,
                  "id":15,
@@ -282,18 +306,6 @@
                  "width":46,
                  "x":186,
                  "y":81.38
-                }, 
-                {
-                 "gid":219,
-                 "height":16,
-                 "id":14,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":14,
-                 "x":184,
-                 "y":140.22
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -317,18 +329,6 @@
                  "width":40,
                  "x":232,
                  "y":81.38
-                }, 
-                {
-                 "gid":202,
-                 "height":14,
-                 "id":10,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16,
-                 "x":238,
-                 "y":81.38
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -343,7 +343,7 @@
          "objects":[
                 {
                  "height":30,
-                 "id":12,
+                 "id":11,
                  "name":"collision",
                  "rotation":0,
                  "type":"",
@@ -2864,7 +2864,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":598,
+         "tilecount":607,
          "tileheight":124,
          "tiles":[
                 {
@@ -6513,6 +6513,61 @@
                  "image":"..\/objects\/m10_generator1.png",
                  "imageheight":26,
                  "imagewidth":34
+                }, 
+                {
+                 "id":608,
+                 "image":"..\/objects\/m10_portal_head1.png",
+                 "imageheight":46,
+                 "imagewidth":64
+                }, 
+                {
+                 "id":609,
+                 "image":"..\/objects\/m10_blast_leaf1.png",
+                 "imageheight":64,
+                 "imagewidth":18
+                },
+            
+                {
+                 "id":610,
+                 "image":"..\/objects\/m10_key_isolator1.png",
+                 "imageheight":28,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":611,
+                 "image":"..\/objects\/m10_wall_phone1.png",
+                 "imageheight":24,
+                 "imagewidth":14
+                }, 
+                {
+                 "id":612,
+                 "image":"..\/objects\/m10_coat_hooks1.png",
+                 "imageheight":36,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":613,
+                 "image":"..\/objects\/m10_sign_core1.png",
+                 "imageheight":11,
+                 "imagewidth":23
+                }, 
+                {
+                 "id":614,
+                 "image":"..\/objects\/m10_fire_buckets1.png",
+                 "imageheight":22,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":615,
+                 "image":"..\/objects\/m10_tool_roll1.png",
+                 "imageheight":12,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":616,
+                 "image":"..\/objects\/m10_steel_stand1.png",
+                 "imageheight":36,
+                 "imagewidth":30
                 }],
          "tilewidth":252
         }],

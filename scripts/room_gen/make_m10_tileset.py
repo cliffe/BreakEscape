@@ -228,6 +228,28 @@ def paint_outline(op, box, c=CD_YELLOW, width=320):
     paint_line(op, x1 - 2, y0, x1, y1, c=c, width=width)
 
 
+def paint_dais(op, box, width=320):
+    """A raised slab: a lighter top, a 2 px lit lip along its back, a 3 px shadowed front
+    edge, and a short step at its east end."""
+    x0, y0, x1, y1 = box
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            if not floor_at(x, y, width):
+                continue
+            r, g, b, a = op[x, y]
+            if y >= y1 - 3:
+                op[x, y] = (*shade((r, g, b), 0.7), a)
+            elif x >= x1 - 3:
+                op[x, y] = (*shade((r, g, b), 0.8), a)
+            else:
+                op[x, y] = (min(255, r + 18), min(255, g + 16), min(255, b + 12), a)
+    for y in range(y1 - 14, y1):                       # the step
+        for x in range(x1, x1 + 12):
+            if floor_at(x, y, width):
+                r, g, b, a = op[x, y]
+                op[x, y] = (*shade((r, g, b), 0.85 if y >= y1 - 3 else 1.06), a)
+
+
 # --- sheets ---------------------------------------------------------------------
 
 def forward_sheet():
@@ -238,6 +260,8 @@ def forward_sheet():
     for x0 in (40, 90):
         paint_box_fn(op, (x0, 100, x0 + 6, 300), track_pixel, width=640)
     paint_hatch_border(op, (548, 64, 610, 124), width_px=4, colours=(CD_YELLOW, BLACK), width=640)  # blast door apron
+    paint_box_fn(op, (586, 68, 606, 120), tread_plate_pixel, width=640)   # R3 F1: the door's steel threshold
+    paint_grate(op, 560, 88, width=640)                                    # and a drain in the apron
     paint_stain(op, 80, 120, 14, 6, width=640)
     paint_stain(op, 92, 246, 14, 6, width=640)
     paint_wear(op, (450, 64, 610, 180), width=640, strength=0.93)        # feet at the gate
@@ -280,7 +304,7 @@ def workshop_sheet():
 def power_sheet():
     img = paint_floor(base_walls(POWER_WALLS), red_oxide_pixel, shadow=0.88)
     op = img.load()
-    paint_line(op, 96, 112, 280, 114, c=CD_YELLOW)          # keep clear of the switchgear
+    paint_hatch_border(op, (110, 76, 276, 104), width_px=3, colours=(CD_YELLOW, BLACK))   # R3 P4: keep clear of the panels
     paint_hatch_border(op, (96, 244, 220, 290), width_px=3, colours=(CD_YELLOW, BLACK))   # the battery bay
     paint_wear(op, (32, 64, 96, 120))
     paint_wear(op, (224, 64, 288, 120))
@@ -292,10 +316,9 @@ def hall_sheet():
     paint_band(walls, 36, 38, CD_YELLOW, width=640)
     img = paint_floor(walls, raised_floor_pixel, width=640, shadow=0.95)
     op = img.load()
-    paint_outline(op, (92, 64, 216, 112), c=(150, 130, 60), width=640)    # the old plotting dais, under the board
+    paint_dais(op, (92, 64, 216, 108), width=640)                          # R3 H1: the old plotting dais, a raised step
     paint_wear(op, (32, 64, 96, 120), width=640)
     paint_wear(op, (548, 64, 608, 120), width=640)
-    paint_hatch_border(op, (498, 66, 544, 104), width_px=3, colours=(CD_YELLOW, BLACK), width=640)  # in front of the hatch
     return img
 
 
@@ -308,7 +331,13 @@ def gallery_sheet():
 
 
 def core_sheet():
-    return paint_floor(base_walls(CORE_WALLS), bare_concrete_pixel, shadow=0.92)
+    img = paint_floor(base_walls(CORE_WALLS), bare_concrete_pixel, shadow=0.92)
+    op = img.load()
+    # R3 C1: one cable run on the floor, the key console to the host terminal's desk
+    for x in range(88, 180):
+        op[x, 168] = (40, 40, 44, 255)
+        op[x, 169] = (70, 70, 74, 255)
+    return img
 
 
 def main():

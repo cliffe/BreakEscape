@@ -148,3 +148,59 @@ Hand-drawn in `make_m10_props.py` (`round2()`), registered: `m10_gate_post1`, `m
 2. A red health-bar overlay draws over the gallery's LEVEL 2 sign in the tour shots (an engine combat overlay, not the map); check it in the walk.
 3. The hall and security office could take more detail only where no NPC stands or walks.
 4. Lighting next: the sodium lamp, the work lamp, caged bulbs and the vans' interiors are the sources.
+
+## Round 3 (2026-10-22): the R3 review's findings
+
+Review: `DRESSING_REVIEW_R3.md` (0 blockers, 3 majors, 20 minors), with the coordinator's rulings. Renders: maps `dressing_r3/maps/` (contact sheet included); in game (game 3187, rooms unlocked, the moved NPCs shown) `dressing_r3/ingame/<room>-a.png`. Browser check of the changes: game 3188, a Sonnet helper, log in the session scratchpad `m10dress/pt3/`.
+
+### Per finding
+
+| # | Sev | Fix | Checked in game |
+|---|---|---|---|
+| G1 | major | lock_guard's beat is the east half, behind the lock party: (7.9, 3.4) ↔ (6.2, 3.4), the 20 s dwell at the west end (his back to the keypad); his start moved to match. First set to (8.4, 3.4) as ruled, but x 8.4 is outside the gallery's pathfinding bounds (tiles x 2–8), so the engine dropped that waypoint and he stood at the west end logging "No path found" every 2 s (game 3188); 7.9 is inside. Farah's chair moved 8 px south, off her feet. ERB comments on both | first setting failed as above. Re-check at 7.9 (game 3194): both waypoints survive validation; he shuttles between world x 2442 and 2486 with a 20 s west dwell and a 3 s east one; one early "No path found" (32 before); none for Farah, the monitor guard, duty_guard_b or the kettle copy; no "outside patrol bounds" anywhere |
+| G2 | major (engine) | The live bars are `public/break_escape/js/ui/npc-health-bars.js` (imported by game.js); `systems/npc-health-bar.js` is never imported, so I left it alone. The bar now follows the NPC sprite's visibility when it is made and on every update. Test: `test/js/npc-health-bar-visibility.test.mjs` (2 tests; with the existing `npc-health-bar-missing` test, 3 pass) | yes: with both reinforcements hidden no bar draws; revealing reinforcement_a shows its bar |
+| F1 | major | A cast-concrete portal in the NE corner over the E door (`m10_portal_head1`: formwork, a lintel stencilled TG-1, a hazard strip); the blast door's steel leaf swung open flat against the east wall below the doorway (`m10_blast_leaf1`). The apron now holds a steel threshold plate at the door and a drain (sheet). KEEP CLEAR came off; FALLOUT SHELTER stays | yes: forward post ↔ tunnel walked both ways |
+| F2 | minor | Accepted: van two's step stays at its door; it is reached from the east side through a menu with Nightshade (game 3188) | yes |
+| F3 | minor | Van one's step moved under its open door (x 80) | yes: opens at 25–28 px, menu with HaX |
+| F4 | minor | Generator moved south of the road end (x 132, feet 300). phantom_post (7, 4) → (7, 4.6), kowalczyk_van (2, 4) → (2.2, 4.6), nightshade_blast (18, 6) → (18, 7); ERB comments | shots |
+| F5 | minor | The three mugs (forward table, tunnel desk, security desk) removed | — |
+| T1 | minor | The tunnel desk's collision now runs to the wall; tunnel_guard_kettle (7, 2.5) → (7, 2.9), in front of the kettle | yes: the floor behind the desk is blocked |
+| S1 | minor | duty_guard_b (8, 4) → (7.3, 4.5) | yes: no "stuck in wall" after load |
+| S2 | minor | The duty handset is a black Bakelite wall phone on the east wall above the duty screen (`m10_wall_phone1`, `as-type:m10_wall_phone`); the side table is gone | yes: opens Ghost's call at 23 px; the duty screen at 23 px |
+| S3 | minor | Wall-side only: hooks with a hi-vis and a civil-defence tin hat on the west strip under the cupboard; two fire buckets by the S door, east of its lane | render |
+| W1 | minor | Steel workbenches (`zds_desk3`) for the west bench (two) and for Imran's and Gary's; slots kept | yes: the bench terminal's password prompt and the bench log open |
+| W2 | minor | kowalczyk_ws (6.6, 3) → (6.6, 3.4) (raid copy) | — |
+| P1 | minor | BATTERIES on one mesh panel and drawn over it | render |
+| P2 | minor | `m10_key_isolator1` (key switch with the key in, four breakers, a label strip) in place of the e-stop box; `readDisplay: "gameDisplay"` | yes: opens as an in-place read modal. It still copies to notes once (no `addToNotes: false`; its `textVariants` change after the cut, so the skill would add it: left for the puzzle owner) |
+| P3 | minor | Static's tool roll (`m10_tool_roll1`, canvas, stencilled S) on a steel bench by the switchgear, so "on the bench" is true | yes: opens at 27 px |
+| P4 | minor | The stray line is now a hatched keep-clear box in front of the load board and panels | render |
+| P5 | minor | kowalczyk_pr (2, 7) → (2.6, 6.4) (raid copy) | — |
+| H1 | minor | The dais is a raised slab on the floor (lighter top, shadowed front edge, a step at its east end); the hatched stand-off in front of the hatch is gone | render |
+| H2 | minor | The low cable tray removed | — |
+| H3 | minor | The schedule terminal stands in the gap in the south rack run | yes: opens at 26.5 px |
+| C1 | minor | Two caged bulbs, a CORE plate, one cable run on the floor from the key console to the host terminal's desk; the host terminal on a steel desk | yes: host terminal and field console open |
+| R1 | minor | Gate terminal on a small steel stand (`m10_steel_stand1`), core host and hall printer on steel desks, the security table gone, the workshop benches steel. The tunnel's wooden post desk stays | yes |
+
+### Scenario edits (layout fields only, re-read before each edit)
+
+- shutter_isolator `as-type:m10_key_isolator` plus `readDisplay: "gameDisplay"`; static_kit `as-type:m10_tool_roll`; duty_handset `as-type:m10_wall_phone`.
+- NPC positions and lock_guard's waypoints as above, each with an ERB comment.
+
+### New assets
+
+Hand-drawn (`make_m10_props.py`, `round3()`), registered: `m10_portal_head1`, `m10_blast_leaf1`, `m10_key_isolator1`, `m10_wall_phone1`, `m10_coat_hooks1`, `m10_fire_buckets1`, `m10_tool_roll1`, `m10_steel_stand1`, `m10_sign_core1`. No PixelLab or Gemini.
+
+### Checks after round 3
+
+- Validator: exit 0, 0 errors (the `halina_kowalczyk` errors are gone now that its sheet exists). Schema passes.
+- `slot_audit.py --notes`: 0 problems. `check_room_walls.py`: all 64 (the power room's new hatch box first read 72 and was moved down to y 76). `check_door_alignment.py`: 7 of 7. `predict_door_sides.py`: unchanged. Door clearance: no hits. No decor takes a slot.
+- `game.js` and `npc-health-bars.js` pass `node --check`; `node --test test/js/npc-health-bar-visibility.test.mjs test/js/npc-health-bar-missing.test.mjs`: 3 pass.
+- Game 3188: all six doors checked both ways; every changed object opens; no page exceptions; only TTS 503s and 3 × 403 (probably viseme PNGs on the keyless server).
+
+### Open for round 4 or lighting
+
+1. The isolator still copies a snapshot to notes; `addToNotes: false` is the puzzle owner's call.
+2. A revealed reinforcement_a's health bar sits over the LEVEL 2 plate (it stands at (3, 3)); that is correct behaviour for a visible hostile.
+3. The tunnel rota shares a menu with the patrolling tunnel guard when he is at his first waypoint (the round 1 trade-off).
+4. vos logs "stuck in wall" once at his spawn (5, 3) in the gallery (game 3194; also seen before); he is static, so it is cosmetic, but worth a look when the gallery is next touched.
+5. Lighting next.

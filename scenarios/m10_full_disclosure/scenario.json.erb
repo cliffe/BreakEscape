@@ -1770,7 +1770,8 @@ end
           "id": "nightshade_blast",
           "displayName": "Agent 0x47 'Nightshade'",
           "npcType": "person",
-          "position": { "x": 18, "y": 6 },
+          <%# Dressing R3: was (18, 6); off the barrier. %>
+          "position": { "x": 18, "y": 7 },
           "spriteSheet": "nightshade",
           "spriteVisemes": "assets/characters/nightshade_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
@@ -2022,7 +2023,8 @@ end
           "id": "phantom_post",
           "displayName": "Agent 0x88 'Phantom'",
           "npcType": "person",
-          "position": { "x": 7, "y": 4 },
+          <%# Dressing R3: was (7, 4); off the kit crates. %>
+          "position": { "x": 7, "y": 4.6 },
           "spriteSheet": "agent_phantom",
           "spriteVisemes": "assets/characters/agent_phantom_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
@@ -2496,7 +2498,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "tunnel_guard_kettle",
           "displayName": "Guard",
           "npcType": "person",
-          "position": { "x": 7, "y": 2.5 },
+          <%# Dressing R3: was (7, 2.5); in front of the kettle, not inside the desk. %>
+          "position": { "x": 7, "y": 2.9 },
           "spriteSheet": "male_security_guard",
           "spriteVisemes": "assets/characters/male_security_guard_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
@@ -2609,7 +2612,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "duty_guard_b",
           "displayName": "Guard",
           "npcType": "person",
-          "position": { "x": 8, "y": 4 },
+          <%# Dressing R3: was (8, 4); off the filing cabinet and the desk end ("stuck in wall" in R3); her frame still misses the door log. %>
+          "position": { "x": 7.3, "y": 4.5 },
           "spriteSheet": "female_security_guard_v2",
           "spriteTalk": "assets/characters/female_security_guard_talk.png",
           "spriteVisemes": "assets/characters/female_security_guard_visemes.png",
@@ -2740,7 +2744,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "duty_handset",
           "name": "Duty Handset",
           "takeable": false,
-          "position": "as-type:phone",
+          "position": "as-type:m10_wall_phone",
           "observations": "The desk phone. Ringing.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "workshop_floor",
@@ -2941,7 +2945,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "observations": "The floor guard walking the bench row, hand never far from his belt."
         },
         <%# Dressing R1: kowalczyk_ws was (8, 3), standing in the E door's mouth; (6.6, 3) keeps her by the door and off the shift clock's tap area. %>
-        <%= raid_copy.('kowalczyk', 'kowalczyk_ws', 'workshop_floor', 'ws', 6.6, 3, [not_tethered], 'Kowalczyk at the far end by the power-room door, reading the bench log upside down.') %>,
+        <%# Dressing R3: kowalczyk_ws (6.6, 3) -> (6.6, 3.4), out of the tool chest's front. %>
+        <%= raid_copy.('kowalczyk', 'kowalczyk_ws', 'workshop_floor', 'ws', 6.6, 3.4, [not_tethered], 'Kowalczyk at the far end by the power-room door, reading the bench log upside down.') %>,
         <%= raid_copy.('arakawa', 'arakawa_ws', 'workshop_floor', 'ws', 5, 7, [not_tethered], 'Arakawa keeping the bench row in view.') %>,
         <%= raid_copy.('quintero', 'quintero_ws', 'workshop_floor', 'ws', 2, 4, [nil], 'Quintero at the foot of the stair, counting the benches.') %>
       ],
@@ -3158,7 +3163,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           ],
           "observations": "Static between you and Voltage, arms folded, watching your hands."
         },
-        <%= raid_copy.('kowalczyk', 'kowalczyk_pr', 'power_room', 'pr', 2, 7, ["#{not_tethered} && !globalVars.wren_warned"], 'Kowalczyk by the battery-room mesh.') %>,
+        <%# Dressing R3: kowalczyk_pr (2, 7) -> (2.6, 6.4), out of the switchgear cabinet. %>
+        <%= raid_copy.('kowalczyk', 'kowalczyk_pr', 'power_room', 'pr', 2.6, 6.4, ["#{not_tethered} && !globalVars.wren_warned"], 'Kowalczyk by the battery-room mesh.') %>,
         <%= raid_copy.('arakawa', 'arakawa_pr', 'power_room', 'pr', 3, 7, [not_tethered], 'Arakawa watching the far door.') %>,
         <%= raid_copy.('quintero', 'quintero_pr', 'power_room', 'pr', 2, 4, [nil], 'Quintero just inside the door, listening to the hum.') %>
       ],
@@ -3169,7 +3175,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "name": "Shutter Isolator",
           "takeable": false,
           "readable": true,
-          "position": "as-type:aes_esd_station",
+          "position": "as-type:m10_key_isolator",
+          "readDisplay": "gameDisplay",
           "puzzle_graph_links": [{ "from": "action_cut_the_shutter", "to": "door_gallery" }],
           "observations": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it.",
           "observationVariants": [
@@ -3220,7 +3227,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "static_kit",
           "name": "Tool Roll",
           "takeable": false,
-          "position": "as-type:aes_toolbox",
+          "position": "as-type:m10_tool_roll",
           "observations": "A tool roll on the bench: pliers, a crimper, cable ties.",
           "observationVariants": [
             { "condition": "globalVars.m04_static_left_alone === true", "value": "A tool roll left on the bench: pliers, a crimper, cable ties, and a Polish crossword half done. The strap is stencilled S." }
@@ -3539,8 +3546,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "lock_guard",
           "displayName": "Sione Fonoti",
           "npcType": "person",
-          <%# Dressing R3 G1: was (7, 4) patrolling to (2, 4), through the standing row every lap; the beat is now the east half, behind the lock party (8.4, 3.4) <-> (6.2, 3.4), with the long dwell at the west end, his back to the keypad. %>
-          "position": { "x": 8.4, "y": 3.4 },
+          <%# Dressing R3 G1: was (7, 4) patrolling to (2, 4), through the standing row every lap; the beat is now the east half, behind the lock party (7.9, 3.4) <-> (6.2, 3.4) (8.4 fell outside the gallery's pathfinding bounds, tiles x 2-8, and was dropped), with the long dwell at the west end, his back to the keypad. %>
+          "position": { "x": 7.9, "y": 3.4 },
           "spriteSheet": "sione_fonoti",
           "spriteTalk": "assets/characters/sione_fonoti_talk.png",
           "spriteVisemes": "assets/characters/sione_fonoti_visemes.png",
@@ -3554,7 +3561,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           ],
           "behavior": {
             "hostile": { "chaseSpeed": 125, "attackDamage": 14, "pauseToAttack": true, "fightStyle": "slugger", "maxHP": 140 },
-            "patrol": { "enabled": true, "speed": 45, "waypoints": [{ "x": 7, "y": 4, "dwellTime": 3000 }, { "x": 2, "y": 4, "dwellTime": 20000 }], "loop": true, "pauseForPlayer": false }
+            "patrol": { "enabled": true, "speed": 45, "waypoints": [{ "x": 7.9, "y": 3.4, "dwellTime": 3000 }, { "x": 6.2, "y": 3.4, "dwellTime": 20000 }], "loop": true, "pauseForPlayer": false }
           },
           "los": {
             "enabled": true, "range": 160, "angle": 100, "visualize": true,

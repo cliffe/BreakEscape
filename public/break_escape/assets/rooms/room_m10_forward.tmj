@@ -656,7 +656,7 @@
     {
      "gid": 1388,
      "height": 20,
-     "id": 16,
+     "id": 17,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -668,7 +668,7 @@
     {
      "gid": 1112,
      "height": 43,
-     "id": 18,
+     "id": 19,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -680,7 +680,7 @@
     {
      "gid": 1112,
      "height": 43,
-     "id": 19,
+     "id": 20,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -692,7 +692,7 @@
     {
      "gid": 1112,
      "height": 43,
-     "id": 20,
+     "id": 21,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -726,14 +726,14 @@
      "y": 104.0
     },
     {
-     "gid": 110,
-     "height": 41,
+     "gid": 1417,
+     "height": 36,
      "id": 32,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 32,
+     "width": 30,
      "x": 514.0,
      "y": 104.0
     }
@@ -770,25 +770,37 @@
      "type": "",
      "visible": true,
      "width": 6,
-     "x": 540.0,
+     "x": 537.0,
      "y": 70.0
     },
     {
-     "gid": 1370,
-     "height": 11,
+     "gid": 1409,
+     "height": 46,
      "id": 3,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 47,
-     "x": 556.0,
-     "y": 30.0
+     "width": 64,
+     "x": 544.0,
+     "y": 58.0
+    },
+    {
+     "gid": 1410,
+     "height": 64,
+     "id": 4,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 18,
+     "x": 610.0,
+     "y": 192.0
     },
     {
      "gid": 1362,
      "height": 19,
-     "id": 4,
+     "id": 5,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -800,7 +812,7 @@
     {
      "gid": 1393,
      "height": 60,
-     "id": 5,
+     "id": 6,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -812,7 +824,7 @@
     {
      "gid": 1394,
      "height": 50,
-     "id": 8,
+     "id": 9,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -824,19 +836,19 @@
     {
      "gid": 1408,
      "height": 26,
-     "id": 11,
+     "id": 12,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 34,
-     "x": 236.0,
-     "y": 100.0
+     "x": 132.0,
+     "y": 300.0
     },
     {
      "gid": 1388,
      "height": 20,
-     "id": 13,
+     "id": 14,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -848,7 +860,7 @@
     {
      "gid": 1388,
      "height": 20,
-     "id": 15,
+     "id": 16,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -908,19 +920,19 @@
     {
      "gid": 1405,
      "height": 8,
-     "id": 7,
+     "id": 8,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 20,
-     "x": 116.0,
+     "x": 80.0,
      "y": 114.0
     },
     {
      "gid": 1406,
      "height": 8,
-     "id": 10,
+     "id": 11,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -956,7 +968,7 @@
     {
      "gid": 1361,
      "height": 18,
-     "id": 17,
+     "id": 18,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -968,7 +980,7 @@
     {
      "gid": 1386,
      "height": 18,
-     "id": 21,
+     "id": 22,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -980,7 +992,7 @@
     {
      "gid": 1398,
      "height": 14,
-     "id": 22,
+     "id": 23,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -992,7 +1004,7 @@
     {
      "gid": 1250,
      "height": 26,
-     "id": 23,
+     "id": 24,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1004,7 +1016,7 @@
     {
      "gid": 1387,
      "height": 14,
-     "id": 24,
+     "id": 25,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -1047,7 +1059,7 @@
      "visible": true,
      "width": 23,
      "x": 518.0,
-     "y": 80.22
+     "y": 83.12
     }
    ],
    "opacity": 1,
@@ -1061,18 +1073,6 @@
    "id": 12,
    "name": "table_items",
    "objects": [
-    {
-     "gid": 202,
-     "height": 14,
-     "id": 25,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 16,
-     "x": 272.0,
-     "y": 211.06
-    },
     {
      "gid": 918,
      "height": 18,
@@ -1099,7 +1099,7 @@
    "objects": [
     {
      "height": 20.0,
-     "id": 6,
+     "id": 7,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -1110,7 +1110,7 @@
     },
     {
      "height": 18.0,
-     "id": 9,
+     "id": 10,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -1121,18 +1121,18 @@
     },
     {
      "height": 10,
-     "id": 12,
+     "id": 13,
      "name": "collision",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 30,
-     "x": 238.0,
-     "y": 90.0
+     "x": 134.0,
+     "y": 290.0
     },
     {
      "height": 10,
-     "id": 14,
+     "id": 15,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -3627,7 +3627,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 598,
+   "tilecount": 607,
    "tileheight": 60,
    "tiles": [
     {
@@ -7217,6 +7217,60 @@
      "image": "../objects/m10_generator1.png",
      "imageheight": 26,
      "imagewidth": 34
+    },
+    {
+     "id": 608,
+     "image": "../objects/m10_portal_head1.png",
+     "imageheight": 46,
+     "imagewidth": 64
+    },
+    {
+     "id": 609,
+     "image": "../objects/m10_blast_leaf1.png",
+     "imageheight": 64,
+     "imagewidth": 18
+    },
+    {
+     "id": 610,
+     "image": "../objects/m10_key_isolator1.png",
+     "imageheight": 28,
+     "imagewidth": 24
+    },
+    {
+     "id": 611,
+     "image": "../objects/m10_wall_phone1.png",
+     "imageheight": 24,
+     "imagewidth": 14
+    },
+    {
+     "id": 612,
+     "image": "../objects/m10_coat_hooks1.png",
+     "imageheight": 36,
+     "imagewidth": 16
+    },
+    {
+     "id": 613,
+     "image": "../objects/m10_sign_core1.png",
+     "imageheight": 11,
+     "imagewidth": 23
+    },
+    {
+     "id": 614,
+     "image": "../objects/m10_fire_buckets1.png",
+     "imageheight": 22,
+     "imagewidth": 24
+    },
+    {
+     "id": 615,
+     "image": "../objects/m10_tool_roll1.png",
+     "imageheight": 12,
+     "imagewidth": 26
+    },
+    {
+     "id": 616,
+     "image": "../objects/m10_steel_stand1.png",
+     "imageheight": 36,
+     "imagewidth": 30
     }
    ],
    "tilewidth": 60

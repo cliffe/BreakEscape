@@ -222,7 +222,7 @@
                  "visible":true,
                  "width":16,
                  "x":140,
-                 "y":152
+                 "y":160
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2736,7 +2736,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":598,
+         "tilecount":607,
          "tileheight":124,
          "tiles":[
                 {
@@ -6385,6 +6385,61 @@
                  "image":"..\/objects\/m10_generator1.png",
                  "imageheight":26,
                  "imagewidth":34
+                }, 
+                {
+                 "id":608,
+                 "image":"..\/objects\/m10_portal_head1.png",
+                 "imageheight":46,
+                 "imagewidth":64
+                }, 
+                {
+                 "id":609,
+                 "image":"..\/objects\/m10_blast_leaf1.png",
+                 "imageheight":64,
+                 "imagewidth":18
+                },
+            
+                {
+                 "id":610,
+                 "image":"..\/objects\/m10_key_isolator1.png",
+                 "imageheight":28,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":611,
+                 "image":"..\/objects\/m10_wall_phone1.png",
+                 "imageheight":24,
+                 "imagewidth":14
+                }, 
+                {
+                 "id":612,
+                 "image":"..\/objects\/m10_coat_hooks1.png",
+                 "imageheight":36,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":613,
+                 "image":"..\/objects\/m10_sign_core1.png",
+                 "imageheight":11,
+                 "imagewidth":23
+                }, 
+                {
+                 "id":614,
+                 "image":"..\/objects\/m10_fire_buckets1.png",
+                 "imageheight":22,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":615,
+                 "image":"..\/objects\/m10_tool_roll1.png",
+                 "imageheight":12,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":616,
+                 "image":"..\/objects\/m10_steel_stand1.png",
+                 "imageheight":36,
+                 "imagewidth":30
                 }],
          "tilewidth":252
         }],

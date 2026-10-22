@@ -354,39 +354,51 @@
    "name": "tables",
    "objects": [
     {
-     "gid": 107,
+     "gid": 1034,
      "height": 39,
      "id": 11,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 78,
-     "x": 160.0,
+     "width": 51,
+     "x": 158.0,
      "y": 196.0
     },
     {
-     "gid": 109,
-     "height": 41,
-     "id": 15,
+     "gid": 1034,
+     "height": 39,
+     "id": 14,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 50,
-     "x": 238.0,
+     "width": 51,
+     "x": 213.0,
      "y": 196.0
     },
     {
-     "gid": 107,
+     "gid": 1034,
+     "height": 39,
+     "id": 17,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 51,
+     "x": 34.0,
+     "y": 200.0
+    },
+    {
+     "gid": 1034,
      "height": 39,
      "id": 18,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 78,
-     "x": 34.0,
+     "width": 51,
+     "x": 85.0,
      "y": 200.0
     }
    ],
@@ -614,7 +626,7 @@
      "type": "",
      "visible": true,
      "width": 21,
-     "x": 170.0,
+     "x": 162.0,
      "y": 173.38
     },
     {
@@ -626,19 +638,19 @@
      "type": "",
      "visible": true,
      "width": 24,
-     "x": 200.0,
+     "x": 184.0,
      "y": 173.38
     },
     {
      "gid": 350,
      "height": 23,
-     "id": 14,
+     "id": 15,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 12,
-     "x": 222.0,
+     "x": 216.0,
      "y": 173.38
     },
     {
@@ -650,20 +662,8 @@
      "type": "",
      "visible": true,
      "width": 24,
-     "x": 248.0,
-     "y": 172.22
-    },
-    {
-     "gid": 918,
-     "height": 18,
-     "id": 17,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 26,
-     "x": 270.0,
-     "y": 172.22
+     "x": 236.0,
+     "y": 173.38
     }
    ],
    "opacity": 1,
@@ -3163,7 +3163,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 598,
+   "tilecount": 607,
    "tileheight": 60,
    "tiles": [
     {
@@ -6753,6 +6753,60 @@
      "image": "../objects/m10_generator1.png",
      "imageheight": 26,
      "imagewidth": 34
+    },
+    {
+     "id": 608,
+     "image": "../objects/m10_portal_head1.png",
+     "imageheight": 46,
+     "imagewidth": 64
+    },
+    {
+     "id": 609,
+     "image": "../objects/m10_blast_leaf1.png",
+     "imageheight": 64,
+     "imagewidth": 18
+    },
+    {
+     "id": 610,
+     "image": "../objects/m10_key_isolator1.png",
+     "imageheight": 28,
+     "imagewidth": 24
+    },
+    {
+     "id": 611,
+     "image": "../objects/m10_wall_phone1.png",
+     "imageheight": 24,
+     "imagewidth": 14
+    },
+    {
+     "id": 612,
+     "image": "../objects/m10_coat_hooks1.png",
+     "imageheight": 36,
+     "imagewidth": 16
+    },
+    {
+     "id": 613,
+     "image": "../objects/m10_sign_core1.png",
+     "imageheight": 11,
+     "imagewidth": 23
+    },
+    {
+     "id": 614,
+     "image": "../objects/m10_fire_buckets1.png",
+     "imageheight": 22,
+     "imagewidth": 24
+    },
+    {
+     "id": 615,
+     "image": "../objects/m10_tool_roll1.png",
+     "imageheight": 12,
+     "imagewidth": 26
+    },
+    {
+     "id": 616,
+     "image": "../objects/m10_steel_stand1.png",
+     "imageheight": 36,
+     "imagewidth": 30
     }
    ],
    "tilewidth": 60

@@ -109,19 +109,23 @@ def room_m10_forward():
     r = G._Uni()
     # the fence line: rock face and chain-link are on the sheet; lamps and boards on it
     r.item("m10_map_board1", 352.0, 58.0)                 # Quintero's map board, behind her
-    r.item("outdoor-lamp4", 540.0, 70.0)                  # the one sodium lamp, at the gate
-    r.item("m10_sign_keepclear1", 556.0, 30.0)            # over the blast door's apron
+    r.item("outdoor-lamp4", 537.0, 70.0)                  # the one sodium lamp, at the gate
+    # R3 F1: the bunker's portal: a concrete headwall and lintel (TG-1) in the NE corner over
+    # the E door, the blast door's leaf swung open against the east wall below the doorway;
+    # the apron carries a steel threshold and a drain on the sheet
+    r.item("m10_portal_head1", 544.0, 58.0)
+    r.item("m10_blast_leaf1", 610.0, 192.0)
     r.item("m10_sign_fallout1", 470.0, 32.0)
     # the road end: the vans, nose to the fence's east, side doors to the south
     # R2: the vans are decor; each scenario van is a small slot at its open side door
     # (the step), so a tap on an NPC standing in front of a van no longer also hits the van
     r.item("m10_van1", 34.0, 112.0)
     r.collision(38.0, 92.0, 108.0, 20.0)
-    _cond(r, "m10_van_step1", 116.0, 114.0)
+    _cond(r, "m10_van_step1", 80.0, 114.0)                 # R3 F3: under the open door
     r.item("m10_van2", 32.0, 240.0)
     r.collision(36.0, 222.0, 102.0, 18.0)
     _cond(r, "m10_van_step2", 106.0, 242.0)
-    r.solid("m10_generator1", 236.0, 100.0)               # R2: power for the lamp and the vans
+    r.solid("m10_generator1", 132.0, 300.0)               # R3 F4: off nightshade_table's spot; south of the road end
     r.solid("m10_kit_crate1", 172.0, 100.0)               # spare kit stacked by the fence
     r.item("m10_kit_crate1", 176.0, 86.0)
     # the incident file's crate, south of the table's west end
@@ -135,7 +139,6 @@ def room_m10_forward():
     _top(r, "m10_plans1", 248.0, 214.0, cond=True)
     _top(r, "notes_clip1", 294.0, 218.0, cond=True)
     _top(r, "m10_breaching_case1", 332.0, 212.0, cond=True)
-    _top(r, "office-misc-cup3", 272.0, 224.0)
     r.item("m10_work_lamp1", 358.0, 206.0)                # R2: the work lamp, at the case end
     # the projection desk against the fence
     # (slot centres kept above y 89: Quintero's and Arakawa's frames start there)
@@ -145,7 +148,7 @@ def room_m10_forward():
     r.table("aes_trestle2", 458.0, 104.0, kind="objects")  # x 458-510
     _top(r, "vm-launcher", 462.0, 99.0, cond=True)
     _top(r, "radio_charger1", 494.0, 96.0)
-    r.table("smalldesk2", 514.0, 104.0)                    # x 514-546, clear of the door's mouth
+    r.table("m10_steel_stand1", 514.0, 104.0, kind="objects")   # R3 R1: steel, x 514-544, clear of the door's mouth
     _top(r, "safetynet_flag_terminal1", 518.0, 100.0, cond=True)
     # the gate hut, SE corner
     # R2: the hut with the refit fence running west from it (x 524-556); its dark variant
@@ -181,8 +184,8 @@ def room_m10_tunnel():
     _cond(r, "rota_board1", 168.5, 58.0)
     r.item("m10_sign_post1", 202.0, 30.0)
     d = r.table("smalldesk1", 196.0, 84.0)               # the post's desk, x 196-246
+    r.collision(196.0, 62.0, 50.0, 22.0)                 # R3 T1: the whole desk to the wall
     _top(r, "kettle1", 222.0, 70.0)
-    _top(r, "office-misc-cup3", 204.0, 74.0)
     _cond(r, "m10_wall_ladder1", 266.0, 59.0)
     r.solid("aes_drum1", 270.0, 156.0)
     r.item("fire_extinguisher1", 14.0, 150.0)
@@ -203,7 +206,7 @@ def room_m10_security():
     NPCs: duty_guard_b at the monitors' east end (269,128): frame x 229-309, y 57-137.
     The duty guard patrols (128,128) to (192,256); Vector by the cupboard (96,176).
     Slots: alarm_panel, notice_board1 (Shift Notes: Photo), rota_board1 (Duty Board),
-    cctv_monitors1 (as-type, Door Log), phone4 (as-type phone, Duty Handset),
+    cctv_monitors1 (as-type, Door Log), m10_wall_phone1 (Duty Handset, east wall),
     m10_cupboard1 (Records Cupboard), m10_locker1 (Fitter's Locker),
     m10_readout_side1 (Duty Screen).
     """
@@ -218,11 +221,12 @@ def room_m10_security():
     r.table("desk1", 176.0, 104.0)                       # x 176-254
     _top(r, "cctv_monitors1", 186.0, 92.0, cond=True)
     _top(r, "keyboard1", 232.0, 96.0)
-    _top(r, "office-misc-cup3", 238.0, 96.0)              # R2: the night shift's mug
     r.solid("filing_cabinet_steel1", 258.0, 100.0, depth=30)
-    # the duty handset on a stand, open floor
-    r.table("smalldesk2", 176.0, 164.0)                  # x 176-208
-    _top(r, "phone4", 184.0, 150.0, cond=True)
+    # R3 S2: the duty handset is a Bakelite wall phone on the east wall, above the duty screen
+    _cond(r, "m10_wall_phone1", 292.0, 124.0)
+    # R3 S3: wall-side detail only (the middle is the raid team's and the duty guard's)
+    r.item("m10_coat_hooks1", 13.0, 214.0)
+    r.item("m10_fire_buckets1", 78.0, 252.0)             # by the S door, east of its lane
     # the records cupboard, west wall below the W door
     _cond(r, "m10_cupboard1", 34.0, 170.0)
     r.collision(36.0, 158.0, 26.0, 12.0)
@@ -260,16 +264,17 @@ def room_m10_workshop():
     _cond(r, "wall_clock1", 252.0, 59.0)
     r.item("m10_caged_lamp1", 136.0, 24.0)
     # Imran's bench and Gary's, mid-room
-    b = r.table("desk1", 160.0, 196.0)                    # x 160-238
-    _top(r, "aes_bypass_module1", 170.0, 176.0)
-    _top(r, "cable_tangle1", 200.0, 178.0)
-    _top(r, "office-misc-lamp4", 222.0, 172.0)
-    g = r.table("smalldesk1", 238.0, 196.0)               # x 238-288
-    _top(r, "aes_battery_module1", 248.0, 178.0)
-    _top(r, "radio_charger1", 270.0, 178.0)
+    # R3 W1: steel workbenches, not office desks
+    b = r.table("zds_desk3", 158.0, 196.0, kind="objects")   # Imran's, x 158-209
+    _top(r, "aes_bypass_module1", 162.0, 176.0)
+    _top(r, "cable_tangle1", 184.0, 178.0)
+    g = r.table("zds_desk3", 213.0, 196.0, kind="objects")   # Gary's, x 213-264
+    _top(r, "office-misc-lamp4", 216.0, 172.0)
+    _top(r, "aes_battery_module1", 236.0, 178.0)
     # the west bench: terminal and log
     # feet 200: slot centres stay above the guard's frame at his west waypoint (y 185)
-    w = r.table("desk1", 34.0, 200.0)                     # x 34-112
+    w = r.table("zds_desk3", 34.0, 200.0, kind="objects")    # x 34-85, R3 W1
+    r.table("zds_desk3", 85.0, 200.0, kind="objects")        # x 85-136
     _top(r, "pc10", 38.0, 198.0, cond=True)
     _top(r, "aes_clipboard1", 92.0, 194.0, cond=True)
     r.item("hospital_chair_north", 52.0, 222.0)
@@ -293,14 +298,14 @@ def room_m10_power():
     NPCs: Wendell at the panel (192,160); Voltage at the switchgear (160,128) or cuffed
     (128,160); Static (224,192); Wendell at the far panel (256,256).
     Slots: m10_load_board1 (Load Board), m10_bypass_panel1 (Bypass Panel),
-    aes_esd_station1 (as-type, Shutter Isolator), aes_toolbox1 (Tool Roll).
+    m10_key_isolator1 (Shutter Isolator), m10_tool_roll1 on a bench (Tool Roll).
     """
     r = G._Uni()
     r.item("m10_bakelite_panel1", 40.0, 58.0)
     r.item("m10_sign_plant1", 128.0, 25.0)
     _cond(r, "m10_load_board1", 120.0, 59.0)
     _cond(r, "m10_bypass_panel1", 200.0, 59.0)
-    _cond(r, "aes_esd_station1", 248.0, 58.0)
+    _cond(r, "m10_key_isolator1", 248.0, 59.0)              # R3 P2: key switch and breakers, not an e-stop
     for x in (104.0, 186.0):
         r.item("m10_caged_lamp1", x, 24.0)
     # the 1960s switchgear down the west wall, below the W door
@@ -314,8 +319,10 @@ def room_m10_power():
     for x in (96.0, 144.0, 192.0):
         r.item("m09_mesh_low1", x, 240.0)
     r.collision(96.0, 230.0, 144.0, 10.0)
-    r.item("m10_sign_batteries1", 146.0, 230.0)          # hung on the mesh
-    _cond(r, "aes_toolbox1", 40.0, 280.0)
+    r.item("m10_sign_batteries1", 98.0, 242.0)           # R3 P1: on one mesh panel, drawn over it
+    # R3 P3: Static's tool roll on a bench by the switchgear
+    r.table("zds_desk3", 34.0, 296.0, kind="objects")    # x 34-85
+    _top(r, "m10_tool_roll1", 46.0, 296.0, cond=True)
     r.item("fire_extinguisher1", 292.0, 200.0)
     return _build(r, "room_m10_power")
 
@@ -359,12 +366,11 @@ def room_m10_hall():
     # racks where the map tables were, along the south wall
     for x in (176.0, 210.0, 244.0, 278.0, 346.0, 380.0):
         r.solid("hq_rack1", x, 290.0, depth=30)
-    _cond(r, "aes_round_terminal1", 316.0, 228.0)
-    r.collision(318.0, 220.0, 14.0, 8.0)
+    _cond(r, "aes_round_terminal1", 319.0, 290.0)          # R3 H3: in the gap in the rack run
+    r.collision(320.0, 280.0, 16.0, 10.0)
     # the uplink printer, near the W door
-    r.table("smalldesk1", 40.0, 262.0)                   # x 40-90
+    r.table("zds_desk3", 40.0, 262.0, kind="objects")    # x 40-91, R3 R1
     _top(r, "pnw_portable_printer1", 54.0, 242.0, cond=True)
-    r.item("cable_tray1", 420.0, 300.0)
     r.item("fire_extinguisher1", 612.0, 200.0)
     r.item("cctv_camera1", 590.0, 34.0)
     return _build(r, "room_m10_hall", "20x10_wide")
@@ -393,7 +399,7 @@ def room_m10_gallery():
     for x in (34.0, 82.0, 178.0, 226.0):                  # the walkway's rail along the south
         r.item("m09_mesh_rail1", x, 160.0)                 # (a gap behind Farah's chair)
     _cond(r, "m10_keypad_plate1", 292.0, 140.0)
-    _cond(r, "hospital_chair_north", 140.0, 152.0)
+    _cond(r, "hospital_chair_north", 140.0, 160.0)          # R3 G1: 8 px south, off Farah's feet
     return _build(r, "room_m10_gallery", "10x6_hall")
 
 
@@ -413,12 +419,15 @@ def room_m10_core():
     """
     r = G._Uni()
     _cond(r, "m10_wall_screen1", 128.0, 58.0)
+    r.item("m10_sign_core1", 134.0, 26.0)                # R3 C1
+    for x in (70.0, 214.0):
+        r.item("m10_caged_lamp1", x, 24.0)
     _cond(r, "m10_readout1", 256.0, 56.0)
     r.item("exec_chair_black1", 178.0, 132.0)
     _cond(r, "m10_key_console1", 176.0, 176.0)
     r.collision(178.0, 160.0, 48.0, 16.0)
     r.item("hospital_chair_north", 196.0, 214.0)
-    r.table("smalldesk2", 36.0, 170.0)                   # x 36-68
+    r.table("zds_desk3", 36.0, 170.0, kind="objects")    # x 36-87, steel (R3 R1)
     _top(r, "safetynet_flag_terminal1", 40.0, 156.0, cond=True)
     r.table("aes_trestle1", 36.0, 240.0, kind="objects")
     _top(r, "vm-launcher", 48.0, 222.0, cond=True)

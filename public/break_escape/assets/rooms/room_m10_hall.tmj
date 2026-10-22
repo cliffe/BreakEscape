@@ -690,14 +690,14 @@
      "y": 118.0
     },
     {
-     "gid": 109,
-     "height": 41,
+     "gid": 1034,
+     "height": 39,
      "id": 35,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 50,
+     "width": 51,
      "x": 40.0,
      "y": 262.0
     }
@@ -894,21 +894,9 @@
      "y": 290.0
     },
     {
-     "gid": 910,
-     "height": 14,
-     "id": 37,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 150,
-     "x": 420.0,
-     "y": 300.0
-    },
-    {
      "gid": 818,
      "height": 28,
-     "id": 38,
+     "id": 37,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -920,7 +908,7 @@
     {
      "gid": 886,
      "height": 18,
-     "id": 39,
+     "id": 38,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -974,8 +962,8 @@
      "type": "",
      "visible": true,
      "width": 18,
-     "x": 316.0,
-     "y": 228.0
+     "x": 319.0,
+     "y": 290.0
     }
    ],
    "opacity": 1,
@@ -1047,7 +1035,7 @@
      "visible": true,
      "width": 16,
      "x": 54.0,
-     "y": 238.22
+     "y": 239.38
     }
    ],
    "opacity": 1,
@@ -1161,15 +1149,15 @@
      "y": 260.0
     },
     {
-     "height": 8.0,
+     "height": 10.0,
      "id": 34,
      "name": "collision",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 14.0,
-     "x": 318.0,
-     "y": 220.0
+     "width": 16.0,
+     "x": 320.0,
+     "y": 280.0
     }
    ],
    "opacity": 1,
@@ -1180,7 +1168,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 40,
+ "nextobjectid": 39,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3613,7 +3601,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 598,
+   "tilecount": 607,
    "tileheight": 60,
    "tiles": [
     {
@@ -7203,6 +7191,60 @@
      "image": "../objects/m10_generator1.png",
      "imageheight": 26,
      "imagewidth": 34
+    },
+    {
+     "id": 608,
+     "image": "../objects/m10_portal_head1.png",
+     "imageheight": 46,
+     "imagewidth": 64
+    },
+    {
+     "id": 609,
+     "image": "../objects/m10_blast_leaf1.png",
+     "imageheight": 64,
+     "imagewidth": 18
+    },
+    {
+     "id": 610,
+     "image": "../objects/m10_key_isolator1.png",
+     "imageheight": 28,
+     "imagewidth": 24
+    },
+    {
+     "id": 611,
+     "image": "../objects/m10_wall_phone1.png",
+     "imageheight": 24,
+     "imagewidth": 14
+    },
+    {
+     "id": 612,
+     "image": "../objects/m10_coat_hooks1.png",
+     "imageheight": 36,
+     "imagewidth": 16
+    },
+    {
+     "id": 613,
+     "image": "../objects/m10_sign_core1.png",
+     "imageheight": 11,
+     "imagewidth": 23
+    },
+    {
+     "id": 614,
+     "image": "../objects/m10_fire_buckets1.png",
+     "imageheight": 22,
+     "imagewidth": 24
+    },
+    {
+     "id": 615,
+     "image": "../objects/m10_tool_roll1.png",
+     "imageheight": 12,
+     "imagewidth": 26
+    },
+    {
+     "id": 616,
+     "image": "../objects/m10_steel_stand1.png",
+     "imageheight": 36,
+     "imagewidth": 30
     }
    ],
    "tilewidth": 60

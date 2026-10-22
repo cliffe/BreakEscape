@@ -1426,6 +1426,15 @@ export function preload() {
     this.load.image('m10_van_step2', 'objects/m10_van_step2.png');
     this.load.image('m10_work_lamp1', 'objects/m10_work_lamp1.png');
     this.load.image('m10_generator1', 'objects/m10_generator1.png');
+    this.load.image('m10_portal_head1', 'objects/m10_portal_head1.png');
+    this.load.image('m10_blast_leaf1', 'objects/m10_blast_leaf1.png');
+    this.load.image('m10_key_isolator1', 'objects/m10_key_isolator1.png');
+    this.load.image('m10_wall_phone1', 'objects/m10_wall_phone1.png');
+    this.load.image('m10_coat_hooks1', 'objects/m10_coat_hooks1.png');
+    this.load.image('m10_sign_core1', 'objects/m10_sign_core1.png');
+    this.load.image('m10_fire_buckets1', 'objects/m10_fire_buckets1.png');
+    this.load.image('m10_tool_roll1', 'objects/m10_tool_roll1.png');
+    this.load.image('m10_steel_stand1', 'objects/m10_steel_stand1.png');
     this.load.image('se_logo_sign1', 'objects/se_logo_sign1.png');
     this.load.image('se_sign_engagement1', 'objects/se_sign_engagement1.png');
     this.load.image('se_sign_recon1', 'objects/se_sign_recon1.png');

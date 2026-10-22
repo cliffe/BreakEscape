@@ -537,6 +537,7 @@ def main():
     cracker_rack()
     extras()
     round2()
+    round3()
 
 
 def plans_roll():
@@ -775,6 +776,175 @@ def round2():
     van_step("m10_van_step2", "rail")
     work_lamp()
     generator()
+
+
+# --- round 3 ------------------------------------------------------------------
+
+CONCRETE = (150, 146, 136)
+CONCRETE_DARK = (112, 108, 100)
+CONCRETE_LIGHT = (176, 172, 162)
+
+
+def portal_head():
+    """The bunker's portal at the forward post's NE corner: a cast-concrete headwall
+    over the rock, a heavy lintel beam, TG-1 stencilled on it, a strip of yellow-black
+    on the beam's underside (the blast door itself is the E door below it)."""
+    w, h = 64, 46
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, h - 1, OUTLINE)
+    for y in range(1, h - 1):
+        for x in range(1, w - 1):
+            k = (x * 7 + y * 13) % 17
+            c.px(x, y, CONCRETE if k else CONCRETE_DARK)
+    for x in range(8, w, 16):                         # formwork joints
+        c.rect(x, 1, x, 24, CONCRETE_DARK)
+    c.rect(1, 25, w - 2, 38, CONCRETE_LIGHT)          # the lintel beam
+    c.hline(1, w - 2, 25, (200, 196, 186))
+    c.rect(18, 28, 45, 35, CD_YELLOW)
+    c.text(22, 29, "TG-1", BLACK)
+    for x in range(1, w - 1):                         # hazard strip under the beam
+        c.px(x, 39, CD_YELLOW if (x // 3) % 2 else BLACK)
+        c.px(x, 40, CD_YELLOW if (x // 3) % 2 else BLACK)
+    c.rect(1, 41, w - 2, h - 2, CONCRETE_DARK)
+    c.save(OBJ, "m10_portal_head1")
+
+
+def blast_leaf():
+    """The blast door's leaf, swung open flat against the east wall below the doorway,
+    seen edge-on from the yard: a thick steel slab, its locking wheel, two hinge
+    knuckles, chipped grey paint."""
+    w, h = 18, 64
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, h - 1, OUTLINE)
+    c.rect(1, 1, w - 2, h - 2, (104, 110, 116))
+    c.rect(2, 1, 4, h - 2, (140, 146, 152))           # the leaf's edge, lit
+    for y in range(6, h - 4, 9):
+        c.px(w - 4, y, (80, 84, 90))
+    cx, cy = 10, 30                                   # the wheel
+    for (dx, dy) in ((0, -5), (4, -3), (5, 0), (4, 3), (0, 5), (-4, 3), (-5, 0), (-4, -3)):
+        c.px(cx + dx, cy + dy, (200, 200, 196))
+    c.rect(cx - 1, cy - 1, cx + 1, cy + 1, (60, 60, 64))
+    for y0 in (4, h - 10):                            # hinge knuckles
+        c.rect(0, y0, 2, y0 + 5, (70, 74, 80))
+    c.px(12, 50, (170, 150, 120))                     # chipped paint
+    c.px(13, 51, (170, 150, 120))
+    c.save(OBJ, "m10_blast_leaf1")
+
+
+def key_isolator():
+    """The gallery shutter's isolator: a grey steel box with a row of four breakers, a
+    key switch with the key in it, and a white label strip (GALLERY SHUTTER in the
+    object's text)."""
+    w, h = 24, 28
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, h - 1, OUTLINE)
+    c.rect(1, 1, w - 2, h - 2, (150, 156, 160))
+    c.hline(1, w - 2, 1, (186, 192, 196))
+    c.rect(3, 3, w - 4, 6, (236, 236, 228))           # label
+    c.hline(4, w - 6, 4, (60, 60, 60))
+    c.hline(4, 12, 5, (60, 60, 60))
+    for i in range(4):                                # breakers
+        x = 3 + i * 5
+        c.rect(x, 9, x + 3, 15, (50, 52, 58))
+        c.rect(x + 1, 10 + (0 if i != 2 else 3), x + 2, 11 + (0 if i != 2 else 3), (220, 220, 214))
+    cx, cy = 11, 21                                   # key switch
+    c.rect(cx - 3, cy - 3, cx + 3, cy + 3, (60, 62, 66))
+    c.rect(cx - 2, cy - 2, cx + 2, cy + 2, (200, 168, 60))
+    c.rect(cx - 2, cy, cx + 2, cy, (90, 70, 30))      # the key, across
+    c.rect(cx + 3, cy - 1, cx + 6, cy + 1, (220, 190, 80))
+    c.px(w - 4, h - 4, (90, 220, 120))
+    c.save(OBJ, "m10_key_isolator1")
+
+
+def wall_phone():
+    """The duty handset: a black Bakelite wall phone on the east wall, its handset in the
+    cradle, coiled cord, a small dial (16 px wide, for the side-wall strip)."""
+    w, h = 14, 24
+    c = Canvas(w, h)
+    c.rect(1, 2, w - 2, h - 1, OUTLINE)
+    c.rect(2, 3, w - 3, h - 2, (36, 32, 30))
+    c.hline(2, w - 3, 3, (70, 64, 60))
+    c.rect(0, 0, 3, 12, OUTLINE)                      # handset, upright in the cradle
+    c.rect(1, 1, 2, 11, (52, 46, 42))
+    cx, cy = 8, 14                                    # dial
+    for (dx, dy) in ((0, -2), (2, -1), (2, 1), (0, 2), (-2, 1), (-2, -1)):
+        c.px(cx + dx, cy + dy, (210, 206, 196))
+    for y in range(13, 22, 2):                        # coiled cord
+        c.px(1, y, (60, 56, 52))
+        c.px(2, y + 1, (60, 56, 52))
+    c.save(OBJ, "m10_wall_phone1")
+
+
+def coat_hooks():
+    """A row of hooks on the west wall strip: a hi-vis vest and a 1960s civil-defence tin
+    hat, side-on (16 px wide)."""
+    w, h = 16, 36
+    c = Canvas(w, h)
+    c.rect(6, 0, 9, 34, (96, 70, 46))                 # the board
+    c.rect(4, 2, 11, 9, (120, 124, 112))              # tin hat, brim
+    c.rect(5, 0, 10, 4, (106, 112, 98))
+    c.hline(5, 10, 4, CD_YELLOW)
+    c.rect(3, 12, 12, 30, (220, 230, 40))             # hi-vis
+    c.rect(3, 18, 12, 19, (200, 200, 196))
+    c.rect(3, 25, 12, 26, (200, 200, 196))
+    c.rect(7, 12, 8, 30, (180, 190, 30))
+    c.save(OBJ, "m10_coat_hooks1")
+
+
+def fire_buckets():
+    """Two red fire buckets of sand on a wall stand, FIRE stencilled."""
+    w, h = 24, 22
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, 3, OUTLINE)                   # the stand's rail
+    c.rect(1, 1, w - 2, 2, (90, 94, 100))
+    for x0 in (1, 13):
+        c.rect(x0, 5, x0 + 9, h - 1, OUTLINE)
+        c.rect(x0 + 1, 6, x0 + 8, h - 2, RED)
+        c.rect(x0 + 1, 6, x0 + 8, 7, (230, 200, 140))  # sand
+        c.hline(x0 + 2, x0 + 7, 13, (240, 220, 210))
+    c.save(OBJ, "m10_fire_buckets1")
+
+
+def tool_roll():
+    """Static's tool roll: a canvas roll tied with a strap, the handles of a few tools
+    out of one end, an S stencilled on the flap."""
+    w, h = 26, 12
+    c = Canvas(w, h)
+    c.rect(0, 2, w - 1, h - 1, OUTLINE)
+    c.rect(1, 3, w - 2, h - 2, (124, 116, 80))
+    c.hline(1, w - 2, 3, (150, 142, 100))
+    c.rect(9, 2, 10, h - 1, (70, 50, 30))             # strap
+    c.rect(16, 4, 19, 9, (222, 214, 190))             # stencil block
+    c.px(17, 5, BLACK); c.px(18, 5, BLACK); c.px(17, 6, BLACK)
+    c.px(18, 7, BLACK); c.px(17, 8, BLACK); c.px(18, 8, BLACK)
+    for i, col in enumerate(((200, 40, 40), (230, 190, 40), (60, 60, 64))):
+        c.rect(22 + i, 0, 22 + i, 2, col)             # handles out of the end
+    c.save(OBJ, "m10_tool_roll1")
+
+
+def steel_stand():
+    """A small steel equipment stand: a grey top, a shelf, four square legs (30 wide)."""
+    w, h = 30, 36
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, 6, OUTLINE)
+    c.rect(1, 1, w - 2, 5, (150, 156, 162))
+    c.hline(1, w - 2, 1, (190, 196, 202))
+    for x in (1, w - 4):
+        c.rect(x, 7, x + 2, h - 1, (90, 96, 104))
+    c.rect(1, 22, w - 2, 24, (110, 116, 124))
+    c.save(OBJ, "m10_steel_stand1")
+
+
+def round3():
+    portal_head()
+    blast_leaf()
+    key_isolator()
+    wall_phone()
+    coat_hooks()
+    fire_buckets()
+    tool_roll()
+    steel_stand()
+    stencil_plate("CORE", "m10_sign_core1")
 
 
 if __name__ == "__main__":

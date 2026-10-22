@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="598" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="612" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -1794,5 +1794,47 @@
  </tile>
  <tile id="607">
   <image source="../objects/m10_generator1.png" width="34" height="26"/>
+ </tile>
+ <tile id="608">
+  <image source="../objects/m10_portal_head1.png" width="64" height="46"/>
+ </tile>
+ <tile id="609">
+  <image source="../objects/m10_blast_leaf1.png" width="18" height="64"/>
+ </tile>
+ <tile id="610">
+  <image source="../objects/m10_key_isolator1.png" width="24" height="28"/>
+ </tile>
+ <tile id="611">
+  <image source="../objects/m10_wall_phone1.png" width="14" height="24"/>
+ </tile>
+ <tile id="612">
+  <image source="../objects/m10_coat_hooks1.png" width="16" height="36"/>
+ </tile>
+ <tile id="613">
+  <image source="../objects/m10_sign_core1.png" width="23" height="11"/>
+ </tile>
+ <tile id="614">
+  <image source="../objects/m10_fire_buckets1.png" width="24" height="22"/>
+ </tile>
+ <tile id="615">
+  <image source="../objects/m10_tool_roll1.png" width="26" height="12"/>
+ </tile>
+ <tile id="616">
+  <image source="../objects/m10_steel_stand1.png" width="30" height="36"/>
+ </tile>
+ <tile id="617">
+  <image source="../objects/se_logo_sign1.png" width="64" height="19"/>
+ </tile>
+ <tile id="618">
+  <image source="../objects/se_sign_engagement1.png" width="47" height="11"/>
+ </tile>
+ <tile id="619">
+  <image source="../objects/se_sign_recon1.png" width="27" height="11"/>
+ </tile>
+ <tile id="620">
+  <image source="../objects/se_sign_ops1.png" width="47" height="11"/>
+ </tile>
+ <tile id="621">
+  <image source="../objects/se_sign_blueteam1.png" width="43" height="11"/>
  </tile>
 </tileset>
