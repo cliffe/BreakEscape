@@ -1053,6 +1053,9 @@ WALL_MOUNTED_EXTRAS = {
     "m09_keypad",
     "m09_door_controller",
     "m09_drop_screen",
+    "m09_county_map",
+    "m09_sign_silence",
+    "m09_sign_personnel",
 }
 
 

@@ -167,6 +167,34 @@ def paint_stain(op, cx, cy, rx, ry, f=0.8, width=320):
                 op[x, y] = (*shade((r, g, b), f), a)
 
 
+def paint_chainlink(img, width=320, y0=14, y1=56, post_every=48):
+    """Chain-link mesh standing in front of the back wall (rows y0..y1, the whole wall
+    face between the frame and the skirting) and down both side-wall strips: light steel
+    diamonds over the wall colour, a top rail, posts. Kept above y 56 so the floor line
+    still reads at 64 (check_room_walls)."""
+    op = img.load()
+    steel, post, rail = (176, 182, 188), (120, 126, 134), (150, 156, 164)
+    for y in range(y0, y1):
+        for x in range(12, width - 12):
+            if (x + y) % 6 == 0 or (x - y) % 6 == 0:
+                op[x, y] = (*steel, 255)
+        for x in range(12, width - 12, post_every):
+            for dx in (0, 1):
+                op[x + dx, y] = (*post, 255)
+    for x in range(12, width - 12):
+        op[x, y0] = (*rail, 255)
+        op[x, y0 + 1] = (*post, 255)
+    # side strips (x 12-31 and width-32..width-12), below the back wall
+    for y in range(64, img.height - 14):
+        for x in list(range(12, 30)) + list(range(width - 30, width - 12)):
+            if (x + y) % 6 == 0 or (x - y) % 6 == 0:
+                op[x, y] = (*steel, 255)
+        if y % 48 == 0:
+            for x in list(range(12, 30)) + list(range(width - 30, width - 12)):
+                op[x, y] = (*post, 255)
+    return img
+
+
 # --- sheets ---------------------------------------------------------------------
 
 def dock_sheet():
@@ -203,8 +231,9 @@ def stacks_sheet():
     paint_wear(op, (548, 64, 608, 120), width=640)    # E door (closet)
     paint_wear(op, (32, 200, 92, 256), width=640)     # S door (the shutter)
     paint_wear(op, (96, 236, 600, 300), width=640, strength=0.94)   # the guard's round
-    for x, y in ((300, 284), (520, 284)):
+    for x, y in ((300, 284), (360, 284)):
         paint_grate(op, x, y, width=640)
+    paint_hatch_border(op, (392, 270, 606, 304), width_px=3, width=640)   # the returns bay, south-east
     return img
 
 
@@ -238,9 +267,9 @@ def restricted_sheet():
 def cage_sheet():
     img = paint_floor(base_walls(BLOCK_GREEN_WALLS), concrete_pixel, shadow=0.92)
     op = img.load()
-    paint_hatch_border(op, (158, 128, 236, 166), width_px=3, colours=(YELLOW, BLACK))  # round the shredder line
+    paint_hatch_border(op, (112, 128, 236, 168), width_px=3, colours=(YELLOW, BLACK))  # round the shredder line
     paint_wear(op, (32, 64, 100, 120))
-    return img
+    return paint_chainlink(img)
 
 
 def office_sheet():
@@ -260,7 +289,7 @@ def salvage_sheet():
     op = img.load()
     paint_stain(op, 200, 110, 18, 8)
     paint_stain(op, 120, 120, 10, 5)
-    return img
+    return paint_chainlink(img)
 
 
 def main():

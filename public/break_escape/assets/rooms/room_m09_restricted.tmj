@@ -354,21 +354,21 @@
    "name": "tables",
    "objects": [
     {
-     "gid": 1332,
+     "gid": 1358,
      "height": 104,
      "id": 11,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 22,
-     "x": 220.0,
+     "width": 16,
+     "x": 224.0,
      "y": 228.0
     },
     {
      "gid": 107,
      "height": 39,
-     "id": 18,
+     "id": 20,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -474,21 +474,45 @@
      "y": 40.0
     },
     {
-     "gid": 1333,
-     "height": 24,
-     "id": 15,
+     "gid": 1357,
+     "height": 124,
+     "id": 12,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 8,
+     "x": 238.0,
+     "y": 230.0
+    },
+    {
+     "gid": 1356,
+     "height": 12,
+     "id": 16,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 48,
      "x": 240.0,
-     "y": 252.0
+     "y": 128.0
+    },
+    {
+     "gid": 1356,
+     "height": 12,
+     "id": 17,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 48,
+     "x": 240.0,
+     "y": 238.0
     },
     {
      "gid": 848,
      "height": 29,
-     "id": 16,
+     "id": 18,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -500,7 +524,7 @@
     {
      "gid": 1343,
      "height": 46,
-     "id": 22,
+     "id": 24,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -512,7 +536,7 @@
     {
      "gid": 828,
      "height": 20,
-     "id": 24,
+     "id": 26,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -520,6 +544,18 @@
      "width": 16,
      "x": 14.0,
      "y": 230.0
+    },
+    {
+     "gid": 1325,
+     "height": 13,
+     "id": 27,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 9,
+     "x": 17.0,
+     "y": 142.0
     }
    ],
    "opacity": 1,
@@ -545,16 +581,16 @@
    "name": "conditional_table_items",
    "objects": [
     {
-     "gid": 1331,
-     "height": 11,
-     "id": 17,
+     "gid": 1359,
+     "height": 14,
+     "id": 19,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 16,
-     "x": 224.0,
-     "y": 214.0
+     "width": 20,
+     "x": 222.0,
+     "y": 216.0
     }
    ],
    "opacity": 1,
@@ -571,7 +607,7 @@
     {
      "gid": 1337,
      "height": 14,
-     "id": 19,
+     "id": 21,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -583,7 +619,7 @@
     {
      "gid": 1337,
      "height": 14,
-     "id": 20,
+     "id": 22,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -595,7 +631,7 @@
     {
      "gid": 194,
      "height": 14,
-     "id": 21,
+     "id": 23,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -651,7 +687,7 @@
     },
     {
      "height": 104.0,
-     "id": 12,
+     "id": 13,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -662,7 +698,7 @@
     },
     {
      "height": 8.0,
-     "id": 13,
+     "id": 14,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -673,7 +709,7 @@
     },
     {
      "height": 10.0,
-     "id": 14,
+     "id": 15,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -684,7 +720,7 @@
     },
     {
      "height": 10,
-     "id": 23,
+     "id": 25,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -702,7 +738,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 25,
+ "nextobjectid": 28,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3135,7 +3171,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 538,
+   "tilecount": 551,
    "tileheight": 60,
    "tiles": [
     {
@@ -6365,6 +6401,84 @@
      "image": "../objects/m09_deck_controller1.png",
      "imageheight": 14,
      "imagewidth": 18
+    },
+    {
+     "id": 548,
+     "image": "../objects/m09_county_map1.png",
+     "imageheight": 22,
+     "imagewidth": 30
+    },
+    {
+     "id": 549,
+     "image": "../objects/m09_sign_silence1.png",
+     "imageheight": 11,
+     "imagewidth": 63
+    },
+    {
+     "id": 550,
+     "image": "../objects/m09_sign_personnel1.png",
+     "imageheight": 11,
+     "imagewidth": 43
+    },
+    {
+     "id": 551,
+     "image": "../objects/m09_shelves_white1.png",
+     "imageheight": 60,
+     "imagewidth": 50
+    },
+    {
+     "id": 552,
+     "image": "../objects/m09_shelves_red1.png",
+     "imageheight": 60,
+     "imagewidth": 50
+    },
+    {
+     "id": 553,
+     "image": "../objects/m09_shelves_half1.png",
+     "imageheight": 60,
+     "imagewidth": 50
+    },
+    {
+     "id": 554,
+     "image": "../objects/m09_shelves_flip1.png",
+     "imageheight": 60,
+     "imagewidth": 50
+    },
+    {
+     "id": 555,
+     "image": "../objects/m09_mesh_rail1.png",
+     "imageheight": 12,
+     "imagewidth": 48
+    },
+    {
+     "id": 556,
+     "image": "../objects/m09_hatch_screen1.png",
+     "imageheight": 124,
+     "imagewidth": 8
+    },
+    {
+     "id": 557,
+     "image": "../objects/m09_hatch_counter2.png",
+     "imageheight": 104,
+     "imagewidth": 16
+    },
+    {
+     "id": 558,
+     "image": "../objects/m09_rubber_stamp2.png",
+     "imageheight": 14,
+     "imagewidth": 20
+    },
+    {
+     "id": 559,
+     "image": "../objects/m09_strip_sack1.png",
+     "imageheight": 20,
+     "imagewidth": 18
+    },
+    {
+     "id": 560,
+     "image": "../objects/m09_folder1.png",
+     "imageheight": 18,
+     "imagewidth": 26
     }
    ],
    "tilewidth": 60

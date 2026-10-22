@@ -1342,6 +1342,19 @@ export function preload() {
     this.load.image('m09_drop_screen1', 'objects/m09_drop_screen1.png');
     this.load.image('m09_sign_bay1', 'objects/m09_sign_bay1.png');
     this.load.image('m09_deck_controller1', 'objects/m09_deck_controller1.png');
+    this.load.image('m09_county_map1', 'objects/m09_county_map1.png');
+    this.load.image('m09_sign_silence1', 'objects/m09_sign_silence1.png');
+    this.load.image('m09_sign_personnel1', 'objects/m09_sign_personnel1.png');
+    this.load.image('m09_shelves_white1', 'objects/m09_shelves_white1.png');
+    this.load.image('m09_shelves_red1', 'objects/m09_shelves_red1.png');
+    this.load.image('m09_shelves_half1', 'objects/m09_shelves_half1.png');
+    this.load.image('m09_shelves_flip1', 'objects/m09_shelves_flip1.png');
+    this.load.image('m09_mesh_rail1', 'objects/m09_mesh_rail1.png');
+    this.load.image('m09_hatch_screen1', 'objects/m09_hatch_screen1.png');
+    this.load.image('m09_hatch_counter2', 'objects/m09_hatch_counter2.png');
+    this.load.image('m09_rubber_stamp2', 'objects/m09_rubber_stamp2.png');
+    this.load.image('m09_strip_sack1', 'objects/m09_strip_sack1.png');
+    this.load.image('m09_folder1', 'objects/m09_folder1.png');
 
     // Load audio files
     // NPC system sounds

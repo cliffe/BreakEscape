@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="538" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="551" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -1614,5 +1614,44 @@
  </tile>
  <tile id="547">
   <image source="../objects/m09_deck_controller1.png" width="18" height="14"/>
+ </tile>
+ <tile id="548">
+  <image source="../objects/m09_county_map1.png" width="30" height="22"/>
+ </tile>
+ <tile id="549">
+  <image source="../objects/m09_sign_silence1.png" width="63" height="11"/>
+ </tile>
+ <tile id="550">
+  <image source="../objects/m09_sign_personnel1.png" width="43" height="11"/>
+ </tile>
+ <tile id="551">
+  <image source="../objects/m09_shelves_white1.png" width="50" height="60"/>
+ </tile>
+ <tile id="552">
+  <image source="../objects/m09_shelves_red1.png" width="50" height="60"/>
+ </tile>
+ <tile id="553">
+  <image source="../objects/m09_shelves_half1.png" width="50" height="60"/>
+ </tile>
+ <tile id="554">
+  <image source="../objects/m09_shelves_flip1.png" width="50" height="60"/>
+ </tile>
+ <tile id="555">
+  <image source="../objects/m09_mesh_rail1.png" width="48" height="12"/>
+ </tile>
+ <tile id="556">
+  <image source="../objects/m09_hatch_screen1.png" width="8" height="124"/>
+ </tile>
+ <tile id="557">
+  <image source="../objects/m09_hatch_counter2.png" width="16" height="104"/>
+ </tile>
+ <tile id="558">
+  <image source="../objects/m09_rubber_stamp2.png" width="20" height="14"/>
+ </tile>
+ <tile id="559">
+  <image source="../objects/m09_strip_sack1.png" width="18" height="20"/>
+ </tile>
+ <tile id="560">
+  <image source="../objects/m09_folder1.png" width="26" height="18"/>
  </tile>
 </tileset>

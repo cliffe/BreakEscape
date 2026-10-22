@@ -20,12 +20,12 @@
          "y":0
         }, 
         {
-         "data":[701, 702, 703, 704, 705,
-            711, 712, 713, 714, 715,
-            721, 722, 723, 724, 725,
-            731, 732, 733, 734, 735,
-            741, 742, 743, 744, 745,
-            751, 752, 753, 754, 755],
+         "data":[701, 702, 703, 704, 710,
+            711, 712, 713, 714, 720,
+            721, 722, 723, 724, 730,
+            731, 732, 733, 734, 740,
+            741, 742, 743, 744, 790,
+            791, 792, 793, 794, 800],
          "height":6,
          "id":1,
          "name":"room",
@@ -61,7 +61,7 @@
                 {
                  "gid":110,
                  "height":41,
-                 "id":5,
+                 "id":6,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -90,13 +90,25 @@
                  "type":"",
                  "visible":true,
                  "width":17,
-                 "x":66,
+                 "x":40,
                  "y":46
+                }, 
+                {
+                 "gid":878,
+                 "height":29,
+                 "id":2,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28,
+                 "x":62,
+                 "y":54
                 }, 
                 {
                  "gid":868,
                  "height":59,
-                 "id":2,
+                 "id":3,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -108,7 +120,7 @@
                 {
                  "gid":1337,
                  "height":14,
-                 "id":7,
+                 "id":8,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -132,7 +144,7 @@
                 {
                  "gid":1338,
                  "height":24,
-                 "id":4,
+                 "id":5,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -166,7 +178,7 @@
                 {
                  "gid":366,
                  "height":30,
-                 "id":6,
+                 "id":7,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -188,7 +200,7 @@
          "objects":[
                 {
                  "height":30,
-                 "id":3,
+                 "id":4,
                  "name":"collision",
                  "rotation":0,
                  "type":"",
@@ -204,7 +216,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":8,
+ "nextobjectid":9,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -2715,8 +2727,8 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":538,
-         "tileheight":104,
+         "tilecount":551,
+         "tileheight":124,
          "tiles":[
                 {
                  "id":0,
@@ -6052,6 +6064,87 @@
                  "image":"..\/objects\/m09_deck_controller1.png",
                  "imageheight":14,
                  "imagewidth":18
+                }, 
+                {
+                 "id":548,
+                 "image":"..\/objects\/m09_county_map1.png",
+                 "imageheight":22,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":549,
+                 "image":"..\/objects\/m09_sign_silence1.png",
+                 "imageheight":11,
+                 "imagewidth":63
+                },
+            
+                {
+                 "id":550,
+                 "image":"..\/objects\/m09_sign_personnel1.png",
+                 "imageheight":11,
+                 "imagewidth":43
+                }, 
+                {
+                 "id":551,
+                 "image":"..\/objects\/m09_shelves_white1.png",
+                 "imageheight":60,
+                 "imagewidth":50
+                }, 
+                {
+                 "id":552,
+                 "image":"..\/objects\/m09_shelves_red1.png",
+                 "imageheight":60,
+                 "imagewidth":50
+                }, 
+                {
+                 "id":553,
+                 "image":"..\/objects\/m09_shelves_half1.png",
+                 "imageheight":60,
+                 "imagewidth":50
+                }, 
+                {
+                 "id":554,
+                 "image":"..\/objects\/m09_shelves_flip1.png",
+                 "imageheight":60,
+                 "imagewidth":50
+                },
+            
+                {
+                 "id":555,
+                 "image":"..\/objects\/m09_mesh_rail1.png",
+                 "imageheight":12,
+                 "imagewidth":48
+                }, 
+                {
+                 "id":556,
+                 "image":"..\/objects\/m09_hatch_screen1.png",
+                 "imageheight":124,
+                 "imagewidth":8
+                }, 
+                {
+                 "id":557,
+                 "image":"..\/objects\/m09_hatch_counter2.png",
+                 "imageheight":104,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":558,
+                 "image":"..\/objects\/m09_rubber_stamp2.png",
+                 "imageheight":14,
+                 "imagewidth":20
+                }, 
+                {
+                 "id":559,
+                 "image":"..\/objects\/m09_strip_sack1.png",
+                 "imageheight":20,
+                 "imagewidth":18
+                },
+            
+                {
+                 "id":560,
+                 "image":"..\/objects\/m09_folder1.png",
+                 "imageheight":18,
+                 "imagewidth":26
                 }],
          "tilewidth":252
         }],

@@ -2814,7 +2814,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 538,
+   "tilecount": 551,
    "tileheight": 60,
    "tiles": [
     {
@@ -6044,6 +6044,84 @@
      "image": "../objects/m09_deck_controller1.png",
      "imageheight": 14,
      "imagewidth": 18
+    },
+    {
+     "id": 548,
+     "image": "../objects/m09_county_map1.png",
+     "imageheight": 22,
+     "imagewidth": 30
+    },
+    {
+     "id": 549,
+     "image": "../objects/m09_sign_silence1.png",
+     "imageheight": 11,
+     "imagewidth": 63
+    },
+    {
+     "id": 550,
+     "image": "../objects/m09_sign_personnel1.png",
+     "imageheight": 11,
+     "imagewidth": 43
+    },
+    {
+     "id": 551,
+     "image": "../objects/m09_shelves_white1.png",
+     "imageheight": 60,
+     "imagewidth": 50
+    },
+    {
+     "id": 552,
+     "image": "../objects/m09_shelves_red1.png",
+     "imageheight": 60,
+     "imagewidth": 50
+    },
+    {
+     "id": 553,
+     "image": "../objects/m09_shelves_half1.png",
+     "imageheight": 60,
+     "imagewidth": 50
+    },
+    {
+     "id": 554,
+     "image": "../objects/m09_shelves_flip1.png",
+     "imageheight": 60,
+     "imagewidth": 50
+    },
+    {
+     "id": 555,
+     "image": "../objects/m09_mesh_rail1.png",
+     "imageheight": 12,
+     "imagewidth": 48
+    },
+    {
+     "id": 556,
+     "image": "../objects/m09_hatch_screen1.png",
+     "imageheight": 124,
+     "imagewidth": 8
+    },
+    {
+     "id": 557,
+     "image": "../objects/m09_hatch_counter2.png",
+     "imageheight": 104,
+     "imagewidth": 16
+    },
+    {
+     "id": 558,
+     "image": "../objects/m09_rubber_stamp2.png",
+     "imageheight": 14,
+     "imagewidth": 20
+    },
+    {
+     "id": 559,
+     "image": "../objects/m09_strip_sack1.png",
+     "imageheight": 20,
+     "imagewidth": 18
+    },
+    {
+     "id": 560,
+     "image": "../objects/m09_folder1.png",
+     "imageheight": 18,
+     "imagewidth": 26
     }
    ],
    "tilewidth": 60

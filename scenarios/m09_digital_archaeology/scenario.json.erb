@@ -1119,7 +1119,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       },
       "npcs": [
         {
-          "_comment": "Room dressing R2: start and round moved from y 8.5 to 7.5; 8.5 was outside the room's pathfinding bounds (tiles y 2-8), so the patrol was dropped. Cody Old Coyote, night guard (B6). Challenges on sight (any cover talks past him); leaves on old_coyote_told. On m01_maya_ko after flag 1, Tran's radio sends him to a tile beside the reading-room door (S5 §3.3), with a relay for a route-A player who never loaded this room (stage 8 m-01). Holds the dock office door's only key. PLACEHOLDER art: male_security_guard (ASSET_LIST §1.2).",
+          "_comment": "Room dressing R3: the override tile moved from (2, 6.5), mid west crossing, to (3.5, 4.2), beside the reading-room door's mouth and clear of route B (S5 §3.3). Room dressing R2: start and round moved from y 8.5 to 7.5; 8.5 was outside the room's pathfinding bounds (tiles y 2-8), so the patrol was dropped. Cody Old Coyote, night guard (B6). Challenges on sight (any cover talks past him); leaves on old_coyote_told. On m01_maya_ko after flag 1, Tran's radio sends him to a tile beside the reading-room door (S5 §3.3), with a relay for a route-A player who never loaded this room (stage 8 m-01). Holds the dock office door's only key. PLACEHOLDER art: male_security_guard (ASSET_LIST §1.2).",
           "id": "old_coyote",
           "displayName": "Cody Old Coyote",
           "npcType": "person",
@@ -1190,13 +1190,13 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "eventPattern": "global_variable_changed:flag1_submitted",
               "condition": "value === true && globalVars.m01_maya_ko && !globalVars.old_coyote_told && !globalVars.old_coyote_ko",
               "onceOnly": true,
-              "patrolOverride": { "targetTile": { "x": 2, "y": 6.5 }, "stopOnArrival": true }
+              "patrolOverride": { "targetTile": { "x": 3.5, "y": 4.2 }, "stopOnArrival": true }
             },
             {
               "_comment": "Relay (stage 8 m-01): his mapping doesn't hear flag 1 while this room is unloaded.",
               "eventPattern": "room_entered:open_stacks",
               "condition": "globalVars.flag1_submitted && globalVars.m01_maya_ko && !globalVars.old_coyote_told && !globalVars.old_coyote_ko",
-              "patrolOverride": { "targetTile": { "x": 2, "y": 6.5 }, "stopOnArrival": true }
+              "patrolOverride": { "targetTile": { "x": 3.5, "y": 4.2 }, "stopOnArrival": true }
             }
           ],
           "observations": "The night guard, torch on his belt, phone on speaker."
@@ -1404,6 +1404,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
         {
           "_comment": "VM-WIRE: vm_object's system name and fallback (the attack box both launchers open).",
           "type": "vm-launcher",
+          "sprite": "laptop1",
           "id": "field_laptop",
           "name": "Field Laptop",
           "takeable": false,
@@ -1971,10 +1972,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
         {
           "_comment": "S6 §1.7. Collected (find_the_deed); no variants (C-21). HaX's lines on pickup are texts (A3-21..23).",
           "type": "notes",
-          "sprite": "case-file",
           "id": "lease_file",
           "name": "Lease Abstract and Construction File",
-          "position": "as-type:case-file",
+          "position": "as-type:m09_folder",
           "takeable": true,
           "readable": true,
           "observations": "A lease and a roll of drawings for a bunker in this county.",
@@ -2188,6 +2188,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
         {
           "_comment": "VM-WIRE: the same attack VM as field_laptop (two launchers, one console; S5 §9).",
           "type": "vm-launcher",
+          "sprite": "laptop1",
           "id": "field_kit_link",
           "name": "Field Kit Link",
           "takeable": false,
@@ -2216,7 +2217,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "type": "notes",
           "id": "albion_folder",
           "name": "Printed Folder: VH-2017-0312",
-          "position": "as-type:case-file",
+          "position": "as-type:m09_folder",
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",

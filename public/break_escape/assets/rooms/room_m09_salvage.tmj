@@ -260,25 +260,25 @@
     {
      "gid": 110,
      "height": 41,
-     "id": 15,
+     "id": 14,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 32,
-     "x": 182.0,
+     "x": 160.0,
      "y": 128.0
     },
     {
      "gid": 109,
      "height": 41,
-     "id": 18,
+     "id": 17,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 50,
-     "x": 234.0,
+     "x": 204.0,
      "y": 128.0
     }
    ],
@@ -326,20 +326,8 @@
      "type": "",
      "visible": true,
      "width": 32,
-     "x": 240.0,
+     "x": 254.0,
      "y": 96.0
-    },
-    {
-     "gid": 1334,
-     "height": 24,
-     "id": 12,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 32,
-     "x": 240.0,
-     "y": 74.0
     }
    ],
    "opacity": 1,
@@ -380,7 +368,7 @@
     {
      "gid": 1335,
      "height": 24,
-     "id": 13,
+     "id": 12,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -428,25 +416,25 @@
     {
      "gid": 304,
      "height": 16,
-     "id": 17,
+     "id": 16,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 16,
-     "x": 190.0,
+     "x": 168.0,
      "y": 114.06
     },
     {
-     "gid": 1339,
-     "height": 27,
-     "id": 19,
+     "gid": 1361,
+     "height": 18,
+     "id": 18,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 40,
-     "x": 239.0,
+     "width": 26,
+     "x": 216.0,
      "y": 114.06
     }
    ],
@@ -464,13 +452,13 @@
     {
      "gid": 1252,
      "height": 11,
-     "id": 16,
+     "id": 15,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
      "width": 16,
-     "x": 190.0,
+     "x": 168.0,
      "y": 103.4
     }
    ],
@@ -504,12 +492,12 @@
      "type": "",
      "visible": true,
      "width": 28,
-     "x": 242.0,
+     "x": 256.0,
      "y": 86.0
     },
     {
      "height": 12.0,
-     "id": 14,
+     "id": 13,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -527,7 +515,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 20,
+ "nextobjectid": 19,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -2960,7 +2948,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 538,
+   "tilecount": 551,
    "tileheight": 60,
    "tiles": [
     {
@@ -6190,6 +6178,84 @@
      "image": "../objects/m09_deck_controller1.png",
      "imageheight": 14,
      "imagewidth": 18
+    },
+    {
+     "id": 548,
+     "image": "../objects/m09_county_map1.png",
+     "imageheight": 22,
+     "imagewidth": 30
+    },
+    {
+     "id": 549,
+     "image": "../objects/m09_sign_silence1.png",
+     "imageheight": 11,
+     "imagewidth": 63
+    },
+    {
+     "id": 550,
+     "image": "../objects/m09_sign_personnel1.png",
+     "imageheight": 11,
+     "imagewidth": 43
+    },
+    {
+     "id": 551,
+     "image": "../objects/m09_shelves_white1.png",
+     "imageheight": 60,
+     "imagewidth": 50
+    },
+    {
+     "id": 552,
+     "image": "../objects/m09_shelves_red1.png",
+     "imageheight": 60,
+     "imagewidth": 50
+    },
+    {
+     "id": 553,
+     "image": "../objects/m09_shelves_half1.png",
+     "imageheight": 60,
+     "imagewidth": 50
+    },
+    {
+     "id": 554,
+     "image": "../objects/m09_shelves_flip1.png",
+     "imageheight": 60,
+     "imagewidth": 50
+    },
+    {
+     "id": 555,
+     "image": "../objects/m09_mesh_rail1.png",
+     "imageheight": 12,
+     "imagewidth": 48
+    },
+    {
+     "id": 556,
+     "image": "../objects/m09_hatch_screen1.png",
+     "imageheight": 124,
+     "imagewidth": 8
+    },
+    {
+     "id": 557,
+     "image": "../objects/m09_hatch_counter2.png",
+     "imageheight": 104,
+     "imagewidth": 16
+    },
+    {
+     "id": 558,
+     "image": "../objects/m09_rubber_stamp2.png",
+     "imageheight": 14,
+     "imagewidth": 20
+    },
+    {
+     "id": 559,
+     "image": "../objects/m09_strip_sack1.png",
+     "imageheight": 20,
+     "imagewidth": 18
+    },
+    {
+     "id": 560,
+     "image": "../objects/m09_folder1.png",
+     "imageheight": 18,
+     "imagewidth": 26
     }
    ],
    "tilewidth": 60

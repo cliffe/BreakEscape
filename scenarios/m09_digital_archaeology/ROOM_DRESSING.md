@@ -158,3 +158,71 @@ No PixelLab call this round (balance unchanged at 4123). The deck controller box
 4. Server closet is thin (rack, degausser, terminal); a reel rack would help if a narrow one is drawn.
 5. The trolley and bin states need a decision on making them scenario objects before any art is made.
 6. Lighting is next once dressing is signed off: the tour reports no lighting configured yet.
+
+## Round 3 (2026-10-22): the R3 review's findings
+
+Review: `DRESSING_REVIEW_R3.md` (0 blockers, 7 majors, 20 minors). I fixed all the majors and most of the minors, then checked them in a browser session of my own (game 3101, every room unlocked server-side; log in the session scratchpad, `dress_r1/pt3/`). Renders: maps `dressing_r3/maps/` (contact sheet included); in game `dressing_r3/ingame/<room>-a.png` (game 3099, Dillard shown); browser shots `dressing_r3/ingame/cage_browser.png`, `salvage_browser.png`.
+
+### Per finding
+
+| # | Sev | Fix | Checked in game |
+|---|---|---|---|
+| K1 | major | The closet's room layer is now built from the 5×6 template's cell map (`_build` in `m09_rooms.py`), so it has its east wall and south frame | yes: walls and frame drawn; W door both ways; the console opens with no menu |
+| K2 | minor | Wall-hung patch cabinet west of the rack; clipboard moved to the west end. A floor-standing UPS stood in the W door's mouth, so I used a wall unit instead. Tran unchanged | render |
+| H1 | major | The counter is now a 16 px ledge (`m09_hatch_counter2`) with a side-on mesh screen standing on its east edge (`m09_hatch_screen1`: 8×124, posts every 32 px, a gap at the hatch). Low mesh rails (`m09_mesh_rail1`, 12 px tall) close the strip at both ends, so the north collision is no longer invisible. Collisions unchanged | yes: gate walked both ways; Sorensen opens her person-chat from the counter |
+| H2 | minor | Larger stamp-and-pad sprite (`m09_rubber_stamp2`, 20×14) in the same slot | yes: dusting minigame from 27 px |
+| H3 | minor | `m09_keypad1` on the hub's west wall below the office door | render |
+| C1 | major | Chain-link painted over the cage sheet's back wall and both side strips (`paint_chainlink`, kept above y 56 so the floor line still reads 64) | yes (`cage_browser.png`) |
+| C2 | major | The hatched shredder box now runs from x 112, so Sorensen stands inside it. A sack of strips and a taped box sit between her and the shredder as decor. The shredder slot stays at x 164 (outside her tap frame); she was not moved | yes: she reads as at the feed |
+| C3 | minor | The degausser is on a small steel bench | render |
+| C4 | minor | The cage's shelves are `m09_shelves_red1` (white archive boxes with red tape) | yes |
+| V1 | major | The same chain-link on the salvage cage sheet | yes (`salvage_browser.png`) |
+| V2 | minor | One ALPHA crate at the back wall (x 254); printer stand moved to x 160–192, folder table to x 204–254; every slot 32 px or more apart | yes: all seven objects open |
+| V3 / R3 | minor | `field_laptop` and `field_kit_link` get `"sprite": "laptop1"` | yes: texture `laptop1` in both rooms; both open the VM launcher |
+| V4 | minor | Accepted: the cut controller stays on the north wall (the S wall is covered) | — |
+| O1 | minor | New manila folder (`m09_folder1`) for `lease_file` and `albion_folder` (`as-type:m09_folder`; lease_file's `case-file` stand-in dropped). HaX's case file keeps `case-file` | yes: both open |
+| O2 | minor | Sorensen's desk is now the dark `exec_desk1` | yes |
+| O3 | minor | The west side table is a sideboard (rent ledger on it); the east one stays | yes: rent ledger opens |
+| S1 | major | Three shelf variants (`m09_shelves_white1`, `_half1`, `_flip1`, recoloured or mirrored from the house shelving at native size) alternate with the original along both runs; a 14 px gap between bay 10 and bay 11 at x 250–264 | yes |
+| S2 | major | A hatched returns bay along the south of the east half (y 270–304, x 392–606) with pallets of taped boxes, a box trolley and the pallet truck, outside Old Coyote's round | yes: his lap is unchanged |
+| S3 | minor | Bay label foot at y 101, on bay 12's bottom rail and drawn in front of it (at y 95 it drew behind the shelf and vanished) | yes: visible; opens at 27 px |
+| S4 | minor | Old Coyote's override tile moved from (2, 6.5), mid west crossing, to (3.5, 4.2), beside the reading-room door's mouth (S5 §3.3: beside the door, never on it). Both relay copies changed; the scenario comment says why | the pathfinding grid shows tile (3, 4) walkable; the override itself was not triggered (it needs flag 1 on an `m01_maya_ko` save) |
+| D1 | minor | A PERSONNEL plate under BAY 1 by the open N door | render |
+| D2 | minor | Dillard at (3.5, 8) shown in game (`--show-npc archive_guard`): his feet sit just above the dock's wall line, not across the brick. Left where he is | yes (`open_stacks-a.png`) |
+| F1 | minor | Two chairs on the counter's public side, facing it | render |
+| F2 | minor | Covered by O2 and F1 | — |
+| R1 | minor | Reading-table chair is `hospital_chair1` (faces W, towards the table) | render |
+| R2 | minor | A framed county map and SILENCE PLEASE on the back wall | render |
+
+### Found while checking: decor that took a scenario slot
+
+The engine searches the regular layers before the conditional ones. A decor sprite of the same base type as an `as-type` slot therefore takes the scenario object first. Three cases, all fixed:
+
+- **front_desk**: the taped box on the counter took `noor_desk_box`, so the desk box sat on the counter (since round 1). It is now an `office-misc-box1`.
+- **open_stacks**: the returns bay's `supply_boxes1` took `hl_box`, moving Harwick & Lowe's boxes to the south wall. The decor is now taped boxes.
+- **restricted_cage**: an open box by the shredder took `feed_table_box`. It is now a taped box.
+
+The check is in the session scratchpad. For each room it lists every `as-type` or own-type slot that has a same-base sprite in `items` or `table_items`; it now lists none. In game, `noor_desk_box` is at the desk (182, 92), `hl_box` is in front of bay 12 (494, 102) and `feed_table_box` is on the feed table (139, 177).
+
+### Scenario edits (layout fields only, re-read before each edit)
+
+- `lease_file`: `sprite` dropped, `as-type:m09_folder`. `albion_folder`: `as-type:m09_folder`.
+- `field_laptop`, `field_kit_link`: `"sprite": "laptop1"`.
+- Old Coyote's `patrolOverride.targetTile` (two copies): (3.5, 4.2); his comment notes it.
+
+### Other files
+
+- `scripts/room_gen/make_m09_props.py`: `round3()` adds the shelf variants, mesh rail, hatch screen, counter ledge, larger stamp, strip sack, county map, folder, SILENCE PLEASE and PERSONNEL plates. All are registered (the map and plates as wall items).
+- `scripts/room_gen/make_m09_tileset.py`: `paint_chainlink` on the cage and salvage sheets; a wider shredder box; the returns bay hatching in the stacks.
+- `scripts/room_gen/m09_rooms.py`: as above.
+
+### Checks after round 3
+
+Validator exit 0, 0 errors, schema passes. `slot_audit`: 0 problems. Walls: all 64. Door alignment: 11 of 11. Door clearance: no hits. Slot spacing: all 32 px or more except the rack and its label (by design). No PixelLab spend (balance 4123). The 'style' page error did not appear in game 3101; the 503s in its log are the keyless server's.
+
+### Open for round 4 or lighting
+
+1. Old Coyote's override at (3.5, 4.2): still to be seen in play on an `m01_maya_ko` save after flag 1.
+2. Art still owed (ASSET_LIST §4): the trolley and bin states. Both need scenario objects first.
+3. Four rooms use the cream `desk1` (front desk ×2, hub sorting table, reading desk). Noted, not changed.
+4. Ready for lighting, in my view: every room now reads as its place, props sit square to the walls, and no door or tap area is blocked.

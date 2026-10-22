@@ -47,6 +47,14 @@ M09_SHEETS = {
 
 def _build(r, name, template="10x10"):
     room = r.build(name, template)
+    if template == "5x6":
+        # R3 K1: the 5x6 room layer comes from the template's cell map (east wall and
+        # south frame included), as room_hospital_storage_1x1gu does; r.build fills the
+        # sheet's top-left 5x6 block, which has neither.
+        cells = G.TEMPLATES["5x6"]["room"]
+        for layer in room["layers"]:
+            if layer.get("name") == "room":
+                layer["data"] = [G.ROOM6_FIRSTGID + g - 1 if 1 <= g <= 100 else g for g in cells]
     sheet = M09_SHEETS[name]
     west, east = sheet if isinstance(sheet, tuple) else (sheet, None)
     for ts in room["tilesets"]:
@@ -79,6 +87,7 @@ def room_m09_dock():
     """
     r = G._Uni()
     r.item("m09_sign_bay1", 70.0, 30.0)
+    r.item("m09_sign_personnel1", 70.0, 44.0)          # R3 D1: the open bay is the way in
     r.solid("aes_bollard1", 104.0, 112.0)
     r.item("aes_shutter_ctrl1", 92.0, 56.0)
     r.item("aes_roller_shutter1", 116.0, 64.0)          # BAY 2, down
@@ -142,11 +151,13 @@ def room_m09_front():
     r.on(c, "notes_legalpad1", 0.62, 0.30)
     c2 = r.table("desk1", 134.0, 250.0)
     r.on(c2, "phone4", 0.30, 0.36)
-    r.on(c2, "m09_box_taped1", 0.70, 0.40)
+    r.on(c2, "office-misc-box1", 0.70, 0.40)          # not m09_box_taped1: that would take the desk box's slot
     # the two trolleys for the run, east of Noor
     t1 = r.table("m09_box_trolley1", 252.0, 200.0, kind="objects")   # x 252-294
     r.on(t1, "notes_clip1", 0.30, 0.86, layer="conditional_table_items")
     r.table("m09_box_trolley1", 252.0, 254.0, kind="objects")
+    r.item("hospital_chair_north", 92.0, 290.0)         # R3 F1: the public side of the counter
+    r.item("hospital_chair_north", 170.0, 290.0)
     r.solid("filing_cabinet_steel1", 34.0, 210.0)
     r.solid("filing_cabinet_steel1", 64.0, 210.0)
     r.solid("water_cooler1", 224.0, 300.0)
@@ -174,24 +185,41 @@ def room_m09_stacks():
     """
     r = G._Uni()
     # back-wall run, west: bays 10 and 11
-    for x in (100.0, 150.0, 200.0, 250.0, 300.0):
-        r.solid("supply_shelves1", x, 100.0, depth=36)
+    # R3 S1: shelf variants, and an end-of-bay gap between bays 10 and 11 at x 250-264
+    for x, name in ((100.0, "supply_shelves1"), (150.0, "m09_shelves_white1"), (200.0, "m09_shelves_flip1"),
+                    (264.0, "m09_shelves_half1"), (314.0, "supply_shelves1")):
+        r.solid(name, x, 100.0, depth=36)
     r.item("m09_bay_plate10", 160.0, 30.0)
-    r.item("m09_bay_plate11", 270.0, 30.0)
+    r.item("m09_bay_plate11", 290.0, 30.0)
     r.item("m09_sign_stacks1", 358.0, 36.0)
     # back-wall run, east: bay 12
-    for x in (432.0, 482.0):
-        r.solid("supply_shelves1", x, 100.0, depth=36)
+    for x, name in ((432.0, "m09_shelves_white1"), (482.0, "m09_shelves_flip1")):
+        r.solid(name, x, 100.0, depth=36)
     r.item("m09_bay_plate12", 466.0, 30.0)
     r.item("cctv_camera1", 560.0, 30.0)
-    _cond(r, "m09_bay_label1", 440.0, 104.0)            # on bay 12's shelf front
+    _cond(r, "m09_bay_label1", 440.0, 101.0)            # on bay 12's bottom rail, drawn in front of it (R3 S3)
     # Harwick & Lowe's boxes, pulled out in front of their bay
     _cond(r, "supply_boxes1", 494.0, 142.0)
     # the free-standing run
-    for x in (100.0, 150.0, 200.0, 250.0, 300.0):
-        r.solid("supply_shelves1", x, 210.0, depth=60)
-    for x in (432.0, 482.0):
-        r.solid("supply_shelves1", x, 210.0, depth=60)
+    for x, name in ((100.0, "m09_shelves_flip1"), (150.0, "supply_shelves1"), (200.0, "m09_shelves_white1"),
+                    (264.0, "supply_shelves1"), (314.0, "m09_shelves_half1")):
+        r.solid(name, x, 210.0, depth=60)
+    for x, name in ((432.0, "supply_shelves1"), (482.0, "m09_shelves_white1")):
+        r.solid(name, x, 210.0, depth=60)
+    # R3 S2: the returns bay along the south of the east half, outside Old Coyote's
+    # round (his body reaches y ~249): pallets of boxes and a trolley, feet y 300
+    for x in (400.0, 432.0, 520.0):
+        r.solid("aes_pallet1", x, 300.0)
+    # (no supply_boxes1 here: decor of that type would take Harwick & Lowe's slot)
+    r.item("m09_box_taped1", 404.0, 288.0)
+    r.item("m09_box_taped1", 418.0, 288.0)
+    r.item("m09_box_taped1", 436.0, 288.0)
+    r.item("m09_box_taped1", 450.0, 288.0)
+    r.item("m09_box_taped1", 443.0, 278.0)
+    r.item("m09_box_taped1", 524.0, 288.0)
+    r.item("m09_box_taped1", 531.0, 278.0)
+    r.solid("m09_box_trolley1", 470.0, 300.0)
+    r.solid("aes_pallet_truck1", 560.0, 300.0)
     r.item("step_stool1", 352.0, 140.0)
     r.item("m09_box_trolley1", 236.0, 148.0)            # a trolley being loaded in the first aisle
     r.solid("aes_pallet1", 566.0, 206.0)                 # returns in, east end, clear of the E door
@@ -216,7 +244,8 @@ def room_m09_closet():
     Slot: m09_degausser1 (as-type, Wipe Console).
     """
     r = G._Uni()
-    r.item("aes_clipboard1", 66.0, 46.0)
+    r.item("aes_clipboard1", 40.0, 46.0)
+    r.item("comms_cabinet1", 62.0, 54.0)               # a wall-hung patch cabinet west of the rack (R3 K2)
     r.solid("server_rack2", 96.0, 98.0, depth=30)
     _cond(r, "m09_degausser1", 34.0, 174.0)             # SW, out of Tran's tap area (R2)
     d = r.table("smalldesk2", 94.0, 174.0)              # x 94-126, a terminal SE
@@ -260,6 +289,8 @@ def room_m09_reading():
     """
     r = G._Uni()
     r.item("m09_sign_reading1", 80.0, 28.0)
+    r.item("m09_county_map1", 146.0, 46.0)             # R3 R2
+    r.item("m09_sign_silence1", 80.0, 44.0)
     # the terminal's wall screen east of the desk, over open floor (the E door's mouth),
     # so a player can stand right under it (R2: over the desk it was only reachable at 52 px)
     _cond(r, "m09_drop_screen1", 236.0, 58.0)
@@ -272,7 +303,7 @@ def room_m09_reading():
     r.solid("m09_microfiche1", 200.0, 90.0)             # the microfiche reader cart, x 200-234
     t = r.table("smalldesk1", 92.0, 128.0)              # x 92-142, on the rug
     r.on(t, "case-file", 0.46, 0.70, layer="conditional_table_items")
-    r.item("hospital_chair2", 146.0, 126.0)
+    r.item("hospital_chair1", 144.0, 126.0)                # R3 R1: faces the table (W)
     return _build(r, "room_m09_reading", "10x6_hall")
 
 
@@ -302,13 +333,15 @@ def room_m09_restricted():
     r.item("hq_badge_reader1", 296.0, 146.0)            # by the gate, E wall
     r.item("wall_clock1", 182.0, 40.0)
     # the cage front
-    counter = r.table("m09_hatch_counter1", 220.0, 228.0, kind="objects")   # x 220-242
+    counter = r.table("m09_hatch_counter2", 224.0, 228.0, kind="objects")   # R3 H1: the ledge, x 224-240
+    r.item("m09_hatch_screen1", 238.0, 230.0)          # the mesh screen standing on its east edge
     r.collision(224.0, 124.0, 16.0, 104.0)
     r.collision(240.0, 120.0, 48.0, 8.0)                # sealed at the north end
     r.collision(240.0, 228.0, 48.0, 10.0)               # and the south
-    r.item("m09_mesh_low1", 240.0, 252.0)              # the strip's south end
+    r.item("m09_mesh_rail1", 240.0, 128.0)             # low rails close the strip (R3 H1)
+    r.item("m09_mesh_rail1", 240.0, 238.0)
     r.item("yellow_bin1", 262.0, 226.0)                 # her bin, behind her
-    r.conditional_table_items.append(G.make_obj("objects", "m09_rubber_stamp1", 224.0, 214.0, r._next()))
+    r.conditional_table_items.append(G.make_obj("objects", "m09_rubber_stamp2", 222.0, 216.0, r._next()))   # R3 H2
     # the sorting table
     st = r.table("desk1", 96.0, 224.0)                  # x 96-174
     r.on(st, "m09_box_open1", 0.20, 0.40)
@@ -316,6 +349,7 @@ def room_m09_restricted():
     r.on(st, "notes4", 0.80, 0.36)
     r.solid("m09_box_trolley1", 34.0, 172.0)             # returns waiting, between the W door and the S door
     r.item("fire_alarm_point1", 14.0, 230.0)
+    r.item("m09_keypad1", 17.0, 142.0)                 # R3 H3: the office's keypad, hub side
     return _build(r, "room_m09_restricted")
 
 
@@ -337,10 +371,12 @@ def room_m09_cage():
     r = G._Uni()
     r.item("m09_sign_series_r1", 104.0, 26.0)
     r.item("wall_clock1", 202.0, 52.0)
-    r.solid("supply_shelves1", 96.0, 96.0, depth=30)
-    r.solid("supply_shelves1", 146.0, 96.0, depth=30)
+    r.solid("m09_shelves_red1", 96.0, 96.0, depth=30)      # R3 C4: Series R, red tape
+    r.solid("m09_shelves_red1", 146.0, 96.0, depth=30)
     _cond(r, "plan_chest2", 232.0, 100.0)
     r.collision(234.0, 88.0, 48.0, 12.0)
+    r.item("m09_strip_sack1", 140.0, 158.0)            # R3 C2: her sack of strips, at the feed
+    r.item("m09_box_taped1", 124.0, 162.0)             # not an open box: that is the feed table's slot
     _cond(r, "shredder1", 164.0, 160.0)
     r.collision(166.0, 150.0, 14.0, 10.0)
     r.solid("hq_confidential_bin1", 188.0, 160.0)
@@ -349,7 +385,8 @@ def room_m09_cage():
     r.on(ft, "m09_box_open1", 0.30, 0.40, layer="conditional_table_items")
     sh = r.table("sideboard1", 240.0, 204.0, kind="objects")   # x 240-284
     r.on(sh, "binders1", 0.40, 0.30, layer="conditional_table_items")
-    r.solid("m09_degausser1", 204.0, 250.0)
+    db = r.table("smalldesk2", 200.0, 250.0)            # R3 C3: on a bench
+    r.on(db, "m09_degausser1", 0.50, 0.40)
     r.item("m09_box_taped1", 40.0, 250.0)
     r.item("m09_box_taped1", 56.0, 250.0)
     r.item("m09_box_taped1", 48.0, 238.0)
@@ -381,12 +418,12 @@ def room_m09_office():
     r.on(cr, "mugs_tray1", 0.36, 0.34)
     r.on(cr, "m09_deck_controller1", 0.76, 0.34, layer="conditional_table_items")
     r.item("exec_chair_black1", 148.0, 170.0)
-    d = r.table("desk1", 126.0, 204.0)                  # x 126-204, on the rug
-    r.on(d, "bankers_lamp1", 0.14, 0.32)
-    r.on(d, "phone2", 0.36, 0.40)
-    r.on(d, "case-file", 0.74, 0.44, layer="conditional_table_items")
-    wt = r.table("smalldesk1", 40.0, 196.0)             # x 40-90
-    r.on(wt, "book1", 0.40, 0.40, layer="conditional_table_items")
+    d = r.table("exec_desk1", 126.0, 208.0, kind="objects")   # R3 O2: dark wood, x 126-206, on the rug
+    r.on(d, "bankers_lamp1", 0.14, 0.30)
+    r.on(d, "phone2", 0.36, 0.36)
+    r.on(d, "m09_folder1", 0.74, 0.40, layer="conditional_table_items")   # R3 O1: a manila folder
+    wt = r.table("sideboard1", 40.0, 196.0, kind="objects")   # R3 O3: x 40-84
+    r.on(wt, "book1", 0.40, 0.30, layer="conditional_table_items")
     et = r.table("smalldesk1", 232.0, 196.0)            # x 232-282
     r.on(et, "notes2", 0.40, 0.40, layer="conditional_table_items")
     sb = r.table("sideboard1", 120.0, 300.0, kind="objects")   # x 120-164
@@ -460,15 +497,14 @@ def room_m09_salvage():
     r.on(kd, "vm-launcher", 0.46, 0.40, layer="conditional_table_items")
     sd = r.table("zds_desk3", 174.0, 96.0, kind="objects")          # x 174-225, the drop link
     r.on(sd, "safetynet_flag_terminal1", 0.50, 0.40, layer="conditional_table_items")
-    r.solid("m09_crate_alpha1", 240.0, 96.0)                        # ALPHA, against the back wall
-    r.item("m09_crate_alpha1", 240.0, 74.0)                         # stacked two high
+    r.solid("m09_crate_alpha1", 254.0, 96.0)                        # ALPHA, against the back wall (R3 V2: one)
     _cond(r, "m09_crate_beta1", 118.0, 128.0)
     r.collision(120.0, 116.0, 28.0, 12.0)
-    ps = r.table("smalldesk2", 182.0, 128.0)                        # x 182-214, the printer stand
+    ps = r.table("smalldesk2", 160.0, 128.0)                        # x 160-192, the printer stand
     r.on(ps, "pnw_portable_printer1", 0.50, 0.40)
     r.on(ps, "notes1", 0.50, 0.66, layer="conditional_table_items")
-    lt = r.table("smalldesk1", 234.0, 128.0)                        # x 234-284
-    r.on(lt, "case-file", 0.50, 0.66, layer="conditional_table_items")
+    lt = r.table("smalldesk1", 204.0, 128.0)                        # x 204-254
+    r.on(lt, "m09_folder1", 0.50, 0.66, layer="conditional_table_items")
     return _build(r, "room_m09_salvage", "10x6_hall")
 
 

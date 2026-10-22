@@ -372,5 +372,194 @@ def main():
     degausser()
 
 
+# --- round 3 ---------------------------------------------------------------------
+
+def shelf_variants():
+    """Variants of the house steel shelving (supply_shelves1, 50x60) so a run of bays
+    doesn't read as one sprite copied: recoloured and rearranged at native size, never
+    rescaled. 'white' swaps the brown cartons for white archive boxes; 'red' is the
+    white set with red retention tape (Series R in the cage); 'half' has its top
+    shelf cleared; 'flip' is the original mirrored (posts and boxes swap sides)."""
+    from PIL import Image
+    src = Image.open(OBJ / "supply_shelves1.png").convert("RGBA")
+    browns = {
+        (155, 123, 90): (226, 222, 210), (201, 164, 110): (246, 244, 236),
+        (142, 106, 83): (200, 196, 186), (96, 68, 46): (120, 118, 112),
+        (148, 115, 92): (214, 210, 200), (155, 123, 123): (216, 210, 206),
+    }
+
+    def recolour(img, table):
+        out = img.copy()
+        px = out.load()
+        for y in range(out.height):
+            for x in range(out.width):
+                r, g, b, a = px[x, y]
+                if a and (r, g, b) in table:
+                    px[x, y] = (*table[(r, g, b)], a)
+        return out
+
+    white = recolour(src, browns)
+    white.save(OBJ / "m09_shelves_white1.png")
+    red = recolour(src, {**browns, (201, 164, 110): (196, 40, 40)})
+    red.save(OBJ / "m09_shelves_red1.png")
+    half = src.copy()
+    hp, sp = half.load(), src.load()
+    back = sp[25, 12] if sp[25, 12][3] else (115, 125, 130, 255)
+    for y in range(0, 18):
+        for x in range(4, 46):
+            hp[x, y] = (0, 0, 0, 0)
+    half.save(OBJ / "m09_shelves_half1.png")
+    src.transpose(Image.FLIP_LEFT_RIGHT).save(OBJ / "m09_shelves_flip1.png")
+    print("wrote shelf variants")
+
+
+def mesh_rail():
+    """A short run of mesh rail, 48x12, front on: steel posts at each end, two rails,
+    chain-link between. Low enough to close the hatch strip under the gate's mouth."""
+    w, h = 48, 12
+    c = Canvas(w, h)
+    for y in range(2, h - 1):
+        for x in range(2, w - 2):
+            if (x + y) % 4 == 0 or (x - y) % 4 == 0:
+                c.px(x, y, STEEL_LIGHT)
+    c.hline(0, w - 1, 0, STEEL_DARK)
+    c.hline(0, w - 1, 1, STEEL)
+    c.hline(0, w - 1, h - 2, STEEL)
+    for x in (0, 1, w // 2 - 1, w // 2, w - 2, w - 1):
+        c.rect(x, 0, x, h - 1, STEEL_DARK if x in (0, w - 1) else STEEL)
+    c.save(OBJ, "m09_mesh_rail1")
+
+
+def hatch_screen():
+    """The cage's mesh screen standing on the hatch counter's east edge, seen side on:
+    a narrow strip of chain-link 8 px wide that rises about 20 px above the counter top,
+    posts every 32 px, a gap at the hatch. Drawn as its own sprite so it stands over
+    the counter; the counter sprite carries only the ledge."""
+    w, h = 8, 124
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, h - 1, STEEL_DARK)
+    for y in range(1, h - 1):
+        for x in range(1, w - 1):
+            c.px(x, y, STEEL_LIGHT if (x + y) % 3 == 0 else (58, 62, 68))
+    for y0 in range(0, h - 3, 32):
+        c.rect(0, y0, w - 1, y0 + 3, STEEL)
+    c.rect(0, h - 4, w - 1, h - 1, STEEL)
+    gap0 = 72                                   # the hatch (counter y 176-200 at feet 228+...)
+    c.rect(1, gap0, w - 2, gap0 + 22, (0, 0, 0, 0))
+    c.rect(0, gap0 - 2, w - 1, gap0 - 1, STEEL)
+    c.rect(0, gap0 + 23, w - 1, gap0 + 24, STEEL)
+    c.save(OBJ, "m09_hatch_screen1")
+
+
+def counter_ledge():
+    """The hatch counter without its mesh: a panelled front face and an oak top, 16x104
+    (the mesh is m09_hatch_screen1, standing on its east edge)."""
+    w, h = 16, 104
+    c = Canvas(w, h)
+    c.rect(0, 0, 4, h - 1, OUTLINE)
+    for y in range(1, h - 1):
+        c.px(1, y, OAK_DARK)
+        c.px(2, y, (122, 86, 50))
+        c.px(3, y, OAK_DARK)
+    for y in range(12, h - 4, 24):
+        c.hline(1, 3, y, OUTLINE)
+    c.rect(4, 0, w - 1, h - 1, OUTLINE)
+    for y in range(1, h - 1):
+        for x in range(5, w - 1):
+            c.px(x, y, (180, 134, 84) if x in (8, 12) else OAK)
+        c.px(5, y, (220, 184, 110))
+    mid = h // 2
+    for y in range(mid - 8, mid + 8):
+        for x in range(8, w - 1):
+            if (x + y) % 3:
+                c.px(x, y, (210, 168, 112))
+    c.save(OBJ, "m09_hatch_counter2")
+
+
+def rubber_stamp_big():
+    """Sorensen's stamp and its pad, larger than round 1's so it reads on the counter:
+    a turned handle, a red-inked base, the open red pad beside it with a lid."""
+    w, h = 20, 14
+    c = Canvas(w, h)
+    c.rect(9, 6, 19, 13, OUTLINE)
+    c.rect(10, 7, 18, 12, RED_DARK)
+    c.rect(11, 8, 17, 11, RED)
+    c.rect(9, 3, 19, 5, (60, 60, 64))           # the pad's lid, flipped back
+    c.rect(2, 0, 5, 1, OAK_DARK)
+    c.rect(1, 1, 6, 3, OAK)
+    c.rect(3, 4, 4, 6, OAK_DARK)
+    c.rect(0, 7, 7, 10, OUTLINE)
+    c.rect(1, 8, 6, 9, (90, 60, 40))
+    c.hline(0, 7, 11, RED)
+    c.hline(1, 6, 12, RED_DARK)
+    c.save(OBJ, "m09_rubber_stamp2")
+
+
+def strip_sack():
+    """A clear sack of shredded strips at the shredder's feed, tied at the neck."""
+    w, h = 18, 20
+    c = Canvas(w, h)
+    for y in range(4, h):
+        half = 6 + min(3, (y - 4) // 3)
+        for x in range(9 - half, 9 + half):
+            col = (236, 236, 228) if (x * 3 + y) % 4 else (200, 200, 190)
+            if (x + y * 2) % 7 == 0:
+                col = (180, 196, 214)
+            c.px(x, y, col)
+        c.px(9 - half, y, (120, 124, 130))
+        c.px(9 + half - 1, y, (120, 124, 130))
+    c.rect(7, 1, 10, 4, (200, 204, 210))
+    c.rect(6, 3, 11, 3, (90, 94, 100))
+    c.hline(2, 15, h - 1, (110, 112, 116))
+    c.save(OBJ, "m09_strip_sack1")
+
+
+def county_map():
+    """A framed map of Lewis and Clark County for the reading room wall: a dark frame,
+    a pale map with a river, county line and a red pin at Helena."""
+    w, h = 30, 22
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, h - 1, (52, 36, 24))
+    c.frame(1, 1, w - 2, h - 2, (110, 80, 50))
+    c.rect(2, 2, w - 3, h - 3, (226, 218, 186))
+    for x in range(3, w - 3):
+        y = 12 + (x * 5 // 7) % 4 - 2
+        c.px(x, y, (90, 140, 190))
+    for (x, y) in ((4, 4), (10, 3), (18, 5), (25, 4), (26, 10), (24, 17), (14, 18), (6, 16), (4, 10)):
+        c.px(x, y, (150, 110, 70))
+    c.rect(15, 9, 16, 10, RED)
+    c.save(OBJ, "m09_county_map1")
+
+
+def folder():
+    """A manila file folder lying closed: a tab, a typed label, a paperclip."""
+    w, h = 26, 18
+    c = Canvas(w, h)
+    c.rect(2, 0, 10, 2, (150, 116, 60))
+    c.rect(3, 1, 9, 2, (214, 176, 104))
+    c.rect(0, 2, w - 1, h - 1, (150, 116, 60))
+    c.rect(1, 3, w - 2, h - 2, (226, 190, 118))
+    c.hline(1, w - 2, h - 2, (190, 152, 86))
+    c.rect(5, 7, 16, 10, PAPER)
+    c.hline(6, 14, 8, GREY)
+    c.rect(20, 1, 21, 6, STEEL_LIGHT)
+    c.px(20, 1, STEEL_DARK)
+    c.save(OBJ, "m09_folder1")
+
+
+def round3():
+    shelf_variants()
+    mesh_rail()
+    hatch_screen()
+    counter_ledge()
+    rubber_stamp_big()
+    strip_sack()
+    county_map()
+    folder()
+    plate("SILENCE PLEASE", "m09_sign_silence1")
+    plate("PERSONNEL", "m09_sign_personnel1", face=YELLOW, ink=BLACK, rim=(150, 120, 30))
+
+
 if __name__ == "__main__":
     main()
+    round3()
