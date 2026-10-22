@@ -1,4 +1,22 @@
 {
+  "abena_asante": {
+    "character_id": "45cf70d2-00e5-45ce-963e-8148a358a8ff",
+    "name": "Make portrait for Dr Abena Asante\nA tall Ghanaian-...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "adrian_tesseract": {
+    "character_id": "f23e1d84-4d61-498e-a4eb-e3a29155f5b1",
+    "name": "Make portrait for Dr Adrian Tesseract\nA lean, upri...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
   "agent_hax": {
     "character_id": "52c4d2cc-aca3-4ee0-bfa6-20b526b6db6f",
     "name": "A woman spy with long dark brown hair under a brow...",
@@ -106,6 +124,15 @@
       "height": 60
     },
     "imported": "2026-10-17"
+  },
+  "farah_qureshi": {
+    "character_id": "39dfe7c3-8ef6-45b5-a240-d74e93f46ecd",
+    "name": "Make portrait for Farah Qureshi\nA Pakistani-Americ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
   },
   "female_blowse_v2": {
     "character_id": "df960bf2-20c6-4600-b725-44846cb0337f",
@@ -260,6 +287,15 @@
       "height": 60
     },
     "imported": "2026-10-03"
+  },
+  "imran_siddiqui": {
+    "character_id": "0f14b104-c083-4b06-adf4-d28592be8965",
+    "name": "Make portrait for Imran Siddiqui\nA slim, boyish Br...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
   },
   "irina_volkova": {
     "character_id": "95fc9762-3a9d-4bff-9892-b1876aa69c95",
@@ -451,6 +487,15 @@
     },
     "imported": "2026-10-17"
   },
+  "pieter_vos": {
+    "character_id": "cc1b5d89-ad2f-47c6-a775-2d6c382d3b85",
+    "name": "Make portrait for Pieter Vos\nA tall, lean Dutch ma...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
   "priya_raghavan": {
     "character_id": "33cfa6c3-2dcf-448e-a7a0-7576078b32ce",
     "name": "Make portrait for Priya Raghavan\nA British-Indian ...",
@@ -550,6 +595,15 @@
     },
     "imported": "2026-10-06"
   },
+  "sione_fonoti": {
+    "character_id": "ebde2b54-3007-40af-aee5-492ecd422626",
+    "name": "Make portrait for Sione Fonoti\nA very big, heavy, ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
   "terry_mott": {
     "character_id": "f00ed76b-8cfd-4591-9fc7-367dd354af70",
     "name": "Make portrait for Terry Mott\nA Black British night...",
@@ -612,5 +666,14 @@
       "height": 60
     },
     "imported": "2026-10-13"
+  },
+  "wendell_briggs": {
+    "character_id": "2975936c-1bfe-45b1-a29b-2a723ce432d4",
+    "name": "Make portrait for Wendell Briggs\nA wiry white man ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
   }
 }

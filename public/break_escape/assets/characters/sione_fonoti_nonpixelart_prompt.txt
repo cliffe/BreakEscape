@@ -1,0 +1,10 @@
+Make portrait for Sione Fonoti
+A very big, heavy, soft-bodied Samoan-American man of about 34 from West Valley City, Utah, a former college football offensive lineman gone soft, with a wide frame, a broad round belly, thick heavy arms with no visible muscle definition, warm light-brown skin, a round, gentle, full-cheeked face with a short trimmed black beard, and thick black hair tied up in a small bun on top, a hired guard on a walkway, slow to speak and polite. Dark brown eyes and a calm, patient, faintly puzzled look. He wears a loose plain black short-sleeved polo shirt with no markings, black cargo trousers, a black duty belt with a handheld radio, and a plain blank white key card clipped to the belt; his large hands are clasped loosely in front of him at belt height. Standing alone against an empty plain light-grey backdrop, no room or furniture behind him. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images. Reframed with reframe_portrait.py --flip. Approved by the user as sione_fonoti_concept_2 (wip/), adopted as the PixelLab pipeline concept.
