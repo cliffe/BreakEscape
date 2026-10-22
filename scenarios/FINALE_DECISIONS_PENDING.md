@@ -19,3 +19,7 @@ m09 build addendum 2 (scenario-design R1 VM answers, 2026-10-22, `finale/M09_PUZ
 ## F10. Is "archaeology" enough as theme? (story call, not blocking)
 
 The VM has no recovery or undelete step. The archaeology is thematic: an abandoned "last server", a nine-year-old memo, an unrevoked credential and the ledger's legacy section, while the game side has destruction (the shredder) but no recovery. Accept as is, or ask opus48 to add a small recovery step to the VM plan?
+
+## F11. Season 2 teaser on m10's closing card? (story call)
+
+The closing card has an optional teaser slot, currently off (no eldritch content, per the brief, apart from this slot). Leave it off, or write a one-line teaser?
