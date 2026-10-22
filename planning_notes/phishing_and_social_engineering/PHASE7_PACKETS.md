@@ -342,3 +342,8 @@ the orchestrator passes it to that wave's owner.
   - The defendOnly prefix doubles to `episode_e1_invoice_fraud_defend_defend_`; decide whether to drop the doubled suffix.
   - `test_social_episode` fails strict only on the missing `kiosk.png`, which is P7-H's.
   - The lint wants 5–8 defend messages (the packet row said 2).
+- **P7-E, for P7-J, P7-N and the orchestrator:**
+  - The defendOnly shell must change the set prefix to `..._defend_defend_`.
+  - The defend-only brief and scopeNote are in `awarenessEpisode._defendOnly`; P7-J copies them into `strings`.
+  - The P7-B views also read `heading`, `finish` and `continue` strings, which are not in the schema (P7-N decides whether to add them).
+  - The Monday card is generic until a report-route slot exists.
