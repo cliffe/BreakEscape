@@ -176,6 +176,30 @@ Everything else goes into the approval log for the user: engine or server change
 - **Before committing a mission whose last round changed structure** (new knots, moved objects, changed conditions), run a short targeted browser check of exactly those changes.
 - Look at the screenshots yourself before calling UI work done.
 
+## Reporting progress by stage
+
+When the user asks for progress, or at the end of a long run, report by stage (the user's preferred format, 2026-10-22). Use one block per track (for example, a lab and its awareness episodes), in a fenced code block so the bars line up:
+
+```
+Stage             Progress    B/M/m open  Status
+Scenario design   ██████████  0/0/0       5 of 5 cycles, closed
+Dialogue          ████░░░░░░  0/0/2       cycle 2 done, cycle 3 review running
+Rooms             ██░░░░░░░░  0/0/9       review done; fixes, lighting, POV to do
+Lab sheet         ░░░░░░░░░░  –           last
+```
+
+- **Stages** are POLISH_PLAN's (or the mission loop's) stages, in order, plus any work stream running alongside them (characters, fun changes, check forms).
+- **The bar** is ten blocks. Fill it by cycles or rounds done out of planned, or by a fair judgement for stages without cycles. A closed stage is full.
+- **B/M/m open** counts the blockers, majors and minors still open from that stage's latest review or playtest. Count findings that are fixed but not yet confirmed as open, and add "fixing" to the status. Use `–` where no review has run yet. Leave trivials out of the column, and mention them in the status if they matter.
+- **Status** is one short line: cycles done, what is running now, what is left.
+
+After the blocks, add:
+- a short table of the rounds completed in this session;
+- a numbered "what's left" list, in the order the work will happen;
+- anything waiting on the user (decisions, approvals, art to eyeball).
+
+Take the counts from the review and playtest files and the logs, not from memory, and say where a count is an estimate.
+
 ## Housekeeping
 
 - Agents that stop mid-run leave headless browsers and stuck harness commands behind. List them with `ps`, check what they are, and kill them **by PID**. Never use `pkill -f` with a pattern that also appears in your own command line, because it kills your own shell.
