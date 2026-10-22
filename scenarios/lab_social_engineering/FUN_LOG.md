@@ -121,3 +121,87 @@ untouched. The stop-rule question and the plan picks are unchanged.
 - **bridge-5 and r4-door:** unchanged; no route change, both pass as before.
 - **`test/js/social-lab-ruth-phone-keys.test.mjs`:** the stage-4 one-fact case now expects the
   F3 "names the fact still missing" line instead of a bare "Now the page" (deliberate F3 change).
+
+---
+
+# R13 follow-up (2026-10-23) — fixes for the live game
+
+R13 (`playtests/R13.md`) found one major and several minor/trivial issues in the committed fun pass
+(0a1fa3007). Fixed below; not committed. Checks re-run: ink recompiled 7/7, dialoguelint clean (only
+the known fairbairn false positive), validator `--strict-social` clean, 110 social-* / validator-social-*
+test files pass, and bridge-6 (36/36), bridge-5 (29/29), r4-door (3/3) each pass headless on :3001.
+
+## lab1 / R13 F1 (major) — the Accounts opener could not be reached live
+
+**Root cause.** `break_escape.games.scenario_data` is a Postgres **jsonb** column, and jsonb reorders
+object keys by length then bytewise. So the live `intelFacts` order is not the ERB source order: it
+comes back `tech_stack, lord_intern, lord_portal, pierce_role, email_pattern, old_org_chart, …`, with
+`lord_intern` (11 chars) before `pierce_role` (11 chars, p > l). `blankSlot()` resolves Dev's team
+slot from the first team→"finance" provider in that order — `lord_intern`, tagged `about: "intern"` —
+so my round-1 `about: "recipient"` Accounts value was filtered out. My round-1 test read the ERB
+order (pierce_role first → "recipient"), so it passed while the live game failed.
+
+**Fix (data, order-independent).** `old_org_chart` now provides the stale "Accounts" value under BOTH
+`about: "intern"` and `about: "recipient"`, so the decoy survives whichever `about` blankSlot resolves
+to. The right "Finance" value is already provided under both (lord_intern/intern, pierce_role/recipient),
+so it is always offered too.
+
+**Test rewritten.** `test/js/social-lab-dev-call.test.mjs` now rebuilds `intelFacts` in the jsonb order
+(sorted by length, then bytewise), asserts the slot resolves to `about: "intern"` (the live condition),
+asserts Accounts is offered, and has a **control** that strips the intern-tagged entry (the R13 F1 bug)
+and asserts Accounts vanishes — so the test fails without the fix.
+
+**Browser confirmation (:3001, keyless).**
+- The real `PretextPrepMinigame` option-builder, on a fresh game with the 2019 org chart held, returns
+  Dev's Team blank as `["finance","accounts"]` — with `Object.keys(intelFacts)` starting
+  `tech_stack, lord_intern, lord_portal, pierce_role, …` (the exact jsonb order R13 saw fail). So the
+  Accounts opener is now selectable in the live game.
+- The live compiled Dev ink (loaded via the game's `/ink?npc=dev_service_desk` endpoint into
+  `window.inkjs.Story`) offered the opener **"I'm helping Sofia Lord, your new starter in Accounts."**;
+  choosing it gave Dev **"Accounts? We folded Accounts into Finance a couple of years back. What's she
+  after?"**; the repair choice **"Sorry, my mistake. She's in Finance."** then appeared, and choosing it
+  gave Dev **"Finance, right you are. New intern, that'll be Sofia then. What's she after?"**
+- Method note: the Dev reactions were driven through the live compiled ink directly, because reaching
+  the desk phone in the Operations room through the UI needs the full recon and the room key; the
+  composer step (Accounts offered) was confirmed through the real minigame.
+
+## lab5 / R13 F2 (minor) — corrected the Xero-decoy claim
+
+The round-1 FUN_LOG said Lord's Xero decoy is "reliably held by compose time through ordinary recon".
+That is wrong: Xero (`tech_stack`) comes from the careers page line "You will use Xero and Office 365.",
+which no readiness slot needs, so a student on the minimal route is not offered Xero in the portal blank
+(they see LedgerPay only). What the student reliably sees as Lord's live wrong options at compose time:
+the greeting blank offers the wrong recipient name (Melanie, held via pierce_role) beside Sofia, and the
+pretext offers the password wording beside the payslip one. The Xero portal-blank decoy appears for a
+student who read the careers tools line. Making Xero guaranteed would mean adding `tech_stack` to Lord's
+readiness slot and a matching board/phone pointer — a puzzle-chain and hint change — so it is flagged for
+a deliberate decision, not done here.
+
+## Trivials
+
+- **F3 (gap names a not-yet-identified target):** the board gap lines no longer use the first name
+  ("You still don't know what she does here.", "…how they receive mail from strangers."), so a target
+  headed "Not yet identified" is not named by its gap.
+- **F4 (pointer repeats the gap):** each slot's `goalString` is trimmed to the pointer only ("The team
+  page names the staff.", "Open the careers page and select its careers inbox line."), so the "Stuck?"
+  disclosure no longer repeats the gap sentence.
+- **F5 (phone had no lockout line):** `ruth_phone.ink` stage 3 now shows the lockout nudge at its top
+  (reusing the existing phone line) when Dev is reported before the easy sends land, mirroring the
+  in-person hub. No new spoken line.
+- **F6 ("How do I reach Sofia?" said "You've made the call" after a one-fact call):** `ruth.ink`
+  topic_hard now names the fact still missing (the portal, or the date) before "You've made the call".
+  Two new voiced lines (in the TTS list).
+- **F7 (Tomasz drifts):** left alone, per the coordinator.
+
+## Q1 reword (R13 note) — keep a reasoning step
+
+The results row and the Q1 answer option nearly repeated ("nothing to count / can't measure" vs
+"whether anyone reported"). The row now states only the mechanism: **"Reports received: none. Ledgerwell
+has no button or inbox for staff to flag a suspect email or page."** — no "can't measure / Gareth will
+ask which". Q1 ("which can these results NOT tell him?") now needs the step of reasoning from the datum
+(no channel to flag mail → reporting is unmeasurable) rather than matching the row's wording.
+
+## Bridge updated (deliberate)
+
+`tools/playtest/se/bridge-6.jsonl` RP1 regex updated for the new unseenNote wording
+(`/no button or inbox for staff to flag/`). bridge-5 and r4-door unchanged.

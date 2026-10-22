@@ -458,10 +458,13 @@
         "subject": "company", "source": "org_old_chart",
         "provides": [
           { "type": "name", "about": "manager", "value": "baker_full", "label": "Jed Baker", "kind": "stale" },
-          <%# lab1: about "recipient" (not "intern") so this stale "Accounts" value is offered in
-              Dev's team blank beside the live "Finance". The blank's slot resolves to about
-              "recipient" (pierce_role wins the canonical "finance" lookup), so a stale "intern"
-              value never matched and the wrong-team opener was unreachable. %>
+          <%# lab1 (R13 F1): offer this stale "Accounts" value in Dev's team blank beside the live
+              "Finance" whatever the intelFacts key order. scenario_data is stored as jsonb, which
+              reorders object keys by length then bytewise, so the live order (lord_intern before
+              pierce_role) differs from this file; blankSlot() then resolves the team slot's `about`
+              to "intern" (lord_intern) in the live game, or "recipient" (pierce_role) in file order.
+              Providing "Accounts" under both abouts makes the decoy survive either resolution. %>
+          { "type": "team", "about": "intern", "value": "accounts", "label": "Accounts", "kind": "stale" },
           { "type": "team", "about": "recipient", "value": "accounts", "label": "Accounts", "kind": "stale" }
         ]
       }
@@ -654,36 +657,36 @@
       "readinessSlots": {
         "pierce": [
           { "label": "Who she is", "needsIntel": ["pierce_role"],
-            "gapString": "You still don't know what Melanie does here.",
-            "goalString": "You still don't know what Melanie does here. The team page names the staff.",
+            "gapString": "You still don't know what she does here.",
+            "goalString": "The team page names the staff.",
             "doneString": "She works in Finance." },
           { "label": "Who she trusts", "needsIntel": ["pierce_trusts_jed", "email_pattern"],
-            "gapString": "You still don't know who Melanie would open an email from.",
-            "goalString": "You still don't know who Melanie would open an email from. Try her social profile and a lookup on the domain.",
+            "gapString": "You still don't know who she'd open an email from.",
+            "goalString": "Try her social profile and a lookup on the domain.",
             "doneString": "She trusts Jed Baker; you know the email pattern." },
           { "label": "What she expects", "needsIntel": ["pierce_expects_balance_sheet"],
-            "gapString": "You still don't know what Melanie expects to receive.",
-            "goalString": "You still don't know what Melanie expects to receive. Check the team notes.",
+            "gapString": "You still don't know what she expects to receive.",
+            "goalString": "Check the team notes.",
             "doneString": "She expects a Q3 balance sheet from Jed on Friday." }
         ],
         "hampshire": [
           { "label": "Where mail goes", "needsIntel": ["hampshire_careers"],
-            "gapString": "You still don't know how Chris receives mail from strangers.",
-            "goalString": "You still don't know how Chris receives mail from strangers. Open the careers page and select its careers inbox line.",
+            "gapString": "You still don't know how they receive mail from strangers.",
+            "goalString": "Open the careers page and select its careers inbox line.",
             "doneString": "The careers inbox accepts CVs from anyone." },
           { "label": "What the file should be", "needsIntel": ["careers_attachment"],
-            "gapString": "You still don't know what kind of file Chris will open.",
-            "goalString": "You still don't know what kind of file Chris will open. Read how to apply.",
+            "gapString": "You still don't know what kind of file they'll open.",
+            "goalString": "Read how to apply.",
             "doneString": "Chris takes .odt and .docx files." },
           { "label": "Why she would read it", "needsIntel": ["hampshire_cv_backlog"],
-            "gapString": "You still don't know what Chris is busy with.",
-            "goalString": "You still don't know what Chris is busy with. Check the careers inbox, then her social profile.",
+            "gapString": "You still don't know what they're busy with.",
+            "goalString": "Check the careers inbox, then their social profile.",
             "doneString": "Chris is racing through CVs before Friday, so one more won't get a close look." }
         ],
         "lord": [
           { "label": "Her payroll system", "needsIntel": ["lord_portal", "lord_intern"],
-            "gapString": "You still don't know which staff system Sofia uses.",
-            "goalString": "You still don't know which staff system Sofia uses. The team page and her social profile help.",
+            "gapString": "You still don't know which staff system she uses.",
+            "goalString": "The team page and her social profile help.",
             "doneString": "She is a new intern and uses a staff payroll portal." }
         ]
       }
@@ -1211,10 +1214,11 @@
       "report": {
         "onCompleteGlobal": "report_filed",
         "labelBy": "role",
-        <%# lab4: seed the "no report button" fact as a visible results datum, so Q1 (which can
-            these results NOT tell him?) is a deduction from the table, not a fact the answer
-            supplies. The note sits in the results view, above the question. %>
-        "unseenNote": "Reports received: none — Ledgerwell has no button or inbox for staff to report a suspect email or page, so there was nothing to count. Some things this test still can't measure; Gareth will ask which.",
+        <%# lab4 / R13 Q1: seed the "no report button" fact as a plain results datum, above Q1. It
+            states the mechanism (no channel to flag mail), not the consequence, so Q1 ("which can
+            these results NOT tell him?") still needs the step of reasoning from the datum rather
+            than matching its wording to the answer. %>
+        "unseenNote": "Reports received: none. Ledgerwell has no button or inbox for staff to flag a suspect email or page.",
         "steps": [
           { "id": "results", "onCompleteGlobal": "report_results_done" },
           { "id": "findings", "onCompleteGlobal": "report_findings_done" }

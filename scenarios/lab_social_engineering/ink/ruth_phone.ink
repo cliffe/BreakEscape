@@ -127,7 +127,12 @@ Recon's next. If that door's locked, I've got the key — come and see me. The O
 // ---- Stage 3: spear-phish rounds 1 and 2 ----
 === stage3 ===
 { phish_hampshire_landed and phish_pierce_landed: -> hub }
-{ not (phish_hampshire_landed or phish_pierce_landed or phish_lord_landed):
+{
+// R13 F5: if the student got Dev reported out of order (before the easy sends land), the phone
+// carries the same lockout nudge the in-person hub does, instead of only pointing at Operations.
+- pretext_call_reported and not se_intel_lord_portal_name and not se_intel_lord_payslip_date:
+    Dev flagged that last call to his manager. Leave it a while, then try again — softer, and have your facts straight.
+- not (phish_hampshire_landed or phish_pierce_landed or phish_lord_landed):
     Operations next, if you've not been in. The key's with me whenever the door won't open.
 - else:
     The rest still have to act in Operations before there's a report.

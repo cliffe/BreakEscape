@@ -282,6 +282,11 @@ Ruth Adeyemi: Real applicants write from webmail, so a throwaway address looks l
     Ruth Adeyemi: You've got everything she checks: the page, the portal's sender and name, and the date. Put them together in one email.
 - landing_payroll_login_built and pretext_call_done:
     Ruth Adeyemi: The page is built. What you're missing from Dev, ring him back for. Name Sofia first or he won't say a thing.
+// R13 F6: a one-fact call names the fact still missing, not "You've made the call".
+- pretext_call_done and not se_intel_lord_portal_name:
+    Ruth Adeyemi: You've got the date, not the portal. Ring Dev back for its name and sender, and build a page like her portal.
+- pretext_call_done and not se_intel_lord_payslip_date:
+    Ruth Adeyemi: You've got the portal, not the date. Ring Dev back for it, and build a page like her portal.
 - pretext_call_done:
     Ruth Adeyemi: You've made the call. Now build a page like her portal, so the link looks right.
 - landing_payroll_login_built:

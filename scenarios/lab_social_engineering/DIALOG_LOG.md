@@ -495,3 +495,18 @@ max 23, tomasz max 28; no line-length errors.
 
 R12 F2 only reordered Ruth's existing lockout line (no text change, no TTS). lab1/lab2/lab4/lab6/lab7
 touched data and UI text (board/report/triage), none of it voiced.
+
+## R13 follow-up (2026-10-23) — spoken-line changes for TTS
+
+New voiced lines from the R13 F6 fix. The lab is still unvoiced (keyless playtests), so these are for
+when audio is generated. Caps held (person ≤30). dialoguelint clean.
+
+### R13 F6 — "How do I reach Sofia?" names the missing fact after a one-fact call (`ruth.ink` topic_hard, person)
+
+1. **NEW:** `You've got the date, not the portal. Ring Dev back for its name and sender, and build a page like her portal.`
+2. **NEW:** `You've got the portal, not the date. Ring Dev back for it, and build a page like her portal.`
+
+R13 F5 (phone stage-3 lockout) reuses the existing phone line "Dev flagged that last call to his
+manager. Leave it a while, then try again — softer, and have your facts straight." (already listed), so
+it is not a new line. The lab1 F1 fix, the F3/F4 board gap/pointer rewording and the Q1 results-row
+reword are all data / UI text, not voiced.
