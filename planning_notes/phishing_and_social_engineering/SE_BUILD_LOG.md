@@ -390,6 +390,29 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 
   Minors: the link hint doesn't tell missing from wrong; Dev's "Last change" line carries over; the call globals are stale between calls; replies arrive for missed sends; the first Close after a miss goes back to compose. Fix round 5 on opus48: `playtests/FIX_ROUND_R3.md`, which also applies C1.
 
+- **Dialogue review C2** (Opus, `scenarios/lab_social_engineering/DIALOGUE_REVIEW_C2.md`): 30 ranked proposals. Cycle 1 mostly landed: LedgerPay is consistent, the Tomasz reveal is gated, Dev reacts per technique, and the slogans are down to three.
+  - Contradictions it found:
+    - Gareth's signing is told three ways.
+    - The throwaway-address phone rung is stale.
+    - Ruth credits the service desk with Sofia's name, which came from the team page.
+    - Some hub lines repeat the line straight before them.
+    - The build log claims a Pierce `ownFrom` hint that isn't in the scenario.
+  - Story issues it found:
+    - The only tension is Dev's influence bar, and a report changes nothing (item 8: Dev's manager rings Gareth).
+    - The close can be missed, and reads out a list.
+    - "Blame stops reporting" is said about seven times.
+  - **Decisions (orchestrator):** accept item 2 (real applicants write from webmail, which is what Chris's checklist scores). Item 23 may edit this lab's mission.json. Item 27 (candour and repair tells shown together) needs a playtest check. Apply C2 with the R4 findings in one round.
+
+- **Lab re-run R4** (Sonnet, games 3197 and 3198, `playtests/R4.md`): start to end screen, 23/23, score 100.
+  - Round-5 claims that did **not** land live:
+    - the door hint (`doors.js` drops `lockedHint` from `doorProperties`);
+    - Lord's `linkCredible` (still a string in the scenario);
+    - Dev's "Last change" (still carries over);
+    - Lord's ladder rung (wrong factor).
+  - **Major D1:** Fairbairn reopens at his hub, so the sign scene (CMA line, his condition) and the payoff only play on a fresh open. This is the same pattern as B1.
+  - Passed: the guest own-From hint, the softest rung on Pierce, Close after a miss, LedgerPay, Dev's mood lines, the Tomasz gate and closing choice, and the bank-change triage contrast.
+  - **Lesson:** unit tests of helpers passed while the live path was broken. Round 6 must prove each fix on the path the game runs. Fix round 6 on opus48: `playtests/FIX_ROUND_R4.md`, which also applies C2.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
