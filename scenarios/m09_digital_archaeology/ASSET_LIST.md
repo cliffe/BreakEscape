@@ -28,16 +28,16 @@ Stage 9, step 0 (finale `STAGE_8_RULINGS.md` ruling 20; m09 stage 8 `REVIEW_R1.m
 
 | NPC id(s) | Display name | Who (SE §3, S6 §5) | Placeholder now (sheet; talk; visemes; headshot) | Proposed sprite key |
 |---|---|---|---|---|
-| `sorensen_hatch`, `sorensen`, `sorensen_door` | Margaret Sorensen | 66, white Montanan of Norwegian family, the director; one portrait and one voice across her three records | `female_office_worker` (+ `_talk`, `_visemes`, `_headshot`) | `margaret_sorensen` |
-| `noor_haddad` | Noor Haddad | 34, Lebanese-American from Dearborn, records clerk | `female_telecom` (+ `_talk`, `_visemes`, `_headshot`) | `noor_haddad` |
-| `jesse_tran` | Jesse Tran | 29, Vietnamese-American from Seattle, IT contractor | `male_nerd` (+ `_talk`, `_visemes`, `_headshot`) | `jesse_tran` |
-| `old_coyote` | Cody Old Coyote | 24, Apsáalooke (Crow) from Lodge Grass, night guard | `male_security_guard` (+ `_talk`, `_visemes`, `_headshot`) | `cody_old_coyote` |
-| `archive_guard` | Lyle Dillard | 54, white Montanan, contract guard (Statewide Security), ex-deputy, heavy | `security_guard` (+ `_talk`, `_visemes`, `_headshot`) | `lyle_dillard` |
-| `quintero` | Agent 0x2D 'Anchor' | Marisol Quintero, 52, Mexican-American from El Paso, raid leader | `female_security_guard` (+ `_talk`, `_visemes`, `_headshot`) | `marisol_quintero` |
-| `kowalczyk` | Agent 0x5E 'Lantern' | Halina Kowalczyk, 47, Polish-British from Ealing, breaching lead (WREN) | `female_hacker_hood_down_v2` (+ `_v2_talk`, `_v2_visemes`, `_v2_headshot`) | `halina_kowalczyk` |
-| `malhotra` | Officer Dev Malhotra | 33, British-Indian from Hounslow, comms | `male_telecom` (+ `_talk`, `_visemes`, `_headshot`) | `dev_malhotra` |
-| `arakawa` | Officer Kenji Arakawa | 41, Japanese-American from Sacramento, US liaison | `male_office_worker` (+ `_talk`, `_visemes`, `_headshot`) | `kenji_arakawa` |
-| `alpha_recording` | Dr Adrian Tesseract (recording) | the Architect, on tape, nine-plus years younger | `the_architect` (+ `_talk`, `_visemes`, `_headshot`), m07's Architect art | `adrian_tesseract` (m10 needs a full Tesseract set anyway; FA §22) |
+| `sorensen_hatch`, `sorensen`, `sorensen_door` | Margaret Sorensen | 66, white Montanan of Norwegian family, the director; one portrait and one voice across her three records | **done** `margaret_sorensen` (+ `_talk`, `_visemes`, `_headshot`; PixelLab pipeline 2026-10-22; was `female_office_worker`) | `margaret_sorensen` |
+| `noor_haddad` | Noor Haddad | 34, Lebanese-American from Dearborn, records clerk | **done** `noor_haddad` (+ `_talk`, `_visemes`, `_headshot`; PixelLab pipeline 2026-10-22; was `female_telecom`) | `noor_haddad` |
+| `jesse_tran` | Jesse Tran | 29, Vietnamese-American from Seattle, IT contractor | **done** `jesse_tran` (+ `_talk`, `_visemes`, `_headshot`; PixelLab pipeline 2026-10-22; was `male_nerd`) | `jesse_tran` |
+| `old_coyote` | Cody Old Coyote | 24, Apsáalooke (Crow) from Lodge Grass, night guard | **done** `cody_old_coyote` (+ `_talk`, `_visemes`, `_headshot`; PixelLab pipeline 2026-10-22; was `male_security_guard`) | `cody_old_coyote` |
+| `archive_guard` | Lyle Dillard | 54, white Montanan, contract guard (Statewide Security), ex-deputy, heavy | **done** `lyle_dillard` (+ `_talk`, `_visemes`, `_headshot`; PixelLab pipeline 2026-10-22; was `security_guard`) | `lyle_dillard` |
+| `quintero` | Agent 0x2D 'Anchor' | Marisol Quintero, 52, Mexican-American from El Paso, raid leader | **done** `marisol_quintero` (+ `_talk`, `_visemes`, `_headshot`; PixelLab pipeline 2026-10-22; was `female_security_guard`) | `marisol_quintero` |
+| `kowalczyk` | Agent 0x5E 'Lantern' | Halina Kowalczyk, 47, Polish-British from Ealing, breaching lead (WREN) | **done 2026-10-22:** `halina_kowalczyk` (+ `_talk`, `_visemes`, `_headshot`), shared with m10 | `halina_kowalczyk` |
+| `malhotra` | Officer Dev Malhotra | 33, British-Indian from Hounslow, comms | **done** `dev_malhotra` (+ `_talk`, `_visemes`, `_headshot`; PixelLab pipeline 2026-10-22; was `male_telecom`) | `dev_malhotra` |
+| `arakawa` | Officer Kenji Arakawa | 41, Japanese-American from Sacramento, US liaison | **done** `kenji_arakawa` (+ `_talk`, `_visemes`, `_headshot`; PixelLab pipeline 2026-10-22; was `male_office_worker`) | `kenji_arakawa` |
+| `alpha_recording` | Dr Adrian Tesseract (recording) | the Architect, on tape, nine-plus years younger | **done 2026-10-22:** `adrian_tesseract` (+ `_talk`, `_visemes`, `_headshot`), shared with m10; was m07's `the_architect` | `adrian_tesseract` (FA §22). The art is of him in his sixties; nothing makes him nine years younger on tape, which only the voice style marks |
 
 The placeholders are all generic sheets, so the validator's "shared by different characters" suggestion is expected only where two new people would share one (they don't: each placeholder above is used once in m09). Placeholder sheets don't match the casting (age, ethnicity); that is what §8 asks the user to approve.
 

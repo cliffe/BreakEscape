@@ -80,6 +80,15 @@
     },
     "imported": "2026-10-06"
   },
+  "cody_old_coyote": {
+    "character_id": "30db8608-97e0-46fc-9bb2-1860721e6585",
+    "name": "Make portrait for Cody Old Coyote\nA young Aps\u00e1aloo...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
   "dani_okonkwo": {
     "character_id": "767f499f-074f-4067-bdb4-6f2b84789e48",
     "name": "Make portrait for Dani Okonkwo\nA lean British-Nige...",
@@ -115,6 +124,15 @@
       "height": 60
     },
     "imported": "2026-10-17"
+  },
+  "dev_malhotra": {
+    "character_id": "17bea81b-0912-4868-b9ac-3ed08f124c09",
+    "name": "Make portrait for Officer Dev Malhotra\nA slim Brit...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
   },
   "elena_rodriguez": {
     "character_id": "2f1f7a20-6606-4a07-b264-9330cbfdc312",
@@ -315,6 +333,15 @@
     },
     "imported": "2026-10-17"
   },
+  "jesse_tran": {
+    "character_id": "0492a91f-7896-4b4c-8142-362161eebfd7",
+    "name": "Make portrait for Jesse Tran\nA lanky Vietnamese-Am...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
   "junior_analyst": {
     "character_id": "83c3edaa-ea1c-4130-a310-64adf6dd3713",
     "name": "Make portrait for Junior Analyst\nA British-Indian ...",
@@ -333,6 +360,15 @@
     },
     "imported": "2026-10-16"
   },
+  "kenji_arakawa": {
+    "character_id": "cbe8850d-35b7-4447-b707-3e4d30c222b6",
+    "name": "Make portrait for Officer Kenji Arakawa\nA fit, com...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
   "lisa_park": {
     "character_id": "d652c8a0-906c-4762-9679-b0ac0af08855",
     "name": "Make portrait for Lisa Park\nA petite British-Korea...",
@@ -341,6 +377,15 @@
       "height": 60
     },
     "imported": "2026-10-17"
+  },
+  "lyle_dillard": {
+    "character_id": "274429e7-ac0b-476f-a1e9-973922a5cae9",
+    "name": "Make portrait for Lyle Dillard\nA big, heavy-set wh...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
   },
   "male_hacker_hood_down_v2": {
     "character_id": "fa5a8818-00da-475c-87fb-4b21d84e39b2",
@@ -406,6 +451,24 @@
     },
     "imported": "2026-09-30"
   },
+  "margaret_sorensen": {
+    "character_id": "866ff41a-08ea-48a0-a07e-1ae403d904a8",
+    "name": "Make portrait for Margaret Sorensen\nA small, uprig...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "marisol_quintero": {
+    "character_id": "54816a15-6568-40a3-a981-9de2ac22a8aa",
+    "name": "Make portrait for Agent Marisol Quintero\nA solid, ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
   "netherton": {
     "character_id": "37ee8f05-6adf-4c4c-b780-810098d9f00b",
     "name": "Make portrait for Director Magnus Netherton\nA Blac...",
@@ -423,6 +486,15 @@
       "height": 60
     },
     "imported": "2026-09-30"
+  },
+  "noor_haddad": {
+    "character_id": "c27871de-0282-43d0-a8d4-932f659ae1f4",
+    "name": "Make portrait for Noor Haddad\nA slim Lebanese-Amer...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
   },
   "offduty_agent": {
     "character_id": "fdc09fe1-86ce-4314-b660-884ac8216284",
