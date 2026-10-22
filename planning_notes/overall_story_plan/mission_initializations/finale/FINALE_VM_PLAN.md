@@ -103,3 +103,29 @@ Found while updating this plan. Nothing here was checked against SecGen, so each
 - **M4, m10 seed content.** The text beside flag 2 must carry the channel list, the early-access orders and the first entries by city. The plan names only the threat-data store, so the content and its placement are not yet specified.
 - **M5, m09 account for flag 3.** The story calls it a "web service account". The plan gives the student's account as `nostromousr`. These may be different accounts. Confirm against the built VM before the credential text is written.
 - **M6, m09 flag 4 mirror target.** The mirror job is said to mirror to Tomb Gamma. Tomb Gamma is also the m10 network (§6.2 heading). No host in this plan carries that name, so the job should name the target only, with no route. Low risk, but the story must not imply a live link the VMs cannot show.
+
+## 6. F12/F13 gating fixes (2026-10-22)
+
+From the F12/F13 ruling (`scenarios/FINALE_DEV_LOG.md:487-490`) and the audit `scenarios/VM_GATING_AUDIT.md`. As drafted, all four m09 flags and all four m10 flags are reachable cold (the two footholds are unauthenticated RCE, the deeper flags are privilege steps), so F12 is not met; and the m10 "disarm" and "unsent notice" are not seeded on the VM, so F13 is not met. The design below keeps each taught exploit as the **foothold** and makes an **in-game find required to read the flag** — the m01 shape, where the box is reachable but the game still hides what you need. It also closes the m09 Tesseract name-peek (D1) and the m10 "climax rootable at start" problem.
+
+### m09
+
+- **Flag 1 (catalogue).** Move flag 1 and the catalogue-index text into a **catalogue service account whose shell login password is a fixed in-game string** (the m02 `Hospital1987` mechanism). The Druid RCE stays as the foothold but lands unprivileged and cannot read that account's `0600` home; flag 1 needs the found login. Seed the index body (Series R, R-114–R-161, restricted cage, bay 10) to match the drop screen.
+- **Flag 2 (ledger, root).** Unchanged route (`sudo_root_more` from flag 1); transitively gated. Seed the ledger body **and the H&L number `HL2015-0477`** inside flag 2's root-home file only.
+- **Flag 3 (Tomb Beta owner).** Move flag 3, the Tesseract credential, the Albion memo and the unsent notice into a **web service account whose login password is a fixed in-game string**; nostromo RCE stays as the foothold but lands unprivileged; flag 3 needs the found login. `strings_to_pre_leak` stays empty. The in-game password lives on the salvage-cage enrolment binder, so the name cannot be read before the identity scene (fixes D1).
+- **Flag 4 (Tomb Beta control).** Unchanged route (`sudo_root_less` from flag 3); transitively gated; mirror job already seeded.
+
+### m10
+
+- **Flag 1 (monitoring).** Move flag 1's file into a **monitoring account whose login is a fixed in-game string**; maltrail injection stays as the foothold. In-game find at the forward-post gate console.
+- **Flag 2 (schedule).** Unchanged route (same box, behind flag 1); seed the channel list, early-access orders and first cities (FINALE_VM_PLAN M4).
+- **Flag 3 (container escape).** Reaching `release_host` root requires an **in-game operative credential** (found in the server hall / workshop); the container bind shell stays as the foothold. **Seed a `disarm` file in `release_host` root's home** beside flag 3 (F13).
+- **Flag 4 (core escape).** Reaching `core_host` root requires an **in-game core-access key** (from the gallery / Tesseract, only after the gallery stair); the chroot bind shell stays as the foothold. **Seed Tesseract's unsent vendor notice in `core_host` root's home** beside flag 4 (F13), plus the stolen-copy / Citadel-vault line the game's `core_files` prop names. This removes the cold root-at-start route.
+
+### Game-side dependencies (concept level; detail in `VM_GATING_AUDIT.md` §A5, §B5)
+
+Each gated flag needs a matching in-game found object holding the credential (catalogue slip in the reading-room drawer; Tomb Beta login on the salvage-cage binder; m10 monitoring tag at the gate console; release-host credential in the server hall; core key in the gallery). **m10 F13 reverses an Educational R1 decision** that removed the on-VM promises for the disarm and the notice — surface that to the user/orchestrator before the game edit.
+
+### Build note
+
+Fixing root login over SSH on `release_host` / `core_host` (existing build note) is part of F12 too: left in, it is a module-level cold route straight to flags 3 and 4.

@@ -67,3 +67,21 @@ Tesseract's memo (`albion_memo`) and his unsent vendor notice (`vendor_notice_dr
 8. Each target's random port is found by the scan the lab sheet describes.
 9. Each file's leaked text reads correctly as the player finds it.
 10. The climax (`release_host`, `core_host`) is not gated by SecGen. Flags 1 and 2 gate it only in the game.
+
+## F12/F13 gating changes (2026-10-22, not yet applied to the XML)
+
+From the F12/F13 ruling (`scenarios/FINALE_DEV_LOG.md:487-490`) and `scenarios/VM_GATING_AUDIT.md`. As currently drafted, every flag in both missions is reachable cold (the footholds are unauthenticated RCE, the rest are privilege steps), and the m10 disarm and unsent notice are not on the VM. The XML edits below make an in-game find required to read each foothold flag, and seed the two m10 artefacts. SecGen is on hold, so these are specified, not applied.
+
+**Mechanism.** For each foothold flag, add a dedicated account with a **fixed password** set to a literal the game will also hand the player in-game (as m02's `gary` uses `Hospital1987`, `m02_ransomed_trust.xml:141-149`). Place the flag and its story file in that account's home at mode `0600`. Keep the existing exploit module as the foothold, but it must land in a context that **cannot** read the `0600` flag home, so reading the flag requires the in-game login. The deeper (root) flags stay as the drafted sudo/escape steps — transitively gated once the foothold needs a found credential.
+
+**m09**
+- `catalogue_server`: new catalogue service account, fixed password = in-game literal; flag 1 + catalogue-index text in its home. Seed the index body (Series R, R-114–R-161, bay 10) to match the drop screen. Flag 2 unchanged; seed the ledger body + `HL2015-0477` in root's home only.
+- `tomb_beta_server`: the web service account (`nostromousr` or a new account) gets a fixed password = in-game literal (the literal lives on the salvage-cage enrolment binder in-game); flag 3 + credential + memo + notice in its `0600` home. `strings_to_pre_leak` stays empty. Flag 4 unchanged.
+
+**m10**
+- `bunker_monitor`: monitoring account (`maltrail`) gets a fixed password = in-game literal (forward-post gate console in-game); flag 1 in its `0600` home. Flag 2 unchanged; seed the schedule record (channels, cities, early-access orders).
+- `release_host`: the operative account the player uses to reach host root gets a fixed password = in-game literal (server hall in-game). **Add a `disarm` file in root's home** beside flag 3 (F13).
+- `core_host`: the escape onto host root requires an in-game key fragment literal (gallery in-game). **Add `vendor_notice` (Tesseract's unsent notice) in root's home** beside flag 4 (F13), plus the stolen-copy / Citadel-vault line.
+- Removing root login over SSH on both climax boxes (already a build note) is part of this: otherwise it is a cold route to flags 3 and 4.
+
+**Open for the user / build:** whether to keep the unauth RCE as foothold-only with a `0600` flag home, or replace the foothold with a straight credentialed SSH login (simpler, but drops the RCE teaching). The audit recommends foothold-plus-credential to keep both the exploit and the gate.
