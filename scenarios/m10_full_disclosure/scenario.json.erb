@@ -782,8 +782,11 @@ elsewhere_one = [
   cl.("Noor Haddad: never told. Still on the list.", "globalVars.m09_completed === true && !globalVars.m09_noor_told && !globalVars.m09_noor_ko && !globalVars.m05_found_pipeline_list"),
   cl.("Noor Haddad: never told. Still on the list.", "globalVars.m09_completed === true && !globalVars.m09_noor_told && !globalVars.m09_noor_ko && globalVars.m05_found_pipeline_list === true && globalVars.m05_recruiter_deal_accepted === true"),
   # Playtest FULL_1 / S6 3.5: a stopped share gets its own row, and the "still trading" rows skip it.
-  cl.('Zero Day: got nothing tonight. Still trading.', "globalVars.share_zero_day === 'stopped' && globalVars.close_zero_day === 'trading'"),
-  cl.('Zero Day: got nothing tonight. Its broker, Pieter Vos, named.', "globalVars.share_zero_day === 'stopped' && globalVars.close_zero_day === 'vos_named'"),
+  cl.('Zero Day: got nothing tonight. Still trading.', "globalVars.share_zero_day === 'stopped' && globalVars.ending !== 'joined' && globalVars.close_zero_day === 'trading'"),
+  cl.('Zero Day: got nothing tonight. Its broker, Pieter Vos, named.', "globalVars.share_zero_day === 'stopped' && globalVars.ending !== 'joined' && globalVars.close_zero_day === 'vos_named'"),
+  # Alignment R6-m3: on Join, the share killed at four against the key at six.
+  cl.('Zero Day: shut out at four. Given everything at six.', "globalVars.share_zero_day === 'stopped' && globalVars.ending === 'joined' && globalVars.close_zero_day === 'trading'", w),
+  cl.('Zero Day: shut out at four. Given everything at six. Its broker, Pieter Vos, named.', "globalVars.share_zero_day === 'stopped' && globalVars.ending === 'joined' && globalVars.close_zero_day === 'vos_named'", w),
   cl.('Zero Day: still trading. Its broker, Pieter Vos, named.', "globalVars.share_zero_day !== 'stopped' && globalVars.close_zero_day === 'vos_named'"),
   cl.('Zero Day: still trading.', "globalVars.share_zero_day !== 'stopped' && globalVars.close_zero_day === 'trading'")
 ]
@@ -1025,7 +1028,7 @@ credits_fragment = JSON.parse(<<~'JSON')
           "name": "OFFICER KENJI ARAKAWA",
           "clauses": [
             {
-              "text": "US liaison. Sent back to the post. Reopened the county road anyway.",
+              "text": "US liaison. Sent back to the post. The sheriff opened the road at four.",
               "condition": "globalVars.officer_out === 'arakawa' && !globalVars.arakawa_ko"
             },
             {
@@ -1054,12 +1057,12 @@ credits_fragment = JSON.parse(<<~'JSON')
               "style": "warning"
             },
             {
-              "text": "Cryptographer. Sent back, then recalled. Still waiting for an apology.",
-              "condition": "globalVars.vector_on_team === true && globalVars.vector_recalled === true"
-            },
-            {
               "text": "Cryptographer. Still waiting for an apology.",
               "condition": "globalVars.vector_on_team === true && globalVars.officer_out === 'vector'"
+            },
+            {
+              "text": "Cryptographer. Sent back, then recalled. Still waiting for an apology.",
+              "condition": "globalVars.vector_on_team === true && globalVars.vector_recalled === true"
             },
             {
               "text": "Cryptographer. Tracing the release.",
@@ -1076,12 +1079,12 @@ credits_fragment = JSON.parse(<<~'JSON')
               "style": "warning"
             },
             {
-              "text": "Auditor. Sent back, then recalled. It's on his list.",
-              "condition": "globalVars.phantom_on_team === true && globalVars.phantom_recalled === true"
-            },
-            {
               "text": "Auditor. Filed a complaint about tonight. It was upheld.",
               "condition": "globalVars.phantom_on_team === true && globalVars.officer_out === 'phantom'"
+            },
+            {
+              "text": "Auditor. Sent back, then recalled. It's on his list.",
+              "condition": "globalVars.phantom_on_team === true && globalVars.phantom_recalled === true"
             },
             {
               "text": "Auditor. Auditing 0x00's sign-outs.",

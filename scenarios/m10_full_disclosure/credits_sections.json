@@ -204,7 +204,7 @@
         "name": "OFFICER KENJI ARAKAWA",
         "clauses": [
           {
-            "text": "US liaison. Sent back to the post. Reopened the county road anyway.",
+            "text": "US liaison. Sent back to the post. The sheriff opened the road at four.",
             "condition": "globalVars.officer_out === 'arakawa' && !globalVars.arakawa_ko"
           },
           {
@@ -233,12 +233,12 @@
             "style": "warning"
           },
           {
-            "text": "Cryptographer. Sent back, then recalled. Still waiting for an apology.",
-            "condition": "globalVars.vector_on_team === true && globalVars.vector_recalled === true"
-          },
-          {
             "text": "Cryptographer. Still waiting for an apology.",
             "condition": "globalVars.vector_on_team === true && globalVars.officer_out === 'vector'"
+          },
+          {
+            "text": "Cryptographer. Sent back, then recalled. Still waiting for an apology.",
+            "condition": "globalVars.vector_on_team === true && globalVars.vector_recalled === true"
           },
           {
             "text": "Cryptographer. Tracing the release.",
@@ -255,12 +255,12 @@
             "style": "warning"
           },
           {
-            "text": "Auditor. Sent back, then recalled. It's on his list.",
-            "condition": "globalVars.phantom_on_team === true && globalVars.phantom_recalled === true"
-          },
-          {
             "text": "Auditor. Filed a complaint about tonight. It was upheld.",
             "condition": "globalVars.phantom_on_team === true && globalVars.officer_out === 'phantom'"
+          },
+          {
+            "text": "Auditor. Sent back, then recalled. It's on his list.",
+            "condition": "globalVars.phantom_on_team === true && globalVars.phantom_recalled === true"
           },
           {
             "text": "Auditor. Auditing 0x00's sign-outs.",

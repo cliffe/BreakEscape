@@ -1088,3 +1088,9 @@ Applied 2026-10-21 by the m10 fixer from `finale/STAGE_8_RULINGS.md` and the rev
 - R5-m4: "The HashChain wallets: tagged since the Architect's Fund paid out. Dark since the disclosure." (warning).
 - R5-m5: superseded markers at the group A file row, row 10-9 and `database_beat`; T-55's texts row reads "**Cut** (alignment R3-m3; R4-m7 deleted `recruiter_phone` and its ink)". The R4-m9 note on deferred m06 saves is corrected: every `m06_completed` save gets exactly one row.
 - Voiced-line delta: one Netherton line and one narrator line reworded; no new lines. (R4 counted the Netherton line as reworded already.)
+
+**Alignment round 6 (ALIGNMENT_REVIEW_F_R6.md; Join credits only, nothing voiced).**
+- R6-m1: in `safetynet_join` (both copies), Vector's and Phantom's clauses run knock-out, `officer_out`, recall, presence default, as in `safetynet`; a man sent back a second time after a recall is credited as sent back.
+- R6-m2: Arakawa's Join `officer_out` clause is "US liaison. Sent back to the post. The sheriff opened the road at four." (six_oclock's "Sheriff opened the road at four.").
+- R6-m3: the two "Zero Day: got nothing tonight" ELSEWHERE rows need `ending !== 'joined'`; on Join a share killed at four prints "Zero Day: shut out at four. Given everything at six." or, with Vos named, "… Its broker, Pieter Vos, named." (both warning). With the "still trading" rows (`share_zero_day !== 'stopped'`) the four are exclusive.
+- Checked: printed credits over 20,000 random states per ending, before and after: no non-Join difference; on Join only the Arakawa line, the Zero Day rows and Vector's and Phantom's second-accusation lines change.
