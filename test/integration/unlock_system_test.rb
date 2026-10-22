@@ -1043,5 +1043,85 @@ module BreakEscape
       assert_response :forbidden,
         "Only the specifically unlocked container should be accessible"
     end
+
+    # =============================================================================
+    # LOCKED TAKEABLE mail_terminal (SE lab, 00 S14) - SERVER HALF
+    # The client half (a locked takeable terminal sends the player to the unlock
+    # flow and is not picked up or auto-opened) is in interactions.js and is not
+    # reachable from Rails. Here: the unlock endpoint treats the terminal like any
+    # other locked object.
+    # =============================================================================
+
+    def add_locked_mail_terminal(extra = {})
+      @game.scenario_data['rooms']['lobby']['objects'] << {
+        'id' => 'mail_terminal_locked', 'name' => 'Mail Terminal', 'type' => 'mail_terminal',
+        'takeable' => true, 'locked' => true, 'lockType' => 'pin', 'requires' => '4321',
+        'minigameData' => { 'accountIds' => ['guest'] }
+      }.merge(extra)
+      @game.save!
+    end
+
+    test "locked takeable mail_terminal: wrong PIN is refused and it stays locked" do
+      add_locked_mail_terminal
+      post unlock_game_url(@game), params: {
+        targetType: 'object', targetId: 'mail_terminal_locked', attempt: '0000', method: 'pin'
+      }
+      assert_response :unprocessable_entity
+      assert_equal false, JSON.parse(@response.body)['success']
+      assert_not_includes @game.reload.player_state['unlockedObjects'], 'mail_terminal_locked'
+    end
+
+    test "locked takeable mail_terminal: 'unlocked' method is refused while it is locked" do
+      add_locked_mail_terminal
+      post unlock_game_url(@game), params: {
+        targetType: 'object', targetId: 'mail_terminal_locked', attempt: '', method: 'unlocked'
+      }
+      assert_response :unprocessable_entity
+      assert_not_includes @game.reload.player_state['unlockedObjects'], 'mail_terminal_locked'
+    end
+
+    test "locked takeable mail_terminal in a room's objects unlocks with the right PIN, not in inventory" do
+      add_locked_mail_terminal
+      assert_empty @game.player_state['inventory']
+
+      post unlock_game_url(@game), params: {
+        targetType: 'object', targetId: 'mail_terminal_locked', attempt: '4321', method: 'pin'
+      }
+      assert_response :success
+      json = JSON.parse(@response.body)
+      assert json['success']
+      assert_equal 'object', json['type']
+      assert_includes @game.reload.player_state['unlockedObjects'], 'mail_terminal_locked'
+    end
+
+    test "locked takeable mail_terminal also unlocks while it is in the inventory" do
+      add_locked_mail_terminal
+      @game.player_state['inventory'] = [{ 'id' => 'mail_terminal_locked', 'type' => 'mail_terminal' }]
+      @game.save!
+
+      post unlock_game_url(@game), params: {
+        targetType: 'object', targetId: 'mail_terminal_locked', attempt: '4321', method: 'pin'
+      }
+      assert_response :success
+      assert_includes @game.reload.player_state['unlockedObjects'], 'mail_terminal_locked'
+    end
+
+    test "mail_terminal that exists only in an NPC's itemsHeld is Object not found" do
+      @game.scenario_data['rooms']['lobby']['npcs'] = [{
+        'id' => 'courier', 'displayName' => 'Courier',
+        'itemsHeld' => [{
+          'id' => 'mail_terminal_held', 'name' => 'Held Terminal', 'type' => 'mail_terminal',
+          'takeable' => true, 'locked' => true, 'lockType' => 'pin', 'requires' => '4321'
+        }]
+      }]
+      @game.save!
+
+      post unlock_game_url(@game), params: {
+        targetType: 'object', targetId: 'mail_terminal_held', attempt: '4321', method: 'pin'
+      }
+      assert_response :unprocessable_entity
+      assert_equal 'Invalid attempt', JSON.parse(@response.body)['message']
+      assert_not_includes @game.reload.player_state['unlockedObjects'], 'mail_terminal_held'
+    end
   end
 end
