@@ -1735,6 +1735,121 @@ def check_pin_locks(json_data)
   issues
 end
 
+# ─────────────────────────────────────────────────────────────
+# Patrol legs the re-target timer cuts short, and lockpick catches that name a lock
+# the NPC can't see being picked (m02 Val and Gary).
+#
+# 1. npc-behavior.js parseConfig: patrol.speed defaults to 100 px/s and
+#    patrol.changeDirectionInterval to 3000 ms. Waypoints are room-relative TILES
+#    (world = room origin + x * TILE_SIZE, TILE_SIZE 32; validateWaypoints). An engine that
+#    re-targets every interval cuts a leg longer than speed * interval short, so the NPC never
+#    arrives or dwells (m02 Val: 3.6 s legs against the 3 s default). The current engine
+#    exempts waypoint patrols (_isWaypointPatrol: only a stall of one whole interval
+#    re-targets), so this only fires when that exemption is missing from npc-behavior.js
+#    (pass engine_cuts_legs: true to force it). Legs are straight lines between consecutive
+#    waypoints of one room (wrapping last to first in sequential mode); the walked path is
+#    never shorter. Random mode picks any waypoint next, so every pair counts.
+# 2. A lockpick_used_in_view mapping whose condition tests
+#    data.lockable.scenarioData.id === 'x' needs a lock with that id that can actually be
+#    picked (locked, lockType 'key'), inside the NPC's own room: the catch gate only watches
+#    the player's room and the lock's room (lockpick-catch.js lockpickWatchRooms), and a
+#    container's room is the one it loaded in. Whether the NPC's room has any pickable lock
+#    at all is check_recurring_bugs.
+# ─────────────────────────────────────────────────────────────
+PATROL_DEFAULT_SPEED = 100
+PATROL_DEFAULT_INTERVAL = 3000
+PATROL_TILE_PX = 32
+PATROL_LEG_MARGIN = 0.9
+
+def check_npc_patrol_and_catch_locks(json_data, repo_root = nil, engine_cuts_legs: nil)
+  issues = []
+  rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+
+  if engine_cuts_legs.nil?
+    behavior_js = repo_root && File.join(repo_root, 'public/break_escape/js/systems/npc-behavior.js')
+    engine_cuts_legs = !!(behavior_js && File.exist?(behavior_js) && !File.read(behavior_js).include?('_isWaypointPatrol'))
+  end
+
+  each_npc = lambda do |&blk|
+    rooms.each do |rid, room|
+      next unless room.is_a?(Hash)
+      Array(room['npcs']).each_with_index { |npc, i| blk.call(rid, i, npc) if npc.is_a?(Hash) }
+    end
+  end
+
+  # --- 1. patrol legs longer than the re-target interval -------------------------------------
+  if engine_cuts_legs
+    each_npc.call do |rid, i, npc|
+      patrol = npc.dig('behavior', 'patrol')
+      next unless patrol.is_a?(Hash) && patrol['enabled'] != false
+      speed = patrol['speed'].is_a?(Numeric) && patrol['speed'] > 0 ? patrol['speed'] : PATROL_DEFAULT_SPEED
+      interval = patrol['changeDirectionInterval'].is_a?(Numeric) && patrol['changeDirectionInterval'] > 0 ? patrol['changeDirectionInterval'] : PATROL_DEFAULT_INTERVAL
+      random_mode = patrol['waypointMode'] == 'random'
+      lists = []
+      lists << [Array(patrol['waypoints']), "rooms/#{rid}/npcs[#{i}]"] if patrol['waypoints'].is_a?(Array)
+      if patrol['multiRoom'] && patrol['route'].is_a?(Array)
+        patrol['route'].each_with_index { |seg, si| lists << [Array(seg['waypoints']), "rooms/#{rid}/npcs[#{i}]/route[#{si}]"] if seg.is_a?(Hash) }
+      end
+      lists.each do |wps, where|
+        wps = wps.select { |w| w.is_a?(Hash) && w['x'].is_a?(Numeric) && w['y'].is_a?(Numeric) }
+        next if wps.length < 2
+        pairs = if random_mode
+                  (0...wps.length).to_a.combination(2).to_a
+                else
+                  (0...wps.length).map { |k| [k, (k + 1) % wps.length] }.uniq { |a, b| [a, b].sort }
+                end
+        pairs.each do |a, b|
+          px = Math.hypot(wps[b]['x'] - wps[a]['x'], wps[b]['y'] - wps[a]['y']) * PATROL_TILE_PX
+          ms = px / speed * 1000
+          next unless ms > interval * PATROL_LEG_MARGIN
+          issues << "⚠️ WARNING: '#{where}' (#{npc['id']}) patrol leg waypoint #{a} (#{wps[a]['x']},#{wps[a]['y']}) to " \
+                    "waypoint #{b} (#{wps[b]['x']},#{wps[b]['y']}) is #{px.round} px, #{(ms / 1000.0).round(1)} s at speed #{speed}, " \
+                    "but changeDirectionInterval is #{(interval / 1000.0).round(1)} s. The re-target timer fires before " \
+                    "the NPC arrives, so it never reaches or dwells at that waypoint (m02 Val). Raise changeDirectionInterval " \
+                    "to at least #{((ms * 1.25) / 500.0).ceil * 500} ms, shorten the leg or raise the speed."
+        end
+      end
+    end
+  end
+
+  # --- 2. catch conditions that name a lock the NPC can't see picked --------------------------
+  # id => [[room, locked_key?]] for every object, nested contents included
+  objects_by_id = Hash.new { |h, k| h[k] = [] }
+  collect = lambda do |list, rid|
+    Array(list).each do |o|
+      next unless o.is_a?(Hash)
+      objects_by_id[o['id']] << [rid, o['locked'] == true && o['lockType'] == 'key'] if o['id'].is_a?(String)
+      collect.call(o['contents'], rid)
+    end
+  end
+  rooms.each { |rid, room| collect.call(room['objects'], rid) if room.is_a?(Hash) }
+
+  each_npc.call do |rid, i, npc|
+    Array(npc['eventMappings']).each_with_index do |m, mi|
+      next unless m.is_a?(Hash) && m['eventPattern'] == 'lockpick_used_in_view' && m['condition'].is_a?(String)
+      cond = m['condition']
+      ids = cond.scan(/data\.lockable\.scenarioData\.id\s*={2,3}\s*['"]([^'"]+)['"]/).flatten
+      next if ids.empty?
+      mpath = "rooms/#{rid}/npcs[#{i}]/eventMappings[#{mi}]"
+      ids.uniq.each do |id|
+        found = objects_by_id[id]
+        if found.empty?
+          issues << "⚠️ WARNING: '#{mpath}' (#{npc['id']}) only catches a pick of the lock with id '#{id}', but no object in " \
+                    "the scenario has that id, so the condition is never true and the catch never fires. Fix the id."
+        elsif found.none? { |r, _| r == rid }
+          issues << "⚠️ WARNING: '#{mpath}' (#{npc['id']}) only catches a pick of '#{id}', which is in #{found.map(&:first).uniq.map { |r| "'#{r}'" }.join(', ')}, " \
+                    "not '#{rid}'. The catch gate watches only the player's room and the lock's room, so an NPC in '#{rid}' " \
+                    "never sees it picked. Move the NPC, or the lock."
+        elsif found.none? { |r, pickable| r == rid && pickable }
+          issues << "⚠️ WARNING: '#{mpath}' (#{npc['id']}) only catches a pick of '#{id}', but that object isn't a locked " \
+                    "lockType 'key' lock, so the lockpick minigame never opens on it and the catch never fires."
+        end
+      end
+    end
+  end
+  issues
+end
+
 def check_common_issues(json_data, valid_item_types = nil)
   issues = []
 
@@ -5284,6 +5399,7 @@ def main
     common_issues = check_common_issues(json_data, valid_item_types)
     common_issues += check_lock_credentials(json_data)
     common_issues += check_pin_locks(json_data)
+    common_issues += check_npc_patrol_and_catch_locks(json_data, repo_root)
     common_issues += check_engine_limits(json_data)
     common_issues += check_recurring_bugs(json_data, repo_root)
     common_issues += check_unheard_room_triggers(json_data, repo_root)
