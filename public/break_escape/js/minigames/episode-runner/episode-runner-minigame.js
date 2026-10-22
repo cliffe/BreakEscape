@@ -5,10 +5,20 @@
 //
 //   brief    drawn here: the brief and the scope note, then Start
 //   osint    opens 'osint-browser' with the episode's siteIds (launchChild, returnTo here)
-//   write    opens 'mail-client' with accountIds, defaultAccount, maxSends: 1 (returnTo here);
-//            on a normal close the sent record's ids are held in the state for the flip
-//   flip     drawn here with renderFlipView (P7-B); Continue clears the held ids
-//   defend   opens the triage starter with the defend set; its onComplete records the round
+//   build    (E5) opens 'landing-page-builder' with attack.landingPageId and attack.target
+//   write    mail: opens 'mail-client' with accountIds, defaultAccount, maxSends: 1 (returnTo
+//            here); on a normal close the sent record's ids are held in the state for the flip.
+//            call (E3, attack.callId set): opens 'pretext-prep' with the callId. Its Begin hands
+//            over to the phone chat, which never returns here, so the runner watches for the
+//            call's outcome global (pretext_<callId>_outcome), holds { kind: 'call', callId,
+//            outcome } for the flip and reopens itself once the chat has closed. A reopen
+//            from the kiosk after a reload finds the outcome set and moves on the same way.
+//   mfa      (E3) opens 'authenticator' with episode.mfa { pushes, approvesAt, mode }
+//   flip     drawn here with renderFlipView (P7-B): the sent email, the built page (E5) or the
+//            call (E3); flipMissed when something went but did not land. Continue clears the
+//            held ids
+//   defend   opens the triage starter with the defend set (role-swap calls merged in, 11 N15)
+//            and the awareness skin; its onComplete records the round
 //   check    (check missions) the same, with defend.stage ('pre' or 'post')
 //   debrief  drawn here with renderDebrief (P7-B); Finish closes the runner
 //
@@ -30,18 +40,21 @@
 //     so a reopen from the kiosk goes straight to the stage.
 //
 // Test seams: params.deps may replace renderStepStrip, renderFlipView, renderDebrief,
-// measure (recordTriageResult), startTriage, write (writeGlobal) and now.
+// measure (recordTriageResult), startTriage, write (writeGlobal), now, schedule and
+// clearScheduled (the call watcher's timer).
 
-import { SocialOverlayScene } from '../framework/social-overlay.js';
+import { SocialOverlayScene, socialOverlayParams } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import { recordTriageResult } from '../../systems/awareness-measure.js';
 import { resolvePlayerSent } from '../inbox-triage/triage-messages.js';
 import { renderStepStrip, applyBrand } from './step-strip.js';
 import { renderFlipView } from './flip-view.js';
 import { renderDebrief } from './debrief-view.js';
+import { episodeDefendSet } from './role-swap.js';
 import {
     stagesFor, stateKey, readState, completeStage, childLaunch, variantOf,
-    sentFromRecord, findSentRecord, flipEntry, measurementCtx, defendSummary
+    sentFromRecord, findSentRecord, flipEntry, measurementCtx, defendSummary,
+    writeKind, sentFromCall, callOutcomeKey, flipPage, flipCall
 } from './episode-model.js';
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -51,11 +64,22 @@ const isStr = (v) => typeof v === 'string' && v.length > 0;
 // (brief, flip, debrief) come from episode.strings.
 const STAGE_COPY = Object.freeze({
     osint: { heading: 'Look around', text: 'Open the browser and find out what you can about the people involved. Close it when you have what you need.', button: 'Open the browser' },
+    build: { heading: 'Build', text: 'Build the page your message will link to. Close the builder when the page is ready.', button: 'Open the page builder' },
     write: { heading: 'Write', text: 'Write one message using what you found. The meter gives you hints before you send. Your first Send is final.', button: 'Open the mail client' },
+    mfa: { heading: 'Sign-in prompts', text: 'You have the password. Watch what happens on the target\u2019s phone when the sign-in prompts keep coming. Close it when you have seen enough.', button: 'Open the phone' },
     defend: { heading: 'Defend', text: 'Now you are on the receiving end. Go through the inbox and decide what to do with each message.', button: 'Open the inbox' },
     check: { heading: 'Check', text: 'Go through these messages and decide what to do with each one. Your answers are recorded.', button: 'Start' }
 });
+// The write stage when the attack is a pretext call (E3).
+const CALL_COPY = Object.freeze({ heading: 'Make the call', text: 'Prepare your call using what you found, then ring through. Once you hang up, you come back here.', button: 'Prepare the call' });
+// The defend stage of a defendOnly run: there was no attack stage to turn round from.
+const DEFEND_ONLY_COPY = Object.freeze({ heading: 'Defend', text: 'Go through the inbox and decide what to do with each message. Take your time: there is no trick to it, just the habits that catch these.', button: 'Open the inbox' });
+// The defend stage when the round is calls the learner takes (11 N15, the role swap).
+const ROLE_SWAP_COPY = Object.freeze({ heading: 'Take the calls', text: 'Now you are in the seat you just called. Take each call and decide what to do with it.', button: 'Open the queue' });
+const ROLE_SWAP_DEFEND_ONLY_COPY = Object.freeze({ heading: 'Take the calls', text: 'You are on the service desk. Take each call and decide what to do with it.', button: 'Open the queue' });
 const FINISHED_TEXT = 'You have finished this exercise. You can close this window.';
+const CALL_WAIT_MS = 300;                 // how often the call watcher looks for the chat closing
+const CALL_WAIT_LIMIT = 4 * 60 * 60 * 1000 / CALL_WAIT_MS; // gives up after four hours (a reopen still resumes)
 const LAUNCH_FAILED = 'That did not open. Close this window and try the kiosk again.';
 const PAUSE_COPY = Object.freeze({
     heading: 'Pause',
@@ -102,6 +126,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             startTriage: (lockable, options) => win().startInboxTriageMinigame?.(lockable, options) ?? null,
             write: writeGlobal,
             now: () => Date.now(),
+            schedule: (fn, ms) => setTimeout(fn, ms),
+            clearScheduled: (h) => clearTimeout(h),
             ...(isObj(this.params.deps) ? this.params.deps : {})
         };
         this.strip = null;
@@ -138,10 +164,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         return isObj(this.episode.strings) ? this.episode.strings : {};
     }
 
+    /** The defend set, with the role swap's calls (defend.calls) merged in first (11 N15). */
     get defendSet() {
-        const id = this.episode.defend?.setId;
-        const sets = Array.isArray(this.social.triageSets) ? this.social.triageSets : [];
-        return sets.find((s) => isObj(s) && s.id === id) || null;
+        return episodeDefendSet(this.episode, this.social);
     }
 
     /** The stored state, read fresh: a child may have advanced it while the runner was closed. */
@@ -186,6 +211,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this.gameContainer.appendChild(root);
 
         this.state = this._readState();
+        this._settleCall();
         // A pause carried back by a child's return or the triage reopen; only for a stage
         // that is done, and never once the episode has finished.
         const after = this.params.pauseAfter;
@@ -289,8 +315,20 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this._button(panel, 'Start', () => this._complete('brief'), 'er-start');
     }
 
+    /** The panel copy for a stage that opens another tool. */
+    _stageCopy(stage) {
+        if (stage === 'write' && writeKind(this.episode) === 'call') return CALL_COPY;
+        if (stage === 'defend') {
+            const defendOnly = variantOf(this.episode) === 'defendOnly';
+            const calls = Array.isArray(this.episode.defend?.calls) && this.episode.defend.calls.length > 0;
+            if (calls) return defendOnly ? ROLE_SWAP_DEFEND_ONLY_COPY : ROLE_SWAP_COPY;
+            if (defendOnly) return DEFEND_ONLY_COPY;
+        }
+        return STAGE_COPY[stage];
+    }
+
     _renderLaunch(stage) {
-        const copy = STAGE_COPY[stage];
+        const copy = this._stageCopy(stage);
         const panel = this._panel(copy.heading, copy.text);
         const prompt = this._groupPrompt(panel, stage);
         if (prompt) panel.appendChild(prompt);
@@ -313,9 +351,28 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         }
     }
 
+    /**
+     * What the flip shows: the sent email, the built page (E5) and the call (E3). `missed`
+     * is true when something went but there is nothing to replay: a mail record with no
+     * tells, or a call that did not land.
+     */
+    _flipProps() {
+        const sent = this.state.sent;
+        const globals = this.globals || {};
+        if (sent?.kind === 'call') {
+            const call = flipCall(this.episode, this.social, sent, globals);
+            return { message: null, page: null, call, missed: !call };
+        }
+        const message = this._flipMessage();
+        let page = null;
+        try { page = flipPage(this.episode, this.social, globals); } catch (e) { console.error('[episode] could not rebuild the page:', e); }
+        const missed = !message && !page && !!sent?.recordId;
+        return { message, page, call: null, missed };
+    }
+
     _renderFlip() {
         this.view = this.deps.renderFlipView(this.body, {
-            message: this._flipMessage(),
+            ...this._flipProps(),
             strings: this.strings,
             onContinue: () => this._complete('flip')
         });
@@ -345,9 +402,10 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this._prependPrompt('debrief');
     }
 
+    /** The bar's Close is the only Close: the panel says it is finished and nothing more. */
     _renderFinished() {
         const panel = this._panel('Finished', FINISHED_TEXT);
-        this._button(panel, 'Close', () => this.close(), 'er-finish');
+        panel.classList.add('er-finished');
     }
 
     _complete(stageId, patch = {}) {
@@ -383,11 +441,82 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                     this._completeWhileAway('write', { sent: sentFromRecord(rec, target) });
                 }
             });
+        } else if (spec.kind === 'build') {
+            child = this.launchChild(spec.sceneType, socialOverlayParams({
+                ...spec.params,
+                onComplete: (success, result) => {
+                    if (isNormal(success, result)) this._completeWhileAway('build');
+                }
+            }));
+        } else if (spec.kind === 'mfa') {
+            child = this.launchChild(spec.sceneType, socialOverlayParams({
+                ...spec.params,
+                onComplete: (success, result) => {
+                    if (isNormal(success, result)) this._completeWhileAway('mfa');
+                }
+            }));
+        } else if (spec.kind === 'call') {
+            child = this._launchCall(spec.params);
         } else if (spec.kind === 'triage') {
             child = this._launchTriage(stage, spec.options);
         }
         this._launching = null;
         if (!child && this.gameState.isActive && this.notice) this.notice.textContent = LAUNCH_FAILED;
+    }
+
+    // ── the pretext call (E3) ────────────────────────────────────────────────
+
+    get _callId() {
+        return writeKind(this.episode) === 'call' ? this.episode.attack.callId : null;
+    }
+
+    _callOutcome() {
+        const id = this._callId;
+        const v = id ? this.globals?.[callOutcomeKey(id)] : null;
+        return isStr(v) ? v : null;
+    }
+
+    /** On a reopen at the call's write stage with its outcome set, the call is over: move on. */
+    _settleCall() {
+        if (this.state.stage !== 'write' || !this._callId) return;
+        const outcome = this._callOutcome();
+        if (!outcome) return;
+        stopCallWatch(this.episode.id);
+        const next = completeStage(this.episode, this.state, 'write', { sent: sentFromCall(this._callId, outcome) });
+        this._saveState(next);
+        this.pauseAfter = null;
+    }
+
+    /**
+     * Open pretext-prep for the episode's call. A Close on the prep card returns here with the
+     * stage unchanged. Begin replaces the prep with the phone chat, which has no way back, so
+     * a watcher waits for the outcome global and for every overlay to close, then holds the
+     * call for the flip and reopens the runner.
+     */
+    _launchCall(params) {
+        const callId = params.callId;
+        const spec = (Array.isArray(this.social.pretextNpcs) ? this.social.pretextNpcs : [])
+            .find((c) => isObj(c) && c.callId === callId) || null;
+        if (!spec) {
+            console.error(`[episode] attack.callId "${callId}" is not a social.pretextNpcs callId`);
+            return null;
+        }
+        const character = spec.character ?? null;
+        const svc = win().socialInfluence;
+        const cfg = svc?.getCharacterConfig?.(character) || this.social.characters?.[character] || {};
+        const npcId = cfg?.channels?.phone || cfg?.channels?.person || null;
+        const before = this._callOutcome();
+        const reopen = this._reopenParams();
+        const child = this.launchChild('pretext-prep', socialOverlayParams({ callId, character, npcId }));
+        if (child) {
+            watchCall({
+                episode: this.episode, callId, before, reopen,
+                globals: () => this.params.globals || win().gameState?.globalVariables || null,
+                save: (state) => { this.deps.write(stateKey(this.episode.id), state, { openChat: false }); win().stateSync?.sync?.(); },
+                schedule: this.deps.schedule, clearScheduled: this.deps.clearScheduled
+            });
+        }
+        return child;
     }
 
     /** A child's onComplete runs after this overlay has closed: save from the stored state. */
@@ -420,6 +549,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         try {
             launched = this.deps.startTriage(null, {
                 ...options,
+                // The merged set (11 N15) and the awareness skin (the Report animation)
+                ...(set ? { set } : {}),
+                skin: 'awareness',
                 onComplete: (success, result) => this._triageDone(stage, options, holder, reopenBase, episode, set, success, result)
             });
         } catch (e) {
@@ -471,6 +603,64 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             }
         };
     }
+}
+
+// ── the call watcher (module level: the runner is closed while the call runs) ─────
+
+const callWatches = new Map(); // episode id -> { stop }
+
+export function stopCallWatch(episodeId) {
+    callWatches.get(episodeId)?.stop?.();
+    callWatches.delete(episodeId);
+}
+
+/**
+ * Wait for the pretext call to end. Heard: the outcome global changed (the change event) or
+ * holds a value it did not hold at launch. Then, once no overlay is open (the chat and its
+ * debrief have closed), write the write stage done with the call held, and reopen the runner.
+ * If the runner is open again first (the prep card was closed), the watch ends. Exposed for
+ * the tests.
+ */
+export function watchCall({ episode, callId, before = null, reopen = {}, globals, save, schedule, clearScheduled }) {
+    stopCallWatch(episode.id);
+    const w = win();
+    const key = callOutcomeKey(callId);
+    const eventName = `global_variable_changed:${key}`;
+    let heard = false;
+    let timer = null;
+    let ticks = 0;
+    const onEvent = () => { heard = true; };
+    const stop = () => {
+        if (timer !== null) clearScheduled?.(timer);
+        timer = null;
+        try { w.eventDispatcher?.off?.(eventName, onEvent); } catch (e) { /* no dispatcher */ }
+    };
+    try { w.eventDispatcher?.on?.(eventName, onEvent); } catch (e) { /* no dispatcher */ }
+    const tick = () => {
+        timer = null;
+        const fw = w.MinigameFramework;
+        const current = fw?.currentMinigame || null;
+        if (current && current._sceneType === 'episode-runner') { stopCallWatch(episode.id); return; }
+        const g = globals() || {};
+        const outcome = isStr(g[key]) ? g[key] : null;
+        const ended = outcome && (heard || outcome !== before);
+        if (ended && !current) {
+            stopCallWatch(episode.id);
+            const state = completeStage(episode, readState(episode, g[stateKey(episode.id)]), 'write',
+                { sent: sentFromCall(callId, outcome) });
+            save(state);
+            fw?.startMinigame?.('episode-runner', null, {
+                ...reopen,
+                pauseAfter: episode.facilitated === true ? 'write' : null
+            });
+            return;
+        }
+        if (++ticks > CALL_WAIT_LIMIT) { stopCallWatch(episode.id); return; }
+        timer = schedule(tick, CALL_WAIT_MS);
+    };
+    callWatches.set(episode.id, { stop, tick });
+    timer = schedule(tick, CALL_WAIT_MS);
+    return { stop: () => stopCallWatch(episode.id), tick };
 }
 
 function isNormal(success, result) {

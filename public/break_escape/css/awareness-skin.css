@@ -2,6 +2,13 @@
    Tokens are --aw-*. The brand's accent overrides --aw-accent from JS. Plain, readable type:
    no pixel font. Every learner string is set in --se-font-readable. */
 
+.aw-skin {
+    --aw-accent: #2f6f5e;
+    --aw-ink: #1f2933;
+    --aw-surface: #f6f8f7;
+    --aw-line: #cfd8d4;
+    --aw-warn: #8a5a00;
+}
 .aw-strip, .aw-flip, .aw-debrief {
     --aw-accent: #2f6f5e;
     --aw-ink: #1f2933;
@@ -37,6 +44,11 @@
 .aw-button { margin-top: 14px; padding: 8px 18px; font: inherit; font-weight: 700; color: #fff; background: var(--aw-accent); border: 0; border-radius: 4px; cursor: pointer; }
 .aw-button:focus-visible { outline: 3px solid var(--aw-ink); outline-offset: 2px; }
 
+/* flip: a built page (E5) and a pretext call (E3) as well as a sent email */
+.aw-flip-page, .aw-flip-call { margin: 8px 0; max-width: 520px; }
+.aw-flip-section { margin: 14px 0 4px; font-size: 17px; }
+.aw-missed { padding: 10px 12px; background: #fff; border-left: 4px solid var(--aw-line); }
+
 /* flip */
 .aw-flip-reader { margin: 8px 0; border: 1px solid var(--aw-line); background: #fff; max-height: 320px; overflow: auto; }
 .aw-tells { margin: 12px 0; padding-left: 20px; }
@@ -62,6 +74,9 @@
 .aw-report-btn { background: var(--aw-accent); color: #fff; opacity: 1; }
 .aw-report-btn:disabled { opacity: 1; cursor: default; }
 .aw-report-thanks { margin: 6px 0 0; font-weight: 700; color: var(--aw-accent); }
+/* in the triage overlay's dark panel the accent green is too dark to read: lighten it there */
+.triage-client.aw-skin .aw-report-thanks { color: #8fe0c4; }
+.triage-client.aw-skin .tri-locked.aw-report-win { display: inline-flex; border-radius: 4px; }
 @keyframes aw-report-pop {
     0% { transform: scale(1); box-shadow: 0 0 0 0 var(--aw-accent); }
     40% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(47, 111, 94, 0.25); }

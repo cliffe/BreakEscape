@@ -327,8 +327,11 @@ function savingNotifier(params) {
  * @param {Object} lockable  The triage-workstation sprite; its
  *                           scenarioData.minigameData holds triageSetId and,
  *                           for a shell, conclusionTaskId
- * @param {Object} [options] { stage, conclusionTaskId, triageSetId,
- *                           onComplete(success, result) }
+ * @param {Object} [options] { stage, conclusionTaskId, triageSetId, set,
+ *                           skin, onComplete(success, result) }
+ *                           set: a ready-made set object used in place of the lookup;
+ *                           skin: 'awareness' gives the overlay the awareness skin
+ *                           (the Report button's positive animation)
  */
 export function startInboxTriageMinigame(lockable, options = {}) {
     const w = win();
@@ -344,8 +347,11 @@ export function startInboxTriageMinigame(lockable, options = {}) {
     }
 
     const data = lockable?.scenarioData?.minigameData || {};
-    const triageSetId = options.triageSetId || data.triageSetId;
-    const set = findTriageSet(triageSetId);
+    // options.set: a ready-made set (the episode runner's defend set with the role swap's
+    // calls merged in, 11 N15). It is used as given; its id names the set.
+    const given = options.set && typeof options.set === 'object' && !Array.isArray(options.set) ? options.set : null;
+    const triageSetId = given?.id || options.triageSetId || data.triageSetId;
+    const set = given || findTriageSet(triageSetId);
     if (!set) {
         console.error(`[triage] Unknown triageSetId "${triageSetId}"`);
         w.gameAlert?.('This workstation has no inbox to sort.', 'error', 'Error', 3000);
@@ -383,6 +389,7 @@ export function startInboxTriageMinigame(lockable, options = {}) {
         readOnly,
         storedResult: readOnly ? stored : null,
         savingNotice: SAVING_NOTICE,
+        skin: options.skin === 'awareness' ? 'awareness' : null,
         onComplete: (success, result) => {
             if (!success || !result || result.aborted) {
                 callback?.(false, result);

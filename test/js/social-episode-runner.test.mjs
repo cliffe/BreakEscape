@@ -20,7 +20,7 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'minigames/episode-runner/episode-runner-minigame.js', 'minigames/episode-runner/episode-model.js',
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
-    'minigames/episode-runner/debrief-view.js', 'systems/episode-starter.js',
+    'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js', 'systems/episode-starter.js',
     'systems/awareness-measure.js', 'systems/global-writer.js',
     'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-kinds.js',
     'minigames/inbox-triage/triage-flags.js', 'systems/phish-rules.js',
@@ -242,7 +242,10 @@ test('a reopen at every stage resumes there', () => {
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: stages } });
     open(ep);
     assert.equal(epState().stage, null);
-    assert.ok(cur().container.querySelector('.er-finish'));
+    // one Close only: the bar's (P7-J playtest); the finished panel adds none of its own
+    assert.ok(cur().container.querySelector('.er-finished'));
+    assert.equal(cur().container.querySelector('.er-finish'), null);
+    assert.equal([...cur().container.querySelectorAll('button')].filter((b) => /close/i.test(b.textContent)).length, 1);
 });
 
 test('the flip shows no message when nothing usable was sent', () => {
@@ -475,6 +478,7 @@ const facilitatedEpisode = () => ({
     }
 });
 const panelText = () => cur().container.querySelector('.er-body').textContent;
+const panelHeading = () => cur().container.querySelector('.er-heading')?.textContent || '';
 const resume = () => click('.er-resume');
 
 test('a facilitated episode shows each stage prompt and pauses between stages', () => {
@@ -601,4 +605,235 @@ test('a facilitated defendOnly episode pauses between its three stages', () => {
     resume();
     assert.equal(calls.debrief.at(-1).variant, 'defendOnly');
     assert.equal(calls.flip.length, 0);
+});
+
+// ── P7-P: build, the pretext call, mfa, the page and call flips, the role swap ────
+
+const e3 = JSON.parse(readFileSync(join(here, 'fixtures/social_role_swap/e3_fragment.json'), 'utf8'));
+FW.registerScene('landing-page-builder', StubOverlay);
+FW.registerScene('pretext-prep', StubOverlay);
+FW.registerScene('phone-chat', StubOverlay);
+FW.registerScene('authenticator', StubOverlay);
+
+// a manual timer for the call watcher, and an event bus with on/off
+const timers = [];
+const runTimers = () => { const due = timers.splice(0); due.forEach((fn) => fn()); };
+const listeners = new Map();
+window.eventDispatcher.on = (name, fn) => { if (!listeners.has(name)) listeners.set(name, new Set()); listeners.get(name).add(fn); };
+window.eventDispatcher.off = (name, fn) => { listeners.get(name)?.delete(fn); };
+const fire = (name, data) => { for (const fn of [...(listeners.get(name) || [])]) fn(data); };
+const callDeps = { ...deps, schedule: (fn) => { timers.push(fn); return fn; }, clearScheduled: (h) => { const i = timers.indexOf(h); if (i >= 0) timers.splice(i, 1); } };
+
+const CALL_ID = 'quayholt_helpdesk_reset';
+const e3Episode = () => ({
+    id: 'e3_fixture', role: 'helpdesk', variant: 'full', conclusionTaskId: 'finish_episode',
+    brand: { name: 'Quayholt Insurance', logoText: 'QUAYHOLT', accent: '#6b4c9a' },
+    stages: ['brief', 'osint', 'write', 'mfa', 'flip', 'defend', 'debrief'],
+    attack: { callId: CALL_ID, siteIds: ['quayholt_site'], scored: false },
+    defend: JSON.parse(JSON.stringify(e3.awarenessEpisode.defend)),
+    mfa: JSON.parse(JSON.stringify(e3.mfa)),
+    strings: {}
+});
+function setupE3(globals = {}) {
+    const ep = e3Episode();
+    setup(ep, globals);
+    timers.length = 0;
+    listeners.clear();
+    window.gameScenario.social = {
+        awarenessEpisode: ep, triageSets: JSON.parse(JSON.stringify(e3.triageSets)),
+        intelFacts: e3.intelFacts, pretextNpcs: e3.pretextNpcs, characters: e3.characters
+    };
+    return ep;
+}
+const openE3 = (ep) => startEpisodeRunner(kiosk(ep.id), { deps: callDeps });
+const outcomeKey = `pretext_${CALL_ID}_outcome`;
+// the pretext session the chat would have saved: line ids and the card's blanks only
+const session = () => ({
+    callId: CALL_ID, open: false,
+    blanks: { who: { value: 'gordon_full', label: 'Gordon McLeish' }, team: { value: 'claims', label: 'Claims' },
+              manager: { value: 'okonkwo_full', label: 'Ngozi Okonkwo' }, staffId: { value: 'gordon_staffid', label: 'QH-20719' } },
+    log: [{ turn: 1, kind: 'say', id: 'open_locked_out' }, { turn: 2, kind: 'say', id: 'give_staffid' },
+          { turn: 3, kind: 'ask', id: 'reset_password' }]
+});
+
+test('E3: write is a pretext call; Close on the card stays on write; a call that lands returns to the runner at mfa', () => {
+    const ep = setupE3({ [M.stateKey('e3_fixture')]: { v: 1, done: ['brief', 'osint'] } });
+    openE3(ep);
+    assert.equal(epState().stage, 'write');
+    assert.ok(panelHeading().includes('Make the call'));
+    click('.er-launch');
+    assert.equal(scene(), 'pretext-prep');
+    assert.equal(cur().params.callId, CALL_ID);
+    assert.equal(cur().params.character, 'leila');
+    assert.equal(cur().params.npcId, 'leila_servicedesk');
+    assert.equal(cur().params.requiresKeyboardInput, true);
+    assert.equal(cur().params.disableClose, true);
+    closeChild(); // the learner backs out of the card
+    assert.equal(scene(), 'episode-runner');
+    assert.equal(epState().stage, 'write');
+    runTimers(); // the watcher sees the runner open again and stops
+    assert.equal(timers.length, 0);
+
+    click('.er-launch');
+    assert.equal(scene(), 'pretext-prep');
+    FW.startMinigame('phone-chat', null, { npcId: 'leila_servicedesk' }); // Begin hands over to the chat
+    assert.equal(scene(), 'phone-chat');
+    runTimers();
+    assert.equal(timers.length, 1, 'still waiting while the chat is open');
+    window.gameState.globalVariables[outcomeKey] = 'got_it';
+    window.gameState.globalVariables[`pretext_${CALL_ID}_state`] = session();
+    fire(`global_variable_changed:${outcomeKey}`, { name: outcomeKey, value: 'got_it' });
+    runTimers();
+    assert.equal(scene(), 'phone-chat', 'nothing reopens over the open chat');
+    closeChild();
+    assert.equal(cur(), null);
+    runTimers();
+    assert.equal(scene(), 'episode-runner', 'the runner reopens once the chat has closed');
+    assert.equal(epState().stage, 'mfa');
+    assert.deepEqual(stored(ep.id).sent, { kind: 'call', callId: CALL_ID, outcome: 'got_it' });
+    assert.equal(epState().sentHeld, true);
+    assert.equal(failed().length, 0);
+});
+
+test('E3: a reopen at write with the call outcome already set moves on (a reload during the call)', () => {
+    const ep = setupE3({ [M.stateKey('e3_fixture')]: { v: 1, done: ['brief', 'osint'] }, [outcomeKey]: 'reported' });
+    openE3(ep);
+    assert.equal(epState().stage, 'mfa');
+    assert.deepEqual(stored(ep.id).sent, { kind: 'call', callId: CALL_ID, outcome: 'reported' });
+});
+
+test('E3: mfa opens the authenticator with episode.mfa; Close moves to the flip', () => {
+    const ep = setupE3({ [M.stateKey('e3_fixture')]: { v: 1, done: ['brief', 'osint', 'write'],
+        sent: { kind: 'call', callId: CALL_ID, outcome: 'got_it' } } });
+    openE3(ep);
+    assert.equal(epState().stage, 'mfa');
+    assert.ok(panelHeading().includes('Sign-in prompts'));
+    click('.er-launch');
+    assert.equal(scene(), 'authenticator');
+    assert.deepEqual(cur().params.pushes, e3.mfa.pushes);
+    assert.equal(cur().params.approvesAt, '06:50');
+    assert.equal(cur().params.mode, 'attacker');
+    assert.equal(cur().params.requiresKeyboardInput, true);
+    assert.equal('pushStream' in cur().params, false);
+    closeChild();
+    assert.equal(scene(), 'episode-runner');
+    assert.equal(epState().stage, 'flip');
+    assert.equal(epState().sentHeld, true, 'the call is still held for the flip');
+});
+
+test('E3: the flip shows the call as the helpdesk took it; a call that missed shows flipMissed', () => {
+    const ep = setupE3({ [M.stateKey('e3_fixture')]: { v: 1, done: ['brief', 'osint', 'write', 'mfa'],
+        sent: { kind: 'call', callId: CALL_ID, outcome: 'got_it' } }, [`pretext_${CALL_ID}_state`]: session() });
+    openE3(ep);
+    assert.equal(epState().stage, 'flip');
+    const props = calls.flip[0];
+    assert.equal(props.message, null);
+    assert.equal(props.missed, false);
+    assert.deepEqual(props.call.transcript.map((l) => l.text), [
+        "Morning, it's Gordon McLeish in Claims, I'm locked out of my account.",
+        'My staff reference is QH-20719.',
+        'Asks for: reset password.'
+    ]);
+    assert.deepEqual(props.call.claims.map((c) => c.value), ['Gordon McLeish', 'Claims', 'Ngozi Okonkwo', 'QH-20719']);
+    assert.equal(props.call.notes.length, 2);
+    click('.stub-continue');
+    assert.equal(stored(ep.id).sent, null, 'cleared after the flip');
+
+    setupE3({ [M.stateKey('e3_fixture')]: { v: 1, done: ['brief', 'osint', 'write', 'mfa'],
+        sent: { kind: 'call', callId: CALL_ID, outcome: 'reported' } } });
+    openE3(e3Episode());
+    assert.equal(calls.flip[0].call, null);
+    assert.equal(calls.flip[0].missed, true);
+});
+
+test('E3: the defend stage is the role swap: the merged set (calls first) with the awareness skin', () => {
+    const ep = setupE3({ [M.stateKey('e3_fixture')]: { v: 1, done: ['brief', 'osint', 'write', 'mfa', 'flip'] } });
+    openE3(ep);
+    assert.equal(epState().stage, 'defend');
+    assert.ok(panelHeading().includes('Take the calls'));
+    click('.er-launch');
+    const opts = calls.triage[0];
+    assert.equal(opts.triageSetId, 'e3_service_desk_queue');
+    assert.equal(opts.skin, 'awareness');
+    assert.deepEqual(opts.set.messages.map((m) => m.kind), ['call', 'call', 'call', 'call', 'push']);
+    assert.equal(opts.set.messages[0].claims[3].value, 'QH-20719');
+    cur().gameResult = { setId: 'e3_service_desk_queue', percent: 90, reportRate: 1, verifyCount: 2,
+        answers: [{ id: 'e3_call_gordon_impostor', verdict: 'verify', action: 'verify_callback', flags: [] }] };
+    cur().complete(true);
+    assert.equal(epState().stage, 'debrief');
+    assert.equal(calls.debrief.at(-1).set.messages.length, 5, 'the debrief reads the merged set');
+    assert.equal(calls.measure[0].ctx.setId, 'e3_service_desk_queue');
+});
+
+// E5: the build stage and the page flip
+const e5Episode = () => ({
+    ...fullEpisode(), id: 'e5_fixture',
+    stages: ['brief', 'osint', 'build', 'write', 'flip', 'defend', 'debrief'],
+    attack: { ...fullEpisode().attack, target: 'sso_staff', landingPageId: 'sso_login' }
+});
+const e5Page = () => ({ id: 'sso_login', title: 'Staff sign-in', domainMenu: [{ id: 'd_look', domain: 'quayho1t-sso.example' }],
+    purposes: [{ id: 'p_expired', label: 'Sign in again' }] });
+
+test('E5: build opens the page builder with the page id and target, between osint and write', () => {
+    const ep = e5Episode();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint'] } });
+    open(ep);
+    assert.equal(epState().stage, 'build');
+    assert.ok(panelHeading().includes('Build'));
+    click('.er-launch');
+    assert.equal(scene(), 'landing-page-builder');
+    assert.equal(cur().params.landingPageId, 'sso_login');
+    assert.equal(cur().params.targetId, 'sso_staff');
+    assert.equal(cur().params.disableClose, true);
+    closeChild();
+    assert.equal(scene(), 'episode-runner');
+    assert.equal(epState().stage, 'write');
+    assert.equal(cur().container.querySelector('.er-heading').textContent, 'Write');
+});
+
+test('E5: the flip gets the built page; a mail send with nothing to replay is missed, not noSend', () => {
+    const ep = e5Episode();
+    setup(ep, {
+        [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'build', 'write'],
+            sent: { recordId: 'gone', targetId: 'sso_staff', templateId: null, blankIds: [] } },
+        se_landing_pages: { sso_login: { pageId: 'sso_login', built: true, tellsFound: ['domain'],
+            choices: { domainId: 'd_look', purpose: 'p_expired', fields: ['email', 'password'], padlock: true } } }
+    });
+    window.gameScenario.social.landingPages = [e5Page()];
+    open(ep);
+    assert.equal(epState().stage, 'flip');
+    assert.deepEqual(calls.flip[0].page, { url: 'https://quayho1t-sso.example/', padlock: true, heading: 'Sign in again',
+        fields: ['Email address', 'Password'], button: 'Sign in again', tells: ['domain'] });
+    assert.equal(calls.flip[0].missed, false, 'the page is there to show');
+
+    // no page built and the sent record cannot be replayed: missed
+    setup(e1Missed(), { [M.stateKey('e1_fixture')]: { v: 1, done: ['brief', 'osint', 'write'],
+        sent: { recordId: 'gone', targetId: 'supplier_contact', templateId: null, blankIds: [] } } });
+    open(e1Missed());
+    assert.equal(calls.flip[0].message, null);
+    assert.equal(calls.flip[0].page, null);
+    assert.equal(calls.flip[0].missed, true);
+});
+const e1Missed = () => fullEpisode();
+
+test('defendOnly has its own defend wording (no "receiving end"), and a full run keeps it', () => {
+    const ep = { ...fullEpisode(), id: 'e1_fixture_defend', variant: 'defendOnly' };
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief'] } });
+    open(ep);
+    assert.equal(epState().stage, 'defend');
+    assert.equal(panelText().includes('receiving end'), false);
+    const full = fullEpisode();
+    setup(full, { [M.stateKey(full.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
+    open(full);
+    assert.ok(panelText().includes('receiving end'));
+});
+
+test('a defendOnly role swap reads Take the calls without the "seat you just called" line', () => {
+    const ep = { ...e3Episode(), id: 'e3_fixture_defend', variant: 'defendOnly' };
+    setupE3({ [M.stateKey('e3_fixture_defend')]: { v: 1, done: ['brief'] } });
+    window.gameScenario.social.awarenessEpisode = ep;
+    startEpisodeRunner(kiosk(ep.id), { deps: callDeps });
+    assert.equal(epState().stage, 'defend');
+    assert.equal(panelHeading(), 'Take the calls');
+    assert.equal(panelText().includes('just called'), false);
 });

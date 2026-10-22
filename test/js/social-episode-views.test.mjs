@@ -17,6 +17,7 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
     'minigames/episode-runner/debrief-view.js', 'minigames/inbox-triage/triage-flags.js',
+    'minigames/inbox-triage/triage-kinds.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'utils/display-dashes.js', 'ui/influence-bar.js', 'systems/social-influence.js',
     'systems/phish-rules.js', 'systems/global-writer.js'
@@ -84,7 +85,7 @@ test('flip lists exactly the stored tells with their canonical strings', () => {
     const shown = [...h.querySelectorAll('.aw-tell')].map((n) => n.textContent);
     const expected = message.truth.flags.map((id) => redFlagString(id, message));
     assert.deepEqual(shown, expected);
-    assert.deepEqual(flip.getState(), { shown: 'message', tells: expected });
+    assert.deepEqual(flip.getState(), { shown: 'message', parts: ['message'], tells: expected });
     assert.ok(h.querySelector('.mail-reader'), 'the shared reader draws the message');
     assert.ok(h.textContent.includes('INV-2217'));
     h.querySelector('.aw-continue').click();
@@ -99,7 +100,7 @@ test('flip with message null shows flipNoSend and no tells', () => {
     assert.equal(h.querySelector('.aw-no-send').textContent, 'Nothing was sent.');
     assert.equal(h.querySelectorAll('.aw-tell').length, 0);
     assert.equal(h.querySelector('.mail-reader'), null);
-    assert.deepEqual(flip.getState(), { shown: 'noSend', tells: [] });
+    assert.deepEqual(flip.getState(), { shown: 'noSend', parts: ['noSend'], tells: [] });
 });
 
 const set = () => ({
@@ -183,4 +184,49 @@ test('skin: tokens defined and reduced motion turns the report animation off', (
     assert.ok(m, 'reduced-motion block present');
     assert.match(m[1], /\.aw-report-win[^{]*\{\s*animation:\s*none/);
     assert.ok(!/url\(/i.test(css), 'no image assets');
+});
+
+// ── P7-P: the page, call and missed flips ──────────────────────────────────────
+
+test('flip with a built page draws the page card and its tells; with the email too, the page tells move under the page', () => {
+    const h = host();
+    const page = { url: 'https://quayho1t-sso.example/', padlock: true, heading: 'Sign in again', fields: ['Email address', 'Password'],
+        button: 'Sign in again', tells: ['domain'] };
+    const flip = renderFlipView(h, { page, strings: {}, onContinue() {} });
+    assert.ok(h.querySelector('.aw-flip-page .tri-kind-page'));
+    assert.equal(h.querySelector('.tri-address').textContent, 'https://quayho1t-sso.example/');
+    assert.deepEqual(flip.getState(), { shown: 'page', parts: ['page'], tells: ['The address bar shows a look-alike of the real address.'] });
+    flip.destroy();
+
+    const h2 = host();
+    const message = { ...sent(), truth: { isPhish: true, flags: ['senderTrust', 'formOrigin', 'hoverMismatch'] } };
+    const both = renderFlipView(h2, { message, page, strings: {}, onContinue() {} });
+    const st = both.getState();
+    assert.deepEqual(st.parts, ['message', 'page']);
+    assert.equal(h2.querySelectorAll('.aw-flip-section').length, 2);
+    const lists = [...h2.querySelectorAll('.aw-tells')].map((ul) => [...ul.children].map((li) => li.dataset.flag));
+    assert.deepEqual(lists, [['senderTrust', 'hoverMismatch'], ['domain', 'formOrigin']]);
+    assert.equal(h2.querySelectorAll('.aw-defender-line').length, 1);
+});
+
+test('flip with a call draws the call card with its claims and the notes', () => {
+    const h = host();
+    const call = { callerId: 'Says they are Gordon McLeish', claims: [{ fact: 'staffId', value: 'QH-20719' }],
+        transcript: [{ who: 'Caller', text: 'My staff reference is QH-20719.' }], notes: ['A callback to the number on file defeats every line here.'] };
+    const flip = renderFlipView(h, { call, strings: { flipCallIntro: 'From the desk.' }, onContinue() {} });
+    assert.ok(h.querySelector('.aw-flip-call .tri-kind-call'));
+    assert.equal(h.querySelector('.tri-claim-value').textContent, 'QH-20719');
+    assert.ok(h.textContent.includes('From the desk.'));
+    assert.deepEqual(flip.getState(), { shown: 'call', parts: ['call'], tells: call.notes });
+});
+
+test('flip with missed: true shows flipMissed, not flipNoSend', () => {
+    const h = host();
+    const flip = renderFlipView(h, { message: null, missed: true, strings: { flipMissed: 'It did not land.', flipNoSend: 'Nothing sent.' }, onContinue() {} });
+    assert.equal(h.querySelector('.aw-missed').textContent, 'It did not land.');
+    assert.equal(h.querySelector('.aw-no-send'), null);
+    assert.deepEqual(flip.getState(), { shown: 'missed', parts: ['missed'], tells: [] });
+    const h2 = host();
+    renderFlipView(h2, { missed: true, onContinue() {} });
+    assert.ok(h2.querySelector('.aw-missed').textContent.startsWith('Your attempt did not land'));
 });

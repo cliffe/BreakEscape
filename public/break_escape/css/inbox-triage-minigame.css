@@ -321,6 +321,13 @@
 /* Call card */
 .tri-kind-call { padding: 10px 12px; background: #10152a; border: 2px solid var(--ui-line, #4c5b80); border-left: 6px solid var(--ui-success, #6ee08f); }
 .tri-call-meta { margin: 0 0 8px; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+/* Role swap (11 N15): what the caller claims, as a short checklist above the transcript */
+.tri-call-claims { margin: 0 0 10px; padding: 8px 10px; border: 1px dashed var(--ui-line, #4c5b80); }
+.tri-call-claims-label { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: var(--ui-text-dim, #c3ccdf); }
+.tri-call-claims-list { margin: 0; display: grid; gap: 4px; }
+.tri-call-claim { display: grid; grid-template-columns: minmax(110px, max-content) 1fr; gap: 8px; }
+.tri-claim-fact { margin: 0; font-weight: 700; }
+.tri-claim-value { margin: 0; overflow-wrap: anywhere; }
 
 /* Printed notice with a QR code */
 .tri-notice {
@@ -405,3 +412,7 @@
     .tri-phone, .tri-notice, .tri-browser { max-width: none; }
     .tri-qr { grid-template-columns: repeat(var(--tri-qr-size), 5px); grid-auto-rows: 5px; }
 }
+
+/* Awareness skin in the triage overlay (P7-P): the thank-you line under a reported message.
+   The colours and the animation are in awareness-skin.css (.aw-skin, .aw-report-win). */
+.triage-client.aw-skin .aw-report-thanks { margin: 6px 0 0; }

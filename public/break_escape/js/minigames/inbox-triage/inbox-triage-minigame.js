@@ -57,6 +57,7 @@ const ICON = '/break_escape/assets/icons/';
 const NARROW_QUERY = '(max-width: 767px)';
 const STEPS = [['brief', '1 Brief'], ['sort', '2 Sort'], ['review', '3 Review'], ['result', '4 Result']];
 const STAGE_LABEL = { pre: 'Pre-assessment', post: 'Follow-up assessment', training: 'Training round', mission: 'Inbox check' };
+const REPORT_THANKS = 'Thanks for reporting. That warns everyone else.';
 const VERDICT_LABEL = { trust: 'Trust', report: 'Report', delete: 'Delete', verify: 'Verify' };
 const VERDICT_PAST = { trust: 'Trusted', report: 'Reported', delete: 'Deleted', verify: 'Verified' };
 const VERDICT_HINT = {
@@ -154,6 +155,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         this.view = { glossaryOpen: set?.glossary === 'open', explain: null };
     }
 
+    /** The episode runner's awareness skin is on (params.skin, set by the triage starter). */
+    get awarenessSkin() {
+        return this.params?.skin === 'awareness';
+    }
+
     // ── lifecycle ────────────────────────────────────────────────────────────
 
     init() {
@@ -166,6 +172,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const root = el('div', 'mail-client triage-client');
         root.setAttribute('role', 'region');
         root.setAttribute('aria-label', 'Inbox check');
+        // The awareness skin (11 N8, P7-P): the episode runner passes skin 'awareness', which
+        // gives the Report action its positive animation and a thank-you line.
+        if (this.awarenessSkin) root.classList.add('aw-skin');
         this.root = root;
         this.gameContainer.appendChild(root);
 
@@ -373,7 +382,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // own actions, each scored through one of those verdict rows (05 N10).
             for (const a of actionsFor(kindOf(rec), this.verifyEnabled)) {
                 const v = a.verdict;
-                const btn = el('button', `tri-verdict minigame-button verdict-${v}`);
+                const reportSkin = this.awarenessSkin && v === 'report' ? ' aw-report-btn' : '';
+                const btn = el('button', `tri-verdict minigame-button verdict-${v}${reportSkin}`);
                 btn.type = 'button';
                 btn.dataset.verdict = v;
                 btn.dataset.action = a.id;
@@ -387,6 +397,17 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             const lock = el('p', 'tri-locked');
             lock.append(icon('mark-tick'), el('span', null, `Your verdict: ${this._actionLabel(rec, ans)}. It is locked.`));
             box.appendChild(lock);
+            if (this.awarenessSkin && ans.verdict === 'report') {
+                // The positive beat for a report: it plays once, on the render right after
+                // the report was locked; later renders show the line without the animation.
+                const win = this._reportWin === rec.id;
+                const thanks = el('p', `aw-report-thanks${win ? ' aw-report-win' : ''}`, REPORT_THANKS);
+                if (win) {
+                    lock.classList.add('aw-report-win');
+                    this._reportWin = null;
+                }
+                box.appendChild(thanks);
+            }
             if (this.feedbackMode === 'immediate') {
                 box.appendChild(this._card(rec));
                 const next = el('button', 'tri-next minigame-button');
@@ -494,6 +515,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const answer = { id: s.messageId, verdict: s.verdict, flags, ms };
         if (s.action && s.action !== s.verdict) answer.action = s.action;
         this.answers.set(s.messageId, answer);
+        if (this.awarenessSkin && answer.verdict === 'report') this._reportWin = s.messageId;
         this._closeSheet(false);
         const rec = this.messages.find((m) => m.id === s.messageId);
         this._announce(`Verdict locked: ${this._actionLabel(rec, answer)}.`);
@@ -935,6 +957,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 linkNote: reader?.linkNote ?? '',
                 headerState: { ...this.view },
                 surface: this.reader?.readPane?.querySelector?.('[data-kind-surface]')?.dataset.kindSurface || null,
+                skin: this.awarenessSkin ? 'awareness' : null,
+                reportThanks: !!this.reader?.readPane?.querySelector?.('.aw-report-thanks'),
+                reportWin: !!this.reader?.readPane?.querySelector?.('.aw-report-win'),
+                callClaims: [...(this.reader?.readPane?.querySelectorAll?.('.tri-call-claim') || [])]
+                    .map((c) => ({ fact: c.dataset.fact, value: c.querySelector('.tri-claim-value')?.textContent || '' })),
                 actionButtons: [...(this.reader?.readPane?.querySelectorAll?.('.tri-verdict') || [])]
                     .map((b) => b.dataset.action),
                 comparison: this.step === 'result' && this.comparison ? JSON.parse(JSON.stringify(this.comparison)) : null,

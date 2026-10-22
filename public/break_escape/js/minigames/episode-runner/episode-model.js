@@ -8,12 +8,22 @@
 //   defendPrefix(id)              'episode_<id>_defend_', the defend set's global prefix
 //   readState(episode, raw)       a clean state from the stored global (or a fresh one)
 //   completeStage(episode, state, stageId, patch)   the state after a stage ends
-//   childLaunch(episode, stage)   what the stage opens: osint, mail, triage or nothing
+//   childLaunch(episode, stage)   what the stage opens: osint, build, mail or call, mfa,
+//                                 triage or nothing
+//   writeKind(episode)            'call' when attack.callId is set (E3), else 'mail'
 //   sentFromRecord(rec, targetId) the ids the write stage holds for the flip
+//   sentFromCall(callId, outcome) the same for a pretext call
+//   flipPage(episode, social, globals)  the built page the flip shows (E5), or null
+//   flipCall(episode, social, sent)     the call the flip shows (E3), or null
 //   measurementCtx(episode, set, launchStage, now)   ctx for recordTriageResult
+//
+// Stage order (P7-X lints it): osint -> build? -> write (mail or call) -> mfa? -> flip -> defend.
+// `mfa` may also sit straight after `flip`. `build` and `mfa` are attack stages.
 
-export const STAGE_IDS = Object.freeze(['brief', 'osint', 'write', 'flip', 'defend', 'debrief', 'check']);
-export const ATTACK_STAGES = Object.freeze(['osint', 'write', 'flip']);
+export const STAGE_IDS = Object.freeze(['brief', 'osint', 'build', 'write', 'mfa', 'flip', 'defend', 'debrief', 'check']);
+export const ATTACK_STAGES = Object.freeze(['osint', 'build', 'write', 'mfa', 'flip']);
+/** The pretext call's outcome that counts as landed (06 N7). */
+export const CALL_LANDED = 'got_it';
 export const DEFAULT_STAGES = Object.freeze({
     full: Object.freeze(['brief', 'osint', 'write', 'flip', 'defend', 'debrief']),
     defendOnly: Object.freeze(['brief', 'defend', 'debrief']),
@@ -66,6 +76,14 @@ export function nextStage(episode, state) {
 
 function cleanSent(raw) {
     if (!isObj(raw)) return null;
+    if (raw.kind === 'call') {
+        // A pretext call (E3): its id and how it ended, nothing the learner said.
+        return {
+            kind: 'call',
+            callId: isStr(raw.callId) ? raw.callId : null,
+            outcome: isStr(raw.outcome) ? raw.outcome : null
+        };
+    }
     return {
         recordId: isStr(raw.recordId) ? raw.recordId : null,
         targetId: isStr(raw.targetId) ? raw.targetId : null,
@@ -121,10 +139,18 @@ export function completeStage(episode, state, stageId, patch = {}) {
     return next;
 }
 
+/** How the write stage attacks: 'call' (a pretext call, attack.callId) or 'mail'. */
+export function writeKind(episode) {
+    return isStr(episode?.attack?.callId) ? 'call' : 'mail';
+}
+
 /**
  * What a stage opens (§2.3). Every launch carries only this episode's own ids.
  *   { kind: 'osint', sceneType: 'osint-browser', params: { siteIds } }
+ *   { kind: 'build', sceneType: 'landing-page-builder', params: { landingPageId, targetId } }
  *   { kind: 'mail', sceneType: 'mail-client', params: { accountIds, defaultAccount, maxSends: 1, layout? } }
+ *   { kind: 'call', sceneType: 'pretext-prep', params: { callId } }  (write, when attack.callId is set)
+ *   { kind: 'mfa', sceneType: 'authenticator', params: { pushes, approvesAt, mode } }  (from episode.mfa)
  *   { kind: 'triage', options: { triageSetId, stage?, conclusionTaskId } }
  *   null for brief, flip and debrief (drawn by the runner itself)
  */
@@ -134,6 +160,21 @@ export function childLaunch(episode, stage) {
     if (stage === 'osint') {
         return { kind: 'osint', sceneType: 'osint-browser',
                  params: { siteIds: Array.isArray(attack.siteIds) ? [...attack.siteIds] : [] } };
+    }
+    if (stage === 'build') {
+        return { kind: 'build', sceneType: 'landing-page-builder',
+                 params: { landingPageId: isStr(attack.landingPageId) ? attack.landingPageId : null,
+                           targetId: isStr(attack.target) ? attack.target : null } };
+    }
+    if (stage === 'mfa') {
+        const mfa = isObj(episode?.mfa) ? episode.mfa : {};
+        return { kind: 'mfa', sceneType: 'authenticator',
+                 params: { pushes: Array.isArray(mfa.pushes) ? mfa.pushes.filter(isObj).map((p) => ({ ...p })) : [],
+                           approvesAt: mfa.approvesAt ?? null,
+                           mode: isStr(mfa.mode) ? mfa.mode : 'attacker' } };
+    }
+    if (stage === 'write' && writeKind(episode) === 'call') {
+        return { kind: 'call', sceneType: 'pretext-prep', params: { callId: attack.callId } };
     }
     if (stage === 'write') {
         const params = {
@@ -165,6 +206,111 @@ export function sentFromRecord(rec, targetId = null) {
         targetId: isStr(rec.targetId) ? rec.targetId : (isStr(targetId) ? targetId : null),
         templateId: isStr(parts.pretext) ? parts.pretext : (templates[0] ?? null),
         blankIds: isObj(rec.slots) ? Object.keys(rec.slots) : []
+    };
+}
+
+/** What a pretext call's write stage holds for the flip. */
+export function sentFromCall(callId, outcome) {
+    return cleanSent({ kind: 'call', callId, outcome });
+}
+
+/** The pretext call's outcome global (06 N7). */
+export const callOutcomeKey = (callId) => `pretext_${callId}_outcome`;
+
+const labelOf = (list, id) => {
+    if (!Array.isArray(list) || !isStr(id)) return null;
+    const hit = list.find((o) => isObj(o) && o.id === id);
+    return hit ? (hit.label ?? hit.text ?? hit.heading ?? null) : null;
+};
+
+const FIELD_LABELS = Object.freeze({
+    email: 'Email address', password: 'Password', one_time_code: 'One-time code',
+    card_number: 'Card number', ni_number: 'National Insurance number'
+});
+
+/**
+ * The built look-alike page the flip shows (E5), from the builder's record
+ * se_landing_pages[<attack.landingPageId>] and the page definition in social.landingPages.
+ * Null unless the episode runs a build stage and the record is built.
+ *   { url, padlock, heading, fields, button, tells }
+ * `tells` are the record's page tells (07 tell ids such as domain, formOrigin, hoverMismatch).
+ */
+export function flipPage(episode, social, globals) {
+    const pageId = episode?.attack?.landingPageId;
+    if (!isStr(pageId) || !stagesFor(episode).includes('build')) return null;
+    const records = isObj(globals?.se_landing_pages) ? globals.se_landing_pages : {};
+    const rec = isObj(records[pageId]) ? records[pageId] : null;
+    const builtFlag = globals?.[`landing_${pageId}_built`] === true;
+    if (!rec || (rec.built !== true && !builtFlag)) return null;
+    const pages = Array.isArray(social?.landingPages) ? social.landingPages : [];
+    const def = pages.find((p) => isObj(p) && p.id === pageId) || {};
+    const choices = isObj(rec.choices) ? rec.choices : {};
+    const menu = [def.domainMenu, def.domains, def.domainOptions].find(Array.isArray) || [];
+    const opt = menu.find((o) => isObj(o) && o.id === choices.domainId) || null;
+    const host = (opt && (opt.browserDomain || opt.domain)) || globals?.[`landing_${pageId}_domain`] || '';
+    if (!isStr(host)) return null;
+    const url = /^[a-z]+:\/\//i.test(host) ? host : `https://${host}/`;
+    const heading = labelOf(def.purposes, choices.purpose) || (isStr(def.title) ? def.title : '');
+    const fields = (Array.isArray(choices.fields) ? choices.fields : []).filter(isStr).map((f) => FIELD_LABELS[f] || f);
+    const own = Array.isArray(rec.tells) ? rec.tells : (Array.isArray(rec.tellsFound) ? rec.tellsFound : []);
+    return {
+        url,
+        padlock: choices.padlock === true,
+        heading: isStr(heading) ? heading : '',
+        fields,
+        button: isStr(labelOf(def.purposes, choices.purpose)) ? labelOf(def.purposes, choices.purpose) : 'Sign in',
+        tells: [...new Set(own.filter(isStr))]
+    };
+}
+
+const spaced = (id) => {
+    const t = String(id).replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+    return t.charAt(0).toUpperCase() + t.slice(1);
+};
+
+/**
+ * The call the flip shows (E3), when the held call landed; null otherwise. It is the call as
+ * the helpdesk agent took it, drawn as a triage `call` card:
+ *   { callId, outcome, callerId, claims: [{ fact, value }], transcript: [{ who, text }], notes }
+ * The transcript is the learner's own lines, rebuilt from the pretext session's log
+ * (pretext_<callId>_state: line ids and the card's blanks, never typed text) with each blank
+ * filled with the label the learner picked. `claims` are those blanks. `notes` are the call
+ * spec's defenderNotes: what would have caught it.
+ */
+export function flipCall(episode, social, sent, globals = {}) {
+    if (!isObj(sent) || sent.kind !== 'call' || sent.outcome !== CALL_LANDED) return null;
+    const calls = Array.isArray(social?.pretextNpcs) ? social.pretextNpcs : [];
+    const spec = calls.find((c) => isObj(c) && c.callId === sent.callId) || {};
+    const notes = isObj(spec.defenderNotes) ? Object.values(spec.defenderNotes).filter(isStr) : [];
+    const session = isObj(globals?.[`pretext_${sent.callId}_state`]) ? globals[`pretext_${sent.callId}_state`] : {};
+    const blanks = isObj(session.blanks) ? session.blanks : {};
+    const lines = isObj(spec.lines) ? spec.lines : {};
+    const transcript = [];
+    for (const row of Array.isArray(session.log) ? session.log : []) {
+        if (!isObj(row) || !isStr(row.id)) continue;
+        if (row.kind === 'say' && isObj(lines[row.id]) && isStr(lines[row.id].text)) {
+            const map = isObj(lines[row.id].blanks) ? lines[row.id].blanks : {};
+            const text = lines[row.id].text.replace(/\{(\w+)\}/g, (m, name) => {
+                const fact = isStr(map[name]) ? map[name] : name;
+                const b = blanks[fact];
+                return isObj(b) && isStr(b.label) ? b.label : (isStr(b?.value) ? b.value : m);
+            });
+            transcript.push({ who: 'Caller', text });
+        } else if (row.kind === 'ask') {
+            transcript.push({ who: 'Caller', text: `Asks for: ${spaced(row.id).toLowerCase()}.` });
+        }
+    }
+    const claims = Object.entries(blanks)
+        .filter(([, b]) => isObj(b) && (isStr(b.label) || isStr(b.value)))
+        .map(([fact, b]) => ({ fact, value: isStr(b.label) ? b.label : b.value }));
+    const who = claims.find((c) => c.fact === 'who')?.value;
+    return {
+        callId: sent.callId,
+        outcome: sent.outcome,
+        callerId: isStr(who) ? `Says they are ${who}` : 'Caller',
+        claims,
+        transcript,
+        notes
     };
 }
 

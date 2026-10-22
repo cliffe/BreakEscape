@@ -133,3 +133,56 @@ test('flipEntry and measurementCtx', () => {
     assert.equal(M.measurementCtx(check(), { id: 'form_a' }, 'pre', 5).stage, 'pre');
     assert.equal(M.measurementCtx(defendOnly(), { id: 'fixture_inbox' }, null, 5).variant, 'defendOnly');
 });
+
+// ── P7-P: build, the pretext call, mfa ─────────────────────────────────────────
+
+const e5 = () => ({ ...full(), id: 'e5_fixture', stages: ['brief', 'osint', 'build', 'write', 'flip', 'defend', 'debrief'],
+    attack: { ...full().attack, target: 'sso_staff', landingPageId: 'sso_login' } });
+const e3 = () => ({ ...full(), id: 'e3_fixture', stages: ['brief', 'osint', 'write', 'mfa', 'flip', 'defend', 'debrief'],
+    attack: { callId: 'helpdesk_call', siteIds: ['site_a'], scored: false },
+    mfa: { pushes: [{ at: '06:31', app: 'SSO' }, { at: '06:38', app: 'SSO' }], approvesAt: '06:50', mode: 'attacker' } });
+
+test('build and mfa are stage ids; defendOnly drops them with the other attack stages', () => {
+    assert.ok(M.STAGE_IDS.includes('build') && M.STAGE_IDS.includes('mfa'));
+    assert.deepEqual(M.stagesFor(e5()), ['brief', 'osint', 'build', 'write', 'flip', 'defend', 'debrief']);
+    assert.deepEqual(M.stagesFor(e3()), ['brief', 'osint', 'write', 'mfa', 'flip', 'defend', 'debrief']);
+    assert.deepEqual(M.stagesFor({ ...e3(), variant: 'defendOnly' }), ['brief', 'defend', 'debrief']);
+});
+
+test('childLaunch: build opens the builder, write opens a call when attack.callId is set, mfa the authenticator', () => {
+    assert.deepEqual(M.childLaunch(e5(), 'build'), { kind: 'build', sceneType: 'landing-page-builder',
+        params: { landingPageId: 'sso_login', targetId: 'sso_staff' } });
+    assert.equal(M.writeKind(e5()), 'mail');
+    assert.equal(M.childLaunch(e5(), 'write').kind, 'mail');
+    assert.equal(M.writeKind(e3()), 'call');
+    assert.deepEqual(M.childLaunch(e3(), 'write'), { kind: 'call', sceneType: 'pretext-prep', params: { callId: 'helpdesk_call' } });
+    const mfa = M.childLaunch(e3(), 'mfa');
+    assert.deepEqual(mfa, { kind: 'mfa', sceneType: 'authenticator', params: e3().mfa });
+    // reads episode.mfa only: an attack.pushStream (P7-Q's draft name) is ignored
+    const old = { ...e3(), mfa: undefined, attack: { ...e3().attack, pushStream: e3().mfa } };
+    assert.deepEqual(M.childLaunch(old, 'mfa').params, { pushes: [], approvesAt: null, mode: 'attacker' });
+});
+
+test('a held call keeps its kind, id and outcome; the flip clears it', () => {
+    const ep = e3();
+    const s = M.completeStage(ep, { done: ['brief', 'osint'] }, 'write', { sent: M.sentFromCall('helpdesk_call', 'got_it') });
+    assert.deepEqual(s.sent, { kind: 'call', callId: 'helpdesk_call', outcome: 'got_it' });
+    assert.equal(s.stage, 'mfa');
+    assert.deepEqual(M.readState(ep, s).sent, s.sent, 'survives a reread');
+    const after = M.completeStage(ep, M.completeStage(ep, s, 'mfa'), 'flip');
+    assert.equal(after.sent, null);
+    assert.equal(M.callOutcomeKey('helpdesk_call'), 'pretext_helpdesk_call_outcome');
+});
+
+test('flipPage: only for an episode with a build stage and a built record', () => {
+    const social = { landingPages: [{ id: 'sso_login', domainMenu: [{ id: 'd1', domain: 'look-alike.example', browserDomain: 'look-alike.example/sso' }],
+        purposes: [{ id: 'p1', label: 'Confirm your account' }] }] };
+    const rec = { built: true, tellsFound: ['domain', 'formOrigin', 'domain'], choices: { domainId: 'd1', purpose: 'p1', fields: ['email', 'one_time_code'], padlock: false } };
+    assert.deepEqual(M.flipPage(e5(), social, { se_landing_pages: { sso_login: rec } }), {
+        url: 'https://look-alike.example/sso/', padlock: false, heading: 'Confirm your account',
+        fields: ['Email address', 'One-time code'], button: 'Confirm your account', tells: ['domain', 'formOrigin']
+    });
+    assert.equal(M.flipPage(e5(), social, { se_landing_pages: { sso_login: { ...rec, built: false } } }), null);
+    assert.equal(M.flipPage(full(), social, { se_landing_pages: { sso_login: rec } }), null, 'no build stage');
+    assert.equal(M.flipPage(e5(), social, {}), null);
+});

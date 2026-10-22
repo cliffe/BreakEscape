@@ -400,8 +400,37 @@ function call(rec) {
     if (rec.from?.address) meta.push(rec.from.address);
     if (rec.time) meta.push(rec.time);
     if (meta.length) box.appendChild(el('p', 'tri-call-meta', meta.join(' · ')));
+    // 11 N15, the role swap: what the caller claims, fact by fact. These are the facts the
+    // learner used in the attack call, so the card shows what there is to check.
+    const claims = (Array.isArray(rec.claims) ? rec.claims : []).filter((c) => isObj(c) && isStr(c.fact));
+    if (claims.length) {
+        const wrap = el('div', 'tri-call-claims');
+        wrap.appendChild(el('p', 'tri-call-claims-label', 'What the caller claims'));
+        const dl = el('dl', 'tri-call-claims-list');
+        for (const c of claims) {
+            const row = el('div', 'tri-call-claim');
+            row.dataset.fact = c.fact;
+            row.append(el('dt', 'tri-claim-fact', claimLabel(c.fact)), el('dd', 'tri-claim-value', String(c.value ?? '')));
+            dl.appendChild(row);
+        }
+        wrap.appendChild(dl);
+        box.appendChild(wrap);
+    }
     box.appendChild(transcriptList(rec.transcript, 'tri-transcript tri-call-transcript'));
     return box;
+}
+
+// Plain words for the 06 `knows` ids a role-swap claim names; others are spaced out.
+const CLAIM_LABELS = Object.freeze({
+    who: 'Name', team: 'Team', manager: 'Manager', staffId: 'Staff reference', role: 'Role',
+    phone: 'Phone number', email: 'Email address', location: 'Location', employeeId: 'Employee number'
+});
+
+/** The label for a claim's fact id ('staffId' -> 'Staff reference', 'cost_centre' -> 'Cost centre'). */
+export function claimLabel(fact) {
+    if (CLAIM_LABELS[fact]) return CLAIM_LABELS[fact];
+    const spaced = String(fact).replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
 function push(rec) {
