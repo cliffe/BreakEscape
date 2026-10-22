@@ -385,3 +385,16 @@ uncaptured toasts are still open. `docs/test-bridge.md` does not cover the socia
 - **Validator-only keys:** pretext `tuning.feedbackMode`, `showTechniqueNames` and `tells.bands` are read only by the validator. *Done (documented):* listed in README "Reserved keys" and the `00` reserved-keys row as validator-only; wiring them is UI work (a debrief-only tells panel, somewhere to show the band lines) left for a later packet.
 - **Fixture:** `test/js/fixtures/social_osint/so_clean.json` fails the new schema, though no CLI test runs it. *Done:* it now passes the schema (scenario_brief, startRoom, room type and connections, object names, the call's character and callId), checked by `validator-social-followups.test.mjs`.
 - **User decision:** should the scope and plan boards show the `blame` wording (currently report-only)? This is an engine change.
+
+## Status at end of 2026-10-22
+- **All 11 must-haves are done:** M1–M11, plus the review minors (83364c5e).
+- **Nice-to-haves done:**
+  - P9 mail (90d00ec5);
+  - Phase 7 triage kinds, call/push actions and comparison (90d00ec5);
+  - defender indicators (90d00ec5);
+  - free-text flavour (f7a531b1);
+  - phone-chat preview and quiet-reopen residuals (opt-in flags).
+- **Still open:**
+  - R-01 speaker tie (user decision);
+  - OQ4, or a server-side results record;
+  - harness H1/H3/H4 from R8 (needs user approval for a shared-file edit).
