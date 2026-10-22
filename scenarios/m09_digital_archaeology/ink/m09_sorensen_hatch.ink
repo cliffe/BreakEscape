@@ -50,6 +50,12 @@ VAR noor_told = false   // Synced scenario global (dialogue R2 m2)
     }
     -> recognition
 }
+// Blind playtest F5: the shredder cover told to Noor reaches her too.
+{noor_cover == "contractor" and not noor_told:
+    Narrator: She looks up before you can say who you are.
+    Margaret Sorensen: Noor says you've come about my shredder. It has never jammed in eleven years. There's a chair on your side.
+    -> opening_contractor
+}
 Narrator: She looks up before you can say who you are.
 Margaret Sorensen: The lease-holder's auditor. Of course. There's a chair on your side.
 Narrator: She stamps a box DESTROYED and slides it back toward the noise.
@@ -60,6 +66,14 @@ Narrator: She stamps a box DESTROYED and slides it back toward the noise.
 === opening ===
 + [That's right. They want tonight's run checked against the schedule.]
     Margaret Sorensen: Then you'll find it in order. I've never sent a box anywhere it wasn't due.
+    -> recognition
++ [I'll stand.]
+    Margaret Sorensen: As you like. Most people sit, in the end.
+    -> recognition
+
+=== opening_contractor ===
++ [Then you won't mind me looking at the feed.]
+    Margaret Sorensen: Look all you like. Keep your sleeves clear of it.
     -> recognition
 + [I'll stand.]
     Margaret Sorensen: As you like. Most people sit, in the end.
@@ -86,8 +100,11 @@ Narrator: She stamps a box DESTROYED and slides it back toward the noise.
     Margaret Sorensen: Your first days aren't in your file. Somebody in your outfit is careful with you.
 }
 // Dialogue R1 MJ-2: "the Architect", not "he" (which read as Derek Lawson).
-{noor_cover == "safetynet":
+{
+- noor_cover == "safetynet":
     Margaret Sorensen: And you're the one the Architect writes about.
+- noor_cover == "contractor" and not noor_told:
+    Margaret Sorensen: You're not here for my shredder. You're the one the Architect writes about.
 - else:
     Margaret Sorensen: You're not from the lease-holder. You're the one the Architect writes about.
 }

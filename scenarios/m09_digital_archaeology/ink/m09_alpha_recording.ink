@@ -26,7 +26,8 @@ VAR alpha_clip_played = false
     // Puzzle chains R8 n2: the credit rides his second line, so an Esc before HaX's reply keeps it.
     #set_global:alpha_clip_played:true
     Dr Adrian Tesseract (recording): And build your own way out first. Always. Then let them build their way in.
-    Agent HaX: Tape two. He gave that lecture every year.
+    // Blind playtest F6/F9: "Session two" matches the annotation sheets and doesn't suggest a missed tape one.
+    Agent HaX: Session two. He gave that lecture every year.
 }
 #exit_conversation
 -> DONE

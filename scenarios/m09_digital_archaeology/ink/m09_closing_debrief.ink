@@ -201,8 +201,19 @@ Director Magnus Netherton: You read it. You decide. I will sign whichever.
     ~ asked_notice = true
     Director Magnus Netherton: You sent it without asking me. I would have said yes. I would have taken a week to say it.
     -> hub
+// Blind playtest F4 (the ending rule: warn, and let the player finish first).
 + [Montana, sir.]
+    {not asked_archive or not asked_wren or not asked_recruiter or (debrief_notice_before and not asked_notice):
+        -> montana_confirm
+    }
     -> spine
+
+=== montana_confirm ===
+Director Magnus Netherton: Then I sign, and that is the night closed. Anything else first?
++ [Sign it, sir.]
+    -> spine
++ [One more thing.]
+    -> hub
 
 === the_archive ===
 // SA §7.1 order; at most two lines, the first two that apply. Sorensen's and

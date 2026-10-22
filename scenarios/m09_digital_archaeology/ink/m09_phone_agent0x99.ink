@@ -800,7 +800,7 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 + {nightshade_file_decided and not nightshade_shown_file and not nightshade_sent_here and not start_debrief} [Send Nightshade his file.]
     -> nightshade_send
 // 11. The hand on his file, the honest three-way answer (stage 4 P17).
-+ {nightshade_file_held and not hand_matched and not hand_answered_here} [The hand on his file.]
++ {nightshade_file_held and not hand_matched and not hand_answered_here} [The hand on Nightshade's file.]
     {not notebook_read:
         Read the notebook scan in my case file first. Then look again.
         -> support_hub

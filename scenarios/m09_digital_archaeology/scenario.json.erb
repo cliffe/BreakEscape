@@ -54,17 +54,30 @@ salvage_code = "LEWISANDCLARK"           # Vigenere Decode of MSJMQAEGDZNVI, key
 salvage_tail = %q{\n\nSALVAGE CAGE ACCESS\nMSJMQAEGDZNVI}
 
 # --- VM gating, F12 (FINALE_VM_GATING_HANDOFF.md A5) ---------------------------
-# PLACEHOLDER (VM): these four strings must equal the accounts the SecGen build
-# creates for the catalogue server (gates flag 1) and Tomb Beta's web service
-# (gates flag 3). The scenario binding carries only flags (flags_for_vm), not
-# account names or passwords, so they are fixed strings here, as m01's password
-# list is. Not checked against the VM: Opus agents don't open the VM plan. The
-# opus48 agent or the user fills them; until then the player-facing text shows
-# the PLACEHOLDER marker.
+# These four strings must equal the accounts the SecGen build creates for the
+# catalogue server (gates flag 1) and Tomb Beta's web service (gates flag 3).
+# The scenario binding carries only flags (flags_for_vm), not account names or
+# passwords, so they are fixed strings here, as m01's password list is. Filled
+# by the opus48 agent against the VM; Opus agents don't open the VM plan.
 catalogue_login_user = "catalogsvc"
 catalogue_login_password = "Catalog!Helena2016"
 tomb_beta_login_user = "nostromousr"
 tomb_beta_login_password = "TombBeta!Enrol16"
+
+# Blind playtest F13: the two target addresses. m01/m02 print a target's address
+# in an in-game note. Here the address comes from the binding when it has one
+# (Hacktivity: the VmSet's VM by title; standalone: vm_ips), as vm_object does for
+# the launchers. PLACEHOLDER fallback when neither is present: the opus48 agent or
+# the user should supply the fixed address the build uses, as m02 hard-codes its own.
+vm_ip_for = lambda do |title, fallback|
+  if vm_context && vm_context['hacktivity_mode'] && vm_context['vms']
+    vm = vm_context['vms'].find { |v| v['title'] == title }
+    return vm['ip'] if vm && vm['ip']
+  end
+  (vm_context && vm_context['vm_ips'] && vm_context['vm_ips'][title]) || fallback
+end
+catalogue_server_ip = vm_ip_for.call('catalogue_server', 'PLACEHOLDER_catalogue_ip')
+tomb_beta_server_ip = vm_ip_for.call('tomb_beta_server', 'PLACEHOLDER_tomb_beta_ip')
 
 # --- Fixed document strings reused in more than one variant (S6 §1) ----------
 series_l = %q{SERIES L -- LEGACY PLACEMENTS, NOT SAFETYNET. M.S.\nName / placed / post / cost to date / yield / notes\nRuth Lindqvist -- 2009 -- deputy clerk, Cascade County -- $14,000 -- voter rolls -- Quiet. Reliable.\nGail Pettibone -- 2010 -- dispatcher, county 911 center -- $8,500 -- call routing -- Asks nothing.\nDolores Ortega -- 2012 -- billing director, regional hospital -- $31,500 -- records, three systems -- Wants out. Remind her of her son.\nHector Salas -- 2012 -- shift supervisor, water treatment plant -- $12,000 -- control room schedule -- Steady.\nJune Akiyama -- 2013 -- IT contractor, state DMV -- $22,000 -- license data -- Careful. Too careful.\nTom Brekke -- 2014 -- school board, Bozeman -- $6,000 -- vendor contracts -- Enjoys it.\nVernon Teague -- 2014 -- lineman foreman, rural co-op -- $9,800 -- substation keys -- Drinks. Watch.\nLeah Brandvold -- 2015 -- paralegal, county attorney -- $11,200 -- case lists -- Bright. Bored.\nAmit Deshmukh -- 2016 -- zoning officer, Billings -- $9,200 -- substation permits -- Never asked for anything yet. Will be.\nSamuel Ocampo -- 2017 -- records officer, VA clinic -- $7,400 -- patient lists -- Grateful.\nDoreen Fitch -- 2018 -- court reporter, district court -- $5,600 -- transcripts -- Lonely.\nPenciled at the foot: The best work I have done. Nobody will ever know. That was the point.}
@@ -387,6 +400,9 @@ hax_maps << text_map("global_variable_changed:noor_box_read", "value === true &&
 end
 hax_maps << text_map("global_variable_changed:sleeper_shortlist", "value === true",
                      "After Quantum Dynamics we checked everyone TalentStack ever touched. Harwick & Lowe shut before TalentStack opened.")
+# Blind playtest F3: two names is the design (m10 settles it); say so.
+hax_maps << text_map("global_variable_changed:sleeper_shortlist", "value === true",
+                     "That sheet leaves two, and nothing in this building splits them. That one's for Montana.", msg_delay: 10000)
 hax_maps << text_map("global_variable_changed:sleeper_shortlist", "value === true && globalVars.raid_team_answer === 'quintero'",
                      "You took her side at the briefing. Keep it. Don't take her word.", msg_delay: 5000)
 hax_maps << text_map("global_variable_changed:reeves_sheet_read", "value === true",
@@ -694,7 +710,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
         { "taskId": "talk_at_the_hatch", "title": "Talk to Sorensen at the cage hatch", "type": "custom", "status": "active" },
         { "taskId": "open_the_cage", "title": "Get through the cage gate", "type": "custom", "status": "active" },
         { "taskId": "open_plan_cabinet", "title": "Open the locked plan cabinet at the back of the cage", "type": "unlock_object", "targetObject": "plan_cabinet", "status": "active" },
-        { "taskId": "match_the_hand", "title": "Compare the hand on Nightshade's file with the notebook scan in HaX's case file", "type": "custom", "status": "locked" },
+        { "taskId": "match_the_hand", "title": "Compare the hand on Nightshade's file (Candidate Assessment, Intake 2011) with the notebook scan in HaX's case file", "type": "custom", "status": "locked" },
         { "taskId": "stop_the_shredding", "title": "Stop Sorensen's shredding", "type": "custom", "status": "locked", "optional": true },
         { "taskId": "stop_the_tape_wipe", "title": "Stop the tape wipe in the server closet", "type": "custom", "status": "active", "optional": true }
       ]
@@ -1593,7 +1609,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "takeable": true,
           "readable": true,
           "observations": "A slip in a duty clerk's hand, stuck to the drop desk.",
-          "text": "CATALOGUE -- OVERNIGHT INDEX RUN\nUser: <%= catalogue_login_user %>\nPassword: <%= catalogue_login_password %>\nNoor -- for the night run only. Don't leave this out. M.S.",
+          "text": "CATALOGUE -- OVERNIGHT INDEX RUN\nHost: <%= catalogue_server_ip %>\nUser: <%= catalogue_login_user %>\nPassword: <%= catalogue_login_password %>\nNoor -- for the night run only. Don't leave this out. M.S.",
           "onRead": { "setVariable": { "catalogue_login_found": true } },
           "puzzle_graph_role": "clue"
         },
@@ -2449,7 +2465,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
                 { "condition": "globalVars.notebook_read", "value": "A ring binder of enrolment sheets, pencilled in a hand you have seen tonight." },
                 { "condition": "globalVars.nightshade_file_held", "value": "A ring binder of enrolment sheets, pencilled in a hand you have seen tonight." }
               ],
-              "text": "TOMB BETA -- WORKSHOP ENROLMENT, SPRING INTAKE\nTwelve names, a photograph clipped to each.\nPencilled beside most of them: Ready. Not yet. Ask properly.\nInside the back cover, typed: Enrolment site login. User: <%= tomb_beta_login_user %>. Password: <%= tomb_beta_login_password %>.",
+              "text": "TOMB BETA -- WORKSHOP ENROLMENT, SPRING INTAKE\nTwelve names, a photograph clipped to each.\nPencilled beside most of them: Ready. Not yet. Ask properly.\nInside the back cover, typed: Enrolment site, on <%= tomb_beta_server_ip %>. User: <%= tomb_beta_login_user %>. Password: <%= tomb_beta_login_password %>.",
               "onRead": { "setVariable": { "tomb_beta_login_found": true } }
             }
           ]
