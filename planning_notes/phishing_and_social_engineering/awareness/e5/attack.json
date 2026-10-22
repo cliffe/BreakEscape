@@ -21,7 +21,7 @@
       "text": "Quayholt's IT notices to staff come from the service desk, it-servicedesk@quayholt.example.",
       "subject": "itdesk", "source": "blk_itdesk",
       "provides": [
-        { "type": "name", "about": "sender", "value": "itdesk_name", "label": "Quayholt IT Service Desk", "kind": "distinctive" },
+        { "type": "name", "about": "sender", "value": "itdesk_full", "label": "Quayholt IT Service Desk", "kind": "distinctive" },
         { "type": "address", "value": "itdesk_address", "label": "it-servicedesk@quayholt.example", "kind": "distinctive" }
       ],
       "reduceNote": "Publishing the address staff already trust for IT notices lets an attacker spoof a sender nobody questions."
