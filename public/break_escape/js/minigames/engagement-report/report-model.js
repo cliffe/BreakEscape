@@ -133,7 +133,16 @@ export function buildReportModel(social, globals, mailState) {
     // ── results: mail ───────────────────────────────────────────────────────
     const metrics = mailState && typeof mailState.metrics === 'object' && mailState.metrics ? mailState.metrics : {};
     const nameOf = targetNameResolver(social, block.labelBy === 'role');
-    const mail = Object.keys(metrics).map((targetId) => {
+    // Row order follows the scenario's phishTargets order, then any other metrics ids sorted,
+    // so it does not depend on the key order of a restored (reloaded) metrics object.
+    const targetOrder = (Array.isArray(social?.phishTargets) ? social.phishTargets : [])
+        .map((t) => t && t.id).filter((id) => typeof id === 'string');
+    const metricIds = Object.keys(metrics);
+    const mailIds = [
+        ...targetOrder.filter((id, i) => targetOrder.indexOf(id) === i && Object.prototype.hasOwnProperty.call(metrics, id)),
+        ...metricIds.filter((id) => !targetOrder.includes(id)).sort()
+    ];
+    const mail = mailIds.map((targetId) => {
         const m = metrics[targetId] && typeof metrics[targetId] === 'object' ? metrics[targetId] : {};
         return {
             targetId,

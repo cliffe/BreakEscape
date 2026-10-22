@@ -63,6 +63,7 @@ module ValidateSocial
     issues = []
     issues.concat(aim_unlock_keys(ctx))
     issues.concat(duplicate_object_ids(ctx))
+    issues.concat(object_name_collisions(ctx))
     return issues unless json['social'].is_a?(Hash)
 
     issues.concat(declared_globals(ctx))
@@ -142,6 +143,33 @@ module ValidateSocial
       "❌ SOCIAL: object id '#{id}' is used more than once (#{where.join(', ')}); " \
         "the unlock endpoint takes the first hit by id, so the others could never be unlocked"
     end
+  end
+
+  # The unlock endpoint (find_object_in_scenario) matches obj['id'] == key || obj['name'] == key in
+  # rooms[*].objects order, first hit, and the client asks with scenarioData.id || scenarioData.name.
+  # So a locked object is mis-found when an earlier object has that key as its id or name. Same-id
+  # duplicates are the error above; this one is a warning, as shipped missions may share names.
+  def self.object_name_collisions(ctx)
+    all = []
+    rooms(ctx.json).each do |room_id, room|
+      Array(room['objects']).each_with_index do |obj, i|
+        all << [obj, "#{room_id}/objects[#{i}]"] if obj.is_a?(Hash)
+      end
+    end
+    issues = []
+    all.each do |obj, where|
+      key = [obj['id'], obj['name']].find { |v| v.is_a?(String) && !v.empty? }
+      next unless key
+      next unless obj['locked'] == true || obj['lockType'] # only a locked object is asked to the unlock endpoint
+
+      hit = all.find { |o, _| o['id'] == key || o['name'] == key }
+      next if hit.nil? || hit[0].equal?(obj)
+      next if obj['id'].is_a?(String) && hit[0]['id'] == obj['id'] # same id: reported as an error above
+
+      issues << "⚠️ SOCIAL: #{where} is looked up by '#{key}', but #{hit[1]} matches that id or name first; " \
+                "the unlock endpoint takes the first hit, so unlocking this object may open the other one instead. Give it a unique id"
+    end
+    issues
   end
 
   # A missing assets/objects/<type>.png for a social object type is an error.

@@ -19,7 +19,8 @@
  * though writing the same value again is not a change.
  *
  * <prefix>pass means percent >= outcome.passPercent and is never cleared by a
- * lower round. <prefix>done means a round was completed at any score.
+ * lower round. <prefix>percent and <prefix>reportRate keep the best round's values
+ * (a lower later round does not overwrite them). <prefix>done means a round was completed at any score.
  *
  * Reopen: when <prefix>done is already true and the conclusion task
  * (conclusionTaskId) is not completed, the starter awaits syncConfirmed() and
@@ -184,8 +185,14 @@ async function saveRound(result, ctx, d) {
     const globals = d.globals;
     const n = triageGlobalNames(prefix);
     const passPercent = typeof ctx.set?.outcome?.passPercent === 'number' ? ctx.set.outcome.passPercent : 0;
-    const percent = typeof result.percent === 'number' ? result.percent : 0;
-    const reportRate = typeof result.reportRate === 'number' ? result.reportRate : 0;
+    let percent = typeof result.percent === 'number' ? result.percent : 0;
+    let reportRate = typeof result.reportRate === 'number' ? result.reportRate : 0;
+    // A later round that scores lower keeps the best round's percent and reportRate
+    // (a tie keeps the earlier round), as <prefix>pass is never cleared.
+    if (globals[n.done] === true && typeof globals[n.percent] === 'number' && globals[n.percent] >= percent) {
+        percent = globals[n.percent];
+        if (typeof globals[n.reportRate] === 'number') reportRate = globals[n.reportRate];
+    }
     const pass = globals[n.pass] === true || percent >= passPercent; // never cleared
 
     const names = heldFor(prefix);

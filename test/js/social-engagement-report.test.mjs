@@ -92,6 +92,19 @@ test('mail results read from mailState.metrics, with target names and first-send
     assert.match(text(s), /chance for a member of staff to report you/);
 });
 
+test('mail rows follow the scenario target order whatever the metrics key order', () => {
+    const order = fixture.phishTargets.map((t) => t.id);
+    assert.ok(order.length >= 2, 'fixture has at least two targets');
+    const metricsFor = (ids) => Object.fromEntries(ids.map((id) => [id, { sent: 1, failed: 0, landed: 1 }]));
+    const forward = buildReportModel(fixture, {}, { metrics: metricsFor(order) });
+    const reversed = buildReportModel(fixture, {}, { metrics: metricsFor([...order].reverse()) });
+    assert.deepEqual(forward.results.mail.map((r) => r.targetId), order);
+    assert.deepEqual(reversed.results.mail.map((r) => r.targetId), order);
+    // ids outside phishTargets go last, sorted
+    const extra = buildReportModel(fixture, {}, { metrics: metricsFor(['zeta', 'alpha', ...[...order].reverse()]) });
+    assert.deepEqual(extra.results.mail.map((r) => r.targetId), [...order, 'alpha', 'zeta']);
+});
+
 test('no mail sent: the results panel says so', () => {
     setWorld({ mailState: { metrics: {} } });
     const s = open();

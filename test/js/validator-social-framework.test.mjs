@@ -124,6 +124,21 @@ test('aim unlockCondition keys and object id uniqueness apply to every scenario'
   assert.deepEqual(lint('sf_clean', SPRITES).filter(s => /unlockCondition/.test(s)), []);
 });
 
+test('object name collisions are a warning, never an error', { skip }, () => {
+  const issues = lint('sf_names', ['notes']).filter(s => /looked up by/.test(s));
+  assert.ok(issues.every(s => s.startsWith('⚠️')), issues.join('\n'));
+  assert.equal(issues.length, 2, issues.join('\n'));
+  // no id: found by name 'Desk', but a/objects[2] has that name first
+  assert.ok(issues.some(s => /b\/objects\[0\] is looked up by 'Desk'.*a\/objects\[2\]/.test(s)));
+  // id 'Cabinet' matches a/objects[1] by name first
+  assert.ok(issues.some(s => /b\/objects\[1\] is looked up by 'Cabinet'.*a\/objects\[1\]/.test(s)));
+  // an object with a unique id is fine even when its name repeats ('fine' vs 'Wall safe')
+  assert.ok(!issues.some(s => /b\/objects\[2\]/.test(s)));
+  // a clean scenario and the same-id duplicate case raise no collision warning
+  assert.deepEqual(lint('sf_clean', ['notes', 'mail_terminal', 'kiosk']).filter(s => /looked up by/.test(s)), []);
+  assert.deepEqual(lint('sf_nosocial', null).filter(s => /looked up by/.test(s)), []);
+});
+
 test('a missing sprite for a social object type is an error, only with a social key', { skip }, () => {
   const none = lint('sf_broken', ['notes']).filter(s => /assets\/objects/.test(s));
   assert.equal(none.length, 2, none.join('\n'));

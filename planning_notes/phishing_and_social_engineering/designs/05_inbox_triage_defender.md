@@ -670,7 +670,7 @@ replaced by the effective stage). Five rules:
   while a changed `percent` emits an event that nothing maps.
 - **`<prefix>pass` is never cleared.** The starter sets it true when a round reaches `passPercent` and
   does not reset it to false after a later lower round, so a door or task a pass opened stays open.
-  There is no "best score" mechanism: `percent` is the latest round.
+  `percent` and `reportRate` keep the best round (a lower later round does not overwrite them; M7 change, earlier text said latest round).
 
 A global cannot complete a task or open a lock by itself. An aim's `unlockCondition` is truthy or
 `equals` only, but an `eventMappings` `condition` on `global_variable_changed:<name>` accepts numeric

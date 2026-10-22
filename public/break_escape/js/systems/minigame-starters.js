@@ -13,6 +13,7 @@ import { keypadTitle } from '../utils/lock-titles.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { socialOverlayParams } from '../minigames/framework/social-overlay.js';
 import { startInboxTriageMinigame } from './triage-starter.js';
+import { withLockedHint } from '../utils/locked-hint.js';
 export { startInboxTriageMinigame };
 
 // Maps Phaser texture keys to their actual filenames (where key !== filename stem)
@@ -231,7 +232,7 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 unlockTargetCallback(lockable, type, lockable.layer);
             }
         } else {
-            window.gameAlert('None of your keys work with this lock.', 'error', 'Wrong Keys', 4000);
+            window.gameAlert(withLockedHint('None of your keys work with this lock.', lockable), 'error', 'Wrong Keys', 4000);
         }
         return;
     }
@@ -455,8 +456,9 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
             } else {
                 console.log('KEY SELECTION FAILED');
                 // Closed because the player was hit: no "wrong key" on top of it (F2).
+                // A door with a lockedHint adds where the key comes from; others are unchanged.
                 if (!window.minigameClosedByDamage?.()) {
-                    window.gameAlert('The selected key doesn\'t work with this lock.', 'error', 'Wrong Key', 4000);
+                    window.gameAlert(withLockedHint('The selected key doesn\'t work with this lock.', lockable), 'error', 'Wrong Key', 4000);
                 }
             }
         }

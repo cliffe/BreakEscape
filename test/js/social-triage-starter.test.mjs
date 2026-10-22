@@ -194,12 +194,32 @@ test('_pass is never cleared by a lower round', async () => {
     const b = persistTriageResult({ percent: 40, reportRate: 0 }, ctx, { stateSync: sync });
     await tick(); sync.settleAll(true); await b;
     assert.equal(env.globals.triage_pass, true, 'pass stays true');
-    assert.equal(env.globals.triage_percent, 40, 'percent is the latest round');
-    assert.deepEqual(names(env.events), [
-        'global_variable_changed:triage_percent',
-        'global_variable_changed:triage_reportRate',
-        TRIAGE_DONE_EVENT
-    ], 'pass and done did not change, so they are not re-emitted');
+    assert.equal(env.globals.triage_percent, 72, 'percent keeps the best round');
+    assert.equal(env.globals.triage_reportRate, 1, 'reportRate keeps the best round');
+    assert.deepEqual(names(env.events), [TRIAGE_DONE_EVENT],
+        'nothing changed, so no global is re-emitted');
+
+    const c = persistTriageResult({ percent: 90, reportRate: 0.5 }, ctx, { stateSync: sync });
+    await tick(); sync.settleAll(true); await c;
+    assert.equal(env.globals.triage_percent, 90, 'a better round replaces it');
+    assert.equal(env.globals.triage_reportRate, 0.5);
+});
+
+test('a failed first round is replaced by a better later round, and a worse one is kept out', async () => {
+    const env = setup();
+    const sync = stubSync();
+    const ctx = ctxFor(labSet);
+    const a = persistTriageResult({ percent: 30, reportRate: 0.2 }, ctx, { stateSync: sync });
+    await tick(); sync.settleAll(true); await a;
+    const b = persistTriageResult({ percent: 20, reportRate: 0.9 }, ctx, { stateSync: sync });
+    await tick(); sync.settleAll(true); await b;
+    assert.equal(env.globals.triage_percent, 30);
+    assert.equal(env.globals.triage_reportRate, 0.2, 'reportRate comes from the best round');
+    const c = persistTriageResult({ percent: 50, reportRate: 0.4 }, ctx, { stateSync: sync });
+    await tick(); sync.settleAll(true); await c;
+    assert.equal(env.globals.triage_percent, 50);
+    assert.equal(env.globals.triage_reportRate, 0.4);
+    assert.equal(env.globals.triage_pass, false);
 });
 
 test('a round below passPercent writes pass false and done true', async () => {
@@ -344,11 +364,11 @@ test('a mission round with the conclusion task still open re-emits unchanged pas
     const p = persistTriageResult({ percent: 50, reportRate: 1 }, ctxFor(labSet, { conclusionTaskId: 'triage_passed' }), { stateSync: sync });
     await tick(); sync.settleAll(true); await p;
     assert.deepEqual(names(env.events), [
-        'global_variable_changed:triage_percent',
         'global_variable_changed:triage_pass',
         'global_variable_changed:triage_done',
         TRIAGE_DONE_EVENT
-    ]);
+    ], 'percent keeps the best round, so it does not change');
+    assert.equal(env.globals.triage_percent, 72);
 });
 
 // ---- with the real StateSync ------------------------------------------------
