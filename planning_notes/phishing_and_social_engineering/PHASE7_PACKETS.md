@@ -327,3 +327,12 @@ the orchestrator passes it to that wave's owner.
 | E5, E3 | wave 3 |
 | E2, E4, E6, E7 | wave 4 |
 | Eldritch Hacker | held (P9-deferred) |
+
+## Wave 1 hand-offs (2026-10-22)
+- **P7-B:** the Report button's positive animation is CSS only. Wave 2 must add `aw-report-win` and show `aw-report-thanks` (triage UI or runner).
+- **P7-A (runner):**
+  - It reads an optional `attack.layout` (needs a schema entry in P7-D or P7-N).
+  - The stage-intro text is fixed English in `STAGE_COPY`. An optional `strings.stageIntro` would need schema support.
+  - Its mail launch params are `{ accountIds, defaultAccount, maxSends: 1, layout? }`, which P7-G must honour.
+  - The flip needs the defend set's `playerSentAuth.accounts.analyst` (P7-E content).
+- **P7-C:** the `se_awareness_records` block shape is for P7-O to document.
