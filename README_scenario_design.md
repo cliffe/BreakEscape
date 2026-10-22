@@ -1906,6 +1906,652 @@ Ink (details and examples in `README_ink_best_practices.md`):
 - **Choices only quote what the player has heard.** A choice that answers or quotes a line the NPC hasn't said, or states something that didn't happen on this route, reads as a bug. *m03: "[The desk was empty when I came in. I signed myself in.]" on a route where the player never signed in; m04: Relay answered a reply nobody gave.* (review)
 - **A hub offers ten choices or fewer at once.** A knot's choice block (sticky, once-only and conditional choices all count) with more than ten crowds the screen and buries the topic that matters now. Order by relevance: topics that arrive later in the mission go first in the ink, so the newest, most relevant choices sit at the top (see m01's handler hub, `m01_phone_agent0x99.ink`, knot `support_hub`), and retire spent topics with a `not … _given` guard. *m02, m05 and m06 phone hubs reached 19-20 declared choices.* (lint: `crowded-hub`; a hub where almost every conditional choice is retired and the unconditional ones sit last, as in m01, passes)
 
+## Social-engineering: general mechanics
+
+The social-engineering systems were built for `lab_social_engineering` (the student lab) and are proved in `test_social_slice` (the engine test bed). Both are lab games: browser-only, no VMs, no combat (`"disableAttacks": true`) and fictional companies on `.example` hosts. Licence to Hack (m01–m10) uses none of them, and a scenario without a top-level `social` key is left exactly as it was: the influence service is installed only when `social.characters` has an entry, and the social lints run only when `social` exists.
+
+This section covers the general mechanics: characters and influence, the people and facts the player collects, the intel board, the OSINT browser, inbox triage, the engagement report, locked-door hints and the validator flag. The attack-shaped blocks (mail, composer, rules engine, pretext calls, landing pages) are in [Social-engineering: attack mechanics](#social-engineering-attack-mechanics). The data contract behind all of it is `planning_notes/phishing_and_social_engineering/designs/00_data_contract.md`.
+
+Validate every social scenario with:
+
+```bash
+ruby scripts/validate_scenario.rb scenarios/<s>/scenario.json.erb --strict-social --no-graph --skip-ink
+```
+
+### The `social` block
+
+Everything lives under one top-level key. `scripts/scenario-schema.json` closes every block: an unknown key fails the schema, except keys that start with `_`, which are notes. The blocks, and where each is documented:
+
+| Key | What it holds | Section |
+|---|---|---|
+| `characters` | Who has an influence value, on which channels, and what happens at each threshold | [Influence](#influence-socialcharacters-and-socialinfluencedisplay) |
+| `influenceDisplay` | Scenario default for which influence UI shows | [Influence](#influence-socialcharacters-and-socialinfluencedisplay) |
+| `people` | The staff and sender directory | [People, intel facts and concept cards](#people-intel-facts-and-concept-cards) |
+| `intelFacts` | Every fact the player can collect | [People, intel facts and concept cards](#people-intel-facts-and-concept-cards) |
+| `conceptCards` | Short teaching cards behind a "What is this?" button | [People, intel facts and concept cards](#people-intel-facts-and-concept-cards) |
+| `intelBoard` | The recon case file: targets and readiness slots | [The intel board](#the-intel-board-socialintelboard-and-socialengagement) |
+| `engagement` | Rules of engagement, plan, defender review and the report | [The intel board](#the-intel-board-socialintelboard-and-socialengagement), [The engagement report](#the-engagement-report-socialengagementreport) |
+| `osint` | Sites, pages and lookup tools for the OSINT browser | [The OSINT browser](#the-osint-browser-socialosint) |
+| `triageSets` | Inbox triage rounds | [Inbox triage](#inbox-triage-socialtriagesets) |
+| `mailClient` | Accounts, mailboxes, contacts, seeded mail, payload kit | [The mail client](#the-mail-client-socialmailclient) |
+| `templates` | Composer fragments | [The composer templates](#the-composer-templates-socialtemplates) |
+| `phishTargets` | Who can be phished and how the rules engine judges them | [Phishing targets and the rules engine](#phishing-targets-and-the-rules-engine-socialphishtargets) |
+| `pretextNpcs` | Pretext calls | [Pretext calls](#pretext-calls-socialpretextnpcs) |
+| `landingPages` | The landing-page builder | [Landing pages](#landing-pages-sociallandingpages) |
+
+Each overlay opens from an object that carries only a pointer in `minigameData` (checked against `scripts/minigame-data-schemas.json`):
+
+| Object `type` | `minigameData` | Opens |
+|---|---|---|
+| `case-file` | `{ mode }`: `recon` (default), `defender`, `scope` or `plan` | the intel board in that mode |
+| `osint-workstation` | `{ siteIds?, start? }` | the OSINT browser, limited to `siteIds` (every site when absent) |
+| `triage-workstation` | `{ triageSetId, stage?, conclusionTaskId? }` | inbox triage |
+| `report-workstation` | `{ requiresGlobal?, lockedMessage? }` | the engagement report; with `requiresGlobal` set and not yet true, a toast shows `lockedMessage` (default "There is nothing to write up yet.") instead |
+| `mail_terminal` | `{ accountIds, defaultAccount? }` | the mail client (attack section) |
+| `page-builder` | `{ landingPageId, targetId? }` | the landing-page builder (attack section) |
+
+Lab examples: `{"type": "case-file", "minigameData": {"mode": "scope"}}` is the Rules of Engagement sheet; the report workstation carries `{"requiresGlobal": "phish_lord_landed", "lockedMessage": "Nothing to write up yet. Finish the sending first, then come back to the report."}`. Each object type also needs its sprite, `assets/objects/<type>.png` (a missing one is a social lint error), and the lab places them on real furniture with `"position": "as-type:pc"` and similar.
+
+**Tasks complete on globals, never on an overlay closing.** The board, OSINT browser and report treat Close and Esc as a normal exit, so their completion event fires whether or not the player did anything (triage closed before its result is an abort). Each mechanic writes a global instead (`se_intel_<id>`, `target_ready_<id>`, `roe_signed`, `triage_pass`, `report_filed` and so on), and a start-room NPC's `eventMappings` completes the task on `global_variable_changed:<name>` with `"condition": "value === true"` and `"onceOnly": true`. In the lab that NPC is Ruth, in the start room, because an NPC in a room the player hasn't visited hears nothing (see [Common bugs](#common-bugs-and-how-to-avoid-them)).
+
+**Declare every global a mechanic writes.** The lints list them: the influence global and `<character>_latched`, every threshold `setGlobal` target, both lockout globals, `se_intel_<id>` (default `false`) for every fact, `target_ready_<id>`, `osint_done`, the engagement block and step globals, the four triage result globals, and the object-valued state globals `se_board_state`, `se_osint_state` and `se_report_state` (default `{}`). An undeclared name still holds its value in the game but is silently not synced into ink, and a social global must not come from `importGlobals`.
+
+### Influence (`social.characters` and `social.influenceDisplay`)
+
+A social character has one influence value: a number, by default -100 to 100, held in a declared global. It moves when a phish lands or misses, and on each line of a pretext call. The player sees it as a bar with threshold marks (in the mail reading pane, on the intel board's person card, and in the header of a person or phone chat), and as a small pip above the character's walk sprite once it has moved from its start. When it crosses a threshold the engine runs that threshold's effects once: it sets a global, ends the conversation, starts a lockout, turns the NPC hostile, or shows a toast.
+
+`social.characters` is keyed by character id. That id is not an NPC id: `channels` maps it to the NPC records that are the character on each channel, so a person sprite, a phone contact and a headless email record can all be one character.
+
+| Field | Shape | What it does |
+|---|---|---|
+| `displayName` | string | Name on the bar, toasts and the lockout refusal |
+| `channels` | `{ person?, phone?, email? }` | NPC id per channel. The person NPC is the one that gets the pip |
+| `emailRecord` | `{ storyPath, displayName, ... }` | A headless NPC record for a character reached only by mail (no sprite, no room). Any NPC field is accepted |
+| `emailReplyDelay` | seconds | Wait before this character's reply arrives (default 20) |
+| `emailKnots` | `{ <accountId>: <knot> }` | Entry knot per sending account; default `on_email` (attack section) |
+| `influence` | `{ global?, min?, max?, start?, rearmMargin?, display? }` | `global` defaults to `<character>_influence`; `min` -100, `max` 100; `start` defaults to the global's declared value; `rearmMargin` 10 |
+| `thresholds[]` | `{ id, at, when?, icon?, effects[] }` | See below |
+| `mirrorToBehavior` | boolean | `true` copies every change into the person NPC's behaviour state (`behavior.influence`). Default off |
+| `syncedVars` | string[] | Validator only: the ink `VAR`s this character's stories share. Every declared global syncs whether or not it is listed |
+| `alternativeRoute` | any | Validator only: marks a permanent lockout as safe because another route exists |
+
+**Thresholds.** `at` is the value. `when` is `"below"` (the default for a negative `at`) or `"above"` (the default otherwise), and equality counts. A threshold fires once when the value reaches `at` from the other side, latches (the latch is saved in `<character>_latched`, so a reload doesn't fire it again), and re-arms only once the value is back past `at` by `rearmMargin`. Several thresholds crossed in one move fire in the order the value passes them. List `"below"` thresholds from the mildest (highest `at`) down. The ids `wary`, `refuses`, `reports` and `lockout` give the band number (1 to 4) that the pretext functions return to ink; other ids don't change the band. `icon` is one of `wary`, `refuses`, `reports`, `hostile` or `trusts`; anything else draws a question mark.
+
+| Effect `type` | Fields | What it does |
+|---|---|---|
+| `setGlobal` | `global`, `value`, `clearOnRearm?` | Writes the global. With a boolean value and `clearOnRearm: true` it is a **band flag**: recomputed on every change, set at or past `at`, cleared to its declared default once the value re-arms |
+| `endConversation` | | Closes the open chat with this character; a pretext call's `outcomes.reported.line` shows as the goodbye |
+| `lockout` | `scope`, `until`, `recoverTo?` | Refuses new contact. `scope` is `"channel"` (only the channel in use) or `"character"` (all channels). `until` is `{ "afterMinutes": N }` (real elapsed minutes), `{ "global": "<name>" }` (lifts when that global turns true) or `null` (permanent). On the lift, influence is set to `recoverTo` (default `start`) silently, and the latch and band flags clear |
+| `combatHostile` | | Opt-in: turns the person NPC hostile, as `#hostile` does |
+| `toast` | `text` | A one-line notice |
+
+The lab's service-desk contact, Dev, is the one lab character with a lockout:
+
+```json
+"dev": {
+  "displayName": "Dev",
+  "channels": { "phone": "dev_service_desk" },
+  "influence": { "global": "dev_influence", "min": -100, "max": 100, "start": 0 },
+  "thresholds": [
+    { "id": "wary", "at": -40, "icon": "wary",
+      "effects": [ { "type": "setGlobal", "global": "dev_wary", "value": true, "clearOnRearm": true } ] },
+    { "id": "refuses", "at": -50, "icon": "refuses",
+      "effects": [ { "type": "setGlobal", "global": "dev_refusing", "value": true, "clearOnRearm": true } ] },
+    { "id": "reports", "at": -70, "icon": "reports",
+      "effects": [ { "type": "setGlobal", "global": "dev_reported", "value": true },
+                   { "type": "endConversation" },
+                   { "type": "lockout", "scope": "channel", "until": { "afterMinutes": 2 } } ] }
+  ]
+}
+```
+
+Pierce and Lord, reached only by mail, have a single `wary` threshold and `min: -40`, so a run of bad sends moves the bar but can never shut the only route to them.
+
+**Moving influence.** Ink in a social character's story can:
+
+- assign the global directly (`~ dev_influence -= 10`), since it is a synced `VAR` in every channel story;
+- use the tags `#influence:N[:reason]` (set), `#influence_gained[:N][:reason]` and `#influence_lost[:N][:reason]` (N defaults to 10) and `#report[:reason]` (a forced report: runs the `reports` threshold's effects without changing the value);
+- call `se_influence(delta, reason)`, which the engine binds only in mail replies and pretext calls.
+
+The tags behave this way only for an NPC that belongs to a `social.characters` entry; every other NPC keeps the old popup.
+
+**What the player sees.** `influenceDisplay` takes `{ bar?, number?, pip? }`, each `true` by default. Put it on `social.influenceDisplay` for the scenario, or on a character's `influence.display` to override key by key. `bar: false` hides the bar everywhere and takes the number with it; `number: false` keeps the bar and drops the printed value; `pip: false` turns off the world pip. Display never changes the mechanics: thresholds, effects, the pretext tells panel and the debrief still run. Neither the lab nor the slice sets these keys, so a sketch:
+
+```json
+"social": {
+  "influenceDisplay": { "number": false },
+  "characters": { "quinn": { "influence": { "start": 0, "display": { "pip": false } } } }
+}
+```
+
+**Lockouts.** A lockout is stored in two declared globals, `<character>_lockout_until` (elapsed ms; `-1` for a global or permanent lockout; `0` none) and `<character>_lockout_channel` (`person`, `phone`, `email`, `all` or `""`), so it survives a reload with no server change. While it holds, the locked channels refuse before anything opens: talking to the person NPC or ringing the phone contact (including a pretext call) shows "<name> flagged the last attempt and won't talk to you for now — give it a while, then try again more carefully.", and a send to a character locked out on email shows "<name> will not read your mail right now." and is neither judged nor counted. Nothing ticks the timer: a timed lockout lifts the next time the player tries that channel after the wait, and a `until.global` lockout lifts as soon as that global turns true.
+
+**`mirrorToBehavior`.** Off by default, so a social character's influence never feeds the older NPC behaviour code. Set it to `true` only when a person NPC's behaviour should read the same number; the validator then requires a `channels.person` NPC that exists in a room. The legacy auto-hostile check is not applied to a mirrored value. No shipped scenario uses it.
+
+**`boostIfGlobal`** (on a `phishTargets` entry, attack section) is how another beat changes how a later phish is judged: `{ "<global>": "<factor>" }` demotes that factor from required to advisory once the global is `true`, and `strictIfGlobal` promotes one. The mail client compares with `=== true`, so the key must be a boolean flag. An influence number never trips it: read influence in the target's `on_email` ink instead. For example `"boostIfGlobal": { "reset_granted_pierce": "pretextRelevant" }` would relax relevance after a call sets `reset_granted_pierce`. No scenario uses either hook yet.
+
+Gotchas from the lab build:
+
+- **Keep `start` and the declared default equal.** The service starts from `influence.start`; the global, and every ink `VAR` for it, start from `globalVariables`. When they differ, the bar and the pip read the declared value until the first write.
+- **A fresh pretext call resets influence to `start`.** Each new call (not a reload mid-call) writes `start` with the reason `new_call`, so influence never carries from one call into the next, and the bar's "Last change" line clears. That makes a `recoverTo` on a call character's lockout dead config, which is why Dev has none. The lesson of pushing too hard is carried by the report and the lockout, which decide whether the player may call back at all.
+- **Out-of-range ink writes are clamped** and the clamped value is written back into the story, so a later `+=` in the same knot starts from the right number.
+- **A tag reason must not be a bare number.** `#influence_gained:urgency` is +10 with reason `urgency`; `#influence_gained:5` is +5.
+- **The validator checks the `recoverTo` rule:** `recoverTo` (or `start` when absent) must be at least the highest `at` of a `"below"` threshold with effects, plus `rearmMargin`, or the character comes back already wary. A lockout with no expiry needs `alternativeRoute`, so a failed attempt can't block the critical path for good.
+- **The pip needs a walk sprite.** It is drawn only for a character whose person NPC (or the character id itself) has a live sprite, and is replaced by the combat health bar if the NPC turns hostile. The lab's three characters are phone- and mail-only, so it never appears there; the slice's `quinn` shows it.
+- **`<character>_forced`** is written by the engine to remember a forced report across a reload. It doesn't need declaring.
+
+### People, intel facts and concept cards
+
+These three blocks are the shared vocabulary. The player never types anything: they collect facts by selecting things (an OSINT block, a call grant, an object), and the composer, the board and the call card offer only what they hold.
+
+**`social.people[]`** is the directory of staff and senders. Its `id` is the join key for board cards, fact subjects and blank values (a `provides` value such as `pierce_first` belongs to `pierce` because it starts `pierce_`).
+
+| Field | What reads it |
+|---|---|
+| `id` | Required. Board cards, fact `subject`, OSINT profiles, contacts |
+| `forms` `{ first, short, formal, full }` | Board card and report row name (`full`, else `first`), the evidence note title (`full`), `{firstName}` on a landing page (`first`) |
+| `name`, `role`, `address` | Board card (the address shows once the player holds the address pattern or a fact that gives it) |
+| `avatar` | A headshot key under `assets/characters/` for OSINT profiles; a missing one falls back to a default icon |
+| `kind` | Nothing reads it (see [Reserved keys](#reserved-keys-authored-but-not-read)) |
+
+**`social.intelFacts`** is a map of fact id to fact. Holding fact `<id>` is the boolean global `se_intel_<id>`, which must be declared with default `false`.
+
+| Field | What it does |
+|---|---|
+| `text` | The sentence the player reads on the board, in the evidence note and in the "Noted:" line |
+| `subject` | A `people` id, or `"company"`. Decides which board card the fact sits on |
+| `source` | The id of the one element that grants it (an OSINT block, field or tool result). The validator checks it matches |
+| `provides[]` | The values the fact offers to composer blanks and the call card: `{ type, value, label, about?, kind?, rule?, address?, attachmentKind? }`. `kind: "stale"` marks a decoy or out-of-date value. Matching to blanks is in the [composer section](#the-composer-templates-socialtemplates) |
+| `label` | Short form for the "Noted" toast (falls back to `text`) |
+| `reduceNote` | One-line "reduce this" prompt; a fact needs one to appear in the defender board |
+| `stale` | `true` shows the whole fact as stale on the board |
+
+From the lab:
+
+```json
+"pierce_trusts_jed": {
+  "text": "Melanie trusts her colleague Jed Baker, who is showing her the ropes.",
+  "subject": "pierce",
+  "source": "post_pierce_jed",
+  "provides": [ { "type": "name", "about": "sender", "value": "baker_full", "label": "Jed Baker", "kind": "distinctive" } ]
+}
+```
+
+A grant is flip-only: the first one writes the global, adds an "Evidence: <name>" note, saves, and re-checks readiness ([the intel board](#the-intel-board-socialintelboard-and-socialengagement)); a repeat does nothing. Facts are granted by OSINT blocks, by a pretext ask's `grants.intel`, or by the action `{ "type": "grant_fact", "fact": "<id>" }` in an object's `triggerOnInteract` (or any other `applyActions` list), which also toasts "Noted: <label>". Decoys are ordinary facts whose `provides` are all `kind: "stale"` (the lab's `baker_namesake`, a plumber in Leeds): the player collects them, the board files them under stale, and the composer and call card offer their values labelled "an older detail". The rules engine reads only a target's own `primedFor.distinctiveValues`, so a stale value convinces nobody unless a target lists it.
+
+**`social.conceptCards[]`** are short teaching cards, `{ id, title, text, image?, imageAlt? }`, shown behind a "What is this?" button by OSINT sites and tools (`card`) and by landing pages (`conceptCards`). Blank lines in `text` split paragraphs; `image` is a file under `assets/osint/`, decorative unless `imageAlt` is set. The host lint reads card text: any host-shaped token must end `.example`, and real brand names fail.
+
+```json
+{ "id": "tool_hunter", "title": "Hunter",
+  "text": "Hunter reports the address pattern a company uses, for example first initial then surname. ..." }
+```
+
+Gotchas:
+
+- **The ready toast assumes mail.** When a grant makes a target ready, the engine shows "You know enough to approach now — write to them from a mail terminal." A scenario that approaches its targets another way will need that line changed in the engine.
+- **One award path per fact.** The validator wants each fact granted by exactly one element (call-granted and mail-highlight facts excepted). Two blocks carrying the same fact fail.
+
+### The intel board (`social.intelBoard` and `social.engagement`)
+
+The board is one overlay with four modes, each opened by its own `case-file` object (`minigameData.mode`). It is rebuilt from globals every time it opens, holds no live state, and writes its answers as ids into the declared object global `se_board_state`. In every mode a wrong answer shows its `why` and can be changed, and a right one locks.
+
+| Mode | Lab object | The player | Reads |
+|---|---|---|---|
+| `recon` | Case File (`recon_board`) | Reviews what they have on each target and what is missing | `intelBoard`, `people`, `intelFacts`, readiness globals |
+| `scope` | Rules of Engagement (`roe_sheet`) | Sorts cards into in scope or out of scope and answers question cards | `engagement.scope`, `engagement.roe` |
+| `plan` | Planning Whiteboard (`planning_whiteboard`) | Picks the engagement's objective and how it will be measured | `engagement.plan` |
+| `defender` | SOC Board (`soc_board`) | Picks a mitigation for each exposure they exploited | `engagement.defender`, `intelFacts[].reduceNote` |
+
+**Recon: `social.intelBoard`** is `{ title?, people[], readinessSlots }`. `people` lists the target ids that get a card, in order; each must be a `phishTargets` id. `readinessSlots` maps each target to the rows on its card:
+
+```json
+"lord": [
+  { "label": "Her payroll system",
+    "needsIntel": ["lord_portal", "lord_intern"],
+    "goalString": "You still don't know which staff system Sofia uses. The team page and her social profile help.",
+    "doneString": "She is a new intern and uses a staff payroll portal." }
+]
+```
+
+A slot is done when every `needsIntel` fact is held and every `needsGlobal` global (booleans only) is `true`. When all of a target's slots are done the engine sets `target_ready_<id>`, and when every id in `people` is ready it sets `osint_done`. Both are set where the facts are granted, so the player never has to open the board. A card shows "Not yet identified" until the player holds a fact about that person or naming them, then their name, role and address, the facts found (stale ones apart), a "From the call" list for facts a pretext ask granted, and the influence bar when a `social.characters` entry has the same id as the target. Contacts named by held facts who aren't targets appear in a strip, company facts in their own panel, and `engagement.scopeNote` across the top.
+
+**Scope, plan and defender: `social.engagement`.** Each mode block has an `onCompleteGlobal`, set once when the block is done, and optional `steps[]` of `{ id, onCompleteGlobal, title? }`, each set when its step is done. With steps declared, every item must name one, and a step is done when all the items bound to it are answered correctly. With no steps, the block is done when every item is. An empty block or step is never done. Tasks complete on these globals.
+
+| Block | Items |
+|---|---|
+| `scope` | `intro` (or `brief`), `title`; `cards[]`: a sort card `{ id, kind: "sort", step, text, inScope, why }` or a question card `{ id, kind: "question", step, text, options[] }`. `engagement.roe` `{ inScope[], outScope[], stopContact }` is printed beside the cards |
+| `plan` | `intro`, `title`; `objectives[]` and `measures[]` (each a single-select list whose options carry `step`), with `objectivesPrompt` and `measuresPrompt`; or general `picks[]` of `{ id, step, text, options[] }` |
+| `defender` | `title`, `intro`; `factMitigations[]` of `{ intel, step?, options[] }`, one per exposed fact, which must have a `reduceNote` |
+| any of them | `items[]` of `{ kind: "confirm", id?, step, text }`: a button the player presses to finish a read-only step |
+
+Options are `{ id, text, correct, why }` (defender uses `good` instead of `correct`). The lint wants a non-empty `text` and `why` on every option, exactly one correct option per pick, and at least one `good` option per defender card. The lab's plan, abridged:
+
+```json
+"plan": {
+  "onCompleteGlobal": "plan_done",
+  "objectivesPrompt": "What is this engagement for?",
+  "steps": [ { "id": "objective", "onCompleteGlobal": "plan_objective_done" },
+             { "id": "measures",  "onCompleteGlobal": "plan_measures_done" } ],
+  "objectives": [
+    { "id": "how_far_gaps", "step": "objective", "correct": true,
+      "text": "Find how far email and a phone pretext get against Ledgerwell's staff, and report the gaps.",
+      "why": "That is what Ledgerwell asked for and what the sheet allows." },
+    { "id": "disrupt_payroll", "step": "objective", "correct": false,
+      "text": "Disrupt payroll to prove the risk.", "why": "The rules of engagement bar disruption. ..." }
+  ],
+  "measures": [ ... ]
+}
+```
+
+Gotchas:
+
+- **`needsGlobal` is checked only when a fact is granted.** Readiness is evaluated inside the fact grant, so a slot that waits on a global set by something else won't flip `target_ready_<id>` until the next fact arrives. Neither shipped scenario uses `needsGlobal`.
+- **Ready means "has the facts", not "can act".** The lab's Sofia read "Ready to approach" before the player had the portal name, which only the service-desk call gives (playtest L4). Put a fact the player must fetch from a call or another beat into the slot if the card shouldn't read ready without it.
+- **The board fixes itself on reopen.** If the saved answers are complete but a step or block global never landed (a closed tab, a failed save), opening the board sets it. Tasks therefore still complete late rather than never.
+- **One board object per mode.** A second `defender` case-file draws a warning.
+- **Put the correct option anywhere but first.** Playtesters noticed when the right plan picks were always first.
+- **`blame` is read only by the report.** The lab's plan marks the "Which named staff fell for it" measure `blame: true`, but the board shows it as an ordinary wrong pick.
+
+### The OSINT browser (`social.osint`)
+
+An in-world browser for researching the target company (design `02`). The player reads pages, follows links, opens a document's properties panel and picks lookups from a short list. Nothing is typed: every paragraph, staff row, post, result and metadata field is a button, and selecting one either collects the fact it carries ("Noted: ..."), says "Already noted: ...", or says "Nothing here you can use." A **Case file** button opens the recon board and returns to the same page.
+
+`social.osint` is `{ profile?, title?, sites[], tools[] }`.
+
+| Site field | What it does |
+|---|---|
+| `id`, `url` | Required. `url` is the host the address bar shows exactly as written: a fictional `.example` host, ASCII |
+| `name` | The site's tab label (falls back to `title`, then the id) |
+| `type` | `company-site` (has `pages[]`), `social` (has `profiles[]`, one page per person) or `document` (has `fields[]`, its properties panel) |
+| `card` | A concept card id shown with the site |
+| `logo`, `logoAlt` | An image under `assets/osint/` |
+| `pages[]` | `{ id, title, path?, url?, showIf?, blocks[] }`. `path` is appended to the site's url in the address bar; `url` replaces it |
+| `profiles[]` | `{ person, name?, avatar?, handle?, bio?, showIf?, posts[], blocks[] }`; `person` is a `people` id |
+| `fields[]` | `{ id, label, value, fact? }`, the document's metadata |
+
+A **block** is `{ id, kind?, text, fact?, note?, showIf? }` plus fields for its kind: `heading` (or `h`), `link` (`to`: a page id on the same site, `site.page` or a site id), `image` (`src` under `assets/osint/`, `alt`), `list` (`items[]`), `staff` (`person`, `name`, `role`, `address`), `post`, `field` (`label`, `value`); anything else is a paragraph. `fact` is the fact a selection grants, and the validator requires the fact's `source` to equal this block's `id`. `note` is an extra line shown on selection, alone when the block grants nothing. `showIf` names a global; the block, page or profile appears only while that global is truthy.
+
+A **tool** is a lookup, `{ id, label, card?, unlockedBy?, results[], emptyText? }`. It is listed once `unlockedBy` holds: `{ "visited": "<siteId>" }` or `{ "visited": "<siteId>.<pageId>" }` (the player has opened that place), or `{ "fact": "<factId>" }`. `results[]` are blocks; with none, it shows `emptyText` (default "No public results.").
+
+From the lab: the team page's staff rows grant facts, a Hunter lookup unlocks once the team page is visited, and a handle search on the PDF returns nothing on purpose.
+
+```json
+"sites": [
+  { "id": "company", "name": "Ledgerwell", "url": "ledgerwell.example", "type": "company-site",
+    "pages": [ { "id": "team", "title": "Our Team", "blocks": [
+      { "id": "row_pierce", "kind": "staff", "person": "pierce", "name": "Melanie Pierce",
+        "role": "Finance", "address": "m.pierce@ledgerwell.example", "fact": "pierce_role" } ] } ] },
+  { "id": "deck", "name": "Q3.pdf", "url": "ledgerwell.example/Q3.pdf", "type": "document", "card": "tool_exiftool",
+    "fields": [ { "id": "f_author", "label": "Author", "value": "mpierce", "fact": "username_convention" } ] }
+],
+"tools": [
+  { "id": "hunter", "label": "Hunter lookup: ledgerwell.example", "card": "tool_hunter",
+    "unlockedBy": { "visited": "company.team" },
+    "results": [ { "id": "r_pattern", "text": "Most addresses follow first-initial.surname@ledgerwell.example", "fact": "email_pattern" } ] },
+  { "id": "handle_decoy", "label": "Handle search: @mpierce_official", "card": "tool_recon",
+    "unlockedBy": { "visited": "deck" }, "results": [] }
+]
+```
+
+The workstation object chooses the sites with `minigameData.siteIds` and may name a `start` place: `company`, `company.team`, `social.pierce` or `~tools`. Without one the browser reopens where the player left it. Its state, `{ visited[], at }`, is saved in `se_osint_state` (declare it with `{}`). `profile` is `student` (the lab) or `awareness`, which hides document sites and the tools panel.
+
+Gotchas:
+
+- **Give every site a `name`.** Without one the tab shows the raw id (lab playtest P2-T).
+- **Every fact needs exactly one granting element, and its `source` must name it.** Facts that come from a call or a mail highlight are exempt.
+- **Hosts are linted.** `sites[].url`, `pages[].url`, `pages[].path`, staff `address` and fact `provides[].address` must be `.example` and ASCII, and no real brand may appear in them or in concept-card text.
+- **Teach that lookups can mislead.** The lab's name search returns a namesake (a decoy fact) and its handle search returns nothing. Both are deliberate, and both rely on tools being cheap to try.
+
+### Inbox triage (`social.triageSets`)
+
+The defender's seat (design `05`). The player works through a fixed inbox in four steps (Brief, Sort, Review, Result): each message gets a verdict (Trust, Report or Delete, plus Verify in awareness sets that allow it) and the red flags that justified it, chosen from chips. Feedback explains each one, and the round ends with a score and a band headline. The reading pane is the mail client's own reader, read-only, with a header panel that explains SPF, DKIM and DMARC. A `playerSent` entry replays the player's own phishing email as its target received it, which is the lab's turning point from attacker to defender.
+
+A `triage-workstation` object opens a set by `minigameData.triageSetId`. `conclusionTaskId` names the task that completes on the set's result, so a reopen can repair a save that never reached the server; `stage` overrides the set's stage.
+
+| Set field | What it does |
+|---|---|
+| `id`, `messages[]`, `outcome` | Required |
+| `outcome` | `{ setGlobalPrefix, passPercent }`. The four result globals are `<prefix>percent`, `<prefix>reportRate`, `<prefix>pass` and `<prefix>done`. `{stage}` in the prefix is replaced by the stage (`triage_{stage}_`) |
+| `title`, `brief` | Header and the Brief step's text |
+| `stage` | `pre`, `post`, `training` or `mission` (default `mission`). A `pre` or `post` set that is already done reopens read-only |
+| `scoringProfile` | `analyst` (the lab) or `awareness` (default). Analyst marks down false flags and wrongly reported real mail |
+| `feedbackMode` | `immediate` (default) or `end` |
+| `headerPanel` | `collapsed` (default), `open` or `off` |
+| `glossary` | `closed` (default), `open` or `off`: the "What's this?" glossary in the header panel |
+| `verifyVerdict` | `true` adds Verify; awareness sets only |
+| `chipStyle`, `flagChips` | Chip wording: `technical` uses the technical labels, any other value the plain ones; `flagChips` overrides one chip's label by id |
+| `channelTells[]` | Extra chips beyond the seven factors (`lookalike_domain`, `changed_bank_details`, `reply_to_differs`, `padlock_myth` and others in `00` §2) |
+| `bands[]` | `{ min, headline }` result headlines |
+| `nudges` | Factor id to a line shown under "Weakest skill" on the result |
+| `pairedWith` | In a `training` set, offers a button to try the paired set |
+| `playerSentAuth` | `{ accounts: { <accountId>: auth }, domains: { <domainId>: auth } }`: the header results to show for the player's own mail, by the account it was sent from and the landing domain it linked. `{account_address}` and `{domain}` are the only placeholders |
+
+An authored message is an email: `{ id, from, to, subject, time, body, links[], attachments[], auth, truth, unread?, forwardedBy? }`. `{{link:<id>}}` in `body` places a link; a link is `{ id, text, destination }`, where `text` is what the email shows and `destination` where it really goes. `auth` is `{ spf, dkim, dmarc, envelopeFrom?, replyTo?, summary? }`. `truth` carries the answer: `isPhish`, `flags[]` (factor or channel-tell ids), `perFlagNote` (a line per flag), `whyFine` (for real mail), `ifTrusted`, `headerNote` and `reportReply`. From the lab:
+
+```json
+{ "id": "lookalike_payroll",
+  "from": { "name": "Ledgerwell Payroll", "address": "payroll@ledgerwell-hr.example" },
+  "subject": "Your payslip is ready", "time": "09:10",
+  "body": "Your March payslip is ready. Sign in to view it.\n{{link:portal}}",
+  "links": [ { "id": "portal", "text": "ledgerwell.example/payroll", "destination": "https://ledgerwell-hr.example/login" } ],
+  "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass" },
+  "truth": { "isPhish": true, "flags": ["linkCredible"],
+    "perFlagNote": { "linkCredible": "The words say ledgerwell.example, but the link goes to ledgerwell-hr.example, a different site." },
+    "ifTrusted": "Signing in would hand over the staff portal password.",
+    "reportReply": "Thanks. This has been marked as a phish." } }
+```
+
+A `playerSent` entry is `{ id, kind: "playerSent", targetId, fromMailbox?, domainFrom?, notes }`. It is replaced by the player's latest sent mail to that target that raised a sender tell (else the latest with any tell), shown with the `playerSentAuth` row for the account it came from. If the player never sent such a mail, the entry is left out of the round. `notes` holds the same note fields as `truth`.
+
+**Scoring.** Each message is worth 100: 60 for the verdict and 40 for the flags. Analyst sets give a phish 60 for Report, 30 for Delete and 0 for Trust, and the flags `40 × (caught − false) / flags`; real mail gets 60 for Trust and 20 for Report. The round's percent is the mean.
+
+**Saving the result.** The starter writes the four globals without announcing them, waits until the server confirms the save, and only then emits `global_variable_changed` for the names that changed (`done` last) and `inbox_triage_completed`. `<prefix>pass` is never cleared by a lower round, `percent` and `reportRate` keep the best round, and `done` is set at any score. The lab's task `triage_passed` completes on `global_variable_changed:triage_pass`.
+
+Gotchas:
+
+- **A task may fire a moment after the result screen.** It waits for the confirmed save. If the connection is down the result says it will save next time, and reopening the round re-emits the events.
+- **Closing mid-round restarts it.** Close or Esc before the Result step is an abort and nothing is saved. The Brief step says so in every set ("Closing or reloading before the end restarts this round from the first message.").
+- **`passPercent` defaults to 0.** A task on `<prefix>done` completes at any score. The validator warns when a non-zero `passPercent` sits beside a task keyed on `done`, which is usually a sign the task should key on `pass`.
+- **`playerSent` needs a sent mail with a tell.** A player who never phished that target sees a shorter round, so don't size the round's lesson around that card alone.
+- **Write the `playerSentAuth` row for every account and every landing domain** the player can send from or link to. The lint checks the list.
+- **Only email works today.** The schema and validator accept the kinds `sms`, `voicemail`, `qr`, `page`, `call` and `push`, but the overlay draws every message as an email (see [Reserved keys](#reserved-keys-authored-but-not-read)).
+
+### The engagement report (`social.engagement.report`)
+
+The report closes the engagement (design `10`, stage 6). Its **results** step is a table read live from the records the other mechanics keep, which the player reads and confirms. Its **findings** step asks the player to pair each finding with a root cause and a control from authored lists. A wrong pick shows its `why` and can be changed; a cause marked `blame: true` is answered "That blames staff." plus its `why`, because blaming staff hides the control gap and stops people reporting. The report stores only the player's picks, as ids, in the declared object global `se_report_state`.
+
+Open it from a `report-workstation` object; give that object `minigameData.requiresGlobal` so it can't be filed before the attacks it reports on.
+
+| Field | What it does |
+|---|---|
+| `title`, `intro` | Header text |
+| `unseenNote` | The line under the results that says what the test could not see (default: whether staff reported the attempts) |
+| `labelBy` | `"name"` (default) or `"role"`: how the mail rows are labelled |
+| `steps[]` | `{ id, onCompleteGlobal }`. The report is done only when every declared step is done, so it needs at least one |
+| `onCompleteGlobal` | Set once every step is done (the lab's `report_filed`) |
+| `items[]` | `{ kind: "confirm", step, text, id? }`: the Confirm button that finishes the results step |
+| `findings[]` | `{ id, step, text, rootCauses[], controls[] }`; each option is `{ id, text, correct, blame?, why }`. A finding is done when a correct cause and a correct control are both chosen |
+
+**The results table** has three parts:
+
+- **Mail**: one row per phishing target that has metrics (sent, failed, landed, landed first time), in `phishTargets` order.
+- **Pages**: one row per landing page, from its victim record (visited, submitted, noticed), named by the domain of the page that landed; "no page sent" when none carried it.
+- **Calls**: one row per `pretextNpcs` entry, from `pretext_call_done`, `<character>_reported`, `pretext_<callId>_outcome`, `pretext_<callId>_lowest` (the lowest influence over every call) and `pretext_<callId>_reports` (failed calls). A got-it call after a failed one reads as two calls.
+
+**`labelBy: "role"`** labels each mail row with the target's own `role`, else its contact's `role`, else the name, so the table names nobody. The lab's no-blame lesson depends on it:
+
+```json
+"report": {
+  "labelBy": "role",
+  "onCompleteGlobal": "report_filed",
+  "steps": [ { "id": "results", "onCompleteGlobal": "report_results_done" },
+             { "id": "findings", "onCompleteGlobal": "report_findings_done" } ],
+  "items": [ { "kind": "confirm", "step": "results", "text": "I have read the campaign results" } ],
+  "findings": [ { "id": "spoofed_colleague", "step": "findings",
+    "text": "Finance acted on mail spoofing a colleague",
+    "rootCauses": [
+      { "id": "no_banner_dmarc_none", "correct": true, "text": "No external-sender banner, and DMARC left at p=none", "why": "..." },
+      { "id": "staff_carelessness", "correct": false, "blame": true, "text": "Finance staff were careless with a suspicious email", "why": "Blaming staff hides the control gap and stops people reporting." } ],
+    "controls": [ ... ] } ]
+}
+```
+
+with `"role": "Finance (new starter)"` and `"role": "Finance (intern)"` on the Pierce and Lord targets (the mail client still shows the contact's own role).
+
+Gotchas:
+
+- **Roles must not single anyone out.** In lab re-run R5 Lord's row read "Finance intern" (her contact's role), and she was the only intern, so the row named her. The next fix gave both Finance targets the role "Finance", and two identical rows read as one person counted twice. The lab settled on distinct roles that describe the job, not the person. The validator warns when `labelBy` is `"role"` and a target has no role anywhere.
+- **The call row reads fixed global names.** `pretext_call_done` is a lab-owned name, and `<character>_reported` must be the `reports` threshold's `setGlobal` target (Dev's is `dev_reported`). A scenario that names them differently gets an empty call row.
+- **Option `text` is required.** The report draws an option with no `text` as a blank button; the lint makes it an error.
+- **Keep the root-cause and finding wording free of names.** The lab's later rounds rewrote the `why` lines to say "the service desk" and "the intern".
+- **`engagement.client`** is not read by any code (see [Reserved keys](#reserved-keys-authored-but-not-read)); the board's top line comes from `engagement.scopeNote`.
+
+### Locked-door hints (`lockedHint`)
+
+An opt-in line that tells the player where a key comes from. It works in any scenario, not only social ones. Put it on a locked room (it applies to every door into that room, and is what the lab does), on a door entry in a room's `doors[]` (read by `doors.js`, though no scenario uses door entries yet), or on a locked object with `"lockType": "key"`. The engine appends it to the alert a player gets when they try the lock with no key and no lockpick ("Requires key. <hint>"), and to the wrong-key alerts ("The selected key doesn't work with this lock. <hint>"). From the lab's Recon room:
+
+```json
+"recon_room": {
+  "locked": true, "lockType": "key", "requires": "recon_door", "keyPins": [12, 24, 36, 48],
+  "lockedHint": "Collect the key from Ruth once your plan is signed off."
+}
+```
+
+Gotchas:
+
+- **It took three layers to reach the toast.** The server's bootstrap filter keeps only listed room fields (`lockedHint` is now on that list in `app/models/break_escape/game.rb`), and `doors.js` copies it onto the door sprite. Node tests of the helper passed while the live door still said "Requires key" (lab rounds 5 and 6), so check a new door field in the browser, not only in a unit test.
+- **A player with a lockpick never sees it.** They are offered the pick instead.
+- **Key locks only.** The validator errors on an empty or non-string hint and warns when the hint sits on something unlocked or on another lock type, where it is never shown.
+
+### Writing the ink around the social mechanics
+
+The mechanics write globals; the characters who comment on them are ordinary ink NPCs (the lab's Ruth, Fairbairn and Tomasz have no `social.characters` entry). Most of the lab's blockers came from how a reopened conversation resumes.
+
+- **A reopened chat resumes at the knot that owns the saved choices, normally `hub`, not at `start`.** Anything placed only in `start` runs once per page load. The lab's Ruth handed over no key in-session (L1/L2 blocker B1), and Fairbairn's signing scene played only on a fresh open (R4 D1). Put stage checks in tunnels called at the top of the hub, made idempotent:
+
+  ```ink
+  === hub ===
+  -> recheck ->
+  -> keys ->
+  ```
+
+  `recheck` completes any task whose global is now set (`completeTask` ignores a done task), and `keys` gives each key once behind its own guard. Fairbairn's `scenecheck` tunnel does the same for his sign and payoff scenes.
+- **A phone hint thread resumes at the stage knot it was last on.** Ruth's phone stayed on stage 0 for the whole lab (L4 B4). Guard every stage on entry and send the hub back to the current stage; the globals only ever go forward, so it can't loop:
+
+  ```ink
+  === stage2 ===
+  { osint_done and se_intel_username_convention: -> hub }
+  ```
+
+- **Stage content belongs in ink conditions on the mechanics' globals**, not in a pile of `eventMappings`: `{ not roe_signed: ... }`, `{ phish_lord_landed and not report_filed: ... }`. Each condition is then right after a reload too. Declare every global the ink reads as a `VAR` with the same default as `globalVariables`.
+- **Lines that follow progress must track the last step.** Ruth's phone kept pointing at Tomasz after the engagement closed (R6 F2) until a closing global (`engagement_closed`) gave it a final state.
+- **A `quiet` flag that skips a repeated greeting can swallow the greeting on a reopen** (residual D9). Test the reopen after every place that sets it.
+- **Prove each beat on the path the game runs.** The lab's rounds 5 and 6 found fixes whose unit tests passed while the live path stayed broken. Each lab NPC now has a Node test that drives its compiled story through the reopen (`test/js/social-lab-ruth-keys.test.mjs`, `social-lab-fairbairn-scenes.test.mjs`, `social-lab-ruth-phone-keys.test.mjs`).
+
+### Validating: `--strict-social`
+
+`ruby scripts/validate_scenario.rb <scenario> --strict-social` makes the validator exit 1 when any social lint reports an error (a line starting `❌ SOCIAL:`). Without the flag those errors print and the run still exits 0. That includes schema errors under `/social`: they are listed with the social lints rather than failing the schema step, so **a mistyped social key only fails the run under `--strict-social`**. A scenario with no `social` key always exits 0 on these lints. Pass `--no-graph --skip-ink` when another session may be editing the scenario, so the run rewrites no `dungeon_graph.*` or compiled ink.
+
+What runs:
+
+- **For every scenario**: aim `unlockCondition` keys (anything other than `aimCompleted`, `aimsCompleted`, `globalVariable` and `equals` leaves the aim unlocked from the start); object ids unique across rooms; a warning when a locked object's id or name is matched first by another object; the `lockedHint` checks. They print for any scenario but fail a run only for a social one under the flag.
+- **With a `social` key**: the closed schema; declared and not-imported globals; an ink fallback for every `EXTERNAL` in a social story; sprites for the social object types; the character lints above (`syncedVars` declared, the influence `VAR` in every channel story with a matching default, thresholds ordered, `min` below `max`, `clearOnRearm` only on booleans, a lockout expiry or `alternativeRoute`, the `recoverTo` rule, `influenceDisplay` keys); then one file per area under `scripts/validate_social/`: `mail.rb`, `osint.rb`, `board.rb`, `triage.rb`, `pretext.rb`, `landing.rb`, `lab.rb` and `options.rb` (`hintsByFactor`, `labelBy`, `checklistTiming`, `mirrorToBehavior`).
+
+Both social scenarios pass with exit 0 today. Fix every `❌`; read every `⚠️`.
+
+### Reserved keys (authored but not read)
+
+The closed schema accepts these keys so existing data stays valid, but no engine code reads them yet. Authoring one changes nothing in the game.
+
+| Key | Where | Status |
+|---|---|---|
+| `mailClient.bodyMode` | `01` | Reserved for the free-text body mode in design `01`. The lab and slice author `"templates"`, which is the only behaviour |
+| `mailClient.freeTextFlavour` | `01` | Reserved with `bodyMode`. Free text, when built, stays unscored and unread (`00` §13) |
+| `engagement.defender.indicators` | `03` | Reserved for the optional defender indicators step, which is not built. The lint only checks it is an array |
+| `triageSets[].messages[].kind` other than `email` and `playerSent` | `05` | Reserved for the Phase 7 channels (`sms`, `voicemail`, `qr`, `page`, `call`, `push`); drawn as email today |
+| `triageSets[].chipStyle: "character"` | `05` | Accepted, drawn as `plain` |
+| `engagement.client` | `10` | Not read. Use `scopeNote` for anything the player should see |
+| `people[].kind` | `00` §1 | Not read. A note for authors (`cast` or `sender`) |
+| `characters.<id>.syncedVars`, `alternativeRoute` | `00` §8 | Read by the validator only (see [Influence](#influence-socialcharacters-and-socialinfluencedisplay)) |
+| engagement option `blame` in `scope` and `plan` | `10` | Read only by the report; the board ignores it |
+
+### Attack mechanics
+
+These are documented in [Social-engineering: attack mechanics](#social-engineering-attack-mechanics):
+
+- [The mail client (`social.mailClient`)](#the-mail-client-socialmailclient): accounts, mailboxes, devices, contacts, seeded mail and the payload kit.
+- [The composer templates (`social.templates`)](#the-composer-templates-socialtemplates): the four-part body and its blanks.
+- [Phishing targets and the rules engine (`social.phishTargets`)](#phishing-targets-and-the-rules-engine-socialphishtargets): the factors, `hints` and `hintsByFactor`, `boostIfGlobal`.
+- [Pretext calls (`social.pretextNpcs`)](#pretext-calls-socialpretextnpcs): the call judge, asks, outcomes and tells.
+- [Landing pages (`social.landingPages`)](#landing-pages-sociallandingpages): the builder and the defender's inspection.
+
+## Social-engineering: attack mechanics
+
+These mechanics belong to the lab game (`"disableAttacks": true`, browser-only, fictional companies). They all read from a top-level `social` object and are validated with `ruby scripts/validate_scenario.rb <scenario> --strict-social --no-graph --skip-ink`; a scenario with no `social` key is untouched by them. The `social` object rejects unknown keys, so a mistyped block name fails the schema.
+
+This section covers the four attack-shaped blocks: the mail client and its phishing targets, the composer templates, the rules engine that judges a sent email, the pretext calls, and the landing-page builder. The support mechanics that feed them — influence, the intel board, inbox triage, the engagement report and the OSINT browser — are documented in the companion social-engineering section.
+
+All sub-blocks live under `social`. Example skeleton:
+
+```json
+"social": {
+  "mailClient": { "accounts": [ ... ], "payloadKit": [ ... ] },
+  "templates":  { "greet_named": { ... } },
+  "phishTargets": [ { "id": "pierce", ... } ],
+  "pretextNpcs": [ { "callId": "service_desk_call", ... } ],
+  "landingPages": [ { "id": "payroll_login", ... } ]
+}
+```
+
+### The mail client (`social.mailClient`)
+
+The in-game email app (design `01`, `00` §10a). The player composes and sends mail from it; a sent message is judged by the rules engine against the phishing target whose `address` matches the recipient. A working example is `scenarios/lab_social_engineering/scenario.json.erb`.
+
+| Field | Shape | Purpose |
+|---|---|---|
+| `accounts[]` | see below | The sending identities the player can send as. |
+| `mailboxes[]` | `{ id, owner? }` | The mailboxes (folders) the client shows. |
+| `contacts[]` | see below | The address book, revealed entry by entry as intel is earned. |
+| `seededMessages[]` | see below | Mail placed before play, in an inbox or Sent folder, or scheduled for later. |
+| `payloadKit[]` | `{ id, kind, label, landingPageId? }` | The attachments and links the composer can attach. |
+| `checklistTiming` | `"onSend"` \| `"withReply"` | When the send checklist appears (default `onSend`). Linted by `validate_social/options.rb`. |
+| `showRedFlagMeter` | boolean | Show the per-send red-flag meter. |
+| `bodyMode`, `freeTextFlavour` | — | Documented in design `01`; no engine code reads them yet. |
+
+**`accounts[]`** — each is a sending identity:
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string | Required. |
+| `kind` | `"given"` \| `"found"` \| `"created"` | How the player comes by it. |
+| `mailbox` | string | The mailbox this account reads and sends from. |
+| `address`, `displayName` | string | The account's own address and name. |
+| `person` | string \| null | The NPC person id behind the account, or null. |
+| `spoofsFrom` | boolean | Whether the composer lets this account set an arbitrary `From` line. |
+| `unlockedBy` | string | A global that reveals a `found` or `created` account. |
+| `createMenu[]` | `{ id, address, displayName? }` | For a `created` account, the addresses it may be registered as. |
+
+**`contacts[]`** — `{ id, person, name, addresses[], role, revealedBy, character?, targetId?, accountIds[]? }`. `revealedBy` is the global that reveals the contact; `targetId` links it to a `phishTargets` entry; `character` links it to a `social.characters` entry for influence.
+
+**`seededMessages[]`** (`mail-data.js normaliseSeeded`, `mail-scheduler.js`) — pre-placed mail. `id`, `mailbox`, `folder` (`inbox`/`sent`), `from` (a string, passed through whole, or `{ name, address, avatar }`), `to`, `subject`, `body`, `time`, `unread`, `gameTime`. A message can be scheduled with `deliverAt { afterSeconds, global }` rather than appearing at the start, threaded with `thread`, sent from a named account with `fromAccount`, carry `links[]` (`{ id, linkText, destination, realDomain, ... }`), `attachments[]` (`{ id, kind, label, kitId? }`) and `highlights[]` (`{ id, text, grants }` — a span that grants an intel global when read).
+
+**`payloadKit[]`** — the attachments the composer offers. `kind` is one of `document`, `pdf`, `spreadsheet`, `archive`, `image` or `link`; any other value draws as a document. A `link` kind points at a landing page with `landingPageId`.
+
+### The composer templates (`social.templates`)
+
+The composer builds an email body from four named fragments — a `from` line, a `greeting`, a `pretext` and an `ask` — rather than free text. `social.templates` is a map keyed by template id (an id starting with `_` is ignored by the schema). Each phishing target's `templateSets` lists which template ids are offered for each part, so different targets expose different wording.
+
+| Field | Type | Notes |
+|---|---|---|
+| `part` | `"from"` \| `"greeting"` \| `"pretext"` \| `"ask"` | Which slot in the body this fragment fills. |
+| `text` | string | Required. May carry `{slot}` placeholders; the built-ins `{account_name}` and `{account_address}` resolve to the sending account. |
+| `slots[]` | `{ id, type, about?, label? }` | Blanks the player fills from held intel. `type` is matched to an intel fact's `provides[].type` (`name`, `address`, `date`, `document`, …); `label` is the choice text; `about` disambiguates (e.g. `"sender"` vs `"recipient"`). |
+| `urgency` | `"low"` \| `"medium"` \| `"high"` | For a `pretext` fragment; read by the `urgencyCalibrated` factor. |
+| `implies[]` | `{ type, value }` | What the fragment claims without a slot — e.g. a `pretext` that names a document implies `{ type: "document", value: "cv" }`. |
+
+Example (from the lab):
+
+```json
+"from_own":    { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] },
+"greet_named": { "part": "greeting", "text": "Hi {name},",
+  "slots": [ { "id": "name", "type": "name", "about": "recipient", "label": "name to greet them by" } ] },
+"pretext_apply": { "part": "pretext", "text": "I'm applying for the open role.",
+  "slots": [], "implies": [ { "type": "document", "value": "cv" } ], "urgency": "low" }
+```
+
+### Phishing targets and the rules engine (`social.phishTargets`)
+
+Each entry is a recipient the player can phish (design `04`, `00` §7; the pure judge is `systems/phish-rules.js`). When the player sends, the judge matches the recipient `address` to a target, scores the email factor by factor, and — if every required factor passes — the message "lands": the target's reply arrives and its `outcome` globals are set.
+
+The seven factors:
+
+| Factor | Passes when |
+|---|---|
+| `senderTrust` | The `From` identity is one the target acts on (`primedFor.trusts`; `"*"` trusts anyone). |
+| `senderAuth` | The sender authentication would survive — derived from `senderAuth` (SPF/DKIM alignment and `dmarcPolicy`). |
+| `addressedTo` | The greeting addresses the target an acceptable way (`addressedAs`). |
+| `pretextRelevant` | The pretext matches a topic in `interests.topics`. |
+| `attachmentPlausible` | The attached payload matches `primedFor.expectedAttachment` (missing or wrong-type otherwise). |
+| `urgencyCalibrated` | The pretext's `urgency` is at or below `urgency.advisoryMax`. |
+| `linkCredible` | The link uses the brand/host in `expectedLink` at a convincing enough tier (judged with the landing page). |
+
+A target declares which factors are mandatory and which only advise, as `requiredFactors[]` and `advisoryFactors[]`, or as a combined `factors[]` of `{ id, mode: "required" | "advisory" }`.
+
+| Field | Shape | Purpose |
+|---|---|---|
+| `id` | string | Required. |
+| `address`, `displayName`, `name`, `firstName`, `role` | string | The target's identity. The recipient `address` is the match key. |
+| `character` | string | A `social.characters` id, to tie a landing to an influence effect. |
+| `emailReplyDelay` | number | Seconds before the reply lands. |
+| `redFlagMeter` | boolean | Whether the red-flag meter is shown for this target. |
+| `subjects[]` | `{ id, text, topic }` | The subject lines the composer offers. |
+| `interests.topics[]` | string[] | Topics the target will open mail about (the `open` gate and `pretextRelevant`). |
+| `templateSets` | `{ from[], greeting[], pretext[], ask[] }` | Template ids offered per part. |
+| `primedFor` | see below | What makes a believable email for this person. |
+| `addressedAs[]` | string[] | Intel-fact ids for the accepted greetings. |
+| `requiredFactors[]` / `advisoryFactors[]` / `factors[]` | factor ids | Which factors gate a landing. |
+| `senderAuth` | `{ domainPublishesAuth, spoofAligns, dmarcPolicy, override? }` | Drives the `senderAuth` factor. `dmarcPolicy` is `none` / `quarantine` / `reject`; `override` forces `would-pass` / `would-fail`. |
+| `urgency.advisoryMax` | `"low"`/`"medium"`/`"high"` | Highest urgency that still passes `urgencyCalibrated`. |
+| `expectedLink` | `{ brandId, realDomain }` | For a target that requires `linkCredible`, the brand and real host a credible link must use. |
+| `requiresIntelToAttempt[]` | string[] | Globals that must be set before the target can be attempted. |
+| `factorStrings` | per-factor `{ pass, fail, redFlag }` | Authored feedback. `attachmentPlausible` nests `missing` and `wrong-type`; `redFlag` may be `null`; an `open` entry covers the open gate. Empty strings are a lint error. |
+| `hints[]` | string[] | A hint ladder: the engine shows `hints[priorFailures - 1]`, so the first entry is the softest rung. |
+| `hintsByFactor` | factor id → string or variants | An opt-in hint keyed to the factor that actually failed (`phish-rules.js selectFactorHint`). `senderTrust` reads `{ spoof, ownFrom, forced }`; `linkCredible` reads `{ missing, wrong }`; any other factor reads `{ spoof, forced }`. Linted by `validate_social/options.rb`. |
+| `replies.landed` | string | The reply text sent when the email lands (the judge reads `landed`). |
+| `outcome.setGlobal` | global → value, or one global name | Set on a landing; the client sets the first to `true`. |
+| `boostIfGlobal` / `strictIfGlobal` | global → factor id | Relax or tighten one factor when a global holds. Both act on a copy of the target; `boostIfGlobal` has no in-scenario use. |
+
+**`primedFor`** — `trusts[]` (sender identities the target acts on), `distinctiveValues[]` and `genericValues[]` (the facts that make the email specific), `minDistinct` (how many distinctive values are needed), `expectedAttachment` (a payload `kind`), and `story` (a plain-English description of the one believable email, for authors).
+
+### Pretext calls (`social.pretextNpcs`)
+
+A scripted pretext phone or chat call (design `06`; `systems/pretext-judge.js`, `person-chat-pretext.js`). The ink drives it through the `pretext_say` and `pretext_ask` externals; the judge scores each line against the character's susceptibilities and tracks an influence band across the call. State is kept in `pretext_<callId>_state`, `_outcome` and `_lowest`.
+
+| Field | Shape | Purpose |
+|---|---|---|
+| `callId` | string | Required. Names the three per-call globals. (`id` is older data only — use `callId`.) |
+| `character` | string | A `social.characters` entry, which must carry a `reports` threshold. |
+| `startKnot` | string | The ink knot the call opens on. |
+| `knows` | fact id → `{ value, accept[], grade }` | The facts the character can verify against what the player claims. |
+| `susceptibility` | technique → number | Per-technique deltas. Techniques: `urgency`, `authority_borrowed`, `reciprocity`, `shared_detail`, `candour`, `deflect`. |
+| `unverifiableCost` | number | Penalty for a claim the player cannot back up. |
+| `tuning` | see below | How the call gives feedback. |
+| `lines` | line id → line | Each: `technique`, `also[]`, `claims[]` (`{ fact, from, value?, unverifiable? }`), `blanks` (blank id → fact id), `repairs`, `doublesDown`, `extra`, `text`. |
+| `asks` | ask id → ask | Each: `pressure`, `floor`, `verification[]`, `grants { intel[], setGlobal }`. |
+| `outcomes` | `got_it` / `reported` / `walked_away` | Each `{ line, setGlobal }`. |
+| `tells` | see below | Feedback strings. |
+| `hints[]`, `defenderNotes`, `brief` | — | `brief` is `{ scope, ethics, objectives[] }` (or top-level `scope`/`ethics`). |
+
+**`tuning`** — `tellDetail` (`full`/`category`/`none`), `matchCreditCapPerLine`, `maxRefusals`, `feedbackMode` (`live`/`debriefOnly`), `showTechniqueNames` (`live`/`debriefOnly`).
+
+**`tells`** — the keys `techniques`, `repair`, `ask` and `bands` are reserved; every other key is a fact id from `knows`. A fact's tell is `{ pass, fail, failCategory?, unknown? }`; `ask` is `{ accepted, pending, refused }`; `bands` is `{ calm, wary, refusing }`.
+
+A **blank** feeds its value to the ink through two VARs named for the *fact* it fills (the `blanks` map is blank id → fact id): `pretext_<factId>_name` (the label, for choice text) and `pretext_<factId>_value` (the value id, for fixed reactions), as in design `06` §5.
+
+### Landing pages (`social.landingPages`)
+
+The credential-harvest page the player builds, inspected by a defender afterwards (`systems/landing-page-model.js`, `landing-page-render.js`). One record per buildable page. The page renders with no form controls and makes no network request; the player never types the link address. Brands are invented and checked against a real-brand denylist, and every host is a fictional `.example` address. These safety rules are enforced by `validate_social/landing.rb`.
+
+| Field | Shape | Purpose |
+|---|---|---|
+| `id` | string | Required. |
+| `title` | string | — |
+| `profile` | `"student"` \| `"awareness"` \| `"mission"` | The difficulty tier the page is built at. |
+| `tellCounter` | boolean | Show the running count of tells. |
+| `linkText` | string | The address the mail client shows for the link (authored; host-linted like a `.example` address). |
+| `pretext` | `{ brandId, purposeId, facts[] }` | The brand, purpose and intel facts the page leans on. |
+| `targets` | target id → `{ linkThreshold, minDomainTier, brandGate? }` | Required. Per-target strictness, keyed by a `phishTargets` id whose required factors include `linkCredible`. The lab uses exactly one. |
+| `brands[]` | see below | Required. The brand(s) the page can impersonate. |
+| `purposes[]`, `logos[]` | `{ id, label }` | The purpose and logo options offered. |
+| `wordings[]` | `{ id, match, slips?, text }` | Body wordings; `match` marks the on-pretext one, `slips` a wording with spelling tells. |
+| `fields[]`, `extraSensitiveFields[]` | string[] | The form fields shown, and those that count as over-asking. |
+| `points` | `{ brand, purpose, logo, wording, form, padlock, domain[] }` | The scoring weights. |
+| `strings` | key → string | Feedback overrides. Values use only `{firstName}`, `{shown}`, `{real}` and `{linkText}`. |
+| `conceptCards[]` | string[] | `social.conceptCards` ids the builder surfaces. |
+| `capture` | `{ address, note }` | The fictional `.example` address "captured", and an authored note that holds no password value. |
+
+**`brands[]`** — `{ id, name, look, realDomain, realFields[], decoyWords[], domains[] }`. `name` is an invented brand (denylist-checked); `look` is `generic` or `parody`; `realDomain` is the genuine `.example` host; `decoyWords[]` are allowlisted domain labels. Each entry in `domains[]` is `{ id, domain, browserDomain?, trick, tier, minProfile? }`: `domain` is shown as typed (ASCII, unless `trick` is `homograph`, when it uses a `\u` escape); `browserDomain` is the punycode `xn--` form shown as a teaching contrast and must equal the encoding of `domain`; `tier` ranks how convincing the look-alike is, checked against each target's `minDomainTier`.
+
 ## Dungeon Graph Metadata
 
 Break Escape uses a metadata layer on scenario objects to let the dungeon graph generator (`scripts/generate_dungeon_graph.rb`) produce an interactive HTML visualisation of the puzzle dependency graph — showing which items, clues, and tasks unlock which locks, rooms, and objectives.

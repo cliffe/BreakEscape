@@ -19,7 +19,7 @@
 
 EXTERNAL pretext_say(utterance_id)
 EXTERNAL pretext_ask(ask_id)
-VAR dev_influence = -10
+VAR dev_influence = 0
 VAR pretext_intern_name = ""
 VAR pretext_intern_value = ""
 VAR pretext_team_name = ""

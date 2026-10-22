@@ -834,15 +834,16 @@ Threshold fields:
   value is **at or below** `at`; `"when": "above"` fires at or above, for a positive threshold such as
   "trusts you". Equality counts. This is the same convention for the bar and the effects. (The
   legacy hostile check above is strict `<`; it is left alone for non-social NPCs.)
-- `icon`: one of `wary`, `refuses`, `reports`, `hostile`, `trusts`, or a scenario asset key. The bar
-  draws the icon at that position.
+- `icon`: one of `wary`, `refuses`, `reports`, `hostile`, `trusts`. The bar
+  draws the icon at that position. (Back-ported 2026-10-22: any other value, including a scenario
+  asset key, draws the fallback question mark, `ui/influence-bar.js` `ICON_FOR`.)
 - `effects[]`, run once per crossing, in order:
 
 | effect | what it does |
 |--------|--------------|
 | `setGlobal {global, value, clearOnRearm?}` | `applyActions set_global` through the shared writer (§9). Declare the global; do not import it. Values colon-free. `clearOnRearm: true` (booleans only) makes it a **band flag**: see "Band flags" below |
 | `endConversation` | closes the open conversation on any channel with the NPC's authored `outcomes.reported` line |
-| `lockout {scope, until, recoverTo}` | refuses new conversations. `scope`: `"channel"` (only the channel the player was on) or `"character"` (all channels). `until`: `{ "afterMinutes": N }` (**real elapsed minutes** from `gameClock.elapsedMs()`; it is not scaled by a scenario's `gameClock.rate`, and needs no `gameClock` block), `{ "global": "name" }` (lifts when that global becomes true) or `null` (permanent; the validator rejects this on a critical-path character, below). `recoverTo`: the influence value set when the lockout lifts (default: the declared start). **Rule: `recoverTo >= A + rearmMargin` (the character's `influence.rearmMargin`, default 10), where `A` is the highest `at` among the character's `"when": "below"` thresholds that carry effects (`"above"` thresholds such as `trusts` are excluded)** (the comparison is `>=`; the validator checks it). The lift writes it **silently**: it clears the latch, clears the band flags and re-arms the thresholds without running their effects, so a character never returns already `wary` or `refusing`. Dev and Priya (`at` -40, margin 10) use -30, which meets the rule exactly |
+| `lockout {scope, until, recoverTo}` | refuses new conversations. `scope`: `"channel"` (only the channel the player was on) or `"character"` (all channels). `until`: `{ "afterMinutes": N }` (**real elapsed minutes** from `gameClock.elapsedMs()`; it is not scaled by a scenario's `gameClock.rate`, and needs no `gameClock` block), `{ "global": "name" }` (lifts when that global becomes true) or `null` (permanent; the validator rejects this on a critical-path character, below). `recoverTo`: the influence value set when the lockout lifts (default: the declared start). **Rule: `recoverTo >= A + rearmMargin` (the character's `influence.rearmMargin`, default 10), where `A` is the highest `at` among the character's `"when": "below"` thresholds that carry effects (`"above"` thresholds such as `trusts` are excluded)** (the comparison is `>=`; the validator checks it). The lift writes it **silently**: it clears the latch, clears the band flags and re-arms the thresholds without running their effects, so a character never returns already `wary` or `refusing`. Priya (`at` -40, margin 10) uses -30, which meets the rule exactly; the lab's Dev has no `recoverTo` and recovers to his start, 0 (back-ported 2026-10-22) |
 | `combatHostile` | **opt-in.** Calls `setHostile`, the existing combat state (tint, chase, health bar, punch on click). Off by default |
 | `toast {text}` | a fixed one-line notice |
 
@@ -917,8 +918,14 @@ Threshold fields:
   runner's engine is not in `inkEngineCache`, so the runner passes it to the writer explicitly.
 - **It carries across channels without a single record.** Every channel story of a character declares
   `VAR <character>_influence`, so the value is the same in the person, phone and email stories (§9).
-  A clumsy email lowers the influence the next call starts with. `04` can read it through
-  `boostIfGlobal` / `strictIfGlobal` directly, because it is already a global.
+  A clumsy email lowers the influence a later chat sees. (Back-ported 2026-10-22: two corrections.
+  A pretext call does not inherit it: each new call, but not a mid-call reload, resets the character
+  to `influence.start` with the reason `new_call` (lab fix round L, M3(d); `person-chat-pretext.js`
+  `attachPretext`), and that reset always emits `npc_influence_changed`, even at 0 delta, so a bar
+  mounted earlier clears its "Last change" line (fix round 7 F1). And `04`'s `boostIfGlobal` /
+  `strictIfGlobal` cannot read influence: `mail-bridge.js` `applyFactorBias` compares each named
+  global with `=== true`, so only a boolean flag flips a factor. Influence reaches a phish through the
+  target's `on_email` ink, which reads the `VAR`.)
 
 ### Characters of the student lab
 
@@ -951,7 +958,7 @@ her `emailReplyDelay` is authored on her target (15, like the other two).
   "dev": {
     "displayName": "Dev",
     "channels": { "phone": "dev_service_desk" },
-    "influence": { "global": "dev_influence", "min": -100, "max": 100, "start": -10 },
+    "influence": { "global": "dev_influence", "min": -100, "max": 100, "start": 0 },
     "syncedVars": ["dev_influence"],
     "thresholds": [
       { "id": "wary",    "at": -40, "icon": "wary",    "effects": [ { "type": "setGlobal", "global": "dev_wary", "value": true, "clearOnRearm": true } ] },
@@ -959,7 +966,7 @@ her `emailReplyDelay` is authored on her target (15, like the other two).
       { "id": "reports", "at": -70, "icon": "reports",
         "effects": [ { "type": "setGlobal", "global": "dev_reported", "value": true },
                      { "type": "endConversation" },
-                     { "type": "lockout", "scope": "channel", "until": { "afterMinutes": 2 }, "recoverTo": -30 } ] } ]
+                     { "type": "lockout", "scope": "channel", "until": { "afterMinutes": 2 } } ] } ]
   }
 }
 ```
@@ -968,7 +975,12 @@ her `emailReplyDelay` is authored on her target (15, like the other two).
 or `lockout`: a mail character cannot be burned, and the `min` of -40 stops a long run of bad sends
 from sinking the bar. Dev is the only lab character with a lockout, and it sits on `reports` so that
 a forced report (a refusal limit or a failed verification, at any influence) lifts after two real
-minutes with Dev reset to -30, his `wary` line plus the re-arm margin, so both band flags clear on the lift (`06` §4.8). Ruth, Fairbairn and Tomasz are
+minutes with Dev reset to his start, so both band flags clear on the lift (`06` §4.8). (Back-ported
+2026-10-22: Dev's `start` moved from -10 to 0 so a student who has done nothing wrong sees a neutral
+bar, and his `recoverTo: -30` was dropped as dead config, because every new call resets him to
+`start` anyway (lab fix round R1-follow-up). The lab's `globalVariables` still declare
+`dev_influence: -10`; the service starts from `influence.start`, so the two should be made equal.)
+Ruth, Fairbairn and Tomasz are
 ordinary story NPCs with no `social.characters` entry and no bar.
 
 ### How the bar reads it
@@ -1758,12 +1770,12 @@ brands are invented (`07` §1), so no brand name needs an exception here.
 | Object type | `minigameData` | Notes |
 |-------------|----------------|-------|
 | `mail_terminal` | `{ accountIds: [...], defaultAccount? }` | opens `mail-client`; a phone item may also list `accountIds` (Eldritch Hacker; no flow in the lab) |
-| `osint-workstation` | `{ siteIds: [...] }` | ids from `social.osint.sites`; the workstation opens only those |
+| `osint-workstation` | `{ siteIds: [...], start? }` | ids from `social.osint.sites`; the workstation opens only those (every site when `siteIds` is absent). `start` is a location (`company`, `company.team`, `social.pierce`, `~tools`); without it the browser reopens at `se_osint_state.at` (back-ported 2026-10-22) |
 | `case-file` | `{ mode }` | one of `scope`, `plan`, `recon`, `defender`; one board object per mode, default `recon` |
-| `triage-workstation` | `{ triageSetId }` | |
-| `page-builder` | `{ landingPageId }` | |
+| `triage-workstation` | `{ triageSetId, stage?, conclusionTaskId? }` | `stage` overrides the set's stage (only with a `{stage}` prefix); `conclusionTaskId` is the task the reopen re-emit checks (§11 "Reopen re-emits") (back-ported 2026-10-22) |
+| `page-builder` | `{ landingPageId, targetId? }` | |
 | `phone` (existing type) / NPC with call data | `{ callId }` | ids from `social.pretextNpcs`. **Engine change:** the whole phone path in `systems/interactions.js` is gated at line 1355 by `data.type === 'phone' && (data.text || data.voice || data.npcIds)`, so a phone carrying only `{ callId }` never enters it. The `callId` check goes **above that gate** (a separate `if (data.type === 'phone' && data.callId)`, or `data.callId` added to the gate condition with the `callId` branch first inside it). It checks the lockout (§8) and then opens `pretext-prep`; no new sprite, and a schema entry for the `callId` pointer. **Which record opens:** `pretextNpcs[callId].character` names the `social.characters` entry; a `phone` object opens that character's `channels.phone` record in `phone-chat`, and an NPC sprite opens `channels.person` in `person-chat` and carries `callId` as a top-level NPC field (add it to the NPC schema), which `pretext-prep` reads |
-| `report-workstation` | none | reads `social.engagement` |
+| `report-workstation` | `{ requiresGlobal?, lockedMessage? }` | reads `social.engagement`. With `requiresGlobal` set and not yet `true`, a toast shows `lockedMessage` (default "There is nothing to write up yet.") and the report does not open, so its tasks cannot complete before the stage they report on (lab R-b5; back-ported 2026-10-22) |
 | `kiosk` | `{ episodeId }` | opens the episode runner (11) |
 
 `mode` is the pointer's one name everywhere. A nested launch passes the child's parameters in the
@@ -1809,8 +1821,11 @@ and lives only in `engagement`; `intelBoard` holds the title, `people` (ids) and
 | `<character>_influence`, `_latched`, `_lockout_until`, `_lockout_channel` | the influence service, ink | §8 |
 | `pretext_call_done` (a lab-owned name) | the `grants.setGlobal` of any Dev ask | boolean; set by the first ask that grants, whatever the call's ending (`06` §4.8) |
 | `pretext_call_reported` (a lab-owned name) | Dev's `outcomes.reported.setGlobal` (`06` §4.8) | boolean, default false; set when the call ends reported; declared in `globalVariables` (`10` keys a branch on it) |
-| `pretext_<callId>_outcome`, `_lowest`, `_state` | the pretext session | `06` §6 (outcome precedence: `reported`, else `got_it` if any ask granted in the call, else `walked_away`). A call can be reopened: `_outcome` and `_lowest` hold the latest call, per-ask grants accumulate |
-| `<prefix>percent`, `<prefix>reportRate`, `<prefix>done`, `<prefix>pass` | the triage starter | the set's `setGlobalPrefix` (05). These four scalars are all that persists of a finished round: a later read-only reopen shows the headline, percent and report rate from them, while per-answer data (`answers[].ms`, `perFactor`, the stage) lives only in the in-memory result until a server record exists (`05` OQ1) |
+| `pretext_<callId>_outcome`, `_lowest`, `_state` | the pretext session | `06` §6 (outcome precedence: `reported`, else `got_it` if any ask granted in the call, else `walked_away`). A call can be reopened: `_outcome` holds the latest call, per-ask grants accumulate. `_lowest` is a running minimum over every call, so a clean call-back does not hide a reported first call (back-ported 2026-10-22; lab fix round 4) |
+| `pretext_<callId>_reports` | the pretext session (`finalisePretext`) | integer: calls that ended without a grant (reported, refused or walked away). It advances the call's hint ladder and lets the report read "an earlier call was reported, a later one got what it asked for" (back-ported 2026-10-22) |
+| `<character>_forced` | the influence service | comma list of threshold ids latched by a forced report while the value was not past their `at`, so a reload does not re-arm them (N-01). Engine-written; need not be declared (back-ported 2026-10-22) |
+| `se_mail_applied`, `se_mail_last_account` | the mail runner; the mail client | engine-written, need not be declared: a per-job marker so a reload never applies a reply's influence twice (T2-1), and the account the client was last on, so a reload reopens there (lab R1 F11) (back-ported 2026-10-22) |
+| `<prefix>percent`, `<prefix>reportRate`, `<prefix>done`, `<prefix>pass` | the triage starter | the set's `setGlobalPrefix` (05). `pass` is never cleared by a lower round, and `percent` and `reportRate` keep the best round (back-ported 2026-10-22, packet M7). After the confirmed save the starter emits the changed names, `done` last, then the done event `inbox_triage_completed`. These four scalars are all that persists of a finished round: a later read-only reopen shows the headline, percent and report rate from them, while per-answer data (`answers[].ms`, `perFactor`, the stage) lives only in the in-memory result until a server record exists (`05` OQ1) |
 | `se_osint_state`, `se_board_state`, `se_landing_pages`, `se_landing_drafts`, `se_report_state`, `episode_<id>_state` | their minigames; `se_landing_drafts[<pageId>]` holds the builder's draft choices before the first Score, written on every change and on close (`07` N4), and `se_landing_pages` holds only scored records (§11a); `se_report_state` is the report builder's in-progress pairings (finding id to chosen cause and control; ids only, saved and synced as the board does) | object-valued, default `{}` |
 
 **Missions that carry a score (check missions, `11`).** A mission whose result another mission reads
@@ -1997,11 +2012,11 @@ lists the triage sizes and the domain ids.
 | Sender-auth policy | `senderAuth: { domainPublishesAuth, spoofAligns, dmarcPolicy: none \| quarantine \| reject }`; Pierce's `factorStrings.senderAuth` carries the `p=none` line; Hampshire authors the `pass` side only (the `fail` side is unreachable for her), Lord uses the derived sentence, and any factor a target leaves out uses the §2 canonical string | 2, 7 |
 | Missing evidence | an empty blank (or a missing `requiresIntelToAttempt` fact) blocks Send; neutral line "A blank needs evidence you haven't found yet" (defined in `04`) | 10 |
 | Band flags | `setGlobal` boolean with `clearOnRearm: true`, recomputed on every influence change, cleared at `at + rearmMargin` or above; ink branches on the returned band | 8 |
-| `recoverTo` rule | `recoverTo >= A + rearmMargin` (character's `influence.rearmMargin`, default 10), `A` = highest `at` among `"below"` thresholds with effects (`"above"` thresholds excluded); Dev and Priya -30 | 8 |
+| `recoverTo` rule | `recoverTo >= A + rearmMargin` (character's `influence.rearmMargin`, default 10), `A` = highest `at` among `"below"` thresholds with effects (`"above"` thresholds excluded); Priya -30; the lab's Dev none (recovers to `start`, 0) | 8 |
 | Lockout storage | globals `<character>_lockout_until`, `_lockout_channel`; no server section; checked before `pretext-prep` | 8, S10 |
 | Step binding | each card, pick and question carries `step`; step done when all its items are correct; block global when all steps are done | 11 |
 | Plan mode | two single-select picks (objective, measure), globals `plan_objective_done`, `plan_measures_done`; a read-only step (report `results`) has one `confirm` item | 11 |
-| Reopened calls | a call can be reopened after any outcome while asks remain; `pretext_<callId>_outcome` and `_lowest` hold the latest call; grants accumulate | 06 |
+| Reopened calls | a call can be reopened after any outcome while asks remain; `pretext_<callId>_outcome` holds the latest call and `_lowest` the lowest over every call; grants accumulate; each new call resets influence to `start` (reason `new_call`) | 06, 8 |
 | Victim record | written on every send carrying the page, keeping the best outcome (`betterVictim`: submitted > noticed > nothing; a later send replaces it only if ranked at least as high); re-scoring a page never clears it, per 11a | 11a |
 | Check missions | `missionConclusion` aim gated on the triage completion global | 11 |
 | CI validator loop | one job with Ruby (bundler-cache, sqlite apt packages and `BUNDLE_BUILD__SQLITE3` as the existing jobs) and Node 20; `package-lock.json` un-ignored and committed so `npm ci` works; Node tests run as `bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs` and fail rather than skip; the social unit tests are `social-phish-rules`, `social-triage-scoring`, `social-pretext-judge`, `social-intel`, and the safety tests `social-landing-page-model`, `-render`, `-guard` and `social-osint-address-bar`; `test:social` script; no test runs the bare validator CLI; `--strict-social --no-graph --skip-ink` over scenarios with a `social` key; `git diff --exit-code` | S11 |
@@ -2040,3 +2055,113 @@ lists the triage sizes and the domain ids.
 | No generated text | no language model anywhere in the game; free text is unscored and unread | 7 |
 | Free text in dialogue and mail | none in this build (the first slice); a scenario that allows a free-text box treats it as unscored and unread (§7, §10). Decided here; not an open question | 6, 1 |
 | Lab ink and reply features | the lab's mail stories end each reply with no choices, no `#compose_reply` and no `#mail_later`; thread `expects` is never set | 10 |
+
+---
+
+## 14. Contract additions made during the build (back-ported 2026-10-22)
+
+Fields and rules added by the build packets and the lab fix rounds after this document was last
+edited, collected here so `00` stays the one contract (packet M4a). Sources are `SE_BUILD_LOG.md`
+entries and the code named in each row; corrections to earlier sections are made in place and
+marked "back-ported 2026-10-22". The builder rows are taken from the build log and the code; `07` was
+not reopened for this back-port. Author documentation: `README_scenario_design.md`, "Social-engineering:
+general mechanics" and "Social-engineering: attack mechanics".
+
+**Schema and validator**
+
+| Addition | Contract | Source |
+|---|---|---|
+| Closed `social` schema | Every block in `scripts/scenario-schema.json` lists the keys the engine or a lint reads; any other key fails the schema, except keys starting with `_` (notes). Schema errors under `/social` are reported as social lint errors, so they fail the run only under `--strict-social` | M3, `316dee74`; `validate_social.rb` `split_schema_errors` |
+| Late-option lints | `hintsByFactor`, `labelBy`, `checklistTiming`, `mirrorToBehavior` and `lockedHint` each have a lint (`scripts/validate_social/options.rb`); `lockedHint` is linted in every scenario | M3 |
+| Object name collision | A warning when a locked object's lookup key (`id`, else `name`) is matched first by another object's `id` or `name`; the unlock endpoint takes the first hit | M7, `e99068bf` |
+| Reserved keys | `mailClient.bodyMode`, `mailClient.freeTextFlavour`, `engagement.client`, `engagement.defender.indicators` and `people[].kind` are accepted but read by no code; the non-email triage kinds are accepted and drawn as email | M4a review; README "Reserved keys" |
+
+**Doors and objects (engine-wide, opt-in)**
+
+| Addition | Contract | Source |
+|---|---|---|
+| `lockedHint` | A string on a locked room (applies to every door into it), a `rooms[].doors[]` entry or a locked key-lock object. Appended to "Requires key." (no key, no lockpick) and to the two wrong-key alerts. Kept by the bootstrap room filter (`game.rb` `filtered_scenario_for_bootstrap`) and copied onto `doorProperties` by `doors.js`; read by `utils/locked-hint.js` and `unlock-system.js`. A door without it is unchanged | lab fix round 4 (F17), rounds 5–6, M7 (wrong-key path) |
+
+**Influence (§8)**
+
+| Addition | Contract | Source |
+|---|---|---|
+| New-call reset | Each new pretext call (not a mid-call reload) sets the character to `influence.start` with reason `new_call`; influence does not carry between calls | lab fix round L, M3(d) |
+| Boundary event | A `new_call` write always emits `npc_influence_changed`, even at 0 delta; the bar clears its "Last change" line on it | fix round 7 F1, `social-influence.js` `_commit` |
+| Turn total on the call bar | In a pretext call the bar's change line is the sum of the turn's deltas, matching the tells row | fix round 8 F1, `InfluenceBar.setChangeFromTurn` |
+| `<character>_forced` | Engine-written latch list for forced reports (§11 table) | P4-D, N-01 |
+| Lockout refusal text | Person and phone: "<name> flagged the last attempt and won't talk to you for now — give it a while, then try again more carefully."; mail: "<name> will not read your mail right now." A refused send is not judged and not counted | lab fix round 4; `interactions.js` `socialChannelLocked`, `mail-bridge.js` `mailChannelLocked` |
+| Lazy lift | A timed lockout lifts when a channel is next checked after the deadline; a `until.global` lockout lifts on that global's change event. Nothing polls | `social-influence.js` `isLockedOut`, `checkLockout` |
+
+**Phishing targets and hints (§7, `04`)**
+
+| Addition | Contract | Source |
+|---|---|---|
+| Ladder index | `hints[priorFailures - 1]` (clamped), so the first repeated miss shows `hints[0]` | lab fix round 4 H1 |
+| `hintsByFactor` | Opt-in map of factor id to a hint string or variants. `senderTrust` reads `{ spoof, ownFrom, forced }` (`forced` for an account that cannot spoof, `ownFrom` for a spoof-capable account that left From as itself, `spoof` otherwise); `linkCredible` reads `{ missing, wrong }`; any other factor reads `spoof`, else `forced`. Only the first failed required factor is keyed | rounds 4–6 H2, H3, F2, F4 |
+| Keyed versus ladder | On the first repeated miss the ladder's `hints[0]` shows if the first required factor is the one that failed, else the keyed hint; from the second repeated miss the keyed hint shows; the ladder is the fallback when the failed factor has no keyed hint | rounds 5–6 F3, D6 |
+| `result.link` | `'none'` when no page is attached, `'fail'` for a wrong page, so a reply can tell "no link" from "wrong link" | round 6 F7 |
+| `phishTargets[].role` | Read only by the report's `labelBy: "role"` resolver, ahead of the contact's role | rounds 7–8 |
+| Landed send line | On a landed send with a reply scheduled, the checklist says the step ticks off when the reply arrives | round 8 F6 |
+
+**Pretext calls (`06`)**
+
+| Addition | Contract | Source |
+|---|---|---|
+| `outcomes.reported.line` | Spoken in the chat before the debrief, and used as the goodbye by an `endConversation` effect | lab fix round 4 |
+| Hint ladder advance | Any call that ends without a grant (reported, refused, walked away) counts as a failed attempt in `pretext_<callId>_reports` | Grok P4 review R-5 |
+| `got_it` with a refusal | The debrief reads "You got some of what you came for." when an ask was refused in a `got_it` call; outcome and globals unchanged | round 7 F3 |
+| Fresh-call transcript | A new call clears the previous call's transcript | lab fix round 4 |
+
+**Intel board and engagement (§11 "Engagement mode blocks")**
+
+| Addition | Contract | Source |
+|---|---|---|
+| Defender block | Optional `title`, `intro`; `factMitigations[].step` binds a card to a step | P3-D |
+| Scope and plan | `scope.intro` (or `brief`), `title`; `plan.objectivesPrompt`, `plan.measuresPrompt`; general `picks[]` of `{ id, step, text, options[] }`; `steps[].title` | P6-C, P6-E |
+| Option `text` | Required on every scored option (a blank button otherwise); every scored option carries a `why` | P6-W, P6-G (`lab.rb`) |
+| Reopen repair | A board or report that opens with its answers complete and a step or block global unset sets that global | P3-D, P6-B |
+| Report fields | `engagement.report` holds `title`, `intro`, `unseenNote`, `labelBy` (`"name"` default, or `"role"`), `steps[]`, `onCompleteGlobal`, `items[]` (confirm) and `findings[] { id, step, text, rootCauses[], controls[] }`; options `{ id, text, correct, blame?, why }`. The report completes only when it declares at least one step | P6-B; lab R4 A9 (`labelBy`) |
+| Report call row | Reads `pretext_call_done`, `<character>_reported`, `pretext_<callId>_outcome`, `_lowest` and `_reports`; keys calls by `callId` (falls back to `id`) | P6-T0, round 5 F7 |
+| Report page row | Names the domain of the page that landed, from the victim record's `domainId` | lab fix round 4, R1 F9 |
+| Report row order | Mail rows follow `phishTargets` order, then any other metrics ids sorted | M7 |
+
+**OSINT (`02`)**
+
+| Addition | Contract | Source |
+|---|---|---|
+| `se_osint_state.at` | The last place open, so the browser reopens there | P2-A |
+| Block `note` | An extra line shown when the block is selected, alone when it grants nothing | P2-A |
+| `sites[].name` | The tab label (falls back to `title`, then the id) | P2-T |
+| Ready toast | A grant that makes a target ready, from the browser or `grant_fact`, shows "You know enough to approach now — write to them from a mail terminal." | P1-T T8, P2-T F4 |
+
+**Inbox triage (`05`)**
+
+| Addition | Contract | Source |
+|---|---|---|
+| Set fields | `brief` (Brief step text), `nudges` (factor id to a line under "Weakest skill"), `title` | P3-B |
+| Message fields | `forwardedBy` (string or boolean), `auth.summary` | P3-B |
+| Done event | `inbox_triage_completed`, emitted after the changed result globals | P3-C |
+| Best round | `percent` and `reportRate` keep the best round; `pass` is never cleared | M7 |
+| Restart notice | The Brief step says closing or reloading restarts the round; a close before Result is an abort | lab fix round 4 F12 |
+| No-flags result | With no flag ticked anywhere, the per-factor breakdown is hidden and one line explains why | rounds 7–8 |
+
+**Mail (`01`, §10a)**
+
+| Addition | Contract | Source |
+|---|---|---|
+| Trimmed mail | When a save trims read mail to fit the 1 MB cap, the response carries `mailTrimmed` (the dropped `mailboxes.<box>.<msgId>` keys) and the client drops them too | M6, `a04b0ee9` |
+| Created accounts | A created account reaches other open mail clients | M6 |
+| `pendingMessage` | Whitelisted in the server's mail merge, so a `withReply` checklist is rebuilt after a reload | P6-M |
+| Engine globals | `se_mail_applied`, `se_mail_last_account` (§11 table) | P1 fix round 2, lab R1 F11 |
+
+**Landing pages (`07`, §11a)**
+
+| Addition | Contract | Source |
+|---|---|---|
+| `pretext` | `{ brandId, purposeId, facts[] }` is required on every page (a lint error without it); `facts` are intel ids the builder prefixes with `se_intel_` | lab fix round L B3 |
+| Fields | `fields[]` and `extraSensitiveFields[]` are authored on the page | P5-D |
+| `{firstName}` | From `social.people[].forms.first` (then `short`, then the first word of `full`) | P5-D |
+| Defender strings | `strings` keys `defDomainTier<N>`, `tellFormOrigin`, `tellHoverMismatch`, `padlockDecoy` | P5-E, P5-G |
+| `wordings` | Exactly one `match: true`, at least one `slips: true`, and none with both. A `match` wording scores full, a `slips` wording zero, any other half | P5-A, P5-C |
+| Victim `domainId` | The victim record keeps the chosen domain option id of the page that was sent | lab fix round 4 |
