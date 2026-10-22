@@ -3156,5 +3156,49 @@
         "room": "training_room"
       }
     ]
+  },
+  "awareness_e3_helpdesk_reset": {
+    "globals": {
+      "episode_e3_helpdesk_reset_defend_percent": 0,
+      "episode_e3_helpdesk_reset_defend_reportRate": 0,
+      "episode_e3_helpdesk_reset_defend_done": false,
+      "episode_e3_helpdesk_reset_defend_pass": false,
+      "leila_reset_granted": false,
+      "pretext_quayholt_helpdesk_reset_outcome": ""
+    },
+    "npcs": [
+      {
+        "id": "darren_price",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e3_helpdesk_reset/ink/darren_price.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      },
+      {
+        "id": "leila_servicedesk",
+        "npcType": "phone",
+        "storyPath": "scenarios/awareness_e3_helpdesk_reset/ink/leila_servicedesk.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e5_signin_pages": {
+    "globals": {
+      "episode_e5_signin_pages_defend_percent": 0,
+      "episode_e5_signin_pages_defend_reportRate": 0,
+      "episode_e5_signin_pages_defend_done": false,
+      "episode_e5_signin_pages_defend_pass": false,
+      "phish_sso_staff_landed": false
+    },
+    "npcs": [
+      {
+        "id": "niamh_doherty",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e5_signin_pages/ink/niamh_doherty.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
   }
 }
