@@ -391,3 +391,9 @@ the orchestrator passes it to that wave's owner.
     - **Call stage:** E3's attack is a pretext call, but its stage list uses `write`, which launches mail. The runner needs a call stage that launches pretext-prep with the episode's `callId`, or `write` has to choose mail or call from the attack block.
     - **Naming:** P7-Q authored `attack.pushStream`, while P7-X's schema has `awarenessEpisode.mfa`. Pick one; `mfa` is the one validated now.
   - **Order:** together with P7-U's `build` gap, the runner needs `osint → build? → write(mail|call) → mfa? → flip → defend → debrief`.
+- **P7-I:**
+  - `strings.facilitator` is `{ <stageId>: string, pause: string }`. It needs a schema entry before a facilitated shell validates.
+  - The flip shows "You did not send a message this time" after a send that missed. It needs its own string (`flipMissed`).
+  - The Report animation belongs in the triage overlay: add `aw-report-win` and `aw-report-thanks`.
+  - `se_awareness_records` is an array, but shells declare it as `{}`. The reader accepts both; docs to say so.
+  - The P7-I bridge is in scratch (`se-P7-I/bridge-p7-i.jsonl`) for P7-T0 to adopt.
