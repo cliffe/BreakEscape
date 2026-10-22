@@ -29,7 +29,7 @@ VAR hub_quiet = false
         { phish_ceo_voice_target_attempts > 0:
             Agnieszka Duda: Your message has gone over to accounts payable. Now take the other seat at the kiosk and cover the finance line the way a call like that would land.
         - else:
-            Agnieszka Duda: Welcome to the Brightwell finale. Start at the kiosk: research what's public about the chief executive, write one message as the red team, then swap seats and cover the finance line.
+            Agnieszka Duda: Welcome to the Brightwell finale. Start at the kiosk: research the chief executive, write one message, then swap seats and cover the finance line.
         }
     }
 }

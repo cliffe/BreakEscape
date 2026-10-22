@@ -100,7 +100,7 @@
             "isPhish": true,
             "flags": ["lookalike_domain", "attachmentPlausible"],
             "perFlagNote": {
-              "lookalike_domain": "The link goes to tarrowby-careers.example, not tarrowby.example. Tarrowby's own sites all end in tarrowby.example; an extra word with a hyphen makes it someone else's",
+              "lookalike_domain": "The link goes to tarrowby-careers.example, not tarrowby.example. Tarrowby's own sites all end in tarrowby.example; the added word with a hyphen makes a separate domain anyone can register, so don't assume it's theirs",
               "attachmentPlausible": "It says the CV is attached, but nothing is. The 'portfolio' link is there to replace it, and it wants your Tarrowby sign-in"
             },
             "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password, so whoever runs tarrowby-careers.example could read the recruitment inbox and every candidate's details in it.",
@@ -309,7 +309,7 @@
             "flags": ["senderTrust", "lookalike_domain"],
             "perFlagNote": {
               "senderTrust": "The name says Roseanne at Kettlewick, but the address is on kettlewick-talent.example, which isn't the agency's",
-              "lookalike_domain": "Kettlewick's real domain is kettlewick.example. kettlewick-talent.example adds a word with a hyphen, so it's someone else's"
+              "lookalike_domain": "Kettlewick's real domain is kettlewick.example. kettlewick-talent.example adds a word with a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
             },
             "ifTrusted": "Candidates' home addresses and phone numbers would go to a stranger, who could then ring them pretending to be Tarrowby.",
             "reportReply": "Thanks. Roseanne didn't send it, kettlewick-talent.example isn't the agency's, and Kettlewick doesn't book candidates' travel."
@@ -345,7 +345,7 @@
             "isPhish": true,
             "flags": ["lookalike_domain", "attachmentPlausible"],
             "perFlagNote": {
-              "lookalike_domain": "Read it slowly: careers-tarrowby.example isn't tarrowby.example. Tarrowby's own sites end in tarrowby.example; an added word with a hyphen makes it someone else's",
+              "lookalike_domain": "Read it slowly: careers-tarrowby.example isn't tarrowby.example. Tarrowby's own sites end in tarrowby.example; the added word with a hyphen makes a separate domain anyone can register, so don't assume it's theirs",
               "attachmentPlausible": "It says the CV is attached, but nothing is, and the link that replaces it wants you to sign in"
             },
             "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password.",
@@ -508,7 +508,7 @@
             "flags": ["senderTrust", "lookalike_domain"],
             "perFlagNote": {
               "senderTrust": "The name says Thanh at Tarrowby, but the address is on tarrowby-onboarding.example, which isn't Tarrowby's",
-              "lookalike_domain": "Tarrowby's own sites end in tarrowby.example. tarrowby-onboarding.example adds a word with a hyphen, so it's someone else's"
+              "lookalike_domain": "Tarrowby's own sites end in tarrowby.example. tarrowby-onboarding.example adds a word with a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
             },
             "ifTrusted": "The new starters' passport scans would go to a stranger.",
             "reportReply": "Thanks. Thanh didn't send it, tarrowby-onboarding.example isn't ours, and the onboarding file is complete."
@@ -544,7 +544,7 @@
             "isPhish": true,
             "flags": ["lookalike_domain", "attachmentPlausible"],
             "perFlagNote": {
-              "lookalike_domain": "Read it slowly: tarrowby-jobs.example isn't tarrowby.example. Tarrowby's own sites end in tarrowby.example; an added word with a hyphen makes it someone else's",
+              "lookalike_domain": "Read it slowly: tarrowby-jobs.example isn't tarrowby.example. Tarrowby's own sites end in tarrowby.example; the added word with a hyphen makes a separate domain anyone can register, so don't assume it's theirs",
               "attachmentPlausible": "It says the CV is attached, but nothing is, and the link that replaces it wants you to sign in"
             },
             "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password.",
@@ -600,9 +600,9 @@
       "flipIntro": "This is the application you just sent, the way it looked to Fatima, Tarrowby's recruitment lead. The parts picked out below are what make it believable.",
       "flipDefenderLine": "Fatima opened it between two interviews, forty applications still unread. One more CV for the warehouse job, from someone who named the role, so she opened the attachment. Anyone that busy would. Being taken in by a message built this carefully is not carelessness.",
       "flipNoSend": "Your application didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives in a recruitment inbox, and you're the one opening it.",
-      "noBlameLine": "Nobody is marked down for a miss here. Every one of these was built to look right, and opening attachments from strangers is a recruiter's whole job. A miss here is a sign of a busy inbox, nothing more.",
+      "noBlameLine": "No one is keeping score against you here. Every one of these was built to look right, and opening attachments from strangers is a recruiter's whole job. A miss here is a sign of a busy inbox, nothing more.",
       "mondayCard": "On Monday: read CVs in the viewer, and if a document asks you to enable editing or content, don't. If a CV 'doesn't come through' and sits behind a link that wants you to sign in, ask the candidate to send it as an attachment instead. Then report anything odd the way your organisation asks you to.",
-      "defendOnly": "You went straight to the inbox this time. These messages were written by people whose job is to make them look right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine."
+      "defendOnly": "You went straight to the inbox this time. These were built by people who know exactly what a real application looks like, and opening a CV is a recruiter's job, not a lapse. Each card shows what gave the fakes away, and why the genuine applicants were fine."
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e2_cv_lures_defend), which has no OSINT, write or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",

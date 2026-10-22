@@ -24,12 +24,12 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e6_texts_and_qr_defend_done:
-        Chidi Okeke: There, you've done it from both ends. On a phone it's the same move each time: if a text, a notice or an email wants a code scanned or a short link tapped, open the app yourself or ring someone on a number you already hold.
+        Chidi Okeke: There, both ends done. On a phone it's one move every time: if a message wants a code scanned or a link tapped, open the app yourself instead.
     - else:
         { phish_mobile_staff_attempts > 0:
-            Chidi Okeke: Your message has gone over to the depot. Now take the other seat at the kiosk and go through what's waiting on a Tarrowby work phone, the way it would land on your break.
+            Chidi Okeke: Your message has gone over to Kaylee. Now take the other seat and go through a Tarrowby work phone, the way it would land on your break.
         - else:
-            Chidi Okeke: Welcome to the Tarrowby exercise. Start at the kiosk: look at what's public, write one message as the red team, then swap seats and go through a work phone like the one it landed on.
+            Chidi Okeke: Welcome to the Tarrowby exercise. Start at the kiosk: look at what's public, write one message, then swap seats and go through the work phone it lands on.
         }
     }
 }

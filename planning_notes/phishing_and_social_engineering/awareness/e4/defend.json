@@ -93,7 +93,7 @@
             "isPhish": true,
             "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
             "perFlagNote": {
-              "senderTrust": "Her published travel address is catherine.merrin@inboxly.example. This is catherine.merrin.travel@inboxly.example, a different inbox, and anyone can open a free one in her name",
+              "senderTrust": "A payment request from the managing partner on a free webmail inbox (inboxly.example), not her merrinsallow.example address. Anyone can open a free inbox in a name you know, so stop and ring her on the number in your contacts",
               "secrecy_or_bypass": "'Keep it between us' and 'don't send it through Yasmin' skip the approval that would catch this",
               "urgencyCalibrated": "'Before I land' and 'three hours in the air' leave no time to check and steer you away from ringing her. The flight time came from her public posts"
             },
@@ -295,7 +295,7 @@
             "flags": ["senderTrust", "lookalike_domain"],
             "perFlagNote": {
               "senderTrust": "The name says Thandiwe, but the address is on merrin-sallow.example, which isn't the firm's",
-              "lookalike_domain": "The firm's domain is merrinsallow.example. merrin-sallow.example adds a hyphen, so it's someone else's"
+              "lookalike_domain": "The firm's domain is merrinsallow.example. merrin-sallow.example adds a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
             },
             "ifTrusted": "The partners' passport numbers would go to a stranger, enough to set up travel or accounts in their names.",
             "reportReply": "Thanks. Thandiwe didn't send it, her real address is on merrinsallow.example, and passport numbers never go out by email."
@@ -505,7 +505,7 @@
             "flags": ["senderTrust", "lookalike_domain"],
             "perFlagNote": {
               "senderTrust": "The name says Thandiwe, but the address is on merrinsallow-group.example, which isn't the firm's",
-              "lookalike_domain": "The firm's domain is merrinsallow.example. merrinsallow-group.example adds a word with a hyphen, so it's someone else's"
+              "lookalike_domain": "The firm's domain is merrinsallow.example. merrinsallow-group.example adds a word with a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
             },
             "ifTrusted": "A list of when each partner is away, and where, is what someone needs to pretend to be them while they travel.",
             "reportReply": "Thanks. Thandiwe didn't send it, her real address is on merrinsallow.example, and the insurers have asked for nothing."
@@ -602,8 +602,8 @@
       "flipIntro": "This is the email you just sent, as Tomás saw it on his phone. The lines picked out below are what make it believable.",
       "flipDefenderLine": "Ten minutes before the flight, two meetings still to set up, Tomás read it. It fitted her day and it sounded like her, so he opened the payment form. Being fooled by something built this well is not a sign of carelessness.",
       "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, messages like it arrive in Tomás's inbox and voicemail, and you're the one reading them.",
-      "noBlameLine": "Nobody is marked down for a miss here. Every one of these was built to look and sound right, and the people who act on them are trying to help in a hurry. A miss is about the pressure, not the person.",
-      "defendIntro": "Now you're in Tomás's seat. Five emails and voicemails are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed.",
+      "noBlameLine": "There's no mark against you for a miss here. Every one of these was built to look and sound right, and the people who act on them are trying to help in a hurry. A miss here is about the pressure you were under.",
+      "defendIntro": "Now you're in Tomás's seat. Five emails and voicemails are waiting. Take them one at a time.",
       "mondayCard": "On Monday: if someone senior asks you to pay, buy or send something in a hurry, or to keep it from finance, check before you act, even when it's their voice on a voicemail. Ring them on the number already in your contacts, or ask finance, then report the message the way your organisation asks you to.",
       "defendOnly": "You went straight to the inbox this time. These messages were made by people whose job is to make them look and sound right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine."
     },

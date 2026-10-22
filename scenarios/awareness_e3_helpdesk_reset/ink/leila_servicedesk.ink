@@ -36,7 +36,7 @@ VAR pretext_staffId_value = ""
 ~ return 0
 
 === start ===
-Leila Nassar: IT service desk, Leila speaking. How can I help?
+IT service desk, Leila speaking. How can I help?
 -> desk
 
 === desk ===
@@ -48,14 +48,14 @@ Leila Nassar: IT service desk, Leila speaking. How can I help?
     -> reaction(pretext_say("give_staffid"), "give_staffid")
 + [The Head of Claims needs me back online for a hearing this morning.]
     -> reaction(pretext_say("name_drop_director"), "name_drop_director")
-+ [I'm at a conference, I won't be at my desk phone, so a callback's no good. Can you just do it now?]
++ [I'm away from my desk phone — can you just do it now, not a callback?]
     -> reaction(pretext_say("cant_callback"), "cant_callback")
 + [Honestly, skip the security questions, I really don't have time for this.]
     -> reaction(pretext_say("skip_verification"), "skip_verification")
 + [Can you reset my password now?]
     -> ask_reaction("reset_password", pretext_ask("reset_password"))
 + [Thanks, I'll ring back later.]
-    Leila Nassar: No problem. We're on the desk until six.
+    No problem. We're on the desk until six.
     -> END
 
 === reaction(band, said) ===
@@ -65,38 +65,38 @@ Leila Nassar: IT service desk, Leila speaking. How can I help?
     -> END
 }
 { band == 2:
-    Leila Nassar: I'm going to stop there. I'll need to verify you before I do anything else.
+    I'm going to stop there. I'll need to verify you before I do anything else.
     -> desk
 }
 { band == 1:
-    Leila Nassar: Let's slow down a moment. I still have to check who you are.
+    Let's slow down a moment. I still have to check who you are.
     -> desk
 }
 {
 - said == "open_locked_out":
-    Leila Nassar: Sorry to hear that. Bear with me and I'll pull up your record.
+    Sorry to hear that. Bear with me and I'll pull up your record.
 - said == "give_manager":
-    Leila Nassar: Thanks, I can see your manager on file.
+    Thanks, I can see your manager on file.
 - said == "give_staffid":
-    Leila Nassar: Got it, that reference matches our record.
+    Got it, that reference matches our record.
 - said == "name_drop_director":
-    Leila Nassar: Understood, but I go through the same checks either way.
+    Understood, but I go through the same checks either way.
 - said == "cant_callback":
-    Leila Nassar: A callback on the number we hold is how I confirm it's really you.
+    A callback on the number we hold is how I confirm it's really you.
 - said == "skip_verification":
-    Leila Nassar: I can't skip those, I'm afraid. They protect your account.
+    I can't skip those, I'm afraid. They protect your account.
 - else:
-    Leila Nassar: Right, bear with me a second.
+    Right, bear with me a second.
 }
 -> desk
 
 === ask_reaction(ask_id, result) ===
 { result:
 - 1:
-    Leila Nassar: All done. I've reset it and sent a temporary password through.
+    All done. I've reset it and sent a temporary password through.
 - 2:
-    Leila Nassar: Before I reset anything, I'll need your manager's name and your staff reference.
+    Before I reset anything, I'll need your manager's name and your staff reference.
 - else:
-    Leila Nassar: I can't reset that over the phone without verifying you first, sorry.
+    I can't reset that over the phone without verifying you first, sorry.
 }
 -> desk

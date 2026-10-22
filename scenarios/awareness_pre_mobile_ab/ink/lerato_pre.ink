@@ -21,7 +21,7 @@ VAR hub_quiet = false
     { triage_pre_done:
         Lerato Dlamini: Good, that's your before check logged. We'll run the same kind of check after the training and line the two up.
     - else:
-        Lerato Dlamini: Morning. Before the training there's a short check on the kiosk: ten texts, notices and emails from a Tarrowby work phone. Treat them the way you would on a normal shift.
+        Lerato Dlamini: Morning. Before the training, a short check on the kiosk: ten texts, notices and emails from a Tarrowby work phone. Treat them like a normal shift.
     }
 }
 + [Thanks.]

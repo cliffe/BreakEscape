@@ -21,7 +21,7 @@ VAR hub_quiet = false
     { triage_pre_done:
         Anjali Rao: That's your first check saved. We'll do another after the training and see how the two compare.
     - else:
-        Anjali Rao: I'm Anjali, I look after security here and these reports come to me. Before the training there's a short check on the kiosk: ten items from the service desk queue. Just do what you'd normally do on a shift.
+        Anjali Rao: I'm Anjali, I look after security here. There's a short check on the kiosk first: ten items from the service desk queue. Do what you'd normally do on a shift.
     }
 }
 + [Thanks, Anjali.]

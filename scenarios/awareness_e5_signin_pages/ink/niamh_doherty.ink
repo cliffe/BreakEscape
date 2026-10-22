@@ -19,12 +19,12 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e5_signin_pages_defend_done:
-        Niamh Doherty: That's both seats done, thanks. The trick is always the address: our real sign-in page sits on its own domain and your password manager knows it, so read the address bar before you ever type a password. A padlock doesn't make a page ours.
+        Niamh Doherty: That's both seats done, thanks. The trick is always the address: read the bar before you type a password. A padlock doesn't make a page ours.
     - else:
         { phish_sso_staff_attempts > 0:
-            Niamh Doherty: Your email with the link has gone to the staff member. Now take the other seat at the kiosk and check the pages that land behind links like yours in a real inbox.
+            Niamh Doherty: Your email with the link has gone to Hana. Now take the other seat and check the pages that land behind links like yours.
         - else:
-            Niamh Doherty: Welcome to the Quayholt exercise. Start at the kiosk: research us, build a sign-in page and send its link as the red team, then swap seats and check the pages yourself.
+            Niamh Doherty: Welcome to the Quayholt exercise. Start at the kiosk: research us, build a sign-in page and send the link, then swap seats and check the pages yourself.
         }
     }
 }

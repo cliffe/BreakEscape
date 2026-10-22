@@ -118,7 +118,7 @@ CHECK_LINES = {
         "That's the second one in. Thank you for taking both.",
         'Thanks, Yasmin.', "You're welcome."),
     ('julian', 'pre'): (
-        "Good of you to sit this. Before the training there's a short check on the kiosk: ten emails and voicemails a PA might get. Just deal with them as you would.",
+        "Good of you to sit this. There's a short check on the kiosk first: ten emails and voicemails a PA might get. Deal with them as you would.",
         "That's your first check recorded. There's a second after the training, and you'll see how the two stand together.",
         'Thanks, Julian.', 'Not at all.'),
     ('julian', 'post'): (

@@ -21,7 +21,7 @@ VAR hub_quiet = false
     { triage_pre_done:
         Julian Sallow: That's your first check recorded. There's a second after the training, and you'll see how the two stand together.
     - else:
-        Julian Sallow: Good of you to sit this. Before the training there's a short check on the kiosk: ten emails and voicemails a PA might get. Just deal with them as you would.
+        Julian Sallow: Good of you to sit this. There's a short check on the kiosk first: ten emails and voicemails a PA might get. Deal with them as you would.
     }
 }
 + [Thanks, Julian.]

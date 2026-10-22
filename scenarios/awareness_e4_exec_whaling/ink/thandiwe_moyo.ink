@@ -21,12 +21,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e4_exec_whaling_defend_done:
-        Thandiwe Moyo: Both seats done, thanks. When it is money and it is all a rush, or you are asked to keep it from finance, ring her on a number you already have before you move, even when the voice is hers.
+        Thandiwe Moyo: Both seats done, thanks.
+        Thandiwe Moyo: When it's money and it's in a hurry, or you're told to keep it from finance, ring her on a number you already have, even when the voice is hers.
     - else:
         { phish_exec_pa_attempts > 0:
             Thandiwe Moyo: Your email has gone to Tomás. Now take his seat at the kiosk and work the inbox the way it lands on a travel day.
         - else:
-            Thandiwe Moyo: Welcome to the Merrin & Sallow exercise. Start at the kiosk: research Catherine and her trip, write one email to her PA as the red team, then swap seats and cover his inbox.
+            Thandiwe Moyo: Welcome to the Merrin & Sallow exercise. Start at the kiosk: research Catherine and her trip, write one email to her PA, then swap seats and cover his inbox.
         }
     }
 }

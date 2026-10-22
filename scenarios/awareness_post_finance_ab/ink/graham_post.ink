@@ -21,7 +21,8 @@ VAR hub_quiet = false
     { triage_post_done:
         Graham Whitfield: Both checks done now. That's grand, thanks for taking the time with them.
     - else:
-        Graham Whitfield: Back again. Ten fresh ones waiting on the kiosk, same sort of thing. Do them as you would, and if you sat the first check you'll get the two side by side at the end.
+        Graham Whitfield: Back again. Ten fresh ones on the kiosk, same sort of thing.
+        Graham Whitfield: Do them as you would. If you sat the first check, you'll get the two side by side at the end.
     }
 }
 + [Thanks.]

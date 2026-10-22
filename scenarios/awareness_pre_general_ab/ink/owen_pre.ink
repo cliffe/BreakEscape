@@ -21,7 +21,7 @@ VAR hub_quiet = false
     { triage_pre_done:
         Owen Treharne: First check's saved. You'll do another afterwards and see how the two line up.
     - else:
-        Owen Treharne: Owen here, Facilities, minding the check for our floor. Short one on the kiosk before the training: ten emails and pages from a Quayholt inbox. Just do what you'd normally do.
+        Owen Treharne: Owen here, Facilities. Short one on the kiosk before the training: ten emails and pages from a Quayholt inbox. Just do what you'd normally do.
     }
 }
 + [Thanks, Owen.]

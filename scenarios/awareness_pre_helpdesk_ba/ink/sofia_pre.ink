@@ -21,7 +21,7 @@ VAR hub_quiet = false
     { triage_pre_done:
         Sofia Marchetti: First check saved. There's a matching one after the training, and you'll see how they compare.
     - else:
-        Sofia Marchetti: Hiya, I'm Sofia from HR, running this one. There's a short check on the kiosk first: ten items from the service desk queue. Just handle them the way you usually would.
+        Sofia Marchetti: Hiya, I'm Sofia from HR. There's a short check on the kiosk first: ten items from the service desk queue. Just handle them the way you usually would.
     }
 }
 + [Thanks, Sofia.]

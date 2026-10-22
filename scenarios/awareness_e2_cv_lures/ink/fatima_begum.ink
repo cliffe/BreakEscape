@@ -21,7 +21,8 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e2_cv_lures_defend_done:
-        Fatima Begum: Inbox and all, that's the pair of them done. A real CV opens straight in the viewer, so once something wants more than that from you, it has earned a second look.
+        Fatima Begum: Inbox and all, that's the pair of them done.
+        Fatima Begum: A real CV opens straight in the viewer, so anything that wants more than that from you has earned a second look.
     - else:
         { phish_recruiter_contact_attempts > 0:
             Fatima Begum: Your application has gone to the recruitment inbox. Now take the other seat at the kiosk and sort the inbox the way it would land on a normal day.

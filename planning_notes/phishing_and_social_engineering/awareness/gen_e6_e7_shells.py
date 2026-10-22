@@ -218,7 +218,7 @@ LINES = {
 # stage) its own, so the before and after welcomes read as two different people.
 CHECK_LINES = {
     ('lerato_dlamini', 'pre'): (
-        "Morning. Before the training there's a short check on the kiosk: ten texts, notices and emails from a Tarrowby work phone. Treat them the way you would on a normal shift.",
+        "Morning. Before the training, a short check on the kiosk: ten texts, notices and emails from a Tarrowby work phone. Treat them like a normal shift.",
         "Good, that's your before check logged. We'll run the same kind of check after the training and line the two up.",
         'Thanks.', 'Any time.'),
     ('lerato_dlamini', 'post'): (
