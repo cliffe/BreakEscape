@@ -1,3 +1,7 @@
+# Resume note: backlog batch (started 2026-10-22)
+
+Brief `docs/agents/BACKLOG_BATCH_BRIEF.md`. Done 2026-10-22: commits 5a8bf225 (engine), c98b7e55 (m06 tracer board), cf16ef61 (m02 Gary occlusion off); 13 backlog entries removed. Open follow-ups are in `docs/IDEAS_BACKLOG.md` under "Follow-ups from the backlog batch" (owed browser checks for route-around and combat, Node 20 for the harness, m06 blind run, Gary's mapping).
+
 # Resume note: social-engineering build (started 2026-10-21)
 
 Brief `docs/agents/SE_BUILD_BRIEF.md`; plan and log `planning_notes/phishing_and_social_engineering/IMPLEMENTATION_PLAN.md`, `SE_BUILD_LOG.md` (its "Resume" section holds the current status).

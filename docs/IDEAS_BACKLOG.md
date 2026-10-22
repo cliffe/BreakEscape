@@ -10,11 +10,9 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 - **Recovery console: the Close button overlaps the banner at 1280x800** (dash check; S).
 - **Toasts shouldn't cover minigame overlays or the person-chat speaker name** (m04 and m02 playtests; S). HaX toasts sat over the reader overlay's hint and over the speaker caption in person-chat.
 - **Fingerprint: Hide reference-card names until a match** (m04 review; S). At medium difficulty and up, the dusting compare step would be a real identification.
-- **Show the EM4100 vs MIFARE difference in the cloner** (m08 fixer; S). Make it visible that EM4100 has no crypto and clones instantly, while MIFARE needs a key attack.
 - **Dusting and "Search Room" for carried items** (m08 fixer; S–M). A clean way to dust something in the inventory.
 
 - **Use the dusting minigame's approach on the other minigames** (orchestrator, 2026-10-02; S each to review, M–L to rebuild). The redesigned fingerprint minigame goes through clear stages (find, powder, dust, lift, compare), each teaching one forensic idea, with pixel-art tools and generous scoring. The user liked it more than the old one. Review the lockpicking, RFID cloning and PIN minigames against the same test: does each step teach something, is it fun rather than fiddly, and does it look like the real thing?
-- **Blockchain explorer as a tracing board** (m06 fixer; M). The unused shared `blockchain-explorer` minigame (only in `scenarios/test-blockchain-explorer`) could get a "match across the mixer" mode and become m06's follow-the-money board, instead of reading log files.
 - **Keypad-residue dusting** (m06 fixer; S–M). Dust a keypad for worn keys to narrow a PIN: a natural, educational second use of the fingerprint kit (e.g. Satoshi's safe).
 - **Pixel-art surfaces for dusting** (fingerprint art pass; S). Mugs, glass and desk surfaces are still drawn procedurally. The PixelLab backing card looked worse than the procedural one, so try surfaces one at a time and keep whichever looks better.
 
@@ -25,19 +23,15 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **Door PINs reach the client at startup** (S). `filtered_scenario_for_bootstrap` in `game.rb` keeps rooms' `requires`, so a player can read door PINs from the startup data.
 - **`window.startPinMinigame` name clash** (S). `minigames/index.js:202` overrides the starter from `minigame-starters.js:915` with the demo helper. The game imports the starter directly, so only callers of the global are affected.
 - **Unrouted `api/games_controller.rb#unlock`** (S). Dead code with its own unlock logic; remove it or route it.
-- **Cancelling the PIN pad shows "PIN Rejected"** (S). Cancel should close quietly.
 
 - **Remove the unused `systems/npc-health-bar.js`** (UI themes work, 2026-10-17; S). Nothing imports it; the game's NPC health bars are `ui/npc-health-bars.js` (`core/game.js:23`). Delete it, or fold anything useful from it into the live module.
 - **A "VM launched" event** (m05 fixer; S). Tasks like "Get into the research portal" could complete on real use instead of on flag 1.
 - **`object_unlock_failed` event** (m06 re-review; S). The engine emits nothing when a PIN or password is wrong, so a handler can't react to repeated wrong guesses.
-- **Combat tuning for missions** (m04 playtest; S–M). A heal item or slow regen missions can place; a room leash so a chasing NPC gives up at her own door; pass `maxHP` and `attackCooldown` through from a scenario's hostile config (`parseConfig` drops them today). Fights in sequence are currently hard to survive.
 - **Ink visit counts don't survive a reload** (m02 pre-commit check; S–M). After a reload, knot visit counts, `TURNS()` and the story position are lost. Ink-local VARs ARE restored: the engine saves `npcInkVariables` after each choice (since 18237332, confirmed in the browser in m06 game 2304, 2026-10-13). Openers keyed on visit counts replay; key them on a VAR or a synced global instead.
 - **Standing NPCs can be pushed and don't return** (m05 pre-commit check; S). The player's path pushed Halloran 35–60 px off her spot and she stayed there; standing NPCs should be immovable or walk back.
 - **Non-combatant NPCs** (m02 fixer; S). A `nonCombatant` flag so bed-bound patients and similar can't be punched.
 - **Console source tiles hidden until available** (m02 fixer; S). The Ghost tile shows greyed before the offer.
-- **Auto-advance paced by line length when there's no audio** (m08 dialogue playtest; S). Without TTS every line holds ~5 s whatever its length; short replies drag in long hubs. With audio, pacing follows the speech.
 - **Planted devices speak their lines aloud** (user, 2026-10-10; S–M). A planted network device such as Ghost's phone could play its dialogue through TTS like an NPC, with a click on the line to skip it.
-- **"Prefer to route around" objects** (user, 2026-10-10; M). A per-object setting (e.g. a vending machine) so click-to-walk pathfinding tries a path around the object first, and only walks through it when there's no clean path; WASD movement stays unchanged.
 - **Unlock player avatars from completed missions** (user, 2026-10-10; M). A character becomes available as a player avatar once the player has met them in a mission they've completed.
 - **Progress in gated objectives** (m08 fixer; S). Tasks like "Interview the suspects" could show "Seen: Cipher, Phantom".
 - **Open person-chats hear global changes** (m08 fixer; M). Today a conversation that's open doesn't see a global change until the minigame returns.
@@ -46,18 +40,13 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **Phone timestamps survive a reload** (m03 dialogue playtest; S). After a reload every message in a thread is re-stamped with the reload minute.
 - **Resume in the room you left** (engine fixer; M). Reload always respawns at `startRoom`; see P10 in the pass-4 log.
   - Also on a KO (m06 struggling run A, 2026-10-13): a knocked-out player respawns in reception, five rooms from the fight, with the hostile NPC still hostile.
-- **Player HP never recovers** (m07 blind run A, 2026-10-14; S–M). Only a KO resets HP, so a player who wins one fight at low HP walks into the next one nearly dead (24 HP for 8 minutes, then lost the next fight). Slow regeneration out of combat, or a heal on room change.
 - **One-line object captions cut off** (m07 blind run A; S). Long observation text in the bottom caption is truncated at 1400x1000 ("Somebody has already…"), hiding clue text such as a rating-plate serial. Wrap to two lines or open a dialog when the text overflows.
 - **Phone-chat number keys stop at 5** (m07 dialogue browser check, 2026-10-14; S). `phone-chat-minigame.js` `handleKeyPress` maps keys 1–5 only, but hubs show up to 9 choices, so choices 6–9 (often "Where do I stand?") can only be clicked. Map 1–9. Also (m07 fix-check N3, 2026-10-14): the choice pane scrolls (scrollHeight 342, clientHeight 224 with six choices) and shows no scroll cue, so choices 5–6 ("Where do I stand?", "I'll call you back.") sit out of sight; add a cue (fade, arrow or scrollbar) or keep the exit choice visible.
 - **A hit closes the phone** (m05/m07 browser checks, 2026-10-14; S–M). `player-damage-interrupt.js` closes any open minigame on damage, so a player being chased can't read HaX's fight-controls texts or use a phone way out (m05 "Send Security"). Pause NPC attacks while the phone is open, or don't close the phone on damage. **Done 2026-10-17 (a73b1175):** the phone stays open on a hit and attacks carry on (no free shield); a KO closes it.
 - **Punch cone misses with single-arrow facing** (m07 puzzle browser check, 2026-10-14; S). The ±30° punch cone means attackers standing ~45° off a cardinal facing are mostly missed unless the player holds two arrow keys (1 of ~25 vs 11 of 11). Widen the cone, auto-face the nearest hostile on a punch, or show a cue.
-- **RFID reader opens the cloner with nothing to emulate** (m07 puzzle fixer, 2026-10-14; S). The reader starts the flipper minigame even when the player holds no saved card; say so instead.
-- **`chaseRange` is never read** (m07 puzzle fixer; S). Hostile NPCs chase across rooms with no leash (see also m06 D8).
 - **All-optional aims complete on their first task** (m07 fixer, 2026-10-14; S). `objectives-manager.js:847`: an aim whose tasks are all optional is marked complete as soon as one task is, so it folds early. Complete it only when every task is settled. m07 works round it by making the tasks required.
 - **Wall paintings float outside rooms in shared maps** (m07 regression; S). Seen outside m07's scada_control and checkpoint east wall; the maps are shared by m04, m07, m08 and sis02.
-- **Hidden NPCs still draw their vision cone** (m06 fix check, 2026-10-13; S). After Kemal walks out (`minder_walked`, sprite hidden) his cone and range circle stay drawn in the wing, before and after a reload.
 - **Fists mode swallows click-to-move** (m06 fix check; S). In fists mode a click throws a punch instead of walking until the player presses Q again; say so on screen or let a click on open floor still move.
-- **RFID clone shows "Emulating..." with no message** (m06 struggling run A; S). When an emulation fails or does nothing, the flipper minigame should say why.
 - **Timers survive a reload** (m07 fixer; S). A started timer restarts from zero after a reload.
 - **Re-readable cutscene transcripts on the phone** (m07 fixer; M). Players could reread a briefing instead of relying on paper summaries like m07's Threat Desk Summary.
 - **Guard line-of-sight hooks** (m07 fixer; M). Some missions draw decorative LOS cones that mean nothing; a general "player spotted" event would let any guard react.
@@ -71,12 +60,10 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 
 - **Scenario timers and closed tabs** (m04 puzzle review, 2026-10-13; S). Timers run on wall-clock time while the tab is open, but resume from their saved running time after a reload, so closing the tab pauses a clock (m04's early-alarm clock) while VM work goes on elsewhere. Decide whether a mission clock should keep running server-side.
 
-- **Line of sight blocked by walls and tall props** (m04 room dressing, 2026-10-13; M–L). NPC sight cones (`npc-los.js` isInLineOfSight) check only range and angle. Neither walls nor tall props (battery racks, cabinets) block an NPC's view, so racks give no stealth cover and guards can see through walls. Add occlusion (wall tiles and props flagged as sight-blocking), then rebalance every mission with sight cones (m03 Terry, m04 guard/Cipher/Static, others) with browser checks.
 
 - **Engine minors from the m06 regression (2026-10-13; S each):**
   - **Hostile NPC HP after a reload:** it isn't saved. Dani went from 30 to 100 HP and was still hostile.
   - **Objectives panel:** with several aims open it clips the later tasks and shows no scrollbar. It also covers the left of the room.
-  - **Guard sight cone:** it keeps drawing across other rooms after he has waved the player through.
   - **Hearts row:** it overlaps the inventory bar.
 - **HaX's headshot avatar** (art, 2026-10-13; S). The phone and toast avatar `agent_hax_headshot.png` still shows her old look, because it's cut from the walk sprite. Her bust was glowed up (option A). Make a headshot from the new bust, or redo her walk sprite to match.
 
@@ -85,6 +72,13 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **Save visit counts with the game** (m06 scenario review, 2026-10-13; S–M). Ink-local VARs already survive a reload (`npcInkVariables`, confirmed in m06 game 2304). Visit counts, `TURNS()` and story position don't, so an opener keyed on `knot > 1` replays. Saving visit counts would fix that class in every mission.
 
 - **KO item drops land on top of each other** (m06 dressing, 2026-10-13; S). Items dropped by a knocked-out NPC land about 8 px apart, so picking one up opens a pick-one menu. Spread drops at least 32 px.
+
+- **Follow-ups from the backlog batch (2026-10-22):**
+  - **Browser checks still owed** (S). "Prefer to route around" (game 3110, lab_tesseract_trials common room: off, on, boxed in; plus a chair-heavy office) and combat healing (game 3108, m04: drink the operations_office cup, regen after a hit, a chaser turning back at its door). The permission classifier blocked both agents' harness runs. The RFID cracked-MIFARE screen's button fix (compact data box) also needs one look.
+  - **Playtest harness needs Node 20** (S). Playwright 1.64.1 refuses Node 18.19.1, the machine's Node. Install Node 20+ or pin an older Playwright.
+  - **m06 blind run of the settlement tracer** (S). The board replaced a deduction step; nothing in HaX's dialogue points to it yet, only the transaction server's look-at text.
+  - **m02: Gary's catch fires for the IT door pick** (S). His `lockpick_used_in_view` mapping has no target condition, so picking the IT door from the staff room plays his "That's my filing cabinet" line (he now has `los.occlusion: false` so the cabinet catch always fires). Condition the mapping on the cabinet.
+  - **Sight-blocking prop list** (S). Fig plants, x-ray scanners, the DVR stack and `brochure_rack` don't block sight; flag any with `blocksSight: true` where a mission wants cover.
 
 ## Story and missions
 
