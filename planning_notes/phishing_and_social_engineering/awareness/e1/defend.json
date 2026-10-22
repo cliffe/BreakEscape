@@ -3,6 +3,7 @@
   "triageSets": [
     {
       "id": "e1_payments_inbox",
+      "playerSentAuth": { "accounts": { "analyst": { "spf": "pass", "dkim": "fail", "dmarc": "fail", "envelopeFrom": "bounce.brightwellfoods.example", "replyTo": "{account_address}" } } },
       "_prefix": "Prefix for the full episode (id e1_invoice_fraud). The defend-only shell (id e1_invoice_fraud_defend) sets episode_e1_invoice_fraud_defend_defend_ instead. No stage on purpose: the effective stage is 'mission', and an explicit training or mission stage with passPercent 0 draws a validator warning.",
       "title": "Brightwell payments inbox",
       "brief": "You're covering Brightwell's payments inbox before the three o'clock payment run. Five messages are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. Reporting a real message never costs you anything.",

@@ -209,3 +209,9 @@ The full list is under `_brandAdditions` in `awareness/e6/defend.json`.
 - **Look-alikes:** `tarrowby-parking`, `-charging` and `-wifi`.
 - **Third parties:** Parceline, FuelWise, Telvoro, PCN Services, `shrtn.example`, ShiftPlanner and PaySuite.
 - **Pre-ship check:** Tarrowby, Parceline, FuelWise, Telvoro, ShiftPlanner and PaySuite still need the real-business web search.
+
+## Additions from E6 attack (2026-10-22)
+- **Tarrowby cast:** Kaylee Dunford, warehouse operative, early 20s, white British, Bradford: the E6 target.
+- **The spoofed sender:** Dev Acharya, Facilities Coordinator, 40s, British Indian.
+- **Name clash:** E6's defend side also has Dev Mistry, and the lab has Dev at the Ledgerwell service desk. Rename one of the two Tarrowby Devs when the E6 shells are built.
+- **Pre-ship check:** "Acharya", "Dunford" and "YardPass" still need the real-business web search.
