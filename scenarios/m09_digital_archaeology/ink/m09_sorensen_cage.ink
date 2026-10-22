@@ -20,6 +20,9 @@ VAR ledger_read_heard = false
 VAR cage_met = false
 VAR cage_asked_wren = false
 VAR hub_quiet = false
+// Full-route playtest #7: closes the stamp line at once (the #set_global of
+// sorensen_fate reaches the story too late for the next menu).
+VAR talked_down = false
 
 === start ===
 {cage_met or sorensen_fate != "left": -> hub}
@@ -40,21 +43,22 @@ Margaret Sorensen: Paper was the only thing that could ever have hurt them. So t
 === hub ===
 // Re-entry tracks sorensen_fate. Once talked, she has no more speech.
 {not hub_quiet:
-    {sorensen_fate == "talked":
+    {sorensen_fate == "talked" or talked_down:
         Narrator: She's writing in pencil, box by box. She doesn't look up.
     - else:
         Margaret Sorensen: {&Another box.|Keep your sleeves away from the feed.|You're standing in my light.}
     }
 }
 ~ hub_quiet = false
-+ {sorensen_fate == "left"} [It's over. Put the stamp down.]
++ {sorensen_fate == "left" and not talked_down} [It's over. Put the stamp down.]
     Narrator: She doesn't look up.
     Margaret Sorensen: When I've finished, dear. You'll want the list to be complete.
     -> back
 // The lever (MC §4.3): her own pencilled query says the plan chest wasn't
 // on the schedule. Shown only with Nightshade's file in hand. "Your
 // Architect" so "he" can't be read as Nightshade (script edit B-12).
-+ {nightshade_file_held and sorensen_fate == "left"} [Your Architect kept his own papers off your list. Only yours burn.]
++ {nightshade_file_held and sorensen_fate == "left" and not talked_down} [Your Architect kept his own papers off your list. Only yours burn.]
+    ~ talked_down = true
     Narrator: She reads the label on the file in your hand, and sets the stamp down.
     #set_global:sorensen_fate:talked
     Margaret Sorensen: Then I'll keep what's left. Give me a pencil. I'll write down what I've destroyed, accurately.
@@ -62,12 +66,12 @@ Margaret Sorensen: Paper was the only thing that could ever have hurt them. So t
     // the line stops the feeding, not the noise.
     Narrator: She takes her hand off the feed. The shredder runs on, empty.
     -> back
-+ {ledger_read_heard and sorensen_fate == "left" and not cage_asked_wren} [Who's WREN?]
++ {ledger_read_heard and sorensen_fate == "left" and not talked_down and not cage_asked_wren} [Who's WREN?]
     ~ cage_asked_wren = true
     Margaret Sorensen: I keep records. I don't read them aloud.
     -> back
 + [I'm done here.]
-    {sorensen_fate == "talked":
+    {sorensen_fate == "talked" or talked_down:
         Narrator: She keeps writing.
     - else:
         // Playtest R1 B-m1: was "The gate sticks."

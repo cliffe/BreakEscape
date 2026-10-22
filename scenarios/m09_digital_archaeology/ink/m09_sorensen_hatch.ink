@@ -33,6 +33,9 @@ VAR stacks_card_cloned = false
 {hatch_met: -> hub}
 ~ hatch_met = true
 #set_global:hatch_talked:true
+// Full-route playtest #15: the auditor is her guess, made before the player
+// speaks; a narrator beat says so.
+Narrator: She looks up before you can say who you are.
 Margaret Sorensen: The lease-holder's auditor. Of course. There's a chair on your side.
 Narrator: She stamps a box DESTROYED and slides it back toward the noise.
 + [That's right. They want tonight's run checked against the schedule.]

@@ -333,6 +333,17 @@ hax_maps << text_map("global_variable_changed:reeves_sheet_read", "value === tru
                      "Reeves' handler, from the hospital. Told to stand down the day we took Reeves.")
 hax_maps << text_map("global_variable_changed:asset_tag_read", "value === true && !globalVars.flag3_submitted",
                      "Strategy Directorate. One of ours signed this out and never handed it back. Find out who.")
+# Full-route playtest #9: the last page bets the player saves Lawson's file;
+# the page is written before the night, so HaX reads the bet against cage_bin.
+%w[letters nightshade_copy].each do |bin|
+  hax_maps << text_map("global_variable_changed:reading_finished", "value === true && globalVars.cage_bin === '#{bin}'",
+                       "He bet you'd save Derek's file. You didn't. First thing he's got wrong tonight.")
+end
+hax_maps << text_map("global_variable_changed:reading_finished", "value === true && globalVars.cage_bin === 'derek_file'",
+                     "He bet on Derek's file. He was right. Don't let it bother you.")
+# Full-route playtest #13: the optional cross-reference gets a pointer when it unlocks.
+hax_maps << text_map("global_variable_changed:ledger_read_heard", "value === true && !globalVars.sleeper_shortlist && !globalVars.sleeper_named",
+                     "Harwick & Lowe's boxes are in the open stacks, by their bay label. The lid takes that file number.", delay: 6000)
 hax_maps << text_map("global_variable_changed:case_file_read", "value === true && globalVars.m06_monitoring_enabled",
                      "Your tags, from HashChain. Someone's paying rent on a building in Montana that isn't this one.")
 
@@ -1611,7 +1622,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "fingerprintOwner": "Margaret Sorensen",
           "fingerprintCandidates": ["Noor Haddad", "Jesse Tran", "Cody Old Coyote"],
           "fingerprintDifficulty": "medium",
-          "fingerprintSurface": "glossy_dark",
+          <%# Full-route playtest #16: a stamp's grained handle, not black glass (dusting-model.js surfaces); the magnetic wand lifts it. %>
+          "fingerprintSurface": "textured",
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": ["plan_cabinet"]
         }
@@ -1806,7 +1818,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "takeable": true,
               "readable": true,
               "text": "SAFETYNET -- INTAKE 2011 -- CANDIDATE ASSESSMENT\nCandidate: 0x47, provisional. Age: 23.\nAssessor's notes: Seen 7 November. Again on the 17th. Idealistic, tired already. Will wait if asked properly.\nAsk properly.\nNo payment. Belief is the payment.\nAssessor: initialled, not signed.",
-              "observations": "A SAFETYNET training form, fifteen years old. The assessor's notes are in a sloping hand you have seen tonight. The g in 'Again' loops back on itself. Both sevens are crossed.",
+              "observations": "A SAFETYNET training form, fifteen years old. The assessor's notes are in a sloping hand. The g in 'Again' loops back on itself. Both sevens are crossed.",
+              "_comment": "Full-route playtest #8: 'a hand you have seen tonight' only once the notebook scan has been read.",
+              "observationVariants": [ { "condition": "globalVars.notebook_read", "value": "A SAFETYNET training form, fifteen years old. The assessor's notes are in a sloping hand you have seen tonight. The g in 'Again' loops back on itself. Both sevens are crossed." } ],
               "onPickup": { "setVariable": { "nightshade_file_held": true } },
               "puzzle_graph_role": "evidence"
             }
@@ -2127,8 +2141,11 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "name": "Shelf Marks",
           "position": "as-type:m09_shelf_legend",
           "takeable": false,
-          "observationDisplay": "gameDisplay",
-          "observations": "MOUNTAIN STATES RECORDS & RETENTION -- SHELF MARKS\nBay 1 ....... Reading room ..... COTTONWOOD\nBays 2 to 9 . Open stacks ...... MERIDIAN\nBay 10 ...... Restricted ....... WATCHTOWER\nBay 11 ...... Tape store ....... STANDBY\nBay 12 ...... Salvage .......... BONEYARD\nHouse rule: cage and keypad codes use the bay word. Never write a code down. M.S.",
+          <%# Full-route playtest #11: a readable shown in place, so the viewer shows the chart, not 'Observations:' run into it. %>
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "observations": "A framed chart of the archive's shelf marks, beside the salvage keypad.",
+          "text": "MOUNTAIN STATES RECORDS & RETENTION -- SHELF MARKS\nBay 1 ....... Reading room ..... COTTONWOOD\nBays 2 to 9 . Open stacks ...... MERIDIAN\nBay 10 ...... Restricted ....... WATCHTOWER\nBay 11 ...... Tape store ....... STANDBY\nBay 12 ...... Salvage .......... BONEYARD\nHouse rule: cage and keypad codes use the bay word. Never write a code down. M.S.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": ["salvage_cage"],
           "puzzle_graph_and_with": "Catalogue: salvage cage",
@@ -2300,7 +2317,12 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "name": "Enrolment Binder, Tomb Beta",
               "takeable": true,
               "readable": true,
-              "observations": "A ring binder of enrolment sheets, pencilled in a hand you have seen twice tonight.",
+              "observations": "A ring binder of enrolment sheets, pencilled in a sloping hand.",
+              "observationVariants": [
+                { "condition": "globalVars.notebook_read && globalVars.nightshade_file_held", "value": "A ring binder of enrolment sheets, pencilled in a hand you have seen twice tonight." },
+                { "condition": "globalVars.notebook_read", "value": "A ring binder of enrolment sheets, pencilled in a hand you have seen tonight." },
+                { "condition": "globalVars.nightshade_file_held", "value": "A ring binder of enrolment sheets, pencilled in a hand you have seen tonight." }
+              ],
               "text": "TOMB BETA -- WORKSHOP ENROLMENT, SPRING INTAKE\nTwelve names, a photograph clipped to each.\nPencilled beside most of them: Ready. Not yet. Ask properly."
             }
           ]
