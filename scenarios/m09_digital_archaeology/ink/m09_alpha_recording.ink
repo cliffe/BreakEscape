@@ -21,8 +21,9 @@ VAR alpha_clip_played = false
     Agent HaX: I know whose voice that is. After.
 - else:
     Dr Adrian Tesseract (recording): The best lock there is opens for the right name. Nobody fights a door that's expecting them.
-    Dr Adrian Tesseract (recording): And build your own way out first. Always. Then let them build their way in.
+    // Puzzle chains R8 n2: the credit rides his second line, so an Esc before HaX's reply keeps it.
     #set_global:alpha_clip_played:true
+    Dr Adrian Tesseract (recording): And build your own way out first. Always. Then let them build their way in.
     Agent HaX: Tape two. He gave that lecture every year.
 }
 #exit_conversation

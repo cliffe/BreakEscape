@@ -17,6 +17,7 @@ VAR ledger_page_seen = false
 // Ink-local.
 VAR noor_met = false   // Synced scenario global (the debrief reads it; playtest R1 C-m-6)
 VAR noor_opened = false   // Puzzle chains R7 m2: opening heard (noor_met stays early: the debrief reads it)
+VAR noor_card_given = false   // Puzzle chains R8 m2: the card's #give_item runs once, even if the opening replays
 VAR noor_cover = ""          // "contractor" / "auditor" / "safetynet" (not-warned form only)
 VAR noor_tell_signposted = false
 VAR noor_list_checked = false
@@ -29,16 +30,21 @@ VAR staff_card_cloned = false
 === start ===
 // A reopen lands on hub; this guard covers a page reload (ink vars survive).
 // Puzzle chains R7 m2: guarded on noor_opened, set once the opening (or the cover)
-// has been heard, so a reload mid-opening replays it. A replayed #give_item is
-// harmless: the bridge reports the card already held or no longer in her itemsHeld.
+// has been heard, so a reload mid-opening replays it. The card is guarded by
+// noor_card_given (R8 m2): a replayed #give_item would show a "no items to give" toast.
 {noor_opened: -> hub}
 ~ noor_met = true
 {
 - m05_found_pipeline_list and not m05_recruiter_deal_accepted:
     // Warned in time: she knows what the player is. No tell choice later.
     #complete_task:meet_the_clerk
-    #give_item:keycard:noor_staff_card
-    Noor Haddad: You're the one they said would come. Here, my card. The staff door's around the side.
+    {noor_card_given:
+        Noor Haddad: You're the one they said would come. Here, my card. The staff door's around the side.
+    - else:
+        ~ noor_card_given = true
+        #give_item:keycard:noor_staff_card
+        Noor Haddad: You're the one they said would come. Here, my card. The staff door's around the side.
+    }
     Noor Haddad: Peg's been in the cage since before I got here. She never feeds the shredder herself, and tonight she's sent me home twice.
     Noor Haddad: I didn't send the last one. It's under the desk.
     ~ noor_opened = true
