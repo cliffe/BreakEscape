@@ -190,3 +190,10 @@ Gallagher and Farah are not used, because they clash with existing scenarios.
   - The Quayholt IT Service Desk, `it-servicedesk@quayholt.example`: the sender the attacker spoofs.
 - **Decoy brand:** DocShare, `docshare.example`. Look-alikes `docshare-login.example`, `docshore.example` and `d0cshare.example`.
 - **Pre-ship check:** "Quayholt", "DocShare" and "Novak" still need the real-business web-search check.
+
+## Additions from E1 shells and E3 defend (P7-J and P7-S, 2026-10-22)
+- **Check-mission hosts (P7-J):**
+  - Graham Whitfield, early 60s, white British, Halifax.
+  - Farah Qureshi, early 30s, British Pakistani, Leicester.
+- **E3 (P7-S), Quayholt:** Chen Jiayi, Helen Achterberg and Patrick Kerrigan. The full list is under `_brandAdditions` in `awareness/e3/defend.json`.
+- **E3 alias:** "Josh Henley", the impostor caller.
