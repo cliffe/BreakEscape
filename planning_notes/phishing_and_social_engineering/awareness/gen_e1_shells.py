@@ -155,6 +155,9 @@ def defend_only():
     prefix = f'episode_{ep_id}_defend_'
     done = f'{prefix}done'
     s = clean_set('e1_payments_inbox')
+    # C2-m23: the defend-only shell has no write/flip stage, so it never replays a
+    # player-sent message; drop the authored sender profile the full set carries.
+    s.pop('playerSentAuth', None)
     s['outcome']['setGlobalPrefix'] = prefix
     strings = copy.deepcopy(EP['strings'])
     strings['brief'] = EP['_defendOnly']['brief']

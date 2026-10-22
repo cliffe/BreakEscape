@@ -62,7 +62,7 @@
       {
         "id": "finance_form_a",
         "title": "Payments inbox check",
-        "brief": "Ten messages from a Brightwell Foods payments inbox. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+        "brief": "Ten messages from a Brightwell Foods payments inbox. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
         "stage": "pre",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
@@ -114,7 +114,7 @@
             },
             "to": "payments@brightwellfoods.example",
             "subject": "Invoice POM-5498 for PO-4302",
-            "time": "08:50",
+            "time": "08:32",
             "body": "Hello,\nPlease find attached invoice POM-5498 for the oat flour delivered on 14 October against your PO-4302.\nPayment terms as agreed. Any questions, call us on the number on your supplier record.\nPennine Oat Mills",
             "attachments": [
               {
@@ -123,20 +123,19 @@
               }
             ],
             "auth": {
-              "spf": "fail",
+              "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "billing-relay.pennineoatmills.example",
+              "envelopeFrom": "pennineoatmills.example",
               "replyTo": "invoices@pennineoatmills.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "It came in through Pennine's billing service rather than their main mail server, which is why one automatic sender check didn't line up, but the message still proves it came from pennineoatmills.example, their real domain.",
-                "default": "Pennine's real domain, a purchase order Brightwell raised, and no change to how you pay them."
-              },
-              "headerNote": "One check not lining up, on its own, is a clue rather than proof. Billing services and forwarded mail often trip it even when the message is genuine."
+                "attachmentPlausible": "An invoice PDF against a purchase order you raised is exactly what a supplier sends.",
+                "default": "Pennine's real address at pennineoatmills.example, a purchase order Brightwell raised, and no change to how you pay them."
+              }
             }
           },
           {
@@ -147,7 +146,7 @@
             },
             "to": "payments@brightwellfoods.example",
             "subject": "Change of bank account from 1 November",
-            "time": "08:32",
+            "time": "08:50",
             "body": "Dear Accounts Payable,\nFrom 1 November our bank account has changed. Please update your records and make all future payments, including invoice POM-5512, to the account below.\nAccount name: Pennine Oat Mills Ltd\nAccount number ending 3048\nKind regards,\nBryony Thwaite\nCredit Control",
             "auth": {
               "spf": "pass",
@@ -243,32 +242,32 @@
             "id": "fa_remittance_spoof",
             "from": {
               "name": "Tom Reilly",
-              "address": "tom.reilly@brightwellfoods.example"
+              "address": "tom.reilly@brightwellfood.example"
             },
             "to": "payments@brightwellfoods.example",
             "subject": "Remittance copies for last week's run",
             "time": "10:05",
             "body": "Hi,\nI'm working from home and can't get into the shared drive. Could you reply with the remittance advices from last Friday's supplier run? Just attach them to your reply.\nThanks,\nTom",
             "auth": {
-              "spf": "fail",
-              "dkim": "none",
-              "dmarc": "fail",
-              "envelopeFrom": "mailer.inboxly.example",
-              "replyTo": "t.reilly.work@inboxly.example"
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.brightwellfood.example",
+              "replyTo": "tom.reilly@brightwellfood.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderAuth",
-                "reply_to_differs"
+                "senderTrust",
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "senderAuth": "Brightwell's own mail system didn't send this, even though the From line shows a Brightwell address",
-                "reply_to_differs": "Replies go to t.reilly.work@inboxly.example, not to Tom's Brightwell address"
+                "senderTrust": "The name is Tom's, but the address isn't a Brightwell one: it's brightwellfood.example",
+                "lookalike_domain": "Brightwell's domain is brightwellfoods.example; this one drops the final s to brightwellfood.example"
               },
-              "headerNote": "Open the details: the From line shows Tom's real address, but the message didn't come from Brightwell's mail system, and a reply would go to a private inbox instead.",
+              "headerNote": "These checks pass because whoever owns brightwellfood.example really did send it. That proves the sending domain, not that it's Brightwell.",
               "ifTrusted": "Remittance advices list suppliers, amounts and bank details: everything needed to write a convincing bank-change email.",
-              "reportReply": "Thanks. Tom is in the office today and didn't send it."
+              "reportReply": "Thanks. That isn't a Brightwell address: brightwellfood.example drops the final s. Tom is in the office and didn't send it."
             }
           },
           {

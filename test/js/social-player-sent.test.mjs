@@ -206,3 +206,16 @@ test('buildTriageMessages keeps authored order, normalises, and lists skipped en
     assert.equal(messages[0].folder, 'inbox');
     assert.equal(messages[1].playerSent, true);
 });
+
+// ── C2-m1: the target's factorStrings ride along on the replayed message ────────
+test('resolvePlayerSent copies the target factorStrings onto the replay (forged-From sentence reaches the flip)', () => {
+    const fs = { senderTrust: { pass: 'A known contact', redFlag: 'The From line was forged: it shows Jed\'s real address but he did not send this.' } };
+    const withFs = { ...social, phishTargets: [{ id: 'lord', expectedLink: { realDomain: 'ledgerwell.example' }, factorStrings: fs }] };
+    const st = state(['guest', [sent({ id: 'only', tells: ['senderTrust'] })]]);
+    const out = resolvePlayerSent(entry(), set, st, withFs, { globals });
+    assert.ok(out.message, 'a message is replayed');
+    assert.deepEqual(out.message.factorStrings, fs);
+    // A target without factorStrings leaves the field off (harmless for the lab).
+    const outNone = resolvePlayerSent(entry(), set, st, social, { globals });
+    assert.equal(outNone.message.factorStrings, undefined);
+});

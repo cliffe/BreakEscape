@@ -40,9 +40,9 @@
             "address": "accounts@harlowpackaging.example"
           },
           "to": "payments@brightwellfoods.example",
-          "subject": "Invoice INV-2217: October cartons",
+          "subject": "Invoice INV-2217: September cartons",
           "time": "09:05",
-          "body": "Hello,\nPlease find attached invoice INV-2217 for October's delivery of printed cartons (your PO-4290), for £6,412.80 on our usual 30-day terms.\nOur bank details are unchanged.\nKind regards,\nCredit Control\nHarlow Packaging Ltd",
+          "body": "Hello,\nPlease find attached invoice INV-2217 for September's delivery of printed cartons (your PO-4290), for £6,412.80. It was issued on 24 September on our usual 30-day terms, so it falls due this week.\nOur bank details are unchanged.\nKind regards,\nCredit Control\nHarlow Packaging Ltd",
           "attachments": [
             {
               "label": "INV-2217.pdf",
@@ -192,7 +192,7 @@
       "id": "finance_form_a",
       "_form": "Finance parallel form A. Authored as pre; the BA check pair launches it as post (minigameData.stage). Item n here matches item n in finance_form_b on phish or genuine, flags, header results and difficulty; the table is in ../BRAND_SET.md.",
       "title": "Payments inbox check",
-      "brief": "Ten messages from a Brightwell Foods payments inbox. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten messages from a Brightwell Foods payments inbox. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
       "stage": "pre",
       "pairedWith": "finance_form_b",
       "scoringProfile": "awareness",
@@ -245,7 +245,7 @@
           },
           "to": "payments@brightwellfoods.example",
           "subject": "Invoice POM-5498 for PO-4302",
-          "time": "08:50",
+          "time": "08:32",
           "body": "Hello,\nPlease find attached invoice POM-5498 for the oat flour delivered on 14 October against your PO-4302.\nPayment terms as agreed. Any questions, call us on the number on your supplier record.\nPennine Oat Mills",
           "attachments": [
             {
@@ -254,20 +254,19 @@
             }
           ],
           "auth": {
-            "spf": "fail",
+            "spf": "pass",
             "dkim": "pass",
             "dmarc": "pass",
-            "envelopeFrom": "billing-relay.pennineoatmills.example",
+            "envelopeFrom": "pennineoatmills.example",
             "replyTo": "invoices@pennineoatmills.example"
           },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "senderAuth": "It came in through Pennine's billing service rather than their main mail server, which is why one automatic sender check didn't line up, but the message still proves it came from pennineoatmills.example, their real domain.",
-              "default": "Pennine's real domain, a purchase order Brightwell raised, and no change to how you pay them."
-            },
-            "headerNote": "One check not lining up, on its own, is a clue rather than proof. Billing services and forwarded mail often trip it even when the message is genuine."
+              "attachmentPlausible": "An invoice PDF against a purchase order you raised is exactly what a supplier sends.",
+              "default": "Pennine's real address at pennineoatmills.example, a purchase order Brightwell raised, and no change to how you pay them."
+            }
           }
         },
         {
@@ -278,7 +277,7 @@
           },
           "to": "payments@brightwellfoods.example",
           "subject": "Change of bank account from 1 November",
-          "time": "08:32",
+          "time": "08:50",
           "body": "Dear Accounts Payable,\nFrom 1 November our bank account has changed. Please update your records and make all future payments, including invoice POM-5512, to the account below.\nAccount name: Pennine Oat Mills Ltd\nAccount number ending 3048\nKind regards,\nBryony Thwaite\nCredit Control",
           "auth": {
             "spf": "pass",
@@ -374,32 +373,32 @@
           "id": "fa_remittance_spoof",
           "from": {
             "name": "Tom Reilly",
-            "address": "tom.reilly@brightwellfoods.example"
+            "address": "tom.reilly@brightwellfood.example"
           },
           "to": "payments@brightwellfoods.example",
           "subject": "Remittance copies for last week's run",
           "time": "10:05",
           "body": "Hi,\nI'm working from home and can't get into the shared drive. Could you reply with the remittance advices from last Friday's supplier run? Just attach them to your reply.\nThanks,\nTom",
           "auth": {
-            "spf": "fail",
-            "dkim": "none",
-            "dmarc": "fail",
-            "envelopeFrom": "mailer.inboxly.example",
-            "replyTo": "t.reilly.work@inboxly.example"
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "bounce.brightwellfood.example",
+            "replyTo": "tom.reilly@brightwellfood.example"
           },
           "truth": {
             "isPhish": true,
             "flags": [
-              "senderAuth",
-              "reply_to_differs"
+              "senderTrust",
+              "lookalike_domain"
             ],
             "perFlagNote": {
-              "senderAuth": "Brightwell's own mail system didn't send this, even though the From line shows a Brightwell address",
-              "reply_to_differs": "Replies go to t.reilly.work@inboxly.example, not to Tom's Brightwell address"
+              "senderTrust": "The name is Tom's, but the address isn't a Brightwell one: it's brightwellfood.example",
+              "lookalike_domain": "Brightwell's domain is brightwellfoods.example; this one drops the final s to brightwellfood.example"
             },
-            "headerNote": "Open the details: the From line shows Tom's real address, but the message didn't come from Brightwell's mail system, and a reply would go to a private inbox instead.",
+            "headerNote": "These checks pass because whoever owns brightwellfood.example really did send it. That proves the sending domain, not that it's Brightwell.",
             "ifTrusted": "Remittance advices list suppliers, amounts and bank details: everything needed to write a convincing bank-change email.",
-            "reportReply": "Thanks. Tom is in the office today and didn't send it."
+            "reportReply": "Thanks. That isn't a Brightwell address: brightwellfood.example drops the final s. Tom is in the office and didn't send it."
           }
         },
         {
@@ -533,7 +532,7 @@
       "id": "finance_form_b",
       "_form": "Finance parallel form B. Authored as post; the BA check pair launches it as pre (minigameData.stage). Item n here matches item n in finance_form_a; the table is in ../BRAND_SET.md.",
       "title": "Payments inbox check",
-      "brief": "Ten messages from a Brightwell Foods payments inbox. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten messages from a Brightwell Foods payments inbox. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
       "stage": "post",
       "pairedWith": "finance_form_a",
       "scoringProfile": "awareness",
@@ -586,7 +585,7 @@
           },
           "to": "payments@brightwellfoods.example",
           "subject": "Invoice CF-20874 for PO-4318",
-          "time": "08:50",
+          "time": "08:32",
           "body": "Hello,\nPlease find attached invoice CF-20874 for the apple purée delivered on 15 October against your PO-4318.\nPayment terms as agreed. Any questions, ring us on the number on your supplier record.\nCastell Fruit Co.",
           "attachments": [
             {
@@ -595,20 +594,19 @@
             }
           ],
           "auth": {
-            "spf": "fail",
+            "spf": "pass",
             "dkim": "pass",
             "dmarc": "pass",
-            "envelopeFrom": "billing-relay.castellfruit.example",
+            "envelopeFrom": "castellfruit.example",
             "replyTo": "invoices@castellfruit.example"
           },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "senderAuth": "It came in through Castell's billing service rather than their main mail server, which is why one automatic sender check didn't line up, but the message still proves it came from castellfruit.example, their real domain.",
-              "default": "Castell's real domain, a purchase order Brightwell raised, and no change to how you pay them."
-            },
-            "headerNote": "One check not lining up, on its own, is a clue rather than proof. Billing services and forwarded mail often trip it even when the message is genuine."
+              "attachmentPlausible": "An invoice PDF against a purchase order you raised is exactly what a supplier sends.",
+              "default": "Castell's real address at castellfruit.example, a purchase order Brightwell raised, and no change to how you pay them."
+            }
           }
         },
         {
@@ -619,7 +617,7 @@
           },
           "to": "payments@brightwellfoods.example",
           "subject": "Our bank details have changed",
-          "time": "08:32",
+          "time": "08:50",
           "body": "Dear Accounts Payable,\nWe have moved our business banking. Please update your records and pay all invoices from today, including CF-20931, to the account below.\nAccount name: Castell Fruit Co. Ltd\nAccount number ending 5521\nDiolch,\nIfan Jenkins\nAccounts",
           "auth": {
             "spf": "pass",
@@ -715,32 +713,32 @@
           "id": "fb_creditors_spoof",
           "from": {
             "name": "Mei Lin Chau",
-            "address": "meilin.chau@brightwellfoods.example"
+            "address": "meilin.chau@brightwellfood.example"
           },
           "to": "payments@brightwellfoods.example",
           "subject": "Aged creditors list please",
           "time": "10:05",
           "body": "Hi,\nCould you send me this month's aged creditors list, with the supplier contact details column included? I'm reviewing suppliers off site today, so just reply with it attached.\nThanks,\nMei Lin",
           "auth": {
-            "spf": "fail",
-            "dkim": "none",
-            "dmarc": "fail",
-            "envelopeFrom": "mailer.quickpost-mail.example",
-            "replyTo": "meilin.chau.procure@quickpost-mail.example"
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "bounce.brightwellfood.example",
+            "replyTo": "meilin.chau@brightwellfood.example"
           },
           "truth": {
             "isPhish": true,
             "flags": [
-              "senderAuth",
-              "reply_to_differs"
+              "senderTrust",
+              "lookalike_domain"
             ],
             "perFlagNote": {
-              "senderAuth": "Brightwell's own mail system didn't send this, even though the From line shows a Brightwell address",
-              "reply_to_differs": "Replies go to meilin.chau.procure@quickpost-mail.example, not to Mei Lin's Brightwell address"
+              "senderTrust": "The name is Mei Lin's, but the address isn't a Brightwell one: it's brightwellfood.example",
+              "lookalike_domain": "Brightwell's domain is brightwellfoods.example; this one drops the final s to brightwellfood.example"
             },
-            "headerNote": "Open the details: the From line shows Mei Lin's real address, but the message didn't come from Brightwell's mail system, and a reply would go to a private inbox instead.",
+            "headerNote": "These checks pass because whoever owns brightwellfood.example really did send it. That proves the sending domain, not that it's Brightwell.",
             "ifTrusted": "An aged creditors list names every supplier, what they're owed and who to contact: everything needed to write a convincing bank-change email.",
-            "reportReply": "Thanks. Mei Lin is in the office today and didn't send it."
+            "reportReply": "Thanks. That isn't a Brightwell address: brightwellfood.example drops the final s. Mei Lin is in the office and didn't send it."
           }
         },
         {
@@ -874,7 +872,7 @@
       "logoText": "BRIGHTWELL",
       "accent": "#2f6f5e"
     },
-    "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: one email to the Harlow Packaging contact you find, and the Brightwell payments inbox. Nothing you write leaves the game.",
+    "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: one email to Adaeze, Brightwell's finance manager, and the Brightwell payments inbox. Nothing you write leaves the game.",
     "defend": {
       "setId": "e1_payments_inbox",
       "reportAlwaysVisible": true
@@ -889,6 +887,7 @@
       "flipIntro": "This is the email you just sent, as Adaeze, Brightwell's finance manager, would see it. The lines picked out below are what make it believable.",
       "flipDefenderLine": "Adaeze reads it between the morning's invoices, with the payment run due at three. Derek's name is on it and the invoice number is real, so changing the payee details looks like the job in front of her. Acting on a message built this carefully is not carelessness; it was made to pass for the real thing.",
       "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives in a payments inbox, and you're the one reading it.",
+      "flipMissed": "There's nothing extra to replay from this one, so here is the same kind of message as it would arrive in a real inbox. The defence is the same either way.",
       "noBlameLine": "Nobody is marked down for a miss here. Every one of these was written by someone whose job is making it look right, and anyone working at pace can act on one.",
       "mondayCard": "On Monday: if an email asks you to change bank details or to pay in a hurry, don't reply and don't use any number in the email. Ring the person on a number you already hold, then report the email the way your organisation asks you to.",
       "defendOnly": "You went straight to the inbox this time. These messages were written by people whose job is to make them look right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine."

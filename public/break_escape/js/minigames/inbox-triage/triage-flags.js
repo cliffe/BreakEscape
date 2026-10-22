@@ -131,6 +131,12 @@ export function skillName(id) {
 
 export const MECHANISMS = Object.freeze(['spf', 'dkim', 'dmarc']);
 export const MECHANISM_LABEL = Object.freeze({ spf: 'SPF', dkim: 'DKIM', dmarc: 'DMARC' });
+// Plain labels for the awareness skin (11 §7: "no jargon, only 'this domain isn't theirs'").
+// The lab keeps the technical names above. Chosen with MECHANISM_LABEL_FOR(plain).
+export const MECHANISM_LABEL_PLAIN = Object.freeze({ spf: 'Sending server', dkim: 'Signature', dmarc: 'Domain check' });
+export const AUTH_TITLE = Object.freeze({ technical: 'Authentication-Results', plain: 'Did the domain really send this?' });
+/** The mechanism label map for the skin: plain words under awareness, SPF/DKIM/DMARC otherwise. */
+export function mechanismLabels(plain) { return plain ? MECHANISM_LABEL_PLAIN : MECHANISM_LABEL; }
 
 /** One-line meaning of each result. Pass lines are 05's own sample text. */
 export const RESULT_MEANING = Object.freeze({
@@ -150,6 +156,20 @@ export const RESULT_MEANING = Object.freeze({
         none: 'The From domain publishes no policy.'
     })
 });
+
+// The awareness skin's plain meaning lines (11 §7, "no jargon"). Only DMARC's default text
+// names SPF and DKIM, so only it is overridden; SPF and DKIM already read in plain words.
+export const RESULT_MEANING_PLAIN = Object.freeze({
+    dmarc: Object.freeze({
+        pass: "The From address you see lines up with who really sent it, so this domain's own check is met.",
+        fail: "The From address you see doesn't line up with who really sent it, so this domain's check is not met.",
+        none: 'The From domain sets no rule, so there is no verdict either way.'
+    })
+});
+/** The result-meaning map for the skin: plain DMARC wording under awareness, the sample text otherwise. */
+export function resultMeaning(plain) {
+    return plain ? { ...RESULT_MEANING, dmarc: RESULT_MEANING_PLAIN.dmarc } : RESULT_MEANING;
+}
 
 /** Three-line explainer per mechanism: what it checks, how to read a result, what it does not tell you. */
 export const EXPLAINERS = Object.freeze({

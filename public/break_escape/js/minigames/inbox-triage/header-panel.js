@@ -9,7 +9,7 @@
 // Every string goes in with textContent.
 
 import {
-    MECHANISMS, MECHANISM_LABEL, RESULT_MEANING, EXPLAINERS, RESULT_WORD, normaliseResult
+    MECHANISMS, EXPLAINERS, RESULT_WORD, normaliseResult, mechanismLabels, AUTH_TITLE, resultMeaning
 } from './triage-flags.js';
 
 const ICON = '/break_escape/assets/icons/';
@@ -33,8 +33,11 @@ function mark(result) {
  * @param {object} rec      the reader record (from, auth, forwardedBy)
  * @param {{glossaryOpen:boolean, explain:string|null}} view
  * @param {object} handlers { glossary: 'open'|'closed'|'off', onToggleGlossary(), onToggleExplain(mech) }
+ * @param {object} opts     { plain } — plain, non-jargon labels for the awareness skin (11 §7)
  */
-export function buildHeaderPanel(rec, view, handlers = {}) {
+export function buildHeaderPanel(rec, view, handlers = {}, opts = {}) {
+    const LABEL = mechanismLabels(opts.plain === true);
+    const MEANING = resultMeaning(opts.plain === true);
     const panel = el('div', 'tri-header-panel');
     panel.setAttribute('role', 'group');
     panel.setAttribute('aria-label', 'Message header details');
@@ -53,7 +56,7 @@ export function buildHeaderPanel(rec, view, handlers = {}) {
     if (auth.replyTo) add('Reply goes to', auth.replyTo);
     panel.appendChild(fields);
 
-    panel.appendChild(el('h3', 'tri-auth-title', 'Authentication-Results'));
+    panel.appendChild(el('h3', 'tri-auth-title', opts.plain === true ? AUTH_TITLE.plain : AUTH_TITLE.technical));
     const list = el('ul', 'tri-auth-list');
     for (const mech of MECHANISMS) {
         const result = normaliseResult(auth[mech]);
@@ -65,17 +68,17 @@ export function buildHeaderPanel(rec, view, handlers = {}) {
         const head = el('div', 'tri-auth-head');
         const lamp = el('span', `tri-lamp lamp-${result}`);
         lamp.appendChild(mark(result));
-        head.append(lamp, el('span', 'tri-auth-name', MECHANISM_LABEL[mech]),
+        head.append(lamp, el('span', 'tri-auth-name', LABEL[mech]),
             el('span', 'tri-auth-word', RESULT_WORD[result]));
         const btn = el('button', 'tri-explain-btn minigame-button', open ? 'Hide explanation' : 'Explain');
         btn.type = 'button';
         btn.dataset.explain = mech;
         btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-        btn.setAttribute('aria-label', `${open ? 'Hide' : 'Show'} what ${MECHANISM_LABEL[mech]} ${RESULT_WORD[result].toLowerCase()} means`);
+        btn.setAttribute('aria-label', `${open ? 'Hide' : 'Show'} what ${LABEL[mech]} ${RESULT_WORD[result].toLowerCase()} means`);
         btn.addEventListener('click', () => handlers.onToggleExplain?.(mech));
         head.appendChild(btn);
         row.appendChild(head);
-        row.appendChild(el('p', 'tri-auth-meaning', RESULT_MEANING[mech][result]));
+        row.appendChild(el('p', 'tri-auth-meaning', MEANING[mech][result]));
 
         if (open) {
             const ex = EXPLAINERS[mech];
@@ -105,7 +108,7 @@ export function buildHeaderPanel(rec, view, handlers = {}) {
                 const ex = EXPLAINERS[mech];
                 const dd = el('dd');
                 for (const line of [ex.checks, ex.reading, ex.notTell]) dd.appendChild(el('span', 'tri-glossary-line', line));
-                dl.append(el('dt', null, MECHANISM_LABEL[mech]), dd);
+                dl.append(el('dt', null, LABEL[mech]), dd);
             }
             gloss.appendChild(dl);
         }

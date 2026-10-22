@@ -156,6 +156,11 @@ export function resolvePlayerSent(entry, set, mailState, social, opts = {}) {
     if (!picked) return { skipped: classified.tellless ? 'sent-without-tells' : 'no-sent-record' };
     const rec = picked.rec;
     const auth = isObj(set?.playerSentAuth) ? set.playerSentAuth : {};
+    // The target's own factorStrings (e.g. a forged-From senderTrust.redFlag) ride along on
+    // the replayed message so the flip shows the authored sentence rather than the library
+    // default (C2-m1). Harmless where a target authors none, and the lab passes none here.
+    const target = (Array.isArray(social?.phishTargets) ? social.phishTargets : []).find((t) => t?.id === entry.targetId);
+    const factorStrings = isObj(target?.factorStrings) ? target.factorStrings : null;
 
     let flags = [...new Set(picked.tells)];
     const link = isObj(rec.link) ? rec.link : null;
@@ -191,7 +196,6 @@ export function resolvePlayerSent(entry, set, mailState, social, opts = {}) {
     const links = [];
     let body = typeof rec.body === 'string' ? rec.body : '';
     if (hasDomain && domainInfo) {
-        const target = (Array.isArray(social?.phishTargets) ? social.phishTargets : []).find((t) => t?.id === entry.targetId);
         const token = /\{\{link:([A-Za-z0-9_-]+)\}\}/.exec(body);
         const id = token ? token[1] : 'sent_link';
         links.push({
@@ -225,6 +229,7 @@ export function resolvePlayerSent(entry, set, mailState, social, opts = {}) {
         links,
         attachments,
         auth: row,
+        ...(factorStrings ? { factorStrings } : {}),
         truth: { ...notes, isPhish: true, flags }
     });
     return { message };

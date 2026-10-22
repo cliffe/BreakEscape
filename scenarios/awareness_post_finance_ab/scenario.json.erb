@@ -81,7 +81,7 @@
       {
         "id": "finance_form_b",
         "title": "Payments inbox check",
-        "brief": "Ten messages from a Brightwell Foods payments inbox. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+        "brief": "Ten messages from a Brightwell Foods payments inbox. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
         "stage": "post",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
@@ -133,7 +133,7 @@
             },
             "to": "payments@brightwellfoods.example",
             "subject": "Invoice CF-20874 for PO-4318",
-            "time": "08:50",
+            "time": "08:32",
             "body": "Hello,\nPlease find attached invoice CF-20874 for the apple purée delivered on 15 October against your PO-4318.\nPayment terms as agreed. Any questions, ring us on the number on your supplier record.\nCastell Fruit Co.",
             "attachments": [
               {
@@ -142,20 +142,19 @@
               }
             ],
             "auth": {
-              "spf": "fail",
+              "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "billing-relay.castellfruit.example",
+              "envelopeFrom": "castellfruit.example",
               "replyTo": "invoices@castellfruit.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "It came in through Castell's billing service rather than their main mail server, which is why one automatic sender check didn't line up, but the message still proves it came from castellfruit.example, their real domain.",
-                "default": "Castell's real domain, a purchase order Brightwell raised, and no change to how you pay them."
-              },
-              "headerNote": "One check not lining up, on its own, is a clue rather than proof. Billing services and forwarded mail often trip it even when the message is genuine."
+                "attachmentPlausible": "An invoice PDF against a purchase order you raised is exactly what a supplier sends.",
+                "default": "Castell's real address at castellfruit.example, a purchase order Brightwell raised, and no change to how you pay them."
+              }
             }
           },
           {
@@ -166,7 +165,7 @@
             },
             "to": "payments@brightwellfoods.example",
             "subject": "Our bank details have changed",
-            "time": "08:32",
+            "time": "08:50",
             "body": "Dear Accounts Payable,\nWe have moved our business banking. Please update your records and pay all invoices from today, including CF-20931, to the account below.\nAccount name: Castell Fruit Co. Ltd\nAccount number ending 5521\nDiolch,\nIfan Jenkins\nAccounts",
             "auth": {
               "spf": "pass",
@@ -262,32 +261,32 @@
             "id": "fb_creditors_spoof",
             "from": {
               "name": "Mei Lin Chau",
-              "address": "meilin.chau@brightwellfoods.example"
+              "address": "meilin.chau@brightwellfood.example"
             },
             "to": "payments@brightwellfoods.example",
             "subject": "Aged creditors list please",
             "time": "10:05",
             "body": "Hi,\nCould you send me this month's aged creditors list, with the supplier contact details column included? I'm reviewing suppliers off site today, so just reply with it attached.\nThanks,\nMei Lin",
             "auth": {
-              "spf": "fail",
-              "dkim": "none",
-              "dmarc": "fail",
-              "envelopeFrom": "mailer.quickpost-mail.example",
-              "replyTo": "meilin.chau.procure@quickpost-mail.example"
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.brightwellfood.example",
+              "replyTo": "meilin.chau@brightwellfood.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderAuth",
-                "reply_to_differs"
+                "senderTrust",
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "senderAuth": "Brightwell's own mail system didn't send this, even though the From line shows a Brightwell address",
-                "reply_to_differs": "Replies go to meilin.chau.procure@quickpost-mail.example, not to Mei Lin's Brightwell address"
+                "senderTrust": "The name is Mei Lin's, but the address isn't a Brightwell one: it's brightwellfood.example",
+                "lookalike_domain": "Brightwell's domain is brightwellfoods.example; this one drops the final s to brightwellfood.example"
               },
-              "headerNote": "Open the details: the From line shows Mei Lin's real address, but the message didn't come from Brightwell's mail system, and a reply would go to a private inbox instead.",
+              "headerNote": "These checks pass because whoever owns brightwellfood.example really did send it. That proves the sending domain, not that it's Brightwell.",
               "ifTrusted": "An aged creditors list names every supplier, what they're owed and who to contact: everything needed to write a convincing bank-change email.",
-              "reportReply": "Thanks. Mei Lin is in the office today and didn't send it."
+              "reportReply": "Thanks. That isn't a Brightwell address: brightwellfood.example drops the final s. Mei Lin is in the office and didn't send it."
             }
           },
           {

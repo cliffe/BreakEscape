@@ -3,13 +3,14 @@
 // Brightwell's finance manager, 40s, Nigerian-British, came up through accounts
 // payable. Warm and direct. She frames the exercise; the kiosk does the rest.
 // Her record carries the mappings that complete land_supplier_contact (on the
-// phish-landed global) and sort_payments_inbox (on the defend set's done global,
-// 11 S5.1), so the ink only reads those globals for its welcome line.
+// phish-attempt global, value > 0) and sort_payments_inbox (on the defend set's
+// done global, 11 S5.1), so the ink reads the attempt count and the done global
+// only for its welcome line.
 // Resting point is the hub (m03 hub_quiet pattern): the goodbye parks there
 // quietly, and a re-talk re-enters it and says the line that fits the moment.
 // ================================================
 
-VAR phish_supplier_contact_landed = false
+VAR phish_supplier_contact_attempts = 0
 VAR episode_e1_invoice_fraud_defend_done = false
 VAR hub_quiet = false
 
@@ -21,10 +22,10 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e1_invoice_fraud_defend_done:
-        Adaeze Okafor: That's both sides done, thank you. The trick is the same whichever seat you're in: if an email asks you to move money or change bank details, check it on a number you already hold before you act.
+        Adaeze Okafor: You've worked it from both ends now. Whoever's asking you to move money or switch bank details, ring them back on a number you already keep before you touch it. That one habit is what I'd want from my team.
     - else:
-        { phish_supplier_contact_landed:
-            Adaeze Okafor: Your email got through to the finance inbox. Now take the other seat at the kiosk and sort the payments inbox the way it would land in real life.
+        { phish_supplier_contact_attempts > 0:
+            Adaeze Okafor: Your message has gone. Now take the other seat at the kiosk and read the payments inbox the way it would land on a busy afternoon.
         - else:
             Adaeze Okafor: Welcome to the Brightwell exercise. Start at the kiosk: research us and our supplier, write one email as the red team, then swap seats and cover the payments inbox.
         }

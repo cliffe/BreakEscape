@@ -361,7 +361,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 this.view.explain = this.view.explain === mech ? null : mech;
                 this._rerender(`[data-explain="${mech}"]`);
             }
-        });
+        }, { plain: this.profile === 'awareness' || this.awarenessSkin });
     }
 
     /** Rebuild the reading pane and return focus to the control the player just used. */

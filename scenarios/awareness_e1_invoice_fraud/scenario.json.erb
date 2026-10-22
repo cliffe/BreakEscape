@@ -2,7 +2,7 @@
   "scenario_id": "awareness_e1_invoice_fraud",
   "scenario_name": "Invoice fraud: both sides",
   "scenario_brief": "Awareness episode E1. You're on an authorised exercise at Brightwell Foods, a fictional food manufacturer. First you're on the red team: research the company and its supplier, then write one email to Adaeze, the finance manager, that looks as if it came from the supplier. Then you swap seats and cover the payments inbox the same kind of email lands in. Only the inbox is scored.",
-  "endGoal": "Send the lookalike email, then sort the payments inbox at the training kiosk.",
+  "endGoal": "Send the email in Derek's name, then sort the payments inbox at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
   "startRoom": "training_room",
@@ -19,8 +19,8 @@
   "objectives": [
     {
       "aimId": "red_team_aim",
-      "title": "Send the lookalike invoice email",
-      "description": "Research Brightwell and its supplier Harlow Packaging, then send one email from the supplier's accounts contact to the finance team.",
+      "title": "Send the email in Derek's name",
+      "description": "Research Brightwell and its supplier Harlow Packaging, then send one email to Adaeze, the finance manager, in the name of the supplier's accounts contact.",
       "status": "active",
       "order": 0,
       "tasks": [
@@ -104,9 +104,9 @@
               "address": "accounts@harlowpackaging.example"
             },
             "to": "payments@brightwellfoods.example",
-            "subject": "Invoice INV-2217: October cartons",
+            "subject": "Invoice INV-2217: September cartons",
             "time": "09:05",
-            "body": "Hello,\nPlease find attached invoice INV-2217 for October's delivery of printed cartons (your PO-4290), for £6,412.80 on our usual 30-day terms.\nOur bank details are unchanged.\nKind regards,\nCredit Control\nHarlow Packaging Ltd",
+            "body": "Hello,\nPlease find attached invoice INV-2217 for September's delivery of printed cartons (your PO-4290), for £6,412.80. It was issued on 24 September on our usual 30-day terms, so it falls due this week.\nOur bank details are unchanged.\nKind regards,\nCredit Control\nHarlow Packaging Ltd",
             "attachments": [
               {
                 "label": "INV-2217.pdf",
@@ -262,7 +262,7 @@
       },
       "variant": "full",
       "durationTargetMin": 13,
-      "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: one email to the Harlow Packaging contact you find, and the Brightwell payments inbox. Nothing you write leaves the game.",
+      "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: one email to Adaeze, Brightwell's finance manager, and the Brightwell payments inbox. Nothing you write leaves the game.",
       "stages": [
         "brief",
         "osint",
@@ -297,6 +297,7 @@
         "flipIntro": "This is the email you just sent, as Adaeze, Brightwell's finance manager, would see it. The lines picked out below are what make it believable.",
         "flipDefenderLine": "Adaeze reads it between the morning's invoices, with the payment run due at three. Derek's name is on it and the invoice number is real, so changing the payee details looks like the job in front of her. Acting on a message built this carefully is not carelessness; it was made to pass for the real thing.",
         "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives in a payments inbox, and you're the one reading it.",
+        "flipMissed": "There's nothing extra to replay from this one, so here is the same kind of message as it would arrive in a real inbox. The defence is the same either way.",
         "noBlameLine": "Nobody is marked down for a miss here. Every one of these was written by someone whose job is making it look right, and anyone working at pace can act on one.",
         "mondayCard": "On Monday: if an email asks you to change bank details or to pay in a hurry, don't reply and don't use any number in the email. Ring the person on a number you already hold, then report the email the way your organisation asks you to.",
         "defendOnly": "You went straight to the inbox this time. These messages were written by people whose job is to make them look right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine."
@@ -506,7 +507,7 @@
       "showRedFlagMeter": true
     },
     "osint": {
-      "profile": "student",
+      "profile": "awareness",
       "sites": [
         {
           "id": "brightwell_site",
