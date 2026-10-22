@@ -195,13 +195,19 @@ function modeFor(target, id, message) {
  */
 function resolveHeader(message, account) {
   const hf = message.headerFrom || {};
-  const forced = hf.account === true || account.spoofsFrom !== true;
+  // `spoofCapable` records whether the sending account could set its own From at all,
+  // kept even when `forced` is true: a spoof-capable account that picked the own-From
+  // template is forced to its own identity for this send but is NOT the "freemail can
+  // only send as itself" case, so the hint must tell them apart (lab R3 F2).
+  const spoofCapable = account.spoofsFrom === true;
+  const forced = hf.account === true || !spoofCapable;
   if (forced) {
-    return { forced: true, namePerson: account.person || null, addressPerson: account.person || null,
+    return { forced: true, spoofCapable, namePerson: account.person || null, addressPerson: account.person || null,
              address: account.address || null, hasName: true, hasAddress: true };
   }
   return {
     forced: false,
+    spoofCapable,
     namePerson: personOfValue(hf.name),
     addressPerson: personOfValue(hf.address),
     address: null,
@@ -345,19 +351,33 @@ function authFailText(target, policy) {
 
 /**
  * H2/H3. The hint keyed to the factor that failed, when the target authors `hintsByFactor`
- * (an opt-in map of factor id -> hint string). The senderTrust entry may be account-aware:
- * an object { spoof, forced } picks by whether the sending account can set its own From
- * (00 section 10a). A non-spoofing account ("forced") that fails senderTrust is told to
- * switch account; a spoof-capable one is pointed at who the target trusts. Returns a string
- * or null (null falls back to the miss-count ladder).
+ * (an opt-in map of factor id -> hint string, or a per-factor object of variants). Two
+ * factors read a variant object rather than a bare string:
+ *   senderTrust: { spoof, ownFrom, forced } — picked by how the From came to be wrong
+ *     (00 section 10a; lab R3 F2). `forced` is only for an account that CANNOT spoof
+ *     (freemail): "switch account". A spoof-capable account that left From as itself gets
+ *     `ownFrom` ("set the From line to someone she trusts"), not the switch-account advice.
+ *     A spoof-capable account that named the wrong person gets `spoof`.
+ *   linkCredible: { missing, wrong } — picked by whether a page is attached at all
+ *     (state 'missing') or a page with the wrong address is (lab R3 F4).
+ * `fail` is the failed factor's EvalResult entry ({ id, state }); `header` is the resolved
+ * From. Returns a string, or null to fall back to the miss-count ladder.
  */
-function selectFactorHint(target, factorId, header) {
+function selectFactorHint(target, fail, header) {
   const byFactor = target && target.hintsByFactor;
+  const factorId = fail && fail.id;
   if (!byFactor || typeof byFactor !== 'object' || !isStr(factorId)) return null;
   if (!Object.prototype.hasOwnProperty.call(byFactor, factorId)) return null;
   let h = byFactor[factorId];
   if (h && typeof h === 'object' && !Array.isArray(h)) {
-    h = header && header.forced ? h.forced : h.spoof;
+    if (factorId === 'senderTrust') {
+      if (!header || !header.forced) h = h.spoof;
+      else h = header.spoofCapable ? (isStr(h.ownFrom) ? h.ownFrom : h.spoof) : h.forced;
+    } else if (factorId === 'linkCredible') {
+      h = fail.state === 'missing' ? (isStr(h.missing) ? h.missing : h.wrong) : (isStr(h.wrong) ? h.wrong : h.missing);
+    } else {
+      h = h.spoof || h.forced || null;
+    }
   }
   return isStr(h) ? h : null;
 }
@@ -444,14 +464,19 @@ export function evaluateMessage(target, message, ctx) {
   // H1: the ladder's softest rung is hints[0], shown on the first repeated miss (prior === 1);
   // the index is prior - 1 (not prior), or the ladder's last rung never reaches hints[0].
   const hintIndex = hints.length ? Math.min(Math.max(prior - 1, 0), hints.length - 1) : 0;
-  // H2/H3: when the target authors `hintsByFactor`, a hint keyed to the factor that actually
-  // failed takes priority over the miss-count ladder, so the advice names the real fault rather
-  // than the rung number. The ladder is the fallback for factors with no keyed hint.
-  const firstFailId = failedRequired.length ? failedRequired[0].id : '';
+  // H1/H2/H3 (lab R3 F3): the first repeated miss (prior === 1) shows the softest ladder rung,
+  // hints[0] — a gentle nudge before any specific advice. From the second repeated miss
+  // (prior >= 2) a hint keyed to the factor that actually failed takes over, so the advice
+  // names the real fault. Without this, every required factor of Pierce and Lord carries a
+  // keyed hint, so the keyed hint fired from the first repeated miss and hints[0] was dead
+  // content. The ladder (hints[hintIndex]) is still the fallback for a factor with no keyed
+  // hint, and for a send that only failed the open check (no required factor to key on).
+  const firstFail = failedRequired.length ? failedRequired[0] : null;
   let hint = null;
   if (!landed && prior >= 1) {
-    hint = selectFactorHint(target, firstFailId, header);
-    if (!isStr(hint) && hints.length) hint = hints[hintIndex];
+    const keyed = prior >= 2 ? selectFactorHint(target, firstFail, header) : null;
+    if (isStr(keyed)) hint = keyed;
+    else if (hints.length) hint = hints[hintIndex];
   }
 
   return {

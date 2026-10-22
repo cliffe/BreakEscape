@@ -257,6 +257,27 @@ test('mount 1, a reply arriving while a message is open keeps the bar and its la
     reader.destroy();
 });
 
+test('seed: a new_call reset is a boundary — a bar mounted on a fresh call shows no stale change (R3 F5)', () => {
+    setup();
+    // The live service log still holds the previous call's rows plus the fresh call's
+    // 'new_call' reset (delta 0, so the old skip-zero scan sailed past it to -10).
+    window.socialInfluence = {
+        getLog: () => [
+            { delta: -10, reason: 'payslip_date', kind: 'change', value: -60 },
+            { delta: 0, reason: 'new_call', kind: 'change', value: 0 }
+        ]
+    };
+    const bar = mount({ characterId: 'pierce' });
+    assert.equal(bar.el.querySelector('.ib-infl-change').textContent, '', 'no last-change line across a call boundary');
+    bar.destroy();
+    // With no reset after it, the last real change still seeds the line.
+    window.socialInfluence = { getLog: () => [{ delta: -10, reason: 'payslip_date', kind: 'change', value: -60 }] };
+    const bar2 = mount({ characterId: 'pierce' });
+    assert.match(bar2.el.querySelector('.ib-infl-change').textContent, /Last change: -10/);
+    bar2.destroy();
+    delete window.socialInfluence;
+});
+
 test('mount 1, reading pane honours bar: false', () => {
     const s = setup();
     s.social.characters.pierce.influence.display = { bar: false };

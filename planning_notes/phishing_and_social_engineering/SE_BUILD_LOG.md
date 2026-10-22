@@ -509,3 +509,68 @@ validator-social-* and every test importing the touched engine files (interactio
 report-model, mail-client). ruth_phone.ink and tomasz.ink recompiled to their committed .json.
 No shipped mission (m01-m10) scenario, ink or audio touched; the phone-chat change is a no-op unless
 `params.pretextCallId` is set, so m01-m08 phone chats are unaffected.
+
+## Fix round 5 — R3 findings (Part A) + dialogue review C1 (Part B)
+
+Brief: `scenarios/lab_social_engineering/playtests/FIX_ROUND_R3.md`
+(sources `playtests/R3.md`, `DIALOGUE_REVIEW_C1.md`).
+
+### Part A — R3 engine/scenario findings
+- **F1 door hint (major):** `Game#filtered_scenario_for_bootstrap` (`app/models/break_escape/game.rb`)
+  dropped `lockedHint`, so `unlock-system.js` never got the "how to get the key" line for the locked-door
+  toast. Added `lockedHint` to the kept room-field whitelist. Added it to the validator's
+  `known_room_fields` (`scripts/validate_scenario.rb`) so it stops warning "will be ignored". Ruby test
+  added in `test/models/break_escape/filtered_scenario_test.rb` (asserts the filtered payload, not the
+  raw scenario). The second F1 gap (a Key Ring's wrong-key path has no hint) is unchanged: the toast
+  hint shows to a keyless player, which in this lab is the Recon door only — logged, not fixed.
+- **F2/H3 own-From hint:** `resolveHeader` now exposes `spoofCapable`; `selectFactorHint` tells apart a
+  spoof-capable account that left From as itself (new `ownFrom` variant) from a freemail account that
+  cannot spoof (`forced`). Pierce's `senderTrust` hint gained the `ownFrom` rung.
+- **F3 soft rung reachable:** the first repeated miss (prior 1) now shows the softest ladder rung
+  `hints[0]`; the factor-keyed hint takes over from the second repeated miss (prior ≥ 2). Before, every
+  required factor of Pierce/Lord was keyed, so `hints[0]` was dead. (Decision: "softest rung first,
+  factor hints from the second", per the brief's option. H3 test updated to prior 2.)
+- **F4 link hint missing vs wrong:** `linkCredible` hint is now a `{ missing, wrong }` object, picked by
+  whether a page is attached; Lord's link hint updated.
+- **F5 Dev bar "Last change" carry-over:** `influence-bar.js` seed stops at a `new_call` boundary in the
+  service log, so a fresh call shows no stale change line.
+- **F7 report call row:** `report-model.js` now reads `pretext_<callId>_reports`; the report line reads
+  as two calls ("an earlier call was reported … a later call got what it asked for") instead of one
+  contradictory one.
+- **F10 close after a miss:** closing the mail checklist of a failed send now drops the composer too
+  (Esc/× = "leave"); the explicit "Edit & resend" button is the only path that keeps the composer.
+- **F6/F8/F9 (logged, not changed):** F6 (globals stale until a call ends) is inherent and is exactly
+  what the F7 row now reports around. F8 (replies on a miss) is by design: a character target replies
+  in-character on both branches (00 §10), and its miss lines are factor-specific and distinct from the
+  landed line (`pierce_mail.ink`/`lord_mail.ink`) — intended, no change. F9 (landed-global ~40 s lag)
+  is a known timing artefact, not addressed this round.
+- New/updated JS tests: `social-phish-rules` (F3 soft rung; H3/F2 ownFrom; F4 missing/wrong),
+  `social-influence-bar` (new_call boundary), `social-engagement-report` (two-call row). All green.
+
+### Part B — dialogue review C1 (40 proposals)
+Applied, with judgement: items 1–10, 12–40 and the slogan trim (30). Item 6 (orchestrator-accepted):
+the payroll portal is now named **LedgerPay** across `intelFacts.lord_portal_name`,
+`lord_trusts_portal_sender`, `people[portal].forms.full`, the landing wording `w_formal`, Dev's ink and
+Ruth's hints. Item 11's `senderTrust` flag checked against the triage chip set (valid). Deviations:
+- **Item 11 Tomasz debrief line SKIPPED:** the new `supplier_bank_change` triage message already pays
+  off the opening spoofed-invoice hook (its `ifTrusted`/`reportReply` name the near-miss), and item 13
+  wanted the debrief *shorter*; adding another Tomasz line would re-bloat it. Logged.
+- **Item 7/8 repair line:** the repair choice is now gated (shown only after an Accounts slip) with a
+  fixed "Sorry, my mistake. She's in Finance." label. To satisfy the social lint (a declared blank must
+  surface in the choice) the now-unused `blanks`/`claims` were dropped from the `repair_team` line; the
+  judge's repair still fires from `repairs: "team"` alone (clears the open mismatch, awards candour
+  credit), so the mechanic is unchanged. Dev's `reaction` is now band- and technique-aware.
+- **Item 35 reported line:** set in `outcomes.reported.line`; the ink `reaction` band≥3 branch now just
+  `-> END` (no spoken line) so the finalise-spoken goodbye is not doubled.
+- Unranked: fixed `vendor_invoice.whyFine` ("the usual amount" → no amount in body). Left the
+  "on Friday"/"on Fridays" wording and the typo-squat concept-card terminology (Phase 5 / builder-owned).
+
+Gates: lab `validate_scenario.rb … --strict-social --no-graph` exit 0 (suggestions + the pre-existing
+narrator-voice ink warning only; dialogue lint is advisory). All 7 lab ink files recompiled to their
+committed `.json`. Node: every suite over the touched files green (146/146 across mail/report/influence/
+phish run together); the full-process `node --test test/js/*.test.mjs` shows 3 unrelated files
+(engine-fixes-pass3, engine-fixes-round4, event-mapping-unlock-door) failing only in the all-in-one
+process from jsdom global collisions — each passes in isolation and tests code this round did not touch.
+Ruby `filtered_scenario_test` 20/20. No shipped mission (m01–m10) scenario, ink or audio touched; the
+engine changes only affect consumers of `phishTargets`/`social` (SE lab), and the influence-bar
+`new_call` boundary is SE-only (no m01–m10 social characters).

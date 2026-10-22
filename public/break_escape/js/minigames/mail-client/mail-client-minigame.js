@@ -767,13 +767,14 @@ export class MailClientMinigame extends SocialOverlayScene {
         this.root.appendChild(panel);
         this.checklistPanel = panel;
         this._syncCovered();
-        // Close/Esc on the checklist of a LANDED send drops the composer too, so the
-        // student is back at the inbox in one press rather than three (lab R1 F11). This
-        // matches the "Done" button's onEdit above. A failed send keeps the composer open
-        // for Edit & resend, so only the checklist is popped there.
+        // Close/Esc on the checklist drops the composer too, so the student is back at the
+        // inbox in one press rather than three (lab R1 F11; lab R3 F10). Closing is "I'm done
+        // here"; the explicit "Edit & resend" BUTTON (onEdit above) is the only path that keeps
+        // the composer open to edit a miss. Before R3 F10, Close on a failed send popped only
+        // the checklist and left the student back on the composer, so Close read as "edit".
         this._popChecklist = this.pushLayer(() => {
             this._dismissChecklist();
-            if (sendInfo.result && sendInfo.result.landed) this.closeCompose();
+            this.closeCompose();
         }, 'checklist');
         const action = panel.querySelector('.mail-checklist-edit, .mail-checklist-done');
         action?.focus?.();

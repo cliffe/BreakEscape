@@ -13,6 +13,7 @@
 
 VAR triage_pass = false
 VAR profile_done = false
+VAR triage_done = false
 VAR dev_reported = false
 VAR phish_pierce_attempts = 0
 VAR pretext_service_desk_call_outcome = ""
@@ -47,10 +48,15 @@ Tomasz: Tomasz. I run security here, me and half a person's budget.
 }
 + {triage_pass and profile_done} [Debrief me.]
     -> debrief
-+ {not explained_own} [Some of these messages look familiar.]
++ {triage_done and not explained_own} [Two of those emails were mine.]
     -> own_mail
 + {not explained_dev} [Why does the service desk keep coming up?]
     -> dev_finding
++ [Remind me what SPF, DKIM and DMARC check.]
+    Tomasz: SPF: was this server allowed to send for that domain. DKIM: did that domain sign it, unchanged.
+    Tomasz: DMARC: does the From line match a domain that passed, and what to do if not. Ours says deliver anyway.
+    ~ quiet = true
+    -> hub
 + [Give me a minute.]
     #exit_conversation
     Tomasz: Take your time. I'm not going anywhere.
@@ -58,8 +64,8 @@ Tomasz: Tomasz. I run security here, me and half a person's budget.
 
 === own_mail ===
 ~ explained_own = true
-Tomasz: Two of those are yours. The ones you sent Melanie and Sofia, landing in my queue.
-Tomasz: Mark them like any other. The header panel shows exactly why they were catchable.
+Tomasz: I wondered when you'd notice. Melanie's and Sofia's, straight out of your outbox.
+Tomasz: Bit different reading them from this side, isn't it? The headers had you the whole time.
 ~ quiet = true
 -> hub
 
@@ -71,9 +77,9 @@ Tomasz: We're writing Dev a script, not a warning. Call back on a number we hold
 -> hub
 
 === debrief ===
-Tomasz: Here's what it showed. An open inbox trusts anyone, a From line is just a label, and a padlock proves nothing.
+Tomasz: Here's what it showed. An open inbox trusts anyone. A From line is just a label. And a padlock only means the line's private.
 { phish_pierce_attempts == 1:
-    Tomasz: You landed Melanie first try. That's how good a borrowed name is — it beats careful people every time.
+    Tomasz: Melanie first try. A borrowed name gets past a lot of careful people.
 }
 {
 - dev_reported:
@@ -81,11 +87,25 @@ Tomasz: Here's what it showed. An open inbox trusts anyone, a From line is just 
 - pretext_service_desk_call_outcome == "got_it" and pretext_service_desk_call_lowest >= 0:
     Tomasz: Dev handed you the portal and the date, no fuss. A call-back to a number on file stops every line of that.
 - pretext_service_desk_call_outcome == "got_it":
-    Tomasz: You had to lean on Dev to get the portal and the date, but he still gave them up. A call-back to a number on file stops every line of that.
+    Tomasz: You had to lean on Dev, but he still gave up the portal and the date. A call-back to a number on file stops every line of that.
+- else:
+    Tomasz: And Dev gave you enough to write Sofia's email. A call-back to a number on file stops every line of that.
 }
-Tomasz: So we route the open inbox through a gateway, strip document metadata, and give the desk that call-back script.
-Tomasz: And the report. No names. Gareth reads it, nobody feels hunted, people keep telling us when they slip.
-Tomasz: That last part is the whole job. Blame them once and they stop reporting. Thanks for playing it straight.
+Tomasz: So: DMARC to enforcement, a banner on outside mail, metadata stripped, a call-back script for the desk.
+Tomasz: And a bookmarked portal with a report button, so anyone can check before they type a password.
+Tomasz: If you could fix one thing here tomorrow, what would it be?
++ [A call-back rule on the service desk.]
+    Tomasz: Cheapest fix on the list, and it would have stopped Sofia's whole chain. Good pick.
+    -> debrief_close
++ [DMARC off p=none, and an external-sender banner.]
+    Tomasz: That kills the Jed spoof outright. It takes a month of testing first, but yes.
+    -> debrief_close
++ [A report button, so people tell us.]
+    Tomasz: That's the one I'd pick. Everything else only works if people tell us when they've slipped.
+    -> debrief_close
+
+=== debrief_close ===
+Tomasz: Whichever it is, the report names nobody. Blame them once and they stop telling us. Thanks for playing it straight.
 #complete_task:closing_debrief
 #exit_conversation
 -> END

@@ -143,7 +143,13 @@ export class InfluenceBar {
         if (!Array.isArray(log)) return false;
         for (let i = log.length - 1; i >= 0; i--) {
             const e = log[i];
-            if (!isObject(e) || e.kind === 'silent' || typeof e.delta !== 'number' || e.delta === 0) continue;
+            if (!isObject(e)) continue;
+            // A fresh pretext call resets influence to the start with reason 'new_call'
+            // (person-chat-pretext). That is a call boundary, not a player's move, so a bar
+            // mounted on the new call shows no "Last change" from the call before it (lab R3
+            // F5). Stop here rather than scanning back into the previous call's rows.
+            if (e.reason === 'new_call') return false;
+            if (e.kind === 'silent' || typeof e.delta !== 'number' || e.delta === 0) continue;
             this.changeText = this._changeLine(e.delta, e.reason);
             return true;
         }

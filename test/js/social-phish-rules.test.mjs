@@ -487,25 +487,64 @@ test('H2: hintsByFactor keys the hint to the factor that failed, falling back to
   assert.equal(evaluateMessage(keyed, fail(), ctx({ priorFailures: 0 })).hint, null);
 });
 
-test('H3: an account-aware senderTrust hint — spoof-capable vs a forced account', () => {
+test('F3: the first repeated miss shows the soft rung even when the factor is keyed; keyed advice from the second', () => {
+  // Every required factor keyed, as in the live Pierce/Lord targets. The soft ladder rung
+  // must still reach the student on the first repeated miss (lab R3 F3), then the keyed advice.
+  const fail = () => ({ ...pierceLand(), templates: { ...pierceLand().templates, pretext: 'pretext_generic' }, attachment: 'kit_balance_sheet' });
+  const keyed = { ...T.pierce, hintsByFactor: { pretextRelevant: 'What does she expect to receive, and from whom?' } };
+  assert.equal(evaluateMessage(keyed, fail(), ctx({ priorFailures: 0 })).hint, null);            // first miss: nothing
+  assert.equal(evaluateMessage(keyed, fail(), ctx({ priorFailures: 1 })).hint, T.pierce.hints[0]); // soft rung, not the keyed line
+  assert.equal(evaluateMessage(keyed, fail(), ctx({ priorFailures: 2 })).hint, 'What does she expect to receive, and from whom?');
+});
+
+test('H3/F2: an account-aware senderTrust hint — spoof-capable, own-From and a forced account', () => {
   const keyed = { ...T.pierce, hintsByFactor: {
-    senderTrust: { spoof: 'Think about who she trusts in Finance.', forced: 'Switch account to send as someone she trusts.' }
+    senderTrust: {
+      spoof: 'Think about who she trusts in Finance.',
+      ownFrom: 'You sent as yourself. Set the From line to someone she trusts.',
+      forced: 'Switch account to send as someone she trusts.'
+    }
   } };
   // A guest send whose From names someone Pierce does not trust: senderTrust fails from a
-  // spoof-capable account, so the spoof variant shows.
+  // spoof-capable account, so the spoof variant shows (keyed advice from prior >= 2).
   const guestFail = { ...pierceLand(), headerFrom: { name: 'portal_full', address: 'portal_address' },
     slots: { ...pierceLand().slots, sender_name: 'portal_full', sender_address: 'portal_address' } };
-  const rg = evaluateMessage(keyed, guestFail, ctx({ priorFailures: 1 }));
+  const rg = evaluateMessage(keyed, guestFail, ctx({ priorFailures: 2 }));
   assert.equal(rg.firstFail, 'senderTrust');
   assert.equal(rg.hint, 'Think about who she trusts in Finance.');
+  // A guest send (spoof-capable) that left the From as itself (own-From template): NOT the
+  // switch-account line — guest can spoof. The own-From variant (lab R3 F2).
+  const guestOwnFrom = { ...pierceLand(), headerFrom: { account: true },
+    templates: { ...pierceLand().templates, from: 'from_own' } };
+  const ro = evaluateMessage(keyed, guestOwnFrom, ctx({ priorFailures: 2 }));
+  assert.equal(ro.firstFail, 'senderTrust');
+  assert.equal(ro.hint, 'You sent as yourself. Set the From line to someone she trusts.');
   // The same failure from freemail (a forced, non-spoofing account): the switch-account variant.
   const freemailFail = { fromAccount: 'freemail', subject: 's_review', headerFrom: { account: true },
     templates: { from: 'from_own', greeting: 'greet_named', pretext: 'pretext_sheet', ask: 'ask_open_attached' },
     slots: { name: 'pierce_short', document: 'balance_sheet', when: 'friday' },
     attachment: 'kit_balance_sheet', link: null, linkInfo: null };
-  const rf = evaluateMessage(keyed, freemailFail, ctx({ priorFailures: 1 }));
+  const rf = evaluateMessage(keyed, freemailFail, ctx({ priorFailures: 2 }));
   assert.equal(rf.firstFail, 'senderTrust');
   assert.equal(rf.hint, 'Switch account to send as someone she trusts.');
+});
+
+test('F4: the link hint distinguishes a missing page from a wrong-address page', () => {
+  const keyed = { ...T.lord, hintsByFactor: {
+    linkCredible: { missing: 'Build the payroll login page and attach it.', wrong: 'The link address is not her portal.' }
+  } };
+  // No page attached: the "missing" variant.
+  const noPage = lordLand({ link: null, linkInfo: null });
+  const rm = evaluateMessage(keyed, noPage, ctx({ priorFailures: 2 }));
+  assert.equal(rm.firstFail, 'linkCredible');
+  assert.equal(factor(rm, 'linkCredible').state, 'missing');
+  assert.equal(rm.hint, 'Build the payroll login page and attach it.');
+  // A page is attached but its address is wrong (below threshold): the "wrong" variant.
+  const wrongPage = lordLand({ linkInfo: FX.linkInfo.below });
+  const rw = evaluateMessage(keyed, wrongPage, ctx({ priorFailures: 2 }));
+  assert.equal(rw.firstFail, 'linkCredible');
+  assert.notEqual(factor(rw, 'linkCredible').state, 'missing');
+  assert.equal(rw.hint, 'The link address is not her portal.');
 });
 
 // ------------------------------------------------------------------ pre-send gate (N11)

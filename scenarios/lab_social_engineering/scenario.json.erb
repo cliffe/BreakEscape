@@ -66,13 +66,13 @@
     {
       "aimId": "phish_easy",
       "title": "First two sends",
-      "description": "Land a message on Careers and on Melanie Pierce in Finance.",
+      "description": "Get Careers and then Melanie Pierce to act on a message: open the file, as they would a real one.",
       "status": "locked",
       "order": 3,
       "unlockCondition": { "aimCompleted": "recon" },
       "tasks": [
         { "taskId": "enter_operations", "title": "Go into the Operations Room", "type": "enter_room", "targetRoom": "operations_room", "status": "active" },
-        { "taskId": "test_account", "title": "Set up an address to send from", "type": "manual", "status": "active" },
+        { "taskId": "test_account", "title": "Create a throwaway test address in the mail client", "type": "manual", "status": "active" },
         { "taskId": "hampshire_landed", "title": "Land a message on the Careers inbox", "type": "manual", "status": "active" },
         { "taskId": "pierce_landed", "title": "Land a message on Melanie Pierce", "type": "manual", "status": "active" }
       ]
@@ -80,13 +80,13 @@
     {
       "aimId": "prepare_hard",
       "title": "Prepare for Sofia",
-      "description": "Build a look-alike payroll page and call the service desk for what the page can't tell you. Either order.",
+      "description": "Build a look-alike payroll page, and call the service desk for what your recon couldn't find: the portal's name and when payslips go out. Either order.",
       "status": "locked",
       "order": 4,
       "unlockCondition": { "aimCompleted": "phish_easy" },
       "tasks": [
         { "taskId": "payroll_page_attached", "title": "Build the payroll login page", "type": "manual", "status": "active" },
-        { "taskId": "call_dev", "title": "Call the service desk and get at least one fact", "type": "manual", "status": "active" }
+        { "taskId": "call_dev", "title": "Call the service desk about Sofia's payslip", "type": "manual", "status": "active" }
       ]
     },
     {
@@ -143,6 +143,7 @@
     "roe_scope_done": false,
     "roe_stoprule_done": false,
     "roe_signed": false,
+    "fairbairn_condition_heard": false,
     "plan_objective_done": false,
     "plan_measures_done": false,
     "plan_done": false,
@@ -231,7 +232,7 @@
       { "id": "lord", "kind": "cast", "address": "s.lord@ledgerwell.example",
         "forms": { "first": "Sofia", "full": "Sofia Lord" } },
       { "id": "portal", "kind": "sender", "address": "payroll-notices@ledgerwell.example",
-        "forms": { "full": "Ledgerwell Payroll Portal" } },
+        "forms": { "full": "LedgerPay" } },
       { "id": "leeds_baker", "kind": "outside", "address": "j.baker@leedsplumbing.example",
         "forms": { "full": "J. Baker" } }
     ],
@@ -366,10 +367,10 @@
         "reduceNote": "Staff should not post about internal systems or their release dates."
       },
       "lord_portal_name": {
-        "text": "The staff payroll portal and how its notices read.",
+        "text": "The payroll portal is called LedgerPay.",
         "subject": "lord", "source": "portal_name",
         "provides": [
-          { "type": "portal", "value": "staff_portal_name", "label": "the staff portal", "kind": "distinctive" }
+          { "type": "portal", "value": "staff_portal_name", "label": "LedgerPay", "kind": "distinctive" }
         ]
       },
       "lord_payslip_date": {
@@ -383,7 +384,7 @@
         "text": "Sofia expects notices from the portal's own notification address.",
         "subject": "lord", "source": "portal_name",
         "provides": [
-          { "type": "name", "about": "sender", "value": "portal_full", "label": "Ledgerwell Payroll Portal", "kind": "distinctive" },
+          { "type": "name", "about": "sender", "value": "portal_full", "label": "LedgerPay", "kind": "distinctive" },
           { "type": "address", "value": "portal_address", "label": "payroll-notices@ledgerwell.example", "kind": "distinctive" }
         ]
       },
@@ -466,7 +467,7 @@
         { "id": "kickoff", "mailbox": "guest",
           "from": { "name": "Ruth Adeyemi", "address": "r.adeyemi@tarnside.example", "avatar": "npc_neutral" },
           "to": "guest@workstation.example", "subject": "Ledgerwell: we are on",
-          "body": "Hello,\n\nLedgerwell have signed. Read the sheet before you do anything, and keep me posted.\n\nRuth",
+          "body": "Hello,\n\nLedgerwell want to go ahead. Read the sheet with Gareth before you do anything, and keep me posted.\n\nRuth",
           "time": "07:52", "unread": true, "folder": "inbox" },
         { "id": "coffee", "mailbox": "guest",
           "from": { "name": "Tarnside Office", "address": "office@tarnside.example", "avatar": "npc_neutral" },
@@ -639,7 +640,7 @@
         "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
         "factorStrings": {
           "senderTrust": { "pass": "✓ An open inbox accepts any sender", "fail": "I don't recognise who this is from.", "redFlag": null },
-          "pretextRelevant": { "pass": "✓ Reads like an application", "fail": "This isn't about the role. I only handle applications.", "redFlag": null },
+          "pretextRelevant": { "pass": "✓ Reads like an application", "fail": "Thanks for getting in touch, but this inbox is for job applications only. Try our main number for anything else.", "redFlag": null },
           "senderAuth": { "pass": "✓ Sent as your own address, so there is nothing to spoof and nothing to fail.", "redFlag": null },
           "attachmentPlausible": {
             "pass": "✓ The CV is attached",
@@ -683,9 +684,9 @@
         "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
         "factorStrings": {
           "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
-          "senderTrust": { "pass": "✓ From someone she trusts", "fail": "Sorry, who is this? I don't recognise the address.", "redFlag": null },
-          "addressedTo": { "pass": "✓ Addressed her by name", "fail": "This isn't addressed the way anyone who actually knows me would.", "redFlag": null },
-          "pretextRelevant": { "pass": "✓ Relevant to her work", "fail": "I'm not expecting anything like this.", "redFlag": null },
+          "senderTrust": { "pass": "✓ From someone she trusts", "fail": "She doesn't know this sender. She acts on mail from someone she trusts in Finance.", "redFlag": null },
+          "addressedTo": { "pass": "✓ Addressed her by name", "fail": "No name, or not the one her colleagues use.", "redFlag": null },
+          "pretextRelevant": { "pass": "✓ Relevant to her work", "fail": "Nothing she was expecting, and no reason for this to reach her.", "redFlag": null },
           "senderAuth": {
             "pass": "✓ Sender authentication would pass",
             "fail": "The spoofed j.baker@ address fails the domain's alignment check. Ledgerwell publishes its DMARC policy as p=none, so a receiver would still deliver it.",
@@ -693,8 +694,8 @@
           },
           "attachmentPlausible": {
             "pass": "✓ The balance sheet is attached",
-            "missing": { "fail": "You said you'd attach it, but there's nothing here.", "redFlag": null },
-            "wrong-type": { "fail": "That isn't a file I can open as a balance sheet.", "redFlag": null }
+            "missing": { "fail": "The message promises the file Jed would send, but nothing is attached.", "redFlag": null },
+            "wrong-type": { "fail": "The attachment isn't the spreadsheet a balance sheet would be.", "redFlag": null }
           }
         },
         "hints": ["Think about who Melanie trusts in Finance.", "What does she expect to receive, and from whom?"],
@@ -739,10 +740,10 @@
         "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
         "factorStrings": {
           "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
-          "senderTrust": { "pass": "✓ From the portal she expects", "fail": "Sorry, who is this? I don't recognise the address.", "redFlag": null },
-          "addressedTo": { "pass": "✓ Addressed her by name", "fail": "This isn't addressed the way the portal would.", "redFlag": null },
-          "pretextRelevant": { "pass": "✓ Reads like a payslip notice", "fail": "I'm not expecting anything like this.", "redFlag": null },
-          "linkCredible": { "pass": "✓ The link looked right", "fail": "That link doesn't look right to me — the address isn't the real portal.", "redFlag": null },
+          "senderTrust": { "pass": "✓ From the portal she expects", "fail": "She doesn't know this sender. Her payroll notices come from the portal's own address.", "redFlag": null },
+          "addressedTo": { "pass": "✓ Addressed her by name", "fail": "No name, or not the one the portal uses.", "redFlag": null },
+          "pretextRelevant": { "pass": "✓ Reads like a payslip notice", "fail": "Not a payslip notice she was expecting; she'd check with the office first.", "redFlag": null },
+          "linkCredible": { "pass": "✓ The link looked right", "fail": "The link's address isn't her portal's.", "redFlag": null },
           "senderAuth": {
             "pass": "✓ Sender authentication would pass",
             "fail": "This didn't really come from the address it claims, so it fails the domain's alignment check. Ledgerwell publishes p=none, so a receiver would still deliver it.",
@@ -773,8 +774,7 @@
         "lines": {
           "open_buddy": { "blanks": { "intern": "intern", "team": "team" },
                           "claims": [ { "fact": "intern", "from": "blank:intern" }, { "fact": "team", "from": "blank:team" } ] },
-          "repair_team": { "technique": "candour", "repairs": "team", "blanks": { "team": "team" },
-                           "claims": [ { "fact": "team", "from": "blank:team" } ] },
+          "repair_team": { "technique": "candour", "repairs": "team" },
           "urgent_payslip": { "technique": "urgency", "claims": [] },
           "name_drop_manager": { "technique": "authority_borrowed", "claims": [] }
         },
@@ -786,7 +786,7 @@
         },
         "outcomes": {
           "got_it": {},
-          "reported": { "line": "I'll need to check this with my manager before I share anything. Goodbye.", "setGlobal": { "pretext_call_reported": true } },
+          "reported": { "line": "Sorry, I'm going to stop you there. I'll run this past my manager first.", "setGlobal": { "pretext_call_reported": true } },
           "walked_away": {}
         },
         "tells": {
@@ -857,11 +857,11 @@
             "notes": {
               "perFlagNote": {
                 "senderTrust": "The display name is Jed's, but the message was really sent from the guest workstation, not from Jed.",
-                "senderAuth": "SPF, DKIM and DMARC all fail: the domain did not really send this."
+                "senderAuth": "SPF fails and there is no DKIM signature at all, so DMARC fails. Ledgerwell's domain never sent this."
               },
               "headerNote": "The header results come from the account the message was sent from.",
               "ifTrusted": "Melanie would have opened it and treated it as a real balance sheet from Jed.",
-              "reportReply": "Thanks. Confirmed as a phish."
+              "reportReply": "Thanks. Confirmed as a phish. Sent from a workstation in our own Operations Room, funnily enough."
             }
           },
           {
@@ -877,7 +877,7 @@
               },
               "headerNote": "The header results come from the account this was really sent from, not from the portal it claims to be.",
               "ifTrusted": "Sofia would have signed in on the look-alike page and handed over her portal password.",
-              "reportReply": "Thanks. Confirmed as a phish."
+              "reportReply": "Thanks. Confirmed as a phish. Good page, that. Shame about the address."
             }
           },
           {
@@ -902,23 +902,22 @@
             }
           },
           {
-            "id": "parcel_zip",
-            "from": { "name": "Parcel Delivery", "address": "tracking@parcel-notice.example" },
-            "to": "operator@ledgerwell.example",
-            "subject": "Your parcel could not be delivered today",
+            "id": "supplier_bank_change",
+            "from": { "name": "Office Supplies Co", "address": "accounts@office-suppiies.example" },
+            "to": "accounts@ledgerwell.example",
+            "subject": "Updated bank details for invoice 4471",
             "time": "09:25",
-            "body": "We tried to deliver your parcel today. Open the attached label and arrange redelivery before it is returned.",
-            "attachments": [ { "id": "label", "label": "label.zip", "kind": "archive" } ],
-            "auth": { "spf": "fail", "dkim": "none", "dmarc": "fail" },
+            "body": "Please note our bank details have changed. Pay invoice 4471 to the new account below from today.\n\nOffice Supplies Co",
+            "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass" },
             "truth": {
               "isPhish": true,
-              "flags": ["senderAuth", "urgencyCalibrated"],
+              "flags": ["senderTrust", "urgencyCalibrated"],
               "perFlagNote": {
-                "senderAuth": "SPF and DMARC fail: the parcel firm's domain did not send this.",
-                "urgencyCalibrated": "A parcel 'returned today' pushes you to open the attachment without thinking."
+                "senderTrust": "office-suppiies.example: an i where the l should be. It passes every check because the look-alike domain really sent it.",
+                "urgencyCalibrated": "'From today' is there to get it paid before anyone rings the supplier."
               },
-              "ifTrusted": "Opening the zip would run whatever is inside it.",
-              "reportReply": "Thanks. This has been marked as a phish."
+              "ifTrusted": "The next payment would go to the attacker. This is how Ledgerwell nearly lost a month's billing.",
+              "reportReply": "Thanks. Reported, and Finance have rung the supplier on the number we hold."
             }
           },
           {
@@ -947,19 +946,20 @@
             "id": "fwd_balance_sheet",
             "from": { "name": "Jed Baker", "address": "j.baker@ledgerwell.example" },
             "to": "m.pierce@ledgerwell.example",
-            "subject": "Fwd: Q3 balance sheet",
+            "subject": "Q3 balance sheet",
             "time": "09:45",
-            "body": "Mel, here's the Q3 balance sheet, forwarded from my home account as the office one was down.\n\nJed",
+            "body": "Mel, Q3 balance sheet as promised. Sent via the finance list so the team gets a copy too.\n\nJed",
+            "attachments": [ { "id": "q3", "label": "Q3-balance-sheet.xlsx", "kind": "spreadsheet" } ],
             "auth": {
               "spf": "fail", "dkim": "pass", "dmarc": "pass",
-              "summary": "SPF failed because it came through a forwarder, but DKIM passed and aligned, so DMARC passed. This is usually fine."
+              "summary": "SPF failed because the finance list re-sent it from its own server, but Jed's DKIM signature survived and aligns, so DMARC passed. This is normal for mailing lists."
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "SPF fails on a forwarded message, but DKIM still aligns, so DMARC passes.",
-                "default": "The sender, the subject and the content match what Melanie expects from Jed."
+                "senderAuth": "SPF fails on list mail, but Jed's DKIM signature still aligns, so DMARC passes.",
+                "default": "Same story as the one you spoofed, but this one carries Jed's real signature. The headers are the difference."
               }
             }
           },
@@ -974,7 +974,7 @@
             "truth": {
               "isPhish": false,
               "flags": [],
-              "whyFine": { "default": "A known supplier, the usual amount and no change to payment details." }
+              "whyFine": { "default": "A known supplier, routine invoice, and no change to payment details." }
             }
           },
           {
@@ -1030,7 +1030,7 @@
           { "id": "payslip", "label": "Payslip ready" }
         ],
         "wordings": [
-          { "id": "w_formal", "match": true, "text": "Your payslip is ready. Sign in to the staff portal to view it." },
+          { "id": "w_formal", "match": true, "text": "Your payslip is ready. Sign in to LedgerPay to view it." },
           { "id": "w_generic", "match": false, "text": "Please sign in to continue." },
           { "id": "w_slips", "match": false, "slips": true, "text": "Plese login to veiw you're payslip." }
         ],
@@ -1110,16 +1110,16 @@
         "measures": [
           { "id": "names", "step": "measures", "correct": false, "blame": true,
             "text": "Which named staff fell for it.",
-            "why": "Naming people suppresses reporting; the report is about process, not blame." },
+            "why": "Gareth's one rule. Name people and they stop reporting." },
           { "id": "how_far", "step": "measures", "correct": true,
             "text": "How far each attempt gets: sent, landed, failed, page visits and the call outcome.",
-            "why": "These are measures the lab can record and that point at process gaps." },
+            "why": "Each one points at a step in a process that could have stopped it." },
           { "id": "passwords_collected", "step": "measures", "correct": false,
             "text": "How many passwords you collected.",
-            "why": "The lab records that a sign-in was submitted, never what was submitted." },
+            "why": "We record that a sign-in happened, never what was typed. No password leaves the test." },
           { "id": "did_staff_report", "step": "measures", "correct": false,
             "text": "Whether staff reported the attempts.",
-            "why": "A live test would measure this; this lab cannot observe it, so do not plan around it." }
+            "why": "Reporting rate is the best measure there is, but Ledgerwell has no report button yet, so there is nothing to count. That gap goes in the report as a finding." }
         ]
       },
       "report": {
@@ -1136,7 +1136,7 @@
             "rootCauses": [
               { "id": "no_banner_dmarc_none", "correct": true,
                 "text": "No external-sender banner, and DMARC left at p=none",
-                "why": "No external-sender banner and DMARC at p=none let a spoof of a colleague through." },
+                "why": "p=none tells receivers to deliver mail that fails DMARC, so your j.baker@ spoof arrived looking internal. A banner would at least have marked it as outside mail." },
               { "id": "staff_carelessness", "correct": false, "blame": true,
                 "text": "Finance staff were careless with a suspicious email",
                 "why": "Blaming staff hides the control gap and stops people reporting." }
@@ -1144,7 +1144,7 @@
             "controls": [
               { "id": "banner_dmarc_enforce", "correct": true,
                 "text": "Add an external-sender banner and move DMARC to enforcement",
-                "why": "An external-sender banner plus DMARC enforcement would flag or block the spoof." },
+                "why": "Quarantine or reject stops the spoof at the gateway. The banner covers look-alike domains that DMARC can't catch." },
               { "id": "ban_finance_email", "correct": false,
                 "text": "Stop Finance using email",
                 "why": "Banning email for Finance is not a workable control." }
@@ -1153,7 +1153,7 @@
             "rootCauses": [
               { "id": "no_verification_script", "correct": true,
                 "text": "No script telling the desk to verify a caller before sharing details",
-                "why": "There is no script telling the desk to verify who is calling before sharing details." },
+                "why": "Dev checked what his policy told him to check: a name and a team. Both were on public pages." },
               { "id": "dev_fault", "correct": false, "blame": true,
                 "text": "Dev should not have given anything away",
                 "why": "Dev followed the policy he was given; the missing call-back rule is the gap." }
@@ -1161,16 +1161,16 @@
             "controls": [
               { "id": "callback_on_file", "correct": true,
                 "text": "Call back on the number already on file before sharing details",
-                "why": "A call-back to a number already on file defeats this line." },
+                "why": "An attacker can fake a name and a team, but not answer a call on the number HR already holds." },
               { "id": "no_phone_support", "correct": false,
                 "text": "Scrap phone support on the service desk",
                 "why": "Removing phone support punishes staff for a process gap." }
             ] },
-          { "id": "lookalike_page", "step": "findings", "text": "A look-alike portal page would convince staff",
+          { "id": "lookalike_page", "step": "findings", "text": "Finance signed in on a look-alike portal page",
             "rootCauses": [
               { "id": "no_way_to_check", "correct": true,
                 "text": "Staff have no easy way to check an address or report a suspect page",
-                "why": "Staff have no easy way to check the address or report a suspect page." },
+                "why": "Sofia had no bookmark to compare against and no button to press if she was unsure." },
               { "id": "intern_naive", "correct": false, "blame": true,
                 "text": "The new intern was too green to spot it",
                 "why": "Naming the intern as the cause misses the missing control." }
@@ -1178,7 +1178,7 @@
             "controls": [
               { "id": "bookmark_and_report", "correct": true,
                 "text": "Give staff a bookmarked portal and a report button",
-                "why": "A bookmarked portal and a report button give staff a safe path." },
+                "why": "A bookmark means never following an emailed link to the portal. A report button turns a doubt into a warning for everyone." },
               { "id": "block_all_links", "correct": false,
                 "text": "Block every link in incoming email",
                 "why": "Blocking every link is not realistic and would not be kept to." }
@@ -1303,7 +1303,7 @@
           "takeable": false,
           "interactable": true,
           "active": true,
-          "observations": "The signed rules of engagement for the Ledgerwell job.",
+          "observations": "The rules of engagement for the Ledgerwell job, waiting for Gareth's signature.",
           "minigameData": { "mode": "scope" }
         },
         {

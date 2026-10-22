@@ -9,6 +9,7 @@
 
 VAR roe_signed = false
 VAR report_filed = false
+VAR fairbairn_condition_heard = false
 
 VAR met = false
 VAR signed_scene = false
@@ -18,7 +19,7 @@ VAR quiet = false
 === start ===
 { met: -> resume }
 ~ met = true
-Gareth Fairbairn: You'll be Tarnside's. Gareth Fairbairn. This is my firm, forty years of it.
+Gareth Fairbairn: We weren't introduced properly. Gareth. Forty years I've had this firm, and every one of them is out there.
 -> resume
 
 // Checked on every open: play a pending scene if one is due, else the hub.
@@ -47,7 +48,9 @@ Gareth Fairbairn: You'll be Tarnside's. Gareth Fairbairn. This is my firm, forty
 ~ signed_scene = true
 Gareth Fairbairn: Right. I'll sign it.
 Narrator: He reads the sheet to the end, then puts his name at the bottom.
+Ruth Adeyemi: That signature is the difference between a test and a crime. Without it, this is the Computer Misuse Act. Same goes elsewhere.
 Gareth Fairbairn: One condition. No names in anything I read. If someone clicks, that's my training's fault, not theirs.
+#set_global:fairbairn_condition_heard:true
 ~ quiet = true
 -> hub
 

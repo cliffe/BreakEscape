@@ -150,6 +150,22 @@ test('call line reads the pretext globals: granted, reported, outcome and lowest
     assert.match(line, /Lowest influence: -72/);
 });
 
+test('call line reads as two calls when a later call succeeded after an earlier reported one (R3 F7)', () => {
+    setWorld({
+        globals: { pretext_call_done: true, dev_reported: true,
+            pretext_service_desk_call_outcome: 'got_it', pretext_service_desk_call_lowest: -60,
+            pretext_service_desk_call_reports: 1 },
+        mailState: { metrics: {} }
+    });
+    const s = open();
+    const call = s.getTestState().report.results.calls[0];
+    assert.equal(call.failedAttempts, 1);
+    const line = s.container.querySelector('[data-call="service_desk_call"]').textContent;
+    assert.match(line, /earlier call was reported to the manager; a later call got what it asked for/);
+    assert.doesNotMatch(line, /An ask was granted\./);
+    assert.match(line, /Lowest influence: -60/);
+});
+
 test('the report states once that it cannot see staff reports', () => {
     setWorld({ mailState: { metrics: {} } });
     const s = open();

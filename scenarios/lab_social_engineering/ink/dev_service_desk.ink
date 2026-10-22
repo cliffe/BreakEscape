@@ -26,6 +26,7 @@ VAR pretext_team_name = ""
 VAR pretext_team_value = ""
 VAR se_intel_lord_portal_name = false
 VAR se_intel_lord_payslip_date = false
+VAR team_checked = false
 
 === function pretext_say(utterance_id) ===
 // Fallback only: a dry run or preload has no binding. The real binding judges the
@@ -42,15 +43,18 @@ Dev: Service desk, Dev speaking. What can I do for you?
 
 === desk ===
 // The external call is inlined into the divert so the knot declares no temp twice.
+// Each reaction is passed the say id as well as the band, so Dev answers the technique
+// (urgency, borrowed authority) and the band (wary, refusing) in his own voice, not with
+// one stock team line each turn (item 7). The team acknowledgement shows once (team_checked).
 + [I'm helping {pretext_intern_name}, your new starter in {pretext_team_name}.]
-    -> reaction(pretext_say("open_buddy"))
-+ [Sorry, she's in {pretext_team_name} — I should have said.]
-    -> reaction(pretext_say("repair_team"))
+    -> reaction(pretext_say("open_buddy"), "open_buddy")
++ { team_checked and pretext_team_value == "accounts" } [Sorry, my mistake. She's in Finance.]
+    -> reaction(pretext_say("repair_team"), "repair_team")
 + [She's a bit panicked, it's her first payslip.]
-    -> reaction(pretext_say("urgent_payslip"))
+    -> reaction(pretext_say("urgent_payslip"), "urgent_payslip")
 + [Her manager said you'd sort this for us.]
-    -> reaction(pretext_say("name_drop_manager"))
-+ { not se_intel_lord_portal_name } [What's the staff portal called, and how do its emails read?]
+    -> reaction(pretext_say("name_drop_manager"), "name_drop_manager")
++ { not se_intel_lord_portal_name } [What's the payslip portal called, and who do its emails come from?]
     -> ask_reaction("portal_name", pretext_ask("portal_name"))
 + { not se_intel_lord_payslip_date } [And when do payslips actually go out this month?]
     -> ask_reaction("payslip_date", pretext_ask("payslip_date"))
@@ -58,18 +62,39 @@ Dev: Service desk, Dev speaking. What can I do for you?
     Dev: Right you are. Cheers.
     -> END
 
-=== reaction(band) ===
+=== reaction(band, said) ===
+// band 3 (reported) ends the call with no line here: the lockout's endConversation closes
+// it and the outcome's authored goodbye is spoken on finalise (item 35), so printing one
+// here would double it.
 { band >= 3:
-    Dev: Tell you what, I'll check this with my manager and call you back. Cheers.
     -> END
 }
-{
-- pretext_team_value == "finance":
-    Dev: Finance, lovely. New intern — that'll be Sofia. What's she after?
-- pretext_team_value == "accounts":
-    Dev: Accounts? Hm. I don't have a new starter down for Accounts. Let me think.
-- else:
-    Dev: Right, bear with me a sec.
+{ band == 2:
+    Dev: Look, I'm not doing anything else on this call without checking who you are.
+    -> desk
+}
+{ band == 1:
+    Dev: Okay. Slow down a sec for me.
+}
+{ said == "urgent_payslip":
+    Dev: Aw, first payslip's always a faff. She'll be fine, they're never late.
+    -> desk
+}
+{ said == "name_drop_manager":
+    Dev: Did they? Nobody's told me. I still go by the list, mind.
+    -> desk
+}
+{ said == "repair_team":
+    Dev: Finance, right you are. New intern, that'll be Sofia then. What's she after?
+    -> desk
+}
+{ not team_checked:
+    ~ team_checked = true
+    { pretext_team_value:
+    - "finance": Dev: Finance, lovely. New intern, that'll be Sofia. What's she after?
+    - "accounts": Dev: Accounts? We folded Accounts into Finance a couple of years back. Who is she?
+    - else: Dev: Right, bear with me a sec.
+    }
 }
 -> desk
 
@@ -79,7 +104,7 @@ Dev: Service desk, Dev speaking. What can I do for you?
     { ask_id == "payslip_date":
         Dev: Course. Payslips go out Monday the 6th this month. There you go.
     - else:
-        Dev: Course. It's the staff portal, notices come from the payroll address. There you go.
+        Dev: Course. It's LedgerPay. Notices come from payroll-notices at our domain, same as every month. There you go.
     }
 - 2:
     Dev: Before I read a date out, I'd check her against the new-starter list. Give me her name and I'll have a look.

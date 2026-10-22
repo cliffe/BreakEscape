@@ -261,7 +261,7 @@ def check_unknown_fields(json_data)
 
   # Known room fields
   known_room_fields = %w[
-    type door_sign connections locked lockType requires keyPins difficulty
+    type door_sign connections locked lockType requires keyPins lockedHint difficulty
     ambientSound ambientVolume objects npcs _comment dimensions biometricMatchThreshold lighting
     chatBackground
   ]

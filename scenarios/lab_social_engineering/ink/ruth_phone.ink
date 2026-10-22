@@ -78,7 +78,7 @@ Ruth Adeyemi: Gareth's signed. The whiteboard next.
     Ruth Adeyemi: He signed in person, by the window. Go and hear his one condition before you plan.
     -> stage1
 + [What objective do I pick?]
-    Ruth Adeyemi: The one that matches the brief: test whether staff can be led into a mistake.
+    Ruth Adeyemi: The one that ends in a report of the gaps. Nothing broken, nobody's password kept.
     -> stage1
 + [Which success measure?]
     Ruth Adeyemi: Not "who fell for it". Measure the process. Naming people breaks Gareth's one rule.
@@ -117,8 +117,11 @@ Ruth Adeyemi: Operations now. If that door's locked, I've got the key — come a
 + {not phish_hampshire_landed} [Chris isn't biting.]
     Ruth Adeyemi: Her careers inbox trusts anyone. Apply as a candidate, and attach a CV from the kit.
     -> stage3
-+ [Melanie keeps refusing.]
-    Ruth Adeyemi: Borrow Jed's name — she trusts him. The From line is only a label you can set.
++ {not phish_pierce_landed} [Melanie keeps refusing.]
+    Ruth Adeyemi: Who would she open a file from without thinking? Your recon says.
+    -> stage3
++ {not phish_pierce_landed} [I'm sending as Jed and she still says no.]
+    Ruth Adeyemi: Freemail can only send as itself. Switch to the guest account, then set Jed in the From line.
     -> stage3
 + [Thanks.] #exit_conversation
     Ruth Adeyemi: Keep at it.
@@ -139,7 +142,7 @@ Ruth Adeyemi: Operations now. If that door's locked, I've got the key — come a
     Ruth Adeyemi: Ring the service desk from the desk phone. Dev. Get the portal's name off him.
     -> stage4
 + [Anything else?]
-    Ruth Adeyemi: Prepare the call from held facts. Say you're the new intern's buddy.
+    Ruth Adeyemi: Know who you're asking about before you ring: her name and her team. Then you're her buddy, helping out.
     -> stage4
 + [On it.] #exit_conversation
     Ruth Adeyemi: Good.
@@ -172,8 +175,8 @@ Ruth Adeyemi: Sending's done. The report desk, in this room.
 + [How do I write the findings?]
     Ruth Adeyemi: A cause and a control for each. Wrong pairs get explained; fix them and move on.
     -> stage6
-+ [One cause names Melanie.]
-    Ruth Adeyemi: Don't pick it. Blaming staff just stops them reporting next time. The fix, not the person.
++ [Some of these causes blame someone.]
+    Ruth Adeyemi: Those are the wrong ones. Blame someone in writing and the whole floor stops owning up.
     -> stage6
 + [Understood.] #exit_conversation
     Ruth Adeyemi: Good.
@@ -184,13 +187,13 @@ Ruth Adeyemi: Sending's done. The report desk, in this room.
 { triage_pass and profile_done: -> hub }
 Ruth Adeyemi: Blue Team room. If that door's locked, I've got the key — come and see me. Tomasz will set you off.
 + [Has Gareth seen the report?]
-    Ruth Adeyemi: He has, and not one name in it. Go by the window — he'll want to thank you himself.
+    Ruth Adeyemi: He's reading it. Go by the window, he wants a word.
     -> stage7
 + {not triage_pass} [The inbox triage?]
     Ruth Adeyemi: Sort each message: trust, report or delete. Read the SPF, DKIM and DMARC results.
     -> stage7
 + {not triage_pass} [One passes every check.]
-    Ruth Adeyemi: A look-alike can. Consistency isn't trust. Judge whether it should be there at all.
+    Ruth Adeyemi: Passing only proves that domain sent it. Read the domain itself, letter by letter.
     -> stage7
 + {not profile_done} [The mitigations?]
     Ruth Adeyemi: Flip the SOC board to defender. Pick one fix for each flagged fact.

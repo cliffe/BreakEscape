@@ -96,6 +96,24 @@ module BreakEscape
       assert_not filtered["rooms"]["start"].key?("chatBackground")
     end
 
+    test 'filtered_scenario_for_bootstrap keeps a room lockedHint' do
+      # lockedHint is the door's "how to get the key" line. unlock-system.js appends it
+      # to the locked-door toast, so it must survive the bootstrap filter (lab R3 F1):
+      # the hint is authored on the room but never reached the client before.
+      mission = break_escape_missions(:ceo_exfil)
+      player = break_escape_demo_users(:test_user)
+      data = @scenario_data.deep_dup
+      data["rooms"]["next_room"]["lockedHint"] = "Collect the key from Ruth once your plan is signed off."
+
+      game = Game.new(mission: mission, player: player, scenario_data: data)
+      game.save(validate: false)
+
+      filtered = game.filtered_scenario_for_bootstrap
+      assert_equal "Collect the key from Ruth once your plan is signed off.",
+                   filtered["rooms"]["next_room"]["lockedHint"]
+      assert_not filtered["rooms"]["start"].key?("lockedHint")
+    end
+
     test 'filtered_scenario_for_bootstrap removes objects and npcs' do
       mission = break_escape_missions(:ceo_exfil)
       player = break_escape_demo_users(:test_user)

@@ -767,7 +767,9 @@ module BreakEscape
           # lighting: the room's lighting block (mode, ambient, emitters, variants) — not secret.
           # The client's door-spill needs it to know whether a still-unloaded room is lit, so
           # light leaks under a closed door into a lit room (but not into a dark motion room).
-          %w[type connections locked lockType requires difficulty door_sign keyPins ambientSound ambientVolume
+          # lockedHint: the door's "how to get the key" line (not secret); unlock-system.js
+          # appends it to the locked toast, so it must survive the bootstrap filter (lab R3 F1).
+          %w[type connections locked lockType requires difficulty door_sign keyPins lockedHint ambientSound ambientVolume
              maxAttempts passwordHint showHint postitNote showPostit showKeyboard chatBackground lighting].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end

@@ -189,12 +189,22 @@ export class EngagementReportMinigame extends SocialOverlayScene {
                 h('h4', { class: 'er-subh', text: 'Pretext call' }));
             for (const c of r.calls) {
                 const parts = [];
-                parts.push(c.done ? 'An ask was granted.' : 'No ask was granted.');
-                if (c.reported) parts.push('The contact reported the attempt.');
-                if (c.outcome) {
-                    const outcomeText = { got_it: 'The contact gave up what was asked.',
-                        reported: 'The contact rang off and reported it.', walked_away: 'The call ended without a result.' };
-                    parts.push(outcomeText[c.outcome] || `Latest call ended: ${c.outcome}.`);
+                // The globals are the engagement's latest state (outcome/reported) plus a running
+                // count of failed calls, so a success after an earlier reported call must read as
+                // two calls, not one contradictory one (lab R3 F7).
+                const twoCalls = c.outcome === 'got_it' && (c.reported || c.failedAttempts > 0);
+                if (twoCalls) {
+                    parts.push(c.reported
+                        ? 'An earlier call was reported to the manager; a later call got what it asked for.'
+                        : 'An earlier call got nothing; a later call got what it asked for.');
+                } else {
+                    parts.push(c.done ? 'An ask was granted.' : 'No ask was granted.');
+                    if (c.reported) parts.push('The contact reported the attempt.');
+                    if (c.outcome) {
+                        const outcomeText = { got_it: 'The contact gave up what was asked.',
+                            reported: 'The contact rang off and reported it.', walked_away: 'The call ended without a result.' };
+                        parts.push(outcomeText[c.outcome] || `Latest call ended: ${c.outcome}.`);
+                    }
                 }
                 if (c.lowest !== null) parts.push(`Lowest influence: ${c.lowest}.`);
                 callPanel.appendChild(h('p', { class: 'er-call-line', 'data-call': c.callId, text: parts.join(' ') }));
@@ -369,7 +379,7 @@ export class EngagementReportMinigame extends SocialOverlayScene {
                     pages: m.results.pages.map((p) => ({ pageId: p.pageId, sent: p.sent, visited: p.visited,
                         submitted: p.submitted, noticed: p.noticed, line: pageOutcomeLine(p) })),
                     calls: m.results.calls.map((c) => ({ callId: c.callId, done: c.done, reported: c.reported,
-                        outcome: c.outcome, lowest: c.lowest }))
+                        outcome: c.outcome, lowest: c.lowest, failedAttempts: c.failedAttempts }))
                 },
                 items: m.items.map((i) => ({ id: i.id, confirmed: i.confirmed })),
                 findings: m.findings.map((f) => ({ id: f.id, done: f.done,

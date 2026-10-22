@@ -166,13 +166,19 @@ export function buildReportModel(social, globals, mailState) {
             const character = typeof c.character === 'string' ? c.character : null;
             const outcome = g['pretext_' + c.id + '_outcome'];
             const lowest = g['pretext_' + c.id + '_lowest'];
+            // Count of calls that ended without a grant (reported, refused or walked away);
+            // finalisePretext bumps `_reports` on every such call (06 §4.5). With a final
+            // outcome of got_it this tells the row a reported/failed earlier call also happened,
+            // so the report reads as two calls rather than one contradictory one (lab R3 F7).
+            const failedAttempts = Number(g['pretext_' + c.id + '_reports']);
             return {
                 callId: c.id,
                 character,
                 done: isTrue(g.pretext_call_done),
                 reported: character ? isTrue(g[character + '_reported']) : false,
                 outcome: typeof outcome === 'string' ? outcome : null,
-                lowest: typeof lowest === 'number' ? lowest : null
+                lowest: typeof lowest === 'number' ? lowest : null,
+                failedAttempts: Number.isFinite(failedAttempts) ? failedAttempts : 0
             };
         });
 
