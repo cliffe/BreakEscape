@@ -29,6 +29,10 @@ JOBS=(
   m5-slice:test_social_slice 6:lab_social_engineering r4-door:lab_social_engineering
   board-indicators:test_social_board_indicators freetext:test_social_freetext
   m5-channels:test_social_m5_channels p7-channels:test_social_p7_channels p9:test_social_p9
+  p7-episode:test_social_episode
+  e1-full:awareness_e1_invoice_fraud e2-full:awareness_e2_cv_lures
+  e3-full:awareness_e3_helpdesk_reset e4-full:awareness_e4_exec_whaling
+  e5-full:awareness_e5_signin_pages e6-full:awareness_e6_texts_and_qr
 )
 
 new_game() { # scenario -> game id
@@ -56,6 +60,8 @@ job() { # name:scenario[:vw]
 # ONLY="1b 4 6" reruns just those bridges (3b rides with 1b).
 running=0
 for j in "${JOBS[@]}"; do
+  # Bridges still being written (e3-full, e5-full) are skipped until their file exists.
+  [ -f "$SE/bridge-${j%%:*}.jsonl" ] || { echo "skip ${j%%:*}: no $SE/bridge-${j%%:*}.jsonl" >&2; continue; }
   if [ -n "${ONLY:-}" ]; then case " $ONLY " in *" ${j%%:*} "*) ;; *) continue;; esac; fi
   job "$j" &
   running=$((running+1))
