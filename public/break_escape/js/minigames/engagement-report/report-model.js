@@ -24,6 +24,25 @@ export const STATE_KEY = 'se_report_state';
 const isTrue = (v) => v === true;
 const int = (v) => (Number.isFinite(v) ? v : 0);
 
+/**
+ * The domain string a landing-page record chose, resolved from `choices.domainId`
+ * against the page's brand domain menus (07 §4). Null when nothing was chosen or the
+ * id is off the menu. Used so the report's page row names the look-alike the student
+ * built, not the authored link text for the real portal (lab R1 F9).
+ */
+function chosenPageDomain(pageDef, rec) {
+    const id = rec && typeof rec === 'object' && rec.choices && typeof rec.choices === 'object'
+        ? rec.choices.domainId : null;
+    if (typeof id !== 'string' || !id) return null;
+    const brands = Array.isArray(pageDef?.brands) ? pageDef.brands : [];
+    for (const brand of brands) {
+        const domains = Array.isArray(brand?.domains) ? brand.domains : [];
+        const opt = domains.find((d) => d && d.id === id);
+        if (opt && typeof opt.domain === 'string' && opt.domain) return opt.domain;
+    }
+    return null;
+}
+
 function personName(person) {
     const f = person?.forms || {};
     return f.full || f.first || person?.name || person?.id || '';
@@ -121,7 +140,10 @@ export function buildReportModel(social, globals, mailState) {
             const victim = rec && typeof rec === 'object' && rec.victim && typeof rec.victim === 'object' ? rec.victim : null;
             return {
                 pageId: p.id,
-                label: p.linkText || p.id,
+                // The look-alike domain the student actually chose, so the row matches the
+                // page they built rather than the real portal's link text (lab R1 F9). Falls
+                // back to the authored link text, then the id, when no domain was recorded.
+                label: chosenPageDomain(p, rec) || p.linkText || p.id,
                 sent: !!victim, // a victim record is written on every send that carries the page (00 §11a)
                 visited: !!victim && victim.visited === true,
                 submitted: !!victim && victim.submitted === true,

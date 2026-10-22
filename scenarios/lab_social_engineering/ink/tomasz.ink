@@ -28,7 +28,11 @@ VAR quiet = false
 ~ met = true
 Tomasz: You're the one giving me a headache this week. Good. I asked for it.
 Tomasz: Tomasz. I run security here, me and half a person's budget.
-Tomasz: Two jobs for you. Triage that inbox at the workstation, then flip the board and pick the fixes.
+{ triage_pass and profile_done:
+    Tomasz: You've beaten me to both — the inbox triaged and the fixes picked. Keen. Sit down and we'll close this out.
+- else:
+    Tomasz: Two jobs for you. Triage that inbox at the workstation, then flip the board and pick the fixes.
+}
 ~ quiet = true
 -> hub
 
@@ -74,7 +78,7 @@ Tomasz: Here's what it showed. An open inbox trusts anyone, a From line is just 
 {
 - dev_reported:
     Tomasz: And Dev reported you. Credit to him — but a call-back rule would have caught it without him noticing a thing.
-- pretext_service_desk_call_outcome == "got_it" and pretext_service_desk_call_lowest >= -10:
+- pretext_service_desk_call_outcome == "got_it" and pretext_service_desk_call_lowest >= 0:
     Tomasz: Dev handed you the portal and the date, no fuss. A call-back to a number on file stops every line of that.
 - pretext_service_desk_call_outcome == "got_it":
     Tomasz: You had to lean on Dev to get the portal and the date, but he still gave them up. A call-back to a number on file stops every line of that.

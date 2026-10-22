@@ -196,7 +196,9 @@ test('Create account: panel lists the menu, Confirm waits for a pick, then both 
     assert.match(panel.textContent, /T\. Test/);
     assert.match(panel.textContent, /<tarnside\.test@freemail\.example>/);
     const confirm = panel.querySelector('.mail-create-confirm');
-    assert.equal(confirm.disabled, true);
+    // Confirm is enabled even before a pick so an empty press gives feedback rather
+    // than being a dead button (lab R1 F11); it writes nothing until an address is chosen.
+    assert.equal(confirm.disabled, false);
     confirm.click();
     assert.equal(globals.acct_freemail, undefined);
 
@@ -229,8 +231,11 @@ test('Create account: the choice is written in order (choice first) and emits bo
     scene.chooseCreateEntry('tt1');
     scene.confirmCreateAccount();
     delete window.eventDispatcher;
+    // The choice and the account flag, then the remembered account so a reload reopens
+    // on it (lab R1 F11).
     assert.deepEqual(seen, [['global_variable_changed:acct_freemail_choice', 'tt1'],
-        ['global_variable_changed:acct_freemail', true]]);
+        ['global_variable_changed:acct_freemail', true],
+        ['global_variable_changed:se_mail_last_account', 'freemail']]);
 });
 
 test('Create account: Esc leaves the panel without creating, then Esc again closes the overlay', () => {

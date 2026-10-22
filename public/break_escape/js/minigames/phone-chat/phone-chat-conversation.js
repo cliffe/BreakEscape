@@ -591,10 +591,16 @@ export default class PhoneChatConversation {
      * The baseline runs with the global observer detached, so it writes nothing.
      *
      * @param {Function} syncGlobals - (story) => void, writes the current globals in
+     * @param {Object} [opts]
+     * @param {boolean} [opts.force] - re-run even if no global changed. A fresh pretext
+     *   call needs this: its opening choices were baked by the preload with the card VARs
+     *   still empty, and syncGlobals fills them as story-LOCAL VARs, which the global
+     *   comparison never sees. Re-running re-bakes the choices with the filled VARs and,
+     *   as always, drops the leading output the player has already read (M2 / lab F1).
      * @returns {{ renavigated: boolean, knot?: string, messages?: string[], tags?: string[],
      *             replayedSteps?: number, result?: Object }}
      */
-    reopenWithCurrentGlobals(syncGlobals) {
+    reopenWithCurrentGlobals(syncGlobals, { force = false } = {}) {
         const story = this.engine?.story;
         if (!this.storyLoaded || !story) return { renavigated: false };
 
@@ -609,7 +615,7 @@ export default class PhoneChatConversation {
         if (typeof syncGlobals === 'function') syncGlobals(story);
         const globalsChanged = Object.keys(globalsBefore)
             .some(name => story.variablesState[name] !== globalsBefore[name]);
-        if (!globalsChanged || !(story.currentChoices?.length > 0)) {
+        if ((!globalsChanged && !force) || !(story.currentChoices?.length > 0)) {
             return { renavigated: false };
         }
 

@@ -299,6 +299,8 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 
 - **Impl review R2** (opus48, `scenarios/lab_social_engineering/IMPL_REVIEW_R2.md`): 0 blocker, 0 major. B1–B4 and M1–M4 correct; ink tunnels and phone stage guards cannot loop or double-give; the anti-farm rule is sound; compiled ink matches a fresh compile. Minors for the next round: Dev's lockout `recoverTo: -30` is now dead config (a fresh call resets to start), so drop it or floor the reset at it; the B2 log note named the wrong gate (corrected above); the harness items in FIX_ROUND_L (`clickControl` substring, `lock` first key, `bootstrap` in Ruth's opening) are deferred to the next harness pass.
 
+- **Lab re-run R1** (Sonnet, fresh game 3143 plus 3169 for side paths, report `scenarios/lab_social_engineering/playtests/R1.md`): start to end screen with **no workarounds**, one deliberate reload, verify-run 23/23, score 100. 12 of 13 checks pass: all three Ruth keys in session, no cross-opening, phone hints follow the stage, Dev's pending path is signposted and can't be farmed, the builder panel fills, Lord lands first send, Hampshire shows 0 flags, the end screen shows. **Still failing (major):** the first Dev menu has empty blanks and the first sent line is stored blank; the ink VARs are already right at render, so the fillVars re-asserts do nothing (suspect the first choices are baked before `attachPretext` sets `_pretext`). 13 minors in R1.md. Lab fix round 3 on opus48: `playtests/FIX_ROUND_R1.md`.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
@@ -336,3 +338,85 @@ Minors left (logged, not small / out of safe scope this round):
 - Triage `own_lord` replay sender/auth do not match the guest send; `cv_portfolio` has no way to inspect its link target; nothing outside the checklist signposts an incoming reply.
 
 Gates: lab `--strict-social --no-graph --skip-ink` exit 0; slice `--strict-social` exit 0; node social/phone/validator suite 778/778 incl. the new ruth-keys test and the new pretext/landing tests.
+
+### Lab fix round R1-follow-up (Opus): re-run R1 + IMPL_REVIEW_R2 findings
+
+Source: `scenarios/lab_social_engineering/playtests/FIX_ROUND_R1.md`, drawing on `playtests/R1.md`
+and `IMPL_REVIEW_R2.md`. Not committed.
+
+Major (M2 / R1 F1) — fixed, with a proof:
+- The real cause was not the fillVars ordering (round 2 was already right for the *fresh-navigation*
+  path). Dev's contact is preloaded on the player phone, so a fresh call takes the **restored**
+  branch of `openConversation`, replaying the preloaded story state. That state was baked by the
+  preload with the card VARs empty, so `currentChoices[0]` read "I'm helping , your new starter in ."
+  The round-2 re-asserts set the VARs but never re-built the already-baked choices, and the reopen
+  re-run is gated on a GLOBAL change (the card VARs are story-local), so it never fired.
+- Fix: `reopenWithCurrentGlobals(sync, { force })` (phone-chat-conversation.js) now re-runs the knot
+  owning the current choices even with no global change when `force` is set; the phone loader
+  (phone-chat-minigame.js) sets `force` for a fresh pretext call (`this._pretext && !resuming`).
+  Re-running re-bakes the opening choices with the filled VARs and, as always, drops the leading
+  output already in the thread, so the greeting is not replayed. `attachPretext` exposes `resuming`
+  on the handle. The round-2 re-asserts stay: they are load-bearing on the non-preloaded fresh path.
+- Proof: `test/js/social-pretext-first-menu.test.mjs` (+ fixture `social_pretext_first_menu.ink/.json`,
+  shaped like the Dev call). Asserts the preload bakes the blank choice, a forced re-run re-bakes it
+  to "I'm helping Sofia Lord, your new starter in Finance." with no greeting replayed, and that
+  WITHOUT force the blank persists (reproduces F1). 3/3 pass.
+
+Minors fixed:
+- **R2 #1 (dead config):** dropped Dev's lockout `recoverTo: -30` (the fresh-call reset always
+  overwrote it). Keeps code and config consistent with the logged decision (the lesson is the report
+  + channel lockout, not a worse start).
+- **Dev influence economy (F2/F3):** Dev's `start` moved -10 -> 0 so a student who does nothing
+  wrong sees a neutral bar, not one that looks already hurt. Grantability is unchanged (portal_name
+  needs no verification either way; payslip_date still needs the opener's name). Tomasz's debrief
+  "no fuss" threshold moved with the start, `lowest >= -10` -> `>= 0` (tomasz.ink), so it still means
+  "influence never dropped below where Dev started" — a clean call reads no-fuss, a pending-before-the-
+  opener call reads leaned-on, as before.
+- **Desk phone feedback (F6):** the "you already have what Dev can tell you" line is now a titled
+  3 s notification that also says ringing back would only put him on guard. (Both desk-phone branches
+  already showed a toast; the headless harness does not capture transient toasts, which is why R1 read
+  it as silence — noted for the harness items below.)
+- **Ruth's phone recon rung (F13):** stage 2's opening no longer tells the student to come and collect
+  a key they already hold ("You've the key already — the OSINT workstation's through that door"), and
+  the third rung now matches its reply ("I can't work out the username pattern" -> read the PDF props).
+- **Tomasz's first hub line (F12):** the intro now branches — if triage and the board are already done
+  it acknowledges that instead of saying "Two jobs for you".
+- **Triage own_lord + Lord send advisory (F7/F8):** `own_lord` dropped `domainFrom: landing_domain`, so
+  the replay now shows the account the student really sent from (guest -> fail/none/fail, the student's
+  own From) rather than rewriting the sender to the look-alike domain with all-pass auth; added a
+  `senderAuth` note and an account-neutral header note. Lord's `senderAuth.fail` string no longer
+  assumes a "freemail-style account" — it reads "the claimed portal domain never sent this" (correct
+  from guest or freemail).
+- **Report landing-page row (F9):** the row now names the look-alike domain the student chose
+  (resolved from the page record's `choices.domainId` against the brand menu), not the authored
+  link text for the real portal.
+- **SOC board / prep card "name not given" (F10):** `lord_portal`'s text changed from "(name not
+  given)" to "the post doesn't name it" — a permanent fact about the source, so it no longer reads as
+  stale once the name is learned from Dev (single intel-fact string, shared by board and prep card).
+- **Mail client (F11):** (a) Create-account Confirm is left enabled and gives "Pick an address first."
+  instead of being a dead button; (b) closing the checklist of a *landed* send now drops the composer
+  too, so it is back to the inbox in one press, not three (a failed send still keeps the composer for
+  Edit & resend); (c) the client persists the open account to `se_mail_last_account` and reopens on it
+  after a reload rather than snapping to guest. Engine behaviour tests in `social-mail-accounts` updated
+  to match (Confirm enabled; the extra remembered-account change event).
+- **Reply timestamps (F5):** added `gameClock { start: "Mon 08:00" }` (rate 1) to the lab, so sent and
+  reply records carry morning times in the same window as the seeded 08:xx-10:xx mail, not the wall
+  clock.
+
+Not changed (logged):
+- **Dev's portal name/sender (F4):** decided no change, per the prior round.
+- **cv_portfolio link discoverability (F14):** left as a hover/click-to-reveal — inspecting a link
+  before trusting it is the intended triage behaviour; flagged as "consider" only.
+- **Harness (tools/playtest/se): BLOCKED.** `clickControl` substring match, `lock` picking the first
+  key, and `bootstrap` not leaving Ruth's opening chat live in
+  `.claude/skills/playtest-scenario/scripts/playtest-session.js`, which SE_BUILD_BRIEF forbids this
+  build from editing. Not touched. Still as reported; needs the orchestrator (or a skill-owning pass).
+
+Gates: lab `ruby scripts/validate_scenario.rb ... --no-graph --skip-ink --strict-social` exit 0
+(suggestions / recommended-field warnings only). Node: all affected suites green — the new
+social-pretext-first-menu (3), plus social-pretext-*, engagement-report, intel-board(+defender/
+engagement), triage, mail (shell/accounts/composer/link-victim), phone-reopen, lab-ruth-keys,
+validator-social-* and every test importing the touched engine files (interactions, phone-chat,
+report-model, mail-client). ruth_phone.ink and tomasz.ink recompiled to their committed .json.
+No shipped mission (m01-m10) scenario, ink or audio touched; the phone-chat change is a no-op unless
+`params.pretextCallId` is set, so m01-m08 phone chats are unaffected.

@@ -661,8 +661,13 @@ function startPretextCall(callId, { npcId = null, channel } = {}) {
     const globals = window.gameState?.globalVariables || {};
     if (everyAskHeld(call, globals)) {
         const name = svc.getCharacterConfig?.(characterId)?.displayName || '';
-        const text = name ? `You already have what ${name} can tell you.` : 'You already have what they can tell you.';
-        (window.gameAlert || window.showNotification)?.(text, 'info', '', 2500);
+        // A short, titled line so the student who rings back (the debrief warns that a
+        // call-back is what defeats the attack) gets a clear answer rather than silence
+        // (lab R1 F6). Calling again would only risk the line for facts already held.
+        const text = name
+            ? `You already have what ${name} can tell you. Ringing back would only put them on guard.`
+            : 'You already have what they can tell you. Ringing back would only raise suspicion.';
+        (window.gameAlert || window.showNotification)?.(text, 'info', 'Desk Phone', 3000);
         return;
     }
     const recordNpcId = npcId || svc.getCharacterConfig?.(characterId)?.channels?.[channel] || null;

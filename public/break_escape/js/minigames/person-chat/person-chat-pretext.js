@@ -560,6 +560,10 @@ export async function attachPretext(minigame, { chat, judge: injected = null } =
     const superseded = () => window.MinigameFramework && window.MinigameFramework.currentMinigame !== minigame;
     const handle = {
         session, spec, ctx, service,
+        // True when this attach resumed an open session (a mid-call reload), false for a
+        // fresh call. The phone loader reads it to decide whether to re-bake the opening
+        // choices: a fresh call's opening was preloaded with the card VARs empty (M2 / F1).
+        resuming,
         get finished() { return finished; },
         // Re-assert the card VARs after an ink restore (LoadJson overwrites story-local
         // VARs). Idempotent, last write wins; the loader calls it post-restore.

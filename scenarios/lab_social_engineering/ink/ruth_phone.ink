@@ -93,14 +93,14 @@ Ruth Adeyemi: Gareth's signed. The whiteboard next.
 // ---- Stage 2: OSINT ----
 === stage2 ===
 { osint_done and se_intel_username_convention: -> hub }
-Ruth Adeyemi: Recon, is it? If that door's still shut, come and see me for the key.
+Ruth Adeyemi: Recon, is it? You've the key already — the OSINT workstation's through that door.
 + [What am I looking for?]
     Ruth Adeyemi: Three people filled in from public sources. The board's "Missing" rows say what's short.
     -> stage2
 + {not se_intel_hampshire_cv_backlog} [Chris's card won't fill.]
     Ruth Adeyemi: Open her careers inbox on the page and select it. Her backlog post only shows then.
     -> stage2
-+ {not se_intel_username_convention} [The door's still locked.]
++ {not se_intel_username_convention} [I can't work out the username pattern.]
     Ruth Adeyemi: Open the published PDF and read its properties — who made it, and how. That's the gate.
     -> stage2
 + [Got it.] #exit_conversation

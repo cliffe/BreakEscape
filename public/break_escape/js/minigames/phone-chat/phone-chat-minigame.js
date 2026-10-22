@@ -503,13 +503,20 @@ export class PhoneChatMinigame extends MinigameScene {
             // text and tags, already in the thread, are not replayed (E10/E13; see
             // PhoneChatConversation.reopenWithCurrentGlobals).
             // Engine-written VARs (00 S7) are set after the sync, before any re-run reads them
+            // A fresh pretext call's opening was preloaded with the card VARs empty, so its
+            // saved choices read "I'm helping , your new starter in ." (M2 / lab F1). Those
+            // VARs are story-local, so the re-run below is normally gated on a GLOBAL change
+            // and never fires for them; force it for a fresh call so the choices re-bake with
+            // the filled VARs. A mid-call reload (resuming) saved its choices with the VARs
+            // already filled, so it needs no force.
+            const forcePretextRebake = !!(this._pretext && !this._pretext.resuming);
             const reopen = this.conversation.reopenWithCurrentGlobals(story => {
                 window.npcConversationStateManager?.syncGlobalVariablesToStory(story);
                 window.npcConversationStateManager?.applyEngineVariables?.(npcId, story, { channel: 'phone-chat' });
                 // Re-assert the pretext card VARs: the restore (LoadJson) above replaced
                 // the story-local VARs, so set them before the re-run reads a choice.
                 this._pretext?.fillVars?.();
-            });
+            }, { force: forcePretextRebake });
 
             // If the saved story had ended (DONE/END), the restored story has no position and
             // would only show "Conversation ended". Restart at the NPC's knot instead. Skip when

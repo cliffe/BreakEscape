@@ -44,6 +44,10 @@ function el(tag, className, text) {
 }
 
 export class MailClientMinigame extends SocialOverlayScene {
+    // The global that remembers which account the client was last on, so a reload
+    // reopens there rather than on the first listed one (lab R1 F11).
+    static LAST_ACCOUNT_KEY = 'se_mail_last_account';
+
     constructor(container, params) {
         super(container, params);
         this.folder = 'inbox';
@@ -110,8 +114,23 @@ export class MailClientMinigame extends SocialOverlayScene {
     _loadAccounts(keepId = null) {
         this.accounts = resolveAccounts(this.config, this.params.accountIds, this.globals);
         this.creatable = pendingCreations(this.config, this.params.accountIds, this.globals);
-        const want = keepId || this.params.accountId || this.params.defaultAccount;
+        // After a reload there is no in-session accountId, so without this the client
+        // dropped back to the first listed account (guest) and lost the one the student
+        // was working from (lab R1 F11). The last account is persisted to a global, so it
+        // rides the save; it is used only when no explicit account was passed.
+        const persisted = this.globals[MailClientMinigame.LAST_ACCOUNT_KEY];
+        const want = keepId || this.params.accountId || this.params.defaultAccount || persisted;
         this.account = this.accounts.find((a) => a.id === want) || this.accounts[0] || null;
+    }
+
+    /** Persist the open account so a reload reopens on it (lab R1 F11). */
+    _rememberAccount() {
+        const id = this.account?.id;
+        if (!id) return;
+        writeGlobal(MailClientMinigame.LAST_ACCOUNT_KEY, id, { openChat: false });
+        if (this.params.globals && this.params.globals !== window.gameState?.globalVariables) {
+            this.params.globals[MailClientMinigame.LAST_ACCOUNT_KEY] = id;
+        }
     }
 
     /** Whether this client shows `mailboxId` (the notifier asks, so any listed account's arrivals append). */
@@ -358,6 +377,7 @@ export class MailClientMinigame extends SocialOverlayScene {
         if (hadCompose) this.closeCompose(false);
         this._dismissChecklist();
         this.account = next;
+        this._rememberAccount();
         ensureMailbox(this.mailState, next.mailbox);
         this.folder = 'inbox';
         this.reader.selectedId = null;
@@ -395,7 +415,8 @@ export class MailClientMinigame extends SocialOverlayScene {
         group.setAttribute('aria-label', 'Addresses');
         const confirm = el('button', 'mail-create-confirm minigame-button', 'Confirm');
         confirm.type = 'button';
-        confirm.disabled = true;
+        // Left enabled so a Confirm with nothing picked still gives the student a line
+        // rather than a dead button (lab R1 F11); confirmCreateAccount() does the check.
         entry.createMenu.forEach((m, i) => {
             const label = el('label', 'mail-create-option');
             const input = el('input');
@@ -455,7 +476,12 @@ export class MailClientMinigame extends SocialOverlayScene {
     confirmCreateAccount() {
         const id = this.createAccountId;
         const choice = this.createChoice;
-        const writes = this.createChoice ? createAccountWrites(this.config, id, this.createChoice, this.globals) : null;
+        // Nothing picked yet: say so instead of swallowing the press (lab R1 F11).
+        if (!choice) {
+            (window.gameAlert || window.showNotification)?.('Pick an address first.', 'info', 'Create account', 2500);
+            return false;
+        }
+        const writes = createAccountWrites(this.config, id, choice, this.globals);
         if (!writes) return false;
         for (const [name, value] of writes) {
             writeGlobal(name, value, { emitAlways: true });
@@ -466,6 +492,7 @@ export class MailClientMinigame extends SocialOverlayScene {
         }
         this.closeCreateAccount(false);
         this._loadAccounts(id); // the new account now resolves, so this lands on it
+        this._rememberAccount();
         if (this.account) ensureMailbox(this.mailState, this.account.mailbox);
         const hadCompose = this.composeOpen;
         if (hadCompose) this.closeCompose(false);
@@ -729,7 +756,14 @@ export class MailClientMinigame extends SocialOverlayScene {
         this.root.appendChild(panel);
         this.checklistPanel = panel;
         this._syncCovered();
-        this._popChecklist = this.pushLayer(() => this._dismissChecklist(), 'checklist');
+        // Close/Esc on the checklist of a LANDED send drops the composer too, so the
+        // student is back at the inbox in one press rather than three (lab R1 F11). This
+        // matches the "Done" button's onEdit above. A failed send keeps the composer open
+        // for Edit & resend, so only the checklist is popped there.
+        this._popChecklist = this.pushLayer(() => {
+            this._dismissChecklist();
+            if (sendInfo.result && sendInfo.result.landed) this.closeCompose();
+        }, 'checklist');
         const action = panel.querySelector('.mail-checklist-edit, .mail-checklist-done');
         action?.focus?.();
     }

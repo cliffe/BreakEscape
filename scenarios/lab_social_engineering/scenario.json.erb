@@ -8,6 +8,8 @@
   "disableAttacks": true,
   "startRoom": "engagement_office",
 
+  "gameClock": { "start": "Mon 08:00" },
+
   "player": {
     "id": "player",
     "displayName": "Consultant",
@@ -262,7 +264,7 @@
       "dev": {
         "displayName": "Dev",
         "channels": { "phone": "dev_service_desk" },
-        "influence": { "global": "dev_influence", "min": -100, "max": 100, "start": -10 },
+        "influence": { "global": "dev_influence", "min": -100, "max": 100, "start": 0 },
         "syncedVars": ["dev_influence"],
         "thresholds": [
           { "id": "wary", "at": -40, "icon": "wary",
@@ -273,7 +275,7 @@
             "effects": [
               { "type": "setGlobal", "global": "dev_reported", "value": true },
               { "type": "endConversation" },
-              { "type": "lockout", "scope": "channel", "until": { "afterMinutes": 2 }, "recoverTo": -30 }
+              { "type": "lockout", "scope": "channel", "until": { "afterMinutes": 2 } }
             ] }
         ]
       }
@@ -358,7 +360,7 @@
         ]
       },
       "lord_portal": {
-        "text": "Sofia uses a staff payroll portal (name not given).",
+        "text": "Sofia uses a staff payroll portal — the post doesn't name it.",
         "subject": "lord", "source": "post_lord_payslip",
         "provides": [],
         "reduceNote": "Staff should not post about internal systems or their release dates."
@@ -735,7 +737,7 @@
           "linkCredible": { "pass": "✓ The link looked right", "fail": "That link doesn't look right to me — the address isn't the real portal.", "redFlag": null },
           "senderAuth": {
             "pass": "✓ Sender authentication would pass",
-            "fail": "Sent from a freemail-style account, so the claimed domain would fail alignment; with p=none it would still be delivered.",
+            "fail": "The claimed portal domain never sent this, so it fails the domain's alignment check; with p=none it would still be delivered.",
             "redFlag": null
           }
         },
@@ -853,14 +855,14 @@
             "id": "own_lord",
             "kind": "playerSent",
             "targetId": "lord",
-            "domainFrom": "landing_domain",
             "notes": {
               "perFlagNote": {
                 "senderTrust": "The From address claims to be the payroll portal, but the message did not come from Ledgerwell.",
+                "senderAuth": "The authentication results are the sending account's own, not the portal's — the real domain did not send this.",
                 "linkCredible": "The link text says the real portal, but the address goes to a look-alike domain.",
                 "urgencyCalibrated": "A payslip 'ready now' is the pressure to click without checking."
               },
-              "headerNote": "A look-alike domain can pass its own SPF, DKIM and DMARC. A pass means consistent, not trustworthy.",
+              "headerNote": "The header results come from the account this was really sent from, not from the portal it claims to be.",
               "ifTrusted": "Sofia would have signed in on the look-alike page and handed over her portal password.",
               "reportReply": "Thanks. Confirmed as a phish."
             }
