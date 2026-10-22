@@ -249,3 +249,4 @@ steps copy), so that is a quality trade, not a free swap.
 - **B, episode hosts (7):** Adaeze Okafor, Fatima Begum, Darren Price, Thandiwe Moyo, Niamh Doherty, Chidi Okeke and Agnieszka Duda. Leila Nassar, bust only, makes 8.
 - **C, check hosts 1:** Yasmin Chaudhry, Julian Sallow, Graham Whitfield, Farah Qureshi, Owen Treharne and Pauline Hendry.
 - **D, check hosts 2:** Anjali Rao, Sofia Marchetti, Jun Watanabe, Ibrahim Diallo and Lerato Dlamini.
+- **Scope change (user, later on 2026-10-22):** for now, make only the Gemini concepts. PixelLab characters wait until the user has reviewed the concepts.
