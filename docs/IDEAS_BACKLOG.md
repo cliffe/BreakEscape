@@ -8,7 +8,6 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 
 - **Fingerprint: Distinct reference cards on easy** (m04 playtests, twice; S). On easy the two reference cards look near-identical, so the compare step can't be done by eye; the m04 final run picked Vance's card by a 50/50 guess. Worth doing soon.
 - **Recovery console: the Close button overlaps the banner at 1280x800** (dash check; S).
-- **Toasts shouldn't cover minigame overlays or the person-chat speaker name** (m04 and m02 playtests; S). HaX toasts sat over the reader overlay's hint and over the speaker caption in person-chat.
 - **Fingerprint: Hide reference-card names until a match** (m04 review; S). At medium difficulty and up, the dusting compare step would be a real identification.
 - **Dusting and "Search Room" for carried items** (m08 fixer; S–M). A clean way to dust something in the inventory.
 
@@ -28,7 +27,6 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **A "VM launched" event** (m05 fixer; S). Tasks like "Get into the research portal" could complete on real use instead of on flag 1.
 - **`object_unlock_failed` event** (m06 re-review; S). The engine emits nothing when a PIN or password is wrong, so a handler can't react to repeated wrong guesses.
 - **Ink visit counts don't survive a reload** (m02 pre-commit check; S–M). After a reload, knot visit counts, `TURNS()` and the story position are lost. Ink-local VARs ARE restored: the engine saves `npcInkVariables` after each choice (since 18237332, confirmed in the browser in m06 game 2304, 2026-10-13). Openers keyed on visit counts replay; key them on a VAR or a synced global instead.
-- **Standing NPCs can be pushed and don't return** (m05 pre-commit check; S). The player's path pushed Halloran 35–60 px off her spot and she stayed there; standing NPCs should be immovable or walk back.
 - **Non-combatant NPCs** (m02 fixer; S). A `nonCombatant` flag so bed-bound patients and similar can't be punched.
 - **Console source tiles hidden until available** (m02 fixer; S). The Ghost tile shows greyed before the offer.
 - **Planted devices speak their lines aloud** (user, 2026-10-10; S–M). A planted network device such as Ghost's phone could play its dialogue through TTS like an NPC, with a click on the line to skip it.
@@ -74,7 +72,6 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **KO item drops land on top of each other** (m06 dressing, 2026-10-13; S). Items dropped by a knocked-out NPC land about 8 px apart, so picking one up opens a pick-one menu. Spread drops at least 32 px.
 
 - **Follow-ups from the backlog batch (2026-10-22):**
-  - **A wheeled chair ended up through a wall** (route-around browser check, m01 game 3224; S, unconfirmed). Chair 1 in main_office_area moved from (99,-60) to (99,19), below the office's south wall in reception, while the player clicked on and beside it. Not isolated to one click and not compared with the build before 5a8bf225; likely chair pushing, not pathfinding. Reproduce, then keep pushed props inside their room.
   - **Playtest harness needs Node 20** (S). Playwright 1.64.1 refuses Node 18.19.1, the machine's Node. Install Node 20+ or pin an older Playwright.
   - **m02: Gary's catch fires for the IT door pick** (S). His `lockpick_used_in_view` mapping has no target condition, so picking the IT door from the staff room plays his "That's my filing cabinet" line (he now has `los.occlusion: false` so the cabinet catch always fires). Condition the mapping on the cabinet.
   - **Sight-blocking prop list** (S). Fig plants, x-ray scanners, the DVR stack and `brochure_rack` don't block sight; flag any with `blocksSight: true` where a mission wants cover.
