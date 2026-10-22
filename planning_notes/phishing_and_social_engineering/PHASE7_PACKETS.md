@@ -460,3 +460,9 @@ the orchestrator passes it to that wave's owner.
   2. Verify on a phish counts as "not caught" in the results summary, though it scores 100 and the card calls it sound. The summary should count Verify as caught.
   3. The kiosk text still says "N messages are waiting" after the round is done.
   4. Moyo appears twice (Tendai in E2, Thandiwe in E4, now a host). Rename one before release.
+- **Awareness follow-ups (870af473):**
+  - **Decided:** Verify counts as caught, not as reported. The reason is recorded in design 05 "Decisions".
+  - **Left for polish:**
+    - `gen_e1_shells.py` emits `playerSentAuth`, but the committed E1 defend-only shell lacks it (harmless: no flip there).
+    - E7's defendOnly line overlaps the Monday card.
+    - The check-mission and full-episode kiosks keep their "ready" text after the round. Add variants on `triage_<stage>_done` and the episode done global.
