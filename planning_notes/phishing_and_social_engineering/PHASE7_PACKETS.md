@@ -347,3 +347,10 @@ the orchestrator passes it to that wave's owner.
   - The defend-only brief and scopeNote are in `awarenessEpisode._defendOnly`; P7-J copies them into `strings`.
   - The P7-B views also read `heading`, `finish` and `continue` strings, which are not in the schema (P7-N decides whether to add them).
   - The Monday card is generic until a report-route slot exists.
+- **P7-M, for P7-W3 and P7-X:**
+  - Register `authenticator` and launch it from the runner's `mfa` stage via `socialOverlayParams({ pushes, approvesAt, mode })`. It must pass `requiresKeyboardInput` and `disableClose`.
+  - Add a CSS link for `authenticator-minigame.css`.
+  - The lint shape is `pushes[{at, app, account, location, device}]` plus `approvesAt`, where `at` is "HH:MM" or a number.
+  - The optional "Send another push" button counts towards `sent`.
+- **P7-G:** `sentIds` and its new test fields appear only in episode mode (`maxSends`, a phone layout, or carried ids).
+- **P7-L:** its schema fields went to P7-N. The Report-button animation was left for P7-I.
