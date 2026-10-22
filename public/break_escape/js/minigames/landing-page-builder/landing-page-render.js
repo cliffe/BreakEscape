@@ -23,9 +23,14 @@
 // (07 §4, 00 §6). Every element holding an authored domain, address or field label is set
 // in var(--se-font-readable) (07 N8).
 //
-// This module imports nothing from the model (landing-page-model.js), which is written in
-// parallel: the guard below is self-contained so the renderer and its test do not depend
-// on the model being present. The two guards share one rule (00 §12 N6b) and must agree.
+// The N6b guard (resolveDomainOption, isDomainBlocked) is imported from the model
+// (landing-page-model.js) so there is one source of the rule: the renderer and the model
+// can never drift apart (P5-R single-source). The model is pure (no DOM, no network), so
+// importing it here adds no browser coupling; both are re-exported below for callers and
+// the renderer's test, which used to read them from this file.
+import { resolveDomainOption, isDomainBlocked } from './landing-page-model.js';
+
+export { resolveDomainOption, isDomainBlocked };
 
 const READABLE_FONT = 'var(--se-font-readable)';
 const PADLOCK_ICON = '/break_escape/assets/icons/padlock_32.png';
@@ -42,52 +47,6 @@ const FIELD_LABELS = {
     card_number: 'Card number',
     ni_number: 'National insurance number',
 };
-
-// --- Guard (07 N6b) -------------------------------------------------------------------
-
-// The host part of a domain/address string: drop any scheme, take everything before the
-// first '/', and for an email address the part after the last '@' (07 §1 host rule).
-function hostOf(value) {
-    let s = String(value || '').trim();
-    s = s.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '');
-    s = s.split('/')[0];
-    if (s.includes('@')) s = s.split('@').pop();
-    return s;
-}
-
-function hostEndsExample(domain) {
-    return hostOf(domain).toLowerCase().endsWith('.example');
-}
-
-/**
- * Resolve the chosen domain option from the page definition. The menu is the union of
- * every brand's `domains` (chips are shown per brand, so a chosen id belongs to one of
- * them). Returns the option object, or null when the id is not on the authored menu.
- * @param {object} pageDef  the social.landingPages entry
- * @param {object} choices  the record's `choices` (reads `domainId`)
- */
-export function resolveDomainOption(pageDef, choices) {
-    const id = choices && choices.domainId;
-    if (!id || !pageDef || !Array.isArray(pageDef.brands)) return null;
-    for (const brand of pageDef.brands) {
-        if (brand && Array.isArray(brand.domains)) {
-            for (const opt of brand.domains) {
-                if (opt && opt.id === id) return opt;
-            }
-        }
-    }
-    return null;
-}
-
-/**
- * The renderer half of the N6b guard. True when the chosen domain is off the authored
- * menu, or its host does not end `.example`. A blocked domain is never drawn as a page.
- */
-export function isDomainBlocked(pageDef, choices) {
-    const opt = resolveDomainOption(pageDef, choices);
-    if (!opt || typeof opt.domain !== 'string') return true;
-    return !hostEndsExample(opt.domain);
-}
 
 // --- DOM helpers ----------------------------------------------------------------------
 

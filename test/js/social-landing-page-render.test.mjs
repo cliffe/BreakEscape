@@ -20,17 +20,24 @@ const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 const builderDir = join(js, 'minigames/landing-page-builder');
 
-// The renderer imports nothing, so copy it alone into an ESM folder and import it.
+// The renderer imports the N6b guard (resolveDomainOption, isDomainBlocked) from the model
+// (one source, P5-R), so copy both into an ESM folder, keeping their relative layout.
 const dir = mkdtempSync(join(tmpdir(), 'social-landing-render-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 mkdirSync(join(dir, 'minigames/landing-page-builder'), { recursive: true });
-writeFileSync(
-    join(dir, 'minigames/landing-page-builder/landing-page-render.js'),
-    readFileSync(join(builderDir, 'landing-page-render.js'), 'utf8'),
-);
+for (const name of ['landing-page-render.js', 'landing-page-model.js']) {
+    writeFileSync(
+        join(dir, 'minigames/landing-page-builder', name),
+        readFileSync(join(builderDir, name), 'utf8'),
+    );
+}
 
 const { renderLandingPage, resolveDomainOption, isDomainBlocked } =
     await import(pathToFileURL(join(dir, 'minigames/landing-page-builder/landing-page-render.js')));
+// Same module instance the renderer imported (Node caches by URL), so the re-exported guard
+// is the literal model function — the single-source proof below is an identity check.
+const modelMod =
+    await import(pathToFileURL(join(dir, 'minigames/landing-page-builder/landing-page-model.js')));
 
 function freshDoc() {
     return new JSDOM('<!doctype html><body></body>').window.document;
@@ -165,6 +172,16 @@ test('authored domain and field labels are set in the readable font (N8)', () =>
     assert.match(label.style.fontFamily, /se-font-readable/);
     const copy = root.querySelector('.lpb-copy');
     assert.match(copy.style.fontFamily, /se-font-readable/);
+});
+
+test('the renderer re-exports the model N6b guard (one source, P5-R)', () => {
+    // identity: the renderer holds no copy of the guard, only the model's exports
+    assert.equal(isDomainBlocked, modelMod.isDomainBlocked);
+    assert.equal(resolveDomainOption, modelMod.resolveDomainOption);
+    // and isDomainBlocked is exactly guardDomain(...).blocked across the N6b fixtures
+    for (const ch of [workedChoices, { ...workedChoices, domainId: 'd_offmenu' }]) {
+        assert.equal(isDomainBlocked(pageDef, ch), modelMod.guardDomain(pageDef, ch).blocked);
+    }
 });
 
 test('N6b guard: off-menu and non-.example domains are blocked', () => {

@@ -20,7 +20,9 @@
  *       target    the 04 target id (string), or { id, firstName } to fill {firstName}
  *     ScoreResult = { credibility, gatesPassed, meetsThreshold, factors[], gates[],
  *                     tells[], verdict, gateLines[], blocked: false }
- *   guardDomain(pageDef, choices) -> { blocked, reason, domain }              (N6b model half)
+ *   guardDomain(pageDef, choices) -> { blocked, reason, domain }              (N6b, one source)
+ *   resolveDomainOption(pageDef, choices) -> option | null   (shared with the renderer, N6b)
+ *   isDomainBlocked(pageDef, choices) -> boolean             (shared with the renderer, N6b)
  *   buildRecord({ pageId, targetId, choices, credibility, gatesPassed, meetsThreshold })
  *                                                     -> closed record (section 5)
  *   applyScore(existing, fresh) -> closed record (merged; keeps victim and tellsFound)  (section 3)
@@ -191,6 +193,25 @@ export function guardDomain(pageDef, choices) {
     return { blocked: true, reason: 'bad-suffix', domain: option.domain };
   }
   return { blocked: false, reason: null, domain: option.domain };
+}
+
+/**
+ * The chosen domain option resolved from a record's `choices` (N6b). A thin wrapper over
+ * the private findDomainOption, exported so the preview renderer (landing-page-render.js)
+ * shares this one resolver instead of keeping its own copy. Returns the option object, or
+ * null when the id is not on the authored menu.
+ */
+export function resolveDomainOption(pageDef, choices) {
+  return findDomainOption(pageDef, choices && choices.brand, choices && choices.domainId);
+}
+
+/**
+ * Boolean form of the N6b guard for the renderer: true when the chosen domain is off the
+ * authored menu, or its host does not end `.example`. Same rule and same source as
+ * guardDomain, so the model and the renderer can never drift apart (P5-R single-source).
+ */
+export function isDomainBlocked(pageDef, choices) {
+  return guardDomain(pageDef, choices).blocked;
 }
 
 // --------------------------------------------------------------- per factor
