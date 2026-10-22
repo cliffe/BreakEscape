@@ -184,144 +184,304 @@
     },
     "social": {
       "type": "object",
-      "description": "Social-engineering systems data (planning_notes/phishing_and_social_engineering/designs/00_data_contract.md). Linted by scripts/validate_social.rb; this schema only fixes the shape of the blocks listed here.",
+      "description": "Social-engineering systems data (planning_notes/phishing_and_social_engineering/designs/00_data_contract.md §11). Closed: every block names the keys the engine or scripts/validate_social reads, so a mistyped key fails. Keys starting with _ are notes. Cross-references and values are linted by scripts/validate_social.rb.",
       "properties": {
+        "characters": {
+          "type": "object",
+          "patternProperties": {"^_": {}},
+          "additionalProperties": {"$ref": "#/definitions/socialCharacter"}
+        },
+        "influenceDisplay": {"$ref": "#/definitions/socialInfluenceDisplay"},
+        "people": {"type": "array", "items": {"$ref": "#/definitions/socialPerson"}},
+        "intelFacts": {
+          "type": "object",
+          "patternProperties": {"^_": {}},
+          "additionalProperties": {"$ref": "#/definitions/socialIntelFact"}
+        },
+        "conceptCards": {"type": "array", "items": {"$ref": "#/definitions/socialConceptCard"}},
+        "intelBoard": {
+          "type": "object",
+          "properties": {
+            "title": {"type": "string"},
+            "people": {"type": "array", "items": {"type": "string"}},
+            "readinessSlots": {
+              "type": "object",
+              "additionalProperties": {"type": "array", "items": {"$ref": "#/definitions/socialReadinessSlot"}}
+            }
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
         "osint": {
           "type": "object",
           "description": "The OSINT browser (design 02). Sites, their pages and selectable blocks, and the picked-lookup tools. Nothing in it is typed by the player.",
           "properties": {
-            "profile": { "type": "string", "description": "Which showIf/profile set the browser reads (for example 'student')" },
-            "sites": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "required": ["id", "url"],
-                "properties": {
-                  "id": { "type": "string" },
-                  "url": { "type": "string", "description": "Host shown in the address bar exactly as authored; a fictional .example host (00 S11 lint field list)" },
-                  "type": { "type": "string", "enum": ["company-site", "social", "document"] },
-                  "card": { "type": "string", "description": "social.conceptCards id shown with the site" },
-                  "pages": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "required": ["id"],
-                      "properties": {
-                        "id": { "type": "string" },
-                        "title": { "type": "string" },
-                        "path": { "type": "string", "description": "Appended to the site's url in the address bar (the host stays the linted sites[].url)" },
-                        "url": { "type": "string", "description": "A full address for this page, shown as typed; linted as a host like sites[].url" },
-                        "blocks": { "type": "array", "items": { "type": "object" } }
-                      },
-                      "additionalProperties": true
-                    }
-                  },
-                  "profiles": { "type": "array", "items": { "type": "object" } },
-                  "fields": { "type": "array", "items": { "type": "object" } }
-                },
-                "additionalProperties": true
-              }
-            },
-            "tools": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "required": ["id"],
-                "properties": {
-                  "id": { "type": "string" },
-                  "label": { "type": "string" },
-                  "card": { "type": "string" },
-                  "unlockedBy": { "type": "object", "description": "{ \"visited\": \"<siteId>[.<pageId>]\" } or { \"fact\": \"<factId>\" }" },
-                  "results": { "type": "array", "items": { "type": "object" } }
-                },
-                "additionalProperties": true
-              }
-            }
+            "profile": {"type": "string", "description": "Which showIf/profile set the browser reads (for example 'student')"},
+            "title": {"type": "string"},
+            "sites": {"type": "array", "items": {"$ref": "#/definitions/socialOsintSite"}},
+            "tools": {"type": "array", "items": {"$ref": "#/definitions/socialOsintTool"}}
           },
-          "additionalProperties": true
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
         },
         "landingPages": {
           "type": "array",
-          "description": "The landing-page builder (design 07). One record per buildable credential-harvest page. Fields are linted by scripts/validate_social/landing.rb (00 S11 lint field list); this schema fixes only the outer shape. No form controls, no network, invented brands, .example hosts.",
           "items": {
             "type": "object",
+            "description": "The landing-page builder (design 07). One record per buildable credential-harvest page. Fields are linted by scripts/validate_social/landing.rb (00 S11 lint field list). No form controls, no network, invented brands, .example hosts.",
             "required": ["id", "targets", "brands"],
             "properties": {
-              "id": { "type": "string" },
-              "linkText": { "type": "string", "description": "The address the mail client shows for the link, authored; the player never types it (host linted like a .example address)" },
-              "pretext": { "type": "object", "additionalProperties": true },
+              "id": {"type": "string"},
+              "title": {"type": "string"},
+              "profile": {"type": "string", "enum": ["student", "awareness", "mission"]},
+              "tellCounter": {"type": "boolean"},
+              "linkText": {
+                "type": "string",
+                "description": "The address the mail client shows for the link, authored; the player never types it (host linted like a .example address)"
+              },
+              "pretext": {
+                "type": "object",
+                "properties": {
+                  "brandId": {"type": "string"},
+                  "purposeId": {"type": "string"},
+                  "facts": {"type": "array", "items": {"type": "string"}}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              },
               "targets": {
                 "type": "object",
-                "description": "Per-target strictness keyed by a phishTargets id; { linkThreshold, minDomainTier }. Each key must be a target that requires linkCredible.",
-                "additionalProperties": { "type": "object", "additionalProperties": true }
+                "patternProperties": {"^_": {}},
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "linkThreshold": {"type": "number"},
+                    "minDomainTier": {"type": "number"},
+                    "brandGate": {"type": "boolean"}
+                  },
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                },
+                "description": "Per-target strictness keyed by a phishTargets id; { linkThreshold, minDomainTier, brandGate }. Each key must be a target that requires linkCredible."
               },
-              "brands": {
+              "brands": {"type": "array", "items": {"$ref": "#/definitions/socialLandingBrand"}},
+              "purposes": {
                 "type": "array",
                 "items": {
                   "type": "object",
-                  "required": ["id"],
-                  "properties": {
-                    "id": { "type": "string" },
-                    "name": { "type": "string", "description": "Invented brand name; checked against the real-brand denylist" },
-                    "look": { "type": "string", "enum": ["generic", "parody"] },
-                    "realDomain": { "type": "string", "description": "A fictional .example host (00 S11 lint field list)" },
-                    "realFields": { "type": "array", "items": { "type": "string" } },
-                    "decoyWords": { "type": "array", "items": { "type": "string" }, "description": "Allowlisted domain labels; each must pass the denylist" },
-                    "domains": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": ["id", "domain"],
-                        "properties": {
-                          "id": { "type": "string" },
-                          "domain": { "type": "string", "description": "Shown as typed; ASCII unless trick is 'homograph' with a \\u escape (00 S11)" },
-                          "browserDomain": { "type": "string", "description": "The punycode (xn--) form, shown as a teaching contrast; equals the encoding of domain" },
-                          "trick": { "type": "string" },
-                          "tier": { "type": "integer", "minimum": 0, "maximum": 3 },
-                          "minProfile": { "type": "string" }
-                        },
-                        "additionalProperties": true
-                      }
-                    }
-                  },
-                  "additionalProperties": true
+                  "properties": {"id": {"type": "string"}, "label": {"type": "string"}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
                 }
               },
-              "purposes": { "type": "array", "items": { "type": "object" } },
-              "logos": { "type": "array", "items": { "type": "object" } },
+              "logos": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {"id": {"type": "string"}, "label": {"type": "string"}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              },
               "wordings": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "properties": {
-                    "id": { "type": "string" },
-                    "match": { "type": "boolean" },
-                    "slips": { "type": "boolean" },
-                    "text": { "type": "string" }
+                    "id": {"type": "string"},
+                    "match": {"type": "boolean"},
+                    "slips": {"type": "boolean"},
+                    "text": {"type": "string"}
                   },
-                  "additionalProperties": true
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
                 }
               },
-              "fields": { "type": "array", "items": { "type": "string" } },
-              "extraSensitiveFields": { "type": "array", "items": { "type": "string" } },
-              "points": { "type": "object", "additionalProperties": true },
-              "strings": { "type": "object", "additionalProperties": true },
-              "conceptCards": { "type": "array", "items": { "type": "string" }, "description": "social.conceptCards ids shown by the builder" },
+              "fields": {"type": "array", "items": {"type": "string"}},
+              "extraSensitiveFields": {"type": "array", "items": {"type": "string"}},
+              "points": {
+                "type": "object",
+                "properties": {
+                  "brand": {"type": "number"},
+                  "purpose": {"type": "number"},
+                  "logo": {"type": "number"},
+                  "wording": {"type": "number"},
+                  "form": {"type": "number"},
+                  "padlock": {"type": "number"},
+                  "domain": {"type": "array", "items": {"type": "number"}}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              },
+              "strings": {
+                "type": "object",
+                "description": "Feedback string overrides (landing-page-model.js); every value is linted as a string",
+                "additionalProperties": {"type": "string"}
+              },
+              "conceptCards": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "social.conceptCards ids shown by the builder"
+              },
               "capture": {
                 "type": "object",
                 "properties": {
-                  "address": { "type": "string", "description": "A fictional .example address (00 S11 lint field list)" },
-                  "note": { "type": "string", "description": "Authored capture note; holds no password value" }
+                  "address": {"type": "string", "description": "A fictional .example address (00 S11 lint field list)"},
+                  "note": {"type": "string", "description": "Authored capture note; holds no password value"}
                 },
-                "additionalProperties": true
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
               },
-              "profile": { "type": "string", "enum": ["student", "awareness", "mission"] }
+              "domainMenu": {"type": "array", "items": {"$ref": "#/definitions/socialLandingMenuOption"}},
+              "domains": {"type": "array", "items": {"$ref": "#/definitions/socialLandingMenuOption"}},
+              "domainOptions": {"type": "array", "items": {"$ref": "#/definitions/socialLandingMenuOption"}},
+              "menu": {"type": "array", "items": {"$ref": "#/definitions/socialLandingMenuOption"}}
             },
-            "additionalProperties": true
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
           }
+        },
+        "mailClient": {
+          "type": "object",
+          "description": "The mail client (design 01, 00 §10a)",
+          "properties": {
+            "accounts": {"type": "array", "items": {"$ref": "#/definitions/socialMailAccount"}},
+            "mailboxes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id"],
+                "properties": {"id": {"type": "string"}, "owner": {"type": "string"}},
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "contacts": {"type": "array", "items": {"$ref": "#/definitions/socialMailContact"}},
+            "seededMessages": {"type": "array", "items": {"$ref": "#/definitions/socialSeededMessage"}},
+            "payloadKit": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id"],
+                "properties": {
+                  "id": {"type": "string"},
+                  "kind": {
+                    "type": "string",
+                    "description": "document, pdf, spreadsheet, archive, image or link; any other value draws as a document"
+                  },
+                  "label": {"type": "string"},
+                  "landingPageId": {"type": "string"}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "checklistTiming": {
+              "type": "string",
+              "enum": ["onSend", "withReply"],
+              "description": "When the send checklist shows (mail-client-minigame.js _checklistTiming; default onSend). Linted by validate_social/options.rb"
+            },
+            "showRedFlagMeter": {"type": "boolean"},
+            "bodyMode": {"type": "string", "description": "Documented in design 01; no code reads it yet"},
+            "freeTextFlavour": {"type": "boolean", "description": "Documented in design 01; no code reads it yet"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "templates": {
+          "type": "object",
+          "patternProperties": {"^_": {}},
+          "additionalProperties": {"$ref": "#/definitions/socialTemplate"}
+        },
+        "phishTargets": {"type": "array", "items": {"$ref": "#/definitions/socialPhishTarget"}},
+        "triageSets": {"type": "array", "items": {"$ref": "#/definitions/socialTriageSet"}},
+        "pretextNpcs": {"type": "array", "items": {"$ref": "#/definitions/socialPretextCall"}},
+        "engagement": {
+          "type": "object",
+          "description": "The engagement (design 10, 00 §11)",
+          "properties": {
+            "client": {"type": "string", "description": "Not read by code yet"},
+            "scopeNote": {"type": "string"},
+            "roe": {
+              "type": "object",
+              "properties": {
+                "inScope": {"type": "array", "items": {"type": "string"}},
+                "outScope": {"type": "array", "items": {"type": "string"}},
+                "stopContact": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "scope": {"$ref": "#/definitions/socialEngagementBoardBlock"},
+            "plan": {"$ref": "#/definitions/socialEngagementBoardBlock"},
+            "defender": {
+              "type": "object",
+              "properties": {
+                "title": {"type": "string"},
+                "intro": {"type": "string"},
+                "steps": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementStep"}},
+                "onCompleteGlobal": {"type": "string"},
+                "factMitigations": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["intel"],
+                    "properties": {
+                      "intel": {"type": "string"},
+                      "step": {"type": "string"},
+                      "options": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementOption"}}
+                    },
+                    "patternProperties": {"^_": {}},
+                    "additionalProperties": false
+                  }
+                },
+                "indicators": {"type": "array", "description": "Optional in design 03; not read yet"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "report": {
+              "type": "object",
+              "description": "The engagement report (design 10; report-model.js)",
+              "properties": {
+                "title": {"type": "string"},
+                "intro": {"type": "string"},
+                "unseenNote": {"type": "string"},
+                "labelBy": {
+                  "type": "string",
+                  "enum": ["name", "role"],
+                  "description": "role labels the results rows by role (report-model.js). Linted by validate_social/options.rb"
+                },
+                "steps": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementStep"}},
+                "onCompleteGlobal": {"type": "string"},
+                "items": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementConfirm"}},
+                "findings": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["id"],
+                    "properties": {
+                      "id": {"type": "string"},
+                      "step": {"type": "string"},
+                      "text": {"type": "string"},
+                      "rootCauses": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementOption"}},
+                      "controls": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementOption"}}
+                    },
+                    "patternProperties": {"^_": {}},
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            }
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
         }
       },
-      "additionalProperties": true
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
     },
     "timers": {
       "type": "array",
@@ -333,6 +493,1456 @@
     }
   },
   "definitions": {
+    "socialInfluenceDisplay": {
+      "type": "object",
+      "description": "Which influence UI shows (README AA): each key defaults to true; bar false also hides the number. Linted by validate_social.rb influence_display_lint",
+      "properties": {"bar": {"type": "boolean"}, "number": {"type": "boolean"}, "pip": {"type": "boolean"}},
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialThresholdEffect": {
+      "type": "object",
+      "description": "A threshold effect (social-influence.js _runEffect). setGlobal: global, value, clearOnRearm; toast: text; lockout: until, scope, recoverTo, alternativeRoute",
+      "required": ["type"],
+      "properties": {
+        "type": {"type": "string", "enum": ["setGlobal", "endConversation", "lockout", "combatHostile", "toast"]},
+        "global": {"type": "string"},
+        "value": {},
+        "clearOnRearm": {"type": "boolean"},
+        "text": {"type": "string"},
+        "until": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {"afterMinutes": {"type": "number"}, "global": {"type": "string"}},
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            {"type": "null"}
+          ],
+          "description": "lockout: {afterMinutes} or {global}; null is permanent (the validator then needs alternativeRoute)"
+        },
+        "scope": {"type": "string", "enum": ["channel", "character"]},
+        "recoverTo": {"type": "number"},
+        "alternativeRoute": {}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialThreshold": {
+      "type": "object",
+      "required": ["id", "at"],
+      "properties": {
+        "id": {"type": "string"},
+        "at": {"type": "number"},
+        "when": {"type": "string", "enum": ["above", "below"]},
+        "icon": {"type": "string"},
+        "effects": {"type": "array", "items": {"$ref": "#/definitions/socialThresholdEffect"}}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialCharacter": {
+      "type": "object",
+      "description": "A social character (00 §8, §9; systems/social-influence.js normaliseCharacter)",
+      "properties": {
+        "displayName": {"type": "string"},
+        "channels": {
+          "type": "object",
+          "description": "NPC ids per channel",
+          "properties": {"person": {"type": "string"}, "phone": {"type": "string"}, "email": {"type": "string"}},
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "influence": {
+          "type": "object",
+          "properties": {
+            "global": {"type": "string"},
+            "min": {"type": "number"},
+            "max": {"type": "number"},
+            "start": {"type": "number"},
+            "rearmMargin": {"type": "number"},
+            "display": {"$ref": "#/definitions/socialInfluenceDisplay"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "thresholds": {"type": "array", "items": {"$ref": "#/definitions/socialThreshold"}},
+        "mirrorToBehavior": {
+          "type": "boolean",
+          "description": "true copies the influence to the person NPC's behaviour state (social-influence.js _mirror). Linted by validate_social/options.rb"
+        },
+        "emailRecord": {
+          "type": "object",
+          "description": "A headless NPC record for the email channel; spread into an NPC record (scenario-npc-records.js), so any NPC field is accepted",
+          "properties": {"storyPath": {"type": "string"}, "displayName": {"type": "string"}, "itemsHeld": {"type": "array"}},
+          "additionalProperties": true
+        },
+        "emailReplyDelay": {"type": "number", "minimum": 0, "description": "Seconds before an email reply arrives (default 20)"},
+        "emailKnots": {
+          "type": "object",
+          "description": "accountId -> knot name in the email story",
+          "additionalProperties": {"type": "string"}
+        },
+        "syncedVars": {"type": "array", "items": {"type": "string"}},
+        "alternativeRoute": {"description": "Truthy when a lockout with no expiry has another way through (validator only)"}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialPerson": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string"},
+        "kind": {"type": "string"},
+        "address": {"type": "string"},
+        "avatar": {"type": "string"},
+        "name": {"type": "string"},
+        "role": {"type": "string"},
+        "forms": {
+          "type": "object",
+          "properties": {
+            "first": {"type": "string"},
+            "short": {"type": "string"},
+            "formal": {"type": "string"},
+            "full": {"type": "string"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        }
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialProvides": {
+      "type": "object",
+      "properties": {
+        "type": {"type": "string"},
+        "value": {"type": "string"},
+        "label": {"type": "string"},
+        "kind": {"type": "string"},
+        "about": {"type": "string"},
+        "rule": {"type": "string"},
+        "address": {"type": "string"},
+        "attachmentKind": {"type": "string"}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialIntelFact": {
+      "type": "object",
+      "properties": {
+        "text": {"type": "string"},
+        "subject": {"type": "string"},
+        "source": {"type": "string"},
+        "provides": {"type": "array", "items": {"$ref": "#/definitions/socialProvides"}},
+        "reduceNote": {"type": "string"},
+        "label": {"type": "string"},
+        "stale": {"type": "boolean"}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialConceptCard": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string"},
+        "title": {"type": "string"},
+        "text": {"type": "string"},
+        "image": {"type": "string"},
+        "imageAlt": {"type": "string"}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialReadinessSlot": {
+      "type": "object",
+      "properties": {
+        "label": {"type": "string"},
+        "goalString": {"type": "string"},
+        "doneString": {"type": "string"},
+        "needsIntel": {"type": "array", "items": {"type": "string"}},
+        "needsGlobal": {"type": "array", "items": {"type": "string"}}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialOsintBlock": {
+      "type": "object",
+      "description": "An OSINT block, post, result or list item (osint-browser-minigame.js block renderer)",
+      "properties": {
+        "id": {"type": "string"},
+        "kind": {
+          "type": "string",
+          "description": "heading|h, link, image, list, staff, field, post; anything else is plain text"
+        },
+        "text": {"type": "string"},
+        "fact": {"type": "string"},
+        "note": {"type": "string"},
+        "showIf": {"type": "string", "description": "A global name; the block shows only when it is true (osint-model.js)"},
+        "name": {"type": "string"},
+        "role": {"type": "string"},
+        "address": {"type": "string"},
+        "person": {"type": "string"},
+        "label": {"type": "string"},
+        "value": {"type": "string"},
+        "date": {"type": "string"},
+        "to": {"type": "string"},
+        "src": {"type": "string"},
+        "alt": {"type": "string"},
+        "items": {"type": "array", "items": {"oneOf": [{"type": "string"}, {"$ref": "#/definitions/socialOsintBlock"}]}}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialOsintPage": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string"},
+        "title": {"type": "string"},
+        "path": {
+          "type": "string",
+          "description": "Appended to the site's url in the address bar (the host stays the linted sites[].url)"
+        },
+        "url": {
+          "type": "string",
+          "description": "A full address for this page, shown as typed; linted as a host like sites[].url"
+        },
+        "showIf": {"type": "string"},
+        "blocks": {"type": "array", "items": {"$ref": "#/definitions/socialOsintBlock"}}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialOsintProfile": {
+      "type": "object",
+      "required": ["person"],
+      "properties": {
+        "person": {"type": "string"},
+        "showIf": {"type": "string"},
+        "name": {"type": "string"},
+        "avatar": {"type": "string"},
+        "handle": {"type": "string"},
+        "bio": {"type": "string"},
+        "posts": {"type": "array", "items": {"$ref": "#/definitions/socialOsintBlock"}},
+        "blocks": {"type": "array", "items": {"$ref": "#/definitions/socialOsintBlock"}}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialOsintField": {
+      "type": "object",
+      "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "value": {"type": "string"}, "fact": {"type": "string"}},
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialOsintSite": {
+      "type": "object",
+      "required": ["id", "url"],
+      "properties": {
+        "id": {"type": "string"},
+        "url": {
+          "type": "string",
+          "description": "Host shown in the address bar exactly as authored; a fictional .example host (00 S11 lint field list)"
+        },
+        "name": {"type": "string"},
+        "title": {"type": "string"},
+        "type": {"type": "string", "enum": ["company-site", "social", "document"]},
+        "card": {"type": "string", "description": "social.conceptCards id shown with the site"},
+        "logo": {"type": "string"},
+        "logoAlt": {"type": "string"},
+        "pages": {"type": "array", "items": {"$ref": "#/definitions/socialOsintPage"}},
+        "profiles": {"type": "array", "items": {"$ref": "#/definitions/socialOsintProfile"}},
+        "fields": {"type": "array", "items": {"$ref": "#/definitions/socialOsintField"}},
+        "blocks": {"type": "array", "items": {"$ref": "#/definitions/socialOsintBlock"}}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialOsintTool": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string"},
+        "label": {"type": "string"},
+        "card": {"type": "string"},
+        "emptyText": {"type": "string"},
+        "unlockedBy": {
+          "type": "object",
+          "properties": {"visited": {"type": "string"}, "fact": {"type": "string"}},
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false,
+          "description": "{ \"visited\": \"<siteId>[.<pageId>]\" } or { \"fact\": \"<factId>\" }"
+        },
+        "results": {"type": "array", "items": {"$ref": "#/definitions/socialOsintBlock"}}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialLandingDomain": {
+      "type": "object",
+      "required": ["id", "domain"],
+      "properties": {
+        "id": {"type": "string"},
+        "domain": {
+          "type": "string",
+          "description": "Shown as typed; ASCII unless trick is 'homograph' with a \\u escape (00 S11)"
+        },
+        "browserDomain": {
+          "type": "string",
+          "description": "The punycode (xn--) form, shown as a teaching contrast; equals the encoding of domain"
+        },
+        "trick": {"type": "string"},
+        "tier": {"type": "integer", "minimum": 0, "maximum": 3},
+        "minProfile": {"type": "string", "enum": ["student", "awareness", "mission"]}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialLandingBrand": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string"},
+        "name": {"type": "string", "description": "Invented brand name; checked against the real-brand denylist"},
+        "look": {"type": "string", "enum": ["generic", "parody"]},
+        "realDomain": {"type": "string", "description": "A fictional .example host (00 S11 lint field list)"},
+        "realFields": {"type": "array", "items": {"type": "string"}},
+        "decoyWords": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Allowlisted domain labels; each must pass the denylist"
+        },
+        "domains": {"type": "array", "items": {"$ref": "#/definitions/socialLandingDomain"}}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialLandingMenuOption": {
+      "type": "object",
+      "properties": {
+        "id": {"type": "string"},
+        "domain": {"type": "string"},
+        "browserDomain": {"type": "string"},
+        "trick": {"type": "string"},
+        "tier": {"type": "integer"}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialMailAccount": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string"},
+        "kind": {"type": "string", "enum": ["given", "found", "created"]},
+        "mailbox": {"type": "string"},
+        "address": {"type": "string"},
+        "displayName": {"type": "string"},
+        "person": {"type": ["string", "null"]},
+        "spoofsFrom": {"type": "boolean"},
+        "unlockedBy": {"type": "string", "description": "Global that unlocks the account"},
+        "createMenu": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "address"],
+            "properties": {"id": {"type": "string"}, "address": {"type": "string"}, "displayName": {"type": "string"}},
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        }
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialMailContact": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string"},
+        "person": {"type": "string"},
+        "name": {"type": "string"},
+        "addresses": {"type": "array", "items": {"type": "string"}},
+        "role": {"type": "string"},
+        "revealedBy": {"type": "string"},
+        "character": {"type": "string"},
+        "targetId": {"type": "string"},
+        "accountIds": {"type": "array", "items": {"type": "string"}}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialSeededMessage": {
+      "type": "object",
+      "description": "A seeded message (mail-data.js normaliseSeeded; mail-scheduler.js). `from` is passed through whole",
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string"},
+        "mailbox": {"type": "string"},
+        "folder": {"type": "string", "enum": ["inbox", "sent"]},
+        "from": {
+          "oneOf": [
+            {"type": "string"},
+            {
+              "type": "object",
+              "properties": {"name": {"type": "string"}, "address": {"type": "string"}, "avatar": {"type": "string"}},
+              "additionalProperties": true
+            }
+          ]
+        },
+        "to": {"type": "string"},
+        "subject": {"type": "string"},
+        "body": {"type": "string"},
+        "time": {"type": "string"},
+        "unread": {"type": "boolean"},
+        "gameTime": {"type": "number"},
+        "deliverAt": {
+          "type": "object",
+          "properties": {"afterSeconds": {"type": "number"}, "global": {"type": "string"}},
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "fromAccount": {"type": "string"},
+        "thread": {"type": ["string", "null"]},
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id"],
+            "properties": {
+              "id": {"type": "string"},
+              "linkText": {"type": "string"},
+              "text": {"type": "string"},
+              "destination": {"type": "string"},
+              "realUrl": {"type": "string"},
+              "href": {"type": "string"},
+              "realDomain": {"type": "string"}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "string"},
+              "kind": {
+                "type": "string",
+                "description": "document, pdf, spreadsheet, archive, image or link; any other value draws as a document"
+              },
+              "label": {"type": "string"},
+              "kitId": {"type": "string"}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "highlights": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {"id": {"type": "string"}, "text": {"type": "string"}, "grants": {"type": "string"}},
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        }
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialTemplateSlot": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": {"type": "string"},
+        "type": {"type": "string", "description": "Matched to intelFacts provides[].type (name, address, date, document, ...)"},
+        "about": {"type": "string"},
+        "label": {"type": "string"}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialTemplate": {
+      "type": "object",
+      "required": ["text"],
+      "properties": {
+        "part": {"type": "string", "enum": ["from", "greeting", "pretext", "ask"]},
+        "text": {"type": "string"},
+        "slots": {"type": "array", "items": {"$ref": "#/definitions/socialTemplateSlot"}, "maxItems": 2},
+        "urgency": {"type": "string", "enum": ["low", "medium", "high"]},
+        "implies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {"type": {"type": "string"}, "value": {"type": "string"}},
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        }
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialPhishTarget": {
+      "type": "object",
+      "description": "A phishing target (design 04, 00 §7; systems/phish-rules.js)",
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string"},
+        "address": {"type": "string"},
+        "displayName": {"type": "string"},
+        "name": {"type": "string"},
+        "firstName": {"type": "string"},
+        "role": {"type": "string"},
+        "character": {"type": "string"},
+        "emailReplyDelay": {"type": "number", "minimum": 0},
+        "redFlagMeter": {"type": "boolean"},
+        "subjects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "text"],
+            "properties": {"id": {"type": "string"}, "text": {"type": "string"}, "topic": {"type": "string"}},
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "interests": {
+          "type": "object",
+          "properties": {"topics": {"type": "array", "items": {"type": "string"}}},
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "templateSets": {
+          "type": "object",
+          "properties": {
+            "from": {"type": "array", "items": {"type": "string"}},
+            "greeting": {"type": "array", "items": {"type": "string"}},
+            "pretext": {"type": "array", "items": {"type": "string"}},
+            "ask": {"type": "array", "items": {"type": "string"}}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "primedFor": {
+          "type": "object",
+          "properties": {
+            "trusts": {"type": "array", "items": {"type": "string"}},
+            "distinctiveValues": {"type": "array", "items": {"type": "string"}},
+            "minDistinct": {"type": "integer", "minimum": 1},
+            "expectedAttachment": {"type": "string"},
+            "genericValues": {"type": "array", "items": {"type": "string"}},
+            "story": {"type": "string"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "addressedAs": {"type": "array", "items": {"type": "string"}},
+        "requiredFactors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "senderTrust",
+              "senderAuth",
+              "addressedTo",
+              "pretextRelevant",
+              "attachmentPlausible",
+              "urgencyCalibrated",
+              "linkCredible"
+            ]
+          }
+        },
+        "advisoryFactors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "senderTrust",
+              "senderAuth",
+              "addressedTo",
+              "pretextRelevant",
+              "attachmentPlausible",
+              "urgencyCalibrated",
+              "linkCredible"
+            ]
+          }
+        },
+        "factors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "enum": [
+                  "senderTrust",
+                  "senderAuth",
+                  "addressedTo",
+                  "pretextRelevant",
+                  "attachmentPlausible",
+                  "urgencyCalibrated",
+                  "linkCredible"
+                ]
+              },
+              "mode": {"type": "string", "enum": ["required", "advisory"]}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "senderAuth": {
+          "type": "object",
+          "properties": {
+            "domainPublishesAuth": {"type": "boolean"},
+            "spoofAligns": {"type": "boolean"},
+            "dmarcPolicy": {"type": "string", "enum": ["none", "quarantine", "reject"]},
+            "override": {"type": "string", "enum": ["would-pass", "would-fail"]}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "urgency": {
+          "type": "object",
+          "properties": {"advisoryMax": {"type": "string", "enum": ["low", "medium", "high"]}},
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "expectedLink": {
+          "type": "object",
+          "properties": {"brandId": {"type": "string"}, "realDomain": {"type": "string"}},
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "requiresIntelToAttempt": {"type": "array", "items": {"type": "string"}},
+        "boostIfGlobal": {
+          "type": "object",
+          "description": "global name -> factor id",
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "senderTrust",
+              "senderAuth",
+              "addressedTo",
+              "pretextRelevant",
+              "attachmentPlausible",
+              "urgencyCalibrated",
+              "linkCredible"
+            ]
+          }
+        },
+        "strictIfGlobal": {
+          "type": "object",
+          "description": "global name -> factor id",
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "senderTrust",
+              "senderAuth",
+              "addressedTo",
+              "pretextRelevant",
+              "attachmentPlausible",
+              "urgencyCalibrated",
+              "linkCredible"
+            ]
+          }
+        },
+        "hints": {"type": "array", "items": {"type": "string"}},
+        "hintsByFactor": {
+          "type": "object",
+          "properties": {
+            "senderTrust": {
+              "oneOf": [
+                {"type": "string"},
+                {
+                  "type": "object",
+                  "properties": {
+                    "spoof": {"type": "string"},
+                    "ownFrom": {"type": "string"},
+                    "forced": {"type": "string"},
+                    "missing": {"type": "string"},
+                    "wrong": {"type": "string"}
+                  },
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "senderAuth": {
+              "oneOf": [
+                {"type": "string"},
+                {
+                  "type": "object",
+                  "properties": {
+                    "spoof": {"type": "string"},
+                    "ownFrom": {"type": "string"},
+                    "forced": {"type": "string"},
+                    "missing": {"type": "string"},
+                    "wrong": {"type": "string"}
+                  },
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "addressedTo": {
+              "oneOf": [
+                {"type": "string"},
+                {
+                  "type": "object",
+                  "properties": {
+                    "spoof": {"type": "string"},
+                    "ownFrom": {"type": "string"},
+                    "forced": {"type": "string"},
+                    "missing": {"type": "string"},
+                    "wrong": {"type": "string"}
+                  },
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "pretextRelevant": {
+              "oneOf": [
+                {"type": "string"},
+                {
+                  "type": "object",
+                  "properties": {
+                    "spoof": {"type": "string"},
+                    "ownFrom": {"type": "string"},
+                    "forced": {"type": "string"},
+                    "missing": {"type": "string"},
+                    "wrong": {"type": "string"}
+                  },
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "attachmentPlausible": {
+              "oneOf": [
+                {"type": "string"},
+                {
+                  "type": "object",
+                  "properties": {
+                    "spoof": {"type": "string"},
+                    "ownFrom": {"type": "string"},
+                    "forced": {"type": "string"},
+                    "missing": {"type": "string"},
+                    "wrong": {"type": "string"}
+                  },
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "urgencyCalibrated": {
+              "oneOf": [
+                {"type": "string"},
+                {
+                  "type": "object",
+                  "properties": {
+                    "spoof": {"type": "string"},
+                    "ownFrom": {"type": "string"},
+                    "forced": {"type": "string"},
+                    "missing": {"type": "string"},
+                    "wrong": {"type": "string"}
+                  },
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "linkCredible": {
+              "oneOf": [
+                {"type": "string"},
+                {
+                  "type": "object",
+                  "properties": {
+                    "spoof": {"type": "string"},
+                    "ownFrom": {"type": "string"},
+                    "forced": {"type": "string"},
+                    "missing": {"type": "string"},
+                    "wrong": {"type": "string"}
+                  },
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false,
+          "description": "factor id -> hint string or variants (phish-rules.js selectFactorHint). Linted by validate_social/options.rb"
+        },
+        "replies": {
+          "type": "object",
+          "description": "Reply text; the judge reads `landed`",
+          "additionalProperties": {"type": "string"}
+        },
+        "outcome": {
+          "type": "object",
+          "properties": {
+            "setGlobal": {
+              "oneOf": [{"type": "string"}, {"type": "object", "additionalProperties": true}],
+              "description": "global name -> value, or one global name; the mail client sets the first to true on a landing"
+            }
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "factorStrings": {
+          "type": "object",
+          "properties": {
+            "open": {
+              "type": "object",
+              "properties": {
+                "pass": {"type": "string"},
+                "fail": {"type": "string"},
+                "redFlag": {"type": ["string", "null"]},
+                "missing": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                },
+                "wrong-type": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "senderTrust": {
+              "type": "object",
+              "properties": {
+                "pass": {"type": "string"},
+                "fail": {"type": "string"},
+                "redFlag": {"type": ["string", "null"]},
+                "missing": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                },
+                "wrong-type": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "senderAuth": {
+              "type": "object",
+              "properties": {
+                "pass": {"type": "string"},
+                "fail": {"type": "string"},
+                "redFlag": {"type": ["string", "null"]},
+                "missing": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                },
+                "wrong-type": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "addressedTo": {
+              "type": "object",
+              "properties": {
+                "pass": {"type": "string"},
+                "fail": {"type": "string"},
+                "redFlag": {"type": ["string", "null"]},
+                "missing": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                },
+                "wrong-type": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "pretextRelevant": {
+              "type": "object",
+              "properties": {
+                "pass": {"type": "string"},
+                "fail": {"type": "string"},
+                "redFlag": {"type": ["string", "null"]},
+                "missing": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                },
+                "wrong-type": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "attachmentPlausible": {
+              "type": "object",
+              "properties": {
+                "pass": {"type": "string"},
+                "fail": {"type": "string"},
+                "redFlag": {"type": ["string", "null"]},
+                "missing": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                },
+                "wrong-type": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "urgencyCalibrated": {
+              "type": "object",
+              "properties": {
+                "pass": {"type": "string"},
+                "fail": {"type": "string"},
+                "redFlag": {"type": ["string", "null"]},
+                "missing": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                },
+                "wrong-type": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "linkCredible": {
+              "type": "object",
+              "properties": {
+                "pass": {"type": "string"},
+                "fail": {"type": "string"},
+                "redFlag": {"type": ["string", "null"]},
+                "missing": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                },
+                "wrong-type": {
+                  "type": "object",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            }
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        }
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialTriageAuth": {
+      "type": "object",
+      "properties": {
+        "spf": {"type": "string", "enum": ["pass", "fail", "none"]},
+        "dkim": {"type": "string", "enum": ["pass", "fail", "none"]},
+        "dmarc": {"type": "string", "enum": ["pass", "fail", "none"]},
+        "envelopeFrom": {"type": "string"},
+        "replyTo": {"type": "string"},
+        "summary": {"type": "string"}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialTriageMessage": {
+      "type": "object",
+      "description": "A triage message (triage-messages.js normaliseTriageMessage); kind playerSent reads targetId, fromMailbox, domainFrom and notes",
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string"},
+        "kind": {"type": "string", "enum": ["email", "playerSent", "sms", "voicemail", "qr", "page", "call", "push"]},
+        "from": {
+          "oneOf": [
+            {"type": "string"},
+            {
+              "type": "object",
+              "properties": {"name": {"type": "string"}, "address": {"type": "string"}},
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            }
+          ]
+        },
+        "to": {"type": "string"},
+        "subject": {"type": "string"},
+        "time": {"type": "string"},
+        "body": {"type": "string"},
+        "unread": {"type": "boolean"},
+        "forwardedBy": {"type": ["string", "boolean"]},
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id"],
+            "properties": {
+              "id": {"type": "string"},
+              "text": {"type": "string"},
+              "linkText": {"type": "string"},
+              "destination": {"type": "string"}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "string"},
+              "label": {"type": "string"},
+              "kind": {"type": "string"},
+              "kitId": {"type": "string"}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "auth": {"$ref": "#/definitions/socialTriageAuth"},
+        "truth": {
+          "type": "object",
+          "properties": {
+            "isPhish": {"type": "boolean"},
+            "flags": {"type": "array", "items": {"type": "string"}},
+            "perFlagNote": {"type": "object", "additionalProperties": {"type": "string"}},
+            "whyFine": {"type": "object", "additionalProperties": {"type": "string"}},
+            "ifTrusted": {"type": "string"},
+            "headerNote": {"type": "string"},
+            "reportReply": {"type": "string"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "factorStrings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "redFlag": {"type": "string"},
+              "wrong-type": {
+                "type": "object",
+                "properties": {"redFlag": {"type": "string"}},
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              },
+              "missing": {
+                "type": "object",
+                "properties": {"redFlag": {"type": "string"}},
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "targetId": {"type": "string"},
+        "fromMailbox": {"type": "string"},
+        "domainFrom": {"type": "string", "enum": ["landing_domain"]},
+        "notes": {
+          "type": "object",
+          "properties": {
+            "perFlagNote": {"type": "object", "additionalProperties": {"type": "string"}},
+            "whyFine": {"type": "object", "additionalProperties": {"type": "string"}},
+            "ifTrusted": {"type": "string"},
+            "headerNote": {"type": "string"},
+            "reportReply": {"type": "string"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        }
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialTriageSet": {
+      "type": "object",
+      "description": "An inbox triage set (design 05; triage-starter.js, inbox-triage-minigame.js)",
+      "required": ["id", "outcome", "messages"],
+      "properties": {
+        "id": {"type": "string"},
+        "title": {"type": "string"},
+        "stage": {"type": "string", "enum": ["pre", "post", "training", "mission"]},
+        "scoringProfile": {"type": "string", "enum": ["analyst", "awareness"]},
+        "feedbackMode": {"type": "string", "enum": ["end", "immediate"]},
+        "headerPanel": {"type": "string", "enum": ["collapsed", "open", "off"]},
+        "glossary": {"type": "string", "enum": ["closed", "open", "off"]},
+        "chipStyle": {"type": "string", "enum": ["plain", "technical", "character"]},
+        "verifyVerdict": {"type": "boolean"},
+        "brief": {"type": "string"},
+        "pairedWith": {"type": "string"},
+        "channelTells": {"type": "array", "items": {"type": "string"}},
+        "flagChips": {"type": "object", "additionalProperties": {"type": "string"}},
+        "nudges": {"type": "object", "additionalProperties": {"type": "string"}},
+        "bands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["min", "headline"],
+            "properties": {"min": {"type": "integer", "minimum": 0, "maximum": 100}, "headline": {"type": "string"}},
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "outcome": {
+          "type": "object",
+          "required": ["setGlobalPrefix", "passPercent"],
+          "properties": {"setGlobalPrefix": {"type": "string"}, "passPercent": {"type": "integer", "minimum": 0, "maximum": 100}},
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "playerSentAuth": {
+          "type": "object",
+          "properties": {
+            "accounts": {"type": "object", "additionalProperties": {"$ref": "#/definitions/socialTriageAuth"}},
+            "domains": {"type": "object", "additionalProperties": {"$ref": "#/definitions/socialTriageAuth"}}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "messages": {"type": "array", "items": {"$ref": "#/definitions/socialTriageMessage"}}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialPretextLine": {
+      "type": "object",
+      "properties": {
+        "technique": {
+          "type": "string",
+          "enum": ["urgency", "authority_borrowed", "reciprocity", "shared_detail", "candour", "deflect"]
+        },
+        "also": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["urgency", "authority_borrowed", "reciprocity", "shared_detail", "candour", "deflect"]
+          }
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["fact"],
+            "properties": {
+              "fact": {"type": "string"},
+              "from": {"type": "string"},
+              "value": {"type": "string"},
+              "unverifiable": {"type": "boolean"}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "blanks": {"type": "object", "additionalProperties": {"type": "string"}, "maxProperties": 2},
+        "repairs": {"type": "string"},
+        "doublesDown": {"type": "string"},
+        "extra": {"type": "number"},
+        "text": {"type": "string"}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialPretextAsk": {
+      "type": "object",
+      "properties": {
+        "pressure": {"type": "number"},
+        "floor": {"type": "number"},
+        "verification": {"type": "array", "items": {"type": "string"}},
+        "grants": {
+          "type": "object",
+          "properties": {
+            "intel": {"type": "array", "items": {"type": "string"}},
+            "setGlobal": {"type": "object", "description": "global name -> value", "additionalProperties": true}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        }
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialPretextCall": {
+      "type": "object",
+      "description": "A pretext call (design 06; pretext-judge.js, person-chat-pretext.js)",
+      "required": ["callId", "character"],
+      "properties": {
+        "callId": {"type": "string"},
+        "id": {"type": "string", "description": "Older data only; use callId"},
+        "character": {"type": "string"},
+        "startKnot": {"type": "string"},
+        "knows": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["value"],
+            "properties": {
+              "value": {"type": "string"},
+              "grade": {"type": "string", "enum": ["identity", "lesser"]},
+              "accept": {"type": "array", "items": {"type": "string"}}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "susceptibility": {
+          "type": "object",
+          "properties": {
+            "urgency": {"type": "number"},
+            "authority_borrowed": {"type": "number"},
+            "reciprocity": {"type": "number"},
+            "shared_detail": {"type": "number"},
+            "candour": {"type": "number"},
+            "deflect": {"type": "number"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "unverifiableCost": {"type": "number"},
+        "tuning": {
+          "type": "object",
+          "properties": {
+            "tellDetail": {"type": "string", "enum": ["full", "category", "none"]},
+            "matchCreditCapPerLine": {"type": "number", "minimum": 0},
+            "maxRefusals": {"type": "integer", "minimum": 1},
+            "feedbackMode": {"type": "string", "enum": ["live", "debriefOnly"]},
+            "showTechniqueNames": {"type": "string", "enum": ["live", "debriefOnly"]}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "labels": {"type": "object", "additionalProperties": {"type": "string"}},
+        "lines": {
+          "type": "object",
+          "patternProperties": {"^_": {}},
+          "additionalProperties": {"$ref": "#/definitions/socialPretextLine"}
+        },
+        "asks": {
+          "type": "object",
+          "patternProperties": {"^_": {}},
+          "additionalProperties": {"$ref": "#/definitions/socialPretextAsk"}
+        },
+        "outcomes": {
+          "type": "object",
+          "properties": {
+            "got_it": {
+              "type": "object",
+              "properties": {
+                "line": {"type": "string"},
+                "setGlobal": {"type": "object", "description": "global name -> value", "additionalProperties": true}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "reported": {
+              "type": "object",
+              "properties": {
+                "line": {"type": "string"},
+                "setGlobal": {"type": "object", "description": "global name -> value", "additionalProperties": true}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "walked_away": {
+              "type": "object",
+              "properties": {
+                "line": {"type": "string"},
+                "setGlobal": {"type": "object", "description": "global name -> value", "additionalProperties": true}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            }
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "tells": {
+          "type": "object",
+          "description": "Reserved keys techniques, repair, ask, bands; every other key is a fact id in knows",
+          "properties": {
+            "techniques": {"type": "object", "additionalProperties": {"type": "string"}},
+            "repair": {"type": "string"},
+            "ask": {
+              "type": "object",
+              "properties": {"accepted": {"type": "string"}, "pending": {"type": "string"}, "refused": {"type": "string"}},
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "bands": {
+              "type": "object",
+              "properties": {"calm": {"type": "string"}, "wary": {"type": "string"}, "refusing": {"type": "string"}},
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            }
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "pass": {"type": "string"},
+              "fail": {"type": "string"},
+              "failCategory": {"type": "string"},
+              "unknown": {"type": "string"}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "hints": {"type": "array", "items": {"type": "string"}},
+        "defenderNotes": {"type": "object", "additionalProperties": {"type": "string"}},
+        "brief": {
+          "type": "object",
+          "properties": {
+            "scope": {"type": "string"},
+            "ethics": {"type": "string"},
+            "objectives": {"type": "array", "items": {"type": "string"}}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "scope": {"type": "string"},
+        "ethics": {"type": "string"}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialEngagementOption": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string"},
+        "text": {"type": "string"},
+        "label": {"type": "string"},
+        "correct": {"type": "boolean"},
+        "good": {"type": "boolean"},
+        "why": {"type": "string"},
+        "step": {"type": "string"},
+        "blame": {"type": "boolean"}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialEngagementStep": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {"id": {"type": "string"}, "title": {"type": "string"}, "onCompleteGlobal": {"type": "string"}},
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialEngagementConfirm": {
+      "type": "object",
+      "properties": {
+        "kind": {"type": "string", "enum": ["confirm"]},
+        "id": {"type": "string"},
+        "step": {"type": "string"},
+        "text": {"type": "string"}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialEngagementBoardBlock": {
+      "type": "object",
+      "description": "A scope or plan board mode (board-model.js)",
+      "properties": {
+        "title": {"type": "string"},
+        "intro": {"type": "string"},
+        "brief": {"type": "string"},
+        "steps": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementStep"}},
+        "onCompleteGlobal": {"type": "string"},
+        "cards": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id"],
+            "properties": {
+              "id": {"type": "string"},
+              "kind": {"type": "string", "enum": ["sort", "question"]},
+              "step": {"type": "string"},
+              "text": {"type": "string"},
+              "inScope": {"type": "boolean"},
+              "why": {"type": "string"},
+              "options": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementOption"}}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "objectives": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementOption"}},
+        "objectivesPrompt": {"type": "string"},
+        "measures": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementOption"}},
+        "measuresPrompt": {"type": "string"},
+        "picks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "string"},
+              "step": {"type": "string"},
+              "text": {"type": "string"},
+              "options": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementOption"}}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "items": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementConfirm"}}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
     "emitterVariant": {
       "type": "object",
       "properties": {
@@ -634,6 +2244,7 @@
           "type": "array",
           "items": { "type": "integer" }
         },
+        "lockedHint": { "type": "string", "minLength": 1, "description": "Opt-in: appended to the Requires key and wrong-key alerts of a locked key lock, to say where the key comes from (utils/locked-hint.js). Linted by scripts/validate_social/options.rb" },
         "difficulty": {
           "type": "string",
           "enum": ["easy", "medium", "hard", "tutorial"]
@@ -1328,6 +2939,7 @@
           "type": "array",
           "items": { "type": "integer" }
         },
+        "lockedHint": { "type": "string", "minLength": 1, "description": "Opt-in: appended to the Requires key and wrong-key alerts of a locked key lock, to say where the key comes from (utils/locked-hint.js). Linted by scripts/validate_social/options.rb" },
         "card_id": { "type": "string" },
         "difficulty": {
           "type": "string",

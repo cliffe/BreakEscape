@@ -1,0 +1,1360 @@
+{
+  "_comment": "A valid social block for validator-social-schema.test.mjs, cut down from the SE lab's shape. Every top-level social block is present; the test mutates copies of it. Not a playable scenario.",
+  "scenario_brief": "Social schema fixture",
+  "startRoom": "office",
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "connections": {},
+      "objects": []
+    }
+  },
+  "social": {
+    "people": [
+      {
+        "id": "pierce",
+        "kind": "cast",
+        "address": "m.pierce@ledgerwell.example",
+        "forms": {
+          "first": "Melanie",
+          "short": "Mel",
+          "formal": "Ms Pierce",
+          "full": "Melanie Pierce"
+        }
+      },
+      {
+        "id": "baker",
+        "kind": "cast",
+        "address": "j.baker@ledgerwell.example",
+        "forms": {
+          "first": "Jed",
+          "full": "Jed Baker"
+        }
+      }
+    ],
+    "characters": {
+      "pierce": {
+        "displayName": "Melanie Pierce",
+        "channels": {
+          "email": "pierce_mail"
+        },
+        "emailRecord": {
+          "storyPath": "scenarios/lab_social_engineering/ink/pierce_mail.json",
+          "displayName": "Melanie Pierce"
+        },
+        "emailReplyDelay": 15,
+        "influence": {
+          "global": "pierce_influence",
+          "min": -40,
+          "max": 100,
+          "start": 0
+        },
+        "syncedVars": [
+          "pierce_influence"
+        ],
+        "thresholds": [
+          {
+            "id": "wary",
+            "at": -30,
+            "icon": "wary",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "pierce_wary",
+                "value": true,
+                "clearOnRearm": true
+              }
+            ]
+          }
+        ]
+      },
+      "lord": {
+        "displayName": "Sofia Lord",
+        "channels": {
+          "email": "lord_mail"
+        },
+        "emailRecord": {
+          "storyPath": "scenarios/lab_social_engineering/ink/lord_mail.json",
+          "displayName": "Sofia Lord"
+        },
+        "emailReplyDelay": 15,
+        "influence": {
+          "global": "lord_influence",
+          "min": -40,
+          "max": 100,
+          "start": 0
+        },
+        "syncedVars": [
+          "lord_influence"
+        ],
+        "thresholds": [
+          {
+            "id": "wary",
+            "at": -30,
+            "icon": "wary",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "lord_wary",
+                "value": true,
+                "clearOnRearm": true
+              }
+            ]
+          }
+        ]
+      },
+      "dev": {
+        "displayName": "Dev",
+        "channels": {
+          "phone": "dev_service_desk"
+        },
+        "influence": {
+          "global": "dev_influence",
+          "min": -100,
+          "max": 100,
+          "start": 0
+        },
+        "syncedVars": [
+          "dev_influence"
+        ],
+        "thresholds": [
+          {
+            "id": "wary",
+            "at": -40,
+            "icon": "wary",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "dev_wary",
+                "value": true,
+                "clearOnRearm": true
+              }
+            ]
+          },
+          {
+            "id": "refuses",
+            "at": -50,
+            "icon": "refuses",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "dev_refusing",
+                "value": true,
+                "clearOnRearm": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "intelFacts": {
+      "email_pattern": {
+        "text": "Staff addresses are first-initial.surname@ledgerwell.exam...",
+        "subject": "company",
+        "source": "r_pattern",
+        "provides": [
+          {
+            "type": "address",
+            "rule": "initial.surname@ledgerwell.example",
+            "label": "an address built from the pattern"
+          }
+        ],
+        "reduceNote": "Do not publish staff addresses in a pattern a lookup tool..."
+      },
+      "username_convention": {
+        "text": "Staff usernames are first initial plus surname, so Melani...",
+        "subject": "company",
+        "source": "f_author",
+        "provides": [],
+        "reduceNote": "Strip author and application metadata from documents befo..."
+      },
+      "pierce_role": {
+        "text": "Melanie Pierce works in Finance.",
+        "subject": "pierce",
+        "source": "row_pierce",
+        "provides": [
+          {
+            "type": "name",
+            "about": "recipient",
+            "value": "pierce_first",
+            "label": "Melanie",
+            "kind": "generic"
+          },
+          {
+            "type": "name",
+            "about": "recipient",
+            "value": "pierce_formal",
+            "label": "Ms Pierce",
+            "kind": "generic"
+          }
+        ]
+      }
+    },
+    "templates": {
+      "from_own": {
+        "part": "from",
+        "text": "{account_name} <{account_address}>",
+        "slots": []
+      },
+      "from_named": {
+        "part": "from",
+        "text": "{sender_name} <{sender_address}>",
+        "slots": [
+          {
+            "id": "sender_name",
+            "type": "name",
+            "about": "sender",
+            "label": "sender's name"
+          },
+          {
+            "id": "sender_address",
+            "type": "address",
+            "label": "sender's address"
+          }
+        ]
+      },
+      "greet_generic": {
+        "part": "greeting",
+        "text": "Hello,",
+        "slots": []
+      },
+      "greet_named": {
+        "part": "greeting",
+        "text": "Hi {name},",
+        "slots": [
+          {
+            "id": "name",
+            "type": "name",
+            "about": "recipient",
+            "label": "name to greet them by"
+          }
+        ]
+      }
+    },
+    "mailClient": {
+      "accounts": [
+        {
+          "id": "guest",
+          "address": "guest@workstation.example",
+          "displayName": "Consultant",
+          "kind": "given",
+          "person": null,
+          "mailbox": "guest",
+          "spoofsFrom": true
+        },
+        {
+          "id": "freemail",
+          "kind": "created",
+          "person": null,
+          "unlockedBy": "acct_freemail",
+          "mailbox": "freemail",
+          "spoofsFrom": false,
+          "createMenu": [
+            {
+              "id": "tt1",
+              "address": "tarnside.test@freemail.example",
+              "displayName": "T. Test"
+            },
+            {
+              "id": "nt2",
+              "address": "n.assurance@freemail.example",
+              "displayName": "N. Assurance"
+            }
+          ]
+        }
+      ],
+      "mailboxes": [
+        {
+          "id": "guest"
+        },
+        {
+          "id": "freemail"
+        }
+      ],
+      "contacts": [
+        {
+          "id": "hampshire",
+          "person": "hampshire",
+          "name": "Chris Hampshire",
+          "addresses": [
+            "careers@ledgerwell.example"
+          ],
+          "role": "Careers",
+          "revealedBy": "se_intel_hampshire_careers",
+          "targetId": "hampshire"
+        },
+        {
+          "id": "pierce",
+          "person": "pierce",
+          "character": "pierce",
+          "name": "Melanie Pierce",
+          "addresses": [
+            "m.pierce@ledgerwell.example"
+          ],
+          "role": "Finance",
+          "revealedBy": "se_intel_pierce_role",
+          "targetId": "pierce"
+        }
+      ],
+      "seededMessages": [
+        {
+          "id": "welcome",
+          "mailbox": "guest",
+          "from": {
+            "name": "Tarnside IT",
+            "address": "it@tarnside.example",
+            "avatar": "npc_helper"
+          },
+          "to": "guest@workstation.example",
+          "subject": "Your engagement workstation",
+          "body": "Hello,\n\nYour engagement workstation is ready. Everything ...",
+          "time": "07:46",
+          "unread": true,
+          "folder": "inbox"
+        },
+        {
+          "id": "kickoff",
+          "mailbox": "guest",
+          "from": {
+            "name": "Ruth Adeyemi",
+            "address": "r.adeyemi@tarnside.example",
+            "avatar": "npc_neutral"
+          },
+          "to": "guest@workstation.example",
+          "subject": "Ledgerwell: we are on",
+          "body": "Hello,\n\nLedgerwell want to go ahead. Read the sheet with ...",
+          "time": "07:52",
+          "unread": true,
+          "folder": "inbox"
+        }
+      ],
+      "payloadKit": [
+        {
+          "id": "kit_cv",
+          "label": "CV.docx",
+          "kind": "document"
+        },
+        {
+          "id": "kit_balance_sheet",
+          "label": "Q3-balance-sheet.xlsx",
+          "kind": "spreadsheet"
+        }
+      ],
+      "checklistTiming": "onSend",
+      "bodyMode": "templates",
+      "freeTextFlavour": false,
+      "showRedFlagMeter": false
+    },
+    "conceptCards": [
+      {
+        "id": "tool_hunter",
+        "title": "Hunter",
+        "text": "Hunter reports the address pattern a company uses, for ex..."
+      },
+      {
+        "id": "tool_harvester",
+        "title": "theHarvester",
+        "text": "theHarvester collects names, email addresses and sub-doma..."
+      }
+    ],
+    "osint": {
+      "profile": "student",
+      "sites": [
+        {
+          "id": "company",
+          "name": "Ledgerwell",
+          "url": "ledgerwell.example",
+          "type": "company-site",
+          "pages": [
+            {
+              "id": "team",
+              "title": "Our Team",
+              "blocks": [
+                {
+                  "id": "row_pierce",
+                  "kind": "staff",
+                  "person": "pierce",
+                  "name": "Melanie Pierce",
+                  "role": "Finance",
+                  "address": "m.pierce@ledgerwell.example",
+                  "fact": "pierce_role"
+                },
+                {
+                  "id": "row_baker",
+                  "kind": "staff",
+                  "person": "baker",
+                  "name": "Jed Baker",
+                  "role": "Finance",
+                  "address": "j.baker@ledgerwell.example"
+                }
+              ]
+            },
+            {
+              "id": "notes",
+              "title": "Team notes",
+              "blocks": [
+                {
+                  "id": "note_q3",
+                  "kind": "p",
+                  "text": "Jed: I'll send Mel the Q3 balance sheet on Friday.",
+                  "fact": "pierce_expects_balance_sheet"
+                },
+                {
+                  "id": "note_lunch",
+                  "kind": "p",
+                  "text": "Friday lunch is in the kitchen. Bring a plate."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "type": "social",
+          "profiles": [
+            {
+              "person": "pierce",
+              "posts": [
+                {
+                  "id": "post_pierce_jed",
+                  "text": "First week in finance and Jed's showing me the ropes. He ...",
+                  "fact": "pierce_trusts_jed"
+                },
+                {
+                  "id": "post_pierce_train",
+                  "text": "Train cancelled again. Working from the kitchen table."
+                }
+              ]
+            },
+            {
+              "person": "hampshire",
+              "showIf": "se_intel_hampshire_careers",
+              "posts": [
+                {
+                  "id": "post_hampshire_cvs",
+                  "text": "So many CVs to get through before Friday.",
+                  "fact": "hampshire_cv_backlog"
+                },
+                {
+                  "id": "post_hampshire_tea",
+                  "text": "The kettle in Careers has died. Send help."
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "tools": [
+        {
+          "id": "hunter",
+          "label": "Hunter lookup: ledgerwell.example",
+          "card": "tool_hunter",
+          "unlockedBy": {
+            "visited": "company.team"
+          },
+          "results": [
+            {
+              "id": "r_pattern",
+              "text": "Most addresses follow first-initial.surname@ledgerwell.ex...",
+              "fact": "email_pattern"
+            }
+          ]
+        },
+        {
+          "id": "name_baker",
+          "label": "Name search: J. Baker",
+          "card": "tool_harvester",
+          "unlockedBy": {
+            "visited": "company.team"
+          },
+          "results": [
+            {
+              "id": "r_baker_staff",
+              "text": "Jed Baker, Finance, ledgerwell.example"
+            },
+            {
+              "id": "r_namesake",
+              "text": "J. Baker, plumbing firm, Leeds",
+              "fact": "baker_namesake"
+            }
+          ]
+        }
+      ]
+    },
+    "intelBoard": {
+      "title": "Engagement: Ledgerwell",
+      "people": [
+        "hampshire",
+        "pierce"
+      ],
+      "readinessSlots": {
+        "pierce": [
+          {
+            "label": "Who she is",
+            "needsIntel": [
+              "pierce_role"
+            ],
+            "goalString": "You still don't know what Melanie does here. The team pag...",
+            "doneString": "She works in Finance."
+          },
+          {
+            "label": "Who she trusts",
+            "needsIntel": [
+              "pierce_trusts_jed",
+              "email_pattern"
+            ],
+            "goalString": "You still don't know who Melanie would open an email from...",
+            "doneString": "She trusts Jed Baker; you know the email pattern."
+          }
+        ],
+        "hampshire": [
+          {
+            "label": "Where mail goes",
+            "needsIntel": [
+              "hampshire_careers"
+            ],
+            "goalString": "You still don't know how Chris receives mail from strange...",
+            "doneString": "The careers inbox accepts CVs from anyone."
+          },
+          {
+            "label": "What the file should be",
+            "needsIntel": [
+              "careers_attachment"
+            ],
+            "goalString": "You still don't know what kind of file Chris will open. R...",
+            "doneString": "Chris takes .odt and .docx files."
+          }
+        ],
+        "lord": [
+          {
+            "label": "Her payroll system",
+            "needsIntel": [
+              "lord_portal",
+              "lord_intern"
+            ],
+            "goalString": "You still don't know which staff system Sofia uses. The t...",
+            "doneString": "She is a new intern and uses a staff payroll portal."
+          }
+        ]
+      }
+    },
+    "phishTargets": [
+      {
+        "id": "hampshire",
+        "address": "careers@ledgerwell.example",
+        "displayName": "Chris Hampshire",
+        "subjects": [
+          {
+            "id": "s_application",
+            "text": "Application",
+            "topic": "recruitment"
+          },
+          {
+            "id": "s_hello",
+            "text": "Hello",
+            "topic": "general"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "recruitment"
+          ]
+        },
+        "emailReplyDelay": 15,
+        "redFlagMeter": true,
+        "urgency": {
+          "advisoryMax": "low"
+        },
+        "templateSets": {
+          "from": [
+            "from_own"
+          ],
+          "greeting": [
+            "greet_generic"
+          ],
+          "pretext": [
+            "pretext_apply",
+            "pretext_enquiry"
+          ],
+          "ask": [
+            "ask_review_cv"
+          ]
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "cv"
+          ],
+          "minDistinct": 1,
+          "expectedAttachment": "document",
+          "trusts": [
+            "*"
+          ],
+          "story": "an applicant's CV for the open role"
+        },
+        "requiredFactors": [
+          "senderTrust",
+          "pretextRelevant"
+        ],
+        "advisoryFactors": [
+          "senderAuth",
+          "urgencyCalibrated"
+        ],
+        "factorStrings": {
+          "senderTrust": {
+            "pass": "✓ An open inbox accepts any sender",
+            "fail": "I don't recognise who this is from.",
+            "redFlag": null
+          },
+          "pretextRelevant": {
+            "pass": "✓ Reads like an application",
+            "fail": "Thanks for getting in touch, but this inbox is for job ap...",
+            "redFlag": null
+          },
+          "senderAuth": {
+            "pass": "✓ Sent as your own address, so there is nothing to spoof ...",
+            "redFlag": null
+          },
+          "attachmentPlausible": {
+            "pass": "✓ The CV is attached",
+            "missing": {
+              "fail": "You mention a CV, but there's nothing attached.",
+              "redFlag": null
+            },
+            "wrong-type": {
+              "fail": "That isn't a file type I can open as a CV.",
+              "redFlag": null
+            }
+          }
+        },
+        "replies": {
+          "landed": "Thanks, I'll get to this CV before Friday."
+        },
+        "hints": [
+          "An open inbox trusts anyone who looks like an applicant.",
+          "What does the careers page ask applicants to send?"
+        ],
+        "outcome": {
+          "setGlobal": {
+            "phish_hampshire_landed": true
+          }
+        }
+      },
+      {
+        "id": "pierce",
+        "character": "pierce",
+        "address": "m.pierce@ledgerwell.example",
+        "displayName": "Melanie Pierce",
+        "role": "Finance (new starter)",
+        "subjects": [
+          {
+            "id": "s_balance",
+            "text": "For your review",
+            "topic": "finance"
+          },
+          {
+            "id": "s_quick",
+            "text": "Quick one",
+            "topic": "general"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "finance"
+          ]
+        },
+        "addressedAs": [
+          "pierce_first",
+          "pierce_short"
+        ],
+        "redFlagMeter": false,
+        "urgency": {
+          "advisoryMax": "medium"
+        },
+        "senderAuth": {
+          "domainPublishesAuth": true,
+          "spoofAligns": false,
+          "dmarcPolicy": "none"
+        },
+        "templateSets": {
+          "from": [
+            "from_named",
+            "from_own"
+          ],
+          "greeting": [
+            "greet_named",
+            "greet_generic"
+          ],
+          "pretext": [
+            "pretext_sheet",
+            "pretext_invoice"
+          ],
+          "ask": [
+            "ask_open_attached"
+          ]
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "balance_sheet"
+          ],
+          "genericValues": [
+            "friday"
+          ],
+          "minDistinct": 1,
+          "expectedAttachment": "spreadsheet",
+          "trusts": [
+            "baker"
+          ],
+          "story": "a Q3 balance sheet from Jed, on a Friday"
+        },
+        "requiredFactors": [
+          "senderTrust",
+          "addressedTo"
+        ],
+        "advisoryFactors": [
+          "senderAuth",
+          "urgencyCalibrated"
+        ],
+        "factorStrings": {
+          "open": {
+            "pass": "✓ She would open it",
+            "fail": "Nothing about the sender or the subject made her open it.",
+            "redFlag": null
+          },
+          "senderTrust": {
+            "pass": "✓ From someone she trusts",
+            "fail": "She doesn't know this sender. She acts on mail from someo...",
+            "redFlag": null
+          },
+          "addressedTo": {
+            "pass": "✓ Addressed her by name",
+            "fail": "No name, or not the one her colleagues use.",
+            "redFlag": null
+          },
+          "pretextRelevant": {
+            "pass": "✓ Relevant to her work",
+            "fail": "Nothing she was expecting, and no reason for this to reac...",
+            "redFlag": null
+          },
+          "senderAuth": {
+            "pass": "✓ Sender authentication would pass",
+            "fail": "The spoofed j.baker@ address fails the domain's alignment...",
+            "redFlag": null
+          },
+          "attachmentPlausible": {
+            "pass": "✓ The balance sheet is attached",
+            "missing": {
+              "fail": "The message promises the file Jed would send, but nothing...",
+              "redFlag": null
+            },
+            "wrong-type": {
+              "fail": "The attachment isn't the spreadsheet a balance sheet woul...",
+              "redFlag": null
+            }
+          }
+        },
+        "hints": [
+          "Think about who Melanie trusts in Finance.",
+          "What does she expect to receive, and from whom?"
+        ],
+        "hintsByFactor": {
+          "senderTrust": {
+            "spoof": "She only acts on mail from someone she trusts in Finance....",
+            "ownFrom": "You're still sending as yourself. Change the From line to...",
+            "forced": "This account can only send as itself. Switch account to s..."
+          },
+          "addressedTo": "Greet her the way someone who actually knows her would.",
+          "pretextRelevant": "What does she expect to receive, and from whom?",
+          "attachmentPlausible": "Attach the file she would expect from Jed — a balance she..."
+        }
+      }
+    ],
+    "pretextNpcs": [
+      {
+        "character": "dev",
+        "callId": "service_desk_call",
+        "tuning": {
+          "matchCreditCapPerLine": 10,
+          "maxRefusals": 2,
+          "feedbackMode": "live",
+          "tellDetail": "full",
+          "showTechniqueNames": "live"
+        },
+        "susceptibility": {
+          "urgency": -10,
+          "authority_borrowed": -20,
+          "candour": 10
+        },
+        "unverifiableCost": -10,
+        "knows": {
+          "intern": {
+            "value": "lord_full",
+            "accept": [
+              "lord_first",
+              "lord_full"
+            ],
+            "grade": "identity"
+          },
+          "team": {
+            "value": "finance",
+            "grade": "identity"
+          }
+        },
+        "lines": {
+          "open_buddy": {
+            "blanks": {
+              "intern": "intern",
+              "team": "team"
+            },
+            "claims": [
+              {
+                "fact": "intern",
+                "from": "blank:intern"
+              },
+              {
+                "fact": "team",
+                "from": "blank:team"
+              }
+            ]
+          },
+          "repair_team": {
+            "technique": "candour",
+            "repairs": "team"
+          },
+          "urgent_payslip": {
+            "technique": "urgency",
+            "claims": []
+          },
+          "name_drop_manager": {
+            "technique": "authority_borrowed",
+            "claims": []
+          }
+        },
+        "asks": {
+          "portal_name": {
+            "pressure": 0,
+            "floor": -30,
+            "verification": [],
+            "grants": {
+              "setGlobal": {
+                "pretext_call_done": true
+              },
+              "intel": [
+                "lord_portal_name",
+                "lord_trusts_portal_sender"
+              ]
+            }
+          },
+          "payslip_date": {
+            "pressure": -10,
+            "floor": -20,
+            "verification": [
+              "intern"
+            ],
+            "grants": {
+              "setGlobal": {
+                "pretext_call_done": true
+              },
+              "intel": [
+                "lord_payslip_date"
+              ]
+            }
+          }
+        },
+        "outcomes": {
+          "got_it": {},
+          "reported": {
+            "line": "Sorry, I'm going to stop you there. I'll run this past my...",
+            "setGlobal": {
+              "pretext_call_reported": true
+            }
+          },
+          "walked_away": {}
+        },
+        "tells": {
+          "intern": {
+            "pass": "Intern. Sofia is on the new-starter list.",
+            "fail": "Intern. You said \"{said}\". The list has {actual}.",
+            "failCategory": "Intern. That did not match the new-starter list.",
+            "unknown": "Intern. He cannot check this."
+          },
+          "team": {
+            "pass": "Team. Finance matches the new-starter record.",
+            "fail": "Team. You said \"{said}\". The record has {actual}.",
+            "failCategory": "Team. That did not match the record.",
+            "unknown": "Team. He cannot check this."
+          },
+          "techniques": {
+            "urgency": "Urgency. A rushed request is the oldest pressure line on ...",
+            "authority_borrowed": "Borrowed authority. Naming a manager does not replace the...",
+            "candour": "Candour. Owning a correction early costs less than defend..."
+          },
+          "repair": "Corrected. Dev now has Finance, the team on his record.",
+          "ask": {
+            "accepted": "He read it out.",
+            "pending": "He wants to check one more thing.",
+            "refused": "He will not do that on this call."
+          },
+          "bands": {
+            "calm": "Dev is happy to help.",
+            "wary": "Dev has slowed down.",
+            "refusing": "Dev has stopped helping."
+          }
+        },
+        "hints": [
+          "Know who you are asking after before you approach.",
+          "The team page names the Finance intern."
+        ],
+        "defenderNotes": {
+          "payslip_date": "Calling back on the number already on file defeats every ..."
+        }
+      }
+    ],
+    "triageSets": [
+      {
+        "id": "lab_inbox",
+        "stage": "mission",
+        "scoringProfile": "analyst",
+        "feedbackMode": "immediate",
+        "headerPanel": "open",
+        "glossary": "open",
+        "title": "Ledgerwell inbox: trust, report or delete",
+        "bands": [
+          {
+            "min": 85,
+            "headline": "Sharp"
+          },
+          {
+            "min": 60,
+            "headline": "A pass"
+          }
+        ],
+        "outcome": {
+          "setGlobalPrefix": "triage_",
+          "passPercent": 60
+        },
+        "playerSentAuth": {
+          "accounts": {
+            "guest": {
+              "spf": "fail",
+              "dkim": "none",
+              "dmarc": "fail",
+              "envelopeFrom": "workstation.example",
+              "replyTo": "guest@workstation.example"
+            },
+            "freemail": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "freemail.example",
+              "replyTo": "{account_address}"
+            }
+          },
+          "domains": {
+            "d_unrelated": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "{domain}",
+              "replyTo": "no-reply@{domain}"
+            },
+            "d_letter": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "{domain}",
+              "replyTo": "no-reply@{domain}"
+            },
+            "d_word": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "{domain}",
+              "replyTo": "no-reply@{domain}"
+            },
+            "d_sub": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "{domain}",
+              "replyTo": "no-reply@{domain}"
+            },
+            "d_vv": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "{domain}",
+              "replyTo": "no-reply@{domain}"
+            },
+            "d_homo": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "{domain}",
+              "replyTo": "no-reply@{domain}"
+            }
+          }
+        },
+        "messages": [
+          {
+            "id": "own_pierce",
+            "kind": "playerSent",
+            "targetId": "pierce",
+            "notes": {
+              "perFlagNote": {
+                "senderTrust": "The display name is Jed's, but the message was really sen...",
+                "senderAuth": "SPF fails and there is no DKIM signature at all, so DMARC..."
+              },
+              "headerNote": "The header results come from the account the message was ...",
+              "ifTrusted": "Melanie would have opened it and treated it as a real bal...",
+              "reportReply": "Thanks. Confirmed as a phish. Sent from a workstation in ..."
+            }
+          },
+          {
+            "id": "own_lord",
+            "kind": "playerSent",
+            "targetId": "lord",
+            "notes": {
+              "perFlagNote": {
+                "senderTrust": "The From address claims to be the payroll portal, but the...",
+                "senderAuth": "The authentication results are the sending account's own,...",
+                "linkCredible": "The link text says the real portal, but the address goes ...",
+                "urgencyCalibrated": "A payslip waiting to be read is the pull to click before ..."
+              },
+              "headerNote": "The header results come from the account this was really ...",
+              "ifTrusted": "Sofia would have signed in on the look-alike page and han...",
+              "reportReply": "Thanks. Confirmed as a phish. Good page, that. Shame abou..."
+            }
+          }
+        ]
+      }
+    ],
+    "landingPages": [
+      {
+        "id": "payroll_login",
+        "linkText": "ledgerwell.example/payroll",
+        "pretext": {
+          "brandId": "ledgerwell",
+          "purposeId": "payslip",
+          "facts": [
+            "lord_portal_name",
+            "lord_payslip_date"
+          ]
+        },
+        "fields": [
+          "email",
+          "password"
+        ],
+        "extraSensitiveFields": [
+          "card_number",
+          "ni_number"
+        ],
+        "targets": {
+          "lord": {
+            "linkThreshold": 70,
+            "minDomainTier": 2
+          }
+        },
+        "brands": [
+          {
+            "id": "ledgerwell",
+            "name": "Ledgerwell",
+            "look": "generic",
+            "realDomain": "ledgerwell.example",
+            "realFields": [
+              "email",
+              "password"
+            ],
+            "decoyWords": [
+              "payroll-online",
+              "account-help"
+            ],
+            "domains": [
+              {
+                "id": "d_unrelated",
+                "domain": "payroll-online.example",
+                "trick": "unrelated",
+                "tier": 0
+              },
+              {
+                "id": "d_letter",
+                "domain": "ledgerwall.example",
+                "trick": "wrong-letter",
+                "tier": 1
+              }
+            ]
+          }
+        ],
+        "purposes": [
+          {
+            "id": "signin",
+            "label": "Sign in"
+          },
+          {
+            "id": "expired",
+            "label": "Password expired"
+          }
+        ],
+        "wordings": [
+          {
+            "id": "w_formal",
+            "match": true,
+            "text": "Your payslip is ready. Sign in to LedgerPay to view it."
+          },
+          {
+            "id": "w_generic",
+            "match": false,
+            "text": "Please sign in to continue."
+          }
+        ],
+        "strings": {
+          "defDomainTier0": "The address has no connection to the service it claims to...",
+          "defDomainTier1": "The address is {shown}, not {real}. One letter is wrong.",
+          "defDomainTier2": "The address is {shown}, not {real}. Read it from the right.",
+          "defDomainTier3": "The address is {shown}, not {real}. Compare every letter.",
+          "verdictPass": "Convincing enough for {firstName}."
+        },
+        "conceptCards": [
+          "typo-squat",
+          "homograph"
+        ],
+        "capture": {
+          "address": "s.lord@ledgerwell.example",
+          "note": "Sofia Lord's portal sign-in was captured by your page. In..."
+        }
+      }
+    ],
+    "engagement": {
+      "client": "Ledgerwell Ltd (fictional)",
+      "scopeNote": "Authorised exercise for Ledgerwell Ltd (fictional). In sc...",
+      "roe": {
+        "inScope": [
+          "work email to named staff",
+          "published service-desk phone line"
+        ],
+        "outScope": [
+          "personal accounts",
+          "physical entry"
+        ],
+        "stopContact": "Ruth Adeyemi, Tarnside duty line"
+      },
+      "scope": {
+        "onCompleteGlobal": "roe_signed",
+        "intro": "Read the sheet. Sort each card into In scope or Out of sc...",
+        "steps": [
+          {
+            "id": "scope",
+            "onCompleteGlobal": "roe_scope_done"
+          },
+          {
+            "id": "stoprule",
+            "onCompleteGlobal": "roe_stoprule_done"
+          }
+        ],
+        "cards": [
+          {
+            "id": "work_mail",
+            "kind": "sort",
+            "step": "scope",
+            "text": "Phish named staff at their work email",
+            "inScope": true,
+            "why": "The sheet authorises work email to named staff."
+          },
+          {
+            "id": "personal_mail",
+            "kind": "sort",
+            "step": "scope",
+            "text": "Phish staff at their personal addresses",
+            "inScope": false,
+            "why": "The sheet limits the test to work accounts; personal addr..."
+          }
+        ]
+      },
+      "plan": {
+        "onCompleteGlobal": "plan_done",
+        "intro": "Decide what you are testing and how you will measure it, ...",
+        "objectivesPrompt": "What is this engagement for?",
+        "measuresPrompt": "What will the report be built around?",
+        "steps": [
+          {
+            "id": "objective",
+            "onCompleteGlobal": "plan_objective_done"
+          },
+          {
+            "id": "measures",
+            "onCompleteGlobal": "plan_measures_done"
+          }
+        ],
+        "objectives": [
+          {
+            "id": "disrupt_payroll",
+            "step": "objective",
+            "correct": false,
+            "text": "Disrupt payroll to prove the risk.",
+            "why": "The rules of engagement bar disruption. Ledgerwell asked ..."
+          },
+          {
+            "id": "how_far_gaps",
+            "step": "objective",
+            "correct": true,
+            "text": "Find how far email and a phone pretext get against Ledger...",
+            "why": "That is what Ledgerwell asked for and what the sheet allows."
+          }
+        ],
+        "measures": [
+          {
+            "id": "names",
+            "step": "measures",
+            "correct": false,
+            "blame": true,
+            "text": "Which named staff fell for it.",
+            "why": "Gareth's one condition is no names in anything he reads. ..."
+          },
+          {
+            "id": "how_far",
+            "step": "measures",
+            "correct": true,
+            "text": "How far each attempt gets: sent, landed, failed, page vis...",
+            "why": "Count these and the report shows how far each attempt got..."
+          }
+        ]
+      },
+      "report": {
+        "onCompleteGlobal": "report_filed",
+        "labelBy": "role",
+        "steps": [
+          {
+            "id": "results",
+            "onCompleteGlobal": "report_results_done"
+          },
+          {
+            "id": "findings",
+            "onCompleteGlobal": "report_findings_done"
+          }
+        ],
+        "items": [
+          {
+            "kind": "confirm",
+            "step": "results",
+            "text": "I have read the campaign results"
+          }
+        ],
+        "findings": [
+          {
+            "id": "spoofed_colleague",
+            "step": "findings",
+            "text": "Finance acted on mail spoofing a colleague",
+            "rootCauses": [
+              {
+                "id": "no_banner_dmarc_none",
+                "correct": true,
+                "text": "No external-sender banner, and DMARC left at p=none",
+                "why": "p=none tells receivers to deliver mail that fails DMARC, ..."
+              },
+              {
+                "id": "staff_carelessness",
+                "correct": false,
+                "blame": true,
+                "text": "Finance staff were careless with a suspicious email",
+                "why": "Blaming staff hides the control gap and stops people repo..."
+              }
+            ],
+            "controls": [
+              {
+                "id": "banner_dmarc_enforce",
+                "correct": true,
+                "text": "Add an external-sender banner and move DMARC to enforcement",
+                "why": "Quarantine or reject stops the spoof at the gateway. The ..."
+              },
+              {
+                "id": "ban_finance_email",
+                "correct": false,
+                "text": "Stop Finance using email",
+                "why": "Banning email for Finance is not a workable control."
+              }
+            ]
+          },
+          {
+            "id": "service_desk_disclosed",
+            "step": "findings",
+            "text": "The service desk gave out the portal name and payslip date",
+            "rootCauses": [
+              {
+                "id": "no_verification_script",
+                "correct": true,
+                "text": "No script telling the desk to verify a caller before shar...",
+                "why": "The service desk checked what its policy told it to check..."
+              },
+              {
+                "id": "dev_fault",
+                "correct": false,
+                "blame": true,
+                "text": "The service desk operator should not have given anything ...",
+                "why": "The operator followed the policy they were given; the mis..."
+              }
+            ],
+            "controls": [
+              {
+                "id": "callback_on_file",
+                "correct": true,
+                "text": "Call back on the number already on file before sharing de...",
+                "why": "An attacker can fake a name and a team, but not answer a ..."
+              },
+              {
+                "id": "no_phone_support",
+                "correct": false,
+                "text": "Scrap phone support on the service desk",
+                "why": "Removing phone support punishes staff for a process gap."
+              }
+            ]
+          }
+        ]
+      },
+      "defender": {
+        "onCompleteGlobal": "profile_done",
+        "factMitigations": [
+          {
+            "intel": "email_pattern",
+            "options": [
+              {
+                "id": "role_inboxes",
+                "text": "Publish role inboxes, not a list of staff addresses",
+                "good": true,
+                "why": "A lookup tool then has no named address pattern to copy."
+              },
+              {
+                "id": "hide_team_page",
+                "text": "Take the team page down for a while",
+                "good": false,
+                "why": "The addresses are already public and in old mail; hiding ..."
+              }
+            ]
+          },
+          {
+            "intel": "username_convention",
+            "options": [
+              {
+                "id": "strip_metadata",
+                "text": "Strip author and application metadata before publishing d...",
+                "good": true,
+                "why": "The author field no longer gives away the username conven..."
+              },
+              {
+                "id": "stop_publishing",
+                "text": "Stop publishing any documents",
+                "good": false,
+                "why": "Ledgerwell needs to publish. Clean the metadata and the d..."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "influenceDisplay": {
+      "bar": true,
+      "number": false,
+      "pip": true
+    }
+  }
+}

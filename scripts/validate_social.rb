@@ -64,6 +64,7 @@ module ValidateSocial
     issues.concat(aim_unlock_keys(ctx))
     issues.concat(duplicate_object_ids(ctx))
     issues.concat(object_name_collisions(ctx))
+    issues.concat(Options.locked_hints(json)) # engine-wide option; nothing shipped authors it
     return issues unless json['social'].is_a?(Hash)
 
     issues.concat(declared_globals(ctx))
@@ -81,6 +82,14 @@ module ValidateSocial
 
     prefix = entry['from'].to_s[/\A((?:m|sis)\d\d)_/, 1]
     prefix && entry['var'].is_a?(String) ? "#{prefix}_#{entry['var']}" : nil
+  end
+
+  # Splits json-schema messages into [social issue strings, the other messages]. A message about
+  # a path under #/social (the closed social schema in scenario-schema.json) becomes a "❌ SOCIAL:
+  # schema:" issue, without the gem's "in schema <uuid>" tail.
+  def self.split_schema_errors(errors)
+    social, other = Array(errors).partition { |e| e.to_s.match?(%r{'#/social(?:/|')}) }
+    [social.map { |e| "❌ SOCIAL: schema: #{e.to_s.sub(/ in schema [0-9a-f-]+#?\s*\z/, '')}" }, other]
   end
 
   # ---- scenario walking ----------------------------------------------------
@@ -559,3 +568,7 @@ end
 ValidateSocial::AREAS.concat([ValidateSocial::Mail, ValidateSocial::Osint, ValidateSocial::Board,
                               ValidateSocial::Triage, ValidateSocial::Pretext, ValidateSocial::Landing,
                               ValidateSocial::Lab])
+
+# The late options (hintsByFactor, labelBy, checklistTiming, mirrorToBehavior, lockedHint): MECHANICS_AUDIT M3
+require_relative 'validate_social/options'
+ValidateSocial::AREAS << ValidateSocial::Options

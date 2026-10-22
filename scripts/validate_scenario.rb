@@ -5234,6 +5234,10 @@ def main
     # keys, object id uniqueness) apply to every scenario; the rest need a `social` key.
     social_issues = ValidateSocial.check(json_data, repo_root: repo_root, valid_item_types: valid_item_types,
                                                    imports: carry_imports, raw: rendered_json)
+    # Schema errors under /social are social errors: listed with the lints, and fatal under
+    # --strict-social like them (MECHANICS_AUDIT M3). Every other schema error still fails the run.
+    social_schema, errors = ValidateSocial.split_schema_errors(errors)
+    social_issues = social_schema + social_issues
     common_issues += social_issues
 
     # Check for recommended fields
