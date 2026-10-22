@@ -20,7 +20,7 @@ CLI (one operation per call; object ids come from `list`):
   room_edit.py ROOM relayer ID LAYER         # move to another layer, appended last
   room_edit.py ROOM floor NAME               # point the room6-layout floor tileset at
                                              # tiles/rooms/NAME.png (e.g. room_hospital_carpet;
-                                             # room6, room_hospital*, room_uni*, room_aw_* sheets)
+                                             # room6, room_hospital*, room_uni*, room_aw_*, room_zds*, room_qdc*, room_aes*, room_se* sheets)
 
 Several edits at once, from Python:
   import sys; sys.path.insert(0, 'scripts/room_gen'); from room_edit import Room
@@ -325,13 +325,13 @@ class Room:
         return oid
 
     def floor(self, name):
-        """Swap the floor/wall sheet (room6 or a room_hospital*, room_uni* or room_aw_*
+        """Swap the floor/wall sheet (room6 or a room_hospital*, room_uni*, room_aw_*, room_zds*, room_qdc*, room_aes* or room_se*
         recolour, same tile layout) for another variant; the tile gids stay the same."""
         if not (ROOT / "public/break_escape/assets/tiles/rooms" / f"{name}.png").exists():
             raise SystemExit(f"no tiles/rooms/{name}.png (make it first, e.g. make_hospital_tileset.py)")
         for d in self.docs:
             ts = next((t for t in d.m["tilesets"] if "image" in t
-                       and re.fullmatch(r"room6|room_hospital(_[a-z]+)?|room_uni(_[a-z]+)?|room_aw_[a-z_]+",
+                       and re.fullmatch(r"room6|room_hospital(_[a-z]+)?|room_uni(_[a-z]+)?|room_aw_[a-z_]+|room_(zds|qdc|aes|se)(_[a-z0-9]+)*",
                                    Path(t["image"]).stem)), None)
             if ts is None:
                 raise SystemExit(f"{d.path.name}: no room6-layout floor tileset")

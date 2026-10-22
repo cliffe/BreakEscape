@@ -83,18 +83,6 @@
                  "y":118
                 }, 
                 {
-                 "gid":113,
-                 "height":39,
-                 "id":8,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":44,
-                 "x":182,
-                 "y":118
-                }, 
-                {
                  "gid":114,
                  "height":39,
                  "id":12,
@@ -308,18 +296,6 @@
          "name":"conditional_table_items",
          "objects":[
                 {
-                 "gid":304,
-                 "height":16,
-                 "id":27,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16,
-                 "x":156.84,
-                 "y":96.55
-                }, 
-                {
                  "gid":212,
                  "height":11,
                  "id":30,
@@ -375,8 +351,8 @@
                  "type":"",
                  "visible":true,
                  "width":24,
-                 "x":189.8,
-                 "y":94.6
+                 "x":158,
+                 "y":95
                 }, 
                 {
                  "gid":830,
@@ -2926,11 +2902,11 @@
         {
          "columns":10,
          "firstgid":701,
-         "image":"..\/tiles\/rooms\/room_aes_security.png",
+         "image":"..\/tiles\/rooms\/room_se_charcoal.png",
          "imageheight":320,
          "imagewidth":320,
          "margin":0,
-         "name":"room_aes_security",
+         "name":"room_se_charcoal",
          "spacing":0,
          "tilecount":100,
          "tileheight":32,

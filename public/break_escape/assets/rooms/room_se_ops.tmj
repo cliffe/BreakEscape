@@ -438,18 +438,6 @@
      "y": 54.0
     },
     {
-     "gid": 1031,
-     "height": 19,
-     "id": 6,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 24,
-     "x": 120.0,
-     "y": 104.0
-    },
-    {
      "gid": 268,
      "height": 37,
      "id": 11,
@@ -760,16 +748,16 @@
      "y": 212.7
     },
     {
-     "gid": 371,
-     "height": 21,
+     "gid": 368,
+     "height": 22,
      "id": 14,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 31,
-     "x": 127.9,
-     "y": 155.38
+     "width": 34,
+     "x": 124,
+     "y": 155
     }
    ],
    "opacity": 1,
@@ -3226,11 +3214,11 @@
   {
    "columns": 10,
    "firstgid": 701,
-   "image": "../tiles/rooms/room_qdc_open.png",
+   "image": "../tiles/rooms/room_se_carpet.png",
    "imageheight": 320,
    "imagewidth": 320,
    "margin": 0,
-   "name": "room_qdc_open",
+   "name": "room_se_carpet",
    "spacing": 0,
    "tilecount": 100,
    "tileheight": 32,

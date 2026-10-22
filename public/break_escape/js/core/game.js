@@ -312,6 +312,9 @@ export function preload() {
     this.load.image('room_m10_hall_e', 'tiles/rooms/room_m10_hall_e.png'); // m10 Tomb Gamma sheet
     this.load.image('room_m10_gallery', 'tiles/rooms/room_m10_gallery.png'); // m10 Tomb Gamma sheet
     this.load.image('room_m10_core', 'tiles/rooms/room_m10_core.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_se_boardroom', 'tiles/rooms/room_se_boardroom.png'); // lab_social_engineering: Tarnside teal wall line, carpet with the meeting-table rug
+    this.load.image('room_se_carpet', 'tiles/rooms/room_se_carpet.png'); // lab_social_engineering: Tarnside teal wall line, slate-blue carpet (recon, operations)
+    this.load.image('room_se_charcoal', 'tiles/rooms/room_se_charcoal.png'); // lab_social_engineering: Tarnside teal wall line, charcoal carpet (blue team)
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');

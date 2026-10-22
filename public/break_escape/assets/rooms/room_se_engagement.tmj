@@ -653,14 +653,14 @@
      "y": 243.0
     },
     {
-     "gid": 368,
-     "height": 22,
+     "gid": 366,
+     "height": 30,
      "id": 26,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 34,
+     "width": 32,
      "x": 214,
      "y": 204
     }
@@ -3096,11 +3096,11 @@
   {
    "columns": 10,
    "firstgid": 701,
-   "image": "../tiles/rooms/room_zds_boardroom.png",
+   "image": "../tiles/rooms/room_se_boardroom.png",
    "imageheight": 320,
    "imagewidth": 320,
    "margin": 0,
-   "name": "room_zds_boardroom",
+   "name": "room_se_boardroom",
    "spacing": 0,
    "tilecount": 100,
    "tileheight": 32,

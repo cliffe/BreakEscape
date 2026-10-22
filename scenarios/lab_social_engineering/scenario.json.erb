@@ -1370,8 +1370,7 @@
       "lighting": {
         "emitters": {
           "power_panel": { "color": "#7dffa0", "radius": 14, "intensity": 0.4, "effect": null },
-          "fire_alarm_point": [ { "intensity": 0 } ],
-          "exec_laptop": { "color": "#9fd4ff", "radius": 28, "intensity": 0.45, "effect": "screen" }
+          "fire_alarm_point": [ { "intensity": 0 } ]
         }
       },
       "connections": { "west": "recon_room", "east": "operations_room", "north": "blue_team_room" },
@@ -1538,7 +1537,10 @@
       "door_sign": "Recon Room",
       "lighting": {
         "mode": "motion", "darkAmbient": "#1e2740",
-        "emitters": { "fire_alarm_point": [ { "intensity": 0 } ] }
+        "emitters": {
+          "fire_alarm_point": [ { "intensity": 0 } ],
+          "office-misc-lamp": { "color": "#ffd9a0", "radius": 44, "intensity": 0.55, "effect": null }
+        }
       },
       "locked": true,
       "lockType": "key",

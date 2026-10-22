@@ -450,18 +450,6 @@
      "y": 156.0
     },
     {
-     "gid": 1028,
-     "height": 25,
-     "id": 11,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 21,
-     "x": 168.0,
-     "y": 182.0
-    },
-    {
      "gid": 389,
      "height": 47,
      "id": 12,
@@ -617,14 +605,14 @@
      "y": 149.58
     },
     {
-     "gid": 368,
-     "height": 22,
+     "gid": 366,
+     "height": 30,
      "id": 22,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 34,
+     "width": 32,
      "x": 40.84,
      "y": 152.7
     },
@@ -665,15 +653,15 @@
      "y": 150.02
     },
     {
-     "gid": 366,
-     "height": 30,
-     "id": 31,
+     "gid": 830,
+     "height": 22,
+     "id": 33,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 32,
-     "x": 44,
+     "width": 20,
+     "x": 50,
      "y": 223
     }
    ],
@@ -696,7 +684,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 33,
+ "nextobjectid": 34,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3108,11 +3096,11 @@
   {
    "columns": 10,
    "firstgid": 701,
-   "image": "../tiles/rooms/room_zds_office_floor.png",
+   "image": "../tiles/rooms/room_se_carpet.png",
    "imageheight": 320,
    "imagewidth": 320,
    "margin": 0,
-   "name": "room_zds_office_floor",
+   "name": "room_se_carpet",
    "spacing": 0,
    "tilecount": 100,
    "tileheight": 32,
