@@ -1134,3 +1134,10 @@ Applied 2026-10-21 by the m10 fixer from `finale/STAGE_8_RULINGS.md` and the rev
 - R11-m2: Imran's default credit is "Still at his bench at six, under his own sheet." (Join: "Still at his bench."). ERB only; `credits_sections.json` doesn't carry it. The credits comparison shows only that line changing.
 - The R10-m4 comments (`m10_voltage.ink` `escaped`, `m10_victoria.ink` `threat_missed`) and the R10-m4 bullet now give the right reason: a reload restores hostility (since 8e868565); the re-arm covers a Restart after the player is knocked out.
 - Voiced delta: 2 lines reworded (Gary, Imran at 06:00), replacing R10's two rewordings; no new lines.
+
+**Alignment round 12, phase closed (ALIGNMENT_REVIEW_F_R12.md; 0/0/3, which closes m10's alignment phase under the user's rule).**
+- R12-m1: `card_cloned` means "stayed at the bench with Gary" (Gary's "[Stay where you are. I'll take a copy of your card.]" is its only writer). Imran is off the 06:00 walkabout on `card_cloned` (`imran_here`), the dead `walk_imran` arm is deleted, and his credit reads "Stayed at the bench with Gary. Still on their payroll.". HaX's `card_cloned` mapping for Imran's own card is removed (nothing could fire it); the R9 comment in `m10_imran.ink` names Gary's pick. Proved: on the reviewer's `left_in_place.cjs` save the walkabout offers Quintero, Wendell and "That's everyone.", no Imran; the credits comparison shows only that clause changing.
+- R12-m2 (`m10_voltage.ink` `fight`): Static's conditional `#hostile:static_power` opens the knot ahead of `#hostile:voltage_power`, so both ride the reply's first line; "Not past me." stays in its own conditional. No line changes.
+- R12-m3: `#unlock_door:core` moves onto the first line of Victoria's confronted reply and Vos's stood-aside reply (the door opens a beat before "Open." / "The door is open."). No line changes.
+- Proved with the reviewer's `midreply.cjs`: line 1 of each reply now carries `unlock_door:core` (Victoria, Vos) and both hostile tags (Voltage), so the engine's flush on close or unload (4af6a328, d8c4e0c7) applies them.
+- Voiced delta: −1 (Imran's `card_cloned` 06:00 line).

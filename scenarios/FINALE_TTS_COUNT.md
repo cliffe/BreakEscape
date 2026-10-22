@@ -189,3 +189,4 @@ No audio exists yet, so nothing is orphaned by the change. The officers' m09 and
 - 2026-10-22 m10 alignment R8: +2 lines (Victoria 'You found your own way in. I'll remember that.'; Gary 'Right. Power room's open. I'll get Imran to the medics first.').
 - 2026-10-22 m10 alignment R10: 2 lines reworded (Gary, Imran at 06:00); no new lines.
 - 2026-10-22 m10 alignment R11: Gary and Imran 06:00 lines reworded again (replace R10's); no new lines.
+- 2026-10-22 m10 alignment R12: −1 line (Imran's card_cloned 06:00 line deleted).

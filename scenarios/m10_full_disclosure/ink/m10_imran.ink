@@ -73,7 +73,7 @@ Agent HaX: Let him go and the phone goes with him. Keep him, and we get his supp
 -> imran_menu
 
 === imran_menu ===
-// Alignment R9 sweep: a reopen enters here; a card cloned meanwhile (HaX's card_cloned mapping) settles him.
+// Alignment R9 sweep, R12-m1: a reopen enters here; Gary's "stay at the bench" pick (card_cloned) settles him meanwhile.
 {imran_outcome == "talked_round" or imran_outcome == "taken_in" or imran_outcome == "card_cloned":
     -> imran_rest
 }

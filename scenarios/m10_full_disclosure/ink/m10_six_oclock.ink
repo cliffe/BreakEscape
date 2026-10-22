@@ -48,7 +48,8 @@ Narrator: The forward post, a few minutes before six. Floodlights, engines runni
 // most three picks, Quintero first. One line each. Nobody absent is offered.
 === walkabout ===
 ~ temp gary_here = m02_completed and (m02_gary_protected or not m02_exposed_hospital) and gary_outcome != "left_in_place"
-~ temp imran_here = imran_outcome != "talked_round"
+// Alignment R12-m1: card_cloned is Gary's "stay at the bench" pick; Imran stays where Gary stays.
+~ temp imran_here = imran_outcome != "talked_round" and imran_outcome != "card_cloned"
 ~ temp wendell_here = (not m04_voltage_captured and not m04_voltage_escaped) or (m04_voltage_escaped and (not m04_static_left or m04_static_left_alone))
 ~ temp vic_here = victoria_gallery == "arrested_here" or victoria_gallery == "ko"
 ~ temp kow_here = sleeper_caught or wren_at_core
@@ -268,8 +269,6 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 {
 - imran_outcome == "taken_in":
     Imran Siddiqui: My mum thinks I'm on a course in Leeds. Can someone ring her before the news does?
-- imran_outcome == "card_cloned":
-    Imran Siddiqui: You copied my card while I was talking. I'd have handed it over if you'd asked.
 - imran_outcome == "ko":
     Imran Siddiqui: You could have just asked me.
 - else:

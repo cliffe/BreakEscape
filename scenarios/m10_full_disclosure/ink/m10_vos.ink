@@ -56,8 +56,9 @@ Pieter Vos: I don't do philosophy. I do delivery dates.
 + {vos_secret_known} [Your second buyer. The one you skim from.]
     ~ vos_secret_used = true
     ~ vos_outcome = "stood_aside"
-    Pieter Vos: *pause* Who told you that. No. Don't. I'm leaving.
+    // Alignment R12-m3: the unlock rides the reply's first line.
     #unlock_door:core
+    Pieter Vos: *pause* Who told you that. No. Don't. I'm leaving.
     Pieter Vos: The door is open. The order goes with me, and so do I.
     ~ vos_l_quiet = true
     #exit_conversation

@@ -279,10 +279,13 @@ Voltage (Critical Mass): Shutter's isolated. Cuff me in front. I'll want my hand
 === fight ===
 ~ voltage_outcome = "fought"
 ~ cut_by_hand = true
+// Alignment R12-m2: both hostile tags ride the first line, so a close mid-reply arms both.
+{m04_static_left and not m04_static_left_alone:
+    #hostile:static_power
+}
 #hostile:voltage_power
 Voltage (Critical Mass): Then be quick about it.
 {m04_static_left and not m04_static_left_alone:
-    #hostile:static_power
     ENTROPY Operative 'Static': Not past me.
 }
 ~ volt_quiet = true

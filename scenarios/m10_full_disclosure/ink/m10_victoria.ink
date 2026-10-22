@@ -54,8 +54,9 @@ Victoria Sterling: I can open that lock for you. I can also open it for them. No
 }
 + [Before you touch that lock. Zero Day's order has your name on it.]
     ~ victoria_gallery = "confronted"
-    Victoria Sterling: Then you know I'm hedging. So is everyone.
+    // Alignment R12-m3: the unlock rides the reply's first line, so a close or reload can't keep the outcome without the door.
     #unlock_door:core
+    Victoria Sterling: Then you know I'm hedging. So is everyone.
     Victoria Sterling: Open. And the order's withdrawn. Remember that I didn't have to.
     ~ vic_quiet = true
     #exit_conversation

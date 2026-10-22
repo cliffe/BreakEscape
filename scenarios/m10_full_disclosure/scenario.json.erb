@@ -646,7 +646,7 @@ in_this_operation = lambda do |ending|
   people << person.('IMRAN SIDDIQUI', [
     cl.('Went home. So did a friend.', "globalVars.imran_outcome === 'talked_round'"),
     cl.('Charged. His supplier was raided by morning.', "globalVars.imran_outcome === 'taken_in'"),
-    cl.('Kept his card. Lost a copy of it.', "globalVars.imran_outcome === 'card_cloned'"),
+    cl.('Stayed at the bench with Gary. Still on their payroll.', "globalVars.imran_outcome === 'card_cloned'"),
     cl.('Knocked out at his bench.', "globalVars.imran_outcome === 'ko'", w),
     # Alignment R10-m5, R11-m2: "avoided" covers a player who heard him out and left, so no "never asked".
     cl.('Still at his bench.', "globalVars.ending === 'joined'"),
@@ -1665,7 +1665,7 @@ end
             { "eventPattern": "global_variable_changed:ghost_sale", "condition": "value === 'stopped' && globalVars.share_resale === 'live'", "setGlobal": { "share_resale": "stopped" } },
 <%# --- The power-room door and the workshop (OT 4.8) ------------------------- %>
             { "eventPattern": "door_unlock_failed:power_room", "condition": "!globalVars.hax_jammed", "onceOnly": true, "bark": "Someone on that floor carries a card for it. Or there's the fitter's locker upstairs." },
-            { "eventPattern": "card_cloned", "condition": "data.cardName === 'Power Room Card, Imran Siddiqui' && globalVars.imran_outcome !== 'taken_in' && globalVars.imran_outcome !== 'talked_round' && globalVars.imran_outcome !== 'ko'", "setGlobal": { "imran_outcome": "card_cloned" } },
+            <%# Alignment R12-m1: HaX's card_cloned mapping for Imran's own card is gone (nothing clones his card while he's unsettled); card_cloned is written by Gary's stay-at-the-bench pick. %>
             <%# Impl R1 minor 3: a knock-out after a settled outcome leaves the decision standing (06:00, close_compute and the credits read it). Protected Gary is read through gary_ko (minor 4: confirmed in m10_six_oclock and the credits). %>
             { "eventPattern": "npc_ko:imran", "condition": "globalVars.imran_outcome !== 'taken_in' && globalVars.imran_outcome !== 'talked_round'", "setGlobal": { "imran_outcome": "ko" } },
             { "eventPattern": "npc_ko:imran_watched", "condition": "globalVars.imran_outcome !== 'taken_in' && globalVars.imran_outcome !== 'talked_round'", "setGlobal": { "imran_outcome": "ko" } },
