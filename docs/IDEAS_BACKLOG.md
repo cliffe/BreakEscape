@@ -17,10 +17,7 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 ## Engine and UI
 
 From the PIN cracker fix (2026-10-10), found but not fixed:
-- **`window.startPinMinigame` name clash** (S). `minigames/index.js:202` overrides the starter from `minigame-starters.js:915` with the demo helper. The game imports the starter directly, so only callers of the global are affected.
-- **Unrouted `api/games_controller.rb#unlock`** (S). Dead code with its own unlock logic; remove it or route it.
 
-- **Remove the unused `systems/npc-health-bar.js`** (UI themes work, 2026-10-17; S). Nothing imports it; the game's NPC health bars are `ui/npc-health-bars.js` (`core/game.js:23`). Delete it, or fold anything useful from it into the live module.
 - **A "VM launched" event** (m05 fixer; S). Tasks like "Get into the research portal" could complete on real use instead of on flag 1.
 - **`object_unlock_failed` event** (m06 re-review; S). The engine emits nothing when a PIN or password is wrong, so a handler can't react to repeated wrong guesses.
 - **Ink visit counts don't survive a reload** (m02 pre-commit check; S–M). After a reload, knot visit counts, `TURNS()` and the story position are lost. Ink-local VARs ARE restored: the engine saves `npcInkVariables` after each choice (since 18237332, confirmed in the browser in m06 game 2304, 2026-10-13). Openers keyed on visit counts replay; key them on a VAR or a synced global instead.
@@ -115,10 +112,8 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 
 - **Lint: "Not X. Y." across sentences, in narration** (m04 script editor; S). The `not-x-but-y` rule misses the two-sentence form ("Not doubt. Irritation.") and narrator lines, and "She is not X; she Y".
 
-- **Validator: patrol legs longer than `changeDirectionInterval`** (m02 fixer; S). Warn when a waypoint leg can't be walked before the re-target timer fires.
 - **Grouped phone submenus as a standard pattern** (m02 fixer; S). m02 folded nine guide buttons into one "Send me a field guide." submenu; worth documenting for all handlers.
 
-- **Validator: catch mappings that can never fire** (m02 fixer; S). Flag a `lockpick_used_in_view` mapping whose room has no pickable lock.
 - **Graph generator: end the critical path on the missionConclusion aim**, and accept `puzzle_graph_links` on NPCs (m02 fixer; S).
 
 - **Write up the "what failed" debrief and permissive-ESD patterns** in README_scenario_design.md (m04 fixer; S).
