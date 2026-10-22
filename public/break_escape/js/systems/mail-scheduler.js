@@ -343,24 +343,41 @@ export class MailScheduler {
   /**
    * Drop messages the server trimmed to fit the 1 MB cap (00 §10a, P1-D).
    * state-sync calls this with the keys the server reported so the live state
-   * matches what was saved. The key splits on the first dot after the prefix
-   * (mailbox ids hold no dot; a message id may), as the server does.
-   * @param {string[]} keys  mailboxes.<box>.<msgId> keys
+   * matches what was saved.
+   *
+   * A key is either a [boxId, msgId] pair (unambiguous) or the server's dotted
+   * string mailboxes.<box>.<msgId>. The validator forbids a dot in a mailbox id
+   * (validate_social mail dotted_ids), so the dotted form is safe, but rather
+   * than trust a first-dot split we resolve [box, msgId] against the live state:
+   * each split point is tried and the first that names a box holding that message
+   * is the one dropped. A dot in the box id therefore no longer misroutes the
+   * drop (IMPL_REVIEW_MECHANICS minor 3).
+   * @param {Array<string|[string,string]>} keys
    */
   dropMessages(keys) {
     if (!Array.isArray(keys)) return;
     for (const key of keys) {
+      if (Array.isArray(key) && typeof key[0] === 'string' && typeof key[1] === 'string') {
+        this._dropMessage(key[0], key[1]);
+        continue;
+      }
       if (typeof key !== 'string' || !key.startsWith('mailboxes.')) continue;
       const rest = key.slice('mailboxes.'.length);
-      const dot = rest.indexOf('.');
-      if (dot < 0) continue;
-      const boxId = rest.slice(0, dot);
-      const msgId = rest.slice(dot + 1);
-      const box = this.state.mailboxes[boxId];
-      if (!box || !Array.isArray(box.messages)) continue;
-      const i = box.messages.findIndex(m => m && m.id === msgId);
-      if (i >= 0) { box.messages.splice(i, 1); this._recount(box); }
+      for (let dot = rest.indexOf('.'); dot >= 0; dot = rest.indexOf('.', dot + 1)) {
+        if (this._dropMessage(rest.slice(0, dot), rest.slice(dot + 1))) break;
+      }
     }
+  }
+
+  /** Remove one message by [boxId, msgId] from the live state. Returns true if it was there. */
+  _dropMessage(boxId, msgId) {
+    const box = this.state.mailboxes[boxId];
+    if (!box || !Array.isArray(box.messages)) return false;
+    const i = box.messages.findIndex(m => m && m.id === msgId);
+    if (i < 0) return false;
+    box.messages.splice(i, 1);
+    this._recount(box);
+    return true;
   }
 
   // --- jobs --------------------------------------------------------------

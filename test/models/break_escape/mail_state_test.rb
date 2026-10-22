@@ -307,6 +307,31 @@ module BreakEscape
       assert_empty @game.mail_trimmed_keys, 'a small save trims nothing'
     end
 
+    # IMPL_REVIEW_MECHANICS minor 2: every saved record carries an id, but if a
+    # trimmed message somehow lacks one the drop has no key to report. It must be
+    # logged, not shed in silence, and the keys for its id-bearing neighbours are
+    # still reported.
+    test 'a trimmed message with no id is dropped and logged, not silently shed' do
+      box = { 'messages' => [
+        { 'folder' => 'inbox', 'read' => true, 'gameTime' => 1, 'tells' => [] }, # no id
+        msg('has_id', game_time: 2)
+      ] }
+      dropped = []
+      io = StringIO.new
+      original = Rails.logger
+      Rails.logger = ActiveSupport::Logger.new(io)
+      begin
+        # yield always false: no early return, every candidate dropped.
+        @game.send(:trim_mail_messages!, [['guest', box]], dropped) { false }
+      ensure
+        Rails.logger = original
+      end
+
+      assert_equal ['mailboxes.guest.has_id'], dropped, 'only the message with an id is reported'
+      assert_empty box['messages'], 'both messages were dropped from the mailbox'
+      assert_match(/no id/, io.string, 'the id-less drop is logged')
+    end
+
     test 'an update with nothing usable writes no mailState and is not a refusal' do
       assert_nil @game.merge_mail_state!('unknown' => 1, 'jobs' => 'not a list')
       refute @game.player_state.key?('mailState')

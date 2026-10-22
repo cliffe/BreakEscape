@@ -2259,7 +2259,16 @@ module BreakEscape
 
       candidates.sort_by(&:first).each do |_, box_id, box, msg|
         box['messages'].delete_at(box['messages'].index { |m| m.equal?(msg) })
-        dropped << "mailboxes.#{box_id}.#{msg['id']}" if msg['id']
+        if msg['id']
+          dropped << "mailboxes.#{box_id}.#{msg['id']}"
+        else
+          # Every saved record carries an id (sanitize_mail_message requires one,
+          # and the client keys by it), so this should not happen. If it does, the
+          # drop has no key to report, and the client would hold the message as
+          # confirmed and lose it on the next reload. Log it rather than drop it
+          # in silence (P1-D reporting; IMPL_REVIEW_MECHANICS minor 2).
+          Rails.logger.warn "[BreakEscape] trimmed a mail message with no id in mailbox #{box_id}; drop not reported to the client"
+        end
         break if yield(msg)
       end
     end

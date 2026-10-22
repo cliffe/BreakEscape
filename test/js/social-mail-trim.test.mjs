@@ -71,6 +71,27 @@ test('dropMessages splits the key on the first dot, so a message id may hold dot
   assert.ok(!guestIds(scheduler).includes('v2.1'), 'the id after the mailbox is the whole remainder');
 });
 
+// IMPL_REVIEW_MECHANICS minor 3: a dot in the mailbox id (the validator forbids
+// it, but the runtime must not misroute if one slips through). A blind first-dot
+// split would target box "team"; resolving against live state finds "team.ops".
+test('dropMessages resolves a dotted mailbox id against live state, not a blind first-dot split', () => {
+  const { scheduler } = setup();
+  scheduler.ensureMailbox('team.ops');
+  scheduler.addMessage('team.ops', { id: 'm1', folder: 'inbox', read: true, body: 'x', gameTime: 1, tells: [] });
+  scheduler.dropMessages(['mailboxes.team.ops.m1']);
+  assert.ok(!scheduler.state.mailboxes['team.ops'].messages.some(m => m.id === 'm1'), 'the message in the dotted-id box is dropped');
+  assert.deepEqual(guestIds(scheduler), ['r1', 'r2', 'r3', 'r4'], 'guest is untouched (a blind split would have aimed at box "team")');
+});
+
+test('dropMessages accepts a [boxId, msgId] pair, so the drop never has to split a string', () => {
+  const { scheduler } = setup();
+  scheduler.ensureMailbox('a.b');
+  scheduler.addMessage('a.b', { id: 'x.y', folder: 'inbox', read: true, body: 'x', gameTime: 1, tells: [] });
+  scheduler.dropMessages([['a.b', 'x.y'], ['guest', 'r2']]);
+  assert.ok(!scheduler.state.mailboxes['a.b'].messages.some(m => m.id === 'x.y'), 'the pair drops it even though both ids hold dots');
+  assert.deepEqual(guestIds(scheduler), ['r1', 'r3', 'r4'], 'the pair also drops a plain message');
+});
+
 test('dropMessages ignores non-string, non-mailbox and malformed keys', () => {
   const { scheduler } = setup();
   scheduler.dropMessages([null, 42, 'jobs', 'threads.pierce:guest', 'mailboxes.guest', 'mailboxes.']);

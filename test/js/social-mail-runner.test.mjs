@@ -109,40 +109,53 @@ function sendSent(scheduler, { id = 'sent_1', subject = 'The ledger', account = 
 
 // Build a world: scheduler, manager, influence service, and a runner wired to the
 // character story. silentConsole keeps the engine's chatter out of the test output.
+// Construction logs emoji-heavy chatter (the manager prints a line per instance,
+// the influence and runner installers log). Left on stdout it is mis-framed by the
+// Node test runner when this file runs beside others, surfacing as a spurious
+// "Unable to deserialize cloned data" uncaughtException on the whole file (see
+// bin/test-js). Silence the build so the combined run is green.
+function hush(fn) {
+    const { log, warn, error } = console;
+    console.log = () => {}; console.warn = () => {}; console.error = () => {};
+    try { return fn(); } finally { console.log = log; console.warn = warn; console.error = error; }
+}
+
 function makeWorld({ story = characterStory, withInfluence = true, processTags } = {}) {
-    const scenario = scenarioFixture();
-    const dispatcher = makeDispatcher();
-    window.gameScenario = scenario;
-    window.gameState = { globalVariables: { quill_influence: 0, phish_quill_landed: false } };
-    window.eventDispatcher = dispatcher;
-    window.breakEscapeConfig = { gameId: 1 };
+    return hush(() => {
+        const scenario = scenarioFixture();
+        const dispatcher = makeDispatcher();
+        window.gameScenario = scenario;
+        window.gameState = { globalVariables: { quill_influence: 0, phish_quill_landed: false } };
+        window.eventDispatcher = dispatcher;
+        window.breakEscapeConfig = { gameId: 1 };
 
-    const manager = new ManagerClass();
-    window.npcConversationStateManager = manager;
+        const manager = new ManagerClass();
+        window.npcConversationStateManager = manager;
 
-    influenceMod.uninstallSocialInfluence();
-    const influence = withInfluence ? influenceMod.installSocialInfluence({ scenario, dispatcher }) : null;
+        influenceMod.uninstallSocialInfluence();
+        const influence = withInfluence ? influenceMod.installSocialInfluence({ scenario, dispatcher }) : null;
 
-    const clock = { t: 1_000_000 };
-    const scheduler = new MailScheduler({ now: () => clock.t });
-    scheduler.init({ scenario });
-    window.mailScheduler = scheduler;
+        const clock = { t: 1_000_000 };
+        const scheduler = new MailScheduler({ now: () => clock.t });
+        scheduler.init({ scenario });
+        window.mailScheduler = scheduler;
 
-    const record = { id: 'quill_mail', displayName: 'Morgan Quill', storyPath: 'scenarios/x/quill_mail.ink', storyJSON: story, itemsHeld: [] };
-    const tagCalls = [];
-    const encounters = [];
-    const runner = installMailRunner({
-        scheduler,
-        getNpc: (id) => (id === 'quill_mail' ? record : null),
-        storyFor: (rec) => rec.storyJSON,
-        stateManager: manager,
-        influence,
-        InkEngine,
-        processTags: processTags || (async (tags, options) => { tagCalls.push({ tags: [...tags], options }); return []; }),
-        encounter: (id) => encounters.push(id)
+        const record = { id: 'quill_mail', displayName: 'Morgan Quill', storyPath: 'scenarios/x/quill_mail.ink', storyJSON: story, itemsHeld: [] };
+        const tagCalls = [];
+        const encounters = [];
+        const runner = installMailRunner({
+            scheduler,
+            getNpc: (id) => (id === 'quill_mail' ? record : null),
+            storyFor: (rec) => rec.storyJSON,
+            stateManager: manager,
+            influence,
+            InkEngine,
+            processTags: processTags || (async (tags, options) => { tagCalls.push({ tags: [...tags], options }); return []; }),
+            encounter: (id) => encounters.push(id)
+        });
+
+        return { scenario, scheduler, manager, influence, clock, runner, record, tagCalls, encounters };
     });
-
-    return { scenario, scheduler, manager, influence, clock, runner, record, tagCalls, encounters };
 }
 
 // Drive the scheduler until its jobs settle (the ink handler is async, so each due
