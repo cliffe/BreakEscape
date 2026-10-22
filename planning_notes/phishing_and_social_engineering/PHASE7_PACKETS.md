@@ -466,3 +466,11 @@ the orchestrator passes it to that wave's owner.
     - `gen_e1_shells.py` emits `playerSentAuth`, but the committed E1 defend-only shell lacks it (harmless: no flip there).
     - E7's defendOnly line overlaps the Monday card.
     - The check-mission and full-episode kiosks keep their "ready" text after the round. Add variants on `triage_<stage>_done` and the episode done global.
+- **P7-O (docs) found these lint gaps (not fixed):**
+  - The lint checks the `done` global but not `percent`, `reportRate` or `pass`.
+  - Nothing lints `playerSentAuth.accounts.<attack account>` on a full episode's defend set, so the flip silently falls back without it.
+  - An empty `strings.brief` passes.
+  - These are accepted but not read: `attack.maxMessages`, `showRedFlagMeter`, `defend.reportAlwaysVisible` and `debrief`.
+  - `toXapi` is unused.
+
+  The transcript "You" case bug is fixed in triage-kinds.js.
