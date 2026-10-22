@@ -118,6 +118,11 @@
     "optional": ["triageSetId", "stage", "conclusionTaskId"]
   },
 
+  "kiosk": {
+    "required": ["episodeId"],
+    "optional": []
+  },
+
   "page-builder": {
     "required": ["landingPageId"],
     "optional": ["targetId"]

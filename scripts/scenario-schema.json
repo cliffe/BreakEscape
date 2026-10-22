@@ -397,6 +397,7 @@
         "phishTargets": {"type": "array", "items": {"$ref": "#/definitions/socialPhishTarget"}},
         "triageSets": {"type": "array", "items": {"$ref": "#/definitions/socialTriageSet"}},
         "pretextNpcs": {"type": "array", "items": {"$ref": "#/definitions/socialPretextCall"}},
+        "awarenessEpisode": {"$ref": "#/definitions/socialAwarenessEpisode"},
         "engagement": {
           "type": "object",
           "description": "The engagement (design 10, 00 §11)",
@@ -1682,6 +1683,89 @@
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         }
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialAwarenessEpisode": {
+      "type": "object",
+      "description": "An awareness episode (design 11 S5.1, PHASE7_PACKETS S2.1; the episode runner reads it). Linted by scripts/validate_social/awareness.rb. A defend-only episode uses id '<full id>_defend'. A check mission uses stages ['check'] and defend.stage 'pre' or 'post'.",
+      "required": ["id", "variant", "stages", "defend"],
+      "properties": {
+        "id": {"type": "string"},
+        "role": {"type": "string"},
+        "company": {"type": "string"},
+        "brand": {
+          "type": "object",
+          "description": "The neutral-skin wordmark (N8): drawn in CSS from logoText, accent is a CSS colour",
+          "properties": {
+            "name": {"type": "string"},
+            "logoText": {"type": "string"},
+            "accent": {"type": "string", "pattern": "^#[0-9a-fA-F]{3,8}$"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "variant": {"type": "string", "enum": ["full", "defendOnly"]},
+        "durationTargetMin": {"type": "number", "minimum": 0},
+        "scopeNote": {"type": "string"},
+        "stages": {
+          "type": "array",
+          "items": {"type": "string", "enum": ["brief", "osint", "write", "flip", "defend", "debrief", "check"]}
+        },
+        "conclusionTaskId": {"type": "string", "description": "The task the host NPC's mapping completes; passed to the triage starter"},
+        "attack": {
+          "type": "object",
+          "description": "Read only by a full episode",
+          "properties": {
+            "target": {"type": "string", "description": "A social.phishTargets id"},
+            "siteIds": {"type": "array", "items": {"type": "string"}},
+            "accountIds": {"type": "array", "items": {"type": "string"}},
+            "defaultAccount": {"type": "string"},
+            "showRedFlagMeter": {"type": "boolean"},
+            "maxMessages": {"type": "integer", "minimum": 1},
+            "scored": {"type": "boolean"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "defend": {
+          "type": "object",
+          "properties": {
+            "setId": {"type": "string", "description": "A social.triageSets id (scoringProfile awareness)"},
+            "stage": {"type": ["string", "null"], "enum": ["pre", "post", null], "description": "Set on a check mission only"},
+            "reportAlwaysVisible": {"type": "boolean"}
+          },
+          "required": ["setId"],
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "strings": {
+          "type": "object",
+          "description": "Every learner-facing line of the episode, as data",
+          "properties": {
+            "brief": {"type": "string"},
+            "flipHeading": {"type": "string"},
+            "flipIntro": {"type": "string"},
+            "flipDefenderLine": {"type": "string"},
+            "flipNoSend": {"type": "string"},
+            "noBlameLine": {"type": "string"},
+            "mondayCard": {"type": "string"},
+            "defendOnly": {"type": "string"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "debrief": {
+          "type": "object",
+          "properties": {
+            "mondayCard": {"type": "string"},
+            "noBlameLine": {"type": "boolean"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "facilitated": {"type": "boolean"}
       },
       "patternProperties": {"^_": {}},
       "additionalProperties": false

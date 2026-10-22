@@ -172,7 +172,7 @@ test('each area has a stub file returning an empty list', { skip }, () => {
   assert.equal(r.status, 0, r.stderr);
   const areas = JSON.parse(r.stdout.trim().split('\n').pop());
   assert.deepEqual(areas.map(a => a[0].split('::')[1]),
-    ['Mail', 'Osint', 'Board', 'Triage', 'Pretext', 'Landing', 'Lab', 'Options']);
+    ['Mail', 'Osint', 'Board', 'Triage', 'Pretext', 'Landing', 'Lab', 'Options', 'Awareness']);
   assert.ok(areas.every(a => a[1].length === 0));
 });
 

@@ -1,0 +1,482 @@
+{
+  "scenario_id": "test_social_episode",
+  "scenario_name": "Test: awareness episode shell",
+  "scenario_brief": "Fixture for the awareness episode runner and its validator: one kiosk that starts the full episode, a host NPC that completes the conclusion task, one OSINT site, one mail account, one attack target and a five message defend set. Stub content, not a mission.",
+  "endGoal": "None. Fixture only.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "ep_room",
+  "player": {
+    "id": "player",
+    "displayName": "Operator",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "finish_episode_aim",
+      "title": "Finish the episode",
+      "description": "Run the episode at the kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e1_stub_defend_done"
+        ]
+      },
+      "tasks": [
+        {
+          "taskId": "finish_episode",
+          "title": "Finish the episode",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e1_stub_state": {},
+    "se_awareness_records": {},
+    "episode_e1_stub_defend_percent": 0,
+    "episode_e1_stub_defend_reportRate": 0,
+    "episode_e1_stub_defend_done": false,
+    "episode_e1_stub_defend_pass": false,
+    "se_osint_state": {},
+    "se_intel_supplier_contact": false,
+    "phish_supplier_contact_landed": false,
+    "phish_supplier_contact_attempts": 0
+  },
+  "social": {
+    "people": [
+      {
+        "id": "supplier_contact",
+        "kind": "cast",
+        "address": "pat@halden-supply.example",
+        "forms": {
+          "full": "Pat Halden"
+        }
+      }
+    ],
+    "intelFacts": {
+      "supplier_contact": {
+        "text": "Pat Halden handles Halden Supply's accounts.",
+        "subject": "supplier_contact",
+        "source": "ep_staff",
+        "provides": [
+          {
+            "type": "name",
+            "about": "recipient",
+            "value": "pat",
+            "label": "Pat",
+            "kind": "generic"
+          }
+        ]
+      }
+    },
+    "osint": {
+      "profile": "awareness",
+      "sites": [
+        {
+          "id": "supplier_site",
+          "url": "halden-supply.example",
+          "type": "company-site",
+          "pages": [
+            {
+              "id": "team",
+              "title": "Our team",
+              "url": "halden-supply.example/team",
+              "blocks": [
+                {
+                  "id": "ep_staff",
+                  "kind": "staff",
+                  "person": "supplier_contact",
+                  "name": "Pat Halden",
+                  "address": "pat@halden-supply.example",
+                  "fact": "supplier_contact"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "templates": {
+      "from_own": {
+        "part": "from",
+        "text": "{account_name} <{account_address}>",
+        "slots": []
+      },
+      "greet_generic": {
+        "part": "greeting",
+        "text": "Hello,",
+        "slots": []
+      },
+      "pretext_invoice": {
+        "part": "pretext",
+        "text": "I'm checking the status of an invoice.",
+        "slots": [],
+        "urgency": "low"
+      },
+      "pretext_account": {
+        "part": "pretext",
+        "text": "I'm updating our account records.",
+        "slots": [],
+        "urgency": "low"
+      },
+      "ask_confirm": {
+        "part": "ask",
+        "text": "Could you confirm it is due this week?",
+        "slots": []
+      }
+    },
+    "mailClient": {
+      "accounts": [
+        {
+          "id": "analyst",
+          "address": "analyst@brightwell.example",
+          "displayName": "Analyst",
+          "kind": "given",
+          "person": null,
+          "mailbox": "analyst",
+          "spoofsFrom": true
+        }
+      ],
+      "mailboxes": [
+        {
+          "id": "analyst"
+        }
+      ],
+      "contacts": [
+        {
+          "id": "supplier_contact",
+          "person": "supplier_contact",
+          "name": "Pat Halden",
+          "addresses": [
+            "pat@halden-supply.example"
+          ],
+          "role": "Accounts",
+          "revealedBy": "se_intel_supplier_contact",
+          "targetId": "supplier_contact"
+        }
+      ],
+      "seededMessages": [],
+      "checklistTiming": "onSend",
+      "showRedFlagMeter": true
+    },
+    "phishTargets": [
+      {
+        "id": "supplier_contact",
+        "address": "pat@halden-supply.example",
+        "displayName": "Pat Halden",
+        "subjects": [
+          {
+            "id": "s_invoice",
+            "text": "Invoice query",
+            "topic": "finance"
+          },
+          {
+            "id": "s_canteen",
+            "text": "Canteen menu",
+            "topic": "catering"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "finance"
+          ]
+        },
+        "emailReplyDelay": 6,
+        "templateSets": {
+          "from": [
+            "from_own"
+          ],
+          "greeting": [
+            "greet_generic"
+          ],
+          "pretext": [
+            "pretext_invoice",
+            "pretext_account"
+          ],
+          "ask": [
+            "ask_confirm"
+          ]
+        },
+        "requiredFactors": [
+          "senderTrust",
+          "pretextRelevant"
+        ],
+        "advisoryFactors": [
+          "senderAuth"
+        ],
+        "replies": {
+          "landed": "Thanks, I'll check that invoice."
+        },
+        "factorStrings": {
+          "senderTrust": {
+            "pass": "The request comes from a known contact",
+            "redFlag": null
+          }
+        },
+        "outcome": {
+          "setGlobal": {
+            "phish_supplier_contact_landed": true
+          }
+        }
+      }
+    ],
+    "triageSets": [
+      {
+        "id": "e1_stub_inbox",
+        "title": "Payments inbox",
+        "brief": "Decide what each message is.",
+        "scoringProfile": "awareness",
+        "feedbackMode": "immediate",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "changed_bank_details"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "episode_e1_stub_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "ep_bank",
+            "from": {
+              "name": "Supplier Accounts",
+              "address": "accounts@halden-supply.example"
+            },
+            "to": "you@brightwell.example",
+            "subject": "New bank details",
+            "time": "09:10",
+            "body": "Please pay invoice 4471 to our new account. Details attached.",
+            "auth": {
+              "spf": "fail",
+              "dkim": "fail",
+              "dmarc": "fail"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "changed_bank_details"
+              ],
+              "perFlagNote": {
+                "changed_bank_details": "New bank details by email, with a payment due."
+              },
+              "ifTrusted": "The payment would go to an account the sender controls.",
+              "reportReply": "Thanks. Confirmed as a phish."
+            }
+          },
+          {
+            "id": "ep_laptop",
+            "from": {
+              "name": "Brightwell IT",
+              "address": "it@brightwell.example"
+            },
+            "to": "you@brightwell.example",
+            "subject": "Your new laptop",
+            "time": "08:30",
+            "body": "Your laptop is ready to collect from the IT desk.",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "The address is IT's real one and you were expecting a laptop."
+              }
+            }
+          },
+          {
+            "id": "ep_lookalike",
+            "from": {
+              "name": "Supplier Accounts",
+              "address": "billing@haldn-supply.example"
+            },
+            "to": "you@brightwell.example",
+            "subject": "Invoice reminder",
+            "time": "09:10",
+            "body": "Invoice 4472 is overdue. Pay today.",
+            "auth": {
+              "spf": "fail",
+              "dkim": "fail",
+              "dmarc": "fail"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "The domain is one letter off the supplier's real one."
+              },
+              "ifTrusted": "The payment would go to an account the sender controls.",
+              "reportReply": "Thanks. Confirmed as a phish."
+            }
+          },
+          {
+            "id": "ep_rota",
+            "from": {
+              "name": "Brightwell IT",
+              "address": "it@brightwell.example"
+            },
+            "to": "you@brightwell.example",
+            "subject": "Rota for next week",
+            "time": "08:30",
+            "body": "Next week's rota is on the shared drive.",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "It comes from the usual sender and asks for nothing unusual."
+              }
+            }
+          },
+          {
+            "id": "ep_phone",
+            "from": {
+              "name": "Brightwell IT",
+              "address": "it@brightwell.example"
+            },
+            "to": "you@brightwell.example",
+            "subject": "Supplier call back",
+            "time": "08:30",
+            "body": "Halden rang about invoice 4470. I called them back on the number we hold and it is fine.",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "The call was checked on the number already on file."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e1_stub",
+      "role": "finance",
+      "company": "brightwell_foods",
+      "brand": {
+        "name": "Brightwell Foods",
+        "logoText": "BRIGHTWELL",
+        "accent": "#2f6f5e"
+      },
+      "variant": "full",
+      "durationTargetMin": 13,
+      "scopeNote": "Authorised exercise at fictional Brightwell Foods. In scope: this inbox.",
+      "stages": [
+        "brief",
+        "osint",
+        "write",
+        "flip",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "finish_episode",
+      "attack": {
+        "target": "supplier_contact",
+        "siteIds": [
+          "supplier_site"
+        ],
+        "accountIds": [
+          "analyst"
+        ],
+        "defaultAccount": "analyst",
+        "showRedFlagMeter": true,
+        "maxMessages": 1,
+        "scored": false
+      },
+      "defend": {
+        "setId": "e1_stub_inbox",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "brief": "Stub brief.",
+        "flipHeading": "Now you are the target",
+        "flipIntro": "This is the message you sent.",
+        "flipDefenderLine": "Here is what a careful reader would notice.",
+        "flipNoSend": "You did not send a message this time.",
+        "noBlameLine": "Anyone can miss one of these.",
+        "mondayCard": "Next time, check bank changes by phone.",
+        "defendOnly": "This version skips the attack."
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    }
+  },
+  "rooms": {
+    "ep_room": {
+      "type": "room_office",
+      "door_sign": "Training Room",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "ep_host",
+          "displayName": "Host",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/ink/generic-npc.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_e1_stub_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "finish_episode"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "ep_kiosk",
+          "name": "Training Kiosk",
+          "position": {
+            "x": 6,
+            "y": 2
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A training kiosk. It runs the episode.",
+          "minigameData": {
+            "episodeId": "e1_stub"
+          }
+        }
+      ]
+    }
+  },
+  "_comment": "Clean full episode for validator-social-awareness.test.mjs (copy of scenarios/test_social_episode, no sprite check). The tests mutate copies."
+}

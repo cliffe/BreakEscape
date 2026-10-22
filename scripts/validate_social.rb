@@ -592,3 +592,7 @@ ValidateSocial::AREAS.concat([ValidateSocial::Mail, ValidateSocial::Osint, Valid
 # The late options (hintsByFactor, labelBy, checklistTiming, mirrorToBehavior, lockedHint): MECHANICS_AUDIT M3
 require_relative 'validate_social/options'
 ValidateSocial::AREAS << ValidateSocial::Options
+
+# The awareness episode shell (Phase 7, P7-D): the kiosk, the stages, the defend set's binding, the host NPC
+require_relative 'validate_social/awareness'
+ValidateSocial::AREAS << ValidateSocial::Awareness
