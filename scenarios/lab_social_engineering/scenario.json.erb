@@ -171,6 +171,7 @@
             { "text": "Scope: signed by Gareth Fairbairn before anything was sent" },
             { "text": "Phishing: all three messages acted on (Careers, Finance, the Finance intern)" },
             { "text": "Service desk: one call was reported; a later call still got what the email needed", "condition": "globalVars.dev_reported && globalVars.pretext_service_desk_call_outcome === 'got_it'" },
+            <%# w-C3-1: currently unreachable (got_it is sticky and landing Sofia needs a granting call), kept as a safety net mirroring tomasz.ink's debrief branch. %>
             { "text": "Service desk: gave out what the intern's email needed, and reported a call", "condition": "globalVars.dev_reported && globalVars.pretext_service_desk_call_outcome !== 'got_it'" },
             { "text": "Service desk: gave out what the intern's email needed, with no call-back check", "condition": "!globalVars.dev_reported" },
             { "text": "Report: filed, with no names in it" }

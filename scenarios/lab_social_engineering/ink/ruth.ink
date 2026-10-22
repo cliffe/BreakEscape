@@ -197,7 +197,7 @@ Ruth Adeyemi: Read the rules of engagement. The sheet on the table. Properly. Ga
     Ruth Adeyemi: Mail's in Operations. Make your throwaway address before you write to anyone.
 - operations_key_given and not (phish_hampshire_landed and phish_pierce_landed):
     Ruth Adeyemi: Delivered isn't landed. It lands when they'd open the file or click the link, the way they would a real one.
-- pretext_call_reported and not (se_intel_lord_portal_name and se_intel_lord_payslip_date):
+- pretext_call_reported and not se_intel_lord_portal_name and not se_intel_lord_payslip_date:
     Ruth Adeyemi: Dev's manager rang Gareth about a dodgy call. Gareth kept a straight face. Give the desk a minute, then ring back softer.
 - phish_hampshire_landed and phish_pierce_landed and pretext_call_done and not landing_payroll_login_built:
     Ruth Adeyemi: Call's done. Now the page: a look-alike of her payroll portal.

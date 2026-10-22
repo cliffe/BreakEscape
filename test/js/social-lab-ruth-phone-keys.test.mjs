@@ -70,26 +70,27 @@ test('stage 7 (Blue Team) opener points to Tomasz and does NOT re-offer the key 
         'does not re-offer the key, which was handed at report_filed');
 });
 
-test('stage 4: the "Dev flagged" lockout shows while Dev is still needed after a report, and clears once both facts are held (R11 F1)', { skip }, () => {
-    // Reported, and neither Dev fact held yet: the lockout line shows.
+test('stage 4: the "Dev flagged" lockout shows while reported with no Dev fact yet, and clears once any fact is in (R11 F1 / M-C3-1)', { skip }, () => {
+    // Reported, and no Dev fact held yet: the lockout line shows.
     const stuck = opener({ ...base,
         roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true,
         phish_hampshire_landed: true, phish_pierce_landed: true, pretext_call_reported: true, pretext_call_done: false,
         landing_payroll_login_built: false });
-    assert.match(stuck, /flagged that last call/i, 'lockout shows while Dev is still needed');
+    assert.match(stuck, /flagged that last call/i, 'lockout shows while reported with no fact yet');
 
-    // A later call got one fact (the date) but not the portal, still reported: the lockout must
-    // persist. The old gate on `not pretext_call_done` cleared it after the first success, hiding
-    // the lockout on the date-first route while the portal was still missing and Dev was locked out.
-    const partial = opener({ ...base,
+    // A later call got one fact (the date): "give the desk a minute, then ring back softer" is
+    // now stale (they just rang back), so M-C3-1 narrowed the gate to zero-facts and the lockout
+    // clears. Stage 4 falls through to the page steer; stage 5 gives the specific missing-fact
+    // guidance once the page is built.
+    const oneFact = opener({ ...base,
         roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true,
         phish_hampshire_landed: true, phish_pierce_landed: true, pretext_call_reported: true, pretext_call_done: true,
         se_intel_lord_payslip_date: true, se_intel_lord_portal_name: false,
         landing_payroll_login_built: false });
-    assert.match(partial, /flagged that last call/i, 'lockout persists while a Dev fact is still missing');
+    assert.doesNotMatch(oneFact, /flagged that last call/i, 'lockout clears once a Dev fact is in');
+    assert.match(oneFact, /Now the page/i, 'falls through to the page steer');
 
-    // Both facts now held: the lockout clears (Dev is no longer needed), even though the page is
-    // not built yet, so stage 4 is still current and falls through to "Call's done. Now the page."
+    // Both facts held: lockout still clear.
     const recovered = opener({ ...base,
         roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true,
         phish_hampshire_landed: true, phish_pierce_landed: true, pretext_call_reported: true, pretext_call_done: true,
@@ -146,7 +147,9 @@ test('C4 n4: Melanie landed before Careers keeps the phone on stage 3, with the 
     s.ChoosePathString('start');
     let t = '';
     while (s.canContinue) t += s.Continue();
-    assert.match(t, /Operations now/, 'still on stage 3');
+    // M-C3-2: one easy target has landed, so the "Operations now / if that door's locked" opener
+    // is suppressed (the student is well past first entry) in favour of the else-branch steer.
+    assert.match(t, /still have to act in Operations/, 'still on stage 3, with the door-opener suppressed');
     assert.ok(s.currentChoices.some((c) => /Chris isn't biting/.test(c.text)), 'the Careers pointer is still offered');
     assert.doesNotMatch(t, /Sofia/, 'no Sofia advice yet');
 });

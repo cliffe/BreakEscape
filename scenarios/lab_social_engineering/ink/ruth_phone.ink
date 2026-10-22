@@ -127,7 +127,11 @@ Recon's next. If that door's locked, I've got the key — come and see me. The O
 // ---- Stage 3: spear-phish rounds 1 and 2 ----
 === stage3 ===
 { phish_hampshire_landed and phish_pierce_landed: -> hub }
-Operations now. If that door's locked, I've got the key — come and see me.
+{ not (phish_hampshire_landed or phish_pierce_landed or phish_lord_landed):
+    Operations now. If that door's locked, I've got the key — come and see me.
+- else:
+    The rest still have to act in Operations before there's a report.
+}
 + {not phish_pierce_landed} [Which account do I send from?]
     For Chris, a throwaway webmail address: real applicants use one. For Melanie, the guest account, because it lets you set the From line.
     -> stage3
@@ -148,7 +152,7 @@ Operations now. If that door's locked, I've got the key — come and see me.
 === stage4 ===
 { landing_payroll_login_built and pretext_call_done: -> hub }
 {
-- pretext_call_reported and not (se_intel_lord_portal_name and se_intel_lord_payslip_date):
+- pretext_call_reported and not se_intel_lord_portal_name and not se_intel_lord_payslip_date:
     Dev flagged that last call to his manager. Leave it a while, then try again — softer, and have your facts straight.
 - pretext_call_done:
     Call's done. Now the page.

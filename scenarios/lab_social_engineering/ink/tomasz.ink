@@ -115,6 +115,10 @@ Tomasz: Here's what it showed. An open inbox trusts anyone, a From line is just 
 {
 - dev_reported and pretext_service_desk_call_outcome == "got_it":
     Tomasz: Dev reported one of your calls, credit to him. But you rang back and still got it. A call-back rule on file stops both.
+// Safety net (w-C3-1): currently unreachable, kept deliberately. Reaching this debrief needs the
+// report filed -> Sofia landed -> both Dev facts held, which needs a granting call, so
+// pretext_service_desk_call_outcome is sticky "got_it" (person-chat-pretext.js finalisePretext);
+// this reported-but-never-got_it branch therefore can't fire on any path that gets here.
 - dev_reported:
     Tomasz: Dev gave you what Sofia's email needed, and reported a call too. Credit for that. A call-back rule stops it without him noticing.
 - pretext_service_desk_call_outcome == "got_it" and pretext_service_desk_call_lowest >= 0:

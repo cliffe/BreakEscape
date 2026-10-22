@@ -260,3 +260,116 @@ condition, not their spoken text, so they need no re-voicing.
 - `scenarios/lab_social_engineering/scenario.json.erb` (F5 report-aim unlockCondition → sends_done)
 - `test/js/social-lab-ruth-phone-keys.test.mjs` (stage-4 test adapted to F1's new route)
 - `scenarios/lab_social_engineering/DIALOG_LOG.md` (this section)
+
+---
+
+## Cycle 3 — DIALOG_REVIEW_C3.md — 2026-10-22
+
+Caps unchanged (30 person / 25 phone). Snapshot baseline for `tagdiff --old` is still the
+cycle-1 pre-edit snapshot. Cycle 2 committed in `ade3912f2`.
+
+### Severity table
+
+| ID | Sev | Where | Outcome |
+|----|-----|-------|---------|
+| M-C3-1 | minor | ruth.ink:200, ruth_phone.ink:151 | Fixed — narrowed the lockout gate to zero-facts (option (a)); see why below. Gate-only, no spoken-text change |
+| M-C3-2 | minor | ruth_phone.ink stage3 opener | Fixed — door/key opener now shows only when nothing has landed; else an in-progress steer. See below |
+| w-C3-1 | worth-considering | tomasz.ink:118-119, scenario.json.erb:174 | Traced (unreachable), kept as a safety net with a one-line comment in each file. See the trace below |
+| w-C3-2 | worth-considering | tomasz.ink:120 vs :122 | No change (per brief; recorded by the reviewer so a later cycle doesn't "simplify" the leaned-on variant away) |
+
+### M-C3-1 — chosen fix and why
+
+Picked **option (a): narrow the lockout gate to `pretext_call_reported and not
+se_intel_lord_portal_name and not se_intel_lord_payslip_date`** (zero facts held), on both
+ruth.ink:200 and ruth_phone.ink:151 (both were re-gated identically in cycle 2, so they move
+together). Why it gives the most useful line at each point on the Dev-reported route:
+
+- **Zero facts held:** the lockout "give the desk a minute, then ring back softer" shows —
+  correct, Dev is touchy and they have nothing yet.
+- **One fact held (they rang back successfully):** the stale "ring back softer" clears, and the
+  hub's own specific branch takes over — page built ⇒ ruth.ink:208/:210 "ring him back for the
+  portal / the date"; page not yet built ⇒ ruth.ink:202 "Call's done. Now the page" (a real next
+  step). On the phone, stage 4 falls through to "Now the page" and stage 5 then names the exact
+  missing fact. No `else`-fallback gap — ruth.ink:202 (`…pretext_call_done and not
+  landing_payroll_login_built`) catches the page-not-built case.
+- **Both facts held:** lockout clears, flow proceeds to "write to Sofia".
+
+Option (b) (keep the lockout until both facts) left the "ring back softer" steer up after a
+successful call-back, which reads as though no call-back had happened. Spoken text is unchanged
+either way, so no re-voice.
+
+### M-C3-2 — phone stage3 opener
+
+The door/key opener ("Operations now. If that door's locked, I've got the key — come and see
+me.") read backward once the player was already inside Operations. Wrapped it:
+`{ not (phish_hampshire_landed or phish_pierce_landed or phish_lord_landed): <door line>
+- else: The rest still have to act in Operations before there's a report. }`. I included
+`phish_lord_landed` in the gate (the reviewer's proposed gate omitted it) because the headline
+case is Sofia-first with neither easy target landed — without the lord term the door line would
+still show there, leaving the finding unfixed. Now the door line appears only at true first
+entry (nothing landed); once anything has landed the else steer shows. This also tidies the
+normal in-order route (the opener stops saying "if that door's locked" after the first send).
+
+### w-C3-1 — reachability trace of the "reported, not got_it" branch
+
+**Conclusion: unreachable on any path that reaches Tomasz's debrief; kept as a safety net.**
+
+- Reaching `tomasz.ink`'s debrief requires `report_filed` → `sends_done` → Sofia landed, which
+  (Lord mail design) requires both `se_intel_lord_portal_name` and `se_intel_lord_payslip_date`.
+- Those facts come only from a *granting* Dev ask, i.e. a `got_it` outcome (R11 earned-secrets
+  table; no hint leaks them).
+- `got_it` is sticky: `person-chat-pretext.js finalisePretext` (lines 355-363) writes
+  `pretext_${callId}_outcome = alreadyGotIt ? 'got_it' : outcome`, so once any call grants a
+  fact the outcome global stays `'got_it'` for good, even if a later call is reported.
+- Therefore at the debrief `pretext_service_desk_call_outcome === 'got_it'` always holds, so the
+  first branch (`dev_reported && … === 'got_it'`, tomasz.ink:116) wins whenever a call was also
+  reported, and the `dev_reported` (implicitly `!== 'got_it'`) branch at tomasz.ink:118 — and the
+  mirror credits line at scenario.json.erb:174 — can never fire from here.
+
+Kept both (not removed): the branch guards a sensible nuance, the cost of keeping dead-but-correct
+text is nil, and the outcome mechanics could change. Added a one-line `//` comment above the ink
+branch and an `<%# %>` comment above the credits line recording that it's a deliberate safety net.
+(Outcome/sticky mechanics are formally `scenario-design-review`'s to own; this is the dialogue-side
+trace the brief asked for.)
+
+### Spoken-line changes (old → new) — for TTS
+
+1. **ruth_phone.ink — Ruth (M-C3-2, NEW stage3 else line)**
+   - NEW: `The rest still have to act in Operations before there's a report.`
+
+M-C3-1 is gate-only (the lockout lines' text is unchanged). w-C3-1 is comments only. No other
+spoken text changed.
+
+### Checks run
+
+- **compile-ink.sh:** 7/7, 0 failed (expected `-> END` warnings only; the w-C3-1 `//` comment
+  inside tomasz's debrief switch compiles fine).
+- **tagdiff --old (vs cycle-1 snapshot):** ruth.ink — the L200 condition now shows the
+  zero-facts gate; all other diffs are the already-explained cycle-1/2 changes. ruth_phone.ink —
+  the stage3 conditional (new condition + else) and the stage4 zero-facts gate. tomasz.ink —
+  STRUCTURE UNCHANGED (comment only). No unintended structural change.
+- **dialoguelint:** only the known fairbairn phone-self-prefix false positive. No line-length
+  errors; ruth max 25, ruth_phone max 23 (the new else line is 12 words).
+- **validator --strict-social:** no errors, no missing recommended fields; only the three
+  pre-existing `mutuallyExclusiveGlobals` warnings (left alone). The w-C3-1 ERB comment renders
+  and the JSON parses.
+- **loopcheck (200 steps × 6 strategies):** clean on ruth@start, ruth@hub, ruth_phone@hub,
+  ruth_phone@stage3, ruth_phone@stage4, tomasz@start — the changed conditions create no starved knot.
+- **Lab Node tests (social-lab-*):** 14/14. Two `social-lab-ruth-phone-keys` cases were adapted
+  to the deliberate cycle-3 route changes: the stage-4 lockout test now expects the lockout to
+  clear once any fact is in (M-C3-1), and the "C4 n4" stage-3 test now expects the suppressed
+  door-opener / else steer (M-C3-2). Code changed for a reason → tests follow it.
+- **bridge-6 (headless, Node 24, on its own):** 36/36 PASS (the lone benign reload `waitFor`
+  navigation warning as before). bridge-6 covers neither the Dev-reported nor the Sofia-first
+  route, so M-C3-1 and M-C3-2 are verified by loopcheck and the Node tests, not a browser run;
+  a blind playtest of those two edge routes would confirm them live.
+
+### Files changed this cycle
+
+- `scenarios/lab_social_engineering/ink/ruth.ink` (M-C3-1) and recompiled `ruth.json`
+- `scenarios/lab_social_engineering/ink/ruth_phone.ink` (M-C3-1, M-C3-2) and recompiled `ruth_phone.json`
+- `scenarios/lab_social_engineering/ink/tomasz.ink` (w-C3-1 comment) and recompiled `tomasz.json`
+- `scenarios/lab_social_engineering/scenario.json.erb` (w-C3-1 credits comment)
+- `test/js/social-lab-ruth-phone-keys.test.mjs` (two cases adapted to M-C3-1 / M-C3-2)
+- `scenarios/lab_social_engineering/DIALOG_LOG.md` (this section)
+- `dungeon_graph.*` regenerated by the validator (side effect).
