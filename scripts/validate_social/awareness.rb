@@ -27,7 +27,7 @@ module ValidateSocial
     # attack.landingPageId and is never in a defendOnly or check shell.
     BUILD_AFTER = 'osint'
     CHECK_STAGES = %w[pre post].freeze
-    EPISODE_MESSAGES = (5..8)
+    EPISODE_MESSAGES = (4..8) # 4 since the E3 timing trim (TIMING_TRIM_PLAN Cut D)
     CHECK_MESSAGES = 10
     REPLY_DELAY = (5..8)
     PRE_NAMES = %w[triage_pre_percent triage_pre_reportRate triage_pre_done].freeze

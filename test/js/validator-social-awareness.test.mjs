@@ -144,11 +144,11 @@ test('defend set: resolves, awareness profile, passPercent 0, prefix, message co
   set(j).outcome.setGlobalPrefix = 'e1_';
   expectIn(lint(j), /setGlobalPrefix is "e1_"; it must be 'episode_e1_stub_defend_'/);
   j = fx('clean_full.json');
-  set(j).messages = set(j).messages.slice(0, 4);
-  expectIn(lint(j), /has 4 message\(s\); an episode's defend set has 5 to 8/);
+  set(j).messages = set(j).messages.slice(0, 3);
+  expectIn(lint(j), /has 3 message\(s\); an episode's defend set has 4 to 8/);
   j = fx('clean_full.json');
   set(j).messages = [...set(j).messages, ...set(j).messages.map((m) => ({ ...m, id: `${m.id}_b` }))];
-  expectIn(lint(j), /has 10 message\(s\); an episode's defend set has 5 to 8/);
+  expectIn(lint(j), /has 10 message\(s\); an episode's defend set has 4 to 8/);
   j = fx('clean_check_pre.json');
   set(j).messages = set(j).messages.slice(0, 9);
   expectIn(lint(j), /has 9 message\(s\); a check form has 10/);

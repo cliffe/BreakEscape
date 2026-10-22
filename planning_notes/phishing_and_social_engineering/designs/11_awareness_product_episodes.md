@@ -229,7 +229,7 @@ sequencing and strings. It lives at `social.awarenessEpisode` (`00` §11). Defen
               "siteIds": ["brightwell_site","brightwell_social"],   // ids from social.osint.sites, passed to the OSINT browser
               "accountIds": ["analyst"], "defaultAccount": "analyst",   // ids from social.mailClient.accounts, passed to the mail client as a mail_terminal would
               "showRedFlagMeter": true, "maxMessages": 1, "scored": false },
-  "defend": { "setId": "e1_payments_inbox",       // a 05 triageSets entry, scoringProfile "awareness", 5 to 8 messages
+  "defend": { "setId": "e1_payments_inbox",       // a 05 triageSets entry, scoringProfile "awareness", 4 to 8 messages
               "reportAlwaysVisible": true },
   "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true }
 }
@@ -473,7 +473,7 @@ release (see "Claims to verify").
 
 Episodes rely on `00` §10a, §11 and §13 for `playerSent` (the latest sent record whose tells include `senderTrust` or `senderAuth`, else the
 latest with any tell, with the stored `tells` and the rendered body), the triage sizes (awareness pre/post 10, episode defend
-sets 5 to 8), the `kiosk` pointer `{ episodeId }` and the `awarenessEpisode` key.
+sets 4 to 8), the `kiosk` pointer `{ episodeId }` and the `awarenessEpisode` key.
 
 `05` already provides, in its "Extensions for the awareness episodes" and N1, N7, N9 to N11: the
 `Verify` verdict (E1 and E4), the non-email message kinds `voicemail`, `sms`, `qr`, `page`, `push` (Approve is Trust, Deny is Delete, Deny and report is Report; tell `unrequested_mfa_push`) and `call`
