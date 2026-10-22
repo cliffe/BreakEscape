@@ -1732,7 +1732,7 @@
         "scopeNote": {"type": "string"},
         "stages": {
           "type": "array",
-          "items": {"type": "string", "enum": ["brief", "osint", "write", "flip", "defend", "debrief", "check"]}
+          "items": {"type": "string", "enum": ["brief", "osint", "write", "flip", "defend", "debrief", "check", "mfa"]}
         },
         "conclusionTaskId": {"type": "string", "description": "The task the host NPC's mapping completes; passed to the triage starter"},
         "attack": {
@@ -1756,7 +1756,45 @@
           "properties": {
             "setId": {"type": "string", "description": "A social.triageSets id (scoringProfile awareness)"},
             "stage": {"type": ["string", "null"], "enum": ["pre", "post", null], "description": "Set on a check mission only"},
-            "reportAlwaysVisible": {"type": "boolean"}
+            "reportAlwaysVisible": {"type": "boolean"},
+            "callsFrom": {"type": "string", "description": "A social.pretextNpcs callId whose knows ids the calls' claims resolve to. Omitted: any pretextNpcs entry's knows"},
+            "calls": {
+              "type": "array",
+              "description": "Role swap (11 N15, P7-P): calls the learner takes as the agent. Each becomes a 'call' message in the defend set (truth.isPhish = !genuine, truth.flags = tells). Linted by awareness.rb",
+              "items": {
+                "type": "object",
+                "required": ["id", "genuine", "transcript"],
+                "properties": {
+                  "id": {"type": "string"},
+                  "genuine": {"type": "boolean"},
+                  "callerId": {"type": "string"},
+                  "claims": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["fact", "value"],
+                      "properties": {"fact": {"type": "string"}, "value": {"type": "string"}},
+                      "patternProperties": {"^_": {}},
+                      "additionalProperties": false
+                    }
+                  },
+                  "tells": {"type": "array", "items": {"type": "string"}},
+                  "transcript": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["text"],
+                      "properties": {"who": {"type": "string"}, "text": {"type": "string"}},
+                      "patternProperties": {"^_": {}},
+                      "additionalProperties": false
+                    }
+                  },
+                  "notes": {"$ref": "#/definitions/socialTriageMessage/properties/notes"}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            }
           },
           "required": ["setId"],
           "patternProperties": {"^_": {}},
@@ -1783,6 +1821,34 @@
           "properties": {
             "mondayCard": {"type": "string"},
             "noBlameLine": {"type": "boolean"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "mfa": {
+          "type": "object",
+          "description": "The mfa stage's push stream (11 N11, P7-M): passed to the authenticator scene. Linted by awareness.rb",
+          "required": ["pushes", "approvesAt"],
+          "properties": {
+            "pushes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["at", "app"],
+                "properties": {
+                  "id": {"type": "string"},
+                  "at": {"description": "'HH:MM' or a number of minutes", "type": ["string", "number"]},
+                  "app": {"type": "string"},
+                  "account": {"type": "string"},
+                  "location": {"type": "string"},
+                  "device": {"type": "string"}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "approvesAt": {"description": "'HH:MM' or a number: when the target taps approve", "type": ["string", "number"]},
+            "mode": {"type": "string", "enum": ["attacker"]}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false

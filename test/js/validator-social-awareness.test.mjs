@@ -67,8 +67,8 @@ test('stages: valid ids, in the order of the variant, ["check"] on a check', { s
   ep(j).stages = ['brief', 'defend', 'debrief'];
   expectIn(lint(j), /variant 'full' has stages/);
   j = fx('clean_full.json');
-  ep(j).stages = ['brief', 'osint', 'write', 'flip', 'defend', 'mfa'];
-  expectIn(lint(j), /'mfa', which is not one of/);
+  ep(j).stages = ['brief', 'osint', 'write', 'flip', 'defend', 'gloat'];
+  expectIn(lint(j), /'gloat', which is not one of/);
   j = fx('clean_defend_only.json');
   ep(j).stages = ['brief', 'osint', 'defend', 'debrief'];
   expectIn(lint(j), /variant 'defendOnly' has stages/);

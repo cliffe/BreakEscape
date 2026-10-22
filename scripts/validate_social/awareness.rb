@@ -15,11 +15,14 @@
 # what binds the set to the episode: ids, counts, the done global, the host NPC and the carry-over.
 module ValidateSocial
   module Awareness
-    STAGES = %w[brief osint write flip defend debrief check].freeze
+    STAGES = %w[brief osint write flip defend debrief check mfa].freeze
     STAGES_BY_VARIANT = {
       'full' => %w[brief osint write flip defend debrief],
       'defendOnly' => %w[brief defend debrief]
     }.freeze
+    # Wave 3 (E3): the push-stream beat, an unscored attack demonstration. It sits straight after
+    # `write` or straight after `flip`, never in a defendOnly or check shell.
+    MFA_AFTER = %w[write flip].freeze
     CHECK_STAGES = %w[pre post].freeze
     EPISODE_MESSAGES = (5..8)
     CHECK_MESSAGES = 10
@@ -45,10 +48,12 @@ module ValidateSocial
       issues.concat(stage_checks(ep))
       issues.concat(id_suffix_checks(ep))
       issues.concat(attack_checks(ctx, ep)) if full?(ep)
+      issues.concat(mfa_checks(ep))
       set = defend_set(ctx, ep, issues)
       done = nil
       if set
         issues.concat(set_checks(ep, set))
+        issues.concat(call_checks(ctx, ep, set))
         done = done_global(ep, set)
       end
       issues.concat(conclusion_checks(ctx, ep, done)) if done
@@ -127,13 +132,25 @@ module ValidateSocial
         issues << err("stages is [\"check\"] but defend.stage is #{stage.inspect}; a check names its stage, pre or post") unless CHECK_STAGES.include?(stage)
       elsif STAGES_BY_VARIANT.key?(ep['variant'])
         want = STAGES_BY_VARIANT[ep['variant']]
-        unless stages == want
-          issues << err("variant '#{ep['variant']}' has stages #{stages.inspect}; it must be #{want.inspect}")
+        unless stage_orders(ep['variant'], want).include?(stages)
+          extra = ep['variant'] == 'full' ? " (or the same with 'mfa' straight after 'write' or straight after 'flip')" : ''
+          issues << err("variant '#{ep['variant']}' has stages #{stages.inspect}; it must be #{want.inspect}#{extra}")
         end
       else
         issues << err("variant '#{ep['variant']}' must be full or defendOnly")
       end
       issues
+    end
+
+    # The stage lists a variant may author: its own order, and for a full episode that order with
+    # `mfa` inserted after `write` or after `flip`.
+    def self.stage_orders(variant, want)
+      return [want] unless variant == 'full'
+
+      [want] + MFA_AFTER.map do |after|
+        i = want.index(after)
+        want[0..i] + ['mfa'] + want[(i + 1)..]
+      end
     end
 
     def self.id_suffix_checks(ep)
@@ -208,12 +225,14 @@ module ValidateSocial
       pass = set.dig('outcome', 'passPercent')
       issues << err("#{where} has passPercent #{pass.inspect}; it must be 0, so the done global does not trip the pass-mark warning and the round is never a 'try again'") unless pass == 0
 
-      count = Array(set['messages']).length
+      calls = ep.dig('defend', 'calls')
+      count = Array(set['messages']).length + (calls.is_a?(Array) ? calls.length : 0)
+      with_calls = calls.is_a?(Array) && !calls.empty? ? ' including defend.calls' : ''
       if check_mission?(ep)
-        issues << err("#{where} has #{count} message(s); a check form has #{CHECK_MESSAGES}") unless count == CHECK_MESSAGES
+        issues << err("#{where} has #{count} message(s)#{with_calls}; a check form has #{CHECK_MESSAGES}") unless count == CHECK_MESSAGES
       else
         unless EPISODE_MESSAGES.cover?(count)
-          issues << err("#{where} has #{count} message(s); an episode's defend set has #{EPISODE_MESSAGES.first} to #{EPISODE_MESSAGES.last}")
+          issues << err("#{where} has #{count} message(s)#{with_calls}; an episode's defend set has #{EPISODE_MESSAGES.first} to #{EPISODE_MESSAGES.last}")
         end
         want = "episode_#{ep['id']}_defend_"
         prefix = set.dig('outcome', 'setGlobalPrefix')
@@ -276,6 +295,184 @@ module ValidateSocial
       unless ctx.all_globals.key?(done)
         issues << err("the done global '#{done}' is not declared in globalVariables")
       end
+      issues
+    end
+
+    # ---- the mfa stage and its push stream (11 N11, P7-M) ----------------------------------
+
+    TIME_RE = /\A(\d{1,2}):(\d{2})\z/.freeze
+
+    # Minutes since midnight for an authored time ("HH:MM" or a number), or nil when it is neither.
+    def self.time_key(t)
+      return t if t.is_a?(Numeric) && t.to_f.finite?
+
+      m = t.is_a?(String) ? TIME_RE.match(t.strip) : nil
+      return nil unless m && m[1].to_i < 24 && m[2].to_i < 60
+
+      (m[1].to_i * 60) + m[2].to_i
+    end
+
+    def self.mfa_checks(ep)
+      stages = Array(ep['stages'])
+      has_stage = stages.include?('mfa')
+      has_data = ep.key?('mfa')
+      issues = []
+      if has_stage && !has_data
+        return [err("stages lists 'mfa' but there is no awarenessEpisode.mfa (pushes and approvesAt); the authenticator would open on an empty phone")]
+      end
+      if has_data && !has_stage
+        issues << warn_("awarenessEpisode.mfa is set but stages has no 'mfa'; the push stream is never played")
+      end
+      return issues unless has_data
+
+      mfa = ep['mfa']
+      return issues << err('awarenessEpisode.mfa must be an object { pushes, approvesAt }') unless mfa.is_a?(Hash)
+
+      issues << err("awarenessEpisode.mfa.mode is #{mfa['mode'].inspect}; the only mode is \"attacker\"") if mfa.key?('mode') && mfa['mode'] != 'attacker'
+      pushes = mfa['pushes']
+      keys = []
+      if !pushes.is_a?(Array) || pushes.empty?
+        issues << err('awarenessEpisode.mfa.pushes must be a non-empty array; the stream has nothing to play')
+      else
+        issues << warn_('awarenessEpisode.mfa.pushes has one push; MFA fatigue is a run of prompts, so two or more show it') if pushes.length == 1
+        ids = []
+        formats = []
+        pushes.each_with_index do |p, i|
+          w = "awarenessEpisode.mfa.pushes[#{i}]"
+          unless p.is_a?(Hash)
+            issues << err("#{w} must be an object { at, app, account?, location?, device? }")
+            next
+          end
+          issues << err("#{w}.app is missing; the prompt would not say which app is asking") if Mail.blank?(p['app'])
+          k = time_key(p['at'])
+          if k.nil?
+            issues << err("#{w}.at is #{p['at'].inspect}; give a time as \"HH:MM\" (00:00 to 23:59) or a number")
+          else
+            keys << k
+            formats << (p['at'].is_a?(String) ? :string : :number)
+          end
+          ids << p['id'] if p['id'].is_a?(String) && !p['id'].empty?
+        end
+        dupes = ids.select { |x| ids.count(x) > 1 }.uniq
+        issues << err("awarenessEpisode.mfa.pushes repeats the id #{dupes.map(&:inspect).join(', ')}") unless dupes.empty?
+        if formats.uniq.length > 1 || (formats.uniq == [:string] && mfa['approvesAt'].is_a?(Numeric)) || (formats.uniq == [:number] && mfa['approvesAt'].is_a?(String))
+          issues << warn_('awarenessEpisode.mfa mixes "HH:MM" strings and plain numbers; the timeline orders them together, which is rarely what you mean')
+        end
+      end
+
+      if !mfa.key?('approvesAt')
+        issues << err('awarenessEpisode.mfa.approvesAt is missing; the demonstration ends with the target tapping approve')
+      else
+        ak = time_key(mfa['approvesAt'])
+        if ak.nil?
+          issues << err("awarenessEpisode.mfa.approvesAt is #{mfa['approvesAt'].inspect}; give a time as \"HH:MM\" (00:00 to 23:59) or a number")
+        elsif !keys.empty? && ak < keys.min
+          issues << err("awarenessEpisode.mfa.approvesAt (#{mfa['approvesAt']}) is before the first push; the target cannot approve a prompt that has not arrived")
+        end
+      end
+      issues
+    end
+
+    # ---- the role swap's calls (11 N15, P7-P) ------------------------------------------------
+
+    def self.call_checks(ctx, ep, set)
+      defend = ep['defend']
+      return [] unless defend.is_a?(Hash) && defend.key?('calls')
+
+      calls = defend['calls']
+      return [err('defend.calls must be an array of { id, genuine, callerId, claims, tells, transcript, notes }')] unless calls.is_a?(Array)
+      return [err("defend.calls is empty; leave it out, or give the learner calls to take")] if calls.empty?
+
+      issues = []
+      where = "defend set '#{set['id']}'"
+      unless Triage.profile(set) == 'awareness' && set['verifyVerdict'] == true
+        issues << err("defend.calls become call messages, which belong in an awareness set with verifyVerdict: true; #{where} is not one")
+      end
+      universe = Triage.flag_universe(set, where, [])
+      knows = knows_for(ctx, defend, issues)
+      taken = Mail.hash_list(set['messages']).filter_map { |m| m['id'] }
+      seen = []
+      calls.each_with_index do |c, i|
+        w = "defend.calls[#{i}]#{c.is_a?(Hash) && c['id'].is_a?(String) ? " (#{c['id']})" : ''}"
+        unless c.is_a?(Hash)
+          issues << err("#{w} must be an object")
+          next
+        end
+        id = c['id']
+        if Mail.blank?(id)
+          issues << err("#{w}.id is missing")
+        elsif seen.include?(id)
+          issues << err("#{w}.id '#{id}' is used by an earlier call")
+        elsif taken.include?(id)
+          issues << err("#{w}.id '#{id}' is also a message id in #{where}; the merged set would hold the id twice")
+        end
+        seen << id
+        unless [true, false].include?(c['genuine'])
+          issues << err("#{w}.genuine must be true or false")
+          next
+        end
+        issues.concat(claim_checks(c, w, knows))
+        issues.concat(call_message_checks(c, w, universe))
+      end
+      issues << err('defend.calls has no genuine call; refusing every caller would win. Include a genuine (ideally awkward) caller') if calls.all? { |c| c.is_a?(Hash) && c['genuine'] == false }
+      issues << err('defend.calls has no impostor call; the learner would have nothing to catch') if calls.all? { |c| c.is_a?(Hash) && c['genuine'] == true }
+      issues
+    end
+
+    def self.hash_of(v)
+      v.is_a?(Hash) ? v : {}
+    end
+
+    # The knows hash claims resolve against: the named pretext call's, or every pretext call's.
+    def self.knows_for(ctx, defend, issues)
+      npcs = Mail.hash_list(ctx.social['pretextNpcs'])
+      if defend.key?('callsFrom')
+        found = npcs.find { |n| n['callId'] == defend['callsFrom'] }
+        if found.nil?
+          issues << err("defend.callsFrom '#{defend['callsFrom']}' is not a callId in social.pretextNpcs")
+          return {}
+        end
+        return hash_of(found['knows'])
+      end
+      npcs.each_with_object({}) { |n, all| all.merge!(hash_of(n['knows'])) { |_, a, _| a } }
+    end
+
+    def self.claim_checks(c, w, knows)
+      claims = c['claims']
+      return [] if claims.nil?
+      return [err("#{w}.claims must be an array of { fact, value }")] unless claims.is_a?(Array)
+
+      claims.each_with_index.flat_map do |cl, i|
+        cw = "#{w}.claims[#{i}]"
+        next [err("#{cw} must be an object { fact, value }")] unless cl.is_a?(Hash)
+
+        out = []
+        fact = cl['fact']
+        out << err("#{cw}.value is missing; say what the caller claims") if Mail.blank?(cl['value'])
+        if Mail.blank?(fact)
+          out << err("#{cw}.fact is missing")
+        elsif !knows.key?(fact)
+          out << err("#{cw}.fact '#{fact}' is not a knows id of the pretext call the learner attacked (social.pretextNpcs); " \
+                     'the facts the learner exploited are the ones they now check')
+        elsif c['genuine'] == true && cl['value'].is_a?(String)
+          k = knows[fact]
+          good = k.is_a?(Hash) ? [k['value']] + Array(k['accept']) : []
+          out << warn_("#{cw}: a genuine caller claims '#{cl['value']}' for '#{fact}', which is not the value the record holds (#{good.compact.join(', ')})") unless good.include?(cl['value'])
+        end
+        out
+      end
+    end
+
+    # The call as the call message it becomes, run through the triage set's own message rules.
+    def self.call_message_checks(c, w, universe)
+      tells = c['tells']
+      issues = []
+      issues << err("#{w}.tells must be an array of channel tell ids") unless tells.nil? || tells.is_a?(Array)
+      notes = c['notes'].is_a?(Hash) ? c['notes'] : {}
+      truth = notes.merge('isPhish' => !c['genuine'], 'flags' => tells.is_a?(Array) ? tells : [])
+      m = { 'kind' => 'call', 'callerId' => c['callerId'], 'transcript' => c['transcript'], 'truth' => truth }
+      issues.concat(Triage.kind_field_checks(m, 'call', w))
+      issues.concat(Triage.truth_checks(m, universe, w))
       issues
     end
 
