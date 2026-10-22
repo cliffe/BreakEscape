@@ -648,8 +648,9 @@ in_this_operation = lambda do |ending|
     cl.('Charged. His supplier was raided by morning.', "globalVars.imran_outcome === 'taken_in'"),
     cl.('Kept his card. Lost a copy of it.', "globalVars.imran_outcome === 'card_cloned'"),
     cl.('Knocked out at his bench.', "globalVars.imran_outcome === 'ko'", w),
-    cl.('Never asked. Still at his bench.', "globalVars.ending === 'joined'"),
-    cl.('Never asked. Still at his bench at six, under his own sheet.')
+    # Alignment R10-m5: "avoided" covers a player who heard him out and left, so no "never asked".
+    cl.('Left at his bench.', "globalVars.ending === 'joined'"),
+    cl.('Left at his bench at six, under his own sheet.')
   ])
   people << person.('VOLTAGE', [
     cl.("Did tonight's switching himself, for us.", "globalVars.voltage_outcome === 'his_hands'"),

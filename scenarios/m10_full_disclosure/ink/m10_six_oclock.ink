@@ -257,7 +257,8 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 - gary_outcome == "ko":
     Gary Whitlock: I'd have come quietly, you know. I did at St. Catherine's.
 - else:
-    Gary Whitlock: Nobody came to my bench all night. Same as St. Catherine's.
+    // Alignment R10-m5: true whether or not the player spoke to him first.
+    Gary Whitlock: Nobody decided anything about me all night. Same as St. Catherine's.
 }
 -> walk_back
 
@@ -272,7 +273,7 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 - imran_outcome == "ko":
     Imran Siddiqui: You could have just asked me.
 - else:
-    Imran Siddiqui: Nobody asked me anything all night. Same as the board.
+    Imran Siddiqui: Nobody made me choose, all night. Same as the board.
 }
 -> walk_back
 

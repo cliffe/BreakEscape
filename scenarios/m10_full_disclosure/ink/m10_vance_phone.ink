@@ -28,6 +28,10 @@ INCLUDE m10_carryover_vars.ink
 }
 
 === cut_0 ===
+// Alignment R10-m2: a reopened step re-runs this knot, so a shutter cut meanwhile ends the call.
+{gallery_shutter_cut:
+    -> cut_call
+}
 Vance. They've told me what you're stood in. Old kit, so we do it by the book.
 Grey cabinet by the door. Key switch and a breaker row, GALLERY SHUTTER on the label.
 -> cut_0_menu
@@ -41,6 +45,10 @@ Grey cabinet by the door. Key switch and a breaker row, GALLERY SHUTTER on the l
     -> cut_0_menu
 
 === cut_1 ===
+// Alignment R10-m2: a reopened step re-runs this knot, so a shutter cut meanwhile ends the call.
+{gallery_shutter_cut:
+    -> cut_call
+}
 Turn the key a quarter right and leave it. That isolates the feed. Nothing's moved yet.
 -> cut_1_menu
 = cut_1_menu
@@ -53,6 +61,10 @@ Turn the key a quarter right and leave it. That isolates the feed. Nothing's mov
     -> cut_1_menu
 
 === cut_2 ===
+// Alignment R10-m2: a reopened step re-runs this knot, so a shutter cut meanwhile ends the call.
+{gallery_shutter_cut:
+    -> cut_call
+}
 Breaker row. The shutter's third from the left, the big one. Don't touch the others.
 -> cut_2_menu
 = cut_2_menu

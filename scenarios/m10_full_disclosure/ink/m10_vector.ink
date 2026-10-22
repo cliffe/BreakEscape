@@ -80,6 +80,10 @@ Agent 0x23 'Vector': Write this down. I'd only worry otherwise.
 
 // The face-to-face wrong accusation: the same writes as the line accusation.
 === accuse_check ===
+// Alignment R10-m1: a reopen enters here, so the accusation gate is tested again.
+{ not vec_can_accuse():
+    -> menu
+}
 Agent HaX: Wrong, and Netherton loses Vector till you can clear him. Sure?
 + [I'm sure.]
     ~ officer_out = "vector"

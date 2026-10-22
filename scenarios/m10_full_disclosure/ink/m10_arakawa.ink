@@ -185,6 +185,10 @@ Officer Kenji Arakawa: That hum's in my teeth. Let's not stay long.
 
 // The face-to-face wrong accusation: the same writes as the line accusation.
 === accuse_check ===
+// Alignment R10-m1: a reopen enters here, so the accusation gate is tested again.
+{ not arak_can_accuse():
+    -> menu
+}
 Agent HaX: Wrong, and Arakawa's off the raid till you can clear him. Sure?
 + [I'm sure.]
     ~ officer_out = "arakawa"

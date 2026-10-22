@@ -54,6 +54,10 @@ VAR mal_line_asked = false
 // The face-to-face wrong accusation: the same writes as the line accusation.
 // He stays at the van either way (koImmune, RL §2.1); the cost is HaX's relay.
 === accuse_check ===
+// Alignment R10-m1: a reopen enters here, so the accusation gate is tested again.
+{ not mal_can_accuse():
+    -> post
+}
 Agent HaX: Wrong, and I lose Malhotra's relay till you can clear him. Sure?
 + [I'm sure.]
     ~ officer_out = "malhotra"

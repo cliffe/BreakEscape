@@ -23,7 +23,6 @@ VAR gary_t_costs = false     // tech: HaX's cost line before the menu has been s
 {gary_c_seen:
     -> consultant_rest
 }
-~ gary_c_seen = true
 Gary Whitlock: You saved my career. Director of Cyber Security now. Consultant for SAFETYNET tonight, apparently.
 Gary Whitlock: That casing on the rack. I had one of those behind my server cabinet at St. Catherine's, in a case nobody ever inventoried.
 + [Same supplier, then.]
@@ -34,6 +33,8 @@ Gary Whitlock: That casing on the rack. I had one of those behind my server cabi
     -> consultant_imran
 
 = consultant_imran
+// Alignment R10-m3: seen only once the pointer to Imran has played (Esc at the first choice replays the opener).
+~ gary_c_seen = true
 Gary Whitlock: That's Imran at the far bench. I trained him. Talk him round or take him in, but talk to him first.
 ~ gary_quiet = true
 -> consultant_rest

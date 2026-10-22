@@ -688,6 +688,10 @@ You're on your own for one room. I'll be at the door.
 }
 
 === cut_step_0 ===
+// Alignment R10-m2: a reopened step re-runs this knot, so a shutter cut meanwhile ends the call.
+{gallery_shutter_cut:
+    -> cut_call
+}
 It's falling to us, then. The isolator's on the wall by the old board.
 A key switch and a breaker row, labelled GALLERY SHUTTER.
 + [I'm at it.]
@@ -699,6 +703,10 @@ A key switch and a breaker row, labelled GALLERY SHUTTER.
     -> DONE
 
 === cut_step_1 ===
+// Alignment R10-m2: a reopened step re-runs this knot, so a shutter cut meanwhile ends the call.
+{gallery_shutter_cut:
+    -> cut_call
+}
 Turn the key a quarter. That takes the row off their board.
 + [Key's turned.]
     ~ cut_step = 2
@@ -709,10 +717,18 @@ Turn the key a quarter. That takes the row off their board.
     -> DONE
 
 === cut_step_2 ===
+// Alignment R10-m2: a reopened step re-runs this knot, so a shutter cut meanwhile ends the call.
+{gallery_shutter_cut:
+    -> cut_call
+}
 Top row. The third breaker from the left feeds the shutter.
 -> cut_breakers
 
 === cut_breakers ===
+// Alignment R10-m2: a reopened step re-runs this knot, so a shutter cut meanwhile ends the call.
+{gallery_shutter_cut:
+    -> cut_call
+}
 + {not gallery_camera_blinded} [And the gallery camera?]
     ~ gallery_camera_blinded = true
     Fourth one along. Throw it as well. Their monitor up there just went dark.

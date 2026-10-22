@@ -58,6 +58,10 @@ VAR pha_list_heard = false
 
 // The face-to-face wrong accusation: the same writes as the line accusation.
 === accuse_check ===
+// Alignment R10-m1: a reopen enters here, so the accusation gate is tested again.
+{ not pha_can_accuse():
+    -> post
+}
 Agent HaX: Wrong, and Netherton loses Phantom till you can clear him. Sure?
 + [I'm sure.]
     ~ officer_out = "phantom"

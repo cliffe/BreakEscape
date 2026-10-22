@@ -117,6 +117,10 @@ Agent 0x2D 'Anchor': I've got the near end. Go do your work.
 
 // The face-to-face wrong accusation: the same writes as the line accusation.
 === accuse_check ===
+// Alignment R10-m1: a reopen enters here, so the accusation gate is tested again.
+{ not quin_can_accuse():
+    -> menu
+}
 Agent HaX: Wrong, and Quintero's off the raid till you can clear her. Sure?
 + [I'm sure.]
     ~ officer_out = "quintero"

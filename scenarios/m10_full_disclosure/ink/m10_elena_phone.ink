@@ -29,6 +29,10 @@ VAR elena_decided_said = false   // FA row 90: said on the first ring only
 }
 
 === cut_0 ===
+// Alignment R10-m2: a reopened step re-runs this knot, so a shutter cut meanwhile ends the call.
+{gallery_shutter_cut:
+    -> cut_call
+}
 It's Elena Rodriguez. They patched me into your feed. I know switchgear older than this, barely.
 {not elena_decided_said:
     ~ elena_decided_said = true
@@ -46,6 +50,10 @@ There's a gray cabinet by the door. A key switch and a breaker row, labeled GALL
     -> cut_0_menu
 
 === cut_1 ===
+// Alignment R10-m2: a reopened step re-runs this knot, so a shutter cut meanwhile ends the call.
+{gallery_shutter_cut:
+    -> cut_call
+}
 Turn the key a quarter right and leave it. That isolates the feed. Nothing moves yet.
 -> cut_1_menu
 = cut_1_menu
@@ -58,6 +66,10 @@ Turn the key a quarter right and leave it. That isolates the feed. Nothing moves
     -> cut_1_menu
 
 === cut_2 ===
+// Alignment R10-m2: a reopened step re-runs this knot, so a shutter cut meanwhile ends the call.
+{gallery_shutter_cut:
+    -> cut_call
+}
 Breaker row. The shutter's third from the left. Leave the rest alone, they feed the hall.
 -> cut_2_menu
 = cut_2_menu

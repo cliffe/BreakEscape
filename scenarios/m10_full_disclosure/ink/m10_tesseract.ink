@@ -229,6 +229,7 @@ Dr Adrian Tesseract: Hospitals, dispatch, water. In the hands of people who coul
 Dr Adrian Tesseract: Then it stops, because every vendor on earth patches at once, and nobody can hoard what everybody has.
 Dr Adrian Tesseract: Every year your service keeps its map, it costs more than that. Nobody counts it. I did.
 { m02_completed:
+    ~ tess_menu = true
     -> case_lesson ->
 }
 + [You've had all night. Why haven't you pressed it?]
@@ -256,22 +257,34 @@ Dr Adrian Tesseract: Either you press it, or I get a courtroom. I've costed both
 // frozen bank to his arrival. A cold start hears nothing m01-specific (A4, m1).
 === case_records ===
 { not tess_rec_albion and (m04_completed or (m09_completed and m09_memo_stance != "")):
+    ~ tess_menu = true
     -> rec_albion ->
 }
 { tess_rec < 2 and not tess_rec_derek and m01_completed:
+    ~ tess_menu = true
     -> rec_derek ->
 }
 { tess_rec < 2 and not tess_rec_debrief and m07_completed and m07_debrief_stance != "":
+    ~ tess_menu = true
     -> rec_debrief ->
 }
 { tess_rec == 0 and not tess_rec_cold:
+    ~ tess_menu = true
     -> rec_cold ->
 }
 ~ tess_case_step = 2
 -> case_recruiter
 
 // Record 1: Albion, and what the player told Netherton about his memo (m09 A1).
+// Alignment R10-M1: the record knots and case_lesson are tunnels holding choices.
+// A reopen re-enters them with no tunnel to return to, so each opens on tess_menu
+// (set just before the tunnel call) and otherwise re-routes through core_router.
 === rec_albion ===
+{ tess_menu:
+    ~ tess_menu = false
+- else:
+    -> core_router
+}
 ~ temp memo = m09_completed and m09_memo_stance != ""
 {
 - m04_completed and m04_disclosure_choice == "full":
@@ -311,6 +324,11 @@ Dr Adrian Tesseract: Either you press it, or I get a courtroom. I've costed both
 
 // Record 2: Derek, only for a player who met him (A4).
 === rec_derek ===
+{ tess_menu:
+    ~ tess_menu = false
+- else:
+    -> core_router
+}
 {
 - m01_final_choice == "fight":
     Dr Adrian Tesseract: You beat a marketing manager and called it a war.
@@ -344,6 +362,11 @@ Dr Adrian Tesseract: Either you press it, or I get a courtroom. I've costed both
 
 // Record 3: the m07 debrief, if fewer than two have played.
 === rec_debrief ===
+{ tess_menu:
+    ~ tess_menu = false
+- else:
+    -> core_router
+}
 {
 - m07_debrief_stance == "defended":
     Dr Adrian Tesseract: 'I'd make it again.' You would. I counted on it.
@@ -371,6 +394,11 @@ Dr Adrian Tesseract: Either you press it, or I get a courtroom. I've costed both
 
 // No record to read: the two dead agents, which every player shares.
 === rec_cold ===
+{ tess_menu:
+    ~ tess_menu = false
+- else:
+    -> core_router
+}
 Dr Adrian Tesseract: Two of yours died at the sites nobody covered. I've read their names.
 + { m07_completed or m09_completed } [Callum Fraser. Ana Lúcia Ferreira.]
     Dr Adrian Tesseract: Yes. You say them better than I do.
@@ -385,6 +413,11 @@ Dr Adrian Tesseract: Two of yours died at the sites nobody covered. I've read th
 // FA row 31 (ruling 14): Ghost's words in his mouth; HaX's own m02 line back.
 // Tesseract quotes Ghost, so the player need not have heard the call.
 === case_lesson ===
+{ tess_menu:
+    ~ tess_menu = false
+- else:
+    -> core_router
+}
 Dr Adrian Tesseract: Ghost put it best, at St. Catherine's. Not the money. The lesson.
 + [Ghost held a hospital to ransom to say it.]
 + [(Say nothing.)]

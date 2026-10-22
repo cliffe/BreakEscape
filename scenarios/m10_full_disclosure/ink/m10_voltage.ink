@@ -135,6 +135,10 @@ Voltage (Critical Mass): Let me do it. It's quicker. Or do it yourself, and I'll
 }
 
 === cut_p0 ===
+// R10: a reopen re-enters the knot (not the stitch), so the test sits here as well.
+{gallery_shutter_cut:
+    -> captured_rest
+}
 Voltage (Critical Mass): Grey panel by the door. A key switch, a row of breakers, GALLERY SHUTTER on the label.
 -> cut_p0_menu
 = cut_p0_menu
@@ -151,6 +155,10 @@ Voltage (Critical Mass): Grey panel by the door. A key switch, a row of breakers
     -> cut_in_person
 
 === cut_p1 ===
+// R10: a reopen re-enters the knot (not the stitch), so the test sits here as well.
+{gallery_shutter_cut:
+    -> captured_rest
+}
 Voltage (Critical Mass): Turn the key a quarter right and leave it there. That isolates the feed. Nothing moves yet.
 -> cut_p1_menu
 = cut_p1_menu
@@ -167,6 +175,10 @@ Voltage (Critical Mass): Turn the key a quarter right and leave it there. That i
     -> cut_in_person
 
 === cut_p2 ===
+// R10: a reopen re-enters the knot (not the stitch), so the test sits here as well.
+{gallery_shutter_cut:
+    -> captured_rest
+}
 Voltage (Critical Mass): Breaker row. Third from the left is the shutter. Leave the others; they feed the hall.
 -> cut_p2_menu
 = cut_p2_menu
@@ -197,6 +209,10 @@ Voltage (Critical Mass): Breaker row. Third from the left is the shutter. Leave 
 === escaped ===
 {voltage_outcome == "":
     ~ voltage_outcome = "avoided"
+}
+// Alignment R10-m4: hostility isn't saved, so after a reload a fight he was in starts again.
+{voltage_outcome == "fought":
+    -> fight
 }
 {voltage_outcome == "stood_down_print" or voltage_outcome == "talked_down":
     -> escaped_rest
