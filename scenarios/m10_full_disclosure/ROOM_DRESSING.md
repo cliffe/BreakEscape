@@ -204,3 +204,21 @@ Hand-drawn (`make_m10_props.py`, `round3()`), registered: `m10_portal_head1`, `m
 3. The tunnel rota shares a menu with the patrolling tunnel guard when he is at his first waypoint (the round 1 trade-off).
 4. vos logs "stuck in wall" once at his spawn (5, 3) in the gallery (game 3194; also seen before); he is static, so it is cosmetic, but worth a look when the gallery is next touched.
 5. Lighting next.
+
+## Round 4 (2026-10-22): the R4 review's minors
+
+Review: `DRESSING_REVIEW_R4.md` (0 blockers, 0 majors, 8 minors; "ready for lighting"). Renders: `dressing_r4/maps/`.
+
+| # | Fix |
+|---|---|
+| R2 | A towerless steel bench at zds_desk3's size (`m10_steel_bench1`, hand-drawn: galvanised top, apron, four legs, a low shelf). It replaces zds_desk3 at the workshop's second west bench, Imran's and Gary's benches, the power room's tool-roll bench and the hall's printer table. The bench terminal's bench (workshop x 34) and the core host desk keep zds_desk3, whose tower serves the PC |
+| P6 | BATTERIES at feet 236, above the rack tops (237); the mesh run lowered to feet 234 (collision with it) so the plate draws over the mesh, not under it |
+| W3 | kowalczyk_ws (6.6, 3.4) → (6.6, 4.0), in front of the tool chest (ERB comment) |
+| F6 | The forward post's east strip from y 40 to 144 is painted as the portal's concrete reveal (a lit arris, the same formwork texture as the headwall), so the blast door sits in the concrete mass |
+| H4 | hall_guard_b's start and west turn (13, 8) → (13.6, 8), out of the east rack's corner (a Ruby comment in the patrol array; the line sits inside an ERB block, where `<%#` would close it) |
+| R3 | A grey steel canteen chair seen from behind (`m10_steel_chair1`, 16×26) in place of the teal hospital chair: Farah's floor-post chair (`farah_chair` now `as-type:m10_steel_chair`), the empty chair facing the key console, the workshop bench chair |
+| N1, N2 | Left for the character owner and the user, as ruled |
+
+Checks: validator exit 0, 0 errors; slot audit 0; walls all 64; door alignment 7 of 7; door clearance clean; no decor takes a slot. Slot spacing unchanged except one new overlap: the gallery's lock panel (`clock_gallery`, top-left (204, 33)) now sits inside the lock guard's frame at his west turn (6.2, 3.4), so tapping it while he dwells there may raise a two-item menu. It is a countdown readout; accepted.
+
+Browser check (game 3268, rooms unlocked server-side; log in the session scratchpad `m10dress/pt3/`): hall_guard_b keeps both waypoints and walks x 2041–2144 with no "No path found", "outside patrol bounds" or "stuck in wall" (none either for hall_guard_a, lock_guard, duty_guard_b or the kettle copy); her west stop is about 30 px clear of the rack edge. The lock panel, Farah's chair (a menu with her, as accepted), bench log, bench terminal, tool roll and printer all open within 28 px.

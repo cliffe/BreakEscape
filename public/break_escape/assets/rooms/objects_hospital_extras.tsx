@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="612" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="614" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -1836,5 +1836,11 @@
  </tile>
  <tile id="621">
   <image source="../objects/se_sign_blueteam1.png" width="43" height="11"/>
+ </tile>
+ <tile id="622">
+  <image source="../objects/m10_steel_bench1.png" width="51" height="39"/>
+ </tile>
+ <tile id="623">
+  <image source="../objects/m10_steel_chair1.png" width="16" height="26"/>
  </tile>
 </tileset>

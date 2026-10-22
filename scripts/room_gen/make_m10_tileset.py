@@ -266,6 +266,18 @@ def forward_sheet():
     paint_stain(op, 92, 246, 14, 6, width=640)
     paint_wear(op, (450, 64, 610, 180), width=640, strength=0.93)        # feet at the gate
     img = paint_chainlink(img, width=640, y0=30, y1=56, post_every=64)  # the fence in front of the rock
+    # R4 F6: the east strip from the corner down past the door is the portal's concrete
+    # reveal, joining the headwall (m10_portal_head1) so the blast door sits in the mass
+    op = img.load()
+    for y in range(40, 144):
+        for x in range(608, 628):
+            k = (x * 7 + y * 13) % 17
+            c = (150, 146, 136) if k else (112, 108, 100)
+            if x in (608, 609):
+                c = (176, 172, 162)                    # the reveal's lit arris
+            if y >= 140:
+                c = (112, 108, 100)                    # its foot
+            op[x, y] = (*c, 255)
     return img
 
 

@@ -2947,7 +2947,8 @@ not_tethered = '!globalVars.nightshade_tethered'
         },
         <%# Dressing R1: kowalczyk_ws was (8, 3), standing in the E door's mouth; (6.6, 3) keeps her by the door and off the shift clock's tap area. %>
         <%# Dressing R3: kowalczyk_ws (6.6, 3) -> (6.6, 3.4), out of the tool chest's front. %>
-        <%= raid_copy.('kowalczyk', 'kowalczyk_ws', 'workshop_floor', 'ws', 6.6, 3.4, [not_tethered], 'Kowalczyk at the far end by the power-room door, reading the bench log upside down.') %>,
+        <%# Dressing R4 W3: kowalczyk_ws (6.6, 3.4) -> (6.6, 4.0), in front of the tool chest, not in it. %>
+        <%= raid_copy.('kowalczyk', 'kowalczyk_ws', 'workshop_floor', 'ws', 6.6, 4.0, [not_tethered], 'Kowalczyk at the far end by the power-room door, reading the bench log upside down.') %>,
         <%= raid_copy.('arakawa', 'arakawa_ws', 'workshop_floor', 'ws', 5, 7, [not_tethered], 'Arakawa keeping the bench row in view.') %>,
         <%= raid_copy.('quintero', 'quintero_ws', 'workshop_floor', 'ws', 2, 4, [nil], 'Quintero at the foot of the stair, counting the benches.') %>
       ],
@@ -3291,7 +3292,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "observations": "Dr Mercer at the release console, as calm as a man reading a timetable."
         },
 <% [['hall_guard_a', 2, 6, 8, 6, 'male_security_guard', :guard_m, 'The west patrol, walking the plotting board end.'],
-    ['hall_guard_b', 13, 8, 17, 8, 'female_security_guard_v2', :guard_f, 'The east patrol, past the hatch and back.']].each do |gid, x1, y1, x2, y2, sprite, vkey, look| %>
+    # Dressing R4 H4: hall_guard_b's start and west turn were (13, 8), tucked into the east rack's corner; (13.6, 8) clears it.
+    ['hall_guard_b', 13.6, 8, 17, 8, 'female_security_guard_v2', :guard_f, 'The east patrol, past the hatch and back.']].each do |gid, x1, y1, x2, y2, sprite, vkey, look| %>
         {
           "id": "<%= gid %>",
           "displayName": "Guard",
@@ -3791,7 +3793,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "farah_chair",
           "name": "Floor Post Chair",
           "takeable": false,
-          "position": "as-type:hospital_chair_north",
+          "position": "as-type:m10_steel_chair",
           "observations": "A chair at the floor post.",
           "observationVariants": [
             { "condition": "globalVars.imran_outcome === 'talked_round'", "value": "A chair at the floor post, a coat over the back. Nobody in it." }

@@ -264,20 +264,21 @@ def room_m10_workshop():
     _cond(r, "wall_clock1", 252.0, 59.0)
     r.item("m10_caged_lamp1", 136.0, 24.0)
     # Imran's bench and Gary's, mid-room
-    # R3 W1: steel workbenches, not office desks
-    b = r.table("zds_desk3", 158.0, 196.0, kind="objects")   # Imran's, x 158-209
+    # R3 W1: steel workbenches, not office desks (R4 R2: towerless m10_steel_bench1; the
+    # bench terminal's bench at x 34 keeps zds_desk3, whose tower serves the PC)
+    b = r.table("m10_steel_bench1", 158.0, 196.0, kind="objects")   # Imran's, x 158-209
     _top(r, "aes_bypass_module1", 162.0, 176.0)
     _top(r, "cable_tangle1", 184.0, 178.0)
-    g = r.table("zds_desk3", 213.0, 196.0, kind="objects")   # Gary's, x 213-264
+    g = r.table("m10_steel_bench1", 213.0, 196.0, kind="objects")   # Gary's, x 213-264
     _top(r, "office-misc-lamp4", 216.0, 172.0)
     _top(r, "aes_battery_module1", 236.0, 178.0)
     # the west bench: terminal and log
     # feet 200: slot centres stay above the guard's frame at his west waypoint (y 185)
     w = r.table("zds_desk3", 34.0, 200.0, kind="objects")    # x 34-85, R3 W1
-    r.table("zds_desk3", 85.0, 200.0, kind="objects")        # x 85-136
+    r.table("m10_steel_bench1", 85.0, 200.0, kind="objects")        # x 85-136
     _top(r, "pc10", 38.0, 198.0, cond=True)
     _top(r, "aes_clipboard1", 92.0, 194.0, cond=True)
-    r.item("hospital_chair_north", 52.0, 222.0)
+    r.item("m10_steel_chair1", 52.0, 222.0)
     # the cracker rack, SE
     _cond(r, "m10_cracker_rack1", 250.0, 286.0)
     r.collision(252.0, 274.0, 30.0, 12.0)
@@ -317,11 +318,11 @@ def room_m10_power():
         r.solid("pnw_batteries1", x, 290.0, depth=30)
     r.solid("aes_battery_rack1", 206.0, 290.0, depth=30)
     for x in (96.0, 144.0, 192.0):
-        r.item("m09_mesh_low1", x, 240.0)
-    r.collision(96.0, 230.0, 144.0, 10.0)
-    r.item("m10_sign_batteries1", 98.0, 242.0)           # R3 P1: on one mesh panel, drawn over it
+        r.item("m09_mesh_low1", x, 234.0)                  # R4 P6: feet 234, so the plate (feet 236) draws over it
+    r.collision(96.0, 224.0, 144.0, 10.0)
+    r.item("m10_sign_batteries1", 98.0, 236.0)           # R3 P1 / R4 P6: on one mesh panel, above the rack tops (237)
     # R3 P3: Static's tool roll on a bench by the switchgear
-    r.table("zds_desk3", 34.0, 296.0, kind="objects")    # x 34-85
+    r.table("m10_steel_bench1", 34.0, 296.0, kind="objects")    # x 34-85 (R4 R2: no PC tower)
     _top(r, "m10_tool_roll1", 46.0, 296.0, cond=True)
     r.item("fire_extinguisher1", 292.0, 200.0)
     return _build(r, "room_m10_power")
@@ -369,7 +370,7 @@ def room_m10_hall():
     _cond(r, "aes_round_terminal1", 319.0, 290.0)          # R3 H3: in the gap in the rack run
     r.collision(320.0, 280.0, 16.0, 10.0)
     # the uplink printer, near the W door
-    r.table("zds_desk3", 40.0, 262.0, kind="objects")    # x 40-91, R3 R1
+    r.table("m10_steel_bench1", 40.0, 262.0, kind="objects")    # x 40-91, R3 R1 / R4 R2
     _top(r, "pnw_portable_printer1", 54.0, 242.0, cond=True)
     r.item("fire_extinguisher1", 612.0, 200.0)
     r.item("cctv_camera1", 590.0, 34.0)
@@ -386,7 +387,7 @@ def room_m10_gallery():
     NPCs: Victoria or Vos (160,96); the lock guard patrols y 128 from x 224 to 64; the
     monitor guard (96,160), Farah (160,160), the lock party (192-224,160).
     Slots: m10_slit_window1 (Slit Windows), m10_door_panel1 (Lock Panel),
-    m10_keypad_plate1 (Keypad Face Plate), hospital_chair_north (as-type, Floor Post
+    m10_keypad_plate1 (Keypad Face Plate), m10_steel_chair1 (as-type, Floor Post
     Chair; chair-grey-1 is a swivel prop and never a slot).
     """
     r = G._Uni()
@@ -399,7 +400,7 @@ def room_m10_gallery():
     for x in (34.0, 82.0, 178.0, 226.0):                  # the walkway's rail along the south
         r.item("m09_mesh_rail1", x, 160.0)                 # (a gap behind Farah's chair)
     _cond(r, "m10_keypad_plate1", 292.0, 140.0)
-    _cond(r, "hospital_chair_north", 140.0, 160.0)          # R3 G1: 8 px south, off Farah's feet
+    _cond(r, "m10_steel_chair1", 140.0, 160.0)          # R3 G1: 8 px south, off Farah's feet
     return _build(r, "room_m10_gallery", "10x6_hall")
 
 
@@ -426,7 +427,7 @@ def room_m10_core():
     r.item("exec_chair_black1", 178.0, 132.0)
     _cond(r, "m10_key_console1", 176.0, 176.0)
     r.collision(178.0, 160.0, 48.0, 16.0)
-    r.item("hospital_chair_north", 196.0, 214.0)
+    r.item("m10_steel_chair1", 196.0, 214.0)            # R4 R3: steel, not a hospital chair
     r.table("zds_desk3", 36.0, 170.0, kind="objects")    # x 36-87, steel (R3 R1)
     _top(r, "safetynet_flag_terminal1", 40.0, 156.0, cond=True)
     r.table("aes_trestle1", 36.0, 240.0, kind="objects")

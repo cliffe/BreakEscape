@@ -71,7 +71,7 @@
          "name":"tables",
          "objects":[
                 {
-                 "gid":1034,
+                 "gid":1423,
                  "height":39,
                  "id":11,
                  "name":"",
@@ -83,7 +83,7 @@
                  "y":196
                 }, 
                 {
-                 "gid":1034,
+                 "gid":1423,
                  "height":39,
                  "id":14,
                  "name":"",
@@ -107,7 +107,7 @@
                  "y":200
                 }, 
                 {
-                 "gid":1034,
+                 "gid":1423,
                  "height":39,
                  "id":18,
                  "name":"",
@@ -190,7 +190,7 @@
                  "y":24
                 }, 
                 {
-                 "gid":316,
+                 "gid":1424,
                  "height":26,
                  "id":21,
                  "name":"",
@@ -2912,7 +2912,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":607,
+         "tilecount":614,
          "tileheight":124,
          "tiles":[
                 {
@@ -6616,6 +6616,49 @@
                  "image":"..\/objects\/m10_steel_stand1.png",
                  "imageheight":36,
                  "imagewidth":30
+                }, 
+                {
+                 "id":617,
+                 "image":"..\/objects\/se_logo_sign1.png",
+                 "imageheight":19,
+                 "imagewidth":64
+                }, 
+                {
+                 "id":618,
+                 "image":"..\/objects\/se_sign_engagement1.png",
+                 "imageheight":11,
+                 "imagewidth":47
+                }, 
+                {
+                 "id":619,
+                 "image":"..\/objects\/se_sign_recon1.png",
+                 "imageheight":11,
+                 "imagewidth":27
+                },
+            
+                {
+                 "id":620,
+                 "image":"..\/objects\/se_sign_ops1.png",
+                 "imageheight":11,
+                 "imagewidth":47
+                }, 
+                {
+                 "id":621,
+                 "image":"..\/objects\/se_sign_blueteam1.png",
+                 "imageheight":11,
+                 "imagewidth":43
+                }, 
+                {
+                 "id":622,
+                 "image":"..\/objects\/m10_steel_bench1.png",
+                 "imageheight":39,
+                 "imagewidth":51
+                }, 
+                {
+                 "id":623,
+                 "image":"..\/objects\/m10_steel_chair1.png",
+                 "imageheight":26,
+                 "imagewidth":16
                 }],
          "tilewidth":252
         }],

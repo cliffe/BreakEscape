@@ -538,6 +538,7 @@ def main():
     extras()
     round2()
     round3()
+    round4()
 
 
 def plans_roll():
@@ -945,6 +946,48 @@ def round3():
     tool_roll()
     steel_stand()
     stencil_plate("CORE", "m10_sign_core1")
+
+
+# --- round 4 ------------------------------------------------------------------
+
+def steel_bench():
+    """A plain steel workbench at zds_desk3's size (51x39) without its PC tower: a pale
+    galvanised top, a dark apron, four square legs and a low shelf between them."""
+    w, h = 51, 39
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, 17, OUTLINE)
+    c.rect(1, 1, w - 2, 16, (176, 184, 194))
+    c.hline(1, w - 2, 1, (206, 212, 220))
+    for x in range(6, w - 4, 11):
+        c.px(x, 8, (160, 168, 178))
+    c.rect(0, 18, w - 1, 21, (62, 68, 80))
+    for x0 in (1, w - 4):
+        c.rect(x0, 22, x0 + 2, h - 1, (62, 68, 80))
+    c.rect(3, 30, w - 4, 32, (96, 104, 116))
+    c.hline(3, w - 4, 30, (130, 138, 148))
+    c.save(OBJ, "m10_steel_bench1")
+
+
+def steel_chair():
+    """A grey steel canteen chair seen from behind (north-facing, 16x26): a curved
+    backrest, the seat's edge, four tube legs."""
+    w, h = 16, 26
+    c = Canvas(w, h)
+    c.rect(1, 0, w - 2, 9, OUTLINE)
+    c.rect(2, 1, w - 3, 8, (150, 156, 162))
+    c.hline(2, w - 3, 1, (186, 192, 198))
+    c.rect(3, 10, 4, 13, (90, 96, 104))
+    c.rect(w - 5, 10, w - 4, 13, (90, 96, 104))
+    c.rect(0, 13, w - 1, 16, OUTLINE)
+    c.rect(1, 14, w - 2, 15, (120, 126, 134))
+    for x in (1, 4, w - 5, w - 2):
+        c.rect(x, 17, x, h - 1, (80, 86, 94))
+    c.save(OBJ, "m10_steel_chair1")
+
+
+def round4():
+    steel_bench()
+    steel_chair()
 
 
 if __name__ == "__main__":

@@ -3627,7 +3627,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 607,
+   "tilecount": 614,
    "tileheight": 60,
    "tiles": [
     {
@@ -7271,6 +7271,48 @@
      "image": "../objects/m10_steel_stand1.png",
      "imageheight": 36,
      "imagewidth": 30
+    },
+    {
+     "id": 617,
+     "image": "../objects/se_logo_sign1.png",
+     "imageheight": 19,
+     "imagewidth": 64
+    },
+    {
+     "id": 618,
+     "image": "../objects/se_sign_engagement1.png",
+     "imageheight": 11,
+     "imagewidth": 47
+    },
+    {
+     "id": 619,
+     "image": "../objects/se_sign_recon1.png",
+     "imageheight": 11,
+     "imagewidth": 27
+    },
+    {
+     "id": 620,
+     "image": "../objects/se_sign_ops1.png",
+     "imageheight": 11,
+     "imagewidth": 47
+    },
+    {
+     "id": 621,
+     "image": "../objects/se_sign_blueteam1.png",
+     "imageheight": 11,
+     "imagewidth": 43
+    },
+    {
+     "id": 622,
+     "image": "../objects/m10_steel_bench1.png",
+     "imageheight": 39,
+     "imagewidth": 51
+    },
+    {
+     "id": 623,
+     "image": "../objects/m10_steel_chair1.png",
+     "imageheight": 26,
+     "imagewidth": 16
     }
    ],
    "tilewidth": 60
