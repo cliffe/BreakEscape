@@ -14,6 +14,7 @@ import { resolveObjectField } from '../utils/conditional-text.js';
 import { socialOverlayParams } from '../minigames/framework/social-overlay.js';
 import { startInboxTriageMinigame } from './triage-starter.js';
 import { withLockedHint } from '../utils/locked-hint.js';
+import { rejectionAlert } from '../utils/flag-wording.js';
 import { startEpisodeRunner } from './episode-starter.js';
 export { startInboxTriageMinigame, startEpisodeRunner };
 
@@ -577,7 +578,8 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
             callback(true);
         } else if (passwordInput !== null) {
             console.log('PASSWORD FAIL (fallback)');
-            window.gameAlert("Incorrect password.", 'error', 'Password Rejected', 3000);
+            const rej = rejectionAlert(lockable, type, { message: "Incorrect password.", title: 'Password Rejected' });
+            window.gameAlert(rej.message, 'error', rej.title, 3000);
             callback(false);
         }
         return;
@@ -610,7 +612,9 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
             } else {
                 console.log('PASSWORD MINIGAME FAILED');
                 if (!window.minigameClosedByDamage?.()) {
-                    window.gameAlert("Failed to enter correct password.", 'error', 'Password Rejected', 3000);
+                    // A flag lock says so: a mistyped flag is not "a password"
+                    const rej = rejectionAlert(lockable, type, { message: "Failed to enter correct password.", title: 'Password Rejected' });
+                    window.gameAlert(rej.message, 'error', rej.title, 3000);
                 }
                 callback(false, result);
             }

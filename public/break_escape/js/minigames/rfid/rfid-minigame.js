@@ -356,11 +356,15 @@ export class RFIDMinigame extends MinigameScene {
                     else this.ui.showProtocolInfo(cardData);
                 }, 1500);
             } else {
-                this.ui.showError(result.message);
+                // A miss is a result, not a fault: say what ran and what to try next, and
+                // hold it long enough to read (1.5 s flashed past in m09 m-7; Darkside gets
+                // a failure line too, so this one must not look like nothing happened).
+                this.ui.showError('Dictionary attack found no keys',
+                    String(result.message || '').replace(/^\u26A0\uFE0F?\s*/, ''), 'notice');
 
                 setTimeout(() => {
                     this.ui.showProtocolInfo(cardData);
-                }, 1500);
+                }, 3000);
             }
 
         } else if (attackType === 'darkside') {

@@ -34,22 +34,34 @@ function releaseHeldNotifications() {
 // A toast raised just before a minigame opens (the task that completes on an unlock,
 // then the container opening 500 ms later) slipped past the hold and sat over the
 // panel (m07 confirmation N1, Cascade Control). When a minigame starts, info and
-// success toasts younger than RECENT_TOAST_MS go back into the held queue. Older
-// ones have been on screen long enough to read, so they are dismissed at once:
-// left to fade, a room's task and objective toasts sat over the portrait of a
-// conversation opened 1.5 to 2 s after entering (m06 confirmation F2, Satoshi).
-export const RECENT_TOAST_MS = 1500;
+// success toasts that have barely been on screen (under RECENT_TOAST_MS) go back into
+// the held queue, once. Older ones were on screen long enough to read, so they are
+// dismissed at once: left to fade, a room's task and objective toasts sat over the
+// portrait of a conversation opened 1.5 to 2 s after entering (m06 confirmation F2,
+// Satoshi).
+//
+// The window used to be 1.5 s and a toast could be pulled back again each time it was
+// shown, so a task, objective or unlock toast the player had already read came back
+// after the next panel closed (m09/m10 phase 5: "fires twice", "three times"). Now only
+// a glimpse (under 0.7 s) is replayed, and a toast that has been replayed once is never
+// held again.
+export const RECENT_TOAST_MS = 700;
 
-/** Shown info/success toasts too old to hold again: dismissed when a panel opens. */
+/** Shown info/success toasts not to hold again: dismissed when a panel opens. */
 export function pickStaleHoldable(entries, now, windowMs = RECENT_TOAST_MS) {
     return entries.filter((e) => e && HOLDABLE_TYPES.has(e.type)
-        && typeof e.shownAt === 'number' && now - e.shownAt >= windowMs);
+        && (e.seen === true || (typeof e.shownAt === 'number' && now - e.shownAt >= windowMs)));
 }
 
-/** Which shown toasts to pull back when a panel opens. entries: [{ type, shownAt }] */
+/** Which shown toasts to pull back when a panel opens. entries: [{ type, shownAt, seen? }] */
 export function pickRecentHoldable(entries, now, windowMs = RECENT_TOAST_MS) {
-    return entries.filter((e) => e && HOLDABLE_TYPES.has(e.type)
+    return entries.filter((e) => e && HOLDABLE_TYPES.has(e.type) && e.seen !== true
         && typeof e.shownAt === 'number' && now - e.shownAt < windowMs);
+}
+
+/** True when an identical info/success toast is already waiting in the hold. */
+export function isQueuedDuplicate(queue, message, type, title) {
+    return queue.some((q) => q[0] === message && q[1] === type && q[2] === title);
 }
 
 export function holdRecentNotifications(now = Date.now()) {
@@ -63,7 +75,8 @@ export function holdRecentNotifications(now = Date.now()) {
     pulled.forEach(({ el, message, type, title, duration }) => {
         el._toast.pulled = true;
         if (el.parentNode) el.parentNode.removeChild(el);
-        heldNotifications.push([message, type, title, duration]);
+        // seen = true: already on screen once, so it is replayed once and never pulled again
+        heldNotifications.push([message, type, title, duration, true]);
     });
     if (pulled.length && !holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
     pickStaleHoldable(shown, now).forEach(({ el }) => {
@@ -77,6 +90,9 @@ if (typeof window !== 'undefined') window.holdRecentNotifications = holdRecentNo
 // Show a notification instead of using alert()
 export function showNotification(message, type = 'info', title = '', duration = 5000) {
     if (shouldHoldNotification(type, fullScreenPanelOpen())) {
+        // The same toast raised twice while a panel is open (two code paths announcing one
+        // event) shows once
+        if (isQueuedDuplicate(heldNotifications, message, type, title)) return null;
         heldNotifications.push([message, type, title, duration]);
         if (!holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
         return null;
@@ -84,7 +100,7 @@ export function showNotification(message, type = 'info', title = '', duration = 
     return renderNotification(message, type, title, duration);
 }
 
-function renderNotification(message, type, title, duration) {
+function renderNotification(message, type, title, duration, seen = false) {
     const notificationContainer = document.getElementById('notification-container');
     
     // Create notification element
@@ -104,7 +120,7 @@ function renderNotification(message, type, title, duration) {
     }
     
     notification.innerHTML = notificationContent;
-    notification._toast = { message, type, title, duration, shownAt: Date.now() };
+    notification._toast = { message, type, title, duration, shownAt: Date.now(), seen };
     
     // Add to container
     notificationContainer.appendChild(notification);

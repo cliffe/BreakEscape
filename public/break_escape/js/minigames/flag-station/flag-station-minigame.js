@@ -8,6 +8,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { applyActions } from '../../systems/apply-actions.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { flagRefusalLine } from '../../utils/flag-wording.js';
 
 export class FlagStationMinigame extends MinigameScene {
     constructor(container, params) {
@@ -20,7 +21,13 @@ export class FlagStationMinigame extends MinigameScene {
         // still passes an array; never rely on its contents.
         this.expectedFlagCount = params.flagCount ?? (params.flags || []).length;
         this.acceptsVms = params.acceptsVms || []; // List of VM names whose flags are accepted
-        this.submittedFlags = params.submittedFlags || window.gameState?.submittedFlags || [];
+        // Only THIS station's flags. The caller passes the server's per-station list; the
+        // game-wide list (every machine's flags) is never used, or a link for one VM
+        // shows another VM's flags as submitted (m09 Tomb Beta, m-4).
+        const sessionFlags = window.gameState?.stationSubmittedFlags?.[this.stationId] || [];
+        this.submittedFlags = Array.isArray(params.submittedFlags)
+            ? [...params.submittedFlags, ...sessionFlags.filter(f => !params.submittedFlags.includes(f))]
+            : sessionFlags.slice();
         this.gameId = params.gameId || window.breakEscapeConfig?.gameId || window.gameConfig?.gameId;
         this.isSubmitting = false;
         this.lockObjectId     = params.objectId          || null;
@@ -505,7 +512,7 @@ export class FlagStationMinigame extends MinigameScene {
                 }, 1500);
             } else {
                 if (window.playUISound) window.playUISound('reject');
-                this.showResult(resultEl, 'error', '✗ Incorrect decryption key');
+                this.showResult(resultEl, 'error', flagRefusalLine(null));
             }
         } catch (error) {
             console.error('[FlagLock] Unlock error:', error);
@@ -663,9 +670,13 @@ export class FlagStationMinigame extends MinigameScene {
                     this.submittedFlags.push(flagValue);
                     this.updateFlagHistory();
 
-                    // Update global state
+                    // Remember it for this station (reopening the panel in the same session),
+                    // and in the game-wide list. Never hand one station's list to the other.
                     if (window.gameState) {
-                        window.gameState.submittedFlags = this.submittedFlags;
+                        const byStation = window.gameState.stationSubmittedFlags || (window.gameState.stationSubmittedFlags = {});
+                        (byStation[this.stationId] || (byStation[this.stationId] = [])).push(flagValue);
+                        if (!Array.isArray(window.gameState.submittedFlags)) window.gameState.submittedFlags = [];
+                        window.gameState.submittedFlags.push(flagValue);
                     }
                 }
                 
@@ -719,7 +730,7 @@ export class FlagStationMinigame extends MinigameScene {
 
             } else {
                 if (window.playUISound) window.playUISound('reject');
-                this.showResult(resultEl, 'error', `✗ ${data.message || 'Invalid flag'}`);
+                this.showResult(resultEl, 'error', flagRefusalLine(data.message));
             }
             
         } catch (error) {

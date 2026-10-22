@@ -83,7 +83,7 @@ test('toasts raised just before a minigame opens go back in the hold', async () 
         { type: 'info' }
     ], now);
     assert.deepEqual(picked.map((e) => e.type), ['success']);
-    assert.equal(T.RECENT_TOAST_MS, 1500);
+    assert.equal(T.RECENT_TOAST_MS, 700);
     const mgr = readFileSync(join(js, 'minigames/framework/minigame-manager.js'), 'utf8');
     const start = mgr.slice(mgr.indexOf('startMinigame(sceneType'), mgr.indexOf('holdsBarks()'));
     assert.match(start, /this\.currentMinigame\._sceneType = sceneType;[\s\S]*?window\.holdRecentNotifications\?\.\(\)/);

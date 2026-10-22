@@ -469,7 +469,7 @@ module BreakEscape
         return render_error("Room not found: #{room_id}", :not_found) unless room_data
 
         # Annotate flag-stations and launch-devices with whether all their flags are submitted
-        annotate_station_submission_status!(room_data)
+        annotate_station_submission_status!(room_data, room_id)
 
         # Track NPC encounters BEFORE sending response
         npc_count = room_data['npcs']&.length || 0
@@ -2309,9 +2309,28 @@ module BreakEscape
 
     # Annotate flag-station and launch-device objects in room data with `flagsAllSubmitted`,
     # derived from the server's submitted_flags list. Mutates room_data in place.
-    def annotate_station_submission_status!(room_data)
-      submitted = Set.new((@game.player_state['submitted_flags'] || []).map(&:downcase))
+    def annotate_station_submission_status!(room_data, room_id = nil)
+      submitted_list = @game.player_state['submitted_flags'] || []
+      submitted = Set.new(submitted_list.map(&:downcase))
+      # Submitted flags as the player typed them, keyed by lower-case value
+      submitted_as_typed = submitted_list.each_with_object({}) { |f, h| h[f.downcase] ||= f }
       station_types = %w[flag-station launch-device]
+
+      # The client copy has its flag lists stripped to a count (see
+      # filter_requires_and_contents_recursive), so a station's own flags are read
+      # from the unfiltered room. Keyed by station id so each annotation below
+      # lists only THAT station's flags (the link panel's "Submitted Flags" showed
+      # every machine's: m09 Tomb Beta listed the catalogue server's).
+      raw_flags_by_station = {}
+      collect = lambda do |obj|
+        return unless obj.is_a?(Hash) && station_types.include?(obj['type'])
+        raw_flags_by_station[(obj['id'] || obj['name']).to_s] = Array(obj['flags'])
+      end
+      raw_room = room_id ? @game.room_data(room_id) : nil
+      if raw_room
+        raw_room['objects']&.each { |obj| collect.call(obj) }
+        raw_room['npcs']&.each { |npc| npc['itemsHeld']&.each { |item| collect.call(item) } }
+      end
 
       annotate = lambda do |obj|
         return unless obj.is_a?(Hash) && station_types.include?(obj['type'])
@@ -2319,6 +2338,14 @@ module BreakEscape
         obj['flagsAllSubmitted'] = flags.any? && flags.all? do |ref|
           resolved = resolve_flag_value(ref)&.downcase
           resolved && submitted.include?(resolved)
+        end
+        # Only this station's flags, in the order it lists them
+        own = raw_flags_by_station[(obj['id'] || obj['name']).to_s]
+        if own
+          obj['submittedFlags'] = own.filter_map do |ref|
+            resolved = resolve_flag_value(ref)&.downcase
+            resolved && submitted_as_typed[resolved]
+          end
         end
       end
 
