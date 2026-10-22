@@ -220,6 +220,8 @@ Always start a fresh game unless the user asks to resume one.
 
 The bridge only exists outside production (`breakEscapeConfig.testBridge`). Playwright lives in the repo (`node_modules`, chromium already installed). If `window.__test` never appears, the server is in production mode or `main.js` failed to load — say so rather than retrying.
 
+The harness needs Node 24, and the system Node is 18 on this machine: run it with `~/.cache/ms-playwright-go/1.57.0/node`. Use `--headless true` here, because headed mode is unreliable.
+
 ---
 
 ## Step 2 — read the scenario's walkthrough

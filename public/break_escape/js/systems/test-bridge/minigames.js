@@ -70,7 +70,12 @@ export const minigameBridge = {
             el = buttons[indexOrLabel];
         } else {
             const needle = String(indexOrLabel).toLowerCase();
-            el = buttons.find(b => (b.innerText || b.value || '').trim().toLowerCase().includes(needle));
+            // Exact label first, then a prefix, then a substring, so "Send"
+            // does not hit "Use sender's name".
+            const text = b => (b.innerText || b.value || '').trim().toLowerCase();
+            el = buttons.find(b => text(b) === needle)
+                || buttons.find(b => text(b).startsWith(needle))
+                || buttons.find(b => text(b).includes(needle));
         }
         const index = buttons.indexOf(el);
         if (!el) {

@@ -237,6 +237,9 @@ function substituteFlags(node, at) {
     // open" reading is therefore not proof the overworld is ready — require
     // several consecutive clear checks before returning.
     let clear = 0;
+    // A hub that offers the same menu again would otherwise loop on choice 1.
+    const seenMenus = new Map();
+    const exitRe = /\b(bye|goodbye|leave|later|that's all|that's it|nothing|done|go|thanks)\b/i;
     for (let i = 0; i < maxSteps; i++) {
       const mg = await page.evaluate(() => window.__test.getState().activeMinigame);
       if (mg) {
@@ -244,8 +247,19 @@ function substituteFlags(node, at) {
         const d = await page.evaluate(() => window.__test.minigame.getState()?.dialogue);
         if (d && (d.awaitingChoice || d.canContinue)) {
           if (d.awaitingChoice) {
-            trace.push(`cutscene choice 1 of ${d.choices.length}`);
-            await page.evaluate(() => window.__test.minigame.choose(1));
+            // choices are objects ({number, text}); tolerate plain strings too.
+            const texts = d.choices.map(ch => (typeof ch === 'string' ? ch : ch.text) || '');
+            const key = texts.join('|');
+            let n = 1;
+            if (seenMenus.has(key)) {
+              const ix = texts.findIndex(t => exitRe.test(t));
+              n = ix >= 0 ? ix + 1 : texts.length;
+              trace.push(`repeat menu, choice ${n} of ${texts.length}`);
+            } else {
+              seenMenus.set(key, true);
+              trace.push(`cutscene choice 1 of ${texts.length}`);
+            }
+            await page.evaluate(k => window.__test.minigame.choose(k), n);
           } else {
             await page.evaluate(() => window.__test.minigame.continue());
           }
@@ -506,6 +520,7 @@ function substituteFlags(node, at) {
       const read = () => page.evaluate(() => window.__test.minigame.getState());
       const steps = [];
       let lastInsert = null;
+      const tried = new Set();
       let st = await read();
       if (!st) return { ok: false, reason: 'no-active-minigame' };
 
@@ -529,13 +544,18 @@ function substituteFlags(node, at) {
                      + 'password lock, pass {"code":"..."}. Otherwise read `mg getState` and drive it by hand.' };
       }
 
-      for (let i = 0; i < 12; i++) {
-        // Key lock, stage 1: choose a key. Prefer one whose label matches
-        // `key`, else the only one, else the first.
+      // 40 iterations: a wrong-key insert animation takes about 4s and the red
+      // flash about 2s before the key list returns.
+      for (let i = 0; i < 40; i++) {
+        // Key lock, stage 1: choose a key. A named `key` wins. With none named,
+        // try each held key in turn (first one not yet tried), else the first.
         if (st.keySelection && st.keySelection.length) {
           const want = (c.key || '').toLowerCase();
           const pick = (want && st.keySelection.find(k => (k.label || '').toLowerCase().includes(want)))
+            || st.keySelection.find(k => !tried.has(k.label))
             || st.keySelection[0];
+          tried.add(pick.label);
+          lastInsert = null;
           steps.push(`select key "${pick.label || '?'}" at ${pick.x},${pick.y}`);
           await page.evaluate(([x, y]) => window.__test.minigame.clickCanvas(x, y), [pick.x, pick.y]);
         // Key lock, stage 2: insert it.
