@@ -45,22 +45,36 @@ Wendell Briggs: You with the data company? Nobody told me there'd be a visit.
 + [Those servers are set to shut down hospitals at six. That's the job.]
     ~ wendell_outcome = "told"
     ~ server_hall_warned = true
-    ~ gallery_shutter_cut = true
-    Wendell Briggs: *pause* Well. Which switch do you want.
-    + + [The one marked gallery shutter.]
-        Wendell Briggs: There. Key's turned, breaker's down. That door won't move again tonight.
-    - -
-    Wendell Briggs: Dale's on the next shift. I'm calling him. He's got grandkids.
-    ~ wend_quiet = true
-    #exit_conversation
-    -> wendell_rest
+    // Alignment R9-m5: he makes the cut only on a live shutter, and then no phone voice is credited with it.
+    {not gallery_shutter_cut:
+        -> wendell_switch
+    }
+    -> wendell_dale
 + [Never mind. Carry on, Mr Briggs.]
     ~ wendell_outcome = "worked_round"
-    ~ cut_by_hand = true
+    // Alignment R9 sweep: no by-hand cut to credit when the shutter is already dead.
+    {not gallery_shutter_cut:
+        ~ cut_by_hand = true
+    }
     Wendell Briggs: Suit yourself. I'll be at the panel if anybody needs a breaker.
     ~ wend_quiet = true
     #exit_conversation
     -> wendell_rest
+
+// No tunnel: a reopen can enter this knot directly (R9), so it diverts on.
+=== wendell_switch ===
+~ gallery_shutter_cut = true
+~ cut_by_hand = false
+Wendell Briggs: *pause* Well. Which switch do you want.
++ [The one marked gallery shutter.]
+    Wendell Briggs: There. Key's turned, breaker's down. That door won't move again tonight.
+    -> wendell_dale
+
+=== wendell_dale ===
+Wendell Briggs: Dale's on the next shift. I'm calling him. He's got grandkids.
+~ wend_quiet = true
+#exit_conversation
+-> wendell_rest
 
 === wendell_rest ===
 {wend_quiet:

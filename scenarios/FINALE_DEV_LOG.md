@@ -456,3 +456,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - Queued for m10 phase 5 browser checks: post-lock Victoria/Vos resting; Gary with Imran knocked out; escaped Voltage knocked out after stand-down.
 - m09 puzzle chains R4 fixes: 2/2 (Tran topic open past the gate once the bin is chosen; pre-hatch line "paper with his name on it"). Voiced delta: 0.
 - m09 puzzle chains R5 fixes: 1/1 (disableClose on Victoria's door scene, shown on :3001) and n1 taken (Tran topic open and final on the hatch route once the gate is open). Voiced delta: 0.
+- m10 alignment R9 fixes: 5/5 plus a reopen sweep (menu-knot guards for Victoria, Vos, Asante, Imran; Wendell's switch beat only on a live shutter; Imran's menu, captured Voltage's menus and Wendell's walk-away guarded). No voiced delta.

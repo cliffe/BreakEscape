@@ -48,6 +48,10 @@ Victoria Sterling: I can open that lock for you. I can also open it for them. No
 -> recruited_menu
 
 === recruited_menu ===
+// Alignment R9-m1: a reopen enters here, not at recruited, so the lock test repeats.
+{outer_lock_open:
+    -> gallery_rest
+}
 + [Before you touch that lock. Zero Day's order has your name on it.]
     ~ victoria_gallery = "confronted"
     Victoria Sterling: Then you know I'm hedging. So is everyone.

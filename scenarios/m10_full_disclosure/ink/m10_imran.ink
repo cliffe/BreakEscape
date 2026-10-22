@@ -73,6 +73,10 @@ Agent HaX: Let him go and the phone goes with him. Keep him, and we get his supp
 -> imran_menu
 
 === imran_menu ===
+// Alignment R9 sweep: a reopen enters here; a card cloned meanwhile (HaX's card_cloned mapping) settles him.
+{imran_outcome == "talked_round" or imran_outcome == "taken_in" or imran_outcome == "card_cloned":
+    -> imran_rest
+}
 + [Go home. Keep your phone.]
     ~ imran_outcome = "talked_round"
     #unlock_door:power_room
@@ -135,6 +139,10 @@ Agent HaX: Got it. A crate signed for at the service door on Tuesday. Raid-issue
 
 // Unprotected branch: Gary decides, and Imran goes where Gary goes.
 === follows_gary ===
+// Alignment R9-m4: a reopen enters here; once Gary is down, Imran has his own scene.
+{gary_ko or gary_outcome == "ko":
+    -> workshop
+}
 {imran_quiet:
     ~ imran_quiet = false
 - else:

@@ -14,8 +14,13 @@ VAR vos_l_seen = false    // the opener has played
 {vos_outcome == "":
     ~ vos_outcome = "avoided"
 }
-// Alignment R8-m1: no code card to sell once the lock is open.
+// Alignment R8-m1: no code card to sell once the lock is open. R9-m2: an
+// m03 knock-out still gets its answer on a first meeting after the lock.
 {outer_lock_open:
+    {not vos_l_seen and m03_victoria_fate == "ko":
+        ~ vos_l_seen = true
+        Pieter Vos: You put Sterling in hospital. I sent flowers. Business is business.
+    }
     -> vos_rest
 }
 {vos_outcome == "stood_aside" or vos_outcome == "bought" or vos_outcome == "refused":
@@ -44,6 +49,10 @@ Pieter Vos: I don't do philosophy. I do delivery dates.
 -> vos_menu
 
 === vos_menu ===
+// Alignment R9-m1: a reopen enters here, so the lock test repeats.
+{outer_lock_open:
+    -> vos_rest
+}
 + {vos_secret_known} [Your second buyer. The one you skim from.]
     ~ vos_secret_used = true
     ~ vos_outcome = "stood_aside"

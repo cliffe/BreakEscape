@@ -41,6 +41,10 @@ VAR volt_missed = false     // escaped: a miss ended the talk
 {voltage_outcome == "":
     ~ voltage_outcome = "avoided"
 }
+// Alignment R9 sweep: Wendell (or the phone voice) may have cut the shutter already.
+{gallery_shutter_cut:
+    -> captured_rest
+}
 {voltage_outcome == "by_hand":
     -> cut_in_person
 }
@@ -62,6 +66,10 @@ Voltage (Critical Mass): Let me do it. It's quicker. Or do it yourself, and I'll
 -> captured_menu
 
 === captured_menu ===
+// Alignment R9 sweep: a reopen enters here, so the shutter is tested again.
+{gallery_shutter_cut:
+    -> captured_rest
+}
 + [Your hands. Go on.]
     ~ voltage_outcome = "his_hands"
     Voltage (Critical Mass): I could. Watch my hands.
@@ -130,6 +138,9 @@ Voltage (Critical Mass): Let me do it. It's quicker. Or do it yourself, and I'll
 Voltage (Critical Mass): Grey panel by the door. A key switch, a row of breakers, GALLERY SHUTTER on the label.
 -> cut_p0_menu
 = cut_p0_menu
+{gallery_shutter_cut:
+    -> captured_rest
+}
 + [I'm at it.]
     ~ cut_step = 1
     -> cut_p1
@@ -143,6 +154,9 @@ Voltage (Critical Mass): Grey panel by the door. A key switch, a row of breakers
 Voltage (Critical Mass): Turn the key a quarter right and leave it there. That isolates the feed. Nothing moves yet.
 -> cut_p1_menu
 = cut_p1_menu
+{gallery_shutter_cut:
+    -> captured_rest
+}
 + [Key's turned.]
     ~ cut_step = 2
     -> cut_p2
@@ -156,6 +170,9 @@ Voltage (Critical Mass): Turn the key a quarter right and leave it there. That i
 Voltage (Critical Mass): Breaker row. Third from the left is the shutter. Leave the others; they feed the hall.
 -> cut_p2_menu
 = cut_p2_menu
+{gallery_shutter_cut:
+    -> captured_rest
+}
 + {not gallery_camera_blinded} [And the gallery camera?]
     ~ gallery_camera_blinded = true
     Voltage (Critical Mass): The small toggle under the row, painted over. Down. That's their camera on the walkway.

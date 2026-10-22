@@ -28,6 +28,10 @@ Dr Abena Asante: You're the one off the office wall. Don't touch my console and 
 -> hall_menu
 
 === hall_menu ===
+// Alignment R9-m3: a reopen enters here, so Wendell's warning is tested again.
+{server_hall_warned:
+    -> warned
+}
 + {not asan_wrote} [Who built this release?]
     ~ asan_wrote = true
     Dr Abena Asante: I wrote it. I'd write it again.
