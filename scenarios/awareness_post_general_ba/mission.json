@@ -2,6 +2,7 @@
   "display_name": "Awareness check: general, after (BA)",
   "description": "A short check for all staff at Quayholt Insurance, a fictional company, taken after the awareness episodes (pair BA). Ten new items from a Quayholt inbox, the same kinds as before. It is matched to the first check (awareness_pre_general_ba), and the end screen compares the two results when the first check was finished.",
   "difficulty_level": 1,
+  "scoring": "completion",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

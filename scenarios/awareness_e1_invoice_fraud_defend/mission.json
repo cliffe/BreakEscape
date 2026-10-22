@@ -2,6 +2,7 @@
   "display_name": "Awareness E1: Invoice fraud (inbox only)",
   "description": "An eight-minute awareness episode for finance staff, on the inbox side only. Cover the payments inbox at Brightwell Foods, a fictional company, before the afternoon payment run: five messages, some real and some built to trick you. Each answer is explained, and reporting a real message never costs you anything.",
   "difficulty_level": 1,
+  "scoring": "completion",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

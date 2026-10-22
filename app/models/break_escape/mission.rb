@@ -77,6 +77,18 @@ module BreakEscape
       self.class.normalise_ui_theme(load_mission_metadata&.dig('ui_theme')) || DEFAULT_UI_THEME
     end
 
+    # How a game of this mission is scored, from mission.json "scoring".
+    # tasks (default): 70 × tasks + 30 × aims. partial_then_complete: that,
+    # capped at 99 until the mission concludes, then 100. completion: 0 until
+    # the mission concludes, then 100.
+    SCORING_MODES = %w[tasks partial_then_complete completion].freeze
+    DEFAULT_SCORING_MODE = 'tasks'.freeze
+
+    def scoring_mode
+      mode = load_mission_metadata&.dig('scoring').to_s
+      SCORING_MODES.include?(mode) ? mode : DEFAULT_SCORING_MODE
+    end
+
     # Get all CyBOK entries. Always returns break_escape_cyboks — these are the
     # authoritative source for the mission regardless of host mode. In Hacktivity,
     # the GameSlot syncs these into the host's cyboks table on save so that the

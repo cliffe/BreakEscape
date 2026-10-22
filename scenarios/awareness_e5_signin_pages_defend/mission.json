@@ -2,6 +2,7 @@
   "display_name": "Awareness E5: Sign-in pages (pages only)",
   "description": "An eight-minute awareness episode for all staff, on the defending side only. Five web pages from links in an inbox at Quayholt Insurance, a fictional company: some are the real sign-in, some were built to collect passwords. Each answer is explained, and reporting a real page never costs you anything.",
   "difficulty_level": 1,
+  "scoring": "completion",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

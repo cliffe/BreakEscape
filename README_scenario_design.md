@@ -1554,7 +1554,17 @@ For a story mission, follow all four of these in every new scenario, lab games i
 
 #### Score and `missionConclusion`
 
-Scores are computed as a raw formula: `(tasks_completed / total_tasks) × 70 + (aims_completed / total_aims) × 30`. The conclusion flag does **not** force the score to 100 %. A player who concludes the mission having skipped optional tasks will receive a proportional score.
+By default, scores are computed as a raw formula: `(tasks_completed / total_tasks) × 70 + (aims_completed / total_aims) × 30`. The conclusion flag does **not** force the score to 100 %. A player who concludes the mission having skipped optional tasks will receive a proportional score.
+
+A mission can pick another rule with `"scoring"` in its `mission.json` (read by `Mission#scoring_mode`, applied in `Game#calculate_task_score`):
+
+| `scoring` | Before the mission concludes | Once it concludes | Used by |
+|---|---|---|---|
+| absent, or `"tasks"` | the formula above | the formula above | everything else |
+| `"partial_then_complete"` | the formula, capped at 99 | 100 | `lab_tesseract_trials`, `lab_social_engineering` |
+| `"completion"` | 0 | 100 | every `awareness_*` mission |
+
+"Concludes" means the game's `mission_concluded_at` is set (the `missionConclusion` aim completed and its `concludeRequires` passed, or `POST /conclude`). Hacktivity's Finish button sets `status = 'completed'` without a conclusion, and that does not count. In the two non-default modes a Restart keeps a concluded game's 100, because `mission_concluded_at` survives the reset; the default mode drops to 0 as before. Optional tasks no longer cost marks once the mission concludes, but `concludeRequires` still decides whether it concludes at all. Hacktivity's `GameScoringJob` calls the same method, unless the listing's `scoring_method` is `flags`, which still wins. The validator errors on any other `scoring` value, and warns when a non-default mode has no `missionConclusion` aim (the score could never reach 100).
 
 ---
 

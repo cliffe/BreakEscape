@@ -1022,6 +1022,187 @@ module BreakEscape
     end
   end
 
+  # ---------------------------------------------------------------------------
+  # Scoring modes (mission.json "scoring", Mission#scoring_mode)
+  # ---------------------------------------------------------------------------
+  class ScoringModeTest < ActiveSupport::TestCase
+    # 4 tasks, 3 aims. An attack aim, a work aim with one optional task, and a
+    # conclusion aim gated on the work task and a debrief global.
+    SCENARIO = {
+      "startRoom" => "room1",
+      "rooms" => {},
+      "objectives" => [
+        { "aimId" => "attack_aim", "title" => "Attack", "status" => "active", "order" => 0,
+          "tasks" => [{ "taskId" => "attack_task", "title" => "Send", "type" => "custom", "status" => "active" }] },
+        { "aimId" => "work_aim", "title" => "Work", "status" => "active", "order" => 1,
+          "tasks" => [
+            { "taskId" => "gate_task", "title" => "Gate", "type" => "custom", "status" => "active" },
+            { "taskId" => "optional_task", "title" => "Extra", "type" => "custom", "status" => "active", "optional" => true }
+          ] },
+        { "aimId" => "conclusion_aim", "title" => "Conclude", "status" => "active", "order" => 2,
+          "missionConclusion" => true,
+          "concludeRequires" => { "tasksCompleted" => ["gate_task"], "globals" => ["debrief_done"] },
+          "conclusionScreen" => { "type" => "success" },
+          "tasks" => [{ "taskId" => "conclusion_task", "title" => "Debrief", "type" => "custom", "status" => "active" }] }
+      ]
+    }.freeze
+
+    setup do
+      @mission = break_escape_missions(:ceo_exfil)
+      @game = BreakEscape::Game.create!(
+        mission: @mission,
+        player: break_escape_demo_users(:test_user),
+        scenario_data: SCENARIO.deep_dup,
+        player_state: {
+          "currentRoom" => "room1", "unlockedRooms" => ["room1"], "unlockedObjects" => [],
+          "inventory" => [], "encounteredNPCs" => [], "globalVariables" => {},
+          "biometricSamples" => [], "biometricUnlocks" => [], "bluetoothDevices" => [],
+          "notes" => [], "health" => 100
+        }
+      )
+    end
+
+    # Stub the mode on the game's own Mission object (no reloads in these tests,
+    # so the association keeps returning it).
+    def use_mode(mode)
+      @game.mission.define_singleton_method(:scoring_mode) { mode }
+    end
+
+    def set_debrief_done
+      @game.player_state['globalVariables']['debrief_done'] = true
+      @game.save!
+    end
+
+    # Concludes with optional_task skipped: 3 of 4 tasks, 3 of 3 aims.
+    def conclude_skipping_optional
+      @game.complete_task!('attack_task')
+      @game.complete_task!('gate_task')
+      set_debrief_done
+      result = @game.complete_task!('conclusion_task')
+      assert result[:missionConcluded], 'fixture guard: the run should conclude'
+      assert_not_nil @game.mission_concluded_at
+    end
+
+    # --- default ("tasks"): today's behaviour ------------------------------
+
+    test "the fixture mission has no scoring key, so it uses the default mode" do
+      assert_equal 'tasks', @mission.scoring_mode
+    end
+
+    test "default: a concluded run with optional tasks skipped keeps the raw formula" do
+      conclude_skipping_optional
+      raw = (3.0 / 4) * 70 + (3.0 / 3) * 30 # 82.5
+      assert_in_delta raw, @game.calculate_task_score, 0.001
+      assert_equal raw.round, @game.score
+      assert_in_delta @game.raw_task_score, @game.calculate_task_score, 0.001
+    end
+
+    test "default: an explicit 'tasks' mode matches the raw formula" do
+      use_mode('tasks')
+      conclude_skipping_optional
+      assert_in_delta 82.5, @game.calculate_task_score, 0.001
+      assert_equal 83, @game.score
+    end
+
+    test "default: score can reach 100 without concluding (unchanged)" do
+      %w[attack_task gate_task optional_task conclusion_task].each { |t| @game.complete_task!(t) }
+      assert_nil @game.mission_concluded_at
+      assert_equal 100.0, @game.calculate_task_score
+    end
+
+    test "default: a reset after conclusion drops the score to 0, as before" do
+      conclude_skipping_optional
+      @game.reset_player_state!
+      assert_equal 0, @game.score
+      assert_not_nil @game.mission_concluded_at
+    end
+
+    # --- partial_then_complete ---------------------------------------------
+
+    test "partial_then_complete: partial progress gives the raw formula" do
+      use_mode('partial_then_complete')
+      @game.complete_task!('attack_task')
+      assert_in_delta (1.0 / 4) * 70 + (1.0 / 3) * 30, @game.calculate_task_score, 0.001
+      assert_equal 28, @game.score
+    end
+
+    test "partial_then_complete: every task done but the gate unmet is capped at 99" do
+      use_mode('partial_then_complete')
+      %w[attack_task gate_task optional_task conclusion_task].each { |t| @game.complete_task!(t) }
+      assert_nil @game.mission_concluded_at, 'fixture guard: debrief_done is unset'
+      assert_equal 100.0, @game.raw_task_score
+      assert_equal 99.0, @game.calculate_task_score
+      assert_equal 99, @game.score
+    end
+
+    test "partial_then_complete: a concluded run with optional tasks skipped scores 100" do
+      use_mode('partial_then_complete')
+      conclude_skipping_optional
+      assert_equal 100.0, @game.calculate_task_score
+      assert_equal 100, @game.score
+    end
+
+    test "partial_then_complete: conclude_mission! scores 100" do
+      use_mode('partial_then_complete')
+      @game.complete_task!('gate_task')
+      set_debrief_done
+      result = @game.conclude_mission!
+      assert result[:concluded]
+      assert_equal 100, @game.score
+    end
+
+    test "partial_then_complete: a reset after conclusion keeps 100" do
+      use_mode('partial_then_complete')
+      conclude_skipping_optional
+      @game.reset_player_state!
+      assert_equal 0, @game.tasks_completed
+      assert_equal 100, @game.score
+    end
+
+    test "partial_then_complete: a reset before conclusion gives 0" do
+      use_mode('partial_then_complete')
+      @game.complete_task!('attack_task')
+      @game.reset_player_state!
+      assert_equal 0, @game.score
+    end
+
+    # --- completion --------------------------------------------------------
+
+    test "completion: 0 after the attack aim alone" do
+      use_mode('completion')
+      @game.complete_task!('attack_task')
+      assert_equal 1, @game.objectives_completed
+      assert_equal 0.0, @game.calculate_task_score
+      assert_equal 0, @game.score
+    end
+
+    test "completion: 0 when the conclusion aim completes but its gate is unmet" do
+      use_mode('completion')
+      %w[attack_task gate_task optional_task conclusion_task].each { |t| @game.complete_task!(t) }
+      assert_nil @game.mission_concluded_at
+      assert_equal 0, @game.score
+    end
+
+    test "completion: status completed without a conclusion (Finish) is still 0" do
+      use_mode('completion')
+      @game.update!(status: 'completed')
+      assert_equal 0.0, @game.calculate_task_score
+    end
+
+    test "completion: a concluded run with optional tasks skipped scores 100" do
+      use_mode('completion')
+      conclude_skipping_optional
+      assert_equal 100, @game.score
+    end
+
+    test "completion: a reset after conclusion keeps 100" do
+      use_mode('completion')
+      conclude_skipping_optional
+      @game.reset_player_state!
+      assert_equal 100, @game.score
+    end
+  end
+
   # 7.5c (m07 U5): an aim whose tasks are all optional completes only when every
   # task is settled, not on the first one; mixed aims are unchanged.
   class AllOptionalAimTest < ActiveSupport::TestCase

@@ -2,6 +2,7 @@
   "display_name": "Awareness check: helpdesk, before (AB)",
   "description": "A short check for IT service desk staff at Quayholt Insurance, a fictional company, taken before the awareness episodes (pair AB). Ten items from the IT service desk queue: calls, a voicemail, emails and a sign-in prompt. The result is kept so the matching after-check (awareness_post_helpdesk_ab) can show how the two compare.",
   "difficulty_level": 1,
+  "scoring": "completion",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

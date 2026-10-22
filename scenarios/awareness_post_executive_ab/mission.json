@@ -2,6 +2,7 @@
   "display_name": "Awareness check: executive PA, after (AB)",
   "description": "A short check for executive assistants and PAs at Merrin & Sallow Architects, a fictional practice, taken after the awareness episodes (pair AB). Ten new emails and voicemails from a PA's inbox, the same kinds as before. It is matched to the first check (awareness_pre_executive_ab), and the end screen compares the two results when the first check was finished.",
   "difficulty_level": 1,
+  "scoring": "completion",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

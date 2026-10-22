@@ -2,6 +2,7 @@
   "display_name": "Awareness E5: Sign-in pages (full episode)",
   "description": "A thirteen-minute awareness episode for all staff. On an authorised exercise at Quayholt Insurance, a fictional company, you first play the attacker: research what's public, build a look-alike sign-in page, and send one email carrying its link. Then you swap seats and check the pages that land behind links in a Quayholt inbox. Only the inbox check is scored, and reporting a real page never costs you anything.",
   "difficulty_level": 1,
+  "scoring": "completion",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

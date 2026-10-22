@@ -239,6 +239,8 @@ def check_scenario_directory_structure(erb_path)
       if missing_fields.any?
         issues << "❌ INVALID: mission.json is missing required fields: #{missing_fields.join(', ')}"
       end
+
+      issues.concat(check_mission_scoring(mission))
     rescue JSON::ParserError => e
       issues << "❌ INVALID: mission.json contains invalid JSON: #{e.message}"
     rescue StandardError => e
@@ -247,6 +249,29 @@ def check_scenario_directory_structure(erb_path)
   end
 
   issues
+end
+
+# mission.json "scoring" (read by BreakEscape::Mission#scoring_mode). An unknown
+# value is an error (the engine would silently fall back to "tasks"). With the
+# rendered scenario, warn when a mode that only reaches 100 on conclusion has no
+# missionConclusion aim, since such a mission can never score 100.
+SCORING_MODES = %w[tasks partial_then_complete completion].freeze
+
+def check_mission_scoring(mission, json_data = nil)
+  return [] unless mission.is_a?(Hash) && mission.key?('scoring')
+
+  mode = mission['scoring']
+  unless SCORING_MODES.include?(mode)
+    return ["❌ INVALID: mission.json 'scoring' is #{mode.inspect}; it must be one of #{SCORING_MODES.join(', ')} " \
+            "(or left out, which means tasks)"]
+  end
+  return [] if json_data.nil? || mode == 'tasks'
+
+  has_conclusion = (json_data['objectives'] || []).any? { |aim| aim.is_a?(Hash) && aim['missionConclusion'] }
+  return [] if has_conclusion
+
+  ["⚠️ WARNING: mission.json 'scoring' is \"#{mode}\" but no aim has missionConclusion:true, so " \
+   "mission_concluded_at is never set and the score can never reach 100"]
 end
 
 # Check for unknown fields in JSON that aren't in the schema
@@ -5376,6 +5401,12 @@ def main
     # Check objective task completion wiring
     puts "Checking objective task wiring..."
     wiring_issues = check_objectives_wiring(json_data, repo_root)
+    begin
+      scoring_mission = JSON.parse(File.read(File.join(File.dirname(erb_path), 'mission.json')))
+      wiring_issues.concat(check_mission_scoring(scoring_mission, json_data))
+    rescue StandardError
+      # mission.json problems were already reported by the directory check
+    end
     if wiring_issues.any? { |i| i.start_with?("❌") }
       puts "✗ Objective wiring check found #{wiring_issues.count { |i| i.start_with?('❌') }} error(s):"
       puts

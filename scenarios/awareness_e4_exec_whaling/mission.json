@@ -2,6 +2,7 @@
   "display_name": "Awareness E4: Executive whaling (full episode)",
   "description": "A thirteen-minute awareness episode for executive assistants and PAs. On an authorised exercise at Merrin & Sallow Architects, a fictional practice, you first play the attacker: research what's public about the travelling managing partner, then send one email to her PA that looks as if it came from her. Then you swap seats and work the PA's inbox a message like it lands in, including a voicemail in a copied voice. Only the inbox is scored, and checking or reporting a real message never costs you anything.",
   "difficulty_level": 1,
+  "scoring": "completion",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

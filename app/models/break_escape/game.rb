@@ -47,8 +47,21 @@ module BreakEscape
       status == 'completed' || mission_concluded_at.present?
     end
 
-    # Calculate task-based score (task completion scoring method)
+    # Calculate task-based score (task completion scoring method), shaped by the
+    # mission's scoring mode (mission.json "scoring"; see Mission#scoring_mode).
+    # "Concluded" means mission_concluded_at is set, not status == 'completed':
+    # Hacktivity's Finish button sets that status without a conclusion.
     def calculate_task_score
+      concluded = mission_concluded_at.present?
+      case mission&.scoring_mode
+      when 'completion'            then concluded ? 100.0 : 0.0
+      when 'partial_then_complete' then concluded ? 100.0 : [raw_task_score, 99.0].min
+      else                              raw_task_score
+      end
+    end
+
+    # 70 × tasks/total + 30 × aims/total. The default ("tasks") score.
+    def raw_task_score
       return 0.0 if total_tasks.zero?
 
       task_score = (tasks_completed.to_f / total_tasks) * 70
@@ -90,7 +103,10 @@ module BreakEscape
       initialize_player_state
       self.tasks_completed = 0
       self.objectives_completed = 0
-      self.score = 0
+      # 0 in the default mode, as before (the counts were just zeroed). In the
+      # partial_then_complete and completion modes a concluded game keeps 100,
+      # because a Restart never clears mission_concluded_at.
+      self.score = calculate_task_score.round
       save!
     end
 

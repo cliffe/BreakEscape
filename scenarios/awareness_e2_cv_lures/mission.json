@@ -2,6 +2,7 @@
   "display_name": "Awareness E2: CV lures (full episode)",
   "description": "A thirteen-minute awareness episode for HR and recruitment staff. On an authorised exercise at Tarrowby Logistics, a fictional haulier, you first play the attacker: research the open vacancy and the recruiter, then send one job application with a CV attached. Then you swap seats and sort the recruitment inbox a message like it lands in. Only the inbox is scored, and reporting a real message never costs you anything.",
   "difficulty_level": 1,
+  "scoring": "completion",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

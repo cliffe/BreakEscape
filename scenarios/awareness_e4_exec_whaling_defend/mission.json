@@ -2,6 +2,7 @@
   "display_name": "Awareness E4: Executive whaling (inbox only)",
   "description": "An eight-minute awareness episode for executive assistants and PAs, on the inbox side only. Sit in the PA's seat at Merrin & Sallow Architects, a fictional practice, while the managing partner travels: five emails and voicemails, some real and some made to trick you, one in a copied voice. Each answer is explained, and checking or reporting a real message never costs you anything.",
   "difficulty_level": 1,
+  "scoring": "completion",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",
