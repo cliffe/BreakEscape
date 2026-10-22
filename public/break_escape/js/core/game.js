@@ -202,6 +202,10 @@ export function preload() {
     this.load.tilemapTiledJSON('room_m10_hall', 'rooms/room_m10_hall.json'); // m10 Tomb Gamma server hall (old command room): plotting board, release console, racks, sealed hatch (4x2 GU, 20x10)
     this.load.tilemapTiledJSON('room_m10_gallery', 'rooms/room_m10_gallery.json'); // m10 Tomb Gamma gallery: walkway, slit windows, outer lock keypad (2x1 GU, 10x6)
     this.load.tilemapTiledJSON('room_m10_core', 'rooms/room_m10_core.json'); // m10 Tomb Gamma core: key console, core host terminal, service door (2x2 GU)
+    this.load.tilemapTiledJSON('room_se_engagement', 'rooms/room_se_engagement.json'); // lab_social_engineering hub: Tarnside logo, boards, meeting table, report desk (2x2 GU; from room_zds_conference)
+    this.load.tilemapTiledJSON('room_se_recon', 'rooms/room_se_recon.json'); // lab_social_engineering recon room: two research desks, org chart, notice board (2x2 GU; from room_zds_office)
+    this.load.tilemapTiledJSON('room_se_ops', 'rooms/room_se_ops.json'); // lab_social_engineering operations: desk banks with PCs and a phone (2x2 GU; from room_qdc_open)
+    this.load.tilemapTiledJSON('room_se_blueteam', 'rooms/room_se_blueteam.json'); // lab_social_engineering blue team: camera wall, SIEM board, monitoring desk (2x2 GU; from room_aes_security)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -1422,6 +1426,11 @@ export function preload() {
     this.load.image('m10_van_step2', 'objects/m10_van_step2.png');
     this.load.image('m10_work_lamp1', 'objects/m10_work_lamp1.png');
     this.load.image('m10_generator1', 'objects/m10_generator1.png');
+    this.load.image('se_logo_sign1', 'objects/se_logo_sign1.png');
+    this.load.image('se_sign_engagement1', 'objects/se_sign_engagement1.png');
+    this.load.image('se_sign_recon1', 'objects/se_sign_recon1.png');
+    this.load.image('se_sign_ops1', 'objects/se_sign_ops1.png');
+    this.load.image('se_sign_blueteam1', 'objects/se_sign_blueteam1.png');
 
     // Load audio files
     // NPC system sounds
