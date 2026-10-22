@@ -439,3 +439,8 @@ the orchestrator passes it to that wave's owner.
   - **Checks:** E7's role is everyone, so it gets no checks of its own; it reuses `general_form_a` and `_b`.
   - **Lint:** the full-episode lint must allow E7's unscored script attack. Relax it for `scored: false`, or wait for the voice-script stage.
   - **Library:** no tell exists for "voice alone is not proof", or for urgency on non-email items.
+- **E6 defend:**
+  - **Ids:** the episode is `e6_texts_and_qr`, with role `mobile`. The decision (orchestrator) is to keep E6's own mobile check forms, which means four more shells, `awareness_{pre,post}_mobile_{ab,ba}`.
+  - **Flip gap:** if E6's attack produces a text or a QR notice, the flip needs a way to show sms and qr.
+  - **Rendering:** a QR code inside an email body isn't drawn; it shows as an attachment chip.
+  - **Library:** "unexpected fee" and "sender not in contacts" aren't library tells.
