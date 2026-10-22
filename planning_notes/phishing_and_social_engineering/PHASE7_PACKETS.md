@@ -410,3 +410,15 @@ the orchestrator passes it to that wave's owner.
   - **Kiosk text:** it still says "Five messages are waiting" after the round is done.
   - **Cast:** Graham Whitfield and Farah Qureshi go into BRAND_SET.
 - **P7-W3:** `window.startAuthenticator(params)` is wired. In one run the Mission Brief showed after Esc closed the overlay; check this when the runner launches it. Use a fresh game for each run.
+- **P7-P, the schema and lint needs for the next validator pass (P7-X2, after the success-screen agent finishes with the schema):**
+  - **Stages:** a `build` stage, ordered osint → build → write, with `attack.landingPageId`, which names a landingPages id whose `targets` contains `attack.target`.
+  - **Call attacks:** `attack.callId` must be a pretextNpcs callId. When it is set, the mail account fields aren't needed.
+  - **Strings:** `strings.flipMissed`, `flipPageIntro`, `flipCallIntro` and an optional `continue`. Also `strings.facilitator {stage: string, pause: string}`.
+  - **Claim labels:** an optional warning when a `defend.calls` claim value has no intelFacts `provides` label.
+  - **Shell globals:** E5 shells declare `se_landing_pages: {}` and `landing_<id>_built` and `_domain`. E3 shells declare `pretext_<callId>_outcome` and `_state`.
+  - **Known gaps left:**
+    - The call watcher waits if a second call ends with the same outcome; opening the kiosk resumes anyway.
+    - "Try the other set" inside an episode drops the calls.
+- **P7-Y2:**
+  - Use `awarenessEpisode.mfa`, not `attack.pushStream`.
+  - E3 sets `attack.callId` and keeps `write` in its stages.
