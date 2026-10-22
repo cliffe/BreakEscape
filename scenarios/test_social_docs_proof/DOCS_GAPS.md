@@ -196,3 +196,63 @@ Not docs gaps, noted for whoever owns them:
   README says. Part 1 had written them as remarks; rewritten as prompts. Author error, not a gap.
 
 Severity count for run 3: 0 blockers, 2 majors (20, 21), 3 minors (22, 23, 24).
+
+---
+
+## Closure log, run 3 (2026-10-22)
+
+Each item checked against the code first.
+
+20. **CLOSED** (engine fix, gated; doc). The shape was right. The client never re-checked a
+    `globalVariable` condition when the global changed: only the server derived it, on load
+    (`Game#objectives_state_for_client`), and `checkAimCompletion` re-checks only `aimCompleted` /
+    `aimsCompleted`. Every shipped use (m03 `clone_call_done`, `exec_wing_night`, `night_explored`,
+    `perfect_stealth_earned`; m05 `torres_suspected`; m07 `server_hall_reached`; m02, m10, sis03 and the
+    tesseract scenarios) pairs the global with an explicit `unlockAim` mapping or `#unlock_aim` tag, so none
+    relies on the aim staying shut. To keep m01 to m10 exactly as they were, the fix is opt-in:
+    `ObjectivesManager#initialize(objectives, { liveGlobalUnlock })` calls the new `watchGlobalUnlocks`,
+    which listens on `global_variable_changed:<name>` for each such aim, unlocks it when the condition holds
+    (and once at load), and drops its listeners on re-initialise; `core/game.js` passes
+    `liveGlobalUnlock: !!gameScenario.social`, so only scenarios with a `social` block get it. README
+    "`unlockCondition`" now shows the `globalVariable` / `equals` shape and says when each kind is checked,
+    and what a non-social scenario must do (pair it with `unlockAim`). Test:
+    `test/js/objectives-global-unlock.test.mjs` (7 cases, including the non-live path staying locked).
+21. **CLOSED** (doc). `whyFine` is an object keyed by factor or channel-tell ids plus `default`
+    (schema `scenario-schema.json:1561`; lint `validate_social/triage.rb:411`; read in
+    `inbox-triage-minigame.js:548` for "Not a flag here" lines on any message, and `:563` for the real
+    mail's "why this one was fine" list, keyed lines first and `default` last). README "Inbox triage"
+    now says so, with a worked `truth` block.
+22. **CLOSED** (doc). An `eventMappings` `setGlobal` writes `gameState` and the cached stories
+    (`npc-manager.js` setGlobal, `broadcastGlobalVariableChange`), not the open chat's live story, so the
+    guard changes on the next open. A second pick never gives a second key: `NPCGameBridge.giveItem`
+    splices the item out of `itemsHeld` on the first give, so the second tag finds nothing and shows a
+    "doesn't have key (soc_key)" / "has no items to give" warning toast. README Authoring Rules, Ink, has a
+    new rule with the recommended guard (an ink-local `key_offered` set in the hand-over knot, alongside
+    the global).
+23. **CLOSED** (doc). `<character>_latched` is a string, default `""`: the latched threshold ids,
+    comma-separated in latch order (`social-influence.js` `getLatched` / `_writeLatch`). Added to the
+    README's "Declare every global a mechanic writes", with the ink test `{mara_latched ? "trusts"}`.
+24. **CLOSED** (validator fix; doc). The README was right. An own-line tag attaches to the next line of
+    text below it: compiled with `bin/inklecate` and run in inkjs, `#give_item` between two lines comes
+    with the second line's `Continue()`, and every chat path reads tags line by line
+    (`InkEngine.continue`, `PhoneChatConversation.collectSteps`). The check now warns only when no line of
+    text follows the tag (a divert, choice, gather, brace or end of file next), where the tag fires on a
+    later line or none. It moved into `give_item_placement_issues` in `scripts/validate_scenario.rb`, with
+    the same message text. Across every scenario ink this removes one warning, a false positive
+    (`m10_full_disclosure/ink/m10_vector.ink:45`, a tag between two Vector lines); the four that remain
+    (lab_intro_linux and lab_vulnerabilities `locksmith.ink:21`, test-tesseract-probes `tom.ink:21`, `:28`)
+    are real. The ink README's "Handovers" and the scenario README's tag rule now say the same thing. Test:
+    `test/js/validator-give-item-placement.test.mjs`.
+
+The two notes:
+
+- **Triage result count: CLOSED** (doc; test). The code matches design `05` ("headline numbers"):
+  `falseAlarms` is real mail given Report or Delete (`triage-scoring.js:143`). A false chip on real mail is a
+  false claim: it costs flag points (80 for Trust with one false flag) and counts in `falseByFactor`, not in
+  `falseAlarms`. Game 3243's "False alarms 0" was right. README "Inbox triage" now defines each result number.
+  Test added to `test/js/social-triage-scoring.test.mjs`.
+- **Harness: triage flag chips: CLOSED** (bridge fix). `.tri-chip` added to `clickControl`'s selector in
+  `systems/test-bridge/minigames.js` and to the identical controls selector in `BaseMinigame#getTestState`,
+  so indices from `getState().controls` still match what `clickControl(n)` clicks. Only the triage overlay
+  uses the class. `clickControl('Sender address')` (or the chip's index) now ticks the chip. Test:
+  `test/js/social-triage-bridge-chips.test.mjs` (jsdom). Not yet checked in a live browser.

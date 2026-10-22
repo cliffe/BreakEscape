@@ -60,8 +60,9 @@ export const minigameBridge = {
     async clickControl(indexOrLabel) {
         const mg = current();
         if (!mg) return fail('no-active-minigame');
+        // .tri-chip: inbox triage flag chips; same list as BaseMinigame#getTestState
         const buttons = Array.from(mg.container.querySelectorAll(
-            'button, [role="button"], a[href], .clickable, input[type="button"], input[type="submit"]'
+            'button, [role="button"], a[href], .clickable, input[type="button"], input[type="submit"], .tri-chip'
         )).filter(el => el.offsetParent !== null);
         // Indices shift as a minigame re-renders, so allow a label too — a
         // caller that means "the SUBMIT button" should be able to say so.

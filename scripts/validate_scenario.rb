@@ -708,6 +708,48 @@ def scenario_npc_records(json_data)
   records + headless_npc_records(json_data)
 end
 
+# Check for #give_item tags left after the last line of text they belong to.
+# A tag on its own line attaches to the next line of text below it (inkjs gives it
+# with that line's Continue(), and every chat reads tags line by line), so a tag
+# between two lines of text fires with the second one: that is the README's
+# "above the line it belongs to" and is fine (DOCS_GAPS gap 24). The case to warn
+# on is a tag after text with no text directly below it (a divert, choice, gather,
+# brace or the end of the file next): it then fires on whatever line prints next,
+# often in another knot, or with no line at all.
+def give_item_placement_issues(ink_lines, source_ink_path)
+  issues = []
+  ink_lines.each_with_index do |line, i|
+    stripped = line.strip
+    next unless stripped.start_with?('#give_item:')
+
+    # Find the nearest preceding non-blank line
+    j = i - 1
+    j -= 1 while j >= 0 && ink_lines[j].strip.empty?
+    next if j < 0
+
+    prev = ink_lines[j].strip
+    # Skip if preceding line is a tag, choice, divert, code, knot/stitch header, comment, or brace
+    next if prev.start_with?('#', '*', '+', '->', '~', '=', '//', '{', '}')
+    next if prev.empty?
+
+    # Skip if a line of text follows (past blank lines and further tag lines):
+    # the tag belongs to that line
+    k = i + 1
+    k += 1 while k < ink_lines.size && (ink_lines[k].strip.empty? || ink_lines[k].strip.start_with?('#'))
+    if k < ink_lines.size
+      nxt = ink_lines[k].strip
+      next unless nxt.start_with?('*', '+', '-', '<-', '~', '=', '//', '{', '}')
+    end
+
+    item_type = stripped.sub(/^#give_item:/, '').strip
+    issues << "⚠️ WARNING: '#{source_ink_path}' line #{i + 1}: '#give_item:#{item_type}' appears after " \
+              "a text/dialogue line. Move '#give_item:#{item_type}' to the line immediately BEFORE " \
+              "the dialogue so the item transfer fires on the same story.Continue() call. " \
+              "Wrong: dialogue → tag. Correct: tag → dialogue."
+  end
+  issues
+end
+
 def check_ink_files(json_data, base_dir, scenario_dir = nil)
   issues = []
   ink_files_to_check = Set.new
@@ -781,34 +823,9 @@ def check_ink_files(json_data, base_dir, scenario_dir = nil)
         issues << "❌ INVALID: '#{npc_path}' references ink file '#{source_ink_path}' but compilation failed: #{e.message}"
       end
 
-      # Check for #give_item tags placed after a dialogue/text line.
-      # In Break Escape, the tag must appear BEFORE the dialogue line so that the item transfer
-      # fires on the same story.Continue() call as the text that describes it. A tag on the
-      # line immediately after dialogue is attached to that preceding text in Ink semantics,
-      # which in some engine paths causes the tag to fire on a later Continue() with no NPC
-      # context, silently dropping the item give.
       begin
         ink_lines = File.readlines(full_ink_path)
-        ink_lines.each_with_index do |line, i|
-          stripped = line.strip
-          next unless stripped.start_with?('#give_item:')
-
-          # Find the nearest preceding non-blank line
-          j = i - 1
-          j -= 1 while j >= 0 && ink_lines[j].strip.empty?
-          next if j < 0
-
-          prev = ink_lines[j].strip
-          # Skip if preceding line is a tag, choice, divert, code, knot/stitch header, comment, or brace
-          next if prev.start_with?('#', '*', '+', '->', '~', '=', '//', '{', '}')
-          next if prev.empty?
-
-          item_type = stripped.sub(/^#give_item:/, '').strip
-          issues << "⚠️ WARNING: '#{source_ink_path}' line #{i + 1}: '#give_item:#{item_type}' appears after " \
-                    "a text/dialogue line. Move '#give_item:#{item_type}' to the line immediately BEFORE " \
-                    "the dialogue so the item transfer fires on the same story.Continue() call. " \
-                    "Wrong: dialogue → tag. Correct: tag → dialogue."
-        end
+        issues.concat(give_item_placement_issues(ink_lines, source_ink_path))
 
         # Cross-reference: every #give_item:type used in this file must match an item
         # in the NPC's itemsHeld array. If not, the give will silently fail at runtime.

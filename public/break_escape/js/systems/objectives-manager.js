@@ -24,8 +24,13 @@ export class ObjectivesManager {
   /**
    * Initialize objectives from scenario data
    * @param {Array} objectivesData - Array of aim objects from scenario
+   * @param {Object} [options]
+   * @param {boolean} [options.liveGlobalUnlock] - open a locked aim as soon as
+   *   its globalVariable unlockCondition becomes true (see watchGlobalUnlocks).
+   *   game.js passes true only for a scenario with a `social` block, so the
+   *   Licence to Hack missions keep checking the condition on load only.
    */
-  initialize(objectivesData) {
+  initialize(objectivesData, options = {}) {
     if (!objectivesData || !objectivesData.length) {
       console.log('📋 No objectives defined in scenario');
       return;
@@ -76,7 +81,9 @@ export class ObjectivesManager {
     
     // Reconcile with current game state (handles items collected before objectives loaded)
     this.reconcileWithGameState();
-    
+
+    this.watchGlobalUnlocks(!!options.liveGlobalUnlock);
+
     this.initialized = true;
     console.log(`📋 Objectives initialized: ${this.aims.length} aims, ${Object.keys(this.taskIndex).length} tasks`);
     this.notifyListeners();
@@ -712,6 +719,38 @@ export class ObjectivesManager {
     const cond = aim && aim.unlockCondition;
     if (!cond || !cond.globalVariable) return false;
     return !this.isUnlockConditionMet(aim);
+  }
+
+  /**
+   * Live globalVariable unlocks (DOCS_GAPS gap 20). Without this, a
+   * globalVariable unlockCondition is checked only when the game loads (the
+   * server derives it, Game#objectives_state_for_client), so the aim opens in
+   * play only if something also calls unlockAim (an eventMapping or an
+   * #unlock_aim tag), which is how m03, m05 and m07 do it. With live set, the
+   * manager listens on global_variable_changed:<name> for every such aim and
+   * unlocks it when the condition holds; it also checks once now, for a global
+   * already set before the objectives loaded. unlockAim is idempotent, so a
+   * scenario that also calls it gets one unlock and one notification.
+   */
+  watchGlobalUnlocks(live) {
+    (this._globalUnlockSubs || []).forEach(([name, fn]) => this.eventDispatcher?.off?.(name, fn));
+    this._globalUnlockSubs = [];
+    if (!live || !this.eventDispatcher) return;
+
+    const check = () => {
+      this.aims.forEach(aim => {
+        if (aim.status !== 'locked' && !(aim.status === 'active' && aim.revealedEarly)) return;
+        if (!aim.unlockCondition?.globalVariable) return;
+        if (this.isUnlockConditionMet(aim)) this.unlockAim(aim.aimId);
+      });
+    };
+    const names = new Set(this.aims.map(a => a.unlockCondition?.globalVariable).filter(Boolean));
+    names.forEach(name => {
+      const event = `global_variable_changed:${name}`;
+      this.eventDispatcher.on(event, check);
+      this._globalUnlockSubs.push([event, check]);
+    });
+    if (names.size) check();
   }
 
   /**

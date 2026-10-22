@@ -1664,7 +1664,9 @@ export async function create() {
     // This must happen in create() because gameScenario isn't available until now
     if (gameScenario.objectives && window.objectivesManager) {
         console.log('📋 Initializing objectives from scenario...');
-        window.objectivesManager.initialize(gameScenario.objectives);
+        // Lab games (a `social` block) open a globalVariable-gated aim as soon as
+        // the global changes; other scenarios keep the load-time check only
+        window.objectivesManager.initialize(gameScenario.objectives, { liveGlobalUnlock: !!gameScenario.social });
         
         // Create UI panel (dynamically import to avoid circular dependencies)
         import('../ui/objectives-panel.js').then(module => {

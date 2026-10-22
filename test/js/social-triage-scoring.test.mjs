@@ -195,3 +195,30 @@ test('deterministic and does not mutate its input', () => {
     assert.deepEqual(a, b);
     assert.equal(JSON.stringify({ messages, answers }), before);
 });
+
+// DOCS_GAPS run 3: "False alarms 0" after a false flag on real mail. falseAlarms counts real
+// mail given a phish verdict (Report or Delete), per 05 "headline numbers"; a wrong chip on
+// real mail is a false claim (falseByFactor, and the 40 -> 20 flag points), not a false alarm.
+test('falseAlarms: real mail reported or deleted counts; a false chip on trusted real mail does not', () => {
+    const real = [
+        { id: 'priya', truth: { isPhish: false, flags: [] } },
+        { id: 'jed', truth: { isPhish: false, flags: [] } },
+        { id: 'it', truth: { isPhish: false, flags: [] } },
+    ];
+    const flagOnly = scoreTriage({ messages: real, profile: 'analyst', answers: [
+        { id: 'priya', verdict: 'trust', flags: ['senderTrust'] },
+        { id: 'jed', verdict: 'trust', flags: ['none'] },
+        { id: 'it', verdict: 'trust', flags: ['none'] },
+    ] });
+    assert.equal(flagOnly.falseAlarms, 0);
+    assert.equal(flagOnly.perMessage[0].score, 80);
+    assert.deepEqual(flagOnly.perMessage[0].falseClaims, ['senderTrust']);
+    assert.deepEqual(flagOnly.falseByFactor, { senderTrust: 1 });
+
+    const verdicts = scoreTriage({ messages: real, profile: 'analyst', answers: [
+        { id: 'priya', verdict: 'report', flags: ['none'] },
+        { id: 'jed', verdict: 'delete', flags: ['none'] },
+        { id: 'it', verdict: 'trust', flags: ['none'] },
+    ] });
+    assert.equal(verdicts.falseAlarms, 2);
+});

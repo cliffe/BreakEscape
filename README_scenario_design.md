@@ -1465,7 +1465,15 @@ Aims can be locked until prerequisites are met:
 ```json
 "unlockCondition": { "aimCompleted": "survey_offices" }
 "unlockCondition": { "aimsCompleted": ["return_intel", "deactivate_the_launch"] }
+"unlockCondition": { "globalVariable": "torres_suspected", "equals": true }
 ```
+
+`aimCompleted` and `aimsCompleted` are checked whenever an aim completes. They only order the aims: a locked aim also shows as soon as one of its tasks completes, makes progress or is unlocked.
+
+`globalVariable` is a story gate. The aim stays hidden, even while its tasks move, until the global holds. `equals` compares the value exactly (`"equals": "trusts"`, `"equals": 3`); leave it out, or set it to `true`, and any truthy value opens the aim. The global must be declared in `globalVariables`. When the condition is checked depends on the scenario:
+
+- **A scenario with a `social` block** (the lab games): the aim opens as soon as the global changes, and on load.
+- **Any other scenario** (m01 to m10 among them): the condition is checked only when the game loads (the server derives it from the saved globals). Setting the global in play does not open the aim. Open it at the same moment with `"unlockAim"` on the mapping that sets the global, or an `#unlock_aim:<aimId>` tag beside the ink that sets it, as m03, m05 and m07 do. The `unlockCondition` then keeps it open after a reload.
 
 ---
 
@@ -1866,7 +1874,8 @@ These are the mistakes that most often leave a mission unfinishable or silently 
 
 - **Never end an NPC conversation in `DONE` or `END`.** Re-talking an ended story shows "(End of conversation)". Every exit is `#exit_conversation` on its own line, then `-> hub` (or `-> after_choice`).
 - **Guard once-only decision scenes.** Use `{fate != "": -> after_choice}`, or talking again replays the scene and overwrites the outcome.
-- **Put action tags above the line they belong to.** Use `#give_item:<type>:<itemId>`, with the id on the NPC's `itemsHeld` entry, and set "given" globals from an `item_picked_up:<type>` mapping, not in ink.
+- **Put action tags above the line they belong to.** A tag on its own line attaches to the next line of text below it, so a tag between two lines of a knot fires with the second; it need not be the knot's first line. Don't leave one after the knot's last line with only a divert, choice or `}` below it (the validator warns). Use `#give_item:<type>:<itemId>`, with the id on the NPC's `itemsHeld` entry, and set "given" globals from an `item_picked_up:<type>` mapping, not in ink.
+- **A mapping's global doesn't reach the chat that is open.** An `eventMappings` `setGlobal` (the `item_picked_up` one above included) writes `gameState` and the cached stories, not the story of the conversation on screen, so a choice or status line guarded on that global changes only when the chat is next opened. Guard a hand-over choice on an ink-local flag as well, set in the hand-over knot before the tag: `VAR key_offered = false`, `~ key_offered = true` in the knot, and `+ {not soc_key_given and not key_offered} [Can I have the SOC key?]`. Picking the choice twice never gives a second key (the first give removes it from `itemsHeld`; the second shows a "doesn't have" or "has no items to give" warning toast), so the flag is there to keep that toast and the stale offer off the screen.
 - **An `EXTERNAL` needs an ink fallback function of the same name and arity.** The engine turns ink fallbacks on, so an unbound external runs its fallback (`=== function se_influence(delta, reason) ===`, returning a neutral value such as 0). Without a fallback it still throws, story-wide, at the first `Continue()`. The chats bind only six read-only externals and the bark path binds none, so every external must have a fallback. For state, prefer synced-global `VAR`s.
 - **`setVariable` does no arithmetic.** `"x + 1"` assigns the string. Use one boolean per item instead of a counter.
 - **First-meeting openers need their own knot that diverts.** Choices in a `{cond: ...}` block without a divert merge into the next hub and are lost after one pick.
@@ -1963,7 +1972,7 @@ Lab examples: `{"type": "case-file", "minigameData": {"mode": "scope"}}` is the 
 
 **Tasks complete on globals, never on an overlay closing.** The board, OSINT browser and report treat Close and Esc as a normal exit, so their completion event fires whether or not the player did anything (triage closed before its result is an abort). Each mechanic writes a global instead (`se_intel_<id>`, `target_ready_<id>`, `roe_signed`, `triage_pass`, `report_filed` and so on), and a start-room NPC's `eventMappings` completes the task on `global_variable_changed:<name>` with `"condition": "value === true"` and `"onceOnly": true`. In the lab that NPC is Ruth, in the start room, because an NPC in a room the player hasn't visited hears nothing (see [Common bugs](#common-bugs-and-how-to-avoid-them)).
 
-**Declare every global a mechanic writes.** The lints list them: the influence global and `<character>_latched`, every threshold `setGlobal` target, both lockout globals, `se_intel_<id>` (default `false`) for every fact, `target_ready_<id>`, `osint_done`, the engagement block and step globals, the four triage result globals, and the object-valued state globals `se_board_state`, `se_osint_state` and `se_report_state` (default `{}`). An undeclared name still holds its value in the game but is silently not synced into ink, and a social global must not come from `importGlobals`.
+**Declare every global a mechanic writes.** The lints list them: the influence global (a number, default the character's `influence.start`) and `<character>_latched` (a string, default `""`: the ids of the thresholds latched now, comma-separated in the order they latched, such as `"wary"` or `"wary,refuses"`; ink can test it with `?`, as in `{mara_latched ? "trusts"}`), every threshold `setGlobal` target, both lockout globals, `se_intel_<id>` (default `false`) for every fact, `target_ready_<id>`, `osint_done`, the engagement block and step globals, the four triage result globals, and the object-valued state globals `se_board_state`, `se_osint_state` and `se_report_state` (default `{}`). An undeclared name still holds its value in the game but is silently not synced into ink, and a social global must not come from `importGlobals`.
 
 ### Influence (`social.characters` and `social.influenceDisplay`)
 
@@ -2260,7 +2269,7 @@ A `triage-workstation` object opens a set by `minigameData.triageSetId`. `conclu
 | `pairedWith` | In a `training` set, offers a button to try the paired set |
 | `playerSentAuth` | `{ accounts: { <accountId>: auth }, domains: { <domainId>: auth } }`: the header results to show for the player's own mail, by the account it was sent from and the landing domain it linked. `{account_address}` and `{domain}` are the only placeholders |
 
-An authored message is an email: `{ id, from, to, subject, time, body, links[], attachments[], auth, truth, unread?, forwardedBy? }`. `{{link:<id>}}` in `body` places a link; a link is `{ id, text, destination }`, where `text` is what the email shows and `destination` where it really goes. `auth` is `{ spf, dkim, dmarc, envelopeFrom?, replyTo?, summary? }`. `truth` carries the answer: `isPhish`, `flags[]` (factor or channel-tell ids), `perFlagNote` (a line per flag), `whyFine` (for real mail), `ifTrusted`, `headerNote` and `reportReply`. From the lab:
+An authored message is an email: `{ id, from, to, subject, time, body, links[], attachments[], auth, truth, unread?, forwardedBy? }`. `{{link:<id>}}` in `body` places a link; a link is `{ id, text, destination }`, where `text` is what the email shows and `destination` where it really goes. `auth` is `{ spf, dkim, dmarc, envelopeFrom?, replyTo?, summary? }`. `truth` carries the answer: `isPhish`, `flags[]` (factor or channel-tell ids), `perFlagNote` (a line per flag), `whyFine` (for real mail), `ifTrusted`, `headerNote` and `reportReply`. `perFlagNote` and `whyFine` are objects; the other notes are strings. From the lab:
 
 ```json
 { "id": "lookalike_payroll",
@@ -2275,9 +2284,19 @@ An authored message is an email: `{ id, from, to, subject, time, body, links[], 
     "reportReply": "Thanks. This has been marked as a phish." } }
 ```
 
+`whyFine` is an object, not a string: its keys are factor or channel-tell ids, plus `default`. A real message needs one (the lint errors without it, and warns when it has no `default`). A false flag on any message shows the line for that flag after "Not a flag here:", or `default` when the flag has no line of its own. The review card of a real message lists every line, keyed ones first and `default` last, as "why this one was fine":
+
+```json
+"truth": { "isPhish": false, "flags": [],
+  "whyFine": { "senderTrust": "Priya's address is the real ledgerwell.example one, and the reply-to matches.",
+               "default": "Nothing here asks you to act fast or go anywhere new." } }
+```
+
 A `playerSent` entry is `{ id, kind: "playerSent", targetId, fromMailbox?, domainFrom?, notes }`. It is replaced by the player's latest sent mail to that target that raised a sender tell (else the latest with any tell), shown with the `playerSentAuth` row for the account it came from. If the player never sent such a mail, the entry is left out of the round. `notes` holds the same note fields as `truth`.
 
 **Scoring.** Each message is worth 100: 60 for the verdict and 40 for the flags. Analyst sets give a phish 60 for Report, 30 for Delete and 0 for Trust, and the flags `40 × (caught − false) / flags`; real mail gets 60 for Trust and 20 for Report. The round's percent is the mean.
+
+The result panel's numbers: **Phish caught** (phish given Report or Delete), **Reported rather than just deleted**, **Real mail trusted**, and in analyst sets **False alarms**, which counts real mail given Report or Delete (design `05`). A wrong chip on real mail is not a false alarm: it costs that message's flag points (a Trust with one false flag scores 80) and shows "Not a flag here" on the card, and it never reaches the count.
 
 **Saving the result.** The starter writes the four globals without announcing them, waits until the server confirms the save, and only then emits `global_variable_changed` for the names that changed (`done` last) and `inbox_triage_completed`. `<prefix>pass` is never cleared by a lower round, `percent` and `reportRate` keep the best round, and `done` is set at any score. The lab's task `triage_passed` completes on `global_variable_changed:triage_pass`.
 
