@@ -478,3 +478,5 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - 2026-10-22 m09 scenario design closed at R5 (0/0/1/2; fixes applied after).
 - m09 scenario design R5 (phase 3 closed): status row 'Keep moving' outside the cage (in_cage in the HaX ink); 'the Initiative's recruiting interviews'; ring (b) out of the comment and S4. Voiced delta: 0.
 - m09 dialogue R4 fixes: 4/4 + 5 nits (tape room topic on card held; no stamp in the cage; Nightshade's file named; the door at the end of it; WREN repeat, Torres 'line', the Recruiter's tape, Sorensen shreds, reels line true on a cold start). Voiced: 3 reworded (378).
+- m10 scenario design R2 + dialogue R2: the ending warning names the open backdoor first, T-59 and Nightshade's hint fixed, silent-branch tether asked at once, Wendell's bark guarded; dialogue nits. Voiced: +2, -1, 6 reworded.
+- 2026-10-22 m09 dialogue closed at R5 (0/0/0, 3 nits).
