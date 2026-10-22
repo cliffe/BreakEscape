@@ -436,3 +436,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - m09 alignment R5: 0/0/2 (Tran KO before flag 1 still lets Tran 'send the guard'; three docs lag the R4 fixes).
 - m09 alignment R5 fixes: 2/2.
 - m09 alignment R6: 0/0/2 (Victoria-route 'She's still feeding it.' after the cage is opened; contract doc cells).
+- m09 alignment R6 fixes and contract sweep: §2.3 regenerated from the build (47 HaX texts), 10 stale cells fixed, 6 missing texts added; §3.7/§4.5 already matched.

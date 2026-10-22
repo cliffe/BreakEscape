@@ -205,7 +205,8 @@ hax_maps << text_map("global_variable_changed:cage_opened", "value === true && g
 hax_maps << { "eventPattern" => "global_variable_changed:nightshade_file_held", "condition" => "value === true && globalVars.cage_opened && !globalVars.legacy_clock_run", "onceOnly" => true, "setGlobal" => { "legacy_clock_run" => true } }
 hax_maps << { "eventPattern" => "room_exited", "condition" => "data.roomId === 'restricted_cage' && globalVars.cage_opened && !globalVars.legacy_clock_run", "setGlobal" => { "legacy_clock_run" => true } }
 hax_maps << text_map("room_entered:restricted_cage", nil, "That cabinet takes a print. She stamps everything.", delay: 2000)
-hax_maps << text_map("room_entered", "globalVars.flag2_submitted && !globalVars.hatch_talked", "She's still feeding it.")
+# Alignment R6 r6-1: not once the cage is open (she has left the hatch).
+hax_maps << text_map("room_entered", "globalVars.flag2_submitted && !globalVars.hatch_talked && !globalVars.cage_opened", "She's still feeding it.")
 
 # Sorensen knocked down (S4 §4; S5 §10 item 21). Her fate keeps 'talked'.
 hax_maps << { "eventPattern" => "npc_ko:sorensen", "condition" => "globalVars.sorensen_fate !== 'talked'", "onceOnly" => true, "setGlobal" => { "sorensen_fate" => "ko" } }

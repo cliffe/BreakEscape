@@ -24,7 +24,7 @@ Stage 9 pastes these as `sendTimedMessage` mappings on `agent_0x99` (unvoiced, n
 | A3-06d | (A3-06b's string) | as A3-06c | `onceOnly`, `delayMs: 5000` |
 | A3-06e | The legacy files are under Noor's desk. Let her shred the rest. | `global_variable_changed:cage_opened` with `value === true && globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted` | `onceOnly`. **Fixed** |
 | A3-07 | Hold his file next to the notebook scan in my case file. Then tell me what you see. | `global_variable_changed:nightshade_file_held` with `value === true && !globalVars.flag3_submitted` | `onceOnly`. **Fixed**. Stage 8 m-03: the same event's HaX mapping also has `unlockTask: "match_the_hand"` (the task now ships `locked`) |
-| A3-08 | She's still feeding it. | `room_entered` with `globalVars.flag2_submitted && !globalVars.hatch_talked` | `onceOnly`. **Fixed** |
+| A3-08 | She's still feeding it. | `room_entered` with `globalVars.flag2_submitted && !globalVars.hatch_talked && !globalVars.cage_opened` (alignment R6 r6-1) | `onceOnly`. **Fixed** |
 | A3-09 | She's sixty-six. | `npc_ko:sorensen` | `onceOnly`. **Fixed** |
 | A3-10 | She's done with that box. | `npc_ko:sorensen` with `globalVars.legacy_clock_run` | `onceOnly`, `delayMs: 5000` (after A3-09). **Fixed** |
 | A3-11 | Her cracker. Use it anyway. | first `room_entered:sorensen_office` with `globalVars.sleeper_named` | `onceOnly`, before the safe. **Fixed** |
