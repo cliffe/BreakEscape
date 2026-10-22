@@ -272,6 +272,10 @@ export class PhoneChatMinigame extends MinigameScene {
         
         // Preload intro messages for NPCs without history
         await this.preloadIntroMessages();
+
+        // Closed while the intros were preloading (open and close in quick succession):
+        // the UI is torn down (elements = {}), so there is no thread or list to show
+        if (!this.gameState.isActive) return;
         
         // If NPC ID provided, open that conversation directly
         if (this.currentNPCId) {
@@ -330,6 +334,8 @@ export class PhoneChatMinigame extends MinigameScene {
      * @param {string} npcId - NPC identifier
      */
     async openConversation(npcId) {
+        // The phone was closed before this ran (a deferred reopen, e.g. back from notes)
+        if (!this.gameState.isActive) return;
         const npc = this.npcManager.getNPC(npcId);
         if (!npc) {
             console.error(`❌ NPC not found: ${npcId}`);
@@ -348,7 +354,11 @@ export class PhoneChatMinigame extends MinigameScene {
         
         // Initialize conversation modules
         this.history = new PhoneChatHistory(npcId, this.npcManager);
-        this.conversation = new PhoneChatConversation(npcId, this.npcManager, this.inkEngine);
+        const conversation = new PhoneChatConversation(npcId, this.npcManager, this.inkEngine);
+        this.conversation = conversation;
+        // After each await: the phone may have closed (cleanup() nulls this.conversation)
+        // or the player opened another contact. Either way this open is stale.
+        const stale = () => this.conversation !== conversation;
         
         // Show conversation view
         this.ui.showConversation(npcId);
@@ -356,6 +366,7 @@ export class PhoneChatMinigame extends MinigameScene {
         // A preload of this contact's opening may still be running (the inventory starts
         // one when the phone is picked up); let it finish so its lines are in the thread
         await PhoneChatConversation.waitForPreload(npc);
+        if (stale()) return;
 
         // Load conversation history
         const history = this.history.loadHistory();
@@ -430,6 +441,7 @@ export class PhoneChatMinigame extends MinigameScene {
         }
         
         const loaded = await this.conversation.loadStory(storySource);
+        if (stale()) return;
         if (!loaded) {
             this.ui.showNotification('Failed to load conversation', 'error');
             return;
@@ -450,6 +462,7 @@ export class PhoneChatMinigame extends MinigameScene {
         if (this.params?.pretextCallId) {
             try { this._pretext = await attachPretext(this, { chat: 'phone' }); }
             catch (e) { console.warn('⚠️ pretext attach failed:', e.message); }
+            if (stale()) return;
         }
 
         // Saved ink flags for this contact (from before a reload). A restored

@@ -203,6 +203,7 @@
           "type": "object",
           "properties": {
             "title": {"type": "string"},
+            "readyToast": {"type": "string", "minLength": 1, "description": "Body of the 'Ready to approach' toast. Optional: by default it is built from each ready target's channels (systems/social-intel.js readyToastText)."},
             "people": {"type": "array", "items": {"type": "string"}},
             "readinessSlots": {
               "type": "object",
@@ -400,7 +401,6 @@
           "type": "object",
           "description": "The engagement (design 10, 00 §11)",
           "properties": {
-            "client": {"type": "string", "description": "Not read by code yet"},
             "scopeNote": {"type": "string"},
             "roe": {
               "type": "object",
@@ -435,7 +435,25 @@
                     "additionalProperties": false
                   }
                 },
-                "indicators": {"type": "array", "description": "Optional in design 03; not read yet"}
+                "indicatorsIntro": {"type": "string", "description": "Line above the indicators step; a default is shown when omitted"},
+                "indicators": {
+                  "type": "array",
+                  "description": "Optional indicators step (design 03). Each is shown only when a sent message carries its tell; the player marks it Block or Let through. Gates onCompleteGlobal only through a declared step it names",
+                  "items": {
+                    "type": "object",
+                    "required": ["id", "tell", "text", "block", "why"],
+                    "properties": {
+                      "id": {"type": "string", "minLength": 1},
+                      "tell": {"type": "string", "minLength": 1, "description": "A tell id on the sent record (senderTrust, senderAuth, linkCredible, urgencyCalibrated)"},
+                      "text": {"type": "string", "minLength": 1},
+                      "block": {"type": "boolean", "description": "The right mark: true for Block, false for Let through"},
+                      "why": {"type": "string", "minLength": 1},
+                      "step": {"type": "string"}
+                    },
+                    "patternProperties": {"^_": {}},
+                    "additionalProperties": false
+                  }
+                }
               },
               "patternProperties": {"^_": {}},
               "additionalProperties": false
@@ -1592,6 +1610,66 @@
         "targetId": {"type": "string"},
         "fromMailbox": {"type": "string"},
         "domainFrom": {"type": "string", "enum": ["landing_domain"]},
+        "earlier": {
+          "description": "sms: earlier bubbles in the thread",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["text"],
+            "properties": {"text": {"type": "string"}, "time": {"type": "string"}},
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "duration": {"type": "string", "description": "voicemail: display length such as 0:41"},
+        "callerId": {"type": "string", "description": "call: the caller id line"},
+        "transcript": {
+          "description": "call (required) and voicemail (optional, else body): the lines spoken",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["text"],
+            "properties": {"who": {"type": "string"}, "text": {"type": "string"}},
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "qr": {
+          "description": "qr: the printed notice's code (triage-kinds.js)",
+          "type": "object",
+          "required": ["destination"],
+          "properties": {"destination": {"type": "string"}, "location": {"type": "string"}, "caption": {"type": "string"}},
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "page": {
+          "description": "page: the browser card",
+          "type": "object",
+          "required": ["url"],
+          "properties": {
+            "url": {"type": "string"},
+            "padlock": {"type": "boolean"},
+            "heading": {"type": "string"},
+            "fields": {"type": "array", "items": {"type": "string"}},
+            "button": {"type": "string"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "push": {
+          "description": "push: the MFA prompt",
+          "type": "object",
+          "required": ["app"],
+          "properties": {
+            "app": {"type": "string"},
+            "request": {"type": "string"},
+            "account": {"type": "string"},
+            "location": {"type": "string"},
+            "device": {"type": "string"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
         "notes": {
           "type": "object",
           "properties": {
@@ -1652,6 +1730,18 @@
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
+        },
+        "comparison": {
+          "description": "05 N11: the pre/post panel after a post round; false turns it off",
+          "oneOf": [
+            {"type": "boolean", "enum": [false]},
+            {
+              "type": "object",
+              "properties": {"prePrefix": {"type": "string"}, "requireGlobal": {"type": "string"}},
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            }
+          ]
         },
         "messages": {"type": "array", "items": {"$ref": "#/definitions/socialTriageMessage"}}
       },
