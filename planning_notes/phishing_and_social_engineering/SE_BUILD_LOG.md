@@ -370,6 +370,26 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
   every engine change is opt-in (`hintsByFactor`, `lockedHint`) or gated to the social systems
   (pretext/lockout/mail/report), which m01–m10 do not use.
 
+- **Dialogue review C1** (Opus, `scenarios/lab_social_engineering/DIALOGUE_REVIEW_C1.md`): 40 ranked line-level proposals. The voices are mostly sound. Top issues:
+  - Tomasz's "messages look familiar" choice spoils the own-mail reveal before triage.
+  - Fairbairn signs twice.
+  - The "no names" condition can be missed.
+  - The law (Computer Misuse Act) is never named.
+  - The genuine forwarded balance-sheet mail uses a phishing excuse and can't carry the DKIM it claims.
+  - Dev never names the portal.
+  - Dev's lines ignore his influence band, and the team reaction repeats.
+  - Teaching accuracy: the padlock claim, "all fail" when DKIM is none, the throwaway-address rationale, the unresolved opening invoice.
+  - The "X, not Y" slogan is overused.
+
+  **Decision (orchestrator):** accept the reversal on Dev naming the portal (item 6). Ruth's hint already tells the student to get it from him, so the earlier "no change" left the hint false. Apply C1 after R3 reports, on opus48, because it touches the call ink and the triage mail.
+
+- **Lab re-run R3** (Sonnet, game 3196, `playtests/R3.md`): start to end screen, 23/23, score 100, no console edits. These checks pass: the phone key rungs, the Lord link hint, Dev's lockout reason and goodbye line, the clean second transcript, the call-prep stale mark and "needs N", the in-panel Confirm message, the triage restart notice, the report showing the domain that landed, and the mail times. Still failing:
+  - The door `lockedHint` never reaches the client, because `filtered_scenario_for_bootstrap` in `game.rb:770` whitelists the room fields. The Node tests read the raw scenario.
+  - H3 still fires on guest when the student picks the own-From template.
+  - H1's soft rung is unreachable in practice, because every factor has a keyed hint.
+
+  Minors: the link hint doesn't tell missing from wrong; Dev's "Last change" line carries over; the call globals are stale between calls; replies arrive for missed sends; the first Close after a miss goes back to compose. Fix round 5 on opus48: `playtests/FIX_ROUND_R3.md`, which also applies C1.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
