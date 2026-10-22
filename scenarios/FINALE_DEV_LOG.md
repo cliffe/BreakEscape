@@ -454,3 +454,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - m09 puzzle chains R3 fixes: 2/2 (Tran topic retires only after the hatch bin or on tidied, warning said once; letters line "He's the J.T. in them. Show him."). Optional letters text not added. Voiced delta: 0.
 - m10 alignment R8 fixes: 3/3 (no lock deals after the lock opens for recruited Victoria and Vos; Gary's pick keeps a knocked-out Imran's ko; escaped Voltage's stand-down survives a later knock-out). Voiced delta: +2 (Victoria, Gary).
 - Queued for m10 phase 5 browser checks: post-lock Victoria/Vos resting; Gary with Imran knocked out; escaped Voltage knocked out after stand-down.
+- m09 puzzle chains R4 fixes: 2/2 (Tran topic open past the gate once the bin is chosen; pre-hatch line "paper with his name on it"). Voiced delta: 0.

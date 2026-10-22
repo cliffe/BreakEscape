@@ -811,7 +811,8 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     -> support_hub
 // 17. Tran.
 // Alignment R4 r4-2: not once Tran is talked off the wipe or down.
-+ {not tran_topic_given and not cage_opened and tran_outcome == "left"} [Tran.]
+// Puzzle chains R4 m1: past the gate only once the bin is chosen (the default bin reads derek_file before any choice).
++ {not tran_topic_given and (bin_chosen or not cage_opened) and tran_outcome == "left"} [Tran.]
     // Puzzle chains R3 m1: retire only once the answer can't change (the bin is chosen,
     // or tidied). Before the hatch a second ask gives the bin's line after it.
     {bin_chosen or m08_nightshade_tidied:
@@ -832,7 +833,7 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     - cage_bin == "letters":
         You've got the letters. He's the J.T. in them. Show him.
     - else:
-        You'd need something he wants to talk him off it. Otherwise it's a fight.
+        You'd need paper with his name on it to talk him off it. Otherwise it's a fight.
     }
     -> support_hub
 // 18. Field guides, one button.
