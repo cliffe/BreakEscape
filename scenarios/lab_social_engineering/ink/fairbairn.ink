@@ -10,6 +10,7 @@
 VAR roe_signed = false
 VAR report_filed = false
 VAR fairbairn_condition_heard = false
+VAR fairbairn_payoff_heard = false
 
 VAR met = false
 VAR signed_scene = false
@@ -17,18 +18,23 @@ VAR said_payoff = false
 VAR quiet = false
 
 === start ===
-{ met: -> resume }
+{ met: -> hub }
 ~ met = true
-Gareth Fairbairn: We weren't introduced properly. Gareth. Forty years I've had this firm, and every one of them is out there.
--> resume
-
-// Checked on every open: play a pending scene if one is due, else the hub.
-=== resume ===
-{ report_filed and not said_payoff: -> payoff }
-{ roe_signed and not signed_scene: -> sign }
+Gareth Fairbairn: We weren't introduced properly. Gareth. Forty years I've had this firm, and I hired most of that floor myself.
 -> hub
 
+// Play a pending scene if one is due, then return to the hub body. Run as a tunnel
+// at the top of `hub` (like Ruth's recheck/keys), so an engine-resumed reopen that
+// lands at `hub` still fires the sign or payoff scene it would otherwise only play
+// from `start` (lab R4 D1). sign and payoff set their own once-flags, so the tunnel
+// is a no-op on every later open.
+=== scenecheck ===
+{ report_filed and not said_payoff: -> payoff }
+{ roe_signed and not signed_scene: -> sign }
+->->
+
 === hub ===
+-> scenecheck ->
 {
 - quiet:
     ~ quiet = false
@@ -41,25 +47,30 @@ Gareth Fairbairn: We weren't introduced properly. Gareth. Forty years I've had t
     -> why
 + [I'll leave you to it.]
     #exit_conversation
-    Gareth Fairbairn: Aye. Mind the sheet.
+    { roe_signed:
+        Gareth Fairbairn: Aye. Go gently with them.
+    - else:
+        Gareth Fairbairn: Aye. Mind the sheet.
+    }
     -> hub
 
 === sign ===
 ~ signed_scene = true
 Gareth Fairbairn: Right. I'll sign it.
 Narrator: He reads the sheet to the end, then puts his name at the bottom.
-Ruth Adeyemi: That signature is the difference between a test and a crime. Without it, this is the Computer Misuse Act. Same goes elsewhere.
+Ruth Adeyemi: That signature is the difference between a test and a crime. Without it, this is an offence under the Computer Misuse Act. Most countries have one like it.
 Gareth Fairbairn: One condition. No names in anything I read. If someone clicks, that's my training's fault, not theirs.
 #set_global:fairbairn_condition_heard:true
 ~ quiet = true
--> hub
+->->
 
 === payoff ===
 ~ said_payoff = true
 Gareth Fairbairn: I've read your report. Not one name in it, just like I asked.
-Gareth Fairbairn: I can hand that to the whole firm and nobody feels hunted. Thank you.
+Gareth Fairbairn: She'll read it too, the one who nearly paid that invoice. Nothing in it points at her. Thank you.
+#set_global:fairbairn_payoff_heard:true
 ~ quiet = true
--> hub
+->->
 
 === trust ===
 Gareth Fairbairn: I trust you to be straight about the gaps and kind about the people. That's the whole test.

@@ -40,7 +40,7 @@ VAR email_attachment = "none"
 }
 { email_first_fail:
 - "senderTrust": Melanie Pierce: Sorry, who is this? I don't have you in my contacts.
-- "addressedTo": Melanie Pierce: There's no name on this. Anyone who knew me would have used it.
+- "addressedTo": Melanie Pierce: Whoever sent this didn't use my name. Anyone who knew me would have.
 - "pretextRelevant": Melanie Pierce: I'm not expecting anything like this. Twenty years in retail taught me to check before I click.
 - "attachmentPlausible": { email_attachment == "missing": Melanie Pierce: You mention a file, but nothing's attached. | Melanie Pierce: That isn't a spreadsheet I can open. }
 - else: Melanie Pierce: I'm not sure what this is, to be honest.

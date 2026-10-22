@@ -31,7 +31,7 @@ VAR email_link = "none"
     -> DONE
 }
 { email_landed:
-    Sofia Lord: Oh, the payslip — I've been waiting for this. Logging in now.
+    Sofia Lord: Oh, my first payslip! I've been waiting for this. Logging in now.
     ~ se_influence(10, "linkCredible")
     #set_global:phish_lord_landed:true
     -> DONE

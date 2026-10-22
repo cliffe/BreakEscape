@@ -372,7 +372,10 @@ test('linkCredible is required when the target has an expectedLink: no link is "
   assert.equal(f.mode, 'required');
   assert.equal(r.landed, false);
   assert.equal(r.tells.includes('linkCredible'), false);  // a missing link has no domain
-  assert.equal(r.link, 'fail');
+  // result.link (the ink's email_link) reports a missing page as 'none', distinct from a
+  // wrong page ('fail'), so the victim can say "there's no link here" (lab R4 F7). The factor
+  // state above stays 'missing'.
+  assert.equal(r.link, 'none');
 });
 
 test('linkCredible: a link whose kit item has no built page is missing and raises no tell', () => {
@@ -487,14 +490,41 @@ test('H2: hintsByFactor keys the hint to the factor that failed, falling back to
   assert.equal(evaluateMessage(keyed, fail(), ctx({ priorFailures: 0 })).hint, null);
 });
 
-test('F3: the first repeated miss shows the soft rung even when the factor is keyed; keyed advice from the second', () => {
-  // Every required factor keyed, as in the live Pierce/Lord targets. The soft ladder rung
-  // must still reach the student on the first repeated miss (lab R3 F3), then the keyed advice.
-  const fail = () => ({ ...pierceLand(), templates: { ...pierceLand().templates, pretext: 'pretext_generic' }, attachment: 'kit_balance_sheet' });
-  const keyed = { ...T.pierce, hintsByFactor: { pretextRelevant: 'What does she expect to receive, and from whom?' } };
-  assert.equal(evaluateMessage(keyed, fail(), ctx({ priorFailures: 0 })).hint, null);            // first miss: nothing
-  assert.equal(evaluateMessage(keyed, fail(), ctx({ priorFailures: 1 })).hint, T.pierce.hints[0]); // soft rung, not the keyed line
-  assert.equal(evaluateMessage(keyed, fail(), ctx({ priorFailures: 2 })).hint, 'What does she expect to receive, and from whom?');
+test('A2/F2: linkCredible hint keys a missing page vs a wrong one', () => {
+    // The scenario authors linkCredible as { missing, wrong }; the engine picks by state.
+    // Before the fix the scenario carried a bare string, so both misses read the same line.
+    const keyed = { ...T.lord, hintsByFactor: { ...T.lord.hintsByFactor,
+        linkCredible: { missing: 'NO PAGE: build one', wrong: 'WRONG ADDRESS: check the domain' } } };
+    const noPage = evaluateMessage(keyed, lordLand({ link: null, linkInfo: null }), ctx({ priorFailures: 2 }));
+    assert.equal(noPage.firstFail, 'linkCredible');
+    assert.equal(noPage.hint, 'NO PAGE: build one');
+    const wrong = evaluateMessage(keyed, lordLand({ linkInfo: FX.linkInfo.below }), ctx({ priorFailures: 2 }));
+    assert.equal(wrong.firstFail, 'linkCredible');
+    assert.equal(wrong.hint, 'WRONG ADDRESS: check the domain');
+});
+
+test('F3/D6: the soft rung shows first only when the first required factor failed, else the keyed hint', () => {
+  // hints[0] is authored about the first required factor (senderTrust). The soft rung is the
+  // gentle first-repeated-miss nudge (lab R3 F3) only when senderTrust is the factor that
+  // failed. If an earlier factor passed and a later one failed, the soft rung would misfit,
+  // so the first repeated miss shows the keyed hint instead (lab R4 D6/A3).
+  const keyed = { ...T.pierce, hintsByFactor: {
+    senderTrust: 'Who does she trust in Finance?',
+    pretextRelevant: 'What does she expect to receive, and from whom?'
+  } };
+  // A miss on a LATER factor (pretextRelevant; senderTrust passes).
+  const laterFail = () => ({ ...pierceLand(), templates: { ...pierceLand().templates, pretext: 'pretext_generic' }, attachment: 'kit_balance_sheet' });
+  assert.equal(evaluateMessage(keyed, laterFail(), ctx({ priorFailures: 0 })).hint, null);             // first miss: nothing
+  assert.equal(evaluateMessage(keyed, laterFail(), ctx({ priorFailures: 1 })).firstFail, 'pretextRelevant');
+  assert.equal(evaluateMessage(keyed, laterFail(), ctx({ priorFailures: 1 })).hint, 'What does she expect to receive, and from whom?');
+  assert.equal(evaluateMessage(keyed, laterFail(), ctx({ priorFailures: 2 })).hint, 'What does she expect to receive, and from whom?');
+  // A miss on the FIRST required factor (senderTrust fails from a spoof-capable account): the
+  // soft rung fits, so it still shows on the first repeated miss, then the keyed advice.
+  const senderFail = { ...pierceLand(), headerFrom: { name: 'portal_full', address: 'portal_address' },
+    slots: { ...pierceLand().slots, sender_name: 'portal_full', sender_address: 'portal_address' } };
+  assert.equal(evaluateMessage(keyed, senderFail, ctx({ priorFailures: 1 })).firstFail, 'senderTrust');
+  assert.equal(evaluateMessage(keyed, senderFail, ctx({ priorFailures: 1 })).hint, T.pierce.hints[0]);
+  assert.equal(evaluateMessage(keyed, senderFail, ctx({ priorFailures: 2 })).hint, 'Who does she trust in Finance?');
 });
 
 test('H3/F2: an account-aware senderTrust hint — spoof-capable, own-From and a forced account', () => {

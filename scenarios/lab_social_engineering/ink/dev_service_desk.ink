@@ -38,6 +38,12 @@ VAR team_checked = false
 ~ return 0
 
 === start ===
+// Per-call state (06 "Calling again"): a fresh call restarts here (restartAfterEnd
+// -> start), so reset the team acknowledgement, or the second call opens silently
+// because team_checked carried over from the first (lab R4 D4). A mid-call reload
+// resumes at the open choices, not here, so its state is preserved. Influence is
+// reset separately by person-chat-pretext's new_call.
+~ team_checked = false
 Dev: Service desk, Dev speaking. What can I do for you?
 -> desk
 
@@ -74,6 +80,10 @@ Dev: Service desk, Dev speaking. What can I do for you?
     -> desk
 }
 { band == 1:
+    { said == "urgent_payslip" or said == "name_drop_manager":
+        Dev: Okay, slow down a sec. I still need to check who she is.
+        -> desk
+    }
     Dev: Okay. Slow down a sec for me.
 }
 { said == "urgent_payslip":
@@ -92,7 +102,7 @@ Dev: Service desk, Dev speaking. What can I do for you?
     ~ team_checked = true
     { pretext_team_value:
     - "finance": Dev: Finance, lovely. New intern, that'll be Sofia. What's she after?
-    - "accounts": Dev: Accounts? We folded Accounts into Finance a couple of years back. Who is she?
+    - "accounts": Dev: Accounts? We folded Accounts into Finance a couple of years back. What's she after?
     - else: Dev: Right, bear with me a sec.
     }
 }
@@ -102,7 +112,7 @@ Dev: Service desk, Dev speaking. What can I do for you?
 { result:
 - 1:
     { ask_id == "payslip_date":
-        Dev: Course. Payslips go out Monday the 6th this month. There you go.
+        Dev: Monday the 6th. Tell her not to spend it all at once.
     - else:
         Dev: Course. It's LedgerPay. Notices come from payroll-notices at our domain, same as every month. There you go.
     }

@@ -186,6 +186,24 @@ test('N4: renderChecklist shows the escalating hint only on a failed send that c
 
 // ── end-to-end send through the shell + scheduler ────────────────────────────
 
+// First scene-creating test in this file: its overlay's capture-phase Esc handler is the only
+// one on the document, so a dispatched Escape reaches it (later tests leave their scenes active).
+test('A5/F4: Esc on the checklist after a miss closes the client in one press, not back to the inbox', () => {
+    clock = 0;
+    const { scene, host } = openClient();
+    // A miss (no attachment): the checklist shows with Edit & resend, the client still open.
+    scene._handleComposeSend(message({ attachment: null, attachmentKind: null }));
+    assert.ok(host.querySelector('.mail-checklist'), 'checklist shown after the miss');
+    assert.ok(scene.getTestState().overlay.layers.includes('checklist'), 'checklist is an Esc layer');
+    assert.equal(scene.gameState.isActive, true, 'client still open on the checklist');
+    // Esc with the checklist on top: it now closes the whole client, matching the Close button
+    // (lab R4 F4/A5), rather than popping back to the inbox and needing a second press.
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    assert.equal(host.querySelector('.mail-checklist'), null, 'checklist dismissed');
+    assert.equal(scene.gameState.isActive, false, 'the client closed in one press');
+    scene.cleanup();
+});
+
 test('a landed send: Sent record, text job, metrics, attempts global, checklist, then reply', () => {
     clock = 0;
     const { scene, scheduler, host } = openClient();

@@ -52,8 +52,14 @@ function personName(person) {
     return f.full || f.first || person?.name || person?.id || '';
 }
 
-/** A readable name for a metrics target id: the target's own, else a contact's, else the person's. */
-function targetNameResolver(social) {
+/**
+ * A readable label for a metrics target id: the target's own name, else a contact's, else the
+ * person's. When `preferRole` is set (engagement.report.labelBy === "role"), the target's or
+ * contact's `role` is used instead, so the results table names no individual — the no-blame
+ * lesson the SE lab's report is built around (lab R4 D3/F8). A target with no role falls back
+ * to the name as before, so a scenario that does not opt in is unaffected.
+ */
+function targetNameResolver(social, preferRole = false) {
     const people = Array.isArray(social?.people) ? social.people : [];
     const byId = new Map(people.map((p) => [p.id, p]));
     const contacts = Array.isArray(social?.mailClient?.contacts) ? social.mailClient.contacts : [];
@@ -63,8 +69,12 @@ function targetNameResolver(social) {
     const targetById = new Map(targets.filter((t) => t && t.id).map((t) => [t.id, t]));
     return (targetId) => {
         const t = targetById.get(targetId);
-        if (t && (t.name || t.displayName)) return t.name || t.displayName;
         const c = byTarget.get(targetId);
+        if (preferRole) {
+            if (t && t.role) return t.role;
+            if (c && c.role) return c.role;
+        }
+        if (t && (t.name || t.displayName)) return t.name || t.displayName;
         if (c) {
             if (c.name) return c.name;
             if (c.person && byId.has(c.person)) return personName(byId.get(c.person));
@@ -122,7 +132,7 @@ export function buildReportModel(social, globals, mailState) {
 
     // ── results: mail ───────────────────────────────────────────────────────
     const metrics = mailState && typeof mailState.metrics === 'object' && mailState.metrics ? mailState.metrics : {};
-    const nameOf = targetNameResolver(social);
+    const nameOf = targetNameResolver(social, block.labelBy === 'role');
     const mail = Object.keys(metrics).map((targetId) => {
         const m = metrics[targetId] && typeof metrics[targetId] === 'object' ? metrics[targetId] : {};
         return {

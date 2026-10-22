@@ -515,6 +515,10 @@ export function createDoorSpritesForRoom(roomId, position) {
             difficulty: lockProps.difficulty || connectedRoomData?.difficulty,  // Include difficulty from scenario
             isSideDoor: isSideDoor,  // Track if this is a side (E/W) door for animation purposes
             door_sign: connectedRoomData?.door_sign || null,
+            // Opt-in locked-door hint (SE lab): tells the player where the key comes from.
+            // Doors/rooms without the field get null, so unlock-system.js keeps the plain
+            // "Requires key" line and shipped missions behave exactly as before.
+            lockedHint: lockProps.lockedHint ?? connectedRoomData?.lockedHint ?? null,
             biometricMatchThreshold: lockProps.biometricMatchThreshold ?? connectedRoomData?.biometricMatchThreshold ?? null,
             // Password/PIN pad options (the answer in `requires` is never sent to the client)
             maxAttempts: lockProps.maxAttempts ?? connectedRoomData?.maxAttempts ?? null,

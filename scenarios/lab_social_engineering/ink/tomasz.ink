@@ -15,6 +15,7 @@ VAR triage_pass = false
 VAR profile_done = false
 VAR triage_done = false
 VAR dev_reported = false
+VAR fairbairn_payoff_heard = false
 VAR phish_pierce_attempts = 0
 VAR pretext_service_desk_call_outcome = ""
 VAR pretext_service_desk_call_lowest = 0
@@ -29,7 +30,10 @@ VAR quiet = false
 ~ met = true
 Tomasz: You're the one giving me a headache this week. Good. I asked for it.
 Tomasz: Tomasz. I run security here, me and half a person's budget.
-{ triage_pass and profile_done:
+{
+- triage_pass and profile_done and not fairbairn_payoff_heard:
+    Tomasz: You've beaten me to both. Gareth's been asking after you, mind. See him first if you like, then we'll close this out.
+- triage_pass and profile_done:
     Tomasz: You've beaten me to both — the inbox triaged and the fixes picked. Keen. Sit down and we'll close this out.
 - else:
     Tomasz: Two jobs for you. Triage that inbox at the workstation, then flip the board and pick the fixes.
@@ -41,8 +45,14 @@ Tomasz: Tomasz. I run security here, me and half a person's budget.
 {
 - quiet:
     ~ quiet = false
+- triage_pass and profile_done and not fairbairn_payoff_heard:
+    Tomasz: Both done. Gareth's been asking after you, mind. See him first if you like, then we'll close this out.
 - triage_pass and profile_done:
     Tomasz: Both done. Sit down, let's close this out.
+- triage_pass:
+    Tomasz: Inbox done. The board's the other half.
+- profile_done:
+    Tomasz: Fixes picked. Now the inbox.
 - else:
     Tomasz: Come back when you've finished the exercise. Both halves.
 }
@@ -50,7 +60,7 @@ Tomasz: Tomasz. I run security here, me and half a person's budget.
     -> debrief
 + {triage_done and not explained_own} [Two of those emails were mine.]
     -> own_mail
-+ {not explained_dev} [Why does the service desk keep coming up?]
++ {not explained_dev} [Dev on the service desk — what's the gap?]
     -> dev_finding
 + [Remind me what SPF, DKIM and DMARC check.]
     Tomasz: SPF: was this server allowed to send for that domain. DKIM: did that domain sign it, unchanged.
@@ -77,11 +87,13 @@ Tomasz: We're writing Dev a script, not a warning. Call back on a number we hold
 -> hub
 
 === debrief ===
-Tomasz: Here's what it showed. An open inbox trusts anyone. A From line is just a label. And a padlock only means the line's private.
+Tomasz: Here's what it showed. An open inbox trusts anyone, a From line is just a label, and a padlock only tells you nobody's listening in.
 { phish_pierce_attempts == 1:
     Tomasz: Melanie first try. A borrowed name gets past a lot of careful people.
 }
 {
+- dev_reported and pretext_service_desk_call_outcome == "got_it":
+    Tomasz: Dev reported the first call — credit to him — but your call-back still got the date. A call-back rule to a number on file stops both.
 - dev_reported:
     Tomasz: And Dev reported you. Credit to him — but a call-back rule would have caught it without him noticing a thing.
 - pretext_service_desk_call_outcome == "got_it" and pretext_service_desk_call_lowest >= 0:
@@ -91,9 +103,7 @@ Tomasz: Here's what it showed. An open inbox trusts anyone. A From line is just 
 - else:
     Tomasz: And Dev gave you enough to write Sofia's email. A call-back to a number on file stops every line of that.
 }
-Tomasz: So: DMARC to enforcement, a banner on outside mail, metadata stripped, a call-back script for the desk.
-Tomasz: And a bookmarked portal with a report button, so anyone can check before they type a password.
-Tomasz: If you could fix one thing here tomorrow, what would it be?
+Tomasz: That report's got five fixes in it. I'll get budget for one this year, if I'm lucky. Which would you pick?
 + [A call-back rule on the service desk.]
     Tomasz: Cheapest fix on the list, and it would have stopped Sofia's whole chain. Good pick.
     -> debrief_close
@@ -105,7 +115,7 @@ Tomasz: If you could fix one thing here tomorrow, what would it be?
     -> debrief_close
 
 === debrief_close ===
-Tomasz: Whichever it is, the report names nobody. Blame them once and they stop telling us. Thanks for playing it straight.
+Tomasz: Gareth's pinning your report up in the kitchen. No names on it, so nobody's hiding from it. Thanks for playing it straight.
 #complete_task:closing_debrief
 #exit_conversation
 -> END

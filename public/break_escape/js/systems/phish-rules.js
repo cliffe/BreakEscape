@@ -438,7 +438,11 @@ export function evaluateMessage(target, message, ctx) {
       factors.push(entry(target, id, { pass: !urgencyOver, state: urgencyOver ? 'overdone' : 'pass', mode: 'advisory' }));
     } else if (id === 'linkCredible') {
       const state = judgeLink(message);
-      linkState = state === 'pass' ? 'pass' : state === 'none' ? 'none' : 'fail';
+      // result.link (the ink's email_link) distinguishes no page at all from a wrong one, so a
+      // victim can say "there's no link here" vs "that link isn't our portal" (lab R4 F7).
+      // judgeLink returns 'missing' when no link/page is attached; the factor entry keeps that
+      // state (the missing/wrong hint reads it), but email_link reports it as 'none'.
+      linkState = state === 'pass' ? 'pass' : state === 'fail' ? 'fail' : 'none';
       factors.push(entry(target, id, { pass: state === 'pass', state, mode }));
     }
   }
@@ -472,9 +476,18 @@ export function evaluateMessage(target, message, ctx) {
   // content. The ladder (hints[hintIndex]) is still the fallback for a factor with no keyed
   // hint, and for a send that only failed the open check (no required factor to key on).
   const firstFail = failedRequired.length ? failedRequired[0] : null;
+  // H3b (lab R4 D6/A3): hints[0] is authored about the first required factor (for Lord,
+  // "only trusts the portal's own notices" — senderTrust). On the first repeated miss it is
+  // the gentle nudge, but only when the first required factor is the one that failed. If an
+  // earlier factor passed and a later one failed (Lord's sender passes, the link fails), the
+  // softest rung describes the wrong fault, so show the factor-keyed hint from the first
+  // repeated miss instead. When the failing factor has no keyed hint, the ladder still applies.
+  const firstRequired = factors.find((f) => f.mode === 'required');
+  const firstFactorFailed = !!(firstFail && firstRequired && firstFail.id === firstRequired.id);
   let hint = null;
   if (!landed && prior >= 1) {
-    const keyed = prior >= 2 ? selectFactorHint(target, firstFail, header) : null;
+    const useKeyed = prior >= 2 || (prior === 1 && !firstFactorFailed);
+    const keyed = useKeyed ? selectFactorHint(target, firstFail, header) : null;
     if (isStr(keyed)) hint = keyed;
     else if (hints.length) hint = hints[hintIndex];
   }

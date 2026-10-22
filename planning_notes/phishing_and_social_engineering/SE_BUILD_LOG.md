@@ -597,3 +597,109 @@ process from jsdom global collisions — each passes in isolation and tests code
 Ruby `filtered_scenario_test` 20/20. No shipped mission (m01–m10) scenario, ink or audio touched; the
 engine changes only affect consumers of `phishTargets`/`social` (SE lab), and the influence-bar
 `new_call` boundary is SE-only (no m01–m10 social characters).
+
+## Lab fix round 6 — R4 findings + dialogue review C2 (2026-10-22)
+
+Brief: `scenarios/lab_social_engineering/playtests/FIX_ROUND_R4.md`, detail from `R4.md` and
+`DIALOGUE_REVIEW_C2.md`. Every Part A fix is proven on the path the game runs (a live bridge, or a
+test that drives the real data and the real engine module), because round 5 reported fixes that never
+reached the live game.
+
+### Corrections to round-5 claims that did not land
+- **Door hint.** Round 5 fixed the bootstrap filter, so `gameScenario.rooms.recon_room.lockedHint`
+  reached the client, but `doors.js` never copied the field onto the door sprite, so the toast stayed
+  "Requires key". Now fixed at the sprite (below) and proven live.
+- **`linkCredible`.** Round 5's engine already read `{ missing, wrong }`, but the scenario still held a
+  bare string at the Lord target, so the split never showed. Now an object.
+- **Dev's "Last change".** Round 5's seed scan stopped at `new_call`, but the live bar also seeds from
+  the service log before the reset is recorded and is cleared by the live `new_call` event only now.
+- **Pierce's `ownFrom` hint.** Round 5's log claimed the rung; it was not in the scenario. Added.
+
+### Part A — R4 findings (live-path proofs)
+- **A1 door hint (F1, major).** `doors.js` `doorProperties` now carries
+  `lockedHint: lockProps.lockedHint ?? connectedRoomData?.lockedHint ?? null`, beside the pad options
+  wired the same way; `unlock-system.js` already reads `lockable.doorProperties?.lockedHint`. A door/room
+  without the field gets `null`, so shipped missions are unchanged. **Proof:** live bridge
+  `tools/playtest/se/bridge-r4-door.jsonl` on a fresh game (3199) on :3001 — the live recon door sprite
+  in `window.rooms.engagement_office.doorSprites` carries `doorProperties.locked === true` and the exact
+  `lockedHint`; `check-bridge.mjs` RESULT: PASS (3/3). Source-pin also in `engine-fixes-engine-a`.
+- **A2 wrong-page link hint (F2).** Lord's `hintsByFactor.linkCredible` is now `{ missing, wrong }`.
+  **Proof:** `social-phish-rules` test "A2/F2" drives `evaluateMessage` with a no-page send (state
+  missing → missing rung) and a wrong-domain send (state fail → wrong rung).
+- **A3 / D6 hint ladder.** The first repeated miss shows the soft rung `hints[0]` only when the first
+  required factor failed; when an earlier factor passed and a later one failed (Lord's sender passes,
+  the link fails), it shows the factor-keyed hint instead. **Proof:** `social-phish-rules` test "F3/D6"
+  (later-factor miss → keyed on prior 1; first-factor miss → soft rung on prior 1, keyed on prior 2).
+- **A4 / F3 / D12 Dev "Last change".** `influence-bar.js` `_onEvent` now treats reason `new_call` as a
+  call boundary: it clears the change line and never shows itself, so a fresh call opens with no stale
+  line regardless of whether the bar mounted before or after the reset. **Proof:** `social-influence-bar`
+  test "live: a new_call reset event…" (plus the existing seed-boundary test).
+- **A5 / F4 close behaviour.** Esc on the mail checklist now closes the whole client (via
+  `requestClose`), matching the Close button; "Edit & resend" stays the one path that keeps the composer.
+  **Proof:** `social-mail-bridge` test "A5/F4" drives the real `MailClientMinigame` in jsdom: a miss, a
+  dispatched Escape, checklist dismissed and `gameState.isActive === false` in one press.
+- **A6 / D1 Fairbairn reopens at his hub.** The `sign` and `payoff` scenes are now a `scenecheck` tunnel
+  at the top of `hub` (Ruth's recheck/keys pattern), so an engine-resumed reopen fires a due scene even
+  when the student spoke to him before signing. **Proof:** new `social-lab-fairbairn-scenes.test.mjs`
+  drives the compiled `fairbairn.json` the way the loader does (restore + `ChoosePathString(hub)`): the
+  sign scene and its CMA line fire on the reopen after signing, the payoff on the reopen after filing,
+  each once.
+- **A7 hub-reopen audit.** Audited every lab ink. Only Fairbairn had start-only content; fixed above.
+  Ruth person/phone already route stage checks through the hub (`social-lab-ruth-keys`,
+  `social-lab-ruth-phone-keys`); Tomasz's both-done and reveals are reachable from `hub`; Dev is a call
+  (per-call reset handled in D4); Lord/Pierce are headless email. New per-NPC reopen test added for
+  Fairbairn.
+- **A8 Dev's second call (D4/D5/D7).** D4: `~ team_checked = false` at the top of `dev_service_desk`'s
+  `start` resets the team acknowledgement per fresh call (a fresh call restarts at `start` via
+  `restartAfterEnd`; a mid-call reload resumes at the choices, so its state is kept). D5: "Who is she?"
+  after the student named her → "What's she after?". D7: Tomasz's debrief now branches on the outcome
+  first, so a reported-then-recovered call reads "Dev reported the first call … your call-back still got
+  the date" rather than only "Dev reported you".
+- **A9 / D3 / F8 report names people.** The report results table now labels rows by role, not name, via
+  an opt-in `engagement.report.labelBy: "role"` read by `report-model.js` (falls back to name when a
+  target has no role, so other scenarios are unaffected). Rows read Careers / Finance / Finance intern.
+  Tomasz's close no longer says "the report names nobody" verbatim (item 5). **Proof:** the role resolver
+  is covered by the report model; the scenario carries the flag and the contacts' `role`.
+- **F5** (reported/dev_reported stay true after a good second call): addressed by the D7 branch reorder;
+  the report row already reads it as two calls (round 5). **F6** (Ruth's phone neutral line on a
+  half-successful reported call) and **F9** (Dev thread menu after a call): logged, not changed — F6 is
+  an edge of `pretext_call_done` being set by the portal grant; both are minor and low-value to force.
+- **F7 reply/miss mismatch.** `phish-rules.js` no longer collapses a missing link to `link: 'fail'`:
+  `result.link` is `'none'` for no page, `'fail'` for a wrong one, so Lord says "There's no link here"
+  vs "That link isn't our portal". Pierce's addressedTo miss reworded to cover a wrong name as well as
+  none. **Proof:** `social-phish-rules` test "linkCredible … no link is missing" updated to `link === 'none'`.
+
+### Part B — dialogue review C2 (30 proposals)
+Applied 1–28 and 30, with judgement. Orchestrator decisions honoured: item 2 (throwaway-address reason =
+real applicants write from webmail), item 23 (`mission.json` edited), item 27 (engine checked first).
+- **Item 27 engine check:** on a repair turn `pretext-judge.js` consumes the line's technique and shows
+  only the repair tell (it splices the candour technique out), so the candour technique tell and the
+  repair tell can never render on the same turn — no same-turn duplication exists. The repair tell was
+  still made distinct and informative ("Corrected. Dev now has Finance, the team on his record.") per the
+  review's secondary reason.
+- **Item 11** swaps the invoice/bank-change times (invoice 09:25, bank-change 10:05) and gives the
+  bank-change body a sort code and account, so the fraud rides on the real invoice (also fixes D14).
+- **Item 29 (typo-squat terminology) SKIPPED:** the review itself defers it to the page-builder owner
+  (Phase 5, Haiku); I did not open design 07 or the builder.
+- D-items beyond the C2 list: D8 (Ruth brief/key double lines → `quiet`), D9 logged as a residual (the
+  `quiet` flag can swallow a reopened greeting; a full fix needs engine work on `quiet` persistence and is
+  out of this round's scope), D10 (two meanings of "the other half" → reworded + `quiet`), D11 ("every one
+  of them" → "I hired most of that floor myself"; stale "Mind the sheet" → conditional), D13 (service-desk
+  choice reworded so it no longer presupposes Tomasz raised it), D15 (stale "the post doesn't name it" →
+  "…but the service desk does").
+
+### Gates
+- Node: every touched-area suite green per file — `social-*`, `validator-social-*`,
+  `social-lab-fairbairn-scenes` (new), `engine-fixes-engine-a`, and the door/unlock tests. Two updated
+  assertions in `social-phish-rules` (F7 `link === 'none'`; F3/D6 soft-rung-vs-keyed) reflect the
+  intended behaviour change. Running the whole `test/js` set in one process still shows the known flaky
+  "Unable to deserialize cloned data" runner IPC error (non-deterministic file count); every such file
+  passes in isolation.
+- Validator: `validate_scenario.rb scenarios/lab_social_engineering/scenario.json.erb --no-graph
+  --skip-ink --strict-social` → schema passed, no errors (only the standard lab suggestions and two
+  pre-existing phone-avatar recommended-field notes).
+- All 7 lab ink files recompiled to their `.json` (inklecate).
+- No shipped mission (m01–m10) scenario, ink or audio touched. The only cross-mission engine change is
+  the additive `lockedHint` on `doorProperties` (null default → identical behaviour); the rest are
+  SE-only (phishTargets/social consumers, the SE influence bar, the SE mail checklist, the opt-in report
+  `labelBy`).

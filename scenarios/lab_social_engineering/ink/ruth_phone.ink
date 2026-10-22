@@ -13,6 +13,7 @@
 // ================================================
 
 VAR roe_signed = false
+VAR fairbairn_condition_heard = false
 VAR plan_done = false
 VAR osint_done = false
 VAR se_intel_username_convention = false
@@ -73,9 +74,13 @@ Ruth Adeyemi: On the sheet still?
 // ---- Stage 1: scope and plan ----
 === stage1 ===
 { plan_done: -> hub }
-Ruth Adeyemi: Gareth's signed. The whiteboard next.
-+ [Did Gareth say anything?]
-    Ruth Adeyemi: He signed in person, by the window. Go and hear his one condition before you plan.
+{ fairbairn_condition_heard:
+    Ruth Adeyemi: Gareth's signed. The whiteboard next.
+- else:
+    Ruth Adeyemi: Sheet's done. Gareth wants to sign it himself, by the window. Then the whiteboard.
+}
++ {not fairbairn_condition_heard} [Does Gareth need me?]
+    Ruth Adeyemi: He signs in person, and he's got one condition. Hear it before you plan.
     -> stage1
 + [What objective do I pick?]
     Ruth Adeyemi: The one that ends in a report of the gaps. Nothing broken, nobody's password kept.
@@ -101,7 +106,7 @@ Ruth Adeyemi: Recon's next. If that door's locked, I've got the key — come and
     Ruth Adeyemi: Open her careers inbox on the page and select it. Her backlog post only shows then.
     -> stage2
 + {not se_intel_username_convention} [I can't work out the username pattern.]
-    Ruth Adeyemi: Open the published PDF and read its properties — who made it, and how. That's the gate.
+    Ruth Adeyemi: Open the published PDF and read its properties. The author field gives the username pattern away.
     -> stage2
 + [Got it.] #exit_conversation
     Ruth Adeyemi: Good luck.
@@ -111,8 +116,8 @@ Ruth Adeyemi: Recon's next. If that door's locked, I've got the key — come and
 === stage3 ===
 { phish_pierce_landed: -> hub }
 Ruth Adeyemi: Operations now. If that door's locked, I've got the key — come and see me.
-+ {not acct_freemail} [Do I write from the guest account?]
-    Ruth Adeyemi: Set up a throwaway address first, so nothing comes back to Tarnside.
++ {not phish_pierce_landed} [Which account do I send from?]
+    Ruth Adeyemi: For Chris, a throwaway webmail address: real applicants use one. For Melanie, the guest account, because it lets you set the From line.
     -> stage3
 + {not phish_hampshire_landed} [Chris isn't biting.]
     Ruth Adeyemi: Her careers inbox trusts anyone. Apply as a candidate, and attach a CV from the kit.
@@ -151,7 +156,7 @@ Ruth Adeyemi: Operations now. If that door's locked, I've got the key — come a
 // ---- Stage 5: hard phish to Lord ----
 === stage5 ===
 { phish_lord_landed: -> hub }
-Ruth Adeyemi: Now Sofia. She needs all three call facts to bite.
+Ruth Adeyemi: Now Sofia. She'll want the right sender, the portal's name and the date.
 + [Who do I send as?]
     Ruth Adeyemi: The portal's own notification address. Dev told you how its emails read.
     -> stage5
@@ -205,7 +210,7 @@ Ruth Adeyemi: Blue Team room. If that door's locked, I've got the key — come a
 === stage_done ===
 Ruth Adeyemi: That's the lot. Go and let Tomasz close it out with you.
 + [Anything for Gareth?]
-    Ruth Adeyemi: He's read your report — no names, just like he asked. A word by the window wouldn't go amiss.
+    Ruth Adeyemi: He's read your report. Go and hear what he thinks, by the window.
     -> stage_done
 + [Will do.] #exit_conversation
     Ruth Adeyemi: Good work.

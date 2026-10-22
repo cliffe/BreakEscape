@@ -293,6 +293,16 @@ export class InfluenceBar {
     _onEvent(data) {
         // The event is a prompt to look again. Only its change line is taken from it.
         const own = isObject(data) && (data.character === undefined || data.character === this.config.id);
+        // A fresh pretext call resets influence to the start with reason 'new_call'
+        // (person-chat-pretext). That is a call boundary, not a player's move, so it never
+        // shows as a "Last change" AND it clears any line the bar seeded from the call before
+        // it — whether the bar mounted before or after the reset landed (lab R4 F3/A4). The log
+        // seed (_seedFromServiceLog) already stops at this boundary; this is its live twin.
+        if (own && isObject(data) && data.reason === 'new_call') {
+            this.changeText = '';
+            this.update();
+            return;
+        }
         if (own && isObject(data) && typeof data.delta === 'number' && data.delta !== 0 && !data.silent) {
             this.changeText = this._changeLine(data.delta, data.reason);
         }

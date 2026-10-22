@@ -144,6 +144,7 @@
     "roe_stoprule_done": false,
     "roe_signed": false,
     "fairbairn_condition_heard": false,
+    "fairbairn_payoff_heard": false,
     "plan_objective_done": false,
     "plan_measures_done": false,
     "plan_done": false,
@@ -315,7 +316,7 @@
         ]
       },
       "pierce_expects_balance_sheet": {
-        "text": "Melanie expects a Q3 balance sheet from Jed on Fridays.",
+        "text": "Melanie expects a Q3 balance sheet from Jed on Friday.",
         "subject": "pierce", "source": "note_q3",
         "provides": [
           { "type": "document", "value": "balance_sheet", "label": "the Q3 balance sheet", "kind": "distinctive", "attachmentKind": "spreadsheet" },
@@ -361,7 +362,7 @@
         ]
       },
       "lord_portal": {
-        "text": "Sofia uses a staff payroll portal — the post doesn't name it.",
+        "text": "Sofia uses a staff payroll portal. The post doesn't name it, but the service desk does.",
         "subject": "lord", "source": "post_lord_payslip",
         "provides": [],
         "reduceNote": "Staff should not post about internal systems or their release dates."
@@ -598,7 +599,7 @@
             "doneString": "She trusts Jed Baker; you know the email pattern." },
           { "label": "What she expects", "needsIntel": ["pierce_expects_balance_sheet"],
             "goalString": "You still don't know what Melanie expects to receive. Check the team notes.",
-            "doneString": "She expects a Q3 balance sheet from Jed on Fridays." }
+            "doneString": "She expects a Q3 balance sheet from Jed on Friday." }
         ],
         "hampshire": [
           { "label": "Where mail goes", "needsIntel": ["hampshire_careers"],
@@ -702,6 +703,7 @@
         "hintsByFactor": {
           "senderTrust": {
             "spoof": "She only acts on mail from someone she trusts in Finance. The From line is a label you can set.",
+            "ownFrom": "You're still sending as yourself. Change the From line to someone she trusts in Finance.",
             "forced": "This account can only send as itself. Switch account to send as someone she trusts."
           },
           "addressedTo": "Greet her the way someone who actually knows her would.",
@@ -752,10 +754,13 @@
         },
         "hints": ["She only trusts the portal's own notices.", "You need the portal's name, its sender and the release date — the social post only says there is a portal."],
         "hintsByFactor": {
-          "senderTrust": "She only trusts the portal's own notification address. Send as that, not as a person.",
+          "senderTrust": "She only trusts the portal's own notification address. Put that in the From line.",
           "addressedTo": "Address her by her first name, the way the portal would.",
           "pretextRelevant": "It must read like a real payslip notice: the portal's name and the release date. Dev at the service desk has both.",
-          "linkCredible": "She won't act on a link with no site behind it. Build the payroll login page in the builder and attach it."
+          "linkCredible": {
+            "missing": "She won't act on a link with no site behind it. Build the payroll login page in the builder and attach it.",
+            "wrong": "There is a page, but its address isn't her portal's. Look at the domain options in the builder."
+          }
         }
       }
     ],
@@ -803,7 +808,7 @@
             "authority_borrowed": "Borrowed authority. Naming a manager does not replace the check.",
             "candour": "Candour. Owning a correction early costs less than defending it."
           },
-          "repair": "Corrected. Owning the slip early costs less than defending it.",
+          "repair": "Corrected. Dev now has Finance, the team on his record.",
           "ask": { "accepted": "He read it out.", "pending": "He wants to check one more thing.", "refused": "He will not do that on this call." },
           "bands": { "calm": "Dev is happy to help.", "wary": "Dev has slowed down.", "refusing": "Dev has stopped helping." }
         },
@@ -906,8 +911,8 @@
             "from": { "name": "Office Supplies Co", "address": "accounts@office-suppiies.example" },
             "to": "accounts@ledgerwell.example",
             "subject": "Updated bank details for invoice 4471",
-            "time": "09:25",
-            "body": "Please note our bank details have changed. Pay invoice 4471 to the new account below from today.\n\nOffice Supplies Co",
+            "time": "10:05",
+            "body": "Following our invoice 4471 this morning, please note our bank details have changed. Pay to the account below from today.\n\nSort code 00-11-22\nAccount 12345678\n\nOffice Supplies Co",
             "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass" },
             "truth": {
               "isPhish": true,
@@ -945,7 +950,7 @@
           {
             "id": "fwd_balance_sheet",
             "from": { "name": "Jed Baker", "address": "j.baker@ledgerwell.example" },
-            "to": "m.pierce@ledgerwell.example",
+            "to": "finance@ledgerwell.example",
             "subject": "Q3 balance sheet",
             "time": "09:45",
             "body": "Mel, Q3 balance sheet as promised. Sent via the finance list so the team gets a copy too.\n\nJed",
@@ -968,7 +973,7 @@
             "from": { "name": "Office Supplies Co", "address": "accounts@office-supplies.example" },
             "to": "accounts@ledgerwell.example",
             "subject": "Invoice 4471 for March",
-            "time": "10:00",
+            "time": "09:25",
             "body": "Please find invoice 4471 for your March order. Payment terms are unchanged.\n\nOffice Supplies Co",
             "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass" },
             "truth": {
@@ -983,7 +988,7 @@
             "to": "all-staff@ledgerwell.example",
             "subject": "March staff newsletter",
             "time": "10:10",
-            "body": "This month: the summer rota, a new starter in Finance, and the charity bake sale.\n\nThe People Team",
+            "body": "This month: the Easter rota, a new starter in Finance, and the charity bake sale.\n\nThe People Team",
             "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass" },
             "truth": {
               "isPhish": false,
@@ -1059,7 +1064,7 @@
       },
       "scope": {
         "onCompleteGlobal": "roe_signed",
-        "intro": "Read the sheet. Sort each card into In scope or Out of scope, then answer the stop-rule question. Ledgerwell have only signed off what is on this sheet.",
+        "intro": "Read the sheet. Sort each card into In scope or Out of scope, then answer the stop-rule question. Ledgerwell will sign off only what is on this sheet.",
         "steps": [
           { "id": "scope", "onCompleteGlobal": "roe_scope_done" },
           { "id": "stoprule", "onCompleteGlobal": "roe_stoprule_done" }
@@ -1099,13 +1104,13 @@
         "objectives": [
           { "id": "disrupt_payroll", "step": "objective", "correct": false,
             "text": "Disrupt payroll to prove the risk.",
-            "why": "The rules of engagement bar disruption; this is a test, not an attack." },
+            "why": "The rules of engagement bar disruption. Ledgerwell asked how far an attack gets, and payroll still has to run." },
           { "id": "how_far_gaps", "step": "objective", "correct": true,
             "text": "Find how far email and a phone pretext get against Ledgerwell's staff, and report the gaps.",
             "why": "That is what Ledgerwell asked for and what the sheet allows." },
           { "id": "collect_passwords", "step": "objective", "correct": false,
             "text": "Collect as many staff passwords as you can.",
-            "why": "The engagement keeps nobody's password; a captured sign-in is simulated and reported, not stored." }
+            "why": "The engagement keeps nobody's password. A captured sign-in is simulated, reported and dropped." }
         ],
         "measures": [
           { "id": "names", "step": "measures", "correct": false, "blame": true,
@@ -1124,6 +1129,7 @@
       },
       "report": {
         "onCompleteGlobal": "report_filed",
+        "labelBy": "role",
         "steps": [
           { "id": "results", "onCompleteGlobal": "report_results_done" },
           { "id": "findings", "onCompleteGlobal": "report_findings_done" }
@@ -1200,7 +1206,7 @@
               { "id": "strip_metadata", "text": "Strip author and application metadata before publishing documents", "good": true,
                 "why": "The author field no longer gives away the username convention." },
               { "id": "stop_publishing", "text": "Stop publishing any documents", "good": false,
-                "why": "Ledgerwell needs to publish; the fix is to clean metadata, not to go silent." }
+                "why": "Ledgerwell needs to publish. Clean the metadata and the documents stay up without the username." }
             ] },
           { "intel": "lord_portal",
             "options": [
@@ -1214,7 +1220,7 @@
               { "id": "filter_and_scan", "text": "Filter the careers inbox through a gateway and scan attachments", "good": true,
                 "why": "The obvious phish is dropped before Chris reads it." },
               { "id": "close_inbox", "text": "Close the careers inbox", "good": false,
-                "why": "Careers needs to receive CVs; the fix is filtering, not closing." }
+                "why": "Careers still needs CVs. A filter keeps the inbox open and drops the bad ones." }
             ] }
         ]
       }

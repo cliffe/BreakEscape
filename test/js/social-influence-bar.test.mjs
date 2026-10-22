@@ -278,6 +278,23 @@ test('seed: a new_call reset is a boundary — a bar mounted on a fresh call sho
     delete window.socialInfluence;
 });
 
+test('live: a new_call reset event clears a stale change line and never shows itself (R4 F3/A4)', () => {
+    setup();
+    const bar = mount({ characterId: 'pierce' });
+    // A real move lands first: the bar shows its last change.
+    window.gameState.globalVariables.pierce_influence = -10;
+    window.eventDispatcher.emit('npc_influence_changed', { character: 'pierce', delta: -10, reason: 'payslip_date' });
+    assert.match(bar.el.querySelector('.ib-infl-change').textContent, /Last change: -10/);
+    // The next call resets influence with reason 'new_call' (person-chat-pretext). It is a call
+    // boundary, not a player's move: the line clears and the reset is never shown as a change —
+    // even though it arrives as a live event after the bar already seeded the stale line.
+    window.gameState.globalVariables.pierce_influence = 0;
+    window.eventDispatcher.emit('npc_influence_changed', { character: 'pierce', delta: 10, reason: 'new_call' });
+    assert.equal(bar.el.querySelector('.ib-infl-change').textContent, '', 'new_call clears the line and shows nothing');
+    assert.equal(numberOf(bar), '0');
+    bar.destroy();
+});
+
 test('mount 1, reading pane honours bar: false', () => {
     const s = setup();
     s.social.characters.pierce.influence.display = { bar: false };

@@ -1,0 +1,6 @@
+{"cmd":"bootstrap","tutorial":"decline","resume":"new"}
+{"cmd":"note","message":"R4 A1: the Recon door carries lockedHint on the live door sprite"}
+{"cmd":"eval","fn":"() => { const s = window.gameScenario; return !!s && s.rooms.recon_room && s.rooms.recon_room.lockedHint === 'Collect the key from Ruth once your plan is signed off.'; }"}
+{"cmd":"eval","fn":"() => { const r = window.rooms && window.rooms['engagement_office']; if (!r || !Array.isArray(r.doorSprites)) return false; const d = r.doorSprites.find(ds => ds.doorProperties && ds.doorProperties.connectedRoom === 'recon_room'); return !!d && d.doorProperties.locked === true && d.doorProperties.lockedHint === 'Collect the key from Ruth once your plan is signed off.'; }"}
+{"cmd":"eval","fn":"() => { const t = window.__test; const g = t.getState().globals; const inv = (t.getState().inventory||[]).map(i=>i.id||i); return g.plan_done === false && !inv.includes('recon_key'); }"}
+{"cmd":"quit"}

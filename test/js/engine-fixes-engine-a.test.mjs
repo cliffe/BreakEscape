@@ -39,6 +39,16 @@ test('E10: door properties carry the pad options from the door or connected room
     }
 });
 
+test('SE lab R4 F1/A1: door properties carry lockedHint from the door or connected room', () => {
+    // The bootstrap filter reached the client, but doors.js was not copying lockedHint into
+    // doorSprite.doorProperties, so the opt-in locked-door hint never reached the door (lab R4
+    // F1). It is wired exactly like the pad options above. unlock-system already reads it.
+    const src = read('js/systems/doors.js');
+    assert.match(src, /lockedHint: lockProps\.lockedHint \?\? connectedRoomData\?\.lockedHint \?\? null/);
+    const u = read('js/systems/unlock-system.js');
+    assert.match(u, /lockable\.doorProperties\?\.lockedHint/);
+});
+
 test('E10: unlock-system reads door options for password and PIN pads', () => {
     const u = read('js/systems/unlock-system.js');
     for (const f of ['passwordHint', 'showHint', 'showKeyboard', 'maxAttempts', 'postitNote', 'showPostit']) {

@@ -38,6 +38,7 @@ VAR phish_hampshire_landed = false
 VAR phish_pierce_landed = false
 VAR landing_payroll_login_built = false
 VAR pretext_call_done = false
+VAR pretext_call_reported = false
 VAR phish_lord_landed = false
 VAR report_results_done = false
 VAR report_findings_done = false
@@ -55,9 +56,9 @@ VAR quiet = false
 === start ===
 { greeted: -> hub }
 ~ greeted = true
-Ruth Adeyemi: Morning. Ruth Adeyemi, I'm leading the Ledgerwell job and you're with me today. Grab the sheet.
+Ruth Adeyemi: Morning. Ruth Adeyemi, I'm leading the Ledgerwell job and you're with me today.
 Ruth Adeyemi: Ledgerwell's a small finance firm. Last quarter one of Gareth's team nearly wired a five-figure invoice to a spoofed supplier.
-Ruth Adeyemi: He isn't angry at her. He's scared it happens for real. We find out how bad it would get, first.
+Ruth Adeyemi: He isn't angry at her. He's scared the next one gets through. We find out how far it would get before a real one does.
 Gareth Fairbairn: Before you start. This test of yours. Is it going to make my people look stupid?
 + [It's about the gaps in your process, not catching anyone out.]
     Gareth Fairbairn: Good answer. Show me you've read that sheet properly and I'll put my name to it.
@@ -69,6 +70,7 @@ Gareth Fairbairn: Before you start. This test of yours. Is it going to make my p
 
 === brief_close ===
 Ruth Adeyemi: Read the rules of engagement on the board. Properly. Gareth will be watching you do it.
+~ quiet = true
 -> hub
 
 // recheck and keys run on every entry to hub (as tunnels), so a reopen that the
@@ -140,6 +142,7 @@ Ruth Adeyemi: Read the rules of engagement on the board. Properly. Gareth will b
     ~ recon_key_given = true
     #give_item:key:recon_key
     Ruth Adeyemi: Plan holds up. Here's the Recon key. Open-source intelligence only: what anyone could find, nothing behind a login.
+    ~ quiet = true
 }
 { osint_done and se_intel_username_convention and not operations_key_given:
     ~ operations_key_given = true
@@ -149,7 +152,8 @@ Ruth Adeyemi: Read the rules of engagement on the board. Properly. Gareth will b
 { report_filed and not blue_team_key_given:
     ~ blue_team_key_given = true
     #give_item:key:blue_team_key
-    Ruth Adeyemi: Report's filed. Gareth's reading it now, go and see his face. Then the Blue Team key: Tomasz has the other half.
+    Ruth Adeyemi: Report's filed. Gareth's reading it now, so go and see him. Then the Blue Team room: Tomasz has the other half.
+    ~ quiet = true
 }
 ->->
 
@@ -162,7 +166,7 @@ Ruth Adeyemi: Read the rules of engagement on the board. Properly. Gareth will b
 - not roe_signed:
     Ruth Adeyemi: The rules of engagement are on the board. Start there.
 - not plan_done and not fairbairn_condition_heard:
-    Ruth Adeyemi: That's it done. Take it to Gareth by the window. He'll want to sign it himself.
+    Ruth Adeyemi: Sheet's done. Take it to Gareth by the window. He wants to sign it himself.
 - not plan_done:
     Ruth Adeyemi: Now tell me what you'll actually do. The whiteboard.
 - plan_done and not (osint_done and se_intel_username_convention):
@@ -170,13 +174,15 @@ Ruth Adeyemi: Read the rules of engagement on the board. Properly. Gareth will b
 - operations_key_given and not acct_freemail:
     Ruth Adeyemi: Mail's in Operations. Make your throwaway address before you write to anyone.
 - operations_key_given and not phish_pierce_landed:
-    Ruth Adeyemi: A message lands when they'd act on it. Opened, clicked, replied. Not just delivered.
+    Ruth Adeyemi: Delivered isn't landed. It lands when they'd open the file or click the link, the way they would a real one.
+- pretext_call_reported and not pretext_call_done:
+    Ruth Adeyemi: Dev's manager rang Gareth about a dodgy call. He knows it was us. The desk's on guard now, so give it a while.
 - phish_pierce_landed and not (landing_payroll_login_built and pretext_call_done):
     Ruth Adeyemi: Sofia's the careful one. You'll want a look-alike page and a call to the service desk.
 - (landing_payroll_login_built and pretext_call_done) and not phish_lord_landed:
     Ruth Adeyemi: You've got the page and the call. Now write to Sofia.
 - phish_lord_landed and not report_filed:
-    Ruth Adeyemi: Sofia checked the sender, her name and the date. All three were right, because Ledgerwell's own desk gave them to us. That's your finding.
+    Ruth Adeyemi: Sofia checked the sender, the portal's name and the date. All three were right. Her own service desk gave us them. That's your finding.
 - report_filed and not (triage_pass and profile_done):
     Ruth Adeyemi: Tomasz has the other half of this for you, in the Blue Team room.
 - else:
@@ -220,20 +226,20 @@ Ruth Adeyemi: And read the published PDF's properties — who made it, and how. 
 -> hub
 
 === topic_account ===
-Ruth Adeyemi: Testers send from separate kit, so Tarnside's real domain never lands on a blocklist. It's all still logged against the job.
+Ruth Adeyemi: Real applicants write from webmail, so a throwaway address looks like one and passes every check. It's still logged against the job.
 Ruth Adeyemi: Chris's careers inbox takes anything. Melanie's trickier — borrow a name she already trusts.
 ~ quiet = true
 -> hub
 
 === topic_hard ===
 Ruth Adeyemi: Sofia checks things. You need a page like her portal, and a pretext call to fill the gaps.
-Ruth Adeyemi: A pretext call: a believable reason to ask, and enough held facts to pass his checks. The desk phone's in Operations.
+Ruth Adeyemi: Ring the desk as her buddy. Know her name and team before you dial. Push too hard and Dev flags you to his manager.
 ~ quiet = true
 -> hub
 
 === topic_report ===
 Ruth Adeyemi: The results, then a cause and a control for each finding. No names, no blame.
-Ruth Adeyemi: Blaming staff just teaches them to stop reporting. Name the gap and how to close it.
+Ruth Adeyemi: Write each one so the person it happened to could read it. Name the gap and how to close it.
 ~ quiet = true
 -> hub
 
