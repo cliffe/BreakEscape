@@ -53,7 +53,7 @@ The entry stage is `bunker_monitor`. Its two flags give the player progress befo
 | # | Story meaning | Provided by | Account | Submitted at | Fit |
 |---|---|---|---|---|---|
 | 1 | Foothold on the security monitoring host that the camera and door systems report to | `bunker_monitor`, the monitoring service's home (user level) | `maltrail` (per VM_SHAPE, not checked in the module) | Forward post's terminal (the attack box) | R3 applied. Fits. |
-| 2 | The staging copy of the schedule, kept on the security monitoring host: channels, first cities, early-access orders | `bunker_monitor`, the platform's threat-data store | same account as flag 1 | Server-hall console (§5, M2) | R4 applied. Fits. |
+| 2 | The staging copy of the schedule, kept on the security monitoring host: channels, first cities, early-access orders | `bunker_monitor`, the `staging` account's `0600` home (see §6; a separate account from flag 1, per R4 M1) | `staging` | Server-hall console (§5, M2) | R4 applied; flag-2 account split out in §6. |
 | 3 | Out of the release service's container onto the release host beneath it | `release_host`, root's home, after leaving the container | root. The student reaches it through one of two generated accounts. | Server-hall console, which arms the disarm for the core | R5, R6 applied. Fits. |
 | 4 | Full control of the core host: the stolen copy and the live line into the Citadel's vault | `core_host`, root's home, after leaving the jail | root. The core host has no named accounts. | Core host terminal, after Tesseract stops the clock | Fits. |
 
