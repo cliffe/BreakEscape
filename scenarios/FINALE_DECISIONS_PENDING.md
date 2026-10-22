@@ -13,3 +13,9 @@ When you build m09 (from the opus48 VM wiring, 2026-10-21): confirm the built ho
 When you build m10 (from the opus48 VM wiring, 2026-10-21): rename the draft systems so the built hostnames are `bunker_monitor`, `release_host`, `core_host` (Kali `attack_vm`); one flag per station (gate terminal, release console, sealed hatch, core terminal); **turn off root SSH login on `release_host` and `core_host`** (the draft enables it, which would let a player skip both climax flags); two operative accounts on `release_host`; the monitoring host keeps exactly two flags so the mission totals four; timed VM run still owed.
 
 m09 build addendum (from the puzzle-chain VM answers, 2026-10-22, `finale/M09_PUZZLE_VM_ANSWERS.md`): seed the ledger body in flag 2's file, and put the H&L file number only there, never on the flag-1 index or a pre-login page. Otherwise Torres's after-the-box ring can be skipped. Optional: check the cage label ("Issued to: Strategy Directorate") reads consistently beside the VM credential.
+
+m09 build addendum 2 (scenario-design R1 VM answers, 2026-10-22, `finale/M09_PUZZLE_VM_ANSWERS.md` D1–D3): seed the catalogue index (flag 1's file) to match the drop screen: Series R, R-114 to R-161, restricted cage bay 10. Confirm Tomb Beta's public page shows no generated text. Tesseract's name sits behind the flag-3 foothold; a fast player can see it before the identity scene, which is the early peek you already accepted.
+
+## F10. Is "archaeology" enough as theme? (story call, not blocking)
+
+The VM has no recovery or undelete step. The archaeology is thematic: an abandoned "last server", a nine-year-old memo, an unrevoked credential and the ledger's legacy section, while the game side has destruction (the shredder) but no recovery. Accept as is, or ask opus48 to add a small recovery step to the VM plan?
