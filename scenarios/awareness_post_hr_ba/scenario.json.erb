@@ -1,0 +1,508 @@
+{
+  "scenario_id": "awareness_post_hr_ba",
+  "scenario_name": "Recruitment inbox check: after (BA)",
+  "scenario_brief": "The second of two short checks for HR and recruitment staff at Tarrowby Logistics, a fictional company (pair BA, form A). Ten new emails from the Tarrowby recruitment inbox, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
+  "endGoal": "Sort the ten emails at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "second_check_aim",
+      "title": "Do the second check",
+      "description": "Sort ten emails at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "triage_post_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Second check done",
+        "body": "Thank you for taking both checks."
+      },
+      "tasks": [
+        {
+          "taskId": "finish_check",
+          "title": "Finish the second check",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_post_hr_ba_state": {},
+    "se_awareness_records": [],
+    "triage_post_percent": 0,
+    "triage_post_reportRate": 0,
+    "triage_post_done": false,
+    "triage_post_pass": false
+  },
+  "importGlobals": [
+    {
+      "from": "awareness_pre_hr_ba",
+      "var": "triage_pre_percent",
+      "as": "triage_pre_percent",
+      "default": 0
+    },
+    {
+      "from": "awareness_pre_hr_ba",
+      "var": "triage_pre_reportRate",
+      "as": "triage_pre_reportRate",
+      "default": 0
+    },
+    {
+      "from": "awareness_pre_hr_ba",
+      "var": "triage_pre_done",
+      "as": "triage_pre_done",
+      "default": false
+    },
+    {
+      "from": "awareness_pre_hr_ba",
+      "completed": "pre_check_completed"
+    }
+  ],
+  "social": {
+    "triageSets": [
+      {
+        "id": "hr_form_a",
+        "title": "Recruitment inbox check",
+        "brief": "Ten messages from a Tarrowby Logistics recruitment inbox. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+        "stage": "post",
+        "scoringProfile": "awareness",
+        "feedbackMode": "end",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "enable_content_prompt",
+          "secrecy_or_bypass",
+          "reply_to_differs"
+        ],
+        "flagChips": {
+          "enable_content_prompt": "It asks me to turn on editing or content to see it"
+        },
+        "outcome": {
+          "setGlobalPrefix": "triage_{stage}_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "ha_rooms_booked",
+            "from": {
+              "name": "Jun Watanabe",
+              "address": "jun.watanabe@tarrowby.example"
+            },
+            "to": "recruitment@tarrowby.example",
+            "subject": "Interview rooms booked for next week",
+            "time": "08:10",
+            "body": "Hi Fatima,\nI've booked the small meeting room at Normanton for Tuesday and Wednesday afternoons next week, for the driver interviews. The room's in the shared calendar.\nJun",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "jun.watanabe@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Jun's real Tarrowby address, a room booking, and nothing to open, pay or sign in to."
+              }
+            }
+          },
+          {
+            "id": "ha_protected_cv",
+            "from": {
+              "name": "Alex Hollins",
+              "address": "alex.hollins.cv@inboxly.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Application",
+            "time": "08:35",
+            "body": "Dear Sir or Madam,\nPlease see my CV attached for the position.\nThe document is protected. If it opens as read-only, click Enable Editing, then Enable Content, to see it.\nRegards,\nAlex Hollins",
+            "attachments": [
+              {
+                "id": "cv",
+                "label": "CV_2026.docx",
+                "kind": "document"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "alex.hollins.cv@inboxly.example"
+            },
+            "factorStrings": {
+              "enable_content_prompt": {
+                "redFlag": "The document asks you to enable editing or content before it will show anything"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "enable_content_prompt",
+                "addressedTo"
+              ],
+              "perFlagNote": {
+                "enable_content_prompt": "A real CV shows up when you open it. Being told to enable editing and then content is the step the file needs before it can run anything",
+                "addressedTo": "'Dear Sir or Madam' and 'the position', with no name and no job: it could have gone to anyone"
+              },
+              "ifTrusted": "Switching on content would let the document run a small program on your computer.",
+              "reportReply": "Thanks. The file was set up to run a program once content was switched on. We've blocked the sender."
+            }
+          },
+          {
+            "id": "ha_forklift_cv",
+            "from": {
+              "name": "Zsofia Szabo",
+              "address": "zsofia.szabo@inboxly.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Forklift driver (nights): my application",
+            "time": "09:00",
+            "body": "Hello Fatima,\nI'd like to apply for the night forklift driver job. I hold counterbalance and reach truck licences and have worked nights for six years. My CV is attached.\nBest wishes,\nZsofia Szabo",
+            "attachments": [
+              {
+                "id": "cv",
+                "label": "Zsofia_Szabo_CV.docx",
+                "kind": "document"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "zsofia.szabo@inboxly.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "enable_content_prompt": "It's a Word file, which is normal for a CV, and it asks you to switch nothing on.",
+                "senderTrust": "Candidates apply from personal email, so an inboxly.example address is normal here.",
+                "default": "A named job, your name, a CV that's really attached, and nothing to switch on."
+              }
+            }
+          },
+          {
+            "id": "ha_passport_scans",
+            "from": {
+              "name": "Colin Mather",
+              "address": "colin.mather.depot@inboxly.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Starters Monday: need their passports now",
+            "time": "09:25",
+            "body": "Fatima,\nI'm at the depot without my laptop. Can you send me scans of the passports for the two drivers starting Monday? Send them to this address before 3; I need them for the agency. Keep it between us, HR will only slow it down.\nColin",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "colin.mather.depot@inboxly.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "secrecy_or_bypass",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "Colin's name on a personal inbox at inboxly.example, not tarrowby.example",
+                "secrecy_or_bypass": "'Keep it between us' and 'HR will only slow it down' ask you to skip the people who would check",
+                "urgencyCalibrated": "'Before 3' leaves no time to ring Colin and ask"
+              },
+              "ifTrusted": "Two people's passport scans would go to a stranger, which is enough to open accounts in their names.",
+              "reportReply": "Thanks. Colin has his laptop and didn't send this. Passport copies only ever go through the onboarding system."
+            }
+          },
+          {
+            "id": "ha_feedback_forms",
+            "from": {
+              "name": "Jun Watanabe",
+              "address": "jun.watanabe@tarrowby.example"
+            },
+            "to": "recruitment@tarrowby.example",
+            "subject": "Interview feedback forms are in the system",
+            "time": "09:50",
+            "body": "Hi both,\nThe feedback forms for last week's interviews are now in the recruitment system:\n{{link:feedback}}\nYou can also find them from the intranet as usual.\nJun",
+            "links": [
+              {
+                "id": "feedback",
+                "text": "hire.tarrowby.example/feedback",
+                "destination": "https://hire.tarrowby.example/feedback"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "jun.watanabe@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "linkCredible": "The link goes where it says, to Tarrowby's own recruitment system, and you could reach it from the intranet instead.",
+                "default": "Jun's real address, a routine notice, and no hurry."
+              }
+            }
+          },
+          {
+            "id": "ha_agency_spoof",
+            "from": {
+              "name": "Roseanne Wadsworth",
+              "address": "roseanne.wadsworth@kettlewick.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Shortlisted candidates: travel bookings",
+            "time": "10:15",
+            "body": "Hi Fatima,\nI'm booking travel for the shortlisted drivers. Could you reply with each one's home address and mobile number so I can send their tickets?\nThanks,\nRoseanne\nKettlewick Talent",
+            "auth": {
+              "spf": "fail",
+              "dkim": "none",
+              "dmarc": "fail",
+              "envelopeFrom": "mailer.inboxly.example",
+              "replyTo": "roseanne.kettlewick@inboxly.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderAuth",
+                "reply_to_differs"
+              ],
+              "perFlagNote": {
+                "senderAuth": "SPF and DMARC both failed for kettlewick.example: the agency's own servers didn't send this",
+                "reply_to_differs": "Replies go to roseanne.kettlewick@inboxly.example, not to Roseanne's Kettlewick address"
+              },
+              "headerNote": "Open the details: the From shows Roseanne's real address, but the checks failed and the reply-to points somewhere else.",
+              "ifTrusted": "Candidates' home addresses and phone numbers would go to a stranger, who could then ring them pretending to be Tarrowby.",
+              "reportReply": "Thanks. Roseanne didn't send it, and Kettlewick doesn't book candidates' travel."
+            }
+          },
+          {
+            "id": "ha_interviews_moved",
+            "from": {
+              "name": "Colin Mather",
+              "address": "colin.mather@tarrowby.example"
+            },
+            "to": "recruitment@tarrowby.example",
+            "subject": "Can we move Thursday's interviews to Wednesday?",
+            "time": "10:40",
+            "body": "Hi both,\nI've been called to the Castleford site on Thursday, so could we move the driver interviews to Wednesday afternoon? Sorry for the late change. Please let the candidates know through the recruitment system as usual.\nColin",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "colin.mather@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "urgencyCalibrated": "It's a short-notice change, but it explains why and asks for nothing unusual.",
+                "default": "Colin's real address, his own interviews, and he wants them rearranged through the normal system."
+              }
+            }
+          },
+          {
+            "id": "ha_careers_missing",
+            "from": {
+              "name": "Dean Holroyd",
+              "address": "dean.holroyd@quickpost-mail.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "CV attached: HGV driver",
+            "time": "11:05",
+            "body": "Hi,\nMy CV is attached for the HGV driver job. If it hasn't come through, it's also on your careers page here:\n{{link:cv}}\nSign in with your work email to view it.\nDean",
+            "links": [
+              {
+                "id": "cv",
+                "text": "careers.tarrowbey.example/cv/5520",
+                "destination": "https://careers.tarrowbey.example/cv/5520"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quickpost-mail.example",
+              "replyTo": "dean.holroyd@quickpost-mail.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "attachmentPlausible"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "Read it slowly: tarrowbey has an extra e. Tarrowby's own sites end in tarrowby.example",
+                "attachmentPlausible": "It says the CV is attached, but nothing is, and the link that replaces it wants you to sign in"
+              },
+              "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password.",
+              "reportReply": "Thanks. tarrowbey.example isn't ours, and we've blocked it."
+            }
+          },
+          {
+            "id": "ha_new_applications",
+            "from": {
+              "name": "Tarrowby Recruitment System",
+              "address": "jobs-noreply@tarrowby.example"
+            },
+            "to": "recruitment@tarrowby.example",
+            "subject": "3 new applications: HGV driver (Class 1)",
+            "time": "11:30",
+            "body": "Three new applications are waiting for HGV driver (Class 1). Open them in the recruitment system:\n{{link:apps}}\nThis is an automatic message.",
+            "links": [
+              {
+                "id": "apps",
+                "text": "hire.tarrowby.example/jobs/hgv-class1",
+                "destination": "https://hire.tarrowby.example/jobs/hgv-class1"
+              }
+            ],
+            "auth": {
+              "spf": "fail",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "send.hirerelay.example",
+              "replyTo": "jobs-noreply@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderAuth": "SPF failed because the recruitment system's mail service sent it for Tarrowby, but DKIM passed and DMARC passed for tarrowby.example, the real domain.",
+                "linkCredible": "The link goes where it says, to Tarrowby's own recruitment system.",
+                "default": "The recruitment system's usual notice, linking to Tarrowby's own address."
+              },
+              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through a service often breaks SPF while DKIM still passes."
+            }
+          },
+          {
+            "id": "ha_withdrawal",
+            "from": {
+              "name": "Minjun Ahn",
+              "address": "minjun.ahn@inboxly.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Withdrawing my application",
+            "time": "12:00",
+            "body": "Dear Fatima,\nThank you for inviting me to interview for the transport planner role. I've accepted another offer this week, so I'd like to withdraw my application. I hope to apply to Tarrowby again in future.\nKind regards,\nMinjun Ahn",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "minjun.ahn@inboxly.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderTrust": "Candidates write from personal email, so an inboxly.example address is normal here.",
+                "default": "A candidate, by name, about a job they applied for, asking for nothing."
+              }
+            }
+          }
+        ],
+        "comparison": {
+          "requireGlobal": "pre_check_completed"
+        }
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "post_hr_ba",
+      "role": "hr_recruitment",
+      "company": "tarrowby_logistics",
+      "brand": {
+        "name": "Tarrowby Logistics",
+        "logoText": "TARROWBY",
+        "accent": "#3b5b8c"
+      },
+      "variant": "full",
+      "durationTargetMin": 4,
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: ten emails from the Tarrowby recruitment inbox.",
+      "stages": [
+        "check"
+      ],
+      "conclusionTaskId": "finish_check",
+      "defend": {
+        "setId": "hr_form_a",
+        "stage": "post",
+        "reportAlwaysVisible": true
+      }
+    }
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_office",
+      "door_sign": "Training Room",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "ibrahim_diallo",
+          "displayName": "Ibrahim Diallo",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/awareness_post_hr_ba/ink/ibrahim_post.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:triage_post_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "finish_check"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "position": {
+            "x": 6,
+            "y": 2
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk with ten emails from the recruitment inbox, ready for the second check.",
+          "minigameData": {
+            "episodeId": "post_hr_ba"
+          }
+        }
+      ]
+    }
+  }
+}

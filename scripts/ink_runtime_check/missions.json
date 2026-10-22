@@ -2820,5 +2820,175 @@
         "room": "training_room"
       }
     ]
+  },
+  "awareness_e2_cv_lures_defend": {
+    "globals": {
+      "episode_e2_cv_lures_defend_defend_percent": 0,
+      "episode_e2_cv_lures_defend_defend_reportRate": 0,
+      "episode_e2_cv_lures_defend_defend_done": false,
+      "episode_e2_cv_lures_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "fatima_begum",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e2_cv_lures_defend/ink/fatima_begum.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_hr_ab": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_done": false,
+      "triage_pre_pass": false
+    },
+    "npcs": [
+      {
+        "id": "jun_watanabe",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_hr_ab/ink/jun_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_hr_ab": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_done": false,
+      "triage_post_pass": false
+    },
+    "npcs": [
+      {
+        "id": "jun_watanabe",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_hr_ab/ink/jun_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_hr_ba": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_done": false,
+      "triage_pre_pass": false
+    },
+    "npcs": [
+      {
+        "id": "ibrahim_diallo",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_hr_ba/ink/ibrahim_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_hr_ba": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_done": false,
+      "triage_post_pass": false
+    },
+    "npcs": [
+      {
+        "id": "ibrahim_diallo",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_hr_ba/ink/ibrahim_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e4_exec_whaling_defend": {
+    "globals": {
+      "episode_e4_exec_whaling_defend_defend_percent": 0,
+      "episode_e4_exec_whaling_defend_defend_reportRate": 0,
+      "episode_e4_exec_whaling_defend_defend_done": false,
+      "episode_e4_exec_whaling_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "thandiwe_moyo",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e4_exec_whaling_defend/ink/thandiwe_moyo.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_executive_ab": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_done": false,
+      "triage_pre_pass": false
+    },
+    "npcs": [
+      {
+        "id": "yasmin_chaudhry",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_executive_ab/ink/yasmin_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_executive_ab": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_done": false,
+      "triage_post_pass": false
+    },
+    "npcs": [
+      {
+        "id": "yasmin_chaudhry",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_executive_ab/ink/yasmin_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_executive_ba": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_done": false,
+      "triage_pre_pass": false
+    },
+    "npcs": [
+      {
+        "id": "julian_sallow",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_executive_ba/ink/julian_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_executive_ba": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_done": false,
+      "triage_post_pass": false
+    },
+    "npcs": [
+      {
+        "id": "julian_sallow",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_executive_ba/ink/julian_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
   }
 }
