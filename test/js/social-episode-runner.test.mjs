@@ -23,7 +23,7 @@ for (const rel of [
     'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js', 'systems/episode-starter.js',
     'systems/awareness-measure.js', 'systems/global-writer.js',
     'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-kinds.js',
-    'minigames/inbox-triage/triage-flags.js', 'systems/phish-rules.js',
+    'minigames/inbox-triage/triage-flags.js', 'minigames/inbox-triage/triage-scoring.js', 'systems/phish-rules.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'ui/influence-bar.js', 'systems/social-influence.js',
     'minigames/framework/minigame-manager.js', 'minigames/framework/base-minigame.js',
@@ -76,7 +76,13 @@ class StubMail extends StubOverlay {
         }
     }
     get closeMode() { return stub.mailAbort ? 'abort' : 'close'; }
-    closeResult() { return { targetId: 'supplier_contact', outcome: 'landed', sentIds: ['sent_1'] }; }
+    closeResult() {
+        // A normal close with nothing sent carries an empty sentIds, as the real client now does
+        // for an episode child (P1 m6/E5-11), so the runner stays on write when it reopens.
+        return stub.mailSend
+            ? { targetId: 'supplier_contact', outcome: 'landed', sentIds: ['sent_1'] }
+            : { outcome: 'closed', sentIds: [] };
+    }
 }
 class StubTriage extends StubOverlay {}
 FW.registerScene('episode-runner', EpisodeRunnerMinigame);
@@ -365,6 +371,44 @@ test('closing the mail client with nothing sent stays on write', () => {
     assert.equal(M.readState(ep, stored(ep.id)).stage, 'write');
 });
 
+test('closing the mail client on a normal close with nothing sent reopens the runner on write (regression: the dead end)', () => {
+    const ep = fullEpisode();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint'] } });
+    stub.mailSend = false; // the learner opened the client but sent nothing
+    open(ep);
+    click('.er-launch');
+    assert.equal(scene(), 'mail-client');
+    closeChild(); // a normal close from an episode child returns to the runner
+    assert.equal(scene(), 'episode-runner', 'the runner reopens instead of dropping out to the game');
+    assert.equal(epState().stage, 'write', 'still on write: nothing was sent');
+    assert.equal(epState().sentHeld, false);
+    assert.equal(failed().length, 0);
+});
+
+test('the write stage offers Back to research, which reopens osint and leaves the stage on write (B1 blocker)', () => {
+    const ep = fullEpisode();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint'] } });
+    open(ep);
+    assert.equal(epState().stage, 'write');
+    assert.ok(cur().container.querySelector('.er-back-research'), 'the write stage shows Back to research');
+    click('.er-back-research');
+    assert.equal(scene(), 'osint-browser', 'it reopens the research browser');
+    closeChild();
+    assert.equal(scene(), 'episode-runner');
+    assert.equal(epState().stage, 'write', 'research stays done; still on write');
+    assert.ok(M.readState(ep, stored(ep.id)).done.includes('osint'));
+    assert.equal(failed().length, 0);
+});
+
+test('Back to research is only on the write stage, not on osint', () => {
+    const ep = fullEpisode();
+    setup(ep);
+    open(ep);
+    click('.er-start');
+    assert.equal(epState().stage, 'osint');
+    assert.equal(cur().container.querySelector('.er-back-research'), null, 'no Back to research on the osint launch');
+});
+
 test('Esc and Close are a normal exit with no minigame_failed', () => {
     const ep = fullEpisode();
     setup(ep);
@@ -565,8 +609,10 @@ test('a facilitated reopen from the kiosk goes straight to the stage', () => {
 });
 
 test('a facilitated debrief with the real view hides the score; an unfacilitated one shows it', () => {
+    // A reviewed item (score < 100) so a card — and its per-message score — renders for the
+    // unfacilitated run; the facilitated view strips the score (Cut A leaves the summary intact).
     const result = { setId: 'fixture_inbox', percent: 80, reportRate: 0.5, verifyCount: 0,
-        answers: [{ id: 'm1', verdict: 'trust', flags: [], score: 100, ms: 900 }] };
+        answers: [{ id: 'm1', verdict: 'trust', flags: [], score: 60, ms: 900 }] };
     const realViews = { measure: deps.measure, startTriage: deps.startTriage, now: deps.now };
     for (const facilitated of [true, false]) {
         const ep = { ...facilitatedEpisode(), facilitated };
@@ -695,11 +741,21 @@ test('E3: write is a pretext call; Close on the card stays on write; a call that
     assert.equal(failed().length, 0);
 });
 
-test('E3: a reopen at write with the call outcome already set moves on (a reload during the call)', () => {
-    const ep = setupE3({ [M.stateKey('e3_fixture')]: { v: 1, done: ['brief', 'osint'] }, [outcomeKey]: 'reported' });
+test('E3: a reopen at write with a landed call moves on to mfa (a reload during the call)', () => {
+    const ep = setupE3({ [M.stateKey('e3_fixture')]: { v: 1, done: ['brief', 'osint'] }, [outcomeKey]: 'got_it' });
     openE3(ep);
     assert.equal(epState().stage, 'mfa');
-    assert.deepEqual(stored(ep.id).sent, { kind: 'call', callId: CALL_ID, outcome: 'reported' });
+    assert.deepEqual(stored(ep.id).sent, { kind: 'call', callId: CALL_ID, outcome: 'got_it' });
+});
+
+test('E3-1: a call that did not land skips the mfa stage (no "You have the password")', () => {
+    for (const outcome of ['reported', 'walked_away']) {
+        const ep = setupE3({ [M.stateKey('e3_fixture')]: { v: 1, done: ['brief', 'osint'] }, [outcomeKey]: outcome });
+        openE3(ep);
+        assert.equal(epState().stage, 'flip', `${outcome}: mfa is skipped, straight to the flip`);
+        assert.ok(M.readState(ep, stored(ep.id)).done.includes('mfa'), `${outcome}: mfa marked done`);
+        assert.deepEqual(stored(ep.id).sent, { kind: 'call', callId: CALL_ID, outcome });
+    }
 });
 
 test('E3: mfa opens the authenticator with episode.mfa; Close moves to the flip', () => {

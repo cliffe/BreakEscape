@@ -352,3 +352,55 @@ test('red-flag meter: off when neither the target nor the default turns it on, a
     assert.equal(b.composer.getState().redFlagMeter.on, false);
     assert.equal(b.host.querySelector('.mail-redflag-meter'), null);
 });
+
+// ── P1 F1/m5: the forged-From line in the meter, and the calm default (E6 F3) ─
+
+// pierce trusts baker and can be spoofed (from_named): the forged-From scenario.
+const forgeable = () => grant('pierce_trusts_jed', 'email_pattern', 'pierce_role');
+
+test('red-flag meter: the forged-From warning is held back while the sender is a placeholder', () => {
+    const { composer } = composerFor('pierce', 'Mel Pierce', forgeable(), { meterDefault: true, accounts: [GUEST] });
+    // The From defaults to from_named with its name/address blanks unfilled.
+    assert.equal(composer.getState().templates.from, 'from_named');
+    const m = composer.getState().redFlagMeter;
+    assert.equal(m.on, true);
+    assert.ok(m.flags.length >= 1, 'other gaps (pretext, attachment) still flag');
+    assert.ok(!m.flags.some((f) => /Sender address doesn't match/.test(f)),
+        'the senderTrust red flag is not shown before a sender is picked');
+    assert.equal(m.advice.length, 0, 'no advice until a trusted sender is forged');
+});
+
+test('red-flag meter: a forged trusted sender shows as advice, not a counted fault', () => {
+    const { composer, host } = composerFor('pierce', 'Mel Pierce', forgeable(), { meterDefault: true, accounts: [GUEST] });
+    composer.setSlot('sender_name', 'baker_full');
+    composer.setSlot('sender_address', 'baker_address');
+    const m = composer.getState().redFlagMeter;
+    assert.equal(m.advice.length, 1, 'the forged From is surfaced as advice');
+    assert.match(m.advice[0], /forged/i);
+    assert.equal(m.clean, false, 'a forged From means the meter does not read as all-clear');
+    assert.ok(!m.flags.includes(m.advice[0]), 'the advice is not counted among the red flags');
+    const panel = host.querySelector('.mail-redflag-meter');
+    assert.equal(panel.dataset.count, String(m.flags.length), 'the count badge excludes advice');
+    assert.equal(host.querySelectorAll('.mail-redflag-advice').length, 1, 'the advice renders as a note');
+    assert.ok(!m.flags.some((f) => /Sender address doesn't match/.test(f)),
+        'a trusted forged From raises no senderTrust fault');
+});
+
+test('a defaulted part takes the calmest wording, never a pre-selected urgent line (E6 F3)', () => {
+    const fx = fixture();
+    // Put the urgent ask first in the set; the calm one second.
+    fx.templates.ask_open_attached.urgency = 'high';
+    fx.templates.ask_confirm.urgency = 'low';
+    fx.phishTargets.find((t) => t.id === 'pierce').templateSets.ask = ['ask_open_attached', 'ask_confirm'];
+    const { composer } = composerFor('pierce', 'Mel Pierce', grant('pierce_role'), { fx });
+    assert.equal(composer.getState().templates.ask, 'ask_confirm',
+        'the default is the low-urgency ask, not the first (urgent) one');
+});
+
+test('a defaulted part with no authored urgency keeps the first option', () => {
+    const fx = fixture();
+    // greeting templates carry no urgency: the default stays the first listed.
+    const { composer } = composerFor('pierce', 'Mel Pierce', grant('pierce_role'), { fx });
+    assert.equal(composer.getState().templates.greeting,
+        fx.phishTargets.find((t) => t.id === 'pierce').templateSets.greeting[0]);
+});

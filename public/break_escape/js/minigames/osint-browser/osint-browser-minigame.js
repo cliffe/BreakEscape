@@ -558,6 +558,14 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
                 block.address ? h('span', { class: 'ob-line ob-staff-address ob-readable', text: block.address }) : null];
         }
         if (k === 'field') {
+            const hasLabel = typeof block.label === 'string' && block.label.length > 0;
+            const hasValue = block.value !== undefined && block.value !== null && String(block.value).length > 0;
+            // A field authored with only `text` (no label/value) would otherwise render as an
+            // empty dashed box, hiding the noteable fact behind a blank control (E5-1). Show its
+            // text so there is something to read and click.
+            if (!hasLabel && !hasValue && typeof block.text === 'string' && block.text.length > 0) {
+                return [h('span', { class: 'ob-line ob-field-value ob-readable', text: block.text })];
+            }
             return [h('span', { class: 'ob-line ob-field-label', text: block.label || '' }),
                 h('span', { class: 'ob-line ob-field-value ob-readable', text: block.value ?? '' })];
         }

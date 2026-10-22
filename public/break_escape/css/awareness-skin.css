@@ -20,6 +20,21 @@
     box-sizing: border-box;
 }
 .aw-flip, .aw-debrief { background: var(--aw-surface); padding: 16px; line-height: 1.45; }
+/* The flip embeds the mail reader and the triage page/call cards, which default to the dark
+   mail/triage theme. On the flip's light surface their text inherited the skin's dark ink and
+   landed dark-on-dark navy (E5-4). Re-point the --ui-* tokens inside the flip/debrief to a light
+   palette so those embedded surfaces render as dark ink on a light card. */
+.aw-flip, .aw-debrief {
+    --ui-text: var(--aw-ink);
+    --ui-text-dim: #52606d;
+    --ui-surface: #fff;
+    --ui-surface-raised: #fff;
+    --ui-surface-hover: #eef2f1;
+    --ui-slot-bg: #eef2f1;
+    --ui-line: var(--aw-line);
+    --ui-border: var(--aw-line);
+    --ui-accent: var(--aw-accent);
+}
 
 /* wordmark: drawn in CSS from the brand's logoText, no image */
 .aw-wordmark {

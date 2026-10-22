@@ -245,10 +245,19 @@ export function flipPage(episode, social, globals) {
     const pages = Array.isArray(social?.landingPages) ? social.landingPages : [];
     const def = pages.find((p) => isObj(p) && p.id === pageId) || {};
     const choices = isObj(rec.choices) ? rec.choices : {};
-    const menu = [def.domainMenu, def.domains, def.domainOptions].find(Array.isArray) || [];
-    const opt = menu.find((o) => isObj(o) && o.id === choices.domainId) || null;
-    const host = (opt && (opt.browserDomain || opt.domain)) || globals?.[`landing_${pageId}_domain`] || '';
-    if (!isStr(host)) return null;
+    // Domain options may sit at the page top level or, as the builder authors them, nested under
+    // each brand (brands[].domains). Search both, by the chosen option id (E5-3).
+    const topMenu = [def.domainMenu, def.domains, def.domainOptions].find(Array.isArray) || [];
+    const brandMenu = (Array.isArray(def.brands) ? def.brands : [])
+        .flatMap((b) => (isObj(b) && Array.isArray(b.domains) ? b.domains : []));
+    const opt = [...topMenu, ...brandMenu].find((o) => isObj(o) && o.id === choices.domainId) || null;
+    // The builder writes the option id (e.g. "d_word"), not a domain, to landing_<pageId>_domain,
+    // so only trust that global as a host when it actually reads as a domain — otherwise the flip's
+    // address bar showed "https://d_word/" (E5-3).
+    const fallback = globals?.[`landing_${pageId}_domain`];
+    const fallbackHost = isStr(fallback) && fallback.includes('.') ? fallback : '';
+    const host = (opt && (opt.browserDomain || opt.domain)) || fallbackHost;
+    if (!isStr(host) || !host) return null;
     const url = /^[a-z]+:\/\//i.test(host) ? host : `https://${host}/`;
     const heading = labelOf(def.purposes, choices.purpose) || (isStr(def.title) ? def.title : '');
     const fields = (Array.isArray(choices.fields) ? choices.fields : []).filter(isStr).map((f) => FIELD_LABELS[f] || f);

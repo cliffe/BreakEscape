@@ -238,3 +238,25 @@ test('phone layout: every control is a native, tabbable element, no positive tab
     assert.ok(close && !close.disabled, 'Close is reachable');
     scene.cleanup();
 });
+
+test('an episode child closes to its runner even with nothing sent (P1 m6/E5-11)', () => {
+    // A child launched by the episode runner (returnTo set) in episode mode (maxSends) is a
+    // normal close with nothing sent, so returnTo reopens the runner's write step instead of
+    // aborting out to the game world. closeResult still reports an empty sentIds.
+    const child = open({ maxSends: 1, returnTo: { sceneType: 'episode-runner', params: {} } });
+    assert.equal(child.scene.closeMode, 'close', 'nothing sent, but an episode child returns to the step');
+    assert.deepEqual(child.scene.closeResult().sentIds, []);
+    child.scene._handleComposeSend(message());
+    assert.equal(child.scene.closeMode, 'close', 'still a normal close after a send');
+    child.scene.cleanup();
+
+    // A returnTo on a plain (non-episode) client does not change the abort-with-nothing-sent rule.
+    const plain = open({ returnTo: { sceneType: 'episode-runner', params: {} } });
+    assert.equal(plain.scene.closeMode, 'abort');
+    plain.scene.cleanup();
+
+    // Episode mode but no returnTo (opened standalone): unchanged, aborts with nothing sent.
+    const solo = open({ maxSends: 1 });
+    assert.equal(solo.scene.closeMode, 'abort');
+    solo.scene.cleanup();
+});

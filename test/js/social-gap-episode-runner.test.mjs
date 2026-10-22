@@ -28,7 +28,7 @@ for (const rel of [
     'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js', 'systems/episode-starter.js',
     'systems/awareness-measure.js', 'systems/global-writer.js',
     'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-kinds.js',
-    'minigames/inbox-triage/triage-flags.js', 'systems/phish-rules.js',
+    'minigames/inbox-triage/triage-flags.js', 'minigames/inbox-triage/triage-scoring.js', 'systems/phish-rules.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'ui/influence-bar.js', 'systems/social-influence.js',
     'minigames/framework/minigame-manager.js', 'minigames/framework/base-minigame.js',

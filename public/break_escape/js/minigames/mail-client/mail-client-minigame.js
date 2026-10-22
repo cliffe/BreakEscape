@@ -1089,9 +1089,17 @@ export class MailClientMinigame extends SocialOverlayScene {
         this.lastSendResult = result || null;
     }
 
-    /** Close with nothing sent ends as { aborted: true } and records nothing (01 "Closing the client"). */
+    /**
+     * Close with nothing sent ends as { aborted: true } and records nothing (01 "Closing the
+     * client"). An episode child is the exception: it closes normally so its returnTo reopens
+     * the episode runner on the write step, instead of aborting all the way out to the game
+     * world (P1 m6/F12, E5-11). closeResult carries an empty sentIds, so the runner sees nothing
+     * was sent and stays on write rather than advancing to the flip.
+     */
     get closeMode() {
-        return this.sentThisSession > 0 ? 'close' : 'abort';
+        if (this.sentThisSession > 0) return 'close';
+        if (this._episodeMode() && this.params.returnTo) return 'close';
+        return 'abort';
     }
 
     closeResult() {

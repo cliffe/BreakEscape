@@ -246,6 +246,28 @@ export class MailComposer {
         return !(this.account && this.account.spoofsFrom === true);
     }
 
+    /**
+     * The default wording for a part the composer fills in for the player (every part but
+     * the pretext, which is their deliberate choice). The calmest option wins — the lowest
+     * `urgency` authored on the templates, ties broken by the set's order — so a one-click
+     * send never lands on a pre-selected urgent line (E6 F3). A set whose templates author no
+     * urgency (From, greeting) falls back to the first, as before.
+     */
+    _defaultTemplate(set) {
+        const list = arr(set).filter(isStr);
+        if (!list.length) return null;
+        const RANK = { low: 0, medium: 1, high: 2 };
+        let best = list[0];
+        let bestRank = Infinity;
+        for (const id of list) {
+            const tpl = templateOf(this.templates, id);
+            const u = tpl && isStr(tpl.urgency) ? RANK[tpl.urgency] : undefined;
+            const rank = Number.isFinite(u) ? u : 0; // no urgency authored reads as calm
+            if (rank < bestRank) { best = id; bestRank = rank; }
+        }
+        return best;
+    }
+
     templateSet(part) {
         const t = this.target;
         const set = (t && isObject(t.templateSets) ? arr(t.templateSets[part]) : []).filter((id) => isStr(id));
@@ -307,7 +329,7 @@ export class MailComposer {
             // part is defaulted (From is forced, greeting/ask usually have one option).
             if (part === 'pretext' && this.templateSet(part).length > 1) continue;
             const set = this.templateSet(part);
-            if (set.length) this.choice[part] = set[0];
+            if (set.length) this.choice[part] = this._defaultTemplate(set);
         }
         if (rerender) { this._emitChange(); this.render(); }
     }
@@ -461,18 +483,62 @@ export class MailComposer {
         }
     }
 
-    /** The red flags the current draft would raise, de-duped (00 §2, §13: failed factors). */
+    /**
+     * Whether the forged sender in the From line is still a placeholder, so the forged-From
+     * warning would name a name and address the player has not chosen yet (E6/E7 F1). A From
+     * forced to the sending account is not a placeholder; a spoofable From with its name or
+     * address blank is.
+     */
+    _senderUnset() {
+        if (this.fromForced) return false;
+        const fromTpl = templateOf(this.templates, this.choice.from);
+        const fs = fromSlots(fromTpl);
+        if (fs.name && !isStr(this.slots[fs.name.id])) return true;
+        if (fs.address && !isStr(this.slots[fs.address.id])) return true;
+        return false;
+    }
+
+    /**
+     * The line the meter shows as advice once a forged, trusted sender is chosen: the target's
+     * own senderTrust redFlag text (which describes the forgery and why it reads as trusted),
+     * or a plain fallback. Presented as advice, not a fault (E6/E7 F1).
+     */
+    _forgedFromAdvice() {
+        const t = this.target;
+        const fs = t && isObject(t.factorStrings) ? t.factorStrings.senderTrust : null;
+        if (fs && isStr(fs.redFlag)) return fs.redFlag;
+        return 'The From line is forged to show a name and address they trust — that is what makes this land.';
+    }
+
+    /**
+     * The red flags the current draft would raise, de-duped (00 §2, §13: failed factors), plus
+     * any advice (E6/E7 F1). The forged-From warning is held back while the sender is still a
+     * placeholder, and returns as advice — not a counted fault — once a trusted sender is forged,
+     * so the meter agrees with the flip and debrief instead of ending at "reads clean".
+     */
     _meterData() {
-        if (!this._meterOn()) return { on: false, flags: [], clean: false, landed: false };
+        if (!this._meterOn()) return { on: false, flags: [], advice: [], clean: false, landed: false };
         const result = this._liveResult();
+        const senderUnset = this._senderUnset();
         const flags = [];
         const seen = new Set();
         const push = (s) => { if (isStr(s) && !seen.has(s)) { seen.add(s); flags.push(s); } };
         if (result) {
             if (result.open && result.open.opened === false) push(result.openLine || 'Nothing here would make them open it.');
-            for (const f of arr(result.factors)) if (!f.pass && isStr(f.redFlag)) push(f.redFlag);
+            for (const f of arr(result.factors)) {
+                if (f.pass || !isStr(f.redFlag)) continue;
+                // Hold back the forged-From warning while no sender has been picked: it would
+                // name an address the player has not chosen. It returns below as advice.
+                if (f.id === 'senderTrust' && senderUnset) continue;
+                push(f.redFlag);
+            }
         }
-        return { on: true, flags, clean: flags.length === 0, landed: !!(result && result.landed) };
+        const advice = [];
+        if (result && arr(result.tells).includes('senderTrust')) {
+            const line = this._forgedFromAdvice();
+            if (isStr(line)) advice.push(line);
+        }
+        return { on: true, flags, advice, clean: flags.length === 0 && advice.length === 0, landed: !!(result && result.landed) };
     }
 
     /** The composed message (00 §3). */
@@ -737,7 +803,7 @@ export class MailComposer {
     _renderFrom() {
         if (this._fromIsOwn()) {
             // The address is already on the "Send as" row; record the chosen wording and show no second row.
-            if (!this.choice.from) this.choice.from = this.templateSet('from')[0] || 'from_own';
+            if (!this.choice.from) this.choice.from = this._defaultTemplate(this.templateSet('from')) || 'from_own';
             return;
         }
         const row = el('div', 'mail-compose-row mail-compose-part');
@@ -937,6 +1003,7 @@ export class MailComposer {
         if (!data.on) return;
         const panel = el('aside', 'mail-redflag-meter');
         panel.dataset.count = String(data.flags.length);
+        panel.dataset.advice = String(arr(data.advice).length);
         panel.setAttribute('role', 'status');
         panel.setAttribute('aria-live', 'polite');
         panel.setAttribute('aria-label', 'Red-flag check');
@@ -944,31 +1011,37 @@ export class MailComposer {
         head.appendChild(el('span', 'mail-redflag-title', 'Red flags'));
         head.appendChild(el('span', 'mail-redflag-count', String(data.flags.length)));
         panel.appendChild(head);
-        if (data.flags.length) {
-            const list = el('ul', 'mail-redflag-list');
-            for (const flag of data.flags) {
-                const li = el('li', 'mail-redflag-item');
-                const img = el('img', 'mail-redflag-mark');
-                img.src = '/break_escape/assets/icons/mark-cross.png';
-                img.alt = '';
-                img.setAttribute('aria-hidden', 'true');
-                img.width = 16;
-                img.height = 16;
-                li.append(img, el('span', 'mail-redflag-text', flag));
-                list.appendChild(li);
-            }
-            panel.appendChild(list);
-        } else {
-            const ok = el('p', 'mail-redflag-clean');
-            const img = el('img', 'mail-redflag-mark');
-            img.src = '/break_escape/assets/icons/mark-tick.png';
+        const mark = (cls, src) => {
+            const img = el('img', cls);
+            img.src = src;
             img.alt = '';
             img.setAttribute('aria-hidden', 'true');
             img.width = 16;
             img.height = 16;
-            ok.append(img, el('span', 'mail-redflag-text',
-                'No red flags right now — this reads clean so far.'));
+            return img;
+        };
+        if (data.flags.length) {
+            const list = el('ul', 'mail-redflag-list');
+            for (const flag of data.flags) {
+                const li = el('li', 'mail-redflag-item');
+                li.append(mark('mail-redflag-mark', '/break_escape/assets/icons/mark-cross.png'),
+                    el('span', 'mail-redflag-text', flag));
+                list.appendChild(li);
+            }
+            panel.appendChild(list);
+        } else if (!arr(data.advice).length) {
+            const ok = el('p', 'mail-redflag-clean');
+            ok.append(mark('mail-redflag-mark', '/break_escape/assets/icons/mark-tick.png'),
+                el('span', 'mail-redflag-text', 'No red flags right now — this reads clean so far.'));
             panel.appendChild(ok);
+        }
+        // Advice (E6/E7 F1): the forged From is what makes the message land, shown as a note
+        // rather than a counted fault, so the meter agrees with the flip and debrief.
+        for (const line of arr(data.advice)) {
+            const item = el('p', 'mail-redflag-advice');
+            item.append(mark('mail-redflag-mark mail-redflag-advice-mark', '/break_escape/assets/icons/mark-exclamation.png'),
+                el('span', 'mail-redflag-text', line));
+            panel.appendChild(item);
         }
         this.root.appendChild(panel);
     }

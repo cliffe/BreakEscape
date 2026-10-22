@@ -17,7 +17,7 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
     'minigames/episode-runner/debrief-view.js', 'minigames/inbox-triage/triage-flags.js',
-    'minigames/inbox-triage/triage-kinds.js',
+    'minigames/inbox-triage/triage-kinds.js', 'minigames/inbox-triage/triage-scoring.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'utils/display-dashes.js', 'ui/influence-bar.js', 'systems/social-influence.js',
     'systems/phish-rules.js', 'systems/global-writer.js'
@@ -130,21 +130,78 @@ const result = () => ({
     ]
 });
 
-test('debrief: one card per answer, the Monday card and the no-blame line', () => {
+test('debrief (Cut A): a card only for items got wrong, plus the Monday card and the no-blame line', () => {
     const h = host();
     let finished = 0;
     const d = renderDebrief(h, { result: result(), set: set(), strings: { mondayCard: 'On Monday, use the Report button.', noBlameLine: 'No blame here.' }, variant: 'full', onFinish: () => { finished += 1; } });
-    assert.equal(h.querySelectorAll('.aw-card').length, 3);
-    assert.deepEqual(d.getState(), { items: 3, mondayCard: true, noBlame: true, conceptPanel: false, voicePanel: false });
+    // m1 (trusted a phish, score 0) is reviewed; m2 (reported, 100) and m3 (trusted real, 100) are not.
+    assert.equal(h.querySelectorAll('.aw-card').length, 1);
+    assert.deepEqual(d.getState(), { items: 1, mondayCard: true, noBlame: true, conceptPanel: false, voicePanel: false });
     assert.equal(h.querySelector('.aw-monday').textContent, 'On Monday, use the Report button.');
     assert.equal(h.querySelector('.aw-no-blame').textContent, 'No blame here.');
     const first = h.querySelector('[data-message-id="m1"]');
     assert.ok(first.textContent.includes(redFlagString('changed_bank_details', set().messages[0])));
     assert.ok(first.textContent.includes('The payment would go to the sender.'));
-    assert.ok(h.querySelector('[data-message-id="m2"]').textContent.includes('known address'));
+    assert.equal(h.querySelector('[data-message-id="m2"]'), null, 'a fully-correct item gets no card');
+    assert.equal(h.querySelector('[data-message-id="m3"]'), null);
     assert.ok(!/fell for|your fault|stupid/i.test(h.textContent));
     h.querySelector('.aw-finish').click();
     assert.equal(finished, 1);
+});
+
+test('debrief (Cut A): everything right shows one short line and no cards', () => {
+    const h = host();
+    const allRight = {
+        percent: 100, headline: 'Sharp', reportRate: 1, verifyCount: 0,
+        answers: [
+            { id: 'm1', verdict: 'report', flags: ['lookalike_domain', 'changed_bank_details'], score: 100 },
+            { id: 'm2', verdict: 'trust', flags: [], score: 100 },
+            { id: 'm3', verdict: 'trust', flags: [], score: 100 }
+        ]
+    };
+    const d = renderDebrief(h, { result: allRight, set: set(), strings: {}, variant: 'full', onFinish() {} });
+    assert.equal(h.querySelectorAll('.aw-card').length, 0);
+    assert.equal(d.getState().items, 0);
+    assert.ok(h.querySelector('.aw-all-right'), 'a short all-right line stands in for the cards');
+    assert.equal(h.querySelector('.aw-weakest'), null, 'no weakest line when nothing was missed');
+    assert.ok(h.querySelector('.aw-monday'), 'the Monday card stays');
+    assert.ok(h.querySelector('.aw-no-blame'), 'the no-blame line stays');
+});
+
+test('debrief (Cut A): a weakest-skill line appears when a tell was missed and perFactor is present', () => {
+    const h = host();
+    const r = {
+        percent: 60, headline: 'Getting there',
+        perFactor: { senderTrust: { caught: 0, missed: 2 }, pretextRelevant: { caught: 1, missed: 0 } },
+        answers: [{ id: 'm1', verdict: 'trust', flags: [], score: 0 }]
+    };
+    renderDebrief(h, { result: r, set: set(), strings: {}, variant: 'full', onFinish() {} });
+    assert.equal(h.querySelectorAll('.aw-card').length, 1);
+    const weak = h.querySelector('.aw-weakest');
+    assert.ok(weak, 'the weakest-skill line is shown');
+    assert.match(weak.textContent, /caught 0 of 2/);
+});
+
+test('debrief: call and prompt cards use their own action words and lines (D3), never a raw id heading (D2)', () => {
+    const h = host();
+    const callSet = { id: 'e3', messages: [
+        { id: 'e3_call_gordon_impostor', kind: 'call', callerId: 'Gordon McLeish, Claims (calling from a mobile)',
+          truth: { isPhish: true, flags: ['vish_callback_pressure'] } },
+        { id: 'e3_push_early', kind: 'push', push: { app: 'Authenticator' },
+          truth: { isPhish: true, flags: ['unrequested_mfa_push'] } }
+    ] };
+    const r = { percent: 50, headline: 'x', answers: [
+        { id: 'e3_call_gordon_impostor', verdict: 'verify', action: 'verify_callback', flags: [], score: 60 },
+        { id: 'e3_push_early', verdict: 'trust', action: 'approve', flags: [], score: 0 }
+    ] };
+    renderDebrief(h, { result: r, set: callSet, strings: {}, variant: 'full', onFinish() {} });
+    const call = h.querySelector('[data-message-id="e3_call_gordon_impostor"]');
+    assert.ok(call, 'the call item is reviewed');
+    assert.match(call.querySelector('.aw-card-title').textContent, /Gordon McLeish/, 'heading is the caller, not the id');
+    assert.ok(!/e3_call_gordon_impostor/.test(call.querySelector('.aw-card-title').textContent));
+    assert.match(call.querySelector('.aw-card-verdict').textContent, /^You chose Ring back\./, 'the call action label');
+    const push = h.querySelector('[data-message-id="e3_push_early"]');
+    assert.match(push.querySelector('.aw-card-verdict').textContent, /^You chose Approve\./, 'the prompt action label');
 });
 
 test('debrief defendOnly shows its string and no flip wording', () => {
@@ -244,7 +301,7 @@ test('debrief: the optional concept and voice panels render as plain text, betwe
     const d = renderDebrief(h, { result: result(), set: set(), variant: 'full', onFinish() {},
         strings: { conceptPanel: `Why enable content matters. ${evil}\n\nA real CV never needs it.`,
                    voicePanel: { heading: 'Voices can be copied', text: 'Ring back on a number you hold.' } } });
-    assert.deepEqual(d.getState(), { items: 3, mondayCard: true, noBlame: true, conceptPanel: true, voicePanel: true });
+    assert.deepEqual(d.getState(), { items: 1, mondayCard: true, noBlame: true, conceptPanel: true, voicePanel: true });
     const concept = h.querySelector('.aw-concept-panel');
     assert.equal(concept.querySelector('.aw-panel-heading').textContent, 'How it works');
     assert.deepEqual([...concept.querySelectorAll('.aw-panel-text')].map((p) => p.textContent),

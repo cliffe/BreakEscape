@@ -414,3 +414,44 @@ test('the stage parameter overrides the set stage; an empty round cannot start',
     const none = open(makeSet({ messages: [] }));
     assert.equal($(none, '.tri-start').disabled, true);
 });
+
+// ── call/prompt queue wording (E3-4/E5-7/D4/D5, Cut C) ───────────────────────
+const callSet = () => makeSet({
+    id: 'calls', title: 'Calls', scoringProfile: 'awareness', verifyVerdict: true, stage: 'mission',
+    messages: [
+        { id: 'c1', kind: 'call', callerId: 'Gordon McLeish', claims: [], transcript: [{ who: 'Caller', text: 'Reset my password.' }],
+          truth: { isPhish: true, flags: [] } },
+        { id: 'c2', kind: 'call', callerId: 'Chen Jiayi', claims: [], transcript: [{ who: 'Caller', text: 'New starter here.' }],
+          truth: { isPhish: false, flags: [] } },
+        { id: 'p1', kind: 'push', push: { app: 'Authenticator' }, truth: { isPhish: true, flags: [] } }
+    ]
+});
+
+test('call/prompt queue: own label, no email legend, per-kind action lines (Cut C/D5)', () => {
+    const s = open(callSet());
+    assert.match($(s, '.tri-brief-title').textContent, /Service desk queue: 3 items/);
+    assert.equal($(s, '.tri-brief-buttons'), null, 'the email Trust/Report/Delete/Verify legend is dropped');
+    assert.ok($(s, '.tri-brief-call'), 'the On a call action line is shown');
+    assert.ok($(s, '.tri-brief-push'), 'the On a sign-in prompt action line is shown');
+});
+
+test('call queue result: call wording, and ringing back a genuine caller counts as handled right (D4)', () => {
+    const s = open(callSet());
+    click($(s, '.tri-start'));
+    verdict(s, 'c1', 'report');   // Escalate the impostor
+    verdict(s, 'c2', 'verify');   // Ring back the genuine caller
+    verdict(s, 'p1', 'report');   // Deny and report the prompt
+    click($(s, '.tri-next'));
+    assert.equal(state(s).step, 'result');
+    const labels = $$(s, '.tri-numbers dt').map((d) => d.textContent);
+    assert.ok(labels.some((t) => /Real callers handled right/.test(t)), 'call wording, not "Real mail"');
+    assert.ok(!labels.some((t) => /Real mail/.test(t)));
+    const nums = Object.fromEntries($$(s, '.tri-numbers dd').map((d) => [d.dataset.number, d.textContent]));
+    assert.equal(nums.realTrusted, '1 of 1', 'the genuine caller rung back is handled right, not a miss');
+});
+
+test('email queue keeps the inbox legend and the "Real mail" grid line', () => {
+    const s = open(makeSet());
+    assert.ok($(s, '.tri-brief-buttons'), 'email sets keep the verdict legend');
+    assert.match($(s, '.tri-brief-title').textContent, /Inbox check:/);
+});

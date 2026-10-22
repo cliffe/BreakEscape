@@ -373,6 +373,22 @@ test('a post and a paragraph carry the readable face', () => {
     assert.ok(para.classList.contains('ob-block-text') && para.classList.contains('ob-readable'));
 });
 
+test('a field block authored with only text (no label/value) shows its text, not an empty box (E5-1)', () => {
+    setGlobals();
+    const s = open();
+    // blk_itdesk-style: kind field, only `text`. Without the fallback this renders two empty
+    // spans (an empty dashed box), hiding the noteable fact behind a blank control.
+    const lines = s._lines({ kind: 'field', text: 'IT notices come from the service desk, it-servicedesk@quayholt.example.' });
+    assert.equal(lines.length, 1, 'one readable line, not an empty label/value pair');
+    assert.equal(lines[0].textContent, 'IT notices come from the service desk, it-servicedesk@quayholt.example.');
+    assert.ok(lines[0].classList.contains('ob-readable'));
+    // A normal field (label + value) is unchanged.
+    const normal = s._lines({ kind: 'field', label: 'Author', value: 'J. Baker' });
+    assert.equal(normal.length, 2);
+    assert.equal(normal[0].textContent, 'Author');
+    assert.equal(normal[1].textContent, 'J. Baker');
+});
+
 test('a profile with no avatar falls back to the default person icon, never nothing (R-8)', () => {
     setGlobals();
     const s = open();

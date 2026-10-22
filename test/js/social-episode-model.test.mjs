@@ -186,3 +186,19 @@ test('flipPage: only for an episode with a build stage and a built record', () =
     assert.equal(M.flipPage(full(), social, { se_landing_pages: { sso_login: rec } }), null, 'no build stage');
     assert.equal(M.flipPage(e5(), social, {}), null);
 });
+
+test('flipPage: resolves a brand-nested domain by id, not the id-valued domain global (E5-3)', () => {
+    // Domains sit under brands[], as the builder authors them; the chosen option id is "d_word".
+    const social = { landingPages: [{ id: 'sso_login',
+        brands: [{ id: 'quayholt', domains: [
+            { id: 'd_letter', domain: 'quaybolt.example' },
+            { id: 'd_word', domain: 'quayholt-sso.example' }
+        ] }],
+        purposes: [{ id: 'p1', label: 'Sign in again' }] }] };
+    const rec = { built: true, tells: ['domain'], choices: { brand: 'quayholt', domainId: 'd_word', purpose: 'p1', fields: ['email'], padlock: true } };
+    // landing_sso_login_domain holds the option id "d_word" (what the builder writes), which must
+    // not reach the address bar.
+    const page = M.flipPage(e5(), social, { se_landing_pages: { sso_login: rec }, landing_sso_login_domain: 'd_word' });
+    assert.equal(page.url, 'https://quayholt-sso.example/', 'the real look-alike domain, not the id');
+    assert.ok(!/d_word/.test(page.url));
+});

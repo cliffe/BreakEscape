@@ -56,8 +56,19 @@ import { episodeDefendSet } from './role-swap.js';
 import {
     stagesFor, stateKey, readState, completeStage, childLaunch, variantOf,
     sentFromRecord, findSentRecord, flipEntry, measurementCtx, defendSummary,
-    writeKind, sentFromCall, callOutcomeKey, flipPage, flipCall
+    writeKind, sentFromCall, callOutcomeKey, flipPage, flipCall, CALL_LANDED
 } from './episode-model.js';
+
+/**
+ * A pretext call that did not land (reported or walked away) means the attacker never got
+ * the password, so the MFA-fatigue stage ("You have the password…") must not follow it
+ * (E3-1). When the write stage just closed on such a call and the next stage is mfa, mark
+ * mfa done too so the runner moves straight to the flip, which shows the missed attempt.
+ */
+function skipMfaIfUnlanded(episode, state, outcome) {
+    if (outcome === CALL_LANDED || state.stage !== 'mfa') return state;
+    return completeStage(episode, state, 'mfa');
+}
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isStr = (v) => typeof v === 'string' && v.length > 0;
@@ -398,6 +409,13 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this.notice.setAttribute('aria-live', 'polite');
         panel.appendChild(this.notice);
         this._button(panel, copy.button, () => this._launch(stage), 'er-launch');
+        // From the write stage, always offer a way back to research. A learner who closed the
+        // browser without noting a contact or a fact the message needs is otherwise stuck with
+        // Send disabled and no route back — the one restart-or-nothing dead end (P1 B1 blocker,
+        // E5-2). Research reopens as a child; closing it leaves the write stage where it was.
+        if (stage === 'write' && stagesFor(this.episode).includes('osint')) {
+            this._button(panel, 'Back to research', () => this._launch('osint'), 'er-back-research');
+        }
     }
 
     _flipMessage() {
@@ -498,9 +516,15 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             child = this.launchChild(spec.sceneType, {
                 ...spec.params,
                 onComplete: (success, result) => {
-                    if (!isNormal(success, result)) return; // nothing sent: stay on write
-                    const rec = findSentRecord(this.mailState, target, result?.sentIds);
-                    this._completeWhileAway('write', { sent: sentFromRecord(rec, target) });
+                    if (!isNormal(success, result)) return; // aborted: stay on write
+                    // An episode child now closes normally even with nothing sent, so returnTo
+                    // reopens us on write (P1 m6/E5-11). Advance only when a message actually went.
+                    const ids = Array.isArray(result?.sentIds) ? result.sentIds : [];
+                    if (!ids.length) return;
+                    const rec = findSentRecord(this.mailState, target, ids);
+                    const sent = sentFromRecord(rec, target);
+                    if (!sent) return; // no matching sent record: do not advance past write
+                    this._completeWhileAway('write', { sent });
                 }
             });
         } else if (spec.kind === 'build') {
@@ -544,8 +568,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         const outcome = this._callOutcome();
         if (!outcome) return;
         stopCallWatch(this.episode.id);
-        const next = completeStage(this.episode, this.state, 'write', { sent: sentFromCall(this._callId, outcome) });
-        this._saveState(next);
+        const written = completeStage(this.episode, this.state, 'write', { sent: sentFromCall(this._callId, outcome) });
+        this._saveState(skipMfaIfUnlanded(this.episode, written, outcome));
         this.pauseAfter = null;
     }
 
@@ -708,8 +732,9 @@ export function watchCall({ episode, callId, before = null, reopen = {}, globals
         const ended = outcome && (heard || outcome !== before);
         if (ended && !current) {
             stopCallWatch(episode.id);
-            const state = completeStage(episode, readState(episode, g[stateKey(episode.id)]), 'write',
+            const written = completeStage(episode, readState(episode, g[stateKey(episode.id)]), 'write',
                 { sent: sentFromCall(callId, outcome) });
+            const state = skipMfaIfUnlanded(episode, written, outcome);
             save(state);
             fw?.startMinigame?.('episode-runner', null, {
                 ...reopen,

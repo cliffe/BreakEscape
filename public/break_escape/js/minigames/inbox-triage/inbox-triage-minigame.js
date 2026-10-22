@@ -293,18 +293,55 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
     // ── 1 Brief ──────────────────────────────────────────────────────────────
 
+    /**
+     * How to word the round for the kind of queue it is (E3-4/E5-7/D4/D5, Cut C). An email or
+     * mixed-with-email queue keeps the inbox wording; a queue that is all calls, prompts or
+     * voicemails gets its own label, item noun, "real X" noun and report-line wording, and drops
+     * the generic Trust/Report/Delete/Verify legend (the per-message buttons already explain
+     * themselves, and the email verbs do not apply to those kinds).
+     */
+    _queueInfo() {
+        const kinds = this.messages.map((m) => kindOf(m));
+        const every = (allow) => kinds.length > 0 && kinds.every((k) => allow.includes(k));
+        if (kinds.some((k) => k === 'email' || k === 'playerSent')) {
+            return { label: 'Inbox check', item: ['message', 'messages'], real: 'Real mail',
+                reportLabel: 'Reported rather than just deleted', dropLegend: false };
+        }
+        if (every(['call'])) return { label: 'Service desk queue', item: ['call', 'calls'], real: 'Real callers',
+            reportLabel: 'Escalated rather than just refused', dropLegend: true };
+        if (every(['push'])) return { label: 'Sign-in prompts', item: ['prompt', 'prompts'], real: 'Expected sign-ins',
+            reportLabel: 'Reported rather than just denied', dropLegend: true };
+        if (every(['call', 'push'])) return { label: 'Service desk queue', item: ['item', 'items'], real: 'Real callers',
+            reportLabel: 'Escalated or reported rather than just refused', dropLegend: true };
+        if (every(['voicemail'])) return { label: 'Voicemail', item: ['voicemail', 'voicemails'], real: 'Real voicemails',
+            reportLabel: 'Reported rather than just deleted', dropLegend: true };
+        if (every(['page'])) return { label: 'Pages to check', item: ['page', 'pages'], real: 'Real pages',
+            reportLabel: 'Reported rather than just deleted', dropLegend: false };
+        if (every(['sms', 'qr'])) return { label: 'Messages', item: ['message', 'messages'], real: 'Real messages',
+            reportLabel: 'Reported rather than just deleted', dropLegend: false };
+        return { label: 'Messages to check', item: ['message', 'messages'], real: 'Real messages',
+            reportLabel: 'Reported rather than just deleted', dropLegend: false };
+    }
+
     _renderBrief() {
         const p = this.briefEl;
         p.textContent = '';
         const n = this.messages.length;
-        const label = STAGE_LABEL[this.stage] || 'Inbox check';
-        p.appendChild(el('h3', 'tri-brief-title', `${label}: ${plural(n, 'message', 'messages')}`));
+        const info = this._queueInfo();
+        // A pre/post/training round keeps its assessment label; otherwise the queue's own label.
+        const stageLabel = ['pre', 'post', 'training'].includes(this.stage) ? STAGE_LABEL[this.stage] : null;
+        const label = stageLabel || info.label;
+        p.appendChild(el('h3', 'tri-brief-title', `${label}: ${plural(n, info.item[0], info.item[1])}`));
         if (typeof this.set.brief === 'string' && this.set.brief) p.appendChild(el('p', 'tri-brief-text', this.set.brief));
 
-        const dl = el('dl', 'tri-brief-buttons');
-        const verdicts = ['trust', 'report', 'delete', ...(this.verifyEnabled ? ['verify'] : [])];
-        for (const v of verdicts) dl.append(el('dt', null, VERDICT_LABEL[v]), el('dd', null, VERDICT_HINT[v]));
-        p.appendChild(dl);
+        // The email verdict legend is dropped on a call/prompt/voicemail queue (Cut C/D5): those
+        // kinds show their own action buttons (or self-describing verdict buttons) during the sort.
+        if (!info.dropLegend) {
+            const dl = el('dl', 'tri-brief-buttons');
+            const verdicts = ['trust', 'report', 'delete', ...(this.verifyEnabled ? ['verify'] : [])];
+            for (const v of verdicts) dl.append(el('dt', null, VERDICT_LABEL[v]), el('dd', null, VERDICT_HINT[v]));
+            p.appendChild(dl);
+        }
         // Calls and sign-in prompts have their own buttons (05 N10); say so before the round.
         const kinds = new Set(this.messages.map((m) => kindOf(m)));
         for (const [kind, lead, actions] of [['call', 'On a call', CALL_ACTIONS], ['push', 'On a sign-in prompt', PUSH_ACTIONS]]) {
@@ -791,11 +828,15 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         if (stored) {
             addNum('Reported rather than just deleted', `${Math.round(reportRate * 100)}% of the phish`, 'reportRate');
         } else {
+            const info = this._queueInfo();
             const real = this.messages.filter((m) => m.truth.isPhish !== true);
-            const trusted = real.filter((m) => this.answers.get(m.id)?.verdict === 'trust').length;
+            // A genuine item handled right is one trusted OR checked (Verify / Ring back): ringing
+            // back a real caller is correct and "never costs you anything", so it must not read as
+            // a miss (D4). The noun follows the queue's kind.
+            const handledRight = real.filter((m) => ['trust', 'verify'].includes(this.answers.get(m.id)?.verdict)).length;
             addNum('Phish caught', `${result.phishCaught} of ${result.phishTotal}`, 'phishCaught');
-            addNum('Reported rather than just deleted', `${result.reportCount} of ${result.phishTotal}`, 'reported');
-            addNum('Real mail trusted', `${trusted} of ${real.length}`, 'realTrusted');
+            addNum(info.reportLabel, `${result.reportCount} of ${result.phishTotal}`, 'reported');
+            addNum(`${info.real} handled right`, `${handledRight} of ${real.length}`, 'realTrusted');
             if (this.profile === 'analyst') addNum('False alarms', String(result.falseAlarms), 'falseAlarms');
             if (this.verifyEnabled && result.verifyCount) addNum('Checked by another route', String(result.verifyCount), 'verify');
         }

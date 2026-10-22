@@ -13,13 +13,16 @@
 //                 conceptPanel: boolean, voicePanel: boolean }.
 // Every string goes in with textContent. The wording never blames the learner.
 
-import { redFlagString } from '../inbox-triage/triage-flags.js';
+import { redFlagString, skillName } from '../inbox-triage/triage-flags.js';
+import { weakestFactor } from '../inbox-triage/triage-scoring.js';
+import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject } from '../inbox-triage/triage-kinds.js';
 
 const DEFAULTS = Object.freeze({
     heading: 'What happened',
     mondayCard: "What to do on Monday: if something looks wrong, report it through your organisation's usual route. Reporting is never wrong.",
     noBlameLine: 'Nobody here is being marked down for a miss. These messages are built to look right.',
-    defendOnly: 'You went straight to the inbox this time. Each message below shows what to look for and why.',
+    defendOnly: 'This round is defence only. Anything you did not read the right way is picked out below.',
+    allRight: 'You read every one of these the right way. Nothing to pick over here.',
     finish: 'Finish'
 });
 
@@ -54,6 +57,7 @@ function el(tag, className, text) {
 }
 
 const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+const isStr = (v) => typeof v === 'string' && v.length > 0;
 const str = (strings, key) => (isObj(strings) && typeof strings[key] === 'string' && strings[key]) ? strings[key] : DEFAULTS[key];
 
 function messageFor(set, id) {
@@ -62,11 +66,51 @@ function messageFor(set, id) {
 }
 
 function titleOf(msg, id) {
-    if (!msg) return id;
-    const subject = msg.subject || '';
+    if (!isObj(msg)) return id;
+    const subject = isStr(msg.subject) ? msg.subject : '';
     const who = isObj(msg.from) ? (msg.from.name || msg.from.address || '') : (typeof msg.from === 'string' ? msg.from : '');
+    // A call, voicemail, text, QR notice, page or prompt has no From/subject: use the caller or
+    // a kind-appropriate title, never the raw message id (D2/E3-5).
+    if (isNonEmail(kindOf(msg))) {
+        const caller = isStr(msg.callerId) ? msg.callerId : who;
+        return caller || subject || defaultSubject(msg) || id;
+    }
     if (subject && who && who !== subject && msg.kind && msg.kind !== 'email') return `${who} · ${subject}`;
     return subject || who || id;
+}
+
+/**
+ * The word for what the learner did and the line that follows it, in the set's own vocabulary:
+ * a call or sign-in prompt uses its action labels (Ring back, Escalate, Deny and report) and
+ * its own review lines, not the email verdicts (D3).
+ */
+function verdictWordAndLine(answer, msg, phish) {
+    const kind = kindOf(msg);
+    if (kind === 'call' || kind === 'push') {
+        const action = actionById(kind, answer.action, answer.verdict);
+        return { word: action.label, line: kindVerdictLine(kind, phish, answer.verdict) || '' };
+    }
+    return { word: VERDICT_WORD[answer.verdict] || String(answer.verdict ?? ''),
+        line: LINES[phish ? 'phish' : 'real'][answer.verdict] || '' };
+}
+
+/**
+ * Whether an item is worth a review card (Cut A): the learner did not get full marks on it
+ * (a wrong verdict or a missed tell both drop the score below 100). Without a per-message
+ * score, fall back to the verdict and the authored flags.
+ */
+function reviewNeeded(answer, msg) {
+    if (Number.isFinite(answer?.score)) return answer.score < 100;
+    const truth = isObj(msg?.truth) ? msg.truth : {};
+    const phish = truth.isPhish === true;
+    const v = answer?.verdict;
+    const verdictRight = phish ? (v === 'report' || v === 'verify') : (v === 'trust' || v === 'verify');
+    if (!verdictRight) return true;
+    if (phish && Array.isArray(truth.flags)) {
+        const picked = new Set(Array.isArray(answer.flags) ? answer.flags : []);
+        return truth.flags.some((f) => !picked.has(f));
+    }
+    return false;
 }
 
 function buildCard(answer, msg) {
@@ -78,8 +122,7 @@ function buildCard(answer, msg) {
     const title = el('h3', 'aw-card-title', titleOf(msg, answer.id));
     title.tabIndex = -1;
     card.appendChild(title);
-    const word = VERDICT_WORD[verdict] || String(verdict ?? '');
-    const line = LINES[phish ? 'phish' : 'real'][verdict] || '';
+    const { word, line } = verdictWordAndLine(answer, msg, phish);
     card.appendChild(el('p', 'aw-card-verdict', `You chose ${word}. ${line}`.trim()));
 
     const picked = new Set(Array.isArray(answer.flags) ? answer.flags : []);
@@ -148,10 +191,25 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     summary.textContent = bits.join('. ');
     if (bits.length) root.appendChild(summary);
 
+    // Cut A: the learner read the full reasoning for every item in immediate feedback, so the
+    // debrief dwells only on what they got wrong. A card per missed item, then one weakest-skill
+    // line; if nothing was missed, one short line says so. The score summary, panels, Monday card
+    // and no-blame line stay.
     const answers = Array.isArray(result?.answers) ? result.answers.filter(isObj) : [];
+    const reviewed = answers.filter((a) => reviewNeeded(a, messageFor(set, a.id)));
     const cards = el('div', 'aw-cards');
-    for (const a of answers) cards.appendChild(buildCard(a, messageFor(set, a.id)));
+    for (const a of reviewed) cards.appendChild(buildCard(a, messageFor(set, a.id)));
     root.appendChild(cards);
+
+    if (reviewed.length) {
+        const weak = weakestFactor(isObj(result?.perFactor) ? result.perFactor : {});
+        if (weak && weak.missed > 0) {
+            root.appendChild(el('p', 'aw-weakest',
+                `The tell most often missed: ${skillName(weak.id)} (caught ${weak.caught} of ${weak.caught + weak.missed}).`));
+        }
+    } else if (answers.length) {
+        root.appendChild(el('p', 'aw-all-right', str(strings, 'allRight')));
+    }
 
     const concept = buildPanel(strings, 'conceptPanel');
     if (concept) root.appendChild(concept);
@@ -171,6 +229,6 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
 
     return {
         destroy() { root.remove(); },
-        getState() { return { items: answers.length, mondayCard: true, noBlame: true, conceptPanel: !!concept, voicePanel: !!voice }; }
+        getState() { return { items: reviewed.length, mondayCard: true, noBlame: true, conceptPanel: !!concept, voicePanel: !!voice }; }
     };
 }

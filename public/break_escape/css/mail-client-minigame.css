@@ -364,6 +364,11 @@
 .mail-redflag-clean { color: var(--ui-success, #6ee08f); }
 .mail-redflag-mark { width: 16px; height: 16px; flex: none; margin-top: 2px; image-rendering: pixelated; }
 .mail-redflag-text { min-width: 0; }
+/* Advice (E6/E7 F1): the forged From, shown as a note, not a counted fault. */
+.mail-redflag-advice { display: flex; align-items: flex-start; gap: 6px; margin: 0; font-size: 15px; line-height: 1.35; color: var(--ui-warning, #f2c14e); }
+/* With advice present and no faults, the meter must not read as all-clear green. */
+.mail-redflag-meter[data-count="0"]:not([data-advice="0"]) { border-left-color: var(--ui-warning, #f2c14e); background: color-mix(in srgb, var(--ui-warning, #f2c14e) 8%, transparent); }
+.mail-redflag-meter[data-count="0"]:not([data-advice="0"]) .mail-redflag-count { background: var(--ui-warning, #f2c14e); }
 
 .mail-picker {
     position: absolute;

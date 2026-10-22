@@ -26,6 +26,7 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'utils/conditional-text.js', 'minigames/episode-runner/debrief-view.js',
     'minigames/inbox-triage/triage-flags.js', 'minigames/inbox-triage/triage-kinds.js',
+    'minigames/inbox-triage/triage-scoring.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'utils/display-dashes.js', 'ui/influence-bar.js', 'systems/social-influence.js',
     'systems/phish-rules.js', 'systems/global-writer.js'
