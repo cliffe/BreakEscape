@@ -178,7 +178,7 @@ Victoria Sterling: If I walk out of here, I walk out owing nobody. Including you
 {vic_quiet:
     ~ vic_quiet = false
 - else:
-    // Alignment R10-m4: a fresh entry (a reload) re-arms her; hostility isn't saved.
+    // Alignment R10-m4: a fresh entry re-arms her (a Restart after the player is knocked out calms hostiles; a reload keeps them).
     #hostile:victoria_threat
     Victoria Sterling: We're past talking.
 }

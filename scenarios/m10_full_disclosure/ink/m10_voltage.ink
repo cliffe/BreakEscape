@@ -210,7 +210,7 @@ Voltage (Critical Mass): Breaker row. Third from the left is the shutter. Leave 
 {voltage_outcome == "":
     ~ voltage_outcome = "avoided"
 }
-// Alignment R10-m4: hostility isn't saved, so after a reload a fight he was in starts again.
+// Alignment R10-m4: a reload restores hostility, but a Restart after the player is knocked out calms it; a fight he was in then starts again.
 {voltage_outcome == "fought":
     -> fight
 }
