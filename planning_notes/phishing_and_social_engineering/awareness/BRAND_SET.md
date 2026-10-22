@@ -174,3 +174,12 @@ no equivalence between the forms.
 - **The Monday card.** `strings.mondayCard` is generic ("report the email the way your organisation asks you
   to"). When the customer slot (`debrief.mondayCard: "slot:customer_report_route"`, `11` §6.3) is built, the
   customer's route replaces that clause.
+
+## Additions from E5 (P7-V, 2026-10-22)
+The full list is under `_brandAdditions` in `awareness/e5/defend.json`. It adds:
+- the real Quayholt hosts;
+- the look-alikes `quayholt-benefits` and `quayholt-learning`;
+- two invented third parties, Ashcombe Solicitors and MailGuard;
+- five more cast members (Somali-British, Welsh, Northern Irish, Italian-British and Jamaican-British, aged from their 20s to their 60s).
+
+Gallagher and Farah are not used, because they clash with existing scenarios.
