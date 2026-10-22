@@ -455,3 +455,8 @@ the orchestrator passes it to that wave's owner.
   - **Thin flip:** a good send stores only `[urgencyCalibrated]`, because an open inbox has no trusted-sender spoof and no link. The defend side carries the lesson.
   - **For the E2 shell:** E2's defend set needs `playerSentAuth` for the `analyst` account so the flip can replay the send.
 - **Wave 4 content is complete:** the attack and defend halves of E2, E4, E6 and E7.
+- **Follow-up runtime packet, from the E2/E4 playtests:**
+  1. The triage result's weakest-skill line says "Practise it in the mail client… lab sheet", which is lab wording, in the awareness product. Use the awareness skin or profile to swap it.
+  2. Verify on a phish counts as "not caught" in the results summary, though it scores 100 and the card calls it sound. The summary should count Verify as caught.
+  3. The kiosk text still says "N messages are waiting" after the round is done.
+  4. Moyo appears twice (Tendai in E2, Thandiwe in E4, now a host). Rename one before release.
