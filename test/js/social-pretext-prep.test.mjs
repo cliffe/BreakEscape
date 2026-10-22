@@ -246,7 +246,7 @@ test('a contact blank offers the held sender name and not a recipient name', () 
     blank(scene, 'contact').click();
     const values = [...scene.container.querySelectorAll('.pretext-picker-option')].map((el) => el.dataset.value);
     assert.deepEqual(values, ['shah_full']);
-    assert.match(scene.container.querySelector('.pretext-picker-kind').textContent, /insider detail/);
+    assert.match(scene.container.querySelector('.pretext-picker-kind').textContent, /a specific detail/);
     scene.container.querySelector('.pretext-picker-option').click();
     assert.equal(scene.payload().contact.value, 'shah_full');
     assert.equal(scene.payload().contact.label, 'Ravi Shah');

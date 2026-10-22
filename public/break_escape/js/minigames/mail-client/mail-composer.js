@@ -940,11 +940,11 @@ export class MailComposer {
             li.dataset.value = opt.value;
             li.id = `mail-picker-opt-${i}`;
             li.append(el('span', 'mail-picker-label', opt.label));
-            // Explain the tag in plain words rather than the raw kind id (A6): a
-            // distinctive detail is one only an insider would know; a stale value
-            // may be out of date.
+            // Name where the fact came from, in plain words, without judging which is
+            // the better pick (the student should reason from the board, not the label;
+            // lab fix round L): a specific detail versus an older one.
             if (opt.kind && opt.kind !== 'generic') {
-                const kindText = { distinctive: 'a specific, insider detail', stale: 'may be out of date' }[opt.kind] || opt.kind;
+                const kindText = { distinctive: 'a specific detail', stale: 'an older detail' }[opt.kind] || opt.kind;
                 li.append(el('span', `mail-picker-kind kind-${opt.kind}`, kindText));
             }
             li.setAttribute('aria-selected', opt.value === chosen ? 'true' : 'false');

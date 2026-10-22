@@ -46,8 +46,16 @@ VAR profile_done = false
 - else: -> stage_done
 }
 
+// Each stage checks it is still the current one on entry. The engine resumes a
+// reopened phone at the knot that held the last choices (a stageN), not at `hub`,
+// so without this guard the thread stayed on whichever stage it opened at (B4).
+// When the stage's work is done the guard diverts back to `hub`, which re-routes
+// to the stage the globals now point at. The globals only ever move forward, so
+// the guard needs only its own completion check and never loops.
+
 // ---- Stage 0: authorisation ----
 === stage0 ===
+{ roe_signed: -> hub }
 Ruth Adeyemi: On the sheet still?
 + [Where do I start?]
     Ruth Adeyemi: The rules-of-engagement board, in this room. Sort the scope cards first.
@@ -64,6 +72,7 @@ Ruth Adeyemi: On the sheet still?
 
 // ---- Stage 1: scope and plan ----
 === stage1 ===
+{ plan_done: -> hub }
 Ruth Adeyemi: Gareth's signed. The whiteboard next.
 + [Did Gareth say anything?]
     Ruth Adeyemi: He signed in person, by the window. Go and hear his one condition before you plan.
@@ -75,7 +84,7 @@ Ruth Adeyemi: Gareth's signed. The whiteboard next.
     Ruth Adeyemi: Not "who fell for it". Measure the process. Naming people breaks Gareth's one rule.
     -> stage1
 + [Then what?]
-    Ruth Adeyemi: Come back to me in person for the Recon key. I hand those over myself.
+    Ruth Adeyemi: Once the plan's signed off, have a word with me and I'll pass you the Recon key.
     -> stage1
 + [Right.] #exit_conversation
     Ruth Adeyemi: Off you go.
@@ -83,7 +92,8 @@ Ruth Adeyemi: Gareth's signed. The whiteboard next.
 
 // ---- Stage 2: OSINT ----
 === stage2 ===
-Ruth Adeyemi: Recon, is it? You'll need the key from me in person if you haven't got it.
+{ osint_done and se_intel_username_convention: -> hub }
+Ruth Adeyemi: Recon, is it? If that door's still shut, come and see me for the key.
 + [What am I looking for?]
     Ruth Adeyemi: Three people filled in from public sources. The board's "Missing" rows say what's short.
     -> stage2
@@ -99,7 +109,8 @@ Ruth Adeyemi: Recon, is it? You'll need the key from me in person if you haven't
 
 // ---- Stage 3: spear-phish rounds 1 and 2 ----
 === stage3 ===
-Ruth Adeyemi: Operations now. Collect that key from me first if you need it.
+{ phish_pierce_landed: -> hub }
+Ruth Adeyemi: Operations now. If that door's locked, I've got the key — come and see me.
 + {not acct_freemail} [Do I write from the guest account?]
     Ruth Adeyemi: Set up a throwaway address first, so nothing comes back to Tarnside.
     -> stage3
@@ -115,6 +126,7 @@ Ruth Adeyemi: Operations now. Collect that key from me first if you need it.
 
 // ---- Stage 4 + 5: page and call ----
 === stage4 ===
+{ landing_payroll_login_built and pretext_call_done: -> hub }
 { pretext_call_reported:
     Ruth Adeyemi: Dev flagged that last call to his manager. Leave it a while, then try again — softer, and have your facts straight.
 - else:
@@ -135,6 +147,7 @@ Ruth Adeyemi: Operations now. Collect that key from me first if you need it.
 
 // ---- Stage 5: hard phish to Lord ----
 === stage5 ===
+{ phish_lord_landed: -> hub }
 Ruth Adeyemi: Now Sofia. She needs all three call facts to bite.
 + [Who do I send as?]
     Ruth Adeyemi: The portal's own notification address. Dev told you how its emails read.
@@ -151,6 +164,7 @@ Ruth Adeyemi: Now Sofia. She needs all three call facts to bite.
 
 // ---- Stage 6: report ----
 === stage6 ===
+{ report_filed: -> hub }
 Ruth Adeyemi: Sending's done. The report desk, in this room.
 + [Where are the numbers?]
     Ruth Adeyemi: The builder reads them from what you sent. Press Confirm on the results first.
@@ -167,6 +181,7 @@ Ruth Adeyemi: Sending's done. The report desk, in this room.
 
 // ---- Stage 7: defender flip ----
 === stage7 ===
+{ triage_pass and profile_done: -> hub }
 Ruth Adeyemi: Blue Team room. Tomasz will set you off.
 + [Has Gareth seen the report?]
     Ruth Adeyemi: He has, and not one name in it. Go by the window — he'll want to thank you himself.

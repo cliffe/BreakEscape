@@ -119,6 +119,13 @@
       "unlockCondition": { "aimCompleted": "report" },
       "missionConclusion": true,
       "concludeRequires": {},
+      "conclusionScreen": {
+        "type": "end_screen",
+        "title": "ENGAGEMENT CLOSED",
+        "body": "You phished Ledgerwell, then turned round and defended it. The report names no one, and the fixes are written. Gareth keeps his staff, and his staff keep reporting.",
+        "buttonText": "Return to Missions",
+        "outcome": "success"
+      },
       "tasks": [
         { "taskId": "enter_blue_team", "title": "Go into the Blue Team Room", "type": "enter_room", "targetRoom": "blue_team_room", "status": "active" },
         { "taskId": "triage_passed", "title": "Pass the inbox triage", "type": "manual", "status": "active" },
@@ -420,7 +427,7 @@
                    { "id": "when", "type": "date", "about": "release", "label": "the release date" } ],
         "urgency": "medium" },
       "ask_review_cv": { "part": "ask", "text": "Could you review my CV when you have a moment?", "slots": [],
-        "urgency": "medium" },
+        "urgency": "low" },
       "ask_open_attached": { "part": "ask", "text": "Can you open the attached file and check it, please?", "slots": [],
         "urgency": "low" },
       "ask_view_portal": { "part": "ask", "text": "Please sign in to the portal to view it.", "slots": [],
@@ -977,6 +984,10 @@
       {
         "id": "payroll_login",
         "linkText": "ledgerwell.example/payroll",
+        "pretext": { "brandId": "ledgerwell", "purposeId": "payslip",
+                     "facts": ["lord_portal_name", "lord_payslip_date"] },
+        "fields": ["email", "password", "one_time_code", "card_number", "ni_number"],
+        "extraSensitiveFields": ["card_number", "ni_number"],
         "targets": {
           "lord": { "linkThreshold": 70, "minDomainTier": 2 }
         },
@@ -1042,7 +1053,7 @@
           { "id": "work_mail", "kind": "sort", "step": "scope", "text": "Phish named staff at their work email",
             "inScope": true, "why": "The sheet authorises work email to named staff." },
           { "id": "personal_mail", "kind": "sort", "step": "scope", "text": "Phish staff at their personal addresses",
-            "inScope": false, "why": "Section 4 limits the test to work accounts; personal accounts are out." },
+            "inScope": false, "why": "The sheet limits the test to work accounts; personal addresses are out of scope." },
           { "id": "service_desk", "kind": "sort", "step": "scope", "text": "Call the published service-desk line",
             "inScope": true, "why": "The published service-desk line is named in scope." },
           { "id": "tailgate", "kind": "sort", "step": "scope", "text": "Tailgate into the building",
@@ -1071,23 +1082,23 @@
           { "id": "measures", "onCompleteGlobal": "plan_measures_done" }
         ],
         "objectives": [
-          { "id": "how_far_gaps", "step": "objective", "correct": true,
-            "text": "Find how far email and a phone pretext get against Ledgerwell's staff, and report the gaps.",
-            "why": "That is what Ledgerwell asked for and what the sheet allows." },
           { "id": "disrupt_payroll", "step": "objective", "correct": false,
             "text": "Disrupt payroll to prove the risk.",
             "why": "The rules of engagement bar disruption; this is a test, not an attack." },
+          { "id": "how_far_gaps", "step": "objective", "correct": true,
+            "text": "Find how far email and a phone pretext get against Ledgerwell's staff, and report the gaps.",
+            "why": "That is what Ledgerwell asked for and what the sheet allows." },
           { "id": "collect_passwords", "step": "objective", "correct": false,
             "text": "Collect as many staff passwords as you can.",
             "why": "The engagement keeps nobody's password; a captured sign-in is simulated and reported, not stored." }
         ],
         "measures": [
-          { "id": "how_far", "step": "measures", "correct": true,
-            "text": "How far each attempt gets: sent, landed, failed, page visits and the call outcome.",
-            "why": "These are measures the lab can record and that point at process gaps." },
           { "id": "names", "step": "measures", "correct": false, "blame": true,
             "text": "Which named staff fell for it.",
             "why": "Naming people suppresses reporting; the report is about process, not blame." },
+          { "id": "how_far", "step": "measures", "correct": true,
+            "text": "How far each attempt gets: sent, landed, failed, page visits and the call outcome.",
+            "why": "These are measures the lab can record and that point at process gaps." },
           { "id": "passwords_collected", "step": "measures", "correct": false,
             "text": "How many passwords you collected.",
             "why": "The lab records that a sign-in was submitted, never what was submitted." },
@@ -1220,11 +1231,11 @@
           },
           "itemsHeld": [
             { "type": "key", "id": "recon_key", "name": "Recon Room Key", "takeable": true,
-              "opens_lock": "recon_door", "keyPins": [11, 22, 33, 44], "observations": "The key to the Recon Room." },
+              "opens_lock": "recon_door", "keyPins": [12, 24, 36, 48], "observations": "The key to the Recon Room." },
             { "type": "key", "id": "operations_key", "name": "Operations Room Key", "takeable": true,
-              "opens_lock": "operations_door", "keyPins": [15, 26, 37, 48], "observations": "The key to the Operations Room." },
+              "opens_lock": "operations_door", "keyPins": [50, 14, 46, 20], "observations": "The key to the Operations Room." },
             { "type": "key", "id": "blue_team_key", "name": "Blue Team Room Key", "takeable": true,
-              "opens_lock": "blue_team_door", "keyPins": [19, 28, 39, 41], "observations": "The key to the Blue Team Room." }
+              "opens_lock": "blue_team_door", "keyPins": [28, 54, 16, 34], "observations": "The key to the Blue Team Room." }
           ],
           "eventMappings": [
             { "eventPattern": "global_variable_changed:roe_scope_done", "condition": "value === true", "onceOnly": true, "completeTask": "scope_cards" },
@@ -1325,7 +1336,7 @@
       "locked": true,
       "lockType": "key",
       "requires": "recon_door",
-      "keyPins": [11, 22, 33, 44],
+      "keyPins": [12, 24, 36, 48],
       "connections": { "east": "engagement_office" },
       "npcs": [],
       "objects": [
@@ -1350,7 +1361,7 @@
       "locked": true,
       "lockType": "key",
       "requires": "operations_door",
-      "keyPins": [15, 26, 37, 48],
+      "keyPins": [50, 14, 46, 20],
       "connections": { "west": "engagement_office" },
       "npcs": [
         {
@@ -1407,7 +1418,7 @@
       "locked": true,
       "lockType": "key",
       "requires": "blue_team_door",
-      "keyPins": [19, 28, 39, 41],
+      "keyPins": [28, 54, 16, 34],
       "connections": { "south": "engagement_office" },
       "npcs": [
         {

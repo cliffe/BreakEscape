@@ -73,6 +73,7 @@ export class PretextSession {
         this.pendingVerification = [];      // fact ids an ask is waiting on
         this.pendingVerificationAsk = null; // the ask those facts belong to
         this.verified = {};                 // { <askId>: true } once its verification matched
+        this.provenFacts = [];              // fact ids a claim has checked out this call (judge reads this)
         this.grantedAsks = [];              // ask ids granted during THIS call
         this.reportedThisCall = false;
         this.reportReason = null;
@@ -87,8 +88,9 @@ export class PretextSession {
     }
 
     /** Apply the state changes the judge returns from one line (06 N1). */
-    applyUtteranceChanges({ opens = [], repairs = [], verificationCleared = [] } = {}) {
+    applyUtteranceChanges({ opens = [], repairs = [], proven = [], verificationCleared = [] } = {}) {
         for (const fact of opens) if (!this.openMismatches.includes(fact)) this.openMismatches.push(fact);
+        for (const fact of proven) if (!this.provenFacts.includes(fact)) this.provenFacts.push(fact);
         if (repairs.length) this.openMismatches = this.openMismatches.filter(f => !repairs.includes(f));
         if (verificationCleared.length) this.pendingVerification = this.pendingVerification.filter(f => !verificationCleared.includes(f));
         if (this.pendingVerificationAsk && this.pendingVerification.length === 0) {
@@ -121,6 +123,7 @@ export class PretextSession {
             pendingVerification: [...this.pendingVerification],
             pendingVerificationAsk: this.pendingVerificationAsk,
             verified: { ...this.verified },
+            provenFacts: [...this.provenFacts],
             grantedAsks: [...this.grantedAsks],
             reportedThisCall: this.reportedThisCall,
             reportReason: this.reportReason,
@@ -140,6 +143,7 @@ export class PretextSession {
         s.pendingVerification = Array.isArray(raw.pendingVerification) ? [...raw.pendingVerification] : [];
         s.pendingVerificationAsk = raw.pendingVerificationAsk ?? null;
         s.verified = isObject(raw.verified) ? { ...raw.verified } : {};
+        s.provenFacts = Array.isArray(raw.provenFacts) ? [...raw.provenFacts] : [];
         s.grantedAsks = Array.isArray(raw.grantedAsks) ? [...raw.grantedAsks] : [];
         s.reportedThisCall = raw.reportedThisCall === true;
         s.reportReason = raw.reportReason ?? null;
@@ -509,11 +513,25 @@ export async function attachPretext(minigame, { chat, judge: injected = null } =
     // Reload mid-call keeps the open session; a fresh call (the previous one ended,
     // or none) starts clean and overwrites the key (06 §6 "Calling again").
     const saved = loadSession(callId);
-    const session = (saved && saved.open && saved.callId === callId) ? saved : new PretextSession({ callId, character: spec.character, npcId, channel: chat });
+    const resuming = !!(saved && saved.open && saved.callId === callId);
+    const session = resuming ? saved : new PretextSession({ callId, character: spec.character, npcId, channel: chat });
     session.npcId = npcId;
     session.channel = chat;
     if (isObject(params.blanks)) session.blanks = { ...params.blanks };
     persistSession(session);
+
+    // Influence does NOT carry between calls: each new call (not a mid-call reload)
+    // resets the character to its configured start, so a call-back is a fresh social
+    // attempt (lab L4/L6 F4). The lesson "push too hard and you lose the line" is
+    // carried by the report + channel lockout, which gate whether you may call back
+    // at all, not by a quietly worse starting influence. A reload resumes unchanged.
+    if (!resuming) {
+        const cfg = service.getCharacterConfig?.(spec.character);
+        if (cfg && Number.isFinite(cfg.start)) {
+            try { service.setInfluence(spec.character, cfg.start, 'new_call', ctx); }
+            catch (e) { console.warn('⚠️ [pretext] influence reset failed:', e?.message); }
+        }
+    }
 
     // Bind se_influence (the general write path) plus the two call externals, all
     // before the first Continue (00 S1, S5, N3). The loader has already begun the

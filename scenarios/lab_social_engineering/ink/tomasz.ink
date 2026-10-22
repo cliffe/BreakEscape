@@ -16,6 +16,7 @@ VAR profile_done = false
 VAR dev_reported = false
 VAR phish_pierce_attempts = 0
 VAR pretext_service_desk_call_outcome = ""
+VAR pretext_service_desk_call_lowest = 0
 
 VAR met = false
 VAR explained_own = false
@@ -73,8 +74,10 @@ Tomasz: Here's what it showed. An open inbox trusts anyone, a From line is just 
 {
 - dev_reported:
     Tomasz: And Dev reported you. Credit to him — but a call-back rule would have caught it without him noticing a thing.
-- pretext_service_desk_call_outcome == "got_it":
+- pretext_service_desk_call_outcome == "got_it" and pretext_service_desk_call_lowest >= -10:
     Tomasz: Dev handed you the portal and the date, no fuss. A call-back to a number on file stops every line of that.
+- pretext_service_desk_call_outcome == "got_it":
+    Tomasz: You had to lean on Dev to get the portal and the date, but he still gave them up. A call-back to a number on file stops every line of that.
 }
 Tomasz: So we route the open inbox through a gateway, strip document metadata, and give the desk that call-back script.
 Tomasz: And the report. No names. Gareth reads it, nobody feels hunted, people keep telling us when they slip.

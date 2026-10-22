@@ -208,10 +208,15 @@ test('the per-run ledger makes a replay of the same turn a no-op', () => {
     assert.equal(again, 0);
     assert.equal(service.getInfluence('dev'), 0, 'influence did not move a second time');
 
-    // A new turn runs it again (06 §8 "Idempotency").
+    // A new turn runs the line again, but its claimed facts (intern, team) are now
+    // proven, so they earn no further credit: a one-line opener cannot be repeated to
+    // farm influence (M3). The ledger still runs the call (the log grows); the judge
+    // just gives proven facts 0.
     service.advanceTurn('run1');
     quiet(() => pretext_say('open_buddy'));
-    assert.equal(service.getInfluence('dev'), 10, 'the second turn applies +10 again');
+    assert.equal(service.getInfluence('dev'), 0, 'a repeat of an already-proven opener earns nothing');
+    assert.ok(session.provenFacts.includes('intern') && session.provenFacts.includes('team'),
+        'the opener marked its facts proven');
 });
 
 test('a checkable wrong claim costs by grade and opens the mismatch', () => {
@@ -293,6 +298,40 @@ test('pretext_ask pending, then a verifying line, then granted', () => {
     const granted = quiet(() => api.pretext_ask('payslip_date'));
     assert.equal(granted, 1);
     assert.equal(globals().se_intel_lord_payslip_date, true);
+});
+
+test('an ask whose verification fact was already proven as the opener grants without pending (M3)', () => {
+    const { service, grantFact } = setup({ start: 0 });
+    const session = new P.PretextSession({ callId: CALL, character: 'dev' });
+    session.blanks = { ...CARD };
+    const api = externals({ service, session, grantFact });
+
+    // The intern name is given as the opener, before the date is asked.
+    quiet(() => api.pretext_say('open_buddy'));
+    assert.ok(session.provenFacts.includes('intern'), 'the opener proved the intern name');
+
+    // The date ask needs the intern check. It is already proven, so it grants at once,
+    // rather than coming back pending and sending the player round again.
+    service.advanceTurn('run1');
+    const r = quiet(() => api.pretext_ask('payslip_date'));
+    assert.equal(r, 1, 'granted, not pending');
+    assert.equal(globals().se_intel_lord_payslip_date, true);
+});
+
+test('influence does not carry between calls: a fresh call resets to the start (M3)', async () => {
+    const { service } = setup({ start: -10 });
+    // The first call leaves Dev low.
+    service.setInfluence('dev', -40, 'first call', { channel: 'phone' });
+    assert.equal(service.getInfluence('dev'), -40);
+
+    // A fresh call: attachPretext resets to the configured start (-10) because the
+    // saved session is not open. A minimal minigame stub is enough for the attach.
+    globals()[`pretext_${CALL}_state`] = null;
+    const engine = { story: { variablesState: { _defaultGlobalVariables: new Map(), $() {} }, BindExternalFunction() {}, bindExternalFunction() {} }, bindExternalFunction() {} };
+    const minigame = { params: { pretextCallId: CALL, blanks: { ...CARD } }, inkEngine: engine, npcId: 'dev_service_desk',
+        ui: {}, complete() {}, gameResult: {} };
+    await quiet(() => P.attachPretext(minigame, { chat: 'phone', judge }));
+    assert.equal(service.getInfluence('dev'), -10, 'a new call starts fresh at the character start');
 });
 
 test('soft refusals reach maxRefusals and force a report with its threshold effects', () => {

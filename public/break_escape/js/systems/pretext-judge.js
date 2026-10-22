@@ -221,10 +221,15 @@ export function judgeUtterance(spec, session, utteranceId, blanks, influence) {
   const unverifiableCost = isNum(spec && spec.unverifiableCost) ? spec.unverifiableCost : DEFAULTS.unverifiableCost;
   const open = openSet(session);
   const pending = new Set(arr(session && session.pendingVerification));
+  // Facts the player has already proven (a claim that checked out) earlier in THIS
+  // call. Re-claiming them earns no further credit, so a one-line opener cannot be
+  // repeated to farm influence (M3). A newly proven fact is returned in `proven`.
+  const provenSet = new Set(arr(session && session.provenFacts));
 
   const entries = [];
   const opens = [];
   const repairs = [];
+  const proven = [];
   const verificationCleared = [];
   let matchCreditUsed = 0;
   let reported = false;
@@ -274,9 +279,11 @@ export function judgeUtterance(spec, session, utteranceId, blanks, influence) {
     const accept = arr(known.accept);
     const matched = value === known.value || accept.includes(value);
     if (matched) {
-      const credit = Math.max(0, Math.min(DEFAULTS.claimCredit, cap - matchCreditUsed));
-      matchCreditUsed += credit;
+      const alreadyProven = provenSet.has(fact);
+      const credit = alreadyProven ? 0 : Math.max(0, Math.min(DEFAULTS.claimCredit, cap - matchCreditUsed));
+      if (!alreadyProven) matchCreditUsed += credit;
       entries.push({ delta: credit, reason: fact, line: passTell(spec, fact) });
+      if (!proven.includes(fact)) proven.push(fact);
       if (pending.has(fact)) verificationCleared.push(fact);
     } else {
       const delta = isNum(GRADE_COST[known.grade]) ? GRADE_COST[known.grade] : GRADE_COST.lesser;
@@ -308,7 +315,7 @@ export function judgeUtterance(spec, session, utteranceId, blanks, influence) {
   }
   const locked = band === BAND.LOCKED;
 
-  return { entries, influenceAfter, band, reported, reportReason, locked, opens, repairs, verificationCleared };
+  return { entries, influenceAfter, band, reported, reportReason, locked, opens, repairs, proven, verificationCleared };
 }
 
 // ------------------------------------------------------------------ ask
@@ -335,8 +342,13 @@ export function judgeAsk(spec, session, askId, influence) {
   if (!isNum(floorUsed)) floorUsed = -Infinity; // no floor and no refuses threshold: nothing blocks it
 
   const verification = arr(ask.verification);
+  // Verification is satisfied when the ask was already cleared, or when every fact it
+  // needs has already been proven this call — e.g. the intern's name was given as the
+  // opener before the ask, so the ask must not come back pending (M3, lab L4/L6 F4).
+  const provenFacts = arr(session && session.provenFacts);
   const verified = verification.length === 0
-    || !!(session && session.verified && session.verified[askId] === true);
+    || !!(session && session.verified && session.verified[askId] === true)
+    || verification.every((f) => provenFacts.includes(f));
 
   let result;
   let inkResult;

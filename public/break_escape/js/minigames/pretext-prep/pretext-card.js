@@ -220,7 +220,7 @@ export function callLaunch(spec, npc, npcId, blanks) {
     return { scene, params };
 }
 
-const KIND_TEXT = { distinctive: 'a specific, insider detail', stale: 'may be out of date' };
+const KIND_TEXT = { distinctive: 'a specific detail', stale: 'an older detail' };
 
 /** Plain words for a non-generic kind, matching the mail picker. */
 export function kindText(kind) {

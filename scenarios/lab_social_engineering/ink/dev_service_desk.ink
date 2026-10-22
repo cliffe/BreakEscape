@@ -82,7 +82,7 @@ Dev: Service desk, Dev speaking. What can I do for you?
         Dev: Course. It's the staff portal, notices come from the payroll address. There you go.
     }
 - 2:
-    Dev: I'd just want to check her name on the new-starter list before I read that out.
+    Dev: Before I read a date out, I'd check her against the new-starter list. Give me her name and I'll have a look.
 - else:
     Dev: Ah, I can't give that out over the phone, sorry. Not without a check.
 }

@@ -52,7 +52,7 @@ VAR blue_team_key_given = false
 VAR quiet = false
 
 === start ===
-{ greeted: -> resume }
+{ greeted: -> hub }
 ~ greeted = true
 Ruth Adeyemi: Morning. Ruth Adeyemi, I run engagements here. You're on loan to me from Tarnside for this one. Grab the sheet.
 Ruth Adeyemi: Ledgerwell's a small finance firm. Last quarter one of Gareth's team nearly wired a five-figure invoice to a spoofed supplier.
@@ -67,12 +67,12 @@ Gareth Fairbairn: Before you start. This test of yours. Is it going to make my p
 
 === brief_close ===
 Ruth Adeyemi: Read the rules of engagement on the board. Properly. Gareth will be watching you do it.
--> resume
+-> hub
 
-// Runs once per open: backup completions, then any key now due, then the hub.
-=== resume ===
--> recheck
-
+// recheck and keys run on every entry to hub (as tunnels), so a reopen that the
+// engine resumes at `hub` still completes any backup task and hands over any key
+// now due. Both are idempotent: completeTask ignores a done task, and each key is
+// guarded by its own once-flag, so re-running them on every hub loop is safe (B1).
 === recheck ===
 { roe_scope_done:
     #complete_task:scope_cards
@@ -131,7 +131,7 @@ Ruth Adeyemi: Read the rules of engagement on the board. Properly. Gareth will b
 { profile_done:
     #complete_task:profile_done
 }
--> keys
+->->
 
 === keys ===
 { plan_done and not recon_key_given:
@@ -149,9 +149,11 @@ Ruth Adeyemi: Read the rules of engagement on the board. Properly. Gareth will b
     #give_item:key:blue_team_key
     Ruth Adeyemi: Report's filed, and no names in it. Gareth will be glad. Blue Team key — go see Tomasz.
 }
--> hub
+->->
 
 === hub ===
+-> recheck ->
+-> keys ->
 {
 - quiet:
     ~ quiet = false

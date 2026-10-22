@@ -156,6 +156,7 @@ module ValidateSocial
       where = "social.landingPages[#{pid}]"
 
       issues.concat(targets_block(ctx, pg, phish, where))
+      issues.concat(pretext_block(pg, where))
       pg['brands'].is_a?(Array) ? issues.concat(brands_block(ctx, pg, where)) : (issues << err("#{where}.brands must be a non-empty array"))
       issues.concat(Osint.lint_field(ctx, pg['linkText'], "#{where}.linkText")) unless Mail.blank?(pg['linkText'])
       issues.concat(capture_block(ctx, pg, where))
@@ -163,6 +164,38 @@ module ValidateSocial
       issues.concat(strings_block(pg, where))
       issues.concat(tier_defender_strings(pg, where))
       issues.concat(concept_cards(pg, cards, where))
+      issues
+    end
+
+    # A page needs a `pretext` object naming the brand and purpose the email promised,
+    # or the builder's brand and purpose gates can never pass and no page meets its
+    # threshold (lab playtests L4-L6 B3). brandId must resolve to a brand on the page;
+    # purposeId, when given, must resolve to a purpose. facts, when given, is a list of
+    # intel ids (each gets the se_intel_ prefix at runtime), checked only for shape here.
+    def self.pretext_block(pg, where)
+      pt = pg['pretext']
+      unless pt.is_a?(Hash)
+        return [err("#{where} has no pretext object; the builder's brand and purpose gates read pretext.brandId / purposeId, " \
+                    'so without it no page can pass (add { brandId, purposeId, facts })')]
+      end
+
+      issues = []
+      brand_id = pt['brandId']
+      if Mail.blank?(brand_id)
+        issues << err("#{where}.pretext.brandId is missing; it names the brand the page must match")
+      elsif pg['brands'].is_a?(Array) && Mail.hash_list(pg['brands']).none? { |b| b['id'] == brand_id }
+        ids = Mail.hash_list(pg['brands']).filter_map { |b| b['id'] }.join(', ')
+        issues << err("#{where}.pretext.brandId '#{brand_id}' is not a brand on this page (brands: #{ids})")
+      end
+
+      purpose_id = pt['purposeId']
+      if !Mail.blank?(purpose_id) && pg['purposes'].is_a?(Array) &&
+         Mail.hash_list(pg['purposes']).none? { |p| p['id'] == purpose_id }
+        ids = Mail.hash_list(pg['purposes']).filter_map { |p| p['id'] }.join(', ')
+        issues << err("#{where}.pretext.purposeId '#{purpose_id}' is not a purpose on this page (purposes: #{ids})")
+      end
+
+      issues << err("#{where}.pretext.facts must be an array of intel ids when present") if pt.key?('facts') && !pt['facts'].is_a?(Array)
       issues
     end
 

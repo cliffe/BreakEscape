@@ -191,7 +191,11 @@ export class EngagementReportMinigame extends SocialOverlayScene {
                 const parts = [];
                 parts.push(c.done ? 'An ask was granted.' : 'No ask was granted.');
                 if (c.reported) parts.push('The contact reported the attempt.');
-                if (c.outcome) parts.push(`Latest call ended: ${c.outcome}.`);
+                if (c.outcome) {
+                    const outcomeText = { got_it: 'The contact gave up what was asked.',
+                        reported: 'The contact rang off and reported it.', walked_away: 'The call ended without a result.' };
+                    parts.push(outcomeText[c.outcome] || `Latest call ended: ${c.outcome}.`);
+                }
                 if (c.lowest !== null) parts.push(`Lowest influence: ${c.lowest}.`);
                 callPanel.appendChild(h('p', { class: 'er-call-line', 'data-call': c.callId, text: parts.join(' ') }));
             }

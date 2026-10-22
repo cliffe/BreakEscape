@@ -579,9 +579,14 @@ export class PhoneChatMinigame extends MinigameScene {
             return;
         }
         
+        // Keep the pretext card VARs current before showing restored choices (M2). The
+        // choices here were built when the story state was saved, when the VARs were
+        // already set, so this is a safety re-assert, not a rebuild.
+        this._pretext?.fillVars?.();
+
         // Get current state without continuing
         const result = this.conversation.getCurrentState();
-        
+
         console.log('📋 showCurrentChoices - getCurrentState result:', {
             hasChoices: result.choices?.length > 0,
             canContinue: result.canContinue,
@@ -619,6 +624,13 @@ export class PhoneChatMinigame extends MinigameScene {
 
         console.log('🎬 continueStory() called');
         console.trace('Call stack'); // This will show us where continueStory is being called from
+
+        // A pretext call interpolates the card VARs (pretext_<fact>_name/_value) into its
+        // first choices. Those are baked when the continue loop below reaches the choice
+        // point, so the VARs must be set first, or the opening menu shows empty blanks and
+        // the first sent line is stored blank (lab playtests L4-L6, M2). fillVars is
+        // idempotent, so re-asserting it here, immediately before the loop, is safe.
+        this._pretext?.fillVars?.();
 
         // Held locally: an ink global set mid-continue can open a cutscene that closes
         // the phone inside continue() (see _keepOutputAfterTeardown)

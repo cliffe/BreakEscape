@@ -62,6 +62,7 @@
       {
         "id": "payroll_login",
         "linkText": "ledgerwell.example/payroll",
+        "pretext": { "brandId": "ledgerwell", "purposeId": "payslip", "facts": ["portal_name", "payslip_date"] },
         "targets": {
           "lord": {
             "linkThreshold": 70,

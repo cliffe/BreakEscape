@@ -88,6 +88,21 @@ test('without landingPages or expectedLink nothing runs', { skip }, () => {
   assert.deepEqual(lint({ globalVariables: {}, social: {} }), []);
 });
 
+// ---- pretext (builder brand/purpose gates) ----------------------------------------
+
+test('a landing page with no pretext object fails under --strict-social', { skip }, () => {
+  const out = lint(mutated((s) => { delete page(s).pretext; }), { raw: cleanRaw });
+  assert.equal(hits(out, /payroll_login\] has no pretext object/).length, 1, out.join('\n'));
+  assert.ok(errors(out).length >= 1, out.join('\n'));
+});
+
+test('pretext.brandId must name a brand on the page; purposeId a purpose', { skip }, () => {
+  const badBrand = lint(mutated((s) => { page(s).pretext.brandId = 'nope'; }), { raw: cleanRaw });
+  assert.equal(hits(badBrand, /pretext\.brandId 'nope' is not a brand on this page/).length, 1, badBrand.join('\n'));
+  const badPurpose = lint(mutated((s) => { page(s).pretext.purposeId = 'nope'; }), { raw: cleanRaw });
+  assert.equal(hits(badPurpose, /pretext\.purposeId 'nope' is not a purpose on this page/).length, 1, badPurpose.join('\n'));
+});
+
 // ---- ASCII / homograph ------------------------------------------------------------
 
 test('a raw homograph character in a domain fails; the \\u escape for the same letter passes', { skip }, () => {
