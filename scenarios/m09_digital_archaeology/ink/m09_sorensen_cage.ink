@@ -60,7 +60,7 @@ Margaret Sorensen: Paper was the only thing that could ever have hurt them. So t
     Narrator: She doesn't look up.
     Margaret Sorensen: When I've finished, dear. You'll want the list to be complete.
     -> back
-// The lever (MC §4.3): her own pencilled query says the plan chest wasn't
+// The lever (MC §4.3): her own pencilled query says the plan cabinet wasn't
 // on the schedule. Shown only with Nightshade's file in hand. "Your
 // Architect" so "he" can't be read as Nightshade (script edit B-12).
 + {nightshade_file_held and sorensen_fate == "left" and not talked_down} [Your Architect kept his own papers off your list. Only yours burn.]

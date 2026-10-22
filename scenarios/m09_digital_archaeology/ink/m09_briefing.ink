@@ -269,7 +269,7 @@ Director Magnus Netherton: I will not say the name in this room until we can pro
     Agent HaX: You heard me say it after HashChain. I called it Satoshi's guess.
 }
 // Beat 7: the stakes, HaX, fact first.
-Agent HaX: Whatever the Publication is, it's built from the database Nightshade sent to Montana. Every weakness we've ever catalogued.
+Agent HaX: Whatever the Publication is, he's building it from that database. Every weakness we've ever catalogued.
 Agent HaX: One entry, for scale. A flaw in the infusion pumps of a hundred and forty hospitals.
 Agent HaX: Analysis says hundreds dead in the first month if the cells get it. They're guessing. I'd like to find out they guessed high.
 // C-2: Austin uncovered = a finished m07 whose team didn't go to Austin

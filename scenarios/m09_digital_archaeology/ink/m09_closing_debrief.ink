@@ -146,7 +146,7 @@ Director Magnus Netherton: You read it. You decide. I will sign whichever.
 + [Send it.]
     ~ notice_answered = true
     #set_global:albion_notified:true
-    Director Magnus Netherton: Then I sign it.
+    Director Magnus Netherton: Then it goes tonight, under my name.
     -> hub
 + [Hold it.]
     ~ notice_answered = true
@@ -275,7 +275,7 @@ Narrator: He lays the Montana order on a crate and uncaps a pen.
 // replay of the spine doesn't say it twice.
 {m08_netherton_ko and not said_floor_line:
     ~ said_floor_line = true
-    Director Magnus Netherton: You put me on the floor at the Citadel. Nobody has mentioned it. I am mentioning it once.
+    Director Magnus Netherton: You knocked me down at the Citadel. Nobody has mentioned it. I am mentioning it once.
 }
 {
 - memo_stance == "yes_albion":

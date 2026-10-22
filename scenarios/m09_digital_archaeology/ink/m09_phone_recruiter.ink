@@ -131,11 +131,11 @@ Margaret's shredding eleven years of my placements tonight, for his schedule. I'
 = offer
 One of your four is mine. Was mine, until your Architect took them for Montana. The name tonight. You let my tape deck wipe.
 Say no and I wipe it myself. Same deck, no name.
-// Scenario design R4 m4: a player who has read the H&L placing sheet.
+I can't see which tape you pull, only that you pulled one. Take the name and pull anything, and I call my placement.
+// Scenario design R4 m4 (dialogue R3: after her whole offer): a player who has read the H&L placing sheet.
 {sleeper_shortlist:
     Agent HaX: We're down to two off that firm's sheet. She's selling you a coin toss.
 }
-I can't see which tape you pull, only that you pulled one. Take the name and pull anything, and I call my placement.
 // B-2: HaX on what her file holds, by m05 (group A to sign off). No
 // default arm: it repeated the next line (script edit B-03).
 {

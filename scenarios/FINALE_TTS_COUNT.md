@@ -197,3 +197,4 @@ No audio exists yet, so nothing is orphaned by the change. The officers' m09 and
 - 2026-10-22 m09 dialogue R2: net 0 (376); 5 clips (1 new Sorensen, 4 reworded, 1 HaX dropped).
 - 2026-10-22 m09 scenario design R4: +2 HaX voiced (376 → 378).
 - 2026-10-22 m10 dialogue R1 + educational R1 + scenario design R1: ~+19 new, −1, ~19 reworded (see CONTRACT §11).
+- 2026-10-22 m09 dialogue R3: 6 reworded, 0 new (378).

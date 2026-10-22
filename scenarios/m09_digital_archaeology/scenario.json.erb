@@ -54,7 +54,7 @@ salvage_code = "LEWISANDCLARK"           # Vigenere Decode of MSJMQAEGDZNVI, key
 salvage_tail = %q{\n\nSALVAGE CAGE ACCESS\nMSJMQAEGDZNVI}
 
 # --- Fixed document strings reused in more than one variant (S6 §1) ----------
-series_l = %q{SERIES L -- LEGACY PLACEMENTS, NOT SAFETYNET. M.S.\nName / placed / post / cost to date / yield / notes\nRuth Lindqvist -- 2009 -- deputy clerk, Cascade County -- $14,000 -- voter rolls -- Quiet. Reliable.\nGail Pettibone -- 2010 -- dispatcher, county 911 center -- $8,500 -- call routing -- Asks nothing.\nDolores Ortega -- 2012 -- billing director, regional hospital -- $31,500 -- records, three systems -- Wants out. Remind her of her son.\nHector Salas -- 2012 -- shift supervisor, water treatment plant -- $12,000 -- control room rota -- Steady.\nJune Akiyama -- 2013 -- IT contractor, state DMV -- $22,000 -- license data -- Careful. Too careful.\nTom Brekke -- 2014 -- school board, Bozeman -- $6,000 -- vendor contracts -- Enjoys it.\nVernon Teague -- 2014 -- lineman foreman, rural co-op -- $9,800 -- substation keys -- Drinks. Watch.\nLeah Brandvold -- 2015 -- paralegal, county attorney -- $11,200 -- case lists -- Bright. Bored.\nAmit Deshmukh -- 2016 -- zoning officer, Billings -- $9,200 -- substation permits -- Never asked for anything yet. Will be.\nSamuel Ocampo -- 2017 -- records officer, VA clinic -- $7,400 -- patient lists -- Grateful.\nDoreen Fitch -- 2018 -- court reporter, district court -- $5,600 -- transcripts -- Lonely.\nPenciled at the foot: The best work I have done. Nobody will ever know. That was the point.}
+series_l = %q{SERIES L -- LEGACY PLACEMENTS, NOT SAFETYNET. M.S.\nName / placed / post / cost to date / yield / notes\nRuth Lindqvist -- 2009 -- deputy clerk, Cascade County -- $14,000 -- voter rolls -- Quiet. Reliable.\nGail Pettibone -- 2010 -- dispatcher, county 911 center -- $8,500 -- call routing -- Asks nothing.\nDolores Ortega -- 2012 -- billing director, regional hospital -- $31,500 -- records, three systems -- Wants out. Remind her of her son.\nHector Salas -- 2012 -- shift supervisor, water treatment plant -- $12,000 -- control room schedule -- Steady.\nJune Akiyama -- 2013 -- IT contractor, state DMV -- $22,000 -- license data -- Careful. Too careful.\nTom Brekke -- 2014 -- school board, Bozeman -- $6,000 -- vendor contracts -- Enjoys it.\nVernon Teague -- 2014 -- lineman foreman, rural co-op -- $9,800 -- substation keys -- Drinks. Watch.\nLeah Brandvold -- 2015 -- paralegal, county attorney -- $11,200 -- case lists -- Bright. Bored.\nAmit Deshmukh -- 2016 -- zoning officer, Billings -- $9,200 -- substation permits -- Never asked for anything yet. Will be.\nSamuel Ocampo -- 2017 -- records officer, VA clinic -- $7,400 -- patient lists -- Grateful.\nDoreen Fitch -- 2018 -- court reporter, district court -- $5,600 -- transcripts -- Lonely.\nPenciled at the foot: The best work I have done. Nobody will ever know. That was the point.}
 
 ledger_block = %q{LIVE CAPTURE -- INITIATIVE LEDGER\nPlacements 23. Candidates 47. Legacy 11.\nWREN -- H&L -- placed 11 yrs -- LIVE -- Day 10: assigned TF Null, Montana operation. M.S.\nSource file: HL2015-0477}
 
@@ -261,7 +261,7 @@ hax_maps << { "eventPattern" => "room_entered:sorensen_office", "onceOnly" => tr
 hax_maps << text_map("room_entered:sorensen_office", "globalVars.sleeper_named", "Her cracker. Use it anyway.")
 # Educational R1 E-m9: credit the lease-date deduction when the ledger was read.
 hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.sleeper_named && !globalVars.rent_ledger_read", "Safe's open. Kowalczyk will want to hear about her toy.")
-hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.sleeper_named && globalVars.rent_ledger_read", "Lease date. People pick numbers they'll never forget. That's what makes them easy to find.")
+hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.sleeper_named && globalVars.rent_ledger_read", "Lease date. She picked a number she'd never forget, then printed it at the top of every page.")
 %w[taken double_crossed].each do |offer|
   hax_maps << text_map("global_variable_changed:office_entered", "value === true && globalVars.recruiter_offer === '#{offer}'",
                        "Sale. WREN. To Agent 0x00. Consideration, one deck. Booked.", delay: 20000, set: { "invoice_booked" => true })
@@ -337,7 +337,7 @@ hax_maps << text_map("item_picked_up:notes", "data.itemId === 'lease_file' && gl
   hax_maps << text_map("item_picked_up:notes", "data.itemId === 'lease_file' && globalVars.m03_victoria_fate === '#{v}'",
                        "Big Sky was in Zero Day's sales ledger. Sterling's keys opened it after Cardiff.", msg_delay: 5000)
 end
-hax_maps << text_map("global_variable_changed:rent_ledger_read", "value === true && globalVars.m06_irina_recruited", "Irina's tip-off led us to this. Tell her it bought us the deed.")
+hax_maps << text_map("global_variable_changed:rent_ledger_read", "value === true && globalVars.m06_irina_recruited", "Irina's tip-off led us to this. Tell her it found us the bunker.")
 hax_maps << text_map("global_variable_changed:refit_ledger_read", "value === true && globalVars.m02_paid_ransom", "St. Catherine's money. It bought the blast door.")
 %w[protected exposed].each do |fate|
   hax_maps << text_map("global_variable_changed:danny_sheet_read", "value === true && globalVars.m03_danny_fate === '#{fate}' && !globalVars.m03_danny_ko", "Danny's statement just became evidence.")
@@ -361,7 +361,7 @@ hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true 
 # Educational R1 E-M3: name the motives the notes column shows (A3-38), after the remark.
 hax_maps << text_map("global_variable_changed:legacy_remark_sent", "value === true", "Read the notes column. A son, a drink, boredom, a lonely night. That's how she chose them, and how she kept them.", delay: 5000)
 # Educational R1 E-M3: the recruiter's method, once Noor has been told (A3-39).
-hax_maps << text_map("global_variable_changed:noor_told", "value === true", "That's how they start. A kindness, then a need they already knew about.", delay: 3000)
+hax_maps << text_map("global_variable_changed:noor_told", "value === true", "A bonus in her first week. Her dad's dialysis already on file. Kindness first, then the need.", delay: 3000)
 # Educational R1 E-M4: leavers' access is now a line in HaX's "[About the name.]" topic
 # (the opus48-checked wording), so the A3-40 text is withdrawn rather than said twice.
 # Educational R1 E-n1: the guard's log (A3-41).
@@ -1082,7 +1082,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
-          "text": "MON. SHREDDER RUNNING, NIGHT. NOT ON THE ROTA. MRS. S SAYS SCHEDULED. NOTED.\nTUE. SAME. NOTED.\nWED. SAME.\nTHU. SAME.\nFRI. SAME. NOBODY READS THIS.",
+          "text": "MON. SHREDDER RUNNING, NIGHT. NOT ON THE SCHEDULE. MRS. S SAYS SCHEDULED. NOTED.\nTUE. SAME. NOTED.\nWED. SAME.\nTHU. SAME.\nFRI. SAME. NOBODY READS THIS.",
           "observations": "A guard's log in block capitals. The same entry, five nights running.",
           "onRead": { "setVariable": { "incident_log_read": true } }
         }
@@ -2069,7 +2069,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "takeable": true,
               "readable": true,
               "observations": "The order's schedule, ticked room by room in pencil.",
-              "text": "Series by number, per the order. -- A.\nIn pencil, room by room: Dock ✓. Front desk ✓. Reading room ✓. Open stacks ✓. Closet ✓. Stacks ✓. Cage ✓. Office ✓. Tape room ✓. Salvage cage, no series, no tick.\nIn the margin: Reading (safe). Plan chest: not listed. Keep?",
+              "text": "Series by number, per the order. -- A.\nIn pencil, room by room: Dock ✓. Front desk ✓. Reading room ✓. Open stacks ✓. Closet ✓. Stacks ✓. Cage ✓. Office ✓. Tape room ✓. Salvage cage, no series, no tick.\nIn the margin: Reading (safe). Plan cabinet: not listed. Keep?",
               "onRead": { "setVariable": { "schedule_read": true } }
             },
             {

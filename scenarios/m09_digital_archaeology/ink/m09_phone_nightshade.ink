@@ -20,7 +20,7 @@
 Agent 0x00. I'd ask how the leave was, but HaX would tell me to get off her line.
 // Alignment R1 m3: help only he can give (HaX has said print and card).
 Sorensen's card is on custom keys. Crack the keys first, then read it. Don't guess.
-That plan chest isn't on her schedule. It never was. Whatever's in it, he wanted kept.
+That plan cabinet isn't on her schedule. It never was. Whatever's in it, he wanted kept.
 + [Why help me?]
     I'd rather be useful than watched. Tonight I get to be both.
 + [HaX is on this line.]

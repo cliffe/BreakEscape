@@ -83,7 +83,7 @@ Narrator: She stamps a box DESTROYED and slides it back toward the noise.
 - m01_final_choice == "arrest" or m01_completed:
     Margaret Sorensen: Viral Dynamics. You handed Mr. Lawson to the police, and he kept his promise and said nothing. He was always good about promises.
 - else:
-    Margaret Sorensen: Your first days aren't in your file. Somebody over there is careful with you.
+    Margaret Sorensen: Your first days aren't in your file. Somebody in your outfit is careful with you.
 }
 // Dialogue R1 MJ-2: "the Architect", not "he" (which read as Derek Lawson).
 {noor_cover == "safetynet":

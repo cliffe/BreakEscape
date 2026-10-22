@@ -391,7 +391,7 @@ Her card for the tape room will be in that office.
 {not hand_matched:
     #complete_task:match_the_hand
     #set_global:hand_matched:true
-    You never told me about the writing on Nightshade's file. I put it beside the margins in my old course notebook. Same hand.
+    The writing on Nightshade's file. I put it beside the margins in my old course notebook. Same hand.
 }
 Tomb Beta's owner. It's one of ours. A SAFETYNET staff credential.
 Issued before he left us. Never revoked. The name on it is...
@@ -698,7 +698,7 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     - m04_disclosure_choice == "full" or m04_crew_lost:
         Albion's inquiry was about what happened. This is about the hole itself, and who else has it.
     - m04_disclosure_choice != "":
-        What you said about Albion was about what happened. This is about the hole itself, and who else has it.
+        Albion's report was about what happened. This is about the hole itself, and who else has it.
     }
     Still on his box. Say the word.
     -> notice_ask
@@ -707,7 +707,7 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     ~ name_topic_given = true
     He told us to call him Adrian on the course. None of us ever managed it.
     // Educational R1 E-M4 (wording checked against the VM plan by the opus48 agent).
-    When someone leaves, their accounts and their kit go back the same day. We never took his back.
+    When someone leaves, we take back their kit and shut their accounts the same day. Not his.
     That's all you get tonight. The rest is afterwards.
     -> support_hub
 // 3b. The Alpha decode. Script edit R1 A-05: gated on a read of the annotation

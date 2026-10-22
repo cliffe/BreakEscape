@@ -38,7 +38,7 @@ Narrator: Sorensen looks up from the feed table as the gate swings open.
 - m01_final_choice == "arrest" or m01_completed:
     Margaret Sorensen: Viral Dynamics. You handed Mr. Lawson to the police, and he kept his promise and said nothing. He was always good about promises.
 - else:
-    Margaret Sorensen: Your first days aren't in your file. Somebody over there is careful with you.
+    Margaret Sorensen: Your first days aren't in your file. Somebody in your outfit is careful with you.
 }
 Margaret Sorensen: You came in by the maintenance code, not my hatch. You're the one the Architect writes about.
 Agent HaX: ...She's got a file on you.
