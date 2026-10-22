@@ -470,3 +470,5 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - m09 dialogue R1 fixes: 2 majors (recruit text matches m01; Sorensen's "the one the Architect writes about"), 9 minors (incl. noor_cover global and Sorensen's SAFETYNET opening), 7 nits. Voiced: 10 reworded, +3 new (376 lines; 13 clips to generate).
 - m09 educational R1 (m09 items): E-M1–M4 (concept only), E-m1–m3, E-m9, E-m11 (CyBOK 9 → 0 errors), E-n1, E-n7. All unvoiced: voiced delta 0.
 - m09 scenario design R3 fixes: 2/2 + 3 nits (dock names the first job; Tomb Beta named at flag 1 and the tape room; Victoria row above flag 2; Sun River coordinate arm; "This one didn't, Quintero."). Voiced: 2 Netherton lines reworded.
+- m10 dialogue R1 fixes: 2/2 major, 17/17 minor (m13 kept as the planted red herring), nits taken except n5, n10, n11. Core scene resumes on Esc (pitch, database, his end). Voiced delta: +11 new, -1, 11 reworded.
+- m09 dialogue R2 fixes: 5/5 + 8 nits (short notebook line always; Sorensen's goodnight line when Noor was told; Tran's price; leaver line shortened; safe text; full forms, wording). Voiced: net 0 (376), 5 clips.

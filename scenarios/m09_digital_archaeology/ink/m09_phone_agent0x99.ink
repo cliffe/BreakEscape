@@ -177,15 +177,15 @@ Night guard. Twenty-four. Not ours, not theirs. Don't hurt him.
     #set_global:dock_done:true
     A clerk's on tonight, and an IT contractor, Jesse Tran. Maya's list has a Tran on it.
     // Scenario design R3 m1: the first job, said aloud.
-    Once you're in, set the laptop up in the reading room and get me into their catalogue. It's how we find out what she's burning.
+    Once you're in, set the laptop up in the reading room and get me into their catalogue. It's how we find out what Sorensen's burning.
 - m01_maya_ko:
     #set_global:dock_done:true
     A clerk's on tonight, and an IT contractor, Jesse Tran. Maya Chen would have flagged him. We don't have Maya's names.
-    Once you're in, set the laptop up in the reading room and get me into their catalogue. It's how we find out what she's burning.
+    Once you're in, set the laptop up in the reading room and get me into their catalogue. It's how we find out what Sorensen's burning.
 - else:
     #set_global:dock_done:true
     A clerk's on tonight, and an IT contractor, Jesse Tran. Viral Dynamics' staff files have a Tran in them.
-    Once you're in, set the laptop up in the reading room and get me into their catalogue. It's how we find out what she's burning.
+    Once you're in, set the laptop up in the reading room and get me into their catalogue. It's how we find out what Sorensen's burning.
 }
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
@@ -214,7 +214,7 @@ The catalogue keeps something else live. Their ledger.
 Her card's on a reel at her hip. You've done this before.
 I've sent you the odd one. Salvage cage, their own code.
 // Scenario design R3 m2: name Act 3's target where the line is handed over.
-The catalogue calls what's in there Tomb Beta. It's still drawing power, and it isn't on her schedule.
+The catalogue calls what's in there Tomb Beta. It's still drawing power, and nobody's scheduled it for anything.
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
 + [Got it.]
@@ -413,12 +413,9 @@ Director Magnus Netherton: HaX.
     He was mine, and I wanted to be wrong.
 - m06_architect_identity_found:
     I gave you his name after HashChain and called it Satoshi's guess. I've been hoping ever since that it was only his.
-    // Dialogue R1 n6: shorter once the notebook has been matched.
-    {hand_matched:
-        He taught me. The margins in that notebook are his.
-    - else:
-        He taught me. The notebook in my case file is from his course. Those margins are his.
-    }
+    // Dialogue R1 n6, R2 m1: the scene's opening has just said the notebook (its tag lands
+    // after the batch, so a branch on hand_matched can't tell), so the short form always.
+    He taught me. The margins in that notebook are his.
     He was mine, and I wanted to be wrong.
 - m07_teacher_discussed:
     I told you somebody taught me that line. I didn't say who.
@@ -426,11 +423,7 @@ Director Magnus Netherton: HaX.
     He was mine, and I wanted to be wrong.
 - else:
     There was a file on a crypto fund, with his name in it at eighty-seven per cent. I put it in a drawer.
-    {hand_matched:
-        He taught me. The margins in that notebook are his.
-    - else:
-        He taught me. The notebook in my case file is from his course. Those margins are his.
-    }
+    He taught me. The margins in that notebook are his.
     He was mine. I wanted the other thirteen.
 }
 // Fixed (CONTRACT §2.1), split at a sentence break for the 25-word phone cap.
@@ -693,18 +686,19 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 // 2. The notice, from any room (stage 4 P8). Stage 8 M-01: one hub row;
 // the send and the hold are its answers (notice_ask).
 + {identity_scene_done and not albion_notified and not notice_sent_here} [His notice.]
-    Still on his box. Say the word.
     // Educational R1 E-m3: incident disclosure (m04) and vulnerability disclosure, kept apart.
+    // Dialogue R2 n5: the cue line last, above the buttons.
     {m04_disclosure_choice != "":
         Albion's inquiry was about what happened. This is about the hole itself, and who else has it.
     }
+    Still on his box. Say the word.
     -> notice_ask
 // 3. The name (SE §4.4), once.
 + {identity_scene_done and not name_topic_given} [About the name.]
     ~ name_topic_given = true
     He told us to call him Adrian on the course. None of us ever managed it.
     // Educational R1 E-M4 (wording checked against the VM plan by the opus48 agent).
-    When someone leaves, their accounts and their kit go the same day. His were never revoked. Seven years on, the credential still works.
+    When someone leaves, their accounts and their kit go back the same day. We never took his back.
     That's all you get tonight. The rest is afterwards.
     -> support_hub
 // 3b. The Alpha decode. Script edit R1 A-05: gated on a read of the annotation
@@ -961,7 +955,7 @@ Sent. He'll read it tonight.
     Victoria's people can open that gate. Ask me.
 // Dialogue R1 m5: a player who has already talked at the hatch.
 - flag2_submitted and hatch_talked and not cage_opened:
-    The gate, beside her hatch. If you didn't clone her card, go back to the counter.
+    The gate beside her hatch takes her card. If you haven't cloned it, lean on her counter again.
 - flag2_submitted:
     The hatch, then the gate. Her card's on that reel.
 - cage_opened and nightshade_file_held:

@@ -31,7 +31,7 @@ Narrator: Four officers sit in kit nobody has unpacked. Your leave was meant to 
     Narrator: Netherton takes the chair furthest from yours. Nobody mentions why.
 }
 // Beat 2 (fixed), then how it was caught: the first reason that applies.
-Director Magnus Netherton: Last night a courier in Helena, Montana, carried this to a records archive. We read it. Then we let it go on. If it hadn't arrived, he would know.
+Director Magnus Netherton: Last night a courier in Helena, Montana, carried this to a records archive. We read it. Then we let it go on. If it had not arrived, he would know.
 {
 - m04_lore_safehouse_address_found:
     Director Magnus Netherton: Your card from Albion had an address on it. Task Force Null went in yesterday. There was a courier account, and this was on it.

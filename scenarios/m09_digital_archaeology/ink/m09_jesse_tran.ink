@@ -56,7 +56,7 @@ Jesse Tran: Paper. You people break into buildings at night for paper.
         ~ tran_read_letters = true
         Narrator: He reads the courier line, J.T., and takes his hands off the keyboard.
     }
-    Jesse Tran: Fine. It's off. I walk out that door, and I make a phone call on the way.
+    Jesse Tran: Fine. I stop it, I walk out that door, and I make a phone call on the way.
     -> deal
 + [Enjoy your night.]
     Jesse Tran: Living the dream.

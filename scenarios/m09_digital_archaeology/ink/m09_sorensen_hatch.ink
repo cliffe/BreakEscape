@@ -30,6 +30,7 @@ VAR bin_pulled = false
 VAR stacks_card_cloned = false
 // Synced scenario global (dialogue R1 m9): the cover the player gave Noor.
 VAR noor_cover = ""
+VAR noor_told = false   // Synced scenario global (dialogue R2 m2)
 
 === start ===
 {hatch_met: -> hub}
@@ -41,7 +42,12 @@ VAR noor_cover = ""
 // Dialogue R1 m9: a player who told Noor the truth gets that cover back.
 {noor_cover == "safetynet":
     Narrator: She looks up before you can say who you are.
-    Margaret Sorensen: Noor rang through. SAFETYNET, of course. There's a chair on your side.
+    // Dialogue R2 m2: a player who stopped Noor ringing out doesn't hear she rang.
+    {noor_told:
+        Margaret Sorensen: Noor went home without saying goodnight. She always says goodnight. SAFETYNET, then. There's a chair on your side.
+    - else:
+        Margaret Sorensen: Noor rang through. SAFETYNET, of course. There's a chair on your side.
+    }
     -> recognition
 }
 Narrator: She looks up before you can say who you are.
@@ -77,7 +83,7 @@ Narrator: She stamps a box DESTROYED and slides it back toward the noise.
 - m01_final_choice == "arrest" or m01_completed:
     Margaret Sorensen: Viral Dynamics. You handed Mr. Lawson to the police, and he kept his promise and said nothing. He was always good about promises.
 - else:
-    Margaret Sorensen: Your first days aren't in your file. Somebody at SAFETYNET is careful with you.
+    Margaret Sorensen: Your first days aren't in your file. Somebody over there is careful with you.
 }
 // Dialogue R1 MJ-2: "the Architect", not "he" (which read as Derek Lawson).
 {noor_cover == "safetynet":

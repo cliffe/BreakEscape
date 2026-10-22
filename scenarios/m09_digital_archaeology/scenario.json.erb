@@ -261,7 +261,7 @@ hax_maps << { "eventPattern" => "room_entered:sorensen_office", "onceOnly" => tr
 hax_maps << text_map("room_entered:sorensen_office", "globalVars.sleeper_named", "Her cracker. Use it anyway.")
 # Educational R1 E-m9: credit the lease-date deduction when the ledger was read.
 hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.sleeper_named && !globalVars.rent_ledger_read", "Safe's open. Kowalczyk will want to hear about her toy.")
-hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.sleeper_named && globalVars.rent_ledger_read", "Lease date. People pick numbers they'll never forget. So can we.")
+hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.sleeper_named && globalVars.rent_ledger_read", "Lease date. People pick numbers they'll never forget. That's what makes them easy to find.")
 %w[taken double_crossed].each do |offer|
   hax_maps << text_map("global_variable_changed:office_entered", "value === true && globalVars.recruiter_offer === '#{offer}'",
                        "Sale. WREN. To Agent 0x00. Consideration, one deck. Booked.", delay: 20000, set: { "invoice_booked" => true })

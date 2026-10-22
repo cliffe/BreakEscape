@@ -91,7 +91,7 @@ Cody Old Coyote: Figured. I'll be in the truck.
 ~ hub_quiet = false
 + {not coyote_asked_course} [Why work nights?]
     ~ coyote_asked_course = true
-    Cody Old Coyote: Lineman's course. Climbing poles in a blizzard. Poles don't make that noise all night.
+    Cody Old Coyote: Lineman's course, days. Climbing poles in a blizzard. Poles don't make that noise all night.
     -> back
 + {not coyote_asked_cage} [Have you seen what's going on in the cage?]
     ~ coyote_asked_cage = true
