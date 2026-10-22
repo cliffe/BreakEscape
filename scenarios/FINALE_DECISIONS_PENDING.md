@@ -23,3 +23,9 @@ m10 build addendum (scenario-design R1 VM answers, 2026-10-22, `finale/FINALE_ED
 - The release host holds no "disarm" file and the core host no unsent notice; both are in-game only. The game side is being worded so it doesn't promise VM content. Answered (F13): seed both on the VM as well.
 - Timed VM run still owed (cut order starts with the backdoor task if the VM portion runs over ~34 min).
 - m10 build check (puzzle chains R1): the VM's door log (flag 1) and staging schedule (flag 2) should agree with the in-game texts (m10 erb ~2850-2871 and ~3547-3562).
+
+VM gating audit (2026-10-22, `finale/VM_GATING_AUDIT.md`) — three open items for you:
+
+- **How to gate the foothold flags (m09 flags 1/3, m10 flags 1/3/4).** The audit's fix keeps the taught exploit as the foothold but puts the flag in an account whose login password is an in-game find, so you have to read that account with the found password (the exploit shell can't). The alternative is to drop the exploit from the flag route and make the foothold a plain credentialed login — simpler to build, but it loses the exploit lesson on that box. **Recommendation: keep the exploit foothold plus the gated account** (you get both the exploit teaching and the F12 gate). Choose per mission if you prefer.
+- **m10 schedule cities (flag 2).** The schedule record names Seattle first (fixed in the finale docs); Austin as second and the third city (a water utility) are my placeholders. **Confirm or replace Austin and the third city** before the schedule text is seeded.
+- **m01 spot-check (shipped, not urgent).** m01's flag 1 only works if the in-game "My Passwords" list contains the one password the VM picks at build from its 27-word list (`SecGen .../m01_first_contact.xml:84-114`). Worth confirming once that the two still agree; if the list drifted, flag 1 is unsolvable.
