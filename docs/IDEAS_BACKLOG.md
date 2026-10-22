@@ -6,7 +6,6 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 
 ## Minigames
 
-- **Fingerprint: Distinct reference cards on easy** (m04 playtests, twice; S). On easy the two reference cards look near-identical, so the compare step can't be done by eye; the m04 final run picked Vance's card by a 50/50 guess. Worth doing soon.
 - **Recovery console: the Close button overlaps the banner at 1280x800** (dash check; S).
 - **Fingerprint: Hide reference-card names until a match** (m04 review; S). At medium difficulty and up, the dusting compare step would be a real identification.
 - **Dusting and "Search Room" for carried items** (m08 fixer; S–M). A clean way to dust something in the inventory.
