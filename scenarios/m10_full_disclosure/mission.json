@@ -35,43 +35,63 @@
   "cybok": [
     {
       "ka": "OSV",
+      "topic": "Role of Operating Systems",
+      "keywords": ["isolation", "virtual machines", "CONTAINERS", "CHROOT"]
+    },
+    {
+      "ka": "OSV",
       "topic": "Primitives for Isolation and Mediation",
-      "keywords": ["virtualisation and containers", "isolation", "PRIVILEGE ESCALATION"]
+      "keywords": ["physical access and secure deletion", "authentication and identification", "PRIVILEGE ESCALATION"]
     },
     {
       "ka": "NS",
-      "topic": "Network Security",
-      "keywords": ["network monitoring", "segmentation", "lateral movement"]
+      "topic": "Network Security Tools",
+      "keywords": ["network security monitoring"]
+    },
+    {
+      "ka": "NS",
+      "topic": "Networking Applications",
+      "keywords": ["NMAP", "PORT SCANNING"]
     },
     {
       "ka": "WAM",
       "topic": "Server-Side Vulnerabilities and Mitigations",
-      "keywords": ["injection vulnerabilities", "command injection"]
+      "keywords": ["injection vulnerabilities", "server-side misconfiguration and vulnerable components"]
     },
     {
-      "ka": "SOIM",
-      "topic": "Fundamental Concepts",
-      "keywords": ["PENETRATION TESTING - NETWORK MAPPING", "FINGERPRINTING", "NMAP"]
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["user authentication", "BIOMETRICS", "SMART CARDS", "PERSONAL IDENTIFICATION NUMBER AND MEMORABLE INFORMATION"]
     },
     {
-      "ka": "SS",
-      "topic": "Categories of Vulnerabilities",
-      "keywords": ["CVES AND CWES", "vulnerability disclosure"]
+      "ka": "AB",
+      "topic": "Characterisation of Adversaries",
+      "keywords": ["THE INSIDER THREAT", "SOCIAL ENGINEERING"]
+    },
+    {
+      "ka": "AB",
+      "topic": "Elements of a Malicious Operation",
+      "keywords": ["SUPPLY CHAIN ATTACK"]
+    },
+    {
+      "ka": "F",
+      "topic": "Definitions and Conceptual Models",
+      "keywords": ["AUDIT TRAIL"]
     },
     {
       "ka": "LR",
-      "topic": "Vulnerability Disclosure",
-      "keywords": ["coordinated disclosure", "full disclosure", "vendor notification"]
+      "topic": "Ethics",
+      "keywords": ["vulnerability testing", "VULNERABILITY DISCLOSURE", "RESPONSIBLE DISCLOSURE"]
     },
     {
-      "ka": "HF",
-      "topic": "Human Factors",
-      "keywords": ["THE INSIDER THREAT", "social engineering"]
+      "ka": "SSL",
+      "topic": "Motivations for Secure Software Lifecycle",
+      "keywords": ["customers don’t apply patches"]
     },
     {
-      "ka": "C",
-      "topic": "Symmetric Cryptography",
-      "keywords": ["ENCODING", "BASE64"]
+      "ka": "F",
+      "topic": "Artifact Analysis",
+      "keywords": ["ENCODING"]
     }
   ],
   "secgen": {

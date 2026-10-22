@@ -12,7 +12,12 @@ VAR stat_quiet = false
 {stat_quiet:
     ~ stat_quiet = false
 - else:
-    ENTROPY Operative 'Static': Talk to him. From there.
+    // Dialogue R1 m9: after a Restart that followed a fight (hostiles calm), he still sends the player to Voltage, who re-arms them both.
+    {voltage_outcome == "fought":
+        ENTROPY Operative 'Static': You again. He's not finished with you.
+    - else:
+        ENTROPY Operative 'Static': Talk to him. From there.
+    }
 }
 + [Fine.]
     ENTROPY Operative 'Static': Still watching.

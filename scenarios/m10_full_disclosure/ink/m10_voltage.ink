@@ -159,7 +159,7 @@ Voltage (Critical Mass): Grey panel by the door. A key switch, a row of breakers
 {gallery_shutter_cut:
     -> captured_rest
 }
-Voltage (Critical Mass): Turn the key a quarter right and leave it there. That isolates the feed. Nothing moves yet.
+Voltage (Critical Mass): Turn the key a quarter right and leave it there. That takes the row off their board. It's ours now.
 -> cut_p1_menu
 = cut_p1_menu
 {gallery_shutter_cut:

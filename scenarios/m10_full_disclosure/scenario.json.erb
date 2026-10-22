@@ -192,6 +192,8 @@ txt[:incident_file] = <<~'T'.chomp
 
   4. Stores. Every unit 0x47 signed in for evaluation since St. Catherine's is withdrawn and held: 160 units, one supplier, four batches. None was ever issued to the field.
 
+  5. Badges. The 1,206 badge records taken with the catalogue are void from day 13. Reissue in hand. Until then, a badge read proves a card, not a person.
+
   M. Netherton, Director.
 T
 signout = lambda do |opened, packed|
@@ -557,7 +559,7 @@ in_this_operation = lambda do |ending|
   # as an outcome; m09's told answer is its own unnamed row below.
   people << person.('AGENT 0x00', [
     cl.('Pressed the key.', "globalVars.ending === 'joined'", w),
-    cl.('Brought him out alive, in front of a court.', "globalVars.ending === 'arrest'"),
+    cl.('Brought him in alive, to face a court.', "globalVars.ending === 'arrest'"),
     cl.('Took his surrender. Kept his protocol.', "globalVars.ending === 'surrender'"),
     cl.('Fired when his hand was on the key.', "globalVars.ending === 'lethal'"),
     cl.('Fired when his hands were empty.', "globalVars.ending === 'executed'", w),
@@ -714,10 +716,15 @@ in_this_operation = lambda do |ending|
     cl.('Named. His delivery was cancelled. He caught his flight.', "globalVars.vos_outcome === 'avoided' && globalVars.share_zero_day === 'stopped' && globalVars.ending === 'joined'"),
     cl.('Named. Arrested on the walkway, waiting for a flight.', "globalVars.vos_outcome === 'refused' && globalVars.share_zero_day === 'stopped' && globalVars.ending !== 'joined'"),
     cl.('Named. Arrested on the walkway, waiting for a flight.', "globalVars.vos_outcome === 'avoided' && globalVars.share_zero_day === 'stopped' && globalVars.ending !== 'joined'"),
-    cl.('Named. Still waiting for his delivery.', "globalVars.vos_outcome === 'refused' && globalVars.ending === 'joined'"),
-    cl.('Named. Still waiting for his delivery.', "globalVars.vos_outcome === 'avoided' && globalVars.ending === 'joined'"),
-    cl.('Named. Arrested on the walkway, waiting for a delivery.', "globalVars.vos_outcome === 'refused'"),
-    cl.('Named. Arrested on the walkway, waiting for a delivery.', "globalVars.vos_outcome === 'avoided'")
+    # Dialogue R1 m4: a share killed at the console cancelled his delivery too; otherwise it came at four.
+    cl.('Named. His delivery was cancelled. He caught his flight.', "globalVars.vos_outcome === 'refused' && globalVars.head_start_killed === 'zero_day' && globalVars.ending === 'joined'"),
+    cl.('Named. His delivery was cancelled. He caught his flight.', "globalVars.vos_outcome === 'avoided' && globalVars.head_start_killed === 'zero_day' && globalVars.ending === 'joined'"),
+    cl.('Named. Arrested on the walkway, waiting for a flight.', "globalVars.vos_outcome === 'refused' && globalVars.head_start_killed === 'zero_day'"),
+    cl.('Named. Arrested on the walkway, waiting for a flight.', "globalVars.vos_outcome === 'avoided' && globalVars.head_start_killed === 'zero_day'"),
+    cl.('Named. His delivery came at four.', "globalVars.vos_outcome === 'refused' && globalVars.ending === 'joined'"),
+    cl.('Named. His delivery came at four.', "globalVars.vos_outcome === 'avoided' && globalVars.ending === 'joined'"),
+    cl.('Named. Arrested on the walkway after his delivery came.', "globalVars.vos_outcome === 'refused'"),
+    cl.('Named. Arrested on the walkway after his delivery came.', "globalVars.vos_outcome === 'avoided'")
   ])
   people << person.('SIONE FONOTI', [
     cl.('Put on the floor on the walkway.', 'globalVars.fonoti_ko === true', w),
@@ -821,7 +828,7 @@ elsewhere_three = [
   cl.('Of the forty-seven, twenty-eight were warned in time. Nineteen had already signed.', "globalVars.m05_completed === true && globalVars.m05_found_pipeline_list === true && globalVars.m05_recruiter_deal_accepted === true && globalVars.m05_recruiter_deal_confessed === true && globalVars.close_human !== 'fortyseven_late'", w),
   cl.("None of the forty-seven were warned. They're still on someone's list.", "globalVars.m05_completed === true && !globalVars.m05_found_pipeline_list && globalVars.close_human !== 'fortyseven_none'", w),
   cl.("None of the forty-seven were warned. They're still on someone's list.", "globalVars.m05_completed === true && globalVars.m05_found_pipeline_list === true && globalVars.m05_recruiter_deal_accepted === true && !globalVars.m05_recruiter_deal_confessed && globalVars.close_human !== 'fortyseven_none'", w),
-  cl.("Elena Torres is in treatment. It's working.", "globalVars.m05_elena_treatment_funded === true && globalVars.close_human !== 'elena'"),
+  cl.("Elena Torres is in treatment. It's working.", "globalVars.m05_elena_treatment_funded === true && globalVars.m05_final_choice !== 'arrest' && globalVars.close_human !== 'elena'"),
   cl.('In Billings, a girl turns nine on Saturday. Her father is bringing a telescope.', "globalVars.close_human !== 'none'")
 ]
 
@@ -1284,9 +1291,10 @@ end
   },
 
 <%# START KIT (RL 4): inventory never carries between missions, so the kit is
-    cumulative by design. Only HaX is preloaded on the phone; every other
-    contact's home knot (start) is gated and silent until its mapping rings or
-    texts (PASS2 lesson 36). The Recruiter has no contact: her 06:00 word is
+    cumulative by design. Only HaX is listed on the phone (scenario design R1
+    m2, as m09): every other contact appears once it has history, on its first
+    ring, call or text; its home knot (start) stays gated and silent (PASS2
+    lesson 36). The Recruiter has no contact: her 06:00 word is
     narrated in six_oclock's phone_beat (alignment R3-m3, R4-m7). %>
   "startItemsInInventory": [
     {
@@ -1294,7 +1302,7 @@ end
       "name": "Your Phone",
       "takeable": true,
       "phoneId": "player_phone",
-      "npcIds": ["agent_0x99", "ghost_phone", "victoria_line", "vance_phone", "elena_phone"],
+      "npcIds": ["agent_0x99"],
       "observations": "Your secure phone. HaX is on the other end of it, and tonight so is the whole raid."
     },
     {
@@ -1416,7 +1424,7 @@ end
     {
       "aimId": "reach_the_core",
       "title": "Reach The Core",
-      "description": "Up the stair and along the gallery to the core's outer lock. HaX can't reach you up there. He is waiting at his console in the core.",
+      "description": "Up the stair and along the gallery to the core's outer lock. HaX can't reach you up there. Tesseract is waiting at his console in the core.",
       "status": "locked",
       "order": 4,
       "unlockCondition": { "aimCompleted": "find_the_release" },
@@ -1442,7 +1450,7 @@ end
         { "taskId": "decide_the_console", "title": "Decide what happens at his console", "type": "custom", "status": "active" },
         { "taskId": "decide_the_database", "title": "Decide what happens to the database", "type": "custom", "status": "active" },
         { "taskId": "decide_his_end", "title": "Decide how it ends for him", "type": "custom", "status": "active" },
-        { "taskId": "close_the_night", "title": "Report at the forward post", "type": "custom", "status": "active" }
+        { "taskId": "close_the_night", "title": "Close the night", "type": "custom", "status": "active" }
       ]
     },
     {
@@ -1613,6 +1621,11 @@ end
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Sealed Section Hatch' && data.roomId === 'server_hall' && !globalVars.guide3_offered", "setGlobal": { "guide3_offered": true } },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Sealed Section Hatch' && data.roomId === 'server_hall' && !globalVars.flag3_submitted && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "That's the hatch. The release service runs on the host under it." } },
             { "eventPattern": "object_interacted", "condition": "data.objectType === 'vm-launcher' && data.roomId === 'core' && !globalVars.guide4_offered", "setGlobal": { "guide4_offered": true } },
+            <%# Scenario design R1 m1: HaX says each field guide is ready (which guide only, nothing of its content). Guide 1 waits 20 s so it lands clear of the split scene. %>
+            { "eventPattern": "global_variable_changed:guide1_offered", "condition": "value === true && !globalVars.flag1_submitted && !globalVars.guide1_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 20000, "message": "There's a field guide for their monitoring host. Ask me.", "skipIfGlobal": "guide1_given" } },
+            { "eventPattern": "global_variable_changed:guide2_offered", "condition": "value === true && !globalVars.flag2_submitted && !globalVars.guide2_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Guide for the staging copy, if you want it. Ask.", "skipIfGlobal": "guide2_given" } },
+            { "eventPattern": "global_variable_changed:guide3_offered", "condition": "value === true && !globalVars.flag3_submitted && !globalVars.guide3_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "I've a guide for getting out of that container. Ask.", "skipIfGlobal": "guide3_given" } },
+            { "eventPattern": "global_variable_changed:guide4_offered", "condition": "value === true && !globalVars.flag4_submitted && !globalVars.guide4_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Guide for his box, when you want it.", "skipIfGlobal": "guide4_given" } },
 <%# --- The breach (OT 4.1): door_scene_done && flag1 && pair_back. ---------- %>
 <% breach = "globalVars.door_scene_done === true && globalVars.flag1_submitted === true && globalVars.pair_back === true && !globalVars.breach_open" %>
 <% %w[door_scene_done flag1_submitted pair_back].each do |half| %>
@@ -1687,6 +1700,8 @@ end
             { "eventPattern": "fingerprint_collected:voltage", "condition": "data.objectId === 'bypass_panel' && globalVars.m04_voltage_escaped === true && !globalVars.voltage_print_lifted", "setGlobal": { "voltage_print_lifted": true } },
             { "eventPattern": "global_variable_changed:cut_by_hand", "condition": "value === true && globalVars.phone_voice_is_hax === true && !globalVars.gallery_shutter_cut && !globalVars.hax_jammed", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.cut_by_hand === true && !globalVars.gallery_shutter_cut && globalVars.phone_voice_is_hax === true && !globalVars.hax_jammed", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500, "cooldown": 0 },
+            <%# Scenario design R1 m3: the isolator itself starts the by-hand cut with the phone voice. %>
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.cut_by_hand === true && !globalVars.gallery_shutter_cut && globalVars.phone_voice_is_hax === true && !globalVars.hax_jammed", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500, "cooldown": 0 },
             { "eventPattern": "conversation_closed:agent_0x99", "condition": "globalVars.cut_by_hand === true && !globalVars.gallery_shutter_cut && globalVars.phone_voice_is_hax === true && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
             { "eventPattern": "room_entered:power_room", "condition": "!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome !== 'turned' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1000, "message": "He doesn't know. Tell him, and he'll want to warn somebody. Their switchboard will hear it." } },
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.m04_robert_vance_ko === true && !globalVars.m04_voltage_captured && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 6000, "message": "I rang Vance. He said no. He said you'd know why." } },
@@ -1805,6 +1820,10 @@ end
             { "eventPattern": "room_entered:workshop_floor", "condition": "!globalVars.casualty_sheet_read && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 4000, "message": "That's his sheet. Read it.", "skipIfGlobal": "casualty_sheet_read" } },
             { "eventPattern": "global_variable_changed:casualty_sheet_read", "condition": "value === true && !globalVars.margin_note_read && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2500, "message": "There's something written in the margin. Not plain English.", "skipIfGlobal": "margin_note_read" } },
             { "eventPattern": "global_variable_changed:casualty_sheet_read", "condition": "value === true && !globalVars.margin_note_read && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 7500, "message": "Copy just the code.", "skipIfGlobal": "margin_note_read" } },
+            <%# Educational R1 E-m7: once the cracker's source is known, steer towards the keypad's own evidence (the outer lock stays a PIN lock). %>
+            { "eventPattern": "global_variable_changed:sleeper_caught", "condition": "value === true && !globalVars.outer_lock_open && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 6000, "message": "Her cracker came off his bench. I wouldn't trust it at his door. The keys' wear and the rota will get you in.", "skipIfGlobal": "outer_lock_open" } },
+            <%# Educational R1 E-m5: a recognition rung for the Base64 strip (m02 taught the shape). %>
+            { "eventPattern": "global_variable_changed:casualty_sheet_read", "condition": "value === true && !globalVars.margin_note_read && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 30000, "message": "Upper and lower case, digits, no spaces. You've seen that shape before.", "skipIfGlobal": "margin_note_read" } },
             { "eventPattern": "global_variable_changed:clue_bench_log", "condition": "value === true && globalVars.whodunit_live === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "That's a cloner in our own breaching kit. The case's sign-out sheet is on the table up here. Want the names?" } },
             { "eventPattern": "global_variable_changed:clue_bench_log", "condition": "value === true && globalVars.clue_door_log === true && globalVars.clue_alibi === true && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 6000, "message": "That's three things that point somewhere. Your call, and you don't have to make it.", "skipIfGlobal": "hax_jammed" } },
             { "eventPattern": "global_variable_changed:clue_alibi", "condition": "value === true && globalVars.clue_door_log === true && globalVars.clue_bench_log === true && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 6000, "message": "That's three things that point somewhere. Your call, and you don't have to make it.", "skipIfGlobal": "hax_jammed" } },
@@ -2271,6 +2290,8 @@ end
           "eventMappings": [
             { "eventPattern": "global_variable_changed:cut_by_hand", "condition": "value === true && globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.cut_by_hand === true && globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
+            <%# Scenario design R1 m3: the isolator itself starts the by-hand cut with the phone voice. %>
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.cut_by_hand === true && globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
             { "eventPattern": "room_entered:power_room", "condition": "!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && globalVars.m04_vance_is_ally === true", "onceOnly": true, "sendTimedMessage": { "delay": 1000, "message": "He doesn't know. Tell him, and he'll want to warn somebody. Their switchboard will hear it." } }
           ]
         },
@@ -2287,6 +2308,8 @@ end
           "eventMappings": [
             { "eventPattern": "global_variable_changed:cut_by_hand", "condition": "value === true && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.cut_by_hand === true && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
+            <%# Scenario design R1 m3: the isolator itself starts the by-hand cut with the phone voice. %>
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.cut_by_hand === true && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
             { "eventPattern": "room_entered:power_room", "condition": "!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned'", "onceOnly": true, "sendTimedMessage": { "delay": 1000, "message": "He doesn't know. Tell him, and he'll want to warn somebody. Their switchboard will hear it." } }
           ]
         },
@@ -3069,7 +3092,7 @@ not_tethered = '!globalVars.nightshade_tethered'
             "hostile": { "chaseSpeed": 130, "attackDamage": 10, "pauseToAttack": true },
             "patrol": { "enabled": true, "speed": 60, "waypoints": [{ "x": 2, "y": 8, "dwellTime": 2500 }, { "x": 7, "y": 8, "dwellTime": 2500 }], "loop": true, "pauseForPlayer": false }
           },
-          "los": { "enabled": true, "range": 150, "angle": 110, "visualize": false, "challengeOnSight": { "cooldown": 30000, "rooms": ["workshop_floor"] } },
+          "los": { "enabled": true, "range": 150, "angle": 110, "visualize": true, "challengeOnSight": { "cooldown": 30000, "rooms": ["workshop_floor"] } },
           "eventMappings": [
             <%= after_end_json.('workshop_floor') %>
             { "eventPattern": "player_spotted:workshop_guard", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "workshop", "cooldown": 0 }
@@ -3216,6 +3239,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "voice": <%= voice.(:wendell) %>,
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 90, "attackDamage": 6, "pauseToAttack": true } },
           "eventMappings": [
+            <%# Scenario design R1 m3: a click on the isolator before anyone has asked him. %>
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && !globalVars.m04_voltage_escaped && !globalVars.gallery_shutter_cut && !globalVars.cut_by_hand && globalVars.wendell_outcome !== 'told' && globalVars.wendell_outcome !== 'worked_round'", "bark": "Hands off my panel. Ask, if you want a breaker." },
             <%= after_end_json.('power_room') %>
             { "eventPattern": "room_entered:power_room", "condition": "!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && !globalVars.closing_done", "setVisible": true }
           ],
@@ -3275,6 +3300,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "voice": <%= voice.(:voltage) %>,
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 140, "attackDamage": 14, "pauseToAttack": true, "fightStyle": "guarded" } },
           "eventMappings": [
+            <%# Scenario design R1 m3: escaped Voltage holds the panel (his existing line). %>
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.m04_voltage_escaped === true && !globalVars.gallery_shutter_cut && globalVars.voltage_outcome !== 'stood_down_print' && globalVars.voltage_outcome !== 'talked_down' && globalVars.voltage_outcome !== 'fought'", "bark": "The shutter stays live until he says otherwise." },
             <%= after_end_json.('power_room') %>
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.m04_voltage_escaped === true && !globalVars.closing_done", "setVisible": true }
           ],
@@ -3445,7 +3472,7 @@ not_tethered = '!globalVars.nightshade_tethered'
             "hostile": { "chaseSpeed": 135, "attackDamage": 11, "pauseToAttack": true },
             "patrol": { "enabled": true, "speed": 60, "waypoints": [{ "x": <%= x1 %>, "y": <%= y1 %>, "dwellTime": 2500 }, { "x": <%= x2 %>, "y": <%= y2 %>, "dwellTime": 2500 }], "loop": true, "pauseForPlayer": false }
           },
-          "los": { "enabled": true, "range": 160, "angle": 110, "visualize": false, "challengeOnSight": { "cooldown": 30000, "rooms": ["server_hall"], "skipIfGlobal": "hall_guards_stood_down" } },
+          "los": { "enabled": true, "range": 160, "angle": 110, "visualize": true, "challengeOnSight": { "cooldown": 30000, "rooms": ["server_hall"], "skipIfGlobal": "hall_guards_stood_down" } },
           "eventMappings": [
             <%= after_end_json.('server_hall') %>
             <%# Playtest B-03: the second guard's challenge waits 4 s after the first (re-checked then), so the two do not land back to back; neither plays once the raid team has stood them down. %>
@@ -3526,7 +3553,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "position": "as-type:m10_console_controls",
           "observations": "Locked to the staging copy.",
           "observationVariants": [
-            { "condition": "globalVars.flag2_submitted === true", "value": "The head-start feeds, and the backdoor's queue. HaX can work one feed from here: kill it, or follow it. Not both." }
+            { "condition": "globalVars.flag2_submitted === true", "value": "The head-start feeds, and the backdoor's queue. HaX can work one feed from here: kill it, or follow it." }
           ]
         },
         {
@@ -3914,11 +3941,11 @@ not_tethered = '!globalVars.nightshade_tethered'
           "fingerprintDifficulty": "easy",
           "observations": "The keypad's face plate. Four of the keys look a shade duller than the rest.",
           "observationVariants": [
-            { "condition": "globalVars.keypad_dusted === true", "value": "Dusted. Four keys carry the oil: 0, 3, 6 and 8. Nothing else on the plate has been touched in weeks." }
+            { "condition": "globalVars.keypad_dusted === true", "value": "Dusted. Four keys carry the oil: 0, 3, 6 and 8. Nothing else on the plate has been touched in weeks. Four digits, each used once: twenty-four possible orders." }
           ],
           "text": "The keypad's face plate. Four of the keys look a shade duller than the rest.",
           "textVariants": [
-            { "condition": "globalVars.keypad_dusted === true", "value": "Dusted. Four keys carry the oil: 0, 3, 6 and 8. Nothing else on the plate has been touched in weeks." }
+            { "condition": "globalVars.keypad_dusted === true", "value": "Dusted. Four keys carry the oil: 0, 3, 6 and 8. Nothing else on the plate has been touched in weeks. Four digits, each used once: twenty-four possible orders." }
           ],
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": "core",
@@ -4068,7 +4095,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "observations": "His console. One key under a hinged cover, and his hand resting beside it.",
           "observationVariants": [
             <%# scorched_card folded in here (ASSET_LIST 4: objects have no visibility condition). %>
-            { "condition": "globalVars.ending === 'scorched'", "value": "His console, dark. A card on the edge, in his hand: Afterwards, then." },
+            { "condition": "globalVars.ending === 'scorched'", "value": "His console, dark. A card on the edge, in his handwriting: Afterwards, then." },
             { "condition": "globalVars.database_outcome === 'published'", "value": "His console. The cover is up, and the key is down." },
             { "condition": "globalVars.console_choice === 'stopped'", "value": "His console. The cover is down. The disarm's lamp is green." }
           ]
@@ -4340,6 +4367,7 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
 <%# --- The server hall's talk-past (playtest B-03; set by staging mappings and m10_guards) --- %>
     "hall_team_present": false,
     "hall_guards_stood_down": false,
+    "hax_rest_promised": false,
 <%# --- The closing scenes' first lines (alignment R1 A7; set in six_oclock, hearing and citadel ink) --- %>
     "six_open": false,
     "hearing_open": false,

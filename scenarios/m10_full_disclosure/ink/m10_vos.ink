@@ -17,9 +17,14 @@ VAR vos_l_seen = false    // the opener has played
 // Alignment R8-m1: no code card to sell once the lock is open. R9-m2: an
 // m03 knock-out still gets its answer on a first meeting after the lock.
 {outer_lock_open:
-    {not vos_l_seen and m03_victoria_fate == "ko":
+    // Dialogue R1 m3: a first meeting after the lock gets his opener too, not a single line.
+    {not vos_l_seen:
         ~ vos_l_seen = true
-        Pieter Vos: You put Sterling in hospital. I sent flowers. Business is business.
+        {m03_victoria_fate == "ko":
+            Pieter Vos: You put Sterling in hospital. I sent flowers. Business is business.
+        - else:
+            Pieter Vos: I don't do philosophy. I do delivery dates.
+        }
     }
     -> vos_rest
 }
@@ -58,8 +63,8 @@ Pieter Vos: I don't do philosophy. I do delivery dates.
     ~ vos_outcome = "stood_aside"
     // Alignment R12-m3: the unlock rides the reply's first line.
     #unlock_door:core
-    Pieter Vos: *pause* Who told you that. No. Don't. I'm leaving.
-    Pieter Vos: The door is open. The order goes with me, and so do I.
+    Pieter Vos: *pause* Who told you that. No. Don't. The door is open.
+    Pieter Vos: The order goes with me, and so do I. I'm leaving.
     ~ vos_l_quiet = true
     #exit_conversation
     -> vos_rest
@@ -97,8 +102,12 @@ Pieter Vos: I don't do philosophy. I do delivery dates.
     - vos_outcome == "bought":
         Pieter Vos: We have done our business. Go and do yours.
     - else:
-        {head_start_killed == "zero_day" or share_zero_day == "stopped":
+        {
+        - head_start_killed == "zero_day" or share_zero_day == "stopped":
             Pieter Vos: My delivery was cancelled. I am waiting for a flight. You are in the way of that too.
+        // Dialogue R1 m3: after four, any share not stopped or killed has gone out.
+        - outer_lock_open:
+            Pieter Vos: My delivery came at four. Now I am waiting for a flight. You are in the way of that too.
         - else:
             Pieter Vos: I am waiting for a delivery. You are in the way of it.
         }

@@ -19,28 +19,32 @@ VAR fon_shift_used = false  // "Shift change" has been tried at the challenge
 {fon_quiet:
     ~ fon_quiet = false
 - else:
-    {fon_card_given:
+    {
+    // Dialogue R1 m5: no card to hand over once the lock is open.
+    - outer_lock_open:
+        Sione Fonoti: Door's open, so I guess my shift's done. Go on through.
+    - fon_card_given:
         Sione Fonoti: I'm off shift, far as I'm concerned. Go on through.
     - else:
         Sione Fonoti: Evening. Nobody comes up the stair this late. They told me one would, and not why.
     }
 }
-+ {not fon_card_given and gallery_rota_read} [The rota says you carry the card.]
++ {not fon_card_given and not outer_lock_open and gallery_rota_read} [The rota says you carry the card.]
     ~ fon_card_given = true
     #give_item:notes:gallery_code_card
     Sione Fonoti: It does, huh. *slowly* Okay. It's only a card. Here.
     -> talk
-+ {not fon_card_given and ghost_gift == "card"} [Ghost says you'll want to be off shift.]
++ {not fon_card_given and not outer_lock_open and ghost_gift == "card"} [Ghost says you'll want to be off shift.]
     ~ fon_card_given = true
     #give_item:notes:gallery_code_card
     Sione Fonoti: I don't know any Ghost. But I'd like to be off shift. Take it.
     -> talk
-+ {not fon_card_given and victoria_gallery == "walked"} [Sterling sent me.]
++ {not fon_card_given and not outer_lock_open and victoria_gallery == "walked"} [Sterling sent me.]
     ~ fon_card_given = true
     #give_item:notes:gallery_code_card
     Sione Fonoti: The lady in the good coat. She walked right past me. Here, then.
     -> talk
-+ {not fon_card_given and vos_outcome == "bought"} [Vos sold you out.]
++ {not fon_card_given and not outer_lock_open and vos_outcome == "bought"} [Vos sold you out.]
     ~ fon_card_given = true
     Sione Fonoti: The Dutch guy. Figures. You've got his card, so you don't need mine. I'll stand over here.
     -> talk

@@ -116,8 +116,20 @@ Cut (alignment R3-m3/m4): rows T-47 to T-57 are deleted from the ERB. The closin
 | T-56 | `agent_0x99` | I'll be at the board. I don't know what I'll say. | `globalVars.ending === 'executed'` | `delayMs: 30000`: "later, a message" (SE §3.1). **Fixed** **Cut** (alignment R3-m3: the closing scene carries it; the mapping is deleted) |
 | T-57 | `agent_0x99` | 0x00. | `global_variable_changed:ending` with `value === 'joined'` (not on `six_done`) | `delayMs: 3000`. Her designation, nothing else, unanswered (SE §3.1; FA §4.6 Join row). The credit reads "Handler. Her last message to 0x00 went unanswered." (ruling 9) **Cut** (alignment R3-m4: the Citadel carries "0x00."; the mapping is deleted) |
 
+## 6b. Added after stage 9 (unvoiced HaX texts unless marked)
+
+| # | Speaker | Text | Trigger | Notes |
+|---|---|---|---|---|
+| T-58a | `agent_0x99` | Field console by the gate first. Start it, then the terminal. | `global_variable_changed:door_scene_done` with `!gate_console_used` | 8 s; skip on `gate_console_used` (playtest A m-6) |
+| T-58b | `agent_0x99` | Not the terminal yet. The field console beside it. | first look at the Gate Terminal with `!gate_console_used && !flag1_submitted` | 1.5 s; skip on `gate_console_used` |
+| T-59 | `agent_0x99` | Her cracker came off his bench. I wouldn't trust it at his door. The keys' wear and the rota will get you in. | `global_variable_changed:sleeper_caught` with `!outer_lock_open` | 6 s; skip on `outer_lock_open` (educational R1 E-m7) |
+| T-60 | `agent_0x99` | Upper and lower case, digits, no spaces. You've seen that shape before. | `global_variable_changed:casualty_sheet_read` with `!margin_note_read` | 30 s; skip on `margin_note_read` (educational R1 E-m5) |
+| T-61a–d | `agent_0x99` | There's a field guide for their monitoring host. Ask me. / Guide for the staging copy, if you want it. Ask. / I've a guide for getting out of that container. Ask. / Guide for his box, when you want it. | `global_variable_changed:guideN_offered` with `!flagN_submitted && !guideN_given` | guide 1 at 20 s (clear of the split), the rest at 2 s; skip on `guideN_given` (scenario design R1 m1) |
+| B-01 | `wendell` (bark, voiced) | Hands off my panel. Ask, if you want a breaker. | a click on the Shutter Isolator before he is told or worked round, shutter live, not on the escaped branch | scenario design R1 m3 |
+| B-02 | `voltage_power` (bark, voiced; his existing line) | The shutter stays live until he says otherwise. | a click on the Shutter Isolator on the escaped branch before a stand-down or fight | scenario design R1 m3 |
+
 ## 7. Not placed here
 
 - "The readers take our badges. He loaded every SAFETYNET credential he stole. That door was told to want yours." (SE §3.1 "On the way down") has no trigger in OT; the breach call's "It's read your badge." carries the beat. Stage 9 may add it on the first read of `wanted_photo` if wanted.
-- "Two posts empty. That's your freeze. He couldn't make payroll." is HaX's hub topic `fence` (ink), and Tesseract now says the other half in his case ("You froze my bank…", FA row 72).
+- "Two posts empty. That's your freeze. He couldn't make payroll." is HaX's hub topic `fence` (ink), and Tesseract now says the other half in his arrival ("You froze my bank…", FA row 72).
 - HaX's pointers that live in ink (the aside's table and gate-console lines, the Ghost menu line, Imran's and Gary's, the console, the gallery warnings) are not repeated here.

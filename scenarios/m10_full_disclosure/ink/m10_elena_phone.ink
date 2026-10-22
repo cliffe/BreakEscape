@@ -54,7 +54,7 @@ There's a gray cabinet by the door. A key switch and a breaker row, labeled GALL
 {gallery_shutter_cut:
     -> cut_call
 }
-Turn the key a quarter right and leave it. That isolates the feed. Nothing moves yet.
+Turn the key a quarter right and leave it. That takes the row off their board. It's ours now, not theirs.
 -> cut_1_menu
 = cut_1_menu
 + [Key's turned.]
@@ -80,7 +80,7 @@ Breaker row. The shutter's third from the left. Leave the rest alone, they feed 
 + [Pulling it.]
     ~ cut_step = 3
     ~ gallery_shutter_cut = true
-    Done. That shutter won't close tonight. Go get him.
+    Done. That shutter's dead. Go get him.
     -> cut_close_way
 + [Give me a minute.]
     Third from the left. It'll wait.

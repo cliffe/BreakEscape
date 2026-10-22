@@ -27,8 +27,13 @@ VAR vic_missed = false  // threat: a miss raised the pistol
 {victoria_gallery == "":
     ~ victoria_gallery = "refused"
 }
-// Alignment R8-m1: no lock deal once the lock is open.
+// Alignment R8-m1: no lock deal once the lock is open. Dialogue R1 m6: a first
+// meeting after the lock gets one line about the offer the player walked past.
 {outer_lock_open:
+    {not vic_seen:
+        ~ vic_seen = true
+        Victoria Sterling: There you are. I could have opened that lock for you, or for them. Nobody asked me.
+    }
     -> gallery_rest
 }
 {victoria_gallery == "confronted" or victoria_gallery == "trusted":
@@ -56,8 +61,8 @@ Victoria Sterling: I can open that lock for you. I can also open it for them. No
     ~ victoria_gallery = "confronted"
     // Alignment R12-m3: the unlock rides the reply's first line, so a close or reload can't keep the outcome without the door.
     #unlock_door:core
-    Victoria Sterling: Then you know I'm hedging. So is everyone.
-    Victoria Sterling: Open. And the order's withdrawn. Remember that I didn't have to.
+    Victoria Sterling: Then you know I'm hedging. So is everyone. Open.
+    Victoria Sterling: And the order's withdrawn. Remember that I didn't have to.
     ~ vic_quiet = true
     #exit_conversation
     -> gallery_rest
@@ -107,19 +112,27 @@ Victoria Sterling: I'll see myself down the stair. Don't follow me. You've somew
 }
 ~ vic_seen = true
 Victoria Sterling: You. St. Catherine's was a proof of concept. This is the rest.
-{share_zero_day == "stopped":
+// Dialogue R1 m1: after four the lock is open and the order has gone (or was stopped), so she sells only her absence.
+{
+- outer_lock_open:
+    Victoria Sterling: You've opened that lock without me. All I can sell you now is my absence.
+    Victoria Sterling: Or cuff me to that rail. Your choice.
+- share_zero_day == "stopped":
     Victoria Sterling: Zero Day's share is dead already, so all I can sell you is a name. Which of these two carries the code card.
+    Victoria Sterling: Or cuff me to that rail, and find the card yourself.
 - else:
     Victoria Sterling: I walk out. Zero Day's order goes away, and I tell you which of these two has the code card.
+    Victoria Sterling: Or cuff me to that rail, and find the card yourself.
 }
-Victoria Sterling: Or cuff me to that rail, and find the card yourself.
 -> escaped_menu
 
 === escaped_menu ===
 + [Go.]
     ~ victoria_gallery = "walked"
     ~ lock_guard_known = true
-    Victoria Sterling: The big one at the lock end. Fonoti. He carries the code card.
+    {not outer_lock_open:
+        Victoria Sterling: The big one at the lock end. Fonoti. He carries the code card.
+    }
     Victoria Sterling: Goodbye. I don't expect we'll do this again.
     ~ vic_quiet = true
     #exit_conversation
@@ -162,7 +175,12 @@ Victoria Sterling: If I walk out of here, I walk out owing nobody. Including you
 + [You said you'd do it yourself. You haven't yet.]
     ~ victoria_gallery = "talked_down"
     Victoria Sterling: No. I haven't.
-    Victoria Sterling: Then I'll owe you one, which I hate. Zero Day's order goes with me. Don't watch me leave.
+    // Dialogue R1 m2: no order left to take after four, or once it was stopped.
+    {outer_lock_open or share_zero_day == "stopped":
+        Victoria Sterling: Then I'll owe you one, which I hate. Don't watch me leave.
+    - else:
+        Victoria Sterling: Then I'll owe you one, which I hate. Zero Day's order goes with me. Don't watch me leave.
+    }
     ~ vic_quiet = true
     #exit_conversation
     -> gallery_rest

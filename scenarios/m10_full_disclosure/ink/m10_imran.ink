@@ -5,6 +5,7 @@ INCLUDE m10_carryover_vars.ink
 // branch Imran follows Gary (m10_gary.ink writes imran_outcome) and says one line.
 
 VAR imran_quiet = false   // skip the re-entry line once after an exit
+VAR imran_board_said = false // dialogue R1 m8: the board line was said in follows_gary
 VAR imran_heard = false   // he has listened (the argument is made)
 VAR imran_costs = false   // HaX's cost line has been said
 
@@ -32,6 +33,9 @@ VAR imran_costs = false   // HaX's cost line has been said
     Imran Siddiqui: Gary landed on his feet. The rest of us got a reference and a box.
 - m02_completed and m02_exposed_hospital:
     Imran Siddiqui: Gary landed on his feet. The rest of us got a reference and a box.
+- m02_completed and imran_board_said:
+    // Dialogue R1 m8: he has just said the board line at Gary's side.
+    Imran Siddiqui: Gary's down, so it's me you're asking.
 - m02_completed:
     Imran Siddiqui: They sacked the whole team and kept the board. You'd have taken this job too.
 - else:
@@ -154,6 +158,7 @@ Agent HaX: Got it. A crate signed for at the service door on Tuesday. Raid-issue
     - gary_outcome == "taken_in":
         Imran Siddiqui: If Gary's going in, so am I. Cuffs, then.
     - else:
+        ~ imran_board_said = true
         Imran Siddiqui: They sacked the whole team and kept the board. You'd have taken this job too.
         Imran Siddiqui: Ask Gary. I go where he goes.
     }

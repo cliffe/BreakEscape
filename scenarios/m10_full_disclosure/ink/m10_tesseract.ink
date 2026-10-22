@@ -21,6 +21,12 @@ VAR tess_rec_albion = false // each record, written on its pick
 VAR tess_rec_derek = false
 VAR tess_rec_debrief = false
 VAR tess_rec_cold = false
+VAR tess_pitch_said = false   // dialogue R1 M1: the pitch has played; a reopen resumes at case_why
+VAR tess_lesson_said = false  // dialogue R1 M1: Ghost's lesson plays once
+VAR tess_db_greeted = false   // dialogue R1 M2: Netherton is on the line and greeted
+VAR tess_db_costs_said = false // dialogue R1 M2: the costs are said; a reopen goes straight to the choice
+VAR tess_warned = false      // scenario design R1 M1: the "we finish tonight" warning has played
+VAR tess_end_said = false     // dialogue R1 m10: his end's opening beat has played
 
 === start ===
 -> core_router
@@ -71,7 +77,7 @@ VAR tess_rec_cold = false
 // No Quintero: held, knocked out, sent back, or breached ahead on the tether
 // and still on her way (MC §3.1).
 === double_cross_open ===
-Narrator: Kowalczyk is standing by the service door, empty-handed. He hasn't left his chair.
+Narrator: Kowalczyk is standing by the service door, empty-handed. Tesseract hasn't left his chair.
 Dr Adrian Tesseract: ...it proves nothing. It has to be one of theirs.
 Agent 0x5E 'Lantern': Adrian.
 Agent HaX: ...Quintero. Core. Now.
@@ -187,11 +193,12 @@ Dr Adrian Tesseract: Finish on my box first. I'll keep.
 // SE §3.1 "As flag 4 lands"; MC §6.1. HaX inside his conversation. Opened by
 // his own mapping on flag4_submitted, or on a walk-up after a reload.
 === flag4_lines ===
+// Educational R1: HaX tells the player about the notice; no line promises a file on his box.
 { m09_completed:
-    Agent HaX: The notice from Helena is on here too.
+    Agent HaX: He kept the notice from Helena. Nine years, and never sent.
 - else:
     Agent HaX: He argued for the vendor nine years ago and lost.
-    Agent HaX: The notice is on here. He wrote it himself, and he never sent it.
+    Agent HaX: He wrote a notice to the vendor himself, and he never sent it.
 }
 Agent HaX: I've got his box. If anything goes out from that console, I can try to kill the feed. Try.
 + [Only try?]
@@ -213,11 +220,32 @@ Agent HaX: And the line into our vault is open from here. We left it open.
 - tess_case_step == 1:
     Dr Adrian Tesseract: Where was I. Your record.
     -> case_records
+- tess_pitch_said:
+    Dr Adrian Tesseract: Where was I. Why you.
+    ~ tess_menu = true
+    -> case_why
 }
 Dr Adrian Tesseract: All four. Good. Now it's my turn.
+// Scenario design R1 M1: the ending rule. Once, before the case commits: what this
+// starts, at most one loose end from HaX, and a way out that sets nothing.
+{ not tess_warned:
+    ~ tess_warned = true
+    Dr Adrian Tesseract: Once I start, we finish tonight, here, one way or another. If there's something you'd like to see to first, go. I'll keep.
+    {
+    - whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "":
+        Agent HaX: We still haven't named WREN.
+    - not casualty_sheet_read:
+        Agent HaX: You never read his sheet. It's on the bench upstairs.
+    }
+}
 + [Go on, then.]
 + [Step away from the console first.]
     Dr Adrian Tesseract: No. But I'll keep my hand where you can see it.
++ [Not yet. I want to finish something.]
+    Dr Adrian Tesseract: I'll keep.
+    ~ tess_quiet = true
+    #exit_conversation
+    -> parked
 -
 Dr Adrian Tesseract: At six it starts going out, city by city. Everything SAFETYNET ever found, free, with working detail.
 Dr Adrian Tesseract: Press this, and it goes everywhere in the same minute. Eleven hundred to twenty-six hundred, the first month.
@@ -228,9 +256,21 @@ Dr Adrian Tesseract: Hospitals, dispatch, water. In the hands of people who coul
 -
 Dr Adrian Tesseract: Then it stops, because every vendor on earth patches at once, and nobody can hoard what everybody has.
 Dr Adrian Tesseract: Every year your service keeps its map, it costs more than that. Nobody counts it. I did.
-{ m02_completed:
+~ tess_pitch_said = true
+{ m02_completed and not tess_lesson_said:
     ~ tess_menu = true
     -> case_lesson ->
+}
+~ tess_menu = true
+-> case_why
+
+// Dialogue R1 M1: the second half of the pitch, its own knot so a reopen resumes
+// here ("Where was I. Why you.") and not at "All four. Good."
+=== case_why ===
+{ tess_menu:
+    ~ tess_menu = false
+- else:
+    -> core_router
 }
 + [You've had all night. Why haven't you pressed it?]
 + [You could have done this from anywhere. Why wait for me?]
@@ -418,11 +458,13 @@ Dr Adrian Tesseract: Two of yours died at the sites nobody covered. I've read th
 - else:
     -> core_router
 }
+~ tess_lesson_said = true
 Dr Adrian Tesseract: Ghost put it best, at St. Catherine's. Not the money. The lesson.
 + [Ghost held a hospital to ransom to say it.]
 + [(Say nothing.)]
 -
-Agent HaX: Ghost wasn't wrong about the problem. I said so then. Wrong about the answer. So is he.
+// Educational R1 E-n6: the verdict is left to the exchanges.
+Agent HaX: Ghost wasn't wrong about the problem. I said so then. Wrong about the answer.
 ->->
 
 // MC §6.2: m09's two Recruiter exports, once each, here.
@@ -506,11 +548,17 @@ Dr Adrian Tesseract: That's the cheapest it will ever be. Wait a year and the nu
     -> first_landed ->
     Dr Adrian Tesseract: *pause* I knew.
     -> bridge_in
-+ { not (margin_note_read or asante_confirmed_sheet) } [Someone corrected your sheet upwards, and you signed your old number under it.]
+// Scenario design R1 m4: the correction can be cited only by a player who read the sheet; otherwise slot 2 is a decoy.
++ { casualty_sheet_read and not (margin_note_read or asante_confirmed_sheet) } [Someone corrected your sheet upwards, and you signed your old number under it.]
     ~ exchange_1 = "rebuttal"
     -> exch_1_sting ->
     -> first_landed ->
     Dr Adrian Tesseract: I signed it.
+    -> bridge_in
++ { not casualty_sheet_read and not (margin_note_read or asante_confirmed_sheet) } [Nobody can know a number like that.]
+    ~ exchange_1 = "miss"
+    -> exch_1_sting ->
+    Dr Adrian Tesseract: I can. I did the sums. You didn't read them.
     -> bridge_in
 // slot 3: hardened > the clean first day > plain decoy
 + { hard } [Your Council's curve is on the desk outside. It doesn't stop after a month.]
@@ -788,7 +836,7 @@ Dr Adrian Tesseract: Nobody elected the people who hoard, either. I asked who do
 ~ temp k = ko_pattern()
 {
 - k >= 4:
-    Dr Adrian Tesseract: Most of the operations I've watched, you put someone on the floor who wasn't armed. That isn't a lapse. It's a method.
+    Dr Adrian Tesseract: Most of the operations I've watched, you put someone on the floor who wasn't armed. Often enough to call it a method.
 - k >= 2:
     Dr Adrian Tesseract: More than once, you've put someone on the floor who wasn't armed. Clean hands, Agent?
 - k == 1:
@@ -1023,7 +1071,17 @@ Agent 0x5E 'Lantern': Adrian.
 // the person with a reason to say it. Netherton names the first two
 // operations that apply, one fixed line each (never a printed name).
 // ===========================================
+// Dialogue R1 M2: a reopen resumes at the costs or at the choice, not at
+// "Netherton's on the line." (the greeting and the costs are said once each).
 === database ===
+{ tess_db_costs_said:
+    Agent HaX: Netherton's still on the line. Your call.
+    ~ tess_menu = true
+    -> database_menu
+}
+{ tess_db_greeted:
+    -> database_costs
+}
 Agent HaX: Netherton's on the line. He wants to hear this.
 + [Put him through.]
 + [Then he can listen.]
@@ -1031,6 +1089,10 @@ Agent HaX: Netherton's on the line. He wants to hear this.
 Dr Adrian Tesseract: Magnus.
 Director Magnus Netherton: Adrian.
 Director Magnus Netherton: Agent. His copy, and ours in the vault. You decide what happens to both. Hear what each costs first.
+~ tess_db_greeted = true
+-> database_costs
+
+=== database_costs ===
 Director Magnus Netherton: Half of these cannot be patched this year, and the oldest water controllers never. Send them out and every buyer knows where to hit.
 + [And if we keep them?]
 + [Go on, sir.]
@@ -1041,7 +1103,8 @@ Agent HaX: Keep them, and the infusion pumps in a hundred and forty hospitals ar
 -
 -> database_ops ->
 Director Magnus Netherton: Both of them run through holes on that list. Patch the holes and we lose the way in. I will sign it.
-Agent HaX: That's coordinated disclosure. Vendors first, quietly, with time to fix. The ones nobody can patch go to the operators, with workarounds.
+// Educational R1 E-m1: coordinated disclosure ends in publication.
+Agent HaX: That's coordinated disclosure. Vendors first, with time to fix, then the public. The ones nobody can patch go to the operators, with workarounds.
 {
 - m09_albion_notified and m09_debrief_notice_before:
     Agent HaX: You sent his notice before anyone asked you to. This is that letter, a thousand times.
@@ -1057,6 +1120,7 @@ Agent HaX: That's coordinated disclosure. Vendors first, quietly, with time to f
     Agent HaX: And if both copies die, this room purges itself. He'll be ready for it. You won't have him after.
 -
 Director Magnus Netherton: Then nobody has it, and nobody fixes anything either. We both answer for it.
+~ tess_db_costs_said = true
 ~ tess_menu = true
 -> database_menu
 
@@ -1135,6 +1199,17 @@ Director Magnus Netherton: Send ours to the vendors, and two operations go dark.
 // ===========================================
 === his_end ===
 ~ points_landed = landed_count()
+// Dialogue R1 m10: a reopen after the opening beat goes straight back to the choice.
+{ tess_end_said:
+    Dr Adrian Tesseract: Well, Agent?
+    ~ tess_menu = true
+    { points_landed >= 2:
+        -> end_menu_standing
+    - else:
+        -> end_menu_seated
+    }
+}
+~ tess_end_said = true
 { join_step >= 2:
     Dr Adrian Tesseract: You held your hand out for it. I won't forget that.
 }
@@ -1260,9 +1335,9 @@ Agent HaX: 0x00.
 === ending_scorched ===
 Narrator: The wipe goes through. Then the room goes: the lights die, the suppression dumps, and somewhere behind the walls the blast doors start to cycle.
 { m09_recruiter_offer == "taken":
-    Narrator: When the emergency lights come up, his chair is empty, and a panel nobody had found stands open. On the console, a card in his hand: 'Afterwards, then.'
+    Narrator: When the emergency lights come up, his chair is empty, and a panel nobody had found stands open. On the console, a card in his handwriting: 'Afterwards, then.'
 - else:
-    Narrator: When the emergency lights come up, his chair is empty, and the service door is open. On the console, a card in his hand: 'Afterwards, then.'
+    Narrator: When the emergency lights come up, his chair is empty, and the service door is open. On the console, a card in his handwriting: 'Afterwards, then.'
 }
 Agent HaX: Out, 0x00. The team's at the lock. Follow their torches.
 ~ tess_quiet = true

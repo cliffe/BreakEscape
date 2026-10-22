@@ -49,7 +49,7 @@ Grey cabinet by the door. Key switch and a breaker row, GALLERY SHUTTER on the l
 {gallery_shutter_cut:
     -> cut_call
 }
-Turn the key a quarter right and leave it. That isolates the feed. Nothing's moved yet.
+Turn the key a quarter right and leave it. That takes the row off their board. It's ours now, not theirs.
 -> cut_1_menu
 = cut_1_menu
 + [Key's turned.]

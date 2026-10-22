@@ -189,6 +189,7 @@ VAR ladder_used = false
 VAR override_held = false
 VAR hall_team_present = false       // stage 9: true while a raid copy stands in the server hall (playtest B-03)
 VAR hall_guards_stood_down = false  // the hall guards' talk-past; stage 9 stops both patrols and their challenges on it
+VAR hax_rest_promised = false      // dialogue R1 m14: HaX promised the rest at six (hax_post), so 06:00 and the hearing offer the question
 VAR plans_read = false
 VAR payment_read = false
 VAR forward_post_entered = false

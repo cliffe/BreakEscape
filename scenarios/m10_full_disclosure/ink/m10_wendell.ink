@@ -47,6 +47,9 @@ Wendell Briggs: You with the data company? Nobody told me there'd be a visit.
     ~ server_hall_warned = true
     // Alignment R9-m5: he makes the cut only on a live shutter, and then no phone voice is credited with it.
     {not gallery_shutter_cut:
+        ~ gallery_shutter_cut = true
+        ~ cut_by_hand = false
+        Wendell Briggs: *pause* Well. Which switch do you want.
         -> wendell_switch
     }
     -> wendell_dale
@@ -62,13 +65,15 @@ Wendell Briggs: You with the data company? Nobody told me there'd be a visit.
     -> wendell_rest
 
 // No tunnel: a reopen can enter this knot directly (R9), so it diverts on.
+// Dialogue R1 m7: the question is asked in the told choice, so a reopen here
+// (the knot owning this choice) offers the choice again without repeating it.
 === wendell_switch ===
-~ gallery_shutter_cut = true
-~ cut_by_hand = false
-Wendell Briggs: *pause* Well. Which switch do you want.
 + [The one marked gallery shutter.]
-    Wendell Briggs: There. Key's turned, breaker's down. That door won't move again tonight.
-    -> wendell_dale
+    -> wendell_switch_done
+
+=== wendell_switch_done ===
+Wendell Briggs: There. Key's turned, breaker's down. That door won't move again tonight.
+-> wendell_dale
 
 === wendell_dale ===
 Wendell Briggs: Dale's on the next shift. I'm calling him. He's got grandkids.

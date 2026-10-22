@@ -26,6 +26,8 @@ VAR hax_backdoor_asked = false
 VAR hax_console_asked = false
 VAR hax_vault_asked = false
 VAR hax_hatch_asked = false
+VAR hax_monitor_asked = false  // educational R1 (E-m6): the flag-1 concept steer
+VAR hax_box_asked = false      // educational R1 (E-m6): the flag-4 concept steer
 VAR hax_suspect = ""
 
 === function hax_guide_ready() ===
@@ -69,17 +71,20 @@ VAR hax_suspect = ""
     #exit_conversation
     -> DONE
 
+// Scenario design R1 n2: the console and vault topics retire once flag4_lines has said both in the scene.
 // OT §5. Choices only (phone resting knot). Newest topics first; each retires
 // on its own guard or when its aim is done; the three sticky choices last.
 === support_hub ===
-+ {flag4_submitted and not hax_console_asked} [The console.] -> console_fact
-+ {flag4_submitted and not hax_vault_asked} [The vault line.] -> vault_line
++ {flag4_submitted and not flag4_heard and not hax_console_asked} [The console.] -> console_fact
++ {flag4_submitted and not flag4_heard and not hax_vault_asked} [The vault line.] -> vault_line
 + {outer_lock_open and not hax_jammed and not what_went_out_given} [What went out?] -> what_went_out
 + {flag2_submitted and not hax_jammed and not outer_lock_open} [What's still live?] -> whats_live
 // Stage 8 (ruling 3, m-1): while "[What's still live?]" shows, it carries the
 // backdoor too, so the hub stays at ten on the busiest save.
 + {flag2_submitted and outer_lock_open and backdoor_channel_live and not backdoor_closed and not hax_backdoor_asked} [The backdoor.] -> backdoor_topic
 + {flag2_submitted and not flag3_submitted and not hax_hatch_asked} [The hatch?] -> hatch_topic
+// Educational R1 (E-m6): concept steers for flags 1 and 4 (wording checked against the VM plan by opus48).
++ {outer_lock_open and not flag4_submitted and not hax_box_asked} [His box.] -> box_topic
 + {power_room_entered and not gallery_shutter_cut and phone_voice_is_hax} [Talk me through the shutter.] -> shutter_topic
 + {clue_door_log and whodunit_live and not wren_at_core and accused == ""} [I know who WREN is.] -> accuse
 // Alignment m12: recalls after the accusation, and gone once past the gallery stair.
@@ -92,6 +97,7 @@ VAR hax_suspect = ""
 + {clue_door_log and door_log_given and whodunit_live and not clue_alibi} [Who was where at ten past?] -> alibi
 + {clue_door_log and whodunit_live and not clue_alibi and not door_log_given} [The door log.] -> door_log
 + {flag1_submitted and not power_room_entered and not hax_power_asked} [The power room?] -> power_room_topic
++ {door_scene_done and not flag1_submitted and not hax_monitor_asked} [Their monitoring. Where do I start?] -> monitor_topic
 + {flag1_submitted and m06_assets_seized and not workshop_entered and not hax_fence_asked} [The fence.] -> fence
 + {briefing_played and not breach_open and not hax_why_asked} [Why does he want me?] -> why_me
 + {briefing_played and not breach_open and not hax_hour_asked} [The hour.] -> the_hour
@@ -129,6 +135,9 @@ VAR hax_suspect = ""
     The console takes the staging copy.
 - gallery_shutter_cut:
     Server hall's through there.
+// Dialogue R1 m15: in the power room, the job is the shutter.
+- power_room_entered:
+    The shutter. Whoever runs that room, or you by hand.
 - workshop_entered:
     Get to the power room. Then the shutter.
 - ghost_call_done:
@@ -224,8 +233,9 @@ Two posts empty. That's your freeze. He couldn't make payroll.
 
 === power_room_topic ===
 ~ hax_power_asked = true
-Whoever's in the power room runs your lights.
-The gallery's blast shutter runs off it too. That has to be dead before you reach him.
+// Dialogue R1 m16: not the flag-1 text's words again.
+Your lights and the gallery's blast shutter both run off that room.
+The shutter has to be dead before you reach him.
 -> support_hub
 
 // ---------------- the whodunit ----------------
@@ -240,7 +250,8 @@ The log says Malhotra's badge. Malhotra was on with me at ten past.
     That camera's a box on a bracket. Never wired.
     -> support_hub
 + [So somebody has a copy.]
-    That's how I read it.
+    // Educational R1 E-M4: what a door log proves.
+    That's how I read it. A door log proves a card was there. Not who held it.
     -> support_hub
 
 // Clue 2. What the player saw, what HaX had, what Netherton had. The arakawa_ko
@@ -514,7 +525,21 @@ It's holding a batch for the moment anyone stops his release. Close it at the co
 === hatch_topic ===
 ~ hax_hatch_asked = true
 Sealed section, east end of the hall. A Cold War maintenance hatch, painted over, and somebody's opened it since.
-The release service runs in a container on the host under it. Get out of the container onto that host, and you've got the disarm.
+// Educational R1: "the disarm" read as something found on the machine; flag 3's effect in game is the stair.
+The release service runs in a container on the host under it.
+Get out of the container onto that host. That opens the way up to him.
+-> support_hub
+
+=== monitor_topic ===
+~ hax_monitor_asked = true
+Their monitoring watches the cameras and the doors. It's still software, and software has holes.
+Get a foothold on it and their own eyes work for us.
+-> support_hub
+
+=== box_topic ===
+~ hax_box_asked = true
+He walled his box off, the way the release service was boxed in. Isolation like that can still be broken out of.
+And he always builds his own way out first. Find his.
 -> support_hub
 
 // After flag 4 (MC §6.1): the feed, and the vault line with the purge.
@@ -619,7 +644,7 @@ Director Magnus Netherton: Breach. Go.
     Agent 0x47 'Nightshade': Manual.
     He's on the crank. Their reader never saw you.
 - override_held:
-    It's read your badge. Only he knows.
+    It's read your badge. Your key kept it off their board. He knows; they don't.
 - else:
     It's read your badge. They know you're in.
 }

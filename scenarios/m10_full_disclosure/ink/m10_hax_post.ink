@@ -23,8 +23,6 @@ VAR hpost_end_quiet = false   // post_after / post_dead only, so an in-raid exit
 {
 - hpost_quiet:
     ~ hpost_quiet = false
-- ending != "" and ending != "joined":
-    Agent HaX: It's done. Sit down a minute.
 - breach_open:
     Agent HaX: I'm on your phone now. Ring me.
 - door_scene_done:
@@ -34,12 +32,14 @@ VAR hpost_end_quiet = false   // post_after / post_dead only, so an in-raid exit
 }
 + {not breach_open and not hpost_rest_asked and m09_completed} [You said there was more. In Helena.]
     ~ hpost_rest_asked = true
+    ~ hax_rest_promised = true
     Agent HaX: I did. It isn't over yet.
     Agent HaX: Six o'clock. If we're both still standing, you'll get the rest.
     ~ hpost_quiet = true
     -> hub
 + {not breach_open and not hpost_rest_asked and not m09_completed} [You knew him well?]
     ~ hpost_rest_asked = true
+    ~ hax_rest_promised = true
     Agent HaX: He trained me. When he left, there was a conversation I've never told anyone about.
     Agent HaX: Ask me at six. I'll tell you then.
     ~ hpost_quiet = true

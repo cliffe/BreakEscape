@@ -135,7 +135,8 @@ Director Magnus Netherton: The cells get it at four, two hours early, as pay for
 - {m07_completed and m07_debrief_stance == "hardened":
     Director Magnus Netherton: The Council said yes. You asked for the numbers. You have them.
 }
-Director Magnus Netherton: Full disclosure is one researcher, one flaw, after the vendor stops answering. This is every weapon we hold, handed out at once.
+// Educational R1 E-M1: full disclosure is publishing to everyone; a silent vendor is the usual reason, not the definition.
+Director Magnus Netherton: Full disclosure is one researcher, one flaw, published to everyone, usually after the vendor stops answering. This is every weapon we hold, handed out at once.
 -> briefing_invite
 
 // The invitation (m09 SA Beat 3.6). On a cold start HaX gives the nickname

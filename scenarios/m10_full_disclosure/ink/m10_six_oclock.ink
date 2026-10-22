@@ -181,6 +181,8 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
     Agent 0x5E 'Lantern': Eleven years she paid my mum's care home. Then she sold me to you.
 - kowalczyk_answer == "bench":
     Agent 0x5E 'Lantern': The paperwork. It's always the paperwork.
+    // Educational R1 E-m8: the supply-chain lesson, named once.
+    Agent HaX: Everything we carry comes through stores for a reason. Hers came off his bench.
 - kowalczyk_answer == "briefing":
     Agent 0x5E 'Lantern': *almost laughs* No, you didn't. But thank you.
 - kowalczyk_answer == "worked_out":
@@ -500,7 +502,7 @@ Director Magnus Netherton: I know. I kept it to one page.
     Narrator: The van pulls out through the gate.
     Agent HaX: It's afterwards.
 }
-+ { m09_completed } [You said you'd tell me the rest.]
++ { m09_completed or hax_rest_promised } [You said you'd tell me the rest.]
 + [(Stand with her.)]
 -
 // R2-M4: m09's Reading, shown to her in Helena.
@@ -647,9 +649,9 @@ Narrator: 'I'll be at the board. I don't know what I'll say.'
     Director Magnus Netherton: We buried Albion. Tonight I signed for every line we left out.
 // R3-M1: true on every database outcome.
 - key == "stcath_exposed" and database_outcome == "secured":
-    Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They still aren't. That was my signature too.
+    Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They still are not. That was my signature too.
 - key == "stcath_exposed" and database_outcome == "both_wiped":
-    Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They won't be now.
+    Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They will not be now.
 - key == "stcath_exposed":
     Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They will be now.
 - key == "stcath_bed4":

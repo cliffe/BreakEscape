@@ -46,7 +46,7 @@ Agent HaX: He still knows. But the map's gone. He's one man with a memory now.
 }
 
 === the_rest ===
-+ { m09_completed } [You said you'd tell me the rest.]
++ { m09_completed or hax_rest_promised } [You said you'd tell me the rest.]
 + [(Wait for them to call you.)]
 -
 // R3-m6: m09's Reading payoff, as at 06:00 (the same string).
