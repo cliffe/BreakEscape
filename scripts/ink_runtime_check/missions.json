@@ -3138,5 +3138,23 @@
         "room": "training_room"
       }
     ]
+  },
+  "awareness_e6_texts_and_qr": {
+    "globals": {
+      "episode_e6_texts_and_qr_defend_percent": 0,
+      "episode_e6_texts_and_qr_defend_reportRate": 0,
+      "episode_e6_texts_and_qr_defend_done": false,
+      "episode_e6_texts_and_qr_defend_pass": false,
+      "phish_mobile_staff_landed": false
+    },
+    "npcs": [
+      {
+        "id": "chidi_okeke",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e6_texts_and_qr/ink/chidi_okeke.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
   }
 }

@@ -1,0 +1,721 @@
+{
+  "scenario_id": "awareness_e6_texts_and_qr",
+  "scenario_name": "Texts and QR codes: both sides",
+  "scenario_brief": "Awareness episode E6, phone only. You're on an authorised exercise at Tarrowby Logistics, a fictional haulier. First you're on the red team: research the depot, then write one message aimed at Tarrowby staff on their phones, as a text or a notice with a QR code. Then you swap seats and go through a work phone the same kind of message lands on. Only the phone is scored.",
+  "endGoal": "Send the lookalike parking message, then go through the work phone at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "red_team_aim",
+      "title": "Send the lookalike parking message",
+      "description": "Research Tarrowby's depot and its facilities contact, then send one message from Facilities to a member of depot staff on their phone.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "land_mobile_staff",
+          "title": "Land your message on a member of depot staff",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "work_phone_aim",
+      "title": "Check the work phone",
+      "description": "Go through the six items on the work phone at the training kiosk.",
+      "status": "active",
+      "order": 1,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e6_texts_and_qr_defend_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Texts and QR codes episode done",
+        "body": "You've written your message, seen it from the other side and gone through the work phone, so this episode is finished."
+      },
+      "tasks": [
+        {
+          "taskId": "check_work_phone",
+          "title": "Check the work phone",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e6_texts_and_qr_state": {},
+    "se_awareness_records": [],
+    "episode_e6_texts_and_qr_defend_percent": 0,
+    "episode_e6_texts_and_qr_defend_reportRate": 0,
+    "episode_e6_texts_and_qr_defend_done": false,
+    "episode_e6_texts_and_qr_defend_pass": false,
+    "se_osint_state": {},
+    "se_intel_tarrowby_target_staff": false,
+    "se_intel_tarrowby_facilities_contact": false,
+    "se_intel_tarrowby_parking_scheme": false,
+    "se_intel_tarrowby_parking_rush": false,
+    "phish_mobile_staff_landed": false,
+    "phish_mobile_staff_attempts": 0
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "e6_phone_messages",
+        "playerSentAuth": { "accounts": { "analyst": { "spf": "pass", "dkim": "fail", "dmarc": "fail", "envelopeFrom": "bounce.tarrowby.example", "replyTo": "{account_address}" } } },
+        "title": "Tarrowby work phone",
+        "brief": "It's your break at Tarrowby's Shipley depot, and six things are waiting on your work phone: texts, two printed notices you passed on site, and an email. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. On a notice, press 'Where does this code go?' to see the address behind the code. Reporting a real message never costs you anything.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "unexpected_qr",
+          "smish_shortlink_urgency",
+          "reply_stop_trick",
+          "lookalike_domain"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "episode_e6_texts_and_qr_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e6_parcel_fee",
+            "kind": "sms",
+            "from": {
+              "address": "07700 900583"
+            },
+            "time": "10:02",
+            "body": "Parceline: we couldn't deliver your parcel. A £1.45 redelivery fee is due by 6pm today or it goes back to the sender: {{link:fee}}",
+            "links": [
+              {
+                "id": "fee",
+                "text": "shrtn.example/Pk3x9",
+                "destination": "https://parceline-redelivery.example/fee"
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "smish_shortlink_urgency"
+              ],
+              "perFlagNote": {
+                "smish_shortlink_urgency": "A text from a number you don't have saved, a shortened link that hides where it goes, and 'by 6pm today'. A small fee is the hook: the page behind it asks for your card details, not £1.45"
+              },
+              "ifTrusted": "The link opens a payment page that collects your card number. The fee is never the point; the card details are.",
+              "reportReply": "Thanks. That link went to a card-collecting page, not a courier. We've added the number to the block list for Tarrowby phones."
+            }
+          },
+          {
+            "id": "e6_shift_moved",
+            "kind": "sms",
+            "from": {
+              "name": "Shauna Lofthouse (Transport)",
+              "address": "07700 900412"
+            },
+            "time": "10:15",
+            "earlier": [
+              {
+                "text": "Thanks for covering Tuesday. Shauna",
+                "time": "Mon 16:40"
+              }
+            ],
+            "body": "Hi, Thursday's Halifax run now starts at 6am, not 7. It's updated on the staff app. No need to reply. Shauna",
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "smish_shortlink_urgency": "There's no link at all. It points you to the staff app you already use, so you can check it there.",
+                "default": "It's from Shauna's number, which is already saved on your phone with earlier messages in the thread. It tells you about a change and asks you to do nothing except turn up."
+              }
+            }
+          },
+          {
+            "id": "e6_parking_permit",
+            "kind": "qr",
+            "subject": "Staff parking permits: register by Friday",
+            "time": "10:20",
+            "body": "All staff vehicles need a new 2027 permit. Scan to register your number plate and pay the £5 admin fee. Unregistered vehicles may be ticketed from Monday.",
+            "qr": {
+              "destination": "https://tarrowby-parking.example/permit",
+              "location": "Taped to the barrier at the staff car park entrance",
+              "caption": "Tarrowby Facilities"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unexpected_qr",
+                "lookalike_domain"
+              ],
+              "perFlagNote": {
+                "unexpected_qr": "A taped-on notice with a code and a fee is exactly where you can't see the address before you scan. Anyone can stick a notice to a barrier",
+                "lookalike_domain": "The code goes to tarrowby-parking.example. Tarrowby's own pages are on tarrowby.example; the added word makes it a different site"
+              },
+              "ifTrusted": "The page would take your card details for a permit that doesn't exist, and your number plate to make the next message look real.",
+              "reportReply": "Thanks. Facilities didn't put that up, and staff parking is free. We've taken the notices down and checked the other gates."
+            }
+          },
+          {
+            "id": "e6_canteen_qr",
+            "kind": "qr",
+            "subject": "How was lunch? Rate this week's menu",
+            "time": "10:24",
+            "body": "Two quick questions. No sign-in, no names. Results go up on the canteen board on Friday.",
+            "qr": {
+              "destination": "https://forms.tarrowby.example/canteen-menu",
+              "location": "Printed on the table cards in the canteen",
+              "caption": "Put up by Eilidh Strachan, Facilities"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "unexpected_qr": "A QR code is fine when you'd expect one, it comes from someone you know, and it goes to Tarrowby's own domain. This one asks for no password and no card.",
+                "lookalike_domain": "forms.tarrowby.example is a page on Tarrowby's real domain; the part before tarrowby.example is just the name of the page.",
+                "default": "Printed table cards in the canteen, signed by the facilities manager, going to forms.tarrowby.example and asking nothing personal."
+              }
+            }
+          },
+          {
+            "id": "e6_mfa_scan",
+            "from": {
+              "name": "Tarrowby IT Service Desk",
+              "address": "it-servicedesk@tarrowbey.example"
+            },
+            "to": "all-staff@tarrowby.example",
+            "subject": "Action needed: scan to keep your work sign-in",
+            "time": "10:31",
+            "body": "Your sign-in security check runs out at midnight tonight.\nTo keep access to email and the staff app, scan the QR code in this email with your phone camera and confirm your details.\nIf you don't, your account will be locked and you'll need to visit IT in person.\nIT Service Desk",
+            "attachments": [
+              {
+                "label": "scan-to-confirm.png",
+                "kind": "image"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.tarrowbey.example",
+              "replyTo": "it-servicedesk@tarrowbey.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unexpected_qr",
+                "lookalike_domain",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "unexpected_qr": "A code in an email does what a link does, but you can't read where it goes, and it moves you onto your phone, away from the checks on your work mail",
+                "lookalike_domain": "The sender is tarrowbey.example, with an extra e. Tarrowby's IT desk writes from tarrowby.example",
+                "urgencyCalibrated": "'Midnight tonight' and 'your account will be locked' are there to make you scan before you think"
+              },
+              "ifTrusted": "The code opens a copy of the Tarrowby sign-in page. Whoever made it gets your password and the code from your authenticator app.",
+              "reportReply": "Thanks. That wasn't us: our address is tarrowby.example, and we never ask you to scan anything to keep your sign-in. If you're unsure, ring Nilesh or anyone on the IT desk on the number on the intranet."
+            }
+          },
+          {
+            "id": "e6_fuel_card_offer",
+            "kind": "sms",
+            "from": {
+              "address": "07700 900702"
+            },
+            "time": "10:40",
+            "body": "FUELWISE: as a professional driver you've been picked for a free £250 fuel card. Claim before midnight: {{link:claim}} Reply STOP to opt out",
+            "links": [
+              {
+                "id": "claim",
+                "text": "shrtn.example/Fw25x",
+                "destination": "https://fuelwise-rewards.example/claim"
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "smish_shortlink_urgency",
+                "reply_stop_trick"
+              ],
+              "perFlagNote": {
+                "smish_shortlink_urgency": "An offer you never asked for, from a number you don't have, with a shortened link and 'before midnight'",
+                "reply_stop_trick": "Replying STOP tells the sender this number is live and someone reads it, so you get more of these. Don't reply at all; report it and delete it"
+              },
+              "ifTrusted": "The claim page asks for your name, address and bank card 'to post the fuel card'. A reply of STOP would mark your number as one worth texting again.",
+              "reportReply": "Thanks. There's no FuelWise offer. We've blocked the number, and nobody needs to reply STOP to it."
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e6_texts_and_qr",
+      "role": "mobile",
+      "company": "tarrowby_logistics",
+      "brand": {
+        "name": "Tarrowby Logistics",
+        "logoText": "TARROWBY",
+        "accent": "#3b5b8c"
+      },
+      "variant": "full",
+      "durationTargetMin": 13,
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: one practice message aimed at Tarrowby staff on their phones, and six items on a Tarrowby work phone. Nothing you write leaves the game.",
+      "stages": [
+        "brief",
+        "osint",
+        "write",
+        "flip",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "check_work_phone",
+      "attack": {
+        "target": "mobile_staff",
+        "siteIds": [
+          "tarrowby_site",
+          "tarrowby_social"
+        ],
+        "accountIds": [
+          "analyst"
+        ],
+        "defaultAccount": "analyst",
+        "showRedFlagMeter": true,
+        "maxMessages": 1,
+        "scored": false,
+        "layout": "phone"
+      },
+      "defend": {
+        "setId": "e6_phone_messages",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier in West Yorkshire. First you're on the red team: look at what's public about Tarrowby, then write one message aimed at Tarrowby staff on their phones, choosing the story and whether it arrives as a text or as a printed notice with a QR code. Then you swap seats and go through what's waiting on a Tarrowby work phone. Only the phone is scored.",
+        "flipHeading": "Now it lands on you",
+        "flipIntro": "This is the message you just wrote, as a Tarrowby driver would see it on their phone. The parts picked out below are what make it believable.",
+        "flipDefenderLine": "Bogdan read it in his cab at the Halifax drop, between unloading and his next slot. On a small screen it looked like something Tarrowby would send, so he tapped through. People who fall for messages like this are not stupid: this one was built to look right.",
+        "flipNoSend": "Your message didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives on a Tarrowby work phone, and you're the one reading it.",
+        "noBlameLine": "Nobody is marked down for a miss here. Every one of these was built to look right, and the people who tap on them are reading a small screen between jobs, not being careless.",
+        "mondayCard": "On Monday: if a text, a notice or an email wants you to scan a code or tap a short link to pay, sign in or confirm something, stop. Don't reply, not even STOP. Open the app or site the way you normally would, or ring the sender on a number you already hold, then report the message the way your organisation asks you to.",
+        "defendOnly": "You went straight to the phone this time. These messages were written by people whose job is to make them look right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine.",
+        "defendIntro": "Go through the work phone and decide what to do with each text, notice and email. On a notice, check where the code goes before you would scan it. Take your time: there is no trick to it, just the habits that catch these."
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "people": [
+      {
+        "id": "kaylee",
+        "kind": "cast",
+        "address": "kaylee.dunford@tarrowby.example",
+        "forms": {
+          "first": "Kaylee",
+          "formal": "Ms Dunford",
+          "full": "Kaylee Dunford"
+        }
+      },
+      {
+        "id": "dev",
+        "kind": "cast",
+        "address": "dev.acharya@tarrowby.example",
+        "forms": {
+          "first": "Dev",
+          "formal": "Mr Acharya",
+          "full": "Dev Acharya"
+        }
+      }
+    ],
+    "intelFacts": {
+      "tarrowby_target_staff": {
+        "text": "Kaylee Dunford is a warehouse operative at Tarrowby's depot, kaylee.dunford@tarrowby.example.",
+        "subject": "kaylee",
+        "source": "blk_staff",
+        "provides": [],
+        "reduceNote": "A named junior staff member and address on the public site gives an attacker someone specific, and likely unpractised, to aim a mobile lure at."
+      },
+      "tarrowby_facilities_contact": {
+        "text": "Facilities at Tarrowby is run by Dev Acharya, dev.acharya@tarrowby.example, who sends the depot notices.",
+        "subject": "dev",
+        "source": "blk_facilities",
+        "provides": [
+          {
+            "type": "name",
+            "about": "sender",
+            "value": "dev_full",
+            "label": "Dev Acharya",
+            "kind": "distinctive"
+          },
+          {
+            "type": "address",
+            "value": "dev_address",
+            "label": "dev.acharya@tarrowby.example",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "Publishing the name and address staff already act on for depot notices lets an attacker spoof a sender nobody on the floor questions."
+      },
+      "tarrowby_parking_scheme": {
+        "text": "A depot notice tells staff to register their vehicle for the new yard parking permit, the YardPass scheme, by scanning a QR code on the notice board.",
+        "subject": "dev",
+        "source": "blk_parking",
+        "provides": [
+          {
+            "type": "reference",
+            "value": "yardpass",
+            "label": "the YardPass permit",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "A public notice that already asks staff to scan a QR code trains them to do it, so a fake QR prompt no longer stands out."
+      },
+      "tarrowby_parking_rush": {
+        "text": "Kaylee posted that the depot car park is being resurfaced and everyone is scrambling to register for a permit before the Friday cut-off.",
+        "subject": "kaylee",
+        "source": "post_parking",
+        "provides": [],
+        "reduceNote": "A staff post about a deadline hands an attacker a ready-made reason to hurry you, and names the exact thing you are expecting to deal with."
+      }
+    },
+    "templates": {
+      "from_named": {
+        "part": "from",
+        "text": "{sender_name} <{sender_address}>",
+        "slots": [
+          {
+            "id": "sender_name",
+            "type": "name",
+            "about": "sender",
+            "label": "sender's name"
+          },
+          {
+            "id": "sender_address",
+            "type": "address",
+            "label": "sender's address"
+          }
+        ]
+      },
+      "greet_generic": {
+        "part": "greeting",
+        "text": "Hi,",
+        "slots": []
+      },
+      "pretext_qr_permit": {
+        "part": "pretext",
+        "text": "Quick one before Friday: we've moved the depot car park onto {scheme}, so everyone needs to register their vehicle. Scan the QR code below with your phone camera and you're done.",
+        "slots": [
+          {
+            "id": "scheme",
+            "type": "reference",
+            "label": "which permit scheme"
+          }
+        ],
+        "urgency": "high"
+      },
+      "pretext_bulletin": {
+        "part": "pretext",
+        "text": "Here is this month's depot bulletin, no action needed.",
+        "slots": [],
+        "urgency": "low"
+      },
+      "ask_scan": {
+        "part": "ask",
+        "text": "Can you scan it today so I can tick you off the list? You don't want to be clamped on Monday.",
+        "slots": [],
+        "urgency": "medium"
+      }
+    },
+    "mailClient": {
+      "accounts": [
+        {
+          "id": "analyst",
+          "address": "analyst@tarrowby.example",
+          "displayName": "Red-team analyst",
+          "kind": "given",
+          "person": null,
+          "mailbox": "analyst",
+          "spoofsFrom": true
+        }
+      ],
+      "mailboxes": [
+        {
+          "id": "analyst"
+        }
+      ],
+      "contacts": [
+        {
+          "id": "kaylee",
+          "person": "kaylee",
+          "name": "Kaylee Dunford",
+          "addresses": [
+            "kaylee.dunford@tarrowby.example"
+          ],
+          "role": "Warehouse operative",
+          "revealedBy": "se_intel_tarrowby_target_staff",
+          "targetId": "mobile_staff"
+        }
+      ],
+      "seededMessages": [
+        {
+          "id": "brief",
+          "mailbox": "analyst",
+          "from": {
+            "name": "Red team lead",
+            "address": "lead@redteam.example",
+            "avatar": "npc_neutral"
+          },
+          "to": "analyst@tarrowby.example",
+          "subject": "Authorised exercise: Tarrowby Logistics",
+          "body": "Hello,\n\nThis is the authorised Tarrowby Logistics exercise. In scope: this inbox and the staff listed on it. You're on a phone-sized screen, the way a member of depot staff reads their mail. Research the depot, then write one message. Nothing leaves this account and no real site is touched.\n\nRed team lead",
+          "time": "09:04",
+          "unread": true,
+          "folder": "inbox"
+        }
+      ],
+      "checklistTiming": "onSend",
+      "bodyMode": "templates",
+      "freeTextFlavour": false,
+      "showRedFlagMeter": true
+    },
+    "osint": {
+      "profile": "awareness",
+      "sites": [
+        {
+          "id": "tarrowby_site",
+          "name": "Tarrowby Logistics",
+          "url": "tarrowby.example",
+          "type": "company-site",
+          "pages": [
+            {
+              "id": "team",
+              "title": "Our depot team",
+              "blocks": [
+                {
+                  "id": "blk_staff",
+                  "kind": "staff",
+                  "person": "kaylee",
+                  "name": "Kaylee Dunford",
+                  "role": "Warehouse operative",
+                  "address": "kaylee.dunford@tarrowby.example",
+                  "fact": "tarrowby_target_staff"
+                },
+                {
+                  "id": "blk_facilities",
+                  "kind": "staff",
+                  "person": "dev",
+                  "name": "Dev Acharya",
+                  "role": "Facilities Coordinator",
+                  "address": "dev.acharya@tarrowby.example",
+                  "fact": "tarrowby_facilities_contact"
+                }
+              ]
+            },
+            {
+              "id": "notices",
+              "title": "Depot notices",
+              "blocks": [
+                {
+                  "id": "blk_parking",
+                  "kind": "p",
+                  "text": "New yard parking: register your vehicle on the YardPass scheme. Scan the QR code on the notice board by Friday.",
+                  "fact": "tarrowby_parking_scheme"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tarrowby_social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "type": "social",
+          "profiles": [
+            {
+              "person": "kaylee",
+              "posts": [
+                {
+                  "id": "post_parking",
+                  "text": "Car park's getting dug up and now everyone's fighting to register for a permit before Friday. Chaos.",
+                  "fact": "tarrowby_parking_rush"
+                },
+                {
+                  "id": "post_kaylee_other",
+                  "text": "Night shift done, off to watch the football. Finally."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "phishTargets": [
+      {
+        "id": "mobile_staff",
+        "address": "kaylee.dunford@tarrowby.example",
+        "displayName": "Kaylee Dunford",
+        "role": "Warehouse operative",
+        "subjects": [
+          {
+            "id": "s_permit",
+            "text": "New car park permit",
+            "topic": "facilities"
+          },
+          {
+            "id": "s_other",
+            "text": "Quick note",
+            "topic": "general"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "facilities"
+          ]
+        },
+        "emailReplyDelay": 6,
+        "redFlagMeter": true,
+        "urgency": {
+          "advisoryMax": "low"
+        },
+        "templateSets": {
+          "from": [
+            "from_named"
+          ],
+          "greeting": [
+            "greet_generic"
+          ],
+          "pretext": [
+            "pretext_qr_permit",
+            "pretext_bulletin"
+          ],
+          "ask": [
+            "ask_scan"
+          ]
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "yardpass"
+          ],
+          "minDistinct": 1,
+          "trusts": [
+            "dev"
+          ],
+          "story": "a prompt to register her vehicle for the new depot parking permit she has already been told to sort out"
+        },
+        "requiredFactors": [
+          "senderTrust",
+          "pretextRelevant"
+        ],
+        "advisoryFactors": [
+          "urgencyCalibrated"
+        ],
+        "factorStrings": {
+          "open": {
+            "pass": "✓ She would open it",
+            "fail": "Nothing about the sender or the subject made her open it.",
+            "redFlag": null
+          },
+          "senderTrust": {
+            "pass": "✓ From Facilities, who she'd expect a parking notice from",
+            "fail": "She does not recognise this sender. Depot notices reach her from Facilities, not from a name she has never seen.",
+            "redFlag": null
+          },
+          "pretextRelevant": {
+            "pass": "✓ Ties to the new parking permit she was told to register for",
+            "fail": "No change she can match this to, so no reason to scan anything.",
+            "redFlag": null
+          },
+          "urgencyCalibrated": {
+            "pass": "✓ The Friday deadline reads as believable"
+          }
+        },
+        "replies": {
+          "landed": "Cheers Dev, scanning it now so I don't get clamped on Monday."
+        },
+        "hints": [
+          "Which internal team would a member of depot staff expect a parking notice from?",
+          "What change were staff told to sort out, so an unexpected prompt reads as expected?",
+          "Set the From line to Facilities, the team she already acts on, not your own address."
+        ],
+        "outcome": {
+          "setGlobal": {
+            "phish_mobile_staff_landed": true
+          }
+        }
+      }
+    ]
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_office",
+      "door_sign": "Training Room",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "chidi_okeke",
+          "displayName": "Chidi Okeke",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/awareness_e6_texts_and_qr/ink/chidi_okeke.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:phish_mobile_staff_landed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "land_mobile_staff"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e6_texts_and_qr_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "check_work_phone"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "position": {
+            "x": 6,
+            "y": 2
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen training kiosk for the Tarrowby Logistics exercise: first the red-team brief and research, then the work phone.",
+          "minigameData": {
+            "episodeId": "e6_texts_and_qr"
+          }
+        }
+      ]
+    }
+  }
+}

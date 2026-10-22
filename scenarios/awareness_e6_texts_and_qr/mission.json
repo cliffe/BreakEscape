@@ -1,0 +1,22 @@
+{
+  "display_name": "Awareness E6: Texts and QR codes (full episode)",
+  "description": "A thirteen-minute awareness episode for staff with a work phone. On an authorised exercise at Tarrowby Logistics, a fictional haulier, you first play the attacker: research the depot, then send one lookalike parking message. Then you swap seats and go through a work phone a message like it lands on. Only the phone is scored, and reporting a real message never costs you anything.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "training",
+  "ui_theme": "general",
+  "estimated_duration_minutes": 13,
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": [
+        "Smishing",
+        "QR code phishing",
+        "Mobile security",
+        "OSINT",
+        "Security awareness"
+      ]
+    }
+  ]
+}
