@@ -69,13 +69,18 @@ VAR neth_plans_asked = false
     Narrator: The forward post at a quarter to two. Two vans, a folding table, a screen with two times on it.
     Narrator: Kowalczyk and Arakawa pack the breaching case. Something he says makes her laugh. Malhotra runs the comms check with HaX, his badge by his headset.
     {
-    - not m08_completed and not m09_completed:
+    // Alignment m2: he introduces himself only to a player who has never met him.
+    - not m02_completed and not m03_completed and not m04_completed and not m05_completed and not m06_completed and not m07_completed and not m08_completed and not m09_completed:
         #complete_task:take_the_briefing
         Director Magnus Netherton: Magnus Netherton. I run this shop. Gather in.
     - else:
         #complete_task:take_the_briefing
         Director Magnus Netherton: Gather in. We have until six.
     }
+}
+// Alignment m6: the m08 knock-out, once, unspoken.
+{m08_netherton_ko:
+    Narrator: Netherton has a cut over one eyebrow, not quite healed. He doesn't mention it.
 }
 {m04_voltage_captured:
     Narrator: In the back of the second van, Voltage sits cuffed, saying nothing.

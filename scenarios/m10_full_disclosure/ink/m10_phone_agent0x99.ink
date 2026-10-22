@@ -81,12 +81,13 @@ VAR hax_suspect = ""
 + {flag2_submitted and outer_lock_open and backdoor_channel_live and not backdoor_closed and not hax_backdoor_asked} [The backdoor.] -> backdoor_topic
 + {flag2_submitted and not flag3_submitted and not hax_hatch_asked} [The hatch?] -> hatch_topic
 + {power_room_entered and not gallery_shutter_cut and phone_voice_is_hax} [Talk me through the shutter.] -> shutter_topic
-+ {officer_out == "malhotra" and clue_alibi} [Bring Malhotra back.] -> recall_malhotra
-+ {officer_out == "quintero" and clue_bench_log} [Bring Quintero back.] -> recall_quintero
-+ {officer_out == "arakawa" and clue_alibi} [Bring Arakawa back.] -> recall_arakawa
-+ {officer_out == "vector" and clue_alibi} [Bring Vector back.] -> recall_vector
-+ {officer_out == "phantom" and clue_alibi} [Bring Phantom back.] -> recall_phantom
 + {clue_door_log and whodunit_live and not wren_at_core and accused == ""} [I know who WREN is.] -> accuse
+// Alignment m12: recalls after the accusation, and gone once past the gallery stair.
++ {officer_out == "malhotra" and clue_alibi and not gallery_open} [Bring Malhotra back.] -> recall_malhotra
++ {officer_out == "quintero" and clue_bench_log and not gallery_open} [Bring Quintero back.] -> recall_quintero
++ {officer_out == "arakawa" and clue_alibi and not gallery_open} [Bring Arakawa back.] -> recall_arakawa
++ {officer_out == "vector" and clue_alibi and not gallery_open} [Bring Vector back.] -> recall_vector
++ {officer_out == "phantom" and clue_alibi and not gallery_open} [Bring Phantom back.] -> recall_phantom
 + {clue_bench_log and whodunit_live and not signout_read} [Who signed for the case?] -> signout
 + {clue_door_log and door_log_given and whodunit_live and not clue_alibi} [Who was where at ten past?] -> alibi
 + {clue_door_log and whodunit_live and not clue_alibi and not door_log_given} [The door log.] -> door_log
@@ -196,7 +197,7 @@ VAR hax_suspect = ""
 === why_me ===
 ~ hax_why_asked = true
 He wants it to be one of ours. Ask him why. He'll enjoy telling you.
-He's kept a file on you since your first day. He thinks it'll be you.
+He's watched every job you've done since your first day. He thinks it'll be you.
 + [He's wrong.]
     Then prove it to him slowly. He likes to be shown.
     -> support_hub

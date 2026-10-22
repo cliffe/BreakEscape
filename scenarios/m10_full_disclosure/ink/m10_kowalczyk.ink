@@ -249,6 +249,13 @@ Narrator: For a moment she has nothing to say.
     Agent HaX: "The long way is over." I said that the morning you handed it over.
 }
 Agent 0x5E 'Lantern': Well. *almost laughs* It was a good cracker.
+// m09 A1: what the player said to her about it on the apron.
+{
+- m09_kowalczyk_reply == "warm":
+    Agent 0x5E 'Lantern': You thanked me for it in Helena. I'd have liked to deserve that.
+- m09_kowalczyk_reply == "flat":
+    Agent 0x5E 'Lantern': In your pocket, you said. You never did trust it. Fair.
+}
 {kow_arakawa_here():
     Narrator: Arakawa looks away.
 }

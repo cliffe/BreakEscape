@@ -162,8 +162,8 @@ Custody values (`arrested`, `ko`, `flagged`), the arrested read rule, and never-
 
 **`wanted_photo`** ((5, 2); readable in place). Name: "Shift Notes: Photo". Carries: the player is expected (FA row 119), in Tesseract's hand. Changed by: whether m09 was played (only the reference to Helena).
 
-- Default observations: "Your photo, pinned among the shift notes, taken somewhere you didn't know there was a camera. Under it, in a neat, upright hand: 0x00: to the core. Do not detain." Default text, two lines: "Your photo. Under it, in a neat, upright hand:" / "0x00: to the core. Do not detain."
-- Variant, same for both, `globalVars.m09_completed === true`: the same two strings with "in a neat, upright hand" replaced by "in the neat, upright hand from the papers in Helena".
+- Default observations: "Your photo, pinned among the shift notes, taken somewhere you didn't know there was a camera. Under it, in a neat, sloping hand: 0x00: to the core. Do not detain." Default text, two lines: "Your photo. Under it, in a neat, sloping hand:" / "0x00: to the core. Do not detain."
+- Variant, same for both, `globalVars.m09_completed === true`: the same two strings with "in a neat, sloping hand" replaced by "in the neat, sloping hand from the papers in Helena".
 
 **`duty_board`** ((7, 2); readable, `gameDisplay`). Name: "Duty Board". Observations (default): "Tonight's postings, and an order from the top pinned over them." Carries: the freeze's cost to him (FA row 72), Ray Hollis (row 92), and the standing order about 0x00. Changed by: m06 `assets_seized`, m07 `hollis_resolved`.
 

@@ -13,6 +13,7 @@ VAR m01_player_launched_attack = false
 VAR m01_maya_ko = false
 VAR m01_kevin_ko = false
 VAR m01_sarah_ko = false
+VAR m01_player_aborted_attack = false   // alignment A4: the first week's hand off the button (season line)
 
 // m02 Ransomed Trust
 VAR m02_ghost_deal_accepted = false
@@ -114,6 +115,14 @@ VAR m09_albion_notified = false
 VAR m09_cage_bin = ""
 VAR m09_legacy_files_saved = false
 VAR m09_hax_confession_answer = ""
+// m09 alignment A1 (m09 exports them from its alignment round; JSON-only there)
+VAR m09_memo_stance = ""          // yes_albion / no: the debrief's "Was he right?"
+VAR m09_raid_team_answer = ""     // quintero / kowalczyk: the player's answer to the team at the briefing
+VAR m09_kowalczyk_reply = ""      // warm / flat: thanks for the cracker at the debrief
+VAR m09_sorensen_fate = ""        // left / talked / ko (m09's default is "left"; read only with m09_completed)
+VAR m09_tran_outcome = ""         // left / talked / ko (as above)
+VAR m09_noor_told = false
+VAR m09_alpha_clip_played = false   // heard "build your own way out first" on the Alpha tape
 VAR m09_alpha_annotations_read = false   // twelfth m09 export (stage 8 ruling 5); Tier 2: gates the Tomb Alpha notes answer
 
 // completed
@@ -138,6 +147,12 @@ VAR partial_release = "none"
 VAR media_story_ran = false
 
 // ===================== LOCALS (CONTRACT §2.5) =====================
+
+// Alignment A7 (music; the builder wires the cues): each closing scene sets
+// its own on the first line.
+VAR six_open = false
+VAR hearing_open = false
+VAR citadel_open = false
 
 // --- Act, doors and clock (mappings write most; ink reads) ---
 VAR raid_clock = "t0145"
@@ -362,6 +377,8 @@ VAR close_zero_day = ""
     ~ close_secure_cell = "zd_uk"
 - m08_nightshade_triple_agent and not m09_nightshade_shown_file:
     ~ close_secure_cell = "procurement"
+- m05_final_choice == "turn_double_agent":
+    ~ close_secure_cell = "torres"
 - m06_monitoring_enabled:
     ~ close_secure_cell = "crypto"
 - m09_completed and not m09_albion_notified:
@@ -452,3 +469,32 @@ VAR close_zero_day = ""
     ~ close_zero_day = "trading"
 }
 ~ return
+
+// Alignment A5 (ruling D1 c): the one season line at 06:00, Netherton's, chosen
+// by the first heavy import that applies. Returns a key; the scene prints the
+// fixed line. "" on a cold start (no line).
+=== function season_line()
+{
+- m04_completed and m04_disclosure_choice == "full":
+    ~ return "albion_full"
+- m04_completed and m04_disclosure_choice == "partial":
+    ~ return "albion_half"
+- m04_completed and m04_disclosure_choice == "quiet":
+    ~ return "albion_quiet"
+- m02_completed and m02_exposed_hospital:
+    ~ return "stcath_exposed"
+- m02_completed and m02_bed4_manually_stabilised:
+    ~ return "stcath_bed4"
+- m07_completed and m07_team_assignment == "trojan_horse":
+    ~ return "austin_covered"
+- m07_completed and m07_team_assignment != "":
+    ~ return "austin_uncovered"
+- m08_completed:
+    ~ return "mole"
+- m01_completed and m01_player_aborted_attack:
+    ~ return "first_week_button"
+- m01_completed:
+    ~ return "first_week"
+- else:
+    ~ return ""
+}

@@ -18,6 +18,7 @@ VAR hear_quiet = false
 // Playtest D: a line in the same knot as close_compute() didn't show; the
 // opening is its own knot, as in six_oclock.
 === opening ===
+~ hearing_open = true
 Narrator: A hearing room at the Citadel, two days later. Three people behind a table, and an empty chair beside yours until HaX sits in it.
 Agent HaX: He still knows. But the map's gone. He's one man with a memory now.
 + [They'll want to know why I did it.]

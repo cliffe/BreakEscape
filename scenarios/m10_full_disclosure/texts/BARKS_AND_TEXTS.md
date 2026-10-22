@@ -74,6 +74,7 @@ Speakers: `agent_0x99` (HaX, phone), `lock_guard` (Sione Fonoti), `monitor_guard
 | T-36b | `agent_0x99` | (T-36a's string) | as T-36a on `global_variable_changed:clue_alibi` (with `clue_door_log && clue_bench_log`) | |
 | T-36c | `agent_0x99` | (T-36a's string) | as T-36a on `global_variable_changed:clue_door_log` (with `clue_alibi && clue_bench_log`) | |
 | T-37 | `agent_0x99` | Tran's handler is on that rota. He's in the Helena letters. | first read of `uplink_printer` with `globalVars.m09_cage_bin === 'letters'` | "D. Varga" on the rota (CONTRACT 10-14). **Fixed** (CONTRACT 10-11; SR minor 9) |
+| T-37b | `agent_0x99` | Tran's handler is on that rota. Tran gave us the name himself, in Helena. | first read of `uplink_printer` with `globalVars.m09_cage_bin === 'letters' && globalVars.m09_completed && globalVars.m09_tran_outcome === 'talked'` | in place of T-37 on this value (T-37 then needs `globalVars.m09_tran_outcome !== 'talked'`). m09 A1. New |
 | T-38 | `agent_0x99` | There's the reply Netherton was waiting for. They've named the unit, and you. | first read of `uplink_printer` with `globalVars.m05_entropy_program_exposed` | `delayMs: 5000` after T-37. FA row 66 (ruling 14), on the prop's variants 1 and 3. New |
 | T-39 | `agent_0x99` | It isn't going out from here. Nothing I can stop from this end. | first read of `uplink_printer` with `globalVars.m07_completed && globalVars.m07_team_assignment !== 'fracture'` | `delayMs: 10000`. **Fixed** (FA row 84: Fracture uncovered, the story runs from outside) |
 
@@ -98,6 +99,8 @@ Voltage's print match ("I told you it'd be waiting. It was.") and the Alpha tape
 | ~~T-46~~ | `tesseract` | Nearly there. You'll want to sit down for what comes after. You won't, I expect. | a failed flag submission at `core_host_terminal` (stage 9 names the event) with `!globalVars.flag4_submitted` | **Fixed** (SE §2.4) **Cut at stage 9** (no event for a failed submission). |
 
 ## 6. 06:00 and after
+
+Alignment A2 (2026-10-22): the 06:00 rows T-47 to T-55 also play inside the scene now (`m10_six_oclock.ink` `phone_beat`, read by the narrator), T-56 inside `executed_close` and T-57 inside the Citadel's opening. These rows stay as the thread's record; their timing no longer carries the beat.
 
 Ghost's, the Recruiter's and HaX's executed texts arrive as the 06:00 scene closes: trigger `global_variable_changed:six_done` with `value === true` (sent during the scene, they land in the thread as it closes; SE §3.5, S5-6). `six_done` is never set on Join.
 

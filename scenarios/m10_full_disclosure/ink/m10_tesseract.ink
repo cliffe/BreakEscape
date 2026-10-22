@@ -14,7 +14,8 @@ INCLUDE m10_carryover_vars.ink
 // File-locals (tess_ prefix; never a scenario global's name)
 VAR tess_quiet = false      // set before every exit, so a reopen of `parked` re-routes
 VAR tess_menu = false       // set before every divert into a choices-only menu; a reopen finds it false and re-routes
-VAR tess_bridge = false     // true only on the first pass through exch_bridge
+VAR tess_bridge = false
+VAR tess_rec = 0          // record lines read in `case` (alignment A6: two at most)     // true only on the first pass through exch_bridge
 
 === start ===
 -> core_router
@@ -90,6 +91,9 @@ Narrator: Nobody comes. Kowalczyk looks at you, and waits.
 
 === double_cross_out ===
 Agent 0x5E 'Lantern': She told me you'd break it. The Recruiter. She was right about you.
+{ m09_kowalczyk_reply == "warm":
+    Agent 0x5E 'Lantern': You thanked me for the cracker. I nearly stayed for that.
+}
 Narrator: She goes out through the lock without looking back at him.
 -> core_router
 
@@ -107,6 +111,10 @@ Narrator: She goes out through the lock without looking back at him.
     Dr Adrian Tesseract: Nothing went at four. You were thorough.
 }
 Dr Adrian Tesseract: Take your time. It goes at six whatever we say. Or now, if someone presses this. I'd rather it was you.
+// FA row 72; alignment A6 moved it here from his case: the freeze.
+{ m06_assets_seized:
+    Dr Adrian Tesseract: You froze my bank. I had to economise on guards. I expect you noticed.
+}
 { m09_recruiter_offer == "double_crossed":
     Agent HaX: 0x00. I've got you clean now.
 - else:
@@ -194,10 +202,6 @@ Agent HaX: And the line into our vault is open from here. We left it open.
 // the Recruiter beat. A choice at least every three lines.
 === case ===
 Dr Adrian Tesseract: All four. Good. Now it's my turn.
-// FA row 72 (ruling 14): the freeze, the two empty posts.
-{ m06_assets_seized:
-    Dr Adrian Tesseract: You froze my bank. I had to economise on guards. I expect you noticed.
-}
 + [Go on, then.]
 + [Step away from the console first.]
     Dr Adrian Tesseract: No. But I'll keep my hand where you can see it.
@@ -225,19 +229,34 @@ Dr Adrian Tesseract: Either you press it, or I get a courtroom. I've costed both
 + [I'm not pressing anything.]
 + [Why would I?]
 -
-{
-- m06_satoshi_stance == "wondered":
-    Dr Adrian Tesseract: You told a man waiting for the police that you sometimes wonder whether we're right. I liked that.
-- m06_satoshi_stance == "rejected":
-    Dr Adrian Tesseract: You told him murder was murder. I'm offering you a number instead.
-- m06_satoshi_stance == "refused":
-    Dr Adrian Tesseract: You told him no without thinking. Think now.
-}
 { m07_completed:
     Dr Adrian Tesseract: I told you once I prefer to watch. I've watched.
 - else:
     Dr Adrian Tesseract: I prefer to watch. I've watched you.
 }
+// Alignment A6: two record lines at most, by the arc's priority (Albion and
+// his memo, then Derek, then the m07 debrief), each answered in the player's
+// own voice with his one-line reply. Satoshi moved to the Join offer, the
+// frozen bank to his arrival. A cold start hears nothing m01-specific (A4, m1).
+~ tess_rec = 0
+{ m04_completed or (m09_completed and m09_memo_stance != ""):
+    -> rec_albion ->
+}
+{ tess_rec < 2 and m01_completed:
+    -> rec_derek ->
+}
+{ tess_rec < 2 and m07_completed and m07_debrief_stance != "":
+    -> rec_debrief ->
+}
+{ tess_rec == 0:
+    -> rec_cold ->
+}
+Dr Adrian Tesseract: Since your first day.
+-> case_recruiter
+
+// Record 1: Albion, and what the player told Netherton about his memo (m09 A1).
+=== rec_albion ===
+~ tess_rec = tess_rec + 1
 {
 - m04_completed and m04_disclosure_choice == "full":
     Dr Adrian Tesseract: You told them the truth, and they audited every site. That was my lesson, delivered by you.
@@ -248,41 +267,98 @@ Dr Adrian Tesseract: Either you press it, or I get a courtroom. I've costed both
 - else:
     Dr Adrian Tesseract: Albion. A site left open because someone decided the hole was worth more than the fix. I argued against that, once.
 }
-+ [You've been reading my file.]
-    Dr Adrian Tesseract: Files are written by people who need you to be a shape. I read the work.
+{
+- m09_completed and m09_memo_stance == "yes_albion":
+    Dr Adrian Tesseract: You told Magnus I was right about Albion. Say it to me.
+- m09_completed and m09_memo_stance == "no":
+    Dr Adrian Tesseract: You told Magnus I was wrong about all of it. Even Albion?
+}
++ { m09_completed and m09_memo_stance == "yes_albion" } [About Albion, yes. About tonight, no.]
+    Dr Adrian Tesseract: That's the first honest thing your service has said to me in seven years.
++ { m09_completed and m09_memo_stance == "no" } [Even Albion. You knew, and you kept it nine years.]
+    Dr Adrian Tesseract: I did. So did your service. Then we were both wrong.
++ { m04_completed and m04_disclosure_choice == "full" } [They had a right to know.]
+    Dr Adrian Tesseract: They did. So does everyone else, at six.
++ { m04_completed and m04_disclosure_choice == "partial" } [I told them what they could use.]
+    Dr Adrian Tesseract: That's what we told ourselves, for nine years.
++ { m04_completed and m04_disclosure_choice == "quiet" } [I bought time to fix it.]
+    Dr Adrian Tesseract: So did we. Nine years of it.
++ { not m04_completed and m09_memo_stance == "" } [Then you should have sent your notice.]
+    Dr Adrian Tesseract: Yes. I should have.
 + [That was my call. Not yours.]
     Dr Adrian Tesseract: It was. I'm only reading it back.
 -
+->->
+
+// Record 2: Derek, only for a player who met him (A4).
+=== rec_derek ===
+~ tess_rec = tess_rec + 1
 {
-- m01_completed and m01_final_choice == "fight":
+- m01_final_choice == "fight":
     Dr Adrian Tesseract: You beat a marketing manager and called it a war.
-- m01_completed and m01_final_choice == "recruit":
+- m01_final_choice == "recruit":
     Dr Adrian Tesseract: You asked Derek to turn. He had nothing to turn with. I saw to that.
-- m01_completed and m01_final_choice == "expose":
+- m01_final_choice == "expose":
     Dr Adrian Tesseract: You put Derek in the papers. The papers did my recruiting for a month.
-- m01_completed and m01_final_choice == "surrender":
+- m01_final_choice == "surrender":
     Dr Adrian Tesseract: Derek gave himself up because I told him to. You were meant to wonder why.
-- else:
+- m01_final_choice == "arrest":
     Dr Adrian Tesseract: You handed Derek over. He kept his promise to me and said nothing.
-}
-{
-- m07_completed and m07_debrief_stance == "defended":
-    Dr Adrian Tesseract: 'I'd make it again.' You would. I counted on it.
-- m07_completed and m07_debrief_stance == "owned":
-    Dr Adrian Tesseract: You said it was yours. You'll carry this too.
-- m07_completed and m07_debrief_stance == "refused":
-    Dr Adrian Tesseract: 'Don't ask me to rank them.' I ranked them for you.
-- m07_completed and m07_debrief_stance == "hardened":
-    Dr Adrian Tesseract: You asked your Council for the numbers. They're on the desk outside. Did you look?
 - else:
-    Dr Adrian Tesseract: Two of yours died at the sites nobody covered. I've read their names.
+    Dr Adrian Tesseract: Your first operation was Derek Lawson. I chose him for you.
 }
-Dr Adrian Tesseract: Since your first day.
-+ [Then you know I won't press it.]
-    Dr Adrian Tesseract: I know you haven't yet.
-+ [You've watched. So what?]
++ { m01_final_choice == "fight" } [He had his hand on the launch.]
+    Dr Adrian Tesseract: He had my launch in his hand. I wanted to see what you'd do.
++ { m01_final_choice == "recruit" } [I gave him a way out.]
+    Dr Adrian Tesseract: You did. He couldn't see where it led.
++ { m01_final_choice == "expose" } [People had a right to know what he did.]
+    Dr Adrian Tesseract: They read it, and some of them came to me.
++ { m01_final_choice == "surrender" } [I did wonder.]
+    Dr Adrian Tesseract: Good. Keep wondering.
++ { m01_final_choice == "arrest" } [He'll talk, in the end.]
+    Dr Adrian Tesseract: He won't. He believes. That was the point of him.
++ [That was my first day.]
+    Dr Adrian Tesseract: It was. I've been reading since.
 -
--> case_recruiter
+->->
+
+// Record 3: the m07 debrief, if fewer than two have played.
+=== rec_debrief ===
+~ tess_rec = tess_rec + 1
+{
+- m07_debrief_stance == "defended":
+    Dr Adrian Tesseract: 'I'd make it again.' You would. I counted on it.
+- m07_debrief_stance == "owned":
+    Dr Adrian Tesseract: You said it was yours. You'll carry this too.
+- m07_debrief_stance == "refused":
+    Dr Adrian Tesseract: 'Don't ask me to rank them.' I ranked them for you.
+- else:
+    Dr Adrian Tesseract: You asked your Council for the numbers. They're on the desk outside. Did you look?
+}
++ { m07_debrief_stance == "defended" } [I'd make it again tonight.]
+    Dr Adrian Tesseract: I know. That's why you're in this room.
++ { m07_debrief_stance == "owned" } [I carry it.]
+    Dr Adrian Tesseract: Everyone does, until the weight changes.
++ { m07_debrief_stance == "refused" } [Nobody should rank them.]
+    Dr Adrian Tesseract: Somebody always does. Tonight it's you.
++ { m07_debrief_stance == "hardened" } [I looked. I'm still here.]
+    Dr Adrian Tesseract: So am I.
++ [That was my call. Not yours.]
+    Dr Adrian Tesseract: It was. I'm only reading it back.
+-
+->->
+
+// No record to read: the two dead agents, which every player shares.
+=== rec_cold ===
+~ tess_rec = tess_rec + 1
+Dr Adrian Tesseract: Two of yours died at the sites nobody covered. I've read their names.
++ { m07_completed or m09_completed } [Callum Fraser. Ana Lúcia Ferreira.]
+    Dr Adrian Tesseract: Yes. You say them better than I do.
++ { not m07_completed and not m09_completed } [I know what they cost.]
+    Dr Adrian Tesseract: Then we agree on the price, if nothing else.
++ [(Say nothing.)]
+-
+->->
 
 // FA row 31 (ruling 14): Ghost's words in his mouth; HaX's own m02 line back.
 // Tesseract quotes Ghost, so the player need not have heard the call.
@@ -449,6 +525,19 @@ Dr Adrian Tesseract: That's about me. I asked about a price.
 === exch_1_sting ===
 { m02_completed and m02_patient_bed4_deceased:
     Dr Adrian Tesseract: Bed four at St. Catherine's. I have him as one. You were in the building.
+}
+// Alignment A3: m05, by Torres's fate. Stings, decides nothing.
+{
+- m05_final_choice == "combat_lethal":
+    Dr Adrian Tesseract: David Torres lay by his server rack for forty minutes. Twenty would have saved him. I have him as one, too.
+- m05_final_choice == "turn_double_agent":
+    Dr Adrian Tesseract: Torres sends me nothing now. I assume he sends it to you.
+- m05_final_choice == "arrest":
+    Dr Adrian Tesseract: You handed Torres to the police for paying his daughter's bills. I count her as well.
+- m05_final_choice == "public_exposure":
+    Dr Adrian Tesseract: You put Torres's name in the papers. His daughter reads them.
+- m05_final_choice == "combat_nonlethal":
+    Dr Adrian Tesseract: You put Torres down, then stayed with him till help came. I noticed that too.
 }
 ->->
 
@@ -649,6 +738,7 @@ Dr Adrian Tesseract: Nobody elected the people who hoard, either. I asked who do
 }
 { m08_hax_ko:
     Dr Adrian Tesseract: At the Citadel, it was your own handler.
+    Agent HaX: He's right. Carry on.
 }
 ->->
 
@@ -705,7 +795,11 @@ Dr Adrian Tesseract: That's my argument. The key is yours to use or not.
     ~ partial_release = "none"
 }
 { m09_deck_pulled == "alpha_tapes" and whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core:
-    Agent HaX: Service door. He always builds his own way out first.
+    {m09_alpha_clip_played:
+        Agent HaX: Service door. You heard him on the tape. He always builds his own way out first.
+    - else:
+        Agent HaX: Service door. He always builds his own way out first.
+    }
 }
 Narrator: The release goes dead under your hands. He doesn't try to stop you.
 {
@@ -741,6 +835,19 @@ Dr Adrian Tesseract: It's a key. You press it. Everything I've told you happens.
     Dr Adrian Tesseract: You've beaten me. Now you want the key?
 - else:
     Dr Adrian Tesseract: You couldn't answer me. Then let it be you.
+}
+// Alignment A6: Satoshi's stance moved here (FA row 76: it warms or cools the offer).
+{
+- m06_satoshi_stance == "wondered":
+    Dr Adrian Tesseract: You told a man waiting for the police that you sometimes wonder whether we're right. I liked that.
+- m06_satoshi_stance == "rejected":
+    Dr Adrian Tesseract: You told him murder was murder. I'm offering you a number instead.
+- m06_satoshi_stance == "refused":
+    Dr Adrian Tesseract: You told him no without thinking. Think now.
+}
+// m09 A1: the memo answer as a signpost on the Join path.
+{ m09_completed and m09_memo_stance == "yes_albion":
+    Dr Adrian Tesseract: You said I was right about Albion. This is Albion, for everyone.
 }
 Narrator: Pressing it publishes the database to everyone, everywhere, in the same minute. Eleven hundred to twenty-six hundred people, the first month, by his own figure. You can still step back.
 ~ tess_menu = true
@@ -932,6 +1039,10 @@ Director Magnus Netherton: Send ours to the vendors, and two operations go dark.
 { n < 2 and m08_nightshade_triple_agent and not m09_nightshade_shown_file:
     ~ n = n + 1
     Director Magnus Netherton: Nightshade's channel.
+}
+{ n < 2 and m05_final_choice == "turn_double_agent":
+    ~ n = n + 1
+    Director Magnus Netherton: Torres's channel.
 }
 { n < 2 and m06_monitoring_enabled:
     ~ n = n + 1

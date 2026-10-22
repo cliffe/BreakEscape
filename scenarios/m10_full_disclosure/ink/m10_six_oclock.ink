@@ -23,6 +23,7 @@ VAR six_quiet = false
 
 === start ===
 ~ close_compute()
+~ six_open = true
 {
 - ending == "executed":
     -> executed
@@ -53,7 +54,7 @@ Narrator: The forward post, a few minutes before six. Floodlights, engines runni
 ~ temp kow_here = sleeper_caught or wren_at_core
 ~ temp officer_here = officer_out != "" and officer_out != "quintero"
 { six_picks >= 3:
-    -> numbers
+    -> phone_beat
 }
 + { not six_q } { quintero_wounded } [(Go to Quintero's stretcher.)]
     -> walk_quintero
@@ -74,7 +75,37 @@ Narrator: The forward post, a few minutes before six. Floodlights, engines runni
 + { not six_vic and vic_here } [(Go to Victoria.)]
     -> walk_victoria
 + [That's everyone.]
-    -> numbers
+    -> phone_beat
+
+// Alignment A2: Ghost's last word and the Recruiter's arrive here, inside the
+// scene, before the numbers (the JSON texts T-47 to T-55 stay as the thread's
+// record). Read by the narrator as the texts they are.
+=== phone_beat ===
+Narrator: Your phone buzzes on the bonnet. A number with no name.
+{
+- ghost_answer == "not_why":
+    Narrator: 'Neither was this. Clean exit.'
+- ghost_answer == "card_unsigned":
+    Narrator: 'Mine will be too. Clean exit.'
+- ghost_answer == "ask_them":
+    Narrator: 'I did. They didn't know who I was. Clean exit.'
+- ghost_answer == "hospitals":
+    Narrator: 'Clean. I noticed.'
+- ghost_answer == "trust":
+    Narrator: 'You checked. Most don't.'
+- ghost_sale == "bait" and head_start_killed == "ghost":
+    Narrator: 'Five buyers paid for nothing, and you have their names. I kept the money. Clean exit.'
+- ghost_sale == "bait":
+    Narrator: 'Sold. You watched who bought it. I hope the names were worth it. Clean exit.'
+- else:
+    Narrator: 'Left on a quiet day, as you asked. First sale I ever turned down. Clean exit.'
+}
+{ m09_recruiter_offer == "double_crossed":
+    Narrator: A second number, American. 'I'll remember the shape of you.'
+}
++ [(Put the phone away.)]
+-
+-> numbers
 
 // Each pick counts once, then returns to the hub.
 === walk_back ===
@@ -90,8 +121,12 @@ Narrator: The forward post, a few minutes before six. Floodlights, engines runni
     Agent 0x2D 'Anchor': Somebody put me on the floor down there. I know who. I'd like to know why, one day.
 - officer_out == "quintero":
     Agent 0x2D 'Anchor': I watched the whole thing on a screen in the van. Read the sheet next time.
+- quintero_stance == "quintero" and m09_raid_team_answer == "quintero":
+    Agent 0x2D 'Anchor': You backed me in Helena, and again tonight. I'll remember who did.
 - quintero_stance == "quintero":
     Agent 0x2D 'Anchor': You backed me. I'll remember who did.
+- quintero_stance == "netherton" and m09_raid_team_answer == "quintero":
+    Agent 0x2D 'Anchor': You backed me in Helena. Not tonight. Next time, back the slow way. Once.
 - quintero_stance == "netherton":
     Agent 0x2D 'Anchor': Next time, back the slow way. Once.
 - quintero_wounded:
@@ -150,6 +185,13 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 - kowalczyk_answer == "worked_out":
     Agent 0x5E 'Lantern': That's worse. That means I was good.
 }
+// m09 A1: what the player said to her in Helena.
+{
+- m09_raid_team_answer == "kowalczyk":
+    Agent 0x5E 'Lantern': You took my side in Helena, in front of Quintero. That was the hard part.
+- m09_kowalczyk_reply == "warm":
+    Agent 0x5E 'Lantern': You thanked me for the cracker, on the apron. I'd have liked to deserve it.
+}
 ->->
 
 // A wrongly accused officer never recalled (group B's voices).
@@ -176,15 +218,19 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 ~ six_v = true
 {
 - voltage_outcome == "his_hands":
-    Voltage (Critical Mass): Tell the inquiry the shutter died first time. They'll ask.
+    Voltage (Critical Mass): You took me out of Albion in cuffs. Tonight you gave me my hands back. Tell the inquiry the shutter died first time.
+- voltage_outcome == "by_hand" and m04_voltage_captured:
+    Voltage (Critical Mass): Albion's agent, doing my job for me. Slower than me, but right.
 - voltage_outcome == "by_hand":
-    Voltage (Critical Mass): You did it right. Slower than me, but right.
+    Voltage (Critical Mass): You let me walk out of Albion, and tonight you did my job for me. Slower, but right.
 - voltage_outcome == "stood_down_print":
-    Voltage (Critical Mass): My own thumb. I'm still annoyed about it.
+    Voltage (Critical Mass): You lifted my thumb at Albion and kept it for tonight. I'm still annoyed about it.
+- voltage_outcome == "talked_down" and m04_voltage_escaped:
+    Voltage (Critical Mass): *flatly* You let me walk out of Albion, and I never said a word since. Put that in too.
 - voltage_outcome == "talked_down":
     Voltage (Critical Mass): *flatly* March to tonight, and I never said a word. Put that in too.
 - voltage_outcome == "fought" or voltage_outcome == "ko":
-    Voltage (Critical Mass): Next time, show me the sheet before you swing.
+    Voltage (Critical Mass): Albion, and now this. Next time, show me the sheet before you swing.
 - else:
     Voltage (Critical Mass): You walked straight past my switchgear. I'm still deciding if that was an insult.
 }
@@ -203,15 +249,15 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 - m02_gary_protected and imran_outcome == "ko":
     Gary Whitlock: I sat with Imran till the medics came. He asked who it was. I said I didn't see.
 - m02_gary_protected:
-    Gary Whitlock: Consultant for a night. I spent it watching other people's benches.
+    Gary Whitlock: You kept my name clean at St. Catherine's. Tonight I got to spend it.
 - gary_outcome == "talked_round":
-    Gary Whitlock: A board finally listened to me. Shame it's a review board.
+    Gary Whitlock: St. Catherine's sacked me for being right. A board finally listened. Shame it's a review board.
 - gary_outcome == "taken_in":
-    Gary Whitlock: Somebody asked me for a statement. First time anyone's wanted it in writing.
+    Gary Whitlock: Nobody at St. Catherine's wanted my statement. Somebody asked tonight. First time in writing.
 - gary_outcome == "ko":
-    Gary Whitlock: I'd have come quietly, you know. I always do.
+    Gary Whitlock: I'd have come quietly, you know. I did at St. Catherine's.
 - else:
-    Gary Whitlock: Nobody came to my bench all night. I'm used to that.
+    Gary Whitlock: Nobody came to my bench all night. Same as St. Catherine's.
 }
 -> walk_back
 
@@ -250,9 +296,11 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 ~ six_vic = true
 {
 - victoria_gallery == "ko":
-    Victoria Sterling: You never did learn to ask first. I'll want a doctor, and then a lawyer.
+    Victoria Sterling: You never did learn to ask first. Not in Cardiff, not here. I'll want a doctor, and then a lawyer.
+- m03_victoria_fate == "recruited":
+    Victoria Sterling: You turned me after WhiteHat, and tonight you cuffed me. You'll want my book one day. Ask nicely.
 - else:
-    Victoria Sterling: You could have let me walk. You'll want my book one day. Ask nicely.
+    Victoria Sterling: I walked out of WhiteHat. I won't walk out of this. You'll want my book one day. Ask nicely.
 }
 -> walk_back
 
@@ -264,6 +312,7 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
 -
 { ending == "lethal":
     Director Magnus Netherton: He reached. I will put that first.
+    Director Magnus Netherton: The cells have gone quiet since. They have a martyr now. Quiet is worse.
 }
 -> numbers_core ->
 -> more_menu ->
@@ -359,6 +408,8 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
     Director Magnus Netherton: Sterling's watch paid out at five. Zero Day's UK desk is being picked up as we speak.
 - close_secure_cell == "procurement":
     Director Magnus Netherton: Nightshade's channel paid out at five. The Initiative's procurement desk is in custody.
+- close_secure_cell == "torres":
+    Director Magnus Netherton: Torres's channel paid out at five. Two of the Recruiter's placements are in custody.
 - close_secure_cell == "crypto":
     Director Magnus Netherton: The HashChain tags led us to the Crypto Anarchists' reserve. It was frozen at five.
 - close_secure_cell == "cm":
@@ -379,6 +430,10 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
 { n < 2 and m08_nightshade_triple_agent and not m09_nightshade_shown_file:
     ~ n = n + 1
     Director Magnus Netherton: Nightshade has been moved. I cannot reach him.
+}
+{ n < 2 and m05_final_choice == "turn_double_agent":
+    ~ n = n + 1
+    Director Magnus Netherton: Torres stopped sending at five.
 }
 { n < 2 and m06_monitoring_enabled:
     ~ n = n + 1
@@ -424,12 +479,14 @@ Director Magnus Netherton: I know. I kept it to one page.
     Director Magnus Netherton: He is in a cell. The cells are not.
 - else:
     Director Magnus Netherton: There will be no trial.
+    Director Magnus Netherton: His protocol was good. The couriers went at half five, and their quartermaster with them.
 }
 -> the_rest
 
 // HaX: the forty-seven (kept or denied), then the promise from Helena, then
 // her last word by ending (FA §4.6 table). The screen reaches six as it lands.
 === the_rest ===
+-> season ->
 {
 - wren_at_core and not sleeper_caught and not six_k:
     Agent HaX: Kowalczyk came through his door for the key. Nobody named her before she did it herself.
@@ -492,6 +549,7 @@ Agent HaX: The forty-seven. You told me she was fishing. Now tell me what she ac
 // Scorched Earth: the suspension and the wipe's gain end this scene; the
 // hearing tells the rest and closes the night (OT §4.7).
 === scorched_close ===
+-> season ->
 Director Magnus Netherton: Agent 0x00. As of now you are suspended, pending a hearing.
 + [Understood, sir.]
 + [(Say nothing.)]
@@ -508,6 +566,12 @@ Director Magnus Netherton: Nobody holds the map now. Not him, not the buyers, no
 === executed ===
 Narrator: The forward post at six. The screen on the table isn't showing the clock any more.
 Director Magnus Netherton: I will not put my name under this one. You will be held until the board sits.
+// Alignment A2 (ruling D2): the screen inside the scene, as on-screen text
+// (speaker Screen, unvoiced). Still no narrator reads it.
++ [(Look at the screen.)]
+-
+Screen: SOCIAL FABRIC. LIVE. SAFETYNET AGENT SHOOTS UNARMED MAN IN MONTANA BUNKER.
+Screen: A SAFETYNET agent shot a man in a converted Cold War bunker in Montana tonight. He was not moving. His hands were empty, and in plain sight.
 + [(Say nothing.)]
 + [Sir...]
 -
@@ -518,9 +582,12 @@ Director Magnus Netherton: I will not put my name under this one. You will be he
 -> database_beat
 
 === executed_close ===
+Director Magnus Netherton: Take 0x00 to the second van. Nobody discusses tonight with them until the board sits.
+// Alignment A2: HaX's later message inside the scene (T-56 stays as the thread's record).
+Narrator: In the van, your phone lights once. HaX.
 #set_global:six_done:true
 #set_global:closing_done:true
-Director Magnus Netherton: Take 0x00 to the second van. Nobody discusses tonight with them until the board sits.
+Narrator: 'I'll be at the board. I don't know what I'll say.'
 ~ six_quiet = true
 #exit_conversation
 -> finished
@@ -541,3 +608,40 @@ Director Magnus Netherton: Take 0x00 to the second van. Nobody discusses tonight
 }
 + [(Leave it.)]
     -> exit_only
+
+// Alignment A5 (ruling D1 c): the one line on the player's side that adds the
+// season up (season_line() picks it), then Helena's memo answer (m09 A1).
+// Nothing on a cold start. Before "the rest", and before the suspension.
+=== season ===
+~ temp key = season_line()
+{
+- key == "albion_full":
+    Director Magnus Netherton: You told Albion's public the truth. That is why the Council let me run this raid at all.
+- key == "albion_half":
+    Director Magnus Netherton: Albion's half-truth bought us a quiet year. Tonight we spent it.
+- key == "albion_quiet":
+    Director Magnus Netherton: We buried Albion. Tonight I signed for every line we left out.
+- key == "stcath_exposed":
+    Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They will be now.
+- key == "stcath_bed4":
+    Director Magnus Netherton: You kept a man breathing by hand at St. Catherine's. Tonight was the same work, longer.
+- key == "austin_covered":
+    Director Magnus Netherton: You covered Austin when the numbers said otherwise. You did the same tonight.
+- key == "austin_uncovered":
+    Director Magnus Netherton: Eleven counties have dropped calls since Denver. Tonight is the first night I can tell them why.
+- key == "mole":
+    Director Magnus Netherton: You caught one of ours at his own desk. Tonight you walked through his door and came back.
+- key == "first_week_button":
+    Director Magnus Netherton: Your first week, you took your hand off a button. Tonight you did it again.
+- key == "first_week":
+    Director Magnus Netherton: I signed your first field report. I have signed for every one since.
+}
+{ m09_completed:
+    {
+    - m09_memo_stance == "yes_albion":
+        Director Magnus Netherton: You told me he was right about Albion. He was. It never made him right about anything else.
+    - m09_memo_stance == "no":
+        Director Magnus Netherton: You told me he was wrong about all of it. I put that answer under my signature tonight.
+    }
+}
+->->

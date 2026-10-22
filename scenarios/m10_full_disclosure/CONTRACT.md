@@ -946,3 +946,53 @@ Applied 2026-10-21 by the m10 fixer from `finale/STAGE_8_RULINGS.md` and the rev
 - Imran: a new option, "[I haven't read it yet. Tell me.]", on `not casualty_sheet_read`, with the reply "Casualties. His own sums, in thousands. I build casings. Somebody else decides what goes in them." (m-4).
 - Texts: T-16 is reworded to "That's Ghost on the handset. They want one last sale before they leave. Make it not worth it." with a suggested trigger on the handset's first use (m-5).
 - Credits: S6 §3.5's ELSEWHERE gains two arms that sit before the "still trading" rows, for `share_zero_day === 'stopped'`: "Zero Day: got nothing tonight. Still trading." and "Zero Day: got nothing tonight. Its broker, Pieter Vos, named." The live copy is in the ERB (builder).
+
+**Alignment R1 (JSON side; ALIGNMENT_PLAN.md, ALIGNMENT_REVIEW_F_R1.md).**
+- A7 music: `wren_entering` plays `threat`; the ending, once picked, plays `silence` (arrest, surrender, lethal, executed), `threat` (scorched, under the purge) or `end` (joined); the first line of each closing scene sets `six_open`, `hearing_open` or `citadel_open` (ink), which plays `cutscene`, so 06:00's mood no longer depends on the talk-down score. Every cue has an exclusive `game_loaded` twin in story order. The core's arrival has no cue: the head start's "Steel Shadows" is already playing. Lethal's credits run on `end`; `victory` stays for arrest and surrender. The three scene-open globals are declared false.
+- A2: the closing texts (Ghost's T-47–T-54, the Recruiter's T-55, executed's T-56, Join's T-57) carry `skipIfGlobal: "night_closed"`, so a toast held behind the closing scene is dropped as stale at release rather than shown over the card; the thread keeps any text already delivered. T-56's delay is 2 s (was 30 s). The scenes now carry those beats in ink.
+- A1 / D1: `AGENT 0x00` has one outcome clause per ending, after `Pressed the key.` and the m09 `told` clause. An unnamed line under it, "Ten operations. Still answering for every one.", shows on any non-Join save with `m09_completed`.
+- m4: the eight SAFETYNET people appear once. `credits_for` moves each one's IN THIS OPERATION conditional clauses ahead of their SAFETYNET role clauses and drops them from IN THIS OPERATION; with no outcome, the role line shows. Join keeps Kowalczyk in IN THIS OPERATION (she has no SAFETYNET entry there). `credits_sections.json` is unchanged and the drift check still holds.
+- A3 / A4: ELSEWHERE rows for Derek Lawson by `m01_final_choice` and David Torres by `m05_final_choice`, each gated on its `mNN_completed`. `m01_player_aborted_attack` is imported (default false) for the season line's first-week arm.
+- m3: the scenario brief ends "Helena gave us the shape of a sleeper on tonight's team." (true on every branch); `show_scenario_brief` stays `on_resume` until a regression run.
+- m10: the two `room_entered:blast_tunnel` HaX texts are exclusive (`m08_nightshade_triple_agent` and `m08_nightshade_arrested` are in `mutuallyExclusiveGlobals`).
+
+**Alignment phase 1, round 1 (ink side; `ALIGNMENT_PLAN.md`, `ALIGNMENT_REVIEW_F_R1.md`), plus m09's new exports.**
+- New imports in the include (Tier 2; the builder adds them to `importGlobals`):
+  - `m01_player_aborted_attack` (false);
+  - `m09_memo_stance`, `m09_raid_team_answer`, `m09_kowalczyk_reply` (all "");
+  - `m09_sorensen_fate`, `m09_tran_outcome` ("", read only with `m09_completed`);
+  - `m09_noor_told`, `m09_alpha_clip_played` (false).
+- New locals: `six_open`, `hearing_open`, `citadel_open` (false; music, A7), set on each closing scene's opening. `close_secure_cell` and `close_cell_name` gain the value `torres` (after `procurement`).
+- New function `season_line()` in the include: the key for the 06:00 season line (A5, ruling D1).
+- **A6, Tesseract's case:**
+  - His record is now at most two lines, in priority order: `rec_albion` (m04 disclosure, or m09's memo answer), `rec_derek` (`m01_completed` only), `rec_debrief`, and `rec_cold` when none of them applies.
+  - Each line has a menu that answers it in the player's voice, and he gives a one-line reply. The menus are inline, as before; a reload replays `case` from the top, as it always did.
+  - Satoshi moved into `join_1`. The frozen bank moved into `arrival`. "Files are written by people…" and the "Since your first day" pair are cut, but "Since your first day." stays as a single line.
+  - New file-local `tess_rec`.
+- **A4, m1 (Derek):** a cold start no longer hears "You handed Derek over".
+- **A3, m05:** five m05 stings in `exch_1_sting` by `m05_final_choice`, worded to m05's canon (Torres died by his rack on `combat_lethal`). On `turn_double_agent`, Torres's channel joins `database_ops`, `dark_ops` and `secured_cell`.
+- **m09 payoffs:**
+  - `m09_memo_stance`:
+    - in `rec_albion` (his challenge, and the player's answer);
+    - in `join_1` (the signpost "This is Albion, for everyone.");
+    - in 06:00's `season` (Netherton).
+  - `m09_raid_team_answer`: Quintero's 06:00 line, and Kowalczyk's 06:00 reply.
+  - `m09_kowalczyk_reply`: her crack, her 06:00 reply, and the double-cross at the core.
+  - `m09_alpha_clip_played`: HaX's service-door warning.
+  - `m09_tran_outcome`: texts row T-37b.
+  - Sorensen and Noor: credit strings, handed to the builder.
+- **A2, the closing beats:**
+  - `six_oclock` has a new `phone_beat` knot between the walkabout and the numbers: Ghost's last word and the Recruiter's, read by the narrator.
+  - The executed ending gets "[(Look at the screen.)]" and two `Screen:` lines (headline and paragraph, unvoiced; the builder registers the speaker). HaX's later message is now the scene's last line, after the closing tags.
+  - The Citadel opening now narrates HaX's "0x00.".
+- **A5, the walkabout:** backward clauses on Voltage (Albion), Gary (St. Catherine's), Victoria (WhiteHat and Cardiff), Quintero (Helena) and Kowalczyk (Helena). A new `season` tunnel opens `the_rest` and `scorched_close`; it gives one season line and the memo line.
+- **A8:** surrender's gain ("His protocol was good. The couriers went at half five, and their quartermaster with them.") and lethal's cost ("The cells have gone quiet since. They have a martyr now. Quiet is worse.").
+- **m5, Citadel:** one Netherton line by a fixed priority (Gary protected, Voltage captured, Nightshade shown).
+- **Minors:**
+  - m2: Netherton introduces himself only when m02–m09 are all unplayed.
+  - m6: a narrator beat on `m08_netherton_ko`.
+  - m7: HaX's "He's right. Carry on.".
+  - m8: Gary is "Consultant for SAFETYNET tonight, apparently.".
+  - m9: HaX's "He's watched every job you've done".
+  - m12: the recall topics sit after "[I know who WREN is.]" and hide once `gallery_open`.
+- **S6:** the photo's hand is "sloping" (m09's clue). The ERB copy is the builder's.
