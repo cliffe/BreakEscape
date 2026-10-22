@@ -426,6 +426,21 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 
 - **Lab re-run R5** (Sonnet, games 3200 and 3201, `playtests/R5.md`): start to end screen, 23/23, score 100, all keys. 5 of the 6 checks pass: the door toast hint is captured live on all three doors, the Lord missing/wrong hints are right, the second-miss hint fits the factor, × and Esc close the client in one press, and report rows use roles. **All reopen-order tests pass for Ruth, Fairbairn and Tomasz.** Check 4 passes in part: a first call that ends at net 0 leaks "Last change" into the second call. Dialogue: J1–J10 (stale post-payoff guidance, the end card's "staff keep reporting" claim, the role row still identifying Sofia, a Melanie spoiler, triage "caught 0 of 3"). Fix round 7 on opus48: `playtests/FIX_ROUND_R5.md`, which also applies C3.
 
+- **Rooms and lighting review C1** (Opus, `scenarios/lab_social_engineering/ROOMS_REVIEW_C1.md`): none of the four rooms reads as its purpose yet.
+  - All four use m01's main office map unchanged.
+  - The lab has no lighting and no chat backgrounds.
+  - The hub boards are identical placeholder corkboards.
+  - The three workstations share one laptop icon.
+  - Ruth and Fairbairn stand in front of the boards.
+  - The Operations desk phone may be hidden behind a PC tower.
+
+  Group (a), no new art: lab-owned maps copied from m03, m04 and m05 rooms; real fixtures via `as-type:`; NPCs moved off the boards; lighting reused; m01's background as a stop-gap. Group (b): 7 core assets, namely 2 POV backgrounds (Engagement Office, Blue Team; Gemini concept to PixelLab, needs user permission) and 5 PIL signs (free).
+
+  **Decision (orchestrator):** A1 is in scope. The lab owns its maps, so later edits to m03–m05 can't reach it. The room-type registration in shared files is staged hunk by hunk. Group (a) and the PIL signs go next, after R6. The POV backgrounds wait for the user's permission.
+
+- **Lab re-run R6** (Sonnet, games 3202 and 3207, `playtests/R6.md`): start to end screen, 23/23, score 100. 5 of 6 checks pass: Dev's net-0 boundary and refused-ask debrief, no post-payoff Gareth pointers, the end card, the Melanie spoiler gone, the triage no-flags card. Fail: Ruth's phone still points to Tomasz after the close (low harm, it sits under the end card). Student view: good pacing, always clear except after the scope cards. Worst moments: the silent wait after the Lord send (F6), the skippable Gareth signature (F5), the abrupt end. Fix round 8 on opus48: `playtests/FIX_ROUND_R6.md`.
+- **User decision:** generate both POV chat backgrounds (Engagement Office, Blue Team) as a batch, after dressing and lighting.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
