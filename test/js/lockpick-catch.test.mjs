@@ -122,3 +122,15 @@ test('the hold does not outlive its catcher: a new NPC set-up decides afresh', (
     assert.equal(catchLockpickInView(lock), null);
     assert.equal(d.emitted.length, 0);
 });
+
+// m02 Gary: his catch is conditioned on which lock is picked (data.lockable.scenarioData.id).
+test('a catch conditioned on the lock only fires for that lock; the other pick goes ahead', () => {
+    const d = setup();
+    window.npcManager.npcs.get('guard').eventMappings[0].condition = "data.lockable.scenarioData.id === 'it_filing_cabinet'";
+    const itDoor = { doorProperties: { roomId: 'checkpoint', connectedRoom: 'it_department' } };
+    assert.equal(catchLockpickInView(itDoor), null);
+    assert.equal(d.emitted.length, 0);
+    const cabinet = { scenarioData: { id: 'it_filing_cabinet' }, roomId: 'checkpoint' };
+    assert.equal(catchLockpickInView(cabinet)?.id, 'guard');
+    assert.equal(d.emitted.length, 1);
+});

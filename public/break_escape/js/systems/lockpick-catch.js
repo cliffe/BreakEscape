@@ -37,7 +37,7 @@ export function catchLockpickInView(lockable, { beforeEmit } = {}) {
         ? player.sprite.getCenter()
         : { x: player?.x || 0, y: player?.y || 0 };
 
-    const npc = npcManager.shouldInterruptLockpickingWithPersonChat(roomIds, playerPos);
+    const npc = npcManager.shouldInterruptLockpickingWithPersonChat(roomIds, playerPos, lockable);
     if (!npc) return null;
     // The catcher's room, so a handler can tell which watcher this event is for
     const roomId = npc.roomId;

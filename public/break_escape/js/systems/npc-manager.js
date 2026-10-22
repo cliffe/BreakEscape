@@ -353,7 +353,7 @@ export default class NPCManager {
    * Returns the NPC if one should handle lockpick_used_in_view with person-chat
    * Otherwise returns null
    */
-  shouldInterruptLockpickingWithPersonChat(roomIdOrIds, playerPosition = null) {
+  shouldInterruptLockpickingWithPersonChat(roomIdOrIds, playerPosition = null, lockable = null) {
     // One room id or several (lockpick-catch.js passes the player's room and the lock's room)
     const roomIds = (Array.isArray(roomIdOrIds) ? roomIdOrIds : [roomIdOrIds]).filter(Boolean);
     if (roomIds.length === 0) return null;
@@ -390,8 +390,9 @@ export default class NPCManager {
 
         // Only interrupt if one of those mappings would actually fire now (E4).
         // Otherwise the pick was swallowed: no minigame and no conversation.
-        // The payload matches what unlock-system emits, minus the lockable.
-        const gateEventData = { npcId: npc.id, roomId: npc.roomId, timestamp: Date.now() };
+        // The payload matches what lockpick-catch emits.
+        // `lockable` lets a mapping condition test which lock is being picked (data.lockable.scenarioData.id).
+        const gateEventData = { npcId: npc.id, roomId: npc.roomId, lockable, timestamp: Date.now() };
         const firing = lockpickMappings.find(({ mapping, index }) =>
           this._mappingWouldFire(npc.id, 'lockpick_used_in_view',
             this._buildMappingConfig(mapping, index), gateEventData).fire);
