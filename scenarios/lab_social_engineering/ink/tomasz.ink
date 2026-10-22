@@ -114,9 +114,9 @@ Tomasz: Here's what it showed. An open inbox trusts anyone, a From line is just 
 }
 {
 - dev_reported and pretext_service_desk_call_outcome == "got_it":
-    Tomasz: Dev reported one of your calls — credit to him — but you rang back and still got what you needed. A call-back rule to a number on file stops both.
+    Tomasz: Dev reported one of your calls, credit to him. But you rang back and still got it. A call-back rule on file stops both.
 - dev_reported:
-    Tomasz: Dev gave you what Sofia's email needed, and he reported a call too. Credit for that, but a call-back rule stops it without him noticing a thing.
+    Tomasz: Dev gave you what Sofia's email needed, and reported a call too. Credit for that. A call-back rule stops it without him noticing.
 - pretext_service_desk_call_outcome == "got_it" and pretext_service_desk_call_lowest >= 0:
     Tomasz: Dev handed you the portal and the date. A call-back to a number on file stops every line of that.
 - pretext_service_desk_call_outcome == "got_it":
@@ -128,7 +128,7 @@ Tomasz: That report's got three fixes in it. I'll get budget for one this year, 
 + [A call-back rule on the service desk.]
     Tomasz: Cheapest fix on the list, and it would have stopped Sofia's whole chain. Good pick.
     -> debrief_close
-+ [DMARC off p=none, and an external-sender banner.]
++ [Move DMARC off p=none, plus an external-sender banner.]
     Tomasz: That kills the Jed spoof outright. It takes a month of testing first, but yes.
     -> debrief_close
 + [A report button, so people tell us.]

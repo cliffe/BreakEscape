@@ -11,6 +11,7 @@ VAR roe_signed = false
 VAR report_filed = false
 VAR fairbairn_condition_heard = false
 VAR fairbairn_payoff_heard = false
+VAR overpromised_anonymity = false
 
 VAR met = false
 VAR signed_scene = false
@@ -65,7 +66,7 @@ Gareth Fairbairn: We weren't introduced properly. Gareth. Forty years I've had t
 ~ signed_scene = true
 Gareth Fairbairn: Right. I'll sign it.
 Narrator: He reads the sheet to the end, then puts his name at the bottom.
-Ruth Adeyemi: That signature is the difference between a test and a crime. Without it, this is an offence under the Computer Misuse Act. Most countries have one like it.
+Ruth Adeyemi: That signature is the difference between a test and a crime. Without it, you're committing an offence under the Computer Misuse Act.
 Gareth Fairbairn: One condition. No names in anything I read. If someone clicks, that's my training's fault, not theirs.
 #set_global:fairbairn_condition_heard:true
 ~ quiet = true
@@ -74,7 +75,10 @@ Gareth Fairbairn: One condition. No names in anything I read. If someone clicks,
 === payoff ===
 ~ said_payoff = true
 Gareth Fairbairn: I've read your report. Not one name in it, just like I asked.
-Gareth Fairbairn: She'll read it too, the one who nearly wired that invoice to a fake supplier last quarter. Nothing in it points at her. Thank you.
+Gareth Fairbairn: She'll read it too, the one who nearly wired that invoice to a spoofed supplier last quarter. Nothing in it points at her. Thank you.
+{ overpromised_anonymity:
+    Gareth Fairbairn: You nearly promised nobody'd ever know, that first morning. I asked for the promise we could keep. You kept it.
+}
 #set_global:fairbairn_payoff_heard:true
 ~ quiet = true
 ->->

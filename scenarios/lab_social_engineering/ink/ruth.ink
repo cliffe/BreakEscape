@@ -69,6 +69,7 @@ Gareth Fairbairn: Before you start. This test of yours. Is it going to make my p
 + [Don't worry, nobody will ever know it was them.]
     Ruth Adeyemi: Careful. We can't promise nobody finds out. Logs exist. We can promise the report blames no one.
     Gareth Fairbairn: Then promise me that one.
+    #set_global:overpromised_anonymity:true
     -> brief_close
 
 === brief_close ===
@@ -195,7 +196,7 @@ Ruth Adeyemi: Read the rules of engagement. The sheet on the table. Properly. Ga
 - operations_key_given and not (phish_hampshire_landed and phish_pierce_landed):
     Ruth Adeyemi: Delivered isn't landed. It lands when they'd open the file or click the link, the way they would a real one.
 - pretext_call_reported and not pretext_call_done:
-    Ruth Adeyemi: Dev's manager rang Gareth about a dodgy call. Gareth promised to look into it, with a straight face. Give the desk a couple of minutes, then ring back softer.
+    Ruth Adeyemi: Dev's manager rang Gareth about a dodgy call. Gareth kept a straight face. Give the desk a minute, then ring back softer.
 - phish_hampshire_landed and phish_pierce_landed and pretext_call_done and not landing_payroll_login_built:
     Ruth Adeyemi: Call's done. Now the page: a look-alike of her payroll portal.
 - phish_hampshire_landed and phish_pierce_landed and landing_payroll_login_built and not pretext_call_done:
