@@ -358,3 +358,58 @@ test('the account switcher and Create-account panel are reachable by keyboard (n
     assert.equal(panel.querySelector('[role="radiogroup"]').querySelectorAll('input[type="radio"]').length, 2);
     for (const b of panel.querySelectorAll('button')) assert.notEqual(b.tabIndex, -1);
 });
+
+// T2-7: an account created in one open client reaches other open clients. Two
+// clients share the device's globals (window.gameState.globalVariables), as two
+// terminals open on the same game would; the create writes the globals, and the
+// other client re-resolves and shows the new account without being reopened.
+function openPair(idsA, idsB) {
+    const body = document.getElementById('host');
+    body.textContent = '';
+    window.gameState = { globalVariables: {} };
+    const mk = (ids) => {
+        const host = document.createElement('div');
+        body.append(host);
+        const scene = new MailClientMinigame(host, {
+            mailClient: config(), social: social(), mailState: data.emptyMailState(), accountIds: ids
+        });
+        scene.init();
+        scene.start();
+        return scene;
+    };
+    return [mk(idsA), mk(idsB)];
+}
+
+test('T2-7: creating an account in one open client pushes it to another open client', () => {
+    const [a, b] = openPair(['guest', 'freemail'], ['guest', 'freemail']);
+    try {
+        // Before: neither lists freemail; both offer it as a pending creation.
+        assert.deepEqual(mail(b).switcher.options.map((o) => o.value), ['guest', 'create:freemail']);
+
+        a.openCreateAccount('freemail');
+        a.chooseCreateEntry('tt1');
+        a.confirmCreateAccount();
+
+        assert.deepEqual(mail(a).switcher.options.map((o) => o.value), ['guest', 'freemail'], 'A made it and shows it');
+        assert.deepEqual(mail(b).switcher.options.map((o) => o.value), ['guest', 'freemail'], 'B was told and now shows it');
+        assert.deepEqual(mail(b).creatable, [], 'B no longer offers it as a pending creation');
+        assert.equal(mail(b).account.id, 'guest', 'B stays on the account it was viewing');
+    } finally {
+        a.cleanup();
+        b.cleanup();
+    }
+});
+
+test('T2-7: a client that does not offer the created account is left unchanged', () => {
+    const [a, b] = openPair(['guest', 'freemail'], ['guest']);
+    try {
+        const before = b.accounts.map((x) => x.id);
+        a.openCreateAccount('freemail');
+        a.chooseCreateEntry('tt1');
+        a.confirmCreateAccount();
+        assert.deepEqual(b.accounts.map((x) => x.id), before, 'B does not list freemail, so nothing changes for it');
+    } finally {
+        a.cleanup();
+        b.cleanup();
+    }
+});

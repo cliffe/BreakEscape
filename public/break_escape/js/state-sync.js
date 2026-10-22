@@ -365,6 +365,20 @@ export class StateSync {
   }
 
   /**
+   * Reconcile the mail the server trimmed on a successful save (P1-D). The
+   * client held these messages as confirmed; the server has dropped them to fit
+   * the byte cap, so we drop them from the scheduler's live state (keeping the
+   * client's view in step) and from this.confirmed.mailState (so they are
+   * neither re-sent nor marked present), matching what the server now holds.
+   * @param {string[]} keys  mailboxes.<box>.<msgId> keys
+   */
+  _reconcileTrimmedMail(keys) {
+    const confirmedMail = this.confirmed.mailState;
+    if (confirmedMail) for (const key of keys) delete confirmedMail[key];
+    try { window.mailScheduler?.dropMessages?.(keys); } catch (err) { console.error('mail dropMessages failed:', err); }
+  }
+
+  /**
    * Date.now(), raised if needed so it is always greater than the last value
    * sent from this page. If the system clock is set back between a reload's
    * old and new page, the new page's syncs are stale until the clock passes
@@ -430,6 +444,11 @@ export class StateSync {
         console.warn(`State sync: the server did not save ${section} (over a cap); resending it with each sync`);
       }
       this.confirm(changes, Date.now(), notSaved);
+      // The server may have trimmed read mail to fit the 1 MB cap while still
+      // saving (00 §10a, P1-D). It reports the dropped keys so we drop them here
+      // too, rather than hold them as confirmed and lose them on reload.
+      const mailTrimmed = Array.isArray(response?.mailTrimmed) ? response.mailTrimmed : [];
+      if (mailTrimmed.length) this._reconcileTrimmedMail(mailTrimmed);
       this.lastError = null;
       console.log('✓ State synced to server');
       // A run that left a capped section refused is not fully confirmed (N-4): the

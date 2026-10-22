@@ -728,10 +728,11 @@ module BreakEscape
         render json: { success: false, message: refusal }, status: :forbidden
       elsif stale
         render json: { success: true, stale: true }
-      elsif @not_saved.any?
-        render json: { success: true, notSaved: @not_saved }
       else
-        render json: { success: true }
+        body = { success: true }
+        body[:notSaved] = @not_saved if @not_saved.any?
+        body[:mailTrimmed] = @mail_trimmed if @mail_trimmed.present?
+        render json: body
       end
     end
 
@@ -1441,9 +1442,15 @@ module BreakEscape
 
       # mailState: each key replaces the saved message, thread or list whole, so
       # an older copy would undo a read mark or bring back a delivered job (00 §10a)
-      if params[:mailState].respond_to?(:to_unsafe_h) &&
-         @game.merge_mail_state!(params[:mailState].to_unsafe_h) == false
-        @not_saved << 'mailState'
+      if params[:mailState].respond_to?(:to_unsafe_h)
+        if @game.merge_mail_state!(params[:mailState].to_unsafe_h) == false
+          @not_saved << 'mailState'
+        elsif @game.mail_trimmed_keys.any?
+          # A successful save still trimmed read mail to fit the 1 MB cap: report
+          # the dropped keys so the client drops them too, instead of holding
+          # them as confirmed and losing them silently on reload (P1-D).
+          @mail_trimmed = @game.mail_trimmed_keys
+        end
       end
 
       if params[:npcVisibility].respond_to?(:to_unsafe_h)

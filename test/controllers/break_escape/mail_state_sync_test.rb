@@ -118,6 +118,31 @@ module BreakEscape
       assert_equal({ 'success' => true }, body)
     end
 
+    # P1-D: a save that trims read mail to fit the byte cap answers with the
+    # dropped keys in mailTrimmed, so the client drops them too rather than keep
+    # holding them as confirmed and lose them silently on the next reload.
+    test 'a byte-cap trim answers with the dropped keys in mailTrimmed' do
+      big = 'y' * Game::MAX_MAIL_BODY_CHARS
+      read_reply = lambda do |id, box, time|
+        reply(id, read: true).merge('mailbox' => box, 'gameTime' => time, 'body' => big)
+      end
+      state = {}
+      %w[guest freemail].each_with_index do |box, b|
+        (1..150).each { |i| state["mailboxes.#{box}.#{box}#{i}"] = read_reply.call("#{box}#{i}", box, (i * 10) + b) }
+      end
+
+      body = sync(mailState: state, clientTs: 1000)
+
+      refute body.key?('notSaved'), 'the save succeeded'
+      assert body['mailTrimmed'].is_a?(Array) && body['mailTrimmed'].any?, 'the dropped keys are reported'
+      assert(body['mailTrimmed'].all? { |k| k.start_with?('mailboxes.') })
+      saved = @game.reload.player_state['mailState']
+      assert_operator saved.to_json.bytesize, :<=, Game::MAX_MAIL_STATE_BYTES
+      remaining = saved['mailboxes'].values.flat_map { |bx| bx['messages'].map { |m| m['id'] } }
+      trimmed_ids = body['mailTrimmed'].map { |k| k.split('.', 3).last }
+      assert(trimmed_ids.none? { |id| remaining.include?(id) }, 'a reported key names a message no longer saved')
+    end
+
     test 'an over-cap phoneState is reported as notSaved and the saved one stands' do
       sync(phoneState: { 'alice' => { 'history' => [{ 'type' => 'npc', 'text' => 'kept' }] } }, clientTs: 1000)
       huge = (1..40).to_h do |i|

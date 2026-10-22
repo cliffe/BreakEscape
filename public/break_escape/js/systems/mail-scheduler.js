@@ -340,6 +340,29 @@ export class MailScheduler {
     box.unread = box.messages.filter(m => m.folder !== 'sent' && m.read === false).length;
   }
 
+  /**
+   * Drop messages the server trimmed to fit the 1 MB cap (00 §10a, P1-D).
+   * state-sync calls this with the keys the server reported so the live state
+   * matches what was saved. The key splits on the first dot after the prefix
+   * (mailbox ids hold no dot; a message id may), as the server does.
+   * @param {string[]} keys  mailboxes.<box>.<msgId> keys
+   */
+  dropMessages(keys) {
+    if (!Array.isArray(keys)) return;
+    for (const key of keys) {
+      if (typeof key !== 'string' || !key.startsWith('mailboxes.')) continue;
+      const rest = key.slice('mailboxes.'.length);
+      const dot = rest.indexOf('.');
+      if (dot < 0) continue;
+      const boxId = rest.slice(0, dot);
+      const msgId = rest.slice(dot + 1);
+      const box = this.state.mailboxes[boxId];
+      if (!box || !Array.isArray(box.messages)) continue;
+      const i = box.messages.findIndex(m => m && m.id === msgId);
+      if (i >= 0) { box.messages.splice(i, 1); this._recount(box); }
+    }
+  }
+
   // --- jobs --------------------------------------------------------------
 
   /** Reply delay in ms for a target or character: emailReplyDelay seconds, default 20. */

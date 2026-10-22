@@ -37,3 +37,22 @@ export function notifyNewMail(record) {
     }
     return 'notified';
 }
+
+/**
+ * Tell every other open client that an account was created (T2-7). A client
+ * created it and already lists it; the others re-resolve their accounts from the
+ * now-updated globals so one that also offers the account shows it, instead of
+ * leaving a stale switcher until it is reopened.
+ * @param {string} accountId
+ * @param {{ source?: object }} [opts]  the client that made it (not notified)
+ * @returns {number} how many other clients were told
+ */
+export function notifyAccountCreated(accountId, { source = null } = {}) {
+    let told = 0;
+    for (const client of openClients) {
+        if (client === source) continue;
+        client.accountListChanged?.(accountId);
+        told += 1;
+    }
+    return told;
+}

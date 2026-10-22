@@ -258,6 +258,40 @@ module BreakEscape
       assert_equal stub, mail.dig('mailboxes', 'a', 'messages', 0), 'The oldest read message, but a stub'
     end
 
+    # P1-D: a save that trims read mail to fit the byte cap reports the dropped
+    # keys, so the client can drop them too instead of holding them as confirmed
+    # and losing them without warning on the next reload.
+    test 'a byte-cap trim reports the dropped message keys in mail_trimmed_keys' do
+      big = 'y' * Game::MAX_MAIL_BODY_CHARS
+      %w[a b c].each_with_index do |box, b|
+        @game.merge_mail_state!(keyed(box, (1..100).map { |i| msg("#{box}#{i}", body: big, game_time: (i * 10) + b) }))
+      end
+
+      trimmed = @game.mail_trimmed_keys
+      refute_empty trimmed, 'the last save trimmed mail to fit the byte cap'
+      assert(trimmed.all? { |k| k.start_with?('mailboxes.') }, 'each key is mailboxes.<box>.<msgId>')
+
+      remaining_ids = mail['mailboxes'].values.flat_map { |bx| bx['messages'].map { |m| m['id'] } }
+      trimmed_ids = trimmed.map { |k| k.split('.', 3).last }
+      assert(trimmed_ids.none? { |id| remaining_ids.include?(id) }, 'a reported key names a message that is now gone')
+      # Only the third merge pushes the state over the cap, so that one merge reports every
+      # message its trim shed: 300 merged, fewer than 300 kept, the rest reported.
+      assert_equal 300 - remaining_ids.size, trimmed.size, 'every message the save dropped is reported'
+    end
+
+    test 'mail_trimmed_keys is empty on a refusal and on a save that trims nothing' do
+      big = 'z' * Game::MAX_MAIL_BODY_CHARS
+      %w[a b].each do |box|
+        @game.merge_mail_state!(keyed(box, (1..100).map { |i| msg("#{box}#{i}", read: false, body: big) }))
+      end
+      assert_equal false, @game.merge_mail_state!(keyed('c', (1..100).map { |i| msg("c#{i}", read: false, body: big) })),
+                   'only unread mail: the over-cap update is refused'
+      assert_empty @game.mail_trimmed_keys, 'a refusal saved nothing, so nothing was trimmed'
+
+      assert @game.merge_mail_state!('mailboxes.a.one' => msg('one', read: false))
+      assert_empty @game.mail_trimmed_keys, 'a small save trims nothing'
+    end
+
     test 'an update with nothing usable writes no mailState and is not a refusal' do
       assert_nil @game.merge_mail_state!('unknown' => 1, 'jobs' => 'not a list')
       refute @game.player_state.key?('mailState')

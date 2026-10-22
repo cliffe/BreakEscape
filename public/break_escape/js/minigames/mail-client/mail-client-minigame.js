@@ -23,7 +23,7 @@
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { MailReader } from './mail-reader.js';
 import { MailComposer } from './mail-composer.js';
-import { registerOpenClient } from './mail-notification.js';
+import { registerOpenClient, notifyAccountCreated } from './mail-notification.js';
 import { performSend, renderChecklist, rejudgeForChecklist, resolveTarget, applyFactorBias } from './mail-bridge.js';
 import { evaluateMessage } from '../../systems/phish-rules.js';
 import { writeGlobal } from '../../systems/global-writer.js';
@@ -516,7 +516,22 @@ export class MailClientMinigame extends SocialOverlayScene {
         this.switcher?.focus?.();
         this._changed({ type: 'account-created', id, mailbox: this.account?.mailbox });
         try { this.params.onAccountCreated?.(id, choice); } catch (err) { console.error('mail onAccountCreated failed:', err); }
+        // Push the new account to any other open client (T2-7).
+        try { notifyAccountCreated(id, { source: this }); } catch (err) { console.error('mail notifyAccountCreated failed:', err); }
         return true;
+    }
+
+    /**
+     * Another open client created `accountId` (T2-7). Re-resolve this device's
+     * accounts from the now-updated globals, keeping the account in view, and
+     * refresh so a switcher that should now list it does. A client that does not
+     * offer the account resolves the same list and nothing changes.
+     */
+    accountListChanged(accountId) {
+        if (!this.root) return;
+        const before = this.accounts.length;
+        this._loadAccounts(this.account?.id);
+        if (this.accounts.length !== before) this._refresh();
     }
 
     setFolder(folder) {

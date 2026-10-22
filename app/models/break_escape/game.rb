@@ -2084,7 +2084,13 @@ module BreakEscape
     # change together, so one is never kept without the other). Returns true
     # when saved, false when refused (the caller reports it as notSaved), nil
     # when nothing usable came. Does not save!; the caller does.
+    #
+    # When a save does trim read mail to fit the byte cap, the dropped message
+    # keys are left in #mail_trimmed_keys so the controller can report them
+    # (P1-D): the client still holds that mail as confirmed, so without the
+    # report it would vanish on the next reload without the client knowing.
     def merge_mail_state!(incoming)
+      @mail_trimmed_keys = []
       return nil unless incoming.is_a?(Hash)
 
       updates = mail_state_updates(incoming)
@@ -2122,14 +2128,23 @@ module BreakEscape
       end
       merged.delete('mailboxes') if merged['mailboxes'] == {}
 
-      refusal = mail_state_refusal(merged, updates)
+      dropped = []
+      refusal = mail_state_refusal(merged, updates, dropped)
       if refusal
         Rails.logger.warn "[BreakEscape] mailState #{refusal}; update not saved"
         return false
       end
 
       player_state['mailState'] = merged
+      @mail_trimmed_keys = dropped
       true
+    end
+
+    # Message keys (mailboxes.<box>.<msgId>) the last merge_mail_state! trimmed
+    # to fit the caps while still saving (P1-D). Empty after a refusal (nothing
+    # was saved) or when nothing was trimmed.
+    def mail_trimmed_keys
+      @mail_trimmed_keys || []
     end
 
     private
@@ -2173,8 +2188,11 @@ module BreakEscape
       updates
     end
 
-    # Why the merged section cannot be saved, or nil. Trims messages first.
-    def mail_state_refusal(merged, updates)
+    # Why the merged section cannot be saved, or nil. Trims messages first,
+    # recording the keys it drops in `dropped` (mailboxes.<box>.<msgId>) so the
+    # caller can tell the client what a successful save shed (P1-D). On a
+    # refusal nothing is saved, so the caller ignores anything collected here.
+    def mail_state_refusal(merged, updates, dropped)
       boxes = merged['mailboxes'] || {}
       return "has #{boxes.size} mailboxes (cap #{MAX_MAIL_MAILBOXES})" if boxes.size > MAX_MAIL_MAILBOXES
       return "has #{merged['jobs'].size} jobs (cap #{MAX_MAIL_JOBS})" if Array(merged['jobs']).size > MAX_MAIL_JOBS
@@ -2186,7 +2204,7 @@ module BreakEscape
         box = boxes[box_id]
         next unless box
 
-        trim_mail_messages!([box]) { box['messages'].size <= MAX_MAIL_MESSAGES_PER_MAILBOX }
+        trim_mail_messages!([[box_id, box]], dropped) { box['messages'].size <= MAX_MAIL_MESSAGES_PER_MAILBOX }
         if box['messages'].size > MAX_MAIL_MESSAGES_PER_MAILBOX
           return "mailbox #{box_id} holds more than #{MAX_MAIL_MESSAGES_PER_MAILBOX} unread or seeded messages"
         end
@@ -2194,8 +2212,8 @@ module BreakEscape
 
       bytes = merged.to_json.bytesize
       if bytes > MAX_MAIL_STATE_BYTES
-        trim_mail_messages!(boxes.values) do |dropped|
-          bytes -= dropped.to_json.bytesize + 1 if dropped
+        trim_mail_messages!(boxes.to_a, dropped) do |msg|
+          bytes -= msg.to_json.bytesize + 1 if msg
           bytes <= MAX_MAIL_STATE_BYTES
         end
         bytes = merged.to_json.bytesize
@@ -2206,15 +2224,16 @@ module BreakEscape
 
     # Drop messages from the given mailboxes, in trim order, until the block
     # (called with the message just dropped, or nil before the first) is true.
-    # Order: read inbox replies, then sent records; oldest first within each
-    # (gameTime, then position). Seeded stubs and unread inbox mail are kept: a
-    # dropped stub would bring its message back unread on reload, and a stub is
-    # about 60 bytes.
-    def trim_mail_messages!(boxes)
+    # `box_pairs` is [[box_id, box], ...]; each dropped message's key
+    # (mailboxes.<box_id>.<msgId>) is pushed onto `dropped`. Order: read inbox
+    # replies, then sent records; oldest first within each (gameTime, then
+    # position). Seeded stubs and unread inbox mail are kept: a dropped stub
+    # would bring its message back unread on reload, and a stub is about 60 bytes.
+    def trim_mail_messages!(box_pairs, dropped)
       return if yield(nil)
 
       candidates = []
-      boxes.each_with_index do |box, box_index|
+      box_pairs.each_with_index do |(box_id, box), box_index|
         box['messages'].each_with_index do |msg, index|
           next if msg['seeded'] == true
 
@@ -2223,12 +2242,13 @@ module BreakEscape
                  else 0
                  end
           time = msg['gameTime'].is_a?(Numeric) ? msg['gameTime'] : -1
-          candidates << [[tier, time, box_index, index], box, msg]
+          candidates << [[tier, time, box_index, index], box_id, box, msg]
         end
       end
 
-      candidates.sort_by(&:first).each do |_, box, msg|
+      candidates.sort_by(&:first).each do |_, box_id, box, msg|
         box['messages'].delete_at(box['messages'].index { |m| m.equal?(msg) })
+        dropped << "mailboxes.#{box_id}.#{msg['id']}" if msg['id']
         break if yield(msg)
       end
     end
