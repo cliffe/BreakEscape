@@ -23,6 +23,7 @@ VAR sleeper_named = false
 VAR sleeper_shortlist = false
 VAR recruiter_secret = ""
 VAR hax_confession_answer = ""
+VAR maintenance_code_used = false   // playtest round 2 m-2: Victoria's people opened the gate
 VAR deed_found = false   // scenario design R2 m2: the lease file was taken
 VAR albion_notified = false
 VAR legacy_files_saved = false
@@ -207,6 +208,10 @@ Director Magnus Netherton: You read it. You decide. I will sign whichever.
 // SA §7.1 order; at most two lines, the first two that apply. Sorensen's and
 // Tran's "left", and lost files, get nothing; Noor always has a line.
 ~ temp said = 0
+// Playtest round 2 m-2: Victoria's m03 payoff, outside the two-line cap (like Noor's).
+{ m03_victoria_fate == "recruited" and maintenance_code_used:
+    Director Magnus Netherton: Sterling's people opened that gate for us. The first time we have used her. It will not be the last.
+}
 { sorensen_fate == "talked":
     Director Magnus Netherton: She wrote down every box she destroyed. She even got the numbers right.
     ~ said = said + 1

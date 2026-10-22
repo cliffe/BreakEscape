@@ -57,7 +57,8 @@ Every person ends on an unconditional clause, so each always has a line; clauses
       { "text": "Thanked for her cracker, to her face.", "condition": "globalVars.kowalczyk_reply === 'warm'" },
       { "text": "Asked after her cracker. Got a shrug." }
     ] },
-    { "name": "MARGARET SORENSEN", "clauses": [
+    { "name": "VICTORIA STERLING", "clauses": [ { "text": "Her people opened the cage gate. Used, for the first time.", "condition": "globalVars.m03_victoria_fate === 'recruited' && globalVars.maintenance_code_used" } ] },
+            { "name": "MARGARET SORENSEN", "clauses": [
       { "text": "Wrote down every box she destroyed.", "condition": "globalVars.sorensen_fate === 'talked'" },
       { "text": "Stopped at the shredder. Asked for a lawyer.", "condition": "globalVars.sorensen_fate === 'ko'" },
       { "text": "Fed the shredder all night." }

@@ -17,7 +17,7 @@ VAR hl_box_opened = false   // Synced scenario global (puzzle chains R1 P2): HaX
 
 === start ===
 // Home stub: not reached by the call; shows only if the player opens his thread after it.
-+ [Hello?]
++ [Ring back.]
     Narrator: The number rings out.
     #exit_conversation
     -> DONE

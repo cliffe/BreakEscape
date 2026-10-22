@@ -41,6 +41,8 @@ VAR legacy_clock_run = false
 VAR reading_found = false
 VAR reading_finished = false   // scenario design R1 n4: the Reading topic waits for the last page
 VAR deed_found = false   // scenario design R1 m3: the lease file's onPickup
+VAR flag1_to_hub = false   // playtest round 2 m-1 (ink-local)
+VAR catalogue_login_found = false   // VM gating F12: the login slip's onRead
 VAR tomb_beta_login_found = false   // VM gating F12: the enrolment binder's onRead
 VAR hl_box_opened = false   // scenario design R2 n3: the H&L lid's unlock (HaX latch)
 VAR in_cage = false   // Synced scenario global (scenario design R5 m1)
@@ -212,11 +214,16 @@ The catalogue keeps something else live. Their ledger.
 + [She's shredding Series R?]
     Box by box. The first sixteen are already gone.
     The ledger keeps. Her shredder doesn't. Stacks first.
+// Playtest round 2 m-1: a way out of the call's two questions, so a player who
+// heads straight for the gate reaches the hub (Victoria's topic) at once.
++ [Something else.]
+    ~ flag1_to_hub = true
 -
 Her card's on a reel at her hip. You've done this before.
 I've sent you the odd one. Salvage cage, their own code.
 // Scenario design R3 m2: name Act 3's target where the line is handed over.
 The catalogue calls what's in there Tomb Beta. It's still drawing power, and nobody's scheduled it for anything.
+{flag1_to_hub: -> support_hub}
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
 + [Got it.]
@@ -434,7 +441,7 @@ Director Magnus Netherton: HaX.
     He was mine. I wanted the other thirteen.
 }
 // Fixed (CONTRACT §2.1), split at a sentence break for the 25-word phone cap.
-Two cards on that wall. I had his name the night they died.
+The last two cards on our wall. I had his name the night they died.
 I don't know if saying it would have saved them. I didn't say it.
 ~ confession_heard = true
 -> answer
@@ -1000,8 +1007,11 @@ Sent. He'll read it tonight.
 - flag1_submitted:
     The restricted stacks, through the reading room. Series R is in there.
 // Playtest R1 A-M2: the laptop's set up (its click offers the guide).
-- catalogue_guide_offered:
+// Playtest round 2: the slip row retires once the slip is read.
+- catalogue_guide_offered and not catalogue_login_found:
     The laptop's live. The catalogue's staff login is on the slip at the drop desk. Use it, then bring me what you find.
+- catalogue_guide_offered:
+    The laptop's live. You've got the catalogue's staff login. Use it, then bring me what you find.
 - else:
     Get inside, set up the laptop on a reading desk, and get into the catalogue.
 }

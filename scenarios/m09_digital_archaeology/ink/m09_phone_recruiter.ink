@@ -33,7 +33,7 @@ VAR recruiter_hung_up = false
 
 === start ===
 // Shows only if the player opens her thread after the call. Choices only.
-+ [Hello?]
++ [Ring back.]
     Narrator: The number rings out.
     #exit_conversation
     -> DONE
