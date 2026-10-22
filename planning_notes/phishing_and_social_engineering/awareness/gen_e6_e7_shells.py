@@ -293,8 +293,8 @@ EPISODES = {
             'minutes': 8,
             'defendIntro': "Go through the voicemails and emails and decide what to do with each one. Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Work through them at your own pace; it all comes back to ringing the person yourself.",
             'voicePanel': {
-                'heading': 'A voice is not proof',
-                'text': "A voice can be copied. Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. So a familiar voice on a voicemail or a call doesn't tell you who is speaking. What still works is the route: ring the person back on a number you already hold, or check with someone who would know, such as the finance manager.",
+                'heading': 'How a voice gets copied',
+                'text': "Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. If you can't reach the person to check, ask someone who would know, such as the finance manager.",
             },
             'conclusion': ('Finance line done', "You've been through all five messages and finished this episode."),
         },
