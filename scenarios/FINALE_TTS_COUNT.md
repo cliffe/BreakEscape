@@ -182,3 +182,5 @@ No audio exists yet, so nothing is orphaned by the change. The officers' m09 and
 2. The new voices (Pulcherrima, Kore) have not been heard; by ear before generating.
 3. The m09 Tesseract tape style is still unconfirmed by the user's ear (ASSET_LIST section 6); the 2 alpha_recording lines are only 167 chars.
 4. Skill rule 1: generate only once the dialogue is signed off. Both missions are still in editorial passes (git status shows `scenarios/m10_full_disclosure/scenario.json.erb` modified).
+
+- 2026-10-22 m10 alignment R4: +1 Netherton line (scorched 'whole map' form), 1 Netherton line reworded (both-wiped St. Catherine's). Recount before generation.
