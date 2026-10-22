@@ -35,7 +35,15 @@ Two R3 questions (`scenarios/m10_full_disclosure/PUZZLE_CHAINS_REVIEW_R3.md` m2 
   (So the full hatch topic reads: "…Get out of the container onto that host. The release's kill config is on it — how six o'clock is armed, and what stops it. The switch itself is on his console, upstairs. One of his operators dropped a duty card by the east racks. The login's on it.")
 - No change to `box_topic` or to Tesseract's lines; the core-host notice reference is handled there and stays.
 
-**2. Flag 2 has no in-game find.** Correct, and it needs none. Flag 2 (the staging schedule) sits on the same monitoring host as flag 1, behind the same `secmon` login, so it is **gated by flag 1's find** (VM-internal, the way m01 flags 2–4 chain off flag 1's foothold). The build requirement that makes this true: the threat-data store must sit **behind the monitoring login**, not on a public/pre-login page. No new in-game object. HaX's existing flag-2 steer (the hall-console guide offer) is enough.
+**2. Flag 2 has no in-game find.** Correct, and it needs none. Flag 2 (the staging schedule) sits on the same monitoring host as flag 1, behind the same `secmon` login, so it is **gated by flag 1's find** (VM-internal, the way m01 flags 2–4 chain off flag 1's foothold). The build requirement that makes this true: the threat-data store must sit **behind the monitoring login**, not on a public/pre-login page. No new in-game object. HaX's existing flag-2 steer (the hall-console guide offer) is enough. **(Superseded by B7 — flag 2 now gets its own find.)**
+
+### B7. m10 flag 2 gets its own find (concept level) — reverses B6 item 2
+
+Puzzle-chains R4 (`scenarios/m10_full_disclosure/PUZZLE_CHAINS_REVIEW_R4.md` M1) found that B6's VM-internal gating still breaks F12: because flag 2 sits behind flag 1's login on the same machine, a player can take it at the forward post (flag 1's room) and carry it through five rooms to the release console (depth 5). Fix: **flag 2 needs its own in-game find, near the release console.**
+
+- **Game-side find (the builder places it).** Add one found object in the **server hall, by the release console** (flag 2's submit station) — e.g. the release console's **staging / schedule-copy log-in card**, or a note in the hall's release area — holding the account the player uses to pull the staging copy. HaX's existing flag-2 steer (the hall-console guide offer) should point at it. Because the find is in the submit room, flag 2 can no longer be obtained early.
+- **What the login opens, at story level:** the staging copy of the release schedule, held on the bunker's monitoring host. (So the game label can say so.)
+- **VM-side (in the plan / draft notes).** A separate account **`staging`** on the monitoring host, fixed password **`Staging!Copy25`**, with the staging copy of the schedule in its `0600` home; not readable by the other accounts or a pre-login page. Flag 1's login no longer gates flag 2.
 
 ---
 
