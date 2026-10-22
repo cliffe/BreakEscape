@@ -1,5 +1,8 @@
 // Fixtures A-D transcribed from DEDUCTION_IMPLEMENTATION_PLAN.md §4.9 and §9
-// (R6: 3839-line version, md5 122840bb894cff3b148be9141dd446ad, after the R5 workflow fixes).
+// (R6: 3839-line version, md5 122840bb894cff3b148be9141dd446ad, after the R5 workflow fixes; S3: 4749 lines, md5 7c3483da8a51a23a93cd354c239588a2).
+// S3 (R6 fold, 2026-10-23): A's favour gated on the ring (L-10), labels/clauses/profile text for DL23; C's
+// travel ids renamed off "arkham" and the gossip moved to Ahmed's ink, granting Baptiste's no_quarry_trip
+// (L-84), releases as a verdict mode (L-85); D's main bridge takes the notebook and the glass (L-102).
 //
 // Atom = one acquisition step. req(S, m):
 //   S.has(atomId), S.held(factId), S.infl(witness) (influence before the next question),
@@ -33,11 +36,11 @@ const B = {
   suspects: ['okoro', 'lindqvist', 'haddad', 'morgan'],
   slots: { access: 'exactlyOne', device: 'exactlyOne', grievance: 'exactlyOne' },
   clues: {
-    access_out_of_role: { slot: 'access', count: 2, label: 'went in outside their role' }, access_in_role: { slot: 'access', count: 2, label: 'went in for their own work' },
+    access_out_of_role: { slot: 'access', count: 2, label: 'went in outside their role', clause: 'went into the server room outside their role' }, access_in_role: { slot: 'access', count: 2, label: 'went in for their own work' },
     personal_device: { slot: 'device', count: 2, label: 'personal device' }, no_personal_device: { slot: 'device', count: 2, label: 'no personal device' },
-    grievance: { slot: 'grievance', count: 2, label: 'grievance this month' }, no_grievance: { slot: 'grievance', count: 2, label: 'no grievance' },
+    grievance: { slot: 'grievance', count: 2, label: 'grievance this month', clause: 'raised a grievance in the last month' }, no_grievance: { slot: 'grievance', count: 2, label: 'no grievance' },
   },
-  profiles: [{ id: 'insider', label: 'Insider', rule: { all: [has('access_out_of_role'), has('personal_device'), has('grievance')] } }],
+  profiles: [{ id: 'insider', label: 'Insider', text: 'Went into the server room outside their role, had a personal device on the staff network, and raised a grievance in the last month.', rule: { all: [has('access_out_of_role'), has('personal_device'), has('grievance')] } }],
   solution: { okoro: 'guilty', lindqvist: 'clear', haddad: 'clear', morgan: 'clear' },
   // §4.9 fact order: access x4, device x4, grievance x4
   cells: {
@@ -84,15 +87,15 @@ const A = {
   suspects: ['okafor', 'venn', 'marsh', 'ishikawa', 'delacroix'],
   slots: { pass: 'exactlyOne', want: 'exactlyOne', carry: 'oneOrMore' },
   clues: {
-    archive_pass: { slot: 'pass', count: 2, label: 'was in the archive' }, lecture_hall: { slot: 'pass', count: 2, label: 'was in the lecture hall' }, garden: { slot: 'pass', count: 1, label: 'was in the garden' },
+    archive_pass: { slot: 'pass', count: 2, label: 'In the Archive', clause: 'was in the Archive' }, lecture_hall: { slot: 'pass', count: 2, label: 'In the lecture hall', clause: 'was in the lecture hall' }, garden: { slot: 'pass', count: 1, label: 'In the garden', clause: 'was in the garden' },
     wants_codex: { slot: 'want', count: 3, marked: true, label: 'wants the Codex' }, wants_promotion: { slot: 'want', count: 1, marked: true, label: 'wants a promotion' }, wants_funding: { slot: 'want', count: 1, label: 'wants funding' },
-    brass_key: { slot: 'carry', count: 1, marked: true, label: 'brass key' }, sigil_ring: { slot: 'carry', count: 1, marked: true, label: 'sigil ring' }, burner_sim: { slot: 'carry', count: 1, marked: true, label: 'burner SIM' },
-    ward_charm: { slot: 'carry', count: 2, label: 'ward charm', clause: 'carries a ward charm' }, notebook: { slot: 'carry', count: 2, label: 'notebook' }, umbrella: { slot: 'carry', count: 1, label: 'umbrella' },
+    brass_key: { slot: 'carry', count: 1, marked: true, label: 'brass key', clause: 'carries the brass Tesseract key' }, sigil_ring: { slot: 'carry', count: 1, marked: true, label: 'sigil ring' }, burner_sim: { slot: 'carry', count: 1, marked: true, label: 'burner SIM' },
+    ward_charm: { slot: 'carry', count: 2, label: 'ward charm', clause: 'carries a ward charm' }, notebook: { slot: 'carry', count: 2, label: 'notebook' }, umbrella: { slot: 'carry', count: 1, label: 'folded umbrella' },
   },
   profiles: [
-    { id: 'keyholder', label: 'Keyholder', rule: has('brass_key') },
-    { id: 'courier', label: 'Courier', rule: { all: [has('archive_pass'), has('wants_codex'), { not: has('ward_charm') }] } },
-    { id: 'devotee', label: 'Devotee', rule: { markedAtLeast: 3 } },
+    { id: 'keyholder', label: 'Keyholder', text: 'Carries the brass Tesseract key. There is only one.', rule: has('brass_key') },
+    { id: 'courier', label: 'Courier', text: 'Was in the Archive, wants the Codex, and has no ward charm.', parts: { join: 'all', items: ['Was in the Archive', 'wants the Codex', 'has no ward charm'] }, rule: { all: [has('archive_pass'), has('wants_codex'), { not: has('ward_charm') }] } },
+    { id: 'devotee', label: 'Devotee', text: 'Has three or more marked clues.', rule: { markedAtLeast: 3 } },
   ],
   solution: { okafor: 'guilty', venn: 'clear', marsh: 'guilty', ishikawa: 'clear', delacroix: 'clear' },
   cells: mkCells({
@@ -106,7 +109,7 @@ const A = {
 };
 const coatsOpen = m => !(m.wrongLanded > 0); // a_lodge_suspicious (cost, at verdict under reveal now)
 const archive = S => S.has('code_note') || S.has('venn_code');
-const marshFavourOpen = m => present(m, 'marsh') && (m.favourAfterVerdict !== false || !(m.judged && m.judged.has('marsh')));
+const marshFavourOpen = m => present(m, 'marsh'); // §7.3 after L-11: a KO ends the favour, any other verdict does not
 A.atoms = [
   { id: 'bar_okafor_want', room: 'a_hall', facts: ['a_okafor_wants_codex'], witness: 'barstaff', charged: true, req: () => true },
   { id: 'bar_venn_want', room: 'a_hall', facts: ['a_venn_wants_funding'], witness: 'barstaff', charged: true, req: () => true },
@@ -119,9 +122,9 @@ A.atoms = [
   { id: 'coat_venn', room: 'a_cloakroom', facts: ['a_venn_ward_charm'], req: (S, m) => coatsOpen(m), v: { costGated: true } },
   { id: 'coat_ishikawa', room: 'a_cloakroom', facts: ['a_ishikawa_ward_charm', 'a_ishikawa_notebook'], req: (S, m) => coatsOpen(m), v: { costGated: true } },
   { id: 'phone', room: 'a_cloakroom', facts: [], progress: true, req: () => true },
-  // favour: ask gated on her want fact (any route); hand-over on has_marsh_phone
+  // favour: ask gated on her ring fact (L-10: unlockFact a_marsh_sigil_ring, from dusting the glass); hand-over on has_marsh_phone
   { id: 'favour', room: 'a_cloakroom', favour: 'marsh', facts: ['a_marsh_garden', 'a_marsh_wants_promotion', 'a_marsh_sigil_ring', 'a_marsh_burner_sim'],
-    req: (S, m) => S.has('phone') && S.held('a_marsh_wants_promotion') && marshFavourOpen(m), place: "Marsh's favour" },
+    req: (S, m) => S.has('phone') && S.held('a_marsh_sigil_ring') && marshFavourOpen(m), place: "Marsh's favour" },
   { id: 'code_note', room: 'a_cloakroom', facts: [], progress: true, req: () => true },
   // Venn's code: gated on se_intel_a_venn_ward_charm and !ded_a_ally_lost
   { id: 'venn_code', room: 'a_hall', facts: [], progress: true, req: (S, m) => S.held('a_venn_ward_charm') && !m.allyLost && present(m, 'venn') },
@@ -142,6 +145,7 @@ A.planStates = [
   { name: 'H+A', atoms: [...AH, 'code_note', 'badge_log', 'camera', 'desk'], claim: { okafor: 'guilty', delacroix: 'clear', venn: 'clear', ishikawa: 'undetermined', marsh: 'undetermined' }, line: '2328-2330' },
   { name: 'H+F', atoms: [...AH, 'phone', 'favour'], claim: { marsh: 'guilty', okafor: 'undetermined', venn: 'undetermined', ishikawa: 'undetermined', delacroix: 'undetermined' }, line: '2331-2332' },
   { name: 'H+F+A', atoms: [...AH, 'phone', 'favour', 'code_note', 'badge_log', 'camera', 'desk'], claim: { marsh: 'guilty', okafor: 'guilty', delacroix: 'clear', venn: 'clear', ishikawa: 'clear' }, line: '2333-2335' },
+  { name: 'H+C+F (byCount/decidedBy case)', atoms: [...AH, 'coat_venn', 'coat_ishikawa', 'phone', 'favour'], claim: { okafor: 'guilty', marsh: 'guilty' }, line: '§9.2 conformance' },
   // A-wrong bridge (2420-2429): hall clues, coats closed, KO Okafor + key pickup; Marsh missed at close
   { name: 'A-wrong at close (hall + key drop)', atoms: [...AH, 'ko_key'], mode: { ko: new Set(['venn', 'okafor']), gone: new Set(['venn', 'okafor']), judged: new Set(['venn', 'delacroix', 'ishikawa', 'okafor']), wrongLanded: 3, allyLost: true },
     claim: { marsh: 'undetermined' }, settling: { marsh: ['a_marsh_burner_sim'] }, line: '2426-2427' },
@@ -173,16 +177,19 @@ const C = {
   suspects: ['ahmed', 'novak', 'baptiste'],
   slots: { kit: 'oneOrMore', travel: 'exactlyOne', alibi: 'exactlyOne' },
   clues: {
-    cult_burner: { slot: 'kit', count: 1, marked: true, label: 'cult-issued burner' }, safenet_phone: { slot: 'kit', count: 3, label: 'SAFETYNET phone' }, field_kit: { slot: 'kit', count: 2, label: 'field kit' },
-    arkham_trip: { slot: 'travel', count: 2, label: 'went to the quarry site' }, no_arkham: { slot: 'travel', count: 1, label: 'never went to the quarry site' },
+    cult_burner: { slot: 'kit', count: 1, marked: true, label: 'cult-issued burner', clause: 'carries a cult-issued burner' }, safenet_phone: { slot: 'kit', count: 3, label: 'SAFETYNET phone' }, field_kit: { slot: 'kit', count: 2, label: 'field kit' },
+    quarry_trip: { slot: 'travel', count: 2, label: 'went to the quarry site' }, no_quarry_trip: { slot: 'travel', count: 1, label: 'never went to the quarry site' },
     verified_alibi: { slot: 'alibi', count: 2, label: 'verified alibi' }, no_alibi: { slot: 'alibi', count: 1, label: 'no alibi' },
   },
-  profiles: [{ id: 'sleeper', label: 'Sleeper', rule: { any: [has('cult_burner'), { all: [has('arkham_trip'), { not: has('verified_alibi') }] }] } }],
+  profiles: [{ id: 'sleeper', label: 'Sleeper', text: 'Carries a cult-issued burner (there is one), or went to the quarry site and has no verified alibi for the night of the leak.',
+    parts: { join: 'any', items: ['Carries a cult-issued burner (there is one)', 'went to the quarry site and has no verified alibi for the night of the leak'] },
+    rule: { any: [has('cult_burner'), { all: [has('quarry_trip'), { not: has('verified_alibi') }] }] } }],
   solution: { ahmed: 'clear', novak: 'guilty', baptiste: 'clear' },
+  witnesses: { ahmed: { step: 15, wary: -20, refuses: -40 } },
   cells: mkCells({
-    ahmed: { kit: ['safenet_phone', 'field_kit'], travel: ['arkham_trip'], alibi: ['verified_alibi'] },
-    novak: { kit: ['cult_burner', 'safenet_phone'], travel: ['arkham_trip'], alibi: ['no_alibi'] },
-    baptiste: { kit: ['safenet_phone', 'field_kit'], travel: ['no_arkham'], alibi: ['verified_alibi'] },
+    ahmed: { kit: ['safenet_phone', 'field_kit'], travel: ['quarry_trip'], alibi: ['verified_alibi'] },
+    novak: { kit: ['cult_burner', 'safenet_phone'], travel: ['quarry_trip'], alibi: ['no_alibi'] },
+    baptiste: { kit: ['safenet_phone', 'field_kit'], travel: ['no_quarry_trip'], alibi: ['verified_alibi'] },
   }, 'c'),
 };
 // keycard: removed at verdict on any wrong call that has landed (KO at once; a wait only when locked).
@@ -191,14 +198,15 @@ const bedroom = m => !m.keycardRevoked || present(m, 'ahmed') || present(m, 'bap
 const office = (S, m) => S.has('bag') || (m.keycardRevoked && S.has('hax_code'));
 const novakBadge = (S, m) => S.has('clone') || (office(S, m) && !present(m, 'novak'));
 C.atoms = [
-  { id: 'ahmed_show', room: 'c_lounge', facts: ['c_ahmed_safenet_phone'], req: (S, m) => present(m, 'ahmed') },
+  { id: 'ahmed_show', room: 'c_lounge', facts: ['c_ahmed_safenet_phone'], witness: 'ahmed', charged: true, req: (S, m) => present(m, 'ahmed') },
   { id: 'baptiste_show', room: 'c_lounge', facts: ['c_baptiste_safenet_phone'], req: (S, m) => present(m, 'baptiste') },
-  { id: 'gossip', room: 'c_lounge', facts: ['c_ahmed_arkham_trip'], req: (S, m) => present(m, 'baptiste') },
+  // L-84: the paid gossip is Ahmed's (a third party on Baptiste): "Baptiste never left the house that week"
+  { id: 'gossip', room: 'c_lounge', facts: ['c_baptiste_no_quarry_trip'], witness: 'ahmed', charged: true, req: (S, m) => present(m, 'ahmed') },
   { id: 'bag', room: 'c_bedroom', inClosedContainer: true, facts: ['c_baptiste_field_kit'], req: (S, m) => bedroom(m), place: "Baptiste's kit bag in the bedroom" },
   { id: 'hax_code', room: 'c_lounge', facts: [], progress: true, req: (S, m) => !!m.keycardRevoked },
   { id: 'locker', room: 'c_office', facts: ['c_ahmed_field_kit'], req: (S, m) => office(S, m), place: "Ahmed's locker in the office" },
   { id: 'novak_bag', room: 'c_office', facts: ['c_novak_cult_burner'], req: (S, m) => office(S, m), place: "Novak's bag in the office" },
-  { id: 'travel_log', room: 'c_office', facts: ['c_novak_arkham_trip', 'c_baptiste_no_arkham', 'c_ahmed_arkham_trip'], req: (S, m) => office(S, m), place: 'the travel log in the office safe' },
+  { id: 'travel_log', room: 'c_office', facts: ['c_novak_quarry_trip', 'c_ahmed_quarry_trip'], req: (S, m) => office(S, m), place: 'the travel log in the office safe' },
   { id: 'novak_show', room: 'c_office', facts: ['c_novak_safenet_phone'], req: (S, m) => office(S, m) && present(m, 'novak') },
   { id: 'clone', room: 'c_office', facts: [], progress: true, req: (S, m) => office(S, m) && present(m, 'novak') },
   { id: 'badge_emul', room: 'c_garage', facts: ['c_novak_no_alibi'], req: S => S.has('clone'), place: 'the garage door reader' },
@@ -209,23 +217,26 @@ C.openingRooms = ['c_lounge', 'c_bedroom'];
 const CO = C.openingS8, COF = ['locker', 'novak_bag', 'travel_log', 'novak_show', 'clone'];
 C.planStates = [
   { name: 'O', atoms: CO, claim: { ahmed: 'undetermined', novak: 'undetermined', baptiste: 'undetermined' }, line: '2522-2526' },
-  { name: 'O+bag', atoms: [...CO, 'bag'], claim: { ahmed: 'undetermined', novak: 'undetermined', baptiste: 'undetermined' }, line: '2527-2528' },
+  { name: 'O+bag', atoms: [...CO, 'bag'], claim: { ahmed: 'undetermined', novak: 'undetermined', baptiste: 'clear' }, line: '§9.3 O+bag (S3: Baptiste clear)' },
+  { name: 'O+garage', atoms: [...CO, 'badge_emul', 'door_log'], claim: { ahmed: 'undetermined', novak: 'guilty', baptiste: 'undetermined' }, line: '§9.3 conformance sets (S3)' },
   { name: 'O+bag+office', atoms: [...CO, 'bag', ...COF], claim: { novak: 'guilty', baptiste: 'clear', ahmed: 'undetermined' }, line: '2529-2532' },
   { name: 'O+office (after a wrong call, no bag)', atoms: [...CO, 'hax_code', ...COF], mode: { keycardRevoked: true }, claim: { novak: 'guilty', baptiste: 'clear', ahmed: 'undetermined' }, line: '2529-2532' },
   { name: 'O+bag+office+garage', atoms: [...CO, 'bag', ...COF, 'badge_emul', 'door_log'], claim: { novak: 'guilty', baptiste: 'clear', ahmed: 'clear' }, line: '2533' },
-  { name: 'C1-C3 main bridge (no novak_show)', atoms: [...CO, 'bag', 'locker', 'novak_bag', 'travel_log', 'clone', 'badge_emul', 'door_log'], claim: { novak: 'guilty', baptiste: 'clear', ahmed: 'clear' }, line: '2591-2593' },
+  { name: 'C1-C3 main bridge (no novak_show)', atoms: [...CO, 'bag', 'locker', 'novak_bag', 'travel_log', 'clone', 'badge_emul', 'door_log'], claim: { novak: 'guilty', baptiste: 'clear', ahmed: 'clear' }, line: '§9.3 C1-C3' },
+  { name: 'no gossip (Ahmed gone at the start), office reached', atoms: ['baptiste_show', 'locker', 'novak_bag', 'travel_log'], mode: { gone: new Set(['ahmed']) }, claim: { novak: 'guilty', baptiste: 'clear', ahmed: 'undetermined' }, line: '§9.3 Without the gossip' },
 ];
-C.planSingleRoom = { c_office: { open: ['ahmed'] }, c_garage: { open: ['ahmed', 'novak', 'baptiste'] }, line: '2539-2542' };
+C.planSingleRoom = { c_office: { open: ['ahmed'] }, c_garage: { open: ['ahmed', 'baptiste'] }, line: '§9.3 DL8 single-room (S3)' };
 C.verdictModes = () => {
   // Ahmed, Baptiste (lounge, from the start) and Novak (office, on arrival): none / ko / wait+locked / wait unlocked
-  const out = []; const kinds = ['none', 'ko', 'waitL', 'waitU'];
+  // (locked by the exit phone at close) / wait then released (L-85, Q6: gone, no verdict, no wrong call)
+  const out = []; const kinds = ['none', 'ko', 'waitL', 'waitU', 'release'];
   for (const a of kinds) for (const b of kinds) for (const n of kinds) {
     const k = { ahmed: a, baptiste: b, novak: n };
     const gone = new Set(Object.keys(k).filter(s => k[s] !== 'none')), ko = new Set(Object.keys(k).filter(s => k[s] === 'ko'));
     const landed = Object.keys(k).filter(s => k[s] === 'ko' || k[s] === 'waitL');
     const wrongLanded = landed.filter(s => C.solution[s] === 'clear').length;
     out.push({ label: Object.keys(k).filter(s => k[s] !== 'none').map(s => `${k[s]}:${s}`).join(' ') || 'none',
-      m: { gone, ko, judged: new Set(landed), wrongLanded, keycardRevoked: wrongLanded > 0 } });
+      m: { gone, ko, judged: new Set(landed), wrongLanded, keycardRevoked: wrongLanded > 0, released: new Set(Object.keys(k).filter(s => k[s] === 'release')) } });
   }
   return out;
 };
@@ -241,10 +252,11 @@ const D = {
   slots: { pass: 'exactlyOne', want: 'exactlyOne', carry: 'oneOrMore' },
   clues: {
     archive_pass: { slot: 'pass', count: 2 }, lecture_hall: { slot: 'pass', count: 2 }, garden: { slot: 'pass', count: 1 },
-    wants_codex: { slot: 'want', count: 2, marked: true }, wants_promotion: { slot: 'want', count: 1, marked: true }, wants_funding: { slot: 'want', count: 1 }, wants_peace: { slot: 'want', count: 1 },
+    wants_codex: { slot: 'want', count: 2, marked: true }, wants_promotion: { slot: 'want', count: 1, marked: true }, wants_funding: { slot: 'want', count: 1 }, wants_peace: { slot: 'want', count: 1, label: 'wants peace and quiet' },
     brass_key: { slot: 'carry', count: 1, marked: true }, sigil_ring: { slot: 'carry', count: 1, marked: true }, burner_sim: { slot: 'carry', count: 1, marked: true },
     ward_charm: { slot: 'carry', count: 2 }, notebook: { slot: 'carry', count: 2 }, umbrella: { slot: 'carry', count: 1 },
   },
+  // labels and clauses as A's (same clue ids, same profiles), assigned below
   profiles: A.profiles,
   solution: { sato: 'guilty', chen: 'clear', devries: 'guilty', volkov: 'guilty', mensah: 'clear' },
   cells: mkCells({
@@ -262,6 +274,7 @@ const D = {
   }),
   witnesses: { steward: { step: 15, wary: -20, refuses: -40 }, conductor: { step: 15, wary: -20, refuses: -40, kind: 'cond_kind' } },
 };
+for (const [c, d] of Object.entries(D.clues)) if (A.clues[c]) { if (A.clues[c].label && !d.label) d.label = A.clues[c].label; if (A.clues[c].clause) d.clause = A.clues[c].clause; }
 const car = n => S => n === 1 || S.has('stop' + (n - 1));
 const notKO = (m, s) => !(m.ko && m.ko.has(s));
 D.atoms = [
@@ -299,7 +312,9 @@ D.planStates = [
   { name: 'opening (car 1)', atoms: D.openingS8, claim: { sato: 'undetermined', chen: 'undetermined', devries: 'undetermined', volkov: 'undetermined', mensah: 'undetermined' }, line: '2709-2718' },
   // D main bridge (2743-2752): car 1 steward only (rack faded); car 2 nothing; car 3 shred only; car 4 stop4, backup, conductor x4 with kind word, briefcase; car 5 nothing named
   { name: 'D main bridge, literal (steward; shred; backup, conductor, briefcase)', atoms: ['steward_sato', 'steward_chen', 'steward_mensah', 'stop1', 'stop2', 'shred', 'stop3', 'stop4', 'backup', 'cond_sato', 'cond_devries', 'cond_volkov_pass', 'cond_kind', 'cond_volkov_want', 'briefcase'],
-    claim: { sato: 'guilty', chen: 'clear', devries: 'guilty', volkov: 'guilty', mensah: 'clear' }, line: '2743-2753 ("a correct submit")' },
+    claim: { sato: 'undetermined', chen: 'clear', devries: 'undetermined', volkov: 'guilty', mensah: 'clear' }, line: 'R6F-4: literal path leaves Sato, de Vries U' },
+  { name: 'D main bridge after L-102 (D3 adds the lost-property notebook and the glass)', atoms: ['steward_sato', 'steward_chen', 'steward_mensah', 'stop1', 'stop2', 'shred', 'stop3', 'lost_property', 'glass', 'stop4', 'backup', 'cond_sato', 'cond_devries', 'cond_volkov_pass', 'cond_kind', 'cond_volkov_want', 'briefcase'],
+    claim: { sato: 'guilty', chen: 'clear', devries: 'guilty', volkov: 'guilty', mensah: 'clear' }, line: '§9.4 D3/D4 ("a correct submit")' },
 ];
 D.verdictModes = () => {
   const out = [];

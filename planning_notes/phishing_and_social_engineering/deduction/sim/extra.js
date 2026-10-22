@@ -64,16 +64,25 @@ if (!only || only === 'B') {
 }
 if (!only || only === 'A') {
   const fx = FX.A; L('\n## A');
-  for (const v of [{}, { favourAfterVerdict: false }]) {
+  for (const v of [{}]) { // S3: only a KO ends a favour (§7.3, L-11)
     const e = essentialUnderVerdicts(fx, v);
     L(`sources whose removal strands an unjudged suspect (${e.modes} verdict combinations, baseline ${e.base} already stranding)${v.favourAfterVerdict === false ? ' [a verdict ends the favour]' : ''}:`);
     for (const [id, x] of Object.entries(e.out)) L(`  ${id}: ${x.n - e.base > 0 ? '+' + (x.n - e.base) + ' combinations' : 'never'}${x.n > e.base && x.ex ? ' e.g. ' + x.ex : ''}`);
   }
-  // glass with the favour's unlockFact moved to the ring (SIM_REPORT fix 3)
-  const fav = fx.atoms.find(a => a.id === 'favour'); const oreq = fav.req;
-  fav.req = (S, m) => S.has('phone') && S.held('a_marsh_sigil_ring') && (m.gone ? !m.gone.has('marsh') : true);
-  const e2 = essentialUnderVerdicts(fx, {}); L(`if unlockFact were a_marsh_sigil_ring: glass strands in ${e2.out.glass.n - e2.base} more combinations (e.g. ${e2.out.glass.ex})`);
-  fav.req = oreq;
+  // L-96: the glass lost (an excellent lift logged as unidentified): no ring, so the favour is never offered
+  {
+    const base = withDropped(fx, ['glass'], () => terminalsUndecided(fx, {}, false));
+    L(`glass lost, no verdicts: ${base.terminals} terminals, ${base.bad.length} leave someone undecided${base.bad[0] ? ': ' + fmt(fx, base.bad[0].e) : ''}`);
+    const r = withDropped(fx, ['glass'], () => explore(fx, {}, {}));
+    const marshBy = {}; for (const t of r.terminals) { const ev = require('./eval').evaluateAll(fx, fx._.factsOf(fx._.fmOfAtoms(t))); const k = `${ev.marsh.status}/${ev.marsh.decidedBy}/${ev.marsh.byCount.map(b => b.how).join('+')}`; marshBy[k] = (marshBy[k] || 0) + 1; }
+    L(`  Marsh at those terminals (status/decidedBy/byCount): ${JSON.stringify(marshBy)}`);
+    let n = 0, ex = [];
+    for (const vm of fx.verdictModes({})) { const t = withDropped(fx, ['glass'], () => terminalsUndecided(fx, vm.m)); if (t.bad.length) { n++; if (ex.length < 3) ex.push(`${vm.label}: ${t.bad[0].u.join('+')} (${fmt(fx, t.bad[0].e)})`); } }
+    L(`  glass lost, ${fx.verdictModes({}).length} verdict combinations: ${n} leave an unjudged suspect undecidable, e.g. ${ex.join(' | ')}`);
+    const one = { ko: new Set(), gone: new Set(), judged: new Set(['delacroix']), wrongLanded: 1, allyLost: false };
+    const t1 = withDropped(fx, ['glass'], () => terminalsUndecided(fx, one, false));
+    L(`  glass lost + one wrong call (accuse Delacroix): undecided ${t1.bad.map(b => fmt(fx, b.e)).join(' | ') || 'none'}`);
+  }
   // D7 explicit: KO Marsh then one wrong call (accuse Delacroix), then everything
   const vm = { ko: new Set(['marsh']), gone: new Set(['marsh']), judged: new Set(['marsh', 'delacroix']), wrongLanded: 1, allyLost: false };
   const t = terminalsUndecided(fx, vm, false); L(`KO Marsh + accuse Delacroix at the start: ${t.terminals} terminals, undecided: ${t.bad.map(b => fmt(fx, b.e)).join(' | ')}`);
@@ -91,6 +100,9 @@ if (!only || only === 'C') {
   for (const [lab, seq, mode] of [
     ['C-wrong: KO Ahmed, KO Baptiste, HaX code, office, Novak waits (badge handed), garage door log', ['hax_code', 'novak_bag', 'locker', 'travel_log', 'door_log'], { ko: new Set(['ahmed', 'baptiste']), gone: new Set(['ahmed', 'baptiste', 'novak']), judged: new Set(['ahmed', 'baptiste']), wrongLanded: 2, keycardRevoked: true }],
     ['Novak sent to wait before cloning (no wrong call)', ['ahmed_show', 'baptiste_show', 'bag', 'novak_bag', 'locker', 'travel_log', 'door_log', 'badge_emul'], { gone: new Set(['novak']) }],
+    ['Ahmed sent to wait at the start and released (L-85): no gossip, travel log, door log', ['baptiste_show', 'bag', 'novak_bag', 'locker', 'travel_log', 'clone', 'badge_emul', 'door_log'], { gone: new Set(['ahmed']), released: new Set(['ahmed']) }],
+    ['Ahmed released, Baptiste KO (keycard revoked): HaX code', ['hax_code', 'novak_bag', 'locker', 'travel_log', 'clone', 'badge_emul', 'door_log'], { gone: new Set(['ahmed', 'baptiste']), ko: new Set(['baptiste']), judged: new Set(['baptiste']), wrongLanded: 1, keycardRevoked: true }],
+    ['C bridge C1-C3b-C4: kits, gossip, bag, office, clone, garage; Ahmed waits then released; Novak waits', ['ahmed_show', 'baptiste_show', 'gossip', 'bag', 'novak_bag', 'locker', 'travel_log', 'clone', 'badge_emul', 'door_log'], {}],
   ]) { const r = replay(fx, mode, seq); L(`${lab}:\n  ${r.log.join('\n  ')}\n  -> ${fmt(fx, r.st)}`); }
   for (const [lab, o] of [['no pigeonhole', { pigeon: false, count: true }], ['no count elimination', { pigeon: true, count: false }]]) {
     Object.assign(OPTS, o); fx._ = null; prep(fx); const tt = terminalsUndecided(fx, {}, false);
@@ -114,7 +126,7 @@ if (!only || only === 'D') {
   for (const [id, x] of Object.entries(e.out)) L(`  ${id}: ${x.n - e.base > 0 ? '+' + (x.n - e.base) + ' e.g. ' + x.ex : 'never'}`);
   // the main bridge path, plus what it needs
   const base = ['steward_sato', 'steward_chen', 'steward_mensah', 'stop1', 'stop2', 'shred', 'stop3', 'stop4', 'backup', 'cond_sato', 'cond_devries', 'cond_volkov_pass', 'cond_kind', 'cond_volkov_want', 'briefcase'];
-  for (const add of [[], ['lost_property'], ['newspaper', 'glass'], ['lost_property', 'newspaper', 'glass'], ['lost_property', 'newspaper'], ['lost_property', 'glass']]) {
+  for (const add of [[], ['lost_property'], ['glass'], ['newspaper', 'glass'], ['lost_property', 'newspaper', 'glass'], ['lost_property', 'newspaper'], ['lost_property', 'glass']]) {
     const r = replay(fx, {}, [...base, ...add]); L(`D bridge path + [${add}]: ${fmt(fx, r.st)}`);
   }
   for (const [lab, o] of [['no pigeonhole', { pigeon: false, count: true }], ['no count elimination', { pigeon: true, count: false }]]) {

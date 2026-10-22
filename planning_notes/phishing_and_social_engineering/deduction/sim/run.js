@@ -137,6 +137,7 @@ function analyse(fx, { full = true } = {}) {
       const o = oracleAll(fx, held);
       const d = Object.keys(ps.claim).filter(s => ps.claim[s] !== e[s]);
       L(`  ${ps.name} (${ps.line}): ${fmt(fx, e)} | oracle ${fmt(fx, o)} | ${d.length ? 'DISAGREES on ' + d.map(s => `${s} (plan ${ps.claim[s]}, sim ${e[s]})`).join(', ') : 'agrees'}`);
+      const db = fx.suspects.filter(s => ev[s].decidedBy).map(s => `${s}:${ev[s].decidedBy}`); if (db.length) L(`    decidedBy: ${db.join(' ')}`);
       const bc = fx.suspects.filter(s => ev[s].byCount.length).map(s => `${s}:${ev[s].byCount.map(b => b.how + '/' + b.clue).join('+')}`);
       if (bc.length) L(`    byCount: ${bc.join('; ')}`);
       if (ps.settling) for (const [s, exp] of Object.entries(ps.settling)) { const got = settlingFacts(fx, held, s); L(`    settlingFacts(${s}) = [${got}] plan [${exp}]: ${got.join() === exp.join() ? 'agrees' : 'DISAGREES'}`); }
@@ -145,7 +146,7 @@ function analyse(fx, { full = true } = {}) {
 
   // 4. verdict modes (worst case: each verdict at the earliest moment), terminals only (eager exploration)
   if (fx.verdictModes) {
-    for (const variant of (fx.name === 'A' ? [{}, { favourAfterVerdict: false }] : [{}])) {
+    for (const variant of [{}]) { // S3: §7.3 (L-11) settles it: only a KO ends a favour
       const modes = fx.verdictModes(variant);
       let strandU = 0, strandJ = 0; const ex = []; const byMode = [];
       for (const vm of modes) {

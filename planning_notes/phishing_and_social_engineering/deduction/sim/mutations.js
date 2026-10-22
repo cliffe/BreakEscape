@@ -53,3 +53,15 @@ for (const k of ['A', 'C', 'D']) console.log(`DL21 on fixture ${k}: ${dl21(FX[k]
 for (const k of ['A', 'B', 'C', 'D']) { const fx = FX[k]; const t = truthOf(fx);
   const used = fx.profiles.map(p => `${p.id}: matched in truth by ${fx.suspects.filter(s => evaluateAll(fx, Object.keys(fx.cells))[s].profiles[p.id] === 'T').join(',') || 'nobody'}`);
   console.log(`DL4/profiles ${k}: ${used.join('; ')}`); }
+
+// S3: DL23 (profile words name their clues) on the four fixtures and its B bad case; DL4 static satisfiability
+const ruleClues = r => { const k = Object.keys(r)[0]; if (k === 'has') return [r.has]; if (k === 'not') return ruleClues(r.not); if (k === 'all' || k === 'any') return r[k].flatMap(ruleClues); return []; };
+const norm = t => t.toLowerCase().replace(/\s+/g, ' ');
+const dl23 = fx => { const out = []; for (const p of fx.profiles) { const text = norm(p.parts ? p.parts.items.join(' ') : p.text || '');
+  for (const c of ruleClues(p.rule)) { const d = fx.clues[c]; const ok = [d.label, d.clause].filter(Boolean).some(w => text.includes(norm(w))); if (!ok) out.push(`profile '${p.id}' does not name clue '${c}' ('${d.label}')`); } } return out; };
+for (const k of ['A', 'B', 'C', 'D']) console.log(`DL23 on fixture ${k}: ${dl23(FX[k]).join('; ') || 'quiet'}`);
+{ const M = clone(B); M.clues.personal_device.label = 'unregistered phone'; console.log(`DL23 bad case (B personal_device label "unregistered phone"): ${dl23(M).join('; ') || 'quiet'}; truth ${show(M, truthOf(M))}; DL6 ${dl6(M, all).fires ? 'FIRES' : 'quiet'}; DL8 ${dl8(M, OPEN).fires ? 'FIRES' : 'quiet'}; DL21 ${dl21(M).join('; ') || 'quiet'}`); }
+const satisfiable = (fx, p) => { const k = Object.keys(p.rule)[0];
+  if (k === 'markedAtLeast') { const tot = Object.values(fx.clues).filter(c => c.marked).reduce((a, c) => a + c.count, 0); return p.rule.markedAtLeast <= tot; }
+  return ruleClues(p.rule).every(c => fx.clues[c].count >= 1); };
+for (const k of ['A', 'B', 'C', 'D']) console.log(`DL4 static satisfiable ${k}: ${FX[k].profiles.map(p => p.id + '=' + satisfiable(FX[k], p)).join(', ')}`);

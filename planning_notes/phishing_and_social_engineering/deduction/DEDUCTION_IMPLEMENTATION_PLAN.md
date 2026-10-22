@@ -735,6 +735,7 @@ Fixture B's `social` block in full (rooms, NPC records, ink and triggers are in 
 against every lint in §8: see the note after the block.
 
 ```jsonc
+// every object, trigger and timer route below also carries "place" (listed after the block); DL18 fails without it
 "social": {
   "people": [
     { "id": "ded_b_okoro",     "name": "Ngozi Okoro",    "role": "Night operator" },
@@ -793,11 +794,13 @@ against every lint in §8: see the note after the block.
       { "id": "grievance", "label": "Recent grievance",       "perSuspect": "exactlyOne" }
     ],
     "clues": {
-      "access_out_of_role": { "slot": "access",    "label": "went in outside their role", "count": 2 },
+      "access_out_of_role": { "slot": "access",    "label": "went in outside their role", "count": 2,
+                              "clause": "went into the server room outside their role" },
       "access_in_role":     { "slot": "access",    "label": "went in for their own work", "count": 2 },
       "personal_device":    { "slot": "device",    "label": "personal device",            "count": 2 },
       "no_personal_device": { "slot": "device",    "label": "no personal device",         "count": 2 },
-      "grievance":          { "slot": "grievance", "label": "grievance this month",       "count": 2 },
+      "grievance":          { "slot": "grievance", "label": "grievance this month",       "count": 2,
+                              "clause": "raised a grievance in the last month" },
       "no_grievance":       { "slot": "grievance", "label": "no grievance",               "count": 2 }
     },
     "profiles": [
@@ -811,7 +814,7 @@ against every lint in §8: see the note after the block.
     "stakes": {
       "rigidity": "light",
       "disclosure": "brief",
-      "briefText": "Name the wrong people, or miss someone, and the report will say so.",
+      "briefText": "Anyone you name will be looked into. Anyone you don't is cleared.",
       "onRightGuilty":  [ { "type": "set_global", "key": "b_insider_named", "value": true } ],
       "onWrongGuilty":  [ { "type": "set_global", "key": "b_wrong_name", "value": true } ],
       "onMissedGuilty": [],
@@ -820,7 +823,12 @@ against every lint in §8: see the note after the block.
       "onClose":        [ { "type": "complete_task", "taskId": "b_case_closed" } ]
     },
     "nudge": true,
-    "debrief": { "closingLine": "The access log, the network and the HR file each cleared someone. Okoro fitted all three." }
+    "debrief": {
+      "closingLine": "The access log, the network and the HR file each cleared someone. Okoro fitted all three.",
+      "notes": [ { "suspect": "ded_b_lindqvist",
+                   "condition": "globalVars.deduction_outcome_ded_b_lindqvist === 'wrong_guilty'",
+                   "text": "The grievance alone does not make the profile. Raising it was their right." } ]
+    }
   }
 }
 ```
@@ -832,8 +840,10 @@ how many are guilty. Declared globals: every `se_intel_b_*` (false), `deduction_
 it must be declared to sync between the two stories, `isGlobalVariable`), `b_insider_named`, `b_wrong_name`,
 `ded_b_tomas_influence` (0), `ded_b_tomas_latched`
 and the other `06` character globals the existing lints require, `ded_b_tomas_wary`,
-`ded_b_tomas_reported` (false), `scenario_triggers_fired` (`{}`). No tamper and no favour, so no
-`deduction_faded_*` or `deduction_favour_*`. Objectives: one aim "Night shift" with `missionConclusion: true`,
+`ded_b_tomas_reported` (false), `ded_b_tomas_questions` (0) and `ded_b_tomas_kind_given` (false) (§7.2's
+sample), `deduction_decidable_*` for the four suspects (false; the nudge is on, §4.4, DL13), `b_briefed`
+(false; Nair's first call is a `timedConversation`, §7.8), `scenario_triggers_fired` (`{}`). No tamper and
+no favour, so no `deduction_faded_*` or `deduction_favour_*`. Objectives: one aim "Night shift" with `missionConclusion: true`,
 `conclusionScreen: { "type": "success", ... }` (a training episode, `README_scenario_design.md:1540-1546`),
 tasks `b_case_solved` "Get every call right" and `b_case_closed` "Send the shift report" (titles are
 player-facing from the start and must not imply a number of guilty; DL10 scans them). `mission.json` sets
@@ -841,7 +851,11 @@ player-facing from the start and must not imply a number of guilty; DL10 scans t
 nothing in B says it does. Route places (§4.2; each of these route entries carries its `place`, left out of
 the block above for width): `t_b_badge_log` "the badge log in the server room",
 `t_b_hr_summary` "the HR summary in the cabinet", `t_b_complaint_copy` "Lindqvist's copy of his complaint",
-`dhcp_printout` "the DHCP printout in the server room"; Tomás's routes print his name.
+`dhcp_printout` "the network device list in the server room" (the printout is shown as "Network device
+list", §7.9); Tomás's routes print his name. The profile text names each clue its rule reads (DL23): the
+`personal_device` label, and the `clause` of `access_out_of_role` and of `grievance`, which the debrief's
+"Why" lines also use ("Insider: yes, went into the server room outside their role; personal device; raised
+a grievance in the last month").
 
 Hand check against §8. The clean fixture produces **no errors and no warnings**.
 
@@ -849,8 +863,10 @@ Hand check against §8. The clean fixture produces **no errors and no warnings**
 - DL2–DL3: two of each clue, one cell per suspect per slot, subjects match.
 - DL4: one `all` of three `has`. DL5: truth Okoro guilty (all three), Lindqvist clear (no device), Haddad
   clear (in-role access, no grievance), Morgan clear (none).
-- DL6: no tamper; every cell has a route that needs no KO; Tomás holds three clue topics and answers three
-  before turning wary (Q1 free, Q2 and Q3 answered before their costs), with a kind word as recovery.
+- DL6: no tamper; every cell has a route that needs no KO; Tomás holds three clue topics and the alarm; he
+  answers three before turning wary, four with the kind word (Q1 free, Q2 and Q3 answered before their
+  costs; the alarm is a charged progress topic, so asked before the last clue topic it uses one of the
+  three), with the kind word as recovery.
 - DL7: no fadable fact.
 - DL8: the HR cabinet's PIN is given freely in Nair's opening call (an ungated line of an opening-room
   NPC), so the cabinet is open from the start and its HR summary's grievance facts are opening facts. The
@@ -873,12 +889,14 @@ Hand check against §8. The clean fixture produces **no errors and no warnings**
   `when` is `final`, so the wrong-call warning does not apply.
 - DL10: profile text and `briefText` in the brief; no guilty number, no "the insider", no "Not the
   insider" in the brief, `briefText`, `verdictNoun`, `title` or `closingLine`, nor in `mission.json`'s
-  `description` (for example "A night-shift case for the security team. Not a mission.") or Nair's ink ("Name as many as the evidence supports"),
+  `description` (for example "A night-shift case for the security team. Not a mission.") or Nair's ink ("Name anyone the evidence supports."),
   nor in the aim and task titles ("Night shift", "Get every call right", "Send the shift report").
 - DL11: no `ko`, attacks off. DL12: `report` comes from Nair's ink, each name its own choice, and the
   "That's everyone" step has a "Not yet" sibling; Tomás has a `reports` threshold.
 - DL13: as listed. DL14–DL22: nothing to trip (every route room is inferred, so no "room unknown" warning;
-  each slot has one cell per suspect, so DL21 is quiet; no conclusion gate, so DL22 is quiet).
+  each slot has one cell per suspect, so DL21 is quiet; no conclusion gate, so DL22 is quiet; the
+  Lindqvist note names a suspect and a declared global, so DL14 is quiet). DL23: the profile text contains
+  "personal device" and both clauses, so it is quiet (`deduction/sim/mutations.js`).
 
 ## 5. Engine work items (S16 to S23)
 
@@ -2428,23 +2446,28 @@ clue-holding witness is a `social.people` entry.
 **Kind:** corporate, no combat (`"disableAttacks": true`), wording "insider", a training episode that
 ends on the success screen. `mission.json` sets `"scoring": "completion"`, the mode the awareness missions
 use and the one assumed for Incident Simulations (§3.9). Board `title` "Night shift"; `verdictNoun`
-"Insider" / "Not an insider". **Data:** §4.9 in full, with its hand check against every lint.
+"Insider" / "Not an insider". These are test nouns, kept on purpose; real Incident Simulations missions use
+"Refer to HR" / "No further action" (§3.11), so B is not the noun template. **Data:** §4.9 in full, with
+the route places listed after the block, and its hand check against every lint.
 
 **Rooms.** `b_office` (start; the board `b_board`, `mode: "deduction"`; the HR cabinet `hr_cabinet`, PIN
 lock 7310, holding the notes item `hr_summary` with `id: "hr_summary"`, `takeable: true`, `readable: true`
 and its `text`, so taking it emits `item_picked_up:notes` with that `itemId`, `systems/interactions.js`
 notes pickup; Okoro and Haddad; the security manager Nair as a phone NPC in this room's `npcs`, with
-`"phoneId": "player_phone"`, whose opening call says "HR's cabinet code is 7310 if you need the files")
+`"phoneId": "player_phone"`, whose opening call, a `timedConversation` with `skipIfGlobal` and
+`setGlobalOnStart` `b_briefed` (§7.8), says "HR's cabinet code is 7310 if you need the files")
 → open door → `b_kitchen` (Tomás;
 Lindqvist and Morgan) → PIN door (code 4417, known only to Lindqvist: once Tomás has mentioned the server
-room alarm, `b_heard_alarm`, Lindqvist's choice "Ask about last night's server room alarm" is offered and
-he gives the code; DL8 counts the door as closed, §8) → `b_server` (the badge log
-`badge_log_terminal`, a plain readable terminal, not a log filter: the `log_filter_terminal` completes only
+room alarm, `b_heard_alarm`, Lindqvist's choice "Tomás heard the server room alarm last night. What
+happened?" is offered and he gives the code; DL8 counts the door as closed, §8) → `b_server` (the badge log
+`badge_log_terminal`, a plain terminal, not a log filter: the `log_filter_terminal` completes only
 when one anomaly row is flagged (`log-filter-minigame.js` `_checkCompletion`), so it would single out one of
-the two out-of-role entrants or imply one culprit. Its `triggerOnInteract` shows the log as a `hint`
-(Okoro 02:10, Lindqvist 23:40, Haddad on her ticket, Morgan on her checks) and sets `b_badge_log_done`; the
-DHCP printout `dhcp_printout`). Start inventory: the player's phone (`type: "phone"`, `phoneId:
-"player_phone"`, `npcIds: ["ded_b_security_manager"]`, as `lab_social_engineering` carries it).
+the two out-of-role entrants or imply one culprit. It has no `readable` or `text`. Its `triggerOnInteract`
+shows the log as a `hint` with `title` "Badge log, server room" and the rows in full as its `message`:
+"Server room door, last night. N. Okoro 02:10. E. Lindqvist 23:40, out before 01:00. S. Haddad, on her
+ticket. G. Morgan, on her supervisor checks." (no Lindqvist inside at two), and sets `b_badge_log_done`; the DHCP printout `dhcp_printout`, shown as "Network device list").
+Start inventory: the player's phone (`type: "phone"`, `phoneId: "player_phone"`, `npcIds:
+["ded_b_security_manager"]`, as `lab_social_engineering` carries it).
 
 **Clue routes.**
 
@@ -2457,9 +2480,12 @@ DHCP printout `dhcp_printout`). Start inventory: the player's phone (`type: "pho
 
 Triggers: `t_b_badge_log` on `global_variable_changed:b_badge_log_done` (`where: { value: true }`) grants
 the four access facts; `t_b_hr_summary` on `item_picked_up:notes` (`where: { itemId: "hr_summary" }`)
-grants the four grievance facts; `t_b_complaint_copy` on `item_picked_up:notes` (`where: { itemId:
-"b_overtime_complaint" }`) grants Lindqvist's. The DHCP printout's `triggerOnInteract` grants its four
-facts and shows the printout as a `hint`.
+grants the four grievance facts with one `grant_facts` (`place` "the HR summary in the cabinet", §5.4);
+`t_b_complaint_copy` on `item_picked_up:notes` (`where: { itemId: "b_overtime_complaint" }`) grants
+Lindqvist's. The DHCP printout's `triggerOnInteract` grants its four facts with one `grant_facts` (`place`
+"the network device list in the server room") and shows the printout as a `hint` with `title` "Network
+device list". The printout's text is shown once as a hint. The player rereads the device facts in the
+notepad, where each grant writes them ("Evidence: <name>"). No notes item is added as a second source.
 
 **No-combat held-item route.** Lindqvist holds a notes item, `b_overtime_complaint`, in `itemsHeld`.
 Asked about pay, he hands it over (`#give_item`, `systems/npc-game-bridge.js:209-317`, which puts a notes
@@ -2471,25 +2497,43 @@ grievance), "Who brings their own gadgets in?" (Okoro's device), "Anything odd l
 server room alarm went off around two. Lindqvist has the code for that door; ask him."; it sets
 `b_heard_alarm` with `#set_global:b_heard_alarm:true`, the global declared in §4.9 so it reaches
 Lindqvist's story, which opens Lindqvist's choice that gives the server code), "Anyone complaining about
-pay?" (Lindqvist's grievance), plus "Thank him for the coffee" (+20 influence, once) and "Leave it there".
+pay?" (Lindqvist's grievance), plus the kind word "Thanks for the coffee, Tomás. It's a long night." (+20
+influence, once, guarded by `ded_b_tomas_kind_given`, §7.2) and "Leave it there".
 The alarm topic is a **progress topic** (§7.2): `+ {not b_heard_alarm} [Anything odd last night?]`, with
 **no wary branch**, so it always answers; it is charged like any later question (B1). Asked last while wary
 (order unhappy, gadgets, pay, alarm) it still answers and sets the flag; its cost then takes him to −45,
 past `refuses`, which ends that talk after the answer (the server room is already open to the player). The answer comes before the cost
 (§7.2); the first question is free and each later one costs 15, so the third question's cost takes him to
-−30, past `wary`, and a fourth clue question while wary gets the vague line and costs nothing.
+−30, past `wary`, and a fourth clue question while wary gets the vague line and costs nothing. The charge
+that takes him past `wary` gives the tell "Narrator: Tomás glances at the clock."; the wary branch opens
+"Narrator: He's stopped meeting your eye." before the wary line (§7.2's sample, word for word). The tell
+reads `ded_b_tomas_wary` straight after `se_influence`, so it relies on the influence external setting the
+band flag in the same tick: P10-K-B confirms that in the browser (P10-I1 binds the external) and reports
+it if the flag lands later. His influence never goes below −45 in
+play, so `reports` (−60) is there for DL12 and cannot fire. `bridge-deduction-b-wrong.jsonl` covers it:
+set `ded_b_tomas_influence` to −65 from the console through the global writer (so
+`global_variable_changed` fires), then check `ded_b_tomas_reported` is true and a new conversation with
+Tomás ends at once (`refuses`).
 
-**Other content** (placeholder, corporate-neutral; nothing may contradict the facts or trip DL10):
+**Lindqvist.** He checks before he gives the code: "Nair said you'd be coming. Hang on… Right. It's 4417.
+I'm changing it in the morning." Asked about the alarm, he says "I was in at twenty to twelve and gone by
+one. Check the log." (grants nothing: a suspect's own word clears nobody, and it matches the 23:40 entry).
+Tomás's alarm line stays as written above.
+
+**Other content** (placeholder, corporate-neutral; nothing may contradict the facts or trip DL10, though a
+suspect's own claim may be false):
 
 | Item | Content |
 |---|---|
 | `hr_summary` | "HR summary, nights: Okoro, shift-pattern appeal lost three weeks ago. Lindqvist, overtime pay complaint filed last week. Haddad, nothing on file. Morgan, nothing on file." |
 | `b_overtime_complaint` | name "Copy of an overtime complaint"; text "E. Lindqvist: overtime for the cooling checks has not been paid since August." |
-| `dhcp_printout` | a plain, non-container object (not takeable) whose `triggerOnInteract` grants the four device facts and shows "DHCP leases, staff network: Okoro's phone, Haddad's laptop. Nothing for Lindqvist or Morgan." as a `hint` |
-| `scenario_brief` | Nair's request to find who has been in the server room at night, the Insider profile `text` and `briefText` verbatim, and "Name as many as the evidence supports." No count of insiders |
+| `dhcp_printout` | a plain, non-container object (not takeable), named "Network device list", whose `triggerOnInteract` grants the four device facts (`grant_facts`) and shows "DHCP leases, staff network: Okoro's phone, Haddad's laptop. Nothing for Lindqvist or Morgan." as a `hint` with `title` "Network device list" |
+| `scenario_brief` | Nair's request to find who has been in the server room at night; what the investigator may read ("You may read the badge log, the HR summary and the network device list."); the Insider profile `text` and `briefText` verbatim; "A profile match is a reason to refer someone and talk to them, not a finding." (§7.9); and "Name anyone the evidence supports." (§7.5's wording). No count of insiders |
 | Nair | the opening call (the cabinet code, the profile, "call me when you're ready to report"); the report hub of §7.5; after close (`{deduction_closed}` at the top of her hub) only "The report has gone up. Thanks for tonight." with no choices that name anyone |
-| Okoro, Haddad, Morgan | a two-line stub story each ("Busy night. What do you need?" and a goodbye), no grants, no tags |
-| Tomás, wary | "I'd rather not talk about people behind their backs." (§7.2) |
+| Okoro | one topic, no tags: "I was on the console all night." (her claim; the badge log contradicts it) |
+| Haddad | one topic, no tags: her ticket and her own laptop on the staff network (a policy breach that is not the profile) |
+| Morgan | one topic, no tags: what "in role" means for a supervisor's server room checks |
+| Tomás, wary | "I'd rather not talk about people behind their backs. Ask me nicely and I might remember more." (§7.2, the same line every time) |
 | `conclusionScreen` | title "Case closed", body "The shift report has gone up. The debrief has the details." (neutral, §7.10) |
 
 **Verdict.** `report` only, `when: "final"`, `reveal: "end"`. Calling Nair reaches the report hub of §7.5:
@@ -2511,15 +2555,18 @@ says "Case closed" whatever the outcome (§7.10); the debrief carries the outcom
 **Bridges.**
 
 - `bridge-deduction-b.jsonl` (`deduction-b:test_social_deduction_b`, the right name). B0 baseline: globals
-  declared, runtime installed, board opens with four cards, every cell "Hidden", six count lines "2 in this
-  case, 0 found", stakes line `light` plus `briefText`, no "Make the call". B0a talk to Lindqvist first:
-  "Ask about last night's server room alarm" is not offered (`b_heard_alarm` false). B1 Tomás, in this order:
+  declared, runtime installed, board opens with four cards, every cell "Hidden", six count lines under
+  "Clues in this case (guilty or not)", each "<Label>: 2 in this case. Found: none yet.", stakes line
+  `light` plus `briefText`, no "Make the call". B0a talk to Lindqvist first: "Tomás heard the server room
+  alarm last night. What happened?" is not offered (`b_heard_alarm` false). B1 Tomás, in this order:
   Q1 "unhappy" (Okoro's grievance, influence 0), Q2 "gadgets" (Okoro's device, then −15), Q3 "anything odd"
   (the alarm, `b_heard_alarm` true, then −30 with `ded_b_tomas_wary` true), Q4 "pay" while wary (the vague line, no grant, no
-  cost); the kind word raises influence once and is not offered again. B2 Lindqvist hands over the complaint copy:
+  cost); the kind word raises influence once and is not offered again (the −15 and −30 readings and
+  `ded_b_tomas_wary` rest on P10-I1's `se_influence` binding in person chat). B2 Lindqvist hands over the complaint copy:
   `b_lindqvist_grievance` held, no combat; asked about the alarm, he gives the server code (the choice was
-  hidden at B0a, before B1's Q3); nudge toasts for Haddad and Morgan (both grievances now seen,
-  count elimination); Tomás's pay topic is gone. B3 HR cabinet with the code from Nair's opening call: `hr_summary` taken; Haddad's and Morgan's
+  hidden at B0a, before B1's Q3); nudge toasts for Haddad and Morgan, each with "Check the counts." (both
+  grievances now seen, count elimination); Tomás's pay topic is gone. Later nudges in B (Lindqvist after the
+  printout, Okoro after the badge log, B5) carry "Check what's on their card.". B3 HR cabinet with the code from Nair's opening call: `hr_summary` taken; Haddad's and Morgan's
   cells show. B4 marks: Haddad clear with a reason, Okoro guilty with `insider`; reload; marks survive. B5
   the server door with Lindqvist's code, the badge log terminal, the DHCP printout: all twelve facts
   held, every suspect decidable. B6 call Nair,
@@ -2541,16 +2588,24 @@ says "Case closed" whatever the outcome (§7.10); the debrief carries the outcom
   settled it: no personal device" (decided at the verdict); Okoro `missed_guilty`, "Not named", decided at
   close; the no-blame line is "rule misread" (it outranks "worked out but not named", §6.3); Finish:
   `b_case_solved` skipped, `b_case_closed` completed, `b_wrong_name` true, the success screen with its
-  neutral text ("Case closed").
+  neutral text ("Case closed"); Lindqvist's card carries the note "The grievance alone does not make the
+  profile. Raising it was their right." (`debrief.notes`). Before naming anyone, the `reports` band: set
+  `ded_b_tomas_influence` to −65 from the console through the global writer, check `ded_b_tomas_reported`
+  is true and a new conversation with Tomás ends at once (`refuses`).
 - `bridge-deduction-b-600.jsonl` (`deduction-b-600:test_social_deduction_b:600`, the viewport is fixed at
   launch, so the narrow layout is its own job as `5-600` is): open the board, one column, no horizontal
-  scroll, every control reachable. The other fixtures leave the narrow layout to the jsdom test.
+  scroll, every control reachable. The other fixtures leave the narrow layout to the jsdom test. T0 skips
+  `verify-run` for this layout-only job and says so.
 
 **Proves:** the whole data path; triggers on a global and on pickups; `triggerOnInteract` grants;
 `#grant_fact`; a held item given in ink with no combat; influence costs and `wary`; count elimination;
 the nudge; marks and persistence; `report` and a warned `#verdict_close`; reveal at end; `solvedTask`
 completed and skipped; the debrief's "already held" and "Not named" lines; corporate skin with no marked
-clues; no combat.
+clues; no combat; `grant_facts`; an authored `debrief.notes` line keyed on an outcome.
+
+In B a player who names only whoever first shows as guilty always gets every call right (Okoro is the only
+guilty suspect and never shows guilty early); naming everyone scores 100 under `completion`. B's teaching
+rests on the debrief and Nair's reply.
 
 ### 9.2 Fixture A — Open evening (Eldritch Hacker skin)
 
@@ -2558,29 +2613,41 @@ clues; no combat.
 is undercover. Board `title` "Open evening"; `verdictNoun` "Cultist" / "Not a cultist". Scoring: the default
 (`tasks`). Every room does some work: the hall alone decides no one, the cloakroom clears two, the archive's
 badge log is what clears Delacroix (so "where they were" matters), and Okafor falls either to the archive
-camera or, if the player took Marsh's favour first, to a count; the unique-item choice is offered in both
-cases. Marsh's burner SIM comes only from her favour.
+camera or, after the coats and Marsh's favour, to a count; the unique-item choice is offered in both
+cases. Marsh's burner SIM comes only from her favour, and her favour only after the glass (her ask is
+gated on the ring).
 
 **Data.**
 
+- `"voice": "pulp"` (the Eldritch Hacker fixture P10-BL plays, §6.3).
 - Slots: `pass` "Where they were" (exactlyOne), `want` "What they want" (exactlyOne), `carry` "What they
   carry" (oneOrMore).
 - Clues (count; ✦ = marked): pass: `archive_pass` 2, `lecture_hall` 2, `garden` 1. want: `wants_codex` ✦ 3,
   `wants_promotion` ✦ 1, `wants_funding` 1. carry: `brass_key` ✦ 1, `sigil_ring` ✦ 1, `burner_sim` ✦ 1,
   `ward_charm` 2, `notebook` 2, `umbrella` 1.
+- Labels and clauses the profile words rely on (DL23; the rest are P10-K-A's): `archive_pass` label "In the
+  Archive", clause "was in the Archive"; `lecture_hall` clause "was in the lecture hall"; `wants_codex` label
+  "wants the Codex"; `brass_key` label "brass key", clause "carries the brass Tesseract key"; `ward_charm`
+  label "ward charm", clause "carries a ward charm"; `umbrella` label "folded umbrella".
 - Profiles: **Keyholder** `{ "has": "brass_key" }` "Carries the brass Tesseract key. There is only one."
   **Courier** `{ "all": [ {has archive_pass}, {has wants_codex}, {"not": {has ward_charm}} ] }` "Was in the
-  Archive, wants the Codex, and carries no ward charm." **Devotee** `{ "markedAtLeast": 3 }` "Has three or
+  Archive, wants the Codex, and has no ward charm.", with `parts: { "join": "all", "items": ["Was in the
+  Archive", "wants the Codex", "has no ward charm"] }`. **Devotee** `{ "markedAtLeast": 3 }` "Has three or
   more marked clues." ("There is only one" is a clue count, which the board shows anyway, not a number of
-  guilty; DL10's pattern does not match it.)
+  guilty; DL10's pattern does not match it.) The brief and HaX's opening call explain the charm clause in
+  the fiction: "A Courier carrying the Codex can't carry a ward charm with it." DL23 is quiet on all three
+  (`deduction/sim/mutations.js`).
 
-| Suspect | Pass | Want | Carry | Truth |
-|---|---|---|---|---|
-| Okafor | lecture_hall | wants_codex ✦ | brass_key ✦, notebook | guilty: Keyholder |
-| Venn | archive_pass | wants_funding | ward_charm | clear |
-| Marsh | garden | wants_promotion ✦ | sigil_ring ✦, burner_sim ✦ | guilty: Devotee (3 marked) |
-| Ishikawa | archive_pass | wants_codex ✦ | ward_charm, notebook | clear (Courier fails on the charm: the negative clause) |
-| Delacroix | lecture_hall | wants_codex ✦ | umbrella | clear (Courier fails on the pass: wants the Codex, no charm, but was in the lecture hall) |
+| Suspect | Name, role (placeholder; P10-K-A may recast) | Pass | Want | Carry | Truth |
+|---|---|---|---|---|---|
+| Okafor | Dr Adaeze Okafor, visiting scholar (she) | lecture_hall | wants_codex ✦ | brass_key ✦, notebook | guilty: Keyholder |
+| Venn | Helen Venn, independent researcher (she) | archive_pass | wants_funding | ward_charm | clear |
+| Marsh | Imogen Marsh, assistant librarian (she) | garden | wants_promotion ✦ | sigil_ring ✦, burner_sim ✦ | guilty: Devotee (3 marked) |
+| Ishikawa | Yuki Ishikawa, graduate student (she) | archive_pass | wants_codex ✦ | ward_charm, notebook | clear (Courier fails on the charm: the negative clause) |
+| Delacroix | Luc Delacroix, antiquarian bookseller (he) | lecture_hall | wants_codex ✦ | umbrella | clear (Courier fails on the pass: wants the Codex, no charm, but was in the lecture hall) |
+
+Venn has one flavour line only she offers (about the lodge's lectures), with no clue fact. Each witness's
+kind word unlocks one flavour hint, again with no clue fact, so the hand check below does not move.
 
 Counts check: `wants_codex` 3 (Okafor, Ishikawa, Delacroix); `archive_pass` 2, `lecture_hall` 2,
 `ward_charm` 2, `notebook` 2; the rest 1. Carry cells: guilty 2 and 2, innocents 1, 2, 1 (DL21 passes).
@@ -2589,23 +2656,53 @@ Counts check: `wants_codex` 3 (Okafor, Ishikawa, Delacroix); `archive_pass` 2, `
 the default thresholds of §7.2, a `reports` threshold, three clue topics, the answer-then-cost rule and a
 once-only kind word, so each answers all three topics before turning wary, and each `koImmune: true`:
 they are the only routes to the wants and the umbrella, and attacks are on, so a punch must not strand a
-suspect, DL6),
-the board, a wine glass `a_wine_glass` to dust; HaX `ded_a_handler` as a phone NPC in this room's `npcs`; a
-hidden hostile doorman `ded_a_doorman`) → locked door (lockpick) → `a_cloakroom` (a locker holding two
-coats as notes items, Venn's and Ishikawa's, whose triggers read `!globalVars.a_lodge_suspicious`; Marsh's
-phone `a_marsh_phone` on a hook, whose `onPickup` sets `has_marsh_phone`; a note with the archive code; a
-hidden hostile lookout `ded_a_lookout`). `a_hall` → PIN door → `a_archive` (the visitor badge log, a
-`log_filter_terminal` with `logType: "vpn"` whose rows are the five guests' badge entries (archive for Venn
-and Ishikawa, lecture hall for Okafor and Delacroix, garden for Marsh) and whose single anomaly is a
-non-suspect row (a staff badge used twice at once), so flagging it completes the log without singling out a
-guest; the K packet lists the rows; a security monitor `a_camera`; a reading desk `a_reading_desk` with Okafor's
-notebook) → locked door (no key; opened by HaX's warned call) → `a_sanctum` (a hidden hostile acolyte
-`ded_a_acolyte`; an altar `a_altar`). The archive code comes from the cloakroom note, or from Venn once the
-player has seen her coat (her choice is gated on `se_intel_a_venn_ward_charm`: "You've been through my coat?
-Fine. The archive code is 2291.") and only while `!ded_a_ally_lost`. So the archive is never open before the
-cloakroom (DL8: a gated code counts as closed). Start inventory: lockpick, fingerprint kit, the player's
-phone (`phoneId: "player_phone"`, `npcIds: ["ded_a_handler"]`; HaX has the same `phoneId`). Okafor holds the
-brass key in `itemsHeld` (type `key`; only a KO drops it).
+suspect, DL6; each gets one tell when its charge passes `wary` and one wary opener, as Tomás has, §7.2),
+the board, a wine glass `a_wine_glass` to dust; HaX `ded_a_handler` as a phone NPC in this room's `npcs`,
+carrying `"unlockable": ["a_sanctum"]` (the server refuses an NPC's `#unlock_door` unless the room is in that
+NPC's `unlockable` and the player has met the NPC; a phone NPC listed in a room's `npcs` is met when that
+room loads); a hidden hostile doorman `ded_a_doorman` and a hidden hostile lookout `ded_a_lookout`) →
+locked door (lockpick) → `a_cloakroom` (a locker
+holding two coats as notes items, Venn's and Ishikawa's, whose triggers read
+`!globalVars.a_lodge_suspicious` and whose routes carry `closedBy: "a_lodge_suspicious"` (§4.2, DL7); Marsh's
+phone `a_marsh_phone` on a hook; a note with the archive code).
+Each coat's `text` names what it holds ("…her ward charm…"), and a `textVariants` entry `{ "condition":
+"globalVars.a_lodge_suspicious", "value": "The lining has been slit and the pockets turned out. Someone got
+here before you." }` replaces it, so after a wrong call the coat shows nothing it does not grant (§7.6).
+Once both coats are held, HaX says "Count what's left." (a bark on the second coat's grant). `a_hall` → PIN
+door → `a_archive` (the visitor badge log, a `log_filter_terminal` with `logType: "vpn"` whose rows are the
+five guests' badge entries (archive for Venn and Ishikawa, lecture hall for Okafor and Delacroix, garden for
+Marsh) and whose single anomaly is a non-suspect row (a staff badge used twice at once), so flagging it
+completes the log without singling out a guest; the K packet lists the rows; a security monitor `a_camera`
+showing the lecture hall feed (it stands in the archive, but the feed is where Okafor's pass puts her, so it
+places her nowhere else); a reading desk `a_reading_desk` with Okafor's notebook) → an RFID door
+(`lockType: "rfid"`, `requires: "a_sanctum_seal"`, no card with that id anywhere in the scenario, so no
+player tool opens it; HaX's "Go in" opens it with `#unlock_door:a_sanctum`; the validator's "no item opens"
+warning is expected, and an ERB comment says so; `lockedHint` shows only for key locks, so a door sign
+carries the hint) → `a_sanctum` (a hidden hostile acolyte `ded_a_acolyte`; an altar `a_altar`). The archive
+code comes from the cloakroom note, or from Venn once the player has seen her coat (her choice is gated on
+`se_intel_a_venn_ward_charm`: "You've been through my coat? Fine. The archive code is 2291.") and only while
+`!ded_a_ally_lost`. So the archive is never open before the cloakroom (DL8: a gated code counts as closed).
+Start inventory: lockpick, fingerprint kit, the player's phone (`phoneId: "player_phone"`, `npcIds:
+["ded_a_handler"]`; HaX has the same `phoneId`). Okafor holds the brass key in `itemsHeld` (type `key`; only
+a KO drops it). The brass key's `id` and `opens_lock` match no door's or container's `requires` in A: it is
+evidence only.
+
+The badge log rows use `logType: "vpn"` with explicit `logEntries`, mapped as `user` = badge holder, `ip` =
+the door (`ARCHIVE`, `LECTURE HALL`, `GARDEN`), `country` `UK`, `mfa` `YES`, `result` `ACCEPT`, `timestamp`
+the swipe time. The USER and TIME filters work on door rows; the COUNTRY/MFA/RESULT menus do not
+discriminate and are accepted for a test fixture only. A shipped mission with a door log adds a `badge` log
+type (backlog). Its `minigameData` follows `scenarios/sis02_energy`'s log filter field for field
+(`anomaly`, `threatIntel`, flag labels); the K packet lists any field it leaves out.
+
+The desk, the monitor and the altar are non-takeable, non-container objects of an existing plain type
+(`table`, `pc`) with `triggerOnInteract`, which fires before the type's own handling. An object with
+`triggerOnInteract` is never picked up, so a takeable source uses `onPickup` instead. Marsh's phone is a
+takeable `phone` item with no `phoneId`, `text`, `voice` or `npcIds`, so it opens no phone chat; its
+`onPickup.setVariable` sets `has_marsh_phone`. The glass `a_wine_glass` has `hasFingerprint: true`,
+`fingerprintOwner: "ded_a_marsh"`, `fingerprintDifficulty: "easy"`. Identification needs no reference
+sample and a wrong card can be retried, but an excellent lift logged as "unidentified" fires no
+`fingerprint_identified` and the glass cannot be dusted again, so the ring route can be lost (the hand
+check's glass-lost line). Every `hint` action in A has a `title` in the lodge's voice (§5.4).
 
 **Clue routes.**
 
@@ -2614,20 +2711,25 @@ brass key in `itemsHeld` (type `key`; only a KO drops it).
 | five `pass` facts | `t_a_badge_log` (archive, on the log filter's global) |
 | Okafor, Venn wants | bar staff (hall) |
 | Marsh, Ishikawa, Delacroix wants | intern (hall) |
-| Okafor `brass_key` | `{ "via": "object", "id": "a_camera" }`: the monitor's `triggerOnInteract` shows Okafor pocketing the key and grants the fact (archive; an object route, not a trigger); `t_a_key_drop`: `item_picked_up:key`, `where: { itemId: "brass_tesseract_key" }`, after a KO (room none) |
+| Okafor `brass_key` | `{ "via": "object", "id": "a_camera" }`: the monitor's `triggerOnInteract` shows Okafor pocketing the key on the lecture hall feed and grants the fact (archive; an object route, not a trigger); `t_a_key_drop`: `item_picked_up:key`, `where: { itemId: "brass_tesseract_key" }`, after a KO (room none); its actions also `set_global a_key_dropped` (declared false) |
 | Okafor `notebook` | the reading desk's `triggerOnInteract` (archive) |
-| Delacroix `umbrella` | bar staff (hall) |
-| Venn `ward_charm` | `t_a_coat_venn` (cloakroom, condition `!globalVars.a_lodge_suspicious`) |
-| Ishikawa `ward_charm`, `notebook` | `t_a_coat_ishikawa` (cloakroom, same condition) |
-| Marsh `sigil_ring` | `t_a_glass`: `fingerprint_identified:ded_a_marsh`, `where: { objectId: "a_wine_glass" }` (hall); her prints are on no other object (§7.7) |
+| Delacroix `umbrella` ("a folded umbrella") | bar staff (hall) |
+| Venn `ward_charm` | `t_a_coat_venn` (cloakroom, condition `!globalVars.a_lodge_suspicious`, `closedBy: "a_lodge_suspicious"`) |
+| Ishikawa `ward_charm`, `notebook` | `t_a_coat_ishikawa` (cloakroom, same condition and `closedBy`) |
+| Marsh `sigil_ring` | `t_a_glass`: `fingerprint_identified:ded_a_marsh`, `where: { objectId: "a_wine_glass" }` (hall); her prints are on no other object (§7.7). It is also the favour's `unlockFact`, so the glass is what opens Marsh's ask |
 | Marsh `burner_sim` | Marsh's favour only (errand room: cloakroom) |
 
 **Hand check, every order the map allows** (§4.3, pigeonhole step included). The hall is the only
 opening room; the cloakroom needs lockpicking; the archive needs the code, which comes only from the
-cloakroom note or from Venn after her coat; the favour needs the phone from the cloakroom. The locker is not
-locked, so in the cloakroom the player may take the coats (C), the phone (F, after handing it over), the code
-note (A), or any mix. So the reachable states are H, H+C, H+C+F, H+C+A, H+C+F+A, and without the coats H+A,
-H+F and H+F+A. Every one is in P10-A's conformance cases.
+cloakroom note or from Venn after her coat; the favour needs the phone from the cloakroom and the ring
+from the glass (her ask is gated on `a_marsh_sigil_ring`). The locker is not locked, so in the cloakroom
+the player may take the coats (C), the phone (F, after handing it over), the code note (A), or any mix. So
+the reachable states are H, H+C, H+C+F, H+C+A, H+C+F+A, and without the coats H+A, H+F and H+F+A (each F
+state with the glass dusted, which H includes). Every one is in P10-A's conformance cases, with the
+exact `byCount` and `decidedBy` lists `deduction/sim/` gives; the two P10-A must build first are H+C+A
+(Marsh `byCount` `[{ clue: "brass_key", how: "markedForced" }]`, the slot's first marked clue, `decidedBy`
+`count`; Okafor and Delacroix `card`) and H+C+F (Okafor `byCount` `[{ clue: "brass_key", how:
+"pigeonhole" }]`, `decidedBy` `count`; Marsh `card`).
 
 - **H** (the five wants, Delacroix's umbrella, Marsh's ring): hidden carry cells 6 (Okafor 2, Venn 1, Marsh
   1, Ishikawa 2) against 6 unseen carry clues; every "others" is at least 4, so nothing is forced. Venn:
@@ -2659,29 +2761,54 @@ H+F and H+F+A. Every one is in P10-A's conformance cases.
   open. No warning.
 - **After a wrong call** (`a_lodge_suspicious` closes the coats; DL6's check): Venn still clears once the
   key is seen (Keyholder F, Courier F, Devotee F). Ishikawa clears only through the favour (with Marsh's
-  cells known, her two hidden carry cells are the only place for the two charms). The favour stays
-  reachable, so DL6 passes, and the cost is real: the player must take the backfiring favour.
+  cells known, her two hidden carry cells are the only place for the two charms). While Marsh is standing,
+  the favour stays reachable (after the glass), so DL6 passes, and the cost is real: the player must take
+  the backfiring favour. If Marsh is also knocked out before her favour, Ishikawa can't be decided
+  (terminal state Okafor G, Venn C, Marsh U, Ishikawa U, Delacroix C); she still grades `right_clear` as
+  Not named (24 of 243 verdict combinations, every one a KO of Marsh plus a wrong call; `deduction/sim/`,
+  rechecked with the ring gate).
+- **The glass matters.** With the ask gated on the ring, the glass is needed in 102 of the 243 verdict
+  combinations (without it, after a wrong call, no favour, so Marsh and Ishikawa stay open). **Glass lost**
+  (an excellent lift logged as unidentified, so no ring and no favour): with no wrong call, Marsh is still
+  decided once the archive and the coats are done (`markedForced`, `decidedBy` `count`) and everyone is
+  decided. After a wrong call as well, the coats close and **both Marsh and Ishikawa stay undetermined**
+  (126 of 243 verdict combinations then leave someone unjudged undecidable); Ishikawa grades `right_clear`,
+  Marsh `missed_guilty` unless the player names her on a guess. This needs a lost lift and a wrong call
+  together; it is accepted for the fixture and DL6 does not model a lost lift (§7.7 needs no change).
 - Truth with every fact held: as the table. DL6: Okafor through the camera (no KO).
 
-**Favour.** Marsh, unlocked by `a_marsh_wants_promotion`, `room: "a_cloakroom"`, `item: "a_marsh_phone"`:
-"My phone is on a hook in the cloakroom and the attendant has gone home." The hand-over choice needs
+**Favour.** Marsh, unlocked by `a_marsh_sigil_ring` (from dusting the glass; §7.3's sample gate),
+`room: "a_cloakroom"`, `item: "a_marsh_phone"`: "My phone is on a hook in the cloakroom and the attendant has
+gone home." Her ink declares `marsh_asked` (false) for the sample's ask guard. The hand-over choice needs
 `has_marsh_phone`; its line carries `#deduction_favour`. She is guilty, so `onBackfire`: `reveal_hostiles
-{ npcs: ["ded_a_lookout"], room: "a_cloakroom" }` (the phone was her signal), `debriefLine` "You fetched
-Marsh's phone before checking her: it was how she signalled the others." HaX's opening call says "Don't do
-favours for anyone you haven't checked." The cloakroom holds no route to Marsh's own cells other than the
-favour, so the favour is the only way to her SIM.
+{ npcs: ["ded_a_lookout"], room: "a_hall" }` (the lookout in the hall, not the cloakroom: the phone was her
+signal) plus a `hint` with a `title` and the message "That phone just lit up. Who did she message?";
+`debriefLine` "You fetched Marsh's phone before clearing her: it was how she signalled the others."
+"Look inside the case" grants nothing (in particular not `burner_sim`). HaX's opening call, a
+`timedConversation` with `a_briefed` (§7.8), says "Don't do favours for anyone you haven't cleared." The
+cloakroom holds no route to Marsh's own cells other than the favour, so the favour is the only way to her
+SIM. The lookout is placed in `a_hall` with `behavior.initiallyHidden: true` and a `behavior.hostile` block
+(DL14).
 
 **Unique item.** The camera monitor `a_camera` grants the key fact (its `triggerOnInteract`); HaX's `eventMappings` on
 `global_variable_changed:se_intel_a_okafor_brass_key` (condition
-`globalVars.deduction_verdict_ded_a_okafor === ''`) opens the choice of §7.8, stored in `a_key_choice`:
+`globalVars.deduction_verdict_ded_a_okafor === ''`; `conversationMode: "phone-chat"`, §7.8) opens the choice of §7.8, stored in `a_key_choice` (declared `""`):
 "Confront her now. This can't be taken back." (`#verdict:accuse:ded_a_okafor`), "Have it taken off her at the door tonight. This can't be taken back." (`#verdict:act:ded_a_okafor`;
 acting on knowledge is a verdict, so it is graded `right_guilty`), or "Leave her be and watch where she goes"
-(no verdict; HaX says she still needs naming). The credits differ by `a_key_choice`. The KO route never
-triggers it.
+(no verdict; HaX says she still needs naming). The KO route never triggers it. The player can close the
+call before choosing, so HaX's hub re-offers it (§7.8): `+ {se_intel_a_okafor_brass_key and
+deduction_verdict_ded_a_okafor == "" and a_key_choice == ""} [About Okafor's key] -> key_seen`, and the
+same for the forced close: `+ {a_thrown_out and not deduction_closed} [They're onto me. Get me out.] ->
+thrown_out`. The credits differ by the key, one line each: "You faced Okafor down in the hall, key and
+all." (`a_key_choice === 'confront'`); "The key was taken off Okafor at the door." (`'seize'`); "You
+watched Okafor first, then named her." (`'follow' && deduction_outcome_ded_a_okafor === 'right_guilty'`);
+"You watched Okafor, and she walked out with the key." (`'follow' && … === 'missed_guilty'`); "The key came
+off Okafor in the hall." (`globalVars.a_key_dropped`). No separate "Okafor walked free" line.
 
 **Verdicts.** `allowed: ["accuse", "ko", "act"]`, `when: "anytime"`, `reveal: "now"`. Each suspect's ink has
-an accusation (§7.4). `closeHint`: "Everyone here has been dealt with. Call HaX when you're ready for the
-sanctum." The case closes through HaX's warned choice: "Once you go in, you can't come back out to question
+an accusation (§7.4). `closeHint`: "Every guest has a verdict. Call HaX when you're ready for the
+sanctum." `closeRoute`: "How this case closes: call HaX when you're ready for the sanctum. Anyone you
+haven't named stays free." The case closes through HaX's warned choice: "Once you go in, you can't come back out to question
 anyone. Anyone you haven't named stays free." with "Go in" (`#verdict_close #unlock_door:a_sanctum`) and
 "Not yet, I want to check something".
 
@@ -2690,45 +2817,57 @@ against you. Miss a cultist and they will be waiting at the ritual." Every wrong
 a_lodge_suspicious` (`cost: true`; the coat triggers read it). Venn's own `onWrongGuilty`: `lose_ally { npc:
 "ded_a_venn", global: "ded_a_ally_lost", text: "Venn won't help you now." }`. `escalation`: at 2 wrong,
 `reveal_hostiles { npcs: ["ded_a_doorman"], room: "a_hall" }`; at 3 wrong, `set_global a_thrown_out`
-(`cost: true`; HaX's `eventMappings` condition reads it and he rings with a warned close: "You've burned
+(`cost: true`; HaX's `eventMappings` condition reads it (`conversationMode: "phone-chat"`, §7.8) and he
+rings with a warned close: "You've burned
 the evening. Get out now?" with "Get out" carrying `#set_global:a_got_out:true #verdict_close` and "Not
 yet"; `a_got_out`, declared false, records that the player took the forced exit: a player who says "Not
 yet" and later closes through "Go in" still reaches the sanctum). `onRightGuilty`:
 `set_global a_ritual_weakened`. `onMissedGuilty`: `reveal_hostiles { npcs: ["ded_a_acolyte"], room:
 "a_sanctum" }`. `solvedTask`: `a_case_solved`; `scoreLine: true` (scoring is `tasks`). `onClose`:
 `set_global a_case_closed`. The ending has two ways in, so no close route strands the player (DL12): the
-altar's `confirm_action` in the sanctum ("End the evening? Anyone still standing here stays standing." /
-cancel = not yet), and, for the forced close, a trigger `t_a_thrown_out_end` on
+altar's `confirm_action` in the sanctum ("End the evening? Anyone you haven't named goes free.",
+`cancelLabel: "Not yet"`), and, for the forced close, a trigger `t_a_thrown_out_end` on
 `global_variable_changed:a_case_closed` (`where: { value: true }`, `condition: "globalVars.a_got_out"`;
 keyed on the exit actually taken, not on `a_thrown_out`, which stays true after "Not yet").
 Each completes `a_evening_over` and then sets `a_ending`. The music event with `credits` (one entry,
 `headerText: "CASE CLOSED"`) keys on `global_variable_changed:a_ending`, with lines for `a_ritual_weakened`,
 each `deduction_outcome_*` that is `missed_guilty`, each that is `wrong_guilty` ("Venn was thrown out of the
-lodge for nothing."), `a_got_out` ("You were thrown out before the ritual."), and `a_key_choice`. The
+lodge for nothing."), `a_got_out` ("You were thrown out before the ritual."), and the key lines above
+(`a_key_choice`, `a_key_dropped`). The
 conclusion aim's `conclusionScreen` is `{ "type": "bond_visualiser", "bondVisualiserOpts": { "headerText":
 "CASE CLOSED" } }`, and the scenario sets `"creditsOverlay": { "ticker": ["CASE CLOSED", "OPEN EVENING"] }`
 (DL9(h)), so no screen says "MISSION COMPLETE".
 
 Costs compared: a probe accusation loses the coats; a second brings the doorman; a third ends the evening
 early. Accusing all five pays all of that, loses Venn, and has every innocent named in the credits. A
-careful player who misses Marsh meets the acolyte. Deducing wins clearly.
+careful player who misses Marsh meets the acolyte. Deducing wins clearly. Stopping at the first guilty
+signal misses a cultist 93 % of the time (random players: 54.2 % name only Okafor, 38.7 % only Marsh,
+`deduction/sim/strategies.js` with the ring gate) and meets the acolyte; it costs about as much as accusing
+everyone, and both lose to deducing.
 
 **Bridges.** Each main script covers §11.6's checks and finishes inside 600 s; a long script may split into a second `JOBS` entry, which starts a fresh game and sets the state it needs from the console (grants, globals), as the `-wrong` scripts do; the `1b`/`3b` chain is hard-coded in `run-suite.sh` `job()` and is not open to T0 packets.
 
 - `bridge-deduction-a.jsonl` (`deduction-a:test_social_deduction_a`, a careful run, favour first). A0
-  baseline (three profile cards, counts with "found", five cards, all hidden, the three hidden foes hidden
-  and calm; Space and `E` inert with the board open; Tab order; Esc and Close). A1 hall: intern, bar staff,
-  glass; no nudge. A2 cloakroom by lockpick: the coats; nudges for Venn and Ishikawa only. A3 Marsh's
-  favour: the phone handed over, her pass and SIM cells shown at once, the lookout visible and hostile;
-  nudges for **Marsh and Okafor** (the count). Mark Okafor and Marsh guilty; reload; marks survive. A4 the
-  archive by the code from the note; the badge log; the reading desk; the camera grants the key and HaX's
-  choice opens; choose "Leave her be" (HaX says she still needs naming); nudge for **Delacroix** only. A5
-  accuse Okafor and Marsh: "Right call" toasts, outcomes written; no `closeHint` (three suspects have no
+  baseline (three profile cards, the Courier's `parts`, count lines under "Clues in this case (guilty or
+  not)" in the "<Label>: <n> in this case. Found: none yet." form, five cards, all hidden, the three hidden
+  foes hidden and calm; the stakes line in the pulp voice ("Stakes: a wrong call will change what you can do
+  next. They notice who is asking."); the `closeRoute` footer; Space and `E` inert with the board open; Tab
+  order; Esc and Close). A1 hall: intern, bar staff, the glass dusted (the ring; Marsh's ask now offered); no
+  nudge. A2 cloakroom by lockpick: the coats; nudges for Venn and Ishikawa only, each with "Check what's on
+  their card."; HaX's "Count what's left.". A3 Marsh's favour: the phone handed over, her pass and SIM cells
+  shown at once, the lookout visible and hostile in the hall, the titled hint "That phone just lit up. Who
+  did she message?"; nudges for **Marsh** ("Check what's on their card.": the favour revealed all her cells)
+  and **Okafor** ("Check the counts.": the pigeonhole on the brass key). Mark Okafor and Marsh guilty;
+  reload; marks survive. A4 the archive by the code from the note; the badge log; the reading desk; the
+  camera grants the key and HaX's choice opens; choose "Leave her be" (HaX says she still needs naming);
+  nudge for **Delacroix** only, with "Check what's on their card.". A5 accuse Okafor and Marsh: "Right call"
+  toasts, outcomes written; the `closeRoute` footer still shows and no `closeHint` (three suspects have no
   verdict). A6 HaX: "Not yet", then "Go in": the debrief after the call closes: Okafor and Marsh
   `right_guilty` with their "Why" lines (Okafor's names the brass key; Marsh's names her three marked clues);
   Venn, Ishikawa, Delacroix "Not named (innocent)" with theirs (Ishikawa "Courier: no, carries a ward charm",
   Delacroix "Courier: no, was in the lecture hall"); Finish; the overlay closes before the sanctum opens; no
-  acolyte. A7 the altar: "not yet", then confirm; credits under "CASE CLOSED" with the right lines, and no
+  acolyte. A7 the altar: "Not yet", then confirm; credits under "CASE CLOSED" with the right lines (the
+  key line "You watched Okafor first, then named her."), and no
   "MISSION COMPLETE" in the header, the ticker or the credits;
   `a_case_solved` and `a_evening_over` completed (in-page, `objectivesManager.taskIndex`; the T0 packet runs
   `verify-run.rb` on the game id). A8 reload after the end: the visualiser reopens with the neutral
@@ -2740,10 +2879,10 @@ careful player who misses Marsh meets the acolyte. Deducing wins clearly.
   with `{ npcId, wasFriendly: true }` from the console, reported as "exercised, not earned". A1 the hall:
   the intern, the bar staff and the glass (so Marsh's want and ring are held); then punch Venn once: the
   first-punch warning; KO her: `ko` verdict, "Wrong call", `ded_a_ally_lost`, `a_lodge_suspicious`. A2 the
-  cloakroom: the coats grant nothing. A3 accuse Delacroix: second wrong call, the doorman appears hostile.
+  cloakroom: the coats grant nothing and show the slit-lining `textVariants` text. A3 accuse Delacroix: second wrong call, the doorman appears hostile.
   A4 accuse Ishikawa: third wrong call, HaX rings with the warned "Get out" close; choose "Not yet"
   (`a_thrown_out` true, `a_got_out` false). A5 KO Okafor in the hall: `ko`, "Right call", the brass key
-  drops; picking it up grants the key fact; HaX's choice call does not open. A6 reload: verdicts, the
+  drops; picking it up grants the key fact and sets `a_key_dropped`; HaX's choice call does not open. A6 reload: verdicts, the
   doorman, Venn's absence all hold. A7 close through HaX's "Go in" without naming Marsh: the debrief first
   (Marsh `missed_guilty`, "The clue that would have settled it: burner SIM, from Marsh's favour"); Finish;
   `t_a_thrown_out_end` does not fire (`a_got_out` false) and no credits roll; the acolyte appears in the
@@ -2761,7 +2900,9 @@ careful player who misses Marsh meets the acolyte. Deducing wins clearly.
 **Proves:** all three profile types, each deciding someone; the pass slot clearing someone; more than one
 guilty; `not` (the charm) and a negative clause decided by a pass; the marked threshold; count elimination
 and the pigeonhole step (Okafor after the favour, Marsh after the archive); items held as evidence by KO;
-dusting; lockpicking and a PIN door; a favour with an errand, a unique yield and a backfire; the
+dusting that matters (the glass opens Marsh's ask); lockpicking and a PIN door; an NPC-only RFID door; a
+favour gated on a clue the player works for, with an errand, a unique yield and a backfire; the pulp
+voice; `closeRoute`; the
 unique-item choice from a sighting, with `accuse` and `act` options; accusation from the suspect's story and
 from a handler's call; KO with the first-punch warning; reveal now; per-suspect stakes; escalation at 2 and
 3 with a forced warned close; `lose_ally`; `reveal_hostiles` on both paths; a warned close; a story ending
@@ -2779,43 +2920,63 @@ the garage's RFID door, so the office alone no longer decides everyone.
 
 - Slots: `kit` "What they carry" (oneOrMore), `travel` "Where they have been" (exactlyOne), `alibi` "The
   night of the leak" (exactlyOne).
-- Clues: kit: `cult_burner` ✦ 1, `safenet_phone` 3, `field_kit` 2. travel: `arkham_trip` 2 (label "went to
-  the quarry site"), `no_arkham` 1 (label "never went to the quarry site"); the ids are internal and stay.
-  alibi: `verified_alibi` 2, `no_alibi` 1.
-- Profile **Sleeper**: `{ "any": [ { "has": "cult_burner" }, { "all": [ { "has": "arkham_trip" }, { "not": {
+- Clues: kit: `cult_burner` ✦ 1 (label "cult-issued burner", clause "carries a cult-issued burner"),
+  `safenet_phone` 3, `field_kit` 2. travel: `quarry_trip` 2 (label "went to the quarry site"),
+  `no_quarry_trip` 1 (label "never went to the quarry site"). alibi: `verified_alibi` 2 (label "verified
+  alibi"), `no_alibi` 1.
+- Profile **Sleeper**: `{ "any": [ { "has": "cult_burner" }, { "all": [ { "has": "quarry_trip" }, { "not": {
   "has": "verified_alibi" } } ] } ] }` "Carries a cult-issued burner (there is one), or went to the quarry
-  site and has no verified alibi for the night of the leak."
+  site and has no verified alibi for the night of the leak.", with `parts: { "join": "any", "items":
+  ["Carries a cult-issued burner (there is one)", "went to the quarry site and has no verified alibi for the
+  night of the leak"] }`. DL23 is quiet (each label is in the text).
 
-| Suspect | Kit | Travel | Alibi | Truth |
-|---|---|---|---|---|
-| Ahmed | safenet_phone, field_kit | went to the quarry | verified_alibi | clear |
-| Novak | cult_burner ✦, safenet_phone | went to the quarry | no_alibi | guilty: Sleeper (both branches) |
-| Baptiste | safenet_phone, field_kit | never went | verified_alibi | clear |
+| Suspect | Name (placeholder; P10-K-C may recast) | Kit | Travel | Alibi | Truth |
+|---|---|---|---|---|---|
+| Ahmed | Tariq Ahmed (he) | safenet_phone, field_kit | went to the quarry | verified_alibi | clear |
+| Novak | Irena Novak (she) | cult_burner ✦, safenet_phone | went to the quarry | no_alibi | guilty: Sleeper (both branches) |
+| Baptiste | Claire Baptiste (she) | safenet_phone, field_kit | never went | verified_alibi | clear |
+
+Facts: `c_ahmed_quarry_trip`, `c_novak_quarry_trip`, `c_baptiste_no_quarry_trip` (and `c_<id>_<clue>` for
+the rest). **Brief:** `scenario_brief` (shown on start): "Safe house. Three field contacts share this house
+with you. On the night of the leak, our network was passed to the cult. What to look for. Sleeper: <profile
+text>. Check what they carry, where they have been and where they were that night. Trust no one." It
+defines "sleeper" once (a contact who works for the cult while still trusted by us). HaX's opening call, a
+`timedConversation` with `c_briefed` (§7.8), repeats the profile in the same words and says nothing about
+how many. Each contact has a stated gender and pronoun (the table), which the ink uses.
 
 Kit cells 2, 2, 2: the layout gives nothing away.
 
 **Rooms.** `c_lounge` (start; Ahmed, Baptiste, the board; HaX as a phone NPC in this room's `npcs`; the
-exit phone `c_exit_phone`; a sign by the comms door, "Comms room: HaX opens and locks it remotely") → a
-locked door with no key anywhere (`lockType: "key"`, its key in no room or inventory; the player never goes
-in, so the empty room is never seen) → `c_comms` (a holding room the player never enters; contacts sent
-there leave the scene through `#remove_npc`). `c_lounge` → RFID door
+exit phone `c_exit_phone`; a sign by the comms door, "Comms room: HaX opens and locks it remotely") → an
+RFID door (`lockType: "rfid"`, `requires: "c_comms_seal"`, no card with that id anywhere in the scenario, so
+C's cloner cannot copy it and no player tool opens it; the validator's "no item opens" warning is expected,
+and an ERB comment says so; the player never goes in, so the empty room is never seen) → `c_comms` (a
+holding room the player never enters; contacts sent there leave the scene through `#remove_npc`).
+`c_lounge` → RFID door
 (keycard) → `c_bedroom` (Baptiste's kit bag in a drawer, lockpick, holding a notes item that also carries
 the office code). `c_lounge` → PIN door → `c_office` (Novak at the desk, holding her badge both in
 `itemsHeld` (so a KO drops it) and as `rfidCard: { "card_id": "c_novak_badge", "name": "Novak's badge",
 "rfid_protocol": … }` (the clone takes its name from `rfidCard`, `chat-helpers.js` `clone_keycard`; the m07
 Hollis pattern, `m07_architects_gambit/scenario.json.erb`); her ink offers an ungated "[Ask to see her
-badge]" choice whose line carries `#clone_keycard:c_novak_badge`, offered while she is in the scene, wary or
-not; her bag in a locked drawer, lockpick; Ahmed's locker, lockpick; the travel log in a PIN safe,
+badge]" choice, a sticky `+` choice (`clone_keycard` is not flushed on close), whose line carries
+`#clone_keycard:c_novak_badge`, offered while she is in the scene, wary or not; her bag in a locked drawer, lockpick; Ahmed's locker, lockpick; the travel log in a PIN safe,
 its code on a note under the desk). `c_lounge` → RFID door whose reader `requires` `c_novak_badge` →
 `c_garage` (the door log, a `log_filter_terminal` with `logType: "vpn"` whose rows are the garage door's
 entries for the night of the leak (Ahmed's and Baptiste's verified, Novak's 03:40 unexplained) and whose
 single anomaly is a non-suspect row (a maintenance badge out of hours), so completing it singles out no
-contact; the K packet lists the rows). So the garage needs Novak's badge cloned in the office first. Either
-contact can open the bedroom door with `#unlock_door` when asked.
+contact; the K packet lists the rows). So the garage needs Novak's badge cloned in the office first. Once
+the keycard has been revoked, Ahmed or Baptiste can open the bedroom door with `#unlock_door` when asked
+(each offer gated on `c_keycard_revoked`; each carries `"unlockable": ["c_bedroom"]`, and HaX lists any room
+his ink unlocks). The door log uses `logType: "vpn"` with explicit `logEntries`, mapped as A's badge log
+is (§9.2: `user` = badge holder, `ip` = the door, here `GARAGE`, `country` `UK`, `mfa` `YES`, `result`
+`ACCEPT`, `timestamp` the swipe time; the USER and TIME filters work, the other menus do not discriminate,
+accepted for a test fixture only; its `minigameData` follows `scenarios/sis02_energy` field for field).
 **The office code has two sources:** Baptiste's bag, and HaX, who offers it only once the keycard has been
 revoked (his choice is gated on `c_keycard_revoked`), so a wrong call never strands the office. Start
-inventory: lockpick, fingerprint kit, RFID cloner, keycard `c_keycard`, the player's phone (`phoneId:
-"player_phone"`, `npcIds` naming HaX, who has the same `phoneId`).
+inventory: lockpick, RFID cloner, keycard `c_keycard` (`type: "keycard"`, not `key`, which DL14 rejects for
+`remove_item`, with the card data the bedroom reader requires), the player's phone (`phoneId:
+"player_phone"`, `npcIds` naming HaX, who has the same `phoneId`). No fingerprint kit: nothing in C is
+dusted.
 
 **Clue routes** (third parties and records only; a contact shows only what can be seen).
 
@@ -2823,64 +2984,136 @@ inventory: lockpick, fingerprint kit, RFID cloner, keycard `c_keycard`, the play
 |---|---|
 | Ahmed `safenet_phone` | Ahmed's ink, "show me your kit" (lounge) |
 | Ahmed `field_kit` | `t_c_ahmed_locker` (office) |
-| Baptiste `safenet_phone` | Baptiste's ink (lounge) |
+| Baptiste `safenet_phone` | Baptiste's ink, "show me your kit" (lounge) |
 | Baptiste `field_kit` | `t_c_baptiste_bag` (bedroom) |
 | Novak `cult_burner` | `t_c_novak_bag` (office) |
-| Novak `safenet_phone` | Novak's ink (office) |
-| Ahmed `arkham_trip` | Baptiste's ink, gossip with an influence cost (lounge); `t_c_travel_log` (office safe) |
-| Novak `arkham_trip`, Baptiste `no_arkham` | `t_c_travel_log` (office) |
+| Novak `safenet_phone` | Novak's ink, "show me your kit" (office: "This is all I carry") |
+| Ahmed `quarry_trip` | `t_c_travel_log` (office safe) |
+| Novak `quarry_trip` | `t_c_travel_log` (office) |
+| Baptiste `no_quarry_trip` | Ahmed's ink, gossip with an influence cost (lounge): "Baptiste never left the house that week" |
 | Ahmed, Baptiste `verified_alibi`; Novak `no_alibi` | `t_c_door_log` (garage log filter, on its global) |
-| Novak `no_alibi` | also `t_c_badge`: `card_emulated` with `where: { cardName: "Novak's badge", success: true }` (true only at a reader that takes her card, the garage door; the payload has no reader id, `rfid-minigame.js:226-233`), `room: "c_garage"`. `t_c_badge`'s actions also show a `hint`, "Reader: last used 03:40 with this badge." (nothing in the engine shows a reader's last use), and the door log inside lets the player compare |
+| Novak `no_alibi` | also `t_c_badge`: `card_emulated` with `where: { cardName: "Novak's badge", success: true }` (true only at a reader that takes her card, the garage door; the payload has no reader id, `rfid-minigame.js:226-233`), `room: "c_garage"`. `t_c_badge`'s actions also show a `hint` with `"title": "Garage reader"`, "Reader: last used 03:40, the night of the leak, with this badge." (nothing in the engine shows a reader's last use), and the door log inside lets the player compare |
+
+Each "show me your kit" has its own line. The gossip is a third party's word (Ahmed on Baptiste), the only
+route to Baptiste's travel cell, and changes a status in 90 of 648 reachable states (`deduction/sim/`).
+Novak's "show me your kit" is flavour: it grants her `safenet_phone` cell, which no other route gives, but
+the cell never changes a status (her bag decides her; 0 of 648 states).
 
 **Hand check, every order the map allows.** Opening rooms: `c_lounge`, plus `c_bedroom` (its door takes
 the start keycard; DL8); the comms room is never opened by the player and holds no route. Baptiste's kit
-bag is in a lockpick drawer, which is not open from the start, so his field kit is **not** an opening fact.
+bag is in a lockpick drawer, which is not open from the start, so her field kit is **not** an opening fact.
 Closed at the start: the office (its code is in that locked drawer, or, after a wrong call, from HaX on a
 gated choice) and the garage (its reader takes only Novak's badge, cloned in the office). So the states are
 O, O+bag, O+bag+office (with or without the clone), and O+bag+office+garage; and after a wrong call the
 same with the office reached through HaX, with or without the bag.
 
-- **O** (Ahmed's safenet, Baptiste's safenet, Ahmed's trip): hidden kit cells Ahmed 1, Novak 2, Baptiste 1
-  against burner, one safenet, two field kits. Novak: burner unseen 1 against 2 other hidden kit cells → U.
-  Ahmed: burner U; trip T, alibi hidden (2 verified unseen against 2 other hidden alibi cells) → U.
-  Baptiste: burner U (3 other hidden kit cells); trip unseen 1 against Novak's 1 hidden travel cell → U.
-  **0 decided, 3 open. DL8 passes.**
-- **O+bag** (Baptiste's field kit too): Baptiste's kit shown, burner F; trip still U → U. Ahmed and Novak
-  as in O. **0 decided, 3 open.**
+- **O** (Ahmed's safenet, Baptiste's safenet, and Ahmed's gossip: Baptiste never went): hidden kit cells
+  Ahmed 1, Novak 2, Baptiste 1 against burner, one safenet, two field kits. Baptiste: trip F (her travel
+  cell shows never went); burner unseen 1 against 3 other hidden kit cells → U. Ahmed and Novak: their
+  travel cells are the only hidden ones left for the two quarry trips (2 > 1), so each `has quarry_trip` is
+  T by the pigeonhole step; burner U, alibi hidden (2 verified unseen against 2 other hidden alibi cells)
+  → U. **0 decided, 3 open. DL8 passes.**
+- **O+bag** (Baptiste's field kit too): Baptiste's kit shown, burner F, trip F → **clear**. Ahmed and
+  Novak as in O. **1 decided, 2 open.**
 - **O+bag+office** (with or without cloning the badge, whose clue comes only at the garage; also O+office
-  after a wrong call, without the bag): Novak's bag → **guilty**; Baptiste never went → **clear** (the burner
-  is seen on Novak, so his `has cult_burner` is F by count even with his bag unopened); Ahmed U (alibi
-  hidden: 2 verified unseen against Baptiste's and Novak's 2 hidden alibi cells). **2 decided, 1 open.**
+  after a wrong call, without the bag): Novak's bag → **guilty**; Baptiste **clear** (with the bag
+  unopened, the burner is seen on Novak, so her `has cult_burner` is F by count); Ahmed U (kit shown,
+  burner F; trip T; alibi hidden: 2 verified unseen against Baptiste's and Novak's 2 hidden alibi cells).
+  **2 decided, 1 open.**
 - **O+bag+office+garage**: the door log and the badge decide Ahmed. Everyone decided.
+- **Without the gossip** (Ahmed knocked out, sent to wait or released before it): Baptiste's travel cell
+  stays hidden, and the travel log's two quarry trips (Ahmed's and Novak's) use up the count, so her `has
+  quarry_trip` is F by count and she is still decided once the office is open. The gossip changes a status
+  in 90 of 648 reachable states (`deduction/sim/`).
 - **Novak sent to wait before her badge is cloned** (office reached, burner seen, the wait line chosen):
   her wait line hands the badge over first (`#give_item` of the badge, "Leave your badge with me", then
   `#remove_npc`, §9.3 Verdicts), so the player holds the real card and the garage still opens. The real
   card opens the reader without a `card_emulated` event, so `t_c_badge` does not fire; the door log inside
   still grants Novak's no-alibi and decides Ahmed.
-- DL8's single-room warning (two closed rooms hold routes): the opening facts plus the office leave Ahmed
-  open; plus the garage alone (the lint's per-room check) leave all three open (the door log settles the
-  alibis, but every kit is still partly hidden, so each `has cult_burner` is U and Novak's trip is U). No
-  warning.
+- DL8's single-room warning (closed places holding routes: the office, the garage, and the bedroom drawer,
+  a closed container in an opening room, §8): the opening facts plus the office leave Ahmed open; plus the
+  garage alone (the lint's per-room check) decide only Novak (no alibi, and her quarry trip T by the
+  pigeonhole) and leave Ahmed and Baptiste open (every kit still partly hidden, so each `has cult_burner` is
+  U); plus the drawer alone clear Baptiste and leave Ahmed and Novak open. No warning.
 - **After a wrong call** (the keycard removed, `c_keycard_revoked` set): the bedroom needs a contact; the
-  office opens through HaX's code; the garage still opens with Novak's cloned badge (or the badge she left). Baptiste still clears
-  through the travel log, Ahmed through the door log, Novak through her bag. DL6 passes.
+  office opens through HaX's code; the garage still opens with Novak's cloned badge (or the badge she left).
+  Baptiste still clears through her never-went cell (the gossip) or, without it, by count once the travel
+  log is read; Ahmed through the door log, Novak through her bag. DL6 passes.
+- **Released or still waiting.** A contact sent to wait is gone from the scene whether they are then
+  released or locked in, so the worst case for routes is "sent at the start". Their own ink routes go
+  (Ahmed's safenet and the gossip; Baptiste's safenet; Novak's safenet and the badge clone, though her wait
+  line hands over the badge first), and so does their door help (the bedroom's `#unlock_door` after a wrong
+  call needs a contact still in the lounge). A released or waiting Ahmed takes the gossip with him; Baptiste
+  is then decided by count once both quarry trips are seen in the travel log. Worked for every set of
+  contacts sent (released, locked or not), with every set of KOs, with and without a wrong call (125
+  combinations: none, KO, sent and locked, sent and not locked, sent and released, per contact;
+  `deduction/sim/`): every terminal state decides every contact still without a verdict. With nobody left
+  to open the bedroom after a wrong call, only Baptiste's field kit and the code copy in her bag are lost;
+  HaX gives the code, and Baptiste is decided by the travel log's count. DL6 passes.
+- **Conformance sets** (P10-A builds each from `deduction/sim/`): O (all three open), O+bag (Baptiste
+  clear), O+bag+office (Novak guilty, Baptiste clear, Ahmed open), O+bag+office+garage (all decided),
+  O+office (the DL8 single-room set and the after-a-wrong-call set without the bag: Novak guilty, Baptiste
+  clear, Ahmed open) and O+garage (Novak guilty, Ahmed and Baptiste open).
+- **Grading a release.** A released innocent is "Not named (innocent)", `right_clear`, so a careful
+  player who sends Ahmed too early and releases him still gets every call right and `c_case_solved`.
+  Releasing Novak is `missed_guilty`: `c_sleeper_escaped` at close and the solved task skipped.
 - Truth as the table. DL6: no tamper; every cell has a route that needs no KO.
 
-**Verdicts.** `allowed: ["ko", "act"]`, `when: "anytime"`, `reveal: "end"`. `closeHint`: "Everyone has been
-dealt with. Use the exit phone when you're ready to leave." **Act:** each contact's ink offers "[Ask them to
-wait in the comms room. You can't call this back.]" while `!c_comms_locked`; it sets that contact's own
-`c_waiting_<id>` and runs `#remove_npc`; Novak's line first hands over her badge ("Leave your badge with
+**Verdicts.** `allowed: ["ko", "act"]`, `when: "anytime"`, `reveal: "end"`. `closeHint`: "Every contact
+has a verdict. Use the exit phone when you're ready to leave." `closeRoute`: "How this case closes: use
+the exit phone in the lounge. Anyone you haven't named stays on as a trusted contact." **Act:** each
+contact's ink offers "[Ask <name> to wait in the comms room. <He or she> won't be back to help.]" (one
+literal choice per contact, Ahmed "he", Novak and Baptiste "she") while `!c_comms_locked`; it sets that
+contact's own `c_waiting_<id>` and runs `#remove_npc`; `<id>` is the full suspect id
+(`c_waiting_ded_c_ahmed`, `c_waiting_ded_c_novak`, `c_waiting_ded_c_baptiste`), each declared false, as is
+`c_released_<id>` for the same three ids. Novak's line first hands over her badge ("Leave your badge with
 me." `#give_item` of the badge, then `#remove_npc`), because `#remove_npc` drops nothing from `itemsHeld`
 (`npc-game-bridge.js` `removeNpcFromScene`) and her badge is the garage's only key. Any number of contacts
 can be sent. The lock is a HaX choice, "Lock
 the comms room with whoever is waiting inside", offered only while some `c_waiting_<id>` is true and
 `!c_comms_locked` (so it can never be used on an empty room or twice) with a "Not yet" beside it; its line
-carries `#set_global:c_comms_locked:true`.
+carries `#set_global:c_comms_locked:true`. Before the choice, HaX says who is inside, one fixed line per
+waiting contact ("HaX: Ahmed's in there." conditioned on `c_waiting_ded_c_ahmed`, and the same for Novak
+and Baptiste).
+
+**Release** (user Q6, 2026-10-22). While `c_waiting_<id>` is true and `!c_comms_locked`, HaX's hub
+offers "[Let <name> go]" for that contact. It leads to a warned knot:
+
+```ink
++ {c_waiting_ded_c_ahmed && not c_comms_locked} [Let Ahmed go] -> release_ahmed
+=== release_ahmed ===
+HaX: I open the back door, he walks, and he's done with us. You won't get him back on this. Sure?
++ [Let him go. I can't take this back.]
+    HaX: Done. He's out of it. #set_global:c_waiting_ded_c_ahmed:false #set_global:c_released_ded_c_ahmed:true
+    + + [Go on] -> hax_hub
++ [Not yet] -> hax_hub
+```
+
+(the same for Novak and Baptiste, each a literal line). HaX is a phone chat, so the "Go on" choice lets
+the tags run before the hub evaluates its guards again (§5.3 timing note): the release is no longer
+offered and, if nobody else waits, neither is the lock. With `c_waiting_<id>` false, neither the
+`c_comms_locked` triggers nor the exit phone give that contact an `act` verdict, so they close as kind
+`none`. They stay removed (`#remove_npc` persists server-side, `npc-game-bridge.js` `removeNpcFromScene`,
+`RoomStateSync.removeNpcFromScene`). A release does not count as a wrong call: no keycard loss, no
+`wrongCount`, no pull-out. The debrief notes it through `debrief.notes` (§4.1):
+
+- Ahmed, `globalVars.c_released_ded_c_ahmed`: "Sending Ahmed to wait was a call against him. Letting him go
+  kept him out of the comms room, but he has left the network."
+- Baptiste, `globalVars.c_released_ded_c_baptiste`: "Sending Baptiste to wait was a call against her.
+  Letting her go kept her out of the comms room, but she has left the network."
+- Novak, `globalVars.c_released_ded_c_novak`: "You sent Novak to wait, then let her go."
+
+These hold whatever the evidence showed when the player sent them, which the engine does not record. Two
+more notes key on outcomes (§4.1): Ahmed on `globalVars.deduction_outcome_ded_c_ahmed === 'wrong_guilty'`,
+"The profile needs both: the trip and no alibi. Being somewhere suspicious isn't enough."; Novak on
+`globalVars.deduction_outcome_ded_c_novak === 'missed_guilty'`, one line on her lie by omission (she showed
+her kit and left out the burner; P10-K-C words it).
+
 Three `once` triggers on `global_variable_changed:c_comms_locked`, each with `condition:
 "globalVars.c_waiting_<id>"`, run `{ "type": "verdict", "suspect": "<id>", "kind": "act" }`. **KO:** punch any
-contact. **Close:** the exit phone (lounge) is a `confirm_action` ("Call extraction and leave? Anyone waiting
-in the comms room is locked in; anyone else you haven't dealt with stays in the field."; cancel is "not
-yet") with `onConfirm: [{ "type": "set_global", "key": "c_leaving", "value": true }, { "type": "set_global",
+contact. **Close:** the exit phone (lounge) is a `confirm_action` ("Call extraction and leave? Anyone in the
+comms room is locked in. Everyone else stays on as a trusted contact.", `cancelLabel: "Not yet"`; the text
+is static, so it keeps this general wording and cannot name who is inside) with `onConfirm: [{ "type": "set_global", "key": "c_leaving", "value": true }, { "type": "set_global",
 "key": "c_comms_locked", "value": true }, { "type": "verdict_close" }]`, so a contact sent to wait is always
 judged before the close, nobody is lost without a verdict, and HaX's pull-out call cannot ring during the
 close (its condition reads `!globalVars.c_leaving`). The exit is never behind a locked door.
@@ -2891,35 +3124,58 @@ but not why; the debrief explains." `onWrongGuilty` (every innocent): `remove_it
 text: "HaX revokes your safe-house keycard.", "at": "verdict" }`, `set_global c_keycard_revoked` (`"at":
 "verdict"`; HaX's office-code choice reads it), and `set_global c_hax_trust_down` (credits). `escalation`:
 at 2 wrong, `set_global c_pull_out` (`cost: true`, **`"at": "verdict"`**, so it fires in play under `reveal:
-"end"`; HaX's `eventMappings` on it has `condition: "globalVars.c_pull_out && !globalVars.c_leaving"` and he
+"end"`; HaX's `eventMappings` on it has `condition: "globalVars.c_pull_out && !globalVars.c_leaving"`
+(`conversationMode: "phone-chat"`, §7.8) and he
 rings: "You've turned on two of our own. Get out now?" with "Get out" carrying the tags
 `#set_global:c_leaving:true #set_global:c_comms_locked:true #verdict_close`, and "Not yet") and `set_global c_network_scattered` (credits:
-"The network scattered."; it may wait for close).
+"The network scattered."; it may wait for close). After "Not yet", HaX's hub keeps the choice "About
+getting out." (gated on `c_pull_out and not c_leaving and not deduction_closed`), which returns to the same
+warned knot (§7.8's re-offer); HaX's "Not yet" reply promises no timer: "Then I'll be here when you're
+ready to go.".
 `onMissedGuilty`: `set_global c_sleeper_escaped`. `solvedTask`: `c_case_solved`. `onClose`: `complete_task
 c_extracted`, `set_global c_ending`; the music event with `credits` keys on `c_ending`, with lines for
-`c_sleeper_escaped`, `c_hax_trust_down` and `c_network_scattered`, and `headerText: "EXTRACTED"`.
+`c_sleeper_escaped`, `c_hax_trust_down` and `c_network_scattered`; one line per contact taken down,
+"<Full name> was taken down for nothing.", with `condition: "globalVars.deduction_outcome_ded_c_<id> ===
+'wrong_guilty'"` (Ahmed, Baptiste); and one line per released innocent, "<Full name> has left the
+network.", with `condition: "globalVars.c_released_<id>"` (Ahmed, Baptiste; Novak's release is already the
+escape line); and `headerText: "EXTRACTED"`.
 `conclusionScreen` has `bondVisualiserOpts.headerText: "EXTRACTED"`, and the scenario sets
-`"creditsOverlay": { "ticker": ["EXTRACTED", "SAFE HOUSE"] }` (DL9(h)).
+`"creditsOverlay": { "ticker": ["EXTRACTED", "SAFE HOUSE"] }` (DL9(h)). `debrief.closingLine`: "Novak's bag
+held the burner. The garage log showed her badge at 03:40, and a badge can be copied in seconds; it counted
+against her only because nothing put her anywhere else. The door log cleared Ahmed, and Baptiste never
+went to the quarry site." (static, so it must be true on every run: Ahmed's alibi has no route but the door
+log, and Baptiste's clear rests on her travel, whether the player heard it from Ahmed or worked it out from
+the travel log's count; `deduction/sim/` shows both).
 
 Knocking out all three at the start catches the sleeper but loses the keycard, brings HaX's pull-out, names
 two innocents taken down in the credits, scatters the network and costs the solved task: visibly worse than
 a careful run.
 
+C has one guilty suspect and "Not named" grades as `right_clear`, so stopping at the first guilty signal is
+always right and the garage's RFID and log-filter puzzles never change the outcome; only not knowing the
+guilty count sends the player there (the brief stays silent on it, §3.1).
+
 **Bridges.** Each main script covers §11.6's checks and finishes inside 600 s.
 
 - `bridge-deduction-c.jsonl` (`deduction-c:test_social_deduction_c`). C0 baseline: stakes line "The stakes
   are not known.", no `briefText`, no nudge lines anywhere in the run; Space and `E` inert; Tab order; Esc
-  and Close. C1 kits and gossip; the bedroom bag (the office code); mark Novak undecided and Ahmed clear;
-  reload; marks survive. C2 the office: Novak's bag, the locker, the safe; clone Novak's badge and present
-  the copy at the garage reader, which opens: the no-alibi clue; C3 the garage door log. C4 ask Novak to wait in the
-  comms room (the choice says it can't be called back); HaX offers the lock only now; lock it: `act`
-  verdict, no outcome shown; HaX no longer offers the lock. Reload: the `act` verdict and the marks hold, no
-  outcome shown. C5 the exit phone: "not yet",
-  then confirm: debrief (Novak `right_guilty` with "Sleeper: yes, carries a cult-issued burner" (the first T
-  branch of the `any`); Ahmed and Baptiste "Not named (innocent)" with "Sleeper: no, no cult-issued burner;
-  verified alibi" and "Sleeper: no, no cult-issued burner; never went to the quarry site");
-  Finish; credits under "EXTRACTED", without the escape line; no "MISSION COMPLETE" in the header, ticker or
-  credits.
+  and Close; the `closeRoute` footer. C1 kits and Ahmed's gossip (Baptiste never went; the choice charges
+  Ahmed's influence); the bedroom bag (the office code); mark Novak undecided and Ahmed clear; reload;
+  marks survive. C2 the office: Novak's bag, the locker, the safe; clone Novak's badge and present the copy
+  at the garage reader, which opens: the no-alibi clue and the "Garage reader" hint; C3 the garage door log.
+  C3b ask Ahmed to wait ("Ask Ahmed to wait in the comms room. He won't be back to help."); HaX's hub offers
+  "Let Ahmed go" and names him in the comms room ("Ahmed's in there."); "Not yet", then "Let Ahmed go" →
+  "Let him go. I can't take this back." → "Go on": `c_waiting_ded_c_ahmed` false, `c_released_ded_c_ahmed`
+  true, no verdict on Ahmed, the lock choice not offered (nobody waits); reload: the release holds, Ahmed is
+  still gone, the release is not offered. C4 ask Novak to wait in the comms room (the choice says she won't
+  be back); HaX offers the lock only now and names her inside; lock it: `act` verdict, no outcome shown;
+  HaX no longer offers the lock. Reload: the `act` verdict and the marks hold, no outcome shown. C5 the exit
+  phone: "Not yet", then confirm: debrief (Novak `right_guilty` with "Sleeper: yes, carries a cult-issued
+  burner" (the first T branch of the `any`); Ahmed and Baptiste "Not named (innocent)" with "Sleeper: no, no
+  cult-issued burner; verified alibi" and "Sleeper: no, no cult-issued burner; never went to the quarry
+  site"; Ahmed's card carries his release note); `c_case_solved` completed; Finish; credits under
+  "EXTRACTED", with "Tariq Ahmed has left the network." and without the escape line; no "MISSION COMPLETE"
+  in the header, ticker or credits.
 - `bridge-deduction-c-wrong.jsonl` (`deduction-c-wrong:test_social_deduction_c`). Open nothing first. C1 KO
   Ahmed: `ko` verdict, no outcome shown, the keycard gone from the inventory and still gone after a reload
   (server remove); HaX now offers the office code. C2 KO Baptiste: second wrong call, HaX's pull-out call
@@ -2927,11 +3183,16 @@ a careful run.
   without cloning her badge first: she leaves the badge (now in the inventory); the garage reader opens with
   it; the door log. Then use the exit phone without locking: the confirm sets `c_leaving`, locks the comms room, Novak gets her
   `act` verdict, HaX does not ring, and the case closes (no softlock: the exit is in the lounge). Debrief: Ahmed and Baptiste `wrong_guilty`,
-  Novak `right_guilty`; Finish; `c_case_solved` skipped; credits with the trust, network lines.
+  Novak `right_guilty`; Ahmed's card carries "The profile needs both: the trip and no alibi. Being somewhere
+  suspicious isn't enough."; Finish; `c_case_solved` skipped; credits with the trust, network lines and both
+  "<Full name> was taken down for nothing." lines (Ahmed's and Baptiste's). With Ahmed out before his gossip,
+  Baptiste is decided by the travel log's count (the sim's C-wrong replay).
 
 **Proves:** `any` containing `all` with `not`; KO and act as the only verdict routes; `verdict` from a
 trigger, for any number of contacts; `remove_item` with server persistence and an `at: "verdict"` override
-under `reveal: "end"`; escalation with a forced warned close; hidden stakes and `twistNote`; RFID cloning and
+under `reveal: "end"`; escalation that offers a warned close (declining it leaves the exit phone and a
+standing HaX choice); a one-way release of a waiting contact, and an authored debrief note keyed on a
+global; a third party's paid gossip that decides someone; hidden stakes and `twistNote`; RFID cloning and
 emulation at a reader that takes only that card, a PIN door and a log filter as sources; an escalation step
 with `at: "verdict"` under `reveal: "end"`; DL8 counting a door the start keycard opens; a second
 source for a key code after a wrong call; nudge off; credits conditions and a neutral conclusion header.
@@ -2956,7 +3217,16 @@ keeps the set piece moving and makes leaving early a chosen risk against thoroug
 
 Counts: `archive_pass` 2, `lecture_hall` 2, `garden` 1; `wants_codex` 2, the other wants 1; `ward_charm` 2,
 `notebook` 2, `brass_key`, `sigil_ring`, `burner_sim`, `umbrella` 1. Carry cells: guilty 1, 2, 2;
-innocents 2, 1: the layout gives nothing away.
+innocents 2, 1: the layout gives nothing away. The clue ids D shares with A take A's labels and clauses
+(§9.2), so DL23 is quiet on the same profile text. D sets `markedLabel: "cult sign"`, and the brief says:
+"Some things carry the cult's sigil: wanting the Codex or a post in the Archive, a sigil ring, a burner
+SIM, the brass key. The case board shows them as ✦ cult sign." and "The cult recruits the ambitious: it
+promises advancement." In D the carry slot means "brought on the train": the shredded document reads
+"Platform kiosk, tonight, 20:40. One ward charm on red cord. Sold to M. Chen."; `d_chen_charm` reads "Mei
+Chen brought a ward charm on the train."; `d_sato_notebook` reads "Akiko Sato brought a notebook on the
+train: it was handed in to lost property from her seat, 1A. It's the only bag Sato brought aboard." (names
+are P10-K-D's to confirm against the cast). `deduction_decidable_*` is declared for the five suspects (the
+nudge is on, DL13).
 
 **People besides the suspects.** The steward `ded_d_steward` (car 1, a witness with influence, three clue
 topics and a kind word), the conductor `ded_d_conductor` (car 4, a witness with four topics), both
@@ -2965,31 +3235,49 @@ the conductor the only route to de Vries's and Volkov's passes and the only reco
 unwarned punch must not leave the player to guess, DL6), and the guard `ded_d_guard`,
 a phone NPC in `d_car1`'s `npcs` (registered at the start, so its mappings are live before the carriages
 load), whose `eventMappings` on `global_variable_changed:d_stop_<n>` use `unlockDoor` for the next
-carriage (`systems/npc-manager.js:675`, handled at `:877-878`). Start inventory: lockpick (the
-briefcase) and fingerprint kit (the glass); no NPC gives either.
+carriage (`systems/npc-manager.js:675`, handled at `:877-878`). Each carriage `d_car2`–`d_car5` is
+`locked: true`, `lockType: "rfid"`, `requires: "d_door_release"`, a card no item declares, so neither the
+lockpick nor a code opens it (the validator's "no item declares" warning is expected, as for m09's
+restricted stacks). Per stop the guard has: `global_variable_changed:d_stop_<n>` (`value === true`,
+`onceOnly`, `unlockDoor`); `door_unlock_attempt` with `data.connectedRoom === '<car>' &&
+globalVars.d_stop_<n>` (`unlockDoor`, `cooldown: 0`); `game_loaded` with `globalVars.d_stop_<n>`
+(`unlockDoor`), as m09 does; and a bark on `door_unlock_failed:<car>`: "That door stays shut till the next
+stop. Wait by it if you're in a hurry." Mapping conditions take `&&` only: one mapping per alternative,
+never `||`. Start inventory: a phone (`type: "phone"`, `phoneId: "player_phone"`, `npcIds:
+["ded_d_guard"]`; the guard's `phoneId` matches), a lockpick (the briefcase) and a fingerprint kit (the
+glass); no NPC gives either tool. The steward and the conductor each get one tell when a charge passes
+`wary` and one wary opener (§7.2). D's `reports` threshold exists only to keep DL12 quiet; it cannot be
+reached (the lowest influence is −30) and nothing reads `ded_d_<w>_reported`. D has no witness-report
+tamper.
 
-**Clue routes.** The three fadable sources (the rack label, Chen's coat, de Vries's phone) are notes
-pickups whose own text does not state the clue (§7.6): the label reads "Reserved: S. Sato, seat 4", the
-coat's note is a cloakroom ticket, the phone's note "Locked phone"; the clue is in the fact the trigger
-grants, so a faded source can still be read without contradicting "Evidence destroyed".
+**Clue routes.** The three fadable sources (the rack label, Chen's coat, de Vries's phone) use §7.6's
+alternative: each is a non-takeable object whose `triggerOnInteract` sets `d_rack_checked` /
+`d_coat_checked` / `d_phone_checked` (declared false); `t_d_rack` etc. key on
+`global_variable_changed:<g>` (`where: { value: true }`, `once`, `condition:
+"!globalVars.deduction_faded_<f>"`) and grant the fact; a twin trigger with the opposite condition shows a
+titled hint ("The label has been torn off the rack." / "The coat pocket has been turned out." / "The phone
+has gone from the seat."). The objects' own text does not state the clue (the label reads "Reserved: S.
+Sato, seat 4"), so a faded source never contradicts "Evidence destroyed". Chen's notebook, Volkov's charm
+and Mensah's umbrella are shown, not claimed: the `#grant_fact` sits on a `Narrator:` line describing what
+the player sees (§7.1).
 
 | Fact | Car | Routes |
 |---|---|---|
-| `d_sato_pass` (archive) | 1 | `t_d_rack` (the luggage rack's label, a notes pickup; `condition: "!globalVars.deduction_faded_d_sato_pass"`, `closedBy`); the conductor (car 4) |
+| `d_sato_pass` (archive) | 1 | `t_d_rack` (the luggage rack's label, a non-takeable object, on `d_rack_checked`; `condition: "!globalVars.deduction_faded_d_sato_pass"`, `closedBy`); the conductor (car 4: Sato "came from the Archive reading room") |
 | `d_sato_want` (codex ✦) | 1 | the steward |
 | `d_chen_want` (codex ✦) | 1 | the steward |
 | `d_mensah_want` (peace) | 1 | the steward |
 | `d_chen_pass` (archive) | 2 | Chen's ticket on the table (`triggerOnInteract`) |
-| `d_chen_charm` (ward) | 2 | `t_d_coat` (Chen's coat, a notes pickup, gated, `closedBy`); `t_d_shred` (a `shredded-document` in car 3, on its global) |
+| `d_chen_charm` (ward) | 2 | `t_d_coat` (Chen's coat, a non-takeable object, on `d_coat_checked`, gated, `closedBy`); `t_d_shred` (a `shredded-document` in car 3, on its global) |
 | `d_chen_notebook` | 2 | Chen's ink, "what are you reading?" |
 | `d_sato_notebook` | 3 | `t_d_lost_property` (a notes item in the lost-property box) |
 | `d_devries_pass` (lecture) | 3 | the conductor (car 4) |
 | `d_devries_want` (promotion ✦) | 3 | the newspaper with a circled job advert (`triggerOnInteract`) |
 | `d_devries_ring` (sigil ✦) | 3 | `t_d_glass` (`fingerprint_identified:ded_d_devries`, `where: { objectId: "d_glass" }`) |
-| `d_devries_sim` (burner ✦) | 3 | `t_d_phone` (his phone, a notes pickup, gated, `closedBy`); `t_d_backup` (a `backup_recovery` object in car 4; the trigger keys on `global_variable_changed:backup_restore_initiated`, `where: { value: true }`, the fixed global that minigame writes) |
+| `d_devries_sim` (burner ✦) | 3 | `t_d_phone` (his phone, a non-takeable object, on `d_phone_checked`, gated, `closedBy`); `t_d_backup` (a `backup_recovery` object in car 4; the trigger keys on `global_variable_changed:backup_restore_initiated`, `where: { value: true }`, the fixed global that minigame writes). D declares `network_isolated: true` (with `backup_restore_initiated` false, `backup_recovery_source` "", `recovery_eta_hours` 0 and `backup_reinfected` false, as m02 does), so the restore schedules no reinfection. The object is the railway's lost-phone kiosk, with one ready source of its own (`needs: []`, its own bullets) and no key slots |
 | `d_volkov_pass` (garden) | 4 | the conductor |
 | `d_volkov_want` (funding) | 4 | the conductor |
-| `d_volkov_key` (brass ✦) | 4 | `t_d_briefcase` (his briefcase, lockpick, a notes item); `t_d_key_drop` (KO drop, room none) |
+| `d_volkov_key` (brass ✦) | 4 | `t_d_briefcase` (his briefcase, a key lock: picked with the lockpick, or opened with the luggage master key the conductor gives by `#give_item` after his kind word, no skill check; a notes item inside); `t_d_key_drop` (KO drop, room none) |
 | `d_volkov_charm` (ward) | 4 | Volkov's ink, "what's that charm?" |
 | `d_mensah_pass` (lecture) | 5 | Mensah's ticket (`triggerOnInteract`) |
 | `d_mensah_umbrella` | 5 | Mensah's ink |
@@ -2997,7 +3285,9 @@ grants, so a faded source can still be read without contradicting "Evidence dest
 The conductor's four topics are the four facts he holds; the steward's three. Both are social characters
 with the default thresholds (`wary` −20, `refuses` −40, `reports` −60, §7.2), and each has a once-only
 kind word (+20), so the conductor can answer all four (Q1 free, Q2 −15, Q3 −30 and wary, the kind word
-back to −10, Q4 answered): DL6's witness-budget check passes.
+back to −10, Q4 answered): DL6's witness-budget check passes. (−10 is exactly `wary` plus the default
+`rearmMargin` of 10; do not raise the margin.) Without the kind word every suspect is still decided (20
+terminal states, `deduction/sim/extra.js`).
 
 **Stops and tampering.** Each stop's effects live in one trigger, `t_d_stop_<n>`, on
 `global_variable_changed:d_stop_<n>_go` (`where: { value: true }`, `once`): set `d_stop_<n>` (which the
@@ -3005,15 +3295,22 @@ guard's mapping turns into the next door opening) and, for stops 1 to 3, `deduct
 sets `d_last_stop`, which `finalCall.requireGlobal` reads. Two things set
 `d_stop_<n>_go`:
 
-- a timer: stop 1 runs 120 s after the start; stops 2 to 4 run 120 s after entering car 2, 3 and 4
-  (`startOnGlobal` `d_in_car2` to `d_in_car4`, set by `room_entered:<car>` triggers), each with a hint 30 s
-  before ("The train is slowing."); both the stop timer and its hint timer carry `cancelOnGlobal:
-  "d_stop_<n>"` (`ui/scenario-timer-dispatcher.js`), so a stop brought forward cancels its own warning and
-  timer, and no "slowing" hint ever lands after its stop;
+- a timer: stop 1 runs 180 s after the start (the brief is read on game time); stops 2 to 4 run 120 s
+  after entering car 2, 3 and 4 (`startOnGlobal` `d_in_car2` to `d_in_car4`, set by `room_entered:<car>`
+  triggers), each with a hint 30 s before, `{ "type": "hint", "title": "Night train", "message": "The train
+  is slowing." }`; both the stop timer and its hint timer carry `cancelOnGlobal: "d_stop_<n>"`
+  (`ui/scenario-timer-dispatcher.js`), so a stop brought forward cancels its own warning and timer, and no
+  "slowing" hint ever lands after its stop. Timers count wall time, open conversations and minigames
+  included, so a stop can land during a chat: its toast shows when it lands and the door opens behind the
+  chat;
 - the player: a "Wait by the door for the next stop" object at each car's far end, whose
-  `confirm_action` sets `d_stop_<n>_go` at once. In cars 1 to 3 it warns "The train will stop now, and
-  whatever the cult is after in this carriage may go with it. Wait for the stop?"; stop 4 fades nothing,
-  so car 4's says only "The train will stop now. Wait for the stop?".
+  `confirm_action` sets `d_stop_<n>_go` at once. In cars 1 to 3 it warns "The cult uses every stop to clear
+  away evidence. Anything here you haven't picked up or asked about may be gone. Wait for the stop?"; stop
+  4 fades nothing, so car 4's says only "The train will stop now. Wait for the stop?".
+
+Stops 1 to 3's `deduction_tamper` carries `emptyText` "The train stops. Someone searches carriage <n>
+behind you and gets off empty-handed." (one literal text per stop), toasted when everything on its list is
+already held.
 
 The trigger is `once`, so whichever comes first runs the stop and the other does nothing. Once a stop has
 passed, its door object's confirm sets a global that is already true and does nothing (a known no-op: the
@@ -3040,6 +3337,13 @@ live one). No timer is shifted: the bridges bring stops forward the way a player
 - DL6 after every tamper: each faded fact has its recovery route; no deciding fact needs a KO (Volkov's
   key also comes from the briefcase). Every suspect is decided with the reachable facts. Truth as the
   table.
+- One extra car (DL8's per-room check, `deduction/sim/`): car 2 clears Chen; car 3 convicts Sato and de
+  Vries; car 4 convicts Volkov and clears Mensah; car 5 clears Mensah. None decides everyone: no warning.
+- No single unrecovered fade strands the player: Sato's pass is deduced by the pigeonhole on the passes
+  even with the rack and the conductor both gone; only losing both Chen's charm and de Vries's SIM, with
+  both recoveries missed, leaves Chen and de Vries undetermined. Stop 1's fade costs nothing; that is
+  accepted (fun, not hard). No KO set (32) strands anyone; the lost-property notebook is needed in 8 of
+  them and the glass in 14, so both car 3 sources matter.
 
 **Verdicts.** `allowed: ["final", "ko"]`, `when: "final"`, `reveal: "end"`; `finalCall: { "requiresAll":
 true, "requireGlobal": "d_last_stop" }`. Car 5 holds the submit board (`allowSubmit: true`); car 1 holds a
@@ -3050,8 +3354,12 @@ cultist unnamed, and the ritual completes. You will not get a second chance." `o
 reason: "wrong_call" }`. `solvedTask`: `d_case_solved`. `onClose`: `complete_task d_case_closed`,
 `set_global d_ending`. Two music entries key on `global_variable_changed:d_ending` (§7.10): the right
 call (`condition: "!globalVars.mission_failed"`, victory playlist, `headerText: "CASE CLOSED"`) and the loss
-(`condition: "globalVars.mission_failed"`, a non-victory playlist, `headerText: "MISSION FAILED"`, a
-credits title "THE RITUAL COMPLETED", its own closing card). The conclusion aim's `conclusionScreen` is `{
+(`condition: "globalVars.mission_failed"`, a non-victory playlist (`end`, `music/music-config.js:129`),
+`headerText: "MISSION FAILED"`, a credits title "THE RITUAL COMPLETED", its own closing card).
+`debrief.closingLine`: "Evidence goes first from wherever it is easiest to take. Each piece the cult took
+had a second source: a bin, a backup, a witness's memory. And failing one profile never cleared anyone on
+its own: check them all. The steward and the conductor talk to anyone who asks nicely. Someone else could
+ask them the same about you." The conclusion aim's `conclusionScreen` is `{
 "type": "bond_visualiser", "bondVisualiserOpts": { "headerText": "CASE CLOSED" } }`, because it opens before
 the music entry and again on reload (§5.4, DL9(h)); the scenario sets `"creditsOverlay": { "ticker": ["CASE
 CLOSED", "NIGHT TRAIN"] }`, replacing the default "MISSION COMPLETE … WELL PLAYED, AGENT" ticker. A lost run
@@ -3059,16 +3367,24 @@ still concludes, at 65 % (§3.9).
 
 **Bridges.**
 
-- `bridge-deduction-d.jsonl` (`deduction-d:test_social_deduction_d`, the right call; about 120 s of real
-  waiting, within `run-suite.sh`'s 600 s per job, and §11.6's checks). D0 baseline: nudge on; no "Make the
-  call" on car 1's board; Space and `E` inert; Tab order; Esc and Close. D1 wait out stop 1 in real time in car 1 without taking the rack label: the "slowing" hint at 90 s,
-  then `d_sato_pass` faded, cell "Evidence destroyed", the rack grants nothing; reload: the faded cell and
-  the opened car 2 door hold. D2 car
+- `bridge-deduction-d.jsonl` (`deduction-d:test_social_deduction_d`, the right call; about 180 s of real
+  waiting, within `run-suite.sh`'s 600 s per job, and §11.6's checks). D0 baseline: nudge on; the ✦ "cult
+  sign" label; no "Make the call" on car 1's board; Space and `E` inert; Tab order; Esc and Close. D1 wait
+  out stop 1 in real time in car 1 without checking the rack label: the titled "slowing" hint ("Night
+  train") at 150 s, then `d_sato_pass` faded, cell "Evidence destroyed", the rack grants nothing and shows
+  "The label has been torn off the rack."; reload: the faded cell and the opened car 2 door hold. D2 car
   2: take nothing, use the door object ("Wait for the stop?"): stop 2 at once, Chen's charm faded; car 3:
-  the shredded document recovers it (the cell shows the clue, `recovered` lists it). D3 car 3, the door
-  object: stop 3 fades de Vries's SIM; car 4: use the door object for stop 4 **first** (stop 4 fades nothing), then the backup
-  recovery, the conductor (with the kind word) and the briefcase; `d_last_stop` is checked as set, by either
-  route (the stop 4 timer may have run first if car 4's work is slow; the trigger is `once`). D4 car 5:
+  the shredded document recovers it (the cell shows the clue, `recovered` lists it). D3 car 3: take the
+  lost-property notebook and dust the glass (Sato's notebook and de Vries's ring; no nudge yet), then the
+  door object: stop 3 fades de Vries's SIM; car 4: use the door object for stop 4 **first** (stop 4 fades
+  nothing), then the backup recovery, the conductor (with the kind word; `ded_d_conductor_influence` reads
+  −15 after his second answer, P10-I1) and the briefcase; `d_last_stop`
+  is checked as set, by either route (the stop 4 timer may have run first if car 4's work is slow; the
+  trigger is `once`). Nudges in car 4 (`deduction/sim/how.js`, the how lines P10-K-D records): **Sato**
+  once the conductor gives her pass back ("Check what's on their card."); **de Vries** once Volkov's want is
+  held ("Check the counts.": the marked count forces his last hidden cell); and at the briefcase **Volkov**
+  ("Check what's on their card."), **Chen** and **Mensah** ("Check the counts."). Every suspect is decided
+  before the call. D4 car 5:
   mark all five; reload: the marks and the faded and recovered cells hold. "Make the call" hidden until
   `d_last_stop`, then refused with an undecided suspect named, then a correct submit: five `final`
   verdicts, the debrief in place, Finish: `d_case_solved` and `d_case_closed` completed, credits with the
@@ -3087,10 +3403,10 @@ still concludes, at 65 % (§3.9).
   (the engine does not replay the music entry; AP-2); no end card; the board is read-only.
 
 **Proves:** strict mode ending through the debrief and the credits; `solvedTask` skipped on a loss;
-tampering by timer with closed and recovery routes; recovery through `shredded-document`,
+tampering by timer with closed and recovery routes, and `emptyText`; recovery through `shredded-document`,
 `backup-recovery` and a second witness; `requiresAll` and `requireGlobal`; a KO under `final`, judged at
 the call; the Courier profile true for someone; the guard's door mappings before rooms load; stops brought
-forward by the player; a loss that ends in honest credits.
+forward by the player; `markedLabel`; dusting that matters (the glass); a loss that ends in honest credits.
 
 ### 9.5 Feature coverage
 
@@ -3098,7 +3414,7 @@ forward by the player; a loss that ends in honest credits.
 |---|---|---|---|---|
 | S16 schema, fact field, case-file mode | ✓ | ✓ | ✓ | ✓ |
 | S17 evaluator: `has` with count elimination | ✓ | ✓ | ✓ | ✓ |
-| S17 evaluator: pigeonhole step | ✓ (Okafor after the favour; Marsh after the archive) | | | ✓ (passes) |
+| S17 evaluator: pigeonhole step | ✓ (Okafor after the favour; Marsh after the archive) | | ✓ (the quarry trips, once Baptiste never went) | ✓ (passes) |
 | S17 evaluator: `not` | ✓ | | ✓ | ✓ |
 | S17 evaluator: `markedAtLeast` | ✓ | | | ✓ |
 | S17 evaluator: `any` | | | ✓ | |
@@ -3116,6 +3432,9 @@ forward by the player; a loss that ends in honest credits.
 | S19 `#verdict:report:<s>` and `#verdict_close` | | ✓ | | |
 | S19 `#deduction_favour` | ✓ | | | |
 | S20 `verdict` action (any number of suspects) | | | ✓ | |
+| S19 `#verdict:trust` / S20 `verdict` with `value: "clear"` | unit tests and the validator's `trust/` fixture only (§11.2, §11.3, §11.5); no fixture opts in | | | |
+| S20 `grant_facts` (one batch toast) | | ✓ (HR summary, device list) | | |
+| S20 `deduction_tamper` `emptyText` | | | | ✓ |
 | S20 `verdict_close` action (in `confirm_action`) | | | ✓ | |
 | S20 `deduction_tamper` | | | | ✓ (timer) |
 | S20 `remove_item` | ✓ (favour item) | | ✓ | |
@@ -3132,6 +3451,14 @@ forward by the player; a loss that ends in honest credits.
 | S21 favour with errand and backfire | ✓ | | | |
 | S21 nudge on / off | on | on | off | on |
 | S21 `closeHint` (anytime cases) | ✓ | | ✓ | |
+| `closeRoute` footer | ✓ | | ✓ | |
+| `markedLabel` | | | | ✓ ("cult sign") |
+| `voice` plain / pulp | pulp | plain | plain | plain |
+| A one-way release (a contact sent away, no verdict) | | | ✓ | |
+| `debrief.notes` | | ✓ (keyed on an outcome) | ✓ (releases and outcomes) | |
+| A `reports` band, set from the console (unreachable in play) | | ✓ (`deduction-b-wrong`) | | |
+| A favour gated on a clue the player works for (`unlockFact` not a want) | ✓ (the ring, from the glass) | | | |
+| Nudge how line (`decidedBy`: card / count) | both | both (count only clears, accepted) | (nudge off) | both |
 | Warned close | ✓ | ✓ | ✓ | ✓ (confirm) |
 | S21 `solvedTask` completed / skipped | ✓ | both | both | both |
 | S21 `retry` (opt-in, the panel before the debrief) | unit tests only (§11.3); no fixture opts in | | | |
@@ -3145,7 +3472,7 @@ forward by the player; a loss that ends in honest credits.
 | S22 debrief: already held, settling clue with place, Not named, favours, destroyed evidence | ✓ | ✓ | ✓ | ✓ |
 | Stakes disclosed / hidden | disclosed | disclosed | hidden | disclosed |
 | Rigidity | costly | light | costly | strict |
-| Witness with influence cost and thresholds | ✓ | ✓ | ✓ | ✓ |
+| Witness with influence cost and thresholds | ✓ | ✓ | ✓ (Ahmed's paid gossip on Baptiste) | ✓ |
 | No-combat held item (`#give_item`) | | ✓ (Lindqvist's complaint copy) | | |
 | Physical puzzles as sources | lockpick, PIN door, dusting, log filter, container | PIN cabinet, PIN door, a readable log terminal | lockpick, PIN door and safe, RFID clone and emulate, log filter | lockpick, dusting, shredded, backup |
 | The pass slot deciding someone | ✓ (Delacroix) | | | ✓ (Sato) |
@@ -3219,7 +3546,7 @@ check); `disableClose` as F3 needs.
 
 | Id | Scope | Owns | Consumes / provides | Model | After | Proof |
 |---|---|---|---|---|---|---|
-| **P10-A** Evaluator | §5.1: the pure module and its tests, `profileSatisfiable` and `decidedBy` included; the conformance file, seeded from `deduction/sim/` (§11.1), with at least 40 cases: every rule kind, each of T/F/U, count elimination, the pigeonhole step for `has` and for `markedAtLeast`, marked supply, `any` over `all` with `not`, the §4.3 worked lines, the four `decidedBy` cases and the two `satisfiable` cases of §11.1, A's `byCount` scoping cases (H+C+A, H+C+F), and every room-by-room set of §9 (opening rooms and each further room, A's eight states and C's six included: O, O+bag, O+bag+office, O+bag+office+garage, O+office (the DL8 single-room set and the after-a-wrong-call set without the bag: Novak guilty, Baptiste clear, Ahmed open) and O+garage (all three open)) for all four fixtures, plus the statuses of fixture B's DL6, DL7 and DL8 bad-case mutations (§8); and §11.1's two whole-fixture checks | `systems/social-deduction.js`, `test/js/social-deduction-eval.test.mjs`, `test/js/fixtures/social_deduction/conformance.json` | Provides §5.1's exports; inputs also `deduction/sim/` (`eval.js`, `fixtures.js`, `run.js`, `strategies.js`, `extra.js`, `mutations.js`) | Opus | — | `bin/test-js` on its test: §11.1 green |
+| **P10-A** Evaluator | §5.1: the pure module and its tests, `profileSatisfiable` and `decidedBy` included; the conformance file, seeded from `deduction/sim/` (§11.1), with at least 40 cases: every rule kind, each of T/F/U, count elimination, the pigeonhole step for `has` and for `markedAtLeast`, marked supply, `any` over `all` with `not`, the §4.3 worked lines, the four `decidedBy` cases and the two `satisfiable` cases of §11.1, A's `byCount` scoping cases (H+C+A, H+C+F), and every room-by-room set of §9 (opening rooms and each further room, A's eight states and C's six included: O, O+bag, O+bag+office, O+bag+office+garage, O+office (the DL8 single-room set and the after-a-wrong-call set without the bag: Novak guilty, Baptiste clear, Ahmed open) and O+garage (Novak guilty, Ahmed and Baptiste open, after L-84's gossip move)) for all four fixtures, plus the statuses of fixture B's DL6, DL7 and DL8 bad-case mutations (§8); and §11.1's two whole-fixture checks | `systems/social-deduction.js`, `test/js/social-deduction-eval.test.mjs`, `test/js/fixtures/social_deduction/conformance.json` | Provides §5.1's exports; inputs also `deduction/sim/` (`eval.js`, `fixtures.js`, `run.js`, `strategies.js`, `extra.js`, `mutations.js`) | Opus | — | `bin/test-js` on its test: §11.1 green |
 | **P10-D** Triggers | §5.2, armed on `game_loaded`, idempotent | `systems/scenario-triggers.js`, `test/js/social-scenario-triggers.test.mjs` | Consumes `utils/global-condition.js`, `writeGlobal` (`deferEmit`); `applyActions` injected. Provides `installScenarioTriggers`, `matchesWhere`, `FIRED_KEY` | Sonnet | — | §11.3 triggers list |
 | **P10-E** Actions | §5.4: the seven cases (`reveal_hostiles` with `room`, calling the runtime's `deferHostile`; `verdict` with `value` and the kind defaults, `trust` for clear; `deduction_tamper` with `emptyText`), the `grant_facts` case (one batch toast), and `confirm_action`'s `confirmLabel` and `cancelLabel` passed to `gameConfirm` | `systems/apply-actions.js` (its own cases only), `test/js/social-apply-actions-deduction.test.mjs` | Consumes `window.deductionRuntime` (stubbed), `writeGlobal`, `removeFromInventory`, `npcBehaviorManager`, `npcHostileSystem`, `NPCGameBridge`. No new import in `apply-actions.js`. The test's scenario is bootstrap-shaped (no room `npcs`) | Opus | P10-F1, P10-F2 (their findings in the build log) | §11.3 actions list; existing tests that read `apply-actions.js` still pass: `flag-station-resubmit`, `flag-reward-door-sprites`, `engine-fixes-pass4c`, `npc-ko-immune-and-door-event`, `social-global-writer`, `social-intel`, `social-ready-toast`, `examine-minigame` |
 | **P10-G** Ink tags | §5.3: the four tag cases (`#verdict:trust[:<s>]` records `clear`), lazy `import()` only | `minigames/helpers/chat-helpers.js` (its own cases only), `test/js/social-tag-processor-deduction.test.mjs` (copies `apply-actions.js`, `social-intel.js`, `global-writer.js` and their imports, and rewrites the `import()` path as well as the static ones) | Consumes `applyActions` (lazily), `window.deductionRuntime` (stubbed); `minigames/person-chat/person-chat-pending-reply.js`, `minigames/person-chat/person-chat-minigame.js` (`_flushPendingReply`, the `_stateTagsApplied` handling in `displayAccumulatedDialogue`) and `test/js/person-chat-pending-reply.test.mjs` (its method-lifting harness, the model for the flush cases), all read only | Sonnet | — | §11.2, including the pending-reply flush cases; unchanged and green: `social-tag-processor`, `global-sync-declared`, `portrait-variants`, `engine-fixes-round3` |

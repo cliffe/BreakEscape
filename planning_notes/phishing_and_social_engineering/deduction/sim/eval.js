@@ -1,7 +1,9 @@
 // Throwaway prototype of the plan's §4.3 evaluator (three-valued) and the §5.1 helpers
 // (byCount, settlingFacts, deciders, brokenClause, matchedClause, heldDeciders), plus a complete
 // reference oracle that enumerates every completion consistent with the public board.
-// R6: plan version 3839 lines, md5 122840bb894cff3b148be9141dd446ad.
+// R6: plan version 3839 lines, md5 122840bb894cff3b148be9141dd446ad. S3: plan 4749 lines, md5 7c3483da8a51a23a93cd354c239588a2.
+// S3 (R6 fold): §5.1 after S1: byCount scoped to the deciding leaves, decidedBy (card/count/null),
+// one threshold form ("no marked clues", "1 marked clue", ", and no room for <n> more").
 'use strict';
 const OPTS = { pigeon: true, count: true };
 
@@ -33,22 +35,23 @@ function evalRule(rule, s, ctx, trace) {
   if (k === 'has') {
     const c = rule.has, y = ctx.fx.clues[c].slot;
     if (ctx.cells[s][y].revealed.includes(c)) return 'T';
-    if (OPTS.pigeon && ctx.remaining[c] > others(ctx, s, y)) { if (trace) trace.push({ clue: c, how: 'pigeonhole' }); return 'T'; }
+    const counting = ctx.counting !== false;
+    if (counting && OPTS.pigeon && ctx.remaining[c] > others(ctx, s, y)) { if (trace) trace.push({ clue: c, how: 'pigeonhole' }); return 'T'; }
     if (hidden(ctx, s, y) === 0) return 'F';
-    if (OPTS.count && ctx.remaining[c] === 0) { if (trace) trace.push({ clue: c, how: 'count' }); return 'F'; }
+    if (counting && OPTS.count && ctx.remaining[c] === 0) { if (trace) trace.push({ clue: c, how: 'count' }); return 'F'; }
     return 'U';
   }
   if (k === 'not') { const v = evalRule(rule.not, s, ctx, trace); return v === 'T' ? 'F' : v === 'F' ? 'T' : 'U'; }
   if (k === 'all') { const vs = rule.all.map(r => evalRule(r, s, ctx, trace)); return vs.includes('F') ? 'F' : vs.every(v => v === 'T') ? 'T' : 'U'; }
   if (k === 'any') { const vs = rule.any.map(r => evalRule(r, s, ctx, trace)); return vs.includes('T') ? 'T' : vs.every(v => v === 'F') ? 'F' : 'U'; }
   if (k === 'markedAtLeast') {
-    const n = rule.markedAtLeast; let kk = 0, forced = 0, extra = 0, firstForcedClue = null;
+    const n = rule.markedAtLeast; let kk = 0, forced = 0, extra = 0, firstForcedClue = null; const counting = ctx.counting !== false;
     for (const y of Object.keys(ctx.fx.slots)) {
       kk += ctx.cells[s][y].revealed.filter(c => ctx.fx.clues[c].marked).length;
       let M = 0; for (const [c, d] of Object.entries(ctx.fx.clues)) if (d.slot === y && d.marked) M += ctx.remaining[c];
       const h = hidden(ctx, s, y);
-      extra += OPTS.count ? Math.min(h, M) : h;
-      const fy = OPTS.pigeon ? Math.min(h, Math.max(0, M - others(ctx, s, y))) : 0;
+      extra += (counting && OPTS.count) ? Math.min(h, M) : h;
+      const fy = (counting && OPTS.pigeon) ? Math.min(h, Math.max(0, M - others(ctx, s, y))) : 0;
       if (fy > 0 && !firstForcedClue) firstForcedClue = Object.keys(ctx.fx.clues).find(c => ctx.fx.clues[c].slot === y && ctx.fx.clues[c].marked);
       forced += fy;
     }
@@ -60,13 +63,26 @@ function evalRule(rule, s, ctx, trace) {
 }
 
 function evaluateSuspect(fx, ctx, s) {
-  const profiles = {}; const trace = [];
-  for (const p of fx.profiles) profiles[p.id] = evalRule(p.rule, s, ctx, trace);
+  const profiles = {};
+  for (const p of fx.profiles) profiles[p.id] = evalRule(p.rule, s, ctx);
   const vs = Object.values(profiles);
   const status = vs.includes('T') ? 'guilty' : vs.every(v => v === 'F') ? 'clear' : 'undetermined';
   const matched = fx.profiles.find(p => profiles[p.id] === 'T');
+  // §5.1 byCount: only the leaves that decided (matchedClause for guilty, brokenClause for clear)
+  const trace = [];
+  if (status === 'guilty') trueLeaves(matched.rule, s, ctx).forEach(l => evalRule(l, s, ctx, trace));
+  else if (status === 'clear') fx.profiles.forEach(p => failLeaves(p.rule, s, ctx).forEach(l => evalRule(l, s, ctx, trace)));
   const seen = new Set(); const byCount = trace.filter(t => { const k = t.clue + t.how; if (seen.has(k)) return false; seen.add(k); return true; });
-  return { status, profiles, matched: matched ? matched.id : null, byCount };
+  // §5.1 decidedBy: evaluate again with counting off
+  let decidedBy = null;
+  if (status !== 'undetermined') {
+    const red = Object.assign(Object.create(Object.getPrototypeOf(ctx)), ctx, { counting: false });
+    const rv = fx.profiles.map(p => evalRule(p.rule, s, red));
+    const rst = rv.includes('T') ? 'guilty' : rv.every(v => v === 'F') ? 'clear' : 'undetermined';
+    if (rst !== 'undetermined' && rst !== status) throw new Error('reduced evaluation disagrees');
+    decidedBy = rst !== 'undetermined' ? 'card' : 'count';
+  }
+  return { status, profiles, matched: matched ? matched.id : null, byCount, decidedBy };
 }
 function evaluateAll(fx, heldFacts) {
   const ctx = buildCtx(fx, heldFacts); const out = {};
@@ -128,7 +144,12 @@ function matchedClause(fx, held, s) {
 // clause words (§5.1) for a debrief "Why" line
 function leafWords(fx, ctx, s, leaf, truthy) {
   const lab = c => (fx.clues[c].clause || fx.clues[c].label || c);
-  if (leaf.markedAtLeast) { const labs = []; for (const y of Object.keys(fx.slots)) ctx.cells[s][y].revealed.forEach(c => { if (fx.clues[c].marked) labs.push(fx.clues[c].label || c); }); return `${labs.length} marked clues (${labs.join(', ')})`; }
+  if (leaf.markedAtLeast) {
+    const labs = []; for (const y of Object.keys(fx.slots)) ctx.cells[s][y].revealed.forEach(c => { if (fx.clues[c].marked) labs.push(fx.clues[c].label || c); });
+    const k = labs.length; let w = k === 0 ? 'no marked clues' : k === 1 ? `1 marked clue (${labs[0]})` : `${k} marked clues (${labs.join(', ')})`;
+    if (!truthy) w += `, and no room for ${leaf.markedAtLeast - k} more`;
+    return w;
+  }
   if (leaf.not) { const c = leaf.not.has; return lab(c); }
   const c = leaf.has; if (truthy) return lab(c);
   const y = fx.clues[c].slot;
