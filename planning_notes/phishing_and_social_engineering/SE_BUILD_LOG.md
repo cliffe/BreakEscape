@@ -301,6 +301,46 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 
 - **Lab re-run R1** (Sonnet, fresh game 3143 plus 3169 for side paths, report `scenarios/lab_social_engineering/playtests/R1.md`): start to end screen with **no workarounds**, one deliberate reload, verify-run 23/23, score 100. 12 of 13 checks pass: all three Ruth keys in session, no cross-opening, phone hints follow the stage, Dev's pending path is signposted and can't be farmed, the builder panel fills, Lord lands first send, Hampshire shows 0 flags, the end screen shows. **Still failing (major):** the first Dev menu has empty blanks and the first sent line is stored blank; the ink VARs are already right at render, so the fillVars re-asserts do nothing (suspect the first choices are baked before `attachPretext` sets `_pretext`). 13 minors in R1.md. Lab fix round 3 on opus48: `playtests/FIX_ROUND_R1.md`.
 
+- **Lab fix round 3** committed as 093d9449. I changed Dev's desk-phone line to use "them", so it stays neutral for any character. The harness fixes (clickControl exact-first, lock key rotation, bootstrap repeat-menu exit) were blocked by the auto-mode classifier as a shared-resource edit, because `.claude/skills/playtest-scenario/scripts/playtest-session.js` and `test-bridge/minigames.js` are shared with other sessions. They are queued for the user to decide on. Playtests work round them in the meantime. R2 and the F1–F17 failure routes are running on Sonnet.
+
+- **Lab re-run R2** (Sonnet, fresh game 3190, `playtests/R2.md`): start to end screen, 23/23, score 100, no workarounds, 0 blocker, 0 major. 12 of 13 checks pass. The first Dev menu is fixed; the triage replay, Lord advisory and report row now reflect the real send; the board, Tomasz, Ruth's rung, mail Close, last-account reopen and one-morning times all work. Fail (minor): the create-account "Pick an address first." toast is `info`, which `notifications.js` holds while a full-screen panel is open, so it shows only after close; use an in-panel line or `warning`. Other minors: seeded mail 08:15–08:55 runs ahead of the clock (sends 08:03); the influence "floor" wording is unexplained; `moveToNear` Tomasz flaked once; Dev never names the portal (decided, no change); `cv_portfolio` link still click-only (decided).
+
+- **Failure routes F6–F10** (Sonnet, game 3189, `playtests/F6-F10.md`): all 5 pass. F6 against the current design: Dev is reported at the refusal limit (-60) before the -70 threshold, only the phone is locked, and after the wait he reopens at 0 with the first menu filled. PLAN §10 F6 and §3 (lines 543–546, Ruth's line text) are out of date. Minors:
+  - Dev's authored `reported` goodbye line never shows.
+  - The second call's transcript and the bar's "Last change" line carry over from the first call.
+  - Ruth's phone keeps the "Dev flagged" line after a clean second call.
+  - The report's pretext row mixes the two calls, and the landing row shows the last attached page, not the one that landed.
+  - The lockout toast gives no reason or duration.
+  - The hint after a failed third Lord send names facts already held.
+  - The board's "doesn't name it" line stays after the name is learned.
+  - "Attach anyway" on a 35/100 page completes `payroll_page_attached`. This is intended (the plan lets a weak page be sent so it fails at the target), but the task text should not read as success.
+  - `phish_lord_landed` lags the "It landed" line by a few seconds.
+  - A later failed triage replay overwrites `triage_percent`.
+
+- **Failure routes F1–F5** (Sonnet, game 3192, `playtests/F1-F5.md`): all five branches pass against the plan. It found three hint-ladder defects:
+  - **H1:** `phish-rules.js:418-424` indexes `hints[prior]` with `prior >= 1`, so `hints[0]`, the softest hint, can never be shown for any target.
+  - **H2:** hints follow the miss count, not the failing factor. On Lord's third miss, with only the link missing, the hint said to call the desk again.
+  - **H3:** Pierce's third hint ("can only send as itself") shows on a send from `guest`.
+
+  Minors:
+  - The Lord portal-domain advisory shows on a Jed-spoof message.
+  - The call debrief shows each ask's cost only after the ask.
+  - The call-prep panel lists the 2019 org chart without its "Old or unverified" warning.
+  - Influence after landing is inconsistent: Lord stays at -20, Pierce goes to -10.
+
+- **Failure routes F11–F17** (Sonnet, games 3191 and 3195 at 600×900, `playtests/F11-F17.md`):
+  - F12–F16 pass:
+    - Every stateful reload point survives (mid-triage restarts the round by design, with no notice).
+    - At 600 px the overlays are usable (the map is tiny).
+    - The guest-lands-first, careers-inbox and metadata-unread recoveries all work.
+  - F11 fails on the literal wording only: six overlays log `minigame_failed` on close (mail abort by design; pretext card and triage intro are ours; person/phone chat and lockpick are engine). No close completes a task.
+  - F17 fails:
+    - The locked doors never point to Ruth.
+    - Ruth's phone stage 2 says "You've the key already" before the key is held.
+    - Stage 7 has no key line.
+  - The harness hard-codes 1400×1000; the run used a scratch copy for 600 px.
+- **R2 and F1–F17 complete: 0 blocker.** Consolidated in `playtests/FIX_ROUND_F.md`; lab fix round 4 runs on opus48.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
