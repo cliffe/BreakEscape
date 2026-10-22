@@ -763,7 +763,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "currentKnot": "start",
           "itemsHeld": [
             {
-              "_comment": "PLACEHOLDER labUrl: lab sheets are written last (ASSET_LIST §7).",
+              "_comment": "PLACEHOLDER labUrl, deliberately: the m09 lab sheet pages don't exist yet; lab sheets are written last (ASSET_LIST §7), and these four links are set then.",
               "type": "lab-workstation",
               "id": "m09_catalogue_field_guide",
               "name": "SAFETYNET Field Guide: The Catalogue Server",
@@ -941,7 +941,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "koImmune": true
         },
 <%# The raid team: hidden registered speakers for the briefing and the
-    debrief. PLACEHOLDER sprites and new voices (ASSET_LIST §1.2, §6). %>
+    debrief. Art: each one's own sprite key (ASSET_LIST §1.2, done); voices below (§6). %>
 <% [
   ["quintero", "Agent 0x2D 'Anchor'", "female", "marisol_quintero", "marisol_quintero", "Kore", "SAFETYNET raid leader in her fifties, from El Paso, Texas. Consistent West Texas American accent with a light Mexican-American lilt throughout -- do not shift to any other accent. Low, steady, dry; few words, unsentimental and fierce about her people.", "en-US"],
   ["kowalczyk", "Agent 0x5E 'Lantern'", "female", "halina_kowalczyk", "halina_kowalczyk", "Pulcherrima", "SAFETYNET breaching lead in her late forties, Polish-British, grew up in Ealing. Consistent West London English accent throughout -- do not shift to any other accent. Warm, funny, practical; the one joke in a tense room. Nothing in her voice gives anything away.", "en-GB"],
@@ -949,7 +949,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
   ["arakawa", "Officer Kenji Arakawa", "male", "kenji_arakawa", "kenji_arakawa", "Achird", "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Northern California American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home.", "en-US"]
 ].each do |id, name, gender, sheet, art, voice, style, lang| %>
         {
-          "_comment": "PLACEHOLDER art: <%= sheet %> (ASSET_LIST §1.2). Hidden registered speaker; no storyPath.",
+          "_comment": "Art: <%= sheet %> (ASSET_LIST §1.2, done). Hidden registered speaker; no storyPath.",
           "id": "<%= id %>",
           "displayName": <%= name.to_json %>,
           "npcType": "person",
@@ -966,7 +966,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
         },
 <% end %>
         {
-          "_comment": "The opening briefing (C1): a hidden person-chat cutscene in Task Force Null's room. Every line is prefixed, so the host borrows Netherton's art and voice. The cracker is in the start kit; the briefing only narrates the handover (S4 P15). PLACEHOLDER background (ASSET_LIST §3).",
+          "_comment": "The opening briefing (C1): a hidden person-chat cutscene in Task Force Null's room. Every line is prefixed, so the host borrows Netherton's art and voice. The cracker is in the start kit; the briefing only narrates the handover (S4 P15). Background: m09_briefing_blended (ASSET_LIST §3, done).",
           "id": "briefing_cutscene",
           "displayName": "Director Magnus Netherton",
           "npcType": "person",
@@ -996,7 +996,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           }
         },
         {
-          "_comment": "The debrief (C2): a hidden person-chat at the Helena hangar, opened when HaX's '[Bring me in.]' sets start_debrief (it re-emits). Keyed on !report_done, so a reload anywhere inside it reopens it at start; the ink replays safely (S4 §6.5). report_done is on its last line; report_to_netherton completes when it closes (lesson 46). PLACEHOLDER background (ASSET_LIST §3).",
+          "_comment": "The debrief (C2): a hidden person-chat at the Helena hangar, opened when HaX's '[Bring me in.]' sets start_debrief (it re-emits). Keyed on !report_done, so a reload anywhere inside it reopens it at start; the ink replays safely (S4 §6.5). report_done is on its last line; report_to_netherton completes when it closes (lesson 46). Background: m09_hangar_blended (ASSET_LIST §3, done).",
           "id": "closing_debrief",
           "displayName": "Director Magnus Netherton",
           "npcType": "person",
@@ -1089,7 +1089,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       },
       "npcs": [
         {
-          "_comment": "Noor Haddad, records clerk (B2). On the floor by the trolleys so she can be reached (review m5). Clone on every branch until saved, except warned in time, when she hands the card over (alignment R7: staff_card_cloned) (#clone_keycard:reading_staff_door, EM4100, the night's easy card); warned in time she hands over noor_staff_card. Leaves on noor_told. PLACEHOLDER art: female_telecom (ASSET_LIST §1.2).",
+          "_comment": "Noor Haddad, records clerk (B2). On the floor by the trolleys so she can be reached (review m5). Clone on every branch until saved, except warned in time, when she hands the card over (alignment R7: staff_card_cloned) (#clone_keycard:reading_staff_door, EM4100, the night's easy card); warned in time she hands over noor_staff_card. Leaves on noor_told. Art: noor_haddad (ASSET_LIST §1.2, done).",
           "id": "noor_haddad",
           "displayName": "Noor Haddad",
           "npcType": "person",
@@ -1202,7 +1202,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       },
       "npcs": [
         {
-          "_comment": "Room dressing R4: the west-end turn moved from (3, 7.5) to (5, 7.5), clear of Dillard's spot (3.5, 8). Room dressing R3: the override tile moved from (2, 6.5), mid west crossing, to (3.5, 4.2), beside the reading-room door's mouth and clear of route B (S5 §3.3). Room dressing R2: start and round moved from y 8.5 to 7.5; 8.5 was outside the room's pathfinding bounds (tiles y 2-8), so the patrol was dropped. Cody Old Coyote, night guard (B6). Challenges on sight (any cover talks past him); leaves on old_coyote_told. On m01_maya_ko after flag 1, Tran's radio sends him to a tile beside the reading-room door (S5 §3.3), with a relay for a route-A player who never loaded this room (stage 8 m-01). Holds the dock office door's only key. PLACEHOLDER art: male_security_guard (ASSET_LIST §1.2).",
+          "_comment": "Room dressing R4: the west-end turn moved from (3, 7.5) to (5, 7.5), clear of Dillard's spot (3.5, 8). Room dressing R3: the override tile moved from (2, 6.5), mid west crossing, to (3.5, 4.2), beside the reading-room door's mouth and clear of route B (S5 §3.3). Room dressing R2: start and round moved from y 8.5 to 7.5; 8.5 was outside the room's pathfinding bounds (tiles y 2-8), so the patrol was dropped. Cody Old Coyote, night guard (B6). Challenges on sight (any cover talks past him); leaves on old_coyote_told. On m01_maya_ko after flag 1, Tran's radio sends him to a tile beside the reading-room door (S5 §3.3), with a relay for a route-A player who never loaded this room (stage 8 m-01). Holds the dock office door's only key. Art: cody_old_coyote (ASSET_LIST §1.2, done).",
           "id": "old_coyote",
           "displayName": "Cody Old Coyote",
           "npcType": "person",
@@ -1385,7 +1385,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       },
       "npcs": [
         {
-          "_comment": "Room dressing R2: moved from (2.5, 4) to (3.3, 3.5), between the rack and the terminal and clear of the W door's mouth, so a tap on the Wipe Console (SW) no longer also lists him. Jesse Tran, IT contractor, Social Fabric's man (B7). Talked off the wipe with the letters (tran_outcome talked, then he walks out), or a fight. PLACEHOLDER art: male_nerd (ASSET_LIST §1.2).",
+          "_comment": "Room dressing R2: moved from (2.5, 4) to (3.3, 3.5), between the rack and the terminal and clear of the W door's mouth, so a tap on the Wipe Console (SW) no longer also lists him. Jesse Tran, IT contractor, Social Fabric's man (B7). Talked off the wipe with the letters (tran_outcome talked, then he walks out), or a fight. Art: jesse_tran (ASSET_LIST §1.2, done).",
           "id": "jesse_tran",
           "displayName": "Jesse Tran",
           "npcType": "person",
@@ -1591,7 +1591,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       "type": "room_m09_restricted",
       "chatBackground": "assets/backgrounds/rooms/m09_restricted_stacks_blended.png",
       "lighting": {"mode": "on", "ambient": "#a8b0c0", "panels": false, "lights": [{"x": 7.6, "y": 5.6, "color": "#f2f6ff", "radius": 80, "intensity": 1.0}], "emitters": {"fire_alarm_point": {"intensity": 0}}},
-      "_comment": "Expected validator warning: no item declares rfid 'stacks_release'. HaX's unlockDoor mapping on flag1_submitted opens this door (with a retry on door_unlock_attempt and a game_loaded backstop).",
+      "_comment": "Expected validator warning: no item declares rfid 'stacks_release'. HaX's unlockDoor mapping on flag1_submitted opens this door (with a retry on door_unlock_attempt and a game_loaded backstop). ambientSound server_room_ventilation is a deliberate PLACEHOLDER for the shredder loop owed at the audio stage (ASSET_LIST §5, shredder_loop.mp3).",
       "door_sign": "Restricted Stacks -- Series R",
       "locked": true,
       "lockType": "rfid",
@@ -1606,7 +1606,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       },
       "npcs": [
         {
-          "_comment": "Margaret Sorensen at the hatch (B3). A static sprite behind the counter whose body edge reaches it, so she can be talked to across it (review B1); koImmune (behind the mesh). Her card clones on every branch (MIFARE with custom keys, the night's hard clone). Holds the three bin files, given by id. Hidden once the cage opens (and on entry if it already has: Victoria's route). PLACEHOLDER art: female_office_worker (ASSET_LIST §1.2). Browser check owed: reach from a tile at the counter; fallback a hatch bell (S5 §3.6).",
+          "_comment": "Margaret Sorensen at the hatch (B3). A static sprite behind the counter whose body edge reaches it, so she can be talked to across it (review B1); koImmune (behind the mesh). Her card clones on every branch (MIFARE with custom keys, the night's hard clone). Holds the three bin files, given by id. Hidden once the cage opens (and on entry if it already has: Victoria's route). Art: margaret_sorensen (ASSET_LIST §1.2, done). Browser check owed: reach from a tile at the counter; fallback a hatch bell (S5 §3.6).",
           "id": "sorensen_hatch",
           "displayName": "Margaret Sorensen",
           "npcType": "person",
@@ -1669,7 +1669,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       ],
       "objects": [
         {
-          "_comment": "S6 §1.5. The print for the plan cabinet (S4 §4 row 2c); the purge line after flag 2 (m-09: S6's string). A tile clear of her body (review m-R2-4). PLACEHOLDER sprite (ASSET_LIST §4).",
+          "_comment": "S6 §1.5. The print for the plan cabinet (S4 §4 row 2c); the purge line after flag 2 (m-09: S6's string). A tile clear of her body (review m-R2-4). Sprite: the map's placed m09_rubber_stamp (matched by position as-type; ASSET_LIST §4, done).",
           "type": "office-misc-stapler",
           "id": "sorensen_stamp",
           "name": "Rubber Stamp",
@@ -1699,7 +1699,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     and the hatch route's default handover (stage 8 ruling 1).
     Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_qdc_security, playtest R1 B1). %>
     "restricted_cage": {
-      "_comment": "Playtest R1 B1 (blocker): room_hce_vault's cabinets stand across its west wall, so the generated west door sat above the walkable floor and the cage was one-way. Room dressing R1: m09's own map, room_m09_cage, keeps the west wall's row 2 clear (mouth x 32-92, y 64-118).",
+      "_comment": "Playtest R1 B1 (blocker): room_hce_vault's cabinets stand across its west wall, so the generated west door sat above the walkable floor and the cage was one-way. Room dressing R1: m09's own map, room_m09_cage, keeps the west wall's row 2 clear (mouth x 32-92, y 64-118). ambientSound server_room_ventilation is a deliberate PLACEHOLDER for the shredder loop owed at the audio stage (ASSET_LIST §5, shredder_loop.mp3).",
       "type": "room_m09_cage",
       "chatBackground": [
         { "x": [0, 0.55], "image": "assets/backgrounds/rooms/m09_restricted_cage_left_blended.png" },
@@ -1717,7 +1717,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       },
       "npcs": [
         {
-          "_comment": "Margaret Sorensen at the shredder's feed (B4). Non-hostile; fights back only if attacked. Holds her stacks card only (review M5). Her fate on a knock-out is set by HaX's npc_ko:sorensen mapping unless talked. PLACEHOLDER art (ASSET_LIST §1.2).",
+          "_comment": "Margaret Sorensen at the shredder's feed (B4). Non-hostile; fights back only if attacked. Holds her stacks card only (review M5). Her fate on a knock-out is set by HaX's npc_ko:sorensen mapping unless talked. Art: margaret_sorensen (ASSET_LIST §1.2, done).",
           "id": "sorensen",
           "displayName": "Margaret Sorensen",
           "npcType": "person",
@@ -2163,7 +2163,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       },
       "npcs": [
         {
-          "_comment": "The Alpha clip's speaker (C6): hidden; opened by the deck's global on every interaction. m07's Architect art and voice name, styled as a tape recording; the user hears the style first (FA 9-9). PLACEHOLDER (ASSET_LIST §1.2, §6).",
+          "_comment": "The Alpha clip's speaker (C6): hidden; opened by the deck's global on every interaction. m07's Architect art and voice name, styled as a tape recording; the user hears the style first (FA 9-9). Art: adrian_tesseract (ASSET_LIST §1.2, done).",
           "id": "alpha_recording",
           "displayName": "Dr Adrian Tesseract (recording)",
           "npcType": "person",
@@ -2539,6 +2539,7 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "staff_card_cloned": false,
     "hl_box_opened": false,
     "noor_met": false,
+    "noor_card_given": false,
     "albion_folder_opened": false,
     "memo_read": false,
     "tesseract_call_closed": false,

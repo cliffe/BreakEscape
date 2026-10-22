@@ -17,7 +17,7 @@ VAR ledger_page_seen = false
 // Ink-local.
 VAR noor_met = false   // Synced scenario global (the debrief reads it; playtest R1 C-m-6)
 VAR noor_opened = false   // Puzzle chains R7 m2: opening heard (noor_met stays early: the debrief reads it)
-VAR noor_card_given = false   // Puzzle chains R8 m2: the card's #give_item runs once, even if the opening replays
+VAR noor_card_given = false   // Synced scenario global (puzzle chains R9 m1; R8 m2): the card's #give_item runs once, even after an F5 before the first click
 VAR noor_cover = ""          // "contractor" / "auditor" / "safetynet" (not-warned form only)
 VAR noor_tell_signposted = false
 VAR noor_list_checked = false
@@ -30,8 +30,9 @@ VAR staff_card_cloned = false
 === start ===
 // A reopen lands on hub; this guard covers a page reload (ink vars survive).
 // Puzzle chains R7 m2: guarded on noor_opened, set once the opening (or the cover)
-// has been heard, so a reload mid-opening replays it. The card is guarded by
-// noor_card_given (R8 m2): a replayed #give_item would show a "no items to give" toast.
+// has been heard, so a reload mid-opening replays it. The card is guarded by the
+// synced global noor_card_given (R8 m2, R9 m1): it saves at once, so a replayed
+// opening never repeats the #give_item and its "no items to give" toast.
 {noor_opened: -> hub}
 ~ noor_met = true
 {
