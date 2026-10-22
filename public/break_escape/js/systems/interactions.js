@@ -1118,7 +1118,7 @@ export function handleObjectInteraction(sprite) {
     // Engagement report workstation (P6-W): the report reads the case records itself.
     if (sprite.scenarioData.type === 'report-workstation') {
         // Optional stage gate (R-b5): the lab keys this on the phishing stage
-        // (phish_lord_landed) so the report cannot be written — and its tasks cannot
+        // (sends_done, set once all three targets have landed) so the report cannot be written — and its tasks cannot
         // complete out of order — before the aim it belongs to has unlocked. The gate
         // is read from the object's own minigameData, so it is inert for any mission
         // that does not set it.
