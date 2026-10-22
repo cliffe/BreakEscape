@@ -444,3 +444,8 @@ the orchestrator passes it to that wave's owner.
   - **Flip gap:** if E6's attack produces a text or a QR notice, the flip needs a way to show sms and qr.
   - **Rendering:** a QR code inside an email body isn't drawn; it shows as an attachment chip.
   - **Library:** "unexpected fee" and "sender not in contacts" aren't library tells.
+- **E4 attack:**
+  - **Target and sender:** the target `exec_pa` is Tomás Carvalho, the PA. The spoofed sender is Catherine Merrin, writing from freemail `inboxly.example`.
+  - **Globals the shell must declare:** `se_intel_ms_managing_partner`, `_pa_name`, `_exec_calendar`, `_exec_travel_email`, `_travel_post`, `se_osint_state`, `phish_exec_pa_landed` and `_attempts`.
+  - **Tells:** a good send stores `[senderTrust, urgencyCalibrated]`.
+  - **Cast:** the defend side should define Yasmin Chaudhry, the finance controller.
