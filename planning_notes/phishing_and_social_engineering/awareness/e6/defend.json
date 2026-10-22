@@ -6,13 +6,13 @@
       "Bogdan Ionescu: HGV driver, the colleague fooled in the flip line. 50s, Romanian, in Bradford fifteen years",
       "Shauna Lofthouse: transport planner. 40s, white, from Keighley. Genuine in e6_shift_moved and form A row 10; spoofed in form A row 6",
       "Eilidh Strachan: facilities manager. 50s, Scottish, from Aberdeen. Named on the genuine canteen notice (e6_canteen_qr); genuine in form B row 5",
-      "Dev Mistry: IT service desk analyst. 30s, Gujarati-British, grew up in Leicester. Named in e6_mfa_scan's notes as the number to ring; genuine in form B row 10",
+      "Nilesh Solanki: IT service desk analyst. 30s, Gujarati-British, grew up in Leicester. Named in e6_mfa_scan's notes as the number to ring; genuine in form B row 10",
       "Lerato Dlamini: health and safety adviser. 30s, South African, from Durban. Genuine in form A row 1",
       "Chidi Okeke: fleet coordinator. 40s, Nigerian-British. Genuine in form A row 9",
       "Callum Whiteley: warehouse operative. early 20s, white, from Bradford. Genuine in form B row 9",
       "Marjorie Ackroyd: payroll officer. 60s, white, from Wakefield. Named in form B row 8"
     ],
-    "nameCheck": "Ionescu, Lofthouse, Strachan, Mistry, Dlamini, Okeke, Whiteley and Ackroyd had no hits in scenarios, planning_notes, docs or public/break_escape/js on 2026-10-22. Asante, Nwosu, Iqbal and Oyelaran were rejected because they are already in use.",
+    "nameCheck": "Ionescu, Lofthouse, Strachan, Solanki, Dlamini, Okeke, Whiteley and Ackroyd had no hits in scenarios, planning_notes, docs or public/break_escape/js on 2026-10-22. Asante, Nwosu, Iqbal and Oyelaran were rejected because they are already in use.",
     "realHosts": "staff.tarrowby.example (the staff app), hr.tarrowby.example, facilities.tarrowby.example, forms.tarrowby.example, guest.tarrowby.example. Depot: Shipley; sites named: Bradford Road, Halifax, Leeds.",
     "lookalikes": "Episode: tarrowbey.example (in the roster), tarrowby-parking.example (added word). Forms: tarrowby-charging.example, tarrowby-wifi.example (added word).",
     "thirdParties": "Parceline (parceline-redelivery.example), a courier name on a fake fee text; FuelWise (fuelwise-rewards.example), a fuel-card offer nobody asked for; Telvoro (telvoro-billing.example), a mobile network Tarrowby does not use; PCN Services (pcn-settle.example), a fake parking-charge sender; shrtn.example, an invented link shortener; ShiftPlanner (shiftplanner-mail.example) and PaySuite (paysuite-mail.example), the genuine rota and payroll providers that send Tarrowby mail for it.",
@@ -30,7 +30,7 @@
       "7 | sms | phish | smish_shortlink_urgency, reply_stop_trick | (no header) | medium | A: Telvoro 'bill payment failed' | B: PCN Services 'unpaid parking charge'",
       "8 | email | genuine, fail-but-fine | SPF fail, DKIM and DMARC pass | medium | A: next week's rota via ShiftPlanner | B: payslip notice via PaySuite",
       "9 | sms | genuine | (no header) | easy | A: Chidi, pool van booked | B: Callum, running late for handover",
-      "10 | email | genuine | all pass | easy | A: Shauna, Christmas rota requests | B: Dev, staff app update tonight"
+      "10 | email | genuine | all pass | easy | A: Shauna, Christmas rota requests | B: Nilesh, staff app update tonight"
     ]
   },
   "triageSets": [
@@ -145,7 +145,7 @@
               "urgencyCalibrated": "'Midnight tonight' and 'your account will be locked' are there to make you scan before you think"
             },
             "ifTrusted": "The code opens a copy of the Tarrowby sign-in page. Whoever made it gets your password and the code from your authenticator app.",
-            "reportReply": "Thanks. That wasn't us: our address is tarrowby.example, and we never ask you to scan anything to keep your sign-in. If you're unsure, ring Dev or anyone on the IT desk on the number on the intranet."
+            "reportReply": "Thanks. That wasn't us: our address is tarrowby.example, and we never ask you to scan anything to keep your sign-in. If you're unsure, ring Nilesh or anyone on the IT desk on the number on the intranet."
           }
         },
         {
@@ -417,7 +417,7 @@
           "qr": {
             "destination": "https://guest.tarrowby.example/terms",
             "location": "Framed sign on the reception desk",
-            "caption": "Changed monthly by IT. Questions: Dev Mistry, IT Service Desk"
+            "caption": "Changed monthly by IT. Questions: Nilesh Solanki, IT Service Desk"
           },
           "truth": {
             "isPhish": false,
@@ -537,12 +537,12 @@
         },
         {
           "id": "mb_staff_app_update",
-          "from": { "name": "Dev Mistry", "address": "dev.mistry@tarrowby.example" },
+          "from": { "name": "Nilesh Solanki", "address": "nilesh.solanki@tarrowby.example" },
           "to": "all-staff@tarrowby.example",
           "subject": "Staff app update tonight, 10pm to 11pm",
           "time": "12:10",
-          "body": "Hi all,\nThe staff app will be updated tonight between 10pm and 11pm. You don't need to do anything. If the app asks you to sign in again tomorrow, open it from your home screen as usual.\nDev\nIT Service Desk",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "dev.mistry@tarrowby.example" },
+          "body": "Hi all,\nThe staff app will be updated tonight between 10pm and 11pm. You don't need to do anything. If the app asks you to sign in again tomorrow, open it from your home screen as usual.\nNilesh\nIT Service Desk",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "nilesh.solanki@tarrowby.example" },
           "truth": {
             "isPhish": false,
             "flags": [],

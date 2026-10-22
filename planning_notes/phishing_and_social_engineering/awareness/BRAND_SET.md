@@ -204,7 +204,7 @@ Gallagher and Farah are not used, because they clash with existing scenarios.
 
 ## Additions from E6 defend (2026-10-22)
 The full list is under `_brandAdditions` in `awareness/e6/defend.json`.
-- **Tarrowby cast:** Bogdan Ionescu, Shauna Lofthouse, Eilidh Strachan, Dev Mistry, Lerato Dlamini, Chidi Okeke, Callum Whiteley and Marjorie Ackroyd.
+- **Tarrowby cast:** Bogdan Ionescu, Shauna Lofthouse, Eilidh Strachan, Nilesh Solanki (renamed from Dev Mistry, see below), Lerato Dlamini, Chidi Okeke, Callum Whiteley and Marjorie Ackroyd.
 - **Hosts:** the real Tarrowby hosts `staff.`, `hr.`, `facilities.`, `forms.` and `guest.`.
 - **Look-alikes:** `tarrowby-parking`, `-charging` and `-wifi`.
 - **Third parties:** Parceline, FuelWise, Telvoro, PCN Services, `shrtn.example`, ShiftPlanner and PaySuite.
@@ -213,7 +213,7 @@ The full list is under `_brandAdditions` in `awareness/e6/defend.json`.
 ## Additions from E6 attack (2026-10-22)
 - **Tarrowby cast:** Kaylee Dunford, warehouse operative, early 20s, white British, Bradford: the E6 target.
 - **The spoofed sender:** Dev Acharya, Facilities Coordinator, 40s, British Indian.
-- **Name clash:** E6's defend side also has Dev Mistry, and the lab has Dev at the Ledgerwell service desk. Rename one of the two Tarrowby Devs when the E6 shells are built.
+- **Name clash:** E6's defend side also had Dev Mistry, and the lab has Dev at the Ledgerwell service desk. Resolved when the E6 shells were built (below): the defend side's Dev Mistry is now Nilesh Solanki, and Dev Acharya stays.
 - **Pre-ship check:** "Acharya", "Dunford" and "YardPass" still need the real-business web search.
 
 ## Additions from E2 and E4 defend (2026-10-22)
@@ -221,3 +221,12 @@ The full list is under `_brandAdditions` in `awareness/e6/defend.json`.
 - **E4 (Merrin & Sallow):** the full list is under `_brandAdditions` in `awareness/e4/defend.json`. New cast: Julian Sallow, Thandiwe Moyo, Oskar Berglund and Leah Abramson. New companies: Wrenfield Travel, Larkspur Travel, The Ropewalk, Brackenmoor Homes and Abramson Planning.
 - **Name clash:** E2 has Tendai Moyo and E4 has Thandiwe Moyo, so Moyo appears in both. They're different companies, but rename one if both episodes ship together.
 - **E2 (Tarrowby), attack persona:** Alex Rendell, the job applicant on the exercise account (`a.rendell.jobs@inboxly.example`).
+
+## Additions from the E6 and E7 shells (2026-10-22)
+- **Rename (E6 defend):** Dev Mistry, the Tarrowby IT service desk analyst, is now **Nilesh Solanki** (`nilesh.solanki@tarrowby.example`): same role, 30s, Gujarati-British, grew up in Leicester. It clears the clash with Dev Acharya on the E6 attack side. Every mention in `e6/defend.json` changed: the cast note, the `e6_mfa_scan` report reply, the guest wi-fi notice caption (`mb_guest_wifi_sign`), and the form B row 10 email `mb_staff_app_update` (sender, reply-to and sign-off). "Nilesh" and "Solanki" had no hits in scenarios, planning_notes, docs or public/break_escape/js.
+- **Hosts (no new people):**
+  - E6 defend-only: Chidi Okeke, fleet coordinator.
+  - The mobile AB checks: Lerato Dlamini, health and safety adviser.
+  - The mobile BA checks: Jun Watanabe, HR assistant.
+  - E7 defend-only: Agnieszka Duda, Brightwell's payroll officer.
+  - Placeholder sprite keys: `male_telecom`, `female_telecom`, `male_office_worker` and `female_blowse`.

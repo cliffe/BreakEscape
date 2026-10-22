@@ -2990,5 +2990,107 @@
         "room": "training_room"
       }
     ]
+  },
+  "awareness_e6_texts_and_qr_defend": {
+    "globals": {
+      "episode_e6_texts_and_qr_defend_defend_percent": 0,
+      "episode_e6_texts_and_qr_defend_defend_reportRate": 0,
+      "episode_e6_texts_and_qr_defend_defend_done": false,
+      "episode_e6_texts_and_qr_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "chidi_okeke",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e6_texts_and_qr_defend/ink/chidi_okeke.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_mobile_ab": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_done": false,
+      "triage_pre_pass": false
+    },
+    "npcs": [
+      {
+        "id": "lerato_dlamini",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_mobile_ab/ink/lerato_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_mobile_ab": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_done": false,
+      "triage_post_pass": false
+    },
+    "npcs": [
+      {
+        "id": "lerato_dlamini",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_mobile_ab/ink/lerato_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_mobile_ba": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_done": false,
+      "triage_pre_pass": false
+    },
+    "npcs": [
+      {
+        "id": "jun_watanabe",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_mobile_ba/ink/jun_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_mobile_ba": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_done": false,
+      "triage_post_pass": false
+    },
+    "npcs": [
+      {
+        "id": "jun_watanabe",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_mobile_ba/ink/jun_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e7_voice_ceo_defend": {
+    "globals": {
+      "episode_e7_voice_ceo_defend_defend_percent": 0,
+      "episode_e7_voice_ceo_defend_defend_reportRate": 0,
+      "episode_e7_voice_ceo_defend_defend_done": false,
+      "episode_e7_voice_ceo_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "agnieszka_duda",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e7_voice_ceo_defend/ink/agnieszka_duda.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
   }
 }
