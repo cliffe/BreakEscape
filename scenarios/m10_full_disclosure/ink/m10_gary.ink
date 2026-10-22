@@ -35,7 +35,12 @@ Gary Whitlock: That casing on the rack. I had one of those behind my server cabi
 = consultant_imran
 // Alignment R10-m3: seen only once the pointer to Imran has played (Esc at the first choice replays the opener).
 ~ gary_c_seen = true
-Gary Whitlock: That's Imran at the far bench. I trained him. Talk him round or take him in, but talk to him first.
+// Playtest R1 m-3: not "talk to him first" over a knocked-out Imran.
+{ imran_outcome == "ko":
+    Gary Whitlock: That's Imran on the floor at the far bench. I trained him.
+- else:
+    Gary Whitlock: That's Imran at the far bench. I trained him. Talk him round or take him in, but talk to him first.
+}
 ~ gary_quiet = true
 -> consultant_rest
 

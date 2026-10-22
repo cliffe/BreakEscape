@@ -81,7 +81,7 @@ Agent 0x47 'Nightshade': He gave it me to give to you. Helena's drawings have th
 #give_item:key:alarm_override
 Agent 0x47 'Nightshade': And this is what I was keeping. The office's alarm board. Carry this and it doesn't talk to the floors below.
 {whodunit_live:
-    ~ clue_alibi = true
+    ~ ns_borrow_hint = true  // scenario design R2 m2: a method, not an alibi; clue_alibi stays HaX's
     Agent 0x47 'Nightshade': One more, from a man who did it for fifteen years. They always borrow a badge, and it's never the borrower's.
     Agent 0x47 'Nightshade': Look for whoever went where nobody watches.
 }
@@ -160,7 +160,7 @@ Director Magnus Netherton: I am keeping him. If he burns you twice, that is on m
 
 = unshown_extras
 {whodunit_live:
-    ~ clue_alibi = true
+    ~ ns_borrow_hint = true  // scenario design R2 m2: a method, not an alibi; clue_alibi stays HaX's
     Agent 0x47 'Nightshade': Something free, since it isn't in the payment. They always borrow a badge, and it's never the borrower's.
     Agent 0x47 'Nightshade': Look for whoever went where nobody watches.
 }
@@ -272,7 +272,7 @@ Director Magnus Netherton: Without him you have Helena's plans. They are good pl
     #give_item:notes:nightshade_payment
     Agent 0x47 'Nightshade': Then here it is. Everything he'd built by the spring, written out the way he told it to me.
     {whodunit_live:
-        ~ clue_alibi = true
+        ~ ns_borrow_hint = true  // scenario design R2 m2: a method, not an alibi; clue_alibi stays HaX's
         Agent 0x47 'Nightshade': And something he never briefed. They always borrow a badge, and it's never the borrower's.
         Agent 0x47 'Nightshade': Look for whoever went where nobody watches.
     }

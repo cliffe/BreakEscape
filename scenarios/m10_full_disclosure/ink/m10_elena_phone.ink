@@ -77,15 +77,19 @@ Breaker row. The shutter's third from the left. Leave the rest alone, they feed 
     ~ gallery_camera_blinded = true
     The little toggle under the row, painted over. Down. That's their camera on the walkway.
     -> cut_2_menu
-+ [Pulling it.]
-    ~ cut_step = 3
-    ~ gallery_shutter_cut = true
-    Done. That shutter's dead. Go get him.
-    -> cut_close_way
-+ [Give me a minute.]
-    Third from the left. It'll wait.
+// Puzzle chains P2: the player pulls it at the isolator; the call ends on the instruction (resume lands back here).
++ [Going to it.]
+    Third from the left. Go pull it, and leave the others alone.
+    -> cut_2_go
+= cut_2_go
++ [On it.]
     #exit_conversation
     -> cut_2_menu
+
+// Puzzle chains P2: rung once the player has pulled it (cut_step 3).
+=== cut_done ===
+Done. That shutter's dead. Go get him.
+-> cut_close_way
 
 // After the cut: no text, one way out.
 === cut_after ===

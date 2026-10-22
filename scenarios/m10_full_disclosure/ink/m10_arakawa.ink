@@ -189,7 +189,8 @@ Officer Kenji Arakawa: That hum's in my teeth. Let's not stay long.
 { not arak_can_accuse():
     -> menu
 }
-Agent HaX: Wrong, and Arakawa's off the raid till you can clear him. Sure?
+// Playtest R1 m-1: a condition, not a verdict, for the right officer too.
+Agent HaX: If that's wrong, Arakawa's off the raid till you can clear him. Sure?
 + [I'm sure.]
     ~ officer_out = "arakawa"
     ~ wrong_accusation = true

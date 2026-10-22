@@ -489,3 +489,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - F12 VM reach: gate VM progress behind in-game information (as m01: Kali early, but Kevin's password list sits behind in-game puzzles). Apply across missions. A player must never hold a flag they can't yet submit.
 - F13 m10 disarm and unsent notice: seed them on the VM too (as m01's VM holds the launch code). Audit all missions for both patterns.
 - F16 phone tag batching: fix in the engine now. F18 five UI rough edges: fix all five now.
+- m10 playtest R1 (struggling): a traced share stopped by Vos or Victoria is explained by HaX; accusation checks conditional; Gary over a knocked-out Imran; reload pointer; core resume flags are globals; trace acknowledged at the core. Engine: room-init timeout, phone clock. Voiced: +3, 6 reworded.

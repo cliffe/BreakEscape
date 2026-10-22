@@ -39,9 +39,9 @@ Dr Abena Asante: You're the one off the office wall. Don't touch my console and 
     Dr Abena Asante: Every vendor patches in a week, because they have to. You lot have been asking nicely for thirty years.
     -> hall_menu
 // Educational R1 E-m4: her week-long patch claim gets an answer where she makes it.
-+ {asan_wrote and not asan_unpatched} [Some of those controllers will never get a patch.]
++ {asan_wrote and asan_shown and not asan_unpatched} [Some of those controllers will never get a patch.]
     ~ asan_unpatched = true
-    Dr Abena Asante: Then they should never have been on a network. *pause* That isn't the hospitals' fault, I know.
+    Dr Abena Asante: Then they should never have been on a network. *pause* That isn't the utility's fault, I know.
     -> hall_menu
 + {not asan_shown} [Show me the schedule.]
     ~ asante_outcome = "talked"

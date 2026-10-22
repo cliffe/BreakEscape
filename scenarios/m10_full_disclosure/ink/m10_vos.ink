@@ -107,7 +107,7 @@ Pieter Vos: I don't do philosophy. I do delivery dates.
             Pieter Vos: My delivery was cancelled. I am waiting for a flight. You are in the way of that too.
         // Dialogue R1 m3: after four, any share not stopped or killed has gone out.
         - outer_lock_open:
-            Pieter Vos: My delivery came at four. Now I am waiting for a flight. You are in the way of that too.
+            Pieter Vos: My delivery came at four. Now I am waiting for a flight. You are in the way of it.
         - else:
             Pieter Vos: I am waiting for a delivery. You are in the way of it.
         }

@@ -649,7 +649,7 @@ Narrator: 'I'll be at the board. I don't know what I'll say.'
     Director Magnus Netherton: We buried Albion. Tonight I signed for every line we left out.
 // R3-M1: true on every database outcome.
 - key == "stcath_exposed" and database_outcome == "secured":
-    Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They still are not. That was my signature too.
+    Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They are still not. That was my signature too.
 - key == "stcath_exposed" and database_outcome == "both_wiped":
     Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They will not be now.
 - key == "stcath_exposed":

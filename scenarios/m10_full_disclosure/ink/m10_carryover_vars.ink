@@ -207,6 +207,23 @@ VAR signout_read = false
 VAR what_went_out_given = false
 VAR clue_door_log = false
 VAR clue_alibi = false
+VAR ns_borrow_hint = false  // scenario design R2 m2: Nightshade's "they always borrow a badge" hint
+VAR cracker_rack_seen = false  // puzzle chains P5: the cracker rack in the workshop has been looked at
+VAR lock_guard_stood_down = false  // puzzle chains P6: Fonoti has handed over his card or stood down
+// Playtest R1 m-5: Tesseract's record flags are globals, so a reload mid-records resumes at the next record.
+VAR tess_rec = 0
+VAR tess_rec_albion = false
+VAR tess_rec_derek = false
+VAR tess_rec_debrief = false
+VAR tess_rec_cold = false
+// The core scene's resume flags (dialogue R1, scenario design R1), also globals for the same reason.
+VAR tess_case_step = 0
+VAR tess_pitch_said = false
+VAR tess_lesson_said = false
+VAR tess_db_greeted = false
+VAR tess_db_costs_said = false
+VAR tess_end_said = false
+VAR tess_warned = false
 VAR clue_bench_log = false
 VAR casualty_sheet_read = false
 VAR margin_note_read = false
@@ -465,7 +482,7 @@ VAR close_zero_day = ""
     ~ close_human = "fortyseven_late"
 - m05_completed and not list_kept:
     ~ close_human = "fortyseven_none"
-- m05_elena_treatment_funded:
+- m05_elena_treatment_funded and m05_final_choice != "arrest":  // dialogue R2 n7: the Torres credit already says it
     ~ close_human = "elena"
 - else:
     ~ close_human = "none"

@@ -72,15 +72,19 @@ Breaker row. The shutter's third from the left, the big one. Don't touch the oth
     ~ gallery_camera_blinded = true
     Small toggle under the row, painted over. Flick it down. That's their camera on the gallery.
     -> cut_2_menu
-+ [Pulling it.]
-    ~ cut_step = 3
-    ~ gallery_shutter_cut = true
-    That's it. Shutter's dead. Sixty-year-old kit, and it still does what it's told.
-    -> cut_close_way
-+ [Give me a minute.]
-    Third from the left. Take your time.
+// Puzzle chains P2: the player pulls it at the isolator; the call ends on the instruction (resume lands back here).
++ [Going to it.]
+    Third from the left, the big one. Go and pull it. Nothing else.
+    -> cut_2_go
+= cut_2_go
++ [On it.]
     #exit_conversation
     -> cut_2_menu
+
+// Puzzle chains P2: rung once the player has pulled it (cut_step 3).
+=== cut_done ===
+That's it. Shutter's dead. Sixty-year-old kit, and it still does what it's told.
+-> cut_close_way
 
 // After the cut: no text, one way out.
 === cut_after ===

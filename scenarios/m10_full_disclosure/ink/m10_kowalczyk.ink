@@ -188,7 +188,8 @@ Agent 0x5E 'Lantern': Service side. Go on.
 // words for every officer (the raid files use the same shape), so the
 // check gives nothing away.
 === accuse_check ===
-Agent HaX: Wrong, and Kowalczyk's off the raid till you can clear her. Sure?
+// Playtest R1 m-1: a condition, not a verdict, for the right officer too.
+Agent HaX: If that's wrong, Kowalczyk's off the raid till you can clear her. Sure?
 + [I'm sure.]
     -> card_1
 + [Forget I said it.]
@@ -233,7 +234,8 @@ Agent 0x5E 'Lantern': I packed that case with Kenji. Ask him where he was at ten
 // Card 4, her own words. Needs the bench seen (the casings on its rack).
 === card_5 ===
 Narrator: For a moment she has nothing to say.
-+ {workshop_entered} [You said it never went through stores. Then it came straight off his bench.]
+// Puzzle chains P5: the rack seen, not just the room entered.
++ {cracker_rack_seen} [You said it never went through stores. Then it came straight off his bench.]
     -> crack
 + [That's enough. Netherton can have you.]
     -> stonewall

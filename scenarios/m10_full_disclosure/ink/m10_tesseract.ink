@@ -15,18 +15,6 @@ INCLUDE m10_carryover_vars.ink
 VAR tess_quiet = false      // set before every exit, so a reopen of `parked` re-routes
 VAR tess_menu = false       // set before every divert into a choices-only menu; a reopen finds it false and re-routes
 VAR tess_bridge = false     // true only on the first pass through exch_bridge
-VAR tess_rec = 0            // record lines read in `case` (alignment A6: two at most)
-VAR tess_case_step = 0      // R2-m1: 1 once the pitch is done, 2 once the records are; a reload resumes there
-VAR tess_rec_albion = false // each record, written on its pick
-VAR tess_rec_derek = false
-VAR tess_rec_debrief = false
-VAR tess_rec_cold = false
-VAR tess_pitch_said = false   // dialogue R1 M1: the pitch has played; a reopen resumes at case_why
-VAR tess_lesson_said = false  // dialogue R1 M1: Ghost's lesson plays once
-VAR tess_db_greeted = false   // dialogue R1 M2: Netherton is on the line and greeted
-VAR tess_db_costs_said = false // dialogue R1 M2: the costs are said; a reopen goes straight to the choice
-VAR tess_warned = false      // scenario design R1 M1: the "we finish tonight" warning has played
-VAR tess_end_said = false     // dialogue R1 m10: his end's opening beat has played
 
 === start ===
 -> core_router
@@ -132,8 +120,13 @@ Dr Adrian Tesseract: Take your time. It goes at six whatever we say. Or now, if 
     Agent HaX: ...back. 0x00.
 }
 {
+// Playtest R1 m-9: a trace gets its acknowledgement here, not only at 06:00.
+- head_start_out == "both" and share_zero_day == "traced":
+    Agent HaX: Confirmed. Both shares went at the lock. I'm on Zero Day's.
 - head_start_out == "both":
     Agent HaX: Confirmed. Both shares went at the lock.
+- head_start_out == "zero_day" and share_zero_day == "traced":
+    Agent HaX: Confirmed. Zero Day's share went, and I'm on it.
 - head_start_out == "zero_day":
     Agent HaX: Confirmed. Zero Day's share went.
 - head_start_out == "ghost":
@@ -231,18 +224,24 @@ Dr Adrian Tesseract: All four. Good. Now it's my turn.
 { not tess_warned:
     ~ tess_warned = true
     Dr Adrian Tesseract: Once I start, we finish tonight, here, one way or another. If there's something you'd like to see to first, go. I'll keep.
+    // Scenario design R2 M1: the costliest loose end first (the backdoor), then WREN (or the door log that names her), then the sheet.
     {
-    - whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "":
+    - backdoor_channel_live and not backdoor_closed:
+        Agent HaX: His backdoor's still open. The console in the hall closes it.
+    - whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "" and clue_door_log:
         Agent HaX: We still haven't named WREN.
+    - whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "":
+        Agent HaX: We never read the office's door log.
     - not casualty_sheet_read:
-        Agent HaX: You never read his sheet. It's on the bench upstairs.
+        Agent HaX: You never read his sheet. It's on the workshop bench.
     }
 }
 + [Go on, then.]
 + [Step away from the console first.]
     Dr Adrian Tesseract: No. But I'll keep my hand where you can see it.
 + [Not yet. I want to finish something.]
-    Dr Adrian Tesseract: I'll keep.
+    // Dialogue R2 m1 / scenario design R2 n1: not "I'll keep." twice; reuses his arrival line.
+    Dr Adrian Tesseract: I'll be here.
     ~ tess_quiet = true
     #exit_conversation
     -> parked
@@ -555,7 +554,7 @@ Dr Adrian Tesseract: That's the cheapest it will ever be. Wait a year and the nu
     -> first_landed ->
     Dr Adrian Tesseract: I signed it.
     -> bridge_in
-+ { not casualty_sheet_read and not (margin_note_read or asante_confirmed_sheet) } [Nobody can know a number like that.]
++ { not casualty_sheet_read and not (margin_note_read or asante_confirmed_sheet) } [Your figure's a guess dressed up as sums. Nobody can know that.]
     ~ exchange_1 = "miss"
     -> exch_1_sting ->
     Dr Adrian Tesseract: I can. I did the sums. You didn't read them.
@@ -637,7 +636,7 @@ Dr Adrian Tesseract: That's about me. I asked about a price.
     Dr Adrian Tesseract: Torres sends me nothing now. I assume he sends it to you.
 // R3-m7: on a funded arrest the credits say her treatment goes on.
 - m05_final_choice == "arrest" and m05_elena_treatment_funded:
-    Dr Adrian Tesseract: You handed Torres to the police, and your service paid his wife's bills afterwards. Cheaper than paying them before.
+    Dr Adrian Tesseract: You handed Torres to the police, and your service paid his wife's bills once he was locked up. Cheaper than paying them before.
 - m05_final_choice == "arrest":
     Dr Adrian Tesseract: You handed Torres to the police for paying his wife's hospital bills. I count her as well.
 - m05_final_choice == "public_exposure":
@@ -810,7 +809,8 @@ Dr Adrian Tesseract: Somebody has to be the during. Better me.
     Dr Adrian Tesseract: Better me, I said. And I brought you.
     -> core_router
 // slot 4 (ruling 5: the notes answer needs the optional annotation read): the Tomb Alpha notes > what HaX does with the line > plain decoy
-+ { tapes } [Your Tomb Alpha notes say carry it. They never say hand it on.]
+// Puzzle chains P4: what an m09 player who opened the sheet saw.
++ { tapes } [Your Alpha notes made students decode it themselves. Now you'd do it for everyone.]
     ~ exchange_3 = "record"
     -> ko_sting ->
     -> first_landed ->

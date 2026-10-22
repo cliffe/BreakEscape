@@ -46,6 +46,7 @@ VAR fon_shift_used = false  // "Shift change" has been tried at the challenge
     -> talk
 + {not fon_card_given and not outer_lock_open and vos_outcome == "bought"} [Vos sold you out.]
     ~ fon_card_given = true
+    ~ lock_guard_stood_down = true  // puzzle chains P6
     Sione Fonoti: The Dutch guy. Figures. You've got his card, so you don't need mine. I'll stand over here.
     -> talk
 + [Never mind.]

@@ -142,7 +142,7 @@
             "style": "warning"
           },
           {
-            "text": "Breaching lead, Task Force Null. Eleven years in SAFETYNET. Badge returned.",
+            "text": "Breaching lead, Task Force Null. Eleven years in SAFETYNET. Badge handed in.",
             "condition": "globalVars.sleeper_caught === true",
             "style": "warning"
           },

@@ -121,7 +121,8 @@ Agent 0x2D 'Anchor': I've got the near end. Go do your work.
 { not quin_can_accuse():
     -> menu
 }
-Agent HaX: Wrong, and Quintero's off the raid till you can clear her. Sure?
+// Playtest R1 m-1: a condition, not a verdict, for the right officer too.
+Agent HaX: If that's wrong, Quintero's off the raid till you can clear her. Sure?
 + [I'm sure.]
     ~ officer_out = "quintero"
     ~ wrong_accusation = true

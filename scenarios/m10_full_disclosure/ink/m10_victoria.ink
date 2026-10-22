@@ -118,10 +118,10 @@ Victoria Sterling: You. St. Catherine's was a proof of concept. This is the rest
     Victoria Sterling: You've opened that lock without me. All I can sell you now is my absence.
     Victoria Sterling: Or cuff me to that rail. Your choice.
 - share_zero_day == "stopped":
-    Victoria Sterling: Zero Day's share is dead already, so all I can sell you is a name. Which of these two carries the code card.
+    Victoria Sterling: Zero Day's share is dead already, so all I can sell you is a name. Which of them carries the code card.
     Victoria Sterling: Or cuff me to that rail, and find the card yourself.
 - else:
-    Victoria Sterling: I walk out. Zero Day's order goes away, and I tell you which of these two has the code card.
+    Victoria Sterling: I walk out. Zero Day's order goes away, and I tell you which of them has the code card.
     Victoria Sterling: Or cuff me to that rail, and find the card yourself.
 }
 -> escaped_menu

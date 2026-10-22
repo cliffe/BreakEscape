@@ -286,10 +286,14 @@ Agent HaX: If she's in that room, she means it. Get past her. Don't argue with h
 - neth_branch == "arrested":
     Agent HaX: They've brought Nightshade up in cuffs. He asked for you.
 - else:
-    Agent HaX: Nightshade's in the van. Netherton has a question about him.
+    Agent HaX: Nightshade's in the van.
 }
 ~ aside_done = true
 Agent HaX: Start the gate console on your way past. It's slow to boot.
+// Scenario design R2 m4: on the silent branch Netherton asks his question now, not on a second talk.
+{ neth_branch == "silent":
+    -> tether
+}
 ~ neth_quiet = true
 #exit_conversation
 -> hub
@@ -324,6 +328,10 @@ Agent HaX: Start the gate console on your way past. It's slow to boot.
     ~ nightshade_tethered = false
     ~ door_scene_done = true
     Director Magnus Netherton: Then he stays where he is.
+    ~ neth_quiet = true
+    #exit_conversation
+    -> hub
++ [Let me think about it.]
     ~ neth_quiet = true
     #exit_conversation
     -> hub

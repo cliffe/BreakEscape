@@ -85,7 +85,8 @@ VAR hax_suspect = ""
 + {flag2_submitted and not flag3_submitted and not hax_hatch_asked} [The hatch?] -> hatch_topic
 // Educational R1 (E-m6): concept steers for flags 1 and 4 (wording checked against the VM plan by opus48).
 + {outer_lock_open and not flag4_submitted and not hax_box_asked} [His box.] -> box_topic
-+ {power_room_entered and not gallery_shutter_cut and phone_voice_is_hax} [Talk me through the shutter.] -> shutter_topic
+// Puzzle chains P1: only once the cut has fallen to the player, so it never goes round Wendell's choice or Voltage's scene.
++ {power_room_entered and cut_by_hand and not gallery_shutter_cut and phone_voice_is_hax} [Talk me through the shutter.] -> shutter_topic
 + {clue_door_log and whodunit_live and not wren_at_core and accused == ""} [I know who WREN is.] -> accuse
 // Alignment m12: recalls after the accusation, and gone once past the gallery stair.
 + {officer_out == "malhotra" and clue_alibi and not gallery_open} [Bring Malhotra back.] -> recall_malhotra
@@ -135,9 +136,19 @@ VAR hax_suspect = ""
     The console takes the staging copy.
 - gallery_shutter_cut:
     Server hall's through there.
-// Dialogue R1 m15: in the power room, the job is the shutter.
-- power_room_entered:
-    The shutter. Whoever runs that room, or you by hand.
+// Dialogue R1 m15, puzzle chains P1: in the power room, the job is the shutter, and who does it.
+- power_room_entered and not gallery_shutter_cut and not cut_by_hand:
+    The shutter's on whoever runs that room. Talk to them first.
+- power_room_entered and not gallery_shutter_cut and cut_by_hand:
+    The shutter's ours now.
+    {
+    - cut_step == 2:
+        Third from the left. Go and pull it.
+    - phone_voice_is_hax:
+        Ask me and I'll talk you through it.
+    - else:
+        Pick up when they ring.
+    }
 - workshop_entered:
     Get to the power room. Then the shutter.
 - ghost_call_done:
@@ -538,8 +549,9 @@ Get a foothold on it and their own eyes work for us.
 
 === box_topic ===
 ~ hax_box_asked = true
-He walled his box off, the way the release service was boxed in. Isolation like that can still be broken out of.
-And he always builds his own way out first. Find his.
+// Dialogue R2 n4: same concept as opus48's checked lines, no new technical detail; leaves "He always builds his own way out first" to the core.
+He walled his box off, the same way the release service was. You've broken out of one of those tonight.
+He'll have left himself a way out. Find it.
 -> support_hub
 
 // After flag 4 (MC §6.1): the feed, and the vault line with the purge.
@@ -756,17 +768,13 @@ Top row. The third breaker from the left feeds the shutter.
 }
 + {not gallery_camera_blinded} [And the gallery camera?]
     ~ gallery_camera_blinded = true
-    Fourth one along. Throw it as well. Their monitor up there just went dark.
+    // Puzzle chains P9: a toggle under the row, as the isolator and the other voices have it.
+    The painted toggle under the row. Down. Their monitor up there just went dark.
     -> cut_breakers
-+ [Pulling it.]
-    ~ cut_step = 3
-    ~ gallery_shutter_cut = true
-    That's the shutter. It's dead.
-    -> hax_close_way
-+ [Give me a minute.]
-    Third from the left. I'll be here.
-    #exit_conversation
-    -> DONE
+// Puzzle chains P2: the player pulls the breaker at the isolator (its click writes the cut); the call ends on the instruction.
++ [Going to it.]
+    Third from the left. Go and pull it.
+    -> hax_close_got
 
 // Stage 9 final check (m09 CONTRACT §15 pattern): the phone closes ~3 ms after
 // the last line before #exit_conversation, so a call whose last line carries

@@ -979,7 +979,7 @@ credits_fragment = JSON.parse(<<~'JSON')
               "style": "warning"
             },
             {
-              "text": "Breaching lead, Task Force Null. Eleven years in SAFETYNET. Badge returned.",
+              "text": "Breaching lead, Task Force Null. Eleven years in SAFETYNET. Badge handed in.",
               "condition": "globalVars.sleeper_caught === true",
               "style": "warning"
             },
@@ -1341,6 +1341,10 @@ end
       "takeable": true,
       "observations": "Matte casing, no stores label. Halina Kowalczyk handed it to you before Helena: 'This one's mine. Never been through stores, never been near him.'",
       "observationVariants": [
+        <%# Puzzle chains P5: once the rack is seen, the battery door tells. %>
+        { "condition": "globalVars.cracker_rack_seen === true && !globalVars.m09_completed && !globalVars.m08_completed", "value": "Matte casing, no stores label. Halina Kowalczyk handed it to you at the briefing: 'This one's mine. Never been through stores.' Inside the battery door, where his bench puts its batch sticker, there's a clean square where one was peeled off." },
+        { "condition": "globalVars.cracker_rack_seen === true && !globalVars.m09_completed", "value": "Matte casing, no stores label. Halina Kowalczyk handed it to you at the briefing: 'This one's mine. Never been through stores, never been near him.' Inside the battery door, where his bench puts its batch sticker, there's a clean square where one was peeled off." },
+        { "condition": "globalVars.cracker_rack_seen === true", "value": "Matte casing, no stores label. Halina Kowalczyk handed it to you before Helena: 'This one's mine. Never been through stores, never been near him.' Inside the battery door, where his bench puts its batch sticker, there's a clean square where one was peeled off." },
         { "condition": "!globalVars.m09_completed && !globalVars.m08_completed", "value": "Matte casing, no stores label. Halina Kowalczyk handed it to you at the briefing: 'This one's mine. Never been through stores.'" },
         { "condition": "!globalVars.m09_completed", "value": "Matte casing, no stores label. Halina Kowalczyk handed it to you at the briefing: 'This one's mine. Never been through stores, never been near him.'" }
       ],
@@ -1438,7 +1442,7 @@ end
     {
       "aimId": "end_it",
       "title": "End It",
-      "description": "His console, the database and the man. Each choice is yours, and each one costs someone. Then the forward post at six.",
+      "description": "His console, the database and the man. Each choice is yours, and each one costs someone. Then the night closes.",
       "status": "locked",
       "order": 5,
       "missionConclusion": true,
@@ -1701,18 +1705,24 @@ end
             { "eventPattern": "global_variable_changed:cut_by_hand", "condition": "value === true && globalVars.phone_voice_is_hax === true && !globalVars.gallery_shutter_cut && !globalVars.hax_jammed", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.cut_by_hand === true && !globalVars.gallery_shutter_cut && globalVars.phone_voice_is_hax === true && !globalVars.hax_jammed", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500, "cooldown": 0 },
             <%# Scenario design R1 m3: the isolator itself starts the by-hand cut with the phone voice. %>
-            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.cut_by_hand === true && !globalVars.gallery_shutter_cut && globalVars.phone_voice_is_hax === true && !globalVars.hax_jammed", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500, "cooldown": 0 },
-            { "eventPattern": "conversation_closed:agent_0x99", "condition": "globalVars.cut_by_hand === true && !globalVars.gallery_shutter_cut && globalVars.phone_voice_is_hax === true && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.cut_step !== 2 && globalVars.cut_by_hand === true && !globalVars.gallery_shutter_cut && globalVars.phone_voice_is_hax === true && !globalVars.hax_jammed", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500, "cooldown": 0 },
+            { "eventPattern": "conversation_closed:agent_0x99", "condition": "globalVars.cut_by_hand === true && globalVars.cut_step !== 2 && !globalVars.gallery_shutter_cut && globalVars.phone_voice_is_hax === true && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
             { "eventPattern": "room_entered:power_room", "condition": "!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome !== 'turned' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1000, "message": "He doesn't know. Tell him, and he'll want to warn somebody. Their switchboard will hear it." } },
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.m04_robert_vance_ko === true && !globalVars.m04_voltage_captured && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 6000, "message": "I rang Vance. He said no. He said you'd know why." } },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Tool Roll' && data.roomId === 'power_room' && globalVars.m04_static_left_alone === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Static got out of Albion on his own. That's his." } },
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true", "onceOnly": true, "completeTask": "cut_the_shutter" },
-            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && !globalVars.cut_by_hand && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2500, "message": "Shutter's dead. The hall's next." } },
-            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.cut_by_hand === true && !globalVars.phone_voice_is_hax && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2500, "message": "Shutter's dead. The hall's next." } },
+            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2500, "message": "Shutter's dead. The hall's next." } },
+            <%# Puzzle chains P2: one "Shutter's dead" text on every cut (the NPC cuts, HaX's talk-through, after Vance's or Elena's cut_done call). The isolator's click at step 2 is the pull: cut_step first, so cut_done's cut_step === 3 test holds when the cut's change fires. %>
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && data.roomId === 'power_room' && globalVars.cut_step === 2 && !globalVars.gallery_shutter_cut", "cooldown": 0, "setGlobal": { "cut_step": 3, "gallery_shutter_cut": true } },
 <%# --- The server hall: the console, the shares, the schedule (OT 6; CONTRACT 3.3) --- %>
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Release Console Controls' && data.roomId === 'server_hall' && globalVars.flag2_submitted === true && !globalVars.hax_jammed && globalVars.ending === ''", "cooldown": 0, "conversationMode": "phone-chat", "targetKnot": "console" },
             { "eventPattern": "global_variable_changed:head_start_killed", "condition": "value === 'zero_day'", "setGlobal": { "share_zero_day": "stopped" } },
             { "eventPattern": "global_variable_changed:head_start_killed", "condition": "value === 'trace' && globalVars.share_zero_day === 'live'", "setGlobal": { "share_zero_day": "traced" } },
+            <%# Playtest R1 m-4: a reload still spawns at the forward post (engine); once the raid is below ground, HaX points back down. %>
+            { "eventPattern": "room_entered:forward_post", "condition": "globalVars.breach_open === true && globalVars.ending === '' && !globalVars.hax_jammed", "cooldown": 600000, "sendTimedMessage": { "delay": 2500, "message": "Everything below is still open. Ask me where we are." } },
+            <%# Playtest R1 M-1: withdrawing Zero Day's order before four (Vos's secret, Victoria's picks) stops a traced share too: nothing goes, so there is nothing to follow. HaX says so (once), when she can reach the player. %>
+            { "eventPattern": "global_variable_changed:share_zero_day", "condition": "value === 'stopped' && globalVars.head_start_killed === 'trace' && !globalVars.trace_loss_told && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "trace_loss_told": true }, "sendTimedMessage": { "delay": 2500, "message": "Your trace is gone. Their order was pulled before it went, so there was nothing to follow. Zero Day got nothing instead." } },
+            { "eventPattern": "global_variable_changed:hax_jammed", "condition": "value === false && globalVars.share_zero_day === 'stopped' && globalVars.head_start_killed === 'trace' && !globalVars.trace_loss_told", "onceOnly": true, "setGlobal": { "trace_loss_told": true }, "sendTimedMessage": { "delay": 4000, "message": "Your trace is gone. Their order was pulled before it went, so there was nothing to follow. Zero Day got nothing instead." } },
             { "eventPattern": "global_variable_changed:head_start_killed", "condition": "value === 'ghost' && globalVars.share_resale === 'live'", "setGlobal": { "share_resale": "stopped" } },
             { "eventPattern": "global_variable_changed:head_start_killed", "condition": "value !== ''", "onceOnly": true, "completeTask": "use_the_console" },
             { "eventPattern": "global_variable_changed:flag2_submitted", "condition": "value === true && globalVars.backdoor_channel_live === true", "onceOnly": true, "unlockTask": "close_the_backdoor" },
@@ -1794,7 +1804,9 @@ end
             { "eventPattern": "global_variable_changed:door_scene_done", "condition": "value === true", "onceOnly": true, "completeTask": "settle_the_table" },
             { "eventPattern": "global_variable_changed:ghost_call_done", "condition": "value === true", "onceOnly": true, "completeTask": "answer_the_handset" },
             { "eventPattern": "global_variable_changed:clue_door_log", "condition": "value === true", "onceOnly": true, "completeTask": "read_the_door_log" },
-            { "eventPattern": "global_variable_changed:clue_alibi", "condition": "value === true", "onceOnly": true, "completeTask": "check_the_alibis" },
+            <%# Scenario design R2 m2: the alibi task ticks only once the door log is in hand too (the m09 shortlist sets clue_alibi at the aside). %>
+            { "eventPattern": "global_variable_changed:clue_alibi", "condition": "value === true && globalVars.clue_door_log === true", "onceOnly": true, "completeTask": "check_the_alibis" },
+            { "eventPattern": "global_variable_changed:clue_door_log", "condition": "value === true && globalVars.clue_alibi === true", "onceOnly": true, "completeTask": "check_the_alibis" },
             { "eventPattern": "global_variable_changed:clue_bench_log", "condition": "value === true", "onceOnly": true, "completeTask": "read_the_bench_log" },
             { "eventPattern": "global_variable_changed:accused", "condition": "value !== ''", "onceOnly": true, "completeTask": "name_the_sleeper" },
             { "eventPattern": "global_variable_changed:officer_out", "condition": "value !== ''", "onceOnly": true, "completeTask": "name_the_sleeper" },
@@ -1821,10 +1833,17 @@ end
             { "eventPattern": "global_variable_changed:casualty_sheet_read", "condition": "value === true && !globalVars.margin_note_read && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2500, "message": "There's something written in the margin. Not plain English.", "skipIfGlobal": "margin_note_read" } },
             { "eventPattern": "global_variable_changed:casualty_sheet_read", "condition": "value === true && !globalVars.margin_note_read && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 7500, "message": "Copy just the code.", "skipIfGlobal": "margin_note_read" } },
             <%# Educational R1 E-m7: once the cracker's source is known, steer towards the keypad's own evidence (the outer lock stays a PIN lock). %>
-            { "eventPattern": "global_variable_changed:sleeper_caught", "condition": "value === true && !globalVars.outer_lock_open && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 6000, "message": "Her cracker came off his bench. I wouldn't trust it at his door. The keys' wear and the rota will get you in.", "skipIfGlobal": "outer_lock_open" } },
+            { "eventPattern": "global_variable_changed:sleeper_caught", "condition": "value === true && globalVars.workshop_entered === true && !globalVars.cracker_text_sent && !globalVars.outer_lock_open && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "cracker_text_sent": true }, "sendTimedMessage": { "delay": 6000, "message": "Her cracker came off his bench. I wouldn't trust it at his door. The worn keys and the rota will get you in.", "skipIfGlobal": "outer_lock_open" } },
+            <%# Scenario design R2 m1: T-59 needs the bench in the player's world, so never during the briefing on a taken save. The twin speaks on entering the workshop when the sleeper was caught earlier; cracker_text_sent keeps it to once. %>
+            { "eventPattern": "room_entered:workshop_floor", "condition": "globalVars.sleeper_caught === true && !globalVars.cracker_text_sent && !globalVars.outer_lock_open && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "cracker_text_sent": true }, "sendTimedMessage": { "delay": 6000, "message": "Her cracker came off his bench. I wouldn't trust it at his door. The worn keys and the rota will get you in.", "skipIfGlobal": "outer_lock_open" } },
             <%# Educational R1 E-m5: a recognition rung for the Base64 strip (m02 taught the shape). %>
-            { "eventPattern": "global_variable_changed:casualty_sheet_read", "condition": "value === true && !globalVars.margin_note_read && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 30000, "message": "Upper and lower case, digits, no spaces. You've seen that shape before.", "skipIfGlobal": "margin_note_read" } },
+            { "eventPattern": "global_variable_changed:casualty_sheet_read", "condition": "value === true && globalVars.m02_completed === true && !globalVars.margin_note_read && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 30000, "message": "Upper and lower case, digits, no spaces. You've seen that shape before.", "skipIfGlobal": "margin_note_read" } },
+            <%# Dialogue R2 m5: a cold start hasn't met the shape in m02. %>
+            { "eventPattern": "global_variable_changed:casualty_sheet_read", "condition": "value === true && !globalVars.m02_completed && !globalVars.margin_note_read && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 30000, "message": "Upper and lower case, digits, no spaces. That's encoded, not encrypted. Your kit can read it.", "skipIfGlobal": "margin_note_read" } },
             { "eventPattern": "global_variable_changed:clue_bench_log", "condition": "value === true && globalVars.whodunit_live === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "That's a cloner in our own breaching kit. The case's sign-out sheet is on the table up here. Want the names?" } },
+            <%# Puzzle chains P5: the rack seen is the evidence Kowalczyk's fourth card needs; a pointer if the bench log is read first. %>
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Cracker Rack' && data.roomId === 'workshop_floor' && !globalVars.cracker_rack_seen", "cooldown": 0, "setGlobal": { "cracker_rack_seen": true } },
+            { "eventPattern": "global_variable_changed:clue_bench_log", "condition": "value === true && !globalVars.cracker_rack_seen && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 3500, "message": "Have a look at that rack in the corner bay.", "skipIfGlobal": "cracker_rack_seen" } },
             { "eventPattern": "global_variable_changed:clue_bench_log", "condition": "value === true && globalVars.clue_door_log === true && globalVars.clue_alibi === true && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 6000, "message": "That's three things that point somewhere. Your call, and you don't have to make it.", "skipIfGlobal": "hax_jammed" } },
             { "eventPattern": "global_variable_changed:clue_alibi", "condition": "value === true && globalVars.clue_door_log === true && globalVars.clue_bench_log === true && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 6000, "message": "That's three things that point somewhere. Your call, and you don't have to make it.", "skipIfGlobal": "hax_jammed" } },
             { "eventPattern": "global_variable_changed:clue_door_log", "condition": "value === true && globalVars.clue_alibi === true && globalVars.clue_bench_log === true && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 12000, "message": "That's three things that point somewhere. Your call, and you don't have to make it.", "skipIfGlobal": "hax_jammed" } },
@@ -2288,10 +2307,12 @@ end
           "currentKnot": "start",
           "voice": <%= voice.(:vance) %>,
           "eventMappings": [
+            <%# Puzzle chains P2: his success line, once the player has pulled the breaker. %>
+            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.cut_step === 3 && globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "cut_done", "voiced": true, "delayMs": 1500 },
             { "eventPattern": "global_variable_changed:cut_by_hand", "condition": "value === true && globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.cut_by_hand === true && globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
             <%# Scenario design R1 m3: the isolator itself starts the by-hand cut with the phone voice. %>
-            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.cut_by_hand === true && globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.cut_step !== 2 && globalVars.cut_by_hand === true && globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
             { "eventPattern": "room_entered:power_room", "condition": "!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && globalVars.m04_vance_is_ally === true", "onceOnly": true, "sendTimedMessage": { "delay": 1000, "message": "He doesn't know. Tell him, and he'll want to warn somebody. Their switchboard will hear it." } }
           ]
         },
@@ -2306,10 +2327,12 @@ end
           "currentKnot": "start",
           "voice": <%= voice.(:elena) %>,
           "eventMappings": [
+            <%# Puzzle chains P2: her success line, once the player has pulled the breaker. %>
+            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.cut_step === 3 && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "cut_done", "voiced": true, "delayMs": 1500 },
             { "eventPattern": "global_variable_changed:cut_by_hand", "condition": "value === true && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.cut_by_hand === true && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
             <%# Scenario design R1 m3: the isolator itself starts the by-hand cut with the phone voice. %>
-            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.cut_by_hand === true && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.cut_step !== 2 && globalVars.cut_by_hand === true && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
             { "eventPattern": "room_entered:power_room", "condition": "!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned'", "onceOnly": true, "sendTimedMessage": { "delay": 1000, "message": "He doesn't know. Tell him, and he'll want to warn somebody. Their switchboard will hear it." } }
           ]
         },
@@ -2752,7 +2775,7 @@ not_tethered = '!globalVars.nightshade_tethered'
             "hostile": { "chaseSpeed": 135, "attackDamage": 10, "pauseToAttack": true },
             "patrol": { "enabled": true, "speed": 60, "waypoints": [{ "x": 4, "y": 4, "dwellTime": 2000 }, { "x": 6, "y": 8, "dwellTime": 2000 }], "loop": true, "pauseForPlayer": false }
           },
-          "los": { "enabled": true, "range": 160, "angle": 110, "visualize": false },
+          "los": { "enabled": true, "range": 160, "angle": 110, "visualize": true },
           "eventMappings": [
             <%= after_end_json.('security_office') %>
             { "eventPattern": "room_entered:security_office", "condition": "globalVars.security_alerted === true", "setPatrolSpeed": 95 },
@@ -3240,7 +3263,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 90, "attackDamage": 6, "pauseToAttack": true } },
           "eventMappings": [
             <%# Scenario design R1 m3: a click on the isolator before anyone has asked him. %>
-            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && !globalVars.m04_voltage_escaped && !globalVars.gallery_shutter_cut && !globalVars.cut_by_hand && globalVars.wendell_outcome !== 'told' && globalVars.wendell_outcome !== 'worked_round'", "bark": "Hands off my panel. Ask, if you want a breaker." },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.cut_step !== 2 && !globalVars.m04_voltage_escaped && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut && !globalVars.cut_by_hand && globalVars.wendell_outcome !== 'told' && globalVars.wendell_outcome !== 'worked_round'", "bark": "Hands off my panel. Ask, if you want a breaker." },
             <%= after_end_json.('power_room') %>
             { "eventPattern": "room_entered:power_room", "condition": "!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && !globalVars.closing_done", "setVisible": true }
           ],
@@ -3281,6 +3304,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "koImmune": true,
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
+            <%# Puzzle chains P2: his success line becomes a bark on the player's pull. %>
+            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.voltage_outcome === 'by_hand'", "onceOnly": true, "bark": "That's it. Shutter's dead. You'll want to say you did it alone. You did." },
             <%= after_end_json.('power_room') %>
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.m04_voltage_captured === true && !globalVars.closing_done", "setVisible": true }
           ],
@@ -3301,7 +3326,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 140, "attackDamage": 14, "pauseToAttack": true, "fightStyle": "guarded" } },
           "eventMappings": [
             <%# Scenario design R1 m3: escaped Voltage holds the panel (his existing line). %>
-            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.m04_voltage_escaped === true && !globalVars.gallery_shutter_cut && globalVars.voltage_outcome !== 'stood_down_print' && globalVars.voltage_outcome !== 'talked_down' && globalVars.voltage_outcome !== 'fought'", "bark": "The shutter stays live until he says otherwise." },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.m04_voltage_escaped === true && globalVars.voltage_outcome !== 'ko' && globalVars.cut_step !== 2 && !globalVars.gallery_shutter_cut && globalVars.voltage_outcome !== 'stood_down_print' && globalVars.voltage_outcome !== 'talked_down' && globalVars.voltage_outcome !== 'fought'", "bark": "The shutter stays live until he says otherwise." },
             <%= after_end_json.('power_room') %>
             { "eventPattern": "room_entered:power_room", "condition": "globalVars.m04_voltage_escaped === true && !globalVars.closing_done", "setVisible": true }
           ],
@@ -3339,14 +3364,20 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "position": "as-type:m10_key_isolator",
           "readDisplay": "gameDisplay",
+          "addToNotes": false,
           "puzzle_graph_links": [{ "from": "action_cut_the_shutter", "to": "door_gallery" }],
           "observations": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it.",
           "observationVariants": [
+            <%# Puzzle chains P2: the player's own pull (cut_step 3); the NPC cuts keep the variants below. %>
+            { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3 && globalVars.gallery_camera_blinded === true", "value": "Key a quarter right. The third breaker from the left down, where you pulled it. GALLERY SHUTTER: ISOLATED. Under the row, the painted toggle thrown: GALLERY CAMERA: OFF." },
+            { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3", "value": "Key a quarter right. The third breaker from the left down, where you pulled it. GALLERY SHUTTER: ISOLATED." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.gallery_camera_blinded === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED. Under it, a smaller switch thrown the other way: GALLERY CAMERA: OFF." },
             { "condition": "globalVars.gallery_shutter_cut === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED." }
           ],
           "text": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it.",
           "textVariants": [
+            { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3 && globalVars.gallery_camera_blinded === true", "value": "Key a quarter right. The third breaker from the left down, where you pulled it. GALLERY SHUTTER: ISOLATED. Under the row, the painted toggle thrown: GALLERY CAMERA: OFF." },
+            { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3", "value": "Key a quarter right. The third breaker from the left down, where you pulled it. GALLERY SHUTTER: ISOLATED." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.gallery_camera_blinded === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED. Under it, a smaller switch thrown the other way: GALLERY CAMERA: OFF." },
             { "condition": "globalVars.gallery_shutter_cut === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED." }
           ]
@@ -3724,7 +3755,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "voice": <%= voice.(:fonoti) %>,
           "globalVarOnKO": "fonoti_ko",
           "itemsHeld": [
-            { "type": "notes", "id": "gallery_code_card", "name": "Gallery Shift Code Card", "takeable": true, "readable": true, "text": "TOMB GAMMA. GALLERY, NIGHT SHIFT.\nOuter lock: <%= outer_lock_pin %>.\nThis card stays on the walkway.", "onPickup": { "setVariable": { "lock_guard_known": true } }, "puzzle_graph_role": "clue", "puzzle_graph_unlocks": "core", "puzzle_graph_optional": true }
+            { "type": "notes", "id": "gallery_code_card", "name": "Gallery Shift Code Card", "takeable": true, "readable": true, "text": "TOMB GAMMA. GALLERY, NIGHT SHIFT.\nOuter lock: <%= outer_lock_pin %>.\nThis card stays on the walkway.", "onPickup": { "setVariable": { "lock_guard_known": true, "lock_guard_stood_down": true } }, "puzzle_graph_role": "clue", "puzzle_graph_unlocks": "core", "puzzle_graph_optional": true }
           ],
           "behavior": {
             "hostile": { "chaseSpeed": 125, "attackDamage": 14, "pauseToAttack": true, "fightStyle": "slugger", "maxHP": 140 },
@@ -3732,13 +3763,13 @@ not_tethered = '!globalVars.nightshade_tethered'
           },
           "los": {
             "enabled": true, "range": 160, "angle": 100, "visualize": true,
-            "challengeOnSight": { "cooldown": 15000, "rooms": ["gallery"], "requireGlobal": "at_keypad", "skipIfGlobal": ["lock_guard_challenged", "lock_guard_known", "outer_lock_open"] }
+            "challengeOnSight": { "cooldown": 15000, "rooms": ["gallery"], "requireGlobal": "at_keypad", "skipIfGlobal": ["lock_guard_challenged", "lock_guard_stood_down", "outer_lock_open"] }
           },
           "eventMappings": [
             <%= after_end_json.('gallery') %>
             { "eventPattern": "door_unlock_attempt", "condition": "data.connectedRoom === 'core'", "cooldown": 0, "setGlobal": { "at_keypad": true } },
             <%# Confirmation run: his own handover ("Go on through") sets only an ink-local flag, so the card's onPickup and this net set lock_guard_known and his challenge stands down. %>
-            { "eventPattern": "item_picked_up:notes", "condition": "data.itemId === 'gallery_code_card' && !globalVars.lock_guard_known", "setGlobal": { "lock_guard_known": true } },
+            { "eventPattern": "item_picked_up:notes", "condition": "data.itemId === 'gallery_code_card' && !globalVars.lock_guard_stood_down", "setGlobal": { "lock_guard_known": true, "lock_guard_stood_down": true } },
             { "eventPattern": "room_exited", "condition": "data.roomId === 'gallery' && globalVars.at_keypad === true", "setGlobal": { "at_keypad": false } },
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.at_keypad === true", "setGlobal": { "at_keypad": false } },
             { "eventPattern": "player_spotted:lock_guard", "conversationMode": "person-chat", "targetKnot": "challenge", "cooldown": 0 },
@@ -4268,6 +4299,22 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "what_went_out_given": false,
     "clue_door_log": false,
     "clue_alibi": false,
+    "ns_borrow_hint": false,
+    "cracker_rack_seen": false,
+    "trace_loss_told": false,
+    "tess_rec": 0,
+    "tess_rec_albion": false,
+    "tess_rec_derek": false,
+    "tess_rec_debrief": false,
+    "tess_rec_cold": false,
+    "tess_case_step": 0,
+    "tess_pitch_said": false,
+    "tess_lesson_said": false,
+    "tess_db_greeted": false,
+    "tess_db_costs_said": false,
+    "tess_end_said": false,
+    "tess_warned": false,
+    "lock_guard_stood_down": false,
     "clue_bench_log": false,
     "casualty_sheet_read": false,
     "margin_note_read": false,
@@ -4368,6 +4415,7 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "hall_team_present": false,
     "hall_guards_stood_down": false,
     "hax_rest_promised": false,
+    "cracker_text_sent": false,
 <%# --- The closing scenes' first lines (alignment R1 A7; set in six_oclock, hearing and citadel ink) --- %>
     "six_open": false,
     "hearing_open": false,

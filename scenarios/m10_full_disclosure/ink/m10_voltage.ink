@@ -189,15 +189,9 @@ Voltage (Critical Mass): Breaker row. Third from the left is the shutter. Leave 
     ~ gallery_camera_blinded = true
     Voltage (Critical Mass): The small toggle under the row, painted over. Down. That's their camera on the walkway.
     -> cut_p2_menu
-+ [Pulling it.]
-    ~ cut_step = 3
-    ~ gallery_shutter_cut = true
-    Voltage (Critical Mass): That's it. Shutter's dead. You'll want to say you did it alone. You did.
-    ~ volt_quiet = true
-    #exit_conversation
-    -> captured_rest
-+ [Give me a minute.]
-    Voltage (Critical Mass): Third from the left. It'll still be third.
+// Puzzle chains P2: the player pulls it at the isolator (its click writes the cut); his success line is a bark on the cut.
++ [Going to it.]
+    Voltage (Critical Mass): Third from the left. Go and pull it yourself. I'll watch.
     ~ volt_quiet = true
     #exit_conversation
     -> cut_in_person
