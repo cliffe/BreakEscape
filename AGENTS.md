@@ -144,7 +144,7 @@ Everything else goes into the approval log for the user: engine or server change
     - Images embedded as data URIs.
     - Each option clickable, as a radio card with its variant id, plus a "none of these, make more" option.
     - A one-line note under each option giving the agent's view, with its recommendation marked "suggested". The user still makes every pick.
-  - **How the user answers:** a "Copy picks" box at the bottom collects the answers as `key: choice` lines that the user pastes back. Picks persist in localStorage, so the page can be reopened.
+  - **How the user answers:** a "Copy picks" box at the bottom collects the answers for the user to paste back. Each line carries the question as well as the answer, `key (question title): choice — note`, so the pasted text makes sense on its own in the conversation and in any log it's copied into. Picks persist in localStorage, so the page can be reopened.
   - **When options are added:** republish the same file path. The link stays the same and a regenerating script builds the page again.
   - **Agents waiting on the picks:** pause any paid step that depends on them, then resume each agent with its picks.
 - Ask only when the answer changes what happens next. Otherwise pick the conventional default and mention it.
