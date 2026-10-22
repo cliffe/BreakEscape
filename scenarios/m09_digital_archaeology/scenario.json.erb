@@ -1805,12 +1805,13 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           ],
           "eventMappings": [
             {
-              "_comment": "Victoria's route: the gate opened by the maintenance code, the hatch never visited.",
+              "_comment": "Victoria's route: the gate opened by the maintenance code, the hatch never visited. disableClose (puzzle chains R5 m1): onceOnly is spent on opening and every tag sits under a button, so an early close would lose the bin choice; all four buttons exit, one is Walk past her.",
               "eventPattern": "room_entered:restricted_cage",
               "condition": "globalVars.cage_opened && !globalVars.hatch_talked && !globalVars.bin_chosen",
               "onceOnly": true,
               "conversationMode": "person-chat",
-              "targetKnot": "door"
+              "targetKnot": "door",
+              "disableClose": true
             },
             {
               "_comment": "Hatch route, no bin pressed: she hands over the nearest file (stage 8 ruling 1, m09-R M-02).",

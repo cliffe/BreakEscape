@@ -455,3 +455,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - m10 alignment R8 fixes: 3/3 (no lock deals after the lock opens for recruited Victoria and Vos; Gary's pick keeps a knocked-out Imran's ko; escaped Voltage's stand-down survives a later knock-out). Voiced delta: +2 (Victoria, Gary).
 - Queued for m10 phase 5 browser checks: post-lock Victoria/Vos resting; Gary with Imran knocked out; escaped Voltage knocked out after stand-down.
 - m09 puzzle chains R4 fixes: 2/2 (Tran topic open past the gate once the bin is chosen; pre-hatch line "paper with his name on it"). Voiced delta: 0.
+- m09 puzzle chains R5 fixes: 1/1 (disableClose on Victoria's door scene, shown on :3001) and n1 taken (Tran topic open and final on the hatch route once the gate is open). Voiced delta: 0.

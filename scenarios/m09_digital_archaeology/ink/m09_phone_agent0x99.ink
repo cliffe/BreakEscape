@@ -812,10 +812,12 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 // 17. Tran.
 // Alignment R4 r4-2: not once Tran is talked off the wipe or down.
 // Puzzle chains R4 m1: past the gate only once the bin is chosen (the default bin reads derek_file before any choice).
-+ {not tran_topic_given and (bin_chosen or not cage_opened) and tran_outcome == "left"} [Tran.]
+// R5 n1: or on the hatch route, where the handover is certain to give Derek's file.
++ {not tran_topic_given and (bin_chosen or hatch_talked or not cage_opened) and tran_outcome == "left"} [Tran.]
     // Puzzle chains R3 m1: retire only once the answer can't change (the bin is chosen,
     // or tidied). Before the hatch a second ask gives the bin's line after it.
-    {bin_chosen or m08_nightshade_tidied:
+    // Puzzle chains R5 n1: hatch talked and gate open means the handover gives Derek's file, so that is final too.
+    {bin_chosen or m08_nightshade_tidied or (hatch_talked and cage_opened):
         ~ tran_topic_given = true
     }
     {not tran_topic_heard:
