@@ -20,7 +20,7 @@ import { attachPretext } from './person-chat-pretext.js';
 import { processGameActionTags, determineSpeaker as determineSpeakerFromTags } from '../helpers/chat-helpers.js';
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
-import { rememberNpcLine, getRememberedNpcLine, reopenContextLine } from './person-chat-reopen.js';
+import { rememberNpcLine, getRememberedNpcLine, reopenContextLine, refreshHubAfterMidKnotReopen } from './person-chat-reopen.js';
 import { startEventConversation } from './person-chat-event-start.js';
 import { personChatBackgroundFor } from './person-chat-background.js';
 import { advanceDelayMs, readingTimeMs } from './dialogue-pacing.js';
@@ -526,6 +526,10 @@ export class PersonChatMinigame extends MinigameScene {
                         console.log(`🔁 Previous conversation had ended - restarting ${this.npcId} at knot: ${this.npc.currentKnot}`);
                     } else {
                         console.log(`🔄 Continuing previous conversation with ${this.npcId}`);
+                        // Saved part-way through a knot (closed on its last line): read by the
+                        // opt-in hub refresh in showCurrentDialogue (person-chat-reopen.js, D9)
+                        this._resumedMidKnot = stateRestored === true && restoredStory.canContinue &&
+                            !(restoredStory.currentChoices?.length > 0);
                     }
                 } else {
                     // First time conversation - navigate to start knot
@@ -616,6 +620,23 @@ export class PersonChatMinigame extends MinigameScene {
             // Only the first display after a reopen may need the context line
             const isReopen = this.isResumedConversation;
             this.isResumedConversation = false;
+            const resumedMidKnot = isReopen && this._resumedMidKnot === true;
+            this._resumedMidKnot = false;
+
+            // Opt-in (NPC "reopenRefreshesHub": true, lab D9): a reopen that resumed mid-knot
+            // and reached the hub's choices saying nothing re-enters the hub once, so it
+            // shows the hub's current line rather than the old topic line. Off by default.
+            if (isReopen && refreshHubAfterMidKnotReopen({
+                optedIn: this.npc?.reopenRefreshesHub,
+                resumedMidKnot,
+                result,
+                story: this.inkEngine?.story
+            })) {
+                console.log(`🔄 ${this.npcId}: resumed mid-knot at a silent hub, re-entering it (reopenRefreshesHub)`);
+                // Still a reopen: if the hub prints nothing again, the context line applies
+                this.isResumedConversation = true;
+                return this.showCurrentDialogue();
+            }
 
             // Store result for later use
             this.lastResult = result;

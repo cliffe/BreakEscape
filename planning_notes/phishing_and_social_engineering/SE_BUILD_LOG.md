@@ -464,6 +464,13 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
 
 - **Free-text mail body mode** (opus48): `mailClient.bodyMode: "freeText"` / `freeTextFlavour: true` adds one unscored box. Its text is appended to the sent body and is never judged or written into ink, so the templated parts alone decide the send. Fixture `test_social_freetext`, `bridge-freetext.jsonl` 8/8, `social-mail-freetext` 10/10. **Note:** this landed in commit f7a531b1, under the finale session's message "Finale: five-phase improvement loop started", because that session committed while these files were staged here. The content is correct; only the message is wrong. History was not rewritten.
 
+- **Phone-chat residuals D9 and R5 F4 fixed** (Opus). Both are opt-in NPC flags, set only by the lab.
+  - **D9:** person-chat `reopenRefreshesHub` re-enters the hub when a mid-knot reopen prints nothing and stops at choices. Cause: closing on a topic's last line saves the story before its `quiet` tail runs.
+  - **F4:** phone `livePreview` dry-runs the reopen on a throwaway story, so the contact row previews the line opening it would add.
+  - Ruth, Fairbairn and Tomasz get `reopenRefreshesHub`; Ruth's phone gets `livePreview`.
+  - Tests: `phone-chat-hub-residuals` 9/9. Rails 744/0.
+  - Browser: the lab before and after the flag; m02, m04 and m05 phone previews and person-chat reopens unchanged.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor

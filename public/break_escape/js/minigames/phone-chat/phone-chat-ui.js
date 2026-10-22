@@ -17,6 +17,8 @@ import { hasHiddenChoicesBelow, numberedChoiceText } from './phone-chat-choices.
 import { createBottomPin } from './phone-chat-scroll.js';
 import { portraitFor } from '../../utils/portrait-variants.js';
 import { ChatInfluence } from '../../ui/pretext-chrome.js';
+import PhoneChatConversation from './phone-chat-conversation.js';
+import InkEngine from '../../systems/ink/ink-engine.js';
 
 export default class PhoneChatUI {
     /**
@@ -423,9 +425,58 @@ export default class PhoneChatUI {
         npcs.forEach(npc => {
             const contactItem = this.createContactItem(npc);
             contactList.appendChild(contactItem);
+            // Opt-in (NPC "livePreview": true, lab R5 F4): a looping hint contact
+            // previews the line opening its thread would add now
+            if (npc.livePreview === true) this.refreshLivePreview(npc, contactItem);
         });
-        
+
         console.log(`📋 Populated ${npcs.length} contacts`);
+    }
+
+    /**
+     * Replace an opted-in contact's preview with the line its thread would gain if
+     * opened now (PhoneChatConversation.previewReopen). A dry run: the thread, the
+     * unread count and the saved story are not touched. The row keeps its history
+     * preview if the run adds nothing, fails, or the row or thread changed meanwhile.
+     * @param {Object} npc - the NPC entry
+     * @param {HTMLElement} contactItem - its row in the list
+     * @returns {Promise<string|null>} the preview shown, or null
+     */
+    async refreshLivePreview(npc, contactItem) {
+        const historyLength = this.npcManager.getConversationHistory(npc.id).length;
+        const stateManager = typeof window !== 'undefined' ? window.npcConversationStateManager : null;
+        const raw = await PhoneChatConversation.previewReopen(npc, this.npcManager, new InkEngine(`${npc.id}-preview`), {
+            syncGlobals: story => {
+                stateManager?.syncGlobalVariablesToStory?.(story);
+                stateManager?.applyEngineVariables?.(npc.id, story, { channel: 'phone-chat' });
+            }
+        });
+        if (!raw || !contactItem?.isConnected) return null;
+        // The thread was opened (or texted) while the dry run ran: its own line stands
+        if (this.npcManager.getConversationHistory(npc.id).length !== historyLength) return null;
+        const el = contactItem.querySelector('.contact-last-message');
+        if (!el) return null;
+        const preview = this.previewText({ type: 'npc', text: raw }, npc);
+        if (preview === null) return null;
+        el.innerHTML = displayDashes(preview);
+        return preview;
+    }
+
+    /**
+     * A message's text as the contact list previews it: the speaker prefix handled,
+     * "You: " on the player's lines, cut to 40 characters. Null for narration.
+     * @param {Object} message - { type, text }
+     * @param {Object} npc - the contact
+     * @returns {string|null}
+     */
+    previewText(message, npc) {
+        const maxLength = 40;
+        const line = displayPhoneLine(message.type, message.text, npc);
+        if (line.type === 'narrator') return null;
+        const previewText = line.type === 'player' ? `You: ${line.text}` : line.text;
+        return previewText.length > maxLength
+            ? previewText.substring(0, maxLength) + '...'
+            : previewText;
     }
     
     /**

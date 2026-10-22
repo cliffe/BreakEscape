@@ -728,6 +728,80 @@ export default class PhoneChatConversation {
     }
 
     /**
+     * The line the contact list should preview for an opted-in looping hint contact
+     * (NPC config "livePreview": true; lab R5 F4).
+     *
+     * A hint hub writes its stage line into the thread only when the thread is
+     * opened: the reopen re-runs the knot under today's globals and appends what is
+     * new (reopenWithCurrentGlobals). Until then the list's preview, which reads the
+     * thread, shows the line from the last open, or the preloaded opening if the
+     * player never opened it. This works out what that reopen would append, without
+     * doing it: a throwaway story restored from npc.storyState, globals synced the
+     * way the minigame syncs them, no global observer, no tags run, nothing added to
+     * the thread and npc.storyState untouched.
+     *
+     * @param {Object} npc - the NPC entry (needs livePreview, storyState and a story)
+     * @param {Object} npcManager
+     * @param {Object} inkEngine - a spare InkEngine (its story is replaced)
+     * @param {Object} [opts]
+     * @param {Function} [opts.syncGlobals] - (story) => void, as the minigame's reopen
+     * @param {string|Object} [opts.storySource] - JSON or a URL; default as preloadOpening
+     * @returns {Promise<string|null>} the raw newest line ("Name: text"), or null when
+     *   opening the thread would add nothing (the thread's own last line stands)
+     */
+    static async previewReopen(npc, npcManager, inkEngine, { syncGlobals, storySource } = {}) {
+        if (!npc || npc.livePreview !== true || !npc.storyState) return null;
+        // A pretext call's thread is a call log, not a hint hub
+        if (npc.pretextCallId || npc.callId) return null;
+        let source = storySource || npc.storyJSON;
+        if (!source && npc.storyPath) {
+            const gameId = typeof window !== 'undefined' ? window.breakEscapeConfig?.gameId : null;
+            if (gameId) source = `/break_escape/games/${gameId}/ink?npc=${encodeURIComponent(npc.id)}`;
+        }
+        if (!source) return null;
+
+        const temp = new PhoneChatConversation(npc.id, npcManager, inkEngine);
+        temp.observeGlobals = false;
+        temp.processTags = () => {};      // a dry run: no tag reaches the game
+        try {
+            if (!(await temp.loadStory(source))) return null;
+            if (!temp.restoreState(npc.storyState)) return null;
+            const story = temp.engine.story;
+            const sync = s => {
+                if (typeof syncGlobals === 'function') syncGlobals(s);
+                // An intro's held-back globals count as applied, as on a real open
+                // (applyDeferredGlobals: only where the global still has its preload value)
+                const deferred = npc.deferredGlobals;
+                const base = npc.deferredGlobalsBase || {};
+                const globals = (typeof window !== 'undefined' && window.gameState?.globalVariables) || {};
+                if (deferred && typeof deferred === 'object') {
+                    for (const [name, value] of Object.entries(deferred)) {
+                        if (!s.variablesState.GlobalVariableExistsWithName(name)) continue;
+                        const current = globals[name] === undefined ? null : globals[name];
+                        if (Object.prototype.hasOwnProperty.call(base, name) && current !== base[name]) continue;
+                        s.variablesState[name] = value;
+                    }
+                }
+            };
+            const reopen = temp.reopenWithCurrentGlobals(sync);
+            let messages = reopen.renavigated ? reopen.messages : [];
+            if (!reopen.renavigated && story.canContinue && !(story.currentChoices?.length > 0)) {
+                // Saved part-way through a knot: an open continues it (showCurrentChoices)
+                messages = [];
+                PhoneChatConversation.collectSteps(story)
+                    .forEach(step => messages.push(...phoneStepLines(step.text, step.tags)));
+            }
+            const lines = (messages || []).map(m => String(m || '').trim()).filter(Boolean);
+            return lines.length > 0 ? lines[lines.length - 1] : null;
+        } catch (e) {
+            console.warn(`⚠️ Live preview for ${npc.id} failed:`, e.message);
+            return null;
+        } finally {
+            temp.cleanup();
+        }
+    }
+
+    /**
      * True when opening this NPC at `knot` would replay the opening a preload has
      * already put in the thread: the knot is the one the preload ran, the thread holds
      * only preloaded lines (the player hasn't answered yet), and the preload's story
