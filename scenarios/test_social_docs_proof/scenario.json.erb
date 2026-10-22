@@ -1,17 +1,18 @@
 {
-  "scenario_brief": "A one-room reuse proof for the social-engineering systems, built only from README_scenario_design.md, README_ink_best_practices.md and the data contract. Research Wendover's invoice clerk with the OSINT browser, send one phishing email that lands, then write up the engagement.",
+  "scenario_brief": "A two-room reuse proof for the social-engineering systems, built only from README_scenario_design.md, README_ink_best_practices.md and the data contract. Research Wendover's invoice clerk with the OSINT browser, send one phishing email that lands, then write up the engagement. Mara has the key to Wendover's SOC room, where you work their inbox as a defender and choose what they should take down.",
   "show_scenario_brief": "on_start",
   "disableAttacks": true,
   "creditsTheme": "cyber",
   "startRoom": "office",
-  "startPosition": { "x": 5, "y": 6 },
-
+  "startPosition": {
+    "x": 5,
+    "y": 6
+  },
   "player": {
     "id": "player",
     "displayName": "Agent",
     "spriteSheet": "female_hacker_hood_v2"
   },
-
   "globalVariables": {
     "se_intel_blake_role": false,
     "se_intel_blake_topic": false,
@@ -25,9 +26,16 @@
     "phish_blake_attempts": 0,
     "report_filed": false,
     "report_results_done": false,
-    "report_findings_done": false
+    "report_findings_done": false,
+    "mara_influence": 0,
+    "mara_latched": "",
+    "soc_key_given": false,
+    "triage_percent": 0,
+    "triage_reportRate": 0,
+    "triage_pass": false,
+    "triage_done": false,
+    "defender_done": false
   },
-
   "objectives": [
     {
       "aimId": "recon",
@@ -49,7 +57,9 @@
       "title": "Send the phishing email",
       "description": "Compose and send one email from the mail terminal that the target acts on.",
       "status": "locked",
-      "unlockCondition": { "aimCompleted": "recon" },
+      "unlockCondition": {
+        "aimCompleted": "recon"
+      },
       "order": 1,
       "tasks": [
         {
@@ -65,7 +75,9 @@
       "title": "Write up the engagement",
       "description": "File the engagement report at the report desk.",
       "status": "locked",
-      "unlockCondition": { "aimCompleted": "attack" },
+      "unlockCondition": {
+        "aimCompleted": "attack"
+      },
       "order": 2,
       "tasks": [
         {
@@ -75,20 +87,48 @@
           "status": "active"
         }
       ]
+    },
+    {
+      "aimId": "defend",
+      "title": "Switch to the defender's seat",
+      "description": "Work Wendover's inbox the way their SOC would, then pick what Wendover should take down.",
+      "status": "locked",
+      "unlockCondition": {
+        "aimCompleted": "recon"
+      },
+      "order": 3,
+      "tasks": [
+        {
+          "taskId": "triage_round",
+          "title": "Pass the SOC inbox triage",
+          "type": "manual",
+          "status": "active"
+        },
+        {
+          "taskId": "defender_review",
+          "title": "Choose what Wendover should take down",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
     }
   ],
-
   "rooms": {
     "office": {
       "type": "room_office",
       "door_sign": "Tarnside Assurance",
-      "connections": {},
+      "connections": {
+        "east": "soc"
+      },
       "npcs": [
         {
           "id": "mara_quill",
           "displayName": "Mara Quill",
           "npcType": "person",
-          "position": { "x": 5, "y": 5 },
+          "position": {
+            "x": 5,
+            "y": 5
+          },
           "spriteSheet": "female_office_worker_v2",
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
           "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
@@ -112,6 +152,42 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "file_report"
+            },
+            {
+              "eventPattern": "item_picked_up:key",
+              "condition": "data.itemId === 'soc_key'",
+              "onceOnly": true,
+              "setGlobal": {
+                "soc_key_given": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:triage_pass",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "triage_round"
+            },
+            {
+              "eventPattern": "global_variable_changed:defender_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "defender_review"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "key",
+              "id": "soc_key",
+              "name": "SOC Room Key",
+              "takeable": true,
+              "opens_lock": "soc_door",
+              "keyPins": [
+                30,
+                50,
+                40,
+                20
+              ],
+              "observations": "Wendover's key to their security operations room."
             }
           ]
         }
@@ -122,34 +198,55 @@
           "type": "osint-workstation",
           "name": "Research Station",
           "takeable": false,
-          "position": { "x": 2, "y": 3 },
+          "position": {
+            "x": 2,
+            "y": 3
+          },
           "observations": "A clean workstation for open-source research on the target company.",
-          "minigameData": { "start": "wendover.team" }
+          "minigameData": {
+            "start": "wendover.team"
+          }
         },
         {
           "id": "recon_file",
           "type": "case-file",
           "name": "Case File",
           "takeable": false,
-          "position": { "x": 3, "y": 6 },
+          "position": {
+            "x": 3,
+            "y": 6
+          },
           "observations": "The recon case file: what you know about the target and what is still missing.",
-          "minigameData": { "mode": "recon" }
+          "minigameData": {
+            "mode": "recon"
+          }
         },
         {
           "id": "mail_pc",
           "type": "mail_terminal",
           "name": "Mail Terminal",
           "takeable": false,
-          "position": { "x": 6, "y": 3 },
+          "position": {
+            "x": 6,
+            "y": 3
+          },
           "observations": "The engagement's sending workstation.",
-          "minigameData": { "accountIds": ["ops"], "defaultAccount": "ops" }
+          "minigameData": {
+            "accountIds": [
+              "ops"
+            ],
+            "defaultAccount": "ops"
+          }
         },
         {
           "id": "report_pc",
           "type": "report-workstation",
           "name": "Report Desk",
           "takeable": false,
-          "position": { "x": 8, "y": 6 },
+          "position": {
+            "x": 8,
+            "y": 6
+          },
           "observations": "Where the engagement is written up.",
           "minigameData": {
             "requiresGlobal": "phish_blake_landed",
@@ -157,26 +254,83 @@
           }
         }
       ]
+    },
+    "soc": {
+      "type": "room_it",
+      "door_sign": "Wendover SOC",
+      "locked": true,
+      "lockType": "key",
+      "requires": "soc_door",
+      "keyPins": [
+        30,
+        50,
+        40,
+        20
+      ],
+      "difficulty": "easy",
+      "lockedHint": "Mara has the key. Ask her once your recon is done and you have Wendover's address pattern.",
+      "connections": {
+        "west": "office"
+      },
+      "objects": [
+        {
+          "id": "soc_triage",
+          "type": "triage-workstation",
+          "name": "SOC Inbox",
+          "takeable": false,
+          "position": {
+            "x": 3,
+            "y": 4
+          },
+          "observations": "Wendover's shared inbox, as their security team sees it.",
+          "minigameData": {
+            "triageSetId": "wendover_inbox",
+            "conclusionTaskId": "triage_round"
+          }
+        },
+        {
+          "id": "soc_board",
+          "type": "case-file",
+          "name": "SOC Board",
+          "takeable": false,
+          "position": {
+            "x": 7,
+            "y": 6
+          },
+          "observations": "Where Wendover's team decide what to take off the public web.",
+          "minigameData": {
+            "mode": "defender"
+          }
+        }
+      ]
     }
   },
-
   "social": {
     "people": [
       {
         "id": "blake",
-        "forms": { "first": "Blake", "short": "Blake", "formal": "Mr Ferreira", "full": "Blake Ferreira" },
+        "forms": {
+          "first": "Blake",
+          "short": "Blake",
+          "formal": "Mr Ferreira",
+          "full": "Blake Ferreira"
+        },
         "name": "Blake Ferreira",
         "role": "Accounts Payable",
         "address": "blake@wendover.example"
       },
       {
         "id": "company",
-        "forms": { "first": "Wendover", "short": "Wendover", "formal": "Wendover Ltd", "full": "Wendover Ltd" },
+        "forms": {
+          "first": "Wendover",
+          "short": "Wendover",
+          "formal": "Wendover Ltd",
+          "full": "Wendover Ltd"
+        },
         "name": "Wendover Ltd",
         "role": "Target company"
       }
     ],
-
     "intelFacts": {
       "blake_role": {
         "text": "Blake Ferreira handles accounts payable at Wendover.",
@@ -185,7 +339,13 @@
         "source": "row_blake",
         "reduceNote": "Staff roles are listed publicly on the company site.",
         "provides": [
-          { "type": "name", "about": "recipient", "value": "blake_full", "label": "Blake Ferreira", "kind": "distinctive" }
+          {
+            "type": "name",
+            "about": "recipient",
+            "value": "blake_full",
+            "label": "Blake Ferreira",
+            "kind": "distinctive"
+          }
         ]
       },
       "blake_topic": {
@@ -193,9 +353,14 @@
         "label": "Invoice backlog",
         "subject": "blake",
         "source": "careers_note",
-        "reduceNote": "Operational detail like this should not be posted publicly.",
+        "reduceNote": "Keep what the team is busy with out of public job ads.",
         "provides": [
-          { "type": "date", "value": "this_month", "label": "this month", "kind": "generic" }
+          {
+            "type": "date",
+            "value": "this_month",
+            "label": "this month",
+            "kind": "generic"
+          }
         ]
       },
       "wendover_pattern": {
@@ -203,13 +368,19 @@
         "label": "Email address pattern",
         "subject": "company",
         "source": "r_pattern",
-        "reduceNote": "An address pattern makes any name guessable; it is hard to hide but worth knowing.",
+        "reduceNote": "Stop publishing personal addresses in a pattern a lookup tool can learn.",
         "provides": [
-          { "type": "address", "value": "wendover_pattern", "label": "first@wendover.example", "about": "recipient", "rule": "first", "kind": "generic" }
+          {
+            "type": "address",
+            "value": "wendover_pattern",
+            "label": "first@wendover.example",
+            "about": "recipient",
+            "rule": "first",
+            "kind": "generic"
+          }
         ]
       }
     },
-
     "conceptCards": [
       {
         "id": "card_osint",
@@ -217,7 +388,6 @@
         "text": "Attackers read what a company publishes about itself — staff pages, job ads, documents — before they ever send a mail. Each detail makes a later message more convincing."
       }
     ],
-
     "osint": {
       "profile": "student",
       "title": "Research: Wendover",
@@ -233,16 +403,36 @@
               "id": "team",
               "title": "Our Team",
               "blocks": [
-                { "id": "team_head", "kind": "heading", "text": "The people behind Wendover" },
-                { "id": "row_blake", "kind": "staff", "person": "blake", "name": "Blake Ferreira", "role": "Accounts Payable", "address": "blake@wendover.example", "fact": "blake_role" }
+                {
+                  "id": "team_head",
+                  "kind": "heading",
+                  "text": "The people behind Wendover"
+                },
+                {
+                  "id": "row_blake",
+                  "kind": "staff",
+                  "person": "blake",
+                  "name": "Blake Ferreira",
+                  "role": "Accounts Payable",
+                  "address": "blake@wendover.example",
+                  "fact": "blake_role"
+                }
               ]
             },
             {
               "id": "careers",
               "title": "Careers",
               "blocks": [
-                { "id": "careers_head", "kind": "heading", "text": "Join the accounts team" },
-                { "id": "careers_note", "text": "Our accounts team is busy clearing a backlog of supplier invoices this month and we are hiring to help.", "fact": "blake_topic" }
+                {
+                  "id": "careers_head",
+                  "kind": "heading",
+                  "text": "Join the accounts team"
+                },
+                {
+                  "id": "careers_note",
+                  "text": "Our accounts team is busy clearing a backlog of supplier invoices this month and we are hiring to help.",
+                  "fact": "blake_topic"
+                }
               ]
             }
           ]
@@ -252,29 +442,38 @@
         {
           "id": "hunter",
           "label": "Address lookup: wendover.example",
-          "unlockedBy": { "visited": "wendover.team" },
+          "unlockedBy": {
+            "visited": "wendover.team"
+          },
           "results": [
-            { "id": "r_pattern", "text": "Addresses at wendover.example follow the first-name pattern, e.g. blake@wendover.example", "fact": "wendover_pattern" }
+            {
+              "id": "r_pattern",
+              "text": "Addresses at wendover.example follow the first-name pattern, e.g. blake@wendover.example",
+              "fact": "wendover_pattern"
+            }
           ]
         }
       ]
     },
-
     "intelBoard": {
       "title": "Wendover — recon",
-      "people": ["blake"],
+      "people": [
+        "blake"
+      ],
       "readinessSlots": {
         "blake": [
           {
             "label": "Who to target and why",
-            "needsIntel": ["blake_role", "blake_topic"],
+            "needsIntel": [
+              "blake_role",
+              "blake_topic"
+            ],
             "goalString": "You still need to know who handles Wendover's invoices and what they are dealing with.",
             "doneString": "Blake Ferreira handles accounts payable and is clearing an invoice backlog."
           }
         ]
       }
     },
-
     "engagement": {
       "scopeNote": "Scope: Wendover Ltd staff, email only. Fictional engagement.",
       "report": {
@@ -283,11 +482,21 @@
         "labelBy": "role",
         "onCompleteGlobal": "report_filed",
         "steps": [
-          { "id": "results", "onCompleteGlobal": "report_results_done" },
-          { "id": "findings", "onCompleteGlobal": "report_findings_done" }
+          {
+            "id": "results",
+            "onCompleteGlobal": "report_results_done"
+          },
+          {
+            "id": "findings",
+            "onCompleteGlobal": "report_findings_done"
+          }
         ],
         "items": [
-          { "kind": "confirm", "step": "results", "text": "I have read the campaign results." }
+          {
+            "kind": "confirm",
+            "step": "results",
+            "text": "I have read the campaign results."
+          }
         ],
         "findings": [
           {
@@ -295,18 +504,79 @@
             "step": "findings",
             "text": "Accounts payable acted on an unsolicited invoice email.",
             "rootCauses": [
-              { "id": "no_auth_no_banner", "correct": true, "text": "Inbound mail was not authenticated and carried no external-sender banner.", "why": "With no DMARC enforcement and no banner, a convincing invoice email reaches the inbox looking internal." },
-              { "id": "staff_careless", "correct": false, "blame": true, "text": "The accounts clerk was careless.", "why": "Blaming the person hides the control gap and stops people reporting." }
+              {
+                "id": "no_auth_no_banner",
+                "correct": true,
+                "text": "Inbound mail was not authenticated and carried no external-sender banner.",
+                "why": "With no DMARC enforcement and no banner, a convincing invoice email reaches the inbox looking internal."
+              },
+              {
+                "id": "staff_careless",
+                "correct": false,
+                "blame": true,
+                "text": "The accounts clerk was careless.",
+                "why": "Blaming the person hides the control gap and stops people reporting."
+              }
             ],
             "controls": [
-              { "id": "dmarc_banner", "correct": true, "text": "Enforce DMARC and add an external-sender banner.", "why": "Authentication plus a visible banner cuts the credibility of a spoofed invoice." },
-              { "id": "more_training", "correct": false, "text": "Tell staff to be more careful.", "why": "Advice without a control change leaves the same email landing next month." }
+              {
+                "id": "dmarc_banner",
+                "correct": true,
+                "text": "Enforce DMARC and add an external-sender banner.",
+                "why": "Authentication plus a visible banner cuts the credibility of a spoofed invoice."
+              },
+              {
+                "id": "more_training",
+                "correct": false,
+                "text": "Tell staff to be more careful.",
+                "why": "Advice without a control change leaves the same email landing next month."
+              }
+            ]
+          }
+        ]
+      },
+      "defender": {
+        "title": "Wendover SOC: reduce the exposure",
+        "intro": "You found these details from outside. Pick what Wendover should change for each one.",
+        "onCompleteGlobal": "defender_done",
+        "factMitigations": [
+          {
+            "intel": "wendover_pattern",
+            "options": [
+              {
+                "id": "hide_pattern_staff",
+                "good": false,
+                "text": "Ask staff never to tell anyone their address.",
+                "why": "People have to give their address out to do their jobs. The pattern is the problem, not the staff."
+              },
+              {
+                "id": "role_inboxes",
+                "good": true,
+                "text": "Use role inboxes such as accounts@ on public pages, and stop listing personal addresses.",
+                "why": "A role inbox gives an outsider nothing to build a personal address from, and it can be filtered harder."
+              }
+            ]
+          },
+          {
+            "intel": "blake_topic",
+            "options": [
+              {
+                "id": "delete_careers",
+                "good": false,
+                "text": "Take the careers page down altogether.",
+                "why": "Wendover still needs to hire. The page can stay up without the operational detail."
+              },
+              {
+                "id": "trim_ad_detail",
+                "good": true,
+                "text": "Keep job ads to the role and leave out what the team is busy with this month.",
+                "why": "An invoice backlog tells an attacker exactly which pretext will feel routine to accounts."
+              }
             ]
           }
         ]
       }
     },
-
     "mailClient": {
       "accounts": [
         {
@@ -320,14 +590,18 @@
         }
       ],
       "mailboxes": [
-        { "id": "ops_box" }
+        {
+          "id": "ops_box"
+        }
       ],
       "contacts": [
         {
           "id": "blake",
           "person": "blake",
           "name": "Blake Ferreira",
-          "addresses": ["blake@wendover.example"],
+          "addresses": [
+            "blake@wendover.example"
+          ],
           "role": "Accounts Payable",
           "revealedBy": "se_intel_blake_role",
           "targetId": "blake"
@@ -347,15 +621,35 @@
         }
       ]
     },
-
     "templates": {
-      "from_own": { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] },
-      "greet_plain": { "part": "greeting", "text": "Hello,", "slots": [] },
-      "pretext_invoice": { "part": "pretext", "text": "Could you review last month's supplier invoice and confirm the payment details?", "slots": [], "urgency": "low" },
-      "pretext_followup": { "part": "pretext", "text": "Following up on last month's supplier invoice — can you take a look when you have a moment?", "slots": [], "urgency": "low" },
-      "ask_confirm": { "part": "ask", "text": "Please reply to confirm.", "slots": [] }
+      "from_own": {
+        "part": "from",
+        "text": "{account_name} <{account_address}>",
+        "slots": []
+      },
+      "greet_plain": {
+        "part": "greeting",
+        "text": "Hello,",
+        "slots": []
+      },
+      "pretext_invoice": {
+        "part": "pretext",
+        "text": "Could you review last month's supplier invoice and confirm the payment details?",
+        "slots": [],
+        "urgency": "low"
+      },
+      "pretext_followup": {
+        "part": "pretext",
+        "text": "Following up on last month's supplier invoice — can you take a look when you have a moment?",
+        "slots": [],
+        "urgency": "low"
+      },
+      "ask_confirm": {
+        "part": "ask",
+        "text": "Please reply to confirm.",
+        "slots": []
+      }
     },
-
     "phishTargets": [
       {
         "id": "blake",
@@ -365,40 +659,297 @@
         "firstName": "Blake",
         "role": "Accounts Payable",
         "subjects": [
-          { "id": "subj_invoice", "text": "Last month's supplier invoice", "topic": "invoice" }
+          {
+            "id": "subj_invoice",
+            "text": "Last month's supplier invoice",
+            "topic": "invoice"
+          }
         ],
-        "interests": { "topics": ["invoice"] },
+        "interests": {
+          "topics": [
+            "invoice"
+          ]
+        },
         "templateSets": {
-          "from": ["from_own"],
-          "greeting": ["greet_plain"],
-          "pretext": ["pretext_invoice", "pretext_followup"],
-          "ask": ["ask_confirm"]
+          "from": [
+            "from_own"
+          ],
+          "greeting": [
+            "greet_plain"
+          ],
+          "pretext": [
+            "pretext_invoice",
+            "pretext_followup"
+          ],
+          "ask": [
+            "ask_confirm"
+          ]
         },
         "primedFor": {
-          "trusts": ["*"],
-          "distinctiveValues": ["blake_full"],
+          "trusts": [
+            "*"
+          ],
+          "distinctiveValues": [
+            "blake_full"
+          ],
           "genericValues": [],
           "minDistinct": 1,
           "story": "Blake processes supplier invoices and will act on an invoice query that looks routine."
         },
-        "requiredFactors": ["senderTrust"],
-        "advisoryFactors": ["senderAuth", "addressedTo", "pretextRelevant"],
-        "senderAuth": { "domainPublishesAuth": false, "spoofAligns": true, "dmarcPolicy": "none" },
-        "urgency": { "advisoryMax": "medium" },
+        "requiredFactors": [
+          "senderTrust"
+        ],
+        "advisoryFactors": [
+          "senderAuth",
+          "addressedTo",
+          "pretextRelevant"
+        ],
+        "senderAuth": {
+          "domainPublishesAuth": false,
+          "spoofAligns": true,
+          "dmarcPolicy": "none"
+        },
+        "urgency": {
+          "advisoryMax": "medium"
+        },
         "factorStrings": {
-          "open": { "pass": "The subject got them to open it.", "fail": "Nothing about the sender or subject made them open it.", "redFlag": null },
-          "senderTrust": { "pass": "The sender looked like someone they deal with.", "fail": "They did not act on an unknown sender.", "redFlag": null },
-          "senderAuth": { "pass": "The message would authenticate.", "fail": "Authentication would fail and the mail could be flagged.", "redFlag": "Check SPF, DKIM and DMARC alignment." },
-          "addressedTo": { "pass": "It greeted them acceptably.", "fail": "The greeting did not fit.", "redFlag": null },
-          "pretextRelevant": { "pass": "The pretext matched something they handle.", "fail": "The pretext was not relevant to them.", "redFlag": null },
-          "attachmentPlausible": { "pass": "The attachment fit the pretext.", "fail": "No attachment, or the wrong kind.", "redFlag": null },
-          "urgencyCalibrated": { "pass": "The urgency was judged well.", "fail": "The urgency was overdone and read as pressure.", "redFlag": "Pressure to act fast is a classic tell." },
-          "linkCredible": { "pass": "The link looked like the real site.", "fail": "The link did not use a convincing host.", "redFlag": "Hover a link before trusting it." }
+          "open": {
+            "pass": "The subject got them to open it.",
+            "fail": "Nothing about the sender or subject made them open it.",
+            "redFlag": null
+          },
+          "senderTrust": {
+            "pass": "The sender looked like someone they deal with.",
+            "fail": "They did not act on an unknown sender.",
+            "redFlag": null
+          },
+          "senderAuth": {
+            "pass": "The message would authenticate.",
+            "fail": "Authentication would fail and the mail could be flagged.",
+            "redFlag": "Check SPF, DKIM and DMARC alignment."
+          },
+          "addressedTo": {
+            "pass": "It greeted them acceptably.",
+            "fail": "The greeting did not fit.",
+            "redFlag": null
+          },
+          "pretextRelevant": {
+            "pass": "The pretext matched something they handle.",
+            "fail": "The pretext was not relevant to them.",
+            "redFlag": null
+          },
+          "attachmentPlausible": {
+            "pass": "The attachment fit the pretext.",
+            "fail": "No attachment, or the wrong kind.",
+            "redFlag": null
+          },
+          "urgencyCalibrated": {
+            "pass": "The urgency was judged well.",
+            "fail": "The urgency was overdone and read as pressure.",
+            "redFlag": "Pressure to act fast is a classic tell."
+          },
+          "linkCredible": {
+            "pass": "The link looked like the real site.",
+            "fail": "The link did not use a convincing host.",
+            "redFlag": "Hover a link before trusting it."
+          }
         },
         "replies": {
           "landed": "Thanks — I'll pull last month's invoice and confirm the payment details shortly."
         },
-        "outcome": { "setGlobal": { "phish_blake_landed": true } }
+        "outcome": {
+          "setGlobal": {
+            "phish_blake_landed": true
+          }
+        }
+      }
+    ],
+    "characters": {
+      "mara": {
+        "displayName": "Mara Quill",
+        "channels": {
+          "person": "mara_quill"
+        },
+        "influence": {
+          "global": "mara_influence",
+          "start": 0,
+          "display": {
+            "bar": false,
+            "number": false,
+            "pip": true
+          }
+        },
+        "thresholds": [
+          {
+            "id": "trusts",
+            "at": 20,
+            "icon": "trusts",
+            "effects": [
+              {
+                "type": "toast",
+                "text": "Mara trusts your judgement now."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "triageSets": [
+      {
+        "id": "wendover_inbox",
+        "title": "Wendover SOC: shared inbox",
+        "brief": "Four messages reached Wendover's accounts inbox this morning. Trust the real ones, report the phishing, and tick the red flags that gave each phish away.",
+        "stage": "mission",
+        "scoringProfile": "analyst",
+        "channelTells": [
+          "changed_bank_details",
+          "lookalike_domain"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "triage_",
+          "passPercent": 60
+        },
+        "bands": [
+          {
+            "min": 0,
+            "headline": "Some of these would have got through."
+          },
+          {
+            "min": 60,
+            "headline": "A solid shift on the inbox."
+          },
+          {
+            "min": 90,
+            "headline": "Nothing got past you."
+          }
+        ],
+        "messages": [
+          {
+            "id": "lookalike_invoice",
+            "from": {
+              "name": "Wendover Accounts",
+              "address": "accounts@wendover-billing.example"
+            },
+            "to": "accounts@wendover.example",
+            "subject": "Overdue invoice: action needed today",
+            "time": "08:42",
+            "body": "Invoice 4471 is overdue. Review it and approve payment before 5pm.\n{{link:inv}}",
+            "links": [
+              {
+                "id": "inv",
+                "text": "wendover.example/invoices/4471",
+                "destination": "https://wendover-billing.example/login"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "linkCredible",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "linkCredible": "The words say wendover.example, but the link goes to wendover-billing.example, a different site.",
+                "urgencyCalibrated": "A same-day deadline on a payment is pressure, not process."
+              },
+              "ifTrusted": "Signing in would hand the accounts password to whoever owns wendover-billing.example.",
+              "reportReply": "Thanks. This one is now blocked for everyone."
+            }
+          },
+          {
+            "id": "bank_change",
+            "from": {
+              "name": "Harlow Supplies",
+              "address": "billing@harlow-supplies.example"
+            },
+            "to": "accounts@wendover.example",
+            "subject": "Our bank details have changed",
+            "time": "09:05",
+            "body": "Please update our bank details before you pay this month's invoices. Use the new account below from today.",
+            "links": [],
+            "attachments": [],
+            "auth": {
+              "spf": "fail",
+              "dkim": "none",
+              "dmarc": "fail",
+              "envelopeFrom": "mailer@bulk-relay.example",
+              "summary": "Harlow's domain did not send this message."
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderAuth",
+                "changed_bank_details"
+              ],
+              "perFlagNote": {
+                "senderAuth": "SPF and DMARC fail: Harlow's own mail servers did not send this.",
+                "changed_bank_details": "A supplier changing bank details by email is the classic invoice fraud. Call them on a number you already hold."
+              },
+              "ifTrusted": "This month's supplier payments would go to the attacker's account.",
+              "reportReply": "Thanks. Finance will confirm with Harlow by phone."
+            }
+          },
+          {
+            "id": "it_maintenance",
+            "from": {
+              "name": "Wendover IT",
+              "address": "it@wendover.example"
+            },
+            "to": "accounts@wendover.example",
+            "subject": "Finance system maintenance on Saturday",
+            "time": "09:20",
+            "body": "The finance system will be offline from 08:00 to 10:00 on Saturday for updates. Nothing to do on your side.",
+            "links": [],
+            "attachments": [],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderTrust": "It comes from Wendover's own IT team at wendover.example.",
+                "senderAuth": "SPF, DKIM and DMARC all pass for wendover.example.",
+                "pretextRelevant": "It asks you to do nothing at all.",
+                "default": "This is routine internal mail: nothing in it was a red flag."
+              }
+            }
+          },
+          {
+            "id": "rota_note",
+            "from": {
+              "name": "Priya Shah",
+              "address": "priya@wendover.example"
+            },
+            "to": "accounts@wendover.example",
+            "subject": "Month-end rota",
+            "time": "09:31",
+            "body": "I've put the month-end rota on the shared drive. Shout if your days don't work.",
+            "links": [],
+            "attachments": [],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderTrust": "Priya is a colleague writing from wendover.example.",
+                "senderAuth": "Every check passes for Wendover's own domain.",
+                "pretextRelevant": "No link, no attachment and no request for money or a password.",
+                "default": "A normal note from a colleague: nothing in it was a red flag."
+              }
+            }
+          }
+        ]
       }
     ]
   }

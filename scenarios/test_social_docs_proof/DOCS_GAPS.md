@@ -125,3 +125,74 @@ fix was the right place.
 18. **CLOSED** (doc). A `_v2` walk sheet does not imply a `_v2_talk.png`; `spriteTalk`/`spriteVisemes` must
     be set explicitly (usually the non-`_v2` names). Added to the `spriteTalk` row.
 19. **CLOSED** (doc). Folder requirements documented (see gap 9).
+
+---
+
+## Run 3 — general mechanics (2026-10-22)
+
+Part 2 of the proof. Added from the same three docs: an influence entry for Mara (`social.characters.mara`,
+pip-only display, moved by `#influence_gained` tags in her ink, one `trusts` threshold with a toast); a key
+she hands out from a hub choice once recon is done and the address-pattern fact is held; a second room
+(`soc`, `room_it`) east of the office behind a key lock with a `lockedHint`; a 4-message triage set
+(`wendover_inbox`, prefix `triage_`, pass 60) at a triage workstation there, with its task on `triage_pass`;
+and the defender mode of the board (`engagement.defender`, two fact mitigations). The phishing half is
+unchanged in content (the file was re-serialised, so the diff is mostly whitespace).
+
+Validated `--strict-social` exit 0, ink compiled with `scripts/compile-ink.sh`, dialogue lint clean. Played
+twice, headless, on :3001: game 3243 (found gaps 20 and 22) and game 3249 (after the fixes). Both
+`verify-run.rb`: 5 of 5 tasks, score 100, rooms `office` and `soc` unlocked. Logs: `playtests/session-3243.jsonl`,
+`playtests/session-3249.jsonl`.
+
+What worked from the docs alone, first time: the pip-only display (no pip on a fresh game, pip on `mara` once
+influence moved, `mara_latched` written as `trusts` at 20), `#influence_gained:10:<reason>` moving the value
+once, `#give_item:key:soc_key` with the key in `itemsHeld`, the key lock and `lockedHint` toast ("Requires key.
+Mara has the key. ..."), the triage set and its task, `channelTells` chips, and the defender board with a
+wrong pick then right picks.
+
+20. **Major: an aim's `globalVariable` unlock never fired** (Objectives System, `unlockCondition`; also
+    "Validating: `--strict-social`", which lists `globalVariable` and `equals` as accepted keys). *Needed:* open
+    the defend aim when the key is handed over. *Guessed:* the shape `{ "globalVariable": "soc_key_given",
+    "equals": true }`, since the README gives examples only for `aimCompleted` and `aimsCompleted` and never
+    says when a global condition is checked. The validator accepted it. In game 3243 `soc_key_given` turned
+    true and the aim stayed locked; it opened only when one of its tasks completed (the "locked aim reveals
+    itself" rule). Either the shape is wrong or the condition is not re-checked on a global change; the docs
+    don't say which. Worked round with `{ "aimCompleted": "recon" }` and a key gate on `osint_done`. *Code
+    read:* no.
+21. **Major: `truth.whyFine` is documented as a string but must be a keyed object** (Inbox triage, the
+    authored-message paragraph). *Needed:* the reason a real message was fine. The README lists "`whyFine`
+    (for real mail)" beside `ifTrusted` and `reportReply`, which are strings, so a string was the natural
+    reading. The schema rejects it (`whyFine of type string did not match ... object`), and once it is an
+    object the lint warns that it has no `default` line. *Guessed:* keys are factor ids, like `perFlagNote`,
+    plus `default`. Play confirmed it: a false `senderTrust` flag on Priya's mail drew the `senderTrust`
+    line, and a correct Trust lists every line including `default`. *Code read:* the schema
+    (`scripts/scenario-schema.json`), not engine code; the `default` key came from the lint message.
+22. **Minor: a "given" global set by an `item_picked_up` mapping doesn't reach the open chat** (Authoring
+    Rules, Ink: "set 'given' globals from an `item_picked_up:<type>` mapping, not in ink"; "Writing the ink
+    around the social mechanics", the `keys` tunnel). *Needed:* the hand-over choice to go away once the key
+    is given. Following the rule, the choice was guarded on `soc_key_given`. In game 3243 the global was set
+    at once, but the open conversation kept offering the hand-over and kept its old status line until it was
+    closed and reopened. The README recommends the pattern without saying the guard only takes effect on the
+    next open. *Guessed:* an ink-local `key_offered` flag, set in the hand-over knot, as well as the global
+    guard. Not tested: whether picking the choice again would give a second key. *Code read:* no.
+23. **Minor: the type of `<character>_latched` isn't given** ("Declare every global a mechanic writes";
+    Influence). The lints require it to be declared, but neither the README nor `00` §8/§11 gives its type or
+    default. *Guessed:* `""`. The validator accepted it and the engine wrote `"trusts"` into it, so a string
+    is right, but nothing said so. *Code read:* no.
+24. **Minor: action-tag placement rule and validator disagree** (Authoring Rules, Ink: "put action tags above
+    the line they belong to"). *Needed:* the key handed over on Mara's second line of the knot.
+    `#give_item:key:soc_key` sat directly above that line, as the rule says, and the validator warned that
+    it "appears after a text/dialogue line" and wants it before the knot's first line. Moved it to the top
+    of the knot. The README should say that `#give_item` belongs above the first line of its knot, or the
+    check should accept a tag directly above any line. *Code read:* no.
+
+Not docs gaps, noted for whoever owns them:
+
+- **Triage result count.** In game 3243 a false flag on real mail (trusted, `senderTrust` ticked) scored the
+  message 80 of 100 and showed "Not a flag here", but the result panel still said "False alarms 0".
+  Possibly "false alarms" means real mail reported, not chips; the README doesn't define it. Severity minor.
+- **Harness: triage flag chips aren't in `mg` controls.** The `tri-chip` labels had to be clicked through the
+  DOM by their visible text. That belongs in the playtest-scenario skill, which this packet may not edit.
+- **Part 1's `reduceNote`s read as commentary.** The defender board prints them after "Reduce this:", as the
+  README says. Part 1 had written them as remarks; rewritten as prompts. Author error, not a gap.
+
+Severity count for run 3: 0 blockers, 2 majors (20, 21), 3 minors (22, 23, 24).
