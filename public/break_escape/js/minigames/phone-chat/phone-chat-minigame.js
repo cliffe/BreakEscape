@@ -14,6 +14,7 @@ import PhoneChatHistory from './phone-chat-history.js';
 import InkEngine from '../../systems/ink/ink-engine.js';
 import { attachPretext } from '../person-chat/person-chat-pretext.js';
 import { processGameActionTags } from '../helpers/chat-helpers.js';
+import { partitionSlowTags } from '../person-chat/person-chat-pending-reply.js';
 import { classifyPhoneLine, displayPhoneLine, phoneStepLines } from './phone-chat-speaker.js';
 import { choiceIndexFromKey } from './phone-chat-choices.js';
 import { whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
@@ -675,9 +676,11 @@ export class PhoneChatMinigame extends MinigameScene {
                 tags: result.tags
             });
 
-            // Collect tags
+            // Collect tags, and apply this line's state now: ink has already evaluated
+            // the line, so the next continue() must see its #set_global (F16)
             if (result.tags && result.tags.length > 0) {
                 accumulatedTags.push(...result.tags);
+                this._applyLineTags(result.tags, npcId, conversation);
             }
 
             // Collect text (a line tagged #speaker:player comes back as "You: …")
@@ -710,12 +713,13 @@ export class PhoneChatMinigame extends MinigameScene {
         console.log('🏷️ Accumulated tags:', accumulatedTags);
         console.log('📝 Messages detail:', accumulatedMessages);
 
+        // The tags have run line by line above, so they are not passed on again
         if (this.conversation !== conversation) {
-            this._keepOutputAfterTeardown(npcId, conversation, accumulatedMessages, accumulatedTags);
+            this._keepOutputAfterTeardown(npcId, conversation, accumulatedMessages, []);
             return;
         }
 
-        await this._presentOutput(accumulatedMessages, accumulatedTags, lastResult);
+        await this._presentOutput(accumulatedMessages, accumulatedTags, lastResult, { tagsApplied: true });
     }
 
     /**
@@ -724,8 +728,11 @@ export class PhoneChatMinigame extends MinigameScene {
      * @param {string[]} accumulatedMessages - NPC lines, in order
      * @param {string[]} accumulatedTags - tags from those lines
      * @param {Object} lastResult - { choices, canContinue, hasEnded } after the batch
+     * @param {Object} [opts]
+     * @param {boolean} [opts.tagsApplied] - the tags already ran line by line as the
+     *   story continued (continueStory), so only the lines are shown
      */
-    async _presentOutput(accumulatedMessages, accumulatedTags, lastResult) {
+    async _presentOutput(accumulatedMessages, accumulatedTags, lastResult, { tagsApplied = false } = {}) {
         const TYPING_DELAY_MS  = 1000;
         const INTER_MESSAGE_MS = 400;
         const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -765,7 +772,9 @@ export class PhoneChatMinigame extends MinigameScene {
         // since a tag can close the phone (a cutscene's set_global, m06 N-6-1).
         this._pendingNpcMessages = accumulatedMessages.filter(m => m.trim()).map(m => m.trim());
 
-        if (accumulatedTags.length > 0) {
+        if (tagsApplied) {
+            // already run, line by line
+        } else if (accumulatedTags.length > 0) {
             console.log('✅ Processing tags:', accumulatedTags);
             processGameActionTags(accumulatedTags, this.ui, this._tagOptions(this.currentNPCId, this.conversation));
         } else {
@@ -920,6 +929,7 @@ export class PhoneChatMinigame extends MinigameScene {
         // Process the first result from makeChoice
         if (firstResult.tags && firstResult.tags.length > 0) {
             accumulatedTags.push(...firstResult.tags);
+            this._applyLineTags(firstResult.tags, npcId, conversation);
         }
         accumulatedMessages.push(...phoneStepLines(firstResult.text, firstResult.tags));
 
@@ -935,9 +945,10 @@ export class PhoneChatMinigame extends MinigameScene {
                 hasEnded: result.hasEnded
             });
 
-            // Collect tags
+            // Collect tags, applying each line's state as ink continues (F16)
             if (result.tags && result.tags.length > 0) {
                 accumulatedTags.push(...result.tags);
+                this._applyLineTags(result.tags, npcId, conversation);
             }
 
             // Collect text (a line tagged #speaker:player comes back as "You: …")
@@ -950,7 +961,7 @@ export class PhoneChatMinigame extends MinigameScene {
         }
 
         if (this.conversation !== conversation) {
-            this._keepOutputAfterTeardown(npcId, conversation, accumulatedMessages, accumulatedTags);
+            this._keepOutputAfterTeardown(npcId, conversation, accumulatedMessages, []);
             return;
         }
 
@@ -970,12 +981,7 @@ export class PhoneChatMinigame extends MinigameScene {
         // Set before the tags, which can close the phone themselves (m06 N-6-1).
         this._pendingNpcMessages = accumulatedMessages.filter(m => m.trim()).map(m => m.trim());
 
-        if (accumulatedTags.length > 0) {
-            console.log('✅ Processing tags after choice:', accumulatedTags);
-            processGameActionTags(accumulatedTags, this.ui, this._tagOptions(this.currentNPCId, this.conversation));
-        } else {
-            console.log('⚠️ No tags to process after choice');
-        }
+        // (the batch's tags already ran line by line above)
 
         // Display accumulated NPC messages one at a time with typing indicator.
         for (let i = 0; i < accumulatedMessages.length; i++) {
@@ -1080,6 +1086,74 @@ export class PhoneChatMinigame extends MinigameScene {
         this._saveStoryStateFor(npcId, conversation);
         if (window.updatePhoneBadge && this.phoneId) window.updatePhoneBadge(this.phoneId);
         if (tags && tags.length > 0) processGameActionTags(tags, null, this._tagOptions(npcId, conversation));
+    }
+
+    /**
+     * Apply one story line's tags now, as ink continues, so a #set_global on an early
+     * line of a batch has reached the story's variables and the game's globals before a
+     * later line is evaluated (F16). Mirrors person-chat's tag order: tags that never
+     * wait run at once; give_item / remove_npc (a server round trip each) run after,
+     * one line at a time in ink order, so later lines never wait on them.
+     * A tag that closes the phone leaves `this.conversation` unset: later lines of the
+     * batch then run with no UI, and the caller keeps their text (_keepOutputAfterTeardown).
+     */
+    _applyLineTags(tags, npcId, conversation) {
+        if (!tags || tags.length === 0) return;
+        const ui = this.conversation === conversation ? this.ui : null;
+        const { fast, slow } = partitionSlowTags(tags);
+        try {
+            if (fast.length > 0) {
+                Promise.resolve(processGameActionTags(fast, ui, this._tagOptions(npcId, conversation)))
+                    .catch(err => console.error('❌ Error applying line tags:', err));
+            }
+        } catch (err) { console.error('❌ Error applying line tags:', err); }
+        this._pushSetGlobalsToStory(fast, conversation);
+        if (slow.length > 0) {
+            const run = () => {
+                // give_item / remove_npc read the NPC from this global, and teardown clears it
+                const prev = window.currentConversationNPCId;
+                window.currentConversationNPCId = npcId;
+                // Held until the whole call is done: a second give_item reads it after the first's await
+                return Promise.resolve(processGameActionTags(slow, this.conversation === conversation ? this.ui : null,
+                    this._tagOptions(npcId, conversation)))
+                    .finally(() => { if (window.currentConversationNPCId === npcId) window.currentConversationNPCId = prev; });
+            };
+            this._slowTagChain = (this._slowTagChain || Promise.resolve())
+                .then(run)
+                .catch(err => console.error('❌ Error applying line tags:', err));
+        }
+    }
+
+    /**
+     * Copy the globals a line's #set_global tags just wrote into the story being read.
+     * The tag broadcasts only to stories in npcManager.inkEngineCache, and the phone reads
+     * its own InkEngine, so without this the story keeps its old copy until the thread is
+     * reopened (F16). Only the names the tags set, and only declared globals.
+     */
+    _pushSetGlobalsToStory(tags, conversation) {
+        const vars = conversation?.engine?.story?.variablesState;
+        const globals = window.gameState?.globalVariables;
+        if (!vars || !globals) return;
+        const manager = window.npcConversationStateManager;
+        for (const tag of tags) {
+            const text = String(tag).trim();
+            const i = text.indexOf(':');
+            if (i < 0 || text.slice(0, i).trim().toLowerCase() !== 'set_global') continue;
+            const name = text.slice(i + 1).split(':')[0].trim();
+            if (!name || !(name in globals)) continue;
+            if (manager?.isGlobalVariable && !manager.isGlobalVariable(name)) continue;
+            if (!vars.GlobalVariableExistsWithName(name)) continue;
+            // Quiet write, as the cache broadcast does: the observer would only echo it back
+            const observer = vars.variableChangedEvent;
+            try {
+                vars.variableChangedEvent = null;
+                vars[name] = globals[name];
+            } catch (err) {
+                console.warn(`⚠️ Could not push ${name} into the story:`, err.message);
+            } finally {
+                vars.variableChangedEvent = observer;
+            }
+        }
     }
 
     /**

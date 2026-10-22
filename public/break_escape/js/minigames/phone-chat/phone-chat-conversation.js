@@ -816,6 +816,33 @@ export default class PhoneChatConversation {
             conversationHistory.every(msg => msg.preloaded));
     }
 
+    /**
+     * Write `#set_global:name:value` tags into a story's own variables (only those the
+     * story declares), so the next line of a dry run reads them as the live game would.
+     * Parses the value as chat-helpers' set_global does. Touches nothing outside `story`.
+     * @param {Object} story - the inkjs Story
+     * @param {string[]} tags
+     */
+    static mirrorSetGlobalTags(story, tags) {
+        const vars = story?.variablesState;
+        if (!vars || !Array.isArray(tags)) return;
+        for (const tag of tags) {
+            const text = String(tag).trim();
+            const i = text.indexOf(':');
+            if (i < 0 || text.slice(0, i).trim().toLowerCase() !== 'set_global') continue;
+            const parts = text.slice(i + 1).trim().split(':');
+            const name = parts[0]?.trim();
+            const raw = parts[1]?.trim();
+            if (!name || !vars.GlobalVariableExistsWithName(name)) continue;
+            if (typeof window !== 'undefined' && window.npcConversationStateManager?.isReadOnlyGlobal?.(name)) continue;
+            let value = raw;
+            if (raw === 'true') value = true;
+            else if (raw === 'false') value = false;
+            else if (raw !== undefined && raw !== '' && !isNaN(raw)) value = Number(raw);
+            try { vars[name] = value; } catch (e) { /* a type the story rejects: leave it */ }
+        }
+    }
+
     static async _preloadOpeningOnce(npc, npcManager, inkEngine) {
         if (npcManager.getConversationHistory(npc.id).length > 0) return 0;
         if (!npc.storyPath && !npc.storyJSON) return 0;
@@ -850,7 +877,12 @@ export default class PhoneChatConversation {
         for (let guard = 0; guard < 500; guard++) {
             const result = tempConversation.continue();
             allMessages.push(...phoneStepLines(result.text, result.tags));
-            if (result.tags && result.tags.length > 0) allTags.push(...result.tags);
+            if (result.tags && result.tags.length > 0) {
+                allTags.push(...result.tags);
+                // The game applies these on first open, but a later line of this dry run
+                // must already see them (F16), so mirror them into the temp story only
+                PhoneChatConversation.mirrorSetGlobalTags(tempConversation.engine?.story, result.tags);
+            }
             if (result.hasEnded || (result.choices && result.choices.length > 0) || !result.canContinue) break;
         }
         if (allMessages.length === 0) return 0;

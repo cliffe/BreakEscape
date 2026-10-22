@@ -765,13 +765,16 @@ export default class PhoneChatUI {
             console.log(`💬 Added ${type} message: ${trimmedText.substring(0, 30)}...`);
         }
         
-        // Add timestamp
-        const messageTime = document.createElement('div');
-        messageTime.className = 'message-time';
-        // The time this message arrived, not the time the thread was opened: every
-        // bubble used to show the current time, so a whole thread read e.g. "12:29"
-        messageTime.textContent = message ? messageClockText(message) : this.getCurrentTime();
-        messageBubble.appendChild(messageTime);
+        // Add timestamp, but only an in-world one. A scenario with a gameClock stamps each
+        // bubble with the game time it arrived at. Without one the only time to show would be
+        // the player's real clock ("12:29" in a mission set at night), so the bubble carries no
+        // time and the thread's order is the only time cue (F18 item 5).
+        if (typeof window !== 'undefined' && window.gameClock?.configured) {
+            const messageTime = document.createElement('div');
+            messageTime.className = 'message-time';
+            messageTime.textContent = message ? messageClockText(message) : this.getCurrentTime();
+            messageBubble.appendChild(messageTime);
+        }
         
         this.elements.messagesContainer.appendChild(messageBubble);
         

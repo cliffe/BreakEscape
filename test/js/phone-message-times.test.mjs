@@ -112,3 +112,11 @@ test('preloaded intros are stamped at or after the in-game start', () => {
     assert.equal(messageClockText(msg, window.gameClock, T0), '16:30');
     delete window.gameClock;
 });
+
+// F18 item 5: without a scenario gameClock the bubble would show the player's real
+// clock in a mission set at night, so it carries no time at all (order is the cue).
+test('phone bubbles show a time only when the scenario has an in-world clock', () => {
+    const ui = read('minigames/phone-chat/phone-chat-ui.js');
+    assert.match(ui, /if \(typeof window !== 'undefined' && window\.gameClock\?\.configured\) \{\s*const messageTime = document\.createElement\('div'\);/);
+    assert.doesNotMatch(ui, /\n\s*const messageTime = document\.createElement[^\n]*\n\s*messageTime\.className = 'message-time';\n\s*\/\/ The time this message arrived/);
+});
