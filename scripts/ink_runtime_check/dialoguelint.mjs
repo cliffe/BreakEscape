@@ -543,7 +543,11 @@ export function structureFindings(text, { channel = 'person', names = [] } = {})
     const found = L.t.replace(/(^|\s)\/\/.*$/, '').match(CUE_RE) || [];
     if (!found.length) continue;
     cues += found.length;
-    const rest = L.body.replace(CUE_RE, ' ');
+    // The speaker prefix ("Agent 0x47 'Nightshade':") and agent handles in the text ("Agent 0x00") are names,
+    // not figures. The prefix regex above misses a quoted codename, so strip it here too.
+    const rest = L.body.replace(CUE_RE, ' ')
+      .replace(/^[A-Z][\w.'’()-]*(?: [\w.'’()-]+){0,3}(?: ['‘"“][^'’"”:]{1,30}['’"”])?:\s+/, '')
+      .replace(/\bAgent 0x[0-9a-f]+\b/gi, ' ');
     // a digit, or two or more number words ("Two hundred and forty"); "no one", "two kids" pass
     const numWords = (rest.match(new RegExp(NUMBER_WORD.source, 'gi')) || []).filter(w => !/^one$/i.test(w));
     if (/\d/.test(rest) || numWords.length >= 2) {

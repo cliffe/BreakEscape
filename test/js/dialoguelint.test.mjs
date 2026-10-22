@@ -171,6 +171,13 @@ test('stage cues: none on lines with numbers; density above m01\'s', () => {
   assert.equal(only(lintInk(sparse), 'stage-cue-density').length, 0);
 });
 
+test('stage-cue-in-info ignores 0x agent handles (prefix and in text) but still flags real figures', () => {
+  const ok = lintInk(`=== s ===\nAgent 0x47 'Nightshade': *smiles* You read your homework.\nAgent 0x5E 'Lantern': *quietly* Ask Agent 0x00 about it.\n`);
+  assert.equal(only(ok, 'stage-cue-in-info').length, 0);
+  const bad = lintInk(`=== s ===\nAgent 0x47 'Nightshade': *smiles* The code is 4471.\n`);
+  assert.deepEqual(only(bad, 'stage-cue-in-info').map(x => x.line), [2]);
+});
+
 test('not-x-but-y: two-sentence, pronoun and "like X, and not Y" forms', () => {
   const hit = t => tellHits(t).map(h => h.rule);
   assert.deepEqual(hit('Not doubt. Irritation.'), ['not-x-but-y']);
