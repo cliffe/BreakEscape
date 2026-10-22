@@ -997,3 +997,21 @@ Applied 2026-10-21 by the m10 fixer from `finale/STAGE_8_RULINGS.md` and the rev
   - m12: the recall topics sit after "[I know who WREN is.]" and hide once `gallery_open`.
 - **S6:** the photo's hand is "sloping" (m09's clue). The ERB copy is the builder's.
 - Executed screen (user ruling, no engine change): the two `Screen:` lines are now `Narrator[none]:` lines that describe the screen ("The screen reads: …" and "One paragraph: …"), voiced by the narrator. No Screen speaker is needed.
+
+**Alignment R1 ELSEWHERE strings (the ink fixer's, wired in the ERB's `elsewhere_one`).**
+- Derek Lawson: serving. He still hasn't said who. (`globalVars.m01_completed === true && globalVars.m01_final_choice === 'arrest'`)
+- Derek Lawson: serving. He still hasn't said who. (`globalVars.m01_completed === true && globalVars.m01_final_choice === 'fight'`)
+- Derek Lawson: turned the deal down. Serving. (`globalVars.m01_completed === true && globalVars.m01_final_choice === 'recruit'`)
+- Derek Lawson: in the papers, then in prison. Social Fabric never mentioned him again. (`globalVars.m01_completed === true && globalVars.m01_final_choice === 'expose'`)
+- Derek Lawson: gave himself up, as he was told. Serving. (`globalVars.m01_completed === true && globalVars.m01_final_choice === 'surrender'`)
+- David Torres: still turned. Still sending. (`globalVars.m05_completed === true && globalVars.m05_final_choice === 'turn_double_agent'`)
+- David Torres: serving. His daughter's treatment goes on. (`globalVars.m05_completed === true && globalVars.m05_final_choice === 'arrest' && globalVars.m05_elena_treatment_funded === true`)
+- David Torres: serving. (`globalVars.m05_completed === true && globalVars.m05_final_choice === 'arrest' && !globalVars.m05_elena_treatment_funded`)
+- David Torres: named in the papers. Out of work. (`globalVars.m05_completed === true && globalVars.m05_final_choice === 'public_exposure'`)
+- David Torres: recovered, and charged. (`globalVars.m05_completed === true && globalVars.m05_final_choice === 'combat_nonlethal'`)
+- Margaret Sorensen: talked. The archive kept its files. (`globalVars.m09_completed === true && globalVars.m09_sorensen_fate === 'talked'`)
+- Margaret Sorensen: has not said a word since. (`globalVars.m09_completed === true && globalVars.m09_sorensen_fate === 'ko'`)
+- Margaret Sorensen: retired the week after. The shredder went with her. (`globalVars.m09_completed === true && globalVars.m09_sorensen_fate !== 'talked' && globalVars.m09_sorensen_fate !== 'ko'`)
+- Noor Haddad: warned in time. Still at the archive. (`globalVars.m09_completed === true && globalVars.m09_noor_told === true`)
+- Noor Haddad: never told. Still on the list. (`globalVars.m09_completed === true && !globalVars.m09_noor_told`)
+- `combat_lethal` (m05) has no Torres row.

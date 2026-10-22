@@ -149,7 +149,7 @@ end
 
 # --- The closing card's cells line (S6 3.2 C): one line per (count, name) ----
 cell_names = {
-  'couriers' => "ENTROPY's couriers", 'zd_uk' => "Zero Day's UK desk", 'procurement' => "The Initiative's procurement desk",
+  'couriers' => "ENTROPY's couriers", 'zd_uk' => "Zero Day's UK desk", 'procurement' => "The Initiative's procurement desk", 'torres' => "The Recruiter's placement desk",
   'crypto' => "The Crypto Anarchists' reserve", 'cm' => 'Critical Mass', 'book' => "The order book's largest buyer",
   'bait' => "The resale share's buyers", 'trace' => "Zero Day's buyers", 'reeves' => "Michael Reeves's people",
   'ashford' => "Marcus Ashford's people", 'walsh' => "Jennifer Walsh's people"
@@ -556,8 +556,8 @@ in_this_operation = lambda do |ending|
   # Alignment R1 A1: the player heads their own credits on every ending, as an
   # outcome (the told clause first where it applies; one clause per person).
   people << person.('AGENT 0x00', [
-    cl.('Pressed the key.', "globalVars.ending === 'joined'", w),
     cl.("Told their handler about the Recruiter's call.", "globalVars.m09_recruiter_secret === 'told'"),
+    cl.('Pressed the key.', "globalVars.ending === 'joined'", w),
     cl.('Brought him out alive, in front of a court.', "globalVars.ending === 'arrest'"),
     cl.('Took his surrender. Kept his protocol.', "globalVars.ending === 'surrender'"),
     cl.('Fired when his hand was on the key.', "globalVars.ending === 'lethal'"),
@@ -746,6 +746,7 @@ the_cells = { 'section' => 'THE CELLS', 'lines' => [
   cl.("ENTROPY's quartermaster: rolled up. His protocol.", "globalVars.ending === 'surrender'"),
   cl.("Zero Day's UK desk: rolled up. Sterling's watch.", "globalVars.close_secure_cell === 'zd_uk'"),
   cl.("The Initiative's procurement desk: rolled up. Nightshade's channel.", "globalVars.close_secure_cell === 'procurement'"),
+  cl.("The Recruiter's placement desk: two in custody, through Torres.", "globalVars.close_secure_cell === 'torres'"),
   cl.("The Crypto Anarchists' reserve: rolled up. The HashChain tags.", "globalVars.close_secure_cell === 'crypto'"),
   cl.('Critical Mass: rolled up. The watch on the controllers.', "globalVars.close_secure_cell === 'cm'"),
   cl.("The order book's largest buyer: rolled up.", "globalVars.close_secure_cell === 'book'"),
@@ -781,14 +782,19 @@ elsewhere_one = [
   # Alignment R1 A4 / A3: the season's first operation and m05's choice, each by its exported value.
   cl.("Derek Lawson: serving. He still hasn't said who.", "globalVars.m01_completed === true && globalVars.m01_final_choice === 'arrest'"),
   cl.("Derek Lawson: serving. He still hasn't said who.", "globalVars.m01_completed === true && globalVars.m01_final_choice === 'fight'"),
-  cl.("Derek Lawson: serving. He gave himself up, and nothing else.", "globalVars.m01_completed === true && globalVars.m01_final_choice === 'surrender'"),
-  cl.('Derek Lawson: working for us. Still careful what he gives.', "globalVars.m01_completed === true && globalVars.m01_final_choice === 'recruit'"),
-  cl.('Derek Lawson: exposed in public. Social Fabric took his name off its door.', "globalVars.m01_completed === true && globalVars.m01_final_choice === 'expose'"),
-  cl.('David Torres: still turned. Still sending.', "globalVars.m05_completed === true && globalVars.m05_final_choice === 'turn_double_agent'"),
-  cl.('David Torres: serving.', "globalVars.m05_completed === true && globalVars.m05_final_choice === 'arrest'"),
-  cl.('David Torres: serving. He walks with a stick now.', "globalVars.m05_completed === true && globalVars.m05_final_choice === 'combat_nonlethal'"),
-  cl.('David Torres: died under his own server rack.', "globalVars.m05_completed === true && globalVars.m05_final_choice === 'combat_lethal'", w),
-  cl.('David Torres: named in public. Awaiting trial.', "globalVars.m05_completed === true && globalVars.m05_final_choice === 'public_exposure'"),
+  cl.("Derek Lawson: turned the deal down. Serving.", "globalVars.m01_completed === true && globalVars.m01_final_choice === 'recruit'"),
+  cl.("Derek Lawson: in the papers, then in prison. Social Fabric never mentioned him again.", "globalVars.m01_completed === true && globalVars.m01_final_choice === 'expose'"),
+  cl.("Derek Lawson: gave himself up, as he was told. Serving.", "globalVars.m01_completed === true && globalVars.m01_final_choice === 'surrender'"),
+  cl.("David Torres: still turned. Still sending.", "globalVars.m05_completed === true && globalVars.m05_final_choice === 'turn_double_agent'"),
+  cl.("David Torres: serving. His daughter's treatment goes on.", "globalVars.m05_completed === true && globalVars.m05_final_choice === 'arrest' && globalVars.m05_elena_treatment_funded === true"),
+  cl.("David Torres: serving.", "globalVars.m05_completed === true && globalVars.m05_final_choice === 'arrest' && !globalVars.m05_elena_treatment_funded"),
+  cl.("David Torres: named in the papers. Out of work.", "globalVars.m05_completed === true && globalVars.m05_final_choice === 'public_exposure'"),
+  cl.("David Torres: recovered, and charged.", "globalVars.m05_completed === true && globalVars.m05_final_choice === 'combat_nonlethal'"),
+  cl.("Margaret Sorensen: talked. The archive kept its files.", "globalVars.m09_completed === true && globalVars.m09_sorensen_fate === 'talked'"),
+  cl.("Margaret Sorensen: has not said a word since.", "globalVars.m09_completed === true && globalVars.m09_sorensen_fate === 'ko'"),
+  cl.("Margaret Sorensen: retired the week after. The shredder went with her.", "globalVars.m09_completed === true && globalVars.m09_sorensen_fate !== 'talked' && globalVars.m09_sorensen_fate !== 'ko'"),
+  cl.("Noor Haddad: warned in time. Still at the archive.", "globalVars.m09_completed === true && globalVars.m09_noor_told === true"),
+  cl.("Noor Haddad: never told. Still on the list.", "globalVars.m09_completed === true && !globalVars.m09_noor_told"),
   # Playtest FULL_1 / S6 3.5: a stopped share gets its own row, and the "still trading" rows skip it.
   cl.('Zero Day: got nothing tonight. Still trading.', "globalVars.share_zero_day === 'stopped' && globalVars.close_zero_day === 'trading'"),
   cl.('Zero Day: got nothing tonight. Its broker, Pieter Vos, named.', "globalVars.share_zero_day === 'stopped' && globalVars.close_zero_day === 'vos_named'"),
@@ -1640,7 +1646,8 @@ end
             { "eventPattern": "room_entered:server_hall", "condition": "!globalVars.casualty_sheet_read && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 7000, "message": "You walked past his sheet. It's worth the minute.", "skipIfGlobal": "casualty_sheet_read" } },
             { "eventPattern": "room_entered:server_hall", "condition": "globalVars.m07_completed === true && globalVars.m07_mercer_fate === 'arrested' && !globalVars.m07_mercer_ko && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 12000, "message": "Mercer drew us this room from memory. He got it right." } },
             { "eventPattern": "npc_ko:asante", "setGlobal": { "asante_outcome": "ko" } },
-            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Uplink Printer' && data.roomId === 'server_hall' && globalVars.m09_cage_bin === 'letters' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Tran's handler is on that rota. He's in the Helena letters." } },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Uplink Printer' && data.roomId === 'server_hall' && globalVars.m09_cage_bin === 'letters' && globalVars.m09_tran_outcome !== 'talked' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Tran's handler is on that rota. He's in the Helena letters." } },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Uplink Printer' && data.roomId === 'server_hall' && globalVars.m09_cage_bin === 'letters' && globalVars.m09_completed === true && globalVars.m09_tran_outcome === 'talked' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Tran's handler is on that rota. Tran gave us the name himself, in Helena." } },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Uplink Printer' && data.roomId === 'server_hall' && globalVars.m05_entropy_program_exposed === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 7000, "message": "There's the reply Netherton was waiting for. They've named the unit, and you.", "skipIfGlobal": "hax_jammed" } },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Uplink Printer' && data.roomId === 'server_hall' && globalVars.m07_completed === true && globalVars.m07_team_assignment !== 'fracture' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 12500, "message": "It isn't going out from here. Nothing I can stop from this end.", "skipIfGlobal": "hax_jammed" } },
 <%# --- The gallery stair (OT 4.4): flags 2 and 3 and the cut ----------------- %>
@@ -2765,13 +2772,13 @@ not_tethered = '!globalVars.nightshade_tethered'
           "takeable": false,
           "readable": true,
           "position": "as-type:notice_board",
-          "observations": "Your photo, pinned among the shift notes, taken somewhere you didn't know there was a camera. Under it, in a neat, upright hand: 0x00: to the core. Do not detain.",
+          "observations": "Your photo, pinned among the shift notes, taken somewhere you didn't know there was a camera. Under it, in a neat, sloping hand: 0x00: to the core. Do not detain.",
           "observationVariants": [
-            { "condition": "globalVars.m09_completed === true", "value": "Your photo, pinned among the shift notes, taken somewhere you didn't know there was a camera. Under it, in the neat, upright hand from the papers in Helena: 0x00: to the core. Do not detain." }
+            { "condition": "globalVars.m09_completed === true", "value": "Your photo, pinned among the shift notes, taken somewhere you didn't know there was a camera. Under it, in the neat, sloping hand from the papers in Helena: 0x00: to the core. Do not detain." }
           ],
-          "text": "Your photo. Under it, in a neat, upright hand:\n0x00: to the core. Do not detain.",
+          "text": "Your photo. Under it, in a neat, sloping hand:\n0x00: to the core. Do not detain.",
           "textVariants": [
-            { "condition": "globalVars.m09_completed === true", "value": "Your photo. Under it, in the neat, upright hand from the papers in Helena:\n0x00: to the core. Do not detain." }
+            { "condition": "globalVars.m09_completed === true", "value": "Your photo. Under it, in the neat, sloping hand from the papers in Helena:\n0x00: to the core. Do not detain." }
           ]
         },
         {
@@ -4107,7 +4114,7 @@ m10_imports = {
   'm06_follow_the_money' => [['assets_seized', false], ['satoshi_stance', ''], ['monitoring_enabled', false], ['guard_ko', false], ['trader_ko', false], ['analyst_ko', false]],
   'm07_architects_gambit' => [['elena_outcome', ''], ['mercer_fate', ''], ['mercer_ko', false], ['hollis_resolved', ''], ['debrief_stance', ''], ['team_assignment', ''], ['team_redirected', false], ['countdown_expired', false], ['architect_echo_heard', false], ['elena_ko', false]],
   'm08_the_mole' => [['nightshade_triple_agent', false], ['triple_agent_first_payment', false], ['nightshade_arrested', false], ['nightshade_ko_before_fate', false], ['accused_vector', false], ['accused_phantom', false], ['vector_apologised', false], ['phantom_apologised', false], ['vector_hostile', false], ['phantom_hostile', false], ['offduty_agent_ko', false], ['analyst_ko', false], ['athena_ko', false], ['netherton_ko', false], ['hax_ko', false], ['named_on_evidence', false]],
-  'm09_digital_archaeology' => [['nightshade_shown_file', false], ['sleeper_named', false], ['recruiter_offer', ''], ['deck_pulled', ''], ['sleeper_shortlist', false], ['recruiter_secret', ''], ['reading_finished', false], ['albion_notified', false], ['cage_bin', ''], ['legacy_files_saved', false], ['hax_confession_answer', ''], ['alpha_annotations_read', false]]
+  'm09_digital_archaeology' => [['nightshade_shown_file', false], ['sleeper_named', false], ['recruiter_offer', ''], ['deck_pulled', ''], ['sleeper_shortlist', false], ['recruiter_secret', ''], ['reading_finished', false], ['albion_notified', false], ['cage_bin', ''], ['legacy_files_saved', false], ['hax_confession_answer', ''], ['alpha_annotations_read', false], ['memo_stance', ''], ['raid_team_answer', ''], ['kowalczyk_reply', ''], ['sorensen_fate', ''], ['tran_outcome', ''], ['noor_told', false], ['alpha_clip_played', false]]
 }
 import_rows = []
 m10_imports.each do |from, vars|
