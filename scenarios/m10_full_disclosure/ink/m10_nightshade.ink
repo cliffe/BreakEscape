@@ -37,14 +37,8 @@ VAR ns_arr_seen = false     // arrested branch: the opening has played
 ~ temp b = door_branch()
 {
 - b == "shown":
-    {ns_paid or override_held:
-        -> shown_close
-    }
     -> shown
 - b == "unshown":
-    {ns_paid or payment_read:
-        -> unshown_close
-    }
     -> unshown
 - b == "arrested":
     -> arrested
@@ -57,6 +51,10 @@ VAR ns_arr_seen = false     // arrested branch: the opening has played
 // hands over the override on both options.
 // ---------------------------------------------------------------
 === shown ===
+// Moved from table (inklint): each branch tests its own resume point, so another branch's menu isn't charged with it.
+{ns_paid or override_held:
+    -> shown_close
+}
 Agent 0x47 'Nightshade': He wrote fifteen years of me in his own hand. I'd know it anywhere. I learned to write like it.
 Agent 0x47 'Nightshade': So you'll have all of it. Every door down there, and the catalogue entry he built it from.
 {m09_completed:
@@ -136,6 +134,9 @@ Director Magnus Netherton: Take him down there and every guard in the place sees
 // The check (S6-16) is a puzzle; the closing choice is map or plans.
 // ---------------------------------------------------------------
 === unshown ===
+{ns_paid or payment_read:
+    -> unshown_close
+}
 {m08_triple_agent_first_payment:
     Agent 0x47 'Nightshade': I said I'd pay when you stood at the door. Every door, and where he got the idea.
 - else:
@@ -254,6 +255,8 @@ Director Magnus Netherton: Without him you have Helena's plans. They are good pl
 -> arrested_menu
 
 === arrested_menu ===
+// inklint skipped-guard: unreachable today (ending needs the core, the core needs the breach, and on this branch only these picks set door_scene_done), kept so a reopen can never offer a deal after the night ends.
+{ending != "": -> end_rest}
 + [No deals. I said it then.]
     ~ nightshade_deal = "refused"
     ~ nightshade_map_used = false
