@@ -128,7 +128,8 @@ VAR hax_suspect = ""
 - flag4_submitted:
     The core. Hear him out.
 - outer_lock_open:
-    The core. You're in. His box first.
+    // Dialogue R4 m3: true after a reload at the post; names the find.
+    The core. His box first. The key's on his terminal.
 - gallery_open:
     Up the stair. The lock's at the end.
 // Dialogue R3 n8: the pull waiting, whatever else is done.
@@ -137,7 +138,8 @@ VAR hax_suspect = ""
 - flag2_submitted and flag3_submitted and not gallery_shutter_cut:
     The shutter's still live. Power room.
 - flag2_submitted:
-    Get under the release service. The hatch in the sealed section.
+    // Dialogue R4 m3: names the find.
+    Get under the release service. The hatch in the sealed section. The duty sheet by the east racks has the login.
 - server_hall_entered:
     The console takes the staging copy.
 - gallery_shutter_cut:
@@ -171,7 +173,8 @@ VAR hax_suspect = ""
 - door_scene_done and flag1_submitted:
     Quintero's on her way back.
 - door_scene_done:
-    Their monitoring. Gate terminal.
+    // Scenario design R4 m2, dialogue R4 m3: the rung names the find.
+    Their monitoring. Gate terminal. The login's on the maintenance tag.
 - flag1_submitted:
     Netherton won't call it till the table's settled.
 - else:
@@ -297,7 +300,8 @@ The log says Malhotra's badge. Malhotra was on with me at ten past.
 }
 // Scenario design R3 n2: Nightshade's hint, where it belongs.
 {ns_borrow_hint:
-    Nightshade said they always borrow a badge. Ten past two is when it was borrowed.
+    // Dialogue R4 n7.
+    Nightshade said they always borrow a badge. Malhotra's was borrowed at ten past two.
 }
 So who wasn't where somebody could see them at ten past?
 + [Quintero and Kowalczyk. They were in the tunnel.]
@@ -382,8 +386,11 @@ Go on. Who?
 - else:
     Get Phantom back first.
 }
-// Scenario design R3 m2: where the recall comes from.
-{clue_door_log and not clue_alibi:
+// Scenario design R3 m2, R4 m4: where the recall comes from (Quintero's is the bench log).
+{
+- officer_out == "quintero" and not clue_bench_log:
+    The bench log clears her. Read it.
+- officer_out != "quintero" and clue_door_log and not clue_alibi:
     Ask me who was where at ten past. That's how we clear them.
 }
 -> support_hub
@@ -438,8 +445,11 @@ I'll put it to Netherton.
     Agent 0x88 'Phantom': Ask me for my list next time. It has a name on it, and it isn't mine.
     Director Magnus Netherton: Then I am a pair of hands short. Carry on.
 }
-// Scenario design R3 m2: where the recall comes from.
-{clue_door_log and not clue_alibi:
+// Scenario design R3 m2, R4 m4: where the recall comes from (Quintero's is the bench log).
+{
+- hax_suspect == "quintero" and not clue_bench_log:
+    The bench log clears her. Read it.
+- hax_suspect != "quintero" and clue_door_log and not clue_alibi:
     Ask me who was where at ten past. That's how we clear them.
 }
 -> support_hub
@@ -561,25 +571,33 @@ Sealed section, east end of the hall. A Cold War maintenance hatch, painted over
 // VM gating F12/F13 (supersedes the Educational R1 removal): the disarm is a story artefact on the release host,
 // and the steer names its find (the operator's duty card). No technique.
 The release service runs in a container on the host under it.
-Get out of the container onto that host. His disarm sits on that box.
-One of his operators dropped a duty card by the east racks. The login's on it.
+// Dialogue R4 m4: the in-world reason for flag 3.
+Get out of the container onto that host. That opens the way up to him.
+// Puzzle chains R3 m2 (VM handoff B6): what is on the host is the release's kill config; the switch is in the core, past the gallery (the core lies below the gallery's slit windows).
+The release's kill config is on it: how six o'clock is armed, and what stops it. The switch is on his console, in the core.
+One of his operators dropped a duty sheet by the east racks. The login's on it.
 -> support_hub
 
 === monitor_topic ===
 ~ hax_monitor_asked = true
 Their monitoring watches the cameras and the doors. It's still software, and software has holes.
 Get a foothold on it and their own eyes work for us.
+// Scenario design R4 n1: the season's lesson, said once.
+People leave logins on their kit. Look for them.
 // VM gating F12: the steer names its find.
-There's a maintenance tag on the gate console's lead. Their service login's on it.
+// Puzzle chains R3 m1: the tag hangs off their gate terminal, not our field console.
+There's a maintenance tag on their gate terminal's lead. Their service login's on it.
 -> support_hub
 
 === box_topic ===
 ~ hax_box_asked = true
 // Dialogue R2 n4: same concept as opus48's checked lines, no new technical detail; leaves "He always builds his own way out first" to the core.
-He walled his box off, the same way the release service was. You've broken out of one of those tonight.
-He'll have left himself a way out. Find it.
 // VM gating F12: the steer names its find.
-There's a key envelope on the gallery rail, stamped CORE. That's your way onto his box.
+// Puzzle chains R3 M1: the key is in the core, left out by him.
+// Dialogue R4 §5: the envelope first, and one "left".
+He's left a key envelope on his terminal, stamped CORE. He wants you on his box.
+He walled his box off, the same way the release service was. You've broken out of one of those tonight.
+He'll have kept himself a way out. Find it.
 -> support_hub
 
 // After flag 4 (MC §6.1): the feed, and the vault line with the purge.
@@ -764,7 +782,8 @@ A key switch and a breaker row, labelled GALLERY SHUTTER.
     -> cut_step_1
 + [Give me a minute.]
     // Puzzle chains R2 n3: she rings back herself (the one-time re-ring on close).
-    I'll ring you back when you're at it.
+    // Dialogue R4 n1: true with the 1.5 s re-ring on close.
+    Take a second. I'll ring straight back.
     #exit_conversation
     -> DONE
 
@@ -778,7 +797,8 @@ Turn the key a quarter. That takes the row off their board.
     ~ cut_step = 2
     -> cut_step_2
 + [Give me a minute.]
-    Take it. The key won't turn itself.
+    // Puzzle chains R3 n1: she rings back herself.
+    Take it. I'll ring you back.
     #exit_conversation
     -> DONE
 
@@ -802,7 +822,8 @@ Top row. The third breaker from the left feeds the shutter.
     -> cut_breakers
 // Puzzle chains P2: the player pulls the breaker at the isolator (its click writes the cut); the call ends on the instruction.
 // Dialogue R3 m1: a question, so the instruction answers it.
-+ [Anything else before I pull it?]
+// Dialogue R4 m1: checks the breaker without inviting a list.
++ [Just that one?]
     Third from the left. Go and pull it.
     -> hax_close_got
 

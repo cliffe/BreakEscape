@@ -185,7 +185,7 @@ outer_lock_pin = '6083'
 # open the VM plan. The opus48 agent or the user replaces them.
 monitor_login_user = 'secmon'
 monitor_login_password = 'Bunker!Monitor59'
-release_login_user = 'vos'
+release_login_user = 'relops'
 release_login_password = 'Release!Shift25'
 core_access_key = 'TSRCT-CORE-9F21'
 
@@ -1636,7 +1636,7 @@ end
             { "eventPattern": "object_interacted", "condition": "data.objectType === 'vm-launcher' && data.roomId === 'server_hall' && globalVars.flag2_submitted === true && !globalVars.guide3_offered", "setGlobal": { "guide3_offered": true } },
             <%# Stage 8 m-7: the hatch's first use offers guide 3 too, so flag 3 can come first. T-34. %>
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Sealed Section Hatch' && data.roomId === 'server_hall' && !globalVars.guide3_offered", "setGlobal": { "guide3_offered": true } },
-            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Sealed Section Hatch' && data.roomId === 'server_hall' && !globalVars.flag3_submitted && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "That's the hatch. The release service runs on the host under it." } },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Sealed Section Hatch' && data.roomId === 'server_hall' && !globalVars.flag3_submitted && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "That's the hatch. The release service runs on the host under it. One of his operators dropped a duty sheet by the east racks." } },
             { "eventPattern": "object_interacted", "condition": "data.objectType === 'vm-launcher' && data.roomId === 'core' && !globalVars.guide4_offered", "setGlobal": { "guide4_offered": true } },
             <%# Scenario design R1 m1: HaX says each field guide is ready (which guide only, nothing of its content). Guide 1 waits 20 s so it lands clear of the split scene. %>
             { "eventPattern": "global_variable_changed:guide1_offered", "condition": "value === true && !globalVars.flag1_submitted && !globalVars.guide1_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 20000, "message": "There's a field guide for their monitoring host. Ask me.", "skipIfGlobal": "guide1_given" } },
@@ -1725,6 +1725,8 @@ end
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Tool Roll' && data.roomId === 'power_room' && globalVars.m04_static_left_alone === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Static got out of Albion on his own. That's his." } },
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true", "onceOnly": true, "completeTask": "cut_the_shutter" },
             <%# Dialogue R3 m4: one shutter text, first match wins (each sets shutter_text_sent): the stair open when flags 2 and 3 are in; a short "The hall's next." after a voice already said the shutter is dead (Vance, Elena, captured Voltage); otherwise as before. %>
+            <%# Dialogue R4 n4: when a voice has already said the shutter is dead (Vance, Elena, captured Voltage), the stair text drops it. %>
+            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && ((globalVars.cut_step === 3 && !globalVars.phone_voice_is_hax) || globalVars.voltage_outcome === 'by_hand') && !globalVars.shutter_text_sent && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "shutter_text_sent": true }, "sendTimedMessage": { "delay": 2500, "message": "The stair's open." } },
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && !globalVars.shutter_text_sent && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "shutter_text_sent": true }, "sendTimedMessage": { "delay": 2500, "message": "Shutter's dead. The stair's open." } },
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.cut_step === 3 && !globalVars.phone_voice_is_hax && !globalVars.shutter_text_sent && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "shutter_text_sent": true }, "sendTimedMessage": { "delay": 2500, "message": "The hall's next." } },
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.voltage_outcome === 'by_hand' && !globalVars.shutter_text_sent && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "shutter_text_sent": true }, "sendTimedMessage": { "delay": 2500, "message": "The hall's next." } },
@@ -2597,14 +2599,14 @@ end
           "observations": "The second van. A steel rail along one wall, for cuffs."
         },
         {
-          "_comment": "VM gating F12 (handoff B5 item 1): the monitoring host's service login, a tag hanging off the gate console, so flag 1 needs this find. PLACEHOLDER position (tile, beside the console's trestle; dressing to confirm) and PLACEHOLDER (VM) strings.",
+          "_comment": "VM gating F12 (handoff B5 item 1), puzzle chains R3 m1: the monitoring host's service login, a tag on Tomb Gamma's gate terminal (their kit, not SAFETYNET's field console), so flag 1 needs this find. PLACEHOLDER position (tile, beside the terminal's stand; dressing to confirm) and PLACEHOLDER (VM) strings.",
           "type": "notes",
           "id": "monitor_maintenance_tag",
           "name": "Maintenance Tag",
           "takeable": true,
           "readable": true,
-          "position": { "x": 15, "y": 4 },
-          "observations": "A laminated maintenance tag on a cable tie, cut from the gate console's power lead.",
+          "position": { "x": 15.6, "y": 3.4 },
+          "observations": "A laminated maintenance tag on a cable tie, hanging off the gate terminal's power lead.",
           "text": "TOMB GAMMA SECURITY MONITORING. Service login, for maintenance only.\nUser: <%= monitor_login_user %>\nPassword: <%= monitor_login_password %>\nDo not remove.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "gate_terminal"
@@ -3337,7 +3339,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
             <%# Puzzle chains R2 n6: a click before talking to him gets his offer (his existing opener line). %>
-            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.m04_voltage_captured === true && globalVars.cut_step !== 2 && !globalVars.gallery_shutter_cut && globalVars.voltage_outcome !== 'by_hand' && globalVars.voltage_outcome !== 'his_hands'", "bark": "Let me do it. It's quicker. Or do it yourself, and I'll tell you which one's the gallery camera." },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.m04_voltage_captured === true && globalVars.cut_step !== 2 && !globalVars.gallery_shutter_cut && globalVars.voltage_outcome !== 'by_hand' && globalVars.voltage_outcome !== 'his_hands'", "onceOnly": true, "bark": "Let me do it. It's quicker. Or do it yourself, and I'll tell you which one's the gallery camera." },
             <%# Puzzle chains P2: his success line becomes a bark on the player's pull. %>
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.voltage_outcome === 'by_hand'", "onceOnly": true, "bark": "That's it. Shutter's dead. You'll want to say you did it alone. You did." },
             <%= after_end_json.('power_room') %>
@@ -3674,12 +3676,12 @@ not_tethered = '!globalVars.nightshade_tethered'
           "_comment": "VM gating F12 (handoff B5 item 2): the release host's operator login, behind the power-room card (the hall is past the power room), so flag 3 needs this find. PLACEHOLDER position (tile, open floor by the east racks; dressing to confirm) and PLACEHOLDER (VM) strings.",
           "type": "notes",
           "id": "release_operator_card",
-          "name": "Operator's Duty Card",
+          "name": "Operator's Duty Sheet",
           "takeable": true,
           "readable": true,
-          "position": { "x": 17, "y": 5 },
-          "observations": "A duty card dropped by the racks. Release service, operator on shift.",
-          "text": "RELEASE SERVICE. OPERATOR ON SHIFT.\nHost login: <%= release_login_user %>\nPassword: <%= release_login_password %>\nSign the log at handover.",
+          "position": { "x": 15.5, "y": 3.5 },
+          "observations": "A duty sheet dropped by the racks. Release service, operator on shift.",
+          "text": "RELEASE SERVICE. OPERATOR ON SHIFT.\nRelease host login: <%= release_login_user %>\nPassword: <%= release_login_password %>\nSign the log at handover.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "sealed_hatch"
         },
@@ -4049,19 +4051,6 @@ not_tethered = '!globalVars.nightshade_tethered'
           "position": "as-type:m10_slit_window",
           "puzzle_graph_links": [{ "from": "action_opened_from_inside", "to": "door_core", "dashed": true }],
           "observations": "Slit windows down into the core. Bare concrete, one console, and the top of a grey head that doesn't look up."
-        },
-        {
-          "_comment": "VM gating F12 (handoff B5 item 3): the core host's access key, in the gallery, so it is reachable only after the gallery stair and flag 4 needs this find. PLACEHOLDER position (tile, on the walkway; dressing to confirm) and PLACEHOLDER (VM) string.",
-          "type": "notes",
-          "id": "core_access_key",
-          "name": "Core Access Key",
-          "takeable": true,
-          "readable": true,
-          "position": { "x": 3, "y": 3 },
-          "observations": "A sealed key envelope clipped to the walkway rail, stamped CORE. ACCESS.",
-          "text": "CORE. ACCESS KEY. ONE HOLDER.\n<%= core_access_key %>\nReturn to the console on shift change.",
-          "puzzle_graph_role": "key",
-          "puzzle_graph_unlocks": "core_host_terminal"
         }
       ]
     },
@@ -4256,6 +4245,19 @@ not_tethered = '!globalVars.nightshade_tethered'
           "takeable": false,
           "position": "as-type:m10_service_door",
           "observations": "The service door, east wall. Steel, a reader, and a camera on a bracket above it that has never once moved."
+        },
+        {
+          "_comment": "VM gating F12 (handoff B5 item 3), puzzle chains R3 M1: the core host's access key, left out by Tesseract on his own host terminal for the agent he invited, so it is found only where flag 4's station already works. PLACEHOLDER position (tile, beside the host terminal; dressing to confirm) and PLACEHOLDER (VM) string.",
+          "type": "notes",
+          "id": "core_access_key",
+          "name": "Core Host Key",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 2.2, "y": 4.8 },
+          "observations": "A sealed envelope propped against the host terminal's screen, stamped CORE. ACCESS. Left out for whoever came down.",
+          "text": "CORE. HOST ACCESS KEY. ONE HOLDER.\n<%= core_access_key %>\nFor the agent. A.T.",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_unlocks": "core_host_terminal"
         }
       ]
     }

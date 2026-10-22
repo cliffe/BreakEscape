@@ -40,7 +40,7 @@ Grey cabinet by the door. Key switch and a breaker row, GALLERY SHUTTER on the l
     ~ cut_step = 1
     -> cut_1
 + [Give me a minute.]
-    Right. I'll ring back when you're in the room.
+    Right. I'll ring back when you're at the cabinet.
     #exit_conversation
     -> cut_0_menu
 
@@ -74,7 +74,8 @@ Breaker row. The shutter's third from the left, the big one. Don't touch the oth
     -> cut_2_menu
 // Puzzle chains P2: the player pulls it at the isolator; the call ends on the instruction (resume lands back here).
 // Dialogue R3 m1: a question, so the instruction answers it.
-+ [Anything else before I pull it?]
+// Dialogue R4 m1: checks the breaker without inviting a list.
++ [Just that one?]
     Third from the left, the big one. Go and pull it. Nothing else.
     -> cut_2_go
 = cut_2_go

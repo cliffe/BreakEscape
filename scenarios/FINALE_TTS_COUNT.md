@@ -202,3 +202,4 @@ No audio exists yet, so nothing is orphaned by the change. The officers' m09 and
 - 2026-10-22 m09 playtest R1: +1 HaX voiced (379).
 - 2026-10-22 m10 SD R2 + dialogue R2 + puzzle chains R1 + playtest R1: +9 new, −2, 15 reworded (approx.; see CONTRACT §11).
 - 2026-10-22 m10 PC R2 + SD R3 + DR3 + VM gating: ~+5 new, ~9 reworded.
+- 2026-10-22 m10 PC R3 + SD R4 + DR4: 8 reworded, 0 new.

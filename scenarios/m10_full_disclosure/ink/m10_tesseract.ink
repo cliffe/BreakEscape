@@ -189,7 +189,7 @@ Dr Adrian Tesseract: Finish on my box first. I'll keep.
 // Educational R1: HaX tells the player about the notice; no line promises a file on his box.
 // VM gating F13 (supersedes the Educational R1 rewording): the unsent notice is a story artefact on the core host.
 { m09_completed:
-    Agent HaX: The notice from Helena is on his box too. Nine years, and never sent.
+    Agent HaX: The notice from Helena is on his box. Nine years, and never sent.
 - else:
     Agent HaX: He argued for the vendor nine years ago and lost.
     Agent HaX: The notice he wrote to the vendor is on his box. He never sent it.
@@ -412,7 +412,7 @@ Dr Adrian Tesseract: Either you press it, or I get a courtroom. I've costed both
 + { m01_final_choice == "arrest" } [He'll talk, in the end.]
     Dr Adrian Tesseract: He won't. He believes. That was the point of him.
 + [That was my first day.]
-    Dr Adrian Tesseract: It was. I've been reading since.
+    Dr Adrian Tesseract: Yes. And I've been reading since.
 -
 ~ tess_rec_derek = true
 ~ tess_rec = tess_rec + 1

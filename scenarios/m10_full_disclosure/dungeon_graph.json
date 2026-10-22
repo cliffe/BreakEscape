@@ -369,8 +369,8 @@
       "optional": false
     },
     {
-      "id": "operator_s_duty_card",
-      "label": "Operator's Duty Card",
+      "id": "operator_s_duty_sheet",
+      "label": "Operator's Duty Sheet",
       "kind": "key",
       "optional": false
     },
@@ -385,18 +385,6 @@
       "label": "Keypad Face Plate",
       "kind": "item",
       "optional": true
-    },
-    {
-      "id": "core_access_key",
-      "label": "Core Access Key",
-      "kind": "key",
-      "optional": false
-    },
-    {
-      "id": "lock_core_host_terminal",
-      "label": "Core Host Terminal",
-      "kind": "lock",
-      "optional": false
     },
     {
       "id": "npc_victoria_sterling",
@@ -438,6 +426,18 @@
       "id": "field_console_core",
       "label": "Field Console (Core)",
       "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "core_host_key",
+      "label": "Core Host Key",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lock_core_host_terminal",
+      "label": "Core Host Terminal",
+      "kind": "lock",
       "optional": false
     },
     {
@@ -883,11 +883,11 @@
     },
     {
       "from": "server_hall",
-      "to": "operator_s_duty_card",
+      "to": "operator_s_duty_sheet",
       "soft": false
     },
     {
-      "from": "operator_s_duty_card",
+      "from": "operator_s_duty_sheet",
       "to": "lock_sealed_hatch",
       "soft": false
     },
@@ -900,16 +900,6 @@
       "from": "keypad_face_plate",
       "to": "door_core",
       "soft": true
-    },
-    {
-      "from": "gallery",
-      "to": "core_access_key",
-      "soft": false
-    },
-    {
-      "from": "core_access_key",
-      "to": "lock_core_host_terminal",
-      "soft": false
     },
     {
       "from": "gallery",
@@ -959,6 +949,16 @@
     {
       "from": "core",
       "to": "field_console_core",
+      "soft": false
+    },
+    {
+      "from": "core",
+      "to": "core_host_key",
+      "soft": false
+    },
+    {
+      "from": "core_host_key",
+      "to": "lock_core_host_terminal",
       "soft": false
     },
     {

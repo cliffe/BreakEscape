@@ -95,7 +95,7 @@ Narrator: Your phone buzzes on the bonnet. A number with no name.
 - ghost_answer == "trust":
     Narrator: 'You checked. Most don't.'
 - ghost_sale == "bait" and head_start_killed == "ghost":
-    Narrator: 'Five buyers paid for nothing, and you have their names. I kept the money. Clean exit.'
+    Narrator: 'You let me sell it, then killed it. I kept the money. Clean exit.'
 - ghost_sale == "bait":
     Narrator: 'Sold. You watched who bought it. I hope the names were worth it. Clean exit.'
 - else:

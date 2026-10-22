@@ -58,7 +58,7 @@ Gary Whitlock: That casing on the rack. I had one of those behind my server cabi
     - imran_outcome == "taken_in":
         Gary Whitlock: He'll be all right. Probably. I was.
     - imran_outcome == "ko":
-        Gary Whitlock: You put him on the floor. I'll sit with him till someone comes.
+        Gary Whitlock: You put him on the floor. He's breathing, at least.
     - else:
         Gary Whitlock: He's at the far bench. Go on.
     }

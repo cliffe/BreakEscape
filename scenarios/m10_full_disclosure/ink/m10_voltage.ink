@@ -191,7 +191,8 @@ Voltage (Critical Mass): Breaker row. Third from the left is the shutter. Leave 
     -> cut_p2_menu
 // Puzzle chains P2: the player pulls it at the isolator (its click writes the cut); his success line is a bark on the cut.
 // Dialogue R3 m1: a question, so the instruction answers it.
-+ [Anything else before I pull it?]
+// Dialogue R4 m1: checks the breaker without inviting a list.
++ [Just that one?]
     Voltage (Critical Mass): Third from the left. Go and pull it yourself. I'll watch.
     ~ volt_quiet = true
     #exit_conversation
