@@ -452,6 +452,14 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
   - Recon is dark for a second on entry (motion light).
   - The plan board's "Count these" has no clear referent.
 
+- **Lab re-run R8** (Sonnet, game 3323, `playtests/R8.md`): regression after today's mechanics batch. No regression against R7: 23/23, score 100, two reloads survived, ready-toast text unchanged, Dev's bar starts at 0 and matches the log. The harness fixes removed every R7 workaround. Still open:
+  - **Harness:** `bootstrap` loops on the end card after a reload (H3); `brief` errors right after a reload (H4); the mail selects and blank pickers still need DOM eval (H1).
+  - **Minors:**
+    - F4: Dev's card offered only "Finance" for Team. Check whether the stale "Accounts" option needs the 2019 org-chart fact, or whether it has regressed.
+    - F2: the "Finance (new starter)" row is still read as Sofia.
+    - F7: triage "Pressure: caught 0 of 1".
+    - The raw id `payslip_date`.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
