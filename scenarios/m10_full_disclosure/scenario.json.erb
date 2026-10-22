@@ -2603,7 +2603,7 @@ end
           "observations": "The second van. A steel rail along one wall, for cuffs."
         },
         {
-          "_comment": "VM gating F12 (handoff B5 item 1), puzzle chains R3 m1: the monitoring host's service login, a tag on Tomb Gamma's gate terminal (their kit, not SAFETYNET's field console), so flag 1 needs this find. PLACEHOLDER position (tile, beside the terminal's stand; dressing to confirm) and PLACEHOLDER (VM) strings.",
+          "_comment": "VM gating F12 (handoff B5 item 1), puzzle chains R3 m1: the monitoring host's service login, a tag on Tomb Gamma's gate terminal (their kit, not SAFETYNET's field console), so flag 1 needs this find. Position beside the terminal's stand (SD R4 d2); strings set by the VM plan.",
           "type": "notes",
           "id": "monitor_maintenance_tag",
           "name": "Maintenance Tag",
@@ -3637,7 +3637,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readDisplay": "gameDisplay",
           "addToNotes": true,
           "position": "as-type:aes_round_terminal",
-          "observations": "The staging copy of the release schedule, behind the monitoring host's login.",
+          "observations": "The staging copy of the release schedule, on their monitoring host. It has its own sign-in.",
           <%# Impl R1 minor 9: the observation follows the text once flag 2 is in. %>
           "observationVariants": [
             { "condition": "globalVars.flag2_submitted === true", "value": "The staging copy of the release schedule, open on the screen now." }
@@ -3685,12 +3685,12 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "position": { "x": 11.3, "y": 3.4 },
           "observations": "A sign-in card tucked under the release console's edge. The staging copy of the schedule.",
-          "text": "RELEASE SCHEDULE. STAGING COPY.\nLogin for the staging copy of the release schedule: <%= staging_login_user %>\nPassword: <%= staging_login_password %>\nRead only. Leave it at the console.",
+          "text": "RELEASE SCHEDULE. STAGING COPY.\nLogin for the staging copy of the release schedule, monitoring host: <%= staging_login_user %>\nPassword: <%= staging_login_password %>\nRead only. Leave it at the console.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "release_console"
         },
         {
-          "_comment": "VM gating F12 (handoff B5 item 2): the release host's operator login, behind the power-room card (the hall is past the power room), so flag 3 needs this find. PLACEHOLDER position (tile, open floor by the east racks; dressing to confirm) and PLACEHOLDER (VM) strings.",
+          "_comment": "VM gating F12 (handoff B5 item 2): the release host's operator login, behind the power-room card (the hall is past the power room), so flag 3 needs this find. Position by the east racks (SD R4 d3); strings set by the VM plan.",
           "type": "notes",
           "id": "release_operator_card",
           "name": "Operator's Duty Sheet",
@@ -4264,7 +4264,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "observations": "The service door, east wall. Steel, a reader, and a camera on a bracket above it that has never once moved."
         },
         {
-          "_comment": "VM gating F12 (handoff B5 item 3), puzzle chains R3 M1: the core host's access key, left out by Tesseract on his own host terminal for the agent he invited, so it is found only where flag 4's station already works. PLACEHOLDER position (tile, beside the host terminal; dressing to confirm) and PLACEHOLDER (VM) string.",
+          "_comment": "VM gating F12 (handoff B5 item 3), puzzle chains R3 M1: the core host's access code, left out by Tesseract on the desk beside his host terminal for the agent he invited, so it is found only where flag 4's station already works. Position on that desk (SD R4 d1); string set by the VM plan.",
           "type": "notes",
           "id": "core_access_key",
           "name": "Core Access Code",

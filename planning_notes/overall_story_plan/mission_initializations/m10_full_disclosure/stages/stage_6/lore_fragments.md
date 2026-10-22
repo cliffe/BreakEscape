@@ -381,7 +381,7 @@ Variants, same for both:
 
 **`schedule_terminal`** ((14, 4); readable, `gameDisplay`, `addToNotes: true`). Name: "Release Schedule: Staging Copy". Carries: the Publication's two modes and its size (92,460 entries, m08's catalogue total), the channels, the cells' early-access orders with Zero Day's representative named (the evidence for recruited Victoria's confront option), the backdoor's size, and the first entries in plain words, one of them marked with SAFETYNET's own "retain" (the hoarding claim's evidence, in m09's disposition wording). Changed by: flag 2, m03 `victoria_fate`, m07 `team_assignment` / `team_redirected`.
 
-Default (before flag 2): observations "The staging copy of the release schedule, behind the monitoring host's login." Default `text` is **empty** (R1C-m8), so before flag 2 the object shows only its observation and no page goes into the notepad; the readable branch is skipped when there is no text (stage 9 confirms in the browser, else the object is `addToNotes: false` and HaX's flag 2 line says where the schedule is).
+Default (before flag 2): observations "The staging copy of the release schedule, on their monitoring host. It has its own sign-in." Default `text` is **empty** (R1C-m8), so before flag 2 the object shows only its observation and no page goes into the notepad; the readable branch is skipped when there is no text (stage 9 confirms in the browser, else the object is `addToNotes: false` and HaX's flag 2 line says where the schedule is).
 
 92,460 is the sum of m08's catalogue (`scenarios/m08_the_mole/scenario.json.erb:1905`: 47,239 zero-days, 12,847 unpatched criticals, 8,923 infrastructure weaknesses, 23,451 supply-chain vectors); m08 never prints the total, so this file fixes it as canon (§4.4).
 
