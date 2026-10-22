@@ -104,7 +104,9 @@ function formatAsk(row, spec, at) {
     else if (result === 2 || result === 'pending') { label = 'ASK PENDING'; key = 'pending'; }
     const ask = spec?.asks?.[row.id] || {};
     const bits = [];
-    if (typeof ask.floor === 'number') bits.push(`floor ${ask.floor}`);
+    // "floor" alone did not read as a rule to a student (R2 F5); spell it out as the
+    // influence the ask needs to be granted.
+    if (typeof ask.floor === 'number') bits.push(`needs ${ask.floor} or better`);
     bits.push(`now at ${typeof at === 'number' ? at : 0}`);
     const sentence = spec?.tells?.ask?.[key];
     const tail = typeof sentence === 'string' && sentence ? ` ${sentence}` : '';

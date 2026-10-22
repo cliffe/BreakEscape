@@ -446,29 +446,66 @@ test('factors:[{id,mode}] form is honoured', () => {
   assert.equal(r.landed, false);  // senderAuth made required (a defence-side use) now gates
 });
 
-test('hintIndex follows priorFailures, capped at the last hint', () => {
+test('H1: hintIndex is priorFailures - 1, so the softest rung hints[0] is reachable', () => {
+  const last = T.pierce.hints.length - 1;
   assert.equal(evaluateMessage(T.pierce, pierceLand(), ctx()).hintIndex, 0);
-  assert.equal(evaluateMessage(T.pierce, pierceLand(), ctx({ priorFailures: 2 })).hintIndex, 2);
-  assert.equal(evaluateMessage(T.pierce, pierceLand(), ctx({ priorFailures: 99 })).hintIndex, 3);
+  // the first repeated miss (prior 1) points at hints[0], not hints[1]
+  assert.equal(evaluateMessage(T.pierce, pierceLand(), ctx({ priorFailures: 1 })).hintIndex, 0);
+  assert.equal(evaluateMessage(T.pierce, pierceLand(), ctx({ priorFailures: 2 })).hintIndex, 1);
+  assert.equal(evaluateMessage(T.pierce, pierceLand(), ctx({ priorFailures: 99 })).hintIndex, last);
   assert.equal(evaluateMessage({ ...T.pierce, hints: undefined }, pierceLand(), ctx({ priorFailures: 5 })).hintIndex, 0);
 });
 
-test('N4: result.hint is the escalating hint, shown only on a failed send after an earlier failure', () => {
+test('N4/H1: the ladder shows hints[0] first, then climbs, capped at the last, never on a landing', () => {
   // A failing send: generic pretext carries no distinctive value, so pretextRelevant fails.
   const fail = () => ({ ...pierceLand(), templates: { ...pierceLand().templates, pretext: 'pretext_generic' }, attachment: 'kit_balance_sheet' });
   // first miss (no prior failure): no hint pre-empted
   const first = evaluateMessage(T.pierce, fail(), ctx({ priorFailures: 0 }));
   assert.equal(first.landed, false);
   assert.equal(first.hint, null);
-  // second attempt (one prior failure): hints[1]
-  const second = evaluateMessage(T.pierce, fail(), ctx({ priorFailures: 1 }));
-  assert.equal(second.hint, T.pierce.hints[1]);
+  // first repeated miss (one prior failure): the softest rung hints[0] (H1 — was unreachable before)
+  assert.equal(evaluateMessage(T.pierce, fail(), ctx({ priorFailures: 1 })).hint, T.pierce.hints[0]);
+  assert.equal(evaluateMessage(T.pierce, fail(), ctx({ priorFailures: 2 })).hint, T.pierce.hints[1]);
   // capped at the last hint
-  assert.equal(evaluateMessage(T.pierce, fail(), ctx({ priorFailures: 99 })).hint, T.pierce.hints[3]);
+  assert.equal(evaluateMessage(T.pierce, fail(), ctx({ priorFailures: 99 })).hint, T.pierce.hints[T.pierce.hints.length - 1]);
   // a landing never shows a hint, whatever the prior count
   assert.equal(evaluateMessage(T.pierce, pierceLand(), ctx({ priorFailures: 5 })).hint, null);
   // a target with no hints has none to show
   assert.equal(evaluateMessage({ ...T.pierce, hints: undefined }, fail(), ctx({ priorFailures: 3 })).hint, null);
+});
+
+test('H2: hintsByFactor keys the hint to the factor that failed, falling back to the ladder', () => {
+  const fail = () => ({ ...pierceLand(), templates: { ...pierceLand().templates, pretext: 'pretext_generic' }, attachment: 'kit_balance_sheet' });
+  const keyed = { ...T.pierce, hintsByFactor: { pretextRelevant: 'What does she expect to receive, and from whom?' } };
+  const r = evaluateMessage(keyed, fail(), ctx({ priorFailures: 2 }));
+  assert.equal(r.firstFail, 'pretextRelevant');
+  assert.equal(r.hint, 'What does she expect to receive, and from whom?'); // the factor hint, not hints[1]
+  // a factor with no keyed hint falls back to the miss-count ladder
+  const other = { ...T.pierce, hintsByFactor: { senderTrust: 'irrelevant here' } };
+  assert.equal(evaluateMessage(other, fail(), ctx({ priorFailures: 2 })).hint, T.pierce.hints[1]);
+  // still gated on prior >= 1: a first miss shows nothing even with a factor hint
+  assert.equal(evaluateMessage(keyed, fail(), ctx({ priorFailures: 0 })).hint, null);
+});
+
+test('H3: an account-aware senderTrust hint — spoof-capable vs a forced account', () => {
+  const keyed = { ...T.pierce, hintsByFactor: {
+    senderTrust: { spoof: 'Think about who she trusts in Finance.', forced: 'Switch account to send as someone she trusts.' }
+  } };
+  // A guest send whose From names someone Pierce does not trust: senderTrust fails from a
+  // spoof-capable account, so the spoof variant shows.
+  const guestFail = { ...pierceLand(), headerFrom: { name: 'portal_full', address: 'portal_address' },
+    slots: { ...pierceLand().slots, sender_name: 'portal_full', sender_address: 'portal_address' } };
+  const rg = evaluateMessage(keyed, guestFail, ctx({ priorFailures: 1 }));
+  assert.equal(rg.firstFail, 'senderTrust');
+  assert.equal(rg.hint, 'Think about who she trusts in Finance.');
+  // The same failure from freemail (a forced, non-spoofing account): the switch-account variant.
+  const freemailFail = { fromAccount: 'freemail', subject: 's_review', headerFrom: { account: true },
+    templates: { from: 'from_own', greeting: 'greet_named', pretext: 'pretext_sheet', ask: 'ask_open_attached' },
+    slots: { name: 'pierce_short', document: 'balance_sheet', when: 'friday' },
+    attachment: 'kit_balance_sheet', link: null, linkInfo: null };
+  const rf = evaluateMessage(keyed, freemailFail, ctx({ priorFailures: 1 }));
+  assert.equal(rf.firstFail, 'senderTrust');
+  assert.equal(rf.hint, 'Switch account to send as someone she trusts.');
 });
 
 // ------------------------------------------------------------------ pre-send gate (N11)

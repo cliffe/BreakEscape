@@ -1005,7 +1005,7 @@ Failure-branch runs, each short:
 | F3 | A subject the target does not open: the open-check row says so and nothing lands |
 | F4 | A `freemail` retry after a `guest` spoof: triage still replays the spoof (decision K) |
 | F5 | Lord without a page: `linkCredible` fails as `missing` |
-| F6 | The Dev call is reported: report global and lockout set; the desk phone refuses before `pretext-prep`; the student turns to the builder; after Dev's two real minutes (`06` §4.8, line 223; `00` §8 `afterMinutes: 2`) the phone opens again with Dev at -30 and `dev_wary` and `dev_refusing` cleared |
+| F6 | The Dev call is reported (the forced report from the refusal limit fires first, near -60, before the -70 `reports` threshold): report global and lockout set; the desk phone refuses before `pretext-prep`; the student turns to the builder; once the game-clock lockout lifts the phone opens again with Dev at his configured start (0) and `dev_wary` and `dev_refusing` cleared |
 | F7 | A call left after one ask, reopened: only the ungranted ask is offered and grants accumulate |
 | F8 | The page re-scored after Attach: Attach needs a current Score; the victim record keeps its best outcome |
 | F9 | Triage below 60%: "Try again"; `triage_pass` stays true after a later lower round |

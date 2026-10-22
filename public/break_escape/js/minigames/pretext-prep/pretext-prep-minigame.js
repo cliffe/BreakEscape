@@ -9,9 +9,10 @@
 // Begin replaces this overlay with person-chat or phone-chat:
 //   { npcId, startKnot, pretextCallId, blanks }
 // blanks is keyed by fact id → { value, label } (fillPretextVars). The prep
-// overlay itself completes with no payload: Close and Esc abort, and handing
-// over to the chat does not emit a result a scenario could key on. The call's
-// result is pretext_<callId>_outcome, written by the chat (06 N7, N8).
+// overlay itself completes with no payload: Close and Esc are a clean exit (no
+// task, no failure — F11), and handing over to the chat does not emit a result a
+// scenario could key on. The call's result is pretext_<callId>_outcome, written
+// by the chat (06 N7, N8).
 //
 // Registration, the starter and the callId branch are not this packet
 // (P4-T0 adds the shared-file blocks; P4-D already opens this scene).
@@ -48,7 +49,10 @@ export class PretextPrepMinigame extends SocialOverlayScene {
         this._popPicker = null;
     }
 
-    get closeMode() { return 'abort'; }
+    // A plain Close or Esc is a clean exit, not a failure: nothing reads the prep's
+    // result, no task completes, and the student has simply stepped away from the card
+    // (F11). The call's own result is written by the chat, not here.
+    get closeMode() { return 'close'; }
 
     get social() {
         return this.params.social || (typeof window !== 'undefined' ? window.gameScenario?.social : null) || {};
@@ -186,7 +190,13 @@ export class PretextPrepMinigame extends SocialOverlayScene {
             block.appendChild(h('p', { class: 'pretext-held-empty', text: 'Nothing on the board yet.' }));
         } else {
             const list = h('ul', { class: 'pretext-held' });
-            for (const row of held) list.appendChild(h('li', { text: row.text, 'data-fact': row.id }));
+            for (const row of held) {
+                const li = h('li', { 'data-fact': row.id });
+                if (row.stale) li.classList.add('pretext-held-stale');
+                li.appendChild(document.createTextNode(row.text));
+                if (row.stale) li.appendChild(h('span', { class: 'pretext-held-warning', text: ' — old or unverified' }));
+                list.appendChild(li);
+            }
             block.appendChild(list);
         }
         return block;

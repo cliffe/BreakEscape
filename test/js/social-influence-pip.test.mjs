@@ -122,9 +122,9 @@ test('tells use the 06 §4.4 lines: delta, band, mark, and the authored reason',
     assert.equal(lines[2], '-10  CALM  ? Floor. She has no way to check this.');
     assert.equal(lines[3], '-10  CALM  ! Urgency. Helpdesk staff are trained to slow down when pushed.');
     assert.equal(lines[4], '+20  CALM  ! Shared detail. A real detail she can confirm builds trust.');
-    assert.equal(lines[5], 'ASK OK  floor -30, now at -10. Low-stakes: she would tell any new starter this.');
-    assert.equal(lines[6], 'ASK PENDING  floor -20, now at -20. She wants to verify you first.');
-    assert.equal(lines[7], 'ASK REFUSED  floor -20, now at -20. She needs more before doing this.');
+    assert.equal(lines[5], 'ASK OK  needs -30 or better, now at -10. Low-stakes: she would tell any new starter this.');
+    assert.equal(lines[6], 'ASK PENDING  needs -20 or better, now at -20. She wants to verify you first.');
+    assert.equal(lines[7], 'ASK REFUSED  needs -20 or better, now at -20. She needs more before doing this.');
 });
 
 test('assessment mode keeps the number and the band, and prints the category line', () => {

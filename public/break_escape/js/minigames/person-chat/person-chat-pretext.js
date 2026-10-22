@@ -50,6 +50,7 @@ import { grantFact as grantFactDefault } from '../../systems/social-intel.js';
 
 const LOG_LIMIT = 40;               // 00 §11: the session holds the last 40 entries only
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+const isStr = (v) => typeof v === 'string' && v.length > 0;
 const stateKey = (callId) => `pretext_${callId}_state`;
 
 // -------------------------------------------------------------- the session (N2)
@@ -352,7 +353,14 @@ export function finalisePretext({ session, spec, service, ctx, writeGlobal = wri
     const w = { engine: ctx?.engine || null, npcId: ctx?.npcId || null };
 
     writeGlobal(`pretext_${session.callId}_outcome`, outcome, w);
-    writeGlobal(`pretext_${session.callId}_lowest`, lowest ?? 0, w);
+    // The report's pretext row shows the worst the engagement reached, so `_lowest` is a
+    // running minimum across every call, not just the latest one (R2 F6-F10: a clean
+    // call-back must not erase the -60 of a reported first call).
+    const lowestKey = `pretext_${session.callId}_lowest`;
+    const prevLowest = (typeof window !== 'undefined') ? Number(window.gameState?.globalVariables?.[lowestKey]) : NaN;
+    const thisLowest = Number.isFinite(lowest) ? lowest : 0;
+    const runningLowest = Number.isFinite(prevLowest) ? Math.min(prevLowest, thisLowest) : thisLowest;
+    writeGlobal(lowestKey, runningLowest, w);
     // 06 §4.5: the hint ladder advances on any failed call, not only a report. A call
     // that is reported, refused, or walked away from with nothing granted all count as
     // a failed attempt; only `got_it` (the player left with a grant) does not advance it.
@@ -579,6 +587,14 @@ export async function attachPretext(minigame, { chat, judge: injected = null } =
             const prior = minigame.gameResult && minigame.gameResult.aborted ? {} : (minigame.gameResult || {});
             minigame.gameResult = { ...prior, ...payload };
             delete minigame.gameResult.aborted;
+            // Speak the outcome's authored goodbye line (06 §13) before the debrief, so a
+            // reported call's "I'll check this with my manager…" actually appears in the
+            // chat rather than only in the debrief card (R2 F6-a). Only when authored.
+            const outcomeLine = spec?.outcomes?.[payload.outcome]?.line;
+            if (isStr(outcomeLine)) {
+                try { minigame.ui?.addMessage?.('npc', outcomeLine); } catch (e) { /* headless */ }
+                try { minigame.history?.addMessage?.('npc', outcomeLine, { read: true }); } catch (e) { /* no history */ }
+            }
             const container = minigame.container || minigame.messageContainer || null;
             debriefUp = true;
             renderDebrief(container, {

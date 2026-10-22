@@ -232,7 +232,12 @@ export function handleUnlock(lockable, type) {
             } else {
                 console.log('NO KEYS OR LOCKPICK AVAILABLE');
                 emitDoorUnlockFailed('no_key');
-                window.gameAlert(`Requires key`, 'error', 'Locked', 4000);
+                // Opt-in hint: a scenario may author `lockedHint` on the door/room to tell the
+                // player where the key comes from (SE lab F17). Doors without it keep the plain
+                // "Requires key" line unchanged, so shipped missions behave exactly as before.
+                const lockedHint = lockable.lockedHint || lockable.doorProperties?.lockedHint ||
+                                   lockable.scenarioData?.lockedHint || lockable.properties?.lockedHint || '';
+                window.gameAlert(lockedHint ? `Requires key. ${lockedHint}` : `Requires key`, 'error', 'Locked', lockedHint ? 5500 : 4000);
             }
             break;
 

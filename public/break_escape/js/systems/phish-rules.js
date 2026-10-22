@@ -18,8 +18,9 @@
  *         payloadKit   optional payload-kit items [{id,label,kind}] (array or map by id);
  *                      needed to learn an attachment's kind. message.attachmentKind is
  *                      the fallback.
- *         priorFailures  optional count of earlier failed sends to this target, for
- *                      hintIndex (hintIndex = min(priorFailures, hints.length - 1)).
+ *         priorFailures  optional count of earlier failed sends to this target, for the
+ *                      hint ladder (hintIndex = min(priorFailures - 1, hints.length - 1),
+ *                      so the first repeated miss shows the softest rung hints[0]).
  *   preSendGate(target, message, ctx, held) -> { ok, reason, line }   (N11 runtime)
  *       held = { facts: [factId...], options: { <slotId>: <number of held options> } }
  *   dataOnlyReply(target, result) -> { text, landed, firstFail, setGlobal }  (N7)
@@ -343,6 +344,25 @@ function authFailText(target, policy) {
 }
 
 /**
+ * H2/H3. The hint keyed to the factor that failed, when the target authors `hintsByFactor`
+ * (an opt-in map of factor id -> hint string). The senderTrust entry may be account-aware:
+ * an object { spoof, forced } picks by whether the sending account can set its own From
+ * (00 section 10a). A non-spoofing account ("forced") that fails senderTrust is told to
+ * switch account; a spoof-capable one is pointed at who the target trusts. Returns a string
+ * or null (null falls back to the miss-count ladder).
+ */
+function selectFactorHint(target, factorId, header) {
+  const byFactor = target && target.hintsByFactor;
+  if (!byFactor || typeof byFactor !== 'object' || !isStr(factorId)) return null;
+  if (!Object.prototype.hasOwnProperty.call(byFactor, factorId)) return null;
+  let h = byFactor[factorId];
+  if (h && typeof h === 'object' && !Array.isArray(h)) {
+    h = header && header.forced ? h.forced : h.spoof;
+  }
+  return isStr(h) ? h : null;
+}
+
+/**
  * evaluateMessage(target, message, ctx) -> EvalResult (00 section 3).
  */
 export function evaluateMessage(target, message, ctx) {
@@ -416,12 +436,23 @@ export function evaluateMessage(target, message, ctx) {
 
   const hints = arr(target.hints);
   const prior = Number.isInteger(ctx && ctx.priorFailures) && ctx.priorFailures > 0 ? ctx.priorFailures : 0;
-  const hintIndex = hints.length ? Math.min(prior, hints.length - 1) : 0;
   // N4, feedback layer 3: an escalating hint after repeated failures on the same target
   // (04 "Layered, legible feedback", worked example "Hint after the second try"). Shown only
-  // on a send that did not land and only once at least one earlier send to this target failed,
-  // so a first miss is not pre-empted. The bridge renders result.hint in the checklist.
-  const hint = (!landed && prior >= 1 && hints.length) ? hints[hintIndex] : null;
+  // on a send that did not land and only once at least one earlier send to this target failed
+  // (prior >= 1), so a first miss is not pre-empted. The bridge renders result.hint.
+  //
+  // H1: the ladder's softest rung is hints[0], shown on the first repeated miss (prior === 1);
+  // the index is prior - 1 (not prior), or the ladder's last rung never reaches hints[0].
+  const hintIndex = hints.length ? Math.min(Math.max(prior - 1, 0), hints.length - 1) : 0;
+  // H2/H3: when the target authors `hintsByFactor`, a hint keyed to the factor that actually
+  // failed takes priority over the miss-count ladder, so the advice names the real fault rather
+  // than the rung number. The ladder is the fallback for factors with no keyed hint.
+  const firstFailId = failedRequired.length ? failedRequired[0].id : '';
+  let hint = null;
+  if (!landed && prior >= 1) {
+    hint = selectFactorHint(target, firstFailId, header);
+    if (!isStr(hint) && hints.length) hint = hints[hintIndex];
+  }
 
   return {
     landed,

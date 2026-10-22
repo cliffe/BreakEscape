@@ -395,7 +395,11 @@ function normChoices(choices) {
 
 function normVictim(v) {
   if (!isObj(v)) return null;
-  return { visited: v.visited === true, submitted: v.submitted === true, noticed: v.noticed === true };
+  const out = { visited: v.visited === true, submitted: v.submitted === true, noticed: v.noticed === true };
+  // The domain the page used on the send that produced this outcome, so the report can name
+  // the page that actually landed rather than the last page attached (lab R1 F9 / F8-b).
+  if (typeof v.domainId === 'string' && v.domainId) out.domainId = v.domainId;
+  return out;
 }
 
 function normTellsFound(list) {
@@ -490,9 +494,14 @@ export function linkInfoFor(record, pageDef, kitId) {
 export function describeVictimOutcome(record, target, landed) {
   const meets = isObj(record) && record.meetsThreshold === true;
   const didLand = landed === true;
-  if (meets && didLand) return { visited: true, submitted: true, noticed: false };
-  if (!meets) return { visited: true, submitted: false, noticed: true };
-  return { visited: false, submitted: false, noticed: false };
+  // Carry the domain this send used, so betterVictim keeps the landed page's domain with its
+  // outcome and the report names that page, not the last one attached (lab R1 F9 / F8-b). Only
+  // added when the record names a domain, so an outcome with no domain keeps its three-key shape.
+  const domainId = isObj(record) && record.choices && typeof record.choices.domainId === 'string' && record.choices.domainId
+    ? { domainId: record.choices.domainId } : null;
+  if (meets && didLand) return { visited: true, submitted: true, noticed: false, ...domainId };
+  if (!meets) return { visited: true, submitted: false, noticed: true, ...domainId };
+  return { visited: false, submitted: false, noticed: false, ...domainId };
 }
 
 function victimRank(v) {

@@ -340,6 +340,35 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
     - Stage 7 has no key line.
   - The harness hard-codes 1400×1000; the run used a scratch copy for 600 px.
 - **R2 and F1–F17 complete: 0 blocker.** Consolidated in `playtests/FIX_ROUND_F.md`; lab fix round 4 runs on opus48.
+- **Lab fix round 4 (F)** (Opus): `playtests/FIX_ROUND_F.md`. Hints and guidance: H1 the softest ladder
+  rung is now reachable (`phish-rules.js` indexes `hints[priorFailures - 1]`); H2/H3 a new opt-in
+  `hintsByFactor` keys the hint to the factor that actually failed, with an account-aware senderTrust
+  entry (`{ spoof, forced }`) so a `guest` miss and a `freemail` miss get different advice — Pierce and
+  Lord author it, the flat `hints` ladder is the fallback. F17: `ruth_phone.ink` stage 2 (Recon) no
+  longer says "you've the key already" and points to Ruth, stage 7 (Blue Team) gains a key line, and
+  the three lab rooms set an opt-in `lockedHint` the no-key door toast appends (doors without it are
+  unchanged). F15 the board's "Where mail goes" goalString points at the careers inbox line. The lockout
+  toast now gives a reason and a rough wait. Call/report: Dev's `outcomes.reported.line` is spoken in
+  the chat before the debrief; a fresh pretext call clears the prior transcript; the Dev-flagged phone
+  line clears once a clean call-back succeeds (`not pretext_call_done`); `pretext_<callId>_lowest` is a
+  running minimum across calls; the report landing row names the domain of the page that *landed*
+  (stored on the victim record as `domainId`), not the last attached; the 2019 org chart carries its
+  "old or unverified" warning in the call-prep list; the Lord `senderAuth` advisory no longer assumes a
+  portal claim. Overlays: the pretext card closes cleanly (not a failure); the triage brief carries a
+  one-line "closing/reloading restarts the round" notice (F12); the mail create-account "Pick an
+  address first." shows inside the panel, not as a held toast. Influence "floor" is spelled out as
+  "needs N or better". Left (logged): the Lord-vs-Pierce landing influence is already symmetric in both
+  ink stories and configs (no code defect — the reading differed by miss count); the `phish_lord_landed`
+  lag is the by-design reply delay; the triage intro keeps its abort because it is what prevents scoring
+  a half-finished round (PLAN F11 wording updated to match); the "Attach anyway" task title already
+  reads as "build", not "passes". New tests: `social-phish-rules` H1/H2/H3 and
+  `social-lab-ruth-phone-keys` (stage openers + the stage-4 flagged-line gate). PLAN/IMPLEMENTATION_PLAN
+  F6/§3/F11 text brought in line (Dev reopens at 0, the refusal limit reports first near -60, Ruth's
+  actual line). Gates: lab `--strict-social` exit 0; `social-*` Node suites green (social-mail-runner
+  fails only in the full parallel run, passes alone — known structured-clone flake). `ruth_phone.ink`
+  recompiled to its `.json`. No shipped mission (m01–m10) scenario, ink, audio or behaviour touched —
+  every engine change is opt-in (`hintsByFactor`, `lockedHint`) or gated to the social systems
+  (pretext/lockout/mail/report), which m01–m10 do not use.
 
 ## Review rounds
 

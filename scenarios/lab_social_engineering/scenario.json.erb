@@ -462,22 +462,22 @@
           "from": { "name": "Tarnside IT", "address": "it@tarnside.example", "avatar": "npc_helper" },
           "to": "guest@workstation.example", "subject": "Your engagement workstation",
           "body": "Hello,\n\nYour engagement workstation is ready. Everything you do on it is logged against the Ledgerwell job.\n\nTarnside IT",
-          "time": "08:02", "unread": true, "folder": "inbox" },
+          "time": "07:46", "unread": true, "folder": "inbox" },
         { "id": "kickoff", "mailbox": "guest",
           "from": { "name": "Ruth Adeyemi", "address": "r.adeyemi@tarnside.example", "avatar": "npc_neutral" },
           "to": "guest@workstation.example", "subject": "Ledgerwell: we are on",
           "body": "Hello,\n\nLedgerwell have signed. Read the sheet before you do anything, and keep me posted.\n\nRuth",
-          "time": "08:15", "unread": true, "folder": "inbox" },
+          "time": "07:52", "unread": true, "folder": "inbox" },
         { "id": "coffee", "mailbox": "guest",
           "from": { "name": "Tarnside Office", "address": "office@tarnside.example", "avatar": "npc_neutral" },
           "to": "guest@workstation.example", "subject": "Kitchen rota",
           "body": "Hello,\n\nThe coffee machine is fixed. Please rinse the jug.\n\nTarnside Office",
-          "time": "08:40", "unread": false, "folder": "inbox" },
+          "time": "07:58", "unread": false, "folder": "inbox" },
         { "id": "freemail_welcome", "mailbox": "freemail",
           "from": { "name": "Freemail", "address": "noreply@freemail.example", "avatar": "npc_helper" },
           "to": "tarnside.test@freemail.example", "subject": "Welcome to Freemail",
           "body": "Hello,\n\nYour Freemail account is ready. Anyone can sign up for one of these.\n\nFreemail",
-          "time": "08:55", "unread": true, "folder": "inbox" }
+          "time": "08:01", "unread": true, "folder": "inbox" }
       ],
       "payloadKit": [
         { "id": "kit_cv", "label": "CV.docx", "kind": "document" },
@@ -601,7 +601,7 @@
         ],
         "hampshire": [
           { "label": "Where mail goes", "needsIntel": ["hampshire_careers"],
-            "goalString": "You still don't know how Chris receives mail from strangers. Read the careers page.",
+            "goalString": "You still don't know how Chris receives mail from strangers. Open the careers page and select its careers inbox line.",
             "doneString": "The careers inbox accepts CVs from anyone." },
           { "label": "What the file should be", "needsIntel": ["careers_attachment"],
             "goalString": "You still don't know what kind of file Chris will open. Read how to apply.",
@@ -697,8 +697,16 @@
             "wrong-type": { "fail": "That isn't a file I can open as a balance sheet.", "redFlag": null }
           }
         },
-        "hints": ["Think about who Melanie trusts in Finance.", "What does she expect to receive, and from whom?",
-                  "This account can only send as itself. Switch account to send as someone else."]
+        "hints": ["Think about who Melanie trusts in Finance.", "What does she expect to receive, and from whom?"],
+        "hintsByFactor": {
+          "senderTrust": {
+            "spoof": "She only acts on mail from someone she trusts in Finance. The From line is a label you can set.",
+            "forced": "This account can only send as itself. Switch account to send as someone she trusts."
+          },
+          "addressedTo": "Greet her the way someone who actually knows her would.",
+          "pretextRelevant": "What does she expect to receive, and from whom?",
+          "attachmentPlausible": "Attach the file she would expect from Jed — a balance sheet, not just any document."
+        }
       },
       {
         "id": "lord",
@@ -737,12 +745,17 @@
           "linkCredible": { "pass": "✓ The link looked right", "fail": "That link doesn't look right to me — the address isn't the real portal.", "redFlag": null },
           "senderAuth": {
             "pass": "✓ Sender authentication would pass",
-            "fail": "The claimed portal domain never sent this, so it fails the domain's alignment check; with p=none it would still be delivered.",
+            "fail": "This didn't really come from the address it claims, so it fails the domain's alignment check. Ledgerwell publishes p=none, so a receiver would still deliver it.",
             "redFlag": null
           }
         },
-        "hints": ["She only trusts the portal's own notices.", "You need the portal's name, its sender and the release date — the social post only says there is a portal.",
-                  "Call the service desk for what the post didn't say."]
+        "hints": ["She only trusts the portal's own notices.", "You need the portal's name, its sender and the release date — the social post only says there is a portal."],
+        "hintsByFactor": {
+          "senderTrust": "She only trusts the portal's own notification address. Send as that, not as a person.",
+          "addressedTo": "Address her by her first name, the way the portal would.",
+          "pretextRelevant": "It must read like a real payslip notice: the portal's name and the release date. Dev at the service desk has both.",
+          "linkCredible": "She won't act on a link with no site behind it. Build the payroll login page in the builder and attach it."
+        }
       }
     ],
 
@@ -1339,6 +1352,7 @@
       "lockType": "key",
       "requires": "recon_door",
       "keyPins": [12, 24, 36, 48],
+      "lockedHint": "Collect the key from Ruth once your plan is signed off.",
       "connections": { "east": "engagement_office" },
       "npcs": [],
       "objects": [
@@ -1364,6 +1378,7 @@
       "lockType": "key",
       "requires": "operations_door",
       "keyPins": [50, 14, 46, 20],
+      "lockedHint": "Ruth has this key once your recon is done — go and see her.",
       "connections": { "west": "engagement_office" },
       "npcs": [
         {
@@ -1421,6 +1436,7 @@
       "lockType": "key",
       "requires": "blue_team_door",
       "keyPins": [28, 54, 16, 34],
+      "lockedHint": "Ruth holds this key once your report is filed — go and see her.",
       "connections": { "south": "engagement_office" },
       "npcs": [
         {

@@ -540,11 +540,13 @@ into a decision the student is later held to (stage 6's blame findings, Tomasz's
   with the date unknown the blank is empty and Send is blocked by the neutral pre-send line; Ruth's rungs
   point back at Dev, and the phone reopens for a second call (asks whose facts are held are not offered
   again).
-- **Risk.** A reported call (the `reports` threshold at -70, or a forced report from the refusal limit or
-  a failed verification) ends the call, sets `dev_reported` and starts a two-minute channel-scoped
-  lockout, after which Dev resets to -30 with `dev_wary`/`dev_refusing` cleared (`00` §8). The email route
-  to Sofia stays open (the lockout is channel-scoped), and Ruth says the line was "burned for a couple of
-  minutes". No object is greyed, no beat is needed. A call-back policy would have stopped the whole thing:
+- **Risk.** A reported call ends the call and sets `dev_reported`. In practice the forced report from the
+  refusal limit (`maxRefusals: 2`) fires first, at about -60, before the `reports` threshold at -70 is
+  reached; either route starts a channel-scoped lockout measured in game-clock time. When the lockout
+  lifts, Dev reopens at his configured start, 0 (not -30), with `dev_wary`/`dev_refusing` cleared (`00` §8).
+  The email route to Sofia stays open (the lockout is channel-scoped), and Ruth's phone says "Dev flagged
+  that last call to his manager. Leave it a while, then try again — softer, and have your facts straight."
+  No object is greyed, no beat is needed. A call-back policy would have stopped the whole thing:
   that is the stage 6 finding and the stage 7 mitigation.
 
 ### Stage 6: Metrics and report (Engagement Office, `report-workstation`)
@@ -813,11 +815,15 @@ report/scope/plan boolean checks; the L and F runs are the walk-throughs.
 credible wrong pretext per target, the -10 influence hit on Pierce/Lord, the ladder after two misses,
 free retries; F3 a subject the target does not open; F4 a `freemail` retry after a `guest` spoof still
 replays the spoof in triage (decision K); F5 Lord with no page fails `linkCredible` as `missing`; F6 the
-reported Dev call sets the global and lockout, the phone refuses before `pretext-prep`, and after two real
-minutes the phone reopens with Dev at -30 and the wary/refusing flags cleared; F7 a call reopened after one
+reported Dev call sets the global and lockout, the phone refuses before `pretext-prep`, and once the
+game-clock lockout lifts the phone reopens with Dev at his configured start (0) and the wary/refusing flags
+cleared; F7 a call reopened after one
 ask offers only the ungranted ask and accumulates grants; F8 the page re-scored after Attach; F9 a triage
 round below 60% offers "Try again" and `triage_pass` stays true; F10 the report's blame option shows its
-`why`; F11 every overlay closed with Esc and Close gives no `minigame_failed` and completes no task; F12 a
+`why`; F11 every overlay closed with Esc and Close completes no task and shows no error (this build's own
+overlays — the pretext card and triage intro — close cleanly; the triage intro's abort is kept where it
+prevents scoring a half-finished round, and the engine's older overlays still log `minigame_failed` on a
+plain close, which nothing reads); F12 a
 reload at each stateful point (mail draft, pending reply, mid-call, mid-triage, builder draft, report in
 progress); F13 a 600 px-wide run through stages 2 and 3.
 

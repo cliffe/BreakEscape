@@ -14,6 +14,18 @@
 
 import { heldFactIds, heldProvides, optionsForSlot } from '../mail-client/mail-composer.js';
 
+/**
+ * A fact whose every blank value is stale, or one flagged `stale: true`. Kept in step with
+ * board-model.js isStaleFact (duplicated rather than imported so this module stays free of
+ * the intel-board dependency, matching the "pure, no DOM, no globals" note above).
+ */
+function isStaleFact(fact) {
+    if (!fact) return false;
+    if (fact.stale === true) return true;
+    const p = Array.isArray(fact.provides) ? fact.provides : [];
+    return p.length > 0 && p.every((e) => e && e.kind === 'stale');
+}
+
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 
@@ -82,11 +94,16 @@ export function optionsForFact(factId, spec, social, globals) {
     return optionsForSlot({ type: slot.type, about: slot.about }, { entries, people });
 }
 
-/** Board sentences for facts the player holds. Unheld facts are absent. */
+/**
+ * Board sentences for facts the player holds. Unheld facts are absent. `stale` mirrors
+ * the intel board's "Old or unverified" marking (board-model isStaleFact) so the call-prep
+ * list carries the same warning the board does (R2 F1-F5: a 2019 org chart must not read
+ * as current in the prep panel).
+ */
 export function heldOnBoard(social, globals) {
     const intelFacts = isObject(social?.intelFacts) ? social.intelFacts : {};
     return heldFactIds(intelFacts, globals)
-        .map((id) => ({ id, text: intelFacts[id]?.text }))
+        .map((id) => ({ id, text: intelFacts[id]?.text, stale: isStaleFact(intelFacts[id]) }))
         .filter((row) => isStr(row.text));
 }
 

@@ -269,7 +269,7 @@ test('nothing held leaves an empty gap, names the blank, and still allows the ca
     assert.deepEqual(scene.payload(), {});
 });
 
-test('Esc closes the picker and leaves the overlay open; Close aborts with no call payload', () => {
+test('Esc closes the picker and leaves the overlay open; Close is a clean exit with no call payload', () => {
     const scene = open({
         call: brandtCall,
         npc: { id: 'brandt_desk', npcType: 'phone', displayName: 'Brandt', currentKnot: 'start' },
@@ -281,8 +281,9 @@ test('Esc closes the picker and leaves the overlay open; Close aborts with no ca
     assert.equal(scene.container.querySelector('.pretext-picker'), null);
     assert.equal(scene.gameState.isActive, true);
     assert.deepEqual(ended, []);
+    // F11: a plain Close is a clean exit (success, no aborted flag, no payload), not a failure.
     scene.container.querySelector('.pretext-close').click();
-    assert.deepEqual(ended, [{ success: false, result: { aborted: true } }]);
+    assert.deepEqual(ended, [{ success: true, result: {} }]);
 });
 
 test('Space and E do not start the call or close the overlay', () => {

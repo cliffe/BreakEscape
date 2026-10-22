@@ -138,7 +138,7 @@ test('a submitted send writes the victim record and adds the capture note once',
 
     bridge.performSend(scene, linkMessage());
     const rec = window.gameState.globalVariables.se_landing_pages.payroll_login;
-    assert.deepEqual(rec.victim, { visited: true, submitted: true, noticed: false }, 'meets + landed = submitted');
+    assert.deepEqual(rec.victim, { visited: true, submitted: true, noticed: false, domainId: 'd_word' }, 'meets + landed = submitted');
     assert.equal(notes.length, 1, 'capture note added on the first submit');
     assert.equal(notes[0], 'Sofia Lord was captured. Report it.');
 
@@ -158,7 +158,7 @@ test('a below-threshold page: victim is noticed, no capture, linkCredible fails'
     const info = bridge.performSend(scene, msg);
     assert.equal(info.result.landed, false, 'linkCredible fails below threshold');
     const rec = window.gameState.globalVariables.se_landing_pages.payroll_login;
-    assert.deepEqual(rec.victim, { visited: true, submitted: false, noticed: true });
+    assert.deepEqual(rec.victim, { visited: true, submitted: false, noticed: true, domainId: 'd_word' });
     assert.equal(notes.length, 0, 'no capture note for a noticed outcome');
     delete window.addNote;
 });
@@ -172,7 +172,7 @@ test('an earlier submitted outcome is not erased by a later below-threshold send
     const keptVictim = g.se_landing_pages.payroll_login.victim;
     g.se_landing_pages.payroll_login = builtRecord({ credibility: 40, meetsThreshold: false, gatesPassed: false, victim: keptVictim });
     bridge.performSend(scene, linkMessage());
-    assert.deepEqual(g.se_landing_pages.payroll_login.victim, { visited: true, submitted: true, noticed: false },
+    assert.deepEqual(g.se_landing_pages.payroll_login.victim, { visited: true, submitted: true, noticed: false, domainId: 'd_word' },
         'the submitted outcome survives a later weaker send');
 });
 

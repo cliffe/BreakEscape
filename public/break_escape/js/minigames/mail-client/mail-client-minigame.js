@@ -430,6 +430,8 @@ export class MailClientMinigame extends SocialOverlayScene {
             this.addEventListener(input, 'change', () => {
                 this.createChoice = m.id;
                 confirm.disabled = false;
+                const err = this.createPanel?.querySelector('.mail-create-error');
+                if (err) err.textContent = '';
             });
             group.appendChild(label);
         });
@@ -476,9 +478,18 @@ export class MailClientMinigame extends SocialOverlayScene {
     confirmCreateAccount() {
         const id = this.createAccountId;
         const choice = this.createChoice;
-        // Nothing picked yet: say so instead of swallowing the press (lab R1 F11).
+        // Nothing picked yet: say so inside the panel. An info toast is held while a
+        // full-screen panel is open, so it never showed here (R2 F1); write the line
+        // into the create panel where the student can see it.
         if (!choice) {
-            (window.gameAlert || window.showNotification)?.('Pick an address first.', 'info', 'Create account', 2500);
+            let err = this.createPanel?.querySelector('.mail-create-error');
+            if (!err && this.createPanel) {
+                err = el('p', 'mail-create-error');
+                err.setAttribute('role', 'alert');
+                const bar = this.createPanel.querySelector('.mail-create-bar');
+                this.createPanel.insertBefore(err, bar || null);
+            }
+            if (err) err.textContent = 'Pick an address first.';
             return false;
         }
         const writes = createAccountWrites(this.config, id, choice, this.globals);

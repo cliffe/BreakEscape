@@ -30,9 +30,7 @@ const int = (v) => (Number.isFinite(v) ? v : 0);
  * id is off the menu. Used so the report's page row names the look-alike the student
  * built, not the authored link text for the real portal (lab R1 F9).
  */
-function chosenPageDomain(pageDef, rec) {
-    const id = rec && typeof rec === 'object' && rec.choices && typeof rec.choices === 'object'
-        ? rec.choices.domainId : null;
+function resolveDomainById(pageDef, id) {
     if (typeof id !== 'string' || !id) return null;
     const brands = Array.isArray(pageDef?.brands) ? pageDef.brands : [];
     for (const brand of brands) {
@@ -41,6 +39,12 @@ function chosenPageDomain(pageDef, rec) {
         if (opt && typeof opt.domain === 'string' && opt.domain) return opt.domain;
     }
     return null;
+}
+
+function chosenPageDomain(pageDef, rec) {
+    const id = rec && typeof rec === 'object' && rec.choices && typeof rec.choices === 'object'
+        ? rec.choices.domainId : null;
+    return resolveDomainById(pageDef, id);
 }
 
 function personName(person) {
@@ -138,12 +142,14 @@ export function buildReportModel(social, globals, mailState) {
         .map((p) => {
             const rec = pageRecords[p.id];
             const victim = rec && typeof rec === 'object' && rec.victim && typeof rec.victim === 'object' ? rec.victim : null;
+            // The domain of the page that actually landed (stored on the victim record),
+            // not the last page attached (lab R1 F9 / F8-b). Falls back to the current
+            // page's chosen domain, then the authored link text, then the id.
+            const landedDomain = victim && typeof victim.domainId === 'string'
+                ? resolveDomainById(p, victim.domainId) : null;
             return {
                 pageId: p.id,
-                // The look-alike domain the student actually chose, so the row matches the
-                // page they built rather than the real portal's link text (lab R1 F9). Falls
-                // back to the authored link text, then the id, when no domain was recorded.
-                label: chosenPageDomain(p, rec) || p.linkText || p.id,
+                label: landedDomain || chosenPageDomain(p, rec) || p.linkText || p.id,
                 sent: !!victim, // a victim record is written on every send that carries the page (00 §11a)
                 visited: !!victim && victim.visited === true,
                 submitted: !!victim && victim.submitted === true,

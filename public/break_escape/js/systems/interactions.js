@@ -619,9 +619,12 @@ function socialChannelLocked(id, channel) {
     const svc = window.socialInfluence;
     if (!svc || typeof svc.isLockedOut !== 'function' || !svc.isLockedOut(id, channel)) return false;
     const name = svc.getCharacterConfig?.(id)?.displayName || '';
-    const tail = channel === 'email' ? 'will not read your mail right now.' : 'will not talk to you right now.';
-    const text = name ? `${name} ${tail}` : `They ${tail}`;
-    (window.gameAlert || window.showNotification)?.(text, 'warning', '', 2500);
+    // Say why and roughly how long: the lockout follows a flagged/reported attempt
+    // (00 §8), so without a reason the toast just reads as a dead end (F6-F10).
+    const act = channel === 'email' ? 'read your mail' : 'talk to you';
+    const who = name || 'That contact';
+    const text = `${who} flagged the last attempt and won't ${act} for now — give it a while, then try again more carefully.`;
+    (window.gameAlert || window.showNotification)?.(text, 'warning', '', 3500);
     return true;
 }
 
@@ -671,6 +674,15 @@ function startPretextCall(callId, { npcId = null, channel } = {}) {
         return;
     }
     const recordNpcId = npcId || svc.getCharacterConfig?.(characterId)?.channels?.[channel] || null;
+    // A fresh call starts a clean transcript: the previous (completed) call's lines are
+    // cleared so the second call does not append under the first (R2 F6-F10). A mid-call
+    // reload keeps its open session, so its transcript is left to be restored. Gated to
+    // pretext calls, so shipped missions' chat history is never touched.
+    const savedState = globals[`pretext_${callId}_state`];
+    const resuming = savedState && typeof savedState === 'object' && savedState.open === true && savedState.callId === callId;
+    if (!resuming && recordNpcId && typeof window.npcManager?.clearConversationHistory === 'function') {
+        try { window.npcManager.clearConversationHistory(recordNpcId); } catch (e) { /* no history to clear */ }
+    }
     // The starter (minigame-starters.js) sets requiresKeyboardInput before
     // startMinigame reads params. P4-D's phone and NPC checks below are the
     // only callId checks.

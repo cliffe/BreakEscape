@@ -93,7 +93,7 @@ Ruth Adeyemi: Gareth's signed. The whiteboard next.
 // ---- Stage 2: OSINT ----
 === stage2 ===
 { osint_done and se_intel_username_convention: -> hub }
-Ruth Adeyemi: Recon, is it? You've the key already — the OSINT workstation's through that door.
+Ruth Adeyemi: Recon's next. If that door's locked, I've got the key — come and see me. The OSINT workstation's through it.
 + [What am I looking for?]
     Ruth Adeyemi: Three people filled in from public sources. The board's "Missing" rows say what's short.
     -> stage2
@@ -127,7 +127,7 @@ Ruth Adeyemi: Operations now. If that door's locked, I've got the key — come a
 // ---- Stage 4 + 5: page and call ----
 === stage4 ===
 { landing_payroll_login_built and pretext_call_done: -> hub }
-{ pretext_call_reported:
+{ pretext_call_reported and not pretext_call_done:
     Ruth Adeyemi: Dev flagged that last call to his manager. Leave it a while, then try again — softer, and have your facts straight.
 - else:
     Ruth Adeyemi: Sofia's careful. A page and a call, either order.
@@ -182,7 +182,7 @@ Ruth Adeyemi: Sending's done. The report desk, in this room.
 // ---- Stage 7: defender flip ----
 === stage7 ===
 { triage_pass and profile_done: -> hub }
-Ruth Adeyemi: Blue Team room. Tomasz will set you off.
+Ruth Adeyemi: Blue Team room. If that door's locked, I've got the key — come and see me. Tomasz will set you off.
 + [Has Gareth seen the report?]
     Ruth Adeyemi: He has, and not one name in it. Go by the window — he'll want to thank you himself.
     -> stage7
