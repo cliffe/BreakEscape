@@ -220,6 +220,13 @@ One legacy entry, codename WREN. Updated on day ten, in Sorensen's hand. "Assign
     WREN's on our team. One of the four you met at the briefing.
 -
 I've told the Director. He'll say nothing to them. Neither will you.
+// Alignment R1 m9: m08's mole hunt, echoed in this one.
+{
+- m08_accused_vector or m08_accused_phantom:
+    Last time you named one of ours on a hunch. Do this one on paper.
+- m08_named_on_evidence:
+    You found Nightshade on paper. Same again.
+}
 // m05, at most one line (CONTRACT §2.1); arrest, combat_nonlethal and
 // never played get nothing.
 {
@@ -273,7 +280,7 @@ I've told the Director. He'll say nothing to them. Neither will you.
     Arakawa got Villanueva. She wanted to know who'd bother.
 }
 {recruiter_secret == "told":
-    Back in September I'd have kept that between us. Not tonight.
+    Back in the autumn I'd have kept that between us. Not tonight.
 }
 Afterwards. Not during.
 It's yours to carry. Nobody else signed for it.

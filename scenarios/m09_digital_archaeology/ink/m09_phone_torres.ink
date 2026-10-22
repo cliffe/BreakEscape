@@ -21,7 +21,7 @@ VAR sleeper_shortlist = false
 
 === call ===
 #set_global:torres_called:true
-I gave you this address back in September. It was a line in a list.
+I gave you this address back in the autumn. It was a line in a list.
 I am still a live placement. Every morning I wake up, and I am still a line in her book.
 // C-8: the pointer, by whether the firm's placing sheet has been read.
 { sleeper_shortlist:

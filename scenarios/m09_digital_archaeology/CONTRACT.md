@@ -749,4 +749,17 @@ For the orchestrator. None stops the writers; each says what the writers do mean
 - #15: a narrator beat before Sorensen's first hatch line, "She looks up before you can say who you are.", so "The lease-holder's auditor" reads as her guess.
 - #16: the stamp's dusting surface is `textured` (a grained handle; the magnetic wand), not `glossy_dark`.
 
+**Alignment round 1 changes** (`ALIGNMENT_REVIEW_F_R1.md`, `ALIGNMENT_PLAN.md`):
+- A1, m11: `exportGlobals` is now nineteen: the twelve of §5.1 plus `memo_stance` (`""` / `yes_albion` / `no`, the debrief), `raid_team_answer` (`""` / `quintero` / `kowalczyk`, the briefing), `kowalczyk_reply` (`""` / `warm` / `flat`, the debrief), `sorensen_fate` (`left` / `talked` / `ko`), `tran_outcome` (`left` / `talked` / `ko`), `noor_told` (bool) and `alpha_clip_played` (bool, the clip heard). JSON only; each was already a declared global written where the player decides. m10 reads them as `m09_<name>`.
+- m9: imports are now 46 + 8: m08's `accused_vector`, `accused_phantom` and `named_on_evidence` (in `m09_carryover_vars.ink`). `ledger_read` adds one HaX line after "Neither will you.": on a wrong m08 accusation "Last time you named one of ours on a hunch. Do this one on paper."; on `named_on_evidence` "You found Nightshade on paper. Same again."
+- m7: m05 ran 16 Sep to 6 Oct, so "September" becomes "the autumn": Torres "back in the autumn", the Recruiter's own-it button "…in the autumn.", HaX's `afterwards` "Back in the autumn…", and comments. Noor, an American, says "back in the fall" (§8.2: spelling and usage follow the speaker). FINALE_ARC rows 61 and 64 still say September (not this file's to edit).
+- m2: the briefing's coordinate branch (`m08_completed and m08_tomb_gamma_location_known`): Netherton, "Nightshade gave us a coordinate. A coordinate is not a way in, and it is not a name I can say in court." (new voiced line).
+- m3: Nightshade's call gives help only he has, replacing the cabinet and reader lines HaX already said: "Her card's on custom keys. Crack the keys first, then read it. Don't guess." / "That plan chest isn't on her schedule. It never was. Whatever's in it, he wanted kept."
+- m4: HaX texts on `npc_ko:old_coyote` ("I asked you not to.") and `npc_ko:noor_haddad` ("She files deeds, 0x00.").
+- m5: `send_the_notice` is retitled "Send his vendor notice, or leave it for Netherton" (the hub's hold isn't final, so it still completes only on a send).
+- m6: WHAT THE PURGE TOOK also lists what went: the bin that was shredded, "The legacy placement files: shredded. Eleven names." and "The tape side: wiped, 212 reels."; ELSEWHERE gains "TOMB ALPHA: Heard him teach it." on `alpha_clip_played`.
+- m1: music phases: `threat` from `hour_read_started`, `silence` for Tesseract's call, `spy-action` from `tesseract_call_done`; disjoint `game_loaded` rows for each phase; `all_hostiles_ko` returns to the phase's track.
+- m11: `tran_ko` and `sorensen_ko` dropped (superseded by `tran_outcome` and `sorensen_fate`).
+- m12: the onceOnly overlaps are reviewed and justified in an ERB comment; the two legacy-box arms are made disjoint.
+
 **Voiced counts after stage 8**: group A calls 56 distinct (HaX 53, Netherton 3; one new HaX line, one Netherton line reworded); the Recruiter 14 and B1's HaX 17, unchanged; briefing 91 character lines plus 8 Narrator (7 new: Netherton 3, HaX 4; 2 reworded); debrief 50 plus 16 Narrator (2 reworded); Sorensen 2 new lines (B5), 1 Narrator line reworded (B4); Noor 1 reworded.

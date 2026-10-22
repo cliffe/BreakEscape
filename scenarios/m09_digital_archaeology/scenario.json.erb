@@ -113,6 +113,17 @@ def hax_rerings(cond, knot, voiced:)
 end
 
 # --- Agent HaX's mappings (agent_0x99, loading_dock: always loaded) ----------
+# Validator "onceOnly handlers can pass at the same time" (alignment R1 m12):
+# reviewed, all intended. Where several onceOnly mappings share an event they
+# are separate effects of one moment, not alternatives: flag 1 (door unlock,
+# setup task, flag1_read, guide text, Tran-wipe task), cage_opened (tasks,
+# default bin, Noor's save and the legacy texts, whose m05 conditions are
+# disjoint), nightshade_file_held (clock, task unlock, text), npc_ko:sorensen
+# (fate, save, two texts 5 s apart), flag 2, the deck, the office entry,
+# sleeper_shortlist; room_entered / conversation_closed pair a once-only text
+# with re-rings that repeat on purpose. The legacy-box arms are made disjoint
+# (m05_found_pipeline_list) rather than declared. No boolean import pair is
+# exclusive by construction, so there is no mutuallyExclusiveGlobals entry.
 hax_maps = []
 
 # M1 (CONTRACT §5.5): the dock call after the briefing. Not forced, unvoiced.
@@ -200,6 +211,9 @@ hax_maps << text_map("room_entered", "globalVars.flag2_submitted && !globalVars.
 hax_maps << { "eventPattern" => "npc_ko:sorensen", "condition" => "globalVars.sorensen_fate !== 'talked'", "onceOnly" => true, "setGlobal" => { "sorensen_fate" => "ko" } }
 hax_maps << { "eventPattern" => "npc_ko:sorensen", "condition" => "!globalVars.legacy_clock_run", "onceOnly" => true, "setGlobal" => { "legacy_files_saved" => true } }
 hax_maps << text_map("npc_ko:sorensen", nil, "She's sixty-six.")
+# Alignment R1 m4: the two bystanders.
+hax_maps << text_map("npc_ko:old_coyote", nil, "I asked you not to.")
+hax_maps << text_map("npc_ko:noor_haddad", nil, "She files deeds, 0x00.")
 hax_maps << text_map("npc_ko:sorensen", "globalVars.legacy_clock_run", "She's done with that box.", msg_delay: 5000)
 hax_maps << { "eventPattern" => "global_variable_changed:sorensen_fate", "condition" => "value === 'ko'", "onceOnly" => true, "completeTask" => "stop_the_shredding" }
 hax_maps << { "eventPattern" => "global_variable_changed:sorensen_fate", "condition" => "value === 'talked'", "onceOnly" => true, "completeTask" => "stop_the_shredding" }
@@ -315,7 +329,7 @@ hax_maps << text_map("global_variable_changed:danny_sheet_read", "value === true
 # route (there the remark belongs to Noor's box), so two arms.
 hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true && globalVars.legacy_files_saved && !globalVars.m05_found_pipeline_list && !globalVars.legacy_remark_sent",
                      "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
-hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true && globalVars.legacy_files_saved && globalVars.m05_recruiter_deal_accepted && !globalVars.legacy_remark_sent",
+hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true && globalVars.legacy_files_saved && globalVars.m05_found_pipeline_list && globalVars.m05_recruiter_deal_accepted && !globalVars.legacy_remark_sent",
                      "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
 hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true && !globalVars.legacy_clock_run && !globalVars.legacy_files_saved && !globalVars.legacy_remark_sent",
                      "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
@@ -406,15 +420,24 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
   "music": {
     "events": [
       { "trigger": "game_loaded", "condition": "!globalVars.briefing_played", "playlist": "cutscene", "fade": false },
-      { "trigger": "game_loaded", "condition": "globalVars.briefing_played && !globalVars.start_debrief", "playlist": "noir", "fade": false },
+<%# Alignment R1 m1: Act 3 rises: threat from the hour read, silence for
+    Tesseract's call, spy-action on the walk to "Bring me in", with one
+    disjoint game_loaded row per phase so a reload plays the phase's track. %>
+      { "trigger": "game_loaded", "condition": "globalVars.briefing_played && !globalVars.hour_read_started && !globalVars.start_debrief", "playlist": "noir", "fade": false },
+      { "trigger": "game_loaded", "condition": "globalVars.hour_read_started && !globalVars.tesseract_call_started", "playlist": "threat", "fade": false },
+      { "trigger": "game_loaded", "condition": "globalVars.tesseract_call_started && !globalVars.tesseract_call_done", "playlist": "silence", "fade": false },
+      { "trigger": "game_loaded", "condition": "globalVars.tesseract_call_done && !globalVars.start_debrief", "playlist": "spy-action", "fade": false },
       { "trigger": "game_loaded", "condition": "globalVars.start_debrief && !globalVars.report_done", "playlist": "cutscene", "fade": false },
       { "trigger": "conversation_closed:briefing_cutscene", "playlist": "noir", "fade": true },
       { "trigger": "npc_hostile_state_changed", "condition": "isHostile === true", "playlist": "threat", "fade": true },
-      { "trigger": "all_hostiles_ko", "playlist": "noir", "fade": true },
+      { "trigger": "all_hostiles_ko", "condition": "!globalVars.hour_read_started", "playlist": "noir", "fade": true },
+      { "trigger": "all_hostiles_ko", "condition": "globalVars.hour_read_started && !globalVars.tesseract_call_started", "playlist": "threat", "fade": true },
+      { "trigger": "all_hostiles_ko", "condition": "globalVars.tesseract_call_done && !globalVars.start_debrief", "playlist": "spy-action", "fade": true },
       { "trigger": "global_variable_changed:identity_scene_started", "condition": "value === true", "playlist": "cutscene", "fade": true },
       { "trigger": "global_variable_changed:identity_scene_done", "condition": "value === true", "playlist": "noir", "fade": true },
+      { "trigger": "global_variable_changed:hour_read_started", "condition": "value === true", "playlist": "threat", "fade": true },
       { "trigger": "global_variable_changed:tesseract_call_started", "condition": "value === true", "playlist": "silence", "fade": true },
-      { "trigger": "global_variable_changed:tesseract_call_done", "condition": "value === true", "playlist": "noir", "fade": true },
+      { "trigger": "global_variable_changed:tesseract_call_done", "condition": "value === true", "playlist": "spy-action", "fade": true },
       { "trigger": "global_variable_changed:start_debrief", "condition": "value === true", "playlist": "cutscene", "fade": true },
       {
         "_comment": "Stage 9 (lesson 46): on debrief_closed, set when the debrief closes after its last line (or on the next room entry after a reload), not on report_done, so the card doesn't cover the pen.",
@@ -491,13 +514,21 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
             { "text": "The deck: her file pulled, the rest wiped.", "condition": "globalVars.deck_pulled === 'her_file'" },
             { "text": "The deck: Tomb Alpha's tapes pulled, the rest wiped.", "condition": "globalVars.deck_pulled === 'alpha_tapes'" },
             { "text": "The legacy placement files: kept from the shredder.", "condition": "globalVars.legacy_files_saved" },
-            { "text": "The tape side: saved.", "condition": "globalVars.tran_outcome !== 'left'" }
+            { "text": "The tape side: saved.", "condition": "globalVars.tran_outcome !== 'left'" },
+<%# Alignment R1 m6: what the purge took, beside what was saved. %>
+            { "text": "Shredded: Derek Lawson's file.", "condition": "globalVars.cage_bin === 'letters'" },
+            { "text": "Shredded: Derek Lawson's file.", "condition": "globalVars.cage_bin === 'nightshade_copy'" },
+            { "text": "Shredded: the Social Fabric letters.", "condition": "globalVars.cage_bin === 'derek_file' && !globalVars.m08_nightshade_tidied" },
+            { "text": "Shredded: what Nightshade cleared from his locker.", "condition": "globalVars.cage_bin === 'derek_file' && globalVars.m08_nightshade_tidied" },
+            { "text": "The legacy placement files: shredded. Eleven names.", "condition": "!globalVars.legacy_files_saved" },
+            { "text": "The tape side: wiped, 212 reels.", "condition": "globalVars.tran_outcome === 'left'" }
           ] },
           { "section": "ELSEWHERE", "lines": [
             { "text": "Albion's controller: the vendor has ninety days for a fix, and four hundred sites to reach. The Critical Mass watch went dark.", "condition": "globalVars.albion_notified" },
             { "text": "Albion's controller: four hundred sites, still open. The watch stays on.", "condition": "!globalVars.albion_notified" },
             { "text": "NIGHTSHADE: Sent his own file. He knows what his teacher wrote.", "condition": "globalVars.m08_nightshade_triple_agent && globalVars.nightshade_shown_file" },
-            { "text": "NIGHTSHADE: Kept in play, and in the dark.", "condition": "globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_shown_file" }
+            { "text": "NIGHTSHADE: Kept in play, and in the dark.", "condition": "globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_shown_file" },
+            { "text": "TOMB ALPHA: Heard him teach it.", "condition": "globalVars.alpha_clip_played" }
           ] }
         ]
       }
@@ -653,7 +684,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
         { "taskId": "submit_control_flag", "title": "Take full control of Tomb Beta's server and submit it", "type": "submit_flags",
           "targetFlags": ["tomb_beta_station:tomb_beta_server-flag2"], "targetCount": 1, "currentCount": 0, "showProgress": true, "status": "active" },
         { "taskId": "hear_the_mirror_job", "title": "Hear what the server is mirroring to Tomb Gamma", "type": "custom", "status": "locked" },
-        { "taskId": "send_the_notice", "title": "Decide whether to send his vendor notice", "type": "custom", "status": "locked", "optional": true }
+        { "taskId": "send_the_notice", "title": "Send his vendor notice, or leave it for Netherton", "type": "custom", "status": "locked", "optional": true }
       ]
     },
     {
@@ -1341,7 +1372,6 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
             "language": "en-US"
           },
           "currentKnot": "start",
-          "globalVarOnKO": "tran_ko",
           "behavior": {
             "facePlayer": true,
             "hostile": { "chaseSpeed": 90, "attackDamage": 4, "pauseToAttack": true }
@@ -1674,7 +1704,6 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
             "language": "en-US"
           },
           "currentKnot": "start",
-          "globalVarOnKO": "sorensen_ko",
           "behavior": {
             "facePlayer": false,
             "hostile": { "chaseSpeed": 60, "attackDamage": 2, "pauseToAttack": true }
@@ -2331,7 +2360,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     }
   },
 
-<%# Carry-over (CONTRACT §5.2; FA §3.1, §22): 43 imports and eight
+<%# Carry-over (CONTRACT §5.2; FA §3.1, §22): 46 imports (43, plus m08's
+    accused_vector, accused_phantom and named_on_evidence at alignment R1 m9) and eight
     `completed`, read-only, all through m09_carryover_vars.ink. The default
     branch of every import is the never-played canon. %>
   "importGlobals": [
@@ -2345,7 +2375,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
   ['m06_follow_the_money', 'architect_identity_found', 'false'], ['m06_follow_the_money', 'monitoring_enabled', 'false'], ['m06_follow_the_money', 'irina_recruited', 'false'], ['m06_follow_the_money', 'minder_walked', 'false'], ['m06_follow_the_money', 'assets_seized', 'false'],
   ['m07_architects_gambit', 'teacher_discussed', 'false'], ['m07_architects_gambit', 'architect_echo_heard', 'false'], ['m07_architects_gambit', 'team_assignment', '""'], ['m07_architects_gambit', 'debrief_stance', '""'], ['m07_architects_gambit', 'found_tomb_gamma', 'false'],
   ['m08_the_mole', 'nightshade_triple_agent', 'false'], ['m08_the_mole', 'nightshade_arrested', 'false'], ['m08_the_mole', 'nightshade_ko_before_fate', 'false'], ['m08_the_mole', 'tomb_gamma_location_known', 'false'],
-  ['m08_the_mole', 'nightshade_tidied', 'false'], ['m08_the_mole', 'debrief_stance', '""'], ['m08_the_mole', 'netherton_ko', 'false'], ['m08_the_mole', 'netherton_hostile', 'false'], ['m08_the_mole', 'hax_ko', 'false']
+  ['m08_the_mole', 'nightshade_tidied', 'false'], ['m08_the_mole', 'debrief_stance', '""'], ['m08_the_mole', 'netherton_ko', 'false'], ['m08_the_mole', 'netherton_hostile', 'false'], ['m08_the_mole', 'hax_ko', 'false'],
+  ['m08_the_mole', 'accused_vector', 'false'], ['m08_the_mole', 'accused_phantom', 'false'], ['m08_the_mole', 'named_on_evidence', 'false']
 ]
 completed = %w[m01_first_contact m02_ransomed_trust m03_ghost_in_the_machine m04_critical_failure m05_insider_trading m06_follow_the_money m07_architects_gambit m08_the_mole]
 rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default": #{d} }) } +
@@ -2353,10 +2384,15 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
 <%= rows.join(",\n") %>
   ],
 
-<%# Exports (CONTRACT §5.1): twelve, read by m10 as m09_<name>. %>
+<%# Exports (CONTRACT §5.1): read by m10 as m09_<name>. The first twelve
+    since stage 8; alignment R1 A1 and m11 add the player's own m09 stances
+    and fates (memo_stance, raid_team_answer, kowalczyk_reply, sorensen_fate,
+    tran_outcome, noor_told) and alpha_clip_played. %>
   "exportGlobals": ["recruiter_offer", "deck_pulled", "sleeper_named", "sleeper_shortlist", "recruiter_secret",
                     "hax_confession_answer", "albion_notified", "nightshade_shown_file", "reading_finished",
-                    "cage_bin", "legacy_files_saved", "alpha_annotations_read"],
+                    "cage_bin", "legacy_files_saved", "alpha_annotations_read",
+                    "memo_stance", "raid_team_answer", "kowalczyk_reply", "sorensen_fate", "tran_outcome",
+                    "noor_told", "alpha_clip_played"],
 
 <%# Globals (CONTRACT §5.1, §5.3, §5.5; S4 §5). Ink file-locals (dock_heard,
     hub_quiet, said_floor_line, confession_heard, asked_*, ...) are NOT here.
@@ -2383,8 +2419,6 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "noor_told": false,
     "noor_ko": false,
     "old_coyote_ko": false,
-    "sorensen_ko": false,
-    "tran_ko": false,
     "old_coyote_told": false,
     "sorensen_fate": "left",
     "tran_outcome": "left",

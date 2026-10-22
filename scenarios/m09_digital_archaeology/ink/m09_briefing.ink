@@ -63,6 +63,10 @@ Director Magnus Netherton: The label named the building. Mountain States Records
 { m08_completed and not m08_tomb_gamma_location_known:
     Director Magnus Netherton: We have Helena. Not the bunker. Not yet.
 }
+// Alignment R1 m2: the coordinate branch hears why the archive comes first.
+{ m08_completed and m08_tomb_gamma_location_known:
+    Director Magnus Netherton: Nightshade gave us a coordinate. A coordinate is not a way in, and it is not a name I can say in court.
+}
 // Beat 4: HaX's first line (two fixed forms; C-3 the plain one).
 {
 - m08_hax_ko:

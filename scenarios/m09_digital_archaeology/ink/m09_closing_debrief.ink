@@ -213,7 +213,7 @@ Director Magnus Netherton: You read it. You decide. I will sign whichever.
     - noor_told:
         Director Magnus Netherton: Miss Haddad is in a hotel in Great Falls with two of Arakawa's people. She has not been allowed to ring her father. She asked twice.
     - m05_found_pipeline_list and not m05_recruiter_deal_accepted:
-        // Warned back in September: she knew what she was on before tonight.
+        // Warned back in the autumn (m05's badge log runs 16 Sep to 6 Oct): she knew what she was on before tonight.
         Director Magnus Netherton: Miss Haddad went home at the end of her shift. She knew what list she was on before you arrived.
     - noor_met:
         Director Magnus Netherton: Miss Haddad went home and rang her father. She is still on a list, and she does not know it.

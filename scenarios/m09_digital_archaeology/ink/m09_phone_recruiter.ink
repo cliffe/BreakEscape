@@ -100,10 +100,10 @@ VAR recruiter_hung_up = false
     -> spine
 }
 
-// Sold and lied: own the September deal, deny it, or hang up (MC §3.3).
-// (Stitch keeps its old name, `spring`; m05 ran in September, stage 8 SC 2.)
+// Sold and lied: own the autumn deal, deny it, or hang up (MC §3.3).
+// (Stitch keeps its old name, `spring`; m05 ran in the autumn, 16 Sep to 6 Oct, alignment R1 m7.)
 = spring
-+ [She's right. I let her courier have the list in September.]
++ [She's right. I let her courier have the list in the autumn.]
     #set_global:recruiter_secret:told
     Agent HaX: Noted. Later.
     -> spine

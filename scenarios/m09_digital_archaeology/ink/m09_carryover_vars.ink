@@ -58,6 +58,10 @@ VAR m08_debrief_stance = ""
 VAR m08_netherton_ko = false
 VAR m08_netherton_hostile = false
 VAR m08_hax_ko = false
+// Alignment R1 m9 (stage 9): m08's mole hunt.
+VAR m08_accused_vector = false
+VAR m08_accused_phantom = false
+VAR m08_named_on_evidence = false
 
 // ---- Completed (8) ----
 VAR m01_completed = false
