@@ -1421,6 +1421,8 @@
       "debrief_closed": false,
       "stacks_card_cloned": false,
       "noor_met": false,
+      "albion_folder_opened": false,
+      "memo_read": false,
       "archive_guard_ko": false,
       "m01_final_choice": "",
       "m01_maya_ko": false,
@@ -2543,6 +2545,24 @@
         "storyPath": "scenarios/m10_full_disclosure/ink/m10_quintero.json",
         "currentKnot": "core",
         "room": "core"
+      }
+    ]
+  },
+  "awareness_e1_invoice_fraud": {
+    "globals": {
+      "episode_e1_invoice_fraud_defend_percent": 0,
+      "episode_e1_invoice_fraud_defend_reportRate": 0,
+      "episode_e1_invoice_fraud_defend_done": false,
+      "episode_e1_invoice_fraud_defend_pass": false,
+      "phish_supplier_contact_landed": false
+    },
+    "npcs": [
+      {
+        "id": "adaeze_okafor",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e1_invoice_fraud/ink/adaeze_okafor.json",
+        "currentKnot": "start",
+        "room": "training_room"
       }
     ]
   },

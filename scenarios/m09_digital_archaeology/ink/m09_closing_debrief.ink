@@ -31,6 +31,7 @@ VAR old_coyote_ko = false
 VAR sorensen_fate = "left"
 VAR tran_outcome = "left"
 VAR memo_stance = ""
+VAR memo_read = false   // Synced scenario global (alignment R2 n1): HaX sets it when the Albion folder is read after flag 3
 VAR kowalczyk_reply = ""
 VAR debrief_notice_before = false
 VAR debrief_played = false
@@ -99,7 +100,14 @@ Director Magnus Netherton: Dr Adrian Tesseract. It is easier to say in a hangar 
     Director Magnus Netherton: I have your answer on his memo. I will come back to it.
     -> notice
 }
-Director Magnus Netherton: You've read his memo. Was he right?
+// Alignment R2 n1: a player who never read the folder hears the memo in one
+// line, so the exported answer is never blind.
+{memo_read:
+    Director Magnus Netherton: You've read his memo. Was he right?
+- else:
+    Director Magnus Netherton: In 2017 he told the board to warn the vendor within thirty days. The board kept the flaw.
+    Director Magnus Netherton: That was his memo, in short. Was he right?
+}
 + [About Albion, yes.]
     #set_global:memo_stance:yes_albion
     Director Magnus Netherton: Hold that until I find a pen.
@@ -139,6 +147,8 @@ Director Magnus Netherton: You read it. You decide. I will sign whichever.
     -> hub
 + [Hold it.]
     ~ notice_answered = true
+    // Alignment R2 n2: the debrief's hold is final, so it closes the task.
+    #complete_task:send_the_notice
     Director Magnus Netherton: Then it waits behind Montana, with everything else.
     -> hub
 
@@ -213,7 +223,7 @@ Director Magnus Netherton: You read it. You decide. I will sign whichever.
     - noor_told:
         Director Magnus Netherton: Miss Haddad is in a hotel in Great Falls with two of Arakawa's people. She has not been allowed to ring her father. She asked twice.
     - m05_found_pipeline_list and not m05_recruiter_deal_accepted:
-        // Warned back in the autumn (m05's badge log runs 16 Sep to 6 Oct): she knew what she was on before tonight.
+        // Warned back in October (m05's badge log runs 16 Sep to 6 Oct): she knew what she was on before tonight.
         Director Magnus Netherton: Miss Haddad went home at the end of her shift. She knew what list she was on before you arrived.
     - noor_met:
         Director Magnus Netherton: Miss Haddad went home and rang her father. She is still on a list, and she does not know it.

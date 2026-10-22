@@ -64,7 +64,7 @@ Every person ends on an unconditional clause, so each always has a line; clauses
     { "name": "NOOR HADDAD", "clauses": [
       { "text": "Knocked down at her own desk.", "condition": "globalVars.noor_ko" },
       { "text": "A witness in Great Falls. Not allowed to ring her father.", "condition": "globalVars.noor_told" },
-      { "text": "Warned in the autumn. Held the last box back.", "condition": "globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted" },
+      { "text": "Warned in October. Held the last box back.", "condition": "globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted" },
       { "text": "Went home and rang her father. Still on a list." }
     ] },
     { "name": "CODY OLD COYOTE", "clauses": [
@@ -86,19 +86,26 @@ Every person ends on an unconditional clause, so each always has a line; clauses
   ] },
   { "section": "WHAT THE PURGE TOOK", "lines": [
     { "text": "Saved from the bins: Derek Lawson's file.", "condition": "globalVars.cage_bin === 'derek_file'" },
+    { "text": "Shredded: the Social Fabric letters. Nobody warned Teresa Villanueva.", "condition": "globalVars.cage_bin === 'derek_file' && !globalVars.m08_nightshade_tidied" },
+    { "text": "Shredded: what Nightshade cleared from his locker.", "condition": "globalVars.cage_bin === 'derek_file' && globalVars.m08_nightshade_tidied" },
     { "text": "Saved from the bins: the Social Fabric letters. Teresa Villanueva was warned.", "condition": "globalVars.cage_bin === 'letters'" },
     { "text": "Saved from the bins: what Nightshade cleared from his locker.", "condition": "globalVars.cage_bin === 'nightshade_copy'" },
+    { "text": "Shredded: Derek Lawson's file.", "condition": "globalVars.cage_bin === 'letters'" },
+    { "text": "Shredded: Derek Lawson's file.", "condition": "globalVars.cage_bin === 'nightshade_copy'" },
+    { "text": "The legacy placement files: kept from the shredder.", "condition": "globalVars.legacy_files_saved" },
+    { "text": "The legacy placement files: shredded. Eleven names.", "condition": "!globalVars.legacy_files_saved" },
+    { "text": "The tape side: 97 of 212 reels kept.", "condition": "globalVars.tran_outcome !== 'left'" },
+    { "text": "The tape side: wiped, 212 reels.", "condition": "globalVars.tran_outcome === 'left'" },
     { "text": "The deck: wiped, all of it.", "condition": "globalVars.deck_pulled === 'none'" },
     { "text": "The deck: her file pulled, the rest wiped.", "condition": "globalVars.deck_pulled === 'her_file'" },
-    { "text": "The deck: Tomb Alpha's tapes pulled, the rest wiped.", "condition": "globalVars.deck_pulled === 'alpha_tapes'" },
-    { "text": "The legacy placement files: kept from the shredder.", "condition": "globalVars.legacy_files_saved" },
-    { "text": "The tape side: saved.", "condition": "globalVars.tran_outcome !== 'left'" }
+    { "text": "The deck: Tomb Alpha's tapes pulled, the rest wiped.", "condition": "globalVars.deck_pulled === 'alpha_tapes'" }
   ] },
   { "section": "ELSEWHERE", "lines": [
     { "text": "Albion's controller: the vendor has ninety days for a fix, and four hundred sites to reach. The Critical Mass watch went dark.", "condition": "globalVars.albion_notified" },
     { "text": "Albion's controller: four hundred sites, still open. The watch stays on.", "condition": "!globalVars.albion_notified" },
     { "text": "NIGHTSHADE: Sent his own file. He knows what his teacher wrote.", "condition": "globalVars.m08_nightshade_triple_agent && globalVars.nightshade_shown_file" },
-    { "text": "NIGHTSHADE: Kept in play, and in the dark.", "condition": "globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_shown_file" }
+    { "text": "NIGHTSHADE: Kept in play, and in the dark.", "condition": "globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_shown_file" },
+    { "text": "TOMB ALPHA: Heard him teach it.", "condition": "globalVars.alpha_clip_played" }
   ] }
 ]
 ```
@@ -109,3 +116,4 @@ Every person ends on an unconditional clause, so each always has a line; clauses
 - The imports `m05_found_pipeline_list`, `m05_recruiter_deal_accepted` and `m08_nightshade_triple_agent` are read here as m09 globals, which `importGlobals` provides.
 - `old_coyote_told`, `noor_ko`, `old_coyote_ko`, `tran_outcome`, `memo_stance` and `kowalczyk_reply` must be in `globalVariables` (they are, per contract §5.3).
 - Script edit R1 (ruling 1, C-05, C-06): the hangar buttons now hold on the PIN route, so Kowalczyk's warm clause stands and her default reads "Got a shrug."; Sorensen's knock-out clause names no injury; Tran's default no longer says he went home (HaX has Arakawa's people collect him).
+- Stage 9 (alignment R1 m6, m11; R2 n7, n8, n10): WHAT THE PURGE TOOK pairs each save with what was shredded, in the order bins, legacy files, tape side, deck; the tape side's save matches the console ("97 of 212 reels"); Noor's clause says October (m05 ran 16 Sep to 6 Oct); ELSEWHERE adds TOMB ALPHA on `alpha_clip_played`. The closing card and credits are triggered on `debrief_closed` (lesson 46), not `report_done`. The scenario file is the live copy; this file matches it.

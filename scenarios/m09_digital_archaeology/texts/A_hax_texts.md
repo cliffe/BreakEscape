@@ -86,3 +86,15 @@ Each fires once on its document's read or pickup. The read latches (`rent_ledger
 - Every text is under 30 words; none starts with `*`, `-`, `+`, `=` or `#`.
 - Stage 8 (A3-31): new read latch `reeves_sheet_read`, set when the printed ledger is read while its Reeves paragraph shows (S6 §1.6 variants 2–5, which all need flag 2). A plain `printed_ledger_read` won't do: a read before flag 2 latches it with no sheet on the page. If the engine can't set a global per variant, stage 9 sets `reeves_sheet_read` from the object's `onRead` only when `flag2_submitted` is true (a mapping on `object_interacted` for the ledger with that condition).
 - New read latch for stage 9 (script edit R1 A-05): `alpha_annotations_read`, an `onRead` `setVariable` on `alpha_annotations` (readable only after the identity scene, S6). HaX's hub topic 3b, "[His annotation sheets, with the tapes.]", is gated on it; `alpha_clip_played` is no longer read by A1.
+
+## 6. Stage 9 additions (as built; `scenario.json.erb` is the live copy)
+
+| # | Text | Trigger | Notes |
+|---|---|---|---|
+| A3-33a | I asked you not to. | `npc_ko:old_coyote` | `onceOnly`. Alignment R1 m4 (answers the dock call's "Don't hurt him.") |
+| A3-33b | She files deeds, 0x00. | `npc_ko:noor_haddad` | `onceOnly`. Alignment R1 m4 |
+| A3-34a | He bet you'd save Derek's file. You didn't. First thing he's got wrong tonight. | `global_variable_changed:reading_finished` with `value === true && globalVars.cage_bin === 'letters'`, and a second row with `'nightshade_copy'` | `onceOnly`. Full-route playtest #9: the last page's margin bet, read against the bin |
+| A3-34b | He bet on Derek's file. He was right. Don't let it bother you. | as A3-34a with `globalVars.cage_bin === 'derek_file'` | `onceOnly` |
+| A3-35 | Harwick & Lowe's boxes are in the open stacks, by their bay label. The lid takes that file number. | `global_variable_changed:ledger_read_heard` with `value === true && !globalVars.sleeper_shortlist && !globalVars.sleeper_named` | `onceOnly`, `delayMs: 6000`. Full-route playtest #13 (the cross-reference's pointer) |
+| A3-27a (changed) | Nobody of ours in here. Ours are on her tape, by codename. | `legacy_box_read` in two arms, `legacy_files_saved && !m05_found_pipeline_list` and `legacy_files_saved && m05_found_pipeline_list && m05_recruiter_deal_accepted`, plus the clock-not-run arm; and `noor_box_read` on the warned-in-time route. Each `&& !globalVars.legacy_remark_sent` and sets it | Impl review R1 m-01, alignment R1 m12: never over the empty feed tray |
+

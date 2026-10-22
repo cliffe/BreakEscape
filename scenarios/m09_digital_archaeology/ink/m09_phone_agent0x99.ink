@@ -220,13 +220,6 @@ One legacy entry, codename WREN. Updated on day ten, in Sorensen's hand. "Assign
     WREN's on our team. One of the four you met at the briefing.
 -
 I've told the Director. He'll say nothing to them. Neither will you.
-// Alignment R1 m9: m08's mole hunt, echoed in this one.
-{
-- m08_accused_vector or m08_accused_phantom:
-    Last time you named one of ours on a hunch. Do this one on paper.
-- m08_named_on_evidence:
-    You found Nightshade on paper. Same again.
-}
 // m05, at most one line (CONTRACT §2.1); arrest, combat_nonlethal and
 // never played get nothing.
 {
@@ -243,6 +236,14 @@ I've told the Director. He'll say nothing to them. Neither will you.
 + [What else is on the entry?]
     A source code, H&L, and a file number. HL2015-0477.
 -
+// Alignment R1 m9, moved after the file number (R2 n9): m08's mole hunt,
+// echoed in this one, as the next thing on screen.
+{
+- m08_accused_vector or m08_accused_phantom:
+    Last time you named one of ours on a hunch. Do this one on paper.
+- m08_named_on_evidence:
+    You found Nightshade on paper. Same again.
+}
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
 + [Got it.]
@@ -280,7 +281,7 @@ I've told the Director. He'll say nothing to them. Neither will you.
     Arakawa got Villanueva. She wanted to know who'd bother.
 }
 {recruiter_secret == "told":
-    Back in the autumn I'd have kept that between us. Not tonight.
+    Back in October I'd have kept that between us. Not tonight.
 }
 Afterwards. Not during.
 It's yours to carry. Nobody else signed for it.
