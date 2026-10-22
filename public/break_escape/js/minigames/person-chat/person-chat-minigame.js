@@ -18,6 +18,7 @@ import PhoneChatConversation from '../phone-chat/phone-chat-conversation.js'; //
 import InkEngine from '../../systems/ink/ink-engine.js';
 import { attachPretext } from './person-chat-pretext.js';
 import { processGameActionTags, determineSpeaker as determineSpeakerFromTags } from '../helpers/chat-helpers.js';
+import { splitReplyTags, partitionSlowTags } from './person-chat-pending-reply.js';
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
 import { rememberNpcLine, getRememberedNpcLine, reopenContextLine, refreshHubAfterMidKnotReopen } from './person-chat-reopen.js';
@@ -1086,19 +1087,13 @@ export class PersonChatMinigame extends MinigameScene {
             // the exit_conversation tag and calls complete(true) after showing the text.
             if (shouldExit) {
                 console.log('🚪 Exit conversation tag detected - showing response then closing minigame');
-                this.scheduleDialogueAdvance(() => {
-                    this.displayAccumulatedDialogue(result);
-                }, 1500);
+                this._deferReply(result);
                 return;
             }
             
             // Normal dialogue flow: display the result (dialogue blocks) after a small delay
             console.log(`🎯 After choice: scheduling displayAccumulatedDialogue with result.text length: ${result?.text?.length || 0}`);
-            this.scheduleDialogueAdvance(() => {
-                // Process accumulated dialogue by splitting into individual speaker blocks
-                console.log(`🎯 Inside scheduled callback: calling displayAccumulatedDialogue`);
-                this.displayAccumulatedDialogue(result);
-            }, 1500);
+            this._deferReply(result);
 
         } catch (error) {
             console.error('❌ Error handling choice:', error);
@@ -1106,6 +1101,114 @@ export class PersonChatMinigame extends MinigameScene {
         }
     }
     
+    /**
+     * Show a choice's reply after the usual 1.5 s (or on the next click), keeping its
+     * state tags safe meanwhile.
+     *
+     * handleChoice has already saved the story past this reply, but the reply's tags
+     * only run when displayAccumulatedDialogue does. A close (Esc, x, a scene change)
+     * or a page reload in that gap lost them (R8 m3: the m09 hatch bin choice) while
+     * the saved position said they had run. cleanup() and a pagehide now flush the
+     * reply's state tags (_flushPendingReply). We flush on close/hide rather than
+     * applying tags at choice time because normal play must not change: #hostile,
+     * #give_item and the like still land when their line appears, not 1.5 s before it
+     * (and #exit_conversation keeps its show-then-close handling). A hard reload is
+     * covered by a beforeunload / pagehide flush, which runs ahead of state-sync's own
+     * pagehide sync so the globals it sends include the flushed tags. Server writes
+     * that need a round trip (give_item) are best-effort there.
+     * @param {Object} result - the makeChoice() result holding the reply and its tags
+     */
+    _deferReply(result) {
+        this._pendingReply = result;
+        if (this._cleanedUp) {
+            // Already closed (an #end_conversation ended the chat inside makeChoice):
+            // nothing will display this reply, so apply its state tags now and stop.
+            this._flushPendingReply();
+            return;
+        }
+        if (!this._onPageHide) {
+            this._onPageHide = () => this._flushPendingReply({ keepPending: true });
+            // beforeunload as well as pagehide: state-sync's own pagehide listener
+            // (state-sync.js start()) is registered first and runs first, and its
+            // keepalive request sends the globals as they are at that moment. Found in
+            // the browser: a pagehide-only flush ran after it and the tags never
+            // reached the server. beforeunload fires earlier in the same unload.
+            window.addEventListener('beforeunload', this._onPageHide);
+            window.addEventListener('pagehide', this._onPageHide);
+        }
+        this.scheduleDialogueAdvance(() => {
+            this._pendingReply = null;
+            this._dropPageHideHook();
+            this.displayAccumulatedDialogue(result);
+        }, 1500);
+    }
+
+    /** Stop listening for the page going away (the reply has shown, or the chat closed). */
+    _dropPageHideHook() {
+        if (!this._onPageHide) return;
+        window.removeEventListener('beforeunload', this._onPageHide);
+        window.removeEventListener('pagehide', this._onPageHide);
+        this._onPageHide = null;
+    }
+
+    /**
+     * Apply the pending reply's state tags once. Presentation tags (portrait, lighting,
+     * exit) are left to the display path. With keepPending (pagehide, which may be a
+     * bfcache stash rather than a close) the reply still displays later, minus the
+     * tags already applied; otherwise (cleanup) the reply is dropped and its timer cleared.
+     * @param {{keepPending?: boolean}} [opts]
+     */
+    _flushPendingReply({ keepPending = false } = {}) {
+        const reply = this._pendingReply;
+        if (!keepPending) {
+            this._pendingReply = null;
+            if (this.autoAdvanceTimer) {
+                clearTimeout(this.autoAdvanceTimer);
+                this.autoAdvanceTimer = null;
+            }
+            this.pendingContinueCallback = null;
+        }
+        if (!reply || reply._stateTagsApplied) return;
+        const { state } = splitReplyTags(reply.tags);
+        reply._stateTagsApplied = true;
+        if (state.length === 0) return;
+        console.log('🏷️ Flushing pending reply state tags:', state);
+        // processGameActionTags reads the NPC from this global (give_item, hostile...)
+        const prevNpcId = window.currentConversationNPCId;
+        window.currentConversationNPCId = this.npcId;
+        // Order differs from the display path, which runs the tags in ink order in one
+        // call. processGameActionTags awaits a server round trip on give_item /
+        // remove_npc and runs the tags after it a tick later, and on a reload that tick
+        // may never come (found in the browser: cage_bin set, bin_chosen lost). So the
+        // tags that never wait run first, in one call that finishes synchronously.
+        const { slow, fast } = partitionSlowTags(state);
+        const run = (batch) => {
+            // give_item / remove_npc read the NPC from this global, and cleanup() nulls
+            // it while an earlier tag is still awaiting; set it again for every call
+            window.currentConversationNPCId = this.npcId;
+            return processGameActionTags(batch, this.ui, this._tagOptions());
+        };
+        const onError = err => console.error('❌ Error flushing pending reply tags:', err);
+        try {
+            if (fast.length > 0) Promise.resolve(run(fast)).catch(onError);
+        } catch (err) { onError(err); }
+        window.currentConversationNPCId = prevNpcId;
+        // Slow tags one at a time: each one's NPC context is set just before its own
+        // call, and two give_items never overlap (the SQLite busy case chat-helpers avoids)
+        let chain = Promise.resolve();
+        for (const tag of slow) {
+            chain = chain.then(() => run([tag])).catch(onError);
+        }
+        if (slow.length > 0) {
+            chain.then(() => {
+                // Leave the global as the close left it
+                if (this._cleanedUp && window.currentConversationNPCId === this.npcId) {
+                    window.currentConversationNPCId = null;
+                }
+            });
+        }
+    }
+
     /**
      * Display accumulated dialogue by splitting into individual speaker blocks
      * @param {Object} result - Result with potentially multiple lines and tags
@@ -1123,7 +1226,10 @@ export class PersonChatMinigame extends MinigameScene {
             // This ensures tags are processed even if there's no visible text
             if (result.tags && result.tags.length > 0) {
                 console.log('🏷️ Processing action tags from accumulated dialogue:', result.tags);
-                processGameActionTags(result.tags, this.ui, this._tagOptions());
+                // State tags already flushed by _flushPendingReply must not run twice
+                processGameActionTags(
+                    result._stateTagsApplied ? splitReplyTags(result.tags).presentation : result.tags,
+                    this.ui, this._tagOptions());
                 
                 // Check for exit_conversation tag
                 const shouldExit = result.tags.some(tag => tag.includes('exit_conversation'));
@@ -1714,6 +1820,10 @@ export class PersonChatMinigame extends MinigameScene {
             
             console.log(`   Knot after jump: ${this.conversation.engine.story.state?.currentPathString}`);
             
+            // A choice's reply still waiting to show would be dropped by the clears below:
+            // apply its state tags first (see _deferReply)
+            this._flushPendingReply();
+
             // Clear any pending callbacks since we're changing the story
             if (this.autoAdvanceTimer) {
                 clearTimeout(this.autoAdvanceTimer);
@@ -1748,6 +1858,12 @@ export class PersonChatMinigame extends MinigameScene {
         // Drop an auto-advance held for the session-resume overlay
         this._releaseOverlayHold?.();
         this._releaseOverlayHold = null;
+        this._cleanedUp = true;
+
+        // A reply still waiting to be shown: apply its state tags now (the story is
+        // already saved past it), then stop its timer so nothing fires after the close.
+        this._flushPendingReply();
+        this._dropPageHideHook();
 
         // End the influence ledger run and unwrap ChooseChoiceIndex / the pretext
         // close interceptor (no-op for a non-social or non-pretext conversation).
