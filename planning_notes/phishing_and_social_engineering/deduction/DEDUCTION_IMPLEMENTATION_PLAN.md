@@ -67,6 +67,12 @@ game").
 - Any score change beyond skipping the solved task (user, 2026-10-22). Under a mission's `completion` or
   `partial_then_complete` scoring mode that skip costs nothing (§3.9).
 - Two opposition groups with their own nouns in one case (R1D-22, deferred until a mission needs it).
+  Lying sources, relational rules and changing display names wait with it.
+- `favours.<s>.grants` and `onThanks`, until the first corporate "comply with a request" case.
+- People-only suspects with no NPC, OSINT `hideIf`, and OSINT `showIf` / `unlockedBy` tracing in DL8,
+  until the first online case.
+- "At risk" cells, a `deduction_stage` music global, a staged debrief reveal, symmetric witness costs and
+  unique-item trades, a per-state decision curve, and `sourceKind` corroboration.
 - Art beyond placeholder sprites already in `assets/` (no image generation inside any packet), voice
   audio, lab sheets.
 
@@ -177,8 +183,9 @@ before any building (§14).
   sees "clue". Authors should not confuse it with an ENTROPY cell.) Cell numbers must not line up with
   guilt: give at least one innocent as many cells as a guilty suspect in the same slot (lint DL21 warns).
 - **Clues.** A clue type (`brass_key`, `ward_charm`) has a slot, a label, a `marked` flag and a public
-  `count`: how many cells in the whole case hold it. The board's profile card lists each count and how
-  many have been found ("Brass key: 1 in this case, 0 found"), because counts allow elimination.
+  `count`: how many cells in the whole case hold it. The board's profile card lists each count and who
+  it has been found on, under "Clues in this case (guilty or not)" ("Brass key: 1 in this case. Found:
+  none yet."), because counts allow elimination.
 - **Marked clues.** A clue type can carry the opposition's mark (a sigil, a forum handle, a ritual
   date). The board shows it with a symbol and the word "marked", never colour alone.
 - **Profiles.** One or more public rules for who is guilty, stated in the mission brief and repeated on
@@ -218,14 +225,17 @@ past `wary` is a real choice. Recovering influence uses the usual `06` routes. N
 
 ### 3.4 Favours
 
-A suspect with a favour asks the player for something once their first "want" clue is known (the ink
-gates the ask on that fact's `se_intel_<id>` global). The favour is a **real errand**: fetching an item
+A suspect with a favour asks the player for something once the clue named by the favour's `unlockFact` is
+known: any clue about that suspect, chosen by the author (the ink gates the ask on that fact's
+`se_intel_<id>` global). The favour is a **real errand**: fetching an item
 from somewhere the player has to reach, gated on holding that item (`#give_item` back to the suspect, or
 a check on the item in ink). Doing it runs `#deduction_favour:<suspect>`: every clue on that suspect is
 granted at once. If the suspect is guilty, the runtime also runs the favour's `onBackfire` actions (the
 door you opened was the one they needed). The ink plays out the story; the engine applies the cost, so
-the author states the truth in one place only. The brief or the handler gives one general warning ("Don't
-do favours for anyone you haven't checked"), so breaking the rule is the player's choice. The debrief
+the author states the truth in one place only. A favour stays on offer after a verdict on its suspect
+other than a KO (accused, reported, acted on, vouched for). A knocked-out suspect can't be talked to, so a
+KO ends it. The brief or the handler gives one general warning ("Don't
+do favours for anyone you haven't cleared."), so breaking the rule is the player's choice. The debrief
 names every favour done for a guilty suspect.
 
 ### 3.5 Verifying before acting: the unique item
@@ -262,7 +272,8 @@ It shows:
    asks which profile; marking someone clear can record which held clues rule them out. Marks are notes,
    not verdicts, until something commits them. The debrief shows them back (§3.10).
 4. **The nudge** (on by default, `nudge: false` turns it off): "You have enough to decide about Venn."
-   once the held clues decide a suspect either way. Never which way. The same line shows once as a toast
+   once the held clues decide a suspect either way, with one more line saying how: "Check the counts."
+   when a count decided it, else "Check what's on their card.". Never which way. The same line shows once as a toast
    at the grant that made the suspect decidable.
 5. **The final call**, only on a board object with `allowSubmit: true` in a `when: "final"` case: "Make
    the call" commits every mark as a verdict after a confirm step with "Go back".
@@ -270,7 +281,9 @@ It shows:
 ### 3.8 Verdicts
 
 A verdict is a recorded act against one suspect: `guilty` or `clear`, with a kind. The first verdict on
-a suspect stands; later ones are ignored.
+a suspect stands; later ones are ignored. Every kind records `guilty` except `trust`, which records
+`clear`; the final call records each suspect's mark, and the close records `clear` for anyone left without
+a verdict.
 
 | Kind | What the player does | Route |
 |---|---|---|
@@ -278,10 +291,11 @@ a suspect stands; later ones are ignored.
 | `report` | Names names to SAFETYNET or a manager | `#verdict:report:<suspect>` in a phone or person chat |
 | `ko` | Knocks the suspect out | `npc_ko`, whenever attacks are on (§5.11) |
 | `act` | Uses the knowledge (locks them in, feeds them a fake) | `{ "type": "verdict", "kind": "act", ... }` from an object, trigger or timer, or `#verdict:act:<suspect>` |
+| `trust` | Vouches for or protects the suspect (a clear verdict) | `#verdict:trust` in the suspect's own story, `#verdict:trust:<suspect>` from another conversation, or `{ "type": "verdict", "value": "clear", ... }` |
 | `final` | Commits every mark at a set point | the board's "Make the call" |
 
 `verdicts.when` is `anytime` (verdicts land as they happen) or `final` (only the final route and
-`report` commit; `accuse` and `act` tags are ignored with a console warning, and the validator rejects
+`report` commit; `accuse`, `act` and `trust` tags are ignored with a console warning, and the validator rejects
 them, DL12). **A knockout always counts** (the user's rule that a KO acts like an accusation): under
 `final` it is recorded as a `ko` verdict at once, locks that suspect's mark as guilty, and is judged with
 everything else at the final call. A KO is final: the suspect is not brought round (user, 2026-10-22). The
@@ -294,7 +308,9 @@ rule (`README_scenario_design.md:1550`, "Warn before the point of no return", wi
 `#verdict_close` on the line after a choice whose sibling is "Not yet" (lint DL12), the `verdict_close`
 action inside a `confirm_action`, or the final call's confirm step. When every suspect has a verdict the
 case does not close by itself: the runtime shows the authored `closeHint` ("Everyone has been dealt with.
-Call HaX when you're ready to leave.") and waits. A report or a final call can name any number of suspects;
+Call HaX when you're ready to leave.") and waits. An optional authored `closeRoute` says from the start
+how the case closes; the board footer shows it until every suspect has a verdict, then `closeHint` replaces
+it. A report or a final call can name any number of suspects;
 nothing in the interface may imply how many are guilty (§3.1). On close, every suspect with no verdict is ruled
 `clear` with kind `none` ("Not named"). A guilty suspect left without a verdict is a missed guilty.
 
@@ -364,27 +380,31 @@ reviewers; the board shows "The stakes are not known."
 Shown when the case closes, before any close-time stake or ending runs (and reopenable from the board
 afterwards). One card per suspect:
 
-- the truth in the mission's own nouns, worded as §6.3's truth line ("Cultist: matched the Keyholder
-  profile" or "Not a cultist: matched no profile");
+- the truth in the mission's own nouns, worded as §6.3's truth line ("The evidence says: Cultist (matched
+  the Keyholder profile)" or "The evidence says: Not a cultist (matched no profile)");
 - the player's verdict and how it was given, or "Not named";
 - the player's own mark and reasons ("Your note: Not a cultist, because of the ward charm");
-- the outcome in words;
+- the outcome in words; any authored note for that suspect whose condition holds (`debrief.notes`, for a
+  story beat the engine cannot see, such as a contact sent to wait and let go);
 - the clues the player held;
 - **why, on every card, right or wrong**: for a guilty suspect, the clause that matched ("Keyholder: carries
-  the brass key"; for a threshold, "Devotee: 3 marked clues: <labels>"); for a clear suspect, the clause each
+  the brass key"; for a threshold, "Devotee: 3 marked clues (<labels>)"); for a clear suspect, the clause each
   profile fails ("Courier: no, carries a ward charm"), naming the absence or presence clue for a negative
-  clause; for an innocent left "Not named" while still undetermined at close, "You had not ruled them out:
-  <label>, from <place>, did";
+  clause; for an innocent left "Not named" while still undetermined at close, "This would have ruled them
+  out: <label>, from <place>.";
 - for a wrong or missed call, one of two lines. If the clues already held decided the suspect when the
   verdict was given (or, for a missed guilty never named, at close): "You already held what settled it:
   <labels>", naming the profile clause. Otherwise: "The clue that would have settled it: <label>, from
   <place>", using the smallest settling set and, for each clue, the place of its first route that was not
   destroyed (the route's authored `place`, §4.2);
-- for any verdict given while the suspect was still undetermined (`decidedAtVerdict` false), right or
-  wrong: "You named them before the evidence decided it." A lucky right call is still a right call, but it
-  is not shown as a deduction;
-- where a clue was decided by an exhausted count, the fixed count line of §6.3 ("Both <label> clues were
-  found elsewhere, so <name> could not have one."; "The only <label> was found on someone else…" for a
+- for any verdict given while the suspect was still undetermined (`decidedAtVerdict` false): on a wrong
+  call, "You named them before the evidence decided it." for a guilty verdict, "You cleared them before
+  the evidence decided it." for a clear one (a `trust` verdict, or a clear mark at the final call), with
+  its settling line; on a right call, "Right call, made before the evidence settled it. <label>, from
+  <place>, would have.", naming the smallest settling set on the clues held at the verdict. A lucky right
+  call is still a right call, but it is not shown as a deduction;
+- where a clue was decided by an exhausted count, the fixed count line of §6.3 ("<Label>: both were found
+  elsewhere, so <name> could not have one."; "<Label>: the only one was found on someone else…" for a
   clue with count 1).
 
 Then any favour done for a guilty suspect, any evidence destroyed and recovered, the mission's closing
@@ -394,9 +414,12 @@ blame wording: never "You failed to".
 
 ### 3.11 Player-facing vocabulary
 
-Use: suspect, clue, evidence, profile, "what to look for", mark, marked, verdict, accuse, report, "make
+Use: suspect, clue, evidence, profile, "what to look for", mark, marked, verdict, accuse, report, vouch, "make
 the call", "evidence destroyed", "hidden", favour, debrief, "not named", and the mission's own nouns from
-`verdictNoun` ("Cultist" / "Not a cultist", "Insider" / "Not an insider"). Never "the <noun>": it implies one.
+`verdictNoun` ("Cultist" / "Not a cultist", "Insider" / "Not an insider"; real Incident Simulations
+missions use "Refer to HR" / "No further action", which name the proportionate next step rather than
+labelling a colleague (user Q8, 2026-10-22)). A case may replace the word "marked" with its own
+`markedLabel` ("cult sign"). Never "the <noun>": it implies one.
 
 **Banned in anything the player sees** (lint DL15, case-insensitive, whole words): `token`, `tokens`,
 `mystic`, `fez`, `fez council`, `quest card`, `quest cards`, `elder sign`, `fade to black`. Warnings,
@@ -417,6 +440,7 @@ closed (`additionalProperties: false`), as the rest of `social` is (`scripts/sce
 "deduction": {
   "title": "Night shift",                                    // board heading; required
   "verdictNoun": { "guilty": "Insider", "clear": "Not an insider" },   // required, both non-empty
+  //   real Incident Simulations missions: "Refer to HR" / "No further action" (§3.11)
   "suspects": ["ded_b_okoro", "ded_b_lindqvist", "ded_b_haddad", "ded_b_morgan"],
   //   NPC ids from some room's `npcs` (the client registers NPCs only from rooms; a top-level
   //   `phoneNPCs` key is read by the validator alone, so a suspect there would not exist in the game).
@@ -432,12 +456,13 @@ closed (`additionalProperties: false`), as the rest of `social` is (`scripts/sce
   },
   "profiles": [
     { "id": "insider", "label": "Insider", "text": "...", "rule": { "all": [ ... ] } }
+    //  optional "parts": { "join": "any" | "all", "items": ["…"] }: the text split for display (§6.4)
   ],
   "solution": { "ded_b_okoro": "insider", "ded_b_lindqvist": null },
   //   guilty suspect -> the id of the FIRST profile (in list order) that matches; clear -> null
   "brief": { "source": "scenario_brief" },                   // or { "source": "ink", "file": "ink/<x>.ink" }
   "verdicts": {
-    "allowed": ["report"],                                   // subset of accuse, report, ko, act, final
+    "allowed": ["report"],                                   // subset of accuse, report, ko, act, trust, final
     "when": "final",                                         // "anytime" | "final"
     "reveal": "end",                                         // "now" | "end"
     "finalCall": { "requiresAll": false, "requireGlobal": null }   // board submit only (§6.6)
@@ -445,10 +470,13 @@ closed (`additionalProperties: false`), as the rest of `social` is (`scripts/sce
   "closeHint": "Everyone has been dealt with. Use the exit phone when you're ready to leave.",
   //   shown once when every suspect has a verdict and the case is still open (§3.8); required when
   //   `when` is "anytime"
+  "closeRoute": "How this case closes: use the exit phone. Anyone you haven't named stays free.",
+  //   optional: shown in the board footer from the start, replaced by closeHint once every suspect
+  //   has a verdict (§3.8, §6.4)
   "stakes": {
     "rigidity": "light",                                     // "strict" | "costly" | "light" (DL9)
     "disclosure": "brief",                                   // "brief" | "hidden"
-    "briefText": "Name the wrong people, or miss someone, and the report will say so.",
+    "briefText": "Anyone you name will be looked into. Anyone you don't is cleared.",
     "twistNote": null,                                       // required when disclosure is "hidden"
     "onRightGuilty":  [],
     "onWrongGuilty":  [],
@@ -464,15 +492,20 @@ closed (`additionalProperties: false`), as the rest of `social` is (`scripts/sce
                                                              //   only with when "final" and "final" allowed (§5.5, DL9)
   },
   "favours": { },
+  //   unlockFact: any cell of that suspect, the clue that opens the ask (§3.4)
   //   { "<suspect>": { "unlockFact": "<fact>", "room": "<errand room>", "item": "<item id fetched>",
   //                    "onBackfire": [ ... ], "debriefLine": "..." } }
-  "tamperText": "Someone has been at the evidence.",         // toast on a fade; optional, this is the default
+  "tamperText": "Someone has been at the evidence.",         // toast on a fade; optional; replaces the default,
+                                                             //   which names the cell (§6.3)
   "nudge": true,                                             // default true
+  "voice": "plain",                                          // "plain" (default) | "pulp": the engine's string set (§6.3)
+  "markedLabel": "marked",                                   // optional; the word after ✦ (fixture D: "cult sign")
   "earlyCollapse": { "maxGuilty": 0, "minOpen": 0.5 },       // optional; these are the defaults (DL8)
   "allowEarly": [],                                          // suspect ids exempt from DL8; needs "_why"
   "debrief": {
     "heading": "How the case stood",                         // optional; this is the default
-    "closingLine": "..."                                     // optional, plain text
+    "closingLine": "...",                                    // optional, plain text
+    "notes": [ { "suspect": "<id>", "condition": "globalVars.<g>", "text": "..." } ]   // optional; at most 12; plain text
   }
 }
 ```
@@ -482,9 +515,10 @@ Rules on the values:
 - `suspects` 1 to 6, unique, each an NPC id in some room's `npcs`, and a `social.people` id with `name`.
 - `slots` 1 to 4, unique ids. Clue ids match `^[a-z][a-z0-9_]*$`, `count` an integer ≥ 1, `marked`
   boolean (default false).
+- A suspect holds at most one cell of any one clue (two copies of a clue are two suspects' cells).
 - `profiles` 1 to 4, unique ids, `text` non-empty, `rule` as §4.3.
 - `verdicts.allowed` non-empty. `final` in `allowed` requires `when: "final"`. Under `when: "final"` the
-  allowed kinds are `final`, `report` and `ko` (a final report is one call that names names and then
+  allowed kinds are `final`, `report` and `ko` (`accuse`, `act` and `trust` land only under `anytime`; a final report is one call that names names and then
   closes the case, as in fixture B; a knockout always counts, §3.8). DL12 makes both rules errors. Under
   `when: "final"`, `reveal` must be `end` (nothing is graded before the close, DL9).
 - Action lists hold `applyActions` descriptors (§5.4). Each may carry `"at": "verdict" | "close"` and, for
@@ -493,6 +527,10 @@ Rules on the values:
 - `favours.<s>.room` is the room of the errand, where the item the suspect asks for is (in the room or in a
   container there); DL8 places the favour route there. The errand room should not also hold that
   suspect's evidence, or the favour has no point (DL14 ⚠️).
+- `debrief.notes`: each note is shown on that suspect's debrief card when its `condition` (the
+  `utils/global-condition.js` syntax, globals only) is true at close; the text is fixed, authored and never
+  voiced. The condition is evaluated after the close writes `deduction_outcome_<s>` (§5.5 "Closing"), so a
+  note may key on an outcome (`globalVars.deduction_outcome_ded_b_lindqvist === 'wrong_guilty'`).
 
 ### 4.2 The `deduction` field on an intel fact
 
@@ -518,7 +556,9 @@ Every cell is one `social.intelFacts` entry. `socialIntelFact` gains one optiona
   `#grant_fact:<fact>`), `object` (id = an object whose `triggerOnInteract` grants it), `trigger` (id = a
   `triggers` entry), `timer` (id = a timer), `osint`, `mail` (trusted, not traced), `favour` (implicit:
   the validator adds it for every cell of a suspect with a favour, placed in the favour's `room`; never
-  authored). Optional `closedBy` names the `deduction_faded_<fact>` global that gates this route (§3.6).
+  authored). A cell whose only route is its suspect's favour authors `"routes": []`. Optional `closedBy` names the global that gates this route: `deduction_faded_<fact>` for a
+  fade (§3.6), or any other declared bool global, such as a `cost: true` stake that shuts a route after a
+  wrong call (fixture A's `a_lodge_suspicious`, §5.6).
   Optional `room` overrides the room the validator infers for DL8.
 - `place` on a route: the player-facing name of where it is ("the badge log in the server room"), printed
   by the debrief's "from <place>" (§3.10). The client cannot look object names up (the bootstrap scenario
@@ -564,7 +604,10 @@ count used up; and too few hidden cells elsewhere for the copies still unseen. I
 into another (a forced clue in one cell narrowing another clue's places), and it does not reason from a
 number of guilty suspects, which is why briefs must not state one (§3.1). The validator and the nudge use
 these same rules, so DL8's "still open" is judged by what the board lets a player work out. With every
-fact held there are no hidden cells, so every rule is `T` or `F` and the truth is always defined.
+fact held there are no hidden cells, so every rule is `T` or `F` and the truth is always defined. The
+evaluator does not use the one-cell-per-clue rule of §4.1 (it would still be sound if a suspect held two
+copies), so it can stay U where the rule alone would decide; the property test of §11.1 compares it with
+an oracle that allows duplicates, as the prototype does.
 
 Worked lines (fixture B, §4.9): Okoro with only her grievance revealed has `has access_out_of_role` = U
 (her access cell hidden, two unseen, three other hidden access cells), so the insider rule is U. Haddad
@@ -585,6 +628,7 @@ others = 0`, so Sato `has archive_pass` = T.
 | `deduction_outcome_<suspect>` | string, `""` | runtime at reveal: `right_guilty`, `wrong_guilty`, `missed_guilty`, `right_clear` | ink (the handler's reaction), credits |
 | `deduction_faded_<fact>` | bool, false | `deduction_tamper` | the gated route (trigger condition, ink) |
 | `deduction_favour_<suspect>` | bool, false | runtime when a favour is done | ink |
+| `deduction_decidable_<suspect>` | bool, false | runtime, with the nudge, only when `nudge` is on | ink (a fixed warning before a guess, §7.4) |
 | `mission_failed` | string, `""` | `fail_mission` (the reason) | credits and closing-card `condition`s, ink |
 | `scenario_triggers_fired` | object, `{}` | the triggers module | the triggers module |
 
@@ -605,8 +649,10 @@ later.) The `deduction_` and `scenario_triggers_` prefixes are unused today (gre
                                  "revealed": false, "decidedAtVerdict": true, "atMs": 812000 } },
   "wrongCount": 0,                          // wrong_guilty verdicts so far (for escalation)
   "faded":    ["d_sato_pass"],              // facts faded, in order
+  "saved":    ["d_chen_charm"],             // facts of a tamper list already held when it ran (debrief)
   "favours":  ["ded_a_marsh"],              // suspects whose favour was done
   "nudged":   ["ded_b_haddad"],             // suspects already announced as decidable
+  "seen":     ["b_okoro_grievance"],        // facts shown on the board when it last closed (runtime.markSeen())
   "koWarned": ["ded_a_okafor"],             // suspects whose first-punch warning has shown
   "pendingHostiles": [ { "id": "ded_a_acolyte", "room": "a_sanctum" } ],   // waiting for their room to load (§5.7)
   "ran":      ["v:ded_b_okoro", "e:2", "c:ded_b_okoro", "t:b_case_solved", "close"],
@@ -639,7 +685,9 @@ suspects. Written with `writeGlobal('deduction_state', next, { openChat: false }
 ```
 
 Payload checks go in `where`; `condition` reads globals only (`evaluateGlobalCondition`,
-`utils/global-condition.js`: `globalVars.x`, `!`, `===`, `!==`, comparisons, `&&`, `||`).
+`utils/global-condition.js`: `globalVars.x`, `!`, `===`, `!==`, comparisons, `&&`, `||`). A door an NPC's
+ink opens (`#unlock_door`) emits `door_unlocked_by_npc`, not `door_unlocked`, so a trigger on a door that
+either the player or an NPC may open listens for both.
 
 ### 4.7 Case-file pointer
 
@@ -662,12 +710,14 @@ Made by packets P10-X1 and P10-X2 (§10), not by this plan.
   deduction runtime are no-ops without `social.deduction` or `triggers`".
 - **`00` §13 settled values:** suspects 1–6 (fixtures 3–5); the evaluator rules of §4.3 (sound, with the
   pigeonhole step, not complete); no stated number of guilty in a brief; the first verdict on a suspect
-  stands; a KO always counts; no verdict at close means `clear` ("Not named"); the case closes only
+  stands; a KO always counts; verdict kind `trust` (clear); no verdict at close means `clear` ("Not named"); the case closes only
   through a warned route; nudge on by default; marks are notes; early-collapse defaults; the banned
   player-facing terms (§3.11).
 - **`00` §14 additions table:** `triggers` (engine-wide, opt-in), `mission_failed`, the `#grant_fact`
   tag, `remove_item`, `lose_ally` (usable without `social`); `reveal_hostiles` (needs the deduction runtime
   for a foe whose room has not loaded, DL14).
+- **`README_ink_best_practices.md`:** a section on `#grant_fact`, `#verdict:<kind>[:<s>]` (incl.
+  `trust`), `#verdict_close` and `#deduction_favour`.
 - **SE `README.md`:** a Documents row for design 12 and this plan; Engine-work rows S16–S23.
 - **`IMPLEMENTATION_PLAN.md`:** a §1 phase-table row for Phase 10 (alongside, §1 of this plan), §2.3
   back-compat rows 9–13 (§11.7 here), and a §4 pointer to §10 here.
@@ -858,7 +908,8 @@ export function cellsOf(deduction, intelFacts)            // -> [{ fact, suspect
 export function evalRule(rule, suspectId, ctx)            // -> 'T' | 'F' | 'U'   (§4.3, pigeonhole step included)
 export function evaluateSuspect(suspectId, heldIds, deduction, intelFacts)
     // -> { status, profiles: { <pid>: 'T'|'F'|'U' }, matched: <first T pid>|null,
-    //      byCount: [{ clue, how: 'count'|'pigeonhole'|'markedForced' }] }   (rules below)
+    //      byCount: [{ clue, how: 'count'|'pigeonhole'|'markedForced' }],
+    //      decidedBy: 'card'|'count'|null }   (rules below)
 export function evaluateAll(heldIds, deduction, intelFacts)   // -> { <sid>: evaluateSuspect(...) }
 export function truth(deduction, intelFacts)              // evaluateAll with every cell held
 export function isDecidable(suspectId, heldIds, deduction, intelFacts)   // status !== OPEN
@@ -893,6 +944,7 @@ export function heldDeciders(suspectId, heldIds, deduction, intelFacts)
     // holding c; a count decision: the cells that used the count up), deduplicated, in fact order
 export function heldFromGlobals(globals, intelFacts)      // ids whose se_intel_<id> === true
 export function validateRule(rule, clueIds)               // -> [error strings], shape only
+export function profileSatisfiable(profile, deduction)    // -> { ok, reason }: can any suspect's cells match it (DL4)
 ```
 
 `ctx` carries the precomputed cells, `held` (a Set), `seen`, `remaining` and per-slot hidden totals, so
@@ -904,12 +956,23 @@ throw (JS) on a rule that fails it; the Ruby port returns `nil` instead (§5.8).
 data the validator passed. The validator skips DL5, DL6, DL8 and DL21 once DL1 to DL4 report an error (§8).
 
 **`byCount`** is judged on the held set it is given, never on the truth (where every count is used up):
-the debrief passes the held set at the verdict, or at close for a suspect with kind `none`. A `has c`
+the debrief passes the held set at the verdict, or at close for a suspect with kind `none`. It reads only
+the leaves that decided: for a guilty suspect those of `matchedClause`, for a clear one those of
+`brokenClause`, so a profile that did not decide adds no line. A `has c`
 that is F is listed as `count` only when `remaining(c) = 0` **while the suspect's slot still has a hidden
 cell** (a fully revealed slot decides first and is not listed). A `has c` that is T is listed as
 `pigeonhole` only when `remaining(c) > others(s, y)` and no revealed cell of `s` holds `c`. A
 `markedAtLeast` that is T only because of `forced(y)` cells is listed as `markedForced` (with the slot's
 first marked clue as `clue`), so fixture A's Marsh after the archive (H+C+A) gets a line.
+
+**`decidedBy`** says how the held set decided the suspect, never which way. Evaluate the suspect again
+with counting off: a `has c` is T only from a revealed cell holding c, F only when `hidden(s, y) = 0`,
+else U (no pigeonhole step, no `remaining(c) = 0`); a `markedAtLeast n` is T when `k ≥ n` and F when `k +
+Σ hidden(s, y) < n` (no `forced`, `extra = hidden`). If that status is decided, `decidedBy` is `card`;
+else, if the full status is decided, `count`; else `null`. It reads only the held set, never the truth.
+The reduced evaluation is a subset of §4.3's steps, so it never decides a suspect the full one leaves
+open, and never the other way. `evalRule` takes an internal option (`{ counting: false }`) for it; the
+export list is unchanged.
 
 **Clause words** (for `why`, `alreadyHeld` and the board model, §6.2). Each clue has an optional
 `clause` (§4.1), the words that follow "<Profile>: yes, " or "<Profile>: no, " ("carries a ward charm",
@@ -918,13 +981,16 @@ first marked clue as `clue`), so fixture A's Marsh after the archive (H+C+A) get
 ("Courier: no, was in the lecture hall"; B's "Insider: no, no personal device"); one decided by count
 prints the count line (§6.3) instead; any other failed `has c` (a `oneOrMore` slot) prints "no <c's
 label>". A failed `not has c` prints c's clause ("Courier: no, carries a ward charm"). A `markedAtLeast n`
-prints "<k> marked clues (<labels>)" (§6.3). Several leaves (an `any`) are joined with "; ": C's Ahmed reads
+prints one threshold form everywhere: "<k> marked clues (<labels>)", with "1 marked clue (<label>)" and
+"no marked clues"; when it is F it adds how few could still be marked, ", and no room for <n−k> more"
+("1 marked clue (wants the Codex), and no room for 2 more") (§6.3). Several leaves (an `any`) are joined with "; ": C's Ahmed reads
 "Sleeper: no, no cult-issued burner; verified alibi".
 
 **Tests:** `test/js/social-deduction-eval.test.mjs` (§11.1) and the shared conformance file
 `test/js/fixtures/social_deduction/conformance.json`: an array of `{ name, deduction, intelFacts, held,
-expect: { <sid>: { status, profiles, settling?, deciders?, matched?, byCount? } } }` cases (the optional
-keys are checked by both ports when present). The same file drives the Ruby port's test (§5.8).
+expect: { <sid>: { status, profiles, settling?, deciders?, matched?, byCount?, decidedBy? } },
+satisfiable?: { <pid>: bool } }` cases (the optional keys, the case-level `satisfiable` for
+`profileSatisfiable` included, are checked by both ports when present). The same file drives the Ruby port's test (§5.8).
 
 **Back-compat:** a new file, imported only by the runtime and the board.
 
@@ -932,7 +998,8 @@ keys are checked by both ports when present). The same file drives the Ruby port
 
 **Decision:** one scenario-level `triggers` block, not per-minigame hooks. Reasons: every physical
 minigame already reports success through an event (`door_unlocked` and `item_unlocked`,
-`systems/unlock-system.js:681`, `:708`, `:743`; `item_picked_up:<type>`, `systems/inventory.js` (the `item_picked_up:${sprite.scenarioData.type}` emit),
+`systems/unlock-system.js:681`, `:708`, `:743`; beside them `door_unlocked_by_npc`, emitted for an NPC's
+ink `#unlock_door`, `systems/npc-game-bridge.js:137`; `item_picked_up:<type>`, `systems/inventory.js` (the `item_picked_up:${sprite.scenarioData.type}` emit),
 `minigames/container/container-minigame.js:503`, `systems/npc-game-bridge.js:40`;
 `fingerprint_collected:<owner>` and `fingerprint_identified:<owner>`, `systems/biometrics.js:95-97`;
 `card_cloned`, `minigames/rfid/rfid-minigame.js:299`; `global_variable_changed:<g>` from the log filter,
@@ -977,9 +1044,13 @@ Behaviour:
   POST resolves, so the restore and start-item pickups arrive **after** `game_loaded`. The restored
   sprite's `_restoredFromSave` marker is not in the payload. So when it arms, the module takes a
   **one-shot ignore list**: the `id`s of `window.gameScenario.playerInventory` (a reload), or of
-  `startItemsInInventory` when there is no saved inventory (a first load). The first `item_picked_up:*`
-  whose `itemId` is on the list is dropped (not marked fired, no actions) and the id is taken off; later
-  pickups of the same id run as usual. An id that never emits stays on the list harmlessly. Globals restore
+  `startItemsInInventory` when there is no saved inventory (a first load). The list holds each item's
+  emitted id (`id || lockRef(item)`; keys `id || keyId`). When any handler sees an `itemId` on the list,
+  the module adds that payload object to a module-level `WeakSet` and takes the id off; every handler
+  drops a payload in that set (not marked fired, no actions), so two triggers on one restored pickup both
+  skip it. Later pickups of the same id run as usual. An id that never emits stays on the list harmlessly.
+  An NPC `#give_item` flushed at unload whose add POST landed but whose emit never ran comes back as a
+  restore and fires nothing (accepted, §12). Globals restore
   silently. After that, only real play fires a trigger. DL16 also warns on a `once: false` trigger whose
   `on` is an `item_picked_up` event (only `once: false`; a `once` trigger on a pickup is fine).
 - **Idempotent:** the handle is kept on `window.scenarioTriggers`; a second install calls `uninstall()`
@@ -997,7 +1068,7 @@ All in `minigames/helpers/chat-helpers.js` `processGameActionTags` (`:27`), as n
 | Tag | Behaviour |
 |---|---|
 | `#grant_fact:<factId>` | **Never awaits.** With the runtime installed: `window.deductionRuntime.grantFact(id, { source: 'ink' })`, synchronous (the runtime imports `social-intel.js` statically and shows the same "Noted" and "Ready to approach" toasts as `systems/apply-actions.js:49-68`). Without it: `import('../../systems/apply-actions.js').then(({ applyActions }) => applyActions([{ type: 'grant_fact', fact: id }], { source: 'ink' }))`, not awaited. The writer puts the value into the open chat's story itself (`systems/global-writer.js` step 3), so no engine needs passing. Unknown fact: the existing warning, nothing else |
-| `#verdict:<kind>` | Verdict `guilty` of `<kind>` on the conversation's NPC: `window.deductionRuntime?.recordVerdict(npcId, 'guilty', kind, { source: 'ink' })` |
+| `#verdict:<kind>` | Verdict on the conversation's NPC: `window.deductionRuntime?.recordVerdict(npcId, kind === 'trust' ? 'clear' : 'guilty', kind, { source: 'ink' })` |
 | `#verdict:<kind>:<suspect>` | The same on a named suspect (a report to a manager, a confrontation from a handler's call) |
 | `#verdict_close` | `window.deductionRuntime?.close({ source: 'ink' })`, not awaited (its steps 1 and 2 run synchronously) |
 | `#deduction_favour[:<suspect>]` | `window.deductionRuntime?.doFavour(suspect)`, not awaited: grant every clue on the suspect, run `onBackfire` if guilty |
@@ -1010,15 +1081,19 @@ influence report for social characters (`chat-helpers.js:607`, `applySocialInflu
 **Decision on `#grant_fact`:** add it. Witness talk is the main clue route, and without the tag every
 witness answer would need a `set_global` plus a trigger, two declarations per clue.
 
-**Cut** (R1D-23): the `#verdict:...:clear` form and the `deduction_reveal` action. No use case needs them.
+**Cut** (R1D-23): the `deduction_reveal` action. The clear form returns as the `trust` kind
+(`#verdict:trust[:<s>]`; user Q5, 2026-10-22), which a whistleblower or a genuine caller needs
+(`deduction/sidecar/STRESS_TEST.md` 4.1, 6.1).
 
 **Timing note for authors:** a tag runs after the `Continue()` that carried it, and choices already on
 screen were evaluated before the write (`systems/global-writer.js:28-31`). So in **person chat** a choice
 gated on the granted fact, or on a verdict or outcome global, must come at least one line after the tag
-(§7.1). **Phone chat batches**: it calls `Continue()` until it reaches choices or the end, then runs every
-tag of the batch and only then types the lines it already evaluated (`phone-chat-minigame.js`
-`continueStory` and `_presentOutput`). So in phone chat a line or choice that reads what a tag writes must
-sit **behind a player choice** after the tag, not just on a later line (§7.5 shows the pattern).
+(§7.1). **Phone chat** applies tags as each line is read (the F16 change, commit 5585e191e,
+`phone-chat-minigame.js` `_applyLineTags`) or, in a build before F16, per batch, after every line up to
+the choices was evaluated; in both a player choice is the safe beat, and slow tags (`give_item`,
+`remove_npc`) run on a chain after the fast ones. So in phone chat a line or choice that reads what a tag
+writes must sit **behind a player choice** after the tag, not just on a later line (§7.5 shows the
+pattern).
 
 **The pending-reply flush** (commit 4af6a328). Person chat now runs a reply's **state** tags when the
 chat closes, jumps or the page hides before the reply was shown
@@ -1046,13 +1121,20 @@ All in `systems/apply-actions.js` `applyActions` (`:31`), beside the existing ca
 
 | Type | Params | Behaviour |
 |---|---|---|
-| `verdict` | `suspect`, `kind` (default `act`) | `window.deductionRuntime?.recordVerdict(suspect, 'guilty', kind, { source })` |
+| `verdict` | `suspect`, `value` (`"guilty"` default, or `"clear"`), `kind` (default `act` for guilty, `trust` for clear) | `window.deductionRuntime?.recordVerdict(suspect, value, kind, { source })` |
 | `verdict_close` | — | `window.deductionRuntime?.close({ source })`. Use it inside a `confirm_action` (DL12) |
-| `deduction_tamper` | `facts[]`, `text?` | `window.deductionRuntime?.tamper(facts, { text, source })` (§5.5) |
+| `grant_facts` | `facts[]`, `place` | grants each fact through `grantFact` with no per-fact toast, then one toast for the batch, title "Case file", "Noted: <n> clues from <place>" (§6.3), counting only the facts newly granted; nothing granted, no toast. The "Ready to approach" toast still shows as `grant_fact`'s does. For a record that holds several clues (an HR summary, a printout). Built by P10-E |
+| `deduction_tamper` | `facts[]`, `text?`, `emptyText?` (toasted when nothing is left to fade; default none) | `window.deductionRuntime?.tamper(facts, { text, emptyText, source })` (§5.5) |
 | `remove_item` | `itemId` | find the `window.inventory.items` entry whose `scenarioData.id` matches; `window.removeFromInventory(el)` (`export function removeFromInventory` in `systems/inventory.js`); POST `{ action_type: 'remove', item: { id } }` to `/break_escape/games/<gameId>/inventory` with the CSRF header, exactly as `removeInventoryConsumable` does (`systems/consumables.js:178-195`); toast `text` if given. Nothing held: no-op. While a minigame is open the removal waits for it to close (the `busy()` check of `ui/success-screen.js:45-47`), unless `now: true` (the runtime passes it for a favour's item, which the player has just handed over in a chat and is not using). Keys live on the key ring (`addKeyToKeyRing` / `window.inventory.keyRing` in `systems/inventory.js`), and notes-family items (`/^notes\d*$/`) go to the notepad with no `inventory.items` slot, so `remove_item` handles neither: DL14 rejects a key or a notes item |
 | `fail_mission` | `reason` | write `mission_failed` = `reason` (a string) with `writeGlobal`. Nothing else: the case's normal ending carries the loss (§5.5 "Endings"). No end card |
 | `reveal_hostiles` | `npcs[]`, `room` | per NPC, see §5.7 (a foe whose room has not loaded needs the deduction runtime) |
 | `lose_ally` | `npc`, `global?`, `leave?` (default true), `text?` | `set_global` `global` to true if given (the gate on the ally's help, §5.6); if `leave`: `window.npcBehaviorManager.setNPCVisible(npc, false)` (recorded and applied whenever the NPC registers, `npc-manager.js:280-283`, `:1379-1386`, so it works for an ally whose room has not loaded) and `NPCGameBridge.removeNpcFromScene(npc)` when the NPC is registered (`npc-game-bridge.js:748-782`); toast `text` if given |
+
+`confirm_action` (existing) takes optional `confirmLabel` and `cancelLabel`, passed to `gameConfirm`
+(`systems/notifications.js:199`, which already takes both; `applyActions` passes only the text today).
+
+Always give a `hint` action a `title` in the mission's voice; the default "Intelligence Received" is
+SAFETYNET's.
 
 **Decision: no `lock_route` or `spawn_hostiles` action** (§5.6, §5.7).
 
@@ -1097,13 +1179,15 @@ would change `objectives-manager.js` or the music code, outside Phase 10's owner
 
 **File:** new `systems/deduction-runtime.js`. Installed by `core/game.js` beside the triggers. Exposes
 `window.deductionRuntime` only when `scenario.social.deduction` exists; otherwise installs nothing. It
-imports `social-deduction.js`, `global-writer.js` and `social-intel.js` statically (none of them is
+imports `social-deduction.js`, `deduction-strings.js`, `global-writer.js` and `social-intel.js` statically (none of them is
 copied by an existing test, and `core/game.js` already loads `social-intel.js`), and loads
 `apply-actions.js` and the board starter with `import()`: `apply-actions.js` is requested at install and
 the module kept, so every later call runs it synchronously (a call in the first tick after install waits
 for it). **Idempotent:** the handle is kept on
 `window.deductionRuntime`; a second install calls the first handle's `uninstall()` before attaching, so no
 listener is ever doubled (as `watchReadinessGlobals` guards itself, `systems/social-intel.js:133-137`).
+The tamper default, the close-hint default and every runtime toast come from
+`deductionStrings(deduction.voice)` (§6.3).
 
 ```js
 export function installDeductionRuntime({ scenario, dispatcher }) // -> runtime | null
@@ -1114,12 +1198,13 @@ runtime.retryCall()                                         // async: "Try again
 runtime.declineRetry()                                      // async: "See the debrief" on the panel: sets retryUsed,
                                                             //   writes the held globals and deduction_state, returns
                                                             //   the sync promise, then shows the debrief (Retry)
-runtime.tamper(factIds, { text, source })                   // -> faded fact id | null
+runtime.tamper(factIds, { text, emptyText, source })        // -> faded fact id | null
 runtime.doFavour(suspectId)                                 // async inside; callers never await it
 runtime.grantFact(factId, { source })                       // synchronous grant with the "Noted" toasts (for #grant_fact)
 runtime.deferHostile(npcId, room)                           // pending foe (§5.7)
 runtime.resolveHostile(npcId)
 runtime.setMark(suspectId, mark, { profile, because })      // used by the board
+runtime.markSeen()                                          // the board calls it on close: deduction_state.seen = every held clue fact
 runtime.submitFinal()                                       // board final call
 runtime.reconcileKOs()                                      // §5.5 "Knockouts"
 runtime.getState()                                          // { state, truth, held, decidable } for the board and the bridge
@@ -1144,9 +1229,13 @@ the two parallel packets (P10-U2's and P10-H2's tests): a runtime stub with `set
 
 **Verdicts.** `recordVerdict` returns `{ recorded: false, reason }` and changes nothing when: the id is not
 a suspect; the kind is not in `verdicts.allowed` (except `ko`, below); the case is closed; the suspect
-already has a verdict; or `when` is `final` and the kind is `accuse` or `act`. Otherwise it stores the
+already has a verdict; or `when` is `final` and the kind is `accuse`, `act` or `trust`; or the value does
+not fit the kind (`clear` is accepted only with kind `trust`, `final` or `none`, and `guilty` never with
+`trust`; `none` comes only from `close()`). Otherwise it stores the
 verdict with `decidedAtVerdict` (whether the held facts decided that suspect at that moment), writes
 `deduction_verdict_<s>`, sets the suspect's mark to match and locks it, and grades it against `truth()`.
+Under `reveal: "end"` (so in every `when: "final"` case) it toasts "Verdict recorded: <name>, <kind
+word>…" (§6.3), except for the final call's verdicts, which close the case at once.
 
 - Under `when: "anytime"`: it runs the actions of that outcome's list and of the suspect's own list whose
   **effective timing** is `verdict` (an action's `at`, else `verdict` when `reveal` is `now` and `close`
@@ -1160,7 +1249,11 @@ verdict with `decidedAtVerdict` (whether the held facts decided that suspect at 
   so nothing can interleave and a reload never re-runs them. Task actions in these lists then run as in
   "Endings" step 3 (awaited, one at a time, each recorded `t:<taskId>` as it settles); any not settled (a
   reload, a refused gate, a failed save) is collected again at Finish, which always collects task actions
-  filtered only by `t:` (step 1), so none is dropped.
+  filtered only by `t:` (step 1), so none is dropped. A `trust` verdict on a guilty suspect is
+  `missed_guilty`: it runs `onMissedGuilty` on the same timing and does not add to `wrongCount` (only
+  `wrong_guilty` does). On an innocent it is `right_clear`, so an `onRightClear` action with `"at":
+  "verdict"` runs at the verdict under either `reveal` (the "Speak up" pattern: the stake sets a global a
+  timer's `cancelOnGlobal` reads).
 - Under `when: "final"`: the verdict is recorded and nothing runs; grading, outcomes and stakes all wait
   for the close. A report or the final call can name several suspects (fixture B names one or more, then
   closes).
@@ -1208,10 +1301,12 @@ It names no suspect and no outcome. "Try again" (`retryCall()`): clears every `f
 `deduction_verdict_<s>`, `closed` and `debriefPending`; unlocks those marks; sets `retryUsed`; syncs; and
 calls `showView('board')`. "See the debrief" (`declineRetry()`) sets `retryUsed` too (the offer is
 declined), writes the held-back `deduction_closed` and `deduction_outcome_<s>` and `deduction_state`, and
-**awaits the sync before** `showView('debrief')`. No stakes action had run, and the outcome and close
+**awaits the sync before** `showView('debrief')`: it awaits `syncConfirmed()`, and on `false` shows the
+debrief anyway and logs, as Finish does. No stakes action had run, and the outcome and close
 globals were held back (close step 2), so no listener on them has fired: there is nothing to undo. **On
 the retry panel, Close and Escape act as "See the debrief"** (`declineRetry()`), so the panel can never be
-left with the case closed, the debrief pending and nothing open. **On load** with `debriefPending` true,
+left with the case closed, the debrief pending and nothing open; the board routes them through its
+`requestClose()` override, not `close()` (§6.1). **On load** with `debriefPending` true,
 the board reopens on the retry panel only if `retryUsed` is false and the retry conditions still hold,
 which means no answer has been shown yet; once the player has chosen either button, a reload (or a Finish
 stopped on an unsettled task) always reopens the debrief, never the panel. The case-file object follows
@@ -1222,7 +1317,12 @@ Finish) **closes the overlay first**, then calls `finishDebrief()` without await
 success screen never open over the board. From the call, the runtime sets `window.player.disableMovement`
 itself, remembering the value it found, so the player cannot walk into a chat that the credits would then
 cover. Nothing in `music/` sets it; the pattern copied is the success screen's own save and restore
-(`ui/success-screen.js:94`, `:192-195`). When it is given back is in step 4. An in-memory `finishing` flag
+(`ui/success-screen.js:94`, `:192-195`). When it is given back is in step 4. Movement is not the only
+way in: Finish also sets the guard `inventoryBlockedByForcedMinigame()` reads until step 4 ends, so
+inventory clicks (the phone, a case-file item) cannot open a minigame during step 3's awaits. Today that
+guard reads only the current minigame's `disableClose` (`systems/forced-minigame-guard.js`), and the board
+is closed by then, so it gains one check of a flag the runtime holds from the call until step 4 ends
+(`window.deductionRuntime?.blockingInventory`), which keeps the file import-free. An in-memory `finishing` flag
 makes a second call return at once while one is running. Returns unless `debriefPending`. In this order:
 
 1. For every suspect and every escalation step due: a suspect judged before close collects the actions
@@ -1238,7 +1338,10 @@ makes a second call return at once while one is running. Returns unless `debrief
    write contention, `objectives-manager.js:981-992`): `objectivesManager.completeTask(solvedTask)` when
    every outcome is right, else `objectivesManager.skipTask(solvedTask)` (`:654-685`; server `def
    skip_task!` in `app/models/break_escape/game.rb`, which drops that task's share under the `tasks`
-   scoring mode and lets its aim complete); then each collected `complete_task`, then `onClose`'s
+   scoring mode and lets its aim complete). Before the conclusion aim's tasks, the runtime runs
+   `onClose`'s `set_global` actions whose global a conclusion gate (`concludeRequires.globals` or such an
+   `unlockCondition`) names, then `await syncConfirmed()`, so the server sees them at the conclusion call.
+   Then each collected `complete_task`, then `onClose`'s
    `complete_task` entries, in order, **except that every task of the mission's conclusion aim is moved to
    the end** (in that same relative order), so the aim can only conclude on step 3's last call and the
    success screen (which opens after 1 s idle) cannot open while step 3 is still running with movement
@@ -1250,13 +1353,14 @@ makes a second call return at once while one is running. Returns unless `debrief
    recorded is not called again. **An unmet conclusion gate does not refuse the task**: `def
    complete_task!` in `game.rb` saves it as completed and returns `success: true` with a `warning`, and the
    client keeps it `completed` and shows "Not Yet…" (the `response.warning` branch of `completeTask`). So
-   when step 3 completed a task of the conclusion aim (the only case in which that warning can come), the
-   runtime then checks the conclusion aim's `concludeRequires` itself, the server's own test
-   (`unmet_conclude_requirements` in `game.rb`): every `tasksCompleted` id has status `completed` in
-   `taskIndex`, and every `globals` name is `true` in the synced globals, leaving out globals that
-   `onClose`'s non-task actions set (step 4 sets them). If any is unmet, the case counts as **unsettled**.
+   on every Finish run in which every task of the conclusion aim is settled (completed or skipped) and
+   `missionConcluded` has not been seen, the runtime checks the conclusion aim's `concludeRequires`
+   itself, the server's own test (`unmet_conclude_requirements` in `game.rb`): every `tasksCompleted` id
+   has status `completed` in `taskIndex`, and every `globals` name is `true` in the synced globals. If any
+   is unmet, the case counts as **unsettled**.
 4. Only if every task is settled and the gate check passed: `onClose`'s **non-task** actions last, through
-   `applyActions` (recorded as `close`). The ending global that rolls the credits sits here, so the credits'
+   `applyActions` (recorded as `close`), except the gate `set_global`s step 3 already ran, which do not run
+   again. The ending global that rolls the credits sits here, so the credits'
    `concludeMission()` (`music/scenario-music-events.js:159-180`) runs only after every task has been saved
    and after `mission_failed` has been written, and the closing lines are chosen from the final globals
    (`:137-141`). **Movement:** for a success-screen ending, it is given back synchronously right after step
@@ -1288,20 +1392,27 @@ false, else `'debrief'`). When the board in deduction mode is the current miniga
 misses it, and on a reload between the conclusion and Finish `main.js` replays it) and opens the board with
 that `view`. A flag stops a second launch while one is waiting or showing; it clears when the board closes,
 so a panel or debrief closed without finishing can be launched again by the case file or a reload.
+`openDebrief()` waits while `window.playerIsKnockedOut?.()` is true, and clears its flag when the launch
+does not leave a deduction board as `MinigameFramework.currentMinigame` (`startMinigame` returns null while
+the player is knocked out).
 
 **Tampering.** `tamper(facts)` picks the first fact that is neither held nor already faded, writes
-`deduction_faded_<fact>` = true, appends it to `state.faded`, toasts `text` (else `tamperText`, else
-"Someone has been at the evidence."), and returns the id; with nothing left to fade, logs and returns
-null. A tamper after close is recorded for the debrief and changes nothing else.
+`deduction_faded_<fact>` = true, appends it to `state.faded`, toasts `text` (else `tamperText`, else the
+§6.3 default, which names the cell from the faded fact's suspect and slot: "Someone has been at the
+evidence: <name>, <slot label>. It may turn up elsewhere."), shown with type `warning`, and returns the id.
+With nothing left to fade, it logs, toasts `emptyText` if the action gives one, and returns null. Each fact
+of the list already held when it runs is appended to `state.saved` (once), for the debrief. A tamper after close is recorded for the debrief and changes nothing else.
 
 **Favours.** `doFavour(s)` (async): returns unless `favours[s]` is configured and `s` is not in
-`state.favours`. Removes `favours[s].item` from the inventory if set, **at once** (`applyActions`
+`state.favours` (`doFavour` does not check verdicts). Removes `favours[s].item` from the inventory if set, **at once** (`applyActions`
 `remove_item` with `now: true`: the hand-over comes from the suspect's chat, so the busy wait would hold
 it until the chat closes and a reload in between would lose it), grants every clue fact of `s` through
-`grantFact` (one note per fact), appends `s` to `state.favours`, writes `deduction_favour_<s>` = true, and
-if `truth()[s]` is guilty runs `favours[s].onBackfire`. On install, for every suspect in `state.favours`
-whose `favours[s].item` is still held, the runtime removes it (the same call), so a removal lost to a
-reload or a `pagehide` flush is made good.
+`grantFact` (one note per fact, and one toast for the batch, as `grant_facts` shows it, with the place
+"<name>'s favour"), appends `s` to `state.favours`, writes `deduction_favour_<s>` = true, and
+if `truth()[s]` is guilty runs `favours[s].onBackfire`. For every suspect in `state.favours`, the runtime
+re-removes a favour item when the restore's `item_picked_up` for that id arrives (the §5.2 ignore-list
+hook), not on install, which runs before `processInitialInventoryItems()`; so a removal lost to a reload
+or a `pagehide` flush is made good. `remove_item`'s POST is sent with `keepalive: true`.
 
 **Pending foes.** `deferHostile(id, room)` adds `{ id, room }` to `state.pendingHostiles` and arms one
 listener on `room_entered:<room>`; `resolveHostile(id)` turns the foe hostile once its behaviour exists
@@ -1310,8 +1421,17 @@ the pending list; `reveal_hostiles` (§5.4) calls it.
 
 **The nudge.** On `intel_collected` for a clue fact (payload `{ id }`, `social-intel.js:202`), when
 `nudge` is not false and the case is open: for each suspect not in `state.nudged` that has no verdict and is
-now decidable, toast "You have enough to decide about <name>." (title "Case file"), and add it to
-`state.nudged`. A judged suspect (a KO'd one included) is never nudged, and nothing is nudged after close.
+now decidable, toast "You have enough to decide about <name>." then the line for `decidedBy` ("Check the
+counts." or "Check what's on their card.", §6.3), as one message (title "Case file"), and add it to
+`state.nudged`. When that suspect already has a guilty or clear mark, the message adds "Check your mark
+against the profiles." after the how line. With the nudge it writes `deduction_decidable_<s>` = true
+(only when `nudge` is on). A judged suspect (a KO'd one included) is never nudged, and nothing is nudged after close.
+
+**Announcements.** `deduction-runtime.js` owns two visually hidden nodes, a `role="status"` /
+`aria-live="polite"` one and a `role="alert"` one (the first-punch warning, "could not be closed yet"),
+created on install and removed on uninstall. Every runtime toast also calls `announce()`, which sets the
+matching node's text. Nudges are held while a chat is open and shown when it closes. The first-punch and
+close-failure toasts are type `warning` and stay 10 s.
 
 **Persistence.** Everything in `deduction_state` (§4.5) plus the ink-facing globals. The runtime reads
 `globalVariables` on install, so a reload resumes. Nothing in the runtime holds a timer except the
@@ -1403,7 +1523,13 @@ import, so the five tests that copy it are unaffected (`social-intel-board`, `-d
 ### 5.10 S16, S23 — Schema and lints
 
 `scripts/scenario-schema.json`: `social.deduction` (closed, as §4.1), `socialIntelFact.deduction`
-(closed), top-level `triggers` (array of closed objects). `scripts/minigame-data-schemas.json`: the
+(closed), top-level `triggers` (array of closed objects), and the per-object `triggerOnInteract[].type`
+enum in `scripts/scenario-schema.json` (the one ending `"lighting_dip", "grant_fact"`) gains `hint` (with
+`title` and `message` string properties), `grant_facts` (§5.4) and the seven §5.4 types (`verdict`,
+`verdict_close`, `deduction_tamper`, `remove_item`, `fail_mission`, `reveal_hostiles`, `lose_ally`).
+`confirm_action.onConfirm` items are unconstrained objects in the schema and need no change. P10-C1 owns
+it. The top-level `triggers[].actions[].type` is an open string in the schema; DL16 owns the list of
+known types. `scripts/minigame-data-schemas.json`: the
 `case-file` additions (§4.7). `scripts/validate_scenario.rb`: `triggers` joins `known_top_level`
 (the `known_top_level = %w[` array), or every scenario with triggers warns that the key is ignored; and the
 `--strict-social` exit test (the `if options[:strict_social] && json_data.key?('social')` line) also fails a scenario that has `triggers` and a `TRIGGERS` error. Lints in §8.
@@ -1441,30 +1567,43 @@ the KO always counts as a verdict (§5.5): DL11 makes it an error when attacks a
 - The overlay follows `03`'s wiring rules unchanged (it is the same scene): `requiresKeyboardInput`,
   its own Close and Escape, Close is a normal exit, never `minigame_failed`. On the debrief view, Close
   and Escape act as Finish. On the retry panel, Close and Escape act as "See the debrief"
-  (`runtime.declineRetry()`, §5.5 "Retry").
+  (`runtime.declineRetry()`, §5.5 "Retry"). On the retry and debrief views the board overrides
+  `requestClose()` and its Close button to call the runtime (Close and Esc on the retry panel decline the
+  retry, R5-6) instead of `close()`; Finish then calls `close()` itself, so the overlay does not close and
+  reopen.
 
 ### 6.2 The model (pure)
 
-New `minigames/intel-board/deduction-model.js` (imports only `systems/social-deduction.js`):
+New `minigames/intel-board/deduction-model.js` (imports only `systems/social-deduction.js`,
+`systems/deduction-strings.js` and, for the debrief notes, `utils/global-condition.js`
+(`evaluateGlobalCondition`, pure, no imports)). `buildDeductionModel` and `buildDebriefModel` read `deduction.voice` and
+take their strings from `deductionStrings(voice)`:
 
 ```js
 export function buildDeductionModel(social, globals, { allowSubmit = false } = {})
 // -> {
 //   title, nouns: { guilty, clear },
-//   profiles: [{ id, label, text }],
-//   counts:   [{ clue, line, count, found }],   // one per clue, in clues order
+//   progress: { found, total },                  // clue facts held, of every cell in the case
+//   profiles: [{ id, label, text, parts: { join, items } | null }],
+//   counts:   [{ clue, slot, line, count, found, foundOn: [names] }],   // one per clue, grouped by slot, in clues order within it
+//   remainingBySlot: [{ slot, hidden, hiddenBy: [{ name, n }], unseen: [{ label, n }] }],
+//                                                // from public cells and counts only; a slot with nothing hidden is left out
 //   stakes:   { line, briefText },              // §6.3
 //   suspects: [{ id, name, role,
 //                slots: [{ id, label, cells: [{ fact, state: 'shown'|'hidden'|'destroyed',
-//                                              clue, label, marked }] }],
+//                                              clue, label, marked, recovered, isNew }] }],
+//                   // isNew: shown and not in deduction_state.seen (granted since the board last closed)
 //                   // a hidden or destroyed cell has clue, label and marked all null, and the view puts
 //                   // no clue or fact id in its DOM (no data-clue, no data-fact): only "<slot label>:
 //                   // Hidden" or "Evidence destroyed"; fact ids can name the answer (b_lindqvist_device)
+//                found, total, destroyed,               // this suspect's shown, all and destroyed cells
 //                mark: 'undecided'|'guilty'|'clear', profile, because: [factIds], locked,
 //                verdict: { value, kind } | null,
 //                outcome: 'right_guilty'|... | null,   // only when revealed (reveal now, or closed)
-//                decidable, nudge }],                   // nudge = decidable && model.nudgeOn && !verdict && !closed
+//                decidable, nudge, nudgeHow }],         // nudge = decidable && model.nudgeOn && !verdict && !closed; nudgeHow = decidedBy when nudge, else null
 //   nudgeOn, closed, canSubmit, submitBlockedBy: [suspect names] | null,
+//   footerLine,                                  // closeRoute until every suspect has a verdict, then closeHint; null when closed
+//   clearsByDefault,                             // true when `allowed` has neither `trust` nor `final` (no kind records a clear; §6.3)
 //   faded: [factIds], recovered: [factIds], favours: [suspectIds]
 // }
 export function buildDebriefModel(social, globals)
@@ -1478,14 +1617,18 @@ export function buildDebriefModel(social, globals)
 //                why: [{ profileLabel, met, clause, labels }],   // every card: the matched clause (guilty) or each profile's
 //                                                          // failing clause (clear), with the clue labels behind it; for a
 //                                                          // threshold, the marked count and labels
-//                notRuledOut: { label, place } | null,     // innocent, "Not named", still undetermined at close
+//                notRuledOut: { label, place, closed } | null,   // innocent, "Not named", still undetermined at close
 //                alreadyHeld: { labels, clause } | null,   // wrong, or missed and never named, when the held clues already decided it
-//                settling: [{ label, place }] | null,      // otherwise, for a wrong or missed call: smallest settling set, each with its route's place
+//                settling: [{ label, place, closed }] | null,   // otherwise, for a wrong or missed call: smallest settling set, each with its route's place;
+//                                                          // also for an early right call (same settlingFacts call, on the held set at the verdict)
 //                early: bool,                              // a verdict given while undetermined (decidedAtVerdict false), right or wrong
+//                notes: [string],                          // debrief.notes whose suspect is this card and whose condition holds
+//                otherProfile: { truthLabel, markedLabel } | null,   // right_guilty with marks.<s>.profile set and not truth.profile
 //                byCount: [{ label, how }] }],             // how: 'count' | 'pigeonhole' | 'markedForced' (§5.1), picks the §6.3 line
-//      favoursBackfired: [{ name, line }], destroyed: [{ label, recovered, afterClose }],
+//      favoursBackfired: [{ name, line }], destroyed: [{ label, recovered, afterClose }], saved: [{ label, place }],
 //      closingLine, noBlame: 'allRight'|'missed'|'misread'|'notActed'|'early',
-//      summary: { right, total, early, reasonedClears } }  // early: right calls made before the evidence decided them
+//      summary: { right, total, early, reasonedClears,     // early: right calls made before the evidence decided them
+//                 rightGuilty, guiltyTotal, wrongGuilty, rightClear } }   // from grade().counts
 export function buildRetryModel(social, globals)   // -> { offered: bool } : names nothing (§5.5 Retry)
 ```
 
@@ -1493,61 +1636,91 @@ It reads `social.deduction`, `social.intelFacts`, `social.people`, the `se_intel
 `deduction_state`; it calls the evaluator (§5.1) for `decidable`, the truth, `settlingFacts`,
 `brokenClause` (each clear card's `why`), `matchedClause` (each guilty card's `why`, with the counted
 marked cells for a threshold), `heldDeciders` (`alreadyHeld.labels`) and `byCount` (on the held set at the
-verdict, or at close for kind `none`; never the truth). A route's place is the authored `place` of its
-first route that is not closed by a faded global, else of its first route (§4.2: an `npc` route without
+verdict, or at close for kind `none`; never the truth; scoped to the deciding clause's leaves, §5.1). A route is closed when its `closedBy` global is true at close. A fact's place is
+the authored `place` of its first open route, else of its first route, with `closed: true` on that
+settling entry (§4.2: an `npc` route without
 one prints the NPC's `social.people` name; a favour, "<name>'s favour"); the model never prints a raw id.
 `why` comes from the evaluator run with every fact held (the truth), so it explains right calls as well as
 wrong ones, worded by §5.1's clause rules: "Courier: no, carries a ward charm"; "Devotee: 3 marked clues
 (sigil ring, burner SIM, wants a promotion)". `early` is `decidedAtVerdict === false` for any verdict that
 is not kind `none`. Cell order within a slot is fact order in
 `intelFacts`, so the board is stable between opens. A cell is `destroyed` when its fact is faded and not
-held; `recovered` lists faded facts that are now held.
+held; `recovered` lists faded facts that are now held. A shown cell's `recovered` flag comes from
+that `recovered` list (`deduction_state` has no list of its own; the faded list and the held set give
+it): such a cell reads "<label> (recovered)" and says so in its aria text.
 
 ### 6.3 Fixed strings (engine-owned)
 
-| Key | Text |
-|---|---|
+The rows live in `systems/deduction-strings.js`, which the board model and the runtime both read. That
+module is pure, with no imports: `export function deductionStrings(voice)` returns this table as an
+object, with the Pulp column applied when `voice === 'pulp'` (`deduction.voice`, §4.1). An empty or
+missing Pulp cell means the plain text. Authored fields always win over both.
+
+| Key | Text | Pulp (`voice: "pulp"`) |
+|---|---|---|
 | Profile card heading | "What to look for" |
-| Count line (default) | "<Clue label, first letter capitalised>: <n> in this case, <found> found" (authored `countLine` replaces the first half) |
-| Stakes line, `strict` | "Stakes: one wrong or missed call loses the mission." |
-| Stakes line, `costly` | "Stakes: a wrong call will change what you can do next." |
+| Above the profiles | "Any one profile is enough. A profile may fit nobody, or more than one." |
+| Profile `parts`, `any` | "<Label> if either is true:" ("<Label> if any of these is true:" above two), then one item per line, joined by a bold "or" |
+| Profile `parts`, `all` | a checklist, one item per line, joined by a bold "and" |
+| Counts sub-heading | "Clues in this case (guilty or not)" (the count lines below it are grouped by slot) |
+| Counts summary (below 700 px) | "Clue counts (<n>)" |
+| What is left, per slot (inside the counts block; hidden once nothing in the slot is hidden) | "Still hidden here: <n> clues, <whose>. Not yet found: <clues>." e.g. "Still hidden here: 2 clues, both Dr Okafor's. Not yet found: brass key, 1 notebook." |
+| Count line (default) | "<Label>: <n> in this case. Found: <names>." (the suspects it was found on), "Found: none yet." when none is found, and " (all found)" after the names once every copy is found (authored `countLine` replaces the first part, "<Label>: <n> in this case.") |
+| Stakes line, `strict` | "Stakes: one wrong or missed call loses the mission." | "Stakes: one wrong or missed call loses the mission. There is no second chance." (with `stakes.retry: 1`, the plain line) |
+| Stakes line, `costly` | "Stakes: a wrong call will change what you can do next." | "Stakes: a wrong call will change what you can do next. They notice who is asking." |
 | Stakes line, `light` | "Stakes: a wrong call changes how the story ends." |
 | Stakes line suffix when `stakes.scoreLine` is true | " A wrong or missed call also costs part of your score." (the client does not read `mission.json`, so the author states it; DL9 allows `scoreLine` only when `solvedTask` is set and the mission's scoring mode is `tasks`, §3.9) |
-| Stakes line, `hidden` | "The stakes are not known." |
+| Stakes line, `hidden` | "The stakes are not known." | "The stakes are not known. Choose as if they matter." |
 | Cell, hidden | "Hidden" |
 | Cell, destroyed | "Evidence destroyed" |
-| Marked | "✦ marked" (symbol plus word) |
+| Cell, recovered | "<label> (recovered)"; aria text "<slot label>: <label>, recovered" |
+| Cell, new | "New" (a tag on a cell granted since the board last closed) |
+| Board progress (header) | "<n> of <total> clues found" |
+| Card progress | "<n> of <m> clues found." plus " <k> evidence destroyed." when k > 0 |
+| Batch grant toast (`grant_facts`, a favour) | title "Case file", "Noted: <n> clues from <place>" |
+| Marked | "✦ marked" (symbol plus word; `deduction.markedLabel` replaces the word) |
 | Mark buttons | "Undecided", `<guilty noun>`, `<clear noun>` |
 | Profile picker | "Which profile?" |
 | Clear reasons | "What rules them out? (optional)" |
-| Locked mark | "Verdict given" |
+| Clearing by default (beside the marks, when no kind in `allowed` records a clear) | "Leaving someone unnamed clears them." |
+| Locked mark (text in place of the mark control) | "Verdict given: <noun> (<kind word>)", e.g. "Verdict given: Cultist (knocked out)" |
 | Nudge | "You have enough to decide about <name>." |
+| Nudge, how (the next line, same in both voices) | `count`: "Check the counts."; `card`: "Check what's on their card." |
+| Nudge, marked suspect (after the how line) | "Check your mark against the profiles." |
+| Final call panel, a mark still Undecided | "Anyone still Undecided will be cleared." then the stakes line again |
+| Final call panel, nudge on | "You are guessing on: <names>." (marked suspects the held clues do not decide) or "Every mark rests on the evidence." |
 | First punch on a suspect | "Knocking out a suspect counts as accusing them." |
+| Profile card, attacks on and `ko` allowed (from the start) | "Knocking out a suspect counts as accusing them. It can't be undone." |
 | First-punch suffix in a strict case | " A wrong one loses the mission." |
-| Mark confirmations (live region) | "<name> marked <guilty noun> (<profile label>).", "<name> marked <clear noun>.", "<name> marked Undecided." |
+| Mark confirmations (live region) | "Marked <name>: <guilty noun> (<profile label>).", "Marked <name>: <clear noun>.", "Marked <name>: Undecided." |
 | Reveal-now outcome toasts | "Right call: <name> matched the <profile label> profile." / "Wrong call: <name> matched no profile." / "Missed: <name> matched the <profile label> profile." / "Rightly cleared: <name> matched no profile." / a right call made while undetermined: "Right call, but the evidence hadn't decided it yet." |
-| Final call confirm | "This closes the case." |
-| Truth line (debrief) | "<guilty noun>: matched the <profile label> profile" / "<clear noun>: matched no profile" |
-| Early call (debrief card) | "You named them before the evidence decided it." |
-| Destroyed evidence (debrief) | "Evidence destroyed: <label>, from <place>." then "Recovered later." or "Not recovered."; "(after the call)" when it was destroyed after close |
-| Favour, no `debriefLine` | "You helped <name> before checking them." |
-| Runtime toasts | tamper default "Someone has been at the evidence."; a stopped Finish "The case file could not be closed yet. Open the case file to try again."; loading "Opening the case file…" |
-| Summary | "<right> of <total> calls right; <early> of them before the evidence decided it; <n> suspects cleared with a reason" (the middle clause only when `early` > 0) |
-| Final call | "Make the call", "Confirm the call", "Go back", "Mark every suspect first: <names> still undecided." |
-| Verdict line | "Verdict: <noun> (<kind word>)", kind words: accused, reported, knocked out, acted on, final call; kind `none`: "Not named" |
-| Outcome words | "Right call", "Wrong call", "Missed", "Rightly cleared" (each with the tick or cross icon); for kind `none` on an innocent: "Not named (innocent)" |
-| Debrief | "How the case stood", "What you held", "Why", "Your note", "You already held what settled it", "The clue that would have settled it", "You had not ruled them out", "from", "View the debrief", "Finish" |
-| Retry panel | "Some of your calls were not right. Try again once, or see the debrief.", "Try again", "See the debrief" |
-| Why lines | "<Profile>: yes, <clause>" / "<Profile>: no, <clause>"; threshold "<n> marked clues (<labels>)" |
-| Count elimination (`how: 'count'`) | count 1: "The only <label> was found on someone else, so <name> could not have it."; count 2: "Both <label> clues were found elsewhere, so <name> could not have one."; count above two: "All <n> <label> clues were found elsewhere, so <name> could not have one." |
-| Pigeonhole (`how: 'pigeonhole'`) | "Only <name> had room left for the <label>." |
+| Verdict recorded (`reveal: "end"`) | "Verdict recorded: <name>, <kind word>. You'll see how it stood when the case closes." | "Verdict recorded: <name>, <kind word>. You'll learn whether you were right when the case closes." |
+| Board intro (until the first mark) | "Check each suspect against what to look for. Your marks are notes; nothing counts until you act on it." |
+| Final call confirm | "This closes the case." | "This closes the case. Once it's done, it stays done." |
+| Truth line (debrief) | "The evidence says: <guilty noun> (matched the <profile label> profile)" / "The evidence says: <clear noun> (matched no profile)"; when the case has one profile, "The evidence says: <guilty noun> (matched the profile)" |
+| Early call (debrief card) | wrong, guilty: "You named them before the evidence decided it."; wrong, clear: "You cleared them before the evidence decided it."; right: "Right call, made before the evidence settled it. <label>, from <place>, would have." |
+| Closed route (after a place with `closed: true` whose global is not a `deduction_faded_` one) | "That route had closed after a wrong call." |
+| Destroyed evidence (debrief) | "Evidence destroyed: <label>, from <place>." then "Recovered later." or "Not recovered."; "(after the call)" when it was destroyed after close; for each fact in `state.saved`, "Saved before the stop: <label>, from <place>." |
+| Favour, no `debriefLine` | "You helped <name> before checking them." | "You did <name> a favour before you knew what they were." |
+| Runtime toast, tamper default (type `warning`) | "Someone has been at the evidence: <name>, <slot label>. It may turn up elsewhere." (the faded fact's suspect and slot) | "Someone has been at the evidence, and a clue is gone: <name>, <slot label>. The case file shows what was lost." |
+| Runtime toasts | a stopped Finish "The case file could not be closed yet. Open the case file to try again."; loading "Opening the case file…" |
+| Summary | "Named and matched a profile: <right_guilty> of <guilty total>. Named but matched no profile: <wrong_guilty>. Rightly left alone: <right_clear>, <reasoned> with a reason." plus "; <early> named before the evidence decided it" only when `early` > 0 |
+| Right call, other profile (debrief card) | "Right call, but they matched <truth profile label>, not <marked profile label>." (a `right_guilty` card whose marked profile differs from the truth's) |
+| Final call | "Make the call", "Confirm the call", "Go back", "Mark every suspect first. Still undecided: <names>." |
+| Verdict line | "Verdict: <noun> (<kind word>)", kind words: accused, reported, knocked out, acted on, vouched for, final call; kind `none`: "Not named" |
+| Outcome words | "Right call", "Wrong call", "Missed: guilty but not named", "Rightly cleared" (each with the tick or cross icon); for kind `none` on an innocent: "Not named (innocent)" |
+| Debrief | "How the case stood", "What you held", "Why", "Your note", "You already held what settled it", "The clue that would have settled it", "This would have ruled them out: <label>, from <place>.", "from", "View the debrief", "Finish" |
+| Retry panel | "Some of your calls were not right. Try again once, or see the debrief.", "Try again", "See the debrief"; small print "Seeing the debrief ends your chance to try again." | body: "Something in your reckoning is wrong. You can try once more, or see the debrief." |
+| Why lines | "<Profile>: yes, <clause>" / "<Profile>: no, <clause>"; threshold "<k> marked clues (<labels>)", "1 marked clue (<label>)", "no marked clues", and when it fails ", and no room for <n−k> more" |
+| Count elimination (`how: 'count'`) | count 1: "<Label>: the only one was found on someone else, so <name> could not have it."; count 2: "<Label>: both were found elsewhere, so <name> could not have one."; count above two: "<Label>: all <n> were found elsewhere, so <name> could not have one." |
+| Pigeonhole (`how: 'pigeonhole'`) | "<Label>: only <name> had room left for it." |
 | Forced marked cells (`how: 'markedForced'`) | "Only <name> had room left for the remaining marked clues." |
 | No-blame line, acted early | "Some calls came before the evidence had decided them. Checking the board until a suspect is settled is the habit that avoids a guess." |
-| No-blame line, a missed clue | "A missed clue is not a mistake in judgement. The debrief shows where the evidence was." |
-| No-blame line, the rule misread | "The evidence was there. Checking each profile line against it is the habit that catches this." |
-| No-blame line, all right | "Every call matched the evidence." |
-| No-blame line, worked out but not named | "You had worked it out. Naming them is the step that turns evidence into a result." |
-| Close hint (default) | "Everyone has a verdict. Close the case when you're ready." |
+| No-blame line, a missed clue | "A missed clue is not a mistake in judgement. The debrief shows where the evidence was." | "A clue you never found is not a failure of judgement. The debrief shows where it was hidden." |
+| No-blame line, the rule misread | "The evidence was there. Checking each profile line against it is the habit that catches this." | "The signs were in your hands. Hold each line of the profile against them, one at a time. That habit is what keeps them out." |
+| No-blame line, all right | "Every call matched the evidence." | "Every call matched the evidence. Nothing slipped past you." |
+| No-blame line, worked out but not named | "You had worked it out. Naming them is the step that turns evidence into a result." | "You saw them for what they were. Naming them is what stops them." |
+| Close hint (default) | "Everyone has a verdict. Close the case when you're ready." | "Every suspect has a verdict. Close the case when you're ready." |
 
 The no-blame line is chosen by case, in this order: "rule misread" when any wrong call had
 `decidedAtVerdict` true; "worked out but not named" when a missed guilty was never named but was already
@@ -1564,23 +1737,37 @@ New `minigames/intel-board/deduction-view.js`: `renderDeductionBoard(root, model
 `renderDebrief(root, debriefModel, handlers)`, each returning `{ destroy, getState }`, every string
 through `textContent` (the `h()` helper pattern, `intel-board-minigame.js:55`). Layout, top to bottom:
 
-1. Header: title, Close.
-2. Live region (`role="status"`, `aria-live="polite"`) for nudges, mark confirmations, verdict outcomes.
-3. Profile card: heading, one entry per profile (label as a heading, text below), the counts list with
-   "found", the stakes line and `briefText`.
-4. Suspect cards, one per suspect, in `suspects` order. Card heading: name, role. Then one row per slot:
-   slot label, then its cells. Under the slots: the mark control (three toggle buttons with
-   `aria-pressed`), the profile picker after a guilty mark, the optional reasons picker (held clue labels
-   of that suspect) after a clear mark, the nudge line, and the verdict and outcome lines when present.
-   After a verdict the mark control is disabled with "Verdict given" as its label.
-5. Footer: "Make the call" when `canSubmit`; "View the debrief" once closed, and only when no retry is
+1. Header: title, the board progress line ("<n> of <total> clues found"), Close; below it the board
+   intro line (§6.3) until the player's first mark.
+2. Live region (`role="status"`, `aria-live="polite"`) for nudges, mark confirmations, verdict outcomes:
+   one node for the overlay's life, outside the re-rendered subtree, cleared then set for each message.
+3. Profile card: heading, the fixed line above the profiles, one entry per profile (label as a heading,
+   then its `parts` as §6.3 renders them, else its `text`), the counts list under
+   its own sub-heading "Clues in this case (guilty or not)", grouped by slot, each slot followed by its
+   "Still hidden here" line while it has hidden cells, then the stakes line and `briefText`. Below
+   700 px the counts block sits in a `<details>` that starts closed, summary "Clue counts (<n>)"; on wider
+   screens it starts open.
+4. Suspect cards, one per suspect, in `suspects` order. Card heading: name, role, the card progress line.
+   Then one row per slot: slot label, then its cells (a "New" tag on each `isNew` cell). Closing the board
+   calls `runtime.markSeen()`. Under the slots: the mark control (a radio group of three with a roving
+   tabindex), the profile picker after a guilty mark (skipped when the case has one profile; a radio
+   group too; it repeats the chosen profile's
+   `parts` unticked), the optional reasons picker (native checkboxes in a fieldset, the held clue labels
+   of that suspect) after a clear mark, the nudge line and its how line, and the verdict and outcome lines when present.
+   After a verdict the mark control becomes text: "Verdict given: Cultist (knocked out)" (§6.3).
+5. Footer: the authored `closeRoute` while the case is open and some suspect has no verdict, then
+   `closeHint`; "Make the call" when `canSubmit`; "View the debrief" once closed, and only when no retry is
    still due (`debriefPending` false, or `retryUsed` true); while one is due the board opens on the retry
    panel instead (§5.5 "Runtime and board").
 
 **Accessibility** (`designs/03_intel_board.md` "Accessibility and small screens"): a list of cards, one
-column below about 700 px, nothing dragged, every control a button reachable by Tab with Enter and Space,
-44 px targets, ✓/✗ always with words, marked clues as symbol plus word, Source Sans 3. Each cell is a
-list item whose text reads its state in full ("What they carry: brass Tesseract key, marked").
+column below about 700 px, nothing dragged, every control reachable by keyboard (buttons by Tab with Enter
+and Space; radio groups by Tab, then the arrow keys), 44 px targets, ✓/✗ always with words, marked clues as symbol plus word, Source Sans 3. Each cell is a
+list item whose text reads its state in full ("What they carry: brass Tesseract key, marked"). The
+runtime's toasts reach screen readers through its own live nodes (§5.5 "Announcements"); with attacks on
+and `ko` allowed, the profile card carries the §6.3 knockout line from the start. Every control carries a
+stable `data-suspect` and `data-control`, and the view restores focus to the same control after every
+rebuild.
 
 ### 6.5 Marks and persistence
 
@@ -1596,7 +1783,10 @@ Visible only when the board was opened with `allowSubmit`, `verdicts.when` is `f
 `allowed`, the case is open, and `finalCall.requireGlobal` (if set) is true. "Make the call" checks
 `requiresAll` (every suspect marked guilty or clear; a KO'd suspect counts as marked); if not met, the
 live region names the undecided. Otherwise a confirm panel lists each suspect with their mark and profile,
-says "This closes the case.", and offers "Confirm the call" and "Go back". Confirm calls
+says "This closes the case.", adds "Anyone still Undecided will be cleared." and the stakes line again
+whenever a mark is Undecided, and, only with the nudge on, "You are guessing on: <names>." or "Every mark
+rests on the evidence." (§6.3). The panel is a modal dialog that opens with focus on "Go back", and Esc
+is "Go back". It offers "Confirm the call" and "Go back". Confirm calls
 `runtime.submitFinal()`, which checks the same conditions again itself (`final` allowed, case open,
 `requireGlobal`, `requiresAll`) and returns `{ ok: false, reason }` without writing when one fails (a
 console or bridge call cannot skip them); otherwise `reconcileKOs()`, a `final` verdict for each suspect
@@ -1607,20 +1797,28 @@ call.
 ### 6.7 The debrief view
 
 Inside the same overlay (`view: 'debrief'`). Heading, then one card per suspect with the lines of §3.10:
-name; truth ("Insider: matched the Insider profile" or "Not an insider: matched no profile"); the verdict
-line; "Your note" with the player's mark, profile and reasons; the outcome words; "What you held"; "Why"
+name; truth ("The evidence says: Insider (matched the profile)", B having one profile, or "The evidence
+says: Not an insider (matched no profile)"); the verdict
+line; "Your note" with the player's mark, profile and reasons; the outcome words (on a right call whose
+marked profile is not the one that matched, "Right call, but they matched <truth profile label>, not
+<marked profile label>."); any authored notes; "What you held"; "Why"
 with the `why` lines (on every card, right calls included); then, for a wrong or missed call, either "You
 already held what settled it: <labels>. <clause>" or "The clue that would have settled it: <label>, from
-<place>"; for an innocent not named and not ruled out, "You had not ruled them out: <label>, from <place>,
-did"; for an `early` card, "You named them before the evidence decided it."; any count line (by `how`,
+<place>"; for an innocent not named and not ruled out, "This would have ruled them out: <label>, from
+<place>."; for an `early` card, the early-call line of §6.3 ("You named them before the evidence decided
+it.", its clear form, or the right-call form); any count line (by `how`,
 §6.3). Then: favours done for a guilty suspect (the favour's `debriefLine`, else the §6.3 fallback),
 evidence destroyed (the §6.3 lines), the authored `closingLine`, the chosen no-blame line, the summary
-(§6.3: "3 of 4 calls right; 1 of them before the evidence decided it; 2 suspects cleared with a reason"),
+(§6.3: "Named and matched a profile: 1 of 1. Named but matched no profile: 1. Rightly left alone: 2, 2 with
+a reason; 1 named before the evidence decided it"),
 and "Finish". Every line comes from §6.3 or authored data. The opt-in retry is not on the debrief: it is the
 panel before it (§5.5 "Retry"), so the debrief never shows the truth to a player who can still change the
 call. The panel's "See the debrief" records the decline (`retryUsed`) and waits for the sync before the
 debrief renders, so a reload after any answer has been shown never offers the retry again. Finish
 (or Close, or Escape) closes the overlay, then calls `runtime.finishDebrief()` without awaiting it (§5.5 "Endings").
+
+The debrief keeps §6.4's keyboard rules: stable `data-suspect` / `data-control` on its controls and focus
+restored after a rebuild.
 
 Pattern taken from `minigames/episode-runner/debrief-view.js` (one card per item, plain text, a no-blame
 line); that file is triage-specific and is not reused directly.
@@ -1635,15 +1833,17 @@ line); that file is triage-specific and is not reused directly.
   "stakesLine": "...", "briefText": "...",
   "suspects": [ { "id": "ded_b_okoro", "cells": [ { "fact": "b_okoro_access", "state": "shown", "marked": false } ],
                   "mark": "guilty", "profile": "insider", "locked": false, "verdict": null, "outcome": null,
-                  "decidable": true, "nudge": true } ],
+                  "decidable": true, "nudge": true, "nudgeHow": "card" } ],   // nudgeHow "count", "card" or null
   "live": "...",
   "debrief": null }
 ```
 
 On the debrief view, `debrief` holds `{ cards: [{ id, outcome, verdictKind, why, notRuledOut, alreadyHeld,
-settling, early, byCount }], noBlame: "allRight"|"missed"|"misread"|"notActed"|"early", summary }`. On the retry panel,
+settling, early, byCount, notes }], noBlame: "allRight"|"missed"|"misread"|"notActed"|"early", summary }`
+(`verdictKind` may be `"trust"`). On the retry panel,
 `view` is `"retry"` and `debrief` is null. `decidable` is in the test
-state for bridge checks only; the screen shows it only through the nudge.
+state for bridge checks only; the screen shows it only through the nudge. Bridges find controls by their
+`data-suspect` and `data-control` attributes (§6.4), and a locked mark reads "Verdict given: …" as text.
 
 ## 7. Ink and authoring conventions
 
@@ -1653,12 +1853,18 @@ folder, which the packet owns, so the `.json` the NPC `storyPath` loads sits bes
 files are committed, as for the other test fixtures (`scenarios/test_social_slice/ink/` tracks both). All
 rules in `README_ink_best_practices.md` and `README_scenario_design.md` apply.
 
+The samples show tags and structure only. When copying them, follow `README_ink_best_practices.md`:
+prefix person-NPC lines with the NPC's `displayName` exactly, and give every fixture NPC a `displayName`
+equal to its `social.people` name; a phone ink has no self-prefix, and narration in it uses `Narrator:`
+(every other unprefixed line is the contact speaking); choices are what the player says; leave with a
+spoken line plus `#exit_conversation` back to the hub, never `-> END`.
+
 ### 7.1 Granting clues from ink
 
 ```ink
 VAR se_intel_b_okoro_grievance = false
 === ask_unhappy ===
-Tomás: Okoro lost her appeal on the shift pattern. She took it badly. #grant_fact:b_okoro_grievance
+Tomás Rivera: Okoro lost her appeal on the shift pattern. She took it badly. #grant_fact:b_okoro_grievance
 -> topics
 ```
 
@@ -1669,6 +1875,12 @@ Tomás: Okoro lost her appeal on the shift pattern. She took it badly. #grant_fa
   tag (§5.3 timing note).
 - A suspect's own word never clears them. A suspect may show what the player can see ("show me your
   kit"); alibis and denials come from someone else or from a record.
+- A suspect's small-talk topic (every suspect has one, so talking is not itself a tell) gives character,
+  not a lead. It must not point at an event, object or person that is not on the board; if it does, the
+  case resolves it somewhere (a fact, an object's text or the debrief).
+- Guilty and clear suspects get the same register. Every suspect has one odd or guarded line and one warm
+  one, and no line hints at tonight's plan, a payer or a threat. The board decides guilt; the voice never
+  does. P10-K-* reviewers read each suspect's ink with the truth hidden and check they cannot tell.
 
 ### 7.2 Witness topics and influence costs
 
@@ -1676,25 +1888,28 @@ A witness hub offers at least three topics (one per choice, and per group where 
 order everywhere: the answer first, then the cost.** The first question is free; each later one costs 15
 influence after its answer. With the default thresholds (`wary` −20, `refuses` −40, `reports` −60) the
 third question's cost takes the witness to −30, past `wary`, so the fourth question gets the vague answer
-unless the player first wins influence back. The kind word works once (`*` choice), so pushing stays a
-real choice. Pattern:
+unless the player first wins influence back. The kind word works once (a guard global, declared so it
+persists), so pushing stays a real choice. `ded_<case>_<w>_questions` and `ded_<case>_<w>_kind_given` are
+declared in `globalVariables` so they persist (DL13). Pattern:
 
 ```ink
 EXTERNAL se_influence(delta, reason)
 VAR ded_b_tomas_influence = 0
 VAR ded_b_tomas_questions = 0
 VAR ded_b_tomas_wary = false
+VAR ded_b_tomas_kind_given = false
 === topics ===
-+ {not se_intel_b_okoro_grievance} [Ask who has been unhappy on nights] -> ask_unhappy
-* [Thank him for the coffee] -> kind_word
-+ [Leave it there] -> END
++ {not se_intel_b_okoro_grievance} [Who's been unhappy on nights?] -> ask_unhappy
++ {not ded_b_tomas_kind_given} [Thanks for the coffee, Tomás. It's a long night.] -> kind_word
++ [I'll let you get on.] -> leave
 
 === ask_unhappy ===
 { ded_b_tomas_wary:
-    Tomás: I'd rather not talk about people behind their backs.
+    Narrator: He's stopped meeting your eye.
+    Tomás Rivera: I'd rather not talk about people behind their backs. Ask me nicely and I might remember more.
     -> topics
 }
-Tomás: Okoro lost her appeal on the shift pattern. She took it badly. #grant_fact:b_okoro_grievance
+Tomás Rivera: Okoro lost her appeal on the shift pattern. She took it badly. #grant_fact:b_okoro_grievance
 -> charge
 
 === charge ===
@@ -1702,23 +1917,36 @@ Tomás: Okoro lost her appeal on the shift pattern. She took it badly. #grant_fa
 { ded_b_tomas_questions > 1:
     ~ se_influence(-15, "pressed")
 }
+{ ded_b_tomas_wary:
+    Narrator: Tomás glances at the clock.
+}
 -> topics
 
 === kind_word ===
+~ ded_b_tomas_kind_given = true
 ~ se_influence(20, "kind_word")
-Tomás: Thanks. It's a long night.
+Tomás Rivera: Thanks. It's a long night.
+-> topics
+
+=== leave ===
+Tomás Rivera: Mind how you go. #exit_conversation
 -> topics
 
 === function se_influence(delta, reason) ===
 ~ return 0
 ```
 
-The influence change goes through the external `se_influence` with its ink fallback (`00` §12 S1,
+The influence change goes through the external `se_influence` (bound in every social chat by P10-I1; in
+a pretext call by `attachPretext`) with its ink fallback (`00` §12 S1,
 validator fallback lint), not a tag inside a conditional, because a tag must sit on a line of content. A
 vague answer charges nothing.
 
 - `wary` gives a vaguer answer that grants nothing and leaves the topic open, which holds only for a `+`
-  choice. A **progress topic** (one that grants no clue but sets a global something else needs, such as
+  choice. A witness's wary reply hints that kindness helps, and is the same line every time. The `charge`
+  step that takes a witness past `wary` gives a tell in the witness's voice or a `Narrator:` line ("Tomás
+  glances at the clock."; "Ask me much more and I'll start to wonder why."), and the wary branch opens with
+  a matching line ("Narrator: He's stopped meeting your eye.") before the vague answer. No meter.
+  A **progress topic** (one that grants no clue but sets a global something else needs, such as
   B's alarm topic) has no wary branch and is a `+ {not <global>}` choice, so wariness can never use it up;
   say in the fixture whether it is charged. `refuses` ends the
   conversation (the threshold's `endConversation` effect). `reports` sets a band flag, and a trigger on
@@ -1733,16 +1961,18 @@ vague answer charges nothing.
 
 ```ink
 === marsh_hub ===
-+ {se_intel_a_marsh_wants_promotion and not deduction_favour_ded_a_marsh and not marsh_asked} [Ask what she needs]
++ {se_intel_a_marsh_sigil_ring and not deduction_favour_ded_a_marsh and not marsh_asked} [Ask what she needs]
     ~ marsh_asked = true
-    Marsh: My phone is in the cloakroom and the attendant has gone home. Could you fetch it?
+    Imogen Marsh: My phone is in the cloakroom and the attendant has gone home. Could you fetch it?
     -> marsh_hub
 + {marsh_asked and not deduction_favour_ded_a_marsh and has_marsh_phone} [Give Marsh her phone]
     You hand the phone over. #deduction_favour
     -> favour_done
 ```
 
-- The ask is gated on the suspect's first "want" clue, as design 12 says.
+- The ask is gated on the fact in `favours.<s>.unlockFact`, which may be any cell of that suspect (this
+  amends design 12's first-"want" rule, §13.6). Pick a clue the player has to work for, so the source that
+  grants it matters.
 - The favour is a real errand. The item sits somewhere the player has to reach (fixture A: the locked
   cloakroom), and the hand-over choice is gated on holding it (`has_marsh_phone`, set by the item's
   `onPickup.setVariable`). The hand-over line carries `#deduction_favour`, and the runtime takes the
@@ -1751,7 +1981,10 @@ vague answer charges nothing.
   `onBackfire`. The ink plays out what happened in neutral words; the cost and its debrief line come
   from the data, so the truth is stated once.
 - `favours.<s>.room` names the errand's room for DL8.
-- The brief, or the handler early on, says once: "Don't do favours for anyone you haven't checked."
+- A favour stays on offer after a verdict on its suspect other than a KO (accused, reported, acted on,
+  vouched for). A knocked-out suspect can't be talked to, so a KO ends it. The gate needs no
+  `deduction_verdict_<s>` term.
+- The brief, or the handler early on, says once: "Don't do favours for anyone you haven't cleared."
 
 ### 7.4 Accusations and reports
 
@@ -1761,9 +1994,12 @@ vague answer charges nothing.
     You tell Okafor what you know about the key. #verdict:accuse
     -> accused
 === accused ===
-{ deduction_outcome_ded_a_okafor == "right_guilty": Okafor: How did you... | Okafor: You're making a mistake. }
--> END
+{ deduction_outcome_ded_a_okafor == "right_guilty": Dr Okafor: How did you... | Dr Okafor: You're making a mistake. }
+Dr Okafor: We're done here. #exit_conversation
+-> hub
 ```
+
+(`Dr Okafor` stands for her `displayName`, whatever fixture A sets.)
 
 - `#verdict:accuse` names the conversation's NPC. From any other conversation, name the suspect:
   `#verdict:accuse:ded_a_okafor`, `#verdict:report:ded_b_okoro`.
@@ -1772,6 +2008,9 @@ vague answer charges nothing.
   (§5.3 timing note), for the reaction.
 - Offer an accusation only once per suspect (`deduction_verdict_<s> == ""`), and say in the choice text
   that it cannot be undone.
+- With the nudge on, a case may warn before a guess: a per-suspect fixed line, gated on `not
+  deduction_decidable_<s>`, before "This can't be taken back" ("You've still got blanks on Okoro. Name her
+  anyway?"). Write one line per suspect; never interpolate a name into a voiced line.
 - Tags go on a content line after the choice, not on the choice line itself.
 
 ### 7.5 Closing the case: warn first
@@ -1782,28 +2021,30 @@ nothing in it may suggest how many are guilty. For a case:
 
 ```ink
 === report_hub ===
-Nair: Who do you want me to look at? Name as many as the evidence supports. Names you give me stand.
+Name anyone the evidence supports.
 + {deduction_verdict_ded_b_okoro == ""} [Name Okoro. This can't be taken back.] -> name_okoro
 + {deduction_verdict_ded_b_lindqvist == ""} [Name Lindqvist. This can't be taken back.] -> name_lindqvist
 + {deduction_verdict_ded_b_haddad == ""} [Name Haddad. This can't be taken back.] -> name_haddad
 + {deduction_verdict_ded_b_morgan == ""} [Name Morgan. This can't be taken back.] -> name_morgan
-+ [That's everyone] -> close_check
++ [That's everyone I'm naming] -> close_check
 + [Not yet, I want to check something] -> hub
 === name_okoro ===
-You give Nair a name: Ngozi Okoro. #verdict:report:ded_b_okoro
-Nair: Noted.
+Narrator: You give Nair a name: Ngozi Okoro.
+Noted. #verdict:report:ded_b_okoro
 + [Go on] -> report_hub
 === close_check ===
-Nair: Anyone you haven't named is cleared, the shift report goes up tonight, and that ends the exercise. Sure?
+Anyone you haven't named is cleared, the shift report goes up tonight, and that ends the exercise. Sure?
 + [Yes, send it] -> send
 + [Not yet, I want to check something] -> hub
 === send ===
-Nair: Done. I'll take it from here. #verdict_close
--> END
+Done. I'll take it from here. #verdict_close #exit_conversation
+-> hub
 ```
 
-- **Phone chat batches tags** (§5.3 timing note): the "Go on" choice after each name lets the tag run
-  before `report_hub` evaluates its guards again, so a named suspect's choice is gone. Nair's reply in
+- **Phone chat** applies tags as each line is read (F16) or, before F16, per batch; in both a player
+  choice is the safe beat, and slow tags run on a chain after the fast ones (§5.3 timing note): the "Go
+  on" choice after each name lets the tag run before `report_hub` evaluates its guards again, so a named
+  suspect's choice is gone. Nair's reply in
   `send` cannot read the outcome globals (they are written by `close()` after this batch), and under
   `reveal: "end"` it should not: the debrief carries the outcome.
 - A **training episode**'s close warning also says that finishing ends the exercise
@@ -1811,8 +2052,8 @@ Nair: Done. I'll take it from here. #verdict_close
 
 - `#verdict_close` sits in a knot reached only through a choice whose sibling starts "Not yet" (DL12
   checks the sibling). Mention anything obvious left undone.
-- An object that closes the case uses `confirm_action` with the warning as its text and
-  `verdict_close` in `onConfirm`; cancelling is the "Not yet".
+- An object that closes the case uses `confirm_action` with the warning as its text, `cancelLabel: "Not
+  yet"` and `verdict_close` in `onConfirm`; cancelling is the "Not yet".
 - The debrief opens after the conversation or confirm closes. The mission's own ending comes after the
   debrief's Finish (§5.5 "Endings"). Do not end the scene with `#complete_task` for the conclusion in the
   same knot: Finish does it.
@@ -1838,7 +2079,9 @@ So a fadable source's **own text must not state the clue** (the `grant_fact`'s f
 luggage label reads "Reserved: S. Sato" and the archive pass is in the fact, not on the label. Otherwise
 the player reads the clue the board calls "Evidence destroyed". The alternative is a plain
 `triggerOnInteract` object (not a notes pickup) whose gated trigger grants, with a second, ungated trigger
-on the same event that shows a hint ("The label has been torn off.") when the fact is faded.
+on the same event that shows a hint ("The label has been torn off.") when the fact is faded. The same
+holds for any route gated on a `cost: true` global: its source's text must not show what it no longer
+grants (a `textVariants` entry keyed on the global).
 
 ### 7.7 Fingerprint sources
 
@@ -1852,24 +2095,49 @@ case, or key the trigger on `fingerprint_collected:<owner>` with `"where": { "ob
 ### 7.8 The unique item
 
 When a one-of-a-kind clue first arrives through a **sighting** (a camera, a witness, an item seen; never
-the KO drop, which is already a verdict), offer the choice from the handler:
+the KO drop, which is already a verdict), offer the choice from the handler.
+
+A handler's call that opens on an event is an `eventMappings` entry with `"conversationMode":
+"phone-chat"`, `"targetKnot": "<knot>"`, `"onceOnly": true` and the case's `condition`. Without
+`conversationMode` a `targetKnot` is only a bark, and the validator marks it ❌ INVALID. A mapping meant
+as a short message uses `bark`, with `delayMs` for a delay (`barkDelay` is ignored). The player can close
+the call before choosing, and a `onceOnly` call is spent once it closes, so the handler's hub offers the
+same choice again: `+ {se_intel_a_okafor_brass_key and deduction_verdict_ded_a_okafor == "" and
+a_key_choice == ""} [About Okafor's key] -> key_seen`, and for each forced warned close `+ {a_thrown_out
+and not deduction_closed} [They're onto me. Get me out.] -> thrown_out` (C: the same for `c_pull_out`).
+
+A mission's first handler call is a `timedConversation` on the phone NPC: `{ "delay": 1500,
+"targetKnot": "start", "waitForEvent": "game_loaded", "skipIfGlobal": "<x>_briefed", "setGlobalOnStart":
+"<x>_briefed" }` (`<x>_briefed` declared false), so it rings once and never on a reload. The `start` knot
+says the brief's lines and goes to the hub. Never a `game_loaded` phone `eventMappings` entry.
+
+The choice itself, in the handler's phone ink:
 
 ```ink
 === key_seen ===
-{ deduction_verdict_ded_a_okafor != "": -> END }
-HaX: Only one of those keys exists, and Okafor has it. What do you want to do?
+{ deduction_verdict_ded_a_okafor != "": -> hub }
+Only one of those keys exists, and Okafor has it. What do you want to do?
 + [Confront her now. This can't be taken back.]
-    You go straight to Okafor. #verdict:accuse:ded_a_okafor
-    -> END
+    ~ a_key_choice = "confront"
+    Narrator: You go straight to Okafor. #verdict:accuse:ded_a_okafor
+    ++ [Go on] -> key_after
 + [Leave her be and watch where she goes]
     ~ a_key_choice = "follow"
-    HaX: Fine. Watching her doesn't stop her tonight. She still needs naming.
-    -> END
+    Fine. Watching her doesn't stop her tonight. She still needs naming.
+    -> hub
 + [Have it taken off her at the door tonight. This can't be taken back.]
     ~ a_key_choice = "seize"
-    HaX: I'll have a team take it off her at the door. #verdict:act:ded_a_okafor
-    -> END
+    I'll have a team take it off her at the door. #verdict:act:ded_a_okafor
+    ++ [Go on] -> key_after
+
+=== key_after ===
+{ deduction_outcome_ded_a_okafor == "right_guilty": That's one key the ritual won't have. | That didn't land the way I hoped. }
+-> hub
 ```
+
+Phone ink puts no prefix on the contact's own lines (`Narrator:` is fine). In phone chat a line that
+reads a verdict or outcome global sits behind a player choice after the tag (§5.3). Every knot returns to
+the hub. Every option sets the global the credits read.
 
 - The choice is offered only while the owner has no verdict, and each verdict names the suspect, because
   the conversation is with HaX.
@@ -1882,12 +2150,29 @@ HaX: Only one of those keys exists, and Okafor has it. What do you want to do?
 ### 7.9 Briefs
 
 - State every profile's `text` and the `briefText` (when disclosed) verbatim (DL9, DL10).
-- Do not say or imply how many suspects are guilty (§3.1). DL10 warns on "exactly one", "only one of",
-  "one of them is", "the one who", "two of them" and similar, and on "the <guilty noun>", "the real <guilty
-  noun>" and "Not the <guilty noun>" in the brief, `briefText`, `verdictNoun`, the board `title`,
+- Do not say or imply how many suspects are guilty (§3.1). DL10 warns on "exactly/only <n> of
+  them/you/these/the suspects", "exactly/only <n> people/suspects/<noun>s", "one of them/you/these
+  is/was", "<n> of them/you/these", "the one who", and "the <guilty noun>", "the real <guilty noun>" and
+  "Not the <guilty noun>" in the brief, `briefText`, `verdictNoun`, the board `title`,
   `closeHint`, `debrief.closingLine` and the objectives' aim and task titles (a title such as "The
   sleeper" or "Identify the insider" says there is one).
+- Write about the opposition without number ("anyone here who serves the lodge"), including reactions
+  that can fire for several suspects ("You let them walk", not "one of us"). DL10 catches only its
+  patterns, so the dialogue review checks this by reading.
 - Say the favour rule once if the case has favours (§7.3).
+- When a profile uses `markedAtLeast`, the brief says in one sentence, in the mission's fiction, what
+  makes a clue marked and how the board shows it (✦ and the `markedLabel`).
+- Gloss jargon in clue text the first time it appears (Codex, sigil, burner, RFID cloner, sleeper).
+- An Incident Simulations case says once, in a character's voice, that a profile match justifies a
+  referral and an interview, not a finding (`deduction/sidecar/LEARNING_DESIGN.md` R1); with the action
+  nouns the board says the same.
+- Profile clauses and clues describe access, actions and operational items, never personal traits
+  (ethnicity, faith, age, health, union or political membership). Eldritch Hacker cult markers stay
+  operational (a sigil ring, a burner SIM, a post wanted in the Archive).
+- An Incident Simulations brief says what the investigator may read (B: the badge log, the HR summary,
+  the network device list).
+- Vary who is guilty by background. Real missions must; a fixture recast is optional (both Igbo-surnamed
+  suspects, Okoro in B and Okafor in A, are guilty).
 
 ### 7.10 Credits and endings
 
@@ -3324,7 +3609,9 @@ changes this plan (the planner is resumed) before the packet that depends on it.
 
 ## 13. Decisions
 
-### 13.1 Decided by the user (2026-10-22, `deduction/DECISIONS_PENDING.md`)
+### 13.1 Decided by the user (2026-10-22, `deduction/DECISIONS_PENDING.md`, rounds 1 and 2)
+
+Q1 to Q4 are the first round's answers; Q5 to Q9 the second round's.
 
 | Decision | What it means here |
 |---|---|
@@ -3332,6 +3619,11 @@ changes this plan (the planner is resumed) before the packet that depends on it.
 | Q2: a KO is final | A knocked-out suspect is not brought round; the verdict stands and the stakes run |
 | Q3: no score change beyond the skipped solved task | A wrong or missed call skips `solvedTask`; nothing else reaches the server. Under the default `tasks` scoring D's lost run scores 65 %; under `completion` or `partial_then_complete` a lost case scores 100 and the loss shows only in the debrief, credits and story (§3.9) |
 | Q4: a lost mission ends through the debrief and then the normal credits, with failure lines, and still concludes | `fail_mission` writes `mission_failed`; the credits' title, music and closing card are conditioned on it, every credits entry and the conclusion screen carry a neutral header, and the ticker is neutral, so "MISSION COMPLETE" appears nowhere on a loss, on the conclusion screen, the credits or a reload (DL9(h)); a strict case cannot end on the success screen |
+| Q5: an active clear verdict in Phase 10 | Kind `trust`, value always `clear`: `#verdict:trust[:<s>]` and the `verdict` action's `value: "clear"`; `anytime` only; a trusted guilty suspect is `missed_guilty`. Reverses R1D-23 for the clear form; `deduction_reveal` stays cut. No fixture opts in; unit and validator cases cover it (§5.3–§5.5, DL12, DL14) |
+| Q6: "Let them go" in fixture C | HaX offers a warned, one-way release for a contact waiting in the comms room before the lock. The contact stays removed, gets no verdict, closes as "Not named" and is lost as a resource; the debrief notes it through `debrief.notes` (keyed on `c_released_<id>`), and the credits name each released innocent. Partly reopens R4D-11: sending someone to wait still cannot be undone, but it no longer forces a verdict (§9.3) |
+| Q7: the nudge says how, never which way | A second line under the nudge: "Check the counts." when a count step decided it, else "Check what's on their card." (`decidedBy` from the evaluator). The user's example "Check what they don't have." is folded into the card line, because on its own it marks clears in A and B, and a separate "found" line is always guilty (prototype, `integration/VERIFIED_SIM_DECISIONS.md` Q7.1). The card line's wording is decided. Declined: DESIGN_FUN_FEEDBACK §B.3's reason check and §E.2's consistency hint (§3.7, §5.1, §6.3) |
+| Q8: "Refer to HR" / "No further action" for real Incident Simulations missions | An authoring rule (§3.11, §7.9), not a lint (no mission marker exists); fixture B keeps "Insider" / "Not an insider" as test nouns; the truth line and mark confirmations are worded so an action noun reads as the call (§6.3) |
+| Q9: `deduction.voice` | `"plain"` (default) or `"pulp"`, selecting the engine's own strings in `systems/deduction-strings.js` for twelve rows (§6.3); fixture A uses pulp |
 
 ### 13.2 Settled in this plan (the user can overrule any)
 
@@ -3359,7 +3651,7 @@ The user's own decisions (retry, KO, score, how a loss ends) are in §13.1 and a
 | Witnesses, not confessions: a suspect's own word clears nobody | Design 12 "What is worth taking" item 5 (R1D-15) |
 | Marks live in `deduction_state` and are shown back in the debrief | Ink never reads them; the debrief checks "clear everyone" (R1D-8) |
 | The debrief says "You already held what settled it" when the clues decided the suspect at the verdict | It is the commonest real mistake (R1D-7) |
-| `deduction_reveal` and the `:clear` tag cut | No use case needs them (R1D-23) |
+| `deduction_reveal` cut | No use case needs it (R1D-23); the clear form returned as `trust` (§13.1 Q5) |
 | Nudge on by default; fixture C covers the off switch | Fun, not hard; D stays strict but fair (orchestrator decision 5) |
 | Suspects 1–6, fixtures use 3–5 | Design 12 Q1; art, voice and diversity cost per character |
 | Early collapse = no guilty and at least half open in the opening rooms | "No suspect decided" is too strict for a single all-of profile |
@@ -3408,12 +3700,26 @@ The user's own decisions (retry, KO, score, how a loss ends) are in §13.1 and a
 | One rule for locked containers: their contents are outside the opening rooms until the container is open from the start or opened | Keys, cards, codes and facts were treated differently (R4D-1, R4I-6) |
 | B: the cabinet code is given freely by Nair; the server code only by Lindqvist after Tomás's alarm topic | The server room needs the witness chain; the HR file and Tomás are real alternatives for the grievances |
 | A's forced close reaches the ending through a trigger on `a_case_closed`; DL12 warns when a close route cannot reach the ending | The "Get out" close had no ending (R4D-2) |
-| C: the pull-out runs `at: "verdict"` and is silenced while leaving; the badge is read at the garage's own reader; the comms lock is a HaX choice offered only when someone waits | R4D-3, R4D-4, R4D-11 |
+| C: the pull-out runs `at: "verdict"` and is silenced while leaving; the badge is read at the garage's own reader; the comms lock is a HaX choice offered only when someone waits | R4D-3, R4D-4, R4D-11 (partly reopened by §13.1 Q6: a waiting contact can be released) |
 | No new tag case awaits | The pending-reply flush runs a reply's fast tags in one synchronous call (R4E-6) |
 | A bad case includes its message and lists every lint it legitimately co-fires; DL17 and DL21 have small fixtures of their own | B cannot express them as one change (R4I-5) |
 
-There are no open questions for the user. Two approvals are deferred in `deduction/APPROVAL_LOG.md`: AP-1
+There are no open questions for the user: the round 2 answers (Q5 to Q9) are in §13.1. Two approvals are deferred in `deduction/APPROVAL_LOG.md`: AP-1
 (strip `solution` from the client payload) and AP-2 (replay the loss credits on reload).
+
+### 13.6 Round R6 settlements (the user can overrule any)
+
+| Decision | Reason |
+|---|---|
+| A favour may unlock on any held clue about its suspect (`unlockFact`); A's unlocks on the sigil ring, so dusting the glass matters | Design 12's first "want" clue left the glass with no use; with the ring as the gate it is needed in 102 of 243 verdict combinations (R6F-1, §3.4, §7.3) |
+| C's paid gossip grants Baptiste's clearing trip clue; the ids are renamed off "arkham" | The gossip changed no status, so the witness cost was untested in C; "arkham" is a DL15 warning word (R6F-2, §9.3) |
+| A favour stays on offer after a verdict on its suspect other than a KO; a KO ends it | A suspect still standing can still be talked to; the grade is unharmed (R6F-3, §3.4, §5.5, §7.3) |
+| Success-screen endings: `onClose`'s gate globals are set before the conclusion aim's tasks, and DL22 makes the other order an error | A success-screen ending never asks the server again, so a gate set afterwards leaves the aim unconcluded (R6E-2, §5.5 "Endings") |
+| Door logs use `logType: "vpn"` in test fixtures only; a `badge` log type is backlog | The log filter knows only `vpn` and `ics_rdp`; a test fixture needs no new engine item (GAPSAB-8) |
+| A handler's first call is a `timedConversation` | It rings once and never on a reload, so B's cabinet code and A's favour rule always reach the player (GAPSAB-13, §7.8) |
+| D's fades: no single unrecovered fade strands the player, and that is accepted; declined: every stop always costs something | Option (a) of SIDECAR-32; the two-fact lists of GAPSCD-22's alternative would add a route per stop for no gain the hand check needs (§9.4) |
+| A suspect holds at most one cell of any one clue | The plan was silent; DL3 checks it, and the evaluator stays sound without it (SIM-11, §4.1, §4.3) |
+| DL9(h) reads the declared `stakes.rigidity` | A mismatch with the derived rigidity is DL9(a)'s error, so the two lints never disagree on co-fires (R6I-5, §8) |
 
 ## 14. Review log
 
