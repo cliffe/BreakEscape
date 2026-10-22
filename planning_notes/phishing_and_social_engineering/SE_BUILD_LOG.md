@@ -413,6 +413,19 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
   - Passed: the guest own-From hint, the softest rung on Pierce, Close after a miss, LedgerPay, Dev's mood lines, the Tomasz gate and closing choice, and the bank-change triage contrast.
   - **Lesson:** unit tests of helpers passed while the live path was broken. Round 6 must prove each fix on the path the game runs. Fix round 6 on opus48: `playtests/FIX_ROUND_R4.md`, which also applies C2.
 
+- **Dialogue review C3** (Opus, `scenarios/lab_social_engineering/DIALOGUE_REVIEW_C3.md`): 16 ranked proposals, deliberately short. Every applied cycle-2 item checks out, and the lab now reads as one story.
+  - Five continuity slips from cycle 2:
+    - "call-back" is used in two senses.
+    - "He knows it was us" is ambiguous.
+    - Gareth's last line no longer fits after the payoff.
+    - Ruth's phone ignores `fairbairn_payoff_heard`.
+    - Tomasz says "five fixes" when the report has three.
+  - The close mostly lands. Item 1 rewrites the final line (the third "no names" in a minute, and the report pinned up in the kitchen).
+  - The no-blame point now appears about five times on the main route, which is about right.
+  - Items 4, 5 and 10 touch ink logic; the rest are text-only. Apply with the R5 findings.
+
+- **Lab re-run R5** (Sonnet, games 3200 and 3201, `playtests/R5.md`): start to end screen, 23/23, score 100, all keys. 5 of the 6 checks pass: the door toast hint is captured live on all three doors, the Lord missing/wrong hints are right, the second-miss hint fits the factor, × and Esc close the client in one press, and report rows use roles. **All reopen-order tests pass for Ruth, Fairbairn and Tomasz.** Check 4 passes in part: a first call that ends at net 0 leaks "Last change" into the second call. Dialogue: J1–J10 (stale post-payoff guidance, the end card's "staff keep reporting" claim, the role row still identifying Sofia, a Melanie spoiler, triage "caught 0 of 3"). Fix round 7 on opus48: `playtests/FIX_ROUND_R5.md`, which also applies C3.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
