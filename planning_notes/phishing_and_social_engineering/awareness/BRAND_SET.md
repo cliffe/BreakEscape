@@ -183,3 +183,10 @@ The full list is under `_brandAdditions` in `awareness/e5/defend.json`. It adds:
 - five more cast members (Somali-British, Welsh, Northern Irish, Italian-British and Jamaican-British, aged from their 20s to their 60s).
 
 Gallagher and Farah are not used, because they clash with existing scenarios.
+
+## Additions from E5 attack (P7-U, 2026-10-22)
+- **Quayholt cast:**
+  - Hana Novak, claims handler, `hana.novak@quayholt.example`, 30s, Czech-British: the E5 target.
+  - The Quayholt IT Service Desk, `it-servicedesk@quayholt.example`: the sender the attacker spoofs.
+- **Decoy brand:** DocShare, `docshare.example`. Look-alikes `docshare-login.example`, `docshore.example` and `d0cshare.example`.
+- **Pre-ship check:** "Quayholt", "DocShare" and "Novak" still need the real-business web-search check.
