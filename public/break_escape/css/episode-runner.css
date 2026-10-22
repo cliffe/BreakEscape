@@ -1,0 +1,68 @@
+/* Awareness episode runner (SE design 11 N1, packet P7-A). The layout around P7-B's views:
+   the step strip and Close in a bar, then one stage panel. Colours come from the neutral
+   skin's --aw-* tokens (css/awareness-skin.css); the fallbacks match it so the runner still
+   reads correctly if that file is missing. */
+
+.minigame-container[data-minigame="episode-runner"] .minigame-game-container { display: flex; flex-direction: column; min-height: 0; }
+
+.er-root {
+    --aw-accent: #2f6f5e;
+    --aw-ink: #1f2933;
+    --aw-surface: #f6f8f7;
+    --aw-line: #cfd8d4;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    max-width: 100%;
+    font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
+    color: var(--aw-ink);
+    background: var(--aw-surface);
+    box-sizing: border-box;
+}
+
+.er-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border-bottom: 2px solid var(--aw-line);
+}
+.er-strip { flex: 1 1 auto; min-width: 0; }
+.er-strip .aw-strip { border-bottom: 0; }
+.er-bar .se-overlay-close { flex: 0 0 auto; margin: 6px 10px; }
+
+.er-body { flex: 1; min-height: 0; overflow-y: auto; }
+
+.er-panel { padding: 16px; line-height: 1.45; }
+.er-heading { margin: 0 0 8px; font-size: 22px; color: var(--aw-accent); }
+.er-heading:focus { outline: none; }
+.er-text { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
+.er-scope {
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    max-width: 60ch;
+    font-size: 15px;
+    background: #fff;
+    border-left: 4px solid var(--aw-accent);
+}
+.er-notice { margin: 0; font-size: 15px; color: #8a5a00; }
+.er-notice:empty { display: none; }
+
+.er-button {
+    margin-top: 14px;
+    padding: 8px 18px;
+    font: inherit;
+    font-weight: 700;
+    color: #fff;
+    background: var(--aw-accent);
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.er-button:focus-visible { outline: 3px solid var(--aw-ink); outline-offset: 2px; }
+
+@media (max-width: 767px) {
+    .er-bar { flex-wrap: wrap; }
+    .er-panel { padding: 12px; }
+}
