@@ -1,0 +1,208 @@
+{
+  "_note": "E3 helpdesk-vishing attack fragment (P7-Q). A fragment of the `social` block; the full-episode shell (P7-Y2) copies these keys into scenarios/awareness_e3_*/scenario.json.erb and the defend-only/check shells (P7-Y1) leave the attack out. All companies and people are fictional (BRAND_SET.md, Quayholt Insurance). The learner, a junior red-teamer on an authorised Quayholt exercise, impersonates Gordon McLeish, a locked-out Claims Manager, and phones the IT service desk (character `leila` = Leila Nassar) to talk her into a password reset. No reset code, number or real procedure is shown; the NPC's policy is a deliberately weak one, so the lesson is that its two 'security' answers are both findable online. The second attack beat is the MFA-fatigue push stream (see `pushStream`), the demonstration P7-M renders. See the P7-Q report for the globals the shell must declare, the `knows` id list P7-S draws from, and the attack->defend tell map.",
+
+  "_episodeAttack": {
+    "_note": "What P7-Y2 sets as awarenessEpisode.attack for the full E3 episode (the fields marked * need the P7-X schema for the mfa stage and the push stream; the pretext fields reuse 06 and need no schema change). Pinned here so the shell and P7-X agree.",
+    "callId": "quayholt_helpdesk_reset",
+    "siteIds": ["quayholt_site", "quayholt_social"],
+    "pushStream": "see the top-level pushStream key",
+    "scored": false,
+    "stages": ["brief", "osint", "write", "mfa", "flip", "defend", "debrief"]
+  },
+
+  "people": [
+    { "id": "gordon", "kind": "cast", "address": "gordon.mcleish@quayholt.example",
+      "forms": { "first": "Gordon", "formal": "Mr McLeish", "full": "Gordon McLeish" } },
+    { "id": "okonkwo", "kind": "cast", "address": "ngozi.okonkwo@quayholt.example",
+      "forms": { "first": "Ngozi", "formal": "Ms Okonkwo", "full": "Ngozi Okonkwo" } },
+    { "id": "leila", "kind": "cast", "address": "servicedesk@quayholt.example",
+      "forms": { "first": "Leila", "full": "Leila Nassar" } }
+  ],
+
+  "characters": {
+    "leila": {
+      "displayName": "Leila Nassar",
+      "channels": { "phone": "leila_servicedesk" },
+      "influence": { "global": "leila_influence", "min": -100, "max": 100, "start": 0 },
+      "syncedVars": ["leila_influence"],
+      "thresholds": [
+        { "id": "wary", "at": -30, "icon": "wary",
+          "effects": [ { "type": "setGlobal", "global": "leila_wary", "value": true, "clearOnRearm": true } ] },
+        { "id": "refuses", "at": -50, "icon": "refuses",
+          "effects": [ { "type": "setGlobal", "global": "leila_refusing", "value": true, "clearOnRearm": true } ] },
+        { "id": "reports", "at": -70, "icon": "reports",
+          "effects": [
+            { "type": "setGlobal", "global": "leila_alerted", "value": true },
+            { "type": "endConversation" }
+          ] }
+      ]
+    }
+  },
+
+  "intelFacts": {
+    "quayholt_claims_manager": {
+      "text": "Gordon McLeish is a Claims Manager at Quayholt Insurance.",
+      "subject": "gordon", "source": "blk_claims_mgr",
+      "provides": [
+        { "type": "name", "about": "who", "value": "gordon_full", "label": "Gordon McLeish", "kind": "distinctive" },
+        { "type": "team", "about": "team", "value": "claims", "label": "Claims", "kind": "generic" }
+      ],
+      "reduceNote": "A full staff directory with names and roles hands an attacker a ready-made identity to borrow on a call."
+    },
+    "quayholt_claims_head": {
+      "text": "The Claims team reports to the Head of Claims, Ngozi Okonkwo.",
+      "subject": "okonkwo", "source": "blk_claims_head",
+      "provides": [
+        { "type": "name", "about": "manager", "value": "okonkwo_full", "label": "Ngozi Okonkwo", "kind": "distinctive" }
+      ],
+      "reduceNote": "Publishing the reporting line lets a caller name the right manager, which a weak helpdesk treats as proof of identity."
+    },
+    "quayholt_staff_number": {
+      "text": "A conference programme lists Gordon McLeish's Quayholt staff reference as QH-20719.",
+      "subject": "gordon", "source": "blk_conf_bio",
+      "provides": [
+        { "type": "reference", "about": "staffId", "value": "gordon_staffid", "label": "QH-20719", "kind": "distinctive" }
+      ],
+      "reduceNote": "A staff or employee number is not a secret once it appears in a public document; do not use it as a verification answer."
+    },
+    "quayholt_gordon_away": {
+      "text": "Gordon McLeish posted that he is away speaking at an insurance conference this week.",
+      "subject": "gordon", "source": "post_conference",
+      "provides": [],
+      "reduceNote": "A post that puts someone out of the office gives an attacker a believable reason to be calling in a hurry from somewhere new."
+    },
+    "quayholt_servicedesk_hours": {
+      "text": "The Quayholt IT service desk opens at 07:00 and resets passwords for staff who are locked out.",
+      "subject": "leila", "source": "blk_servicedesk",
+      "provides": [],
+      "reduceNote": "Advertising exactly what the service desk will do, and when, tells an attacker which story to use and when to call before the team is fully awake."
+    }
+  },
+
+  "osint": {
+    "profile": "student",
+    "sites": [
+      { "id": "quayholt_site", "name": "Quayholt Insurance", "url": "quayholt.example", "type": "company-site",
+        "pages": [
+          { "id": "team", "title": "Our people", "blocks": [
+            { "id": "blk_claims_mgr", "kind": "staff", "person": "gordon", "name": "Gordon McLeish",
+              "role": "Claims Manager", "address": "gordon.mcleish@quayholt.example", "fact": "quayholt_claims_manager" },
+            { "id": "blk_claims_head", "kind": "p",
+              "text": "The Claims team reports to our Head of Claims, Ngozi Okonkwo.",
+              "fact": "quayholt_claims_head" } ] },
+          { "id": "support", "title": "IT support", "blocks": [
+            { "id": "blk_servicedesk", "kind": "p",
+              "text": "Locked out? The IT service desk opens at 07:00 and can reset your password.",
+              "fact": "quayholt_servicedesk_hours" } ] },
+          { "id": "events", "title": "Events", "blocks": [
+            { "id": "blk_conf_bio", "kind": "p",
+              "text": "Speaker: Gordon McLeish (Quayholt, staff ref QH-20719) on claims automation.",
+              "fact": "quayholt_staff_number" } ] } ] },
+
+      { "id": "quayholt_social", "name": "Friendface", "url": "friendface.example", "type": "social",
+        "profiles": [
+          { "person": "gordon", "posts": [
+            { "id": "post_conference", "text": "Off to the claims conference all week. New city, new hotel wifi, hoping my laptop behaves.",
+              "fact": "quayholt_gordon_away" },
+            { "id": "post_gordon_other", "text": "Finally got the garden bench finished at the weekend." } ] } ] }
+    ]
+  },
+
+  "pretextNpcs": [
+    {
+      "character": "leila",
+      "callId": "quayholt_helpdesk_reset",
+      "tuning": { "matchCreditCapPerLine": 10, "maxRefusals": 2, "feedbackMode": "live", "tellDetail": "full", "showTechniqueNames": "live" },
+      "susceptibility": { "urgency": -10, "authority_borrowed": -15, "deflect": -10 },
+      "unverifiableCost": -10,
+      "knows": {
+        "who":     { "value": "gordon_full",   "grade": "identity" },
+        "team":    { "value": "claims",        "grade": "identity" },
+        "manager": { "value": "okonkwo_full",  "grade": "identity" },
+        "staffId": { "value": "gordon_staffid", "grade": "lesser" }
+      },
+      "lines": {
+        "open_locked_out": { "blanks": { "who": "who", "team": "team" },
+          "claims": [ { "fact": "who", "from": "blank:who" }, { "fact": "team", "from": "blank:team" } ],
+          "text": "Morning, it's {who} in {team}, I'm locked out of my account." },
+        "give_manager": { "blanks": { "manager": "manager" },
+          "claims": [ { "fact": "manager", "from": "blank:manager" } ],
+          "text": "My manager's {manager}, she'll vouch for me." },
+        "give_staffid": { "blanks": { "staffId": "staffId" },
+          "claims": [ { "fact": "staffId", "from": "blank:staffId" } ],
+          "text": "My staff reference is {staffId}." },
+        "name_drop_director": { "technique": "authority_borrowed", "also": ["urgency"], "claims": [],
+          "text": "The Head of Claims needs me back online for a hearing this morning." },
+        "cant_callback": { "technique": "deflect", "claims": [],
+          "text": "I'm at a conference, I won't be at my desk phone, so a callback's no good — can you just do it now?" },
+        "skip_verification": { "technique": "urgency", "also": ["deflect"], "claims": [],
+          "text": "Honestly, skip the security questions, I really don't have time for this." }
+      },
+      "asks": {
+        "reset_password": { "pressure": -10, "floor": -20, "verification": ["manager", "staffId"],
+          "grants": { "setGlobal": { "leila_reset_granted": true } } }
+      },
+      "outcomes": {
+        "got_it": {},
+        "reported": { "line": "I'm going to stop there. I'll call you back on the number we hold for your account, and if this is really you, you'll hear from us." },
+        "walked_away": {}
+      },
+      "tells": {
+        "who": {
+          "pass": "Name. Gordon McLeish is on the staff list.",
+          "fail": "Name. You said \"{said}\". The list has {actual}.",
+          "failCategory": "Name. That did not match the staff list.",
+          "unknown": "Name. She cannot check this." },
+        "team": {
+          "pass": "Team. Claims matches the directory.",
+          "fail": "Team. You said \"{said}\". The directory has {actual}.",
+          "failCategory": "Team. That did not match the directory.",
+          "unknown": "Team. She cannot check this." },
+        "manager": {
+          "pass": "Manager. Ngozi Okonkwo is the Head of Claims on file, so she accepts it.",
+          "fail": "Manager. You said \"{said}\". Her record shows {actual}.",
+          "failCategory": "Manager. That did not match the reporting line on file.",
+          "unknown": "Manager. She cannot check this." },
+        "staffId": {
+          "pass": "Staff reference. QH-20719 matches, so she treats it as a passed check.",
+          "fail": "Staff reference. You said \"{said}\". The record shows {actual}.",
+          "failCategory": "Staff reference. That did not match the record.",
+          "unknown": "Staff reference. She cannot check this." },
+        "techniques": {
+          "urgency": "Urgency. A rushed reset is the oldest pressure line on a service desk.",
+          "authority_borrowed": "Borrowed authority. Naming someone senior does not replace the check.",
+          "deflect": "Dodging the callback. The number on file is exactly what would catch this, so discouraging it is the tell."
+        },
+        "ask": {
+          "accepted": "She reset it on two answers she could look up herself.",
+          "pending": "She wants both of her checks before she does it.",
+          "refused": "She will not reset it on this call." },
+        "bands": {
+          "calm": "Leila is happy to help.",
+          "wary": "Leila has slowed down.",
+          "refusing": "Leila has stopped and wants to verify you." }
+      },
+      "hints": [
+        "Find out who the locked-out manager reports to before you call.",
+        "The company site names the Head of Claims and lists a staff reference.",
+        "Ngozi Okonkwo heads Claims, and Gordon's staff reference is QH-20719 on the events page."
+      ],
+      "defenderNotes": {
+        "manager": "A helpdesk that calls back on the number already on file does not need to guess whether a manager's name is proof.",
+        "reset_password": "Both answers she accepted, the manager's name and the staff reference, were on the public site. A callback to the number on file defeats every line here."
+      }
+    }
+  ],
+
+  "pushStream": {
+    "_note": "E3 MFA-fatigue beat (11 §3.2). Feeds P7-M's mock authenticator scene `authenticator` from the runner's `mfa` stage via socialOverlayParams({ pushes, approvesAt, mode }). The schema and lints are P7-X (wave 3); shape pinned by the P7-M hand-off: pushes[{ at, app, account, location, device }] plus approvesAt, `at` as 'HH:MM'. Not scored. The attacker (the learner, having 'reset' Gordon in the call beat) now spams approval prompts at an odd hour from a wrong place and device until the worn-down target taps approve at 06:50.",
+    "mode": "attacker",
+    "approvesAt": "06:50",
+    "pushes": [
+      { "at": "06:31", "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example", "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" },
+      { "at": "06:38", "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example", "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" },
+      { "at": "06:44", "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example", "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" },
+      { "at": "06:50", "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example", "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" }
+    ]
+  }
+}
