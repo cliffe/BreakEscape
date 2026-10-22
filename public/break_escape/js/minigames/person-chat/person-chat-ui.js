@@ -14,6 +14,7 @@
 import PersonChatPortraits from './person-chat-portraits.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { portraitFor } from '../../utils/portrait-variants.js';
+import { cameraViewFor } from './person-chat-camera.js';
 import { ChatInfluence } from '../../ui/pretext-chrome.js';
 
 export default class PersonChatUI {
@@ -65,6 +66,8 @@ export default class PersonChatUI {
         // Notification stack container (created on first use)
         this._notificationContainer = null;
         this.charactersWithParallax = new Set(); // Track which characters have already had parallax animation
+        // NPCs in the order they first spoke: picks each one's camera shot (person-chat-camera.js)
+        this.npcCameraSlots = new Map();
         // `# portrait:<name>` choices for this conversation, by NPC id (utils/portrait-variants.js)
         this.portraitOverrides = new Map();
         // The portrait opens hidden while the story loads, so a conversation that
@@ -481,6 +484,8 @@ export default class PersonChatUI {
             }
             
             this.portraitRenderer.setupSpriteInfo();
+            this.portraitRenderer.view = this.cameraViewForSpeaker(
+                characterId === 'player' ? 'player' : (character.id || characterId));
             
             // Reset parallax animation only for characters we haven't seen before
             const speakerId = characterId || character.id;
@@ -495,6 +500,20 @@ export default class PersonChatUI {
         }
     }
     
+    /**
+     * The camera shot for a speaker: the player on the left of the room, the first NPC
+     * to speak on the right, and each later NPC in a middle shot of its own.
+     * @param {string} speakerId
+     * @returns {{pan:number, zoom:number, shift:number}}
+     */
+    cameraViewForSpeaker(speakerId) {
+        if (speakerId === 'player') return cameraViewFor(true);
+        if (!this.npcCameraSlots.has(speakerId)) {
+            this.npcCameraSlots.set(speakerId, this.npcCameraSlots.size);
+        }
+        return cameraViewFor(false, this.npcCameraSlots.get(speakerId));
+    }
+
     /**
      * The NPC as its portrait should look now: the first of its portraitVariants whose
      * condition / KO gate holds, or the one a `# portrait:` tag picked, laid over its
