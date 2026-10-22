@@ -1643,7 +1643,7 @@ end
             { "eventPattern": "object_interacted", "condition": "data.objectType === 'vm-launcher' && data.roomId === 'core' && !globalVars.guide4_offered", "setGlobal": { "guide4_offered": true } },
             <%# Scenario design R1 m1: HaX says each field guide is ready (which guide only, nothing of its content). Guide 1 waits 20 s so it lands clear of the split scene. %>
             { "eventPattern": "global_variable_changed:guide1_offered", "condition": "value === true && !globalVars.flag1_submitted && !globalVars.guide1_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 20000, "message": "There's a field guide for their monitoring host. Ask me.", "skipIfGlobal": "guide1_given" } },
-            { "eventPattern": "global_variable_changed:guide2_offered", "condition": "value === true && !globalVars.flag2_submitted && !globalVars.guide2_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Guide for the staging copy, if you want it. Ask.", "skipIfGlobal": "guide2_given" } },
+            { "eventPattern": "global_variable_changed:guide2_offered", "condition": "value === true && !globalVars.flag2_submitted && !globalVars.guide2_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Guide for the staging copy, if you want it. Its sign-in card's on the console desk. Ask.", "skipIfGlobal": "guide2_given" } },
             { "eventPattern": "global_variable_changed:guide3_offered", "condition": "value === true && !globalVars.flag3_submitted && !globalVars.guide3_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 7000, "message": "I've a guide for getting out of that container. Ask.", "skipIfGlobal": "guide3_given" } },
             { "eventPattern": "global_variable_changed:guide4_offered", "condition": "value === true && !globalVars.flag4_submitted && !globalVars.guide4_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Guide for his box, when you want it. His login's in the envelope beside his terminal.", "skipIfGlobal": "guide4_given" } },
 <%# --- The breach (OT 4.1): door_scene_done && flag1 && pair_back. ---------- %>
@@ -3675,6 +3675,19 @@ not_tethered = '!globalVars.nightshade_tethered'
           "flagRewards": [
             { "type": "emit_event", "event_name": "flag_3_in", "description": "Flag 3: out of the release service onto its host" }
           ]
+        },
+        {
+          "_comment": "VM gating handoff B7 (puzzle chains R4 M1): flag 2's own find, on the release console's desk (map desk 9.7-12.1, y 2.5-3.7; console at 10.4, 3.0), so flag 2 can't be taken before its station. Strings are the Codes block's staging login (VM agent).",
+          "type": "notes",
+          "id": "release_staging_card",
+          "name": "Schedule Copy Sign-in Card",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 11.3, "y": 3.4 },
+          "observations": "A sign-in card tucked under the release console's edge. The staging copy of the schedule.",
+          "text": "RELEASE SCHEDULE. STAGING COPY.\nLogin for the staging copy of the release schedule: <%= staging_login_user %>\nPassword: <%= staging_login_password %>\nRead only. Leave it at the console.",
+          "puzzle_graph_role": "key",
+          "puzzle_graph_unlocks": "release_console"
         },
         {
           "_comment": "VM gating F12 (handoff B5 item 2): the release host's operator login, behind the power-room card (the hall is past the power room), so flag 3 needs this find. PLACEHOLDER position (tile, open floor by the east racks; dressing to confirm) and PLACEHOLDER (VM) strings.",

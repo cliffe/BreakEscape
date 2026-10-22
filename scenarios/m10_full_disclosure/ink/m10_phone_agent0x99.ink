@@ -142,7 +142,8 @@ VAR hax_suspect = ""
     // Dialogue R4 m3: names the find.
     Get under the release service. The hatch in the sealed section. The duty sheet from the east racks has the login.
 - server_hall_entered:
-    The console takes the staging copy.
+    // Handoff B7: flag 2's find, by its station.
+    The console takes the staging copy. Its sign-in card's on the desk beside it.
 - gallery_shutter_cut:
     Server hall's through there.
 // Dialogue R1 m15, puzzle chains P1: in the power room, the job is the shutter, and who does it.

@@ -369,6 +369,12 @@
       "optional": false
     },
     {
+      "id": "schedule_copy_sign_in_card",
+      "label": "Schedule Copy Sign-in Card",
+      "kind": "key",
+      "optional": false
+    },
+    {
       "id": "operator_s_duty_sheet",
       "label": "Operator's Duty Sheet",
       "kind": "key",
@@ -879,6 +885,16 @@
     {
       "from": "sealed_section_hatch",
       "to": "door_gallery",
+      "soft": false
+    },
+    {
+      "from": "server_hall",
+      "to": "schedule_copy_sign_in_card",
+      "soft": false
+    },
+    {
+      "from": "schedule_copy_sign_in_card",
+      "to": "release_console",
       "soft": false
     },
     {
