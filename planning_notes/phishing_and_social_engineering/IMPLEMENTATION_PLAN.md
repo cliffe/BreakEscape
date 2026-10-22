@@ -761,7 +761,10 @@ in `00` §2), N11 (mock authenticator), N12 (voicemail player), N13 (interactive
 (`qr` and `sms` surfaces), N15 (role swap inside `inbox-triage`), N16 (shell host NPC and the
 flushed done event). From `05`: N1's non-email kinds (`voicemail`, `sms`, `qr`, `page`) and the
 Verify verdict in use, N10 (`call` and `push` kinds) and N11 (comparison screen with the
-no-baseline gate). P7-* is split into named packets before Phase 7 starts (§4).
+no-baseline gate). The packets are in `PHASE7_PACKETS.md` (2026-10-22: Phase 7 brought forward
+and built in parallel waves; Eldritch Hacker stays held; N7 and N12's audio wait for the user, with
+transcript-only stand-ins). That file lists what was already built, pins the interfaces, and names
+one owner per shared file in each wave.
 
 **Order** (README V): E1 first (needs no new surface), then E5 (needs the builder and N13), then E3
 (needs `06`, N11 and N15). E2, E4, E6 and E7 follow. Every episode also ships a defend-only shell. The
@@ -1196,7 +1199,7 @@ Notes that hold for the table:
 | P6-M | 6 | The live red-flag meter while composing (`01`, optional per target; lab review R2-M1: on for Hampshire, off for Pierce and Lord). Mail UI debt from Phase 1 (`build_log/P1-T2_review.md` fix round 2 deferrals and the orchestrator's screenshot check): template text shows raw `{placeholders}` in the From/greeting/pretext selects (show the filled sentence, A4); influence change reasons show factor ids (`senderTrust`) instead of words (A2; update bar tests and bridge-1b K4); toolbar labels Contacts and Close clip at 1400 px; the withReply checklist after a reload (T2-6); the next-step cues (A1) belong to the lab's own design | opus48 | those notes | Mail client changes, tests | Screenshots checked; bridges pass |
 | P6-U | 6 | Cut-order variants | Opus | `10` §4 | Data variants | Validator exits 0 on each |
 | P6-V | 6 | Timed blind playtest | Sonnet, fresh | §2.6; student materials only | Timings per stage | 60 to 90 minutes of in-game time, or cuts applied and re-run |
-| P7-* | 7 | To be split into named packets before Phase 7 starts. Items to cover: `11` N1 runner; N2 flip view; N3 defend sets; N4 measurement store; N5 facilitated flag; N6 narrow layout; N7 TTS style entry; N8 neutral brand set; N9 profile config; N11 authenticator; N12 voicemail player; N13 `page` card; N14 `qr` and `sms` surfaces; N15 role swap; N16 host NPC; `05` N1 non-email kinds, N10, N11; the check missions; episodes E1, then E5, then E3 | Opus for runner, role swap and content; Sonnet for surfaces and playtests | `11`; `05` | Per packet | Phase 7 "Done when" |
+| P7-* | 7 | Split into named packets in `PHASE7_PACKETS.md` (P7-A onwards, by wave). Items to cover: `11` N1 runner; N2 flip view; N3 defend sets; N4 measurement store; N5 facilitated flag; N6 narrow layout; N7 TTS style entry; N8 neutral brand set; N9 profile config; N11 authenticator; N12 voicemail player; N13 `page` card; N14 `qr` and `sms` surfaces; N15 role swap; N16 host NPC; `05` N1 non-email kinds, N10, N11; the check missions; episodes E1, then E5, then E3 | Opus for runner, role swap and content; Sonnet for surfaces and playtests | `11`; `05` | Per packet | Phase 7 "Done when" |
 | P8-A | 8 | Lab sheet | Opus | `mission-lab-sheet` skill; the lab | Sheet in HacktivityLabSheets | Audit finds no mismatch |
 | P8-B | 8 | Voice audio | Sonnet for checks; generation after the user agrees | `tts-audio` skill | Cached clips | `tts-audio` reports no line without audio |
 | P9-deferred | later | Not scheduled; kept so every item is accounted for: `01` N8, the rest of N15, N16; the later half of `00` S14; the `found` account kind; phone identities (`00` §10a). Built for Eldritch Hacker after its universe-bible pass | Opus to plan | Phase 7 "Eldritch Hacker" | none yet | Planned when Eldritch Hacker is scheduled |
