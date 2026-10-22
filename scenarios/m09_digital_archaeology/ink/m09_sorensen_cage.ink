@@ -44,8 +44,12 @@ Margaret Sorensen: Paper was the only thing that could ever have hurt them. So t
 === hub ===
 // Re-entry tracks sorensen_fate. Once talked, she has no more speech.
 {not hub_quiet:
-    {sorensen_fate == "talked" or talked_down:
+    {
+    - sorensen_fate == "talked" or talked_down:
         Narrator: She's writing in pencil, box by box. She doesn't look up.
+    // Scenario design R1 m2 (MC §4.3: she notices the file; HaX names nothing).
+    - nightshade_file_held and sorensen_fate == "left":
+        Narrator: Her eyes go to the file in your hand, and back to the feed.
     - else:
         Margaret Sorensen: {&Another box.|Keep your sleeves away from the feed.|You're standing in my light.}
     }

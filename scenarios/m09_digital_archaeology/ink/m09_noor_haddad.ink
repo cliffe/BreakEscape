@@ -124,7 +124,7 @@ VAR staff_card_cloned = false
 + {not (m05_found_pipeline_list and not m05_recruiter_deal_accepted) and not noor_told and not ledger_page_seen and noor_asked_peg} [That bonus wasn't for filing. She was sizing you up.]
     Noor Haddad: My dad's on dialysis in Dearborn. I never told her that. How did she know that?
     -> reach
-+ {not (m05_found_pipeline_list and not m05_recruiter_deal_accepted) and not noor_told and ledger_page_seen} [Read this. It's her ledger. You're on it.]
++ {not (m05_found_pipeline_list and not m05_recruiter_deal_accepted) and not noor_told and ledger_page_seen} [I've read her ledger. You're on it.]
     Noor Haddad: Was I going to say yes? Don't answer. I know I was.
     -> reach
 + [I'll let you get on.]

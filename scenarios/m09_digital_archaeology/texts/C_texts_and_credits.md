@@ -28,7 +28,7 @@ Shown on `global_variable_changed:report_done` (`value === true`) with the `vict
     { "text": "WREN: one of four. Going into Montana with you.", "condition": "!globalVars.sleeper_named && !globalVars.sleeper_shortlist" },
     { "text": "His vendor notice: sent tonight.", "condition": "globalVars.albion_notified" },
     { "text": "His vendor notice: still on his box.", "condition": "!globalVars.albion_notified" },
-    { "text": "The Montana order: signed." }
+    { "text": "The Montana order: signed. Sun River." }
   ]
 }
 ```

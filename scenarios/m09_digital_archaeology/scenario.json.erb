@@ -176,6 +176,9 @@ hax_maps << text_map("conversation_closed:agent_0x99",
                      "globalVars.flag1_submitted && globalVars.m01_maya_ko && !globalVars.old_coyote_told && !globalVars.old_coyote_ko && globalVars.tran_outcome === 'left'",
                      "Tran's just sent the guard to your door.", delay: 3000)
 hax_maps << { "eventPattern" => "room_entered:restricted_stacks", "onceOnly" => true, "setGlobal" => { "stacks_entered" => true } }
+# Scenario design R1 m1: Victoria's m03 payoff announces itself (A3-36).
+hax_maps << text_map("room_entered:restricted_stacks", "globalVars.m03_victoria_fate === 'recruited' && !globalVars.cage_opened && !globalVars.maintenance_code_used",
+                     "Victoria's people read this building's mail. Ask me about that gate.", delay: 3000)
 
 # The cage gate (S4 §4 rows 2, 2b). cage_opened follows the door, by the card
 # or by HaX's unlock on Victoria's route, and is rebuilt on entry.
@@ -264,6 +267,8 @@ hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.slee
                        "She's booked you. You're in her ledger now.", delay: 20000, msg_delay: 5000)
 end
 hax_maps << { "eventPattern" => "room_entered:tape_room", "onceOnly" => true, "setGlobal" => { "tape_room_entered" => true } }
+# Scenario design R1 n2: the card in hand retires the status ladder's safe row.
+hax_maps << { "eventPattern" => "item_picked_up:keycard", "condition" => "data.itemId === 'tape_room_keycard'", "onceOnly" => true, "setGlobal" => { "tape_card_held" => true } }
 
 # The salvage keypad and Tomb Beta's server (S4 §4 rows 7-8, §7.2).
 hax_maps << { "eventPattern" => "door_unlock_attempt", "condition" => "data.connectedRoom === 'salvage_cage'", "onceOnly" => true, "setGlobal" => { "salvage_keypad_seen" => true } }
@@ -478,7 +483,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
             { "text": "WREN: one of four. Going into Montana with you.", "condition": "!globalVars.sleeper_named && !globalVars.sleeper_shortlist" },
             { "text": "His vendor notice: sent tonight.", "condition": "globalVars.albion_notified" },
             { "text": "His vendor notice: still on his box.", "condition": "!globalVars.albion_notified" },
-            { "text": "The Montana order: signed." }
+            { "text": "The Montana order: signed. Sun River." }
           ]
         },
         "credits": [
@@ -799,7 +804,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "takeable": true,
               "readable": true,
               "text": "SALVAGE CAGE ACCESS\nMSJMQAEGDZNVI",
-              "observations": "One catalogue line in the archive's own cipher. The second line is the code.",
+              "observations": "One catalogue line in the archive's own cipher. The second line is the code, still in their cipher.",
               "puzzle_graph_role": "clue",
               "puzzle_graph_unlocks": ["salvage_cage"]
             }
@@ -1751,6 +1756,17 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "observations": "Sorensen's own stacks card, on a reel."
             }
           ],
+          "eventMappings": [
+            {
+              "_comment": "Scenario design R1 m2 (MC §4.3 kept: HaX names no lever). She notices the file herself: once, as Nightshade's file is taken in the cage, her conversation opens on her re-entry glance at it. delayMs waits out the plan cabinet's container; in_cage and !flag3_submitted keep it off other rooms and off the identity scene's call.",
+              "eventPattern": "global_variable_changed:nightshade_file_held",
+              "condition": "value === true && globalVars.cage_opened && globalVars.in_cage && globalVars.sorensen_fate === 'left' && !globalVars.flag3_submitted",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "conversationMode": "person-chat",
+              "targetKnot": "start"
+            }
+          ],
           "observations": "Sorensen at the shredder's feed, working through a box sheet by sheet."
         },
         {
@@ -2079,6 +2095,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "takeable": true,
           "readable": true,
           "observations": "A lease and a roll of drawings for a bunker in this county.",
+          "onPickup": { "setVariable": { "deed_found": true } },
           "text": "LEASE ABSTRACT\nLessor: State of Montana, surplus property.\nLessee: Big Sky Holdings LLC.\nPremises: Sun River Regional Control Site, a decommissioned 1962 civil defense facility, with access road and easements. Lewis and Clark County, Montana.\nTerm: 20 years. Commencement date: June 2, 2016.\nRecorded with the County Clerk and Recorder.\nAttached: as-built drawings, 1962. Refit drawings: withdrawn by lessee.",
           "puzzle_graph_role": "evidence"
         },
@@ -2540,6 +2557,8 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "hl_box_opened": false,
     "noor_met": false,
     "noor_card_given": false,
+    "deed_found": false,
+    "tape_card_held": false,
     "albion_folder_opened": false,
     "memo_read": false,
     "tesseract_call_closed": false,

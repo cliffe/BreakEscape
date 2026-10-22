@@ -256,6 +256,9 @@ Narrator: He takes a card from his breast pocket.
 Director Magnus Netherton: Agent 0x19, Callum Fraser. Agent 0x6B, Ana Lúcia Ferreira.
 Narrator: He reads the first name off the card. He doesn't look down for the second.
 // The order, and his reply to the stance at the pen (N-07).
+// Scenario design R1 m3: the briefing's open question ("Not the bunker. Not
+// yet."), answered for every player before he signs.
+Director Magnus Netherton: Sun River. A civil defence bunker Tesseract's people leased from the state in 2016. That is where the order sends us.
 Narrator: He lays the Montana order on a crate and uncaps a pen.
 // R3 I-7: the ruthless save, remembered once (pays off the briefing's
 // "Nobody mentions why.").

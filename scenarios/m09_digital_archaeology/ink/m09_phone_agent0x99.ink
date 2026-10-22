@@ -39,6 +39,9 @@ VAR nightshade_file_held = false
 VAR notebook_read = false
 VAR legacy_clock_run = false
 VAR reading_found = false
+VAR reading_finished = false   // scenario design R1 n4: the Reading topic waits for the last page
+VAR deed_found = false   // scenario design R1 m3: the lease file's onPickup
+VAR tape_card_held = false   // scenario design R1 n2: the tape room card taken from the safe
 VAR salvage_keypad_seen = false
 VAR tape_room_entered = false
 VAR salvage_opened = false
@@ -666,25 +669,10 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 // ================================================
 === support_hub ===
 // Phone resting knot: choices only. Topics use + with not-guards, never *.
-// 1. Bring me in. One line on the first thing still open, then the debrief.
+// 1. Bring me in. Scenario design R1 M1: a confirm step first (the user's rule:
+// warn before the debrief and let the player finish up). Up to two open threads.
 + {tesseract_call_done and not report_done} [Bring me in.]
-    {
-    - not albion_notified:
-        The notice is still on his box. Netherton will ask.
-    - not sleeper_named and not sleeper_shortlist:
-        H&L's boxes are still shut. That's yours to leave, if you leave it.
-    - tran_outcome == "left":
-        Tran's still at his tapes. Arakawa's people can collect him.
-    }
-    // Copied once, never again, so a replayed debrief reads a stable value.
-    {not start_debrief:
-        ~ debrief_notice_before = albion_notified
-    }
-    // A tag, so it re-emits even when already true (a reload reopens the debrief).
-    #set_global:start_debrief:true
-    Bringing you in. Netherton's in the hangar.
-    #exit_conversation
-    -> DONE
+    -> bring_in_confirm
 // 2. The notice, from any room (stage 4 P8). Stage 8 M-01: one hub row;
 // the send and the hold are its answers (notice_ask).
 + {identity_scene_done and not albion_notified and not notice_sent_here} [His notice.]
@@ -748,7 +736,7 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 + {deck_choice_made and not afterwards_heard} [Afterwards.]
     -> afterwards
 // 8. The Reading (MC §4.6).
-+ {reading_found and not reading_told_hax_asked} [The Reading.]
++ {reading_found and reading_finished and not reading_told_hax_asked} [The Reading.]
     Do you want to tell me what it says?
     -> reading_ask
 // 9. WREN and the cross-reference nudge. Stage 8 M-01: retires on the deck
@@ -932,7 +920,10 @@ Sent. He'll read it tonight.
 - salvage_opened:
     Flag three. Find out whose box that is. And bring Nightshade's file from the plan cabinet in the cage.
 - tape_room_entered:
-    The keypad on the salvage cage. The code's the catalogue line I sent you.
+    The keypad on the salvage cage. The catalogue line I sent you is in their cipher. The key's on the wall by it.
+// Scenario design R1 n2: once the card is in hand, the safe row is stale.
+- deck_choice_made and tape_card_held:
+    Her card's in your hand. The tape room's north of the stacks.
 - deck_choice_made:
     Her office. Get the safe open, and her card for the tape room is in it.
 - flag2_submitted and cage_opened:
@@ -946,6 +937,9 @@ Sent. He'll read it tonight.
 // Walkthrough R1 m-04: after the hatch, name the gate and the cabinet.
 - hatch_talked and not cage_opened:
     Clone her card at the hatch if you haven't. The gate's beside her, and the cabinet inside takes her print.
+// Scenario design R1 m1: Victoria's m03 payoff, until the code is asked for.
+- stacks_entered and m03_victoria_fate == "recruited" and not maintenance_code_used:
+    Victoria's people can open that gate. Ask me.
 - stacks_entered:
     The hatch. Talk to her across the counter, and take what you can off her.
 - flag1_submitted:
@@ -957,6 +951,46 @@ Sent. He'll read it tonight.
     Get inside, set up the laptop on a reading desk, and get into the catalogue.
 }
 -> support_hub
+
+// ================================================
+// BRING-IN CONFIRM (unvoiced; scenario design R1 M1)
+// ================================================
+=== bring_in_confirm ===
+~ temp open_told = 0
+That's Helena done. Once you're on the plane, the archive's closed to us.
+{not albion_notified:
+    ~ open_told = open_told + 1
+    The notice is still on his box. Netherton will ask.
+}
+{not sleeper_named and not sleeper_shortlist:
+    ~ open_told = open_told + 1
+    H&L's boxes are still shut. That's yours to leave, if you leave it.
+}
+{open_told < 2 and not deed_found:
+    ~ open_told = open_told + 1
+    Her lease file's still in her office. It's the bunker's address.
+}
+{open_told < 2 and tran_outcome == "left":
+    ~ open_told = open_told + 1
+    Tran's still at his tapes. Arakawa's people can collect him.
+}
+{open_told < 2 and m08_nightshade_triple_agent and nightshade_file_held and not nightshade_file_decided:
+    ~ open_told = open_told + 1
+    You haven't said what we do with Nightshade's file.
+}
++ [Bring me in.]
+    // Copied once, never again, so a replayed debrief reads a stable value.
+    {not start_debrief:
+        ~ debrief_notice_before = albion_notified
+    }
+    // A tag, so it re-emits even when already true (a reload reopens the debrief).
+    #set_global:start_debrief:true
+    Bringing you in. Netherton's in the hangar.
+    #exit_conversation
+    -> DONE
++ [Not yet. I want to finish something.]
+    Line's open.
+    -> support_hub
 
 // ================================================
 // GUIDES MENU (choices only)
