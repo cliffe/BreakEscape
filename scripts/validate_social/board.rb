@@ -185,7 +185,25 @@ module ValidateSocial
         label = "#{where}.items[#{i}]"
         items << { label: label, step: c['step'] }
         issues << err("#{label}: a confirm item needs a text label for its button") if c['kind'] == 'confirm' && Mail.blank?(c['text'])
+        next unless c['kind'] == 'question'
+
+        # A report `question` item (opt-in, report-model.js): it needs its own id (its answer is saved
+        # under it), the question text, at least two options and exactly one correct one.
+        if mode != 'report'
+          issues << err("#{label}: a question item is only read by the report; the #{mode} board would never show it")
+          next
+        end
+        issues << err("#{label}: a question item needs an id; its answer is saved under it") if Mail.blank?(c['id'])
+        issues << err("#{label}: a question item needs text; the student would see options with no question") if Mail.blank?(c['text'])
+        opts = Mail.hash_list(c['options'])
+        if opts.length < 2
+          issues << err("#{label}: a question item needs at least two options; one option is not a question")
+        else
+          issues.concat(correct_count(opts, label, 'report question'))
+        end
       end
+      ids = Mail.hash_list(block['items']).map { |c| c['id'] }.compact
+      ids.select { |id| ids.count(id) > 1 }.uniq.each { |id| issues << err("#{where}.items: id '#{id}' is used more than once; their answers would overwrite each other") }
       Mail.hash_list(block['findings']).each { |f| items << { label: "#{where}.findings[#{f['id'] || '?'}]", step: f['step'] } } if mode == 'report'
       items
     end

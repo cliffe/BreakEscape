@@ -2042,6 +2042,7 @@ lists the triage sizes and the domain ids.
 | `rearmMargin` | optional character-level integer in `influence`, default 10 | 8 |
 | `influence.display` | optional `{bar, number, pip}` booleans, each default `true`; scenario default `social.influenceDisplay`, overridden key by key | 8 |
 | `confirm` item | `{ kind: "confirm", step, text }` | 11 |
+| Report `question` item (opt-in, 2026-10-22, lab design C1 M2) | `{ kind: "question", id, step, text, options: [{ id, text, correct, blame?, why }] }` on `engagement.report.items`; exactly one `correct`; a wrong pick shows its `why` and can be changed, the right pick locks it; the answer is saved as `se_report_state.answers[id]` (ids only); the step is done when every confirm is pressed and every question answered right | 11 |
 | Report builder state | object-valued global `se_report_state` (ids only) | 11 |
 | Sync then emit | `deferEmit`, then `stateSync.syncConfirmed()` (back-off, capped attempts, 403 final), then emit; a reopen that finds the done global set and the conclusion task incomplete re-emits; if the connection never comes back, nothing is emitted and the task stays incomplete until a reopen | 11, S3 |
 | Validator exit | exits 1 when the `json-schema` gem is missing, on bad arguments, a directory-structure failure, structure, ink compile and schema errors, and an uncaught `StandardError`; other findings print and exit 0; `--strict-social` adds social lint errors | S11 |

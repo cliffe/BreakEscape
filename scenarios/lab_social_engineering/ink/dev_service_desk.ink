@@ -13,7 +13,7 @@
 // JSON (social.pretextNpcs, authored by P6-E) owns the line ids, the ask grants
 // and the tells; this ink only speaks Dev's side and routes on the band / result.
 // Say ids: open_buddy, repair_team, urgent_payslip, name_drop_manager.
-// Ask ids: portal_name, payslip_date. Blanks: intern, team.
+// Ask ids: portal_name, payslip_date (both need the intern check, design C1 m5). Blanks: intern, team.
 // Phone lines stay under 25 words; choice labels under 15 words.
 // ================================================
 
@@ -44,7 +44,7 @@ VAR team_checked = false
 // resumes at the open choices, not here, so its state is preserved. Influence is
 // reset separately by person-chat-pretext's new_call.
 ~ team_checked = false
-Dev: Service desk, Dev speaking. What can I do for you?
+Service desk, Dev speaking. What can I do for you?
 -> desk
 
 === desk ===
@@ -65,7 +65,7 @@ Dev: Service desk, Dev speaking. What can I do for you?
 + { not se_intel_lord_payslip_date } [And when do payslips actually go out this month?]
     -> ask_reaction("payslip_date", pretext_ask("payslip_date"))
 + [Thanks Dev, I'll ring back if she's still stuck.]
-    Dev: Right you are. Cheers.
+    Right you are. Cheers.
     -> END
 
 === reaction(band, said) ===
@@ -76,34 +76,34 @@ Dev: Service desk, Dev speaking. What can I do for you?
     -> END
 }
 { band == 2:
-    Dev: Look, I'm not doing anything else on this call without checking who you are.
+    Look, I'm not doing anything else on this call without checking who you are.
     -> desk
 }
 { band == 1:
     { said == "urgent_payslip" or said == "name_drop_manager":
-        Dev: Okay, slow down a sec. I still need to check who she is.
+        Okay, slow down a sec. I still need to check who she is.
         -> desk
     }
-    Dev: Okay. Slow down a sec for me.
+    Okay. Slow down a sec for me.
 }
 { said == "urgent_payslip":
-    Dev: Aw, first payslip's always a faff. She'll be fine, they're never late.
+    Aw, first payslip's always a faff. She'll be fine, they're never late.
     -> desk
 }
 { said == "name_drop_manager":
-    Dev: Did they? Nobody's told me. I still go by the list, mind.
+    Did they? Nobody's told me. I still go by the list, mind.
     -> desk
 }
 { said == "repair_team":
-    Dev: Finance, right you are. New intern, that'll be Sofia then. What's she after?
+    Finance, right you are. New intern, that'll be Sofia then. What's she after?
     -> desk
 }
 { not team_checked:
     ~ team_checked = true
     { pretext_team_value:
-    - "finance": Dev: Finance, lovely. New intern, that'll be Sofia. What's she after?
-    - "accounts": Dev: Accounts? We folded Accounts into Finance a couple of years back. What's she after?
-    - else: Dev: Right, bear with me a sec.
+    - "finance": Finance, lovely. New intern, that'll be Sofia. What's she after?
+    - "accounts": Accounts? We folded Accounts into Finance a couple of years back. What's she after?
+    - else: Right, bear with me a sec.
     }
 }
 -> desk
@@ -112,13 +112,17 @@ Dev: Service desk, Dev speaking. What can I do for you?
 { result:
 - 1:
     { ask_id == "payslip_date":
-        Dev: Monday the 6th. Tell her not to spend it all at once.
+        Monday the 6th. Tell her not to spend it all at once.
     - else:
-        Dev: Course. It's LedgerPay. Notices come from payroll-notices at our domain, same as every month. There you go.
+        Course. It's LedgerPay. Notices come from payroll-notices at our domain, same as every month. There you go.
     }
 - 2:
-    Dev: Before I read a date out, I'd check her against the new-starter list. Give me her name and I'll have a look.
+    { ask_id == "payslip_date":
+        Before I read a date out, I'd check her against the new-starter list. Give me her name and I'll have a look.
+    - else:
+        Happy to, but who's she? I check the new-starter list before I give out system details. Her name?
+    }
 - else:
-    Dev: Ah, I can't give that out over the phone, sorry. Not without a check.
+    Ah, I can't give that out over the phone, sorry. Not without a check.
 }
 -> desk

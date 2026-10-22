@@ -154,6 +154,11 @@
     margin: 16px 0 0;
 }
 
+/* A question about the results (opt-in `question` item) */
+.er-question {
+    margin: 16px 0 0;
+}
+
 .er-confirmed {
     display: flex;
     align-items: center;

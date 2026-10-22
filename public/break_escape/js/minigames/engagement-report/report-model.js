@@ -14,7 +14,9 @@
 //     and `_lowest`.
 //
 // Completion follows the step-binding rule the board uses (03 N6; board-model.js):
-// the `results` step is done when every `confirm` item bound to it has been pressed; the
+// the `results` step is done when every `confirm` item bound to it has been pressed and every
+// `question` item bound to it has its correct option picked (an opt-in kind: a scenario that
+// authors only `confirm` items behaves exactly as before); the
 // `findings` step is done when every finding bound to it has a correct root cause and a
 // correct control chosen. A step's `onCompleteGlobal` is set when its items are done, and
 // the block's `onCompleteGlobal` (report_filed) when every step is done.
@@ -87,7 +89,9 @@ function targetNameResolver(social, preferRole = false) {
 /**
  * The report's in-progress pairings, ids only (00 §11). Anything else in the stored object is
  * dropped: `confirmed` is a list of confirm-item ids (a confirm item's id is its own `id` or,
- * when it has none, its `step`); `findings` maps a finding id to `{ cause?, control? }` option ids.
+ * when it has none, its `step`); `findings` maps a finding id to `{ cause?, control? }` option ids;
+ * `answers` maps a question item's id to the option id last picked for it. `answers` is written
+ * only when a scenario authors a `question` item, so older saves read as before.
  */
 export function readReportState(globals) {
     const raw = globals?.[STATE_KEY];
@@ -102,7 +106,10 @@ export function readReportState(globals) {
         if (typeof v.control === 'string') pair.control = v.control;
         findings[k] = pair;
     }
-    return { v: 1, confirmed, findings };
+    const answers = {};
+    const answersRaw = o.answers && typeof o.answers === 'object' ? o.answers : {};
+    for (const [k, v] of Object.entries(answersRaw)) if (typeof v === 'string') answers[k] = v;
+    return { v: 1, confirmed, findings, answers };
 }
 
 /** A confirm item's stable id: its authored `id`, or its `step` when it carries none. */
@@ -201,13 +208,24 @@ export function buildReportModel(social, globals, mailState) {
             };
         });
 
-    // ── confirm items (the results step) ──────────────────────────────────────
+    // ── results-step items: `confirm` (press to acknowledge) and `question` ──────
+    // A `question` item is opt-in: one authored question about the results with options, one
+    // `correct`. A wrong pick shows its `why` and can be changed; the right pick locks the item.
+    // `done` is the completion test for both kinds; `confirmed` mirrors it for older callers.
     const items = (Array.isArray(block.items) ? block.items : [])
-        .filter((i) => i && i.kind === 'confirm')
+        .filter((i) => i && (i.kind === 'confirm' || i.kind === 'question'))
         .map((i) => {
             const id = confirmId(i);
-            return { id, step: typeof i.step === 'string' ? i.step : null, text: i.text || '',
-                confirmed: !!id && state.confirmed.includes(id) };
+            const step = typeof i.step === 'string' ? i.step : null;
+            if (i.kind === 'question') {
+                const options = optList(i.options);
+                const picked = (id && options.find((o) => o.id === state.answers[id])) || null;
+                const done = !!(picked && picked.correct);
+                return { id, kind: 'question', step, text: i.text || '', options,
+                    pickedId: picked ? picked.id : null, picked, done, confirmed: done };
+            }
+            const confirmed = !!id && state.confirmed.includes(id);
+            return { id, kind: 'confirm', step, text: i.text || '', confirmed, done: confirmed };
         });
 
     // ── findings (the findings step) ──────────────────────────────────────────
@@ -243,7 +261,7 @@ export function buildReportModel(social, globals, mailState) {
         const confItems = items.filter((i) => i.step === id);
         const boundFindings = findings.filter((f) => f.step === id);
         if (!confItems.length && !boundFindings.length) return false; // an empty step is never done
-        const confOk = confItems.length ? confItems.every((i) => i.confirmed) : true;
+        const confOk = confItems.length ? confItems.every((i) => i.done) : true;
         const findOk = boundFindings.length ? boundFindings.every((f) => f.done) : true;
         return confOk && findOk;
     };

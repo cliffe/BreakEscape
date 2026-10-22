@@ -311,3 +311,97 @@ test('Close is a normal exit and reports completion', () => {
     assert.equal(ended[0].success, true);
     assert.equal(ended[0].result.completed, false);
 });
+
+// ── results step: opt-in question items (lab design C1 M2) ──────────────────────
+// A scenario may author `question` items on the results step instead of a confirm: one correct
+// option, a wrong pick shows its why and can be changed, the right pick locks it.
+const questionFixture = () => {
+    const social = JSON.parse(JSON.stringify(fixture));
+    social.engagement.report.items = [
+        { kind: 'question', id: 'unseen', step: 'results', text: 'What can this test not tell you?', options: [
+            { id: 'landed', text: 'Whether the mail landed', correct: false, why: 'The mail table shows that.' },
+            { id: 'reported', text: 'Whether staff reported it', correct: true, why: 'Nothing counts reports yet.' },
+            { id: 'who', text: 'Who to retrain', correct: false, blame: true, why: 'That names people.' }] },
+        { kind: 'question', id: 'first', step: 'results', text: 'What does the first-send column add?', options: [
+            { id: 'tries', text: 'How many tries it took', correct: true, why: 'Each failed send was a chance to report.' },
+            { id: 'speed', text: 'How fast they read mail', correct: false, why: 'Nothing is timed.' }] }
+    ];
+    return social;
+};
+
+function openWithQuestions(globals = {}) {
+    setWorld({ globals, mailState: { metrics: { pierce: { sent: 2, failed: 1, landed: 1 } } } });
+    return open({ social: questionFixture() });
+}
+
+test('question items render as option groups, with no Confirm button', () => {
+    const s = openWithQuestions();
+    assert.equal(s.container.querySelector('[data-confirm-btn]'), null);
+    const q = s.container.querySelector('[data-question="unseen"]');
+    assert.ok(q, 'the question is shown');
+    assert.match(q.textContent, /What can this test not tell you\?/);
+    assert.equal(q.querySelectorAll('[data-option]').length, 3);
+    const items = s.getTestState().report.items;
+    assert.deepEqual(items.map((i) => [i.id, i.kind, i.done]), [['unseen', 'question', false], ['first', 'question', false]]);
+});
+
+test('a wrong answer shows its why, saves the id, sets nothing and can be changed', () => {
+    const s = openWithQuestions();
+    assert.equal(s.answerResults('unseen', 'landed'), true);
+    assert.match(s.container.querySelector('[data-question="unseen"]').textContent, /Not quite:.*The mail table shows that/);
+    assert.equal(readReportState(stateOf()).answers.unseen, 'landed');
+    assert.equal(stateOf().report_results_done, undefined);
+    assert.equal(s.answerResults('unseen', 'who'), true);
+    assert.match(s.container.querySelector('[data-question="unseen"]').textContent, /Blaming staff:.*That names people/);
+    const btn = s.container.querySelector('[data-question="unseen"] [data-option="reported"]');
+    assert.equal(btn.disabled, false, 'the right option stays open after a wrong pick');
+});
+
+test('the right answer locks the item; the step needs every question right', () => {
+    const s = openWithQuestions();
+    s.container.querySelector('[data-question="unseen"] [data-option="reported"]').click();
+    assert.equal(s.getTestState().report.items[0].done, true);
+    assert.equal(stateOf().report_results_done, undefined, 'one question of two is not the step');
+    assert.equal(s.answerResults('unseen', 'landed'), false, 'a locked question ignores a later pick');
+    assert.equal(s.container.querySelector('[data-question="unseen"] [data-option="landed"]').disabled, true);
+    assert.equal(s.answerResults('first', 'nope'), false, 'an unknown option is ignored');
+    assert.equal(s.answerResults('ghost', 'tries'), false, 'an unknown item is ignored');
+    s.answerResults('first', 'tries');
+    assert.equal(stateOf().report_results_done, true);
+    assert.match(s.getTestState().report.live, /Results reviewed/);
+    assert.equal(stateOf().report_filed, undefined, 'the findings step is still open');
+});
+
+test('questions plus findings file the report; se_report_state stays ids only', () => {
+    const s = openWithQuestions();
+    s.answerResults('unseen', 'reported');
+    s.answerResults('first', 'tries');
+    s.pick('spoofed_colleague', 'cause', 'no_banner_dmarc_none');
+    s.pick('spoofed_colleague', 'control', 'banner_dmarc_enforce');
+    s.pick('desk_leak', 'cause', 'no_verification_script');
+    s.pick('desk_leak', 'control', 'callback_on_file');
+    assert.equal(stateOf().report_filed, true);
+    const stored = stateOf().se_report_state;
+    assert.deepEqual(stored.answers, { unseen: 'reported', first: 'tries' });
+    assert.deepEqual(stored.confirmed, []);
+});
+
+test('a reopen restores answered questions and re-applies a step global that never landed', () => {
+    const s = openWithQuestions({ se_report_state: { v: 1, confirmed: [], findings: {}, answers: { unseen: 'reported', first: 'speed' } } });
+    let items = s.getTestState().report.items;
+    assert.deepEqual(items.map((i) => [i.picked, i.done]), [['reported', true], ['speed', false]]);
+    assert.equal(stateOf().report_results_done, undefined);
+    s.answerResults('first', 'tries');
+    const s2 = open({ social: questionFixture() });
+    items = s2.getTestState().report.items;
+    assert.ok(items.every((i) => i.done));
+    assert.equal(stateOf().report_results_done, true);
+});
+
+test('a scenario with only confirm items is unaffected: no answers key is read or needed', () => {
+    const m = buildReportModel(fixture, { se_report_state: { v: 1, confirmed: ['results'], findings: {} } }, { metrics: {} });
+    assert.deepEqual(m.items.map((i) => [i.kind, i.confirmed, i.done]), [['confirm', true, true]]);
+    assert.equal(m.steps.find((x) => x.id === 'results').done, true);
+    // A stray answers object of the wrong shape is dropped, not trusted.
+    assert.deepEqual(readReportState({ se_report_state: { answers: { a: 3, b: 'x' } } }).answers, { b: 'x' });
+});

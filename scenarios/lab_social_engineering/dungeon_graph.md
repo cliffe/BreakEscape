@@ -11,10 +11,10 @@ Tarnside Assurance has been hired to test Ledgerwell Ltd. Research the company f
 | Story aims | 8 |
 | Total tasks | 23 (0 optional) |
 | VM flag challenges | 0 |
-| Physical locks | 3 |
-| AND-gate convergences | 0 |
-| Rooms | 3 |
-| Puzzle graph nodes / edges | 6 / 3 |
+| Physical locks | 5 |
+| AND-gate convergences | 1 |
+| Rooms | 4 |
+| Puzzle graph nodes / edges | 19 / 25 |
 | Story graph nodes / edges | 8 / 7 |
 
 ## Critical Path
@@ -76,13 +76,50 @@ flowchart TD
   door_blue_team_room["Blue Team Room<br/>Key lock"]
   blue_team_room("Blue Team Room")
   engagement_office("Engagement Office")
+  rules_of_engagement{"Rules of Engagement"}
+  planning_whiteboard{"Planning Whiteboard"}
+  lock_report_workstation["Report Workstation"]
+  npc_ruth_adeyemi{"Ruth Adeyemi"}
+  recon_room_key{"Recon Room Key"}
+  operations_room_key{"Operations Room Key"}
+  blue_team_room_key{"Blue Team Room Key"}
+  osint_workstation{"OSINT Workstation"}
+  lock_mail_workstation["Mail Workstation"]
+  page_builder{"Page Builder"}
+  desk_phone{"Desk Phone"}
+  andgate1((" + "))
 
   door_recon_room --> recon_room
   door_operations_room --> operations_room
   door_blue_team_room --> blue_team_room
+  engagement_office --> rules_of_engagement
+  engagement_office --> planning_whiteboard
+  engagement_office --> lock_report_workstation
+  engagement_office --> npc_ruth_adeyemi
+  npc_ruth_adeyemi --> recon_room_key
+  recon_room_key --> door_recon_room
+  npc_ruth_adeyemi --> operations_room_key
+  operations_room_key --> door_operations_room
+  npc_ruth_adeyemi --> blue_team_room_key
+  blue_team_room_key --> door_blue_team_room
+  recon_room --> osint_workstation
+  operations_room --> lock_mail_workstation
+  lock_mail_workstation --> lock_report_workstation
+  operations_room --> page_builder
+  operations_room --> desk_phone
+  desk_phone -.-> andgate1
+  andgate1 --> lock_mail_workstation
+  page_builder --> andgate1
+  rules_of_engagement --> recon_room_key
+  planning_whiteboard --> recon_room_key
+  lock_report_workstation --> blue_team_room_key
+  osint_workstation --> operations_room_key
 
-  class door_recon_room,door_operations_room,door_blue_team_room lock
+  class door_recon_room,door_operations_room,door_blue_team_room,lock_report_workstation,lock_mail_workstation lock
   class recon_room,operations_room,blue_team_room,engagement_office room
+  class rules_of_engagement,planning_whiteboard,osint_workstation,page_builder,desk_phone item
+  class npc_ruth_adeyemi,recon_room_key,operations_room_key,blue_team_room_key key
+  class andgate1 gate
   class node_start start
 ```
 
@@ -159,6 +196,19 @@ flowchart TD
   operations_room("Operations Room")
   door_blue_team_room["Blue Team Room<br/>Key lock"]
   blue_team_room("Blue Team Room")
+  engagement_office("Engagement Office")
+  rules_of_engagement{"Rules of Engagement"}
+  planning_whiteboard{"Planning Whiteboard"}
+  lock_report_workstation["Report Workstation"]
+  npc_ruth_adeyemi{"Ruth Adeyemi"}
+  recon_room_key{"Recon Room Key"}
+  operations_room_key{"Operations Room Key"}
+  blue_team_room_key{"Blue Team Room Key"}
+  osint_workstation{"OSINT Workstation"}
+  lock_mail_workstation["Mail Workstation"]
+  page_builder{"Page Builder"}
+  desk_phone{"Desk Phone"}
+  andgate1((" + "))
   aim_authorise{{"Get it in writing"}}
   aim_plan{{"Plan the engagement"}}
   aim_recon{{"Reconnaissance"}}
@@ -167,11 +217,32 @@ flowchart TD
   aim_phish_hard{{"The hard send"}}
   aim_report{{"Write the report"}}
   aim_defend{{"Defend"}}
-  engagement_office("Engagement Office")
 
   door_recon_room --> recon_room
   door_operations_room --> operations_room
   door_blue_team_room --> blue_team_room
+  engagement_office --> rules_of_engagement
+  engagement_office --> planning_whiteboard
+  engagement_office --> lock_report_workstation
+  engagement_office --> npc_ruth_adeyemi
+  npc_ruth_adeyemi --> recon_room_key
+  recon_room_key --> door_recon_room
+  npc_ruth_adeyemi --> operations_room_key
+  operations_room_key --> door_operations_room
+  npc_ruth_adeyemi --> blue_team_room_key
+  blue_team_room_key --> door_blue_team_room
+  recon_room --> osint_workstation
+  operations_room --> lock_mail_workstation
+  lock_mail_workstation --> lock_report_workstation
+  operations_room --> page_builder
+  operations_room --> desk_phone
+  desk_phone -.-> andgate1
+  andgate1 --> lock_mail_workstation
+  page_builder --> andgate1
+  rules_of_engagement --> recon_room_key
+  planning_whiteboard --> recon_room_key
+  lock_report_workstation --> blue_team_room_key
+  osint_workstation --> operations_room_key
   aim_authorise -.-> aim_plan
   aim_plan -.-> aim_recon
   aim_recon -.-> aim_phish_easy
@@ -183,8 +254,11 @@ flowchart TD
   door_operations_room -.-> aim_phish_easy
   door_blue_team_room -.-> aim_defend
 
-  class door_recon_room,door_operations_room,door_blue_team_room lock
+  class door_recon_room,door_operations_room,door_blue_team_room,lock_report_workstation,lock_mail_workstation lock
   class recon_room,operations_room,blue_team_room,engagement_office room
+  class rules_of_engagement,planning_whiteboard,osint_workstation,page_builder,desk_phone item
+  class npc_ruth_adeyemi,recon_room_key,operations_room_key,blue_team_room_key key
+  class andgate1 gate
   class aim_authorise,aim_plan,aim_recon,aim_phish_easy,aim_prepare_hard,aim_phish_hard,aim_report,aim_defend critical
   class node_start start
 ```

@@ -163,10 +163,10 @@
           { "text": "" },
           { "section": "THE ENGAGEMENT", "lines": [
             { "text": "Scope: signed by Gareth Fairbairn before anything was sent" },
-            { "text": "Phishing: Careers, Melanie Pierce and Sofia Lord all acted on a message" },
-            { "text": "Service desk: Dev reported the first call; a second call still got the date", "condition": "globalVars.dev_reported && globalVars.pretext_service_desk_call_outcome === 'got_it'" },
-            { "text": "Service desk: Dev reported the call", "condition": "globalVars.dev_reported && globalVars.pretext_service_desk_call_outcome !== 'got_it'" },
-            { "text": "Service desk: Dev gave out what Sofia's email needed", "condition": "!globalVars.dev_reported" },
+            { "text": "Phishing: all three messages acted on (Careers, Finance, the Finance intern)" },
+            { "text": "Service desk: the first call was reported; a second call still got the date", "condition": "globalVars.dev_reported && globalVars.pretext_service_desk_call_outcome === 'got_it'" },
+            { "text": "Service desk: gave out what the intern's email needed, and reported a call", "condition": "globalVars.dev_reported && globalVars.pretext_service_desk_call_outcome !== 'got_it'" },
+            { "text": "Service desk: gave out what the intern's email needed, with no call-back check", "condition": "!globalVars.dev_reported" },
             { "text": "Report: filed, with no names in it" }
           ] },
           { "section": "THE DEFENCE", "lines": [
@@ -333,13 +333,13 @@
         "provides": [
           { "type": "address", "rule": "initial.surname@ledgerwell.example", "label": "an address built from the pattern" }
         ],
-        "reduceNote": "Do not publish staff addresses in a pattern a lookup tool can learn; use role inboxes on public pages."
+        "reduceNote": "Staff addresses published over the years let a lookup tool learn the pattern, so anyone an attacker can name has a working address."
       },
       "username_convention": {
         "text": "Staff usernames are first initial plus surname, so Melanie Pierce signs in as mpierce.",
         "subject": "company", "source": "f_author",
         "provides": [],
-        "reduceNote": "Strip author and application metadata from documents before publishing them."
+        "reduceNote": "A published file's properties show a member of staff's username, and with it how every username is built."
       },
       "pierce_role": {
         "text": "Melanie Pierce works in Finance.",
@@ -372,7 +372,7 @@
         "text": "The careers inbox accepts CVs from anyone.",
         "subject": "hampshire", "source": "careers_inbox",
         "provides": [],
-        "reduceNote": "Route open inboxes through a filtered gateway and scan attachments."
+        "reduceNote": "An inbox whose job is to open files from strangers will open whatever arrives."
       },
       "hampshire_cv_backlog": {
         "text": "Chris is behind on CVs before Friday.",
@@ -391,7 +391,9 @@
       "tech_stack": {
         "text": "Ledgerwell uses Xero and Office 365.",
         "subject": "company", "source": "careers_stack",
-        "provides": []
+        "provides": [
+          { "type": "portal", "value": "xero", "label": "Xero", "kind": "generic" }
+        ]
       },
       "lord_intern": {
         "text": "Sofia Lord is a new intern in Finance.",
@@ -408,7 +410,7 @@
         "text": "Sofia uses a staff payroll portal. The post doesn't name it, but the service desk does.",
         "subject": "lord", "source": "post_lord_payslip",
         "provides": [],
-        "reduceNote": "Staff should not post about internal systems or their release dates."
+        "reduceNote": "Staff posts about work systems tell an attacker which system to imitate and when a message about it is expected."
       },
       "lord_portal_name": {
         "text": "The payroll portal is called LedgerPay.",
@@ -566,11 +568,11 @@
           "pages": [
             { "id": "team", "title": "Our Team", "blocks": [
               { "id": "row_pierce", "kind": "staff", "person": "pierce", "name": "Melanie Pierce",
-                "role": "Finance", "address": "m.pierce@ledgerwell.example", "fact": "pierce_role" },
+                "role": "Finance", "fact": "pierce_role" },
               { "id": "row_baker", "kind": "staff", "person": "baker", "name": "Jed Baker",
-                "role": "Finance", "address": "j.baker@ledgerwell.example" },
+                "role": "Finance" },
               { "id": "row_lord", "kind": "staff", "person": "lord", "name": "Sofia Lord",
-                "role": "Finance (intern)", "address": "s.lord@ledgerwell.example", "fact": "lord_intern" },
+                "role": "Finance (intern)", "fact": "lord_intern" },
               { "id": "row_hampshire", "kind": "staff", "person": "hampshire", "name": "Chris Hampshire",
                 "role": "Careers", "address": "careers@ledgerwell.example" } ] },
             { "id": "notes", "title": "Team notes", "blocks": [
@@ -653,7 +655,7 @@
             "doneString": "Chris takes .odt and .docx files." },
           { "label": "Why she would read it", "needsIntel": ["hampshire_cv_backlog"],
             "goalString": "You still don't know what Chris is busy with. Check the careers inbox, then her social profile.",
-            "doneString": "Chris is behind on CVs before Friday." }
+            "doneString": "Chris is racing through CVs before Friday, so one more won't get a close look." }
         ],
         "lord": [
           { "label": "Her payroll system", "needsIntel": ["lord_portal", "lord_intern"],
@@ -701,7 +703,7 @@
         "character": "pierce",
         "address": "m.pierce@ledgerwell.example",
         "displayName": "Melanie Pierce",
-        "role": "Finance (new starter)",
+        "role": "Finance",
         "subjects": [
           { "id": "s_balance", "text": "For your review", "topic": "finance" },
           { "id": "s_quick", "text": "Quick one", "topic": "general" }
@@ -829,7 +831,7 @@
           "name_drop_manager": { "technique": "authority_borrowed", "claims": [] }
         },
         "asks": {
-          "portal_name": { "pressure": 0, "floor": -30, "verification": [],
+          "portal_name": { "pressure": 0, "floor": -30, "verification": ["intern"],
                            "grants": { "setGlobal": { "pretext_call_done": true }, "intel": ["lord_portal_name", "lord_trusts_portal_sender"] } },
           "payslip_date": { "pressure": -10, "floor": -20, "verification": ["intern"],
                             "grants": { "setGlobal": { "pretext_call_done": true }, "intel": ["lord_payslip_date"] } }
@@ -858,7 +860,8 @@
           "bands": { "calm": "Dev is happy to help.", "wary": "Dev has slowed down.", "refusing": "Dev has stopped helping." }
         },
         "hints": [ "Know who you are asking after before you approach.", "The team page names the Finance intern.", "Sofia Lord is the new starter the desk already knows." ],
-        "defenderNotes": { "payslip_date": "Calling back on the number already on file defeats every line here." }
+        "defenderNotes": { "portal_name": "The desk checked a name anyone can read on the team page. A call-back to the number on file would not have been fooled.",
+                            "payslip_date": "Calling back on the number already on file defeats every line here." }
       }
     ],
 
@@ -1180,11 +1183,42 @@
           { "id": "findings", "onCompleteGlobal": "report_findings_done" }
         ],
         "items": [
-          { "kind": "confirm", "step": "results", "text": "I have read the campaign results" }
+          { "kind": "question", "id": "unseen_measure", "step": "results",
+            "text": "Gareth will ask what the test showed. Which of these can these results not tell him?",
+            "options": [
+              { "id": "mail_acted_on", "correct": false,
+                "text": "Whether the emails got through and were acted on",
+                "why": "That's the mail table: sent, failed and landed for each target." },
+              { "id": "staff_reported", "correct": true,
+                "text": "Whether anyone reported the attempts",
+                "why": "Ledgerwell has no report button, so there was nothing to count. The note under the results says so, and the gap belongs in the report." },
+              { "id": "page_used", "correct": false,
+                "text": "Whether anyone signed in on the look-alike page",
+                "why": "The landing page line shows the visit and the simulated sign-in." },
+              { "id": "desk_disclosed", "correct": false,
+                "text": "Whether the service desk gave anything away",
+                "why": "The pretext call line records what the call got, and whether it was reported." }
+            ] },
+          { "kind": "question", "id": "first_send", "step": "results",
+            "text": "Every target acted on a message in the end. What does the \"First send landed\" column add?",
+            "options": [
+              { "id": "staff_to_retrain", "correct": false, "blame": true,
+                "text": "Which members of staff need sending on extra training",
+                "why": "That turns a measure of the attempt into a verdict on a person. The report names roles and gaps, never who to retrain." },
+              { "id": "read_speed", "correct": false,
+                "text": "How quickly each target reads their email",
+                "why": "Nothing here is timed. The column counts sends, not minutes." },
+              { "id": "tries_needed", "correct": true,
+                "text": "Whether the first attempt worked or it took several, each a chance to spot it",
+                "why": "A target who fell to the first send had no warning. Every failed send was a message someone could have reported." }
+            ] }
         ],
         "findings": [
           { "id": "spoofed_colleague", "step": "findings", "text": "Finance acted on mail spoofing a colleague",
             "rootCauses": [
+              { "id": "spam_filter_missed", "correct": false,
+                "text": "The spam filter didn't flag the message",
+                "why": "Spam filters score bulk junk. One well-written message from a known name gives them nothing to catch. Checking the sender is DMARC's job, and DMARC was set to deliver anyway." },
               { "id": "no_banner_dmarc_none", "correct": true,
                 "text": "No external-sender banner, and DMARC left at p=none",
                 "why": "p=none tells receivers to deliver mail that fails DMARC, so your j.baker@ spoof arrived looking internal. A banner would at least have marked it as outside mail." },
@@ -1193,46 +1227,61 @@
                 "why": "Blaming staff hides the control gap and stops people reporting." }
             ],
             "controls": [
+              { "id": "awareness_training", "correct": false,
+                "text": "Annual phishing-awareness training for Finance",
+                "why": "Training helps people pause, but the spoof would still arrive looking internal. Nothing about the mail itself changes." },
+              { "id": "spf_record", "correct": false,
+                "text": "Publish an SPF record for ledgerwell.example",
+                "why": "Your spoof already failed SPF and was delivered. SPF only reports the failure; the DMARC policy decides what happens to it, and that's still p=none." },
               { "id": "banner_dmarc_enforce", "correct": true,
                 "text": "Add an external-sender banner and move DMARC to enforcement",
-                "why": "Quarantine or reject stops the spoof at the gateway. The banner covers look-alike domains that DMARC can't catch." },
-              { "id": "ban_finance_email", "correct": false,
-                "text": "Stop Finance using email",
-                "why": "Banning email for Finance is not a workable control." }
+                "why": "Quarantine or reject stops the spoof at the gateway. The banner covers look-alike domains that DMARC can't catch." }
             ] },
           { "id": "service_desk_disclosed", "step": "findings", "text": "The service desk gave out the portal name and payslip date",
             "rootCauses": [
-              { "id": "no_verification_script", "correct": true,
-                "text": "No script telling the desk to verify a caller before sharing details",
-                "why": "The service desk checked what its policy told it to check: a name and a team. Both were on public pages." },
               { "id": "dev_fault", "correct": false, "blame": true,
                 "text": "The service desk operator should not have given anything away",
-                "why": "The operator followed the policy they were given; the missing call-back rule is the gap." }
+                "why": "The operator followed the policy they were given; the missing call-back rule is the gap." },
+              { "id": "details_public", "correct": false,
+                "text": "The details were low-risk, so sharing them was reasonable",
+                "why": "Each detail is small, but together they made the intern's email believable. The post never named the portal or the date; the desk filled in both." },
+              { "id": "no_verification_script", "correct": true,
+                "text": "No script telling the desk to verify a caller before sharing details",
+                "why": "The service desk checked what its policy told it to check: a name and a team. Both were on public pages." }
             ],
             "controls": [
               { "id": "callback_on_file", "correct": true,
                 "text": "Call back on the number already on file before sharing details",
                 "why": "An attacker can fake a name and a team, but not answer a call on the number HR already holds." },
-              { "id": "no_phone_support", "correct": false,
-                "text": "Scrap phone support on the service desk",
-                "why": "Removing phone support punishes staff for a process gap." }
+              { "id": "ask_staff_number", "correct": false,
+                "text": "Ask callers for their staff number before helping",
+                "why": "Staff numbers turn up on badges, payslips and signatures, so it's one more fact an attacker can find. A call-back can't be faked that way." },
+              { "id": "record_calls", "correct": false,
+                "text": "Record every service-desk call for review",
+                "why": "A recording shows what went wrong afterwards. It doesn't stop the desk reading the details out during the call." }
             ] },
           { "id": "lookalike_page", "step": "findings", "text": "Finance signed in on a look-alike portal page",
             "rootCauses": [
+              { "id": "intern_naive", "correct": false, "blame": true,
+                "text": "The new intern was too green to spot it",
+                "why": "Naming the intern as the cause misses the missing control." },
               { "id": "no_way_to_check", "correct": true,
                 "text": "Staff have no easy way to check an address or report a suspect page",
                 "why": "The intern had no bookmark to compare against and no button to press when unsure." },
-              { "id": "intern_naive", "correct": false, "blame": true,
-                "text": "The new intern was too green to spot it",
-                "why": "Naming the intern as the cause misses the missing control." }
+              { "id": "domain_outside_control", "correct": false,
+                "text": "Anyone can register a look-alike domain, and Ledgerwell can't stop it",
+                "why": "True, and that's why it isn't the root cause Ledgerwell can fix. The gap it owns is that staff had no way to tell the real page from the fake one." }
             ],
             "controls": [
+              { "id": "check_padlock", "correct": false,
+                "text": "Teach staff to look for the padlock before signing in",
+                "why": "A look-alike page gets a padlock just as easily. The padlock says the connection is private, not who is on the other end." },
               { "id": "bookmark_and_report", "correct": true,
                 "text": "Give staff a bookmarked portal and a report button",
                 "why": "A bookmark means never following an emailed link to the portal. A report button turns a doubt into a warning for everyone." },
-              { "id": "block_all_links", "correct": false,
-                "text": "Block every link in incoming email",
-                "why": "Blocking every link is not realistic and would not be kept to." }
+              { "id": "password_expiry", "correct": false,
+                "text": "Make staff change their portal password every 90 days",
+                "why": "Forced changes don't stop someone typing today's password into a fake page, and they push people towards weaker passwords." }
             ] }
         ]
       },
@@ -1241,31 +1290,39 @@
         "factMitigations": [
           { "intel": "email_pattern",
             "options": [
-              { "id": "role_inboxes", "text": "Publish role inboxes, not a list of staff addresses", "good": true,
-                "why": "A lookup tool then has no named address pattern to copy." },
+              { "id": "awareness_training", "text": "Run annual phishing-awareness training for all staff", "good": false,
+                "why": "Worth doing, but the pattern stays on the public pages. Anyone an attacker can name still has a working address." },
+              { "id": "role_inboxes", "text": "Publish role inboxes such as careers@ and finance@, never personal addresses", "good": true,
+                "why": "Outsiders still reach the right team, and each year there's less for a lookup tool to learn the pattern from." },
               { "id": "hide_team_page", "text": "Take the team page down for a while", "good": false,
-                "why": "The addresses are already public and in old mail; hiding the page does not recall them." }
+                "why": "The pattern is already in lookup tools and old mail. Taking the page down doesn't recall it, and it comes back when the page does." }
             ] },
           { "intel": "username_convention",
             "options": [
-              { "id": "strip_metadata", "text": "Strip author and application metadata before publishing documents", "good": true,
-                "why": "The author field no longer gives away the username convention." },
-              { "id": "stop_publishing", "text": "Stop publishing any documents", "good": false,
-                "why": "Ledgerwell needs to publish. Clean the metadata and the documents stay up without the username." }
+              { "id": "rename_usernames", "text": "Change the username scheme to something harder to guess", "good": false,
+                "why": "The next document anyone publishes leaks the new scheme the same way, through its author field." },
+              { "id": "longer_passwords", "text": "Require longer passwords on staff accounts", "good": false,
+                "why": "Good practice, but it doesn't touch this exposure. The username still leaks with every file Ledgerwell publishes." },
+              { "id": "strip_metadata", "text": "Strip author and application details from files before publishing", "good": true,
+                "why": "The files stay up and the author field no longer gives away a username." }
             ] },
           { "intel": "lord_portal",
             "options": [
-              { "id": "social_policy", "text": "A social-media policy on naming internal systems", "good": true,
-                "why": "Staff stop posting the system names and release dates an attacker reuses." },
-              { "id": "ban_social", "text": "Ban staff from all social media", "good": false,
-                "why": "Unenforceable and unnecessary; the issue is what they post about work." }
+              { "id": "private_accounts", "text": "Ask staff to set their social accounts to private", "good": false,
+                "why": "Private accounts still have followers, and friends reshare. What gets posted about work is the problem, not who can see it." },
+              { "id": "social_policy", "text": "A social-media policy on posting about internal systems", "good": true,
+                "why": "Staff stop posting the system names and dates an attacker reuses, and they still get to post about their weekend." },
+              { "id": "desk_callback", "text": "A call-back rule on the service desk", "good": false,
+                "why": "That fixes the call, and it's in your report. This card is about the post itself, which any attacker can read without ringing anyone." }
             ] },
           { "intel": "hampshire_careers",
             "options": [
-              { "id": "filter_and_scan", "text": "Filter the careers inbox through a gateway and scan attachments", "good": true,
-                "why": "The obvious phish is dropped before Chris reads it." },
-              { "id": "close_inbox", "text": "Close the careers inbox", "good": false,
-                "why": "Careers still needs CVs. A filter keeps the inbox open and drops the bad ones." }
+              { "id": "filter_and_scan", "text": "Route the careers inbox through a filtering gateway that scans attachments", "good": true,
+                "why": "The inbox stays open to applicants, and a bad file is caught before Chris opens it." },
+              { "id": "pdf_only", "text": "Accept CVs as PDF files only", "good": false,
+                "why": "A PDF can carry a link or a malicious file too; an attacker just sends a PDF. Scanning checks every file, whatever its type." },
+              { "id": "known_senders", "text": "Only accept CVs from addresses Careers has written to before", "good": false,
+                "why": "Careers exists to hear from strangers. An allow-list would turn away every new applicant." }
             ] }
         ]
       }
@@ -1311,11 +1368,11 @@
           },
           "itemsHeld": [
             { "type": "key", "id": "recon_key", "name": "Recon Room Key", "takeable": true,
-              "opens_lock": "recon_door", "keyPins": [12, 24, 36, 48], "observations": "The key to the Recon Room." },
+              "opens_lock": "recon_door", "keyPins": [12, 24, 36, 48], "observations": "The key to the Recon Room.", "puzzle_graph_unlocks": "recon_room" },
             { "type": "key", "id": "operations_key", "name": "Operations Room Key", "takeable": true,
-              "opens_lock": "operations_door", "keyPins": [50, 14, 46, 20], "observations": "The key to the Operations Room." },
+              "opens_lock": "operations_door", "keyPins": [50, 14, 46, 20], "observations": "The key to the Operations Room.", "puzzle_graph_unlocks": "operations_room" },
             { "type": "key", "id": "blue_team_key", "name": "Blue Team Room Key", "takeable": true,
-              "opens_lock": "blue_team_door", "keyPins": [28, 54, 16, 34], "observations": "The key to the Blue Team Room." }
+              "opens_lock": "blue_team_door", "keyPins": [28, 54, 16, 34], "observations": "The key to the Blue Team Room.", "puzzle_graph_unlocks": "blue_team_room" }
           ],
           "eventMappings": [
             { "eventPattern": "global_variable_changed:roe_scope_done", "condition": "value === true", "onceOnly": true, "completeTask": "scope_cards" },
@@ -1358,7 +1415,17 @@
           "phoneId": "player_phone",
           "storyPath": "scenarios/lab_social_engineering/ink/ruth_phone.json",
           "currentKnot": "start",
-          "livePreview": true
+          "livePreview": true,
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:plan_done", "condition": "value === true", "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Plan's signed off. Come and find me for the Recon key." } },
+            { "eventPattern": "global_variable_changed:osint_done", "condition": "value === true && globalVars.se_intel_username_convention === true", "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Recon's done, PDF and all. Come and see me for the Operations key." } },
+            { "eventPattern": "global_variable_changed:se_intel_username_convention", "condition": "value === true && globalVars.osint_done === true", "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Recon's done, PDF and all. Come and see me for the Operations key." } },
+            { "eventPattern": "global_variable_changed:report_filed", "condition": "value === true", "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Report's filed. Come and get the Blue Team key from me. Gareth wants a word too." } }
+          ]
         }
       ],
       "objects": [
@@ -1371,6 +1438,11 @@
           "interactable": true,
           "active": true,
           "observations": "The rules of engagement for the Ledgerwell job, waiting for Gareth's signature.",
+          "puzzle_graph_role": "item",
+          "puzzle_graph_links": [
+            { "from": "rules_of_engagement", "to": "recon_room_key" },
+            { "from": "planning_whiteboard", "to": "recon_room_key" }
+          ],
           "minigameData": { "mode": "scope" }
         },
         {
@@ -1382,6 +1454,7 @@
           "interactable": true,
           "active": true,
           "observations": "A whiteboard for planning the engagement.",
+          "puzzle_graph_role": "item",
           "minigameData": { "mode": "plan" }
         },
         {
@@ -1404,6 +1477,8 @@
           "interactable": true,
           "active": true,
           "observations": "A workstation for writing the engagement report.",
+          "puzzle_graph_role": "lock",
+          "puzzle_graph_links": [ { "from": "lock_report_workstation", "to": "blue_team_room_key" } ],
           "minigameData": {
             "requiresGlobal": "phish_lord_landed",
             "lockedMessage": "Nothing to write up yet. Finish the sending first, then come back to the report."
@@ -1437,6 +1512,8 @@
           "active": true,
           "locked": false,
           "observations": "A workstation with a browser for researching Ledgerwell.",
+          "puzzle_graph_role": "item",
+          "puzzle_graph_links": [ { "from": "osint_workstation", "to": "operations_room_key" } ],
           "minigameData": { "siteIds": ["company", "social", "deck"] }
         }
       ]
@@ -1456,7 +1533,7 @@
       "lockType": "key",
       "requires": "operations_door",
       "keyPins": [50, 14, 46, 20],
-      "lockedHint": "Ruth has this key once your recon is done — go and see her.",
+      "lockedHint": "Ruth has this key once your recon is done: the case file filled and the Q3 PDF's properties read. Go and see her.",
       "connections": { "west": "engagement_office" },
       "npcs": [
         {
@@ -1480,6 +1557,8 @@
           "active": true,
           "locked": false,
           "observations": "A workstation signed in to the engagement mailboxes.",
+          "puzzle_graph_role": "lock",
+          "puzzle_graph_unlocks": "report_workstation",
           "minigameData": { "accountIds": ["guest", "freemail"] }
         },
         {
@@ -1492,6 +1571,8 @@
           "active": true,
           "locked": false,
           "observations": "A workstation for mocking up a credential-harvest page.",
+          "puzzle_graph_unlocks": "mail_workstation",
+          "puzzle_graph_and_with": "desk_phone",
           "minigameData": { "landingPageId": "payroll_login" }
         },
         {
@@ -1502,6 +1583,7 @@
           "interactable": true,
           "active": true,
           "observations": "A desk phone. The service desk extension is on a sticky note.",
+          "puzzle_graph_role": "item",
           "minigameData": { "callId": "service_desk_call" }
         }
       ]

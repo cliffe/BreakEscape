@@ -70,7 +70,7 @@ Gareth Fairbairn: Before you start. This test of yours. Is it going to make my p
     -> brief_close
 
 === brief_close ===
-Ruth Adeyemi: Read the rules of engagement on the board. Properly. Gareth will be watching you do it.
+Ruth Adeyemi: Read the rules of engagement. The sheet on the table. Properly. Gareth will be watching you do it.
 ~ quiet = true
 -> hub
 
@@ -169,11 +169,13 @@ Ruth Adeyemi: Read the rules of engagement on the board. Properly. Gareth will b
 - quiet:
     ~ quiet = false
 - not roe_signed:
-    Ruth Adeyemi: The rules of engagement are on the board. Start there.
+    Ruth Adeyemi: The rules of engagement are on the table. Start there.
 - not plan_done and not fairbairn_condition_heard:
     Ruth Adeyemi: Sheet's done. Take it to Gareth by the window. He wants to sign it himself.
 - not plan_done:
     Ruth Adeyemi: Now tell me what you'll actually do. The whiteboard.
+- plan_done and osint_done and not se_intel_username_convention:
+    Ruth Adeyemi: Case file's full, but you haven't read the Q3 PDF's properties. Check the author field. Then Operations is yours.
 - plan_done and not (osint_done and se_intel_username_convention):
     Ruth Adeyemi: Recon's through the west door. Public pages only. If you'd need a password to see it, it's off the sheet.
 - operations_key_given and not acct_freemail:
@@ -181,15 +183,18 @@ Ruth Adeyemi: Read the rules of engagement on the board. Properly. Gareth will b
 - operations_key_given and not phish_pierce_landed:
     Ruth Adeyemi: Delivered isn't landed. It lands when they'd open the file or click the link, the way they would a real one.
 - pretext_call_reported and not pretext_call_done:
-    Ruth Adeyemi: Dev's manager rang Gareth about a dodgy call. Gareth promised to look into it, with a straight face. Give the desk a while to calm down.
+    Ruth Adeyemi: Dev's manager rang Gareth about a dodgy call. Gareth promised to look into it, with a straight face. Give the desk a couple of minutes, then ring back softer.
 - phish_pierce_landed and not (landing_payroll_login_built and pretext_call_done):
     Ruth Adeyemi: Sofia's the careful one. You'll want a look-alike page and a call to the service desk.
 - (landing_payroll_login_built and pretext_call_done) and not phish_lord_landed:
     Ruth Adeyemi: You've got the page and the call. Now write to Sofia.
 - phish_lord_landed and not report_filed:
     Ruth Adeyemi: Sofia checked the sender, the portal's name and the date. All three were right. Her own service desk gave us all three. That's your finding.
+    Ruth Adeyemi: Write it up at the report workstation, just there.
 - report_filed and not (triage_pass and profile_done):
     Ruth Adeyemi: Tomasz has the other half of this for you, in the Blue Team room.
+- report_filed:
+    Ruth Adeyemi: Both halves done. Tomasz is waiting in the Blue Team room to close it out with you.
 - else:
     Ruth Adeyemi: {&Need me?|Something else?|Still here. Good.}
 }
@@ -242,13 +247,17 @@ Ruth Adeyemi: Ring the desk as her buddy. Know her name and team before you dial
 -> hub
 
 === topic_report ===
-Ruth Adeyemi: The results, then a cause and a control for each finding. No names, no blame.
+Ruth Adeyemi: Read the results and answer the two questions on them. Then a cause and a control for each finding. No names, no blame.
 Ruth Adeyemi: Write each one so the person it happened to could read it. Name the gap and how to close it.
 ~ quiet = true
 -> hub
 
 === topic_defend ===
-Ruth Adeyemi: Tomasz is running the defender side next door. Triage the inbox, then the mitigations.
-Ruth Adeyemi: He'll close it out with you once both are done.
+{ triage_pass and profile_done:
+    Ruth Adeyemi: Only Tomasz. You've done both halves, so he'll close it out with you.
+- else:
+    Ruth Adeyemi: Tomasz is running the defender side next door. Triage the inbox, then the mitigations on the SOC board.
+    Ruth Adeyemi: He'll close it out with you once both are done.
+}
 ~ quiet = true
 -> hub

@@ -4,7 +4,8 @@
 // current stage's three rungs (a visible nudge, a stronger nudge, a near-explicit
 // pointer), stays under ten choices, and keeps the rungs sticky (PLAN §4, §6;
 // 10 §4 "Hints"). No knot ends in DONE or END: a phone hub always loops.
-// Phone lines stay under 25 words; choice labels under 15 words.
+// Phone lines stay under 25 words; choice labels under 15 words. Ruth's own lines
+// carry no speaker prefix (phone-self-prefix rule).
 //
 // The "which stage" logic reads the same globals as ruth.ink. Each stage's first
 // rung also names the next key to collect from Ruth, so a student at a locked door
@@ -64,134 +65,134 @@ VAR stage7_seen = false
 // ---- Stage 0: authorisation ----
 === stage0 ===
 { roe_signed: -> hub }
-Ruth Adeyemi: On the sheet still?
+On the sheet still?
 + [Where do I start?]
-    Ruth Adeyemi: The rules-of-engagement board, in this room. Sort the scope cards first.
+    The rules-of-engagement sheet, on the table in the Engagement Office. Sort the scope cards first.
     -> stage0
 + [A card won't go where I expect.]
-    Ruth Adeyemi: It bounces back with the line that rules it out. Read that, then try again.
+    It bounces back with the line that rules it out. Read that, then try again.
     -> stage0
 + [What's the stop-rule about?]
-    Ruth Adeyemi: If you stumble on a real breach, you stop and tell me. Pick that answer.
+    If you stumble on a real breach, you stop and tell me. Pick that answer.
     -> stage0
 + [Thanks.] #exit_conversation
-    Ruth Adeyemi: Go on.
+    Go on.
     -> hub
 
 // ---- Stage 1: scope and plan ----
 === stage1 ===
 { plan_done: -> hub }
 { fairbairn_condition_heard:
-    Ruth Adeyemi: Gareth's signed. The whiteboard next.
+    Gareth's signed. The whiteboard next.
 - else:
-    Ruth Adeyemi: Sheet's done. Gareth wants to sign it himself, by the window. Then the whiteboard.
+    Sheet's done. Gareth wants to sign it himself, by the window. Then the whiteboard.
 }
 + {not fairbairn_condition_heard} [Does Gareth need me?]
-    Ruth Adeyemi: He signs in person, and he's got one condition. Hear it before you plan.
+    He signs in person, and he's got one condition. Hear it before you plan.
     -> stage1
 + [What objective do I pick?]
-    Ruth Adeyemi: The one that ends in a report of the gaps. Nothing broken, nobody's password kept.
+    The one that ends in a report of the gaps. Nothing broken, nobody's password kept.
     -> stage1
 + [Which success measure?]
-    Ruth Adeyemi: Not "who fell for it". Measure the process. Naming people breaks Gareth's one rule.
+    Not "who fell for it". Measure the process. Naming people breaks Gareth's one rule.
     -> stage1
 + [Then what?]
-    Ruth Adeyemi: Once the plan's signed off, have a word with me and I'll pass you the Recon key.
+    Once the plan's signed off, have a word with me and I'll pass you the Recon key.
     -> stage1
 + [Right.] #exit_conversation
-    Ruth Adeyemi: Off you go.
+    Off you go.
     -> hub
 
 // ---- Stage 2: OSINT ----
 === stage2 ===
 { osint_done and se_intel_username_convention: -> hub }
-Ruth Adeyemi: Recon's next. If that door's locked, I've got the key — come and see me. The OSINT workstation's through it.
+Recon's next. If that door's locked, I've got the key — come and see me. The OSINT workstation's through it.
 + [What am I looking for?]
-    Ruth Adeyemi: Three people filled in from public sources. The board's "Missing" rows say what's short.
+    Three people filled in from public sources. The board's "Missing" rows say what's short.
     -> stage2
 + {not se_intel_hampshire_cv_backlog} [Chris's card won't fill.]
-    Ruth Adeyemi: Open her careers inbox on the page and select it. Her backlog post only shows then.
+    Open her careers inbox on the page and select it. Her backlog post only shows then.
     -> stage2
 + {not se_intel_username_convention} [I can't work out the username pattern.]
-    Ruth Adeyemi: Open the published PDF and read its properties. The author field gives the username pattern away.
+    Open the published PDF and read its properties. The author field gives the username pattern away.
     -> stage2
 + [Got it.] #exit_conversation
-    Ruth Adeyemi: Good luck.
+    Good luck.
     -> hub
 
 // ---- Stage 3: spear-phish rounds 1 and 2 ----
 === stage3 ===
 { phish_pierce_landed: -> hub }
-Ruth Adeyemi: Operations now. If that door's locked, I've got the key — come and see me.
+Operations now. If that door's locked, I've got the key — come and see me.
 + {not phish_pierce_landed} [Which account do I send from?]
-    Ruth Adeyemi: For Chris, a throwaway webmail address: real applicants use one. For Melanie, the guest account, because it lets you set the From line.
+    For Chris, a throwaway webmail address: real applicants use one. For Melanie, the guest account, because it lets you set the From line.
     -> stage3
 + {not phish_hampshire_landed} [Chris isn't biting.]
-    Ruth Adeyemi: Her careers inbox trusts anyone. Apply as a candidate, and attach a CV from the kit.
+    Her careers inbox trusts anyone. Apply as a candidate, and attach a CV from the kit.
     -> stage3
 + {not phish_pierce_landed} [Melanie keeps refusing.]
-    Ruth Adeyemi: Who would she open a file from without thinking? Your recon says.
+    Who would she open a file from without thinking? Your recon says.
     -> stage3
 + {not phish_pierce_landed} [I'm sending as Jed and she still says no.]
-    Ruth Adeyemi: Freemail can only send as itself. Switch to the guest account, then set Jed in the From line.
+    Freemail can only send as itself. Switch to the guest account, then set Jed in the From line.
     -> stage3
 + [Thanks.] #exit_conversation
-    Ruth Adeyemi: Keep at it.
+    Keep at it.
     -> hub
 
 // ---- Stage 4 + 5: page and call ----
 === stage4 ===
 { landing_payroll_login_built and pretext_call_done: -> hub }
 { pretext_call_reported and not pretext_call_done:
-    Ruth Adeyemi: Dev flagged that last call to his manager. Leave it a while, then try again — softer, and have your facts straight.
+    Dev flagged that last call to his manager. Leave it a while, then try again — softer, and have your facts straight.
 - else:
-    Ruth Adeyemi: Sofia's careful. A page and a call, either order.
+    Sofia's careful. A page and a call, either order.
 }
 + {not landing_payroll_login_built} [The landing page?]
-    Ruth Adeyemi: The page builder on the desk. Match her payroll portal — domain, logo, wording, the lot.
+    The page builder on the desk. Match her payroll portal — domain, logo, wording, the lot.
     -> stage4
 + {not pretext_call_done} [The call?]
-    Ruth Adeyemi: Ring the service desk from the desk phone. Dev. Get the portal's name off him.
+    Ring the service desk from the desk phone. Dev. Get the portal's name off him.
     -> stage4
 + [Anything else?]
-    Ruth Adeyemi: Know who you're asking about before you ring: her name and her team. Then you're her buddy, helping out.
+    Know who you're asking about before you ring: her name and her team. Then you're her buddy, helping out.
     -> stage4
 + [On it.] #exit_conversation
-    Ruth Adeyemi: Good.
+    Good.
     -> hub
 
 // ---- Stage 5: hard phish to Lord ----
 === stage5 ===
 { phish_lord_landed: -> hub }
-Ruth Adeyemi: Now Sofia. She'll want the right sender, the portal's name and the date.
+Now Sofia. She'll want the right sender, the portal's name and the date.
 + [Who do I send as?]
-    Ruth Adeyemi: The portal's own notification address. Dev told you how its emails read.
+    The portal's own notification address. Dev told you how its emails read.
     -> stage5
 + {not se_intel_lord_payslip_date} [The date blank's empty.]
-    Ruth Adeyemi: You don't have the release date yet. Ring Dev back and ask when payslips go out.
+    You don't have the release date yet. Ring Dev back and ask when payslips go out.
     -> stage5
 + [What makes it land?]
-    Ruth Adeyemi: Her name, the portal pretext with the date, and the page as the link.
+    Her name, the portal pretext with the date, and the page as the link.
     -> stage5
 + [Right.] #exit_conversation
-    Ruth Adeyemi: Go on.
+    Go on.
     -> hub
 
 // ---- Stage 6: report ----
 === stage6 ===
 { report_filed: -> hub }
-Ruth Adeyemi: Sending's done. The report desk, in this room.
+Sending's done. The report workstation, in the Engagement Office.
 + [Where are the numbers?]
-    Ruth Adeyemi: The builder reads them from what you sent. Press Confirm on the results first.
+    The builder reads them from what you sent. Read the table, then answer the two questions under it.
     -> stage6
 + [How do I write the findings?]
-    Ruth Adeyemi: A cause and a control for each. Wrong pairs get explained; fix them and move on.
+    A cause and a control for each. Some wrong ones sound sensible, so read why before you pick again.
     -> stage6
 + [Some of these causes blame someone.]
-    Ruth Adeyemi: Those are the wrong ones. Blame someone in writing and the whole floor stops owning up.
+    Those are the wrong ones. Blame someone in writing and the whole floor stops owning up.
     -> stage6
 + [Understood.] #exit_conversation
-    Ruth Adeyemi: Good.
+    Good.
     -> hub
 
 // ---- Stage 7: defender flip ----
@@ -199,37 +200,37 @@ Ruth Adeyemi: Sending's done. The report desk, in this room.
 { triage_pass and profile_done: -> hub }
 { not stage7_seen:
     ~ stage7_seen = true
-    Ruth Adeyemi: Blue Team room next. Tomasz will set you off.
+    Blue Team room next. Tomasz will set you off.
 }
 + {not fairbairn_payoff_heard} [Has Gareth seen the report?]
-    Ruth Adeyemi: He's reading it. Go by the window, he wants a word.
+    He's reading it. Go by the window, he wants a word.
     -> stage7
 + {not triage_pass} [The inbox triage?]
-    Ruth Adeyemi: Sort each message: trust, report or delete. Read the SPF, DKIM and DMARC results.
+    Sort each message: trust, report or delete. Read the SPF, DKIM and DMARC results.
     -> stage7
 + {not triage_pass} [One passes every check.]
-    Ruth Adeyemi: Passing only proves that domain sent it. Read the domain itself, letter by letter.
+    Passing only proves that domain sent it. Read the domain itself, letter by letter.
     -> stage7
 + {not profile_done} [The mitigations?]
-    Ruth Adeyemi: Flip the SOC board to defender. Pick one fix for each flagged fact.
+    The SOC board in the Blue Team room. One fix for each exposure. Read why the others fall short.
     -> stage7
 + [Thanks.] #exit_conversation
-    Ruth Adeyemi: Nearly there.
+    Nearly there.
     -> hub
 
 === stage_done ===
 { engagement_closed: -> hub }
-Ruth Adeyemi: That's the lot. Go and let Tomasz close it out with you.
+That's the lot. Go and let Tomasz close it out with you.
 + {not fairbairn_payoff_heard} [Anything for Gareth?]
-    Ruth Adeyemi: He's read your report. Go and hear what he thinks, by the window.
+    He's read your report. Go and hear what he thinks, by the window.
     -> stage_done
 + [Will do.] #exit_conversation
-    Ruth Adeyemi: Good work.
+    Good work.
     -> hub
 
 // ---- After Tomasz's debrief: the engagement is closed, so stop pointing at him ----
 === closed ===
-Ruth Adeyemi: That's the engagement closed. Nothing more from me — good work today.
+That's the engagement closed. Nothing more from me — good work today.
 + [Thanks.] #exit_conversation
-    Ruth Adeyemi: Any time.
+    Any time.
     -> hub

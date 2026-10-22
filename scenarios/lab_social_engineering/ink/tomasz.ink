@@ -39,7 +39,7 @@ Tomasz: Tomasz. I run security here, me and half a person's budget.
 - triage_pass and profile_done:
     Tomasz: You've beaten me to both — the inbox triaged and the fixes picked. Keen. Sit down and we'll close this out.
 - else:
-    Tomasz: Two jobs for you. Triage that inbox at the workstation, then flip the board and pick the fixes.
+    Tomasz: Two jobs for you. Triage that inbox at the workstation, then pick the fixes on the SOC board.
 }
 ~ quiet = true
 -> hub
@@ -53,7 +53,7 @@ Tomasz: Tomasz. I run security here, me and half a person's budget.
 - triage_pass and profile_done:
     Tomasz: Both done. Sit down, let's close this out.
 - triage_pass:
-    Tomasz: Inbox done. The board's the other half.
+    Tomasz: Inbox done. The SOC board's the other half.
 - profile_done:
     Tomasz: Fixes picked. Now the inbox.
 - else:
@@ -116,7 +116,7 @@ Tomasz: Here's what it showed. An open inbox trusts anyone, a From line is just 
 - dev_reported and pretext_service_desk_call_outcome == "got_it":
     Tomasz: Dev reported the first call — credit to him — but your second call still got the date. A call-back rule to a number on file stops both.
 - dev_reported:
-    Tomasz: And Dev reported you. Credit to him — but a call-back rule would have caught it without him noticing a thing.
+    Tomasz: Dev gave you what Sofia's email needed, and he reported a call too. Credit for that, but a call-back rule stops it without him noticing a thing.
 - pretext_service_desk_call_outcome == "got_it" and pretext_service_desk_call_lowest >= 0:
     Tomasz: Dev handed you the portal and the date, no fuss. A call-back to a number on file stops every line of that.
 - pretext_service_desk_call_outcome == "got_it":

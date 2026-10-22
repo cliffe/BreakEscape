@@ -5,7 +5,11 @@
 // 00 §10a, §11a, 06 N8) and interactive for the two steps:
 //
 //   results  — the student reads the results table and presses Confirm (a `confirm` item in
-//              engagement.report.items). Pressing it sets report_results_done.
+//              engagement.report.items). Pressing it sets report_results_done. A scenario can
+//              instead author `question` items (opt-in): a question about the results with
+//              options, one correct. A wrong pick shows its `why` and can be changed; the right
+//              pick locks it. The step is done when every confirm is pressed and every question
+//              is answered right.
 //   findings — for each finding the student pairs a root cause with a control from authored
 //              lists. A wrong pick shows its `why` and can be changed; one wrong cause per
 //              finding is a blame wording, shown why rather than punished (stage 6, Ch. 9). A
@@ -214,8 +218,12 @@ export class EngagementReportMinigame extends SocialOverlayScene {
 
         sec.appendChild(h('p', { class: 'er-note er-unseen', text: r.unseenNote }));
 
-        // Confirm items (the results step)
+        // Results-step items: confirm buttons and (opt-in) questions about the results
         for (const item of m.items) {
+            if (item.kind === 'question') {
+                sec.appendChild(this._questionItem(item));
+                continue;
+            }
             const row = h('div', { class: `er-confirm is-${item.confirmed ? 'done' : 'open'}`,
                 'data-confirm': item.id || '' });
             if (item.confirmed) {
@@ -235,6 +243,36 @@ export class EngagementReportMinigame extends SocialOverlayScene {
         }
 
         return sec;
+    }
+
+    /** A `question` item on the results: a labelled option group with the picked option's why. */
+    _questionItem(item) {
+        const groupId = `er-q-${item.id}`;
+        const wrap = h('div', { class: `er-question er-pair is-${item.done ? 'done' : 'open'}`,
+            'data-question': item.id || '' },
+            h('p', { id: groupId, class: 'er-pair-label er-question-text', text: item.text }));
+        const opts = h('ul', { class: 'er-options', role: 'group', 'aria-labelledby': groupId });
+        for (const o of item.options) {
+            const chosen = item.pickedId === o.id;
+            const btn = h('button', { type: 'button', class: `er-option minigame-button${chosen ? ' is-chosen' : ''}`,
+                'data-option': o.id, 'aria-pressed': String(chosen), disabled: item.done && !chosen ? true : false,
+                text: o.text });
+            this.addEventListener(btn, 'click', (e) => {
+                e.preventDefault?.();
+                e.stopPropagation?.();
+                this.answerResults(item.id, o.id);
+            });
+            opts.appendChild(h('li', { class: 'er-option-row' }, btn));
+        }
+        wrap.appendChild(opts);
+        if (item.picked) {
+            const good = item.picked.correct === true;
+            wrap.appendChild(h('p', { class: `er-feedback ${good ? 'good' : (item.picked.blame ? 'blame' : 'bad')}`, role: 'status' },
+                icon(good ? 'mark-tick' : 'mark-cross'),
+                h('span', { class: 'er-word', text: good ? 'Right:' : (item.picked.blame ? 'Blaming staff:' : 'Not quite:') }),
+                h('span', { class: 'er-why', text: item.picked.why })));
+        }
+        return wrap;
     }
 
     // ── findings ──────────────────────────────────────────────────────────────
@@ -313,6 +351,28 @@ export class EngagementReportMinigame extends SocialOverlayScene {
         return true;
     }
 
+    /**
+     * Answer a results `question` item. A wrong pick is saved and shows its why; the right pick
+     * locks the item. A locked item, an unknown item or an unknown option is ignored.
+     */
+    answerResults(itemId, optionId) {
+        if (!itemId) return false;
+        const item = this.model.items.find((i) => i.id === itemId && i.kind === 'question');
+        if (!item || item.done) return false;
+        const chosen = item.options.find((o) => o.id === optionId);
+        if (!chosen) return false;
+        const state = readReportState(this.globals);
+        this._writeState({ ...state, answers: { ...state.answers, [itemId]: optionId } });
+        this.model = buildReportModel(this.social, this.globals, this.mailState);
+        this._liveText = chosen.correct
+            ? `Right. ${chosen.why}`
+            : (chosen.blame ? `That blames staff. ${chosen.why}` : `Not quite. ${chosen.why}`);
+        if (this.model.steps.find((s) => s.id === item.step)?.done) this._liveText += ' Results reviewed.';
+        if (this._applyCompletion()) this._liveText += ' Report filed.';
+        this._render(`[data-question="${itemId}"] [data-option="${optionId}"]`);
+        return true;
+    }
+
     /** Pick a root cause or a control for a finding. A locked finding ignores the pick. */
     pick(findingId, part, optionId) {
         if (part !== 'cause' && part !== 'control') return false;
@@ -381,7 +441,9 @@ export class EngagementReportMinigame extends SocialOverlayScene {
                     calls: m.results.calls.map((c) => ({ callId: c.callId, done: c.done, reported: c.reported,
                         outcome: c.outcome, lowest: c.lowest, failedAttempts: c.failedAttempts }))
                 },
-                items: m.items.map((i) => ({ id: i.id, confirmed: i.confirmed })),
+                items: m.items.map((i) => ({ id: i.id, kind: i.kind, confirmed: i.confirmed, done: i.done,
+                    picked: i.kind === 'question' ? i.pickedId : undefined,
+                    why: i.kind === 'question' && i.picked ? i.picked.why : undefined })),
                 findings: m.findings.map((f) => ({ id: f.id, done: f.done,
                     cause: f.pickedCauseId, control: f.pickedControlId,
                     causeDone: f.causeDone, controlDone: f.controlDone,

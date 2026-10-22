@@ -474,7 +474,7 @@
                 },
                 "steps": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementStep"}},
                 "onCompleteGlobal": {"type": "string"},
-                "items": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementConfirm"}},
+                "items": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementReportItem"}},
                 "findings": {
                   "type": "array",
                   "items": {
@@ -2189,6 +2189,19 @@
         "id": {"type": "string"},
         "step": {"type": "string"},
         "text": {"type": "string"}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialEngagementReportItem": {
+      "type": "object",
+      "description": "A results-step item in the engagement report: confirm (press to acknowledge) or question (opt-in; options with one correct, report-model.js)",
+      "properties": {
+        "kind": {"type": "string", "enum": ["confirm", "question"]},
+        "id": {"type": "string"},
+        "step": {"type": "string"},
+        "text": {"type": "string"},
+        "options": {"type": "array", "items": {"$ref": "#/definitions/socialEngagementOption"}}
       },
       "patternProperties": {"^_": {}},
       "additionalProperties": false

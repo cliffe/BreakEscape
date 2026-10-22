@@ -149,3 +149,26 @@ test('10 N7: a completing event mapping names a declared global and a real task'
   hit(mutate((j) => { delete j.globalVariables.sc_done; }), /❌.*eventPattern names global 'sc_done'/);
   hit(mutate((j) => { j.rooms.r.npcs[0].eventMappings[0].completeTask = 'ghost_task'; }), /❌.*completeTask 'ghost_task' is not a taskId/);
 });
+
+// The report's opt-in `question` item (lab_social_engineering design C1 M2; report-model.js).
+const withQuestion = (j) => {
+  j.social.engagement.report.items = [{ kind: 'question', id: 'rq', step: 'results', text: 'Which?', options: [
+    { id: 'y', text: 'yes', correct: true, why: 'w' }, { id: 'n', text: 'no', correct: false, why: 'w' }] }];
+};
+
+test('report question item: a clean one raises nothing', { skip }, () => {
+  assert.deepEqual(mutate(withQuestion), []);
+});
+
+test('report question item: needs an id, text, two options and exactly one correct', { skip }, () => {
+  hit(mutate((j) => { withQuestion(j); delete j.social.engagement.report.items[0].id; }), /❌.*items\[0\]: a question item needs an id/);
+  hit(mutate((j) => { withQuestion(j); j.social.engagement.report.items[0].text = ' '; }), /❌.*items\[0\]: a question item needs text/);
+  hit(mutate((j) => { withQuestion(j); j.social.engagement.report.items[0].options.pop(); }), /❌.*items\[0\]: a question item needs at least two options/);
+  hit(mutate((j) => { withQuestion(j); j.social.engagement.report.items[0].options[1].correct = true; }), /❌.*items\[0\] \(report question\) has 2 options with correct: true/);
+  hit(mutate((j) => { withQuestion(j); delete j.social.engagement.report.items[0].options[1].why; }), /❌.*options\[n\] has correct but no why/);
+});
+
+test('report question item: ids must be unique, and only the report reads the kind', { skip }, () => {
+  hit(mutate((j) => { withQuestion(j); j.social.engagement.report.items.push({ ...j.social.engagement.report.items[0] }); }), /❌.*report\.items: id 'rq' is used more than once/);
+  hit(mutate((j) => { j.social.engagement.plan.items = [{ kind: 'question', id: 'pq', step: 'objective', text: 'q', options: [] }]; }), /❌.*plan\.items\[0\]: a question item is only read by the report/);
+});
