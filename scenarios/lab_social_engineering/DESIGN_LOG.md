@@ -72,3 +72,45 @@ These changes are covered by static checks only, with no browser run yet:
 - Ruth (phone): stage0 "Where do I start?", stage6 opener and the two report answers, stage7 mitigations answer. The other 45 lines changed only by losing the prefix.
 - Dev: the new portal pending line. The others changed only by losing the prefix.
 - Tomasz: the `start` two-jobs line, the hub "Inbox done" line and the debrief Dev-reported line.
+
+## Cycle 2 (2026-10-22)
+
+Review: `DESIGN_REVIEW_C2.md`. It found 0 blockers, 3 new majors and 5 new minors. C1's M3, m10 and m13 stay deferred as before. Every finding below comes from static evidence, because the reviewer's browser pass didn't run.
+
+| Severity | Found | Fixed | Deferred | Withdrawn |
+|---|---:|---:|---:|---:|
+| Blocker | 0 | 0 | 0 | 0 |
+| Major | 3 | 3 | 0 | 0 |
+| Minor | 5 | 4 | 1 (m-e) | 0 |
+
+| # | Finding | Outcome | What changed |
+|---|---|---|---|
+| N1 | Results question 1 is answered by the note above it | **Fixed** | `engagement.report.unseenNote` is now neutral: "Some things a test like this cannot measure. Gareth will ask which." The reporting-rate point moved into the right option's `why`. The model already reads `block.unseenNote` (report-model.js), so no engine change. |
+| N2 | The right email-pattern fix is one Ledgerwell already has | **Fixed** | Hunter's result now names where the pattern was learnt ("seen in 14 addresses: old press releases, PDFs and a supplier's contact list"). The right option now reads "Keep staff addresses out of everything published (press releases, PDFs, signatures) and give outsiders role inboxes", and its `why` says the team page already does this but the rest doesn't. The `hide_team_page` why is rewritten as the reviewer suggested, and the Hunter concept card matches. |
+| N3 | A date-only call leaves the hard send with no pointer to the portal sender | **Fixed** | ruth.ink hub has two new branches before "Now write to Sofia": one when the portal name is missing ("ring him back for those") and one when the date is missing. ruth_phone stage 5: "Who do I send as?" now branches on `se_intel_lord_portal_name`, and a new choice, `{not se_intel_lord_portal_name} [I don't know her portal's sender.]`, says to ring Dev back. Sofia's `senderTrust` hint now names the service desk. I did not take the optional change (completing `call_dev` only on the portal grant): `pretext_call_done` feeds the report's call line, Ruth's hub and the phone stages, and the pointers close the gap without moving that global. |
+| m-a | The page builder's wording names LedgerPay before the call | **Fixed** | `w_formal` is now "Your payslip is ready. Sign in to the staff portal to view it." It still has `match: true`. |
+| m-b | Q1's answer isn't true after a reported call | **Fixed** | The right option is now "Whether anyone reported the emails or the page". Its why says the only report a test like this can see is a call the desk flags. |
+| m-c | The Xero trap doesn't say why Xero is wrong | **Fixed** | Sofia's `pretextRelevant` hint adds "The careers page lists the finance tools, not her payroll portal." |
+| m-d | Q2 is a choice between two | **Fixed** | `read_speed` is replaced by `pretext_quality` ("How well written each of your pretexts was"), whose why says the column counts tries, not quality. |
+| m-e | The address rule builds a Leeds address for the namesake | **Deferred (needs approval)** | No data-only fix exists. The namesake's `people[].address` feeds the sender-authentication check (phish-rules.js:257-258), so it can't be removed. Skipping off-domain people needs a change to the shared `mail-composer.js` (`addressOptions`), which goes to the user. On teaching grounds, the Leeds address beside "J. Baker" is also a visible tell that this is the wrong J. Baker. |
+
+### Checks run (cycle 2)
+
+- Recompiled ruth.ink and ruth_phone.ink. Tagdiff against HEAD shows only the intended changes: ruth.ink gets 2 VARs and 2 hub conditions; ruth_phone gets 1 VAR, the stage-5 conditional and the new choice.
+- `validate_scenario.rb --strict-social`: no ❌ errors. The narrator-voice warning stays (audio stage). The phone-avatar warnings stay (m13).
+- dialoguelint: only the withdrawn fairbairn finding remains.
+- `bin/test-js` on social-lab-*, the report test and the lab validator test: 6 of 6 files pass.
+- Bridges: r4-door 3/3. bridge-6 first ran 35/36: RP1 asserted the old note text, which N1 changed on purpose. I updated RP1 to expect the new note and the absence of the old one, and the re-run passes 36/36.
+
+### Browser pass: stopped, incomplete
+
+I started the seven-item headless pass with a scratch session builder (`.../scratchpad/lab-design-fixer/c2/`). One exploratory session (game 3517) ran and showed:
+- **Item 1, partly:** the Recon key text "Plan's signed off. Come and find me for the Recon key." arrived once, about 1.5 s after `plan_done` was written (set by console, so exercised, not earned).
+- Ruth handed over `recon_key` on the next conversation.
+- `enterRoom` reported the Recon door as `door-locked`, with a hint to solve it through the lock flow.
+
+A safety classifier then stopped my turn while I was reading the harness's door-lock helper. I stopped there, as AGENTS.md requires, so items 1 (the Ops and Blue Team texts), 2, 3, 4, 5, 6 and 7 are **not yet checked in a browser**. The orchestrator should hand the rest to a playtest agent. Opening the locked rooms is the step it needs to plan for.
+
+### Noticed, not acted on
+
+- A headless session from another agent was still running when I checked processes: PID 474145, `playtest-session.js` on game 3516, logging to `.../scratchpad/lab-design-c2-playtest/session.jsonl`, with its chrome-headless-shell children. It looks like the reviewer's tester, the one the C2 review says it could not stop. I didn't start it, so I left it for the orchestrator to check and stop by PID.

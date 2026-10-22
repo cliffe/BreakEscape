@@ -28,6 +28,7 @@ VAR landing_payroll_login_built = false
 VAR pretext_call_done = false
 VAR pretext_call_reported = false
 VAR se_intel_lord_payslip_date = false
+VAR se_intel_lord_portal_name = false
 VAR phish_lord_landed = false
 VAR report_filed = false
 VAR triage_pass = false
@@ -166,7 +167,14 @@ Operations now. If that door's locked, I've got the key — come and see me.
 { phish_lord_landed: -> hub }
 Now Sofia. She'll want the right sender, the portal's name and the date.
 + [Who do I send as?]
-    The portal's own notification address. Dev told you how its emails read.
+    { se_intel_lord_portal_name:
+        The portal's own notification address. Dev told you how its emails read.
+    - else:
+        The portal's own notification address. You haven't got it yet: ring Dev back and ask.
+    }
+    -> stage5
++ {not se_intel_lord_portal_name} [I don't know her portal's sender.]
+    Ring Dev back. Ask what the portal's called and who its emails come from.
     -> stage5
 + {not se_intel_lord_payslip_date} [The date blank's empty.]
     You don't have the release date yet. Ring Dev back and ask when payslips go out.

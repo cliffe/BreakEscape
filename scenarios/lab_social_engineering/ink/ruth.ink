@@ -28,6 +28,8 @@ VAR plan_measures_done = false
 VAR plan_done = false
 VAR se_intel_email_pattern = false
 VAR se_intel_username_convention = false
+VAR se_intel_lord_portal_name = false
+VAR se_intel_lord_payslip_date = false
 VAR target_ready_hampshire = false
 VAR target_ready_pierce = false
 VAR target_ready_lord = false
@@ -186,6 +188,10 @@ Ruth Adeyemi: Read the rules of engagement. The sheet on the table. Properly. Ga
     Ruth Adeyemi: Dev's manager rang Gareth about a dodgy call. Gareth promised to look into it, with a straight face. Give the desk a couple of minutes, then ring back softer.
 - phish_pierce_landed and not (landing_payroll_login_built and pretext_call_done):
     Ruth Adeyemi: Sofia's the careful one. You'll want a look-alike page and a call to the service desk.
+- (landing_payroll_login_built and pretext_call_done) and not phish_lord_landed and not se_intel_lord_portal_name:
+    Ruth Adeyemi: You got the date off Dev, but not the portal's name or who its emails come from. Ring him back for those.
+- (landing_payroll_login_built and pretext_call_done) and not phish_lord_landed and not se_intel_lord_payslip_date:
+    Ruth Adeyemi: You've got the portal off Dev, but not the payslip date. Ring him back and ask when they go out.
 - (landing_payroll_login_built and pretext_call_done) and not phish_lord_landed:
     Ruth Adeyemi: You've got the page and the call. Now write to Sofia.
 - phish_lord_landed and not report_filed:
