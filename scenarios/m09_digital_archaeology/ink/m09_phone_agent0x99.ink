@@ -60,6 +60,10 @@ VAR hour_read_done = false
 VAR hour_read_choice_reached = false
 VAR tesseract_call_started = false
 VAR tesseract_call_done = false
+// Synced scenario globals (alignment R3): the call's close for the music cue,
+// and whether the Albion memo has been read (set by HaX's mapping).
+VAR tesseract_call_closed = false
+VAR memo_read = false
 VAR alpha_annotations_read = false
 VAR start_debrief = false
 VAR debrief_notice_before = false
@@ -472,7 +476,12 @@ Don't be kind about it. *beat* Thank you. Once.
 
 // Beat 3.3 step 5 (milestone M-05).
 = back_to_work
-Seven years, and nobody turned it off. There's more on his box. A memo and a draft. Read them.
+// Alignment R3 r3-3: a player who read the folder first isn't sent back to it.
+{memo_read:
+    Seven years, and nobody turned it off. You've read his memo and the draft.
+- else:
+    Seven years, and nobody turned it off. There's more on his box. A memo and a draft. Read them.
+}
 -> albion
 
 // Beat 3.4. The hub's notice topic has its own lines and never comes here.
@@ -640,7 +649,9 @@ And he asked if we'd liked his notes.
 Netherton's on the ground at Helena. Tell me when you're ready to come in.
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
+// Alignment R3 r3-1: the music's spy-action cue keys on this, once.
 + [Understood.]
+    #set_global:tesseract_call_closed:true
     #exit_conversation
     -> DONE
 

@@ -342,15 +342,18 @@ Story globals from MC §10 and the machinery from S4 §5. "Scenario" means stage
 
 | Global | Type, default | Set by | Read by (ink) |
 |---|---|---|---|
-| `raid_team_answer` | string `""` (`quintero` / `kowalczyk`) | C1 | A1 `dock`; B1; A3 (shortlist text) |
-| `noor_told` | bool | B2 | C2; credits |
-| `noor_ko`, `old_coyote_ko` | bool | scenario (`globalVarOnKO`) | C2; credits. (`sorensen_ko`, `tran_ko` dropped at stage 9 alignment R1 m11: `sorensen_fate` and `tran_outcome` carry the knock-out.) |
+| `raid_team_answer` | string `""` (`quintero` / `kowalczyk`) | C1 | A1 `dock`; B1; A3 (shortlist text). **Exported** (m10 reads `m09_<name>`; FINALE_ARC §3.4). |
+| `noor_told` | bool | B2 | C2; credits. **Exported** (m10 reads `m09_<name>`; FINALE_ARC §3.4). |
+| `noor_ko`, `old_coyote_ko` | bool | scenario (`globalVarOnKO`) | C2; credits. **Exported** (m10 reads `m09_<name>`; FINALE_ARC §3.4). (`sorensen_ko`, `tran_ko` dropped at stage 9 alignment R1 m11: `sorensen_fate` and `tran_outcome` carry the knock-out.) |
 | `old_coyote_told` | bool | B6 | credits |
-| `sorensen_fate` | string `"left"` (`talked` / `ko`) | B4 (`talked`); scenario (`ko` on `npc_ko:sorensen` unless `talked`) | B4; C2 |
-| `tran_outcome` | string `"left"` (`talked` / `ko`) | B7 (`talked`); scenario (`ko`) | A1 hub 1; B7; C2 |
-| `reading_told_hax` | bool | A1 hub 8 | A1 `identity_scene` |
-| `memo_stance` | string `""` (`yes_albion` / `no`) | C2 | C2 |
-| `kowalczyk_reply` | string `""` (`warm` / `flat`) | C2 | C2 |
+| `sorensen_fate` | string `"left"` (`talked` / `ko`) | B4 (`talked`); scenario (`ko` on `npc_ko:sorensen` unless `talked`) | B4; C2. **Exported** (m10 reads `m09_<name>`; FINALE_ARC §3.4). |
+| `tran_outcome` | string `"left"` (`talked` / `ko`) | B7 (`talked`); scenario (`ko`) | A1 hub 1; B7; C2. **Exported** (m10 reads `m09_<name>`; FINALE_ARC §3.4). |
+| `reading_told_hax` | bool | A1 hub 8 | A1 `identity_scene`. **Exported** (m10 reads `m09_<name>`; FINALE_ARC §3.4). |
+| `memo_stance` | string `""` (`yes_albion` / `no`) | C2 | C2; credits (both answers). **Exported** (m10 reads `m09_<name>`; FINALE_ARC §3.4). |
+| `memo_read` (stage 9, alignment R2 n1) | bool | scenario (HaX promotes `albion_folder_opened` on `flag3_submitted`) | C2 `stance`; A1 `identity_scene.back_to_work` (R3 r3-3) |
+| `albion_folder_opened` (stage 9) | bool | scenario (`albion_folder.onRead`; also fires on the empty tray) | none in ink (HaX's mapping only) |
+| `tesseract_call_closed` (stage 9, alignment R3 r3-1) | bool | A1 `tesseract_call`'s "[Understood.]" | none in ink (the music's spy-action cue) |
+| `kowalczyk_reply` | string `""` (`warm` / `flat`) | C2 | C2; credits. **Exported** (m10 reads `m09_<name>`; FINALE_ARC §3.4). |
 | `schedule_read` | bool | scenario (`master_schedule.onRead`) | A1 `hour_read` |
 | `briefing_played` | bool | scenario (`setGlobalOnStart`) | none |
 | `flag1_submitted` … `flag4_submitted` | bool | scenario (flag rewards) | A1 (status, hub gates) |
@@ -369,10 +372,10 @@ Story globals from MC §10 and the machinery from S4 §5. "Scenario" means stage
 | `identity_scene_started`, `identity_scene_done`, `identity_name_said` | bool | A1 `identity_scene` | A1; C6 (`identity_scene_done`) |
 | `hour_read_started`, `hour_read_done`, `hour_read_choice_reached` | bool | A1 `hour_read` | A1 |
 | `tesseract_call_started`, `tesseract_call_done` | bool | A1 `tesseract_call` | A1 |
-| `alpha_clip_played` | bool | C6 | none in ink (credits if C uses it) |
+| `alpha_clip_played` | bool | C6 | none in ink; credits (ELSEWHERE, TOMB ALPHA). **Exported** (m10 reads `m09_<name>`; FINALE_ARC §3.4). |
 | `alpha_annotations_read` | bool | scenario (`alpha_annotations.onRead`, R1 A-05) | A1 hub 3b; now also an export (§5.1, stage 8) |
 | `start_debrief` | bool | A1 hub 1 (`#set_global`, re-emits) | A1 hub 1, 10 |
-| `debrief_notice_before` | bool | A1 hub 1 (`~`, once) | C2 |
+| `debrief_notice_before` | bool | A1 hub 1 (`~`, once) | C2. **Exported** (m10 reads `m09_<name>`; FINALE_ARC §3.4). |
 | `debrief_played`, `report_done` | bool | C2 | A1 hub 1 (`report_done`) |
 | `catalogue_guide_offered`, `ledger_guide_offered`, `tomb_beta_guide_offered`, `archive_code_guide_offered` | bool | scenario (exposure mappings) | A1 hub 18, `guides_menu` |
 | `catalogue_guide_hint_given`, `ledger_guide_hint_given`, `tomb_beta_guide_hint_given`, `archive_code_guide_hint_given` | bool | A1 `guides_menu` | A1 |
@@ -432,7 +435,7 @@ Writers don't build these, but the ink must set the global the mapping listens f
 | `hand_matched` (with `#complete_task:match_the_hand`) | A1 | none beyond the task |
 | `start_debrief` | A1 hub 1 | `closing_debrief` opens (`!report_done`); `cutscene` music |
 | `report_done` | C2 last line | `victory` music, the card and credits |
-| `alpha_clip_played` | C6 | credits if C uses it |
+| `alpha_clip_played` | C6 | the TOMB ALPHA credit; exported |
 | `torres_called`, `gary_called` | C4, C5 | Torres' fallback; A1 hub 5 |
 
 ## 7. Voiced and forced calls
@@ -775,5 +778,12 @@ For the orchestrator. None stops the writers; each says what the writers do mean
 - n12: this contract's body and `texts/A_hax_texts.md`, `texts/C_texts_and_credits.md` updated to the shipped strings.
 - n13: `sorensen_office` carries a comment for its expected graph warning.
 - n14: four more exports: `reading_told_hax`, `noor_ko`, `old_coyote_ko`, `debrief_notice_before` (twenty-three in all).
+
+**Alignment round 3 changes** (`ALIGNMENT_REVIEW_F_R3.md`):
+- r3-1: new global `tesseract_call_closed`, set under the call's "[Understood.]"; the spy-action cue keys on it once (the `conversation_closed:agent_0x99` row re-cued on every close). The `game_loaded` row stays.
+- r3-2: Netherton's credit on `memo_stance === 'no'`: "Read the memo on the flight. Wants it argued in court."
+- r3-3: `identity_scene.back_to_work` on `memo_read`: "Seven years, and nobody turned it off. You've read his memo and the draft." (new voiced HaX line); otherwise the old line.
+- r3-4: texts C §4 and FINALE_ARC §5.4 say October; §5.3 has rows for `memo_read`, `albion_folder_opened` and `tesseract_call_closed`, and marks every exported global.
+- r3-5: the wipe console's halted text needs only `tran_outcome !== 'left'` (the task's flag 1 gate stays on the task).
 
 **Voiced counts after stage 8**: group A calls 56 distinct (HaX 53, Netherton 3; one new HaX line, one Netherton line reworded); the Recruiter 14 and B1's HaX 17, unchanged; briefing 91 character lines plus 8 Narrator (7 new: Netherton 3, HaX 4; 2 reworded); debrief 50 plus 16 Narrator (2 reworded); Sorensen 2 new lines (B5), 1 Narrator line reworded (B4); Noor 1 reworded.

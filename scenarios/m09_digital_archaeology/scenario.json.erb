@@ -445,9 +445,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       { "trigger": "global_variable_changed:identity_scene_done", "condition": "value === true", "playlist": "noir", "fade": true },
       { "trigger": "global_variable_changed:hour_read_started", "condition": "value === true", "playlist": "threat", "fade": true },
       { "trigger": "global_variable_changed:tesseract_call_started", "condition": "value === true", "playlist": "silence", "fade": true },
-<%# Alignment R2 n5: spy-action when HaX's thread closes after the call, not on
-    tesseract_call_done (set two lines before the end, under his last message). %>
-      { "trigger": "conversation_closed:agent_0x99", "condition": "globalVars.tesseract_call_done && !globalVars.start_debrief", "playlist": "spy-action", "fade": true },
+<%# Alignment R2 n5: spy-action once, on the call's "[Understood.]" (R3 r3-1:
+    tesseract_call_closed; a conversation_closed row re-cued it on every close). %>
+      { "trigger": "global_variable_changed:tesseract_call_closed", "condition": "value === true && !globalVars.start_debrief", "playlist": "spy-action", "fade": true },
       { "trigger": "global_variable_changed:start_debrief", "condition": "value === true", "playlist": "cutscene", "fade": true },
       {
         "_comment": "Stage 9 (lesson 46): on debrief_closed, set when the debrief closes after its last line (or on the next room entry after a reload), not on report_done, so the card doesn't cover the pen.",
@@ -481,6 +481,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
             ] },
             { "name": "DIRECTOR NETHERTON", "clauses": [
               { "text": "Read the memo on the flight. Signed for Tesseract too.", "condition": "globalVars.memo_stance === 'yes_albion'" },
+            { "text": "Read the memo on the flight. Wants it argued in court.", "condition": "globalVars.memo_stance === 'no'" },
               { "text": "Said the name. Signed the Montana order." }
             ] },
             { "name": "HALINA KOWALCZYK", "clauses": [
@@ -1420,7 +1421,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "observations": "A console running a degausser through a rack of reels.",
           "text": "WIPE IN PROGRESS. Series LI, legacy interviews: 212 reels.",
           "textVariants": [
-            { "condition": "globalVars.tran_outcome !== 'left' && globalVars.flag1_submitted", "value": "WIPE HALTED. Series LI, legacy interviews: 97 of 212 reels intact." }
+            { "condition": "globalVars.tran_outcome !== 'left'", "value": "WIPE HALTED. Series LI, legacy interviews: 97 of 212 reels intact." }
           ]
         }
       ]
@@ -2519,6 +2520,7 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "noor_met": false,
     "albion_folder_opened": false,
     "memo_read": false,
+    "tesseract_call_closed": false,
     "archive_guard_ko": false
   }
 }
