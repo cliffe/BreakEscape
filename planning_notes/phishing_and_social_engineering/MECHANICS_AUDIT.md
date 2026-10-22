@@ -356,12 +356,12 @@ uncaptured toasts are still open. `docs/test-bridge.md` does not cover the socia
 |---|---|---|---|---|
 | M1 (**done**, 96077591) | CI runner that runs each test file in its own process, with an updated quarantine list | Sonnet | – | CI script green locally; the quarantine list matches the observed flakes |
 | M2 | Back-compat catch-up: §2.4 R3/R4/R0 browser regression on m01–m10, plus the §2.3 item 1 `global_variable_changed` mapping audit | Sonnet (runs), Opus (audit) | M1 | Per-mission results logged; no regression |
-| M3 | Social schema plus the missing lints (`hintsByFactor`, `labelBy`, `checklistTiming`, `mirrorToBehavior`, closing `social` to unknown keys) | Opus | – | Validator tests for each option; a typo fails |
-| M4a | Author docs for the general mechanics (influence, board, triage, report, OSINT, `lockedHint`, `--strict-social`) in README_scenario_design.md; back-port contract additions into `00` | Opus | M3 | Docs reviewed against the code |
-| M4b | Author docs for the attack-shaped mechanics (mail composer and targets, rules factors, pretext calls, landing pages) | opus48 | M3 | Docs reviewed against the code |
+| M3 (**done**, 316dee74) | Social schema plus the missing lints (`hintsByFactor`, `labelBy`, `checklistTiming`, `mirrorToBehavior`, closing `social` to unknown keys) | Opus | – | Validator tests for each option; a typo fails |
+| M4a (**done**, c54ad1f3) | Author docs for the general mechanics (influence, board, triage, report, OSINT, `lockedHint`, `--strict-social`) in README_scenario_design.md; back-port contract additions into `00` | Opus | M3 | Docs reviewed against the code |
+| M4b (**done**, c54ad1f3) | Author docs for the attack-shaped mechanics (mail composer and targets, rules factors, pretext calls, landing pages) | opus48 | M3 | Docs reviewed against the code |
 | M5 | Browser proofs: world pip, `display.bar:false`, lockout refusals on person and mail channels, the slice's lockout lift, a locked takeable `mail_terminal` asking to be unlocked rather than auto-opening (client half, `interactions.js` 832–848; the Rails half is done in M10) | Sonnet | harness fixes | Bridge checks committed and passing |
-| M6 | Mail persistence residuals: server trim versus client "saved" (P1-D); a created account reaching other open clients (T2-7) | opus48 | – | Rails and Node tests on the real paths |
-| M7 | Small correctness residuals: report row order, the `triage_percent` overwrite, object-id `name` uniqueness, the Key Ring wrong-key hint | Sonnet | – | Tests per item |
+| M6 (**done**) | Mail persistence residuals: server trim versus client "saved" (P1-D); a created account reaching other open clients (T2-7) | opus48 | – | Rails and Node tests on the real paths |
+| M7 (**done**, e99068bf) | Small correctness residuals: report row order, the `triage_percent` overwrite, object-id `name` uniqueness, the Key Ring wrong-key hint | Sonnet | – | Tests per item |
 | M8 | Builder: render at a true 600 px; one source for the domain guard | opus48 | harness viewport | Bridge at 600 px |
 | M9 | Harness: viewport setting, toast capture, a test-bridge doc section for the social overlays | Sonnet | harness fixes | Live check |
 | M10 (**done**, 3e64107e: 10 tests, full Rails suite 734 runs, 0 failures) | Missing Rails tests (`unlock_system`, `task_set_global`, `missions_controller` `lab_games`) | Sonnet | – | Tests pass |
@@ -375,3 +375,13 @@ uncaptured toasts are still open. `docs/test-bridge.md` does not cover the socia
 - The phone-chat history preview and `quiet` persistence (engine; m01–m10 risk).
 - The R-01 speaker tie (the user's decision).
 - OQ4, or a server-side results record.
+
+## Follow-ups found during M3 and M4 (2026-10-22)
+- **Lint:** a character's `influence.start` should match the declared global's initial value and the ink `VAR` default. The lab had -10 against `start: 0`; this is fixed in c54ad1f3, and the lint is still to add.
+- **`needsGlobal` readiness slots** are re-checked only when a fact is granted. They should also re-check on `global_variable_changed`. No scenario uses them yet.
+- **The "Ready to approach" toast** hard-codes "write to them from a mail terminal". Make the text configurable, or derive it from the target's channel.
+- **`engagement.client`** is never read: rename it to `_client` and drop it from the schema.
+- **OSINT `showIf`:** the validator accepts an array, but the runtime only reads a string. Align the two.
+- **Validator-only keys:** pretext `tuning.feedbackMode`, `showTechniqueNames` and `tells.bands` are read only by the validator.
+- **Fixture:** `test/js/fixtures/social_osint/so_clean.json` fails the new schema, though no CLI test runs it.
+- **User decision:** should the scope and plan boards show the `blame` wording (currently report-only)? This is an engine change.
