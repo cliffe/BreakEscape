@@ -14,7 +14,7 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { generatePrint, hashString, mulberry32, patternForOwner, PATTERNS } from './fingerprint-generator.js';
 import {
     SURFACES, POWDERS, TOOLS, DIFFICULTY, DustField, TapeGrid, surfaceForObject, contrastFactor,
-    liftQuality, ratingFor, developedDensity, wrongPowderReason
+    liftQuality, ratingFor, developedDensity, wrongPowderReason, decoyPatterns
 } from './dusting-model.js';
 import { ART_SLOTS, SURFACE_SLOT, preloadArt, onArtLoaded, drawSlot, artRect, hasArt, slotCanvas, refreshSlotCanvases } from './dusting-art.js';
 import { displayNameForOwner, bestLiftFromObject } from '../../systems/biometric-samples.js';
@@ -717,16 +717,17 @@ export class DustingMinigame extends MinigameScene {
         if (this.diff.decoySamePattern !== 'never') {
             const at = pool.findIndex(nm => patternForOwner(nm) === lp);
             if (at > 0) pool.unshift(pool.splice(at, 1)[0]);
+        } else {
+            // easy: prefer people whose own pattern already differs, so their card is the same finger
+            // on every surface in the mission (stable sort keeps the seeded order otherwise)
+            pool.sort((a, b) => (patternForOwner(a) === lp) - (patternForOwner(b) === lp));
         }
         const decoyNames = [];
         for (let k = 0; k < n - 1; k++) decoyNames.push(pool[k] || fallback[k]);
 
-        const others = PATTERNS.filter(p => p !== lp);
+        const decoyClasses = decoyPatterns(lp, decoyNames.length, this.diff.decoySamePattern, seed, decoyNames.map(nm => patternForOwner(nm)));
         const decoys = decoyNames.map((nm, k) => {
-            let pattern;
-            if (this.diff.decoySamePattern === 'all') pattern = lp;
-            else if (this.diff.decoySamePattern === 'one') pattern = k === 0 ? lp : others[(seed + k) % others.length];
-            else pattern = others[(seed + k) % others.length];
+            const pattern = decoyClasses[k];
             return { label: nm, pattern, print: cachedPrint({ owner: nm, pattern }), correct: false };
         });
         const correct = { label: this.ownerName, pattern: lp, print: cachedPrint({ owner: this.owner, pattern: lp }), correct: true };
