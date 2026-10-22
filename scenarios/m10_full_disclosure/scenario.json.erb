@@ -81,6 +81,18 @@ m10_stations = [
 # The attack box (HaX's racked field console). VM-WIRE: title and fallback ip.
 m10_attack_vm = 'attack_vm'
 m10_attack_fallback = { 'id' => 1, 'title' => 'kali', 'ip' => '172.16.0.3', 'enable_console' => true }
+# Handoff B8 (m09's helper, 9a34d32f): each find carries its target's address, read by VM title from the
+# Hacktivity VM set; standalone, a neutral in-game phrase.
+vm_ip_for = lambda do |title, fallback|
+  if vm_context && vm_context['hacktivity_mode'] && vm_context['vms']
+    vm = vm_context['vms'].find { |v| v['title'] == title }
+    return vm['ip'] if vm && vm['ip']
+  end
+  (vm_context && vm_context['vm_ips'] && vm_context['vm_ips'][title]) || fallback
+end
+bunker_monitor_ip = vm_ip_for.call('bunker_monitor', 'the monitoring host on your VM list')
+release_host_ip = vm_ip_for.call('release_host', 'the release host on your VM list')
+core_host_ip = vm_ip_for.call('core_host', 'the core host on your VM list')
 
 station = ->(n) { m10_stations.find { |s| s[:flag] == n } }
 # Station-qualified task target: "<station>:<vm>-flag1" (each list holds one flag).
@@ -2611,7 +2623,7 @@ end
           "readable": true,
           "position": { "x": 15.6, "y": 3.4 },
           "observations": "A laminated maintenance tag on a cable tie, hanging off the gate terminal's power lead.",
-          "text": "TOMB GAMMA SECURITY MONITORING. Service login, for maintenance only.\nUser: <%= monitor_login_user %>\nPassword: <%= monitor_login_password %>\nDo not remove.",
+          "text": "TOMB GAMMA SECURITY MONITORING. Service login, for maintenance only.\nHost: <%= bunker_monitor_ip %>\nUser: <%= monitor_login_user %>\nPassword: <%= monitor_login_password %>\nDo not remove.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "gate_terminal"
         }
@@ -3685,7 +3697,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "position": { "x": 11.3, "y": 3.4 },
           "observations": "A sign-in card tucked under the release console's edge. The staging copy of the schedule.",
-          "text": "RELEASE SCHEDULE. STAGING COPY.\nLogin for the staging copy of the release schedule, monitoring host: <%= staging_login_user %>\nPassword: <%= staging_login_password %>\nRead only. Leave it at the console.",
+          "text": "RELEASE SCHEDULE. STAGING COPY.\nHost: <%= bunker_monitor_ip %>\nLogin for the staging copy of the release schedule: <%= staging_login_user %>\nPassword: <%= staging_login_password %>\nRead only. Leave it at the console.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "release_console"
         },
@@ -3698,7 +3710,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "position": { "x": 15.5, "y": 3.5 },
           "observations": "A duty sheet dropped by the racks. Release service, operator on shift.",
-          "text": "RELEASE SERVICE. OPERATOR ON SHIFT.\nRelease service login: <%= release_login_user %>\nPassword: <%= release_login_password %>\nSign the log at handover.",
+          "text": "RELEASE SERVICE. OPERATOR ON SHIFT.\nHost: <%= release_host_ip %>\nRelease service login: <%= release_login_user %>\nPassword: <%= release_login_password %>\nSign the log at handover.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "sealed_hatch"
         },
@@ -4272,7 +4284,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "position": { "x": 2.2, "y": 4.8 },
           "observations": "An envelope on the desk beside the host terminal, stamped CORE. ACCESS. Left out for whoever came down.",
-          "text": "CORE. HOST ACCESS CODE. ONE HOLDER.\n<%= core_access_key %>\nFor the agent. A.T.",
+          "text": "CORE. HOST ACCESS CODE. ONE HOLDER.\nHost: <%= core_host_ip %>\n<%= core_access_key %>\nFor the agent. A.T.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "core_host_terminal"
         }

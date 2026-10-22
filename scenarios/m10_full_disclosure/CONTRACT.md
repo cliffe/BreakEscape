@@ -1286,3 +1286,5 @@ Applied 2026-10-21 by the m10 fixer from `finale/STAGE_8_RULINGS.md` and the rev
 
 **Puzzle chains round 5, phase 2 closed (PUZZLE_CHAINS_REVIEW_R5.md; 0/0/1/2).**
 - m1: the schedule terminal's pre-flag-2 observation (and S6 lore_fragments) reads "The staging copy of the release schedule, on their monitoring host. It has its own sign-in." The staging card names the host ("…release schedule, monitoring host:"). n1: the PLACEHOLDER labels are gone from the tag, duty sheet and core code `_comment`s (positions per SD R4 d1-d3, strings from the VM plan). n2: noted, no change (the gate terminal's flag-2 hint stays, per PC R4). Voiced delta: 0.
+
+**VM gating hand-off B8 (target addresses on the finds).** m09's `vm_ip_for` helper is ported to the m10 ERB (after the attack-box fallback, outside the Codes block): it reads each VM's address by title from the Hacktivity VM set, else `vm_ips`, else a neutral phrase. The tag and the staging card carry `bunker_monitor`, the duty sheet `release_host`, the Core Access Code `core_host`, each on a "Host:" line. Standalone fallbacks: "the monitoring host / the release host / the core host on your VM list". Voiced delta: 0.
