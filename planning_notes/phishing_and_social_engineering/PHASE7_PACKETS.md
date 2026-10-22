@@ -449,3 +449,9 @@ the orchestrator passes it to that wave's owner.
   - **Globals the shell must declare:** `se_intel_ms_managing_partner`, `_pa_name`, `_exec_calendar`, `_exec_travel_email`, `_travel_post`, `se_osint_state`, `phish_exec_pa_landed` and `_attempts`.
   - **Tells:** a good send stores `[senderTrust, urgencyCalibrated]`.
   - **Cast:** the defend side should define Yasmin Chaudhry, the finance controller.
+- **E2 attack:**
+  - **Target and sender:** the target `recruiter_contact` is Fatima Begum. The learner sends as themselves (`spoofsFrom: false`) from the persona Alex Rendell, using the `kit_cv` document.
+  - **Globals the shell must declare:** `se_intel_tarrowby_recruiter`, `_vacancy`, `_hiring_manager`, `_cv_request`, `se_osint_state`, `phish_recruiter_contact_landed` and `_attempts`.
+  - **Thin flip:** a good send stores only `[urgencyCalibrated]`, because an open inbox has no trusted-sender spoof and no link. The defend side carries the lesson.
+  - **For the E2 shell:** E2's defend set needs `playerSentAuth` for the `analyst` account so the flip can replay the send.
+- **Wave 4 content is complete:** the attack and defend halves of E2, E4, E6 and E7.
