@@ -1098,6 +1098,8 @@ On a quiet save (Imran and Asante untouched, Voltage escaped and never resolved,
 | `globalVars.ending === 'executed'` | "Social Fabric's story ran at six. One paragraph of it was true." (w) |
 | `globalVars.media_story_ran === true && globalVars.ending !== 'executed'` | "Social Fabric's story ran from outside: a massacre that never happened." (w) |
 | `globalVars.media_story_ran === true && globalVars.ending !== 'executed' && globalVars.m05_entropy_program_exposed === true` | "It named SAFETYNET, and 0x00." (w) |
+| `globalVars.close_zero_day === 'vos_named' && globalVars.share_zero_day === 'stopped'` | "Zero Day: got nothing tonight. Its broker, Pieter Vos, named." (stage 9, playtest full 1 m-2: Netherton says "Zero Day got nothing.") |
+| `globalVars.close_zero_day === 'trading' && globalVars.share_zero_day === 'stopped'` | "Zero Day: got nothing tonight. Still trading." (same) |
 | `globalVars.close_zero_day === 'vos_named'` | "Zero Day: still trading. Its broker, Pieter Vos, named." |
 | `globalVars.close_zero_day === 'trading'` | "Zero Day: still trading." |
 

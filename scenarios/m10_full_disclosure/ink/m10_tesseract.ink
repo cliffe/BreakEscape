@@ -880,10 +880,14 @@ Agent HaX: That's coordinated disclosure. Vendors first, quietly, with time to f
 { m09_albion_notified:
     Agent HaX: You burned the Critical Mass watch for one letter. This is that letter, a thousand times.
 }
+// Playtest full 1 m-3: each prompt gets its own lead-in; the purge warning
+// is said on both, before the menu.
 + [And if I wipe both copies?]
+    Agent HaX: If both copies die, this room purges itself. He'll be ready for it, and you won't have him after.
 + [There's a third way.]
+    Director Magnus Netherton: There is. Wipe both copies, his and ours.
+    Agent HaX: And if both copies die, this room purges itself. He'll be ready for it. You won't have him after.
 -
-Agent HaX: If both copies die, this room purges itself. He'll be ready for it, and you won't have him after.
 Director Magnus Netherton: Then nobody has it, and nobody fixes anything either. We both answer for it.
 ~ tess_menu = true
 -> database_menu

@@ -41,6 +41,9 @@ Imran Siddiqui: Read what's pinned over my bench. Then tell me which side's wors
 + {casualty_sheet_read} [Someone corrected that sheet upwards, and he signed the old number.]
     Imran Siddiqui: I saw the scribble. I thought it was somebody being clever.
     -> imran_margin
++ {not casualty_sheet_read} [I haven't read it yet. Tell me.]
+    Imran Siddiqui: Casualties. His own sums, in thousands. I build casings. Somebody else decides what goes in them.
+    -> imran_margin
 + [Whatever that sheet says, it's people. You'd be building it.]
     Imran Siddiqui: I build casings. Somebody else decides what goes in them.
     -> imran_margin

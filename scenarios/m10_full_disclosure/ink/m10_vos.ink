@@ -22,7 +22,11 @@ VAR vos_l_seen = false    // the opener has played
     -> vos_menu
 }
 {vos_l_seen:
-    Pieter Vos: {&You are still here. So is my delivery, almost.|Have you decided? I have a flight.}
+    {head_start_killed == "zero_day" or share_zero_day == "stopped":
+        Pieter Vos: {&You are still here. My delivery is not.|Have you decided? I have a flight.}
+    - else:
+        Pieter Vos: {&You are still here. So is my delivery, almost.|Have you decided? I have a flight.}
+    }
     -> vos_menu
 }
 ~ vos_l_seen = true
@@ -55,7 +59,11 @@ Pieter Vos: I don't do philosophy. I do delivery dates.
     -> vos_rest
 + {not vos_secret_known} [No.]
     ~ vos_outcome = "refused"
-    Pieter Vos: Then find another way through. I will wait for my delivery.
+    {head_start_killed == "zero_day" or share_zero_day == "stopped":
+        Pieter Vos: Then find another way through. My delivery was cancelled, so I have time.
+    - else:
+        Pieter Vos: Then find another way through. I will wait for my delivery.
+    }
     ~ vos_l_quiet = true
     #exit_conversation
     -> vos_rest
@@ -75,7 +83,11 @@ Pieter Vos: I don't do philosophy. I do delivery dates.
     - vos_outcome == "bought":
         Pieter Vos: We have done our business. Go and do yours.
     - else:
-        Pieter Vos: I am waiting for a delivery. You are in the way of it.
+        {head_start_killed == "zero_day" or share_zero_day == "stopped":
+            Pieter Vos: My delivery was cancelled. I am waiting for a flight. You are in the way of that too.
+        - else:
+            Pieter Vos: I am waiting for a delivery. You are in the way of it.
+        }
     }
 }
 + [Goodbye, Mr Vos.]
