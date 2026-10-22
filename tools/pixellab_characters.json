@@ -252,6 +252,15 @@
     },
     "imported": "2026-10-03"
   },
+  "gareth_fairbairn": {
+    "character_id": "46fc0e4f-fea2-45f4-841e-30f8e0c2af2c",
+    "name": "Make portrait for Gareth Fairbairn\nA white Scottis...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
   "gary_whitlock": {
     "character_id": "2b2d5800-1695-4dcd-bdc4-593bc34e4b43",
     "name": "Gary Whitlock A white British man in his late thir...",
@@ -613,6 +622,15 @@
     },
     "imported": "2026-10-13"
   },
+  "ruth_adeyemi": {
+    "character_id": "bf8ff217-fe3e-4479-a142-3a99655187da",
+    "name": "Make portrait for Ruth Adeyemi\nA Black British wom...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
   "ruth_halloran": {
     "character_id": "95250c5f-3ff8-4987-9900-1367ad0c2a23",
     "name": "Make portrait for Dr Ruth Halloran\nA white Irish w...",
@@ -720,6 +738,15 @@
       "height": 60
     },
     "imported": "2026-10-06"
+  },
+  "tomasz": {
+    "character_id": "81200bb1-30bf-4c86-886b-aee046bad9bb",
+    "name": "Make portrait for Tomasz\nA Polish British man of a...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
   },
   "victoria_sterling": {
     "character_id": "57297be2-3977-4a1d-a0cc-0a92240f9355",
