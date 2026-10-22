@@ -1816,9 +1816,9 @@ end
           "displayName": "Agent 0x5E 'Lantern'",
           "npcType": "person",
           "position": { "x": 10, "y": 5 },
-          "spriteSheet": "female_office_worker_v2",
-          "spriteTalk": "assets/characters/female_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "spriteSheet": "halina_kowalczyk",
+          "spriteTalk": "assets/characters/halina_kowalczyk_talk.png",
+          "spriteVisemes": "assets/characters/halina_kowalczyk_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk.json",
           "currentKnot": "post",
@@ -1841,9 +1841,9 @@ end
           "displayName": "Agent 0x5E 'Lantern'",
           "npcType": "person",
           "position": { "x": 2, "y": 4 },
-          "spriteSheet": "female_office_worker_v2",
-          "spriteTalk": "assets/characters/female_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "spriteSheet": "halina_kowalczyk",
+          "spriteTalk": "assets/characters/halina_kowalczyk_talk.png",
+          "spriteVisemes": "assets/characters/halina_kowalczyk_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk.json",
           "currentKnot": "van",
@@ -2238,7 +2238,7 @@ end
   ['imran_voice', 'Imran Siddiqui', 'male_nerd_v2', 'assets/characters/male_nerd_talk.png', 'assets/characters/male_nerd_visemes.png', :imran],
   ['gary_voice', 'Gary Whitlock', 'gary_whitlock', nil, 'assets/characters/gary_whitlock_visemes.png', :gary],
   ['wendell_voice', 'Wendell Briggs', 'male_office_worker', nil, 'assets/characters/male_office_worker_visemes.png', :wendell],
-  ['tesseract_voice', 'Dr Adrian Tesseract', 'the_architect', nil, 'assets/characters/the_architect_visemes.png', :tesseract]
+  ['tesseract_voice', 'Dr Adrian Tesseract', 'adrian_tesseract', 'assets/characters/adrian_tesseract_talk.png', 'assets/characters/adrian_tesseract_visemes.png', :tesseract]
 ].each_with_index do |(sid, sname, sheet, talk, vis, vkey), si| %>
         {
           "_comment": "Hidden registered speaker (Implementation R1 C F2): resolves the \"<%= sname %>:\" prefix in scenes away from <%= sname %>'s room.",
@@ -2413,7 +2413,7 @@ end
 # Kowalczyk's when she is named or goes ahead (after the conversation closes:
 # delayMs waits for any open minigame). Field copies are knockable.
 raid = {
-  'kowalczyk' => { name: "Agent 0x5E 'Lantern'", sprite: 'female_office_worker_v2', ink: 'm10_kowalczyk.json', voice: :kowalczyk },
+  'kowalczyk' => { name: "Agent 0x5E 'Lantern'", sprite: 'halina_kowalczyk', ink: 'm10_kowalczyk.json', voice: :kowalczyk },
   'quintero'  => { name: "Agent 0x2D 'Anchor'",  sprite: 'female_telecom_v2',       ink: 'm10_quintero.json',  voice: :quintero },
   'arakawa'   => { name: 'Officer Kenji Arakawa', sprite: 'male_telecom_v2',         ink: 'm10_arakawa.json',   voice: :arakawa }
 }
@@ -3817,8 +3817,9 @@ not_tethered = '!globalVars.nightshade_tethered'
           "displayName": "Dr Adrian Tesseract",
           "npcType": "person",
           "position": { "x": 6, "y": 4 },
-          "spriteSheet": "the_architect",
-          "spriteVisemes": "assets/characters/the_architect_visemes.png",
+          "spriteSheet": "adrian_tesseract",
+          "spriteTalk": "assets/characters/adrian_tesseract_talk.png",
+          "spriteVisemes": "assets/characters/adrian_tesseract_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_tesseract.json",
           "currentKnot": "start",
@@ -3842,9 +3843,9 @@ not_tethered = '!globalVars.nightshade_tethered'
           "displayName": "Agent 0x5E 'Lantern'",
           "npcType": "person",
           "position": { "x": 8, "y": 5 },
-          "spriteSheet": "female_office_worker_v2",
-          "spriteTalk": "assets/characters/female_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "spriteSheet": "halina_kowalczyk",
+          "spriteTalk": "assets/characters/halina_kowalczyk_talk.png",
+          "spriteVisemes": "assets/characters/halina_kowalczyk_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk_core.json",
           "currentKnot": "start",
@@ -3863,9 +3864,9 @@ not_tethered = '!globalVars.nightshade_tethered'
           "displayName": "Agent 0x5E 'Lantern'",
           "npcType": "person",
           "position": { "x": 8, "y": 6 },
-          "spriteSheet": "female_office_worker_v2",
-          "spriteTalk": "assets/characters/female_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "spriteSheet": "halina_kowalczyk",
+          "spriteTalk": "assets/characters/halina_kowalczyk_talk.png",
+          "spriteVisemes": "assets/characters/halina_kowalczyk_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk_core.json",
           "currentKnot": "start",
