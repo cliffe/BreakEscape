@@ -82,6 +82,8 @@ Cody Old Coyote: Figured. I'll be in the truck.
 {not hub_quiet:
     {coyote_challenges == 0 and coyote_cover == "":
         Cody Old Coyote: Hey. Building's closed. You lost?
+        // Puzzle chains R7 m3: he has met the player, so a sighting after this talk isn't a cold open.
+        ~ coyote_challenges = 1
     - else:
         Cody Old Coyote: {&What's up?|Make it quick, I'm on a lap.}
     }

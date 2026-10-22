@@ -31,8 +31,9 @@ VAR stacks_card_cloned = false
 
 === start ===
 {hatch_met: -> hub}
-~ hatch_met = true
-#set_global:hatch_talked:true
+// Puzzle chains R7 m1: hatch_met and hatch_talked are set at the end of recognition,
+// so an Esc and a reload before then replays the whole opening (and Victoria's
+// route still gets the door scene).
 // Full-route playtest #15: the auditor is her guess, made before the player
 // speaks; a narrator beat says so.
 Narrator: She looks up before you can say who you are.
@@ -72,12 +73,14 @@ Narrator: She stamps a box DESTROYED and slides it back toward the noise.
 }
 Margaret Sorensen: You're not from the lease-holder. You're the one he writes about.
 Agent HaX: ...She's got a file on you.
+#set_global:hatch_talked:true
 Agent HaX: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwriting on it. It's the only place anyone wrote down why he did what he did.
 {m08_nightshade_tidied:
     Agent HaX: The other's what Nightshade cleared from his locker. His own words on what he took. One of them's ash in a minute.
 - else:
     Agent HaX: The other's the Social Fabric letters. Last one's about a union rep in Butte they're about to bury. One of them's ash in a minute.
 }
+~ hatch_met = true
 -> back
 
 === back ===

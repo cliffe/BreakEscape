@@ -26,7 +26,7 @@ VAR talked_down = false
 
 === start ===
 {cage_met or sorensen_fate != "left": -> hub}
-~ cage_met = true
+// Puzzle chains R7 m2: cage_met is set after the opening, so a reload mid-opening replays it.
 Narrator: She feeds another sheaf into the shredder and doesn't turn round.
 Margaret Sorensen: It's only paper. The people are where they've always been, at their desks, doing what they were placed to do.
 Margaret Sorensen: Paper was the only thing that could ever have hurt them. So the paper goes.
@@ -34,6 +34,7 @@ Margaret Sorensen: Paper was the only thing that could ever have hurt them. So t
 {m05_completed:
     Margaret Sorensen: Torres cost us one hospital bill, and he got us within an afternoon of a nation's dispatch keys. I'd call that good value. So would you, if you were honest.
 }
+~ cage_met = true
 -> back
 
 === back ===

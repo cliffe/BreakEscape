@@ -23,11 +23,12 @@ VAR hub_quiet = false
 
 === start ===
 {tran_met: -> hub}
-~ tran_met = true
+// Puzzle chains R7 m2: tran_met is set after the opening, so a reload mid-opening replays it.
 Jesse Tran: Paper. You people break into buildings at night for paper.
 {tran_alerted:
     Jesse Tran: I already made a call, by the way. Somebody from Statewide is on his way, and he bills by the hour.
 }
+~ tran_met = true
 -> back
 
 === back ===

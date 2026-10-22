@@ -16,6 +16,7 @@ VAR ledger_page_seen = false
 
 // Ink-local.
 VAR noor_met = false   // Synced scenario global (the debrief reads it; playtest R1 C-m-6)
+VAR noor_opened = false   // Puzzle chains R7 m2: opening heard (noor_met stays early: the debrief reads it)
 VAR noor_cover = ""          // "contractor" / "auditor" / "safetynet" (not-warned form only)
 VAR noor_tell_signposted = false
 VAR noor_list_checked = false
@@ -27,7 +28,10 @@ VAR staff_card_cloned = false
 
 === start ===
 // A reopen lands on hub; this guard covers a page reload (ink vars survive).
-{noor_met: -> hub}
+// Puzzle chains R7 m2: guarded on noor_opened, set once the opening (or the cover)
+// has been heard, so a reload mid-opening replays it. A replayed #give_item is
+// harmless: the bridge reports the card already held or no longer in her itemsHeld.
+{noor_opened: -> hub}
 ~ noor_met = true
 {
 - m05_found_pipeline_list and not m05_recruiter_deal_accepted:
@@ -37,6 +41,7 @@ VAR staff_card_cloned = false
     Noor Haddad: You're the one they said would come. Here, my card. The staff door's around the side.
     Noor Haddad: Peg's been in the cage since before I got here. She never feeds the shredder herself, and tonight she's sent me home twice.
     Noor Haddad: I didn't send the last one. It's under the desk.
+    ~ noor_opened = true
     -> back
 - m05_found_pipeline_list and m05_recruiter_deal_accepted and m05_recruiter_deal_confessed:
     // Warned late: the warning, and no card.
@@ -44,6 +49,7 @@ VAR staff_card_cloned = false
     Noor Haddad: Somebody called me back in October and told me to watch my boss. Then nobody called back.
     Noor Haddad: Peg's been in the cage since before I got here. She never feeds the shredder herself, and tonight she's sent me home twice.
     Noor Haddad: I don't know you. I'm not losing this job for a phone call.
+    ~ noor_opened = true
     -> back
 - else:
     // Not warned (cold starts too): a wary bystander. The player picks a cover.
@@ -55,14 +61,17 @@ VAR staff_card_cloned = false
 === cover ===
 + [Shredder service. Margaret Sorensen called about the feed.]
     ~ noor_cover = "contractor"
+    ~ noor_opened = true
     Noor Haddad: Peg called somebody? Okay. It's in the cage. You can't miss the noise.
     -> back
 + [Audit. The lease-holder wants the destruction certificates checked.]
     ~ noor_cover = "auditor"
+    ~ noor_opened = true
     Noor Haddad: At this hour? The certificates come after the run. Somebody's nervous.
     -> back
 + [SAFETYNET. Someone in this building is recruiting people.]
     ~ noor_cover = "safetynet"
+    ~ noor_opened = true
     Noor Haddad: Recruiting? I file deeds for dead ranchers. Nobody recruits a records clerk.
     -> back
 
