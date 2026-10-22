@@ -1,0 +1,298 @@
+[
+ {
+  "id": "SIDECAR-21",
+  "severity": "minor",
+  "priority": "should",
+  "category": "fun/learning",
+  "sections": "\u00a74.1 tamperText, \u00a75.5 Tampering, \u00a76.2, \u00a76.3, \u00a76.7, \u00a79.4 stops",
+  "change": "The default tamper toast names the cell (\"Someone has been at the evidence: Chen, what she carries. There may be another copy.\") and uses type 'warning'. A recovered cell shows \"(recovered)\", and recovery toasts \"Recovered: <name>, <slot>\". A recovery source that repeats a held clue shows \"Confirmed by two sources\". D's door warning becomes \"The cult uses every stop to clear away evidence. Anything here you haven't picked up or asked about may be gone.\"",
+  "evidence": "PLAYER_TEST_D \u00a72, R2, R6 (the hasty player read the fade as just another Hidden). BOARD_MOCKUP_NOTES 6. DESIGN_FUN_TENSION \u00a75.2. DESIGN_FUN_FEEDBACK \u00a7D (warning toast, ui-themes.css:1203).",
+  "sources": [
+   "sidecar/PLAYER_TEST_D.md",
+   "sidecar/BOARD_MOCKUP_NOTES.md",
+   "sidecar/DESIGN_FUN_TENSION.md",
+   "sidecar/DESIGN_FUN_FEEDBACK.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-18"
+  ]
+ },
+ {
+  "id": "SIDECAR-22",
+  "severity": "minor",
+  "priority": "should",
+  "category": "learning (debrief)",
+  "sections": "\u00a73.10, \u00a76.2 buildDebriefModel, \u00a76.3 no-blame order, \u00a711.4",
+  "change": "Extend the existing 'early' line: a right call with decidedAtVerdict false gets \"Right call, made before the evidence settled it. <label>, from <place>, would have.\" Add a no-blame line chosen when a wrong call was undecided at the verdict: \"You named <name> before their last clue was in. Waiting costs nothing. A wrong name costs someone else.\" (set its place in the \u00a76.3 order). Name the object as well as the room in 'from <place>'.",
+  "evidence": "LEARNING_DESIGN G4 and R4. PLAYER_TEST_B \u00a74 (the 'missed clue' line lets a hasty player off). The plan has only the generic 'You named them before the evidence decided it.'",
+  "sources": [
+   "sidecar/LEARNING_DESIGN.md",
+   "sidecar/PLAYER_TEST_B.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-19"
+  ]
+ },
+ {
+  "id": "SIDECAR-23",
+  "severity": "minor",
+  "priority": "should",
+  "category": "learning/flexibility",
+  "sections": "\u00a74.1 debrief, \u00a76.2, \u00a76.7, \u00a78 DL10, DL15",
+  "change": "Add debrief.notes: { \"<s>\": { \"<outcome>\": \"text\" } }, plain authored text shown on that card and scanned by DL10 and DL15. Fixtures use it for B's alarm gap, C's Ahmed (\"The profile needs both: the trip and no alibi. Being somewhere suspicious isn't enough.\"), D's Chen (the charm taken at stop 2; the shredded receipt had the same fact) and Novak's lie by omission.",
+  "evidence": "PLAYER_TEST_B \u00a72.2. PLAYER_TEST_C F6. PLAYER_TEST_D R4, R5. STRESS_TEST rank 7. DESIGN_FUN_CHARACTERS \u00a78.",
+  "sources": [
+   "sidecar/PLAYER_TEST_B.md",
+   "sidecar/PLAYER_TEST_C.md F6",
+   "sidecar/PLAYER_TEST_D.md",
+   "sidecar/STRESS_TEST.md",
+   "sidecar/DESIGN_FUN_CHARACTERS.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-20"
+  ]
+ },
+ {
+  "id": "SIDECAR-24",
+  "severity": "minor",
+  "priority": "should",
+  "category": "learning (debrief)",
+  "sections": "\u00a74.5 verdicts, \u00a75.5 recordVerdict, \u00a76.2 summary, \u00a76.3 Summary row, \u00a76.7",
+  "change": "Store the mark's profile with the verdict, and let the debrief say when the suspect was guilty under a different profile. Replace \"<right> of <total> calls right\" with \"Cultists named: 1 of 2. Innocents wrongly accused: 1. Innocents left alone: 2, 1 with a reason.\"",
+  "evidence": "STRESS_TEST rank 4 and cross-cutting 6. BOARD_MOCKUP_NOTES 5 (the summary flatters a run that missed a cultist). COPY_DRAFTS \u00a713 item 7.",
+  "sources": [
+   "sidecar/STRESS_TEST.md",
+   "sidecar/BOARD_MOCKUP_NOTES.md",
+   "sidecar/COPY_DRAFTS.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-21"
+  ]
+ },
+ {
+  "id": "SIDECAR-25",
+  "severity": "minor",
+  "priority": "should",
+  "category": "learning/ethics",
+  "sections": "\u00a77 (new authoring note), \u00a77.9 briefs, \u00a79.1 Nair lines, \u00a79.1/\u00a79.2 casting",
+  "change": "Every Incident Simulations case says once, in a character's voice, that a match justifies a referral and an interview, not a finding (pairs with SIDECAR-5's noun rule). Where a suspect's only damaging clue is a grievance, the wrong-report reply says raising it was their right. B's brief states what the investigator may read. Add the authoring rule that profile clauses and clues describe access, actions and operational items, never personal traits (ethnicity, faith, age, health, union or political membership), and that Eldritch Hacker cult markers stay operational. Vary who is guilty by background in real missions: both Igbo-surnamed suspects (Okoro, Okafor) are guilty in the placeholder fixtures.",
+  "evidence": "LEARNING_DESIGN G1\u2013G3 and R1, R2, R3, R10, R11.",
+  "sources": [
+   "sidecar/LEARNING_DESIGN.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-22"
+  ]
+ },
+ {
+  "id": "SIDECAR-26",
+  "severity": "minor",
+  "priority": "should",
+  "category": "copy (fixture B)",
+  "sections": "\u00a74.1 example, \u00a74.9 block (briefText), \u00a79.1 stakes and briefText, \u00a77.5",
+  "change": "B's brief: \"Anyone you name is suspended while we look into it. Anyone you don't is cleared.\" If the existing briefText sentence is kept anywhere (\u00a74.1 example, \u00a74.9), change \"Name the wrong people, or miss someone, and the report will say so.\" to \"\u2026or miss anyone who fits\u2026\" so it does not imply at least one guilty person. Give Nair three replies by outcome (right, wrong, missed) in place of the placeholder b_wrong_name line. Scoring stays completion (Q3 unchanged).",
+  "evidence": "PLAYER_TEST_B \u00a75 (all three players felt nothing until 'Anyone you haven't named is cleared'). B/CHECK_REPORT \u00a75 item 12 ('miss someone' reads as if there is at least one person to miss; DL10's no-implied-count rule); plan l.451 and l.762 keep the old wording.",
+  "sources": [
+   "sidecar/PLAYER_TEST_B.md \u00a75",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-23",
+   "sidecar/drafts/B/CHECK_REPORT.md",
+   "merged: GAPSAB-25"
+  ]
+ },
+ {
+  "id": "SIDECAR-27",
+  "severity": "minor",
+  "priority": "should",
+  "category": "copy",
+  "sections": "\u00a76.3, \u00a76.6, \u00a76.7, \u00a73.10, \u00a77.5",
+  "change": "Put labels after a colon instead of inside sentences. Add singular and plural forms for '<names> still undecided' and '<n> marked clues'. Use \"This would have ruled them out: <label>, from <place>.\" for the 'had not ruled them out' line, \"Not a <Profile>: carries a ward charm\" in place of '<Profile>: no, \u2026', and \"Missed: guilty but not named\". Make the truth line the same in \u00a73.10 and \u00a76.7. Add a Narrator: prefix on \u00a77.5's narration. The retry panel warns that declining is final. Give feedback when a verdict is recorded but not graded (when: final / reveal: end). Reword 'Name as many as the evidence supports' and 'That's everyone' so they do not lean plural. Add a board intro line until the first mark: \"Check each suspect against what to look for. Your marks are notes; nothing counts until you act on it.\"",
+  "evidence": "COPY_DRAFTS \u00a713 items 1\u201312. A11Y_UX_REVIEW E1, E2. BOARD_MOCKUP_NOTES 9.",
+  "sources": [
+   "sidecar/COPY_DRAFTS.md \u00a713",
+   "sidecar/A11Y_UX_REVIEW.md E1 E2",
+   "sidecar/BOARD_MOCKUP_NOTES.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-24"
+  ]
+ },
+ {
+  "id": "SIDECAR-28",
+  "severity": "minor",
+  "priority": "should",
+  "category": "copy/teaching",
+  "sections": "\u00a73.11, \u00a76.3 Marked, \u00a74.1 (optional override), \u00a77.9 Briefs, \u00a79.2, \u00a79.4 brief; optionally DL9/DL10",
+  "change": "Let a mission rename the \u2726 concept (\"\u2726 cult sign\", \"telltale clue\") and explain it in the brief as well as on the board; keep 'mark' for the player's notes. Add to \u00a77.9: when a profile uses markedAtLeast, the brief says in one sentence, in the mission's fiction, what makes a clue marked and how the board shows it. For D: \"Some things carry the cult's sigil: wanting the Codex or a post in the Archive, a sigil ring, a burner SIM, the brass key. The case board shows them as \u2726 marked.\" Optionally a DL warning when such a brief lacks 'marked' outside the profile text. Gloss jargon in the clue text the first time it appears (Codex, sigil, burner, DHCP, RFID cloner, sleeper). Rename B's DHCP printout for players (\"Network device list\"). Skip 'Which profile?' when there is only one profile.",
+  "evidence": "PLAYER_TEST_A \u00a73.3 and R6. PLAYER_TEST_B \u00a74. PLAYER_TEST_C F7. PLAYER_TEST_D \u00a74 and R9. drafts/D/PLAN_GAPS G13: D reuses A's Devotee 'Has three or more marked clues.' and the draft brief never explains marking; plan \u00a77.9 (l.1879-1888) has no such rule.",
+  "sources": [
+   "sidecar/PLAYER_TEST_A.md",
+   "sidecar/PLAYER_TEST_B.md",
+   "sidecar/PLAYER_TEST_C.md F7",
+   "sidecar/PLAYER_TEST_D.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-25",
+   "sidecar/drafts/D/PLAN_GAPS.md G13",
+   "merged: GAPSCD-13"
+  ]
+ },
+ {
+  "id": "SIDECAR-29",
+  "severity": "minor",
+  "priority": "should",
+  "category": "copy (fixture A)",
+  "sections": "\u00a79.2",
+  "change": "Courier text: \"Was in the Archive, wants the Codex, and has no ward charm\". Coat text: \"her ward charm\", plus one line of fiction for why a charm clears. Make the clue label match the profile (\"In the Archive\"). The camera says it shows the lecture hall feed. A folded umbrella. Altar: \"Anyone you haven't named goes free\". Full names, roles and pronouns for every guest. Give Venn something only she offers, and make the kind word unlock a flavour hint (or drop the 'push too far' threat from A).",
+  "evidence": "PLAYER_TEST_A \u00a73.4\u2013\u00a73.8, R7, R9\u2013R11. DESIGN_FUN_CHARACTERS \u00a711.2.",
+  "sources": [
+   "sidecar/PLAYER_TEST_A.md",
+   "sidecar/DESIGN_FUN_CHARACTERS.md \u00a711.2",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-26"
+  ]
+ },
+ {
+  "id": "SIDECAR-30",
+  "severity": "minor",
+  "priority": "should",
+  "category": "fun/learning (fixture B)",
+  "sections": "\u00a79.1 Other content, \u00a74.9 hand check",
+  "change": "Give each quiet suspect one topic with no clue: Okoro (a false \"I was on the console all night\" that the badge log contradicts), Haddad (her ticket and her laptop: a policy breach that is not the profile) and Morgan (what 'in role' means). Optionally, the HR summary holds only the two complaints on file, so Haddad and Morgan are cleared by count elimination. Re-run the hand check; DL8 still passes at 2 of 4.",
+  "evidence": "PLAYER_TEST_B \u00a72.4, \u00a72.6, \u00a73. DESIGN_FUN_CHARACTERS \u00a76.4\u2013\u00a76.6 (lie parity: an innocent lies too). The plan gives the three a two-line stub each.",
+  "sources": [
+   "sidecar/PLAYER_TEST_B.md",
+   "sidecar/DESIGN_FUN_CHARACTERS.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-27"
+  ]
+ },
+ {
+  "id": "SIDECAR-31",
+  "severity": "minor",
+  "priority": "should",
+  "category": "copy/UX (fixture C)",
+  "sections": "\u00a79.3",
+  "change": "HaX's lock choice and the exit confirm name who is inside (\"Lock the comms room with Novak and Ahmed inside\", built from the c_waiting_<id> globals). Gate Ahmed's and Baptiste's door offers on c_keycard_revoked. Give each 'show me your kit' its own line (Novak: \"This is all I carry\"). The garage reader says \"Last used 03:40, the night of the leak\". Define 'sleeper' in the brief (see GAPSCD-27 for C's brief text). Fix the three contacts' genders.",
+  "evidence": "PLAYER_TEST_C F4, F7, F8, F9, \u00a74.8.",
+  "sources": [
+   "sidecar/PLAYER_TEST_C.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-28"
+  ]
+ },
+ {
+  "id": "SIDECAR-32",
+  "severity": "minor",
+  "priority": "should",
+  "category": "copy/fun (fixture D)",
+  "sections": "\u00a79.4 intro, 'Stops and tampering' table, hand check, route rows",
+  "change": "Sato's lost-property clue says it is the only bag Sato brought aboard (or relabel the slot \"What they brought\"). The conductor says Sato \"came from the Archive reading room\". Add one line of story for why ambition carries the cult's sign. Add a third route to Volkov's key with no skill check (the conductor's luggage master key after the kind word). Add a closing line on oversharing staff (\"Someone else could ask them the same about you.\"). On the fades, pick one: (a) note in \u00a79.4 that no single unrecovered fade strands the player (Sato's pass is deduced by the pigeonhole on the passes even with the rack and the conductor both gone; only losing both Chen's charm and de Vries's SIM, with both recoveries missed, leaves Chen and de Vries undetermined), so stop 1's 'Evidence destroyed' costs nothing; or (b) make stop 1 bite: give the passes a second unseen garden or lecture copy so Sato's pass cannot be deduced by elimination, or fade a fact elimination cannot recover, then redo the hand check.",
+  "evidence": "PLAYER_TEST_D \u00a74, \u00a75, R3, R7, R8, \u00a78. SIM_REPORT D8 and Recommended fixes 7: every fade is recoverable but no single fade ever matters even with its recovery route removed; the stop-1 tamper has no effect on decidability in any state; a random player loses each closed route about half the time (49.7\u201349.8 %). Current \u00a79.4 (lines 2620, 2690\u20132696, 2718) says nothing about elimination covering the fades.",
+  "sources": [
+   "sidecar/PLAYER_TEST_D.md",
+   "sidecar/SIM_REPORT.md D8, Recommended fixes 7, Fixture D",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-29",
+   "merged: SIM-9"
+  ]
+ },
+ {
+  "id": "SIDECAR-33",
+  "severity": "minor",
+  "priority": "should",
+  "category": "fun/learning",
+  "sections": "\u00a77.2, \u00a79 witness descriptions",
+  "change": "Authoring rule: after the question that will tip a witness past wary, the ink gives a tell in the witness's voice (\"He glances at the clock\"; \"Ask me much more and I'll start to wonder why\"), and the wary line says so (\"He's stopped meeting your eye\"). No meter.",
+  "evidence": "DESIGN_FUN_CHARACTERS \u00a74.2. DESIGN_FUN_TENSION \u00a74.2. PLAYER_TEST_B \u00a74. PLAYER_TEST_D R10. PLAYER_TEST_C F7.",
+  "sources": [
+   "sidecar/DESIGN_FUN_CHARACTERS.md",
+   "sidecar/DESIGN_FUN_TENSION.md",
+   "sidecar/PLAYER_TEST_B.md",
+   "sidecar/PLAYER_TEST_D.md",
+   "sidecar/PLAYER_TEST_C.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-30"
+  ]
+ },
+ {
+  "id": "SIDECAR-34",
+  "severity": "minor",
+  "priority": "should",
+  "category": "validator flexibility",
+  "sections": "\u00a78 derived sets (Opening facts, After a wrong call), DL6, DL8, \u00a710.1 P10-C2b",
+  "change": "Apply the 'freely' rule to #grant_fact: a grant behind a choice condition or a conditional block is not an opening fact. Trace OSINT showIf/unlockedBy routes, with traced osint route ids instead of 'unknown'. Apply lose_ally in the 'after a wrong call' set alongside cost: true globals and remove_item.",
+  "evidence": "STRESS_TEST cross-cutting 2 and rank 2 (most one-room Incident Simulations cases would fail DL8 or need earlyCollapse switched off; osint-model.js:29-32, :60-65, :124-131). The plan's Opening facts and After a wrong call definitions (\u00a78) do not cover these.",
+  "sources": [
+   "sidecar/STRESS_TEST.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-31"
+  ]
+ },
+ {
+  "id": "SIDECAR-35",
+  "severity": "minor",
+  "priority": "should",
+  "category": "process (playtests)",
+  "sections": "\u00a710.1 P10-BL, \u00a711.6",
+  "change": "The blind playtest spec seals each source's result until the player uses it. It gives in-game lines instead of stated mechanics (budgets, KO drops, 'nothing is final'), includes the tamper toast, and runs the hasty and newcomer personas as well as the careful one, on B\u2013D as well as A, with a judge answering stakes, nudge and debrief.",
+  "evidence": "PLAYER_TEST_A \u00a76 and R12. PLAYER_TEST_B \u00a77. PLAYER_TEST_C \u00a74. PLAYER_TEST_D \u00a73 and R11 (every packet leaked answers; no judge answered). Plan \u00a711.6 still has one blind playtest of fixture A only.",
+  "sources": [
+   "sidecar/PLAYER_TEST_A.md",
+   "sidecar/PLAYER_TEST_B.md",
+   "sidecar/PLAYER_TEST_C.md",
+   "sidecar/PLAYER_TEST_D.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-34"
+  ]
+ },
+ {
+  "id": "SIDECAR-36",
+  "severity": "minor",
+  "priority": "could",
+  "category": "flexibility",
+  "sections": "\u00a74.1 favours, \u00a75.5 doFavour, DL8",
+  "change": "Add favours.<s>.grants: \"all\" | \"none\" | [facts], default \"all\". Add an optional onThanks for an innocent suspect, which may grant only things that have another route.",
+  "evidence": "STRESS_TEST cross-cutting 3 and rank 3 (corporate 'comply with a request' needs the backfire without the reveal). DESIGN_FUN_TENSION \u00a76.1.",
+  "sources": [
+   "sidecar/STRESS_TEST.md",
+   "sidecar/DESIGN_FUN_TENSION.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-32"
+  ]
+ },
+ {
+  "id": "SIDECAR-37",
+  "severity": "minor",
+  "priority": "could",
+  "category": "UX/polish",
+  "sections": "\u00a76.4, \u00a76.6, \u00a74.1 finalCall, \u00a78 (DL23 new)",
+  "change": "Add finalCall.lockedText (\"You can make the call after the last stop.\") instead of a hidden button. Put the counts in a <details> that is closed below 700 px, with the 'still hidden' line outside it. Add a lint \u26a0\ufe0f for a suspect's own story granting their own cell without _why. Add a DL23 \u26a0\ufe0f that profile text names each rule clue by its exact label.",
+  "evidence": "DESIGN_FUN_TENSION \u00a78.3. BOARD_MOCKUP_NOTES 8. DESIGN_FUN_CHARACTERS \u00a711.4. A11Y_UX_REVIEW D4.",
+  "sources": [
+   "sidecar/DESIGN_FUN_TENSION.md",
+   "sidecar/BOARD_MOCKUP_NOTES.md",
+   "sidecar/DESIGN_FUN_CHARACTERS.md",
+   "sidecar/A11Y_UX_REVIEW.md D4",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-35"
+  ]
+ },
+ {
+  "id": "SIDECAR-38",
+  "severity": "minor",
+  "priority": "could",
+  "category": "scope (defer)",
+  "sections": "\u00a71 Out of scope",
+  "change": "Defer. Add to \u00a71 Out of scope: people-only suspects with no NPC, and OSINT hideIf (with the first online case); lying sources, relational rules and changing display names (alongside the already deferred groups, R1D-22).",
+  "evidence": "STRESS_TEST ranked recommendations, ranks 6, 7 and '\u2014'.",
+  "sources": [
+   "sidecar/STRESS_TEST.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md 'Defer to a later phase'"
+  ]
+ },
+ {
+  "id": "SIDECAR-39",
+  "severity": "minor",
+  "priority": "could",
+  "category": "scope (defer)",
+  "sections": "\u00a71 Out of scope",
+  "change": "Defer. Record as later options: 'at risk' threats shown on cells before a tamper; a deduction_stage global for call music; a staged card-by-card debrief reveal with revealLines; a symmetric 'naming always costs a witness' pattern and unique-item trades (for real missions); a validator decision curve per state; a sourceKind on facts to show corroboration across kinds.",
+  "evidence": "DESIGN_FUN_TENSION \u00a75.1, \u00a77, \u00a78.2, \u00a78.4, \u00a79, \u00a710. DESIGN_FUN_FEEDBACK \u00a7F. LEARNING_DESIGN R12.",
+  "sources": [
+   "sidecar/DESIGN_FUN_TENSION.md",
+   "sidecar/DESIGN_FUN_FEEDBACK.md",
+   "sidecar/LEARNING_DESIGN.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md 'Defer to a later phase'"
+  ]
+ },
+ {
+  "id": "SIDECAR-40",
+  "severity": "minor",
+  "priority": "could",
+  "category": "scope (defer)",
+  "sections": "\u00a71 Out of scope (or docs/IDEAS_BACKLOG.md)",
+  "change": "Defer. Note the engine-wide fixes outside Phase 10's file owners: an aria-live #notification-container, reduced motion on toasts, and a HUD badge for unread clues. SIDECAR-16 covers the Phase 10 side through the runtime's own announcer.",
+  "evidence": "A11Y_UX_REVIEW A1 and A5 (notifications.js:87-110, show.html.erb:105, notifications.css:30-40).",
+  "sources": [
+   "sidecar/A11Y_UX_REVIEW.md",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md 'Defer to a later phase'"
+  ]
+ }
+]
