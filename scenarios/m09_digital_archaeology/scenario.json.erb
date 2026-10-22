@@ -916,7 +916,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "timedConversation": {
             "delay": 0,
             "targetKnot": "start",
-            "background": "assets/backgrounds/hq4.png",
+            "background": "assets/backgrounds/m09_briefing_blended.png",
             "waitForEvent": "game_loaded",
             "skipIfGlobal": "briefing_played",
             "setGlobalOnStart": "briefing_played"
@@ -949,7 +949,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "condition": "value === true && !globalVars.report_done",
               "conversationMode": "person-chat",
               "targetKnot": "start",
-              "background": "assets/backgrounds/hq2.png",
+              "background": "assets/backgrounds/m09_hangar_blended.png",
               "disableClose": true,
               "cooldown": 0
             },
@@ -973,7 +973,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
               "condition": "globalVars.start_debrief && !globalVars.report_done",
               "conversationMode": "person-chat",
               "targetKnot": "start",
-              "background": "assets/backgrounds/hq2.png",
+              "background": "assets/backgrounds/m09_hangar_blended.png",
               "disableClose": true
             }
           ]
@@ -1849,6 +1849,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     ledger's header read the long way). Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_hce_office). %>
     "sorensen_office": {
       "type": "room_m09_office",
+      "chatBackground": "assets/backgrounds/rooms/m09_sorensen_office_blended.png",
       "lighting": {"mode": "motion", "ambient": "#c4b8a6", "darkAmbient": "#14121c", "emitters": {"bankers_lamp": {"radius": 70, "offsetX": -8, "offsetY": 6}, "kettle": {"color": "#ff8a3a", "radius": 8, "intensity": 0.5, "above": true}}},
       "door_sign": "Director -- M. Sorensen",
       "locked": true,
