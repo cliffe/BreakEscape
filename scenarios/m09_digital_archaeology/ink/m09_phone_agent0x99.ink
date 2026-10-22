@@ -351,7 +351,7 @@ She only watched the counter. I can pull one before it wipes. Which?
     First name on it is a handler in Baltimore.
     // Scenario design R4 m4: the H&L sheet already read (identical in the Recruiter's tape_choice).
     {sleeper_shortlist:
-        WREN's still one of the two on that firm's sheet.
+        Her file doesn't change it. WREN's still one of two.
     - else:
         One of four. Two, if that firm's boxes say so.
     }
@@ -758,8 +758,13 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     -> support_hub
 // 6. The tape room's card.
 + {deck_choice_made and not tape_room_entered} [The tape room.]
-    Her card for the tape room will be in the safe.
-    It's a floor safe, in her office.
+    // Dialogue R4 m1: the card already taken.
+    {tape_card_held:
+        Her card's in your hand. The tape room's north of the restricted stacks.
+    - else:
+        Her card for the tape room will be in the safe.
+        It's a floor safe, in her office.
+    }
     -> support_hub
 // 7. Afterwards, for a player who closed the call early.
 + {deck_choice_made and not afterwards_heard} [Afterwards.]
@@ -841,7 +846,7 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
         -> tran_warning ->
         He's wiping tapes from the server closet off the open stacks.
         // Scenario design R4 m5: what the reels are (FINALE_ARC row 847).
-        Those reels are the Initiative's recruiting interviews. The legacy names, in their own voices, saying yes.
+        Those reels are old recruiting interviews. People this archive placed, in their own voices, saying yes.
     }
     ~ tran_topic_heard = true
     // Puzzle chains R1 P4: on tidied there is no paper lever (Nightshade burned it).

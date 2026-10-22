@@ -28,7 +28,7 @@ I gave you this address back in October. It was a line in a list.
 I am still a live placement. Every morning I wake up, and I am still a line in her book.
 // C-8: the pointer, by whether the firm's placing sheet has been read.
 { sleeper_shortlist:
-    Two names from the firm's sheet, I think. Read the next of kin on each. That is the line they hire on.
+    Two names from the firm's sheet, I think. Read the next of kin on each. That is what they hire on.
 - else:
     // Puzzle chains R1 P2: by whether the firm's box is open yet.
     {hl_box_opened:

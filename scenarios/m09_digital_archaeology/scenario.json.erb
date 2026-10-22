@@ -200,7 +200,7 @@ hax_maps << { "eventPattern" => "global_variable_changed:cage_opened", "conditio
 # The purge's timed rules (S4 §4): the default bin, the legacy box's clock.
 hax_maps << { "eventPattern" => "global_variable_changed:cage_opened", "condition" => "value === true && !globalVars.bin_chosen", "onceOnly" => true, "setGlobal" => { "cage_bin" => "derek_file" } }
 hax_maps << text_map("global_variable_changed:cage_opened", "value === true && globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted",
-                     "The legacy files are under Noor's desk. Let her shred the rest.", set: { "legacy_files_saved" => true })
+                     "The legacy files are under Noor's desk. Let Sorensen shred the rest.", set: { "legacy_files_saved" => true })
 hax_maps << text_map("global_variable_changed:cage_opened", "value === true && !globalVars.m05_found_pipeline_list",
                      "That box behind her is the last of the night. The legacy files.")
 hax_maps << text_map("global_variable_changed:cage_opened", "value === true && !globalVars.m05_found_pipeline_list",
@@ -286,7 +286,7 @@ hax_maps << text_map("room_entered:salvage_cage", nil, "Field guide for his box 
 
 # Flag 3 and the identity scene (S4 §4 row 9, §6.2). Voiced (F17/F20).
 hax_maps << call_map("global_variable_changed:flag3_submitted", "value === true && globalVars.nightshade_file_held && !globalVars.identity_scene_started", "identity_scene", delay: 2500, voiced: true)
-hax_maps << text_map("global_variable_changed:flag3_submitted", "value === true && !globalVars.nightshade_file_held", "Bring me his file. Then we say it.", delay: 2500)
+hax_maps << text_map("global_variable_changed:flag3_submitted", "value === true && !globalVars.nightshade_file_held", "Bring me Nightshade's file from the plan cabinet. Then we say it.", delay: 2500)
 hax_maps << call_map("global_variable_changed:nightshade_file_held", "value === true && globalVars.flag3_submitted && !globalVars.identity_scene_started", "identity_scene", delay: 1500, voiced: true)
 hax_maps << call_map("room_entered", "globalVars.flag3_submitted && globalVars.nightshade_file_held && !globalVars.identity_scene_started", "identity_scene", voiced: true,
                      comment: "First-ring backstop (S4 §5): room entry, which also fires on load.")
@@ -297,7 +297,7 @@ hax_maps << call_map("global_variable_changed:flag4_submitted", "value === true 
 hax_maps << call_map("global_variable_changed:flag4_submitted", "value === true && globalVars.identity_scene_done && !globalVars.hour_read_started", "hour_read", delay: 1500)
 hax_maps << call_map("global_variable_changed:identity_scene_done", "value === true && globalVars.flag4_submitted && !globalVars.hour_read_started", "hour_read", delay: 3000)
 hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true && !globalVars.identity_scene_started && !globalVars.nightshade_file_held",
-                     "His file first. Then the rest of his box.", once: false, delay: 1500)
+                     "Nightshade's file first. Then the rest of his box.", once: false, delay: 1500)
 hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true && !globalVars.identity_scene_started && globalVars.nightshade_file_held && !globalVars.flag3_submitted",
                      "Owner first. Get me flag three, then we read the rest of his box.", once: false, delay: 1500)
 hax_maps << call_map("room_entered", "globalVars.flag4_submitted && globalVars.identity_scene_done && !globalVars.hour_read_started", "hour_read",
@@ -353,11 +353,11 @@ hax_maps << text_map("global_variable_changed:danny_sheet_read", "value === true
 # Impl review R1 m-01: not over the empty feed tray on the warned-in-time
 # route (there the remark belongs to Noor's box), so two arms.
 hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true && globalVars.legacy_files_saved && !globalVars.m05_found_pipeline_list && !globalVars.legacy_remark_sent",
-                     "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
+                     "Nobody of ours in here. Ours are on the Recruiter's tape, by codename.", set: { "legacy_remark_sent" => true })
 hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true && globalVars.legacy_files_saved && globalVars.m05_found_pipeline_list && globalVars.m05_recruiter_deal_accepted && !globalVars.legacy_remark_sent",
-                     "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
+                     "Nobody of ours in here. Ours are on the Recruiter's tape, by codename.", set: { "legacy_remark_sent" => true })
 hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true && !globalVars.legacy_clock_run && !globalVars.legacy_files_saved && !globalVars.legacy_remark_sent",
-                     "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
+                     "Nobody of ours in here. Ours are on the Recruiter's tape, by codename.", set: { "legacy_remark_sent" => true })
 # Educational R1 E-M3: name the motives the notes column shows (A3-38), after the remark.
 hax_maps << text_map("global_variable_changed:legacy_remark_sent", "value === true", "Read the notes column. A son, a drink, boredom, a lonely night. That's how she chose them, and how she kept them.", delay: 5000)
 # Educational R1 E-M3: the recruiter's method, once Noor has been told (A3-39).
@@ -367,7 +367,7 @@ hax_maps << text_map("global_variable_changed:noor_told", "value === true", "A b
 # Educational R1 E-n1: the guard's log (A3-41).
 hax_maps << text_map("global_variable_changed:incident_log_read", "value === true", "Five nights of warnings, and nobody read them. A log nobody reads is a diary.")
 hax_maps << text_map("global_variable_changed:noor_box_read", "value === true && globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted && !globalVars.legacy_remark_sent",
-                     "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
+                     "Nobody of ours in here. Ours are on the Recruiter's tape, by codename.", set: { "legacy_remark_sent" => true })
 [["surrender", "There's your why. He was told to."], ["expose", "He wanted your headlines."],
  ["fight", "\"Will not stop when they tell him to.\" He didn't."], ["recruit", "He believed this more than the man who wrote it. You still offered him a way out."]].each do |v, msg|
   hax_maps << text_map("item_picked_up:notes", "data.itemId === 'derek_file' && globalVars.m01_final_choice === '#{v}'", msg)

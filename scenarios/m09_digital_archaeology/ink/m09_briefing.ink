@@ -65,7 +65,7 @@ Director Magnus Netherton: The label named the building. Mountain States Records
 }
 // Alignment R1 m2: the coordinate branch hears why the archive comes first.
 { m08_completed and m08_tomb_gamma_location_known:
-    Director Magnus Netherton: Nightshade gave us a coordinate. What gets us through his door is in Helena.
+    Director Magnus Netherton: Nightshade gave us a coordinate. What gets us through the door at the end of it is in Helena.
 }
 // Beat 4: HaX's first line (two fixed forms; C-3 the plain one).
 {

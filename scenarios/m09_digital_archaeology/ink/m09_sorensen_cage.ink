@@ -56,7 +56,7 @@ Margaret Sorensen: Paper was the only thing that could ever have hurt them. So t
     }
 }
 ~ hub_quiet = false
-+ {sorensen_fate == "left" and not talked_down} [It's over. Put the stamp down.]
++ {sorensen_fate == "left" and not talked_down} [It's over. Step away from the feed.]
     Narrator: She doesn't look up.
     Margaret Sorensen: When I've finished, dear. You'll want the list to be complete.
     -> back
@@ -68,7 +68,7 @@ Margaret Sorensen: Paper was the only thing that could ever have hurt them. So t
     // Puzzle chains R8 m1: the fate rides the first line of the reply, so an Esc or a
     // reload on the narrator line can't leave talked_down set and the fate unset.
     #set_global:sorensen_fate:talked
-    Narrator: She reads the label on the file in your hand, and sets the stamp down.
+    Narrator: She reads the label on the file in your hand, and puts the sheaf back in the box.
     Margaret Sorensen: Then I'll keep what's left. Give me a pencil. I'll write down what I've destroyed, accurately.
     // Stage 8 M-03 (ruling 2): the room's ambient shredder keeps sounding, so
     // the line stops the feeding, not the noise.

@@ -218,7 +218,7 @@ Agent HaX: One of them. Now.
     Agent HaX: First name on it is a handler in Baltimore.
     // Scenario design R4 m4 (identical in HaX's deck_resume).
     {sleeper_shortlist:
-        Agent HaX: WREN's still one of the two on that firm's sheet.
+        Agent HaX: Her file doesn't change it. WREN's still one of two.
     - else:
         Agent HaX: One of four. Two, if that firm's boxes say so.
     }
