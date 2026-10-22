@@ -58,6 +58,11 @@ test('Ruth hands over each key once on a hub reopen and never re-gives it after 
     s.ChoosePathString('start');
     const opening = drain(s);
     assert.deepEqual(opening, [], 'no key before the plan is done');
+    // Since 9d6a7fba, `greeted` is set in brief_close, not start, so an unchosen
+    // briefing never leaves `start`. Pick the briefing option to reach the hub the
+    // way a player does, then save the at-hub state the engine would resume from.
+    if (s.currentChoices.length) s.ChooseChoiceIndex(0);
+    drain(s);
     let saved = s.state.ToJson();
 
     // plan_done AND Gareth's signature (P1) -> the Recon key is handed over on the next
@@ -95,6 +100,9 @@ test('Ruth hands over each key once on a hub reopen and never re-gives it after 
 test('P1: the Recon key is withheld until Gareth has signed, even with the plan done', { skip }, () => {
     const s = new Story(json);
     s.ChoosePathString('start');
+    drain(s);
+    // Reach brief_close -> hub the way a player does (greeted is set there since 9d6a7fba).
+    if (s.currentChoices.length) s.ChooseChoiceIndex(0);
     drain(s);
     const saved = s.state.ToJson();
 
