@@ -767,8 +767,11 @@ elsewhere_one = [
   cl.("Social Fabric's story ran at six. One paragraph of it was true.", "globalVars.ending === 'executed'", w),
   cl.("Social Fabric's story ran from outside: a massacre that never happened.", "globalVars.media_story_ran === true && globalVars.ending !== 'executed'", w),
   cl.('It named SAFETYNET, and 0x00.', "globalVars.media_story_ran === true && globalVars.ending !== 'executed' && globalVars.m05_entropy_program_exposed === true", w),
-  cl.('Zero Day: still trading. Its broker, Pieter Vos, named.', "globalVars.close_zero_day === 'vos_named'"),
-  cl.('Zero Day: still trading.', "globalVars.close_zero_day === 'trading'")
+  # Playtest FULL_1 / S6 3.5: a stopped share gets its own row, and the "still trading" rows skip it.
+  cl.('Zero Day: got nothing tonight. Still trading.', "globalVars.share_zero_day === 'stopped' && globalVars.close_zero_day === 'trading'"),
+  cl.('Zero Day: got nothing tonight. Its broker, Pieter Vos, named.', "globalVars.share_zero_day === 'stopped' && globalVars.close_zero_day === 'vos_named'"),
+  cl.('Zero Day: still trading. Its broker, Pieter Vos, named.', "globalVars.share_zero_day !== 'stopped' && globalVars.close_zero_day === 'vos_named'"),
+  cl.('Zero Day: still trading.', "globalVars.share_zero_day !== 'stopped' && globalVars.close_zero_day === 'trading'")
 ]
 albion_full = "globalVars.m04_completed === true && globalVars.m04_disclosure_choice === 'full' && globalVars.close_human !== 'albion_full' && globalVars.close_human !== 'albion_full_sent'"
 albion_inquest = "globalVars.m04_completed === true && globalVars.m04_disclosure_choice === 'partial' && globalVars.m04_crew_lost === true && globalVars.close_human !== 'albion_inquest' && globalVars.close_human !== 'albion_inquest_sent'"
@@ -1359,7 +1362,7 @@ end
           "puzzle_graph_actions": [{ "id": "tether_question", "label": "The tether, on the silent branch (door_scene_done)" }, { "id": "split_line", "label": "The split line" }],
           "voice": <%= voice.(:netherton) %>,
           "koImmune": true,
-          <%# ASSET_LIST 3: no background yet for the forward post at night (plain frame). %>
+          <%# ASSET_LIST 3: the briefing plays over the forward post's west POV background. %>
           "timedConversation": {
             "delay": 0,
             "targetKnot": "start",
@@ -1524,8 +1527,9 @@ end
             { "eventPattern": "door_unlock_attempt", "condition": "data.connectedRoom === 'workshop_floor' && !globalVars.ghost_call_done", "bark": "The stair's on their system. Whoever's on that handset has it." },
             { "eventPattern": "global_variable_changed:stair_open", "condition": "value === true && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "stair_call", "voiced": true, "delayMs": 1500 },
             { "eventPattern": "room_entered:security_office", "condition": "!globalVars.ghost_call_done && !globalVars.hax_jammed", "bark": "Duty line. The handset on the desk is ringing." },
-            { "eventPattern": "room_entered:security_office", "condition": "!globalVars.ghost_call_done && !globalVars.m02_ghost_deal_accepted && !globalVars.m02_ghost_deal_refused && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 5000, "message": "Ghost leaves when Ghost has been paid. Make it not worth it." } },
-            { "eventPattern": "room_entered:security_office", "condition": "!globalVars.ghost_call_done && globalVars.m02_ghost_deal_accepted === true && !globalVars.m02_exposed_hospital && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 5000, "message": "Ghost leaves when Ghost has been paid. Make it not worth it." } },
+            <%# T-16 (playtest FULL_1): on the first click on the duty handset, landing as Ghost's call opens; not on entering the office. %>
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Duty Handset' && data.roomId === 'security_office' && !globalVars.ghost_call_done && !globalVars.m02_ghost_deal_accepted && !globalVars.m02_ghost_deal_refused && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 4000, "message": "That's Ghost on the handset. They want one last sale before they leave. Make it not worth it.", "skipIfGlobal": "hax_jammed" } },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Duty Handset' && data.roomId === 'security_office' && !globalVars.ghost_call_done && globalVars.m02_ghost_deal_accepted === true && !globalVars.m02_exposed_hospital && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 4000, "message": "That's Ghost on the handset. They want one last sale before they leave. Make it not worth it.", "skipIfGlobal": "hax_jammed" } },
             <%# Ghost's sale feeds the share display (OT 6; stage 8 m-4: only a live resale can be stopped). %>
             { "eventPattern": "global_variable_changed:ghost_sale", "condition": "value === 'selling' && globalVars.share_resale === 'none'", "setGlobal": { "share_resale": "live" } },
             { "eventPattern": "global_variable_changed:ghost_sale", "condition": "value === 'stopped' && globalVars.share_resale === 'live'", "setGlobal": { "share_resale": "stopped" } },

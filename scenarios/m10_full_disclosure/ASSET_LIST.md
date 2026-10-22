@@ -69,16 +69,14 @@ Dressing budget order (RL §2, R1D-M9c): bunker props on the reused maps first (
 
 ## 3. Backgrounds
 
-Person-chat backgrounds for the eight rooms (`chatBackground`, 400×400) come later, after dressing and lighting (room-pov-background skill); none is set now, so room conversations show the plain frame. The scene backgrounds below are set on the conversation that needs them.
+Every room has its person-chat `chatBackground` (400×400 POV art under `assets/backgrounds/rooms/m10_*`, split by x where a room has several). The scene backgrounds below are set on the conversation that needs them.
 
-| Scene | Used by | Ships with | Wanted | State |
-|---|---|---|---|---|
-| The briefing at the forward post, night | `director_netherton`'s `timedConversation` | none (plain frame) | the forward post under the sodium lamp: vans lit, folding table, fence | **placeholder** |
-| 06:00 at the forward post | `six_oclock` (every ending but Join) | none (plain frame) | the same post at six: floodlights, engines running, people on bumpers, the table screen | **placeholder** |
-| The Citadel, an hour later | `citadel` (Join only) | `assets/backgrounds/hq1.png` (the Citadel, as m08 uses it) | a Citadel ops room with Netherton on the wall screen and HaX's channel open beside him (CONTRACT §11, ruling 9) | **placeholder** (close in place, wrong scene detail) |
-| The hearing | `hearing` (Scorched Earth only) | `assets/backgrounds/hq3.png` | a SAFETYNET board room, a table, the player and HaX side by side | **placeholder** |
-
-Four new 400×400 backgrounds in all if approved. The two forward-post ones share a layout, so one concept with a day-for-night relight would do both (as m03 did).
+| Scene | Used by | Ships with | State |
+|---|---|---|---|
+| The briefing at the forward post, night | `director_netherton`'s `timedConversation` | `assets/backgrounds/rooms/m10_forward_post_west_blended.png` | done |
+| 06:00 at the forward post | `six_oclock` (every ending but Join) | `assets/backgrounds/m10_six_oclock_blended.png` | done |
+| The Citadel, an hour later | `citadel` (Join only) | `assets/backgrounds/m10_citadel_blended.png` | done |
+| The hearing | `hearing` (Scorched Earth only) | `assets/backgrounds/m10_hearing_blended.png` | done |
 
 ## 4. Objects and props
 
