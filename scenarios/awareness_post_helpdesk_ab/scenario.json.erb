@@ -140,30 +140,6 @@
             }
           },
           {
-            "id": "hb_push_weekend",
-            "kind": "push",
-            "subject": "Sign-in request at 23:52",
-            "time": "23:52",
-            "push": {
-              "app": "Quayholt Sign-in",
-              "request": "Are you trying to sign in?",
-              "account": "leila.nassar@quayholt.example",
-              "location": "Unknown location, outside the UK",
-              "device": "Mac"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "unrequested_mfa_push"
-              ],
-              "perFlagNote": {
-                "unrequested_mfa_push": "It's Saturday night and you're not signing in. A prompt you didn't start means someone else has your password"
-              },
-              "ifTrusted": "Approving would let the sender into your account.",
-              "reportReply": "Thanks. We've reset your password and blocked that sign-in."
-            }
-          },
-          {
             "id": "hb_coo_reset_bypass",
             "from": {
               "name": "Patrick Kerrigan",
@@ -198,103 +174,34 @@
             }
           },
           {
-            "id": "hb_call_monitor",
-            "kind": "call",
-            "callerId": "Darren Price, Service Desk lead (ext. 4100)",
+            "id": "hb_resets_spoof",
             "from": {
-              "name": "Darren Price",
-              "address": "ext. 4100"
+              "name": "Security Review",
+              "address": "reviews@quayholt-team.example"
             },
-            "time": "11:50",
-            "transcript": [
-              {
-                "who": "Darren",
-                "text": "Hi, it's Darren. The second-floor meeting room monitor keeps flickering. Could you take a look this afternoon?"
-              },
-              {
-                "who": "You",
-                "text": "Will do. I'll pop up after lunch."
-              },
-              {
-                "who": "Darren",
-                "text": "Great, thanks."
-              }
-            ],
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "default": "Your own team lead on his desk extension, asking for a routine fix. Nothing here is sensitive, so helping is right."
-              }
-            }
-          },
-          {
-            "id": "hb_call_payroll",
-            "kind": "call",
-            "callerId": "Pauline Hendry, Payroll (calling from a mobile)",
-            "from": {
-              "name": "Pauline Hendry",
-              "address": "07700 900733"
+            "to": "servicedesk@quayholt.example",
+            "subject": "This week's password resets",
+            "time": "10:12",
+            "body": "Hi,\nFor a review I'm running, could you reply with this week's password resets: name, team and the phone number each person gave? A pasted list is fine.\nThanks,\nSecurity Review",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt-team.example",
+              "replyTo": "reviews@quayholt-team.example"
             },
-            "time": "08:20",
-            "transcript": [
-              {
-                "who": "Caller",
-                "text": "Hello love, it's Pauline in Payroll. I can't get into the payroll system and the run goes at ten."
-              },
-              {
-                "who": "You",
-                "text": "Let's get you sorted. I'll hang up and ring you on the number we've got on file."
-              },
-              {
-                "who": "Caller",
-                "text": "I'm not at my desk, I'm on my own phone. The Finance Director said to ring you and get it done. If the run's late, it's three hundred people not paid."
-              }
-            ],
             "truth": {
               "isPhish": true,
               "flags": [
-                "vish_callback_pressure",
-                "borrowed_authority"
+                "senderTrust",
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "vish_callback_pressure": "She keeps you off the number on file: she's 'not at her desk' and 'on her own phone'",
-                "borrowed_authority": "'The Finance Director said to get it done' is there to rush you past the check"
+                "senderTrust": "A review like this would come from a Quayholt address the desk already knows, not from a sender nobody has dealt with",
+                "lookalike_domain": "Read the address: it ends in quayholt-team.example, not quayholt.example. The added '-team' makes a separate domain anyone can register"
               },
-              "ifTrusted": "The caller would have Pauline's payroll account, and with it the bank details of every member of staff.",
-              "reportReply": "Thanks. We rang Pauline on the number on file. She's at her desk and her login works."
-            }
-          },
-          {
-            "id": "hb_call_comms_awkward",
-            "kind": "call",
-            "callerId": "Niamh Doherty, Internal Communications (calling from a mobile)",
-            "from": {
-              "name": "Niamh Doherty",
-              "address": "Mobile, ending 907"
-            },
-            "time": "08:41",
-            "transcript": [
-              {
-                "who": "Niamh",
-                "text": "It's Niamh in Comms. The town hall stream starts at nine and my account's locked. I genuinely don't have time for this."
-              },
-              {
-                "who": "You",
-                "text": "I'll be quick. I'll ring you straight back on the mobile we hold for you, then reset it."
-              },
-              {
-                "who": "Niamh",
-                "text": "Right, fine. Ring now, please, I'll keep the phone in my hand."
-              }
-            ],
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "vish_callback_pressure": "She's stressed and short with you, but she agrees to the callback on the number on file. Impatience isn't a tell; talking you out of the callback is.",
-                "default": "A real colleague under pressure. Ringing her back on the number on file takes a minute and settles it. Refusing would leave her stuck, so offer the callback rather than saying no."
-              }
+              "ifTrusted": "A list of who was reset, and the numbers they gave, tells an attacker who to impersonate next and how.",
+              "reportReply": "Thanks. That address isn't ours, and no review asked for that list. We've blocked quayholt-team.example."
             }
           },
           {
@@ -347,6 +254,106 @@
             }
           },
           {
+            "id": "hb_call_comms_awkward",
+            "kind": "call",
+            "callerId": "Niamh Doherty, Internal Communications (calling from a mobile)",
+            "from": {
+              "name": "Niamh Doherty",
+              "address": "Mobile, ending 907"
+            },
+            "time": "08:41",
+            "transcript": [
+              {
+                "who": "Niamh",
+                "text": "It's Niamh in Comms. The town hall stream starts at nine and my account's locked. I genuinely don't have time for this."
+              },
+              {
+                "who": "You",
+                "text": "I'll be quick. I'll ring you straight back on the mobile we hold for you, then reset it."
+              },
+              {
+                "who": "Niamh",
+                "text": "Right, fine. Ring now, please, I'll keep the phone in my hand."
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "vish_callback_pressure": "She's stressed and short with you, but she agrees to the callback on the number on file. Impatience isn't a tell; talking you out of the callback is.",
+                "default": "A real colleague under pressure. Ringing her back on the number on file takes a minute and settles it. Refusing would leave her stuck, so offer the callback rather than saying no."
+              }
+            }
+          },
+          {
+            "id": "hb_call_payroll",
+            "kind": "call",
+            "callerId": "Pauline Hendry, Payroll (calling from a mobile)",
+            "from": {
+              "name": "Pauline Hendry",
+              "address": "07700 900733"
+            },
+            "time": "08:20",
+            "transcript": [
+              {
+                "who": "Caller",
+                "text": "Hello love, it's Pauline in Payroll. I can't get into the payroll system and the run goes at ten."
+              },
+              {
+                "who": "You",
+                "text": "Let's get you sorted. I'll hang up and ring you on the number we've got on file."
+              },
+              {
+                "who": "Caller",
+                "text": "I'm not at my desk, I'm on my own phone. The Finance Director said to ring you and get it done. If the run's late, it's three hundred people not paid."
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "vish_callback_pressure",
+                "borrowed_authority"
+              ],
+              "perFlagNote": {
+                "vish_callback_pressure": "She keeps you off the number on file: she's 'not at her desk' and 'on her own phone'",
+                "borrowed_authority": "'The Finance Director said to get it done' is there to rush you past the check"
+              },
+              "ifTrusted": "The caller would have Pauline's payroll account, and with it the bank details of every member of staff.",
+              "reportReply": "Thanks. We rang Pauline on the number on file. She's at her desk and her login works."
+            }
+          },
+          {
+            "id": "hb_call_monitor",
+            "kind": "call",
+            "callerId": "Darren Price, Service Desk lead (ext. 4100)",
+            "from": {
+              "name": "Darren Price",
+              "address": "ext. 4100"
+            },
+            "time": "11:50",
+            "transcript": [
+              {
+                "who": "Darren",
+                "text": "Hi, it's Darren. The second-floor meeting room monitor keeps flickering. Could you take a look this afternoon?"
+              },
+              {
+                "who": "You",
+                "text": "Will do. I'll pop up after lunch."
+              },
+              {
+                "who": "Darren",
+                "text": "Great, thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Your own team lead on his desk extension, asking for a routine fix. Nothing here is sensitive, so helping is right."
+              }
+            }
+          },
+          {
             "id": "hb_policy_refresh",
             "from": {
               "name": "Anjali Rao",
@@ -372,34 +379,27 @@
             }
           },
           {
-            "id": "hb_resets_spoof",
-            "from": {
-              "name": "Security Review",
-              "address": "reviews@quayholt-team.example"
-            },
-            "to": "servicedesk@quayholt.example",
-            "subject": "This week's password resets",
-            "time": "10:12",
-            "body": "Hi,\nFor a review I'm running, could you reply with this week's password resets: name, team and the phone number each person gave? A pasted list is fine.\nThanks,\nSecurity Review",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "quayholt-team.example",
-              "replyTo": "reviews@quayholt-team.example"
+            "id": "hb_push_weekend",
+            "kind": "push",
+            "subject": "Sign-in request at 23:52",
+            "time": "23:52",
+            "push": {
+              "app": "Quayholt Sign-in",
+              "request": "Are you trying to sign in?",
+              "account": "leila.nassar@quayholt.example",
+              "location": "Unknown location, outside the UK",
+              "device": "Mac"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderTrust",
-                "lookalike_domain"
+                "unrequested_mfa_push"
               ],
               "perFlagNote": {
-                "senderTrust": "A review like this would come from a Quayholt address the desk already knows, not from a sender nobody has dealt with",
-                "lookalike_domain": "Read the address: it ends in quayholt-team.example, not quayholt.example. The added '-team' makes a separate domain anyone can register"
+                "unrequested_mfa_push": "It's Saturday night and you're not signing in. A prompt you didn't start means someone else has your password"
               },
-              "ifTrusted": "A list of who was reset, and the numbers they gave, tells an attacker who to impersonate next and how.",
-              "reportReply": "Thanks. That address isn't ours, and no review asked for that list. We've blocked quayholt-team.example."
+              "ifTrusted": "Approving would let the sender into your account.",
+              "reportReply": "Thanks. We've reset your password and blocked that sign-in."
             }
           }
         ],

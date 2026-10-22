@@ -127,7 +127,7 @@
       "tellCounter": true,
       "linkText": "quayholt-sso.example",
       "pretext": { "brandId": "quayholt", "purposeId": "expired",
-                   "facts": ["sso_portal_name", "sso_migration"] },
+                   "facts": ["quayholt_sso_portal", "quayholt_sso_migration"] },
       "fields": ["email", "password", "one_time_code"],
       "extraSensitiveFields": ["card_number", "ni_number"],
       "targets": {

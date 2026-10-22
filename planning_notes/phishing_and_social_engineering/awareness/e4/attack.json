@@ -127,7 +127,7 @@
       "displayName": "Tomás Carvalho",
       "role": "Executive Assistant",
       "subjects": [
-        { "id": "s_payment", "text": "Payment - needs doing today", "topic": "finance" },
+        { "id": "s_payment", "text": "Contractor invoice to settle", "topic": "finance" },
         { "id": "s_other", "text": "Quick one", "topic": "general" }
       ],
       "interests": { "topics": ["finance"] },

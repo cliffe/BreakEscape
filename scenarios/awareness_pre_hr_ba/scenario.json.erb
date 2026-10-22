@@ -120,158 +120,6 @@
             }
           },
           {
-            "id": "hb_preview_guide",
-            "from": {
-              "name": "Ibrahim Diallo",
-              "address": "ibrahim.diallo@tarrowby.example"
-            },
-            "to": "recruitment@tarrowby.example",
-            "subject": "How to preview attachments safely",
-            "time": "09:50",
-            "body": "Hello all,\nYou open more attachments from strangers than anyone else here, so I've written a two-minute guide to previewing CVs safely:\n{{link:guide}}\nIf a file ever asks you to switch something on, don't; send it to us.\nIbrahim\nIT Support",
-            "links": [
-              {
-                "id": "guide",
-                "text": "intranet.tarrowby.example/preview",
-                "destination": "https://intranet.tarrowby.example/preview"
-              }
-            ],
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "tarrowby.example",
-              "replyTo": "ibrahim.diallo@tarrowby.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "linkCredible": "The link goes where it says, to Tarrowby's own intranet, and the guide asks for no sign-in.",
-                "default": "IT's real address, a guide on the intranet, and no hurry."
-              }
-            }
-          },
-          {
-            "id": "hb_onboarding_spoof",
-            "from": {
-              "name": "Thanh Nguyen",
-              "address": "thanh.nguyen@tarrowby-onboarding.example"
-            },
-            "to": "jobs@tarrowby.example",
-            "subject": "Right-to-work copies for the onboarding file",
-            "time": "10:15",
-            "body": "Hi Fatima,\nThe onboarding file for Monday's starters is missing their right-to-work copies. Could you reply with their passport scans attached so I can finish it?\nThanks,\nThanh\nOnboarding",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "tarrowby-onboarding.example",
-              "replyTo": "thanh.nguyen@tarrowby-onboarding.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "senderTrust",
-                "lookalike_domain"
-              ],
-              "perFlagNote": {
-                "senderTrust": "The name says Thanh at Tarrowby, but the address is on tarrowby-onboarding.example, which isn't Tarrowby's",
-                "lookalike_domain": "Tarrowby's own sites end in tarrowby.example. tarrowby-onboarding.example adds a word with a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
-              },
-              "ifTrusted": "The new starters' passport scans would go to a stranger.",
-              "reportReply": "Thanks. Thanh didn't send it, tarrowby-onboarding.example isn't ours, and the onboarding file is complete."
-            }
-          },
-          {
-            "id": "hb_shortlist_missing",
-            "from": {
-              "name": "Gareth Ingram",
-              "address": "gareth.ingram@quickpost-mail.example"
-            },
-            "to": "jobs@tarrowby.example",
-            "subject": "CV attached: warehouse operative",
-            "time": "11:05",
-            "body": "Hi,\nMy CV is attached for the warehouse operative job. If it hasn't come through, it's also on your careers page here:\n{{link:cv}}\nSign in with your work email to view it.\nGareth",
-            "links": [
-              {
-                "id": "cv",
-                "text": "tarrowby-jobs.example/cv/3307",
-                "destination": "https://tarrowby-jobs.example/cv/3307"
-              }
-            ],
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "gareth.ingram@quickpost-mail.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "lookalike_domain",
-                "attachmentPlausible"
-              ],
-              "perFlagNote": {
-                "lookalike_domain": "Read it slowly: tarrowby-jobs.example isn't tarrowby.example. Tarrowby's own sites end in tarrowby.example; the added word with a hyphen makes a separate domain anyone can register, so don't assume it's theirs",
-                "attachmentPlausible": "It says the CV is attached, but nothing is, and the link that replaces it wants you to sign in"
-              },
-              "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password.",
-              "reportReply": "Thanks. tarrowby-jobs.example isn't ours, and we've blocked it."
-            }
-          },
-          {
-            "id": "hb_induction_moved",
-            "from": {
-              "name": "Thanh Nguyen",
-              "address": "thanh.nguyen@tarrowby.example"
-            },
-            "to": "recruitment@tarrowby.example",
-            "subject": "Induction day moves to Tuesday",
-            "time": "08:10",
-            "body": "Hi all,\nNext week's induction for new starters moves from Monday to Tuesday, same time, in the training room at Normanton. I've updated the invitations.\nThanh\nOnboarding",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "tarrowby.example",
-              "replyTo": "thanh.nguyen@tarrowby.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "default": "Thanh's real Tarrowby address, a date change, and nothing to open, pay or sign in to."
-              }
-            }
-          },
-          {
-            "id": "hb_starter_forms",
-            "from": {
-              "name": "Tarrowby Onboarding",
-              "address": "onboarding@tarrowby.example"
-            },
-            "to": "recruitment@tarrowby.example",
-            "subject": "New starter forms complete: 2 people",
-            "time": "11:30",
-            "body": "Two new starters have finished their forms. Open the onboarding system from the intranet as usual to review them; this email has no link on purpose.\nThis is an automatic message.",
-            "auth": {
-              "spf": "fail",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "mail.starterhub.example",
-              "replyTo": "onboarding@tarrowby.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "default": "The onboarding system's usual automatic notice. It names the real company, carries no link on purpose, and sends you to the intranet you already use. It asks for nothing."
-              }
-            }
-          },
-          {
             "id": "hb_bank_details",
             "from": {
               "name": "Deborah Haldane",
@@ -344,6 +192,64 @@
             }
           },
           {
+            "id": "hb_starter_forms",
+            "from": {
+              "name": "Tarrowby Onboarding",
+              "address": "onboarding@tarrowby.example"
+            },
+            "to": "recruitment@tarrowby.example",
+            "subject": "New starter forms complete: 2 people",
+            "time": "11:30",
+            "body": "Two new starters have finished their forms. Open the onboarding system from the intranet as usual to review them; this email has no link on purpose.\nThis is an automatic message.",
+            "auth": {
+              "spf": "fail",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "mail.starterhub.example",
+              "replyTo": "onboarding@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "The onboarding system's usual automatic notice. It names the real company, carries no link on purpose, and sends you to the intranet you already use. It asks for nothing."
+              }
+            }
+          },
+          {
+            "id": "hb_preview_guide",
+            "from": {
+              "name": "Ibrahim Diallo",
+              "address": "ibrahim.diallo@tarrowby.example"
+            },
+            "to": "recruitment@tarrowby.example",
+            "subject": "How to preview attachments safely",
+            "time": "09:50",
+            "body": "Hello all,\nYou open more attachments from strangers than anyone else here, so I've written a two-minute guide to previewing CVs safely:\n{{link:guide}}\nIf a file ever asks you to switch something on, don't; send it to us.\nIbrahim\nIT Support",
+            "links": [
+              {
+                "id": "guide",
+                "text": "intranet.tarrowby.example/preview",
+                "destination": "https://intranet.tarrowby.example/preview"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "ibrahim.diallo@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "linkCredible": "The link goes where it says, to Tarrowby's own intranet, and the guide asks for no sign-in.",
+                "default": "IT's real address, a guide on the intranet, and no hurry."
+              }
+            }
+          },
+          {
             "id": "hb_other_offer",
             "from": {
               "name": "Roseanne Wadsworth",
@@ -366,6 +272,62 @@
               "whyFine": {
                 "urgencyCalibrated": "There is a deadline, but it's a real one with a reason, and all she wants is a yes or no.",
                 "default": "The agency you use, from its real address, asking for a decision, not for data or a payment."
+              }
+            }
+          },
+          {
+            "id": "hb_onboarding_spoof",
+            "from": {
+              "name": "Thanh Nguyen",
+              "address": "thanh.nguyen@tarrowby-onboarding.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Right-to-work copies for the onboarding file",
+            "time": "10:15",
+            "body": "Hi Fatima,\nThe onboarding file for Monday's starters is missing their right-to-work copies. Could you reply with their passport scans attached so I can finish it?\nThanks,\nThanh\nOnboarding",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby-onboarding.example",
+              "replyTo": "thanh.nguyen@tarrowby-onboarding.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "lookalike_domain"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name says Thanh at Tarrowby, but the address is on tarrowby-onboarding.example, which isn't Tarrowby's",
+                "lookalike_domain": "Tarrowby's own sites end in tarrowby.example. tarrowby-onboarding.example adds a word with a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
+              },
+              "ifTrusted": "The new starters' passport scans would go to a stranger.",
+              "reportReply": "Thanks. Thanh didn't send it, tarrowby-onboarding.example isn't ours, and the onboarding file is complete."
+            }
+          },
+          {
+            "id": "hb_induction_moved",
+            "from": {
+              "name": "Thanh Nguyen",
+              "address": "thanh.nguyen@tarrowby.example"
+            },
+            "to": "recruitment@tarrowby.example",
+            "subject": "Induction day moves to Tuesday",
+            "time": "08:10",
+            "body": "Hi all,\nNext week's induction for new starters moves from Monday to Tuesday, same time, in the training room at Normanton. I've updated the invitations.\nThanh\nOnboarding",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "thanh.nguyen@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Thanh's real Tarrowby address, a date change, and nothing to open, pay or sign in to."
               }
             }
           },
@@ -393,6 +355,44 @@
                 "senderTrust": "Candidates write from personal email, so a quickpost-mail.example address is normal here.",
                 "default": "A candidate, by name, about an interview you held, asking for nothing."
               }
+            }
+          },
+          {
+            "id": "hb_shortlist_missing",
+            "from": {
+              "name": "Gareth Ingram",
+              "address": "gareth.ingram@quickpost-mail.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "CV attached: warehouse operative",
+            "time": "11:05",
+            "body": "Hi,\nMy CV is attached for the warehouse operative job. If it hasn't come through, it's also on your careers page here:\n{{link:cv}}\nSign in with your work email to view it.\nGareth",
+            "links": [
+              {
+                "id": "cv",
+                "text": "tarrowby-jobs.example/cv/3307",
+                "destination": "https://tarrowby-jobs.example/cv/3307"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quickpost-mail.example",
+              "replyTo": "gareth.ingram@quickpost-mail.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "attachmentPlausible"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "Read it slowly: tarrowby-jobs.example isn't tarrowby.example. Tarrowby's own sites end in tarrowby.example; the added word with a hyphen makes a separate domain anyone can register, so don't assume it's theirs",
+                "attachmentPlausible": "It says the CV is attached, but nothing is, and the link that replaces it wants you to sign in"
+              },
+              "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password.",
+              "reportReply": "Thanks. tarrowby-jobs.example isn't ours, and we've blocked it."
             }
           }
         ]

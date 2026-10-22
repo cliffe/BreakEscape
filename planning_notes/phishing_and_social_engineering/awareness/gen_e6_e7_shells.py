@@ -50,13 +50,14 @@ def strip_private(obj):
     return obj
 
 
-# B1 (CHECK_PARITY_AUDIT): explicit, stable reorder of each form's canonical `messages`
-# (new[i] = old[order[i]]), so forms A and B no longer share one per-slot pattern. Verified
-# (seed 20261022): phish in different ordinal slots across A/B, no phish flag-signature at the same
-# slot. Scoring is per item, so a pure reorder changes no counts.
+# B1 / N7 (CHECK_PARITY_AUDIT, playtest P2): explicit, stable reorder of each form's canonical
+# `messages` (new[i] = old[order[i]]), so forms A and B no longer share one per-slot pattern. The
+# permutations put the phish in DISJOINT ordinal slots across A and B: no slot is a phish in both forms
+# of a pair (the earlier reorder left one shared phish slot per role — playtest N7). Scoring is per
+# item, so a pure reorder changes no counts, no flag multiset.
 PERMUTE = {
-    'mobile_form_a': [3, 9, 2, 1, 6, 8, 5, 4, 7, 0],
-    'mobile_form_b': [5, 4, 9, 0, 8, 3, 1, 2, 6, 7],
+    'mobile_form_a': [1, 2, 8, 6, 7, 5, 4, 9, 3, 0],
+    'mobile_form_b': [4, 3, 6, 7, 8, 9, 1, 2, 0, 5],
 }
 
 

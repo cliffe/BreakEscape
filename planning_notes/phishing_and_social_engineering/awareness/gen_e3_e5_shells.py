@@ -202,15 +202,16 @@ def load(ekey):
     return {s['id']: s for s in frag['triageSets']}, frag['awarenessEpisode']
 
 
-# B1 (CHECK_PARITY_AUDIT): explicit, stable reorder of each form's canonical `messages`
-# (new[i] = old[order[i]]), so forms A and B no longer share one per-slot pattern. Verified
-# (seed 20261022): phish in different ordinal slots across A/B, no phish flag-signature at the same
-# slot. Scoring is per item, so a pure reorder changes no counts.
+# B1 / N7 (CHECK_PARITY_AUDIT, playtest P2): explicit, stable reorder of each form's canonical
+# `messages` (new[i] = old[order[i]]), so forms A and B no longer share one per-slot pattern. The
+# permutations put the phish in DISJOINT ordinal slots across A and B: no slot is a phish in both forms
+# of a pair (the earlier reorder left slot 3 a phish in both the helpdesk pre and post — playtest N7).
+# Scoring is per item, so a pure reorder changes no counts, no flag multiset.
 PERMUTE = {
-    'helpdesk_form_a': [3, 2, 1, 6, 8, 5, 7, 9, 4, 0],
-    'helpdesk_form_b': [8, 4, 3, 9, 1, 2, 5, 7, 0, 6],
-    'general_form_a': [0, 1, 7, 2, 6, 3, 8, 5, 9, 4],
-    'general_form_b': [1, 5, 0, 6, 7, 4, 3, 8, 9, 2],
+    'helpdesk_form_a': [4, 0, 5, 6, 7, 3, 2, 8, 1, 9],
+    'helpdesk_form_b': [8, 3, 6, 5, 7, 2, 1, 9, 0, 4],
+    'general_form_a': [5, 0, 1, 3, 6, 2, 8, 4, 7, 9],
+    'general_form_b': [4, 7, 3, 9, 1, 8, 5, 6, 0, 2],
 }
 
 

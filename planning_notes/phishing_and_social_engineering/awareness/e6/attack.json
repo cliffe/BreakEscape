@@ -156,7 +156,7 @@
         "pretextRelevant": { "pass": "✓ Ties to the new parking permit she was told to register for", "fail": "No change she can match this to, so no reason to scan anything.", "redFlag": null },
         "urgencyCalibrated": { "pass": "✓ The Friday deadline reads as believable" }
       },
-      "replies": { "landed": "Cheers Dev, scanning it now so I don't get clamped on Monday." },
+      "replies": { "landed": "Cheers Dev, scanning it now so I'm on the list." },
       "hints": [
         "Which internal team would a member of depot staff expect a parking notice from?",
         "What change were staff told to sort out, so an unexpected prompt reads as expected?",

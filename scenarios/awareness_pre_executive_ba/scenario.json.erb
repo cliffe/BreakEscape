@@ -87,34 +87,6 @@
         },
         "messages": [
           {
-            "id": "eb_vm_sitevisit",
-            "kind": "voicemail",
-            "from": {
-              "name": "Oskar Berglund",
-              "address": "Oskar (Brackenmoor), in your contacts"
-            },
-            "subject": "Voicemail from Oskar Berglund",
-            "time": "15:30",
-            "duration": "0:16",
-            "audio": {
-              "clipId": "VO7_eb_vm_sitevisit"
-            },
-            "transcript": [
-              {
-                "who": "Oskar",
-                "text": "Hi Tomás, Oskar at Brackenmoor. Could we move tomorrow's site visit to two o'clock? If that doesn't work for Julian, ring me back on this number. Thanks."
-              }
-            ],
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "vish_callback_pressure": "He invites a call back on the number already in your contacts.",
-                "default": "A client from his own number, moving a meeting. Nothing to pay or send, and ringing him back would settle any doubt."
-              }
-            }
-          },
-          {
             "id": "eb_planning_panel",
             "from": {
               "name": "Leah Abramson",
@@ -231,6 +203,34 @@
             }
           },
           {
+            "id": "eb_vm_sitevisit",
+            "kind": "voicemail",
+            "from": {
+              "name": "Oskar Berglund",
+              "address": "Oskar (Brackenmoor), in your contacts"
+            },
+            "subject": "Voicemail from Oskar Berglund",
+            "time": "15:30",
+            "duration": "0:16",
+            "audio": {
+              "clipId": "VO7_eb_vm_sitevisit"
+            },
+            "transcript": [
+              {
+                "who": "Oskar",
+                "text": "Hi Tomás, Oskar at Brackenmoor. Could we move tomorrow's site visit to two o'clock? If that doesn't work for Julian, ring me back on this number. Thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "vish_callback_pressure": "He invites a call back on the number already in your contacts.",
+                "default": "A client from his own number, moving a meeting. Nothing to pay or send, and ringing him back would settle any doubt."
+              }
+            }
+          },
+          {
             "id": "eb_travel_portal",
             "from": {
               "name": "Larkmoor Travel Portal",
@@ -267,36 +267,30 @@
             }
           },
           {
-            "id": "eb_vm_hearing",
-            "kind": "voicemail",
+            "id": "eb_statements_noon",
             "from": {
-              "name": "Catherine Merrin",
-              "address": "Number withheld"
+              "name": "Yasmin Chaudhry",
+              "address": "yasmin.chaudhry@merrinsallow.example"
             },
-            "subject": "Voicemail from Catherine Merrin",
-            "time": "10:02",
-            "duration": "0:20",
-            "audio": {
-              "clipId": "VO7_eb_vm_hearing"
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Card statements signed by noon tomorrow, please",
+            "time": "11:20",
+            "body": "Hi Tomás,\nThe auditors are in tomorrow afternoon, so I need Catherine's and Julian's card statements signed by noon. They're in the usual tray in finance. Sorry for the rush.\nThanks,\nYasmin",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "merrinsallow.example",
+              "replyTo": "yasmin.chaudhry@merrinsallow.example"
             },
-            "transcript": [
-              {
-                "who": "Catherine",
-                "text": "Tomás, it's Catherine. I'm in a client meeting and can't talk. Please send the signed Brackenmoor contract to the solicitor's address I'm texting you, and leave it off the shared drive until I'm back. Don't ring, I can't pick up. Thanks."
-              }
-            ],
             "truth": {
-              "isPhish": true,
-              "flags": [
-                "vish_callback_pressure",
-                "secrecy_or_bypass"
-              ],
-              "perFlagNote": {
-                "vish_callback_pressure": "The number is withheld and she tells you not to ring, so you can't check it on the number in your contacts",
-                "secrecy_or_bypass": "'Leave it off the shared drive' keeps the people who would notice out of it"
-              },
-              "ifTrusted": "A signed client contract would go to an address the sender chose.",
-              "reportReply": "Thanks. We rang Catherine's mobile at the break: she hadn't called, and the solicitor already has the contract. The voice sounded like hers, which is why the number and the request matter more."
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "urgencyCalibrated": "It's a tight deadline, but for a normal job done the normal way. Hurry on its own isn't the tell; hurry to skip a check is.",
+                "senderTrust": "Yasmin's real work address.",
+                "default": "Her real address, a routine audit task, and the statements are in the usual tray. Nothing is paid, sent outside or kept quiet."
+              }
             }
           },
           {
@@ -334,33 +328,6 @@
             }
           },
           {
-            "id": "eb_statements_noon",
-            "from": {
-              "name": "Yasmin Chaudhry",
-              "address": "yasmin.chaudhry@merrinsallow.example"
-            },
-            "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Card statements signed by noon tomorrow, please",
-            "time": "11:20",
-            "body": "Hi Tomás,\nThe auditors are in tomorrow afternoon, so I need Catherine's and Julian's card statements signed by noon. They're in the usual tray in finance. Sorry for the rush.\nThanks,\nYasmin",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "merrinsallow.example",
-              "replyTo": "yasmin.chaudhry@merrinsallow.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "urgencyCalibrated": "It's a tight deadline, but for a normal job done the normal way. Hurry on its own isn't the tell; hurry to skip a check is.",
-                "senderTrust": "Yasmin's real work address.",
-                "default": "Her real address, a routine audit task, and the statements are in the usual tray. Nothing is paid, sent outside or kept quiet."
-              }
-            }
-          },
-          {
             "id": "eb_ropewalk_booking",
             "from": {
               "name": "The Ropewalk",
@@ -390,6 +357,39 @@
                 "attachmentPlausible": "A booking confirmation PDF for a booking you made is what you'd expect.",
                 "default": "The venue's real domain, a booking you made, payment to the account on file, and nothing changed. It asks for nothing new."
               }
+            }
+          },
+          {
+            "id": "eb_vm_hearing",
+            "kind": "voicemail",
+            "from": {
+              "name": "Catherine Merrin",
+              "address": "Number withheld"
+            },
+            "subject": "Voicemail from Catherine Merrin",
+            "time": "10:02",
+            "duration": "0:20",
+            "audio": {
+              "clipId": "VO7_eb_vm_hearing"
+            },
+            "transcript": [
+              {
+                "who": "Catherine",
+                "text": "Tomás, it's Catherine. I'm in a client meeting and can't talk. Please send the signed Brackenmoor contract to the solicitor's address I'm texting you, and leave it off the shared drive until I'm back. Don't ring, I can't pick up. Thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "vish_callback_pressure",
+                "secrecy_or_bypass"
+              ],
+              "perFlagNote": {
+                "vish_callback_pressure": "The number is withheld and she tells you not to ring, so you can't check it on the number in your contacts",
+                "secrecy_or_bypass": "'Leave it off the shared drive' keeps the people who would notice out of it"
+              },
+              "ifTrusted": "A signed client contract would go to an address the sender chose.",
+              "reportReply": "Thanks. We rang Catherine's mobile at the break: she hadn't called, and the solicitor already has the contract. The voice sounded like hers, which is why the number and the request matter more."
             }
           }
         ]

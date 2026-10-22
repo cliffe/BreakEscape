@@ -85,6 +85,39 @@
         },
         "messages": [
           {
+            "id": "fa_ceo_transfer",
+            "from": {
+              "name": "Ravinder Sandhu",
+              "address": "ravinder.sandhu.ceo@inboxly.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Confidential: payment needed this morning",
+            "time": "09:14",
+            "body": "Are you at your desk? I need £24,750 sent to a new supplier before 11. It's tied to a deal I can't talk about yet, so keep it between us and don't raise it with Adaeze.\nI'm in meetings all day, so email only. I'll send the account details once you confirm.\nRavinder",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "ravinder.sandhu.ceo@inboxly.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "secrecy_or_bypass",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The chief executive's name on a personal inbox at inboxly.example",
+                "secrecy_or_bypass": "'Keep it between us' and 'don't raise it with Adaeze' cut out the person who approves payments",
+                "urgencyCalibrated": "'Before 11' and 'email only' leave no time to ring and check"
+              },
+              "ifTrusted": "£24,750 would go to an account the sender controls.",
+              "reportReply": "Thanks. Ravinder didn't send it. His real address is on brightwellfoods.example."
+            }
+          },
+          {
             "id": "fa_run_thursday",
             "from": {
               "name": "Tom Reilly",
@@ -107,6 +140,38 @@
               "whyFine": {
                 "urgencyCalibrated": "There's a deadline, but it's the usual approval queue a day early. Nothing asks you to skip a step.",
                 "default": "Tom's real address, a date change with a plain reason, and the normal process kept."
+              }
+            }
+          },
+          {
+            "id": "fa_pennine_invoice",
+            "from": {
+              "name": "Pennine Oat Mills",
+              "address": "invoices@pennineoatmills.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Invoice POM-5498 for PO-4302",
+            "time": "08:32",
+            "body": "Hello,\nPlease find attached invoice POM-5498 for the oat flour delivered on 14 October against your PO-4302.\nPayment terms as agreed. Any questions, call us on the number on your supplier record.\nPennine Oat Mills",
+            "attachments": [
+              {
+                "label": "POM-5498.pdf",
+                "kind": "pdf"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "pennineoatmills.example",
+              "replyTo": "invoices@pennineoatmills.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "attachmentPlausible": "An invoice PDF against a purchase order you raised is exactly what a supplier sends.",
+                "default": "Pennine's real address at pennineoatmills.example, a purchase order Brightwell raised, and no change to how you pay them."
               }
             }
           },
@@ -143,96 +208,6 @@
             }
           },
           {
-            "id": "fa_dunmore_statement",
-            "from": {
-              "name": "Hamid Rahimi",
-              "address": "hamid.rahimi@dunmoredairy.example"
-            },
-            "to": "payments@brightwellfoods.example",
-            "subject": "Statement of account: September",
-            "time": "12:20",
-            "body": "Hi,\nOur September statement is attached. Everything matches your remittances apart from DD-1187, which I think crossed in the post. No rush; let me know when you've had a look.\nHamid Rahimi\nAccounts, Dunmore Dairy",
-            "attachments": [
-              {
-                "label": "Dunmore_statement_Sep.pdf",
-                "kind": "pdf"
-              }
-            ],
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "dunmoredairy.example",
-              "replyTo": "hamid.rahimi@dunmoredairy.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "default": "A supplier's real domain, a routine statement, no change to bank details and no pressure: 'no rush' is the opposite of the fake ones."
-              }
-            }
-          },
-          {
-            "id": "fa_close_timetable",
-            "from": {
-              "name": "Adaeze Okafor",
-              "address": "adaeze.okafor@brightwellfoods.example"
-            },
-            "to": "payments@brightwellfoods.example",
-            "subject": "October month-end timetable",
-            "time": "08:05",
-            "body": "Morning all,\nThe October close timetable is below. Same as last month, one day earlier because of the bank holiday.\nSupplier invoices in by Wednesday 5pm. Accruals by Thursday noon. Final reports Monday.\nShout if anything clashes.\nAdaeze",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "brightwellfoods.example",
-              "replyTo": "adaeze.okafor@brightwellfoods.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "urgencyCalibrated": "The dates are the normal month-end deadlines, and nothing asks you to skip a step to meet them.",
-                "default": "Your finance manager's real address, a routine timetable, and nothing to pay or sign in to."
-              }
-            }
-          },
-          {
-            "id": "fa_ceo_transfer",
-            "from": {
-              "name": "Ravinder Sandhu",
-              "address": "ravinder.sandhu.ceo@inboxly.example"
-            },
-            "to": "payments@brightwellfoods.example",
-            "subject": "Confidential: payment needed this morning",
-            "time": "09:14",
-            "body": "Are you at your desk? I need £24,750 sent to a new supplier before 11. It's tied to a deal I can't talk about yet, so keep it between us and don't raise it with Adaeze.\nI'm in meetings all day, so email only. I'll send the account details once you confirm.\nRavinder",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "ravinder.sandhu.ceo@inboxly.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "senderTrust",
-                "secrecy_or_bypass",
-                "urgencyCalibrated"
-              ],
-              "perFlagNote": {
-                "senderTrust": "The chief executive's name on a personal inbox at inboxly.example",
-                "secrecy_or_bypass": "'Keep it between us' and 'don't raise it with Adaeze' cut out the person who approves payments",
-                "urgencyCalibrated": "'Before 11' and 'email only' leave no time to ring and check"
-              },
-              "ifTrusted": "£24,750 would go to an account the sender controls.",
-              "reportReply": "Thanks. Ravinder didn't send it. His real address is on brightwellfoods.example."
-            }
-          },
-          {
             "id": "fa_payslip",
             "from": {
               "name": "Brightwell HR",
@@ -262,6 +237,98 @@
               "whyFine": {
                 "linkCredible": "The link goes where it says, to the HR portal on Brightwell's own domain, and you could reach it from the intranet instead.",
                 "default": "A monthly notice from HR's real address, with no hurry and nothing to confirm."
+              }
+            }
+          },
+          {
+            "id": "fa_pennine_bank",
+            "from": {
+              "name": "Pennine Oat Mills Accounts",
+              "address": "accounts@pennine-oatmills.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Change of bank account from 1 November",
+            "time": "08:50",
+            "body": "Dear Accounts Payable,\nFrom 1 November our bank account has changed. Please update your records and make all future payments, including invoice POM-5512, to the account below.\nAccount name: Pennine Oat Mills Ltd\nAccount number ending 3048\nKind regards,\nBryony Thwaite\nCredit Control",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.pennine-oatmills.example",
+              "replyTo": "accounts@pennine-oatmills.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "lookalike_domain",
+                "changed_bank_details"
+              ],
+              "perFlagNote": {
+                "senderTrust": "This isn't the address Pennine's accounts team use, so it isn't really who it says it is",
+                "lookalike_domain": "Pennine's real domain is pennineoatmills.example; this one adds a hyphen",
+                "changed_bank_details": "A new bank account for future payments is the change invoice fraud depends on. Ring Pennine on the number in your supplier file"
+              },
+              "headerNote": "These pass because whoever owns pennine-oatmills.example really did send it. That proves the sending domain, not that the domain belongs to Pennine.",
+              "ifTrusted": "Pennine's next payments would go to the sender's account until someone noticed Pennine hadn't been paid.",
+              "reportReply": "Thanks. That isn't Pennine's domain. We've rung them on the number on file: their bank hasn't changed."
+            }
+          },
+          {
+            "id": "fa_close_timetable",
+            "from": {
+              "name": "Adaeze Okafor",
+              "address": "adaeze.okafor@brightwellfoods.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "October month-end timetable",
+            "time": "08:05",
+            "body": "Morning all,\nThe October close timetable is below. Same as last month, one day earlier because of the bank holiday.\nSupplier invoices in by Wednesday 5pm. Accruals by Thursday noon. Final reports Monday.\nShout if anything clashes.\nAdaeze",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "brightwellfoods.example",
+              "replyTo": "adaeze.okafor@brightwellfoods.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "urgencyCalibrated": "The dates are the normal month-end deadlines, and nothing asks you to skip a step to meet them.",
+                "default": "Your finance manager's real address, a routine timetable, and nothing to pay or sign in to."
+              }
+            }
+          },
+          {
+            "id": "fa_audit_request",
+            "from": {
+              "name": "Priyanka Deshpande",
+              "address": "p.deshpande@fairleymarsh.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Year-end audit: request list",
+            "time": "11:45",
+            "body": "Hello,\nAhead of next month's audit fieldwork, our request list is attached. Adaeze has the same list, and we've agreed to collect everything through your usual secure upload area rather than by email.\nThanks,\nPriyanka Deshpande\nAudit Senior, Fairley Marsh LLP",
+            "attachments": [
+              {
+                "label": "Brightwell_audit_requests.xlsx",
+                "kind": "spreadsheet"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "fairleymarsh.example",
+              "replyTo": "p.deshpande@fairleymarsh.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "attachmentPlausible": "A spreadsheet request list is what auditors send, and it asks you to upload through the agreed route, not to reply with files.",
+                "default": "The auditors' real domain, a request Adaeze already knows about, and an agreed way to send things back."
               }
             }
           },
@@ -302,18 +369,18 @@
             }
           },
           {
-            "id": "fa_pennine_invoice",
+            "id": "fa_dunmore_statement",
             "from": {
-              "name": "Pennine Oat Mills",
-              "address": "invoices@pennineoatmills.example"
+              "name": "Hamid Rahimi",
+              "address": "hamid.rahimi@dunmoredairy.example"
             },
             "to": "payments@brightwellfoods.example",
-            "subject": "Invoice POM-5498 for PO-4302",
-            "time": "08:32",
-            "body": "Hello,\nPlease find attached invoice POM-5498 for the oat flour delivered on 14 October against your PO-4302.\nPayment terms as agreed. Any questions, call us on the number on your supplier record.\nPennine Oat Mills",
+            "subject": "Statement of account: September",
+            "time": "12:20",
+            "body": "Hi,\nOur September statement is attached. Everything matches your remittances apart from DD-1187, which I think crossed in the post. No rush; let me know when you've had a look.\nHamid Rahimi\nAccounts, Dunmore Dairy",
             "attachments": [
               {
-                "label": "POM-5498.pdf",
+                "label": "Dunmore_statement_Sep.pdf",
                 "kind": "pdf"
               }
             ],
@@ -321,82 +388,15 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "pennineoatmills.example",
-              "replyTo": "invoices@pennineoatmills.example"
+              "envelopeFrom": "dunmoredairy.example",
+              "replyTo": "hamid.rahimi@dunmoredairy.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "attachmentPlausible": "An invoice PDF against a purchase order you raised is exactly what a supplier sends.",
-                "default": "Pennine's real address at pennineoatmills.example, a purchase order Brightwell raised, and no change to how you pay them."
+                "default": "A supplier's real domain, a routine statement, no change to bank details and no pressure: 'no rush' is the opposite of the fake ones."
               }
-            }
-          },
-          {
-            "id": "fa_audit_request",
-            "from": {
-              "name": "Priyanka Deshpande",
-              "address": "p.deshpande@fairleymarsh.example"
-            },
-            "to": "payments@brightwellfoods.example",
-            "subject": "Year-end audit: request list",
-            "time": "11:45",
-            "body": "Hello,\nAhead of next month's audit fieldwork, our request list is attached. Adaeze has the same list, and we've agreed to collect everything through your usual secure upload area rather than by email.\nThanks,\nPriyanka Deshpande\nAudit Senior, Fairley Marsh LLP",
-            "attachments": [
-              {
-                "label": "Brightwell_audit_requests.xlsx",
-                "kind": "spreadsheet"
-              }
-            ],
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "fairleymarsh.example",
-              "replyTo": "p.deshpande@fairleymarsh.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "attachmentPlausible": "A spreadsheet request list is what auditors send, and it asks you to upload through the agreed route, not to reply with files.",
-                "default": "The auditors' real domain, a request Adaeze already knows about, and an agreed way to send things back."
-              }
-            }
-          },
-          {
-            "id": "fa_pennine_bank",
-            "from": {
-              "name": "Pennine Oat Mills Accounts",
-              "address": "accounts@pennine-oatmills.example"
-            },
-            "to": "payments@brightwellfoods.example",
-            "subject": "Change of bank account from 1 November",
-            "time": "08:50",
-            "body": "Dear Accounts Payable,\nFrom 1 November our bank account has changed. Please update your records and make all future payments, including invoice POM-5512, to the account below.\nAccount name: Pennine Oat Mills Ltd\nAccount number ending 3048\nKind regards,\nBryony Thwaite\nCredit Control",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "bounce.pennine-oatmills.example",
-              "replyTo": "accounts@pennine-oatmills.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "senderTrust",
-                "lookalike_domain",
-                "changed_bank_details"
-              ],
-              "perFlagNote": {
-                "senderTrust": "This isn't the address Pennine's accounts team use, so it isn't really who it says it is",
-                "lookalike_domain": "Pennine's real domain is pennineoatmills.example; this one adds a hyphen",
-                "changed_bank_details": "A new bank account for future payments is the change invoice fraud depends on. Ring Pennine on the number in your supplier file"
-              },
-              "headerNote": "These pass because whoever owns pennine-oatmills.example really did send it. That proves the sending domain, not that the domain belongs to Pennine.",
-              "ifTrusted": "Pennine's next payments would go to the sender's account until someone noticed Pennine hadn't been paid.",
-              "reportReply": "Thanks. That isn't Pennine's domain. We've rung them on the number on file: their bank hasn't changed."
             }
           }
         ]

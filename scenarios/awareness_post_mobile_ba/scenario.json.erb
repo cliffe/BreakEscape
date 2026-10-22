@@ -106,58 +106,26 @@
         },
         "messages": [
           {
-            "id": "ma_colin_personal_number",
-            "from": {
-              "name": "Colin Mather",
-              "address": "colin.mather.tby@inboxly.example"
-            },
-            "to": "you@tarrowby.example",
-            "subject": "Quick favour, text me",
-            "time": "08:12",
-            "body": "Are you on shift? I'm stuck with a customer and need a favour sorted before 12. Text me on my personal number, 07700 900871, not my work one, and keep it between us for now.\nColin",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "colin.mather.tby@inboxly.example"
+            "id": "ma_ev_charging_pay",
+            "kind": "qr",
+            "subject": "EV charging: scan to pay",
+            "body": "New payment system for the staff charging bays. Scan to register your card. Vehicles left charging without registering will be clamped from Monday.",
+            "qr": {
+              "destination": "https://tarrowby-charging.example/pay",
+              "location": "Stuck to the charger post in the staff car park"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderTrust"
+                "unexpected_qr",
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "senderTrust": "The warehouse manager's name on a personal inbox at inboxly.example, not tarrowby.example"
+                "unexpected_qr": "A sticker on a charger asking for card details is where a fake code is easiest to place and hardest to check",
+                "lookalike_domain": "tarrowby-charging.example is not Tarrowby's domain; the added word makes it someone else's site"
               },
-              "ifTrusted": "Once you text that number, the 'favour' follows: usually gift cards or a payment, from someone who isn't Colin.",
-              "reportReply": "Thanks. Colin didn't send it. His only address is on tarrowby.example."
-            }
-          },
-          {
-            "id": "ma_christmas_rota",
-            "from": {
-              "name": "Shauna Lofthouse",
-              "address": "shauna.lofthouse@tarrowby.example"
-            },
-            "to": "all-staff@tarrowby.example",
-            "subject": "Christmas rota: requests open",
-            "time": "12:10",
-            "body": "Hi all,\nRequests for the Christmas and New Year rota are open until 14 November. Put them in the staff app under Rota, the same as last year.\nShauna",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "tarrowby.example",
-              "replyTo": "shauna.lofthouse@tarrowby.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "urgencyCalibrated": "There's a date, but it's three weeks off and the process is the usual one.",
-                "default": "Shauna's real address, a note to everyone, and the normal route through the staff app."
-              }
+              "ifTrusted": "The page would collect your card details for a charging fee that doesn't exist.",
+              "reportReply": "Thanks. Staff charging is free and has no sticker. We've removed it."
             }
           },
           {
@@ -181,26 +149,20 @@
             }
           },
           {
-            "id": "ma_ev_charging_pay",
-            "kind": "qr",
-            "subject": "EV charging: scan to pay",
-            "body": "New payment system for the staff charging bays. Scan to register your card. Vehicles left charging without registering will be clamped from Monday.",
-            "qr": {
-              "destination": "https://tarrowby-charging.example/pay",
-              "location": "Stuck to the charger post in the staff car park"
+            "id": "ma_pool_van",
+            "kind": "sms",
+            "from": {
+              "name": "Chidi Okeke (Fleet)",
+              "address": "Chidi (mobile), in your contacts"
             },
+            "time": "11:30",
+            "body": "Pool van TBY-14 is yours tomorrow, 7am to 3pm. Keys at the gatehouse. Chidi",
             "truth": {
-              "isPhish": true,
-              "flags": [
-                "unexpected_qr",
-                "lookalike_domain"
-              ],
-              "perFlagNote": {
-                "unexpected_qr": "A sticker on a charger asking for card details is where a fake code is easiest to place and hardest to check",
-                "lookalike_domain": "tarrowby-charging.example is not Tarrowby's domain; the added word makes it someone else's site"
-              },
-              "ifTrusted": "The page would collect your card details for a charging fee that doesn't exist.",
-              "reportReply": "Thanks. Staff charging is free and has no sticker. We've removed it."
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "A saved contact in the fleet team confirming a booking, with nothing to tap and nothing to send back."
+              }
             }
           },
           {
@@ -233,19 +195,27 @@
             }
           },
           {
-            "id": "ma_pool_van",
-            "kind": "sms",
+            "id": "ma_rota_next_week",
             "from": {
-              "name": "Chidi Okeke (Fleet)",
-              "address": "Chidi (mobile), in your contacts"
+              "name": "Tarrowby Rota",
+              "address": "rota@tarrowby.example"
             },
-            "time": "11:30",
-            "body": "Pool van TBY-14 is yours tomorrow, 7am to 3pm. Keys at the gatehouse. Chidi",
+            "to": "you@tarrowby.example",
+            "subject": "Your shifts for the week of 3 November",
+            "time": "11:02",
+            "body": "Your shifts for next week are now in the staff app under Rota. If anything looks wrong, speak to Shauna in Transport.\nTarrowby Rota",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "rota@tarrowby.example"
+            },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "A saved contact in the fleet team confirming a booking, with nothing to tap and nothing to send back."
+                "default": "It comes from Tarrowby's own address, there's nothing to click, and it points you to the staff app and a person you know. A rota note like this asks you to do nothing but check your shifts."
               }
             }
           },
@@ -306,28 +276,58 @@
             }
           },
           {
-            "id": "ma_rota_next_week",
+            "id": "ma_christmas_rota",
             "from": {
-              "name": "Tarrowby Rota",
-              "address": "rota@tarrowby.example"
+              "name": "Shauna Lofthouse",
+              "address": "shauna.lofthouse@tarrowby.example"
             },
-            "to": "you@tarrowby.example",
-            "subject": "Your shifts for the week of 3 November",
-            "time": "11:02",
-            "body": "Your shifts for next week are now in the staff app under Rota. If anything looks wrong, speak to Shauna in Transport.\nTarrowby Rota",
+            "to": "all-staff@tarrowby.example",
+            "subject": "Christmas rota: requests open",
+            "time": "12:10",
+            "body": "Hi all,\nRequests for the Christmas and New Year rota are open until 14 November. Put them in the staff app under Rota, the same as last year.\nShauna",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
               "envelopeFrom": "tarrowby.example",
-              "replyTo": "rota@tarrowby.example"
+              "replyTo": "shauna.lofthouse@tarrowby.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "It comes from Tarrowby's own address, there's nothing to click, and it points you to the staff app and a person you know. A rota note like this asks you to do nothing but check your shifts."
+                "urgencyCalibrated": "There's a date, but it's three weeks off and the process is the usual one.",
+                "default": "Shauna's real address, a note to everyone, and the normal route through the staff app."
               }
+            }
+          },
+          {
+            "id": "ma_colin_personal_number",
+            "from": {
+              "name": "Colin Mather",
+              "address": "colin.mather.tby@inboxly.example"
+            },
+            "to": "you@tarrowby.example",
+            "subject": "Quick favour, text me",
+            "time": "08:12",
+            "body": "Are you on shift? I'm stuck with a customer and need a favour sorted before 12. Text me on my personal number, 07700 900871, not my work one, and keep it between us for now.\nColin",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "colin.mather.tby@inboxly.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The warehouse manager's name on a personal inbox at inboxly.example, not tarrowby.example"
+              },
+              "ifTrusted": "Once you text that number, the 'favour' follows: usually gift cards or a payment, from someone who isn't Colin.",
+              "reportReply": "Thanks. Colin didn't send it. His only address is on tarrowby.example."
             }
           },
           {

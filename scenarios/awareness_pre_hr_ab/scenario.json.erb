@@ -118,35 +118,115 @@
             }
           },
           {
-            "id": "ha_new_applications",
+            "id": "ha_withdrawal",
             "from": {
-              "name": "Tarrowby Recruitment System",
-              "address": "jobs-noreply@tarrowby.example"
+              "name": "Minjun Ahn",
+              "address": "minjun.ahn@inboxly.example"
             },
-            "to": "recruitment@tarrowby.example",
-            "subject": "3 new applications: HGV driver (Class 1)",
-            "time": "11:30",
-            "body": "Three new applications are waiting for HGV driver (Class 1). Open them in the recruitment system:\n{{link:apps}}\nThis is an automatic message.",
-            "links": [
-              {
-                "id": "apps",
-                "text": "hire.tarrowby.example/jobs/hgv-class1",
-                "destination": "https://hire.tarrowby.example/jobs/hgv-class1"
-              }
-            ],
+            "to": "jobs@tarrowby.example",
+            "subject": "Withdrawing my application",
+            "time": "12:00",
+            "body": "Dear Fatima,\nThank you for inviting me to interview for the transport planner role. I've accepted another offer this week, so I'd like to withdraw my application. I hope to apply to Tarrowby again in future.\nKind regards,\nMinjun Ahn",
             "auth": {
-              "spf": "fail",
+              "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "send.hirerelay.example",
-              "replyTo": "jobs-noreply@tarrowby.example"
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "minjun.ahn@inboxly.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "linkCredible": "The link goes where it says, to Tarrowby's own recruitment system.",
-                "default": "The recruitment system's usual automatic notice, from Tarrowby's own address, linking to the system you already use. It asks for nothing."
+                "senderTrust": "Candidates write from personal email, so an inboxly.example address is normal here.",
+                "default": "A candidate, by name, about a job they applied for, asking for nothing."
+              }
+            }
+          },
+          {
+            "id": "ha_rooms_booked",
+            "from": {
+              "name": "Jun Watanabe",
+              "address": "jun.watanabe@tarrowby.example"
+            },
+            "to": "recruitment@tarrowby.example",
+            "subject": "Interview rooms booked for next week",
+            "time": "08:10",
+            "body": "Hi Fatima,\nI've booked the small meeting room at Normanton for Tuesday and Wednesday afternoons next week, for the driver interviews. The room's in the shared calendar.\nJun",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "jun.watanabe@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Jun's real Tarrowby address, a room booking, and nothing to open, pay or sign in to."
+              }
+            }
+          },
+          {
+            "id": "ha_passport_scans",
+            "from": {
+              "name": "Colin Mather",
+              "address": "colin.mather.depot@inboxly.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Starters Monday: need their passports now",
+            "time": "09:25",
+            "body": "Fatima,\nI'm at the depot without my laptop. Can you send me scans of the passports for the two drivers starting Monday? Send them to this address before 3; I need them for the agency. Keep it between us, HR will only slow it down.\nColin",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "colin.mather.depot@inboxly.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust"
+              ],
+              "perFlagNote": {
+                "senderTrust": "Colin's name on a personal inbox at inboxly.example, not tarrowby.example"
+              },
+              "ifTrusted": "Two people's passport scans would go to a stranger, which is enough to open accounts in their names.",
+              "reportReply": "Thanks. Colin has his laptop and didn't send this. Passport copies only ever go through the onboarding system."
+            }
+          },
+          {
+            "id": "ha_feedback_forms",
+            "from": {
+              "name": "Jun Watanabe",
+              "address": "jun.watanabe@tarrowby.example"
+            },
+            "to": "recruitment@tarrowby.example",
+            "subject": "Interview feedback forms are in the system",
+            "time": "09:50",
+            "body": "Hi both,\nThe feedback forms for last week's interviews are now in the recruitment system:\n{{link:feedback}}\nYou can also find them from the intranet as usual.\nJun",
+            "links": [
+              {
+                "id": "feedback",
+                "text": "hire.tarrowby.example/feedback",
+                "destination": "https://hire.tarrowby.example/feedback"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "jun.watanabe@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "linkCredible": "The link goes where it says, to Tarrowby's own recruitment system, and you could reach it from the intranet instead.",
+                "default": "Jun's real address, a routine notice, and no hurry."
               }
             }
           },
@@ -189,65 +269,6 @@
             }
           },
           {
-            "id": "ha_rooms_booked",
-            "from": {
-              "name": "Jun Watanabe",
-              "address": "jun.watanabe@tarrowby.example"
-            },
-            "to": "recruitment@tarrowby.example",
-            "subject": "Interview rooms booked for next week",
-            "time": "08:10",
-            "body": "Hi Fatima,\nI've booked the small meeting room at Normanton for Tuesday and Wednesday afternoons next week, for the driver interviews. The room's in the shared calendar.\nJun",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "tarrowby.example",
-              "replyTo": "jun.watanabe@tarrowby.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "default": "Jun's real Tarrowby address, a room booking, and nothing to open, pay or sign in to."
-              }
-            }
-          },
-          {
-            "id": "ha_forklift_cv",
-            "from": {
-              "name": "Zsofia Szabo",
-              "address": "zsofia.szabo@inboxly.example"
-            },
-            "to": "jobs@tarrowby.example",
-            "subject": "Forklift driver (nights): my application",
-            "time": "09:00",
-            "body": "Hello Fatima,\nI'd like to apply for the night forklift driver job. I hold counterbalance and reach truck licences and have worked nights for six years. My CV is attached.\nBest wishes,\nZsofia Szabo",
-            "attachments": [
-              {
-                "id": "cv",
-                "label": "Zsofia_Szabo_CV.docx",
-                "kind": "document"
-              }
-            ],
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "zsofia.szabo@inboxly.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "enable_content_prompt": "It's a Word file, which is normal for a CV, and it asks you to switch nothing on.",
-                "senderTrust": "Candidates apply from personal email, so an inboxly.example address is normal here.",
-                "default": "A named job, your name, a CV that's really attached, and nothing to switch on."
-              }
-            }
-          },
-          {
             "id": "ha_interviews_moved",
             "from": {
               "name": "Colin Mather",
@@ -274,90 +295,35 @@
             }
           },
           {
-            "id": "ha_feedback_forms",
+            "id": "ha_new_applications",
             "from": {
-              "name": "Jun Watanabe",
-              "address": "jun.watanabe@tarrowby.example"
+              "name": "Tarrowby Recruitment System",
+              "address": "jobs-noreply@tarrowby.example"
             },
             "to": "recruitment@tarrowby.example",
-            "subject": "Interview feedback forms are in the system",
-            "time": "09:50",
-            "body": "Hi both,\nThe feedback forms for last week's interviews are now in the recruitment system:\n{{link:feedback}}\nYou can also find them from the intranet as usual.\nJun",
+            "subject": "3 new applications: HGV driver (Class 1)",
+            "time": "11:30",
+            "body": "Three new applications are waiting for HGV driver (Class 1). Open them in the recruitment system:\n{{link:apps}}\nThis is an automatic message.",
             "links": [
               {
-                "id": "feedback",
-                "text": "hire.tarrowby.example/feedback",
-                "destination": "https://hire.tarrowby.example/feedback"
+                "id": "apps",
+                "text": "hire.tarrowby.example/jobs/hgv-class1",
+                "destination": "https://hire.tarrowby.example/jobs/hgv-class1"
               }
             ],
             "auth": {
-              "spf": "pass",
+              "spf": "fail",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "tarrowby.example",
-              "replyTo": "jun.watanabe@tarrowby.example"
+              "envelopeFrom": "send.hirerelay.example",
+              "replyTo": "jobs-noreply@tarrowby.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "linkCredible": "The link goes where it says, to Tarrowby's own recruitment system, and you could reach it from the intranet instead.",
-                "default": "Jun's real address, a routine notice, and no hurry."
-              }
-            }
-          },
-          {
-            "id": "ha_passport_scans",
-            "from": {
-              "name": "Colin Mather",
-              "address": "colin.mather.depot@inboxly.example"
-            },
-            "to": "jobs@tarrowby.example",
-            "subject": "Starters Monday: need their passports now",
-            "time": "09:25",
-            "body": "Fatima,\nI'm at the depot without my laptop. Can you send me scans of the passports for the two drivers starting Monday? Send them to this address before 3; I need them for the agency. Keep it between us, HR will only slow it down.\nColin",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "colin.mather.depot@inboxly.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "senderTrust"
-              ],
-              "perFlagNote": {
-                "senderTrust": "Colin's name on a personal inbox at inboxly.example, not tarrowby.example"
-              },
-              "ifTrusted": "Two people's passport scans would go to a stranger, which is enough to open accounts in their names.",
-              "reportReply": "Thanks. Colin has his laptop and didn't send this. Passport copies only ever go through the onboarding system."
-            }
-          },
-          {
-            "id": "ha_withdrawal",
-            "from": {
-              "name": "Minjun Ahn",
-              "address": "minjun.ahn@inboxly.example"
-            },
-            "to": "jobs@tarrowby.example",
-            "subject": "Withdrawing my application",
-            "time": "12:00",
-            "body": "Dear Fatima,\nThank you for inviting me to interview for the transport planner role. I've accepted another offer this week, so I'd like to withdraw my application. I hope to apply to Tarrowby again in future.\nKind regards,\nMinjun Ahn",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "minjun.ahn@inboxly.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "senderTrust": "Candidates write from personal email, so an inboxly.example address is normal here.",
-                "default": "A candidate, by name, about a job they applied for, asking for nothing."
+                "linkCredible": "The link goes where it says, to Tarrowby's own recruitment system.",
+                "default": "The recruitment system's usual automatic notice, from Tarrowby's own address, linking to the system you already use. It asks for nothing."
               }
             }
           },
@@ -402,6 +368,40 @@
               },
               "ifTrusted": "Switching on content would let the document run a small program on your computer.",
               "reportReply": "Thanks. The file was set up to run a program once content was switched on. We've blocked the sender."
+            }
+          },
+          {
+            "id": "ha_forklift_cv",
+            "from": {
+              "name": "Zsofia Szabo",
+              "address": "zsofia.szabo@inboxly.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Forklift driver (nights): my application",
+            "time": "09:00",
+            "body": "Hello Fatima,\nI'd like to apply for the night forklift driver job. I hold counterbalance and reach truck licences and have worked nights for six years. My CV is attached.\nBest wishes,\nZsofia Szabo",
+            "attachments": [
+              {
+                "id": "cv",
+                "label": "Zsofia_Szabo_CV.docx",
+                "kind": "document"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "zsofia.szabo@inboxly.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "enable_content_prompt": "It's a Word file, which is normal for a CV, and it asks you to switch nothing on.",
+                "senderTrust": "Candidates apply from personal email, so an inboxly.example address is normal here.",
+                "default": "A named job, your name, a CV that's really attached, and nothing to switch on."
+              }
             }
           }
         ]

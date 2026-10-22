@@ -104,9 +104,10 @@
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "ravinder.sandhu.private@inboxly.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "flags": ["senderTrust", "borrowed_authority", "secrecy_or_bypass", "urgencyCalibrated"],
             "perFlagNote": {
               "senderTrust": "The name is the chief executive's, but the address is a personal inbox at inboxly.example, not brightwellfoods.example. The voicemail it mentions doesn't make it more real: a fake voice and a fake email can come from the same sender",
+              "borrowed_authority": "The chief executive's name is doing the job the approval process should do. 'I'll sign it off when I'm back' and 'don't put it through the usual approval' lean on his seniority to push it past the check, and a name in the From line is no proof he sent it",
               "secrecy_or_bypass": "'Keep it to yourself' and 'don't put it through the usual approval' ask you to skip the check that would catch this",
               "urgencyCalibrated": "'Today' and 'in meetings all afternoon' leave no time to check, and steer you away from ringing him"
             },
@@ -152,12 +153,12 @@
     },
     "strings": {
       "_attack": "The brief and flip lines describe the attack beat only as 'a voicemail script' (11 section 3.2: no score, checklist only, never judged on audio realism). They don't promise the learner hears their own script, because the voicemail player is held (P7-Z2).",
-      "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. First you're on the red team: write the script for a short voicemail in the voice of Brightwell's chief executive, Ravinder Sandhu, asking for something he would never ask for on the phone. Nobody judges how real it would sound. Then you swap seats: you're covering the finance office's phone and inbox, with three voicemails and two emails waiting. Only the second part is scored.",
+      "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. First you're on the red team: write the script for a short voicemail in the voice of Brightwell's chief executive, Ravinder Sandhu, asking for something he would never ask for on the phone. Nobody judges how real it would sound. Then you swap seats: you're Tom Reilly in accounts payable, covering the finance office's phone and inbox, with three voicemails and two emails waiting. Only the second part is scored.",
       "flipHeading": "Now it's on your phone",
       "flipIntro": "This is the voicemail you scripted, as the finance office would find it. The lines picked out below are what make it believable.",
       "flipDefenderLine": "It landed at ten to five on a Friday, in the voice the finance office hears every week. By the end of the message the payment was half set up. A voice you know is hard to argue with, and copying it is the whole trick; acting on it is no lapse of sense.",
       "flipNoSend": "Your script didn't go out this time, so there's nothing of yours to show. Next, the same kind of voicemail reaches the finance office's phone, and you're the one listening.",
-      "noBlameLine": "Nobody is marked down for a miss here. A familiar voice is hard to doubt, and these calls were built to lean on exactly that trust. Anyone can be caught by one.",
+      "noBlameLine": "A familiar voice is hard to doubt, and these calls were built to lean on exactly that trust, so anyone can be caught by one.",
       "mondayCard": "On Monday: a voice you recognise is not proof of who is calling, and neither is an email that backs it up. If a call or voicemail asks for money, secrecy or a skipped step, ring the person back on a number you already hold, then report it the way your organisation asks you to.",
       "defendOnly": "A familiar voice feels like proof, and these messages were made to use that, so anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away and why ringing back on a number you already hold works whoever is speaking."
     },

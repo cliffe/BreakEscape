@@ -87,37 +87,6 @@
         },
         "messages": [
           {
-            "id": "mb_new_starters_spoof",
-            "from": {
-              "name": "Colin Mather",
-              "address": "colin.mather@tarrowby-team.example"
-            },
-            "to": "shipley.depot@tarrowby.example",
-            "subject": "New starters' mobile numbers",
-            "time": "09:41",
-            "body": "Hi,\nCould you reply with the mobile numbers of the drivers who started this month? The induction app needs them and I can't get into the system from home.\nThanks,\nColin",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "tarrowby-team.example",
-              "replyTo": "colin.mather@tarrowby-team.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "senderTrust",
-                "lookalike_domain"
-              ],
-              "perFlagNote": {
-                "senderTrust": "The name on the From line looks right, but the address isn't on tarrowby.example at all.",
-                "lookalike_domain": "tarrowby-team.example looks like Tarrowby, but the added word makes it a different domain. Tarrowby's own mail comes from tarrowby.example."
-              },
-              "ifTrusted": "New drivers' mobile numbers would go to someone planning to text them, at the point they know least about how Tarrowby works.",
-              "reportReply": "Thanks. Colin is on the floor and didn't send it. His address is on tarrowby.example, and there is no induction app."
-            }
-          },
-          {
             "id": "mb_car_park_closed",
             "kind": "sms",
             "from": {
@@ -139,66 +108,6 @@
               "whyFine": {
                 "smish_shortlink_urgency": "The link is written out in full and goes where it says, to facilities.tarrowby.example, and it's only a map. Monday is notice, not pressure.",
                 "default": "A saved contact in Facilities, an honest link to Tarrowby's own domain, and nothing to pay or sign in to."
-              }
-            }
-          },
-          {
-            "id": "mb_staff_app_update",
-            "from": {
-              "name": "Nilesh Solanki",
-              "address": "nilesh.solanki@tarrowby.example"
-            },
-            "to": "all-staff@tarrowby.example",
-            "subject": "Staff app update tonight, 10pm to 11pm",
-            "time": "12:10",
-            "body": "Hi all,\nThe staff app will be updated tonight between 10pm and 11pm. You don't need to do anything. If the app asks you to sign in again tomorrow, open it from your home screen as usual.\nNilesh\nIT Service Desk",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "tarrowby.example",
-              "replyTo": "nilesh.solanki@tarrowby.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "urgencyCalibrated": "There's a time, but it's a planned update and 'you don't need to do anything'.",
-                "default": "IT's real address, a planned change, no link and no code, and it tells you to use the app the way you always do."
-              }
-            }
-          },
-          {
-            "id": "mb_early_start",
-            "kind": "sms",
-            "from": {
-              "name": "Colin Mather (Warehouse)",
-              "address": "Colin (mobile), in your contacts"
-            },
-            "time": "07:05",
-            "body": "Morning. Could you start at 6 tomorrow instead of 7? Two extra trailers coming in. Let me know either way. Colin",
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "default": "A saved contact, your own manager, asking about a shift. There's no link, no money and no secret, and you can answer him in person."
-              }
-            }
-          },
-          {
-            "id": "mb_running_late",
-            "kind": "sms",
-            "from": {
-              "name": "Callum Whiteley",
-              "address": "Callum (mobile), in your contacts"
-            },
-            "time": "11:30",
-            "body": "Running 10 mins late for handover, stuck behind a tractor on the A650. Sorry! Callum",
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "default": "A saved contact telling you he's late. It asks for nothing."
               }
             }
           },
@@ -229,49 +138,6 @@
               },
               "ifTrusted": "£300 of voucher codes would go to the sender, and vouchers can't be traced or clawed back.",
               "reportReply": "Thanks. Fatima didn't send it. Her address is on tarrowby.example, and HR never asks staff to buy vouchers."
-            }
-          },
-          {
-            "id": "mb_staff_wifi_signin",
-            "kind": "qr",
-            "subject": "Free Wi-Fi for staff: scan to connect",
-            "body": "Sign in once with your Tarrowby email and password to get Wi-Fi on your phone anywhere on site.",
-            "qr": {
-              "destination": "https://tarrowby-wifi.example/login",
-              "location": "Printed sheet taped to the canteen microwave"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "unexpected_qr",
-                "lookalike_domain"
-              ],
-              "perFlagNote": {
-                "unexpected_qr": "A taped-up sheet asking for your work password behind a code is where you can't check the address first",
-                "lookalike_domain": "tarrowby-wifi.example is not Tarrowby's domain; the added word makes it someone else's site"
-              },
-              "ifTrusted": "Your Tarrowby email and password would go to whoever put the sheet up.",
-              "reportReply": "Thanks. IT didn't put that up, and Wi-Fi never needs your work password. We've taken it down."
-            }
-          },
-          {
-            "id": "mb_guest_wifi_sign",
-            "kind": "qr",
-            "subject": "Guest Wi-Fi",
-            "body": "Network: Tarrowby-Guest. Scan to open the guest terms page. No sign-in needed. Staff phones connect automatically and don't need this.",
-            "qr": {
-              "destination": "https://guest.tarrowby.example/terms",
-              "location": "Framed sign on the reception desk",
-              "caption": "Changed monthly by IT. Questions: Nilesh Solanki, IT Service Desk"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "unexpected_qr": "The code goes to guest.tarrowby.example, Tarrowby's own domain, and the page asks for nothing but a tick on the terms.",
-                "lookalike_domain": "guest.tarrowby.example is a page on the real domain.",
-                "default": "A framed sign on reception, a named contact in IT, and no password asked for."
-              }
             }
           },
           {
@@ -326,6 +192,140 @@
               "whyFine": {
                 "default": "It comes from Tarrowby's own address, there's nothing to click, and it points you to the staff app and a named person on an internal extension."
               }
+            }
+          },
+          {
+            "id": "mb_running_late",
+            "kind": "sms",
+            "from": {
+              "name": "Callum Whiteley",
+              "address": "Callum (mobile), in your contacts"
+            },
+            "time": "11:30",
+            "body": "Running 10 mins late for handover, stuck behind a tractor on the A650. Sorry! Callum",
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "A saved contact telling you he's late. It asks for nothing."
+              }
+            }
+          },
+          {
+            "id": "mb_staff_app_update",
+            "from": {
+              "name": "Nilesh Solanki",
+              "address": "nilesh.solanki@tarrowby.example"
+            },
+            "to": "all-staff@tarrowby.example",
+            "subject": "Staff app update tonight, 10pm to 11pm",
+            "time": "12:10",
+            "body": "Hi all,\nThe staff app will be updated tonight between 10pm and 11pm. You don't need to do anything. If the app asks you to sign in again tomorrow, open it from your home screen as usual.\nNilesh\nIT Service Desk",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "nilesh.solanki@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "urgencyCalibrated": "There's a time, but it's a planned update and 'you don't need to do anything'.",
+                "default": "IT's real address, a planned change, no link and no code, and it tells you to use the app the way you always do."
+              }
+            }
+          },
+          {
+            "id": "mb_staff_wifi_signin",
+            "kind": "qr",
+            "subject": "Free Wi-Fi for staff: scan to connect",
+            "body": "Sign in once with your Tarrowby email and password to get Wi-Fi on your phone anywhere on site.",
+            "qr": {
+              "destination": "https://tarrowby-wifi.example/login",
+              "location": "Printed sheet taped to the canteen microwave"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unexpected_qr",
+                "lookalike_domain"
+              ],
+              "perFlagNote": {
+                "unexpected_qr": "A taped-up sheet asking for your work password behind a code is where you can't check the address first",
+                "lookalike_domain": "tarrowby-wifi.example is not Tarrowby's domain; the added word makes it someone else's site"
+              },
+              "ifTrusted": "Your Tarrowby email and password would go to whoever put the sheet up.",
+              "reportReply": "Thanks. IT didn't put that up, and Wi-Fi never needs your work password. We've taken it down."
+            }
+          },
+          {
+            "id": "mb_guest_wifi_sign",
+            "kind": "qr",
+            "subject": "Guest Wi-Fi",
+            "body": "Network: Tarrowby-Guest. Scan to open the guest terms page. No sign-in needed. Staff phones connect automatically and don't need this.",
+            "qr": {
+              "destination": "https://guest.tarrowby.example/terms",
+              "location": "Framed sign on the reception desk",
+              "caption": "Changed monthly by IT. Questions: Nilesh Solanki, IT Service Desk"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "unexpected_qr": "The code goes to guest.tarrowby.example, Tarrowby's own domain, and the page asks for nothing but a tick on the terms.",
+                "lookalike_domain": "guest.tarrowby.example is a page on the real domain.",
+                "default": "A framed sign on reception, a named contact in IT, and no password asked for."
+              }
+            }
+          },
+          {
+            "id": "mb_early_start",
+            "kind": "sms",
+            "from": {
+              "name": "Colin Mather (Warehouse)",
+              "address": "Colin (mobile), in your contacts"
+            },
+            "time": "07:05",
+            "body": "Morning. Could you start at 6 tomorrow instead of 7? Two extra trailers coming in. Let me know either way. Colin",
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "A saved contact, your own manager, asking about a shift. There's no link, no money and no secret, and you can answer him in person."
+              }
+            }
+          },
+          {
+            "id": "mb_new_starters_spoof",
+            "from": {
+              "name": "Colin Mather",
+              "address": "colin.mather@tarrowby-team.example"
+            },
+            "to": "shipley.depot@tarrowby.example",
+            "subject": "New starters' mobile numbers",
+            "time": "09:41",
+            "body": "Hi,\nCould you reply with the mobile numbers of the drivers who started this month? The induction app needs them and I can't get into the system from home.\nThanks,\nColin",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby-team.example",
+              "replyTo": "colin.mather@tarrowby-team.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "lookalike_domain"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name on the From line looks right, but the address isn't on tarrowby.example at all.",
+                "lookalike_domain": "tarrowby-team.example looks like Tarrowby, but the added word makes it a different domain. Tarrowby's own mail comes from tarrowby.example."
+              },
+              "ifTrusted": "New drivers' mobile numbers would go to someone planning to text them, at the point they know least about how Tarrowby works.",
+              "reportReply": "Thanks. Colin is on the floor and didn't send it. His address is on tarrowby.example, and there is no induction app."
             }
           }
         ]

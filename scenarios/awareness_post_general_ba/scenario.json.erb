@@ -103,6 +103,37 @@
         },
         "messages": [
           {
+            "id": "ga_payroll_spoof",
+            "from": {
+              "name": "Payroll Team",
+              "address": "payroll@quayholt-payroll.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Payroll record check",
+            "time": "10:05",
+            "body": "Hi,\nWe're moving to a new payroll system and a few records don't match. Could you reply with your staff number and your home postcode so we can fix yours before the next run?\nThanks,\nThe Payroll Team",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt-payroll.example",
+              "replyTo": "payroll@quayholt-payroll.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "lookalike_domain"
+              ],
+              "perFlagNote": {
+                "senderTrust": "Payroll writes to you from quayholt.example, the address your payslips come from, not from a sender you don't recognise",
+                "lookalike_domain": "Read the address: it ends in quayholt-payroll.example, not quayholt.example. The added word makes a separate domain anyone can register"
+              },
+              "ifTrusted": "Your staff number and postcode are what a caller needs to sound like you when they ring the service desk to reset your password.",
+              "reportReply": "Thanks. That address isn't ours, and payroll isn't changing systems. We've blocked quayholt-payroll.example."
+            }
+          },
+          {
             "id": "ga_kitchen_closed",
             "from": {
               "name": "Owen Treharne",
@@ -158,39 +189,62 @@
             }
           },
           {
-            "id": "ga_solicitor_share",
+            "id": "ga_manager_signin",
             "from": {
-              "name": "Ashcombe Solicitors",
-              "address": "documents@ashcombelaw.example"
+              "name": "Gordon McLeish",
+              "address": "gordon.mcleish.claims@inboxly.example"
             },
             "to": "you@quayholt.example",
-            "subject": "Ashcombe Solicitors shared 'Settlement papers' with you",
-            "time": "11:02",
-            "body": "Ashcombe Solicitors has shared a document with you.\n{{link:view}}\nThis link expires in 24 hours.",
-            "links": [
-              {
-                "id": "view",
-                "text": "View 'Settlement papers' on ashcombelaw.example",
-                "destination": "https://docshare-login.example/ashcombe/settlement"
-              }
-            ],
+            "subject": "Quick favour, are you in?",
+            "time": "09:14",
+            "body": "Are you at your desk? I'm on a site visit and locked out of my laptop. Could you send me your Quayholt sign-in so I can pull the claims report before 4? Keep it between us; going through IT will take all day.\nGordon",
             "auth": {
               "spf": "pass",
-              "dkim": "none",
-              "dmarc": "none",
-              "envelopeFrom": "ashcombelaw.example",
-              "replyTo": "documents@ashcombelaw.example"
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "gordon.mcleish.claims@inboxly.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "linkCredible"
+                "senderTrust"
               ],
               "perFlagNote": {
-                "linkCredible": "The link text says ashcombelaw.example, but it goes to docshare-login.example"
+                "senderTrust": "Gordon's name on a personal inbox at inboxly.example, not quayholt.example"
               },
-              "ifTrusted": "The link opens a sign-in page that collects your Quayholt password.",
-              "reportReply": "Thanks. Nobody here has a matter with Ashcombe, and the link went to a sign-in page we've now blocked."
+              "ifTrusted": "Whoever wrote it could sign in as you, read your mail and send messages in your name.",
+              "reportReply": "Thanks. Gordon has his laptop and didn't send this. Nobody at Quayholt will ever ask for your password."
+            }
+          },
+          {
+            "id": "ga_expenses_timeout",
+            "kind": "page",
+            "subject": "Back at your desk: the expenses tab you left open",
+            "time": "10:30",
+            "body": "Your session timed out after 30 minutes without activity. Sign in again to carry on with your claim.",
+            "page": {
+              "url": "https://expenses.quayholt.example/claims",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "expenses.quayholt.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "autofill": "filled",
+              "heading": "Quayholt Expenses",
+              "fields": [
+                "Work email",
+                "Password"
+              ],
+              "button": "Sign in"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "lookalike_domain": "expenses.quayholt.example ends in quayholt.example, Quayholt's own domain.",
+                "default": "A timed-out session is normal when a tab is left open. You opened this one yourself, the address is Quayholt's, and your password manager filled it in."
+              }
             }
           },
           {
@@ -229,65 +283,6 @@
             }
           },
           {
-            "id": "ga_expenses_timeout",
-            "kind": "page",
-            "subject": "Back at your desk: the expenses tab you left open",
-            "time": "10:30",
-            "body": "Your session timed out after 30 minutes without activity. Sign in again to carry on with your claim.",
-            "page": {
-              "url": "https://expenses.quayholt.example/claims",
-              "padlock": true,
-              "certificate": {
-                "issuedTo": "expenses.quayholt.example",
-                "issuer": "Open Certs Ltd"
-              },
-              "autofill": "filled",
-              "heading": "Quayholt Expenses",
-              "fields": [
-                "Work email",
-                "Password"
-              ],
-              "button": "Sign in"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "lookalike_domain": "expenses.quayholt.example ends in quayholt.example, Quayholt's own domain.",
-                "default": "A timed-out session is normal when a tab is left open. You opened this one yourself, the address is Quayholt's, and your password manager filled it in."
-              }
-            }
-          },
-          {
-            "id": "ga_manager_signin",
-            "from": {
-              "name": "Gordon McLeish",
-              "address": "gordon.mcleish.claims@inboxly.example"
-            },
-            "to": "you@quayholt.example",
-            "subject": "Quick favour, are you in?",
-            "time": "09:14",
-            "body": "Are you at your desk? I'm on a site visit and locked out of my laptop. Could you send me your Quayholt sign-in so I can pull the claims report before 4? Keep it between us; going through IT will take all day.\nGordon",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "gordon.mcleish.claims@inboxly.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "senderTrust"
-              ],
-              "perFlagNote": {
-                "senderTrust": "Gordon's name on a personal inbox at inboxly.example, not quayholt.example"
-              },
-              "ifTrusted": "Whoever wrote it could sign in as you, read your mail and send messages in your name.",
-              "reportReply": "Thanks. Gordon has his laptop and didn't send this. Nobody at Quayholt will ever ask for your password."
-            }
-          },
-          {
             "id": "ga_staff_survey",
             "from": {
               "name": "Quayholt People Team",
@@ -321,62 +316,6 @@
             }
           },
           {
-            "id": "ga_payroll_spoof",
-            "from": {
-              "name": "Payroll Team",
-              "address": "payroll@quayholt-payroll.example"
-            },
-            "to": "you@quayholt.example",
-            "subject": "Payroll record check",
-            "time": "10:05",
-            "body": "Hi,\nWe're moving to a new payroll system and a few records don't match. Could you reply with your staff number and your home postcode so we can fix yours before the next run?\nThanks,\nThe Payroll Team",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "quayholt-payroll.example",
-              "replyTo": "payroll@quayholt-payroll.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "senderTrust",
-                "lookalike_domain"
-              ],
-              "perFlagNote": {
-                "senderTrust": "Payroll writes to you from quayholt.example, the address your payslips come from, not from a sender you don't recognise",
-                "lookalike_domain": "Read the address: it ends in quayholt-payroll.example, not quayholt.example. The added word makes a separate domain anyone can register"
-              },
-              "ifTrusted": "Your staff number and postcode are what a caller needs to sound like you when they ring the service desk to reset your password.",
-              "reportReply": "Thanks. That address isn't ours, and payroll isn't changing systems. We've blocked quayholt-payroll.example."
-            }
-          },
-          {
-            "id": "ga_laptop_swap",
-            "from": {
-              "name": "Leila Nassar",
-              "address": "leila.nassar@quayholt.example"
-            },
-            "to": "you@quayholt.example",
-            "subject": "Your laptop swap is booked",
-            "time": "12:20",
-            "body": "Hi,\nYour replacement laptop is ready. Bring your old one to the service desk on the ground floor on Tuesday at 10 and we'll move your files across while you wait. No need to send anything beforehand.\nLeila\nIT Service Desk",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "quayholt.example",
-              "replyTo": "leila.nassar@quayholt.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "default": "The service desk's real address, a booking in person, and 'no need to send anything'."
-              }
-            }
-          },
-          {
             "id": "ga_leave_portal",
             "from": {
               "name": "Sofia Marchetti",
@@ -406,6 +345,67 @@
               "whyFine": {
                 "linkCredible": "The link goes where it says, to the HR portal on Quayholt's own domain, and you could reach it from the intranet instead.",
                 "default": "HR's real address, a routine notice, and no hurry."
+              }
+            }
+          },
+          {
+            "id": "ga_solicitor_share",
+            "from": {
+              "name": "Ashcombe Solicitors",
+              "address": "documents@ashcombelaw.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Ashcombe Solicitors shared 'Settlement papers' with you",
+            "time": "11:02",
+            "body": "Ashcombe Solicitors has shared a document with you.\n{{link:view}}\nThis link expires in 24 hours.",
+            "links": [
+              {
+                "id": "view",
+                "text": "View 'Settlement papers' on ashcombelaw.example",
+                "destination": "https://docshare-login.example/ashcombe/settlement"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "none",
+              "dmarc": "none",
+              "envelopeFrom": "ashcombelaw.example",
+              "replyTo": "documents@ashcombelaw.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "linkCredible"
+              ],
+              "perFlagNote": {
+                "linkCredible": "The link text says ashcombelaw.example, but it goes to docshare-login.example"
+              },
+              "ifTrusted": "The link opens a sign-in page that collects your Quayholt password.",
+              "reportReply": "Thanks. Nobody here has a matter with Ashcombe, and the link went to a sign-in page we've now blocked."
+            }
+          },
+          {
+            "id": "ga_laptop_swap",
+            "from": {
+              "name": "Leila Nassar",
+              "address": "leila.nassar@quayholt.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Your laptop swap is booked",
+            "time": "12:20",
+            "body": "Hi,\nYour replacement laptop is ready. Bring your old one to the service desk on the ground floor on Tuesday at 10 and we'll move your files across while you wait. No need to send anything beforehand.\nLeila\nIT Service Desk",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "leila.nassar@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "The service desk's real address, a booking in person, and 'no need to send anything'."
               }
             }
           }

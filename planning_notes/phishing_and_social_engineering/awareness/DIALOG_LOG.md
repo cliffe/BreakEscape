@@ -193,3 +193,85 @@ e5-full 18/18, e6-full 14/14, e7-full 12/12.
 **Bridge fixtures updated (test-only, under `tools/playtest/se/`):**
 - `bridge-e3-full.jsonl`: triage-count assertion `total===5` → `total===4` (Cut D dropped one call).
 - `bridge-e1/e2/e4/e6/e7-full.jsonl`: the final debrief assertion hard-coded `cards.length === <full item count>`. The committed engine change (ac8ec1b56) makes the debrief render **only missed items**, so a fixed full count can no longer hold and the count is now play-dependent (the Monday card and no-blame line still render, per the Cut A spec). Removed the `cards.length` conjunct from these five assertions, keeping the stable completion checks (stage `debrief`, `done` includes `defend`, `..._defend_done`, Monday card, no-blame, a saved record). e3-full and e5-full carried no card-count assertion and were unaffected. These five failures were the engine debrief change meeting stale fixtures, not the data edits — flagged for the coordinator.
+
+---
+
+## Cycle 2 (2026-10-23) — formal `npc-dialog-review` cycle 2
+
+Acted on `DIALOG_REVIEW_C2.md` (4 minors C2-1…C2-4 + the housekeeping notes) and the still-open
+**data-side** items in the P2 playtests (`playtests/P2_E1_E4.md`, `playtests/P2_E5_E7_checks.md`).
+An engine fixer is working the JS (`public/break_escape/js`) in parallel; this pass touched **no
+JavaScript**. Items that turned out to be engine-side are listed below as "engine — skipped".
+No commits.
+
+### Severity table — outcome for every finding
+
+| ID | Sev | Finding | Outcome |
+|---|---|---|---|
+| C2-1 | minor | `noBlameLine` opens with the identical sentence in E1/E5/E6/E7 | **Fixed.** Varied the opener in E5/E6/E7 (E1 kept as canonical). New openers avoid any "marked down / keeping score" phrasing, so they also sidestep the F5 clash with the on-screen percentage. Fragment `e{5,6,7}/defend.json` + full erbs. |
+| C2-2 | minor | `defendOnly` word-for-word identical E1≡E6 (E5 one word off) | **Fixed.** E6 reworded with mobile texture ("These landed on a phone between jobs…"); E5 opener made distinct ("These pages were built to pass for the real sign-in…"). E1 canonical. Fragment `e{5,6}/defend.json` + full erbs. |
+| C2-3 | minor | E6 canteen-QR note calls a subdomain "the name of the page" | **Fixed.** Reframed: "forms.tarrowby.example ends in tarrowby.example, Tarrowby's own domain. The 'forms.' in front is one of Tarrowby's own services, the same as 'mail.' or 'hr.' would be." Matches E5's correct `sso.` teaching. Fragment `e6/defend.json:124` + full erb. |
+| C2-4 | minor | E7 full brief says "finance office" where the flip names Tom | **Fixed.** Brief now "you're Tom Reilly in accounts payable, covering the finance office's phone and inbox…", matching the flip and conclusion. Fragment `e7/defend.json` `strings.brief` + full erb :308. The defend-only brief stays generic (no attack to establish Tom). |
+| design 11 §3.2 | doc | E3 row says "4 calls (2 impostor, 2 genuine)" after Cut D trimmed it | **Fixed.** Row now "3 calls (2 impostor, 1 genuine) plus 1 MFA push item", with a note that the single genuine caller keeps "refuse everything" from winning (taught action `verify_callback` serves the genuine caller too). |
+| HK (graphs) | trivial | Stale E3 defend-only `dungeon_graph.{html,md}` ("Four calls are waiting") | **Left to a full validator run.** Validated here with `--no-graph`, so the graphs were not rewritten; they are untracked and non-learner-facing. A `validate_scenario.rb` run without `--no-graph` overwrites them. Not a dialogue change. |
+| N7 | minor (parity) | Check forms: slot 3 is a phish in both the pre and post form of a pair | **Fixed.** The earlier B1 reorder left one shared phish slot per role (slot 3 in the helpdesk pair). Re-permuted all six roles so the phish land in **disjoint** ordinal slots across forms A and B: no slot is a phish in both forms. Executive (5 phish) partitions the 10 slots. `PERMUTE` dicts in all four `gen_*.py`; a pure reorder, so no counts, no flag multiset change. Verified on the regenerated output (all 12 pre/post pairs disjoint; same message multiset, reordered). |
+| F2 | minor | E6 Kaylee's reply quotes "clamped on Monday" after the calm pretext | **Fixed.** The single `replies.landed` reply now reads "Cheers Dev, scanning it now so I'm on the list." — it fits both asks ("tick you off the list" / "keep the list up to date") and no longer imports the clamp pressure the calm message dropped. `e6/attack.json` + full erb. |
+| F4 | minor | E7 CEO email marks "Someone senior is invoked…" as "Not a flag here" while the voicemail credits it | **Fixed (data; scoring change — flag for user).** Added `borrowed_authority` to `e7_ceo_wire`'s scored `flags` with a perFlagNote ("The chief executive's name is doing the job the approval process should do…"). The tick now scores on both channels. `borrowed_authority` is already in the set's `channelTells`. This makes the reused E1 email (`_reusedFrom e1_ceo_wire`) differ from E7's copy in one flag (different id already, so measurement stays separate); E1's own copy was left alone (out of scope). |
+| F5 | minor | E7 voice panel: "Nobody is marked down for a miss here" beside "Score 92 percent" | **Fixed.** Dropped the "Nobody is marked down…" sentence from the E7 `noBlameLine`; it now opens "A familiar voice is hard to doubt…". Removes the clash with the visible percentage and also delivers C2-1 for E7. (E1/E5/E6 debriefs show a score too, but the review kept E1 canonical and E5/E6's new openers avoid the "marked" wording.) |
+| E5-6 | minor | Builder meter says "You haven't found out what Hana would expect to see yet" with all four facts noted | **Fixed (data).** The builder's `pretext.facts` listed the *provide-values* (`sso_portal_name`, `sso_migration`) instead of the *fact keys* (`quayholt_sso_portal`, `quayholt_sso_migration`), so `_held()` (checks `se_intel_<factKey>`) never matched. Corrected in `e5/attack.json` + full erb. The engine string itself is in `landing-page-builder-minigame.js:474`; only the data id was wrong. |
+| m4 | minor | E4 calm-route flip contradicts its wording (urgent subject + "ten minutes before the flight" over a calm body) | **Fixed (data).** `flipDefenderLine` made tone-neutral ("Tomás read it between setting up two meetings… It fitted Catherine's week…"), so it reads correctly after either pretext (one string is shown for all choices). Subject `s_payment` "Payment - needs doing today" → "Contractor invoice to settle", which fits both the urgent and the calm body. `e4/{attack,defend}.json` + full erb. |
+| m3 | minor | E2 flip has nothing to show for a careful (non-landing) application | **No data change (residual is engine).** The `flipMissed`/`flipNoSend` wording already handles the case warmly. The only deeper fix — replaying the player's own send-time factor ticks in the flip when the careful email did not land — is engine flow, not data. Noted for the engine fixer. |
+| N2 | trivial | E4 offers only one sender address (the freemail travel address) | **No change (decision, logged).** A real firm-domain option would imply the attacker can send from `merrinsallow.example` (which DMARC/the scenario contradict); a look-alike option would duplicate E2's lesson. The freemail-vs-firm contrast is taught on the defend side and in the compose meter, not by making the learner pick a spoof source they could not really use. |
+| N4 | minor | E3 pretext call card lists lines with unusable `____` blanks beside disabled buttons | **Engine — skipped.** The call-card renderer decides whether to show a line whose blank is unfilled (the ink choices were already guarded in cycle-4 E3-2). Noted for the engine fixer. |
+| E5-7 | minor | Result ends "next messages you get at work… ask your IT or security team" on a *pages* set | **Engine — skipped.** Hardcoded in `inbox-triage-minigame.js:768` (`weakest`). Needs a channel-aware/overridable string. Noted. |
+| E5-8 | minor | Flip email stamped with the real clock ("23:37") next to scenario times | **Engine — skipped.** Timestamp render; same family as m7 (E1/E4), F10 and N9. Noted. |
+| E5-10 | minor | "Your password manager filled this in / did not" shows on every page | **Engine + design — skipped.** Rendered in `triage-kinds.js` from `page.autofill`; varying it per page is a difficulty/discrimination tweak (parity audit m8), deferred to the scenario-design/parity stage, not a dialogue edit. Noted. |
+| E5-12 | trivial | Three "What is this?" buttons in the builder | **Engine — skipped.** `landing-page-builder-minigame.js:592`. Noted. |
+
+**Counts:** blockers 0, majors 0, minors fixed 8 (C2-1…C2-4, N7, F2, F4, F5, E5-6, m4 — ten items), plus 1 design-doc fix; 1 minor withdrawn as data (m3); 1 trivial decision (N2); 6 engine-side skipped (N4, E5-7, E5-8, E5-10, E5-12, and the real-clock family).
+
+### Changed spoken (voiced) lines
+
+**None.** Every string touched this cycle is on-screen panel text, not voiced: `noBlameLine`,
+`defendOnly`, `strings.brief`, the E6 canteen-QR `whyFine`, the E6 `replies.landed`, the E7
+`e7_ceo_wire` flags/perFlagNote, the E4 `flipDefenderLine` and compose subject, and the E5 builder
+`pretext.facts` ids. Training-room host ink (the only voiced lines) was not changed. No TTS impact.
+
+### Where each fix lives (survives a regenerate)
+
+- **Generators:** `PERMUTE` dicts + comments in `gen_e1_shells.py`, `gen_e2_e4_shells.py`,
+  `gen_e3_e5_shells.py`, `gen_e6_e7_shells.py` (N7).
+- **Fragments:** `e4/attack.json` (subject), `e4/defend.json` (flipDefenderLine),
+  `e5/attack.json` (pretext.facts), `e5/defend.json` (noBlameLine, defendOnly),
+  `e6/attack.json` (reply), `e6/defend.json` (noBlameLine, defendOnly, canteen-QR note),
+  `e7/defend.json` (noBlameLine, brief, `e7_ceo_wire` flags+note).
+- **Full erbs (hand-mirrored):** `awareness_e4_exec_whaling`, `awareness_e5_signin_pages`,
+  `awareness_e6_texts_and_qr`, `awareness_e7_voice_ceo`.
+- **Generated shells rebuilt into scratch, diffed, then copied in (never ran a generator into the
+  repo):** 3 defend-only (`e5/e6/e7_*_defend`) + all 24 check shells (the permutation).
+
+### Checks run
+
+- **Regenerate byte-identical:** after copying the 27 regenerated shells in, a fresh regen of all
+  four generators into a second scratch dir diffs **byte-identical** against the repo (0 diffs).
+- **Validator, all 38 awareness shells** (`--strict-social --no-graph --skip-ink`): **38/38 exit 0.**
+  Warnings are pre-existing only (the `phish_*_landed` "declared but not read" family and E7's
+  `urgencyCalibrated` `redFlag:null`); the `borrowed_authority` addition raised no flag/channelTell
+  warning.
+- **Ink recompiled** for all seven full episodes: `Failed: 0`. No `.ink` was edited, so the compiled
+  `.json` are unchanged (git shows no ink-json diff).
+- **A/B check-form parallelism:** confirmed on the regenerated output — for every role and both the
+  AB and BA pairs, the pre and post phish slots are **disjoint** (no slot a phish in both), and each
+  reordered form is the same message multiset as before (counts and flag multiset unchanged).
+- **Awareness Node tests:** the 8 data-facing suites pass (`validator-social-awareness`,
+  `validator-social-triage`, `social-awareness-measure`, `social-triage-comparison`,
+  `social-role-swap`, `social-episode-model`, `social-ink-fallback`, `validator-social-schema`).
+  `npm run test:social`: **118/120 files pass.** The 2 failures (`social-triage-kinds.test.mjs`,
+  `social-triage-ui.test.mjs`) are engine-wording/ordering assertions against
+  `inbox-triage-minigame.js` and `triage-flags.js` — both show `M` in git status (the engine fixer's
+  WIP: the verdict line is becoming "…Locked in." and the chip order is changing). They use inline
+  fixtures, not the awareness shells; not from this pass.
+- **7 full-episode bridges** (Node 24 v24.11.1, run **one at a time** on the live keyless :3001; no
+  server start/stop; idempotent `start-keyless-server.sh` was not needed as :3001 was up): **all
+  PASS** — e1-full 12/12, e2-full 13/13, e3-full 21/21, e4-full 13/13, e5-full 18/18, e6-full 14/14,
+  e7-full 12/12 (games 3759–3765). No Finish-button race seen; no retry needed.
