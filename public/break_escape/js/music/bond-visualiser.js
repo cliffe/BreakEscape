@@ -23,7 +23,7 @@
 
 import MusicController from './music-controller.js';
 import { displayDashes } from '../utils/display-dashes.js';
-import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay, nextCreditsHeader, creditsHeader } from './credits-theme.js';
+import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay, nextCreditsHeader, creditsHeader, nextCreditsText, creditsStatus } from './credits-theme.js';
 import { cardHoldMs } from './closing-sequence.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────
@@ -1496,8 +1496,10 @@ let _resizeHandler = null;
  * overlay() returns null (safetynet) keeps the overlay exactly as built.
  */
 let _headerText = null;  // set by a credits entry's headerText; survives later open({})
+let _statusText = null;  // the same for statusText (the STATUS row)
 function _applyTheme(opts) {
     _headerText = nextCreditsHeader(_headerText, opts);
+    _statusText = nextCreditsText(_statusText, opts, 'statusText');
     if (opts.credits?.length) _lastCredits = opts.credits;
     _theme    = resolveCreditsTheme(window.gameScenario);
     _themeDef = getCreditsTheme(_theme);
@@ -1518,6 +1520,8 @@ function _applyTheme(opts) {
     if (t) _applyOverlayText(t);
     const h1 = _overlay.querySelector('.bv-title-block h1');
     if (h1) h1.textContent = creditsHeader(_headerText, t?.heading);
+    const status = _overlay.querySelectorAll('.bv-status-block .bv-status-line .val')[1];
+    if (status) status.textContent = creditsStatus(_statusText, t?.status);
     _applyScenarioOverlay(scenarioCreditsOverlay(window.gameScenario, missionName));
     _themeApplied = _theme;
 }
@@ -1772,6 +1776,7 @@ export const BondVisualiser = {
      * @param {boolean}  [opts.autoStop]     - stop music after current track ends; visualiser stays open
      * @param {boolean}  [opts.disableClose] - hide × button and block Esc (forced/cutscene mode)
      * @param {string}   [opts.headerText]   - header in place of MISSION COMPLETE // AUDIO INTEL; kept by later opens without credits
+     * @param {string}   [opts.statusText]   - STATUS row value in place of MONITORING; same rules as headerText
      */
     open(opts) { _open_overlay(opts || {}); },
     /** Close the fullscreen visualiser. */

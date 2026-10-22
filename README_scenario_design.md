@@ -1602,6 +1602,7 @@ An event entry with `credits` (or `closingCard`) asks the server to conclude the
 - **`section` blocks:** `people` gives one line per person, `NAME: clause`, using the first clause whose condition holds (none holds: no line for that person). Order the clauses most specific first and end with an unconditional one if the person must always appear. `lines` gives every line that holds. The heading prints only if something under it does. `headerStyle` overrides `section-header`; a clause's `style` (or the person's) defaults to `entry`.
 - Plain lines (`text`, `style`, `condition`) work as before, and can sit between blocks.
 - **`headerText`:** on the same entry, replaces the visualiser's header `MISSION COMPLETE // AUDIO INTEL` for this ending, e.g. `"headerText": "MISSION FAILED // AUDIO INTEL"` on a failure ending. Without it the header is the theme's heading or that default. A later open with no credits (a `conclusionScreen` of type `bond_visualiser`, the music widget) keeps it.
+- **`statusText`:** on the same entry, replaces the STATUS row's `MONITORING` in the visualiser's top-right panel, e.g. `"statusText": "COMPROMISED"`. Keep it to one short word. Same rules as `headerText`: without it the row shows the theme's status or `MONITORING`, and a later open with no credits keeps it.
 - Code: `public/break_escape/js/music/closing-sequence.js`; test scenario `scenarios/test_finale_calls_credits/`.
 
 ---

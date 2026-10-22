@@ -90,6 +90,7 @@ function anyHostilesAlive() {
  *                    lines } item is a block (closing-sequence.js)
  *   closingCard    — { lines, teaser } shown before the credits (closing-sequence.js)
  *   headerText     — visualiser header for this ending (default MISSION COMPLETE // AUDIO INTEL)
+ *   statusText     — visualiser STATUS row for this ending (default MONITORING)
  *
  * @param {object} entry - music event config entry
  * @param {object} data  - event payload
@@ -152,6 +153,7 @@ function switchIfConditionMet(entry, data) {
             autoStop:     !!entry.autoStop,         // new: stop music, keep vis open
             disableClose: !!entry.disableClose,
             headerText:   entry.headerText,             // optional, e.g. "MISSION FAILED // AUDIO INTEL"
+            statusText:   entry.statusText,             // optional, e.g. "COMPROMISED"
         });
 
         concludeMission().then((result) => {

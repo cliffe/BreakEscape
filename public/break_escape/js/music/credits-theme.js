@@ -142,10 +142,23 @@ export const DEFAULT_CREDITS_HEADER = 'MISSION COMPLETE // AUDIO INTEL';
  * @returns {string|null}
  */
 export function nextCreditsHeader(current, opts) {
-    const text = typeof opts?.headerText === 'string' ? opts.headerText.trim() : '';
+    return nextCreditsText(current, opts, 'headerText');
+}
+
+/** The same rule for any opt-in text field of a credits entry (headerText, statusText). */
+export function nextCreditsText(current, opts, key) {
+    const text = typeof opts?.[key] === 'string' ? opts[key].trim() : '';
     if (text) return text;
     if (opts?.credits?.length) return null;
     return current ?? null;
+}
+
+/** The STATUS row's value when neither the ending nor the theme sets one. */
+export const DEFAULT_CREDITS_STATUS = 'MONITORING';
+
+/** What the STATUS row shows: the ending's statusText, else the theme's status, else the default. */
+export function creditsStatus(statusText, themeStatus) {
+    return statusText || themeStatus || DEFAULT_CREDITS_STATUS;
 }
 
 /** What the header shows: the ending's text, else the theme's heading, else the default. */

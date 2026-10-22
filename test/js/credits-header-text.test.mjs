@@ -61,3 +61,25 @@ test('a music-event credits entry passes its headerText to the visualiser', () =
     const fn = events.slice(events.indexOf('const openCredits = '), events.indexOf('concludeMission().then'));
     assert.match(fn, /headerText: {3}entry\.headerText/);
 });
+
+// statusText: the STATUS row (MONITORING) under the same rules, for m10's Join ending.
+test('statusText follows the headerText rules', () => {
+    assert.equal(T.DEFAULT_CREDITS_STATUS, 'MONITORING');
+    let s = T.nextCreditsText(null, { credits: [{ text: 'x' }] }, 'statusText');
+    assert.equal(T.creditsStatus(s, undefined), 'MONITORING', 'default unchanged when absent');
+    assert.equal(T.creditsStatus(s, 'EXERCISE'), 'EXERCISE', 'a theme status still wins over the default');
+    s = T.nextCreditsText(null, { credits: [{ text: 'x' }], headerText: FAILED, statusText: 'COMPROMISED' }, 'statusText');
+    assert.equal(T.creditsStatus(s, 'EXERCISE'), 'COMPROMISED');
+    s = T.nextCreditsText(s, {}, 'statusText');   // conclusionScreen open({})
+    assert.equal(s, 'COMPROMISED');
+    assert.equal(T.nextCreditsText(s, { credits: [{ text: 'x' }] }, 'statusText'), null, 'a new roll without it resets');
+    assert.equal(T.nextCreditsHeader(null, { statusText: 'COMPROMISED' }), null, 'fields do not leak into each other');
+});
+
+test('the visualiser and music events wire statusText', () => {
+    const fn = vis.slice(vis.indexOf('function _applyTheme(opts)'), vis.indexOf('function _applyScenarioOverlay'));
+    assert.match(fn, /_statusText = nextCreditsText\(_statusText, opts, 'statusText'\)/);
+    assert.ok(fn.indexOf('creditsStatus(_statusText, t?.status)') > fn.indexOf('_applyOverlayText(t)'));
+    const open = events.slice(events.indexOf('const openCredits = '), events.indexOf('concludeMission().then'));
+    assert.match(open, /statusText: {3}entry\.statusText/);
+});
