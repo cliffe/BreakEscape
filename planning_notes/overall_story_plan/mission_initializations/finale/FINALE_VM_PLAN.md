@@ -120,10 +120,14 @@ From the F12/F13 ruling (`scenarios/FINALE_DEV_LOG.md:487-490`) and the audit `s
 
 ### m10
 
-- **Flag 1 (monitoring).** Move flag 1's file into a **monitoring account whose login is a fixed in-game string**; maltrail injection stays as the foothold. In-game find at the forward-post gate console.
+Chosen login strings (2026-10-22, now in the m10 ERB Codes block — the build must seed these exact values):
+
+- **Flag 1 (monitoring).** Account **`secmon`**, password **`Bunker!Monitor59`** (shown in-game on the forward-post gate-console maintenance tag). **Correction to the earlier draft:** flag 1's file must go into this **separate `secmon` login account**, *not* the `maltrail` account the injection lands as — the maltrail foothold has `user_rwx` as `maltrail`, so a flag in maltrail's own home would be readable cold. Put flag 1 in `secmon`'s `0600` home and keep `maltrail` unable to read it; reading flag 1 then needs the `secmon` login. maltrail injection stays as the colour foothold.
 - **Flag 2 (schedule).** Unchanged route (same box, behind flag 1); seed the channel list, early-access orders and first cities (FINALE_VM_PLAN M4).
-- **Flag 3 (container escape).** Reaching `release_host` root requires an **in-game operative credential** (found in the server hall / workshop); the container bind shell stays as the foothold. **Seed a `disarm` file in `release_host` root's home** beside flag 3 (F13).
-- **Flag 4 (core escape).** Reaching `core_host` root requires an **in-game core-access key** (from the gallery / Tesseract, only after the gallery stair); the chroot bind shell stays as the foothold. **Seed Tesseract's unsent vendor notice in `core_host` root's home** beside flag 4 (F13), plus the stolen-copy / Citadel-vault line the game's `core_files` prop names. This removes the cold root-at-start route.
+- **Flag 3 (container escape).** Operative account **`vos`**, password **`Release!Shift25`** (shown in-game on the operator's duty card in the server hall). The container bind shell stays as the foothold, but it must be reachable **only after logging in as `vos`** (bind the service to loopback / behind the operative login), so reaching `release_host` root needs the in-game credential rather than a cold escape. **Seed a `disarm` file in `release_host` root's home** beside flag 3 (F13).
+- **Flag 4 (core escape).** Core access key **`TSRCT-CORE-9F21`** (shown in-game on the access-key envelope on the gallery rail — a key from Tesseract, reachable only after the gallery stair). The chroot bind shell stays as the foothold, but the escape route must require that key (bind to loopback / gate the shell on the key), so `core_host` root is not cold. **Seed Tesseract's unsent vendor notice in `core_host` root's home** beside flag 4 (F13), plus the stolen-copy / Citadel-vault line the game's `core_files` prop names. This removes the cold root-at-start route.
+
+**Artefacts to seed on the m10 VM (F13), restated for the build:** the `disarm` file in `release_host` root's home (flag 3); Tesseract's unsent vendor notice in `core_host` root's home (flag 4). Both are absent from the current draft XML.
 
 ### Game-side dependencies (concept level; detail in `VM_GATING_AUDIT.md` §A5, §B5)
 
