@@ -76,7 +76,18 @@ test('which objects are avoided', () => {
     assert.equal(prefersAvoid(vending(0, 0)), true);
     assert.equal(prefersAvoid({ scenarioData: { type: 'notes' } }), false);
     assert.equal(prefersAvoid({ hasWheels: true }), false, 'wheeled props are pushed, not avoided');
-    assert.equal(prefersAvoid({ hasWheels: true, scenarioData: { preferAvoid: true } }), true, 'only an explicit preferAvoid opts in');
+    assert.equal(prefersAvoid({ hasWheels: true, scenarioData: { preferAvoid: true } }), true, 'an explicit preferAvoid opts in');
+    // Default rules by sprite name
+    const prop = (key, h = 60, extra = {}) => ({ active: true, visible: true, texture: { key }, displayHeight: h, ...extra });
+    assert.equal(prefersAvoid(prop('vending_machine')), true, 'vending machine by name');
+    assert.equal(prefersAvoid(prop('filing_cabinet_steel2')), true, 'frame digits stripped');
+    assert.equal(prefersAvoid(prop('water_cooler')), true);
+    assert.equal(prefersAvoid(prop('mini_fridge', 30)), false, 'short props are walked past');
+    assert.equal(prefersAvoid(prop('plant-large11-top-ani', 80)), false, 'plants are walked through');
+    assert.equal(prefersAvoid(prop('server_rack', 80, { hasWheels: true })), false, 'wheels win');
+    assert.equal(prefersAvoid(prop('key_cabinet', 60, { elevation: 20 })), false, 'wall-hung props are skipped');
+    assert.equal(prefersAvoid(prop('desk_office', 60)), false, 'unlisted props are not avoided');
+    assert.equal(prefersAvoid(prop('vending_machine', 60, { scenarioData: { preferAvoid: false } })), false, 'scenario false wins');
     assert.equal(prefersAvoid(vending(0, 0, { visible: false })), false, 'hidden or taken objects are ignored');
 });
 

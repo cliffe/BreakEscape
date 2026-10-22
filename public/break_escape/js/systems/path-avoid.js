@@ -12,10 +12,16 @@
  * direct-line and smoothing shortcuts also refuse a straight line through one,
  * unless the raw route itself goes through it. WASD movement is unaffected.
  *
- * Which objects: only those with scenario `preferAvoid: true`. Wheeled props
- * and animated plants are left out on purpose (user, 2026-10-22): bumping a
- * chair or brushing through a plant is a satisfying moment. Objects with a
- * solid immovable body are already walls on the grid and are skipped.
+ * Which objects:
+ *   - a scenario object's `preferAvoid: true|false` always wins;
+ *   - otherwise a floor-standing prop (not hung on the back wall) whose sprite
+ *     key matches ROUTE_AROUND_PROP_PATTERN and is at least
+ *     ROUTE_AROUND_MIN_HEIGHT px tall: vending machines, kiosks, photocopiers,
+ *     water coolers, fridges, lockers, cabinets, shelving, racks, servers;
+ *   - never by default: wheeled props and plants (user, 2026-10-22): bumping a
+ *     chair or brushing through an animated plant is a satisfying moment.
+ * Objects with a solid immovable body are already walls on the grid and are
+ * skipped, so the name list only matters for props the player can walk through.
  */
 
 // Cost of entering one 8px cell of an avoided object (a free cell costs 1).
@@ -23,10 +29,27 @@
 // detour up to ~55 cells (~440px, more than a room's width) is taken first.
 export const AVOID_CELL_COST = 20;
 
-/** Does this sprite ask click-to-move to route round it? */
+export const ROUTE_AROUND_MIN_HEIGHT = 40;
+export const ROUTE_AROUND_PROP_PATTERN =
+    /vending|kiosk|atm|photocopier|water_cooler|fridge|locker|filing|cabinet|shel(f|ves)|bookcase|rack|server/;
+const NEVER_AVOID_PATTERN = /plant|planter|fig/;
+
+/** Sprite key without frame digits or extension: "vending_machine2" -> "vending_machine". */
+export function avoidBaseKey(sprite) {
+    const key = sprite?.texture?.key ?? sprite?.textureKey ?? sprite?.key ?? '';
+    return String(key).replace(/\.png$/i, '').replace(/\d+$/, '');
+}
+
+/** Does this sprite ask click-to-move to route round it? See the header for the rules. */
 export function prefersAvoid(sprite) {
     if (!sprite || sprite.active === false || sprite.visible === false) return false;
-    return sprite.scenarioData?.preferAvoid === true;
+    const flag = sprite.scenarioData?.preferAvoid;
+    if (typeof flag === 'boolean') return flag;
+    if (sprite.hasWheels) return false;
+    if (sprite.elevation > 0) return false;          // hung on the back wall
+    const key = avoidBaseKey(sprite);
+    if (!key || NEVER_AVOID_PATTERN.test(key) || !ROUTE_AROUND_PROP_PATTERN.test(key)) return false;
+    return (sprite.displayHeight ?? sprite.height ?? 0) >= ROUTE_AROUND_MIN_HEIGHT;
 }
 
 /**
