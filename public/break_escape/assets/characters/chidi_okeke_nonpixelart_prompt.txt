@@ -1,0 +1,11 @@
+Make portrait for Chidi Okeke
+A Nigerian-British man in his late forties with dark brown skin, the fleet coordinator at a regional haulage firm, who schedules the drivers and vans from the office. Calm, practical, good-humoured. Short black hair cut close with a little grey at the temples, a neat trimmed moustache and short beard. He wears office clothes: a charcoal-grey quarter-zip pullover over a white collared shirt with the collar showing, dark navy trousers with a black leather belt. Hands relaxed at his sides.
+Standing alone against an empty plain light-grey backdrop, no room or furniture behind him. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (art batch B, awareness episode hosts). Reframed with reframe_portrait.py --flip; unflipped original is wip/chidi_okeke_concept_raw.png. Age and background from BRAND_SET.md and the episode fragments.

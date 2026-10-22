@@ -1,0 +1,11 @@
+Make portrait for Niamh Doherty
+A Northern Irish woman in her mid twenties with pale fair skin and light freckles, the internal communications officer at a commercial insurer, who writes the all-staff emails. Bright, quick, a little wry. Long straight dark auburn hair worn loose past the shoulders with a side parting, green eyes. She wears office clothes: a fitted forest-green blazer over a plain black crew-neck top, dark blue straight-leg trousers with a thin tan belt. Hands relaxed at her sides.
+Standing alone against an empty plain light-grey backdrop, no room or furniture behind her. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (art batch B, awareness episode hosts). Reframed with reframe_portrait.py --flip; unflipped original is wip/niamh_doherty_concept_raw.png. Age and background from BRAND_SET.md and the episode fragments.
