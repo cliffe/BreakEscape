@@ -6,6 +6,10 @@
   "version": "1.0",
   "disableAttacks": true,
   "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
   "player": {
     "id": "player",
     "displayName": "Learner",
@@ -405,10 +409,45 @@
       }
     }
   },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
   "rooms": {
     "training_room": {
-      "type": "room_office",
+      "type": "room_aw_quayholt",
       "door_sign": "Training Room",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "conference_screen": {
+            "color": "#9fc0ff",
+            "radius": 36,
+            "intensity": 0.4,
+            "effect": "screen"
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.3,
+            "color": "#e8f0ff",
+            "radius": 72,
+            "intensity": 0.3
+          }
+        ]
+      },
       "connections": {},
       "npcs": [
         {
@@ -416,8 +455,8 @@
           "displayName": "Anjali Rao",
           "npcType": "person",
           "position": {
-            "x": 3,
-            "y": 3
+            "x": 5.5,
+            "y": 3.5
           },
           "spriteSheet": "female_scientist_v2",
           "spriteTalk": "assets/characters/female_scientist_talk.png",
@@ -439,10 +478,6 @@
           "type": "kiosk",
           "id": "training_kiosk",
           "name": "Training kiosk",
-          "position": {
-            "x": 6,
-            "y": 2
-          },
           "takeable": false,
           "interactable": true,
           "active": true,

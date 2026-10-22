@@ -19,6 +19,9 @@ import json
 import os
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import training_room  # noqa: E402
+
 REPO = '/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape'
 AW = f'{REPO}/planning_notes/phishing_and_social_engineering/awareness'
 GENERATOR = 'planning_notes/phishing_and_social_engineering/awareness/gen_e2_e4_shells.py'
@@ -273,7 +276,7 @@ def host_npc(host, done_global, task_id, ink_path):
         'id': host['id'],
         'displayName': host['displayName'],
         'npcType': 'person',
-        'position': {'x': 3, 'y': 3},
+        'position': copy.deepcopy(training_room.HOST_POSITION),
         'spriteSheet': f'{key}_v2',
         'spriteTalk': f'assets/characters/{key}_talk.png',
         'spriteVisemes': f'assets/characters/{key}_visemes.png',
@@ -298,7 +301,6 @@ def kiosk(ep_id, observations):
         'type': 'kiosk',
         'id': 'training_kiosk',
         'name': 'Training kiosk',
-        'position': {'x': 6, 'y': 2},
         'takeable': False,
         'interactable': True,
         'active': True,
@@ -324,6 +326,7 @@ def scenario(mission, name, brief, end_goal, aim, task, done, ending, globals_, 
         'version': '1.0',
         'disableAttacks': True,
         'startRoom': 'training_room',
+        'startPosition': copy.deepcopy(training_room.START_POSITION),
         'player': PLAYER,
         'objectives': [{
             'aimId': aim[0],
@@ -341,15 +344,17 @@ def scenario(mission, name, brief, end_goal, aim, task, done, ending, globals_, 
     if extra:
         sc.update(extra)
     sc['social'] = social
-    sc['rooms'] = {
-        'training_room': {
-            'type': 'room_office',
-            'door_sign': 'Training Room',
-            'connections': {},
-            'npcs': [host_npc(host, done, task[0], ink_path)],
-            'objects': [kiosk(ep_id, kiosk_obs)],
-        }
-    }
+    company = social['awarenessEpisode']['company']
+    sc['lighting'] = training_room.scenario_lighting(company)
+    rf = training_room.room_fields(company)
+    tr = {'type': rf['type'], 'door_sign': 'Training Room'}
+    if 'chatBackground' in rf:
+        tr['chatBackground'] = rf['chatBackground']
+    tr['lighting'] = rf['lighting']
+    tr['connections'] = {}
+    tr['npcs'] = [host_npc(host, done, task[0], ink_path)]
+    tr['objects'] = [kiosk(ep_id, kiosk_obs)]
+    sc['rooms'] = {'training_room': tr}
     return sc
 
 

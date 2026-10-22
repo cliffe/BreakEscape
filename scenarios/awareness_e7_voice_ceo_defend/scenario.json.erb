@@ -6,6 +6,10 @@
   "version": "1.0",
   "disableAttacks": true,
   "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
   "player": {
     "id": "player",
     "displayName": "Learner",
@@ -277,10 +281,39 @@
       }
     }
   },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
   "rooms": {
     "training_room": {
-      "type": "room_office",
+      "type": "room_aw_brightwell",
       "door_sign": "Training Room",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.3,
+            "color": "#ffe2b0",
+            "radius": 80,
+            "intensity": 0.35
+          }
+        ]
+      },
       "connections": {},
       "npcs": [
         {
@@ -288,8 +321,8 @@
           "displayName": "Agnieszka Duda",
           "npcType": "person",
           "position": {
-            "x": 3,
-            "y": 3
+            "x": 5.5,
+            "y": 3.5
           },
           "spriteSheet": "female_blowse_v2",
           "spriteTalk": "assets/characters/female_blowse_talk.png",
@@ -311,10 +344,6 @@
           "type": "kiosk",
           "id": "training_kiosk",
           "name": "Training kiosk",
-          "position": {
-            "x": 6,
-            "y": 2
-          },
           "takeable": false,
           "interactable": true,
           "active": true,

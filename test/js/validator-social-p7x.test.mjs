@@ -179,7 +179,7 @@ test('defend.calls: the set count includes the calls', { skip }, () => {
   let j = e3();
   ep(j).defend.calls.pop();
   ep(j).defend.calls.pop();
-  expectIn(lint(j), /has 3 message\(s\) including defend\.calls; an episode's defend set has 5 to 8/);
+  expectIn(lint(j), /has 3 message\(s\) including defend\.calls; an episode's defend set has 4 to 8/);
   j = e3();
   set(j).messages.push(clone(set(j).messages[0]), clone(set(j).messages[0]), clone(set(j).messages[0]), clone(set(j).messages[0]));
   expectIn(lint(j), /has 9 message\(s\) including defend\.calls/);
