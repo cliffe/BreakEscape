@@ -63,7 +63,7 @@ test('stage 7 (Blue Team) opener points to Tomasz and does NOT re-offer the key 
     // student to come to Ruth for a key they already have (lab R6 F3).
     const t = opener({ ...base,
         roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
-        phish_pierce_landed: true, landing_payroll_login_built: true, pretext_call_done: true,
+        phish_hampshire_landed: true, phish_pierce_landed: true, landing_payroll_login_built: true, pretext_call_done: true,
         phish_lord_landed: true, report_filed: true });
     assert.match(t, /Blue Team|Tomasz/i, 'points to the Blue Team room / Tomasz');
     assert.doesNotMatch(t, /come and see me|I've got the key|if that door's locked/i,
@@ -74,7 +74,7 @@ test('stage 4: the "Dev flagged" line shows while the call is still unmade, and 
     // Reported, call not yet successfully made (page not built): the flagged line shows.
     const stuck = opener({ ...base,
         roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
-        phish_pierce_landed: true, pretext_call_reported: true, pretext_call_done: false,
+        phish_hampshire_landed: true, phish_pierce_landed: true, pretext_call_reported: true, pretext_call_done: false,
         landing_payroll_login_built: false });
     assert.match(stuck, /flagged that last call/i, 'flagged line shows while the call is unmade');
 
@@ -82,14 +82,14 @@ test('stage 4: the "Dev flagged" line shows while the call is still unmade, and 
     // is still current: the flagged line must be gone (R2 F6-c).
     const recovered = opener({ ...base,
         roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
-        phish_pierce_landed: true, pretext_call_reported: true, pretext_call_done: true,
+        phish_hampshire_landed: true, phish_pierce_landed: true, pretext_call_reported: true, pretext_call_done: true,
         landing_payroll_login_built: false });
     assert.doesNotMatch(recovered, /flagged that last call/i, 'flagged line clears after a clean second call');
 });
 
 const allDone = {
     roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
-    phish_pierce_landed: true, landing_payroll_login_built: true, pretext_call_done: true,
+    phish_hampshire_landed: true, phish_pierce_landed: true, landing_payroll_login_built: true, pretext_call_done: true,
     phish_lord_landed: true, report_filed: true, triage_pass: true, profile_done: true
 };
 
@@ -107,7 +107,7 @@ test('stage 7 pointer is printed once, not after every reply (R6 F3)', { skip },
     const s = new Story(json);
     const g = { ...base,
         roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
-        phish_pierce_landed: true, landing_payroll_login_built: true, pretext_call_done: true,
+        phish_hampshire_landed: true, phish_pierce_landed: true, landing_payroll_login_built: true, pretext_call_done: true,
         phish_lord_landed: true, report_filed: true };
     for (const [k, v] of Object.entries(g)) {
         if (s.variablesState.GlobalVariableExistsWithName(k)) s.variablesState[k] = v;
@@ -125,4 +125,17 @@ test('stage 7 pointer is printed once, not after every reply (R6 F3)', { skip },
     }
     const count = (all.match(/Blue Team room next/g) || []).length;
     assert.equal(count, 1, 'the Blue Team pointer appears exactly once across the thread');
+});
+
+test('C4 n4: Melanie landed before Careers keeps the phone on stage 3, with the Careers pointer', { skip }, () => {
+    const g = { ...base, roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
+        acct_freemail: true, phish_pierce_landed: true, phish_hampshire_landed: false };
+    const s = new Story(json);
+    for (const [k, v] of Object.entries(g)) if (s.variablesState.GlobalVariableExistsWithName(k)) s.variablesState[k] = v;
+    s.ChoosePathString('start');
+    let t = '';
+    while (s.canContinue) t += s.Continue();
+    assert.match(t, /Operations now/, 'still on stage 3');
+    assert.ok(s.currentChoices.some((c) => /Chris isn't biting/.test(c.text)), 'the Careers pointer is still offered');
+    assert.doesNotMatch(t, /Sofia/, 'no Sofia advice yet');
 });

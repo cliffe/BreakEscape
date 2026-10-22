@@ -175,3 +175,59 @@ Inputs:
 - Ruth (phone): the stage 5 opener, now three variants.
 - Tomasz: the debrief line without "no fuss".
 - Barks: the three key-ready texts.
+
+## Cycle 5 (2026-10-22)
+
+Review: `DESIGN_REVIEW_C4.md`. It found 0 blockers, 0 majors and 7 minors (n1–n7). The fixes are logged here as cycle 5, following the orchestrator's numbering, so there is no separate cycle-4 fixer entry.
+
+| Severity | Found | Fixed | Deferred | Withdrawn |
+|---|---:|---:|---:|---:|
+| Blocker | 0 | 0 | 0 | 0 |
+| Major | 0 | 0 | 0 | 0 |
+| Minor | 7 | 7 | 0 | 0 |
+
+| # | Finding | Outcome | What changed |
+|---|---|---|---|
+| n1 | Debrief and credits assume "first call reported, second got the date" | **Fixed** | Both lines now hold on any route, including date → reported → portal. Tomasz: "Dev reported one of your calls — credit to him — but you rang back and still got what you needed…". Credit: "Service desk: one call was reported; a later call still got what the email needed". |
+| n2 | On the namesake route, Melanie's mismatch line and hint point at the wrong half | **Fixed** | Pierce's `senderTrust.mismatch` line is now neutral, like Lord's: "The name and the address belong to two different people…". The `spoof` hint adds "at that person's real address". The phone's "I'm sending as Jed and she still says no." now gives both causes: freemail, and the address being Jed's own, built from the pattern. |
+| n3 | The `lord_portal` SOC card's why contradicts the lab | **Fixed** | The `reduceNote` now names what the post leaked: who is new, which kind of system, what they're waiting for. The right option's why ends "Here the post gave the pretext; the desk filled in the details". The `desk_callback` why now cites what the post told the student before any call. |
+| n4 | Landing Melanie before Careers skips the Careers hints | **Fixed** | The phone hub and the stage 3 guard now need both landings. In Ruth's hub, the "Delivered isn't landed" branch, the Sofia branches, `topic_account` and `topic_hard` are all gated on both landings. A new Node test covers Melanie landing first (`social-lab-ruth-phone-keys`). The later-stage states in two existing lab tests now set `phish_hampshire_landed` as well, because routing deliberately needs both. |
+| n5 | The "page and a call" lines don't say which half is done; the phone's call pointer names only the portal | **Fixed** | Ruth's hub, `topic_hard` and the phone's stage 4 opener each gain a call-done and a page-done branch. The phone's "The call?" answer now names all three facts: the portal's name, who its emails come from, and the payslip date. |
+| n6 | The right email-pattern option names "signatures", which the lab never showed | **Fixed** | The option now reads "(press releases, PDFs, supplier contact lists)", matching the Hunter result. |
+| n7 | The report task and aim describe the old read-and-confirm step | **Fixed** | The task is now "Answer the two questions on the campaign results", and the aim description matches. The task id `results_reviewed` is unchanged, so bridges and mappings still hold. |
+
+C4's "noticed, not raised" items (the legacy `accounts@` mailbox, the `desk_disclosed` wording, the ordering of the lockout note) were left as the reviewer judged them.
+
+### Checks run (cycle 5)
+
+- Recompiled ruth, ruth_phone and tomasz.
+- Tagdiff against HEAD: ruth has 12 differences, all n4 gates and n5 branches; ruth_phone has 6, the n4 gates and the stage 4 branches; tomasz's structure is unchanged.
+- An inkjs scratch run (`scratchpad/lab-design-fixer/c5check.cjs`) shows the phone and Ruth for four states: Melanie first, both landed, call only and page only. Each prints the intended line.
+- `validate_scenario.rb --strict-social`: no ❌. Only the carried narrator and avatar warnings remain.
+- dialoguelint: only the withdrawn fairbairn pair.
+- `bin/test-js`: the 4 social-lab-* files pass, as do the phish-rules and the lab and mail validator tests.
+- Bridges, headless with Node 24 on :3001: bridge-6 36/36 and r4-door 3/3. No process of the R10 pass was touched.
+- No browser run of the C4 tester list (the namesake send, Melanie first, the three-call route). Those are in R10's scope.
+
+### Spoken lines changed (cycle 5)
+
+- Ruth (person): two new hub lines (call done, page done) and two new `topic_hard` lines.
+- Ruth (phone): two new stage 4 openers, the "still says no" answer and the "The call?" answer.
+- Tomasz: the reported-then-success debrief line.
+
+## Stage close: scenario design
+
+The design stage closes after cycle 5 with no open blocker, major or minor from the design reviews. These stay open, each owned by a later stage:
+
+| Item | What's open | Owner |
+|---|---|---|
+| C1 M3 | Pacing has never been measured. The timed blind run should time stages 6 (report) and 7b (SOC board) separately. | Playtest stage (POLISH_PLAN step 4, the blind run) |
+| C4 tester list | The namesake send to Melanie, landing Melanie before Careers, and the three-call route checked in a browser | The R10 browser pass now running, then the playtest stage |
+| C1 m10 | Recon's cyan lower desk reads as a second workstation | Room dressing |
+| C1 m13 | Placeholder cast sprites; the two phone NPCs have no avatar (validator warning) | Characters and art batches |
+| Narrator voice warning | fairbairn.ink narrates, but the scenario has no `narrator` voice | Audio (TTS is skipped for now) |
+| R9 F10, F12 | The "Ready" toasts batch when OSINT closes; a reload restores the start position. Both are shared engine behaviours. | Engine backlog (needs approval) |
+| R9 F9(a) | A toast pulled back by the hold rule is shown twice | Designed behaviour, shared engine; open only if the orchestrator wants it changed |
+| C2 m-e | The Leeds address in the picker | Kept by the orchestrator as a visible clue; n2 now makes its feedback teach it |
+
+Next stage under POLISH_PLAN: puzzle chains (`mission-puzzle-chains`), five cycles.

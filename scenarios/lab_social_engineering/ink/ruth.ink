@@ -182,11 +182,15 @@ Ruth Adeyemi: Read the rules of engagement. The sheet on the table. Properly. Ga
     Ruth Adeyemi: Recon's through the west door. Public pages only. If you'd need a password to see it, it's off the sheet.
 - operations_key_given and not acct_freemail:
     Ruth Adeyemi: Mail's in Operations. Make your throwaway address before you write to anyone.
-- operations_key_given and not phish_pierce_landed:
+- operations_key_given and not (phish_hampshire_landed and phish_pierce_landed):
     Ruth Adeyemi: Delivered isn't landed. It lands when they'd open the file or click the link, the way they would a real one.
 - pretext_call_reported and not pretext_call_done:
     Ruth Adeyemi: Dev's manager rang Gareth about a dodgy call. Gareth promised to look into it, with a straight face. Give the desk a couple of minutes, then ring back softer.
-- phish_pierce_landed and not (landing_payroll_login_built and pretext_call_done):
+- phish_hampshire_landed and phish_pierce_landed and pretext_call_done and not landing_payroll_login_built:
+    Ruth Adeyemi: Call's done. Now the page: a look-alike of her payroll portal.
+- phish_hampshire_landed and phish_pierce_landed and landing_payroll_login_built and not pretext_call_done:
+    Ruth Adeyemi: Page is built. Now ring the service desk.
+- phish_hampshire_landed and phish_pierce_landed and not (landing_payroll_login_built and pretext_call_done):
     Ruth Adeyemi: Sofia's the careful one. You'll want a look-alike page and a call to the service desk.
 - (landing_payroll_login_built and pretext_call_done) and not phish_lord_landed and not se_intel_lord_portal_name:
     Ruth Adeyemi: You got the date off Dev, but not the portal's name or who its emails come from. Ring him back for those.
@@ -210,9 +214,9 @@ Ruth Adeyemi: Read the rules of engagement. The sheet on the table. Properly. Ga
     -> topic_plan
 + {plan_done and not (osint_done and se_intel_username_convention)} [What does the board want from me?]
     -> topic_recon
-+ {operations_key_given and not phish_pierce_landed} [Why a throwaway address?]
++ {operations_key_given and not (phish_hampshire_landed and phish_pierce_landed)} [Why a throwaway address?]
     -> topic_account
-+ {phish_pierce_landed and not phish_lord_landed} [How do I reach Sofia?]
++ {phish_hampshire_landed and phish_pierce_landed and not phish_lord_landed} [How do I reach Sofia?]
     -> topic_hard
 + {phish_lord_landed and not report_filed} [What goes in the report?]
     -> topic_report
@@ -252,6 +256,10 @@ Ruth Adeyemi: Chris's careers inbox takes anything. Melanie's trickier — you'l
     Ruth Adeyemi: You've got everything she checks: the page, the portal's sender and name, and the date. Put them together in one email.
 - landing_payroll_login_built and pretext_call_done:
     Ruth Adeyemi: The page is built. What you're missing from Dev, ring him back for. Name Sofia first or he won't say a thing.
+- pretext_call_done:
+    Ruth Adeyemi: You've made the call. Now build a page like her portal, so the link looks right.
+- landing_payroll_login_built:
+    Ruth Adeyemi: The page is built. Now ring the desk as her buddy. Know her name and team before you dial.
 - else:
     Ruth Adeyemi: Sofia checks things. You need a page like her portal, and a pretext call to fill the gaps.
     Ruth Adeyemi: Ring the desk as her buddy. Know her name and team before you dial. Push too hard and Dev flags you to his manager.

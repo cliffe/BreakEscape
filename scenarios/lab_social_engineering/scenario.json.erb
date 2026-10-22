@@ -104,12 +104,12 @@
     {
       "aimId": "report",
       "title": "Write the report",
-      "description": "Read the campaign results and pair each finding with a cause and a control. No names.",
+      "description": "Answer two questions on the campaign results, then pair each finding with a cause and a control. No names.",
       "status": "locked",
       "order": 6,
       "unlockCondition": { "aimCompleted": "phish_hard" },
       "tasks": [
-        { "taskId": "results_reviewed", "title": "Review the campaign results", "type": "manual", "status": "active" },
+        { "taskId": "results_reviewed", "title": "Answer the two questions on the campaign results", "type": "manual", "status": "active" },
         { "taskId": "findings_paired", "title": "Pair each finding with a cause and a control", "type": "manual", "status": "active" }
       ]
     },
@@ -164,7 +164,7 @@
           { "section": "THE ENGAGEMENT", "lines": [
             { "text": "Scope: signed by Gareth Fairbairn before anything was sent" },
             { "text": "Phishing: all three messages acted on (Careers, Finance, the Finance intern)" },
-            { "text": "Service desk: the first call was reported; a second call still got the date", "condition": "globalVars.dev_reported && globalVars.pretext_service_desk_call_outcome === 'got_it'" },
+            { "text": "Service desk: one call was reported; a later call still got what the email needed", "condition": "globalVars.dev_reported && globalVars.pretext_service_desk_call_outcome === 'got_it'" },
             { "text": "Service desk: gave out what the intern's email needed, and reported a call", "condition": "globalVars.dev_reported && globalVars.pretext_service_desk_call_outcome !== 'got_it'" },
             { "text": "Service desk: gave out what the intern's email needed, with no call-back check", "condition": "!globalVars.dev_reported" },
             { "text": "Report: filed, with no names in it" }
@@ -410,7 +410,7 @@
         "text": "Sofia uses a staff payroll portal. The post doesn't name it, but the service desk does.",
         "subject": "lord", "source": "post_lord_payslip",
         "provides": [],
-        "reduceNote": "Staff posts about work systems tell an attacker which system to imitate and when a message about it is expected."
+        "reduceNote": "A staff post says who is new, which kind of system they use and what they're waiting for: a ready-made pretext for a call or an email."
       },
       "lord_portal_name": {
         "text": "The payroll portal is called LedgerPay.",
@@ -732,7 +732,7 @@
         "factorStrings": {
           "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
           "senderTrust": { "pass": "✓ From someone she trusts", "fail": "She doesn't know this sender. She acts on mail from someone she trusts in Finance.", "redFlag": null,
-            "mismatch": { "fail": "The name is one she trusts, but the address isn't that person's. She knows her colleagues' addresses.", "redFlag": null } },
+            "mismatch": { "fail": "The name and the address belong to two different people. She knows her colleagues' names and the addresses they write from.", "redFlag": null } },
           "addressedTo": { "pass": "✓ Addressed her by name", "fail": "No name, or not the one her colleagues use.", "redFlag": null },
           "pretextRelevant": { "pass": "✓ Relevant to her work", "fail": "Nothing she was expecting, and no reason for this to reach her.", "redFlag": null },
           "senderAuth": {
@@ -749,7 +749,7 @@
         "hints": ["Think about who Melanie trusts in Finance.", "What does she expect to receive, and from whom?"],
         "hintsByFactor": {
           "senderTrust": {
-            "spoof": "She only acts on mail from someone she trusts in Finance. The From line is a label you can set.",
+            "spoof": "She only acts on mail from someone she trusts in Finance, at that person's real address. The From line is a label you can set.",
             "ownFrom": "You're still sending as yourself. Change the From line to someone she trusts in Finance.",
             "forced": "This account can only send as itself. Switch account to send as someone she trusts."
           },
@@ -1295,7 +1295,7 @@
             "options": [
               { "id": "awareness_training", "text": "Run annual phishing-awareness training for all staff", "good": false,
                 "why": "Worth doing, but the pattern stays on the public pages. Anyone an attacker can name still has a working address." },
-              { "id": "role_inboxes", "text": "Keep staff addresses out of everything published (press releases, PDFs, signatures) and give outsiders role inboxes", "good": true,
+              { "id": "role_inboxes", "text": "Keep staff addresses out of everything published (press releases, PDFs, supplier contact lists) and give outsiders role inboxes", "good": true,
                 "why": "The team page already does this; the press releases, PDFs and supplier lists don't. Stop adding to them and there's less each year for a lookup tool to learn from." },
               { "id": "hide_team_page", "text": "Take the team page down for a while", "good": false,
                 "why": "The names on it matter only because the pattern is already out there. Hiding the page loses the outsiders it serves and doesn't recall a single address." }
@@ -1314,9 +1314,9 @@
               { "id": "private_accounts", "text": "Ask staff to set their social accounts to private", "good": false,
                 "why": "Private accounts still have followers, and friends reshare. What gets posted about work is the problem, not who can see it." },
               { "id": "social_policy", "text": "A social-media policy on posting about internal systems", "good": true,
-                "why": "Staff stop posting the system names and dates an attacker reuses, and they still get to post about their weekend." },
+                "why": "Staff stop posting what they're waiting for on work systems, and they still get to post about their weekend. Here the post gave the pretext; the desk filled in the details." },
               { "id": "desk_callback", "text": "A call-back rule on the service desk", "good": false,
-                "why": "That fixes the call, and it's in your report. This card is about the post itself, which any attacker can read without ringing anyone." }
+                "why": "That fixes the call, and it's in your report. This card is about the post: it told you Sofia was new and waiting on her first payslip, before you rang anyone." }
             ] },
           { "intel": "hampshire_careers",
             "options": [

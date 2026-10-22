@@ -114,7 +114,7 @@ Tomasz: Here's what it showed. An open inbox trusts anyone, a From line is just 
 }
 {
 - dev_reported and pretext_service_desk_call_outcome == "got_it":
-    Tomasz: Dev reported the first call — credit to him — but your second call still got the date. A call-back rule to a number on file stops both.
+    Tomasz: Dev reported one of your calls — credit to him — but you rang back and still got what you needed. A call-back rule to a number on file stops both.
 - dev_reported:
     Tomasz: Dev gave you what Sofia's email needed, and he reported a call too. Credit for that, but a call-back rule stops it without him noticing a thing.
 - pretext_service_desk_call_outcome == "got_it" and pretext_service_desk_call_lowest >= 0:

@@ -47,7 +47,7 @@ VAR stage7_seen = false
 - not roe_signed: -> stage0
 - not plan_done: -> stage1
 - not (osint_done and se_intel_username_convention): -> stage2
-- not phish_pierce_landed: -> stage3
+- not (phish_hampshire_landed and phish_pierce_landed): -> stage3
 - not (landing_payroll_login_built and pretext_call_done): -> stage4
 - not phish_lord_landed: -> stage5
 - not report_filed: -> stage6
@@ -123,7 +123,7 @@ Recon's next. If that door's locked, I've got the key — come and see me. The O
 
 // ---- Stage 3: spear-phish rounds 1 and 2 ----
 === stage3 ===
-{ phish_pierce_landed: -> hub }
+{ phish_hampshire_landed and phish_pierce_landed: -> hub }
 Operations now. If that door's locked, I've got the key — come and see me.
 + {not phish_pierce_landed} [Which account do I send from?]
     For Chris, a throwaway webmail address: real applicants use one. For Melanie, the guest account, because it lets you set the From line.
@@ -135,7 +135,7 @@ Operations now. If that door's locked, I've got the key — come and see me.
     Who would she open a file from without thinking? Your recon says.
     -> stage3
 + {not phish_pierce_landed} [I'm sending as Jed and she still says no.]
-    Freemail can only send as itself. Switch to the guest account, then set Jed in the From line.
+    Two things. Freemail only sends as itself, so use the guest account. And the address must be Jed's own, built from the pattern.
     -> stage3
 + [Thanks.] #exit_conversation
     Keep at it.
@@ -144,8 +144,13 @@ Operations now. If that door's locked, I've got the key — come and see me.
 // ---- Stage 4 + 5: page and call ----
 === stage4 ===
 { landing_payroll_login_built and pretext_call_done: -> hub }
-{ pretext_call_reported and not pretext_call_done:
+{
+- pretext_call_reported and not pretext_call_done:
     Dev flagged that last call to his manager. Leave it a while, then try again — softer, and have your facts straight.
+- pretext_call_done:
+    Call's done. Now the page.
+- landing_payroll_login_built:
+    Page is built. Now ring the desk.
 - else:
     Sofia's careful. A page and a call, either order.
 }
@@ -153,7 +158,7 @@ Operations now. If that door's locked, I've got the key — come and see me.
     The page builder on the desk. Match her payroll portal — domain, logo, wording, the lot.
     -> stage4
 + {not pretext_call_done} [The call?]
-    Ring the service desk from the desk phone. Dev. Get the portal's name off him.
+    Ring the service desk from the desk phone. Dev. Get the portal's name, who its emails come from, and when payslips go out.
     -> stage4
 + [Anything else?]
     Know who you're asking about before you ring: her name and her team. Then you're her buddy, helping out.
