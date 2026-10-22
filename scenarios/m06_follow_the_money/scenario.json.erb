@@ -75,6 +75,38 @@ mixer_config_text = "# hc-mixer-01 -- pool configuration\n# author: i.volkova\n#
 
 custody_index_text = "hashchain :: custody_index.csv (cold slots)\n\nslot,label,opened_by,opened\n2207,OTC desk settlement,CEO,2023-02\n3815,customer reserve B,CEO,2022-09\n#{fund_slot},client escrow,ops,2025-05\n5093,client escrow,CEO,2025-04\n6120,\"client escrow -- do not reconcile\",CEO,2024-06\n7302,dormant (legacy),ops,2021-01\n8846,market-maker float,ops,2024-02\n\n# The custody console opens a slot's file by its number.\n# Labels are whatever the account manager typed. Trust the money, not the label. -- I.V."
 
+# Backlog 2026-10-22: the settlement tracer (blockchain explorer, mode
+# mixer_match) on the transaction server. Same numbers as Priya's write-up,
+# the settlement log and the pool config above; the board's rules give one
+# match per deposit (all three in fund_slot), so it stores no answer. Change
+# outputs are the board's own detail (teaching only; no decoy uses them).
+settlement_credits = [
+  ["2025-07-14T23:05Z", "2207", 310400], ["2025-07-15T01:15Z", "3815", 2364000],
+  ["2025-07-15T04:20Z", fund_slot, 2364000], ["2025-07-15T05:10Z", "5093", 2346000],
+  ["2025-07-16T09:30Z", "6120", 975000], ["2025-07-19T16:25Z", "8846", 204900],
+  ["2025-07-22T14:00Z", "2207", 128050], ["2025-07-30T02:40Z", "6120", 1200000],
+  ["2025-07-30T05:05Z", fund_slot, 1182000], ["2025-07-30T11:45Z", "3815", 441300],
+  ["2025-08-01T08:15Z", "5093", 718200], ["2025-08-04T01:50Z", "2207", 669800],
+  ["2025-08-04T03:35Z", fund_slot, 669800], ["2025-08-04T09:00Z", "8846", 133750]
+]
+mixer_board = {
+  "mode" => "mixer_match",
+  "title" => "Settlement Tracer",
+  "caseRef" => "hc-mixer-01",
+  "currency" => "USD",
+  "slotLabel" => "slot",
+  "filesLabel" => "Server files",
+  "mixer" => { "name" => "hc-mixer-01", "feePercent" => 1.5, "minHoldHours" => 6, "source" => "mixer_pool_config.yml" },
+  "deposits" => [
+    { "id" => "dep_ransom", "label" => "Ransomware proceeds", "wallet" => "1ENTROPY2RansomInc", "amount" => 2400000, "time" => "2025-07-14T21:40Z", "required" => true, "change" => { "wallet" => "1Rx7chg4Qm", "amount" => 37250 } },
+    { "id" => "dep_zeroday", "label" => "Exploit sales", "wallet" => "1ENTROPY3ZeroDaySy", "amount" => 1200000, "time" => "2025-07-29T22:10Z", "required" => true, "change" => { "wallet" => "1Zq3chg8Vn", "amount" => 18400 } },
+    { "id" => "dep_social", "label" => "Disinformation contracts", "wallet" => "1ENTROPY1SocialFab", "amount" => 680000, "time" => "2025-08-03T20:05Z", "required" => true, "change" => { "wallet" => "1Sf9chg2Kt", "amount" => 9120 } }
+  ],
+  "withdrawals" => settlement_credits.each_with_index.map { |(t, s, a), i| { "id" => "cr_#{i + 1}", "slot" => s, "amount" => a, "time" => t } },
+  "completionText" => "All three ENTROPY deposits come out of the mixer as credits to cold slot #{fund_slot}. Open that slot on the custody console in this room.",
+  "stateWrites" => { "onTraced" => "traced_fund_slot", "onOpen" => ["read_settlement_log"] }
+}
+
 architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTODY: cold slot #{fund_slot} (1ARCHITECT9FUND)\nAUTHORISED: Satoshi's Ghost (Crypto Anarchists), for The Architect\n\nAdvances paid (4 August): $3.2M\nBalance pending: $12.8M USD (BTC equivalent)\nRelease: pre-signed by Satoshi's Ghost. Goes out on its own in 72 hours unless the wallet is moved first.\n\nPER CELL (advance paid / balance pending):\n- Critical Mass: $0.8M / $3.2M. Pacific Northwest grid control\n- Ghost Protocol: $0.4M / $1.5M. Operation Fracture (election data centre)\n- Social Fabric: $0.5M / $2.1M. Operation Fracture, with Ghost Protocol\n- Supply Chain Saboteurs: $0.3M / $1.3M. Operation Trojan Horse\n- Digital Vanguard: $0.5M / $1.9M. Operation Meltdown (hospitals)\n- Zero Day Syndicate: $0.7M / $2.8M. Operation Meltdown, ordnance\n\nOPERATION: The Architect's Masterpiece\nCOORDINATOR: The Architect\n\nSuccess probability: 94%\nProjected casualties (cells' own estimates, all operations): 350-600"
 %>
 {
@@ -178,9 +210,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           { "text": "MISSION COMPLETE",                                            "style": "title" },
           { "text": "FOLLOW THE MONEY",                                            "style": "subtitle" },
           { "text": "" },
-          { "text": "THE ARCHITECT'S FUND: $12.8M — TRACED THROUGH THE MIXER",     "style": "entry", "condition": "globalVars.found_architects_fund && globalVars.found_blockchain_evidence && !globalVars.irina_confirmed_slot && !globalVars.console_tripped" },
-          <%# Scenario design R1 (m4): without Priya's write-up there was no trace to follow. %>
-          { "text": "THE ARCHITECT'S FUND: $12.8M — FOUND ON THE CONSOLE", "style": "entry", "condition": "globalVars.found_architects_fund && !globalVars.found_blockchain_evidence && !globalVars.irina_confirmed_slot && !globalVars.console_tripped" },
+          { "text": "THE ARCHITECT'S FUND: $12.8M — TRACED THROUGH THE MIXER",     "style": "entry", "condition": "globalVars.found_architects_fund && (globalVars.found_blockchain_evidence || globalVars.traced_fund_slot) && !globalVars.irina_confirmed_slot && !globalVars.console_tripped" },
+          <%# Scenario design R1 (m4): without Priya's write-up there was no trace to follow. Backlog 2026-10-22: the settlement tracer is a trace too. %>
+          { "text": "THE ARCHITECT'S FUND: $12.8M — FOUND ON THE CONSOLE", "style": "entry", "condition": "globalVars.found_architects_fund && !globalVars.found_blockchain_evidence && !globalVars.traced_fund_slot && !globalVars.irina_confirmed_slot && !globalVars.console_tripped" },
           <%# Puzzle chains R2 (M-R2-2): any console lockout before the fund was found. %>
           { "text": "THE ARCHITECT'S FUND: $12.8M — FOUND BY ELIMINATION ON THE CONSOLE", "style": "entry", "condition": "globalVars.found_architects_fund && globalVars.console_tripped && !globalVars.irina_confirmed_slot" },
           { "text": "THE ARCHITECT'S FUND: $12.8M — TRACED, CONFIRMED BY VOLKOVA", "style": "entry", "condition": "globalVars.found_architects_fund && globalVars.irina_confirmed_slot" },
@@ -426,6 +458,16 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "targetCount": 3,
           "currentCount": 0,
           "showProgress": true,
+          "status": "active",
+          "optional": true
+        },
+        <%# Backlog 2026-10-22: the settlement tracer on the transaction server.
+            Optional, so a player who works the slot out from the files (or with a
+            turned Irina) still finishes the aim. %>
+        {
+          "taskId": "trace_mixer_deposits",
+          "title": "Match the ENTROPY deposits across the mixer on the settlement tracer",
+          "type": "custom",
           "status": "active",
           "optional": true
         },
@@ -686,6 +728,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "server_passphrase_known": false,
     "irina_confirmed_slot": false,
     "read_settlement_log": false,
+    "traced_fund_slot": false,
     "entered_data_center": false,
 
     "flag1_submitted": false,
@@ -1173,6 +1216,13 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "condition": "data.itemId === 'settlement_log'",
               "onceOnly": true,
               "setGlobal": { "read_settlement_log": true }
+            },
+            {
+              "_comment": "Backlog 2026-10-22: naming the slot on the settlement tracer (transaction server) completes the optional tracer task.",
+              "eventPattern": "global_variable_changed:traced_fund_slot",
+              "condition": "globalVars.traced_fund_slot === true",
+              "onceOnly": true,
+              "completeTask": "trace_mixer_deposits"
             },
             {
               "_comment": "PASS 4 fix 17: the specific credits key on the conversations the tasks name. taskOnKO also completes these, but the credit conditions exclude a KO.",
@@ -2061,7 +2111,12 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "name": "Financial Transaction Server",
           "takeable": false,
           "locked": false,
-          "observations": "Core transaction processing server — every cryptocurrency movement the exchange has ever brokered passes through this box",
+          "observations": "Core transaction processing server — every cryptocurrency movement the exchange has ever brokered passes through this box. It runs a settlement tracer: what went into the mixer on one side, what came out on the other.",
+          <%# Backlog 2026-10-22: opens the settlement tracer board (mixer_board above);
+              its "Server files" button opens the three files below, which stay for
+              Irina's slot check and HaX's hints. Naming the slot sets traced_fund_slot. %>
+          "interactionType": "blockchain_explorer",
+          "minigameData": <%= mixer_board.to_json %>,
           "contents": [
             {
               "type": "text_file",
