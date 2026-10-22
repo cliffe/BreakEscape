@@ -9,6 +9,7 @@
  * browser per step.
  *
  *   node playtest-session.js --url <game-url> [--speed fast|human] [--headless]
+ *                            [--vw 1400] [--vh 1000]     (or env VW / VH)
  *
  * Commands (one JSON object per line):
  *   {"cmd":"bootstrap","tutorial":"decline","resume":"new"}
@@ -34,6 +35,7 @@
  *   {"cmd":"waitFor","kind":"minigameClosed"}
  *   {"cmd":"waitFor","kind":"event","name":"room_entered:it_department"}
  *   {"cmd":"drain"}                          → action + event log, then clears
+ *   {"cmd":"toasts"}                         → text of every toast shown since the last call
  *   {"cmd":"screenshot","path":"/tmp/x.png"} → ONLY for diagnosing a failure
  *   {"cmd":"eval","fn":"() => window.__test.scan(400)"}
  *   {"cmd":"quit"}
@@ -136,11 +138,44 @@ function substituteFlags(node, at) {
   if (!argv.url) { emit({ ok: false, error: 'missing --url' }); process.exit(1); }
 
   // Headed by default: the point is that a person can watch the playtest.
+  // Viewport defaults to 1400x1000; --vw/--vh or VW/VH override it (e.g. 600
+  // to check a narrow layout).
+  const pickDim = (a, e, d) => { const n = parseInt(a !== undefined && a !== true ? a : e, 10); return n > 0 ? n : d; };
+  const VW = pickDim(argv.vw, process.env.VW, 1400);
+  const VH = pickDim(argv.vh, process.env.VH, 1000);
   const browser = await chromium.launch({
     headless: argv.headless === true || argv.headless === 'true',
-    args: ['--window-size=1400,1000']
+    args: [`--window-size=${VW},${VH}`]
   });
-  const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
+  const page = await browser.newPage({ viewport: { width: VW, height: VH } });
+
+  // Toast capture. Installed before any page script runs, so it sees toasts
+  // raised during load. Watches the whole document for added .notification
+  // nodes (the container, #notification-container, may not exist yet) and
+  // records their text; the `toasts` command returns and clears the list.
+  await page.addInitScript(() => {
+    window.__toastLog = [];
+    const grab = (el) => {
+      if (!el || el.nodeType !== 1 || window.__toastSeen?.has(el)) return;
+      const list = el.matches?.('.notification') ? [el] : [...(el.querySelectorAll?.('.notification') || [])];
+      for (const n of list) {
+        (window.__toastSeen ||= new WeakSet());
+        if (window.__toastSeen.has(n)) continue;
+        window.__toastSeen.add(n);
+        const q = (sel) => n.querySelector(sel)?.innerText?.trim() || '';
+        window.__toastLog.push({
+          at: Date.now(),
+          type: ['success', 'warning', 'error', 'info'].find(t => n.classList.contains(t)) || undefined,
+          title: q('.notification-title'),
+          message: q('.notification-message') || (n.innerText || '').trim()
+        });
+      }
+    };
+    const start = () => new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(grab)))
+      .observe(document.documentElement, { childList: true, subtree: true });
+    if (document.documentElement) start();
+    else document.addEventListener('DOMContentLoaded', start, { once: true });
+  });
 
   // Disable HTTP cache. A game JS file edited between runs (e.g. a bridge fix
   // applied while iterating) can otherwise be served from a prior Playwright
@@ -634,6 +669,12 @@ function substituteFlags(node, at) {
       const target = c.room || c.id;
       if (!target) return { ok: false, reason: 'no-room-given' };
       return page.evaluate(t => window.__test.enterRoom(t), target);
+    },
+
+    /** Text of every notification/toast shown since the last call. */
+    toasts: async () => {
+      const list = await page.evaluate(() => { const l = window.__toastLog || []; window.__toastLog = []; return l; });
+      return { count: list.length, toasts: list, messages: list.map(t => t.title ? `${t.title}: ${t.message}` : t.message) };
     },
 
     drain: async () => ({ log: await page.evaluate(() => window.__test.drainLog()),

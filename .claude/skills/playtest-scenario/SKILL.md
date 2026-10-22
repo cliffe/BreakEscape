@@ -414,6 +414,10 @@ Prefer the high-level commands — `room`, `converse`, `lock`, `enter` — over 
 
 Full command list is in the header of `scripts/playtest-session.js`.
 
+**Viewport.** The default is 1400x1000. Pass `--vw 600 --vh 900`, or set `VW` and `VH` in the environment (the arguments win), to check a narrow or phone-sized layout. Confirm with `{"cmd":"eval","fn":"() => window.innerWidth"}`.
+
+**Toasts.** `{"cmd":"toasts"}` returns every notification shown since the last call, then clears the list: `{count, toasts:[{at, type, title, message}], messages:["Locked: Requires key. ..."]}`. A MutationObserver installed at page load records each `.notification` element as it is added, so a toast that has already faded is still caught (don't poll `.notification-message` yourself). Call it once before the action to clear anything from the opening, then again after. Info and success toasts raised while a minigame is open are held by the engine until it closes, so they appear after the close, not during. A page reload clears the list.
+
 ### Driving dialogue
 
 Use `converse` (above) for whole conversations. The manual actions here are for when a step turns on one specific line or branch — asserting what an NPC says, or steering a choice that gates a later step.
