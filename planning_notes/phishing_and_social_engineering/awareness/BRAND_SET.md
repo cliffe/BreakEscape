@@ -197,3 +197,7 @@ Gallagher and Farah are not used, because they clash with existing scenarios.
   - Farah Qureshi, early 30s, British Pakistani, Leicester.
 - **E3 (P7-S), Quayholt:** Chen Jiayi, Helen Achterberg and Patrick Kerrigan. The full list is under `_brandAdditions` in `awareness/e3/defend.json`.
 - **E3 alias:** "Josh Henley", the impostor caller.
+
+## Additions from E7 defend (2026-10-22)
+- **Lindiwe Mokoena:** chilled-unit site lead, early 30s, Black South African.
+- **Phone numbers (Ofcom drama ranges):** Ravinder Sandhu's mobile is 07700 900418, the cloned call comes from 07700 900771, and Lindiwe's extension is 0116 496 0214.

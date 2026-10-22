@@ -1,0 +1,170 @@
+{
+  "_about": "Defend fragment for awareness episode E7 (optional, design 11 A1: 'Voice and the CEO', deepfake-voice CEO fraud, every role). Brightwell Foods and everyone in it are fictional; every address ends .example and every phone number is in Ofcom's drama range. No real person's voice is used: the cloned clip is a style variant of the fictional Ravinder Sandhu's in-world voice (11 N7, ASSETS VO8). The episode is framed around 'verify, don't trust the ear', with no technique detail. Copy triageSets and the awarenessEpisode keys into the E7 shells. Ids chosen here (nothing pinned them): episode e7_voice_ceo, defend-only e7_voice_ceo_defend, defend set e7_finance_line. Brand: Brightwell Foods, per ../BRAND_SET.md section 2 ('E7 (reuses E1 emails)').",
+  "_brandAdditions": {
+    "_use": "For ../BRAND_SET.md section 3 (Brightwell Foods). Ravinder Sandhu, Adaeze Okafor and Joyce Atkinson are used as BRAND_SET has them; Harlow Packaging is the E1 supplier.",
+    "cast": [
+      "Lindiwe Mokoena: chilled-unit site lead at Brightwell, the genuine caller in e7_vm_lindiwe_gate. Early 30s, Black South African, grew up in Durban, moved to Leicester for a food-science degree and stayed",
+      "Ravinder Sandhu's voice (VO8): his genuine voicemail is e7_vm_ravinder_train; the 'cloned' voicemail e7_vm_ravinder_cloned is a style variant of that fictional voice and never a real person's"
+    ],
+    "phones": "Ravinder's mobile 07700 900418 (in the office contacts); the caller in the cloned voicemail rings from 07700 900771 (not in contacts); Lindiwe's extension 2214 shows as 0116 496 0214. All in Ofcom's drama ranges.",
+    "nameCheck": "Mokoena and Lindiwe had no hits in scenarios, planning_notes, docs or the README files on 2026-10-22."
+  },
+  "_formPairing": "E7 has no role of its own: it is the cross-role 'everyone' episode (11 section 3.2), and 11 section 5.2 says episodes outside a learner's primary role have no check of their own. An organiser who wants checks around E7 uses the general-staff pair from ../e5/defend.json: general_form_a and general_form_b (awareness_pre_general_ab / awareness_post_general_ab and the BA pair). No E7 forms are authored here.",
+  "triageSets": [
+    {
+      "id": "e7_finance_line",
+      "_prefix": "Prefix for the full episode (id e7_voice_ceo). The defend-only shell (id e7_voice_ceo_defend) sets episode_e7_voice_ceo_defend_defend_ instead. No stage on purpose, as in E1.",
+      "_order": "11 section 3.2 E7: three voicemails (two real, one cloned), then two emails reused from E1 (BRAND_SET: E7 reuses E1's emails; E4 is on another brand). The real Ravinder comes first so the learner has heard the voice before the clone. Lindiwe's real, hurried voicemail follows the clone, so a learner who now distrusts every urgent call meets one that is urgent and genuine (11 section 4.3: a similar item after a likely miss). The CEO email repeats the cloned voicemail's request, and the genuine confirmed-by-phone change follows it so the safe version of a payment change comes last, as in E1.",
+      "_audio": "Each voicemail names its VO8 clip in audio.clipId. Until the voicemail player (P7-Z2) lands the card shows the transcript only, which is why the brief says 'read'. The set is scored on the verdict and the tells, never on a guess about the audio (11 section 3.2).",
+      "title": "Finance office: phone and inbox",
+      "brief": "You're covering the finance office's phone and inbox on Friday afternoon while the team is in the quarter-end meeting. Three voicemails and two emails have come in. For each one, choose Trust, Report, Delete or Verify (ring the person back on a number you already hold), then tick what you noticed. Nobody will ask whether a voice sounded real: what counts is what each message asks you to do. Reporting a real message never costs you anything.",
+      "scoringProfile": "awareness",
+      "verifyVerdict": true,
+      "feedbackMode": "immediate",
+      "headerPanel": "off",
+      "glossary": "closed",
+      "channelTells": ["vish_callback_pressure", "secrecy_or_bypass", "borrowed_authority", "changed_bank_details"],
+      "outcome": { "setGlobalPrefix": "episode_e7_voice_ceo_defend_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "e7_vm_ravinder_train",
+          "kind": "voicemail",
+          "from": { "name": "Ravinder Sandhu", "address": "07700 900418" },
+          "time": "13:05",
+          "duration": "0:24",
+          "audio": { "clipId": "VO8_ravinder_train" },
+          "transcript": [
+            { "who": "Ravinder", "text": "Hi, it's Ravinder. I'm on the train back from Leeds, so the signal comes and goes. I approved the oat flour invoices in the system before I left, so they're fine for Monday's run. Nothing for you to do. If Adaeze needs me, I'm on my mobile. Thanks." }
+          ],
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "borrowed_authority": "It's the chief executive, but he isn't using that to skip anything: the invoices went through the normal approval in the system.",
+              "default": "It came from Ravinder's mobile, which is already in the office contacts. It asks you to do nothing, and he tells you to ring that same mobile if anyone needs him. If you wanted to check, ringing him back on it would be a fine Verify."
+            }
+          }
+        },
+        {
+          "id": "e7_vm_ravinder_cloned",
+          "kind": "voicemail",
+          "_worked": "F = 3. Verify or Report + all three = 100; Verify + two = 87 (rounded); Delete + all three = 70; Trust + none = 0. The caller id is not one of the tells on purpose: caller ids can be faked, and the lesson is the request and the missing callback, not the number.",
+          "_clip": "VO8_ravinder_cloned is a style variant of the VO8_ravinder_train voice (11 N7). It must sound like the same fictional speaker; nothing in the game says how such a clip is made.",
+          "from": { "address": "07700 900771" },
+          "time": "14:48",
+          "duration": "0:38",
+          "audio": { "clipId": "VO8_ravinder_cloned" },
+          "transcript": [
+            { "who": "Caller", "text": "Hi, it's Ravinder. I'm on a borrowed phone, mine's died, so don't bother trying my mobile." },
+            { "who": "Caller", "text": "The Leeds site: the agent needs the deposit, eighteen thousand four hundred, before five today or it goes to the other bidder. I'm emailing you the details now." },
+            { "who": "Caller", "text": "Keep it between us until the board announces it, and don't wait for Adaeze. I'm signing it off myself. I'm going into a meeting, so just email me when it's gone. Thanks." }
+          ],
+          "truth": {
+            "isPhish": true,
+            "flags": ["vish_callback_pressure", "secrecy_or_bypass", "borrowed_authority"],
+            "perFlagNote": {
+              "vish_callback_pressure": "'Don't bother trying my mobile' and 'just email me' shut off the one check that works whoever is speaking: ringing Ravinder back on the number you already hold. The borrowed phone is the excuse",
+              "secrecy_or_bypass": "'Keep it between us' and 'don't wait for Adaeze' ask you to skip the approval that would catch this, and 'before five today' leaves no time to ask anyone",
+              "borrowed_authority": "The chief executive's own voice is doing the job the approval process should do. It sounded like him, and a voice on its own doesn't prove who is speaking"
+            },
+            "ifTrusted": "£18,400 would go to an account the caller controls. Ravinder was on the train from Leeds and never made this call.",
+            "reportReply": "Thanks. We rang Ravinder on his usual mobile: he hadn't called, and there is no deposit due on a Leeds site. We've warned finance and the other directors' assistants."
+          }
+        },
+        {
+          "id": "e7_vm_lindiwe_gate",
+          "kind": "voicemail",
+          "_note": "Genuine and awkward (the counterweight to the clone): hurried, about money, from a colleague, and the safe answer is to help. She refuses to pay at the gate and asks for the supplier to be rung on the number on file, which is the behaviour the episode teaches.",
+          "from": { "name": "Lindiwe Mokoena", "address": "0116 496 0214" },
+          "time": "15:20",
+          "duration": "0:31",
+          "audio": { "clipId": "VO8_lindiwe_gate" },
+          "transcript": [
+            { "who": "Lindiwe", "text": "Hi, it's Lindiwe on the chilled unit. Sorry to land this on you. The Harlow driver's at the gate and says their system has our account on hold, so he's to take the cartons back." },
+            { "who": "Lindiwe", "text": "I've told him we don't pay anything at the gate. Could someone in finance ring Harlow on the number in the supplier file and find out what's going on? I'm on extension 2214, or my mobile's on the staff list. Cheers." }
+          ],
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "secrecy_or_bypass": "She's in a hurry, but she asks you to follow the process, not skip it: no paying at the gate, and a call to Harlow on the number already on file.",
+              "vish_callback_pressure": "She gives you two ways to ring her back, her extension and the mobile on the staff list.",
+              "default": "It's Lindiwe's own extension, it asks for no payment, and what she wants is the safe check itself. Ringing Harlow on the supplier-file number, or ringing her back on 2214, is the right kind of Verify."
+            }
+          }
+        },
+        {
+          "id": "e7_ceo_wire",
+          "_reusedFrom": "e1_ceo_wire (E1, ../e1/defend.json). Same sender, amount and wording, with one sentence added ('I've left you a voicemail about it too') so it backs up the cloned voicemail: two channels agreeing is not proof either. New id so measurement records keep E1 and E7 apart.",
+          "from": { "name": "Ravinder Sandhu", "address": "ravinder.sandhu.private@inboxly.example" },
+          "to": "finance@brightwellfoods.example",
+          "subject": "Need this paid today",
+          "time": "15:31",
+          "body": "Are you at your desk? I need a payment of £18,400 made today to secure a new site in Leeds. I've left you a voicemail about it too. It's confidential until the board announces it, so please keep it to yourself and don't put it through the usual approval. I'll sign it off when I'm back.\nI'm in meetings all afternoon, so reply here rather than calling.\nRavinder\nSent from my phone",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "ravinder.sandhu.private@inboxly.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "perFlagNote": {
+              "senderTrust": "The name is the chief executive's, but the address is a personal inbox at inboxly.example, not brightwellfoods.example. The voicemail it mentions doesn't make it more real: a fake voice and a fake email can come from the same sender",
+              "secrecy_or_bypass": "'Keep it to yourself' and 'don't put it through the usual approval' ask you to skip the check that would catch this",
+              "urgencyCalibrated": "'Today' and 'in meetings all afternoon' leave no time to check, and steer you away from ringing him"
+            },
+            "ifTrusted": "£18,400 would go to an account the sender controls. The real Ravinder never asked for it.",
+            "reportReply": "Thanks. Ravinder knows nothing about it, and his real address is on brightwellfoods.example. The voicemail came from the same people, so we've reported both."
+          }
+        },
+        {
+          "id": "e7_bank_confirmed",
+          "_reusedFrom": "e1_bank_confirmed (E1, ../e1/defend.json): the genuine payment change verified by phone (11 section 3.2 E7). Wording unchanged apart from the To address (the finance office's shared inbox in E7).",
+          "from": { "name": "Adaeze Okafor", "address": "adaeze.okafor@brightwellfoods.example" },
+          "to": "finance@brightwellfoods.example",
+          "subject": "Marsh End Eggs: new bank details (confirmed by phone)",
+          "time": "15:44",
+          "body": "Hi team,\nMarsh End Eggs wrote last week to say they've changed bank. Before acting on it, I rang them on the number in our supplier file (not the one on their letter) and spoke to Joyce in their accounts office. She confirmed the new account.\nI've updated the supplier record and signed off the change, so their next invoice can go to the new account in Friday's run.\nConfirmed by phone: Adaeze Okafor, 21 October\nAdaeze",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "brightwellfoods.example", "replyTo": "adaeze.okafor@brightwellfoods.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "changed_bank_details": "It is a bank change, but it was checked the safe way: Adaeze rang Marsh End on the number already in the supplier file, not one from their letter, and logged it. That's the same check that would have stopped the Leeds deposit.",
+              "senderTrust": "The address is Adaeze's real Brightwell one, and the name matches it.",
+              "default": "It comes from your own finance manager, it doesn't hurry you, and it tells you how the change was confirmed. If you still wanted to check, ringing Adaeze on her extension would be a fine Verify."
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "awarenessEpisode": {
+    "role": "everyone",
+    "_role": "Cross-role (11 section 3.2 'Everyone'). No check forms of its own; see _formPairing at the top of this file.",
+    "company": "brightwell_foods",
+    "brand": { "name": "Brightwell Foods", "logoText": "BRIGHTWELL", "accent": "#2f6f5e" },
+    "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: one practice voicemail script in the voice of a fictional chief executive, and three voicemails and two emails on the finance office's line. No real person's voice is used, and nothing you write leaves the game.",
+    "defend": {
+      "setId": "e7_finance_line",
+      "reportAlwaysVisible": true
+    },
+    "debrief": {
+      "mondayCard": "slot:customer_report_route",
+      "noBlameLine": true
+    },
+    "strings": {
+      "_attack": "The brief and flip lines describe the attack beat only as 'a voicemail script' (11 section 3.2: no score, checklist only, never judged on audio realism). They don't promise the learner hears their own script, because the voicemail player is held (P7-Z2).",
+      "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. First you're on the red team: write the script for a short voicemail in the voice of Brightwell's chief executive, Ravinder Sandhu, asking for something he would never ask for on the phone. Nobody judges how real it would sound. Then you swap seats: you're covering the finance office's phone and inbox, with three voicemails and two emails waiting. Only the second part is scored.",
+      "flipHeading": "Now it's on your phone",
+      "flipIntro": "This is the voicemail you scripted, as the finance office would find it. The lines picked out below are what make it believable.",
+      "flipDefenderLine": "It came in at ten to five on a Friday, in a voice the finance office hears every week. Whoever picked it up had the payment half set up before the message ended. People who fall for calls like this are not stupid: a voice you know is hard to doubt, and this one was built to sound right.",
+      "flipNoSend": "Your script didn't go out this time, so there's nothing of yours to show. Next, the same kind of voicemail reaches the finance office's phone, and you're the one listening.",
+      "noBlameLine": "Nobody is marked down for a miss here. A voice you know is hard to doubt, and these messages were made to use that. The people who act on calls like them are busy and trusting, not careless.",
+      "mondayCard": "On Monday: a voice you recognise is not proof of who is calling, and neither is an email that backs it up. If a call or voicemail asks for money, secrecy or a skipped step, ring the person back on a number you already hold, then report it the way your organisation asks you to.",
+      "defendOnly": "You went straight to the phone and inbox this time. A familiar voice feels like proof, and these messages were made to use that. People who fall for calls like these are not stupid. Each card shows what gave the fake ones away, why the real ones were fine, and why ringing back on a number you already hold works whoever is speaking."
+    },
+    "_defendOnly": {
+      "_use": "Strings for the defend-only shell (e7_voice_ceo_defend), which has no attack, write or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",
+      "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. You're covering the finance office's phone and inbox on Friday afternoon. Three voicemails and two emails are waiting. Some are real and some were made to trick you, and you can't always tell by the voice. Sort them, and verify or report anything that doesn't sit right. Ringing someone back on a number you already hold never costs you anything.",
+      "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: three voicemails and two emails on the finance office's line. No real person's voice is used."
+    }
+  }
+}
