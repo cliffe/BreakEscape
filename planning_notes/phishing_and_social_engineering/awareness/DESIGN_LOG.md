@@ -141,3 +141,24 @@ Two engine changes were approved and made this cycle, with Node tests:
 - Playtest-round items: C2-M1 (E2 flip on a careful send), C2-M2 (E7 meter wording / E6 calm route), and the standing E3/E5 13-minute timing (C1 M11/m25) — none measurable by the headless bridge.
 - C2-m24 avatar → character-art agents.
 - Logged engine/product from C1 still standing: m23 (chip hide), m26 (Monday-card customer slot), E7 defend button copy.
+
+## Cycle 3 (2026-10-22)
+
+Fixes the three findings in `DESIGN_REVIEW_C3.md` — two latent generator drifts and the uneven "kiosk after the round" polish. All are regen-safety / consistency fixes; no learner-facing behaviour changes for current play (the committed shells were already correct, except the new kiosk lines on the six full shells).
+
+| # | Sev | Finding (short) | Outcome |
+|---|-----|-----------------|---------|
+| C3-M1 | Major | `gen_e3_e5_shells.py:128` would revert the C2-M3 scene-clock fix on regen | **Fixed.** The generator's inline E3 `scenario_brief` now reads "a sign-in prompt from overnight is still on your phone", matching the committed shell and the fragment. A regen of E3 defend-only no longer reintroduces the desk-scene contradiction. |
+| C3-m1 | minor | No generator emitted `"scoring": "completion"`, which all 38 missions carry | **Fixed.** `'scoring': 'completion'` added to every generator's meta (after `difficulty_level`): gen_e1 (check + defend_only), gen_e2_e4 (check + defend_only), gen_e3_e5 (check + defend_only), gen_e6_e7 (shared `meta_for`). Regen now reproduces each `mission.json` exactly. |
+| C3-m2 | minor | The "kiosk after the round" `observationVariants` were on the 7 defend shells + E7 full, but not the E1–E6 full shells | **Fixed.** Added an `observationVariants` entry keyed on `episode_<id>_defend_done` to all six E1–E6 full shells (hand edit; these are not generated), matching E7 full and the defend shells, with an "…all dealt with / checked" done string. The 24 check shells were left (the learner concludes on the result screen, not the kiosk — per the review, lower value). |
+
+### Verification
+
+- **Regen byte-identical:** regenerated all 31 generated shells (7 defend-only + 24 checks) into scratch and diffed every `scenario.json.erb` and `mission.json` against the repo — **0 diffs** (was: E3 brief + the scoring field before the fix).
+- `--strict-social --no-graph --skip-ink` on the six edited full shells: **6/6 exit 0**.
+- Full-episode bridges e1–e6 (headless, Node 24, reusing the already-running keyless :3001 — no server started or stopped): **all 6 PASS**. e2 13/13, e3 21/21, e4 13/13, e5 18/18 in the batch; e1 and e6 hit the same concurrency timing race seen for e7 in cycle 2 (flip stage advances before the test's flip assertion under 3-at-once load, worsened by the active playtesters sharing :3001) and each passed 12/12 and 14/14 when re-run alone. No content regression from the kiosk `observationVariants` (post-round text, untouched by the bridges), and no bridge was edited.
+
+### Carried forward (unchanged, not re-raised)
+
+- Playtest-round: E3/E5 13-minute timing (C1 M11/m25), E7 urgency-meter wording / E6 calm route (C2-M2), E2's careful-send flip (C2-M1).
+- Logged engine/product: m23 (chip hide), m26 (Monday-card slot), E7 defend button copy. Art: C2-m24 (Leila avatar).

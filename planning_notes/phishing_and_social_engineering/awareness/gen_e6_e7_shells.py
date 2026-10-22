@@ -312,6 +312,7 @@ def meta_for(display, desc, minutes, cybok):
         'display_name': display,
         'description': desc,
         'difficulty_level': 1,
+        'scoring': 'completion',
         'secgen_scenario': None,
         'collection': 'training',
         'ui_theme': 'general',
