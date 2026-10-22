@@ -450,3 +450,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - m09 puzzle chains R1 implemented: P1–P7 (keypad hints in three tiers; hl_box_opened and Torres' unlock ring, race and fix shown on :3001; tape-room wording; Tran tidied arm in two lines; Gary's opened arm; staff-door text; Torres' fallback on leaving the office). Voiced delta: 1 HaX line reworded.
 - m10 alignment R7 fixes: 3/3 (Zero Day's trace survives a post-four Victoria or Vos choice, proved by an engine-level trace; Join Zero Day rows "by the key"; Vos's cancelled-delivery credit). No voiced delta.
 - Queued for m10 phase 5 browser checks: trace Zero Day → open outer lock → '[Go.]' to Victoria (share stays traced); same with Vos's secret.
+- m09 puzzle chains R2 fixes: 2/2 (Tran topic split on the hatch bin, "No. It hasn't.") plus notes n1–n3 (P7 wording in CONTRACT, keypad_topic_asks in S4 and FINALE_ARC, tier 2 method first). Voiced delta: 0.

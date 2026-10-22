@@ -594,7 +594,7 @@ Checked on 2026-10-21 against the shipped ink; the counts below are updated for 
 
 `door_log_given` (m10, bool) predates stage 7 but changed meaning at R2: it now gates HaX's "[Who was where at ten past?]" topic, so **stage 9 must set it from the door-log bark's mapping** as well as from her "[The door log.]" topic, or a player who only heard the bark never sees the alibi topic (m10 contract §9). `lock_guard_known` is written with `~` by Ghost, Victoria and Vos (not OT's `#set_global`).
 
-**Locals that cross files: none.** Every m10 file-local carries its file's prefix and appears in one file only. m09's said-once guards are file-local too: `said_floor_line` (the debrief), `confession_heard`, `hand_answered_here`, `notice_sent_here`, `nightshade_sent_here`, `keypad_topic_asked` (HaX's phone), `recruiter_hung_up` (the Recruiter), `noor_asked_peg` and Noor's others; `hub_quiet` is declared separately in five person files (Noor, Old Coyote, Tran, Sorensen's hatch and cage) and must never become a scenario global, or the five would share one value.
+**Locals that cross files: none.** Every m10 file-local carries its file's prefix and appears in one file only. m09's said-once guards are file-local too: `said_floor_line` (the debrief), `confession_heard`, `hand_answered_here`, `notice_sent_here`, `nightshade_sent_here`, `keypad_topic_asks` (HaX's phone), `recruiter_hung_up` (the Recruiter), `noor_asked_peg` and Noor's others; `hub_quiet` is declared separately in five person files (Noor, Old Coyote, Tran, Sorensen's hatch and cage) and must never become a scenario global, or the five would share one value.
 
 ## 4. m10 ending matrix
 

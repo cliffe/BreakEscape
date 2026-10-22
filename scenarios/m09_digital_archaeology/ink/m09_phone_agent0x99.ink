@@ -606,7 +606,7 @@ He'll call it full disclosure.
 // Puzzle chains R1 P3: the schedule ticks the cage; it's his cage it skips.
 + [Her schedule. His cage has no tick.]
     #set_global:hour_read_done:true
-    No. It isn't. He shredded everyone but himself.
+    No. It hasn't. He shredded everyone but himself.
     -> read_close
 + [Read me the defences.]
     #set_global:hour_read_done:true
@@ -732,8 +732,8 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
             If the cipher's new to you, ask me for the archive-code field guide.
         }
     - keypad_topic_asks == 2:
-        The key is the salvage bay's word, on the chart by the keypad.
         It's Vigenère.
+        The key is the salvage bay's word, on the chart by the keypad.
     - else:
         Vigenère Decode, on your workstation. Key: the salvage bay's word. Capitals in, capitals out.
     }
@@ -814,11 +814,17 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     ~ tran_topic_given = true
     -> tran_warning ->
     // Puzzle chains R1 P4: on tidied there is no paper lever (Nightshade burned it).
-    {m08_nightshade_tidied:
-        He's wiping tapes from the server closet off the open stacks.
+    // Puzzle chains R2 m1: otherwise the hatch bin decides it. The letters are his lever.
+    He's wiping tapes from the server closet off the open stacks.
+    {
+    - m08_nightshade_tidied:
         Nothing on him tonight that I can use. It's a fight, or you leave him to it.
+    - cage_bin == "derek_file":
+        The letters went in her feed. It's a fight, or you leave him to it.
+    - cage_bin == "letters":
+        You've got the letters. That's what he'd want back.
     - else:
-        He's wiping tapes from the server closet off the open stacks. You'd need something he wants to talk him off it. Otherwise it's a fight.
+        You'd need something he wants to talk him off it. Otherwise it's a fight.
     }
     -> support_hub
 // 18. Field guides, one button.
