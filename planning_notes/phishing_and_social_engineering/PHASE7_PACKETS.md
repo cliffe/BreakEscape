@@ -434,3 +434,8 @@ the orchestrator passes it to that wave's owner.
   Both depend on the held audio items (P7-Z1, P7-Z2). The E7 full shell waits for the user's audio decision. Its defend-only shell and check missions can go ahead with transcripts.
   - **Globals the shell must declare:** `se_intel_brightwell_ceo`, `_ceo_travel`, `_payments_clerk`, `_open_payment`, `se_osint_state`, `phish_ceo_voice_target_landed` and `_attempts`.
   - **Not validated yet:** this fragment has had no validator run.
+- **E7 defend:**
+  - **Ids:** the episode is `e7_voice_ceo`. The attack fragment pins `ceo_voice_target` as its target, but no episode id, so the shell uses `e7_voice_ceo`.
+  - **Checks:** E7's role is everyone, so it gets no checks of its own; it reuses `general_form_a` and `_b`.
+  - **Lint:** the full-episode lint must allow E7's unscored script attack. Relax it for `scored: false`, or wait for the voice-script stage.
+  - **Library:** no tell exists for "voice alone is not proof", or for urgency on non-email items.
