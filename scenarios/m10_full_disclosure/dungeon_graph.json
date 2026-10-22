@@ -429,8 +429,8 @@
       "optional": false
     },
     {
-      "id": "core_host_key",
-      "label": "Core Host Key",
+      "id": "core_access_code",
+      "label": "Core Access Code",
       "kind": "key",
       "optional": false
     },
@@ -484,7 +484,7 @@
     },
     {
       "id": "vmch_submit_flag_4",
-      "label": "Take the core host and submit it at its terminal",
+      "label": "Get onto the core host and submit the flag at its terminal",
       "kind": "vm",
       "optional": false
     },
@@ -953,11 +953,11 @@
     },
     {
       "from": "core",
-      "to": "core_host_key",
+      "to": "core_access_code",
       "soft": false
     },
     {
-      "from": "core_host_key",
+      "from": "core_access_code",
       "to": "lock_core_host_terminal",
       "soft": false
     },

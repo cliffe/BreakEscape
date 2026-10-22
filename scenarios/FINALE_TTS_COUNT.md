@@ -204,3 +204,4 @@ No audio exists yet, so nothing is orphaned by the change. The officers' m09 and
 - 2026-10-22 m10 PC R2 + SD R3 + DR3 + VM gating: ~+5 new, ~9 reworded.
 - 2026-10-22 m10 PC R3 + SD R4 + DR4: 8 reworded, 0 new.
 - 2026-10-22 m09 playtest R2: +1 Netherton, 1 HaX reworded (380).
+- 2026-10-22 m10 SD R5 + DR5 + PC R4 nits: +1 HaX, 2 reworded.

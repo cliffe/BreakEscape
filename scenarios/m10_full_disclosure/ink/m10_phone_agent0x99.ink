@@ -129,7 +129,8 @@ VAR hax_suspect = ""
     The core. Hear him out.
 - outer_lock_open:
     // Dialogue R4 m3: true after a reload at the post; names the find.
-    The core. His box first. The key's on his terminal.
+    // Scenario design R5 n2: a login, so the key stays Tesseract's.
+    The core. His box first. The login's beside his terminal.
 - gallery_open:
     Up the stair. The lock's at the end.
 // Dialogue R3 n8: the pull waiting, whatever else is done.
@@ -139,7 +140,7 @@ VAR hax_suspect = ""
     The shutter's still live. Power room.
 - flag2_submitted:
     // Dialogue R4 m3: names the find.
-    Get under the release service. The hatch in the sealed section. The duty sheet by the east racks has the login.
+    Get under the release service. The hatch in the sealed section. The duty sheet from the east racks has the login.
 - server_hall_entered:
     The console takes the staging copy.
 - gallery_shutter_cut:
@@ -389,7 +390,8 @@ Go on. Who?
 // Scenario design R3 m2, R4 m4: where the recall comes from (Quintero's is the bench log).
 {
 - officer_out == "quintero" and not clue_bench_log:
-    The bench log clears her. Read it.
+    // Dialogue R5 m2: names the room and what reading it does.
+    The bench log in the workshop clears her. Once you've seen it, I can bring her back.
 - officer_out != "quintero" and clue_door_log and not clue_alibi:
     Ask me who was where at ten past. That's how we clear them.
 }
@@ -448,7 +450,8 @@ I'll put it to Netherton.
 // Scenario design R3 m2, R4 m4: where the recall comes from (Quintero's is the bench log).
 {
 - hax_suspect == "quintero" and not clue_bench_log:
-    The bench log clears her. Read it.
+    // Dialogue R5 m2: names the room and what reading it does.
+    The bench log in the workshop clears her. Once you've seen it, I can bring her back.
 - hax_suspect != "quintero" and clue_door_log and not clue_alibi:
     Ask me who was where at ten past. That's how we clear them.
 }
@@ -568,13 +571,13 @@ It's holding a batch for the moment anyone stops his release. Close it at the co
 === hatch_topic ===
 ~ hax_hatch_asked = true
 Sealed section, east end of the hall. A Cold War maintenance hatch, painted over, and somebody's opened it since.
-// VM gating F12/F13 (supersedes the Educational R1 removal): the disarm is a story artefact on the release host,
-// and the steer names its find (the operator's duty card). No technique.
+// VM gating F12/F13, handoff B6: the release host holds the kill config (a story artefact); the disarm itself is on
+// his console in the core. The steer names its find (the operator's duty sheet). No technique. Puzzle chains R4 n3.
 The release service runs in a container on the host under it.
 // Dialogue R4 m4: the in-world reason for flag 3.
 Get out of the container onto that host. That opens the way up to him.
-// Puzzle chains R3 m2 (VM handoff B6): what is on the host is the release's kill config; the switch is in the core, past the gallery (the core lies below the gallery's slit windows).
-The release's kill config is on it: how six o'clock is armed, and what stops it. The switch is on his console, in the core.
+// Puzzle chains R3 m2 (VM handoff B6), dialogue R5 n1: "in the core", which lies below the gallery's slit windows; "disarm" as on the lamp and the 06:00 screen.
+The host holds the release's kill config: how six o'clock is armed, and what stops it. The disarm's on his console, in the core.
 One of his operators dropped a duty sheet by the east racks. The login's on it.
 -> support_hub
 
@@ -595,8 +598,10 @@ There's a maintenance tag on their gate terminal's lead. Their service login's o
 // VM gating F12: the steer names its find.
 // Puzzle chains R3 M1: the key is in the core, left out by him.
 // Dialogue R4 §5: the envelope first, and one "left".
-He's left a key envelope on his terminal, stamped CORE. He wants you on his box.
-He walled his box off, the same way the release service was. You've broken out of one of those tonight.
+// Scenario design R5 n2: an envelope with a login, not a key.
+// Dialogue R5 n2/n4, puzzle chains R4 n4: beside the terminal, on the desk; one "his box".
+He's left an envelope beside his terminal, stamped CORE. His login's in it. He wants you on his box.
+He walled it off, the same way the release service was. You've broken out of one of those tonight.
 He'll have kept himself a way out. Find it.
 -> support_hub
 
@@ -782,8 +787,8 @@ A key switch and a breaker row, labelled GALLERY SHUTTER.
     -> cut_step_1
 + [Give me a minute.]
     // Puzzle chains R2 n3: she rings back herself (the one-time re-ring on close).
-    // Dialogue R4 n1: true with the 1.5 s re-ring on close.
-    Take a second. I'll ring straight back.
+    // Dialogue R4 n1, puzzle chains R4 n1: the once-only close re-ring may be spent; the isolator click always rings (erb, cut_call on object_interacted).
+    Take a second. I'll ring when you're at the isolator.
     #exit_conversation
     -> DONE
 
@@ -797,8 +802,8 @@ Turn the key a quarter. That takes the row off their board.
     ~ cut_step = 2
     -> cut_step_2
 + [Give me a minute.]
-    // Puzzle chains R3 n1: she rings back herself.
-    Take it. I'll ring you back.
+    // Puzzle chains R3 n1, R4 n1: the isolator click always rings her.
+    Take it. I'll ring when you're at the isolator.
     #exit_conversation
     -> DONE
 

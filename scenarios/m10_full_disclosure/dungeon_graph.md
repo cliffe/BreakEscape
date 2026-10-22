@@ -140,7 +140,7 @@ flowchart TD
   npc_sione_fonoti{"Sione Fonoti"}
   gallery_shift_code_card{"Gallery Shift Code Card"}
   field_console_core["Field Console (Core)"]
-  core_host_key{"Core Host Key"}
+  core_access_code{"Core Access Code"}
   lock_core_host_terminal["Core Host Terminal"]
   andgate1((" + "))
   vmch_submit_flag_1["Get a foothold on the security monitoring host and submit the flag at the gate terminal"]
@@ -149,7 +149,7 @@ flowchart TD
   vmfl_submit_flag_2{"Flag 2 Flag"}
   vmch_submit_flag_3["Get out of the release service onto its host and submit the flag at the sealed section's hatch"]
   vmfl_submit_flag_3{"Flag 3 Flag"}
-  vmch_submit_flag_4["Take the core host and submit it at its terminal"]
+  vmch_submit_flag_4["Get onto the core host and submit the flag at its terminal"]
   vmfl_submit_flag_4{"Flag 4 Flag"}
 
   door_blast_tunnel --> blast_tunnel
@@ -243,8 +243,8 @@ flowchart TD
   npc_sione_fonoti -.-> gallery_shift_code_card
   gallery_shift_code_card -.-> door_core
   core --> field_console_core
-  core --> core_host_key
-  core_host_key --> lock_core_host_terminal
+  core --> core_access_code
+  core_access_code --> lock_core_host_terminal
   sealed_section_hatch -.-> andgate1
   andgate1 --> door_gallery
   release_console --> andgate1
@@ -271,7 +271,7 @@ flowchart TD
   class blast_tunnel,security_office,workshop_floor,power_room,gallery,core,forward_post,server_hall room
   class lock_pick_kit,rfid_cloner,fingerprint_kit,pin_cracker_kowalczyk_s,breaching_case_sign_out_sheet,citadel_incident_file_v_47,helena_s_plans_tomb_gamma_as_built,gate_terminal,records_cupboard_vector_s_code,records_cupboard_ghost_s_code,outer_lock_maintenance_code,monitoring_desk_door_log,gallery_shift_rota,alarm_log_refit_to_date,records_cupboard,fitter_s_locker,casualty_sheet,margin_strip,asante_s_corrected_model,bench_log_outgoing,release_console,sealed_section_hatch,keypad_face_plate,visitor_s_code_card,gallery_shift_code_card item
   class field_console_gate,field_console_server_hall,field_console_core,vmch_submit_flag_1,vmch_submit_flag_2,vmch_submit_flag_3,vmch_submit_flag_4 vm
-  class maintenance_tag,npc_director_magnus_netherton,npc_agent_0x47_nightshade,npc_officer_kenji_arakawa,npc_agent_0x23_vector,npc_ghost,guard_post_ladder,duty_handset,spare_power_room_card,npc_imran_siddiqui,npc_gary_whitlock,npc_wendell_briggs,npc_voltage_critical_mass,operator_s_duty_sheet,npc_victoria_sterling,npc_pieter_vos,npc_sione_fonoti,core_host_key key
+  class maintenance_tag,npc_director_magnus_netherton,npc_agent_0x47_nightshade,npc_officer_kenji_arakawa,npc_agent_0x23_vector,npc_ghost,guard_post_ladder,duty_handset,spare_power_room_card,npc_imran_siddiqui,npc_gary_whitlock,npc_wendell_briggs,npc_voltage_critical_mass,operator_s_duty_sheet,npc_victoria_sterling,npc_pieter_vos,npc_sione_fonoti,core_access_code key
   class action_tether_question,action_split_line,action_settle_the_table,action_arakawa_call,action_opens_power_room,action_cut_the_shutter,action_opened_from_inside action
   class andgate1 gate
   class vmfl_submit_flag_1,vmfl_submit_flag_2,vmfl_submit_flag_3,vmfl_submit_flag_4 flag
@@ -418,7 +418,7 @@ flowchart TD
   npc_sione_fonoti{"Sione Fonoti"}
   gallery_shift_code_card{"Gallery Shift Code Card"}
   field_console_core["Field Console (Core)"]
-  core_host_key{"Core Host Key"}
+  core_access_code{"Core Access Code"}
   lock_core_host_terminal["Core Host Terminal"]
   andgate1((" + "))
   vmch_submit_flag_1["Get a foothold on the security monitoring host and submit the flag at the gate terminal"]
@@ -427,7 +427,7 @@ flowchart TD
   vmfl_submit_flag_2{"Flag 2 Flag"}
   vmch_submit_flag_3["Get out of the release service onto its host and submit the flag at the sealed section's hatch"]
   vmfl_submit_flag_3{"Flag 3 Flag"}
-  vmch_submit_flag_4["Take the core host and submit it at its terminal"]
+  vmch_submit_flag_4["Get onto the core host and submit the flag at its terminal"]
   vmfl_submit_flag_4{"Flag 4 Flag"}
   aim_breach_the_perimeter{{"Breach The Perimeter"}}
   aim_get_below_ground{{"Get Below Ground"}}
@@ -528,8 +528,8 @@ flowchart TD
   npc_sione_fonoti -.-> gallery_shift_code_card
   gallery_shift_code_card -.-> door_core
   core --> field_console_core
-  core --> core_host_key
-  core_host_key --> lock_core_host_terminal
+  core --> core_access_code
+  core_access_code --> lock_core_host_terminal
   sealed_section_hatch -.-> andgate1
   andgate1 --> door_gallery
   release_console --> andgate1
@@ -572,7 +572,7 @@ flowchart TD
   class blast_tunnel,security_office,workshop_floor,power_room,gallery,core,forward_post,server_hall room
   class lock_pick_kit,rfid_cloner,fingerprint_kit,pin_cracker_kowalczyk_s,breaching_case_sign_out_sheet,citadel_incident_file_v_47,helena_s_plans_tomb_gamma_as_built,gate_terminal,records_cupboard_vector_s_code,records_cupboard_ghost_s_code,outer_lock_maintenance_code,monitoring_desk_door_log,gallery_shift_rota,alarm_log_refit_to_date,records_cupboard,fitter_s_locker,casualty_sheet,margin_strip,asante_s_corrected_model,bench_log_outgoing,release_console,sealed_section_hatch,keypad_face_plate,visitor_s_code_card,gallery_shift_code_card item
   class field_console_gate,field_console_server_hall,field_console_core,vmch_submit_flag_1,vmch_submit_flag_2,vmch_submit_flag_3,vmch_submit_flag_4 vm
-  class maintenance_tag,npc_director_magnus_netherton,npc_agent_0x47_nightshade,npc_officer_kenji_arakawa,npc_agent_0x23_vector,npc_ghost,guard_post_ladder,duty_handset,spare_power_room_card,npc_imran_siddiqui,npc_gary_whitlock,npc_wendell_briggs,npc_voltage_critical_mass,operator_s_duty_sheet,npc_victoria_sterling,npc_pieter_vos,npc_sione_fonoti,core_host_key key
+  class maintenance_tag,npc_director_magnus_netherton,npc_agent_0x47_nightshade,npc_officer_kenji_arakawa,npc_agent_0x23_vector,npc_ghost,guard_post_ladder,duty_handset,spare_power_room_card,npc_imran_siddiqui,npc_gary_whitlock,npc_wendell_briggs,npc_voltage_critical_mass,operator_s_duty_sheet,npc_victoria_sterling,npc_pieter_vos,npc_sione_fonoti,core_access_code key
   class action_tether_question,action_split_line,action_settle_the_table,action_arakawa_call,action_opens_power_room,action_cut_the_shutter,action_opened_from_inside action
   class andgate1 gate
   class vmfl_submit_flag_1,vmfl_submit_flag_2,vmfl_submit_flag_3,vmfl_submit_flag_4 flag
@@ -809,7 +809,7 @@ flowchart TD
   rc_core_console_vm_143{"Field Console (Core)"}
   rc_core_files_144{"Core Host: File Index"}
   rc_service_door_145{"Service Door"}
-  rc_core_access_key_146{"Core Host Key"}
+  rc_core_access_key_146{"Core Access Code"}
   rc_npc_dr_adrian_tesseract_147("Dr Adrian Tesseract")
   rc_npc_agent_0x5e_lantern_148("Agent 0x5E 'Lantern'")
   rc_npc_agent_0x5e_lantern_149("Agent 0x5E 'Lantern'")

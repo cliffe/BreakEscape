@@ -188,7 +188,11 @@ Dr Adrian Tesseract: Finish on my box first. I'll keep.
 === flag4_lines ===
 // Educational R1: HaX tells the player about the notice; no line promises a file on his box.
 // VM gating F13 (supersedes the Educational R1 rewording): the unsent notice is a story artefact on the core host.
-{ m09_completed:
+// Scenario design R5 m2: a player who sent the notice in m09 is told so.
+{
+- m09_completed and m09_albion_notified:
+    Agent HaX: The notice from Helena is on his box. Nine years he sat on it. You sent it.
+- m09_completed:
     Agent HaX: The notice from Helena is on his box. Nine years, and never sent.
 - else:
     Agent HaX: He argued for the vendor nine years ago and lost.

@@ -497,3 +497,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - 2026-10-22 m10 scenario design closed at R5 (0/0/2/4; fixes queued).
 - 2026-10-22 m10 dialogue closed at R5 (0/0/1/5; fixes queued).
 - m09 playtest round 2 fixes: flag-1 call '[Something else.]' to the hub; Victoria's debrief line and credit; catalogue_login_found read by the status row; stubs '[Ring back.]'; confession's wall line grounded. Voiced: +1, 1 reworded (380).
+- m10 scenario design R5 (phase 3 closed), dialogue R5 (phase 4 closed), puzzle chains R4 nits: the stair text split into two &&-only mappings and proved through the engine's evaluator; HaX's flag-4 line knows an m09 notice was sent; "Release service login"; "Core Access Code" envelope beside his terminal; Quintero's pointer names the workshop; disarm wording; ring promises tied to the isolator; doc rows refreshed. PC R4 M1 is with the VM agent. Voiced: 1 new, 2 reworded.

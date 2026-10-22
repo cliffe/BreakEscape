@@ -176,18 +176,21 @@ model_password = 'DOUBLECOUNT'
 cupboard_pin = '2817'
 outer_lock_pin = '6083'
 
-# --- VM gating, F12 (FINALE_VM_GATING_HANDOFF.md B5) ---------------------------
-# PLACEHOLDER (VM): these strings must equal what the SecGen build creates for the
-# monitoring host (gates flag 1), the release host (gates flag 3) and the core
-# host (gates flag 4). The scenario binding carries only flags (flags_for_vm), not
-# account names, passwords or keys, so they are fixed strings here, as m01's
-# password list and m09's logins are. Not checked against the VM: Opus agents don't
-# open the VM plan. The opus48 agent or the user replaces them.
+# --- VM gating, F12 (FINALE_VM_GATING_HANDOFF.md B5, B7) -----------------------
+# These strings must equal what the SecGen build creates for the monitoring host
+# (gates flag 1; the staging account gates flag 2), the release host (gates flag 3)
+# and the core host (gates flag 4). The scenario binding carries only flags
+# (flags_for_vm), not account names, passwords or keys, so they are fixed strings
+# here, as m01's password list and m09's logins are. Values are final (2026-10-22);
+# the build must seed these exact strings.
 monitor_login_user = 'secmon'
 monitor_login_password = 'Bunker!Monitor59'
 release_login_user = 'relops'
 release_login_password = 'Release!Shift25'
 core_access_key = 'TSRCT-CORE-9F21'
+# staging copy of the schedule (gates flag 2); its own find in the server hall, by the release console (R4 M1)
+staging_login_user = 'staging'
+staging_login_password = 'Staging!Copy25'
 
 # --- Readable strings, copied from S6 (stage 6 lore_fragments.md) ------------
 # Fixed text only. Each block is emitted with j.(), which escapes it for JSON.
@@ -1448,7 +1451,7 @@ end
       "tasks": [
         { "taskId": "cross_the_gallery", "title": "Climb to the gallery", "type": "enter_room", "targetRoom": "gallery", "status": "active" },
         { "taskId": "open_the_outer_lock", "title": "Get through the core's outer lock", "type": "custom", "status": "active" },
-        { "taskId": "submit_flag_4", "title": "Take the core host and submit it at its terminal", "type": "submit_flags", "targetFlags": [<%= j.(target_flag.(4)) %>], "targetCount": 1, "currentCount": 0, "showProgress": true, "status": "active" },
+        { "taskId": "submit_flag_4", "title": "Get onto the core host and submit the flag at its terminal", "type": "submit_flags", "targetFlags": [<%= j.(target_flag.(4)) %>], "targetCount": 1, "currentCount": 0, "showProgress": true, "status": "active" },
         { "taskId": "hear_him_out", "title": "Hear him out", "type": "custom", "status": "active" }
       ]
     },
@@ -1641,8 +1644,8 @@ end
             <%# Scenario design R1 m1: HaX says each field guide is ready (which guide only, nothing of its content). Guide 1 waits 20 s so it lands clear of the split scene. %>
             { "eventPattern": "global_variable_changed:guide1_offered", "condition": "value === true && !globalVars.flag1_submitted && !globalVars.guide1_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 20000, "message": "There's a field guide for their monitoring host. Ask me.", "skipIfGlobal": "guide1_given" } },
             { "eventPattern": "global_variable_changed:guide2_offered", "condition": "value === true && !globalVars.flag2_submitted && !globalVars.guide2_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Guide for the staging copy, if you want it. Ask.", "skipIfGlobal": "guide2_given" } },
-            { "eventPattern": "global_variable_changed:guide3_offered", "condition": "value === true && !globalVars.flag3_submitted && !globalVars.guide3_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "I've a guide for getting out of that container. Ask.", "skipIfGlobal": "guide3_given" } },
-            { "eventPattern": "global_variable_changed:guide4_offered", "condition": "value === true && !globalVars.flag4_submitted && !globalVars.guide4_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Guide for his box, when you want it.", "skipIfGlobal": "guide4_given" } },
+            { "eventPattern": "global_variable_changed:guide3_offered", "condition": "value === true && !globalVars.flag3_submitted && !globalVars.guide3_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 7000, "message": "I've a guide for getting out of that container. Ask.", "skipIfGlobal": "guide3_given" } },
+            { "eventPattern": "global_variable_changed:guide4_offered", "condition": "value === true && !globalVars.flag4_submitted && !globalVars.guide4_given && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Guide for his box, when you want it. His login's in the envelope beside his terminal.", "skipIfGlobal": "guide4_given" } },
 <%# --- The breach (OT 4.1): door_scene_done && flag1 && pair_back. ---------- %>
 <% breach = "globalVars.door_scene_done === true && globalVars.flag1_submitted === true && globalVars.pair_back === true && !globalVars.breach_open" %>
 <% %w[door_scene_done flag1_submitted pair_back].each do |half| %>
@@ -1725,8 +1728,9 @@ end
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Tool Roll' && data.roomId === 'power_room' && globalVars.m04_static_left_alone === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Static got out of Albion on his own. That's his." } },
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true", "onceOnly": true, "completeTask": "cut_the_shutter" },
             <%# Dialogue R3 m4: one shutter text, first match wins (each sets shutter_text_sent): the stair open when flags 2 and 3 are in; a short "The hall's next." after a voice already said the shutter is dead (Vance, Elena, captured Voltage); otherwise as before. %>
-            <%# Dialogue R4 n4: when a voice has already said the shutter is dead (Vance, Elena, captured Voltage), the stair text drops it. %>
-            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && ((globalVars.cut_step === 3 && !globalVars.phone_voice_is_hax) || globalVars.voltage_outcome === 'by_hand') && !globalVars.shutter_text_sent && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "shutter_text_sent": true }, "sendTimedMessage": { "delay": 2500, "message": "The stair's open." } },
+            <%# Dialogue R4 n4, scenario design R5 m1: when a voice has already said the shutter is dead (Vance, Elena, captured Voltage), the stair text drops it. Two &&-only mappings (the engine reads no || or brackets); the first to fire sets shutter_text_sent. %>
+            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.cut_step === 3 && !globalVars.phone_voice_is_hax && !globalVars.shutter_text_sent && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "shutter_text_sent": true }, "sendTimedMessage": { "delay": 2500, "message": "The stair's open." } },
+            { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && globalVars.voltage_outcome === 'by_hand' && !globalVars.shutter_text_sent && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "shutter_text_sent": true }, "sendTimedMessage": { "delay": 2500, "message": "The stair's open." } },
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && !globalVars.shutter_text_sent && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "shutter_text_sent": true }, "sendTimedMessage": { "delay": 2500, "message": "Shutter's dead. The stair's open." } },
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.cut_step === 3 && !globalVars.phone_voice_is_hax && !globalVars.shutter_text_sent && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "shutter_text_sent": true }, "sendTimedMessage": { "delay": 2500, "message": "The hall's next." } },
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.voltage_outcome === 'by_hand' && !globalVars.shutter_text_sent && !globalVars.hax_jammed", "onceOnly": true, "setGlobal": { "shutter_text_sent": true }, "sendTimedMessage": { "delay": 2500, "message": "The hall's next." } },
@@ -3681,7 +3685,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "position": { "x": 15.5, "y": 3.5 },
           "observations": "A duty sheet dropped by the racks. Release service, operator on shift.",
-          "text": "RELEASE SERVICE. OPERATOR ON SHIFT.\nRelease host login: <%= release_login_user %>\nPassword: <%= release_login_password %>\nSign the log at handover.",
+          "text": "RELEASE SERVICE. OPERATOR ON SHIFT.\nRelease service login: <%= release_login_user %>\nPassword: <%= release_login_password %>\nSign the log at handover.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "sealed_hatch"
         },
@@ -4250,12 +4254,12 @@ not_tethered = '!globalVars.nightshade_tethered'
           "_comment": "VM gating F12 (handoff B5 item 3), puzzle chains R3 M1: the core host's access key, left out by Tesseract on his own host terminal for the agent he invited, so it is found only where flag 4's station already works. PLACEHOLDER position (tile, beside the host terminal; dressing to confirm) and PLACEHOLDER (VM) string.",
           "type": "notes",
           "id": "core_access_key",
-          "name": "Core Host Key",
+          "name": "Core Access Code",
           "takeable": true,
           "readable": true,
           "position": { "x": 2.2, "y": 4.8 },
-          "observations": "A sealed envelope propped against the host terminal's screen, stamped CORE. ACCESS. Left out for whoever came down.",
-          "text": "CORE. HOST ACCESS KEY. ONE HOLDER.\n<%= core_access_key %>\nFor the agent. A.T.",
+          "observations": "An envelope on the desk beside the host terminal, stamped CORE. ACCESS. Left out for whoever came down.",
+          "text": "CORE. HOST ACCESS CODE. ONE HOLDER.\n<%= core_access_key %>\nFor the agent. A.T.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "core_host_terminal"
         }
