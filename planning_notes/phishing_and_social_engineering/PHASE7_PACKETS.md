@@ -336,3 +336,9 @@ the orchestrator passes it to that wave's owner.
   - Its mail launch params are `{ accountIds, defaultAccount, maxSends: 1, layout? }`, which P7-G must honour.
   - The flip needs the defend set's `playerSentAuth.accounts.analyst` (P7-E content).
 - **P7-C:** the `se_awareness_records` block shape is for P7-O to document.
+- **P7-D, for P7-N and P7-J:**
+  - The triage `unlaunched` lint warns about episode defend sets; teach it about `awarenessEpisode.defend.setId`.
+  - Episode defend sets omit `stage`, so the passPercent-0 warning doesn't fire. Either keep that, or exempt episode sets.
+  - The defendOnly prefix doubles to `episode_e1_invoice_fraud_defend_defend_`; decide whether to drop the doubled suffix.
+  - `test_social_episode` fails strict only on the missing `kiosk.png`, which is P7-H's.
+  - The lint wants 5–8 defend messages (the packet row said 2).
