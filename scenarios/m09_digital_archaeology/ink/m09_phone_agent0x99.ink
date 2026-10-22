@@ -85,6 +85,7 @@ VAR dock_heard = false
 VAR catalogue_topic_given = false
 VAR series_topic_given = false
 VAR tran_topic_given = false
+VAR tran_topic_heard = false   // Puzzle chains R3 m1: warning and opening line said once
 VAR name_topic_given = false
 VAR legacy_topic_given = false
 VAR alpha_topic_given = false
@@ -811,18 +812,25 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 // 17. Tran.
 // Alignment R4 r4-2: not once Tran is talked off the wipe or down.
 + {not tran_topic_given and not cage_opened and tran_outcome == "left"} [Tran.]
-    ~ tran_topic_given = true
-    -> tran_warning ->
+    // Puzzle chains R3 m1: retire only once the answer can't change (the bin is chosen,
+    // or tidied). Before the hatch a second ask gives the bin's line after it.
+    {bin_chosen or m08_nightshade_tidied:
+        ~ tran_topic_given = true
+    }
+    {not tran_topic_heard:
+        -> tran_warning ->
+        He's wiping tapes from the server closet off the open stacks.
+    }
+    ~ tran_topic_heard = true
     // Puzzle chains R1 P4: on tidied there is no paper lever (Nightshade burned it).
     // Puzzle chains R2 m1: otherwise the hatch bin decides it. The letters are his lever.
-    He's wiping tapes from the server closet off the open stacks.
     {
     - m08_nightshade_tidied:
         Nothing on him tonight that I can use. It's a fight, or you leave him to it.
     - cage_bin == "derek_file":
         The letters went in her feed. It's a fight, or you leave him to it.
     - cage_bin == "letters":
-        You've got the letters. That's what he'd want back.
+        You've got the letters. He's the J.T. in them. Show him.
     - else:
         You'd need something he wants to talk him off it. Otherwise it's a fight.
     }

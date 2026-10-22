@@ -451,3 +451,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - m10 alignment R7 fixes: 3/3 (Zero Day's trace survives a post-four Victoria or Vos choice, proved by an engine-level trace; Join Zero Day rows "by the key"; Vos's cancelled-delivery credit). No voiced delta.
 - Queued for m10 phase 5 browser checks: trace Zero Day → open outer lock → '[Go.]' to Victoria (share stays traced); same with Vos's secret.
 - m09 puzzle chains R2 fixes: 2/2 (Tran topic split on the hatch bin, "No. It hasn't.") plus notes n1–n3 (P7 wording in CONTRACT, keypad_topic_asks in S4 and FINALE_ARC, tier 2 method first). Voiced delta: 0.
+- m09 puzzle chains R3 fixes: 2/2 (Tran topic retires only after the hatch bin or on tidied, warning said once; letters line "He's the J.T. in them. Show him."). Optional letters text not added. Voiced delta: 0.
