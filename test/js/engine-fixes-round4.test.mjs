@@ -45,15 +45,20 @@ test('m06 N-6-1: the typing indicator does nothing once the phone UI is torn dow
 
 test('m06 N-6-1: lines waiting to be typed are set before the tags, which can close the phone', () => {
     const src = readFileSync(join(js, 'minigames/phone-chat/phone-chat-minigame.js'), 'utf8');
-    // Both typeouts (after continue and after a choice): pending lines are recorded
-    // before processGameActionTags, so a close inside the tags flushes them to the thread
-    // (the calls may carry a third argument, the tag options: social build P0-R R-04)
+    // Tags now run line by line as ink continues (F16: continueStory / handleChoice call
+    // _applyLineTags in their read loops), so a tag that closes the phone does so inside the
+    // loop, before any line is typed: the lines then go to the thread through
+    // _keepOutputAfterTeardown, with no tags handed over again. The one batch call left is
+    // _presentOutput's, for a reopen's re-run, and it still records the pending lines first
+    // (the calls may carry a third argument, the tag options: social build P0-R R-04).
     const tagCalls = [...src.matchAll(/processGameActionTags\(accumulatedTags, this\.ui[,)]/g)].map(m => m.index);
-    assert.equal(tagCalls.length, 2);
+    assert.equal(tagCalls.length, 1);
     for (const at of tagCalls) {
         const before = src.slice(Math.max(0, at - 1200), at);
         assert.match(before, /this\._pendingNpcMessages = accumulatedMessages\.filter/);
     }
+    assert.equal([...src.matchAll(/this\._applyLineTags\(/g)].length, 3, 'continueStory loop, handleChoice first line and loop');
+    assert.equal([...src.matchAll(/_keepOutputAfterTeardown\(npcId, conversation, accumulatedMessages, \[\]\)/g)].length, 2);
     // _showStoryLine stops before the typing indicator if the thread is no longer open
     const body = src.slice(src.indexOf('async _showStoryLine('), src.indexOf('async handleChoice('));
     assert.ok(body.indexOf('if (!stillOurs()) return false;') < body.indexOf('showTypingIndicator()'));

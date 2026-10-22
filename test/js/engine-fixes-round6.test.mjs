@@ -69,6 +69,7 @@ test('m06 M1: the KO screen and a phone closed by Esc take the notice down too',
 // ---------------------------------------------------------------- m06 M2
 
 const overlay = await import(dataUrl(read('utils/overlay-open.js')));
+const { partitionSlowTags } = await import(dataUrl(read('minigames/person-chat/person-chat-pending-reply.js')));
 
 function threadWin(npcId, lines, view = 'conversation') {
     const els = lines.map(t => ({ textContent: t }));
@@ -173,9 +174,11 @@ function phoneUnderTest({ closeDuringChoice }) {
         saveStoryState() { this._saveStoryStateFor(this.currentNPCId, this.conversation); },
         complete() {}
     };
-    for (const name of ['_saveStoryStateFor', '_keepOutputAfterTeardown', '_tagOptions']) {
+    // handleChoice applies each line's tags through _applyLineTags (F16), which uses
+    // partitionSlowTags and _pushSetGlobalsToStory
+    for (const name of ['_saveStoryStateFor', '_keepOutputAfterTeardown', '_tagOptions', '_applyLineTags', '_pushSetGlobalsToStory']) {
         const [p, b] = methodParts(phoneSrc, name);
-        self[name] = new Function('processGameActionTags', `return function(${p.join(',')}) { ${b} }`)(processGameActionTags);
+        self[name] = new Function('processGameActionTags', 'partitionSlowTags', `return function(${p.join(',')}) { ${b} }`)(processGameActionTags, partitionSlowTags);
     }
     return { self, npc, history, tagsRun, run: (i) => handleChoice(processGameActionTags, phoneStepLines, () => Promise.resolve()).call(self, i) };
 }
