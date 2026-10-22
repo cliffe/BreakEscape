@@ -215,3 +215,8 @@ The full list is under `_brandAdditions` in `awareness/e6/defend.json`.
 - **The spoofed sender:** Dev Acharya, Facilities Coordinator, 40s, British Indian.
 - **Name clash:** E6's defend side also has Dev Mistry, and the lab has Dev at the Ledgerwell service desk. Rename one of the two Tarrowby Devs when the E6 shells are built.
 - **Pre-ship check:** "Acharya", "Dunford" and "YardPass" still need the real-business web search.
+
+## Additions from E2 and E4 defend (2026-10-22)
+- **E2 (Tarrowby):** the full list is under `_brandAdditions` in `awareness/e2/defend.json`. Roseanne Clarke is renamed Roseanne Wadsworth, because sis01 already uses Clarke. New cast: Tendai Moyo, Darius Petrauskas, Zsofia Szabo, Kevin Brannigan, Deborah Haldane, Thanh Nguyen, Ibrahim Diallo, Minjun Ahn and Bethany Hirst.
+- **E4 (Merrin & Sallow):** the full list is under `_brandAdditions` in `awareness/e4/defend.json`. New cast: Julian Sallow, Thandiwe Moyo, Oskar Berglund and Leah Abramson. New companies: Wrenfield Travel, Larkspur Travel, The Ropewalk, Brackenmoor Homes and Abramson Planning.
+- **Name clash:** E2 has Tendai Moyo and E4 has Thandiwe Moyo, so Moyo appears in both. They're different companies, but rename one if both episodes ship together.
