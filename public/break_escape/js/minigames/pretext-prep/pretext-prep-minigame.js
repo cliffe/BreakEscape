@@ -205,9 +205,17 @@ export class PretextPrepMinigame extends SocialOverlayScene {
     _cardBlock(facts, options, lines, factIds, labelFor, ready) {
         const block = h('section', { class: 'pretext-card', 'aria-label': 'Pretext card' });
         block.appendChild(h('h3', { class: 'pretext-card-title', text: 'Pretext card' }));
-        if (lines.length) {
+        // A line whose blank refers to a fact with nothing held can never be completed, so it is
+        // not shown: an un-fillable "____" line beside a disabled "nothing held yet" button only
+        // puzzled the learner (E3 N4). A line with no blanks, or with blanks that do have options
+        // (fillable, even if not yet chosen), still shows.
+        const usableLines = lines.filter((line) => {
+            const ids = [...String(line.text).matchAll(/\{([A-Za-z0-9_]+)\}/g)].map((m) => m[1]);
+            return ids.every((id) => !factIds.includes(id) || (options[id] || []).length > 0);
+        });
+        if (usableLines.length) {
             const list = h('ul', { class: 'pretext-lines' });
-            for (const line of lines) {
+            for (const line of usableLines) {
                 const li = h('li', { class: 'pretext-line', 'data-line': line.lineId });
                 for (const part of textParts(line.text, factIds, labelFor)) {
                     if (part.kind === 'text') li.appendChild(document.createTextNode(part.text));

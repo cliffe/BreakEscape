@@ -233,6 +233,33 @@ test('a full episode runs every stage in order and holds then clears sent', () =
     assert.equal(failed().length, 0);
 });
 
+test('the flip follows the outcome: a send that did not land shows the did-not-land view, not the replay (N2)', () => {
+    const ep = fullEpisode();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, stage: 'flip', done: ['brief', 'osint', 'write'],
+        sent: { recordId: 'sent_1', targetId: 'supplier_contact', templateId: 'tpl_bank', blankIds: [] } } });
+    // a sent record that did not land: the "they opened it and typed their password" replay is false
+    window.mailState.mailboxes.analyst.messages.push({
+        id: 'sent_1', folder: 'sent', fromAccount: 'analyst', targetId: 'supplier_contact', gameTime: 100,
+        subject: 'Updated bank details', templates: { opening: 'tpl_bank' }, slots: {}, landed: false, tells: ['senderTrust']
+    });
+    open(ep);
+    assert.equal(epState().stage, 'flip');
+    assert.equal(calls.flip.length, 1);
+    assert.equal(calls.flip[0].message, null, 'no replayed message when the send did not land');
+    assert.equal(calls.flip[0].page, null, 'no page replay either');
+    assert.equal(calls.flip[0].missed, true, 'the did-not-land flip is shown');
+
+    // a landed record still replays as before (control)
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, stage: 'flip', done: ['brief', 'osint', 'write'],
+        sent: { recordId: 'sent_1', targetId: 'supplier_contact', templateId: 'tpl_bank', blankIds: [] } } });
+    window.mailState.mailboxes.analyst.messages.push({
+        id: 'sent_1', folder: 'sent', fromAccount: 'analyst', targetId: 'supplier_contact', gameTime: 100,
+        subject: 'Updated bank details', templates: { opening: 'tpl_bank' }, slots: {}, landed: true, tells: ['senderTrust']
+    });
+    open(ep);
+    assert.ok(calls.flip[0].message, 'a landed send still replays the message');
+});
+
 test('a reopen at every stage resumes there', () => {
     const ep = fullEpisode();
     const stages = M.stagesFor(ep);

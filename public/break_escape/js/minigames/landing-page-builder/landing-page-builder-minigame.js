@@ -606,6 +606,9 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
     _cardEl(card) {
         const c = createConceptCard(card, {
             open: this._openCards.has(card.id),
+            // Several of these sit on one screen, so each button names its own topic rather than
+            // reading an identical "What is this?" (E5-12).
+            buttonLabel: card && card.title ? `What is this? (${card.title})` : 'What is this?',
             onToggle: (id, open) => { if (open) this._openCards.add(id); else this._openCards.delete(id); }
         });
         c.button.setAttribute('data-focus', `card:${card.id}`);
@@ -616,6 +619,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
     _builtInNote(id, title, text) {
         const c = createConceptCard({ id, title, text }, {
             open: this._openCards.has(id),
+            buttonLabel: title ? `What is this? (${title})` : 'What is this?',
             onToggle: (cid, open) => { if (open) this._openCards.add(cid); else this._openCards.delete(cid); }
         });
         c.button.setAttribute('data-focus', `card:${id}`);

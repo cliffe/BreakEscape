@@ -57,17 +57,23 @@ export function renderStepStrip(container, opts = {}) {
         items.set(id, li);
     });
 
-    function update({ current, done } = {}) {
+    function update({ current, done, skipped } = {}) {
         const doneSet = new Set(Array.isArray(done) ? done : []);
+        const skipSet = new Set(Array.isArray(skipped) ? skipped : []);
         for (const [id, li] of items) {
-            const isDone = doneSet.has(id) && id !== current;
+            // A skipped stage was passed over (never run), so it is shown as skipped, not done:
+            // ticking it "done" claimed the learner did something they did not (E3-6).
+            const isSkipped = skipSet.has(id) && id !== current;
+            const isDone = doneSet.has(id) && id !== current && !isSkipped;
             li.classList.toggle('aw-step-current', id === current);
             li.classList.toggle('aw-step-done', isDone);
+            li.classList.toggle('aw-step-skipped', isSkipped);
             if (id === current) li.setAttribute('aria-current', 'step');
             else li.removeAttribute('aria-current');
             const old = li.querySelector('.aw-step-sr');
             if (old) old.remove();
             if (isDone) li.appendChild(el('span', 'aw-step-sr', ' (done)'));
+            else if (isSkipped) li.appendChild(el('span', 'aw-step-sr', ' (skipped)'));
         }
     }
     update(opts);

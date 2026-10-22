@@ -228,3 +228,25 @@ test('reply delay: target emailReplyDelay, character emailReplyDelay, default 20
   assert.equal(s.replyDelayMs({ character: 'pierce' }), 15_000);
   assert.equal(s.replyDelayMs({ targetId: 'nobody' }), 20_000);
 });
+
+test('unconfigured clock: a sent record with no time takes a scenario time, not the wall clock (awareness E5-8/N9/m7)', () => {
+  // No window.gameClock is configured for the awareness kiosk episodes, so the old wall-clock
+  // fallback stamped sent mail and replies with the real time beside the scenario's 09:xx mail.
+  // timed: keep every seeded message so the fixture's latest time (thanks, 09:00) is in the config.
+  const { s } = make({ timed: true });
+  assert.equal(typeof window.gameClock, 'undefined', 'the test runs with no game clock');
+  const rec = send(s, { landed: false });
+  // the latest authored seeded time in the fixture is 09:00
+  assert.equal(rec.time, '09:00', 'stamped with the latest seeded scenario time');
+});
+
+test('unconfigured clock: an explicit mailClient.clock wins over the seeded fallback', () => {
+  const clock = { t: 1_000_000 };
+  const sc = scenario();
+  sc.social.mailClient.seededMessages = sc.social.mailClient.seededMessages.filter(m => !m.deliverAt);
+  sc.social.mailClient.clock = '09:30';
+  const s = new MailScheduler({ now: () => clock.t, writeGlobal: () => {} });
+  s.init({ scenario: sc, saved: null });
+  const rec = send(s, { landed: true });
+  assert.equal(rec.time, '09:30');
+});

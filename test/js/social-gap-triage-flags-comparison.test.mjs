@@ -49,6 +49,23 @@ test('chipIdsFor: a non-email kind gets only the tells; a scenario-local tell ne
     assert.deepEqual(F.chipIdsFor({}, 'call'), []);
 });
 
+test('chipIdsFor: a call/voicemail/push drops email-and-web-only tells, unless the message is scored on one (N6)', () => {
+    const set = { channelTells: ['vish_callback_pressure', 'secrecy_or_bypass', 'reply_to_differs', 'lookalike_domain', 'padlock_myth', 'enable_content_prompt'] };
+    // A call keeps the voice/pressure tells and drops the ones that can only apply to email or a web page.
+    assert.deepEqual(F.chipIdsFor(set, 'call'), ['vish_callback_pressure', 'secrecy_or_bypass']);
+    assert.deepEqual(F.chipIdsFor(set, 'push'), ['vish_callback_pressure', 'secrecy_or_bypass']);
+    assert.deepEqual(F.chipIdsFor(set, 'voicemail'), ['vish_callback_pressure', 'secrecy_or_bypass']);
+    // A link-bearing kind (sms/qr/page) is unaffected: the look-alike-domain tell still applies.
+    assert.ok(F.chipIdsFor(set, 'sms').includes('lookalike_domain'));
+    assert.ok(F.chipIdsFor(set, 'page').includes('padlock_myth'));
+    // Fairness: a flag the message itself is scored on is never hidden, even on a call.
+    const scored = { truth: { flags: ['lookalike_domain'] } };
+    assert.ok(F.chipIdsFor(set, 'call', scored).includes('lookalike_domain'));
+    // An email is unchanged: all seven factors, then every tell.
+    assert.deepEqual(F.chipIdsFor(set, 'email').slice(0, 7), [...F.FACTOR_ORDER]);
+    assert.ok(F.chipIdsFor(set, 'email').includes('reply_to_differs'));
+});
+
 test('chipLabel: override, technical style, plain default, channel tell text, unknown id as itself; none label and its override', () => {
     assert.equal(F.chipLabel({ flagChips: { senderTrust: 'Mine' } }, 'senderTrust'), 'Mine');
     assert.equal(F.chipLabel({ flagChips: { senderTrust: '' } }, 'senderTrust'), F.CHIP_LABELS.plain.senderTrust);

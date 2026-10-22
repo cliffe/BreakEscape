@@ -65,6 +65,27 @@ test('step strip: marks the current stage and done stages', () => {
     assert.equal(h.querySelector('.aw-strip'), null);
 });
 
+test('step strip: a skipped stage is shown as skipped, not done (E3-6)', () => {
+    const h = host();
+    // mfa is in `done` (so the runner can advance past it) but also skipped: a refused call passes
+    // the MFA demo over without running it, so it must read as skipped, not ticked done.
+    const strip = renderStepStrip(h, { stages: ['write', 'mfa', 'flip'], current: 'flip', done: ['write', 'mfa'], skipped: ['mfa'], labels: { flip: 'The call' } });
+    const mfa = h.querySelector('[data-stage="mfa"]');
+    assert.ok(mfa.classList.contains('aw-step-skipped'), 'mfa marked skipped');
+    assert.ok(!mfa.classList.contains('aw-step-done'), 'mfa is not also marked done');
+    assert.match(mfa.querySelector('.aw-step-sr').textContent, /skipped/);
+    // the write step, done and not skipped, still reads done
+    const write = h.querySelector('[data-stage="write"]');
+    assert.ok(write.classList.contains('aw-step-done'));
+    assert.match(write.querySelector('.aw-step-sr').textContent, /done/);
+    // a call episode relabels the flip step
+    assert.equal(h.querySelector('[data-stage="flip"] .aw-step-label').textContent, 'The call');
+    strip.update({ current: 'flip', done: ['write', 'mfa'], skipped: [] });
+    assert.ok(!h.querySelector('[data-stage="mfa"]').classList.contains('aw-step-skipped'), 'clearing skipped lets it read done again');
+    assert.ok(h.querySelector('[data-stage="mfa"]').classList.contains('aw-step-done'));
+    strip.destroy();
+});
+
 test('wordmark is text from brand.logoText; a bad accent is ignored, a hex accent applied', () => {
     const h = host();
     renderStepStrip(h, { stages: ['brief'], current: 'brief', brand: { name: 'Brightwell Foods', logoText: 'BRIGHTWELL', accent: '#2f6f5e' } });

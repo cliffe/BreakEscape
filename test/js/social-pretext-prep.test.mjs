@@ -254,7 +254,7 @@ test('a contact blank offers the held sender name and not a recipient name', () 
     assert.equal(scene.beginButton.disabled, false);
 });
 
-test('nothing held leaves an empty gap, names the blank, and still allows the call', () => {
+test('nothing held hides the un-fillable line, names the blank, and still allows the call (E3 N4)', () => {
     const scene = open({
         call: brandtCall,
         npc: { id: 'brandt_desk', npcType: 'phone', displayName: 'Brandt', currentKnot: 'start' },
@@ -264,7 +264,11 @@ test('nothing held leaves an empty gap, names the blank, and still allows the ca
     assert.equal(button.disabled, true);
     assert.match(button.textContent, /Contact: nothing held yet/);
     assert.match(scene.container.querySelector('.pretext-readiness').textContent, /Contact: nothing held yet/);
-    assert.match(scene.container.querySelector('[data-line="open_ref"]').textContent, /____ asked me to chase this/);
+    // The only text line's blank can never be filled, so the "____ asked me to chase this" line is
+    // not shown: an un-fillable gap beside the disabled "nothing held yet" button only puzzled the
+    // learner (E3 N4). The blank control and the readiness note still name what is missing.
+    assert.equal(scene.container.querySelector('[data-line="open_ref"]'), null, 'the un-fillable line is hidden');
+    assert.equal(scene.container.querySelector('.pretext-line'), null, 'no pretext line is shown when none can be filled');
     assert.equal(scene.beginButton.disabled, false);
     assert.deepEqual(scene.payload(), {});
 });

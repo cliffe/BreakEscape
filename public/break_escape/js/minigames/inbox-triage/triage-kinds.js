@@ -383,9 +383,13 @@ function page(rec, h) {
         view.appendChild(form);
         // 11 N13: `page.autofill` is 'none' (the password manager offered nothing here) or
         // 'filled'. Only 'none' is a cue; 'filled' is shown quietly so the two can be told apart.
-        if (p.autofill === 'none') {
+        // A password manager only offers to fill a password, so the cue is shown only on a form
+        // that actually asks for one — otherwise "did not fill this in" is said about a page where
+        // it never would (E5-10, accuracy).
+        const hasPassword = fields.some((f) => /pass(word|code)/i.test(f));
+        if (hasPassword && p.autofill === 'none') {
             view.appendChild(el('p', 'tri-autofill tri-autofill-none', 'Your password manager did not fill this in.'));
-        } else if (p.autofill === 'filled') {
+        } else if (hasPassword && p.autofill === 'filled') {
             view.appendChild(el('p', 'tri-autofill tri-autofill-filled', 'Your password manager filled this in.'));
         }
     }

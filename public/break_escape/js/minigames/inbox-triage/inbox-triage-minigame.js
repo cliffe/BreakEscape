@@ -351,7 +351,14 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 `${lead}: ${shown.map((a) => `${a.label} (${a.hint.replace(/\.$/, '').toLowerCase()})`).join('; ')}.`));
         }
 
-        p.appendChild(el('p', 'tri-brief-score', 'Right call is most of the score; naming the flags is the rest.'));
+        // A pre/post check is completion-scored (finishing it is what counts; the breakdown is
+        // formative feedback), so the "right call is most of the score" weighting is only true of a
+        // scored round (a training round or an episode's defend phase), not the checks (N: checks).
+        if (['pre', 'post'].includes(this.stage)) {
+            p.appendChild(el('p', 'tri-brief-score', 'Finishing the check is what counts here; the flags you tick shape your feedback.'));
+        } else {
+            p.appendChild(el('p', 'tri-brief-score', 'Right call is most of the score; naming the flags is the rest.'));
+        }
         let when;
         if (this.stage === 'pre') when = "This one is just to see where you are. You'll see what you got right and wrong at the end.";
         else if (this.feedbackMode === 'end') when = "You'll see what you got right and wrong at the end.";
@@ -432,7 +439,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             box.appendChild(group);
         } else {
             const lock = el('p', 'tri-locked');
-            lock.append(icon('mark-tick'), el('span', null, `Your verdict: ${this._actionLabel(rec, ans)}. It is locked.`));
+            lock.append(icon('mark-tick'), el('span', null, `Your verdict: ${this._actionLabel(rec, ans)}. Locked in.`));
             box.appendChild(lock);
             if (this.awarenessSkin && ans.verdict === 'report') {
                 // The positive beat for a report: it plays once, on the render right after
@@ -470,7 +477,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     // ── the "What made you say that?" sheet ────────────────────────────────────
 
     _chipIds(rec) {
-        return chipIdsFor(this.set, kindOf(rec));
+        return chipIdsFor(this.set, kindOf(rec), rec);
     }
 
     /** The word for what the player did: the call or push action's label, else the verdict's. */
@@ -765,7 +772,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _resultCopy() {
         if (this.awarenessSkin || this.profile === 'awareness') {
             return {
-                weakest: 'Look for it in the next messages you get at work, and if you are not sure, ask your IT or security team.',
+                weakest: this._awarenessWeakestLine(),
                 noFlags: 'Next time, tick what looks off. The review cards show what gave each fake one away.'
             };
         }
@@ -773,6 +780,27 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             weakest: 'Practise it in the mail client, then look it up in your lab sheet.',
             noFlags: 'Tick what looks off next time, then check your lab sheet.'
         };
+    }
+
+    /**
+     * The "where to look next" line, worded for the kind of thing this round checked (E5-7): an
+     * inbox talks about the next messages at work, a page set about reading the address bar, a
+     * call/prompt queue about checking through a channel you trust. All point at the IT/security
+     * team. A mixed set falls back to the inbox wording.
+     */
+    _awarenessWeakestLine() {
+        const kinds = this.messages.map((m) => kindOf(m));
+        const every = (allow) => kinds.length > 0 && kinds.every((k) => allow.includes(k));
+        const ask = 'and if you are not sure, ask your IT or security team.';
+        if (kinds.some((k) => k === 'email' || k === 'playerSent')) {
+            return `Look for it in the next messages you get at work, ${ask}`;
+        }
+        if (every(['page'])) return `Read the address bar before you sign in to any page, ${ask}`;
+        if (every(['call', 'push', 'voicemail'])) {
+            return `If a caller, prompt or voicemail pushes you to act, stop and check through a channel you already trust, ${ask}`;
+        }
+        if (every(['sms', 'qr'])) return `Be wary of links and codes you did not ask for, ${ask}`;
+        return `Look for it in the next messages you get at work, ${ask}`;
     }
 
     _score() {

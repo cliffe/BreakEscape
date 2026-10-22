@@ -505,12 +505,41 @@ export class MailScheduler {
     return account.address || '';
   }
 
+  /**
+   * A scenario time ("HH:MM") for a scenario that does not run the game clock (the awareness
+   * kiosk episodes, the SOC labs): the authored mailClient.clock, else the latest authored
+   * seeded-message time, so a sent mail or a reply reads in scene time instead of the real wall
+   * clock sitting beside the scenario's own 09:xx stamps (awareness E5-8/N9, m7). Null when the
+   * scenario authors neither, in which case the wall clock stays as the last resort.
+   */
+  _scenarioClockTime() {
+    const cfg = this.mailClientConfig;
+    const asKey = (t) => {
+      const m = typeof t === 'string' ? /^(\d{1,2}):(\d{2})$/.exec(t.trim()) : null;
+      if (!m) return null;
+      const h = Number(m[1]); const min = Number(m[2]);
+      return (h >= 0 && h < 24 && min >= 0 && min < 60) ? h * 60 + min : null;
+    };
+    if (cfg && typeof cfg.clock === 'string' && asKey(cfg.clock) != null) return cfg.clock;
+    const seeds = Array.isArray(cfg?.seededMessages) ? cfg.seededMessages : [];
+    let best = null; let bestKey = -1;
+    for (const s of seeds) {
+      const k = asKey(s && s.time);
+      if (k != null && k >= bestKey) { bestKey = k; best = s.time; }
+    }
+    return best;
+  }
+
   _clockStamp() {
     const clock = typeof window !== 'undefined' ? window.gameClock : null;
     const gameTime = clock?.elapsedMs ? clock.elapsedMs() : 0;
     let time;
     if (clock?.configured && clock.formatClock) time = clock.formatClock(gameTime);
-    else { const d = new Date(this.now()); time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+    else {
+      const scene = this._scenarioClockTime();
+      if (scene) time = scene;
+      else { const d = new Date(this.now()); time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+    }
     return { time, gameTime };
   }
 

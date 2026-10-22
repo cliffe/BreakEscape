@@ -121,6 +121,33 @@ test('brief first: stage wording, three buttons explained, Start moves to Sort',
     assert.equal(state(s).step, 'sort');
     const pre = open(makeSet({ stage: 'pre', feedbackMode: 'end' }));
     assert.match($(pre, '.tri-brief').textContent, /just to see where you are/);
+    // A completion-scored check must not claim the right call is "most of the score" (check forms):
+    // that weighting is only true of a scored round (mission/training), not a pre/post check.
+    assert.doesNotMatch($(pre, '.tri-brief').textContent, /Right call is most of the score/);
+    assert.match($(pre, '.tri-brief').textContent, /Finishing the check is what counts/);
+    const post = open(makeSet({ stage: 'post', feedbackMode: 'end' }));
+    assert.doesNotMatch($(post, '.tri-brief').textContent, /Right call is most of the score/);
+    assert.match($(post, '.tri-brief').textContent, /Finishing the check is what counts/);
+});
+
+test('E5-7: the awareness result pointer line is worded for the kind of set', () => {
+    // An email/inbox set keeps the "next messages you get at work" wording.
+    const email = open(makeSet({ scoringProfile: 'awareness' }));
+    assert.match(email._awarenessWeakestLine(), /messages you get at work/i);
+    // A page/sign-in set talks about the address bar, not messages.
+    const page = open(makeSet({ scoringProfile: 'awareness', channelTells: ['lookalike_domain'], messages: [
+        { id: 'p1', kind: 'page', page: { url: 'https://quayholt-sso.example/', heading: 'Sign in', fields: ['Work email', 'Password'], button: 'Sign in' },
+          truth: { isPhish: true, flags: ['lookalike_domain'] } }
+    ] }));
+    assert.match(page._awarenessWeakestLine(), /address bar/i);
+    assert.doesNotMatch(page._awarenessWeakestLine(), /messages you get at work/i);
+    // A call/prompt queue talks about callers and prompts.
+    const call = open(makeSet({ scoringProfile: 'awareness', channelTells: ['vish_callback_pressure'], messages: [
+        { id: 'c1', kind: 'call', callerId: 'Helpdesk', transcript: [{ who: 'Caller', text: 'Hi' }],
+          truth: { isPhish: true, flags: ['vish_callback_pressure'] } }
+    ] }));
+    assert.match(call._awarenessWeakestLine(), /caller|prompt|voicemail/i);
+    assert.doesNotMatch(call._awarenessWeakestLine(), /messages you get at work/i);
 });
 
 test('Sort: list in authored order, both address and name shown, link hover pins the destination', () => {
@@ -171,7 +198,7 @@ test('the chip list: seven factors then Nothing looks wrong; none is exclusive; 
     click($(s, '.tri-confirm'));
     assert.equal(state(s).messages[0].verdict, 'trust');
     assert.equal($(s, '.tri-verdict'), null);
-    assert.match($(s, '.tri-locked').textContent, /Your verdict: Trust\. It is locked\./);
+    assert.match($(s, '.tri-locked').textContent, /Your verdict: Trust\. Locked in\./);
 });
 
 test('immediate feedback: the review card names caught, missed and false flags and what would have happened', () => {

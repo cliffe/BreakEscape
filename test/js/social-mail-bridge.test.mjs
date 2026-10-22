@@ -293,6 +293,14 @@ test('a landed send offers Done, not Edit & resend, and notes a reply may come',
     assert.equal(host.querySelector('.mail-checklist'), null, 'Done dismisses the panel');
 });
 
+test('a failed send does not promise a reply (N3): no reply-pending line under "It did not land"', () => {
+    clock = 0;
+    const { scene, host } = openClient();
+    scene._handleComposeSend(message({ attachment: null, attachmentKind: null }));
+    assert.ok(host.querySelector('.mail-checklist-banner.not-landed'), 'the send did not land');
+    assert.equal(host.querySelector('.mail-checklist-reply'), null, 'no reply-pending line on a non-landing send');
+});
+
 test('a non-target recipient is stored in Sent but never judged or delivered', () => {
     clock = 0;
     const { scheduler, scene, host } = openClient();

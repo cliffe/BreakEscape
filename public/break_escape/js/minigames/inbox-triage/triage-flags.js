@@ -84,16 +84,35 @@ const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
 const NON_EMAIL = ['sms', 'voicemail', 'qr', 'page', 'call', 'push'];
 
+// Tells that are structural to email or the web and cannot apply to a voice call, a voicemail
+// or an MFA prompt: the reply-to header, a link/sender look-alike domain, a document's
+// enable-content prompt and the padlock myth. Showing them as tick options on those kinds let a
+// learner tick something that could never be right (N6). A tell the message is actually scored
+// on is always kept (see chipIdsFor), so no authored flag is ever hidden.
+const KIND_TELL_EXCLUDE = Object.freeze({
+    call: ['reply_to_differs', 'lookalike_domain', 'enable_content_prompt', 'padlock_myth'],
+    voicemail: ['reply_to_differs', 'lookalike_domain', 'enable_content_prompt', 'padlock_myth'],
+    push: ['reply_to_differs', 'lookalike_domain', 'enable_content_prompt', 'padlock_myth']
+});
+
 /**
  * The ids a set shows as chips, in the fixed order. An email (the default kind) gets the
  * seven factors, then the enabled channel tells. A non-email kind gets only the enabled
  * channel tells, because the email factors do not apply to it (05 OQ7). A scenario-local
  * tell counts as enabled when the set gives it a `flagChips` label (00 section 2).
+ *
+ * `message` (optional) is the triage message the chips are for: on a call/voicemail/push, a
+ * tell that cannot apply to that kind is dropped, unless the message is scored on it (its
+ * `truth.flags`), which keeps every authored flag tickable.
  */
-export function chipIdsFor(set, kind = 'email') {
+export function chipIdsFor(set, kind = 'email', message = null) {
     const local = (id) => isObj(set?.flagChips) && isStr(set.flagChips[id]) && !FACTOR_ORDER.includes(id);
     const tells = (Array.isArray(set?.channelTells) ? set.channelTells : []).filter((id) => CHANNEL_TELLS[id] || local(id));
-    return NON_EMAIL.includes(kind) ? tells : [...FACTOR_ORDER, ...tells];
+    if (!NON_EMAIL.includes(kind)) return [...FACTOR_ORDER, ...tells];
+    const exclude = KIND_TELL_EXCLUDE[kind];
+    if (!exclude) return tells;
+    const authored = new Set(Array.isArray(message?.truth?.flags) ? message.truth.flags : []);
+    return tells.filter((id) => !exclude.includes(id) || authored.has(id));
 }
 
 /** The chip label for one id: the set's `flagChips` override, else the built-in table for its `chipStyle`. */

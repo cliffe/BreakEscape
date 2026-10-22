@@ -51,6 +51,11 @@
 .aw-step-current { border-color: var(--aw-accent); color: var(--aw-ink); font-weight: 700; }
 .aw-step-current .aw-step-num { background: var(--aw-accent); color: #fff; }
 .aw-step-done .aw-step-num { background: var(--aw-accent); color: #fff; opacity: 0.7; }
+/* A stage passed over without running (e.g. the MFA demo after a refused call): greyed, not
+   ticked, so it never reads as completed (E3-6). */
+.aw-step-skipped { color: #8c99a4; }
+.aw-step-skipped .aw-step-label { text-decoration: line-through; }
+.aw-step-skipped .aw-step-num { background: var(--aw-line); color: #6b7680; opacity: 0.6; }
 .aw-step-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* shared text */
@@ -66,6 +71,18 @@
 
 /* flip */
 .aw-flip-reader { margin: 8px 0; border: 1px solid var(--aw-line); background: #fff; max-height: 320px; overflow: auto; }
+/* N1: the link/attachment chip fills its own background from a dark pixel-art border-image, which
+   the flip's light re-pointing of --ui-* cannot reach, so the chip stayed dark navy with dark
+   link text. On the flip/debrief light surface, drop the dark fill and give the chip a light
+   background with a readable link colour. */
+.aw-flip .mail-chip, .aw-debrief .mail-chip {
+    border-image: none;
+    border: 1px solid var(--aw-line);
+    background-color: #eef2f1;
+    border-radius: 4px;
+    padding: 4px 10px;
+}
+.aw-flip .mail-chip-link, .aw-debrief .mail-chip-link { color: #1a4b8f; }
 .aw-tells { margin: 12px 0; padding-left: 20px; }
 .aw-tell { margin: 4px 0; }
 .aw-defender-line { margin: 12px 0 0; padding: 10px 12px; border-left: 4px solid var(--aw-accent); background: #fff; font-weight: 600; }

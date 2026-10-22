@@ -293,7 +293,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             ? after : null;
         this.strip = this.deps.renderStepStrip(this.stripHost, {
             stages: stagesFor(this.episode), current: this.state.stage, done: this.state.done,
-            brand: this.episode.brand
+            skipped: this._skippedStages(), labels: this._stripLabels(), brand: this.episode.brand
         });
         this._render();
     }
@@ -326,7 +326,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     _render() {
         this._destroyView();
         const stage = this.state.stage;
-        this.strip?.update?.({ current: stage, done: this.state.done });
+        this.strip?.update?.({ current: stage, done: this.state.done, skipped: this._skippedStages() });
         if (this.pauseAfter && stage) this._renderPause();
         else if (stage === 'brief') this._renderBrief();
         else if (stage === 'flip') this._renderFlip();
@@ -418,6 +418,29 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         }
     }
 
+    /**
+     * Step-strip label overrides. On a pretext-call episode (E3) the flip replays the call, not an
+     * email, so the 'flip' step reads "The call" rather than the default "Your message" (E3-6).
+     */
+    _stripLabels() {
+        return writeKind(this.episode) === 'call' ? { flip: 'The call' } : undefined;
+    }
+
+    /**
+     * Stages shown as skipped rather than done. A pretext call that did not land skips the
+     * MFA-fatigue demo (there is no captured password to replay), yet the runner marks it done so
+     * it can advance; the strip must show that step as skipped, not completed (E3-6, E3 N1).
+     */
+    _skippedStages() {
+        const out = [];
+        if (writeKind(this.episode) === 'call' && stagesFor(this.episode).includes('mfa')
+            && (this.state?.done || []).includes('mfa')) {
+            const outcome = this._callOutcome();
+            if (outcome && outcome !== CALL_LANDED) out.push('mfa');
+        }
+        return out;
+    }
+
     _flipMessage() {
         if (!this.state.sent) return null;
         const set = this.defendSet;
@@ -443,6 +466,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             const call = flipCall(this.episode, this.social, sent, globals);
             return { message: null, page: null, call, missed: !call };
         }
+        // The flip must follow the send's actual outcome. A mail send that did not land has
+        // nothing to replay from the other side — the "they opened it and typed their password"
+        // narrative would be false — so show the did-not-land view, as a failed call does (N2).
+        const rec = sent?.recordId ? findSentRecord(this.mailState, sent.targetId ?? null, [sent.recordId]) : null;
+        if (rec && rec.landed === false) return { message: null, page: null, call: null, missed: true };
         const message = this._flipMessage();
         let page = null;
         try { page = flipPage(this.episode, this.social, globals); } catch (e) { console.error('[episode] could not rebuild the page:', e); }

@@ -288,7 +288,11 @@ test('the chip sheet for a non-email kind offers only the channel tells and Noth
     click($(s, '.tri-verdict[data-action="deny_report"]'));
     const sheet = state(s).sheet;
     assert.equal(sheet.verdict, 'report');
-    assert.deepEqual(sheet.chips.map((c) => c.id), [...TELLS, 'none']);
+    // A sign-in prompt drops the email/web-structural tells (look-alike domain, padlock myth,
+    // reply-to, enable-content), which cannot apply to it; the others stay (N6). push_odd is not
+    // scored on any of the dropped tells, so none is kept by the authored-flag union.
+    const PUSH_TELLS = TELLS.filter((t) => !['lookalike_domain', 'padlock_myth'].includes(t));
+    assert.deepEqual(sheet.chips.map((c) => c.id), [...PUSH_TELLS, 'none']);
     assert.ok(!sheet.chips.some((c) => FACTOR_ORDER.includes(c.id)));
     assert.match($(s, '.tri-sheet-chosen').textContent, /You chose: Deny and report\./);
 });
@@ -303,7 +307,7 @@ test('a push Deny and report and a call Ring back: review cards, row badges and 
     assert.deepEqual([...card.querySelectorAll('.tri-flag.caught')].map((x) => x.dataset.flag), ['unrequested_mfa_push']);
     assert.match(card.textContent, /IT Security: Thanks\. We've reset your password/);
     assert.match(card.textContent, /An MFA prompt you didn't trigger/);
-    assert.match($(s, '.tri-locked').textContent, /Your verdict: Deny and report\. It is locked\./);
+    assert.match($(s, '.tri-locked').textContent, /Your verdict: Deny and report\. Locked in\./);
 
     act(s, 'call_helpdesk', 'verify_callback', ['vish_callback_pressure']);
     card = $(s, '.tri-review-card[data-message-id="call_helpdesk"]');
@@ -413,6 +417,13 @@ test('page card: the autofill cue appears for none and filled only', () => {
     click($(plain, '.tri-start'));
     pick(plain, 'page_sso');
     assert.equal($(plain, '.tri-autofill'), null, 'an unknown value draws nothing');
+    // E5-10 (accuracy): a password manager only offers to fill a password, so the cue is not shown
+    // on a form with no password field, where "did not fill this in" would be said about a page it
+    // never acts on.
+    const noPass = open(certSet({ autofill: 'none', fields: ['Work email'] }));
+    click($(noPass, '.tri-start'));
+    pick(noPass, 'page_sso');
+    assert.equal($(noPass, '.tri-autofill'), null, 'no password field, no password-manager cue');
 });
 
 test('sms phone frame and QR poster decoration are aria-hidden and add no text to read', () => {

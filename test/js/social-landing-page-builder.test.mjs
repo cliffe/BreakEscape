@@ -287,6 +287,11 @@ test('concept cards show behind a "What is this?" button and toggle (N7 display)
     const domainRow = s.container.querySelector('.lpb-row[data-row="domain"]');
     const cardBtn = domainRow.querySelector('[data-focus="card:typo-squat"]');
     assert.ok(cardBtn, 'the typo-squat card is offered on the domain row');
+    // E5-12: several of these sit on one screen, so each button names its own topic instead of
+    // reading an identical "What is this?".
+    assert.match(cardBtn.textContent, /^What is this\? \(.+\)$/, 'the button names what it explains');
+    const otherBtns = [...s.container.querySelectorAll('.cc-button')].map((b) => b.textContent);
+    assert.equal(new Set(otherBtns).size, otherBtns.length, 'every concept-card button label is distinct');
     assert.equal(cardBtn.getAttribute('aria-expanded'), 'false');
     click(cardBtn);
     assert.equal(cardBtn.getAttribute('aria-expanded'), 'true');
