@@ -128,7 +128,8 @@ VAR hand_answered_here = false
 }
 
 // Tunnel: the m01 warning about Tran, three fixed strings (Beat 1.1).
-// Used by dock and hub topic 17 only (both unvoiced).
+// Used by hub topic 17 only (unvoiced); the dock call has the warning inline
+// since stage 9 (playtest R1 A-m1).
 === tran_warning ===
 {
 - m01_completed and not m01_maya_ko:

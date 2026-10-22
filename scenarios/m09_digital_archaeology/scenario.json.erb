@@ -171,7 +171,7 @@ hax_maps << call_map("global_variable_changed:flag1_submitted", "value === true"
 hax_maps << text_map("global_variable_changed:flag1_submitted", "value === true", "I've a field guide for the ledger, if you want it. Ask me.",
                      delay: 15000, set: { "ledger_guide_offered" => true })
 hax_maps << text_map("conversation_closed:agent_0x99",
-                     "globalVars.flag1_submitted && globalVars.m01_maya_ko && !globalVars.old_coyote_told && !globalVars.old_coyote_ko",
+                     "globalVars.flag1_submitted && globalVars.m01_maya_ko && !globalVars.old_coyote_told && !globalVars.old_coyote_ko && globalVars.tran_outcome === 'left'",
                      "Tran's just sent the guard to your door.", delay: 3000)
 hax_maps << { "eventPattern" => "room_entered:restricted_stacks", "onceOnly" => true, "setGlobal" => { "stacks_entered" => true } }
 
@@ -1253,14 +1253,14 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
             { "eventPattern": "room_entered:open_stacks", "condition": "globalVars.old_coyote_told", "setVisible": false },
             {
               "eventPattern": "global_variable_changed:flag1_submitted",
-              "condition": "value === true && globalVars.m01_maya_ko && !globalVars.old_coyote_told && !globalVars.old_coyote_ko",
+              "condition": "value === true && globalVars.m01_maya_ko && !globalVars.old_coyote_told && !globalVars.old_coyote_ko && globalVars.tran_outcome === 'left'",
               "onceOnly": true,
               "patrolOverride": { "targetTile": { "x": 3.5, "y": 4.2 }, "stopOnArrival": true }
             },
             {
               "_comment": "Relay (stage 8 m-01): his mapping doesn't hear flag 1 while this room is unloaded.",
               "eventPattern": "room_entered:open_stacks",
-              "condition": "globalVars.flag1_submitted && globalVars.m01_maya_ko && !globalVars.old_coyote_told && !globalVars.old_coyote_ko",
+              "condition": "globalVars.flag1_submitted && globalVars.m01_maya_ko && !globalVars.old_coyote_told && !globalVars.old_coyote_ko && globalVars.tran_outcome === 'left'",
               "patrolOverride": { "targetTile": { "x": 3.5, "y": 4.2 }, "stopOnArrival": true }
             }
           ],

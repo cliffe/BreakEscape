@@ -114,7 +114,7 @@ Top of file: `INCLUDE m09_carryover_vars.ink`, then a `VAR` for every non-import
 | 14 | "[Can Victoria's people get me through that gate?]" (R2 A-R2-09) | `m03_victoria_fate == "recruited" and stacks_entered and not cage_opened` | `cage_opened` | `#set_global:maintenance_code_used:true` above "Victoria's people read their mail. There's a maintenance code for that gate." then "The cabinet in there takes her print. It's on the stamp on her shelf." (**fixed**). No `_given` flag: if the unlock fails the topic comes back |
 | 15 | "[The restricted series.]" | `flag1_submitted and not series_topic_given and not cage_opened` | given or `cage_opened` (stage 8 M-01) | the shelf marks; Sorensen behind the mesh; "The gate takes her card, the cabinet takes a print." (**fixed**) |
 | 16 | "[The catalogue. What am I looking for?]" | `not flag1_submitted` | `flag1_submitted` | "The catalogue's the index. Find the part that isn't public." (**fixed**) |
-| 17 | "[Tran.]" | `not tran_topic_given and not cage_opened` | given or `cage_opened` | the m01 warning as in `dock`, then "He's wiping tapes from the server closet off the open stacks. You'd need something he wants to talk him off it. Otherwise it's a fight." (**fixed**) |
+| 17 | "[Tran.]" | `not tran_topic_given and not cage_opened and tran_outcome == "left"` (alignment R4 r4-2) | given or `cage_opened` | the m01 warning as in `dock`, then "He's wiping tapes from the server closet off the open stacks. You'd need something he wants to talk him off it. Otherwise it's a fight." (**fixed**) |
 | 18 | "[I need a field guide.]" | any `<x>_guide_offered and not <x>_guide_hint_given` | all given | `-> guides_menu` |
 | 19 | "[Where do I stand?]" | always (sticky) | never | §2.1 status ladder |
 
@@ -137,7 +137,7 @@ Every HaX line the scenario sends as a text (unvoiced, `sendTimedMessage`, no pr
 | "That reader's on the catalogue server. Get me in there and I'll open it." | `door_unlock_failed`, `data.connectedRoom === 'restricted_stacks'`, once |
 | "Her keypad's off the card system. Leave it for now." | `door_unlock_failed`, `sorensen_office`, once |
 | "That reader wants a real card. Hers will be somewhere she trusts." | `door_unlock_failed`, `tape_room`, once |
-| "Tran's just sent the guard to your door." | `flag1_submitted && m01_maya_ko && !old_coyote_told && !old_coyote_ko`, after `flag1_read` closes (stage 8 m-01; the guard's override takes the same guards and a relay on `room_entered:open_stacks`) |
+| "Tran's just sent the guard to your door." | `flag1_submitted && m01_maya_ko && !old_coyote_told && !old_coyote_ko && tran_outcome === 'left'` (alignment R5 r5-1; the guard's overrides too), after `flag1_read` closes (stage 8 m-01; the guard's override takes the same guards and a relay on `room_entered:open_stacks`) |
 | "That cabinet takes a print. She stamps everything." | `room_entered:restricted_cage`, once, `delayMs: 2000` |
 | "That box behind her is the last of the night. The legacy files." then, 5 s later, "She gets to it when you pass her for the cabinet, or leave the cage. She won't stop for asking." (two texts, R1 A-18) / "The legacy files are under Noor's desk. Let her shred the rest." | `cage_opened`, split on `m05_found_pipeline_list && !m05_recruiter_deal_accepted` |
 | "Hold his file next to the notebook scan in my case file. Then tell me what you see." | `nightshade_file_held` with `!flag3_submitted`, once |
@@ -789,6 +789,8 @@ For the orchestrator. None stops the writers; each says what the writers do mean
 - r3-5: the wipe console's halted text needs only `tran_outcome !== 'left'` (the task's flag 1 gate stays on the task).
 
 **Alignment round 4 changes** (`ALIGNMENT_REVIEW_F_R4.md`): r4-1 the closet's amber degausser light needs only `tran_outcome !== 'left'`; r4-2 HaX's "[Tran.]" topic retires once `tran_outcome` is no longer `left`; r4-3 §5.1/§5.3 (`alpha_annotations_read` by HaX's promotion), §6.1/§6.2 and the debrief's header comment follow the `debrief_closed` flow (lesson 46), §6.2 has rows for `debrief_closed` and `tesseract_call_closed`, and FINALE_ARC §5.4 no longer says m05 was September.
+
+**Alignment round 5 changes** (`ALIGNMENT_REVIEW_F_R5.md`): r5-1 HaX's "Tran's just sent the guard to your door." and Old Coyote's two walk-to-the-door overrides also need `tran_outcome === 'left'`; r5-2 §2.1 topic 17's guard and the `tran_warning` comment brought up to date; LIGHTING_PLAN m7 marked superseded.
 
 **Voiced counts as built (stage 9, after alignment R4)**, from `TtsLineExtractor.for_scenario("m09_digital_archaeology")` (no API calls; distinct texts per host and speaker; a line shared by two hosts is counted once, under the first): HaX's voiced calls (`deck_resume`, `identity_scene`, `identity_resume`, `tesseract_call`) 56 (HaX 53, Netherton 3); the Recruiter's call 25 (Recruiter 14, HaX 11 not shared with `deck_resume`); the briefing 92 character lines (Netherton 25 as the host, HaX 58, Quintero 3, Kowalczyk 3, Malhotra 2, Arakawa 1) plus 8 Narrator; the debrief 55 (Netherton 48 as the host, HaX 4, Kowalczyk 3) plus 16 Narrator; the Alpha clip 4 plus 2 Narrator; Sorensen 32 across her three records (hatch 20, cage 9, door 3) plus 16 Narrator and 8 HaX; Noor 20 plus 4 Narrator and 2 HaX; Old Coyote 16; Tran 11 plus 1 Narrator; Dillard 1. In all, 369 distinct (speaker, line) pairs.
 

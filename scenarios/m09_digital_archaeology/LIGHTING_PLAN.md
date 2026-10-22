@@ -132,7 +132,7 @@ Review: `LIGHTING_REVIEW_R2.md` (0 blockers, 1 major, 9 minors). All are fixed w
 | m4 | minor | Cage work light moved to tile (5.0, 5.0) | The NE plan-chest corner is a shade lower and still readable (`restricted_cage-a.png`) |
 | m5 | minor | Dock: east lamp at x 7.6, r 80; both lamps at 0.75 | No smear on the east wall; the pools separate from the amber yard (`loading_dock-a.png`) |
 | m6 | minor | Closet: `pc6` emitter r 22, 0.35 | No cyan wash on the east wall (`server_closet-a.png`) |
-| m7 | minor | Degausser "halted" variant condition is now `globalVars.tran_outcome !== 'left' && globalVars.flag1_submitted`, the same as `stop_the_tape_wipe` (erb:214–215) | Matches the task. Not lighting, for the orchestrator: the console's own `textVariants` (erb ~1363) still say "WIPE HALTED" on `tran_outcome` alone |
+| m7 | minor | Degausser "halted" variant condition is now `globalVars.tran_outcome !== 'left' && globalVars.flag1_submitted`, the same as `stop_the_tape_wipe` (erb:214–215). *Superseded by m09 alignment R4 r4-1: the light (like the console, R3 r3-5) needs only `tran_outcome !== 'left'`; the flag 1 gate stays on the task.* | Matches the task. Not lighting, for the orchestrator: the console's own `textVariants` (erb ~1363) still say "WIPE HALTED" on `tran_outcome` alone |
 | m8 | minor | Office `bankers_lamp` offsetX −8, offsetY 6 | The pool centres on the lamp, not the chair (`sorensen_office-a.png`) |
 | m9 | minor (dressing) | A second green lamp on the reading room's notebook desk (`m09_rooms.py`). SILENCE PLEASE moved over the microfiche so the lamp doesn't cover it. Slot spacing unchanged | Two green lamps (`reading_room-a.png`) |
 
