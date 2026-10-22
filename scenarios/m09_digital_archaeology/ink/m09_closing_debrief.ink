@@ -106,7 +106,7 @@ Director Magnus Netherton: Dr Adrian Tesseract. It is easier to say in a hangar 
 // Alignment R2 n1: a player who never read the folder hears the memo in one
 // line, so the exported answer is never blind.
 {memo_read:
-    Director Magnus Netherton: You've read his memo. Was he right?
+    Director Magnus Netherton: You have read his memo. Was he right?
 - else:
     Director Magnus Netherton: In 2017 he told the board to warn the vendor within thirty days. The board kept the flaw.
     Director Magnus Netherton: That was his memo, in short. Was he right?
@@ -188,7 +188,7 @@ Director Magnus Netherton: You read it. You decide. I will sign whichever.
     - recruiter_offer == "double_crossed":
         Director Magnus Netherton: About half of her network. She warned the rest, and she warned Kowalczyk.
     - recruiter_offer == "taken":
-        Director Magnus Netherton: You bought a name, and it was the right name. She'll sell the invoice.
+        Director Magnus Netherton: You bought a name, and it was the right name. She will sell the invoice.
     - else:
         Director Magnus Netherton: She is at large, and you did not let her set the price.
     }
@@ -262,11 +262,11 @@ Narrator: He reads the first name off the card. He doesn't look down for the sec
 // R2 m2: sourced on every route; the lease arm rewards going back for it.
 {
 - deed_found:
-    Director Magnus Netherton: Sun River. A civil defence bunker Tesseract's people leased from the state in 2016. Her own file gave us the address. That is where the order sends us.
+    Director Magnus Netherton: Sun River. A civil defence bunker Tesseract's people leased from the state in 2016. Mrs Sorensen's own file gave us the address. That is where the order sends us.
 - m08_tomb_gamma_location_known:
     Director Magnus Netherton: Sun River. Nightshade's coordinate, and a lease Tesseract's people took in 2016. That is where the order sends us.
 - else:
-    Director Magnus Netherton: Sun River. Analysis found the lease an hour ago. It was in her office all night. That is where the order sends us.
+    Director Magnus Netherton: Sun River. Analysis found the lease an hour ago. It was in Mrs Sorensen's office all night. That is where the order sends us.
 }
 Narrator: He lays the Montana order on a crate and uncaps a pen.
 // R3 I-7: the ruthless save, remembered once (pays off the briefing's

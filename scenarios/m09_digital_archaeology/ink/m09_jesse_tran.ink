@@ -19,6 +19,7 @@ VAR tran_alerted = false
 VAR tran_met = false
 VAR tran_asked_reels = false
 VAR tran_asked_record = false
+VAR tran_read_letters = false   // dialogue R1 n5: the narrator beat plays once
 VAR hub_quiet = false
 
 === start ===
@@ -51,7 +52,10 @@ Jesse Tran: Paper. You people break into buildings at night for paper.
     -> back
 // The lever (MC §4.4): only with the letters, which name his courier run.
 + {cage_bin == "letters" and tran_outcome == "left"} [You can explain these to Social Fabric, or to me.]
-    Narrator: He reads the courier line, J.T., and takes his hands off the keyboard.
+    {not tran_read_letters:
+        ~ tran_read_letters = true
+        Narrator: He reads the courier line, J.T., and takes his hands off the keyboard.
+    }
     Jesse Tran: Fine. It's off. I walk out that door, and I make a phone call on the way.
     -> deal
 + [Enjoy your night.]

@@ -204,7 +204,7 @@ The catalogue keeps something else live. Their ledger.
 + [Ledger or stacks first?]
     The ledger keeps. Her shredder doesn't. Stacks first.
 + [She's shredding Series R?]
-    Box by box, off the clerk's trolleys.
+    Box by box. The first sixteen are already gone.
     The ledger keeps. Her shredder doesn't. Stacks first.
 -
 Her card's on a reel at her hip. You've done this before.
@@ -243,7 +243,7 @@ I've told the Director. He'll say nothing to them. Neither will you.
     ...
 }
 {m07_found_tomb_gamma:
-    You bagged the dossier. 'Including the people.' This is the people.
+    You bagged the dossier. "Including the people." This is the people.
 }
 + [What else is on the entry?]
     A source code, H&L, and a file number. HL2015-0477.
@@ -299,7 +299,7 @@ Afterwards. Not during.
 It's yours to carry. Nobody else signed for it.
 // On the last line, so a player who closes early still gets hub topic 7.
 #set_global:afterwards_heard:true
-The rest when this is over. Her office is past the binders.
+The rest when this is over. Her office is the west door off the restricted stacks.
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
 + [Understood.]
@@ -403,11 +403,16 @@ Director Magnus Netherton: HaX.
 {
 - m06_architect_identity_found and m07_teacher_discussed:
     I gave you his name after HashChain and called it Satoshi's guess. It was mine as well.
-    I told you on the handset he taught me. I put his name in a drawer.
+    I told you on the phone he taught me. I put his name in a drawer.
     He was mine, and I wanted to be wrong.
 - m06_architect_identity_found:
     I gave you his name after HashChain and called it Satoshi's guess. I've been hoping ever since that it was only his.
-    He taught me. The notebook in my case file is from his course. Those margins are his.
+    // Dialogue R1 n6: shorter once the notebook has been matched.
+    {hand_matched:
+        He taught me. The margins in that notebook are his.
+    - else:
+        He taught me. The notebook in my case file is from his course. Those margins are his.
+    }
     He was mine, and I wanted to be wrong.
 - m07_teacher_discussed:
     I told you somebody taught me that line. I didn't say who.
@@ -415,7 +420,11 @@ Director Magnus Netherton: HaX.
     He was mine, and I wanted to be wrong.
 - else:
     There was a file on a crypto fund, with his name in it at eighty-seven per cent. I put it in a drawer.
-    He taught me. The notebook in my case file is from his course. Those margins are his.
+    {hand_matched:
+        He taught me. The margins in that notebook are his.
+    - else:
+        He taught me. The notebook in my case file is from his course. Those margins are his.
+    }
     He was mine. I wanted the other thirteen.
 }
 // Fixed (CONTRACT §2.1), split at a sentence break for the 25-word phone cap.
@@ -437,7 +446,7 @@ I don't know if saying it would have saved them. I didn't say it.
     -> said_same
 // R2 A-R2-08: only quoted once the player has heard it. The other two
 // answers always show, so the knot can't starve.
-+ {afterwards_heard or m07_architect_echo_heard} [Afterwards. Not during.]
++ {afterwards_heard or m07_architect_echo_heard or (m08_completed and not m08_nightshade_ko_before_fate)} [Afterwards. Not during.]
     -> said_afterwards
 
 // Script edit R1 A-b: the Reading forms are one line said before the
@@ -488,7 +497,7 @@ Don't be kind about it. *beat* Thank you. Once.
 {memo_read:
     Seven years, and nobody turned it off. You've read his memo and the draft.
 - else:
-    Seven years, and nobody turned it off. There's more on his box. A memo and a draft. Read them.
+    Seven years, and nobody turned it off. There's more on his box. A memo, and a vendor notice he never sent. Read them.
 }
 -> albion
 
@@ -502,7 +511,7 @@ Don't be kind about it. *beat* Thank you. Once.
 // lines can't leave the task hidden.
 {
 - m04_disclosure_choice == "full":
-    We marked this hole "retain" nine years ago. The vendor never heard a word from us.
+    That's Albion's hole. We marked it "retain" nine years ago. The vendor never heard a word from us.
 // Stage 8 SC 6: m04's partial branch has an inquest only when crew were lost.
 - m04_disclosure_choice == "partial" and m04_crew_lost:
     You told Albion's inquiry half of it. We told the vendor less.
@@ -583,7 +592,7 @@ He'll call it full disclosure.
     And the cells get it at oh-four-hundred, UTC. Two hours ahead of everyone else.
 -
 + [Analysis had a guess. Is it on there?]
-    His own number. It replaces theirs.
+    His own number. Analysis guessed low.
     One thousand one hundred to two thousand six hundred. The first month. He's signed it.
 + [How many people, HaX?]
     One thousand one hundred to two thousand six hundred. The first month. He's signed it.
@@ -781,7 +790,7 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 // the topic comes back.
 + {m03_victoria_fate == "recruited" and stacks_entered and not cage_opened} [Can Victoria's people get me through that gate?]
     #set_global:maintenance_code_used:true
-    Victoria's people read their mail. There's a maintenance code for that gate.
+    There's a maintenance code for that gate. Sorensen never changed it.
     The cabinet in there takes her print. It's on the stamp on her shelf.
     -> support_hub
 // 15. The restricted series. Stage 8 M-01: an Act 1 topic, gone once the
@@ -924,11 +933,14 @@ Sent. He'll read it tonight.
     The keypad on the salvage cage. The catalogue line I sent you is in their cipher. The key's on the wall by it.
 // Scenario design R1 n2: once the card is in hand, the safe row is stale.
 - deck_choice_made and tape_card_held:
-    Her card's in your hand. The tape room's north of the stacks.
+    Her card's in your hand. The tape room's north of the restricted stacks.
 - deck_choice_made:
     Her office. Get the safe open, and her card for the tape room is in it.
 - flag2_submitted and cage_opened:
     Step out of the cage. Someone's been waiting for you to come up for air.
+// Dialogue R1 m5: a player who has already talked at the hatch.
+- flag2_submitted and hatch_talked and not cage_opened:
+    The gate, beside her hatch. If you didn't clone her card, go back to the counter.
 - flag2_submitted:
     The hatch, then the gate. Her card's on that reel.
 - cage_opened and nightshade_file_held:

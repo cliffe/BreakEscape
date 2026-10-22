@@ -34,7 +34,7 @@ Narrator: Four officers sit in kit nobody has unpacked. Your leave was meant to 
 Director Magnus Netherton: Last night a courier in Helena, Montana, carried this to a records archive. We read it. Then we let it go on. If it hadn't arrived, he would know.
 {
 - m04_lore_safehouse_address_found:
-    Director Magnus Netherton: Your card from Albion. Task Force Null went in yesterday. It held a courier account, and this was on it.
+    Director Magnus Netherton: Your card from Albion had an address on it. Task Force Null went in yesterday. There was a courier account, and this was on it.
 - m06_monitoring_enabled:
     Director Magnus Netherton: Your tags lit up last night.
     Director Magnus Netherton: The courier was paid from the fund you tagged at HashChain.

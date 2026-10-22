@@ -178,7 +178,7 @@ hax_maps << text_map("conversation_closed:agent_0x99",
 hax_maps << { "eventPattern" => "room_entered:restricted_stacks", "onceOnly" => true, "setGlobal" => { "stacks_entered" => true } }
 # Scenario design R1 m1: Victoria's m03 payoff announces itself (A3-36).
 hax_maps << text_map("room_entered:restricted_stacks", "globalVars.m03_victoria_fate === 'recruited' && !globalVars.cage_opened && !globalVars.maintenance_code_used",
-                     "Victoria's people read this building's mail. Ask me about that gate.", delay: 3000)
+                     "First time we've used Victoria. Her people read this building's mail. Ask me about that gate.", delay: 3000)
 
 # The cage gate (S4 §4 rows 2, 2b). cage_opened follows the door, by the card
 # or by HaX's unlock on Victoria's route, and is rebuilt on entry.
@@ -355,7 +355,7 @@ hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true 
 hax_maps << text_map("global_variable_changed:noor_box_read", "value === true && globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted && !globalVars.legacy_remark_sent",
                      "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
 [["surrender", "There's your why. He was told to."], ["expose", "He wanted your headlines."],
- ["fight", "\"Will not stop when they tell him to.\" He didn't."], ["recruit", "He believed this more than the man who wrote it. You turned him anyway."]].each do |v, msg|
+ ["fight", "\"Will not stop when they tell him to.\" He didn't."], ["recruit", "He believed this more than the man who wrote it. You still offered him a way out."]].each do |v, msg|
   hax_maps << text_map("item_picked_up:notes", "data.itemId === 'derek_file' && globalVars.m01_final_choice === '#{v}'", msg)
 end
 hax_maps << text_map("global_variable_changed:sleeper_shortlist", "value === true",
@@ -2557,6 +2557,7 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "hl_box_opened": false,
     "noor_met": false,
     "noor_card_given": false,
+    "noor_cover": "",
     "deed_found": false,
     "tape_card_held": false,
     "albion_folder_opened": false,

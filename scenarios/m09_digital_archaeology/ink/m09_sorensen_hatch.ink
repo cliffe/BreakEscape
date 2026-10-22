@@ -28,6 +28,8 @@ VAR bin_pulled = false
 // Synced scenario global (confirm run): set by HaX on card_cloned for her
 // card, so the clone option retires once a read is saved (it stays after a cancel).
 VAR stacks_card_cloned = false
+// Synced scenario global (dialogue R1 m9): the cover the player gave Noor.
+VAR noor_cover = ""
 
 === start ===
 {hatch_met: -> hub}
@@ -36,6 +38,12 @@ VAR stacks_card_cloned = false
 // route still gets the door scene).
 // Full-route playtest #15: the auditor is her guess, made before the player
 // speaks; a narrator beat says so.
+// Dialogue R1 m9: a player who told Noor the truth gets that cover back.
+{noor_cover == "safetynet":
+    Narrator: She looks up before you can say who you are.
+    Margaret Sorensen: Noor rang through. SAFETYNET, of course. There's a chair on your side.
+    -> recognition
+}
 Narrator: She looks up before you can say who you are.
 Margaret Sorensen: The lease-holder's auditor. Of course. There's a chair on your side.
 Narrator: She stamps a box DESTROYED and slides it back toward the noise.
@@ -71,7 +79,12 @@ Narrator: She stamps a box DESTROYED and slides it back toward the noise.
 - else:
     Margaret Sorensen: Your first days aren't in your file. Somebody at SAFETYNET is careful with you.
 }
-Margaret Sorensen: You're not from the lease-holder. You're the one he writes about.
+// Dialogue R1 MJ-2: "the Architect", not "he" (which read as Derek Lawson).
+{noor_cover == "safetynet":
+    Margaret Sorensen: And you're the one the Architect writes about.
+- else:
+    Margaret Sorensen: You're not from the lease-holder. You're the one the Architect writes about.
+}
 Agent HaX: ...She's got a file on you.
 #set_global:hatch_talked:true
 Agent HaX: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwriting on it. It's the only place anyone wrote down why he did what he did.

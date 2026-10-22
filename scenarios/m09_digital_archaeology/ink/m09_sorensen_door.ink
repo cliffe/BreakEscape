@@ -40,7 +40,7 @@ Narrator: Sorensen looks up from the feed table as the gate swings open.
 - else:
     Margaret Sorensen: Your first days aren't in your file. Somebody at SAFETYNET is careful with you.
 }
-Margaret Sorensen: You came in by the maintenance code, not my hatch. You're the one he writes about.
+Margaret Sorensen: You came in by the maintenance code, not my hatch. You're the one the Architect writes about.
 Agent HaX: ...She's got a file on you.
 Agent HaX: One bin is Derek Lawson's file, and it isn't Derek's handwriting on it. It's the only place anyone wrote down why he did what he did.
 {m08_nightshade_tidied:
