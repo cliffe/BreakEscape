@@ -977,6 +977,13 @@ Voiced delta: +2 HaX lines (the coin toss; "WREN's still one of the two…", one
 
 Voiced delta: 6 lines reworded (Netherton ×2, HaX ×2 (identity opening, briefing), Sorensen ×1 shared by hatch and door, Tran ×1; the coin-toss line moved, with its text unchanged). 0 new, still 378 lines. 6 clips to generate.
 
+**Scenario design round 5 (phase closed)** (`SCENARIO_DESIGN_REVIEW_R5.md`, 0/0/1/2).
+- m1: `in_cage` is declared in the HaX ink, and the status row after flag 2 with the cage open says "Keep moving. Someone's been waiting for you to come up for air." outside the cage ("Step out of the cage…" inside it).
+- n2: "Those reels are the Initiative's recruiting interviews." (the R4 m5 line above said "her").
+- n1: ring (b) is gone from the ledger_read comment and from S4 §4 row 3 and its `in_cage` row. Ring (c) is recorded there with `delayMs: 15000`.
+
+All unvoiced: voiced delta 0.
+
 **Voiced counts as built (stage 9, after alignment R4)**, from `TtsLineExtractor.for_scenario("m09_digital_archaeology")` (no API calls; distinct texts per host and speaker; a line shared by two hosts is counted once, under the first): HaX's voiced calls (`deck_resume`, `identity_scene`, `identity_resume`, `tesseract_call`) 56 (HaX 53, Netherton 3); the Recruiter's call 25 (Recruiter 14, HaX 11 not shared with `deck_resume`); the briefing 92 character lines (Netherton 25 as the host, HaX 58, Quintero 3, Kowalczyk 3, Malhotra 2, Arakawa 1) plus 8 Narrator; the debrief 55 (Netherton 48 as the host, HaX 4, Kowalczyk 3) plus 16 Narrator; the Alpha clip 4 plus 2 Narrator; Sorensen 32 across her three records (hatch 20, cage 9, door 3) plus 16 Narrator and 8 HaX; Noor 20 plus 4 Narrator and 2 HaX; Old Coyote 16; Tran 11 plus 1 Narrator; Dillard 1. In all, 369 distinct (speaker, line) pairs.
 
 **Voiced counts after stage 8**: group A calls 56 distinct (HaX 53, Netherton 3; one new HaX line, one Netherton line reworded); the Recruiter 14 and B1's HaX 17, unchanged; briefing 91 character lines plus 8 Narrator (7 new: Netherton 3, HaX 4; 2 reworded); debrief 50 plus 16 Narrator (2 reworded); Sorensen 2 new lines (B5), 1 Narrator line reworded (B4); Noor 1 reworded.

@@ -476,3 +476,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - m10 educational R1 (m10 items) and scenario design R1 (1 major, 4 minors, 4 nits): definition of full disclosure, door-log and badge-reissue lessons, CyBOK block 18->0 errors, hub concept steers; the ending warning with 'Not yet', field-guide texts, HaX-only phone list, isolator clicks, sheet-gated rebuttal. Voiced delta: +8 new, 8 reworded.
 - m09 dialogue R3 fixes: 3/3 + 9 nits (Netherton's send reply; two texts show rather than state; Albion's report; American 'schedule'; plan cabinet; lease/bunker; coin-toss line after the offer; distinct m08 KO lines). Voiced: 6 reworded, 0 new (378; 6 clips).
 - 2026-10-22 m09 scenario design closed at R5 (0/0/1/2; fixes applied after).
+- m09 scenario design R5 (phase 3 closed): status row 'Keep moving' outside the cage (in_cage in the HaX ink); 'the Initiative's recruiting interviews'; ring (b) out of the comment and S4. Voiced delta: 0.

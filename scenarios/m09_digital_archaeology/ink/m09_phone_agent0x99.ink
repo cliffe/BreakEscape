@@ -42,6 +42,7 @@ VAR reading_found = false
 VAR reading_finished = false   // scenario design R1 n4: the Reading topic waits for the last page
 VAR deed_found = false   // scenario design R1 m3: the lease file's onPickup
 VAR hl_box_opened = false   // scenario design R2 n3: the H&L lid's unlock (HaX latch)
+VAR in_cage = false   // Synced scenario global (scenario design R5 m1)
 VAR tape_card_held = false   // scenario design R1 n2: the tape room card taken from the safe
 VAR salvage_keypad_seen = false
 VAR tape_room_entered = false
@@ -225,8 +226,8 @@ The catalogue calls what's in there Tomb Beta. It's still drawing power, and nob
 // LEDGER READ (Beat 2.3; unvoiced)
 // ================================================
 === ledger_read ===
-// First line sets ledger_read_heard: the Recruiter's ring (b) and the
-// room-entry backstop key on it (CONTRACT §6.2). No pronoun for WREN.
+// First line sets ledger_read_heard: the Recruiter's ring (a) and ring (c)
+// key on it (CONTRACT §6.2; ring (b) removed at scenario design R4 m3). No pronoun for WREN.
 #set_global:ledger_read_heard:true
 The ledger's live. Twenty-three placements, forty-seven candidates.
 And a legacy section, older than any list we've ever had off them.
@@ -840,7 +841,7 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
         -> tran_warning ->
         He's wiping tapes from the server closet off the open stacks.
         // Scenario design R4 m5: what the reels are (FINALE_ARC row 847).
-        Those reels are her recruiting interviews. The legacy names, in their own voices, saying yes.
+        Those reels are the Initiative's recruiting interviews. The legacy names, in their own voices, saying yes.
     }
     ~ tran_topic_heard = true
     // Puzzle chains R1 P4: on tidied there is no paper lever (Nightshade burned it).
@@ -959,7 +960,12 @@ Sent. He'll read it tonight.
 - deck_choice_made:
     Her office. Get the safe open. Her card opens the tape room, and Tomb Beta's server is past it.
 - flag2_submitted and cage_opened:
-    Step out of the cage. Someone's been waiting for you to come up for air.
+    // Scenario design R5 m1: with ring (b) gone, a stacks-first player may not be in the cage.
+    {in_cage:
+        Step out of the cage. Someone's been waiting for you to come up for air.
+    - else:
+        Keep moving. Someone's been waiting for you to come up for air.
+    }
 // Scenario design R1 m1 (R2 n4, R3 n1: above the hatch and flag-2 rows): Victoria's m03 payoff,
 // until the code is asked for.
 - stacks_entered and m03_victoria_fate == "recruited" and not maintenance_code_used and not cage_opened:
