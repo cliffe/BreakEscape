@@ -22,46 +22,6 @@ module BreakEscape
         render json: { success: true }
       end
 
-      # POST /games/:id/unlock
-      # Validate unlock attempt
-      def unlock
-        authorize @game if defined?(Pundit)
-
-        target_type = params[:targetType]
-        target_id = params[:targetId]
-        attempt = params[:attempt]
-        method = params[:method]
-
-        is_valid = @game.validate_unlock(target_type, target_id, attempt, method)
-
-        if is_valid
-          if target_type == 'door'
-            @game.unlock_room!(target_id)
-            room_data = @game.filtered_room_data(target_id)
-
-            render json: {
-              success: true,
-              type: 'door',
-              roomData: room_data
-            }
-          else
-            @game.unlock_object!(target_id)
-            render json: {
-              success: true,
-              type: 'object'
-            }
-          end
-        else
-          # Flag unlock failures are normal user interaction (wrong answer), not HTTP errors.
-          # Return 200 so the client can display a user-friendly message without throwing.
-          if method == 'flag'
-            render json: { success: false, message: 'Incorrect flag' }
-          else
-            render json: { success: false, message: 'Invalid attempt' }, status: :unprocessable_entity
-          end
-        end
-      end
-
       # POST /games/:id/inventory
       # Update inventory
       def inventory

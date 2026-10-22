@@ -111,7 +111,7 @@ import { LandingPageBuilderMinigame } from './landing-page-builder/landing-page-
 import { EngagementReportMinigame } from './engagement-report/engagement-report-minigame.js';
 
 // Import the PIN minigame
-import { PinMinigame, startPinMinigame } from './pin/pin-minigame.js';
+import { PinMinigame } from './pin/pin-minigame.js';
 
 // Import the password minigame
 import { PasswordMinigame } from './password/password-minigame.js';
@@ -222,7 +222,6 @@ window.returnToContainerAfterNotes = returnToContainerAfterNotes;
 window.returnToConversationAfterNPCInventory = returnToConversationAfterNPCInventory;
 window.returnToPhoneAfterNotes = returnToPhoneAfterNotes;
 window.returnToTextFileAfterNotes = returnToTextFileAfterNotes;
-window.startPinMinigame = startPinMinigame;
 window.startTitleScreenMinigame = startTitleScreenMinigame;
 window.startRFIDMinigame = startRFIDMinigame;
 window.returnToConversationAfterRFID = returnToConversationAfterRFID;

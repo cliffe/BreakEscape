@@ -709,5 +709,5 @@ export function startPinMinigame(correctPin = '1234', options = {}) {
     window.MinigameFramework.startMinigame('pin', null, params);
 }
 
-// Make the function available globally
-window.startPinMinigame = startPinMinigame;
+// Not assigned to window: window.startPinMinigame is the real starter from
+// systems/minigame-starters.js (lockable, type, correctPin, callback).
