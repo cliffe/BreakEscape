@@ -1,0 +1,70 @@
+/* Mock authenticator / push stream (SE design 11 N11, packet P7-M).
+   A phone-shaped overlay for the E3 attack demonstration. Plain readable type, no pixel font,
+   no image assets. Classes are auth-*. */
+
+.auth-root {
+    --auth-ink: #1f2933;
+    --auth-dim: #52606d;
+    --auth-surface: #f6f8f7;
+    --auth-line: #cfd8d4;
+    --auth-accent: #2f4a8a;
+    --auth-danger: #b23b3b;
+    --auth-ok: #2f7a4d;
+    font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
+    color: var(--auth-ink);
+    box-sizing: border-box;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 12px;
+}
+
+.auth-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.auth-wordmark {
+    display: inline-block; padding: 2px 10px; background: var(--auth-accent); color: #fff;
+    border-radius: 3px; font-weight: 800; letter-spacing: 0.14em; font-size: 14px;
+}
+.auth-intro { margin: 0 0 12px; font-size: 15px; line-height: 1.4; color: var(--auth-dim); }
+
+/* phone shell */
+.auth-phone {
+    border: 6px solid #1c2440; border-radius: 22px; background: #0f1530;
+    padding: 10px 10px 16px; max-width: 320px; margin: 0 auto;
+}
+.auth-phone-top { display: flex; justify-content: center; padding-bottom: 8px; }
+.auth-phone-speaker { display: block; width: 48px; height: 6px; border-radius: 3px; background: #2b3660; }
+.auth-feed { display: flex; flex-direction: column; gap: 10px; min-height: 60px; }
+
+/* a push prompt card */
+.auth-card {
+    background: var(--auth-surface); border: 1px solid var(--auth-line); border-radius: 10px;
+    padding: 10px 12px; animation: auth-card-in 180ms ease-out;
+}
+.auth-card-manual { border-style: dashed; }
+.auth-card-app { margin: 0 0 2px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: var(--auth-dim); text-transform: uppercase; }
+.auth-card-request { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
+.auth-card-details { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0 0 8px; font-size: 13px; }
+.auth-card-details dt { color: var(--auth-dim); }
+.auth-card-details dd { margin: 0; }
+.auth-card-actions { display: flex; gap: 8px; }
+.auth-card-action { flex: 1; text-align: center; padding: 6px 0; border-radius: 6px; font-size: 13px; font-weight: 700; opacity: 0.55; }
+.auth-card-approve { background: var(--auth-ok); color: #fff; }
+.auth-card-deny { background: #e4e9e7; color: var(--auth-dim); border: 1px solid var(--auth-line); }
+
+.auth-banner {
+    margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; font-size: 15px; font-weight: 700;
+    background: #fbe8e8; color: var(--auth-danger); border: 1px solid #e3b4b4;
+}
+.auth-approved .auth-phone { outline: 3px solid var(--auth-danger); }
+
+.auth-controls { margin-top: 14px; text-align: center; }
+.auth-send { padding: 8px 18px; font: inherit; font-weight: 700; }
+.auth-send:disabled { opacity: 0.5; cursor: default; }
+
+@keyframes auth-card-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-card { animation: none; }
+}
