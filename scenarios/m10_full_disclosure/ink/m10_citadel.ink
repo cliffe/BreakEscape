@@ -34,7 +34,7 @@ Director Magnus Netherton: He said it had to be one of ours. He was right, and I
 }
 + [(Keep driving.)]
 -
-Narrator: On the next screen, the casualty count climbs. Nobody turns it off.
+Narrator: At the Citadel, on the screen beside him, the casualty count climbs. Nobody turns it off.
 #set_global:closing_done:true
 Director Magnus Netherton: Find 0x00. Bring them in, and bring them to me.
 ~ cit_quiet = true

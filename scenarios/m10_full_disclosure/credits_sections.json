@@ -204,6 +204,10 @@
         "name": "OFFICER KENJI ARAKAWA",
         "clauses": [
           {
+            "text": "US liaison. Sent back to the post. Reopened the county road anyway.",
+            "condition": "globalVars.officer_out === 'arakawa' && !globalVars.arakawa_ko"
+          },
+          {
             "text": "US liaison. Reopened the county road."
           }
         ]
@@ -211,6 +215,10 @@
       {
         "name": "OFFICER DEV MALHOTRA",
         "clauses": [
+          {
+            "text": "Comms. In the second van with his headset off when it went out.",
+            "condition": "globalVars.officer_out === 'malhotra'"
+          },
           {
             "text": "Comms. Logged the minute it went out."
           }
@@ -229,6 +237,10 @@
             "condition": "globalVars.vector_on_team === true && globalVars.vector_recalled === true"
           },
           {
+            "text": "Cryptographer. Still waiting for an apology.",
+            "condition": "globalVars.vector_on_team === true && globalVars.officer_out === 'vector'"
+          },
+          {
             "text": "Cryptographer. Tracing the release.",
             "condition": "globalVars.vector_on_team === true"
           }
@@ -245,6 +257,10 @@
           {
             "text": "Auditor. Sent back, then recalled. It's on his list.",
             "condition": "globalVars.phantom_on_team === true && globalVars.phantom_recalled === true"
+          },
+          {
+            "text": "Auditor. Filed a complaint about tonight. It was upheld.",
+            "condition": "globalVars.phantom_on_team === true && globalVars.officer_out === 'phantom'"
           },
           {
             "text": "Auditor. Auditing 0x00's sign-outs.",

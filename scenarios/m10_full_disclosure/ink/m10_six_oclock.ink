@@ -649,7 +649,7 @@ Narrator: 'I'll be at the board. I don't know what I'll say.'
 - key == "stcath_exposed" and database_outcome == "secured":
     Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They still aren't. That was my signature too.
 - key == "stcath_exposed" and database_outcome == "both_wiped":
-    Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They were on it too.
+    Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They won't be now.
 - key == "stcath_exposed":
     Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They will be now.
 - key == "stcath_bed4":

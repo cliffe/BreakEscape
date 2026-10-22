@@ -604,12 +604,14 @@ in_this_operation = lambda do |ending|
   people << person.('HALINA KOWALCZYK', [
     cl.('Named in Helena. Detained at the briefing.', "globalVars.m09_recruiter_offer === 'taken'"),
     cl.('Warned in Helena. Waiting at the core. Taken without a fight.', "globalVars.m09_recruiter_offer === 'double_crossed'", w),
-    cl.('Named. Left cuffed in the van.', "globalVars.sleeper_caught === true && globalVars.ending === 'joined'"),
+    # Alignment R5-m1: on Join, cuffed only when someone held her; the knock-out ahead of "No need".
+    cl.('Named. Left cuffed in the van.', "globalVars.sleeper_caught === true && globalVars.ending === 'joined' && globalVars.wren_held === true"),
+    cl.('Named on the line. Nobody was free to hold her.', "globalVars.sleeper_caught === true && globalVars.ending === 'joined'"),
     cl.('Named on the line. Stopped at the core anyway.', 'globalVars.sleeper_caught === true && globalVars.wren_at_core === true'),
     cl.('Named. In the van by six.', 'globalVars.sleeper_caught === true'),
+    cl.('Knocked out below ground. Never accused.', 'globalVars.kowalczyk_ko === true', w),
     cl.('Never came through the service door. No need.', "globalVars.ending === 'joined'", w),
     cl.('Came through the service door for the key. Stopped. Never accused.', 'globalVars.wren_at_core === true', w),
-    cl.('Knocked out below ground. Never accused.', 'globalVars.kowalczyk_ko === true', w),
     cl.('Never accused.', nil, w)
   ])
   people << person.('OFFICER DEV MALHOTRA', [
@@ -802,7 +804,7 @@ elsewhere_two = [
   cl.('Eleven placements outside SAFETYNET, picked up from the Helena files.', 'globalVars.m09_legacy_files_saved === true'),
   # Alignment R4-m9: m06's choice, one row per save (m06 sets one or the other; a deferred decision gets none).
   cl.('The twelve point eight million: frozen in a SAFETYNET wallet. It never reached the cells.', 'globalVars.m06_completed === true && globalVars.m06_assets_seized === true'),
-  cl.('The HashChain wallets: tagged since the fund. Dark since the disclosure.', "globalVars.m06_completed === true && !globalVars.m06_assets_seized && globalVars.m06_monitoring_enabled === true && globalVars.database_outcome === 'disclosed'", w),
+  cl.("The HashChain wallets: tagged since the Architect's Fund paid out. Dark since the disclosure.", "globalVars.m06_completed === true && !globalVars.m06_assets_seized && globalVars.m06_monitoring_enabled === true && globalVars.database_outcome === 'disclosed'", w),
   cl.('The HashChain wallets: still tagged. Still watched.', "globalVars.m06_completed === true && !globalVars.m06_assets_seized && globalVars.m06_monitoring_enabled === true && globalVars.database_outcome !== 'disclosed'")
 ]
 elsewhere_three = [
@@ -1023,6 +1025,10 @@ credits_fragment = JSON.parse(<<~'JSON')
           "name": "OFFICER KENJI ARAKAWA",
           "clauses": [
             {
+              "text": "US liaison. Sent back to the post. Reopened the county road anyway.",
+              "condition": "globalVars.officer_out === 'arakawa' && !globalVars.arakawa_ko"
+            },
+            {
               "text": "US liaison. Reopened the county road."
             }
           ]
@@ -1030,6 +1036,10 @@ credits_fragment = JSON.parse(<<~'JSON')
         {
           "name": "OFFICER DEV MALHOTRA",
           "clauses": [
+            {
+              "text": "Comms. In the second van with his headset off when it went out.",
+              "condition": "globalVars.officer_out === 'malhotra'"
+            },
             {
               "text": "Comms. Logged the minute it went out."
             }
@@ -1048,6 +1058,10 @@ credits_fragment = JSON.parse(<<~'JSON')
               "condition": "globalVars.vector_on_team === true && globalVars.vector_recalled === true"
             },
             {
+              "text": "Cryptographer. Still waiting for an apology.",
+              "condition": "globalVars.vector_on_team === true && globalVars.officer_out === 'vector'"
+            },
+            {
               "text": "Cryptographer. Tracing the release.",
               "condition": "globalVars.vector_on_team === true"
             }
@@ -1064,6 +1078,10 @@ credits_fragment = JSON.parse(<<~'JSON')
             {
               "text": "Auditor. Sent back, then recalled. It's on his list.",
               "condition": "globalVars.phantom_on_team === true && globalVars.phantom_recalled === true"
+            },
+            {
+              "text": "Auditor. Filed a complaint about tonight. It was upheld.",
+              "condition": "globalVars.phantom_on_team === true && globalVars.officer_out === 'phantom'"
             },
             {
               "text": "Auditor. Auditing 0x00's sign-outs.",
