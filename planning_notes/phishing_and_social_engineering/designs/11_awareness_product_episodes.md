@@ -165,12 +165,13 @@ confirm, and the first answer is the one recorded for measurement (section 5.2).
 
 Item: email from `accounts@brightwel1foods.example`, display name "Brightwell Foods Accounts",
 subject "Updated bank details — please action today", asks to change the payee account on invoice
-INV-2217. Authored flags (F = 2): `lookalike_domain` and `changed_bank_details`.
+INV-2217. Authored flags (F = 3): `senderTrust`, `lookalike_domain` and `changed_bank_details` (cycle 1
+added `senderTrust` so that a learner who ticks "the address doesn't match" is not marked down, C1 M3).
 
-- Learner chooses **Report** (60), ticks both flags (`40 × 2/2` = 40). Message score **100**.
-- Learner chooses **Report** and ticks only *lookalike domain* (`40 × 1/2` = 20). Score **80**, and the
-  card names the missed flag.
-- Learner chooses **Delete** and ticks both flags (30 + 40). Score **70**, with the line "Safe, but not
+- Learner chooses **Report** (60), ticks all three flags (`40 × 3/3` = 40). Message score **100**.
+- Learner chooses **Report** and ticks only *lookalike domain* (`40 × 1/3` ≈ 13). Score **73**, and the
+  card names the missed flags.
+- Learner chooses **Delete** and ticks all three flags (30 + 40). Score **70**, with the line "Safe, but not
   reported. Deleting protects you; reporting warns everyone else."
 - Learner chooses **Trust** (0) and ticks nothing. Score **0**. Feedback, shown in full: "This one
   looks right because the display name is right. Check the address: `brightwel1foods` has a digit 1
