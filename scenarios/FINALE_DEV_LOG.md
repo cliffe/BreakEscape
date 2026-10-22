@@ -483,3 +483,9 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - m09 dialogue R5 (phase 4 closed): four HaX text strings (A3-14, A3-15, A3-27a ×4, A3-38). Voiced delta: 0.
 - m09 playtest R1 content fixes: M-1 (reel deck hides Tesseract's portrait until the identity scene), m-1, m-5, m-6 (+1 HaX line), m-8. m-7 is engine. Voiced: +1 (379).
 - m10 puzzle chains R1: P1, P2, P4, P5, P6, P7, P9, F9 (the shutter topic waits for the cut to fall to the player; the player pulls the breaker at the isolator; rack-seen evidence; Fonoti's stand-down). Voiced: +4, -1, 3 reworded.
+
+## User decisions, 2026-10-22 (review page)
+- F10 archaeology theme: accept as is. F11 Season 2 teaser: leave off. F14 m10 outer lock: keep PIN plus HaX steer. F15 m01–m08 robustness fixes: keep. F17 Restart calms hostiles: leave.
+- F12 VM reach: gate VM progress behind in-game information (as m01: Kali early, but Kevin's password list sits behind in-game puzzles). Apply across missions. A player must never hold a flag they can't yet submit.
+- F13 m10 disarm and unsent notice: seed them on the VM too (as m01's VM holds the launch code). Audit all missions for both patterns.
+- F16 phone tag batching: fix in the engine now. F18 five UI rough edges: fix all five now.

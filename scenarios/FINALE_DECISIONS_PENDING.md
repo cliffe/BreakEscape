@@ -16,16 +16,10 @@ m09 build addendum (from the puzzle-chain VM answers, 2026-10-22, `finale/M09_PU
 
 m09 build addendum 2 (scenario-design R1 VM answers, 2026-10-22, `finale/M09_PUZZLE_VM_ANSWERS.md` D1–D3): seed the catalogue index (flag 1's file) to match the drop screen: Series R, R-114 to R-161, restricted cage bay 10. Confirm Tomb Beta's public page shows no generated text. Tesseract's name sits behind the flag-3 foothold; a fast player can see it before the identity scene, which is the early peek you already accepted.
 
-## F10. Is "archaeology" enough as theme? (story call, not blocking)
-
-The VM has no recovery or undelete step. The archaeology is thematic: an abandoned "last server", a nine-year-old memo, an unrevoked credential and the ledger's legacy section, while the game side has destruction (the shredder) but no recovery. Accept as is, or ask opus48 to add a small recovery step to the VM plan?
-
-## F11. Season 2 teaser on m10's closing card? (story call)
-
-The closing card has an optional teaser slot, currently off (no eldritch content, per the brief, apart from this slot). Leave it off, or write a one-line teaser?
+(F10 and F11 answered 2026-10-22, see FINALE_DEV_LOG.)
 
 m10 build addendum (scenario-design R1 VM answers, 2026-10-22, `finale/FINALE_EDU_VM_LINES.md` Task B):
-- The later hosts are reachable from the gate (flat network, as in m08), so a fast student could take all four flags early; only the in-game stations enforce order. Decide: segment the network, or accept (as for m09's early peek).
-- The release host holds no "disarm" file and the core host no unsent notice; both are in-game only. The game side is being worded so it doesn't promise VM content. If you'd rather the VM carry them, seed them at build.
+- Answered (F12): gate each VM step behind information found in the game, so no flag can be taken before it can be submitted. Audit in progress.
+- The release host holds no "disarm" file and the core host no unsent notice; both are in-game only. The game side is being worded so it doesn't promise VM content. Answered (F13): seed both on the VM as well.
 - Timed VM run still owed (cut order starts with the backdoor task if the VM portion runs over ~34 min).
 - m10 build check (puzzle chains R1): the VM's door log (flag 1) and staging schedule (flag 2) should agree with the in-game texts (m10 erb ~2850-2871 and ~3547-3562).
