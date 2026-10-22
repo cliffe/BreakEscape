@@ -2031,8 +2031,11 @@ boardroom_pin = "0417"
     catch scene that can win him over. 360-degree LOS: it's a small office and he is
     sat in it. Once only, so the next attempt picks normally. Like Val's catch, it
     can't fire for a player holding any key until the "Switch to Lockpicking" LOS
-    fix lands in the engine (unlock-system.js key branch). %>
-          "los": { "enabled": true, "range": 400, "angle": 360, "visualize": false },
+    fix lands in the engine (unlock-system.js key branch).
+    Sight occlusion (2026-10-22): occlusion off. With walls and tall props blocking
+    sight, the steel filing cabinet beside his locked one hid a player picking it from
+    the front (browser check, game 3180), and this catch is meant to always fire. %>
+          "los": { "enabled": true, "range": 400, "angle": 360, "visualize": false, "occlusion": false },
           "eventMappings": [
             {
               "eventPattern": "lockpick_used_in_view",
