@@ -1,0 +1,59 @@
+{
+  "scenario": "lab_social_engineering",
+  "start_room": "engagement_office",
+  "nodes": [
+    {
+      "id": "door_recon_room",
+      "label": "Recon Room<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "recon_room",
+      "label": "Recon Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_operations_room",
+      "label": "Operations Room<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "operations_room",
+      "label": "Operations Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_blue_team_room",
+      "label": "Blue Team Room<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "blue_team_room",
+      "label": "Blue Team Room",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_recon_room",
+      "to": "recon_room",
+      "soft": false
+    },
+    {
+      "from": "door_operations_room",
+      "to": "operations_room",
+      "soft": false
+    },
+    {
+      "from": "door_blue_team_room",
+      "to": "blue_team_room",
+      "soft": false
+    }
+  ]
+}

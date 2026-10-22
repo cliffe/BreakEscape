@@ -363,7 +363,7 @@ uncaptured toasts are still open. `docs/test-bridge.md` does not cover the socia
 | M6 (**done**) | Mail persistence residuals: server trim versus client "saved" (P1-D); a created account reaching other open clients (T2-7) | opus48 | – | Rails and Node tests on the real paths |
 | M7 (**done**, e99068bf) | Small correctness residuals: report row order, the `triage_percent` overwrite, object-id `name` uniqueness, the Key Ring wrong-key hint | Sonnet | – | Tests per item |
 | M8 | Builder: render at a true 600 px; one source for the domain guard | opus48 | harness viewport | Bridge at 600 px |
-| M9 | Harness: viewport setting, toast capture, a test-bridge doc section for the social overlays | Sonnet | harness fixes | Live check |
+| M9 (**done**) | Harness: viewport setting, toast capture, a test-bridge doc section for the social overlays | Sonnet | harness fixes | Live check |
 | M10 (**done**, 3e64107e: 10 tests, full Rails suite 734 runs, 0 failures) | Missing Rails tests (`unlock_system`, `task_set_global`, `missions_controller` `lab_games`) | Sonnet | – | Tests pass |
 | M11 (**done**: caaeab3d, 1d68bd02; gaps 20-24 being closed) | Reuse proof: a small third scenario built only from the docs | Opus | M4a, M4b | Validates `--strict-social`; one playthrough |
 
