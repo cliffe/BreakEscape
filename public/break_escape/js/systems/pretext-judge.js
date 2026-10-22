@@ -242,18 +242,30 @@ export function judgeUtterance(spec, session, utteranceId, blanks, influence) {
 
   // Repair: correcting an open mismatch. Earns the claim credit plus the candour
   // modifier (06 section 4.2), consuming that fact's claim and the line's technique,
-  // so a repair line is not triple-counted. Works only while the fact is open.
+  // so a repair line is not triple-counted. Works only while the fact is open AND the
+  // repaired blank now names the right value: a repair line that still picks a wrong
+  // value earns no repair credit and leaves the mismatch open (the claim falls through
+  // to the claims loop below and is judged as a plain mismatch).
   if (isStr(line.repairs) && open.has(line.repairs)) {
     const fact = line.repairs;
     const idx = claims.findIndex((c) => c && c.fact === fact);
-    if (idx !== -1) claims.splice(idx, 1);
-    const candourKey = isStr(line.technique) ? line.technique : 'candour';
-    const ti = techniques.indexOf(candourKey);
-    if (ti !== -1) techniques.splice(ti, 1);
-    entries.push({ delta: DEFAULTS.claimCredit, reason: fact, line: passTell(spec, fact) });
-    const candour = susceptibility(spec, candourKey) || DEFAULTS.candourCredit;
-    entries.push({ delta: candour, reason: candourKey, line: repairTell(spec) });
-    repairs.push(fact);
+    const repairClaim = idx !== -1 ? claims[idx] : null;
+    const known = spec && spec.knows && spec.knows[fact];
+    const value = claimValue(repairClaim, blanks);
+    const repaired = !!(known && (value === known.value || arr(known.accept).includes(value)));
+    if (repaired) {
+      if (idx !== -1) claims.splice(idx, 1);
+      const candourKey = isStr(line.technique) ? line.technique : 'candour';
+      const ti = techniques.indexOf(candourKey);
+      if (ti !== -1) techniques.splice(ti, 1);
+      entries.push({ delta: DEFAULTS.claimCredit, reason: fact, line: passTell(spec, fact) });
+      // An authored candour susceptibility of 0 is respected (00 §8): only an absent
+      // key falls back to the default credit.
+      const susc = (spec && spec.susceptibility) || {};
+      const candour = isNum(susc[candourKey]) ? susc[candourKey] : DEFAULTS.candourCredit;
+      entries.push({ delta: candour, reason: candourKey, line: repairTell(spec) });
+      repairs.push(fact);
+    }
   }
 
   // Doubling down on an open mismatch (06 section 4.2): a flat penalty, fact stays open.
@@ -365,6 +377,15 @@ export function judgeAsk(spec, session, askId, influence) {
       result = 'granted';
       inkResult = ASK_RESULT.granted;
       line = askTell(spec, 'accepted');
+    }
+    // An ask whose pressure crosses the "reports" band reports the call, exactly as a
+    // line does (06 §4.2; 00 §8). Without this the influence service fires the threshold
+    // effects while the session's reportedThisCall stays false, so outcomeFor misreads it.
+    // A soft refusal below the floor is excluded: its reporting is owned by maxRefusals,
+    // so the first push-back at the threshold is not itself a report.
+    if (band >= BAND.REPORTED) {
+      reported = true;
+      reportReason = 'threshold';
     }
   } else {
     result = 'refused';

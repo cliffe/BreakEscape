@@ -127,13 +127,17 @@ function isObj(v) { return v != null && typeof v === 'object' && !Array.isArray(
 function arr(v) { return Array.isArray(v) ? v : []; }
 function half(n) { return Math.round((Number(n) || 0) / 2); }
 
-/** Host part of an address: drop any scheme, take everything before the first '/'. */
+/**
+ * Host part of an address: drop any scheme, take everything before the first host
+ * terminator. A path '/', a query '?' or a fragment '#' all end the host, so query or
+ * fragment text cannot smuggle a '.example' suffix onto a different host (N6b hardening).
+ */
 function hostOf(address) {
   let s = String(address == null ? '' : address);
   const scheme = s.indexOf('://');
   if (scheme >= 0) s = s.slice(scheme + 3);
-  const slash = s.indexOf('/');
-  if (slash >= 0) s = s.slice(0, slash);
+  const end = s.search(/[/?#]/);
+  if (end >= 0) s = s.slice(0, end);
   return s;
 }
 
@@ -542,8 +546,12 @@ function victimRank(v) {
  * resend that does not land, or a later below-threshold send, never erases an earlier
  * success; and an equal-rank resend returns the existing record unchanged, so the bridge's
  * `next !== before` write-back is skipped and an identical state is not re-synced (P5-R F1).
+ * When there is no existing record yet (null/junk), the send's outcome is written even at
+ * rank 0, so a send that carries the page always leaves a victim record and the report's
+ * `sent = !!victim` reads true (00 §11a).
  */
 export function betterVictim(existing, next) {
+  if (!isObj(existing)) return next;
   return victimRank(next) > victimRank(existing) ? next : existing;
 }
 

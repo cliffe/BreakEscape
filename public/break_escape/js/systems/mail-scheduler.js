@@ -337,7 +337,10 @@ export class MailScheduler {
   }
 
   _recount(box) {
-    box.unread = box.messages.filter(m => m.folder !== 'sent' && m.read === false).length;
+    // Agree with mail-data.recountUnread: anything not strictly read counts as unread, so a
+    // restored message that lost its read flag is counted the same way in both (only strict
+    // read === true is read).
+    box.unread = box.messages.filter(m => m.folder !== 'sent' && m.read !== true).length;
   }
 
   /**
@@ -541,7 +544,15 @@ export class MailScheduler {
   _deliverSeed(job) {
     const authored = (this.mailClientConfig?.seededMessages || []).find(m => m?.id === job.messageId);
     if (!authored) return true; // gone from the scenario: drop the job
-    const message = this.addMessage(job.mailbox || authored.mailbox, this.normaliseSeeded(authored));
+    const mailbox = job.mailbox || authored.mailbox;
+    // A partial save can keep both the delivered message (as a stub) and its seed job. If the
+    // message is already in the mailbox, drop the job without delivering a second copy.
+    const existing = this.state.mailboxes[mailbox];
+    if (existing && Array.isArray(existing.messages) && existing.messages.some(m => m && m.id === job.messageId)) {
+      this._removeJob(job.jobId);
+      return true;
+    }
+    const message = this.addMessage(mailbox, this.normaliseSeeded(authored));
     this._removeJob(job.jobId);
     this._emit('mail_delivered', { mailbox: message.mailbox, message, job });
     return true;

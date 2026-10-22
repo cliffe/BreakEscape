@@ -691,6 +691,9 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
 
     // ── interaction ───────────────────────────────────────────────────────────
     _set(key, value) {
+        // Re-picking the value that is already selected is a no-op: it must not clear a Score
+        // or rewrite the record as unscored (07 §3; a radio click on the current choice).
+        if (key === 'brand' ? this.choices.brand === value : this.choices[key] === value) return;
         if (key === 'brand') {
             // A new brand may offer a different domain menu; drop a domain that is not on it.
             this.choices.brand = value;

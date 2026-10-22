@@ -22,8 +22,8 @@ const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
  * domain, kind, person, spoofsFrom, mailbox, burned }].
  */
 export function resolveAccounts(config, accountIds, globals = {}) {
-    const all = Array.isArray(config?.accounts) ? config.accounts : [];
-    const byId = new Map(all.filter(isObject).map((a) => [a.id, a]));
+    const all = (Array.isArray(config?.accounts) ? config.accounts : []).filter(isObject);
+    const byId = new Map(all.map((a) => [a.id, a]));
     const ids = Array.isArray(accountIds) && accountIds.length ? accountIds : all.map((a) => a.id);
     const out = [];
     for (const id of ids) {

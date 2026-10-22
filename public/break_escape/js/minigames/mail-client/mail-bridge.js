@@ -234,6 +234,12 @@ export function threadKey(target, accountId) {
 export function updateMetrics(metrics, targetId, landed) {
     if (!isObject(metrics[targetId])) metrics[targetId] = { sent: 0, failed: 0, landed: 0, firstTryLanded: false };
     const m = metrics[targetId];
+    // A restored or trimmed save may carry an entry missing some counters; initialise them so
+    // the increments below never produce NaN.
+    if (!Number.isFinite(m.sent)) m.sent = 0;
+    if (!Number.isFinite(m.failed)) m.failed = 0;
+    if (!Number.isFinite(m.landed)) m.landed = 0;
+    if (typeof m.firstTryLanded !== 'boolean') m.firstTryLanded = false;
     const firstSend = m.sent === 0;
     m.sent += 1;
     if (landed) { m.landed += 1; if (firstSend) m.firstTryLanded = true; }
