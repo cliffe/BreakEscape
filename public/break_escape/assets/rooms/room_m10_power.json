@@ -2910,7 +2910,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":592,
+         "tilecount":598,
          "tileheight":124,
          "tiles":[
                 {
@@ -6523,6 +6523,42 @@
                  "image":"..\/objects\/m10_locker1.png",
                  "imageheight":42,
                  "imagewidth":22
+                }, 
+                {
+                 "id":602,
+                 "image":"..\/objects\/m10_gate_post1.png",
+                 "imageheight":62,
+                 "imagewidth":80
+                }, 
+                {
+                 "id":603,
+                 "image":"..\/objects\/m10_gate_post_dark1.png",
+                 "imageheight":62,
+                 "imagewidth":80
+                }, 
+                {
+                 "id":604,
+                 "image":"..\/objects\/m10_van_step1.png",
+                 "imageheight":8,
+                 "imagewidth":20
+                }, 
+                {
+                 "id":605,
+                 "image":"..\/objects\/m10_van_step2.png",
+                 "imageheight":8,
+                 "imagewidth":20
+                }, 
+                {
+                 "id":606,
+                 "image":"..\/objects\/m10_work_lamp1.png",
+                 "imageheight":50,
+                 "imagewidth":18
+                }, 
+                {
+                 "id":607,
+                 "image":"..\/objects\/m10_generator1.png",
+                 "imageheight":26,
+                 "imagewidth":34
                 }],
          "tilewidth":252
         }],

@@ -536,6 +536,7 @@ def main():
     key_console()
     cracker_rack()
     extras()
+    round2()
 
 
 def plans_roll():
@@ -674,6 +675,106 @@ def extras():
     wall_screen()
     cupboard()
     locker()
+
+
+# --- round 2 ------------------------------------------------------------------
+
+def gate_post(lit=True):
+    """The gate hut with the refit fence running west from it along the yard's south
+    edge (80x62: fence x 0-31, the hut from x 32). Lit: the fence is whole. Dark (the
+    m06_assets_seized variant): the fence stops a few metres short, a last post and a
+    loose end of wire, then nothing (RL 2.1, milestone A30: visual only)."""
+    from PIL import Image
+    hut = Image.open(OBJ / ("m10_gate_hut1.png" if lit else "m10_gate_hut_dark1.png")).convert("RGBA")
+    c = Canvas(80, 62)
+    steel, post = (176, 182, 188), (110, 116, 124)
+    x_end = 32 if lit else 14
+    for y in range(30, 60):
+        for x in range(0, x_end):
+            if (x + y) % 6 == 0 or (x - y) % 6 == 0:
+                c.px(x, y, steel)
+    for x in range(0, x_end):
+        c.px(x, 30, post)
+        c.px(x, 59, post)
+    for px_ in ([0, 16] if lit else [0, 13]):
+        c.rect(px_, 28, px_ + 1, 61, post)
+    if not lit:
+        for k, (x, y) in enumerate(((15, 34), (16, 37), (16, 40), (17, 43), (17, 47))):
+            c.px(x, y, steel)                      # a loose end of wire
+    name = "m10_gate_post1" if lit else "m10_gate_post_dark1"
+    c.save(OBJ, name)
+    im = Image.open(OBJ / f"{name}.png").convert("RGBA")
+    im.alpha_composite(hut, (32, 0))
+    im.save(OBJ / f"{name}.png")
+
+
+def van_step(name, kind):
+    """A small slot at a van's open side door: the step plate, and on it van one's
+    headset and SAFETYNET badge, or van two's steel rail end with a cuff on it."""
+    w, h = 20, 8
+    c = Canvas(w, h)
+    c.rect(0, 3, w - 1, h - 1, OUTLINE)
+    c.rect(1, 4, w - 2, h - 2, (120, 126, 132))
+    for x in range(2, w - 2, 3):
+        c.px(x, 5, (150, 156, 162))
+    if kind == "headset":
+        c.rect(3, 0, 8, 1, (40, 40, 44))           # headset band
+        c.rect(3, 1, 4, 3, (40, 40, 44))
+        c.rect(8, 1, 9, 3, (40, 40, 44))
+        c.rect(12, 1, 16, 3, (40, 70, 140))        # the badge on its lanyard
+        c.px(14, 2, (230, 230, 230))
+    else:
+        c.rect(2, 1, 17, 2, (170, 176, 182))       # the rail's end
+        c.rect(12, 0, 15, 3, (90, 94, 100))        # a cuff on it
+        c.px(13, 1, (20, 20, 20))
+    c.save(OBJ, name)
+
+
+def work_lamp():
+    """A tripod work lamp: three splayed legs, a pole, a halogen head angled down at the
+    table, its lens warm."""
+    w, h = 18, 50
+    c = Canvas(w, h)
+    c.rect(2, 0, 15, 7, OUTLINE)                   # head
+    c.rect(3, 1, 14, 6, (230, 190, 40))
+    c.rect(4, 5, 13, 6, (255, 240, 190))           # lens, facing down and forward
+    c.rect(8, 8, 9, 38, (60, 62, 66))              # pole
+    for k in range(10):
+        c.px(8 - k // 1 if k < 8 else 0, 38 + k, (60, 62, 66))
+        c.px(9 + (k if k < 8 else 8), 38 + k, (60, 62, 66))
+        c.px(8 + (1 if k % 2 else 0), 38 + k, (60, 62, 66))
+    c.save(OBJ, "m10_work_lamp1")
+
+
+def generator():
+    """A portable generator in its tube frame: yellow and black, a fuel cap, an outlet
+    panel, a lead running off it."""
+    w, h = 34, 26
+    c = Canvas(w, h)
+    c.rect(0, 2, w - 1, h - 3, OUTLINE)            # frame
+    c.rect(2, 4, w - 3, h - 5, (220, 176, 40))
+    c.rect(2, 4, w - 3, 6, (240, 200, 70))
+    c.rect(4, 9, 14, 17, (40, 40, 44))             # engine side
+    for y in range(10, 17, 2):
+        c.hline(5, 13, y, (80, 80, 84))
+    c.rect(18, 9, 28, 15, (60, 62, 66))            # outlet panel
+    c.px(20, 11, (220, 220, 220))
+    c.px(24, 11, (220, 220, 220))
+    c.px(26, 13, (90, 220, 120))
+    c.rect(24, 0, 27, 2, (40, 40, 44))             # fuel cap
+    c.rect(1, h - 3, 3, h - 1, OUTLINE)            # feet
+    c.rect(w - 4, h - 3, w - 2, h - 1, OUTLINE)
+    c.hline(29, 33, 16, (30, 30, 30))              # the lead
+    c.save(OBJ, "m10_generator1")
+
+
+def round2():
+    gate_post(True)
+    gate_post(False)
+    van_step("m10_van_step1", "headset")
+    van_step("m10_van_step2", "rail")
+    work_lamp()
+    generator()
 
 
 if __name__ == "__main__":

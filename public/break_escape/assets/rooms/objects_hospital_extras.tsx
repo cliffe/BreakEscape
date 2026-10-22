@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="592" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="598" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -1776,5 +1776,23 @@
  </tile>
  <tile id="601">
   <image source="../objects/m10_locker1.png" width="22" height="42"/>
+ </tile>
+ <tile id="602">
+  <image source="../objects/m10_gate_post1.png" width="80" height="62"/>
+ </tile>
+ <tile id="603">
+  <image source="../objects/m10_gate_post_dark1.png" width="80" height="62"/>
+ </tile>
+ <tile id="604">
+  <image source="../objects/m10_van_step1.png" width="20" height="8"/>
+ </tile>
+ <tile id="605">
+  <image source="../objects/m10_van_step2.png" width="20" height="8"/>
+ </tile>
+ <tile id="606">
+  <image source="../objects/m10_work_lamp1.png" width="18" height="50"/>
+ </tile>
+ <tile id="607">
+  <image source="../objects/m10_generator1.png" width="34" height="26"/>
  </tile>
 </tileset>

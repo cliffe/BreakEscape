@@ -1414,6 +1414,12 @@ export function preload() {
     this.load.image('m10_console_controls1', 'objects/m10_console_controls1.png');
     this.load.image('m10_cupboard1', 'objects/m10_cupboard1.png');
     this.load.image('m10_locker1', 'objects/m10_locker1.png');
+    this.load.image('m10_gate_post1', 'objects/m10_gate_post1.png');
+    this.load.image('m10_gate_post_dark1', 'objects/m10_gate_post_dark1.png');
+    this.load.image('m10_van_step1', 'objects/m10_van_step1.png');
+    this.load.image('m10_van_step2', 'objects/m10_van_step2.png');
+    this.load.image('m10_work_lamp1', 'objects/m10_work_lamp1.png');
+    this.load.image('m10_generator1', 'objects/m10_generator1.png');
 
     // Load audio files
     // NPC system sounds

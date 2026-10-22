@@ -98,12 +98,13 @@ def room_m10_forward():
     (384,160), Arakawa at the case end (397,230), at the gate (512,160); the van group
     at the vans' open doors: Voltage (99,115), Kowalczyk (64,128), Nightshade (77,256),
     Malhotra (125,266); the minder (160,224); at the blast door Nightshade (576,192),
-    Arakawa or a minder (512,256).
-    Slots: m10_van1, m10_van2 (as-type m10_van: The Van, The Second Van);
+    Arakawa or a minder (480,256).
+    Slots: m10_van_step1, m10_van_step2 at the vans' open doors (as-type m10_van_step:
+    The Van, The Second Van; the vans themselves are decor, R2);
     m10_field_screen1 (Table Screen), m10_plans1 (Helena's Plans), notes_clip1
     (Sign-Out Sheet), m10_breaching_case1 (Folding Table) on the table; m09_folder1 on
     the crate (Incident File); m10_field_screen_dark1 (Projection Desk); vm-launcher and
-    safetynet_flag_terminal1 on the gate trestle; m10_gate_hut1 (Gate Hut).
+    safetynet_flag_terminal1 on the gate trestle; m10_gate_post1 (Gate Hut, with the fence).
     """
     r = G._Uni()
     # the fence line: rock face and chain-link are on the sheet; lamps and boards on it
@@ -112,10 +113,15 @@ def room_m10_forward():
     r.item("m10_sign_keepclear1", 556.0, 30.0)            # over the blast door's apron
     r.item("m10_sign_fallout1", 470.0, 32.0)
     # the road end: the vans, nose to the fence's east, side doors to the south
-    _cond(r, "m10_van1", 34.0, 112.0)
+    # R2: the vans are decor; each scenario van is a small slot at its open side door
+    # (the step), so a tap on an NPC standing in front of a van no longer also hits the van
+    r.item("m10_van1", 34.0, 112.0)
     r.collision(38.0, 92.0, 108.0, 20.0)
-    _cond(r, "m10_van2", 32.0, 240.0)
+    _cond(r, "m10_van_step1", 116.0, 114.0)
+    r.item("m10_van2", 32.0, 240.0)
     r.collision(36.0, 222.0, 102.0, 18.0)
+    _cond(r, "m10_van_step2", 106.0, 242.0)
+    r.solid("m10_generator1", 236.0, 100.0)               # R2: power for the lamp and the vans
     r.solid("m10_kit_crate1", 172.0, 100.0)               # spare kit stacked by the fence
     r.item("m10_kit_crate1", 176.0, 86.0)
     # the incident file's crate, south of the table's west end
@@ -130,6 +136,7 @@ def room_m10_forward():
     _top(r, "notes_clip1", 294.0, 218.0, cond=True)
     _top(r, "m10_breaching_case1", 332.0, 212.0, cond=True)
     _top(r, "office-misc-cup3", 272.0, 224.0)
+    r.item("m10_work_lamp1", 358.0, 206.0)                # R2: the work lamp, at the case end
     # the projection desk against the fence
     # (slot centres kept above y 89: Quintero's and Arakawa's frames start there)
     r.table("aes_trestle1", 400.0, 104.0, kind="objects")  # x 400-452
@@ -141,8 +148,11 @@ def room_m10_forward():
     r.table("smalldesk2", 514.0, 104.0)                    # x 514-546, clear of the door's mouth
     _top(r, "safetynet_flag_terminal1", 518.0, 100.0, cond=True)
     # the gate hut, SE corner
-    _cond(r, "m10_gate_hut1", 556.0, 300.0)
+    # R2: the hut with the refit fence running west from it (x 524-556); its dark variant
+    # (m10_gate_post_dark1, m06_assets_seized) has the fence stop short (RL 2.1, A30)
+    _cond(r, "m10_gate_post1", 524.0, 300.0)
     r.collision(560.0, 280.0, 44.0, 20.0)
+    r.collision(524.0, 292.0, 32.0, 8.0)
     r.solid("aes_cones1", 458.0, 300.0)
     r.solid("aes_barrier1", 573.0, 160.0)
     return _build(r, "room_m10_forward", "20x10_wide")
@@ -208,6 +218,7 @@ def room_m10_security():
     r.table("desk1", 176.0, 104.0)                       # x 176-254
     _top(r, "cctv_monitors1", 186.0, 92.0, cond=True)
     _top(r, "keyboard1", 232.0, 96.0)
+    _top(r, "office-misc-cup3", 238.0, 96.0)              # R2: the night shift's mug
     r.solid("filing_cabinet_steel1", 258.0, 100.0, depth=30)
     # the duty handset on a stand, open floor
     r.table("smalldesk2", 176.0, 164.0)                  # x 176-208
@@ -244,6 +255,7 @@ def room_m10_workshop():
     _cond(r, "notes2", 124.0, 52.0)
     _cond(r, "notes_tucked1", 164.0, 52.0)
     r.item("pegboard_tools1", 182.0, 59.0)
+    r.solid("component_drawers1", 80.0, 100.0, depth=16)  # R2: parts drawers under the plate, east of the stair lane
     r.solid("aes_tool_chest1", 182.0, 100.0, depth=20)
     _cond(r, "wall_clock1", 252.0, 59.0)
     r.item("m10_caged_lamp1", 136.0, 24.0)

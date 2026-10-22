@@ -1932,8 +1932,8 @@ end
           "id": "arakawa_blast",
           "displayName": "Officer Kenji Arakawa",
           "npcType": "person",
-          <%# Dressing R1: was (17, 8); west of the gate hut, out of its tap area. %>
-          "position": { "x": 16, "y": 8 },
+          <%# Dressing R1/R2: was (17, 8); west of the gate hut and its fence (x 524), out of their tap area. %>
+          "position": { "x": 15, "y": 8 },
           "spriteSheet": "male_telecom_v2",
           "spriteTalk": "assets/characters/male_telecom_talk.png",
           "spriteVisemes": "assets/characters/male_telecom_visemes.png",
@@ -1955,8 +1955,8 @@ end
           "id": "minder_blast",
           "displayName": "Minder",
           "npcType": "person",
-          <%# Dressing R1: was (17, 8); west of the gate hut, out of its tap area. %>
-          "position": { "x": 16, "y": 8 },
+          <%# Dressing R1/R2: was (17, 8); west of the gate hut and its fence (x 524), out of their tap area. %>
+          "position": { "x": 15, "y": 8 },
           "spriteSheet": "female_blowse",
           "spriteVisemes": "assets/characters/female_blowse_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
@@ -2379,9 +2379,9 @@ end
           "id": "gate_hut",
           "name": "Gate Hut",
           "takeable": false,
-          "position": "as-type:m10_gate_hut",
+          "position": "as-type:m10_gate_post",
           "spriteVariants": [
-            { "condition": "globalVars.m06_assets_seized === true", "value": "m10_gate_hut_dark1" }
+            { "condition": "globalVars.m06_assets_seized === true", "value": "m10_gate_post_dark1" }
           ],
           "observations": "The bunker's gate hut, lit. A radio playing low inside, and a man in a parka reading the same page of a paperback.",
           "observationVariants": [
@@ -2393,7 +2393,7 @@ end
           "id": "van_one",
           "name": "The Van",
           "takeable": false,
-          "position": "as-type:m10_van",
+          "position": "as-type:m10_van_step",
           "observations": "The van. Side door open, the light on inside. A headset and a SAFETYNET badge on the step."
         },
         {
@@ -2401,7 +2401,7 @@ end
           "id": "van_two",
           "name": "The Second Van",
           "takeable": false,
-          "position": "as-type:m10_van",
+          "position": "as-type:m10_van_step",
           "observations": "The second van. A steel rail along one wall, for cuffs."
         }
       ]
@@ -3574,7 +3574,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "monitor_guard",
           "displayName": "Guard",
           "npcType": "person",
-          "position": { "x": 3, "y": 5 },
+          <%# Dressing R2: was (3, 5), feet on the bottom wall row (the gallery floor is rows 2-4); 4.5 stands on the walkway. %>
+          "position": { "x": 3, "y": 4.5 },
           "spriteSheet": "security_guard",
           "spriteVisemes": "assets/characters/security_guard_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
@@ -3594,7 +3595,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "farah_guard",
           "displayName": "Guard",
           "npcType": "person",
-          "position": { "x": 5, "y": 5 },
+          <%# Dressing R2: was (5, 5), feet on the bottom wall row (the gallery floor is rows 2-4); 4.5 stands on the walkway. %>
+          "position": { "x": 5, "y": 4.5 },
           "spriteSheet": "female_security_guard",
           "spriteVisemes": "assets/characters/female_security_guard_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
@@ -3635,7 +3637,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "quintero_lock",
           "displayName": "Agent 0x2D 'Anchor'",
           "npcType": "person",
-          "position": { "x": 7, "y": 5 },
+          <%# Dressing R2: was (7, 5), feet on the bottom wall row (the gallery floor is rows 2-4); 4.5 stands on the walkway. %>
+          "position": { "x": 7, "y": 4.5 },
           "spriteSheet": "female_telecom_v2",
           "spriteTalk": "assets/characters/female_telecom_talk.png",
           "spriteVisemes": "assets/characters/female_telecom_visemes.png",
@@ -3661,7 +3664,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "minder_lock",
           "displayName": "Minder",
           "npcType": "person",
-          "position": { "x": 7, "y": 5 },
+          <%# Dressing R2: was (7, 5), feet on the bottom wall row (the gallery floor is rows 2-4); 4.5 stands on the walkway. %>
+          "position": { "x": 7, "y": 4.5 },
           "spriteSheet": "male_spy_v2",
           "spriteTalk": "assets/characters/male_spy_talk.png",
           "spriteVisemes": "assets/characters/male_spy_visemes.png",
@@ -3684,7 +3688,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "nightshade_lock",
           "displayName": "Agent 0x47 'Nightshade'",
           "npcType": "person",
-          "position": { "x": 6, "y": 5 },
+          <%# Dressing R2: was (6, 5), feet on the bottom wall row (the gallery floor is rows 2-4); 4.5 stands on the walkway. %>
+          "position": { "x": 6, "y": 4.5 },
           "spriteSheet": "nightshade",
           "spriteVisemes": "assets/characters/nightshade_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },

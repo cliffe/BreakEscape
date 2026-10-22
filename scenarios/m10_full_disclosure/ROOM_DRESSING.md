@@ -92,3 +92,59 @@ Layout fields only, re-read before each edit (character agents were editing NPC 
 4. Forward post: the vans and their NPCs share tap areas (above). A shorter "van door" slot at the open door, with the van as decor, would split them.
 5. The forward post and core are the emptiest rooms; the core is meant to be bare. The forward post could take a generator and cable to the work lamp, and a lit work lamp over the table (ASSET_LIST §4: "folding table, work lamp").
 6. Lighting is next once dressing is signed off: no room has lighting configured yet (the sodium lamp, caged bulbs and van interiors are the obvious sources).
+
+## Round 2 (2026-10-22): forward post fixes, the gallery's feet, critique pass
+
+Renders: maps `dressing_r2/maps/` (contact sheet included); in game (game 3165, every room unlocked, no lighting) `dressing_r2/ingame/<room>-a.png`.
+
+### Browser walk
+
+Round 1's helper stopped before it reported. A second Sonnet helper is running on the round 2 maps (log and shots: session scratchpad `m10dress/pt2/`). Partial results when this round closed:
+
+- Doors: tunnel ↔ security, security ↔ workshop, workshop ↔ power, power ↔ hall, hall ↔ gallery, gallery ↔ core all walked both ways. Two first tries failed only because a conversation opened mid-walk (person-chat active); both passed on the retry. forward_post ↔ tunnel is not in its log yet.
+- Reach (server hall, gallery, core so far): the plotting board opened its read modal at 22 px; the desk-top hall console opened at 27 px, the release console screen at 26 px; the gallery's lock panel at 25 px; the keypad plate's dusting minigame at 22 px; the core's key console, readout and host terminal all opened directly. Farah's chair opened through a menu shared with Farah (16 px), as expected.
+- Not yet reported: the forward post, tunnel, security office, workshop and power room objects, the patrols, console errors.
+
+### Changes
+
+- **forward_post.**
+  - The vans are decor now. Each scenario van is a small slot at its open side door: `m10_van_step1`, the step with the headset and SAFETYNET badge (van_one's text), and `m10_van_step2`, the step with the cuff rail's end (van_two). A tap on an NPC standing in front of a van no longer also hits a 117×60 van; the 20×8 step is still inside the frames of the NPCs placed at the door (van one: Voltage, Vector, HaX; van two: Nightshade in the van), which is where the story puts them. I tried mirroring van one to move its door west; the door then sat under Kowalczyk's frame instead, so I dropped the mirror and unregistered it.
+  - The gate hut now has the refit fence running west from it (`m10_gate_post1`, 80×62, slot at x 524). Its dark variant (`m10_gate_post_dark1`, the `spriteVariants` entry on `m06_assets_seized`) has the fence stop a few metres short with a loose end of wire (RL §2.1, milestone A30). Visual only; a low collision covers the fence.
+  - A tripod work lamp at the table's case end, a portable generator by the fence between the kit crates and the map board.
+  - arakawa_blast and minder_blast (16, 8) → (15, 8), west of the hut's new fence (ERB comment updated).
+- **gallery.** monitor_guard (3, 5), farah_guard (5, 5), quintero_lock and minder_lock (7, 5), nightshade_lock (6, 5) → y 4.5, so their feet are on the walkway, not the bottom wall row (user-approved; an ERB comment on each). In game they now stand above the rail; Farah stands at her chair.
+- **security_office.** A mug on the monitoring desk.
+- **workshop_floor.** Parts drawers under the WORKSHOP plate, east of the stair's lane.
+
+### Critique pass (all eight, against the skill and m09's finished rooms)
+
+| Room | Reads as its place? | Square to walls | Doors, slots, NPCs | Action |
+|---|---|---|---|---|
+| forward_post | yes: fence, rock, vans, table under a lamp, gate | vans side-on (vehicles), cones | the van steps share NPC frames by design (above) | R2 changes above |
+| blast_tunnel | yes: caged bulbs, FALLOUT SHELTER, post desk and kettle, ladder | yes | rota clear of both guard copies | none |
+| security_office | yes, but sparser than m09's offices | yes | S lane clear; door log out of guard B's frame | mug; a second desk would crowd the raid team's spots (y 7) and the S lane, so I left the floor open |
+| workshop_floor | yes; the centre-north is open floor | yes | sheets over open floor; slots out of the guard's frame | parts drawers |
+| power_room | yes: Bakelite wall, battery bay | yes | clear | none |
+| server_hall | the back wall reads as the command room; the middle is open floor | one office chair angled | both patrol lines clear | none: the open middle is the guards' beat and Asante's and the raid team's spots; more racks there would sit in their paths |
+| gallery | yes: walkway, rail, slit windows | yes | NPCs off the wall row | R2 move above |
+| core | yes: bare by design | yes | console out of Tesseract's and Quintero's frames | none |
+
+Compared with m09: m09's rooms carry more floor furniture (shelving runs, trolleys, rugs). m10's two big rooms keep their middles open because two patrols, Asante or Mercer and three raid copies stand or walk there.
+
+### New assets (round 2)
+
+Hand-drawn in `make_m10_props.py` (`round2()`), registered: `m10_gate_post1`, `m10_gate_post_dark1`, `m10_van_step1`, `m10_van_step2`, `m10_work_lamp1`, `m10_generator1`. No PixelLab or Gemini spend this round.
+
+### Checks after round 2
+
+- Validator: exit 0, schema passes; the only errors are the `halina_kowalczyk` sheet errors from the character work in progress.
+- `slot_audit.py --notes`: 0 problems. `check_room_walls.py`: all 64. `check_door_alignment.py`: 7 of 7. Door clearance: no hits. No decor takes a scenario slot.
+- Slot spacing: all 32 px or more. NPC frames: only the accepted overlaps (van steps, slit windows with the reinforcements, Farah's chair).
+- `game.js` passes `node --check` (the mirrored van's preload line removed with it).
+
+### Open for round 3
+
+1. Read the round 2 browser walk; fix any door, reach or patrol failure it finds (desk-top slots against the back wall, the high wall items and the east-wall items are the ones at risk).
+2. A red health-bar overlay draws over the gallery's LEVEL 2 sign in the tour shots (an engine combat overlay, not the map); check it in the walk.
+3. The hall and security office could take more detail only where no NPC stands or walks.
+4. Lighting next: the sodium lamp, the work lamp, caged bulbs and the vans' interiors are the sources.

@@ -368,7 +368,7 @@
     {
      "gid": 110,
      "height": 41,
-     "id": 12,
+     "id": 13,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -428,7 +428,7 @@
     {
      "gid": 888,
      "height": 61,
-     "id": 10,
+     "id": 11,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -440,7 +440,7 @@
     {
      "gid": 828,
      "height": 20,
-     "id": 19,
+     "id": 20,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -452,7 +452,7 @@
     {
      "gid": 119,
      "height": 25,
-     "id": 20,
+     "id": 21,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -512,7 +512,7 @@
     {
      "gid": 1401,
      "height": 40,
-     "id": 14,
+     "id": 15,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -524,7 +524,7 @@
     {
      "gid": 1402,
      "height": 42,
-     "id": 16,
+     "id": 17,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -536,7 +536,7 @@
     {
      "gid": 1375,
      "height": 22,
-     "id": 18,
+     "id": 19,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -572,7 +572,7 @@
     {
      "gid": 219,
      "height": 16,
-     "id": 13,
+     "id": 14,
      "name": "",
      "rotation": 0,
      "type": "",
@@ -604,6 +604,18 @@
      "width": 40,
      "x": 232.0,
      "y": 81.38
+    },
+    {
+     "gid": 202,
+     "height": 14,
+     "id": 10,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 16,
+     "x": 238.0,
+     "y": 81.38
     }
    ],
    "opacity": 1,
@@ -619,7 +631,7 @@
    "objects": [
     {
      "height": 30,
-     "id": 11,
+     "id": 12,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -630,7 +642,7 @@
     },
     {
      "height": 12.0,
-     "id": 15,
+     "id": 16,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -641,7 +653,7 @@
     },
     {
      "height": 12.0,
-     "id": 17,
+     "id": 18,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -652,7 +664,7 @@
     },
     {
      "height": 10,
-     "id": 21,
+     "id": 22,
      "name": "collision",
      "rotation": 0,
      "type": "",
@@ -670,7 +682,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 22,
+ "nextobjectid": 23,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -3103,7 +3115,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 592,
+   "tilecount": 598,
    "tileheight": 60,
    "tiles": [
     {
@@ -6657,6 +6669,42 @@
      "image": "../objects/m10_locker1.png",
      "imageheight": 42,
      "imagewidth": 22
+    },
+    {
+     "id": 602,
+     "image": "../objects/m10_gate_post1.png",
+     "imageheight": 62,
+     "imagewidth": 80
+    },
+    {
+     "id": 603,
+     "image": "../objects/m10_gate_post_dark1.png",
+     "imageheight": 62,
+     "imagewidth": 80
+    },
+    {
+     "id": 604,
+     "image": "../objects/m10_van_step1.png",
+     "imageheight": 8,
+     "imagewidth": 20
+    },
+    {
+     "id": 605,
+     "image": "../objects/m10_van_step2.png",
+     "imageheight": 8,
+     "imagewidth": 20
+    },
+    {
+     "id": 606,
+     "image": "../objects/m10_work_lamp1.png",
+     "imageheight": 50,
+     "imagewidth": 18
+    },
+    {
+     "id": 607,
+     "image": "../objects/m10_generator1.png",
+     "imageheight": 26,
+     "imagewidth": 34
     }
    ],
    "tilewidth": 60
