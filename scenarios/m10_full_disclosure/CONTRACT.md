@@ -124,7 +124,7 @@ Their lines live in `tesseract`. This file only answers a click: `start` → `wa
 | `database_beat` | By `database_outcome` (FA §4.6 "The database choice in the epilogue"): secured (vault, "Two maps now," the first operation's cell rolled up on screen); disclosed (HaX's acknowledgements line, the two operations going dark, the water utilities); both_wiped (Netherton's suspension of the player in front of the team, "I wanted to do the same…", then the wipe's gain line). |
 | `van` | Arrest and surrender only: the van; his nod to HaX; the chapter exchange with Netherton ("I wrote that chapter, Magnus." / "I know. I kept it to one page."); on `nightshade_taken_in`, the look at the van window ("You wrote me as a line item." / "You were a good one."); surrender's "There will be no trial." and HaX sitting with him for a minute. |
 | `the_rest` | HaX's forty-seven beat first on `m09_recruiter_secret` `kept` or `denied` (harder wording on `denied`; FA §13 10-9); then "the rest" in two lines ("The night he left, he asked me to go with him." / "I said no. It took me till morning."), introduced on arrest by "It's afterwards." as the van goes; then her last word by ending (FA §4.6 table). On `scorched` the rest is not told here (the hearing has it): Netherton's suspension stands as the scene's end. As her last word lands, one narrator line: the table's screen reaches six and nothing happens. |
-| `executed` | MC §8.3: no walkabout, no rest. The screen shows Social Fabric's story (the object's text; **no narrator line** reads it). Netherton: "I will not put my name under this one. You will be held until the board sits." HaX is not at the van (no HaX line; her message comes later as a text, JSON). Netherton's numbers without the $12.8M. The database beat without HaX reading acknowledgements. |
+| `executed` | MC §8.3: no walkabout, no rest. The screen shows Social Fabric's story (the object's text; **no narrator line** reads it). Netherton: "I will not put my name under this one. You will be held until the board sits." HaX is not at the van (no HaX line; her message comes later as a text, JSON). Netherton's numbers without the $12.8M. The database beat without HaX reading acknowledgements. (superseded: §11 alignment R3-m3/m4) |
 | last line, every ending except `scorched` | `#set_global:six_done:true`, `#set_global:closing_done:true`, `#complete_task:close_the_night` as tags above the scene's last spoken line, then `#exit_conversation`. On `scorched`: `#set_global:six_done:true` only, above the last line (the hearing completes the night). |
 | `exit_only` | `#exit_conversation`, no text. |
 
@@ -136,11 +136,11 @@ Walkabout picks read only what the 06:00 scene knows; a person who isn't standin
 
 #### `m10_citadel.ink` (`citadel`, hidden person NPC; Join only)
 
-`start`: `~ close_compute()` first. The Citadel, opening on HaX's channel still open on the wall with nobody speaking on it (A-04; not her empty desk), Netherton orders 0x00 brought in, the casualty curve climbing on the screen (narrator, one line, the curve and nothing else). No HaX lines (her last message is a text, JSON). Last line: `#set_global:closing_done:true`, `#complete_task:close_the_night`, `#exit_conversation`.
+`start`: `~ close_compute()` first. The Citadel, opening on HaX's channel still open on the wall with nobody speaking on it (A-04; not her empty desk), Netherton orders 0x00 brought in, the casualty curve climbing on the screen (narrator, one line, the curve and nothing else). No HaX lines (her last message is a text, JSON). Last line: `#set_global:closing_done:true`, `#complete_task:close_the_night`, `#exit_conversation`. (superseded: §11 alignment R3-m3/m4)
 
-#### `m10_recruiter_phone.ink` (`recruiter_phone`, phone; never rings)
+#### `m10_recruiter_phone.ink` (`recruiter_phone`, phone; never rings) (superseded: §11 alignment R3-m3/m4)
 
-`start` is the home knot, gated and silent (PASS2 lesson 36): it prints nothing and holds one sticky exit choice. The 06:00 text on `double_crossed` ("I'll remember the shape of you.") is a JSON text, not ink.
+`start` is the home knot, gated and silent (PASS2 lesson 36): it prints nothing and holds one sticky exit choice. The 06:00 text on `double_crossed` ("I'll remember the shape of you.") is a JSON text, not ink. (superseded: §11 alignment R3-m3/m4)
 
 #### `credits_sections.json` (group A; JSON, not ink)
 
@@ -411,7 +411,7 @@ OT §16 and MC §12 are the full inventories; this table adds which **ink file**
 | `nightshade_tethered` | bool | B Netherton `tether` | B calls, staging lines; C Nightshade `blast`; A `double_cross_open` |
 | `ghost_sale` | string, `""` (`stopped` / `bait` / `selling`) | C Ghost `ghost_call` (first line, then the pick) | B `console`; map (share display) |
 | `ghost_gift` | string, `""` (`code` / `card`) | C Ghost | C Fonoti; map (bark) |
-| `ghost_answer` **values fixed here** | string, `""` (`not_why` / `card_unsigned` / `ask_them` / `hospitals` / `trust`) | C Ghost | map (Ghost's 06:00 text by value) |
+| `ghost_answer` **values fixed here** | string, `""` (`not_why` / `card_unsigned` / `ask_them` / `hospitals` / `trust`) | C Ghost | map (Ghost's 06:00 text by value) (superseded: §11 alignment R3-m3/m4) |
 | `imran_outcome` | string, `""` (`talked_round` / `taken_in` / `card_cloned` / `ko` / `avoided`) | C Imran, Gary `tech`; map (`ko`, room exit) | A 06:00; map (Farah) |
 | `gary_outcome` | string, `""` (`talked_round` / `left_in_place` / `taken_in` / `ko` / `avoided`) | C Gary `tech`; map | A 06:00 |
 | `voltage_outcome` | string, `""` (`his_hands` / `by_hand` / `stood_down_print` / `talked_down` / `fought` / `ko` / `avoided`) | C Voltage; map | A 06:00 |
@@ -584,7 +584,7 @@ HaX's lines at the core (her return, her flag 4 lines, her lines in the case, th
 
 ### 4.5 Text, not voice
 
-Unvoiced, and outside these call knots: HaX's hub and every topic; her barks (the holding barks, the power-room reader, "Lost you up there. I'm back.", the handset bark); the slot voice's cost text before Wendell's menu; Ghost's mid-call text on `m02_ghost_keys_used` (a held toast); every 06:00 text (Ghost's by `ghost_answer` or `ghost_sale`, the Recruiter's on `double_crossed`, HaX's later message on `executed`); the gallery's guard barks; Tesseract's idle lines. Writers settle any of their wording in the report; stage 9 puts them in JSON.
+Unvoiced, and outside these call knots: HaX's hub and every topic; her barks (the holding barks, the power-room reader, "Lost you up there. I'm back.", the handset bark); the slot voice's cost text before Wendell's menu; Ghost's mid-call text on `m02_ghost_keys_used` (a held toast); every 06:00 text (Ghost's by `ghost_answer` or `ghost_sale`, the Recruiter's on `double_crossed`, HaX's later message on `executed`); the gallery's guard barks; Tesseract's idle lines. Writers settle any of their wording in the report; stage 9 puts them in JSON. (superseded: §11 alignment R3-m3/m4)
 
 After writing, each group recounts its voiced lines (calls only) with `node scripts/ink_runtime_check/voicelines.mjs <file.json>` on its call files and reports the count against this table.
 
@@ -666,7 +666,7 @@ FA §13's stage 7 rows, each with where it lands. "Wording" means the writer wri
 | B4 rules carried | §5.6 | all |
 | B5 no `\|\|` in JSON | §2.1; `close_compute` | A |
 | 10-1 voiced calls; "Manual."; Quintero's door line; m09's `alpha_tapes` line | §4.2; "Manual." is Nightshade on the net in `breach_call`; "I don't like doors that know your name." is Quintero's in `quintero_so` on `breach_announced` (in person, so it doesn't add a voice to the call); "The best lock there is. Tape two." closes `breach_call` on `alpha_tapes` | B |
-| 10-2 Ghost's refused branch | §1.5 Ghost; Ghost's 06:00 text is JSON by `ghost_answer` (refused: by answer) and `ghost_sale` (selling branches) | C |
+| 10-2 Ghost's refused branch | §1.5 Ghost; Ghost's 06:00 text is JSON by `ghost_answer` (refused: by answer) and `ghost_sale` (selling branches) | C (superseded: §11 alignment R3-m3/m4) |
 | 10-3 the lock guard's ink | §1.5 Fonoti; the pointer bark is his, first person, JSON | C |
 | 10-4 the power room | the cost text is JSON (OT §4.9); the cut shape is §1.6 | C, B |
 | 10-5 staging lines | per RL §2.9 in each raid file; the Malhotra-out cost is `gallery_open_call`'s static branch; Victoria's call after `gallery_open_call` closes, with HaX's "Sterling's still on the line…" ending that call | B, C |
@@ -1069,3 +1069,14 @@ Applied 2026-10-21 by the m10 fixer from `finale/STAGE_8_RULINGS.md` and the rev
 - R3-m4: T-57 ("0x00.") is deleted from the ERB; the Citadel scene carries it.
 - R3-m8: the season fallback row reads "Still answering for every operation."
 - R3-m10: the 0x00 and merge-order comments in the ERB match the code. Correction to R2-m14: two of the 25 deleted clauses did print, Netherton's and HaX's Join clauses; `safetynet_join`'s defaults now say the same.
+
+**Alignment round 4 (ALIGNMENT_REVIEW_F_R4.md; ink and JSON).**
+- R4-m1: SAFETYNET recall clauses ahead of the presence catch-alls, in `safetynet` and `safetynet_join` (both copies): Vector on `vector_on_team && vector_recalled` "Cryptographer. Sent back, then recalled. Still waiting for an apology."; Phantom on `phantom_on_team && phantom_recalled` "Auditor. Sent back, then recalled. It's on his list."
+- R4-m2: `safetynet_join` gains the Vector and Phantom knock-out clauses first (the `safetynet` strings); Quintero's Join knock-out clause is "Raid lead. Put on the floor by her own agent. On her feet by Friday, and asking questions." (warning).
+- R4-m3: Kowalczyk's `kowalczyk_ko` SAFETYNET clause is "Breaching lead, Task Force Null. Eleven years in SAFETYNET. Woke in the second van. Never accused. Badge still active." (warning).
+- R4-m4/m5 (`m10_six_oclock.ink` `scorched_close`): Netherton's map line now answers "And the database?" first, before the season tunnel; two forms by `head_start_out` ("none": as before; otherwise "Nobody holds the whole map now. Not him, and not whoever sits in my chair next."). Then the season, the suspension, `#set_global:six_done:true`, and "I wanted to do the same…" as the last line, so the hearing still triggers one line before the end. The both-wiped St. Catherine's season form ends "They were on it too."
+- R4-m6 (`m10_citadel.ink`): the button is "[(Keep driving.)]"; the header says her message is narrated on the player's road (T-57 cut).
+- R4-m7: `recruiter_phone` is gone from the phone's `npcIds`, its NPC record is deleted, and `m10_recruiter_phone.ink/.json` are deleted (staged with `git rm`). The START KIT comment, ASSET_LIST row and texts file speaker list match. `phone_beat` carries her line.
+- R4-m8: comments in `m10_six_oclock.ink` and `m10_ghost_phone.ink` say the 06:00 texts are cut; the texts file's §6 is one sentence saying T-47 to T-57 are cut; the CONTRACT lines that specified them as JSON texts carry "(superseded: §11 alignment R3-m3/m4)".
+- R4-m9: m06 rows in `elsewhere_two` (Join leaves it out), one per save, all on `m06_completed`: seized → "The twelve point eight million: frozen in a SAFETYNET wallet. It never reached the cells."; watched (not seized) with `database_outcome === 'disclosed'` → "The HashChain wallets: tagged since the fund. Dark since the disclosure." (warning); watched otherwise → "The HashChain wallets: still tagged. Still watched." A save that deferred m06's decision gets no row. Departure from the review: one seized row, not two split by `database_outcome`. m06's own record of the freeze ("$12.8M moved into a SAFETYNET wallet. The balances never reach the cells.") supports that wording; the "victims' fund" and "held as evidence" readings aren't in m06. "The tags dropped at five past" became "Dark since the disclosure.", which names the cause without a time the scene doesn't state.
+- Voiced-line delta for FINALE_TTS_COUNT.md: +1 Netherton line (the "whole map" form) and 1 Netherton line reworded (the both-wiped St. Catherine's form). Credits, buttons and comments aren't voiced.

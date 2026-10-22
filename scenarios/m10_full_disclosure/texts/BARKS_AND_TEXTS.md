@@ -4,7 +4,7 @@ Stage 9 pastes these as JSON: a **bark** is the speaker NPC's `bark` on the even
 
 Conditions are `&&` only, written `globalVars.<name>`, no `||`, no brackets: an "or" is two rows. Every HaX row also carries `!globalVars.hax_jammed` (OT §5), which the condition column leaves out. **Fixed** marks a string copied from a stage document (source in Notes); the rest are new at stage 8. Texts from one event go about 5 s apart (`delayMs` steps of 5000 unless a row says otherwise). Every row is `onceOnly` unless Notes say "repeats".
 
-Speakers: `agent_0x99` (HaX, phone), `lock_guard` (Sione Fonoti), `monitor_guard`, `nightshade_lock`, `tesseract`, `ghost_phone`, `recruiter_phone`, and the slot voice's phone (`vance_phone`, `elena_phone` or `agent_0x99`).
+Speakers: `agent_0x99` (HaX, phone), `lock_guard` (Sione Fonoti), `monitor_guard`, `nightshade_lock`, `tesseract`, `ghost_phone`, and the slot voice's phone (`vance_phone`, `elena_phone` or `agent_0x99`).
 
 ## 1. Door holding barks
 
@@ -100,9 +100,7 @@ Voltage's print match ("I told you it'd be waiting. It was.") and the Alpha tape
 
 ## 6. 06:00 and after
 
-Alignment A2 (2026-10-22): the 06:00 rows T-47 to T-55 also play inside the scene now (`m10_six_oclock.ink` `phone_beat`, read by the narrator), T-56 inside `executed_close` and T-57 inside the Citadel's opening. Since R2-m10 they are skipped on `six_open` / `citadel_open`, so T-47 to T-56 never deliver (R3-m3: inert by design, or delete them); T-57 can still toast on Join (R3-m4).
-
-Ghost's, the Recruiter's and HaX's executed texts arrive as the 06:00 scene closes: trigger `global_variable_changed:six_done` with `value === true` (sent during the scene, they land in the thread as it closes; SE §3.5, S5-6). `six_done` is never set on Join.
+Cut (alignment R3-m3/m4): rows T-47 to T-57 are deleted from the ERB. The closing scenes carry them: Ghost's and the Recruiter's words in `m10_six_oclock.ink` `phone_beat`, HaX's executed line in `executed_close`, and "0x00." in the Citadel's opening. The Recruiter has no phone contact (R4-m7).
 
 | # | Speaker | Text | Condition (with `six_done`) | Notes |
 |---|---|---|---|---|

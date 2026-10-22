@@ -26,7 +26,7 @@ Each row says what the mission wants, what `scenario.json.erb` uses today, and w
 | Robert Vance (phone) | `vance_phone` | avatar `robert_vance_headshot.png` | reuse |
 | Elena Rodriguez (phone) | `elena_phone` | avatar `elena_rodriguez_headshot.png` | reuse |
 | Ghost (phone) | `ghost_phone` | avatar `assets/npc/avatars/npc_hacker.png` (m02's) | reuse |
-| The Recruiter (phone, texts only) | `recruiter_phone` | avatar `the_recruiter_headshot.png` | reuse |
+| The Recruiter (no contact; narrated at 06:00) | none (record removed, alignment R4-m7) | none | n/a |
 | Victoria on the line (phone) | `victoria_line` | avatar `victoria_sterling_headshot.png` | reuse |
 
 ### 1.2 New characters

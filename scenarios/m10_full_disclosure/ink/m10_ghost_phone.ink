@@ -41,7 +41,7 @@ VAR ghost_l_owned = false    // broken branch: the player has owned the broken d
     -> selling
 }
 
-// Deal kept: a stance. The answer comes back as Ghost's 06:00 text (JSON).
+// Deal kept: a stance. The answer comes back at 06:00, narrated in six_oclock's phone_beat (T-47 to T-54 cut, R3-m3).
 === kept ===
 You kept your word. I keep mine. Nothing of mine is for sale tonight.
 One question, and then I'm gone for good. Did the board ever thank you?

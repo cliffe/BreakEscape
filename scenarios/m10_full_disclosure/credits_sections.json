@@ -102,6 +102,10 @@
             "condition": "globalVars.vector_on_team === true && globalVars.officer_out === 'vector'"
           },
           {
+            "text": "Cryptographer. Sent back, then recalled. Still waiting for an apology.",
+            "condition": "globalVars.vector_on_team === true && globalVars.vector_recalled === true"
+          },
+          {
             "text": "Cryptographer, the crypto annex.",
             "condition": "globalVars.vector_on_team === true"
           }
@@ -118,6 +122,10 @@
           {
             "text": "Auditor. Filed a complaint about tonight. It was upheld.",
             "condition": "globalVars.phantom_on_team === true && globalVars.officer_out === 'phantom'"
+          },
+          {
+            "text": "Auditor. Sent back, then recalled. It's on his list.",
+            "condition": "globalVars.phantom_on_team === true && globalVars.phantom_recalled === true"
           },
           {
             "text": "Auditor. The kit sign-outs balance now.",
@@ -144,7 +152,7 @@
             "style": "warning"
           },
           {
-            "text": "Breaching lead, Task Force Null. Eleven years in SAFETYNET. Woke in the second van. Badge cancelled at six.",
+            "text": "Breaching lead, Task Force Null. Eleven years in SAFETYNET. Woke in the second van. Never accused. Badge still active.",
             "condition": "globalVars.kowalczyk_ko === true",
             "style": "warning"
           },
@@ -179,8 +187,9 @@
         "name": "AGENT 0x2D 'ANCHOR'",
         "clauses": [
           {
-            "text": "Raid lead. On her feet by Friday, and asking questions.",
-            "condition": "globalVars.quintero_ko === true"
+            "text": "Raid lead. Put on the floor by her own agent. On her feet by Friday, and asking questions.",
+            "condition": "globalVars.quintero_ko === true",
+            "style": "warning"
           },
           {
             "text": "Raid lead. Cleared on paper by Friday.",
@@ -211,6 +220,15 @@
         "name": "AGENT 0x23 'VECTOR'",
         "clauses": [
           {
+            "text": "Cryptographer. Knocked out by his own agent. Back at the annex on Monday.",
+            "condition": "globalVars.vector_on_team === true && globalVars.vector_ko === true",
+            "style": "warning"
+          },
+          {
+            "text": "Cryptographer. Sent back, then recalled. Still waiting for an apology.",
+            "condition": "globalVars.vector_on_team === true && globalVars.vector_recalled === true"
+          },
+          {
             "text": "Cryptographer. Tracing the release.",
             "condition": "globalVars.vector_on_team === true"
           }
@@ -219,6 +237,15 @@
       {
         "name": "AGENT 0x88 'PHANTOM'",
         "clauses": [
+          {
+            "text": "Auditor. Floored by the agent whose kit he audits. He has filed it.",
+            "condition": "globalVars.phantom_on_team === true && globalVars.phantom_ko === true",
+            "style": "warning"
+          },
+          {
+            "text": "Auditor. Sent back, then recalled. It's on his list.",
+            "condition": "globalVars.phantom_on_team === true && globalVars.phantom_recalled === true"
+          },
           {
             "text": "Auditor. Auditing 0x00's sign-outs.",
             "condition": "globalVars.phantom_on_team === true"

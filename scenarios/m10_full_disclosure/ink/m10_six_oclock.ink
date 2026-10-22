@@ -78,8 +78,8 @@ Narrator: The forward post, a few minutes before six. Floodlights, engines runni
     -> phone_beat
 
 // Alignment A2: Ghost's last word and the Recruiter's arrive here, inside the
-// scene, before the numbers. Read by the narrator as the texts they are. The
-// JSON texts T-47 to T-55 are inert since R2-m10 (skipped on six_open; R3-m3).
+// scene, before the numbers. Read by the narrator as the texts they are.
+// Cut (alignment R3-m3/m4): the closing scene carries it (T-47 to T-55 deleted).
 === phone_beat ===
 Narrator: Your phone buzzes on the bonnet. A number with no name.
 {
@@ -554,15 +554,21 @@ Agent HaX: The forty-seven. You told me she was fishing. Now tell me what she ac
 
 // Scorched Earth: the suspension and the wipe's gain end this scene; the
 // hearing tells the rest and closes the night (OT §4.7).
+// R4-m4: his answer to "And the database?" comes first, before the season's
+// menu. R4-m5: "not the buyers" only when nothing went out at four.
 === scorched_close ===
+{ head_start_out == "none":
+    Director Magnus Netherton: Nobody holds the map now. Not him, not the buyers, not whoever sits in my chair next.
+- else:
+    Director Magnus Netherton: Nobody holds the whole map now. Not him, and not whoever sits in my chair next.
+}
 -> season ->
 Director Magnus Netherton: Agent 0x00. As of now you are suspended, pending a hearing.
 + [Understood, sir.]
 + [(Say nothing.)]
 -
-Director Magnus Netherton: I wanted to do the same. That is why you are suspended and I am not.
 #set_global:six_done:true
-Director Magnus Netherton: Nobody holds the map now. Not him, not the buyers, not whoever sits in my chair next.
+Director Magnus Netherton: I wanted to do the same. That is why you are suspended and I am not.
 ~ six_quiet = true
 #exit_conversation
 -> finished
@@ -589,7 +595,7 @@ Narrator[none]: One paragraph: a SAFETYNET agent shot a man in a converted Cold 
 
 === executed_close ===
 Director Magnus Netherton: Take 0x00 to the second van. Nobody discusses tonight with them until the board sits.
-// Alignment A2: HaX's later message inside the scene. T-56 is inert since R2-m10 (skipped on six_open); the scene carries it.
+// Alignment A2: HaX's later message inside the scene. Cut (alignment R3-m3/m4): the closing scene carries it (T-56 deleted).
 // R2-m9, R3-m5: Ghost's and the Recruiter's last words, accounted for and left unread.
 { m09_recruiter_offer == "double_crossed":
     Narrator: In the van, your phone lights three times. Two numbers with no name, which you don't open. Then HaX.
@@ -643,7 +649,7 @@ Narrator: 'I'll be at the board. I don't know what I'll say.'
 - key == "stcath_exposed" and database_outcome == "secured":
     Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They still aren't. That was my signature too.
 - key == "stcath_exposed" and database_outcome == "both_wiped":
-    Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They were on the map we just burned.
+    Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They were on it too.
 - key == "stcath_exposed":
     Director Magnus Netherton: Forty hospitals patched after St. Catherine's. The pumps on his list were not among them. They will be now.
 - key == "stcath_bed4":

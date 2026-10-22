@@ -2,8 +2,8 @@ INCLUDE m10_carryover_vars.ink
 // ===========================================
 // m10 Full Disclosure: THE CITADEL (Join only).
 // NPC id: citadel (hidden person NPC). Opened on conversation_closed:tesseract
-// with ending joined (OT §4.7). No HaX lines: her last message is a text
-// (JSON). One narrator line for the curve, and nothing else about it.
+// with ending joined (OT §4.7). No HaX lines: her last message is narrated on
+// the player's road (T-57 cut, R3-m4). One narrator line for the curve.
 // ===========================================
 
 VAR cit_quiet = false
@@ -32,7 +32,7 @@ Director Magnus Netherton: He said it had to be one of ours. He was right, and I
 - m08_nightshade_triple_agent and m09_nightshade_shown_file:
     Director Magnus Netherton: Nightshade asked me one question. Whether it was you. I said yes, and he stopped talking.
 }
-+ [(Listen.)]
++ [(Keep driving.)]
 -
 Narrator: On the next screen, the casualty count climbs. Nobody turns it off.
 #set_global:closing_done:true
