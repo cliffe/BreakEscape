@@ -89,6 +89,6 @@ Gareth Fairbairn: I trust you to be straight about the gaps and kind about the p
 -> hub
 
 === why ===
-Gareth Fairbairn: Because one of mine nearly wired away a month's billing, and I'd rather learn it from you than a thief.
+Gareth Fairbairn: Because next time it won't be caught, and I'd rather learn that from you than a thief.
 ~ quiet = true
 -> hub

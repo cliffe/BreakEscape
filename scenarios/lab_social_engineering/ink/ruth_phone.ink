@@ -128,7 +128,7 @@ Recon's next. If that door's locked, I've got the key — come and see me. The O
 === stage3 ===
 { phish_hampshire_landed and phish_pierce_landed: -> hub }
 { not (phish_hampshire_landed or phish_pierce_landed or phish_lord_landed):
-    Operations now. If that door's locked, I've got the key — come and see me.
+    Operations next, if you've not been in. The key's with me whenever the door won't open.
 - else:
     The rest still have to act in Operations before there's a report.
 }

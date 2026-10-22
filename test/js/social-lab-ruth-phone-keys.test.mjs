@@ -54,7 +54,9 @@ test('stage 2 (Recon) opener points the student to Ruth for the key, not "you al
 test('stage 3 (Operations) opener points the student to Ruth for the key', { skip }, () => {
     const t = opener({ ...base, roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true });
     assert.match(t, /key/i);
-    assert.match(t, /come and see me|I've got the key/i, 'points back to Ruth');
+    // M-C4-2 reworded the stage-3 door line so it no longer rhymes with stage 2's; it still
+    // points the student back to Ruth for the key ("The key's with me whenever the door won't open").
+    assert.match(t, /key's with me|come and see me|I've got the key/i, 'points back to Ruth');
 });
 
 test('stage 7 (Blue Team) opener points to Tomasz and does NOT re-offer the key the student already holds (R6 F3)', { skip }, () => {

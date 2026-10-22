@@ -639,7 +639,8 @@
             { "id": "r_namesake", "text": "J. Baker, plumbing firm, Leeds", "fact": "baker_namesake" } ] },
         { "id": "handle_decoy", "label": "Handle search: @mpierce_official", "card": "tool_recon",
           "unlockedBy": { "visited": "deck" },
-          "results": [] }
+          "results": [
+            { "id": "r_decoy_parked", "text": "@mpierce_official: parked account, no posts since the day it was made. Not Melanie — anyone can register an official-looking handle." } ] }
       ]
     },
 
@@ -706,7 +707,7 @@
             "wrong-type": { "fail": "That isn't a file type I can open as a CV.", "redFlag": null }
           }
         },
-        "replies": { "landed": "Thanks, I'll get to this CV before Friday." },
+        "replies": { "landed": "Cheers, straight onto the Friday pile with the rest." },
         "hints": ["An open inbox trusts anyone who looks like an applicant.", "What does the careers page ask applicants to send?"],
         "outcome": { "setGlobal": { "phish_hampshire_landed": true } }
       },
@@ -1450,9 +1451,9 @@
                 bark fires only when both are true. One mapping per global catches whichever
                 is set last. %>
             { "eventPattern": "global_variable_changed:plan_done", "condition": "value === true && globalVars.fairbairn_condition_heard === true", "onceOnly": true,
-              "bark": "Plan's good and Gareth's signed. The Recon key's ready for you.", "barkDelay": 1500 },
+              "bark": "Plan's signed off. Come and grab the Recon key when you're ready.", "barkDelay": 1500 },
             { "eventPattern": "global_variable_changed:fairbairn_condition_heard", "condition": "value === true && globalVars.plan_done === true", "onceOnly": true,
-              "bark": "Plan's good and Gareth's signed. The Recon key's ready for you.", "barkDelay": 1500 },
+              "bark": "Plan's signed off. Come and grab the Recon key when you're ready.", "barkDelay": 1500 },
             { "eventPattern": "global_variable_changed:osint_done", "condition": "value === true && globalVars.se_intel_username_convention === true", "onceOnly": true,
               "bark": "Recon's done, PDF and all. The Operations key's ready.", "barkDelay": 1500 },
             { "eventPattern": "global_variable_changed:se_intel_username_convention", "condition": "value === true && globalVars.osint_done === true", "onceOnly": true,
