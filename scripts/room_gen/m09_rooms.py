@@ -290,12 +290,13 @@ def room_m09_reading():
     r = G._Uni()
     r.item("m09_sign_reading1", 80.0, 28.0)
     r.item("m09_county_map1", 146.0, 46.0)             # R3 R2
-    r.item("m09_sign_silence1", 80.0, 44.0)
+    r.item("m09_sign_silence1", 196.0, 27.0)            # over the microfiche (moved for the second lamp)
     # the terminal's wall screen east of the desk, over open floor (the E door's mouth),
     # so a player can stand right under it (R2: over the desk it was only reachable at 52 px)
     _cond(r, "m09_drop_screen1", 236.0, 58.0)
     w = r.table("smalldesk2", 78.0, 90.0)               # x 78-110
-    r.on(w, "notes_notebook1", 0.40, 0.30, layer="conditional_table_items")
+    r.on(w, "notes_notebook1", 0.30, 0.30, layer="conditional_table_items")
+    r.on(w, "bankers_lamp1", 0.86, 0.26)                # a second green lamp (lighting R2 m9)
     d = r.table("desk1", 120.0, 90.0)                   # x 120-198
     r.on(d, "vm-launcher", 0.30, 0.45, layer="conditional_table_items")
     r.on(d, "bankers_lamp1", 0.62, 0.32)

@@ -217,3 +217,16 @@ Lessons:
 - For a confrontation, put the pool on the person, not the table: the subject stands behind the table, so offset the light a tile north of it.
 - An object with `spriteVariants` needs a base `sprite` too, even when the map gives it the right texture: on a global change with no matching variant `rooms.js` falls back to `sprite || type` (m07 7bf88a4c, m08 B1). Test the face swap in the order a player meets it: load the room first, then set the global.
 - Set globals in a browser check through `applyActions` `set_global` so `global_variable_changed` fires and `spriteVariants` swap; a plain assignment to `globalVariables` only reaches lighting (it polls).
+
+### m09_digital_archaeology (2026-10-22, finale, lighting rounds 1-2)
+
+Plan and log: `scenarios/m09_digital_archaeology/LIGHTING_PLAN.md`. A records warehouse in Helena at night (scenario ambient `#b8bfce`); each room's light from stage 5's "Lighting" lines.
+- **On:** dock `#bab09c`, no panels, two sodium pools `#ffc070`; front desk `#b0b6c4` with Noor's lamp warm `above`; closet `#a8b0c4`, no panels; reading room `#c8bca4`, no panels, two green lamps; hub and cage `#a8b0c0`, no panels, a hard white pool on the hatch counter / the shredder line.
+- **Motion:** staff passage (flicker, dark `#161c30`); open stacks (`startOn: false`, dark `#141a2a`); office `#c4b8a6`, dark `#14121c`, desk lamp and kettle light; tape room `#a4b0c8`, dark `#0a0f1c`, blue standby LEDs on the m09 reel shelves (`leds`, `ledColor`); salvage cage `#b4b2b8`, dark `#0a0f1c`, Tomb Beta's rack the one amber light (`ledColor` `#ffb060`), screens dimmed.
+- Call points off. No engine change.
+
+Lessons:
+- `startOn: false` doesn't hold a dark entry while a patrolling NPC is in the room: about 300 ms after the room loads, `checkNpcMotion` strikes the lights, and `offAfter` never fires while the NPC stays in the room. The strike happens as the door opens. There is no player-only sensor.
+- A "warm light in the dark" needs everything else in the room turned down: the screens and a neighbour's lamp outshone an amber rack at r 40 and 0.55. Give the rack `ledColor` too, or its LEDs read stock green once lit.
+- A desk lamp's colour needs `above` in a lit room, or the pool reads white-cream.
+- A status lamp that says a story state (a wipe running or halted) should use the same condition as the task that records that state, not a looser one.

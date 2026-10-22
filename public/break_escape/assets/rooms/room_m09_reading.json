@@ -73,7 +73,7 @@
                 {
                  "gid":107,
                  "height":39,
-                 "id":7,
+                 "id":8,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -85,7 +85,7 @@
                 {
                  "gid":109,
                  "height":41,
-                 "id":13,
+                 "id":14,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -138,13 +138,13 @@
                  "type":"",
                  "visible":true,
                  "width":63,
-                 "x":80,
-                 "y":44
+                 "x":196,
+                 "y":27
                 }, 
                 {
                  "gid":1342,
                  "height":59,
-                 "id":11,
+                 "id":12,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -156,7 +156,7 @@
                 {
                  "gid":308,
                  "height":32,
-                 "id":15,
+                 "id":16,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -208,13 +208,13 @@
                  "type":"",
                  "visible":true,
                  "width":14,
-                 "x":83.8,
+                 "x":80.6,
                  "y":61.3
                 }, 
                 {
                  "gid":382,
                  "height":23,
-                 "id":8,
+                 "id":9,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -226,7 +226,7 @@
                 {
                  "gid":1340,
                  "height":24,
-                 "id":10,
+                 "id":11,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -238,7 +238,7 @@
                 {
                  "gid":1339,
                  "height":27,
-                 "id":14,
+                 "id":15,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -261,7 +261,19 @@
                 {
                  "gid":960,
                  "height":25,
-                 "id":9,
+                 "id":7,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":23,
+                 "x":94.02,
+                 "y":59.66
+                }, 
+                {
+                 "gid":960,
+                 "height":25,
+                 "id":10,
                  "name":"",
                  "rotation":0,
                  "type":"",
@@ -283,7 +295,7 @@
          "objects":[
                 {
                  "height":10,
-                 "id":12,
+                 "id":13,
                  "name":"collision",
                  "rotation":0,
                  "type":"",
@@ -299,7 +311,7 @@
          "y":0
         }],
  "nextlayerid":14,
- "nextobjectid":16,
+ "nextobjectid":17,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -2771,7 +2783,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":551,
+         "tilecount":592,
          "tileheight":124,
          "tiles":[
                 {
@@ -6134,6 +6146,256 @@
                  "image":"..\/objects\/m09_folder1.png",
                  "imageheight":18,
                  "imagewidth":26
+                }, 
+                {
+                 "id":561,
+                 "image":"..\/objects\/m10_sign_fallout1.png",
+                 "imageheight":19,
+                 "imagewidth":62
+                }, 
+                {
+                 "id":562,
+                 "image":"..\/objects\/m10_sign_security1.png",
+                 "imageheight":11,
+                 "imagewidth":39
+                }, 
+                {
+                 "id":563,
+                 "image":"..\/objects\/m10_sign_workshop1.png",
+                 "imageheight":11,
+                 "imagewidth":39
+                }, 
+                {
+                 "id":564,
+                 "image":"..\/objects\/m10_sign_plant1.png",
+                 "imageheight":11,
+                 "imagewidth":47
+                }, 
+                {
+                 "id":565,
+                 "image":"..\/objects\/m10_sign_ops1.png",
+                 "imageheight":11,
+                 "imagewidth":47
+                }, 
+                {
+                 "id":566,
+                 "image":"..\/objects\/m10_sign_gallery1.png",
+                 "imageheight":11,
+                 "imagewidth":35
+                }, 
+                {
+                 "id":567,
+                 "image":"..\/objects\/m10_sign_level1.png",
+                 "imageheight":11,
+                 "imagewidth":35
+                }, 
+                {
+                 "id":568,
+                 "image":"..\/objects\/m10_sign_level2.png",
+                 "imageheight":11,
+                 "imagewidth":35
+                }, 
+                {
+                 "id":569,
+                 "image":"..\/objects\/m10_sign_keepclear1.png",
+                 "imageheight":11,
+                 "imagewidth":47
+                },
+            
+                {
+                 "id":570,
+                 "image":"..\/objects\/m10_sign_post1.png",
+                 "imageheight":11,
+                 "imagewidth":47
+                }, 
+                {
+                 "id":571,
+                 "image":"..\/objects\/m10_sign_batteries1.png",
+                 "imageheight":11,
+                 "imagewidth":43
+                }, 
+                {
+                 "id":572,
+                 "image":"..\/objects\/m10_caged_lamp1.png",
+                 "imageheight":12,
+                 "imagewidth":10
+                }, 
+                {
+                 "id":573,
+                 "image":"..\/objects\/m10_readout1.png",
+                 "imageheight":18,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":574,
+                 "image":"..\/objects\/m10_readout_side1.png",
+                 "imageheight":22,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":575,
+                 "image":"..\/objects\/m10_door_panel1.png",
+                 "imageheight":26,
+                 "imagewidth":18
+                }, 
+                {
+                 "id":576,
+                 "image":"..\/objects\/m10_load_board1.png",
+                 "imageheight":30,
+                 "imagewidth":66
+                }, 
+                {
+                 "id":577,
+                 "image":"..\/objects\/m10_bakelite_panel1.png",
+                 "imageheight":28,
+                 "imagewidth":34
+                }, 
+                {
+                 "id":578,
+                 "image":"..\/objects\/m10_slit_window1.png",
+                 "imageheight":14,
+                 "imagewidth":74
+                }, 
+                {
+                 "id":579,
+                 "image":"..\/objects\/m10_plotting_board1.png",
+                 "imageheight":30,
+                 "imagewidth":112
+                },
+            
+                {
+                 "id":580,
+                 "image":"..\/objects\/m10_wall_ladder1.png",
+                 "imageheight":30,
+                 "imagewidth":20
+                }, 
+                {
+                 "id":581,
+                 "image":"..\/objects\/m10_hatch1.png",
+                 "imageheight":30,
+                 "imagewidth":34
+                }, 
+                {
+                 "id":582,
+                 "image":"..\/objects\/m10_keypad_plate1.png",
+                 "imageheight":18,
+                 "imagewidth":12
+                }, 
+                {
+                 "id":583,
+                 "image":"..\/objects\/m10_service_door1.png",
+                 "imageheight":70,
+                 "imagewidth":18
+                }, 
+                {
+                 "id":584,
+                 "image":"..\/objects\/m10_map_board1.png",
+                 "imageheight":28,
+                 "imagewidth":40
+                }, 
+                {
+                 "id":585,
+                 "image":"..\/objects\/m10_field_screen1.png",
+                 "imageheight":18,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":586,
+                 "image":"..\/objects\/m10_breaching_case1.png",
+                 "imageheight":14,
+                 "imagewidth":26
+                }, 
+                {
+                 "id":587,
+                 "image":"..\/objects\/m10_kit_crate1.png",
+                 "imageheight":20,
+                 "imagewidth":32
+                }, 
+                {
+                 "id":588,
+                 "image":"..\/objects\/m10_gate_hut1.png",
+                 "imageheight":62,
+                 "imagewidth":48
+                }, 
+                {
+                 "id":589,
+                 "image":"..\/objects\/m10_gate_hut_dark1.png",
+                 "imageheight":62,
+                 "imagewidth":48
+                },
+            
+                {
+                 "id":590,
+                 "image":"..\/objects\/m10_key_console1.png",
+                 "imageheight":36,
+                 "imagewidth":52
+                }, 
+                {
+                 "id":591,
+                 "image":"..\/objects\/m10_cracker_rack1.png",
+                 "imageheight":50,
+                 "imagewidth":34
+                }, 
+                {
+                 "id":592,
+                 "image":"..\/objects\/m10_van1.png",
+                 "imageheight":60,
+                 "imagewidth":117
+                }, 
+                {
+                 "id":593,
+                 "image":"..\/objects\/m10_van2.png",
+                 "imageheight":50,
+                 "imagewidth":111
+                }, 
+                {
+                 "id":594,
+                 "image":"..\/objects\/m10_van3.png",
+                 "imageheight":70,
+                 "imagewidth":101
+                }, 
+                {
+                 "id":595,
+                 "image":"..\/objects\/m10_bypass_panel1.png",
+                 "imageheight":30,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":596,
+                 "image":"..\/objects\/m10_wall_screen1.png",
+                 "imageheight":24,
+                 "imagewidth":36
+                }, 
+                {
+                 "id":597,
+                 "image":"..\/objects\/m10_plans1.png",
+                 "imageheight":14,
+                 "imagewidth":28
+                }, 
+                {
+                 "id":598,
+                 "image":"..\/objects\/m10_field_screen_dark1.png",
+                 "imageheight":18,
+                 "imagewidth":24
+                }, 
+                {
+                 "id":599,
+                 "image":"..\/objects\/m10_console_controls1.png",
+                 "imageheight":14,
+                 "imagewidth":30
+                },
+            
+                {
+                 "id":600,
+                 "image":"..\/objects\/m10_cupboard1.png",
+                 "imageheight":40,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":601,
+                 "image":"..\/objects\/m10_locker1.png",
+                 "imageheight":42,
+                 "imagewidth":22
                 }],
          "tilewidth":252
         }],

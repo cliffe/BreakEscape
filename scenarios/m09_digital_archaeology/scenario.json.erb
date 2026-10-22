@@ -673,7 +673,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_aes_dock, ASSET_LIST §2). %>
     "loading_dock": {
       "type": "room_m09_dock",
-      "lighting": {"mode": "on", "ambient": "#bab09c", "panels": false, "lights": [{"x": 5, "y": 3, "color": "#ffc070", "radius": 110, "intensity": 0.6}, {"x": 8, "y": 3.2, "color": "#ffc070", "radius": 100, "intensity": 0.6}], "emitters": {"aes_shutter_ctrl": {"color": "#7dffa0", "radius": 8, "intensity": 0.45, "above": true}, "cctv_camera": {"color": "#ff4040", "radius": 6, "intensity": 0.4, "above": true}}},
+      "lighting": {"mode": "on", "ambient": "#bab09c", "panels": false, "lights": [{"x": 5, "y": 3, "color": "#ffc070", "radius": 110, "intensity": 0.75}, {"x": 7.6, "y": 3.2, "color": "#ffc070", "radius": 80, "intensity": 0.75}], "emitters": {"aes_shutter_ctrl": {"color": "#7dffa0", "radius": 8, "intensity": 0.45, "above": true}, "cctv_camera": {"color": "#ff4040", "radius": 6, "intensity": 0.4, "above": true}}},
       "door_sign": "Mountain States Records & Retention -- Deliveries",
       "connections": {
         "north": "open_stacks",
@@ -1001,7 +1001,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     room (stage 9 change, S5 §3.11). Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_reception). %>
     "front_desk": {
       "type": "room_m09_front",
-      "lighting": {"emitters": {"fire_alarm_point": {"intensity": 0}, "office-misc-lamp": {"radius": 60}}},
+      "lighting": {"emitters": {"fire_alarm_point": {"intensity": 0}, "office-misc-lamp": {"color": "#ffcf8a", "radius": 60, "intensity": 0.7, "above": true}}, "ambient": "#b0b6c4"},
       "door_sign": "Front Desk -- Staff Only Beyond This Point",
       "locked": true,
       "lockType": "key",
@@ -1296,7 +1296,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder small_room_1x1gu). %>
     "server_closet": {
       "type": "room_m09_closet",
-      "lighting": {"mode": "on", "ambient": "#a8b0c4", "panels": false, "emitters": {"m09_degausser": [{"condition": "globalVars.tran_outcome !== 'left'", "color": "#ffb030", "radius": 10, "intensity": 0.45, "above": true}, {"color": "#ff4a3a", "radius": 10, "intensity": 0.5, "effect": "blink", "above": true}], "comms_cabinet": {"radius": 20, "intensity": 0.25, "leds": 0.5}, "server_rack": {"leds": 0.5}}},
+      "lighting": {"mode": "on", "ambient": "#a8b0c4", "panels": false, "emitters": {"m09_degausser": [{"condition": "globalVars.tran_outcome !== 'left' && globalVars.flag1_submitted", "color": "#ffb030", "radius": 10, "intensity": 0.45, "above": true}, {"color": "#ff4a3a", "radius": 10, "intensity": 0.5, "effect": "blink", "above": true}], "comms_cabinet": {"radius": 20, "intensity": 0.25, "leds": 0.5}, "server_rack": {"leds": 0.5}, "pc6": {"radius": 22, "intensity": 0.35}}},
       "door_sign": "IT -- Authorised Contractors Only",
       "ambientSound": "server_room_ventilation",
       "ambientVolume": 0.4,
@@ -1360,7 +1360,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "observations": "A console running a degausser through a rack of reels.",
           "text": "WIPE IN PROGRESS. Series LI, legacy interviews: 212 reels.",
           "textVariants": [
-            { "condition": "globalVars.tran_outcome !== 'left'", "value": "WIPE HALTED. Series LI, legacy interviews: 97 of 212 reels intact." }
+            { "condition": "globalVars.tran_outcome !== 'left' && globalVars.flag1_submitted", "value": "WIPE HALTED. Series LI, legacy interviews: 97 of 212 reels intact." }
           ]
         }
       ]
@@ -1508,7 +1508,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_hq_ops, no counter yet; ASSET_LIST §2). %>
     "restricted_stacks": {
       "type": "room_m09_restricted",
-      "lighting": {"mode": "on", "ambient": "#a8b0c0", "panels": false, "lights": [{"x": 7.6, "y": 5.6, "color": "#f2f6ff", "radius": 72, "intensity": 0.85}], "emitters": {"fire_alarm_point": {"intensity": 0}}},
+      "lighting": {"mode": "on", "ambient": "#a8b0c0", "panels": false, "lights": [{"x": 7.6, "y": 5.6, "color": "#f2f6ff", "radius": 80, "intensity": 1.0}], "emitters": {"fire_alarm_point": {"intensity": 0}}},
       "_comment": "Expected validator warning: no item declares rfid 'stacks_release'. HaX's unlockDoor mapping on flag1_submitted opens this door (with a retry on door_unlock_attempt and a game_loaded backstop).",
       "door_sign": "Restricted Stacks -- Series R",
       "locked": true,
@@ -1618,7 +1618,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     "restricted_cage": {
       "_comment": "Playtest R1 B1 (blocker): room_hce_vault's cabinets stand across its west wall, so the generated west door sat above the walkable floor and the cage was one-way. Room dressing R1: m09's own map, room_m09_cage, keeps the west wall's row 2 clear (mouth x 32-92, y 64-118).",
       "type": "room_m09_cage",
-      "lighting": {"mode": "on", "ambient": "#a8b0c0", "panels": false, "lights": [{"x": 5.5, "y": 4.6, "color": "#f2f6ff", "radius": 96, "intensity": 0.95}]},
+      "lighting": {"mode": "on", "ambient": "#a8b0c0", "panels": false, "lights": [{"x": 5.0, "y": 5.0, "color": "#f2f6ff", "radius": 96, "intensity": 0.95}]},
       "door_sign": "Restricted Cage -- Authorised Staff Only",
       "locked": true,
       "lockType": "rfid",
@@ -1835,7 +1835,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     ledger's header read the long way). Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_hce_office). %>
     "sorensen_office": {
       "type": "room_m09_office",
-      "lighting": {"mode": "motion", "ambient": "#c4b8a6", "darkAmbient": "#14121c", "emitters": {"bankers_lamp": {"radius": 70}, "kettle": {"color": "#ff8a3a", "radius": 8, "intensity": 0.5, "above": true}}},
+      "lighting": {"mode": "motion", "ambient": "#c4b8a6", "darkAmbient": "#14121c", "emitters": {"bankers_lamp": {"radius": 70, "offsetX": -8, "offsetY": 6}, "kettle": {"color": "#ff8a3a", "radius": 8, "intensity": 0.5, "above": true}}},
       "door_sign": "Director -- M. Sorensen",
       "locked": true,
       "lockType": "password",
@@ -2058,7 +2058,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_servers). %>
     "tape_room": {
       "type": "room_m09_tape",
-      "lighting": {"mode": "motion", "ambient": "#a4b0c8", "darkAmbient": "#0a0f1c", "emitters": {"m09_reel_shelf": {"color": "#5cb8ff", "radius": 26, "intensity": 0.3, "leds": 0.35, "ledColor": "#4da6ff"}, "m09_tape_cabinet": {"color": "#5cb8ff", "radius": 26, "intensity": 0.3, "leds": 0.35, "ledColor": "#4da6ff"}, "office-misc-lamp": {"radius": 50, "intensity": 0.4}}},
+      "lighting": {"mode": "motion", "ambient": "#a4b0c8", "darkAmbient": "#0a0f1c", "emitters": {"m09_reel_shelf": {"color": "#5cb8ff", "radius": 26, "intensity": 0.3, "leds": 0.35, "ledColor": "#4da6ff"}, "m09_tape_cabinet": {"color": "#5cb8ff", "radius": 26, "intensity": 0.3, "leds": 0.35, "ledColor": "#4da6ff"}, "office-misc-lamp": {"radius": 36, "intensity": 0.25, "color": "#cfe0ff"}}},
       "door_sign": "Tape Store",
       "locked": true,
       "lockType": "rfid",
@@ -2164,7 +2164,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     Map: m09's own (room dressing R1, ROOM_DRESSING.md; was the placeholder room_hq_intel, 10x6, door S). %>
     "salvage_cage": {
       "type": "room_m09_salvage",
-      "lighting": {"mode": "motion", "ambient": "#b4b2b8", "darkAmbient": "#0a0f1c", "emitters": {"server_rack": {"color": "#ffb060", "radius": 40, "intensity": 0.55, "effect": "blink", "leds": 0.6}, "safetynet_flag_terminal": {"color": "#6fb8ff", "radius": 24, "intensity": 0.5, "effect": "screen", "above": true}}},
+      "lighting": {"mode": "motion", "ambient": "#b4b2b8", "darkAmbient": "#0a0f1c", "emitters": {"server_rack": {"color": "#ffb060", "radius": 56, "intensity": 0.8, "effect": "blink", "leds": 0.6, "ledColor": "#ffb060"}, "safetynet_flag_terminal": {"color": "#6fb8ff", "radius": 18, "intensity": 0.35, "effect": "screen", "above": true}, "laptop": {"radius": 18, "intensity": 0.3}}},
       "door_sign": "Salvage -- Bay 12",
       "locked": true,
       "lockType": "password",

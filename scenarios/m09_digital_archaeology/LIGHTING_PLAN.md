@@ -118,3 +118,24 @@ No `EMITTERS` change. m09's own props glow through per-room `emitters`.
 Reads as planned: the dock is an amber yard with the hut desk in a pool; the reading room is the one warm room; the hub counter sits in a white pool with Sorensen behind it; the office is dark with her lamp on, then strikes; the tape room shows blue standby LEDs in the dark; the salvage cage is dark with Tomb Beta's rack blinking amber and the field kit's screens; the passage is dark through the door with one tired tube.
 
 **Open for round 2:** a fresh visual reviewer over all shots; a browser check (strike on entry, a reload, the flicker); `docs/agents/LIGHTING_LOG.md` entry once the config settles.
+
+### Round 2 (2026-10-22): the R2 visual review
+
+Review: `LIGHTING_REVIEW_R2.md` (0 blockers, 1 major, 9 minors). All are fixed with its proposed values; m9 needed a dressing change. Shots: `lighting_r2/` (game 3144, `--close-intro --restore-off --check`). Motion rooms are shot dark (`-a`), lit (`-b`) and with the player inside after the strike (`-player-lit`, `-player-dark`). Contact sheet: `lighting_r2/sheet.png`.
+
+| id | sev | fix | result |
+|---|---|---|---|
+| M1 | major | Salvage: `server_rack` r 56, 0.8, `ledColor` `#ffb060` (blink, `leds` 0.6 kept); `laptop` r 18, 0.3; `safetynet_flag_terminal` r 18, 0.35 | Dark: the amber rack is now the brightest thing in the room, with the screens second. Lit: amber LEDs (`salvage_cage-a.png`, `-player-lit.png`) |
+| m1 | minor | Tape room bench lamp r 36, 0.25, cool `#cfe0ff` | The blue standby LEDs carry the dark room; the lamp is a small task light (`tape_room-a.png`) |
+| m2 | minor | Noor's lamp `#ffcf8a`, r 60, 0.7, `above`; room ambient `#b0b6c4` | The lamp reads warm on her desk and the rest of the room sits a shade lower (`front_desk-a.png`) |
+| m3 | minor | Hub hatch light r 80, 1.0 | The counter is a clear white pool; the aisle is unchanged (`restricted_stacks-a.png`) |
+| m4 | minor | Cage work light moved to tile (5.0, 5.0) | The NE plan-chest corner is a shade lower and still readable (`restricted_cage-a.png`) |
+| m5 | minor | Dock: east lamp at x 7.6, r 80; both lamps at 0.75 | No smear on the east wall; the pools separate from the amber yard (`loading_dock-a.png`) |
+| m6 | minor | Closet: `pc6` emitter r 22, 0.35 | No cyan wash on the east wall (`server_closet-a.png`) |
+| m7 | minor | Degausser "halted" variant condition is now `globalVars.tran_outcome !== 'left' && globalVars.flag1_submitted`, the same as `stop_the_tape_wipe` (erb:214–215) | Matches the task. Not lighting, for the orchestrator: the console's own `textVariants` (erb ~1363) still say "WIPE HALTED" on `tran_outcome` alone |
+| m8 | minor | Office `bankers_lamp` offsetX −8, offsetY 6 | The pool centres on the lamp, not the chair (`sorensen_office-a.png`) |
+| m9 | minor (dressing) | A second green lamp on the reading room's notebook desk (`m09_rooms.py`). SILENCE PLEASE moved over the microfiche so the lamp doesn't cover it. Slot spacing unchanged | Two green lamps (`reading_room-a.png`) |
+
+Validator (`--skip-ink --no-graph`): schema passes; the only error is the character agent's `halina_kowalczyk` spriteSheet. `docs/agents/LIGHTING_LOG.md` now has the m09 entry.
+
+**Open:** a browser check (strike on entry, one reload, the passage flicker) if the orchestrator wants one before sign-off. Nothing above minor remains in my view.
