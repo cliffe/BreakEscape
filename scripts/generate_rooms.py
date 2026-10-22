@@ -1056,6 +1056,31 @@ WALL_MOUNTED_EXTRAS = {
     "m09_county_map",
     "m09_sign_silence",
     "m09_sign_personnel",
+    "m10_sign_fallout",
+    "m10_sign_security",
+    "m10_sign_workshop",
+    "m10_sign_plant",
+    "m10_sign_ops",
+    "m10_sign_gallery",
+    "m10_sign_level",
+    "m10_sign_keepclear",
+    "m10_sign_post",
+    "m10_sign_batteries",
+    "m10_caged_lamp",
+    "m10_readout",
+    "m10_readout_side",
+    "m10_door_panel",
+    "m10_load_board",
+    "m10_bakelite_panel",
+    "m10_slit_window",
+    "m10_plotting_board",
+    "m10_wall_ladder",
+    "m10_hatch",
+    "m10_keypad_plate",
+    "m10_service_door",
+    "m10_map_board",
+    "m10_bypass_panel",
+    "m10_wall_screen",
 }
 
 
@@ -4707,6 +4732,9 @@ def main():
     # m09's Mountain States Records & Retention rooms (room_m09_*) live in room_gen/m09_rooms.py.
     import m09_rooms
     builders.update(m09_rooms.register(sys.modules[__name__]))
+    # m10's Tomb Gamma rooms (room_m10_*) live in room_gen/m10_rooms.py.
+    import m10_rooms
+    builders.update(m10_rooms.register(sys.modules[__name__]))
     # Optionally restrict to specific rooms (argv) so already-updated rooms are
     # not clobbered, e.g.  python3 scripts/generate_rooms.py room_hospital_hall
     requested = sys.argv[1:]

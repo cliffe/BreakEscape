@@ -192,6 +192,14 @@ export function preload() {
     this.load.tilemapTiledJSON('room_m09_office', 'rooms/room_m09_office.json'); // m09 Mountain States Records & Retention Sorensen's office: binders, credenza, floor safe (2x2 GU)
     this.load.tilemapTiledJSON('room_m09_tape', 'rooms/room_m09_tape.json'); // m09 Mountain States Records & Retention tape room: reel shelves, reel deck, shelf-mark legend (2x2 GU)
     this.load.tilemapTiledJSON('room_m09_salvage', 'rooms/room_m09_salvage.json'); // m09 Mountain States Records & Retention salvage cage: Tomb Beta rack, crates (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_m10_forward', 'rooms/room_m10_forward.json'); // m10 Tomb Gamma forward post: gravel, fence, vans, folding table, gate hut (4x2 GU, 20x10)
+    this.load.tilemapTiledJSON('room_m10_tunnel', 'rooms/room_m10_tunnel.json'); // m10 Tomb Gamma blast tunnel: caged bulbs, guard post desk, ladder (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_m10_security', 'rooms/room_m10_security.json'); // m10 Tomb Gamma security office: monitoring desk, records cupboard, fitter's locker (2x2 GU)
+    this.load.tilemapTiledJSON('room_m10_workshop', 'rooms/room_m10_workshop.json'); // m10 Tomb Gamma workshop floor: benches, cracker rack (2x2 GU)
+    this.load.tilemapTiledJSON('room_m10_power', 'rooms/room_m10_power.json'); // m10 Tomb Gamma power room: Bakelite load board, bypass, battery bay (2x2 GU)
+    this.load.tilemapTiledJSON('room_m10_hall', 'rooms/room_m10_hall.json'); // m10 Tomb Gamma server hall (old command room): plotting board, release console, racks, sealed hatch (4x2 GU, 20x10)
+    this.load.tilemapTiledJSON('room_m10_gallery', 'rooms/room_m10_gallery.json'); // m10 Tomb Gamma gallery: walkway, slit windows, outer lock keypad (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_m10_core', 'rooms/room_m10_core.json'); // m10 Tomb Gamma core: key console, core host terminal, service door (2x2 GU)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -277,6 +285,16 @@ export function preload() {
     this.load.image('room_m09_office', 'tiles/rooms/room_m09_office.png'); // m09 Mountain States Records & Retention sheet
     this.load.image('room_m09_tape', 'tiles/rooms/room_m09_tape.png'); // m09 Mountain States Records & Retention sheet
     this.load.image('room_m09_salvage', 'tiles/rooms/room_m09_salvage.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m10_forward_w', 'tiles/rooms/room_m10_forward_w.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_forward_e', 'tiles/rooms/room_m10_forward_e.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_tunnel', 'tiles/rooms/room_m10_tunnel.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_security', 'tiles/rooms/room_m10_security.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_workshop', 'tiles/rooms/room_m10_workshop.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_power', 'tiles/rooms/room_m10_power.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_hall_w', 'tiles/rooms/room_m10_hall_w.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_hall_e', 'tiles/rooms/room_m10_hall_e.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_gallery', 'tiles/rooms/room_m10_gallery.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_core', 'tiles/rooms/room_m10_core.png'); // m10 Tomb Gamma sheet
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -1355,6 +1373,47 @@ export function preload() {
     this.load.image('m09_rubber_stamp2', 'objects/m09_rubber_stamp2.png');
     this.load.image('m09_strip_sack1', 'objects/m09_strip_sack1.png');
     this.load.image('m09_folder1', 'objects/m09_folder1.png');
+    this.load.image('m10_sign_fallout1', 'objects/m10_sign_fallout1.png');
+    this.load.image('m10_sign_security1', 'objects/m10_sign_security1.png');
+    this.load.image('m10_sign_workshop1', 'objects/m10_sign_workshop1.png');
+    this.load.image('m10_sign_plant1', 'objects/m10_sign_plant1.png');
+    this.load.image('m10_sign_ops1', 'objects/m10_sign_ops1.png');
+    this.load.image('m10_sign_gallery1', 'objects/m10_sign_gallery1.png');
+    this.load.image('m10_sign_level1', 'objects/m10_sign_level1.png');
+    this.load.image('m10_sign_level2', 'objects/m10_sign_level2.png');
+    this.load.image('m10_sign_keepclear1', 'objects/m10_sign_keepclear1.png');
+    this.load.image('m10_sign_post1', 'objects/m10_sign_post1.png');
+    this.load.image('m10_sign_batteries1', 'objects/m10_sign_batteries1.png');
+    this.load.image('m10_caged_lamp1', 'objects/m10_caged_lamp1.png');
+    this.load.image('m10_readout1', 'objects/m10_readout1.png');
+    this.load.image('m10_readout_side1', 'objects/m10_readout_side1.png');
+    this.load.image('m10_door_panel1', 'objects/m10_door_panel1.png');
+    this.load.image('m10_load_board1', 'objects/m10_load_board1.png');
+    this.load.image('m10_bakelite_panel1', 'objects/m10_bakelite_panel1.png');
+    this.load.image('m10_slit_window1', 'objects/m10_slit_window1.png');
+    this.load.image('m10_plotting_board1', 'objects/m10_plotting_board1.png');
+    this.load.image('m10_wall_ladder1', 'objects/m10_wall_ladder1.png');
+    this.load.image('m10_hatch1', 'objects/m10_hatch1.png');
+    this.load.image('m10_keypad_plate1', 'objects/m10_keypad_plate1.png');
+    this.load.image('m10_service_door1', 'objects/m10_service_door1.png');
+    this.load.image('m10_map_board1', 'objects/m10_map_board1.png');
+    this.load.image('m10_field_screen1', 'objects/m10_field_screen1.png');
+    this.load.image('m10_breaching_case1', 'objects/m10_breaching_case1.png');
+    this.load.image('m10_kit_crate1', 'objects/m10_kit_crate1.png');
+    this.load.image('m10_gate_hut1', 'objects/m10_gate_hut1.png');
+    this.load.image('m10_gate_hut_dark1', 'objects/m10_gate_hut_dark1.png');
+    this.load.image('m10_key_console1', 'objects/m10_key_console1.png');
+    this.load.image('m10_cracker_rack1', 'objects/m10_cracker_rack1.png');
+    this.load.image('m10_van1', 'objects/m10_van1.png');
+    this.load.image('m10_van2', 'objects/m10_van2.png');
+    this.load.image('m10_van3', 'objects/m10_van3.png');
+    this.load.image('m10_bypass_panel1', 'objects/m10_bypass_panel1.png');
+    this.load.image('m10_wall_screen1', 'objects/m10_wall_screen1.png');
+    this.load.image('m10_plans1', 'objects/m10_plans1.png');
+    this.load.image('m10_field_screen_dark1', 'objects/m10_field_screen_dark1.png');
+    this.load.image('m10_console_controls1', 'objects/m10_console_controls1.png');
+    this.load.image('m10_cupboard1', 'objects/m10_cupboard1.png');
+    this.load.image('m10_locker1', 'objects/m10_locker1.png');
 
     // Load audio files
     // NPC system sounds

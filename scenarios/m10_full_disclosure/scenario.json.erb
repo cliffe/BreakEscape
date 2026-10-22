@@ -1337,7 +1337,7 @@ end
     jam, guides, texts. The road end (west) is the vans and table; the gate
     end (east) is the gate, its terminal and the blast door. ========== %>
     "forward_post": {
-      "type": "room_pnw_genhall",
+      "type": "room_m10_forward",
       "door_sign": "Forward Post",
       "connections": { "east": "blast_tunnel" },
       "npcs": [
@@ -1723,7 +1723,8 @@ end
           "id": "nightshade_van",
           "displayName": "Agent 0x47 'Nightshade'",
           "npcType": "person",
-          "position": { "x": 2, "y": 6 },
+          <%# Dressing R1: was (2, 6); at van two's open door (at (2,6) he stood behind the van roof). %>
+          "position": { "x": 3.6, "y": 7.9 },
           "spriteSheet": "nightshade",
           "spriteVisemes": "assets/characters/nightshade_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
@@ -1882,7 +1883,8 @@ end
           "id": "arakawa_post",
           "displayName": "Officer Kenji Arakawa",
           "npcType": "person",
-          "position": { "x": 11, "y": 7 },
+          <%# Dressing R1: was (11, 7); just past the table's east (case) end, so the case and his tap area do not overlap. %>
+          "position": { "x": 12.4, "y": 7.2 },
           "spriteSheet": "male_telecom_v2",
           "spriteTalk": "assets/characters/male_telecom_talk.png",
           "spriteVisemes": "assets/characters/male_telecom_visemes.png",
@@ -1930,7 +1932,8 @@ end
           "id": "arakawa_blast",
           "displayName": "Officer Kenji Arakawa",
           "npcType": "person",
-          "position": { "x": 17, "y": 8 },
+          <%# Dressing R1: was (17, 8); west of the gate hut, out of its tap area. %>
+          "position": { "x": 16, "y": 8 },
           "spriteSheet": "male_telecom_v2",
           "spriteTalk": "assets/characters/male_telecom_talk.png",
           "spriteVisemes": "assets/characters/male_telecom_visemes.png",
@@ -1952,7 +1955,8 @@ end
           "id": "minder_blast",
           "displayName": "Minder",
           "npcType": "person",
-          "position": { "x": 17, "y": 8 },
+          <%# Dressing R1: was (17, 8); west of the gate hut, out of its tap area. %>
+          "position": { "x": 16, "y": 8 },
           "spriteSheet": "female_blowse",
           "spriteVisemes": "assets/characters/female_blowse_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
@@ -2037,7 +2041,8 @@ end
           "id": "minder_post",
           "displayName": "Minder",
           "npcType": "person",
-          "position": { "x": 4, "y": 7 },
+          <%# Dressing R1: was (4, 7); clear of van two (at x 4 he stood half behind it). %>
+          "position": { "x": 5, "y": 7 },
           "spriteSheet": "male_spy_v2",
           "spriteTalk": "assets/characters/male_spy_talk.png",
           "spriteVisemes": "assets/characters/male_spy_visemes.png",
@@ -2055,7 +2060,8 @@ end
           "id": "voltage_van",
           "displayName": "Voltage (Critical Mass)",
           "npcType": "person",
-          "position": { "x": 3, "y": 3 },
+          <%# Dressing R1: was (3, 3); at van one's open door, in front of it (at y 3 he stood behind the van). %>
+          "position": { "x": 3.1, "y": 3.6 },
           "spriteSheet": "voltage",
           "spriteVisemes": "assets/characters/voltage_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
@@ -2259,7 +2265,7 @@ end
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "position": { "x": 6, "y": 3 },
+          "position": "as-type:m10_field_screen",
           "observations": <%= j.(clock_default_text) %>,
           "observationVariants": <%= j.(countdown_variants.([{ 'condition' => "globalVars.ending === 'executed'", 'value' => txt[:executed_screen] }])) %>,
           "text": <%= j.(clock_default_text) %>,
@@ -2270,7 +2276,7 @@ end
           "id": "kit_table",
           "name": "Folding Table",
           "takeable": false,
-          "position": { "x": 7, "y": 6 },
+          "position": "as-type:m10_breaching_case",
           "puzzle_graph_links": [{ "from": "action_settle_the_table", "to": "door_blast_tunnel" }, { "from": "action_tether_question", "to": "door_blast_tunnel", "dashed": true }, { "from": "action_split_line", "to": "action_arakawa_call" }, { "from": "action_arakawa_call", "to": "door_blast_tunnel" }],
           "observations": "A folding table under a work lamp. Maps, radios, coffee going cold, and the breaching case at one end."
         },
@@ -2281,7 +2287,7 @@ end
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
-          "position": { "x": 5, "y": 8 },
+          "position": "as-type:notes_clip",
           "observations": "Task Force Null's own form, clipped to the lid of the breaching case.",
           "text": <%= j.(signout.('01:52. Kowalczyk / Arakawa.', 'H.K., K.A.')) %>,
           "textVariants": [
@@ -2303,7 +2309,7 @@ end
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": true,
-          "position": { "x": 3, "y": 8 },
+          "position": "as-type:m09_folder",
           "observations": "A buff folder with the Citadel's crest, signed out to Task Force Null. Somebody has read it until the corners went soft.",
           "text": <%= j.(txt[:incident_file]) %>,
           "puzzle_graph_role": "lore"
@@ -2315,7 +2321,7 @@ end
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
-          "position": { "x": 8, "y": 8 },
+          "position": "as-type:m10_plans",
           "observations": "The construction file from the Helena archive. Cold War drawings, every room numbered, stamped SUPERSEDED in red.",
           "text": <%= j.(txt[:helena_plans]) %>,
           "onRead": { "setVariable": { "plans_read": true } },
@@ -2329,7 +2335,7 @@ end
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
-          "position": { "x": 11, "y": 3 },
+          "position": "as-type:m10_field_screen_dark",
           "observations": "A field screen on a folding desk, dark. Set up for numbers nobody asked for.",
           "observationVariants": [
             { "condition": "globalVars.m07_debrief_stance === 'hardened'", "value": "The Council's curve, live. It doesn't flatten after a month." }
@@ -2344,7 +2350,6 @@ end
           "id": "gate_console",
           "name": "Field Console (Gate)",
           "takeable": false,
-          "position": { "x": 14, "y": 3 },
           "observations": "The field console, racked by the gate. It talks to their gate terminal.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           <%# VM-WIRE: the attack box; title and fallback ip are placeholders (header). %>
@@ -2357,7 +2362,7 @@ end
           "id": "gate_terminal",
           "name": "Gate Terminal",
           "takeable": false,
-          "position": { "x": 16, "y": 3 },
+          "position": "as-type:safetynet_flag_terminal",
           "observations": "Tomb Gamma's gate terminal. Everything at the gate reports through it to their security monitoring.",
           "puzzle_graph_unlocks": "blast_tunnel",
           "puzzle_graph_note": "The breach also waits on the table scene and the pair back (OT 4.1).",
@@ -2374,7 +2379,10 @@ end
           "id": "gate_hut",
           "name": "Gate Hut",
           "takeable": false,
-          "position": { "x": 18, "y": 6 },
+          "position": "as-type:m10_gate_hut",
+          "spriteVariants": [
+            { "condition": "globalVars.m06_assets_seized === true", "value": "m10_gate_hut_dark1" }
+          ],
           "observations": "The bunker's gate hut, lit. A radio playing low inside, and a man in a parka reading the same page of a paperback.",
           "observationVariants": [
             { "condition": "globalVars.m06_assets_seized === true", "value": "The gate hut, dark and empty. Beside it the refit fence just stops, a few metres short of the rock." }
@@ -2385,7 +2393,7 @@ end
           "id": "van_one",
           "name": "The Van",
           "takeable": false,
-          "position": { "x": 1, "y": 3 },
+          "position": "as-type:m10_van",
           "observations": "The van. Side door open, the light on inside. A headset and a SAFETYNET badge on the step."
         },
         {
@@ -2393,7 +2401,7 @@ end
           "id": "van_two",
           "name": "The Second Van",
           "takeable": false,
-          "position": { "x": 1, "y": 7 },
+          "position": "as-type:m10_van",
           "observations": "The second van. A steel rail along one wall, for cuffs."
         }
       ]
@@ -2452,7 +2460,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     The inner door (OT 4.3) is a story door: nothing can open it but HaX's
     unlockDoor mapping (the validator's warning is intended). ============ %>
     "blast_tunnel": {
-      "type": "room_pnw_vault",
+      "type": "room_m10_tunnel",
       "door_sign": "Blast Door",
       "locked": true,
       "lockType": "rfid",
@@ -2512,7 +2520,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "position": { "x": 2, "y": 2 },
+          "position": "as-type:m10_door_panel",
           "observations": "The door's panel. READER ARMED, ONE NAME. Under it, the clock.",
           "observationVariants": [
             { "condition": "globalVars.database_outcome === 'published'", "value": "RELEASED. ALL CITIES." },
@@ -2529,7 +2537,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
-          "position": { "x": 5, "y": 2 },
+          "position": "as-type:rota_board",
           "observations": "A rota on the post's board, a mug ring through one corner.",
           "text": <%= j.(rota.(nil)) %>,
           "textVariants": [
@@ -2545,7 +2553,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "post_ladder",
           "name": "Guard Post Ladder",
           "takeable": false,
-          "position": { "x": 7, "y": 4 },
+          "position": "as-type:m10_wall_ladder",
           "observations": "A ladder up into the office's back corridor. The inner door's quicker.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "security_office",
@@ -2564,7 +2572,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     the fitter's locker (pick only: a key lock with no key; the validator's
     warning is intended). Stair B south is a story door (Ghost's call). ===== %>
     "security_office": {
-      "type": "room_aes_security",
+      "type": "room_m10_security",
       "door_sign": "Inner Door",
       "locked": true,
       "lockType": "rfid",
@@ -2649,7 +2657,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "alarm_panel",
           "name": "Alarm Board",
           "takeable": false,
-          "position": { "x": 3, "y": 2 },
+          "position": "as-type:alarm_panel",
           "observations": "BLAST DOOR 1: OPEN. NO BADGE READ. The lower levels' lamp is dark. As far as this board knows, nobody has come in.",
           "observationVariants": [
             { "condition": "globalVars.security_alerted === true", "value": "Every lamp on the board is lit. TUNNEL INNER DOOR: FORCED. LOCKED FROM DESK. A strip printed out of the side of it: RAID ON THE TUNNEL ROUTE. ALL LEVELS." },
@@ -2673,7 +2681,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "name": "Shift Notes: Photo",
           "takeable": false,
           "readable": true,
-          "position": { "x": 5, "y": 2 },
+          "position": "as-type:notice_board",
           "observations": "Your photo, pinned among the shift notes, taken somewhere you didn't know there was a camera. Under it, in a neat, upright hand: 0x00: to the core. Do not detain.",
           "observationVariants": [
             { "condition": "globalVars.m09_completed === true", "value": "Your photo, pinned among the shift notes, taken somewhere you didn't know there was a camera. Under it, in the neat, upright hand from the papers in Helena: 0x00: to the core. Do not detain." }
@@ -2690,7 +2698,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
-          "position": { "x": 7, "y": 2 },
+          "position": "as-type:rota_board",
           "observations": "Tonight's postings, and an order from the top pinned over them.",
           "observationVariants": [
             { "condition": "globalVars.m06_assets_seized === true && globalVars.m07_hollis_resolved === 'evaded'", "value": "Tonight's postings. A photo pinned under the gate line, a man with a tired face and STOOD DOWN written across it." },
@@ -2711,7 +2719,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
-          "position": { "x": 7, "y": 5 },
+          "position": "as-type:cctv_monitors",
           "observations": "The monitoring desk's log for the core level's two doors. Their desk reads it to you now.",
           "observationVariants": [
             { "condition": "!globalVars.flag1_submitted", "value": "The monitoring desk's door log. Locked to their desk's own login." }
@@ -2731,7 +2739,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "duty_handset",
           "name": "Duty Handset",
           "takeable": false,
-          "position": { "x": 6, "y": 4 },
+          "position": "as-type:phone",
           "observations": "The desk phone. Ringing.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "workshop_floor",
@@ -2748,7 +2756,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "locked": true,
           "lockType": "pin",
           "requires": "<%= cupboard_pin %>",
-          "position": { "x": 1, "y": 4 },
+          "position": "as-type:m10_cupboard",
           "observations": "An old steel records cupboard with a newer keypad bolted to the door. The keypad is the make the Citadel uses on its annex doors.",
           "puzzle_graph_unlocks": "core",
           "puzzle_graph_optional": true,
@@ -2789,7 +2797,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "requires": "tg_fitter_locker",
           "keyPins": [30, 45, 30, 40],
           "difficulty": "easy",
-          "position": { "x": 1, "y": 6 },
+          "position": "as-type:m10_locker",
           "observations": "The shift fitter's locker, dented, a cheap lock on it. Stencilled: MAINTENANCE. SPARES.",
           "puzzle_graph_unlocks": "power_room",
           "puzzle_graph_optional": true,
@@ -2817,7 +2825,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "position": { "x": 9, "y": 3 },
+          "position": "as-type:m10_readout_side",
           "observations": <%= j.(clock_default_text) %>,
           "observationVariants": <%= j.(countdown_variants.()) %>,
           "text": <%= j.(clock_default_text) %>,
@@ -2835,7 +2843,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     has two records: on ghost_watch_on_route his card can't be cloned
     (CONTRACT 7 item 6), so imran_watched carries no rfidCard. ============ %>
     "workshop_floor": {
-      "type": "room_aes_workshop",
+      "type": "room_m10_workshop",
       "door_sign": "Stair B",
       "locked": true,
       "lockType": "rfid",
@@ -2931,7 +2939,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           ],
           "observations": "The floor guard walking the bench row, hand never far from his belt."
         },
-        <%= raid_copy.('kowalczyk', 'kowalczyk_ws', 'workshop_floor', 'ws', 8, 3, [not_tethered], 'Kowalczyk at the far end by the power-room door, reading the bench log upside down.') %>,
+        <%# Dressing R1: kowalczyk_ws was (8, 3), standing in the E door's mouth; (6.6, 3) keeps her by the door and off the shift clock's tap area. %>
+        <%= raid_copy.('kowalczyk', 'kowalczyk_ws', 'workshop_floor', 'ws', 6.6, 3, [not_tethered], 'Kowalczyk at the far end by the power-room door, reading the bench log upside down.') %>,
         <%= raid_copy.('arakawa', 'arakawa_ws', 'workshop_floor', 'ws', 5, 7, [not_tethered], 'Arakawa keeping the bench row in view.') %>,
         <%= raid_copy.('quintero', 'quintero_ws', 'workshop_floor', 'ws', 2, 4, [nil], 'Quintero at the foot of the stair, counting the benches.') %>
       ],
@@ -2944,7 +2953,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": true,
-          "position": { "x": 4, "y": 2 },
+          "position": "as-type:notes",
           "observations": "His casualty sheet, pinned above the bench where the people who build his tools can see it. Someone has written in the margin, and he has signed under it.",
           "text": <%= j.(txt[:casualty_sheet]) %>,
           "onRead": { "setVariable": { "casualty_sheet_read": true } },
@@ -2959,7 +2968,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": true,
-          "position": { "x": 6, "y": 2 },
+          "position": "as-type:notes_tucked",
           "observations": "A strip torn from the same printout and pinned beside the sheet. One long line in the same small, square hand, and none of it makes words.",
           "text": "<%= margin_code %>",
           "puzzle_graph_role": "clue",
@@ -2975,7 +2984,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "lockType": "password",
           "requires": "<%= model_password %>",
           "showKeyboard": true,
-          "position": { "x": 0, "y": 7 },
+          "position": "as-type:pc",
           "observations": "A bench terminal with one file waiting behind a password prompt: CASUALTY MODEL, CORRECTED.",
           "contents": [
             {
@@ -2999,7 +3008,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": true,
-          "position": { "x": 3, "y": 6 },
+          "position": "as-type:aes_clipboard",
           "observations": "The bench's outgoing log, on a clipboard hung from a nail. Batches, quantities, and one line that isn't a batch.",
           "text": <%= j.(bench_log.(wren_row_default, "REPORTS IN, DAY 13.\n01:58   cloner, WREN   1 read. SAFETYNET badge: D. MALHOTRA.")) %>,
           "textVariants": [
@@ -3018,7 +3027,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "position": { "x": 0, "y": 5 },
+          "position": "as-type:wall_clock",
           "observations": <%= j.(clock_default_text) %>,
           "observationVariants": <%= j.(countdown_variants.()) %>,
           "text": <%= j.(clock_default_text) %>,
@@ -3029,7 +3038,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "cracker_rack",
           "name": "Cracker Rack",
           "takeable": false,
-          "position": { "x": 8, "y": 8 },
+          "position": "as-type:m10_cracker_rack",
           "puzzle_graph_links": [{ "from": "action_opens_power_room", "to": "door_power_room", "dashed": true }],
           "observations": "Racks of half-built PIN crackers in matte casings. No stores labels. A batch sticker inside each battery door: G-19."
         }
@@ -3044,7 +3053,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     print); objects can't change presence, so the print is read only on the
     escaped branch (HaX's mapping and the text variants). ================== %>
     "power_room": {
-      "type": "room_aes_plant",
+      "type": "room_m10_power",
       "door_sign": "Power Room",
       "locked": true,
       "lockType": "rfid",
@@ -3178,7 +3187,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "position": { "x": 5, "y": 2 },
+          "position": "as-type:m10_load_board",
           "observations": <%= j.(clock_default_text) %>,
           "observationVariants": <%= j.(countdown_variants.()) %>,
           "text": <%= j.(clock_default_text) %>,
@@ -3189,7 +3198,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "bypass_panel",
           "name": "Bypass Panel",
           "takeable": false,
-          "position": { "x": 7, "y": 2 },
+          "position": "as-type:m10_bypass_panel",
           "hasFingerprint": true,
           <%# Impl R1 minor 2 / ROOMS m4: no condition on an owner, so the lifted print shows a neutral name on every branch; the owner id stays "voltage" for fingerprint_collected:voltage, and the escaped branch's observation variants make the match. %>
           "fingerprintOwner": "voltage",
@@ -3208,7 +3217,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "static_kit",
           "name": "Tool Roll",
           "takeable": false,
-          "position": { "x": 8, "y": 7 },
+          "position": "as-type:aes_toolbox",
           "observations": "A tool roll on the bench: pliers, a crimper, cable ties.",
           "observationVariants": [
             { "condition": "globalVars.m04_static_left_alone === true", "value": "A tool roll left on the bench: pliers, a crimper, cable ties, and a Polish crossword half done. The strap is stencilled S." }
@@ -3225,7 +3234,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     large. Two patrols on every save (M-08). The gallery stair east is a story
     door (flags 2 and 3 and the cut). ===================================== %>
     "server_hall": {
-      "type": "room_aes_hall2",
+      "type": "room_m10_hall",
       "door_sign": "Server Hall",
       "connections": { "west": "power_room", "east": "gallery" },
       "npcs": [
@@ -3314,7 +3323,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "position": { "x": 2, "y": 4 },
+          "position": "as-type:m10_plotting_board",
           "observations": "The 1960s plotting board, still on the wall: a map of a war that never came. Someone has run a strip of red tape across it, city by city, west to east. Seattle is first.",
           "text": "The 1960s plotting board, still on the wall: a map of a war that never came. Someone has run a strip of red tape across it, city by city, west to east. Seattle is first."
         },
@@ -3326,7 +3335,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "position": { "x": 10, "y": 2 },
+          "position": "as-type:m10_readout",
           "observations": <%= j.(clock_default_text) %>,
           "observationVariants": <%= j.(countdown_variants.()) %>,
           "text": <%= j.(clock_default_text) %>,
@@ -3337,7 +3346,6 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "hall_console",
           "name": "Field Console (Server Hall)",
           "takeable": false,
-          "position": { "x": 8, "y": 4 },
           "observations": "The field console, racked between two of the old map tables.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object(m10_attack_vm, m10_attack_fallback) %>,
@@ -3349,7 +3357,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "release_console",
           "name": "Release Console",
           "takeable": false,
-          "position": { "x": 10, "y": 4 },
+          "position": "as-type:safetynet_flag_terminal",
           "observations": "The release console. The staging copy of the schedule sits behind it.",
           "puzzle_graph_unlocks": "gallery",
           "puzzle_graph_and_with": "Sealed Section Hatch",
@@ -3367,7 +3375,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "release_console_controls",
           "name": "Release Console Controls",
           "takeable": false,
-          "position": { "x": 12, "y": 4 },
+          "position": "as-type:m10_console_controls",
           "observations": "Locked to the staging copy.",
           "observationVariants": [
             { "condition": "globalVars.flag2_submitted === true", "value": "The head-start feeds, and the backdoor's queue. HaX can work one feed from here: kill it, or follow it. Not both." }
@@ -3382,7 +3390,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": true,
-          "position": { "x": 10, "y": 7 },
+          "position": "as-type:aes_round_terminal",
           "observations": "The staging copy of the release schedule, behind the monitoring host's login.",
           <%# Impl R1 minor 9: the observation follows the text once flag 2 is in. %>
           "observationVariants": [
@@ -3407,11 +3415,10 @@ not_tethered = '!globalVars.nightshade_tethered'
         },
         {
           "type": "flag-station",
-          "sprite": "aes_junction_box1",
           "id": "sealed_hatch",
           "name": "Sealed Section Hatch",
           "takeable": false,
-          "position": { "x": 17, "y": 4 },
+          "position": "as-type:m10_hatch",
           "observations": "The sealed section's maintenance hatch, painted shut in the sixties and opened again last year. The field kit's link is clipped to the frame.",
           "puzzle_graph_unlocks": "gallery",
           "puzzle_graph_note": "The gallery stair waits on flags 2 and 3 and the shutter cut (OT 4.4).",
@@ -3430,7 +3437,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
-          "position": { "x": 2, "y": 7 },
+          "position": "as-type:pnw_portable_printer",
           "observations": "A printer by the west door, a draft in the tray with your photo on it, and a schedule clipped to the corner.",
           "text": <%= j.(printer.('STATUS: HELD. Awaiting signal.', false)) %>,
           "textVariants": [
@@ -3450,7 +3457,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     Victoria or Vos from inside, Ghost's code. Nobody can open the gallery
     stair but HaX's unlockDoor mapping (intended validator warning). ====== %>
     "gallery": {
-      "type": "room_qdc_server_hall",
+      "type": "room_m10_gallery",
       "door_sign": "Gallery Stair",
       "locked": true,
       "lockType": "rfid",
@@ -3728,7 +3735,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "position": { "x": 6, "y": 2 },
+          "position": "as-type:m10_door_panel",
           "observations": "The lock panel, three paces short of the door.",
           "observationVariants": [
             { "condition": "globalVars.database_outcome === 'published'", "value": "RELEASED. ALL CITIES." }
@@ -3742,7 +3749,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "name": "Keypad Face Plate",
           "takeable": false,
           "readable": true,
-          "position": { "x": 9, "y": 3 },
+          "position": "as-type:m10_keypad_plate",
           "hasFingerprint": true,
           "fingerprintOwner": "gallery_shift",
           "fingerprintCandidates": ["the gallery shift"],
@@ -3765,7 +3772,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "farah_chair",
           "name": "Floor Post Chair",
           "takeable": false,
-          "position": { "x": 4, "y": 5 },
+          "position": "as-type:hospital_chair_north",
           "observations": "A chair at the floor post.",
           "observationVariants": [
             { "condition": "globalVars.imran_outcome === 'talked_round'", "value": "A chair at the floor post, a coat over the back. Nobody in it." }
@@ -3776,7 +3783,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "slit_window",
           "name": "Slit Windows",
           "takeable": false,
-          "position": { "x": 3, "y": 2 },
+          "position": "as-type:m10_slit_window",
           "puzzle_graph_links": [{ "from": "action_opened_from_inside", "to": "door_core", "dashed": true }],
           "observations": "Slit windows down into the core. Bare concrete, one console, and the top of a grey head that doesn't look up."
         }
@@ -3791,7 +3798,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     on his conversation_closed (NPCs at the forward post). After his ending
     he is hidden (stage 8 m-8; no down pose yet, ASSET_LIST 8). ============ %>
     "core": {
-      "type": "room_pnw_ops",
+      "type": "room_m10_core",
       "door_sign": "Outer Lock",
       "locked": true,
       "lockType": "pin",
@@ -3896,7 +3903,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "key_console",
           "name": "His Console",
           "takeable": false,
-          "position": { "x": 6, "y": 3 },
+          "position": "as-type:m10_key_console",
           "observations": "His console. One key under a hinged cover, and his hand resting beside it.",
           "observationVariants": [
             <%# scorched_card folded in here (ASSET_LIST 4: objects have no visibility condition). %>
@@ -3913,7 +3920,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "position": { "x": 8, "y": 2 },
+          "position": "as-type:m10_readout",
           "observations": "The key console's readout, a hand's width from the key.",
           "observationVariants": [
             { "condition": "globalVars.database_outcome === 'published'", "value": "RELEASED. ALL CITIES." }
@@ -3927,7 +3934,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "core_host_terminal",
           "name": "Core Host Terminal",
           "takeable": false,
-          "position": { "x": 2, "y": 4 },
+          "position": "as-type:safetynet_flag_terminal",
           "observations": "The core host terminal. His box.",
           <%# VM-WIRE: flag 4 (the core host). %>
           "acceptsVms": [<%= j.(station.(4)[:vm]) %>],
@@ -3942,7 +3949,6 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "core_console_vm",
           "name": "Field Console (Core)",
           "takeable": false,
-          "position": { "x": 2, "y": 6 },
           "observations": "The field console, racked by the host terminal. The last one.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object(m10_attack_vm, m10_attack_fallback) %>,
@@ -3956,7 +3962,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": true,
-          "position": { "x": 4, "y": 2 },
+          "position": "as-type:m10_wall_screen",
           "observations": "His box's file index, behind the core host's own login.",
           "text": "",
           "textVariants": [
@@ -3969,7 +3975,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "id": "service_door",
           "name": "Service Door",
           "takeable": false,
-          "position": { "x": 9, "y": 5 },
+          "position": "as-type:m10_service_door",
           "observations": "The service door, east wall. Steel, a reader, and a camera on a bracket above it that has never once moved."
         }
       ]

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="551" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="592" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -1653,5 +1653,128 @@
  </tile>
  <tile id="560">
   <image source="../objects/m09_folder1.png" width="26" height="18"/>
+ </tile>
+ <tile id="561">
+  <image source="../objects/m10_sign_fallout1.png" width="62" height="19"/>
+ </tile>
+ <tile id="562">
+  <image source="../objects/m10_sign_security1.png" width="39" height="11"/>
+ </tile>
+ <tile id="563">
+  <image source="../objects/m10_sign_workshop1.png" width="39" height="11"/>
+ </tile>
+ <tile id="564">
+  <image source="../objects/m10_sign_plant1.png" width="47" height="11"/>
+ </tile>
+ <tile id="565">
+  <image source="../objects/m10_sign_ops1.png" width="47" height="11"/>
+ </tile>
+ <tile id="566">
+  <image source="../objects/m10_sign_gallery1.png" width="35" height="11"/>
+ </tile>
+ <tile id="567">
+  <image source="../objects/m10_sign_level1.png" width="35" height="11"/>
+ </tile>
+ <tile id="568">
+  <image source="../objects/m10_sign_level2.png" width="35" height="11"/>
+ </tile>
+ <tile id="569">
+  <image source="../objects/m10_sign_keepclear1.png" width="47" height="11"/>
+ </tile>
+ <tile id="570">
+  <image source="../objects/m10_sign_post1.png" width="47" height="11"/>
+ </tile>
+ <tile id="571">
+  <image source="../objects/m10_sign_batteries1.png" width="43" height="11"/>
+ </tile>
+ <tile id="572">
+  <image source="../objects/m10_caged_lamp1.png" width="10" height="12"/>
+ </tile>
+ <tile id="573">
+  <image source="../objects/m10_readout1.png" width="26" height="18"/>
+ </tile>
+ <tile id="574">
+  <image source="../objects/m10_readout_side1.png" width="16" height="22"/>
+ </tile>
+ <tile id="575">
+  <image source="../objects/m10_door_panel1.png" width="18" height="26"/>
+ </tile>
+ <tile id="576">
+  <image source="../objects/m10_load_board1.png" width="66" height="30"/>
+ </tile>
+ <tile id="577">
+  <image source="../objects/m10_bakelite_panel1.png" width="34" height="28"/>
+ </tile>
+ <tile id="578">
+  <image source="../objects/m10_slit_window1.png" width="74" height="14"/>
+ </tile>
+ <tile id="579">
+  <image source="../objects/m10_plotting_board1.png" width="112" height="30"/>
+ </tile>
+ <tile id="580">
+  <image source="../objects/m10_wall_ladder1.png" width="20" height="30"/>
+ </tile>
+ <tile id="581">
+  <image source="../objects/m10_hatch1.png" width="34" height="30"/>
+ </tile>
+ <tile id="582">
+  <image source="../objects/m10_keypad_plate1.png" width="12" height="18"/>
+ </tile>
+ <tile id="583">
+  <image source="../objects/m10_service_door1.png" width="18" height="70"/>
+ </tile>
+ <tile id="584">
+  <image source="../objects/m10_map_board1.png" width="40" height="28"/>
+ </tile>
+ <tile id="585">
+  <image source="../objects/m10_field_screen1.png" width="24" height="18"/>
+ </tile>
+ <tile id="586">
+  <image source="../objects/m10_breaching_case1.png" width="26" height="14"/>
+ </tile>
+ <tile id="587">
+  <image source="../objects/m10_kit_crate1.png" width="32" height="20"/>
+ </tile>
+ <tile id="588">
+  <image source="../objects/m10_gate_hut1.png" width="48" height="62"/>
+ </tile>
+ <tile id="589">
+  <image source="../objects/m10_gate_hut_dark1.png" width="48" height="62"/>
+ </tile>
+ <tile id="590">
+  <image source="../objects/m10_key_console1.png" width="52" height="36"/>
+ </tile>
+ <tile id="591">
+  <image source="../objects/m10_cracker_rack1.png" width="34" height="50"/>
+ </tile>
+ <tile id="592">
+  <image source="../objects/m10_van1.png" width="117" height="60"/>
+ </tile>
+ <tile id="593">
+  <image source="../objects/m10_van2.png" width="111" height="50"/>
+ </tile>
+ <tile id="594">
+  <image source="../objects/m10_van3.png" width="101" height="70"/>
+ </tile>
+ <tile id="595">
+  <image source="../objects/m10_bypass_panel1.png" width="30" height="30"/>
+ </tile>
+ <tile id="596">
+  <image source="../objects/m10_wall_screen1.png" width="36" height="24"/>
+ </tile>
+ <tile id="597">
+  <image source="../objects/m10_plans1.png" width="28" height="14"/>
+ </tile>
+ <tile id="598">
+  <image source="../objects/m10_field_screen_dark1.png" width="24" height="18"/>
+ </tile>
+ <tile id="599">
+  <image source="../objects/m10_console_controls1.png" width="30" height="14"/>
+ </tile>
+ <tile id="600">
+  <image source="../objects/m10_cupboard1.png" width="30" height="40"/>
+ </tile>
+ <tile id="601">
+  <image source="../objects/m10_locker1.png" width="22" height="42"/>
  </tile>
 </tileset>
