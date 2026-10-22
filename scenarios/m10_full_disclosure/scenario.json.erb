@@ -708,6 +708,11 @@ in_this_operation = lambda do |ending|
   people << person.('PIETER VOS', [
     cl.("Withdrew Zero Day's order. Stood aside.", "globalVars.vos_outcome === 'stood_aside'"),
     cl.('Knocked out on the walkway. Named.', "globalVars.vos_outcome === 'ko'", w),
+    # Alignment R7-m3: a stopped share cancelled his delivery (his own line); one row per save, first match.
+    cl.('Named. His delivery was cancelled. He caught his flight.', "globalVars.vos_outcome === 'refused' && globalVars.share_zero_day === 'stopped' && globalVars.ending === 'joined'"),
+    cl.('Named. His delivery was cancelled. He caught his flight.', "globalVars.vos_outcome === 'avoided' && globalVars.share_zero_day === 'stopped' && globalVars.ending === 'joined'"),
+    cl.('Named. Arrested on the walkway, waiting for a flight.', "globalVars.vos_outcome === 'refused' && globalVars.share_zero_day === 'stopped' && globalVars.ending !== 'joined'"),
+    cl.('Named. Arrested on the walkway, waiting for a flight.', "globalVars.vos_outcome === 'avoided' && globalVars.share_zero_day === 'stopped' && globalVars.ending !== 'joined'"),
     cl.('Named. Still waiting for his delivery.', "globalVars.vos_outcome === 'refused' && globalVars.ending === 'joined'"),
     cl.('Named. Still waiting for his delivery.', "globalVars.vos_outcome === 'avoided' && globalVars.ending === 'joined'"),
     cl.('Named. Arrested on the walkway, waiting for a delivery.', "globalVars.vos_outcome === 'refused'"),
@@ -785,8 +790,8 @@ elsewhere_one = [
   cl.('Zero Day: got nothing tonight. Still trading.', "globalVars.share_zero_day === 'stopped' && globalVars.ending !== 'joined' && globalVars.close_zero_day === 'trading'"),
   cl.('Zero Day: got nothing tonight. Its broker, Pieter Vos, named.', "globalVars.share_zero_day === 'stopped' && globalVars.ending !== 'joined' && globalVars.close_zero_day === 'vos_named'"),
   # Alignment R6-m3: on Join, the share killed at four against the key at six.
-  cl.('Zero Day: shut out at four. Given everything at six.', "globalVars.share_zero_day === 'stopped' && globalVars.ending === 'joined' && globalVars.close_zero_day === 'trading'", w),
-  cl.('Zero Day: shut out at four. Given everything at six. Its broker, Pieter Vos, named.', "globalVars.share_zero_day === 'stopped' && globalVars.ending === 'joined' && globalVars.close_zero_day === 'vos_named'", w),
+  cl.('Zero Day: shut out at four. Given everything by the key.', "globalVars.share_zero_day === 'stopped' && globalVars.ending === 'joined' && globalVars.close_zero_day === 'trading'", w),
+  cl.('Zero Day: shut out at four. Given everything by the key. Its broker, Pieter Vos, named.', "globalVars.share_zero_day === 'stopped' && globalVars.ending === 'joined' && globalVars.close_zero_day === 'vos_named'", w),
   cl.('Zero Day: still trading. Its broker, Pieter Vos, named.', "globalVars.share_zero_day !== 'stopped' && globalVars.close_zero_day === 'vos_named'"),
   cl.('Zero Day: still trading.', "globalVars.share_zero_day !== 'stopped' && globalVars.close_zero_day === 'trading'")
 ]
@@ -1725,10 +1730,11 @@ end
 <%# --- The gallery: Victoria's line abandoned, decisions on the shares, defaults (MC 3.5; stage 8 M-4) --- %>
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate === 'arrested' && !globalVars.victoria_line_done", "setGlobal": { "victoria_line_done": true } },
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate === 'arrested' && globalVars.victoria_line_deal === ''", "setGlobal": { "victoria_line_deal": "no_deal" } },
+<%# Alignment R7-m1: Victoria's and Vos's withdrawn order stops Zero Day's share only before four (head_start_out is written once, when the outer lock opens), so a traced share stays traced. %>
 <% %w[confronted talked_down walked].each do |v| %>
-            { "eventPattern": "global_variable_changed:victoria_gallery", "condition": "value === '<%= v %>' && globalVars.share_zero_day !== 'released'", "setGlobal": { "share_zero_day": "stopped" } },
+            { "eventPattern": "global_variable_changed:victoria_gallery", "condition": "value === '<%= v %>' && globalVars.head_start_out === ''", "setGlobal": { "share_zero_day": "stopped" } },
 <% end %>
-            { "eventPattern": "global_variable_changed:vos_secret_used", "condition": "value === true && globalVars.share_zero_day !== 'released'", "setGlobal": { "share_zero_day": "stopped" } },
+            { "eventPattern": "global_variable_changed:vos_secret_used", "condition": "value === true && globalVars.head_start_out === ''", "setGlobal": { "share_zero_day": "stopped" } },
             { "eventPattern": "npc_ko:victoria_gallery", "condition": "globalVars.victoria_gallery !== 'confronted' && globalVars.victoria_gallery !== 'trusted' && globalVars.victoria_gallery !== 'talked_down' && globalVars.victoria_gallery !== 'walked'", "setGlobal": { "victoria_gallery": "ko" } },
             { "eventPattern": "npc_ko:victoria_threat", "setGlobal": { "victoria_gallery": "ko" } },
             { "eventPattern": "npc_ko:vos", "setGlobal": { "vos_outcome": "ko" } },

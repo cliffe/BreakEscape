@@ -448,3 +448,5 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - m09 puzzle chains R1: plan (0 blockers / 1 major / 9 minors over 3 internal rounds); P1–P7 to implement. VM questions (H&L file number before flag 2; cage clues for flag 3) to opus48.
 - m10 alignment R6 fixes: 3/3 (Join credits: Vector/Phantom clause order, Arakawa's sheriff line, Zero Day shut out at four on Join). Non-Join credits verified unchanged. No voiced delta.
 - m09 puzzle chains R1 implemented: P1–P7 (keypad hints in three tiers; hl_box_opened and Torres' unlock ring, race and fix shown on :3001; tape-room wording; Tran tidied arm in two lines; Gary's opened arm; staff-door text; Torres' fallback on leaving the office). Voiced delta: 1 HaX line reworded.
+- m10 alignment R7 fixes: 3/3 (Zero Day's trace survives a post-four Victoria or Vos choice, proved by an engine-level trace; Join Zero Day rows "by the key"; Vos's cancelled-delivery credit). No voiced delta.
+- Queued for m10 phase 5 browser checks: trace Zero Day → open outer lock → '[Go.]' to Victoria (share stays traced); same with Vos's secret.
