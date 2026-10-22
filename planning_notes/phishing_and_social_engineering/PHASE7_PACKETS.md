@@ -397,3 +397,15 @@ the orchestrator passes it to that wave's owner.
   - The Report animation belongs in the triage overlay: add `aw-report-win` and `aw-report-thanks`.
   - `se_awareness_records` is an array, but shells declare it as `{}`. The reader accepts both; docs to say so.
   - The P7-I bridge is in scratch (`se-P7-I/bridge-p7-i.jsonl`) for P7-T0 to adopt.
+- **P7-J: lint gaps for the next validator pass (P7-X2):**
+  1. Exempt the `setGlobalPrefix` and `PRE_NAMES` names (for example `triage_pre_reportRate`) from the carry-over name lint.
+  2. The `clean_check_post` fixture declares names it also imports, which the validator rejects as a collision.
+  3. `runs_as_post?` must see a kiosk check whose `defend.stage` is post.
+  4. Check missions need three lints: the set's `stage` must equal `defend.stage`; the set must have no `pairedWith` partner in the same game; a pre export must not be redeclared on the post side.
+  5. `variant` should be optional on check missions.
+  6. The lint wants `se_awareness_records` declared `{}`, but the store writes `[]`. Accept `[]`, and make the shells declare `[]`.
+  7. Awareness shells should be exempt from the conclusionScreen warning. Decide this against the user's ending rule: does a training episode end in credits?
+- **P7-J, other notes:**
+  - **Runner minors:** the defend stage says "on the receiving end" on a defend-only run, and the Finished panel shows two Close buttons.
+  - **Kiosk text:** it still says "Five messages are waiting" after the round is done.
+  - **Cast:** Graham Whitfield and Farah Qureshi go into BRAND_SET.
