@@ -234,6 +234,7 @@
         "id": "e1_stub_inbox",
         "title": "Payments inbox",
         "brief": "Decide what each message is.",
+        "playerSentAuth": { "accounts": { "analyst": { "spf": "pass", "dkim": "fail", "dmarc": "fail", "envelopeFrom": "bounce.brightwell.example", "replyTo": "{account_address}" } } },
         "scoringProfile": "awareness",
         "feedbackMode": "immediate",
         "headerPanel": "collapsed",

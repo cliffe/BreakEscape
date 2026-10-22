@@ -1747,8 +1747,8 @@
             "landingPageId": {"type": "string", "description": "A social.landingPages id whose targets lists attack.target. Launched by the 'build' stage (osint, build, write)"},
             "callId": {"type": "string", "description": "A social.pretextNpcs callId. The write stage then places this pretext call instead of sending mail, so accountIds and defaultAccount are not needed"},
             "layout": {"type": "string", "enum": ["phone"], "description": "Passed to the mail client: puts its narrow layout in a phone frame on any viewport"},
-            "showRedFlagMeter": {"type": "boolean"},
-            "maxMessages": {"type": "integer", "minimum": 1},
+            "showRedFlagMeter": {"type": "boolean", "description": "Reserved, not read: accepted but nothing reads it."},
+            "maxMessages": {"type": "integer", "minimum": 1, "description": "Reserved, not read: the runtime does not read it (the validator still wants 1 on a mail attack)"},
             "scored": {"type": "boolean"}
           },
           "patternProperties": {"^_": {}},
@@ -1759,7 +1759,7 @@
           "properties": {
             "setId": {"type": "string", "description": "A social.triageSets id (scoringProfile awareness)"},
             "stage": {"type": ["string", "null"], "enum": ["pre", "post", null], "description": "Set on a check mission only"},
-            "reportAlwaysVisible": {"type": "boolean"},
+            "reportAlwaysVisible": {"type": "boolean", "description": "Reserved, not read: accepted but nothing reads it."},
             "callsFrom": {"type": "string", "description": "A social.pretextNpcs callId whose knows ids the calls' claims resolve to. Omitted: any pretextNpcs entry's knows"},
             "calls": {
               "type": "array",
@@ -1855,6 +1855,7 @@
         },
         "debrief": {
           "type": "object",
+          "description": "Reserved, not read: accepted but nothing reads it.",
           "properties": {
             "mondayCard": {"type": "string"},
             "noBlameLine": {"type": "boolean"}

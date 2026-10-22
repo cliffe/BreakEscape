@@ -227,6 +227,38 @@ test('check missions: the pre exports, the post imports with as and completed', 
   expectIn(lint(j), /names its stage, pre or post/);
 });
 
+test('result globals: a missing percent, reportRate or pass is a warning, naming the global', { skip }, () => {
+  for (const g of ['percent', 'reportRate', 'pass']) {
+    const j = fx('clean_full.json');
+    delete j.globalVariables[`episode_e1_stub_defend_${g}`];
+    const out = lint(j);
+    expectIn(out, new RegExp(`⚠️.*result global 'episode_e1_stub_defend_${g}' is not declared`));
+    assert.equal(hits(out, /❌/), 0, out.join('\n'));
+  }
+});
+
+test('full episode: a missing playerSentAuth row for the attack account is a warning naming it', { skip }, () => {
+  let j = fx('clean_full.json');
+  delete set(j).playerSentAuth.accounts.analyst;
+  expectIn(lint(j), /⚠️.*no playerSentAuth\.accounts\.analyst row/);
+  j = fx('clean_full.json');
+  delete set(j).playerSentAuth;
+  expectIn(lint(j), /⚠️.*no playerSentAuth\.accounts\.analyst row/);
+  // A defendOnly episode never sends, so it needs no row.
+  assert.deepEqual(lint(fx('clean_defend_only.json')), []);
+});
+
+test('strings.brief: empty or blank is an error; absent is left alone', { skip }, () => {
+  for (const v of ['', '   ', null]) {
+    const j = fx('clean_full.json');
+    ep(j).strings.brief = v;
+    expectIn(lint(j), /❌.*strings\.brief is empty/);
+  }
+  const j = fx('clean_full.json');
+  delete ep(j).strings.brief;
+  assert.deepEqual(lint(j), []);
+});
+
 test('the real validator: schema passes on test_social_episode; the only social error is the missing kiosk sprite', { skip }, () => {
   const r = spawnSync('ruby', ['scripts/validate_scenario.rb', 'scenarios/test_social_episode/scenario.json.erb',
     '--no-graph', '--skip-ink', '--strict-social'], { cwd: root, encoding: 'utf8', env });

@@ -59,6 +59,8 @@ module ValidateSocial
         issues.concat(set_checks(ep, set))
         issues.concat(call_checks(ctx, ep, set))
         done = done_global(ep, set)
+        issues.concat(result_global_checks(ctx, ep, set))
+        issues.concat(player_sent_auth_checks(ctx, ep, set)) if full?(ep)
       end
       issues.concat(conclusion_checks(ctx, ep, done)) if done
       issues.concat(state_global_checks(ctx, id))
@@ -262,6 +264,9 @@ module ValidateSocial
       return [] unless strings.is_a?(Hash)
 
       issues = []
+      if strings.key?('brief') && (!strings['brief'].is_a?(String) || strings['brief'].strip.empty?)
+        issues << err('strings.brief is empty; the brief stage would open on a blank panel')
+      end
       %w[conceptPanel voicePanel].each do |key|
         next unless strings.key?(key)
 
@@ -337,6 +342,40 @@ module ValidateSocial
       return nil if prefix.include?('{stage}') && Mail.blank?(stage)
 
       "#{prefix.gsub('{stage}', stage.to_s)}done"
+    end
+
+    # The shell reads percent, reportRate, done and pass from the set's prefix. `done` is an error in
+    # conclusion_checks; the other three are a warning here.
+    def self.result_global_checks(ctx, ep, set)
+      prefix = set.dig('outcome', 'setGlobalPrefix')
+      return [] if Mail.blank?(prefix)
+
+      stage = ep.dig('defend', 'stage')
+      return [] if prefix.include?('{stage}') && Mail.blank?(stage)
+
+      base = prefix.gsub('{stage}', stage.to_s)
+      %w[percent reportRate pass].filter_map do |suffix|
+        name = "#{base}#{suffix}"
+        next if ctx.all_globals.key?(name)
+
+        warn_("the result global '#{name}' is not declared in globalVariables; the shell declares all four (percent, reportRate, done, pass)")
+      end
+    end
+
+    # A full mail episode: the flip replays the learner's send through the defend set, and that needs a
+    # playerSentAuth row for the sending account. Without it the flip falls back silently.
+    def self.player_sent_auth_checks(ctx, ep, set)
+      atk = ep['attack']
+      return [] unless atk.is_a?(Hash) && !atk.key?('callId')
+
+      accounts = Array(atk['accountIds'])
+      accounts = [atk['defaultAccount']] if accounts.empty? && !Mail.blank?(atk['defaultAccount'])
+      rows = set.dig('playerSentAuth', 'accounts')
+      accounts.filter_map do |aid|
+        next if rows.is_a?(Hash) && rows.key?(aid)
+
+        warn_("defend set '#{set['id']}' has no playerSentAuth.accounts.#{aid} row; the flip cannot replay a send from the attack account '#{aid}'")
+      end
     end
 
     # ---- the conclusion: one aim, a host NPC ---------------------------------------
