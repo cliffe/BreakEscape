@@ -3306,12 +3306,17 @@ not_tethered = '!globalVars.nightshade_tethered'
       ],
       "objects": [
         {
-          "type": "command_board",
+          "_comment": "Confirmation run (as m07/m08 PASS 2): type command_board opened m02's incident board minigame (interactions.js), so it is a readable notice board with the same text.",
+          "type": "notice_board1",
           "id": "plotting_board",
           "name": "Plotting Board",
           "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
           "position": { "x": 2, "y": 4 },
-          "observations": "The 1960s plotting board, still on the wall: a map of a war that never came. Someone has run a strip of red tape across it, city by city, west to east. Seattle is first."
+          "observations": "The 1960s plotting board, still on the wall: a map of a war that never came. Someone has run a strip of red tape across it, city by city, west to east. Seattle is first.",
+          "text": "The 1960s plotting board, still on the wall: a map of a war that never came. Someone has run a strip of red tape across it, city by city, west to east. Seattle is first."
         },
         {
           "type": "smartscreen",
@@ -3533,7 +3538,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "voice": <%= voice.(:fonoti) %>,
           "globalVarOnKO": "fonoti_ko",
           "itemsHeld": [
-            { "type": "notes", "id": "gallery_code_card", "name": "Gallery Shift Code Card", "takeable": true, "readable": true, "text": "TOMB GAMMA. GALLERY, NIGHT SHIFT.\nOuter lock: <%= outer_lock_pin %>.\nThis card stays on the walkway.", "puzzle_graph_role": "clue", "puzzle_graph_unlocks": "core", "puzzle_graph_optional": true }
+            { "type": "notes", "id": "gallery_code_card", "name": "Gallery Shift Code Card", "takeable": true, "readable": true, "text": "TOMB GAMMA. GALLERY, NIGHT SHIFT.\nOuter lock: <%= outer_lock_pin %>.\nThis card stays on the walkway.", "onPickup": { "setVariable": { "lock_guard_known": true } }, "puzzle_graph_role": "clue", "puzzle_graph_unlocks": "core", "puzzle_graph_optional": true }
           ],
           "behavior": {
             "hostile": { "chaseSpeed": 125, "attackDamage": 14, "pauseToAttack": true, "fightStyle": "slugger", "maxHP": 140 },
@@ -3546,6 +3551,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "eventMappings": [
             <%= after_end_json.('gallery') %>
             { "eventPattern": "door_unlock_attempt", "condition": "data.connectedRoom === 'core'", "cooldown": 0, "setGlobal": { "at_keypad": true } },
+            <%# Confirmation run: his own handover ("Go on through") sets only an ink-local flag, so the card's onPickup and this net set lock_guard_known and his challenge stands down. %>
+            { "eventPattern": "item_picked_up:notes", "condition": "data.itemId === 'gallery_code_card' && !globalVars.lock_guard_known", "setGlobal": { "lock_guard_known": true } },
             { "eventPattern": "room_exited", "condition": "data.roomId === 'gallery' && globalVars.at_keypad === true", "setGlobal": { "at_keypad": false } },
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.at_keypad === true", "setGlobal": { "at_keypad": false } },
             { "eventPattern": "player_spotted:lock_guard", "conversationMode": "person-chat", "targetKnot": "challenge", "cooldown": 0 },

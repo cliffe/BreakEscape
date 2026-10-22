@@ -111,7 +111,7 @@ Every object in `scenario.json.erb` uses a sprite `type` (or `sprite`) that exis
 | `shutter_isolator` | power room | `aes_esd_station1` (the map's slot) | key switch and breaker row labelled GALLERY SHUTTER | reuse |
 | `bypass_panel` | power room | `aes_bms_bypass1` | refit bypass bolted over 1960s switchgear | reuse |
 | `static_kit` | power room | `aes_toolbox1` | tool roll stencilled S | reuse |
-| `plotting_board` | server hall | `command_board` | the 1960s plotting board, red tape west to east | **placeholder** (wants a wide board; now at (2,4) on open floor, as (5,2) was out of reach behind the racks) |
+| `plotting_board` | server hall | `notice_board1` (readable; `command_board` opens the incident board minigame) | the 1960s plotting board, red tape west to east | **placeholder** (wants a wide board; now at (2,4) on open floor, as (5,2) was out of reach behind the racks) |
 | `release_console_controls` | server hall | `aes_control_panel1` | head-start feeds and the backdoor queue | reuse |
 | `schedule_terminal` | server hall | `aes_round_terminal1` | free-standing terminal at (10,7), south of the racks (moved off the inverters for reach) | reuse |
 | `uplink_printer` | server hall | `pnw_portable_printer1` | printer with Social Fabric's draft | reuse |
