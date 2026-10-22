@@ -1084,6 +1084,7 @@ end
   },
 
   "startRoom": "forward_post",
+  "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
 
   <%# VM-WIRE: one entry per target machine; system_names are placeholders (header). %>
   "flags": {
@@ -1339,6 +1340,7 @@ end
     end (east) is the gate, its terminal and the blast door. ========== %>
     "forward_post": {
       "type": "room_m10_forward",
+      "lighting": {"mode": "on", "ambient": "#a4b0d0", "panels": false, "lights": [{"x": 16.4, "y": 3.4, "color": "#ffc070", "radius": 120, "intensity": 0.85}, {"x": 9.0, "y": 6.2, "color": "#fff0d0", "radius": 100, "intensity": 0.6}, {"x": 3.1, "y": 3.3, "color": "#ffb060", "radius": 44, "intensity": 0.55}, {"x": 2.75, "y": 7.2, "color": "#ffb060", "radius": 44, "intensity": 0.55}, {"x": 6.0, "y": 8.4, "color": "#eef2ff", "radius": 40, "intensity": 0.3}], "emitters": {"outdoor-lamp": {"color": "#ffc070", "radius": 16, "intensity": 0.8, "above": true, "offsetY": -20}, "m10_work_lamp": {"color": "#fff0d0", "radius": 14, "intensity": 0.8, "above": true, "offsetY": -20}, "m10_field_screen": {"color": "#9fd4ff", "radius": 18, "intensity": 0.45, "effect": "screen", "above": true}, "m10_field_screen_dark": {"intensity": 0}, "m10_field_screen_curve": {"color": "#ffb0a0", "radius": 18, "intensity": 0.45, "effect": "screen", "above": true}, "safetynet_flag_terminal": {"color": "#9fd4ff", "radius": 18, "intensity": 0.4, "effect": "screen", "above": true}, "vm-launcher": {"color": "#9fd4ff", "radius": 18, "intensity": 0.4, "effect": "screen", "above": true}, "m10_gate_post": [{"condition": "globalVars.m06_assets_seized === true", "intensity": 0}, {"color": "#ffd090", "radius": 22, "intensity": 0.6, "above": true, "offsetX": 10, "offsetY": -10}], "m10_van1": {"color": "#ffb060", "radius": 30, "intensity": 0.75, "above": true, "floorTint": 0.3, "offsetX": 7, "offsetY": 0}, "m10_van2": {"color": "#ffb060", "radius": 30, "intensity": 0.75, "above": true, "floorTint": 0.3, "offsetX": 0, "offsetY": -5}}},
       "door_sign": "Forward Post",
       "connections": { "east": "blast_tunnel" },
       "npcs": [
@@ -2340,6 +2342,10 @@ end
           "readable": true,
           "readDisplay": "gameDisplay",
           "position": "as-type:m10_field_screen_dark",
+          "sprite": "m10_field_screen_dark1",
+          "spriteVariants": [
+            { "condition": "globalVars.m07_debrief_stance === 'hardened'", "value": "m10_field_screen_curve1" }
+          ],
           "observations": "A field screen on a folding desk, dark. Set up for numbers nobody asked for.",
           "observationVariants": [
             { "condition": "globalVars.m07_debrief_stance === 'hardened'", "value": "The Council's curve, live. It doesn't flatten after a month." }
@@ -2465,6 +2471,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     unlockDoor mapping (the validator's warning is intended). ============ %>
     "blast_tunnel": {
       "type": "room_m10_tunnel",
+      "lighting": {"mode": "on", "ambient": "#aeb2bc", "panels": false, "lights": [{"x": 2.0, "y": 3.1, "color": "#ffd9a0", "radius": 60, "intensity": 0.75}, {"x": 5.3, "y": 3.1, "color": "#ffd9a0", "radius": 60, "intensity": 0.75}, {"x": 8.1, "y": 3.1, "color": "#ffd9a0", "radius": 60, "intensity": 0.75}], "emitters": {"m10_caged_lamp": {"color": "#ffd9a0", "radius": 12, "intensity": 0.8, "above": true, "offsetY": 4}, "m10_door_panel": {"color": "#ffb040", "radius": 8, "intensity": 0.5, "above": true}, "kettle": {"color": "#ff8a3a", "radius": 8, "intensity": 0.5, "above": true}}},
       "door_sign": "Blast Door",
       "locked": true,
       "lockType": "rfid",
@@ -2578,6 +2585,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     warning is intended). Stair B south is a story door (Ghost's call). ===== %>
     "security_office": {
       "type": "room_m10_security",
+      "lighting": {"mode": "on", "ambient": "#b2b8c8", "emitters": {"fire_alarm_point": {"intensity": 0}, "m10_readout_side": {"color": "#ffb040", "radius": 10, "intensity": 0.5, "above": true}}},
       "door_sign": "Inner Door",
       "locked": true,
       "lockType": "rfid",
@@ -2850,6 +2858,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     (CONTRACT 7 item 6), so imran_watched carries no rfidCard. ============ %>
     "workshop_floor": {
       "type": "room_m10_workshop",
+      "lighting": {"mode": "on", "ambient": "#b4b8c4", "emitters": {"m10_caged_lamp": {"color": "#ffd9a0", "radius": 12, "intensity": 0.6, "above": true, "offsetY": 4}, "office-misc-lamp": {"color": "#ffcf8a", "radius": 50, "intensity": 0.7, "above": true}, "m10_cracker_rack": {"color": "#6dffb0", "radius": 20, "intensity": 0.3, "leds": 0.5}}},
       "door_sign": "Stair B",
       "locked": true,
       "lockType": "rfid",
@@ -3062,6 +3071,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     escaped branch (HaX's mapping and the text variants). ================== %>
     "power_room": {
       "type": "room_m10_power",
+      "lighting": {"mode": "motion", "ambient": "#b0b4bc", "darkAmbient": "#141a24", "emitters": {"m10_caged_lamp": {"intensity": 0}, "m10_load_board": {"color": "#ffb347", "radius": 30, "intensity": 0.45, "leds": 0.3, "ledColor": "#ffb347"}, "m10_bypass_panel": {"color": "#7dffa0", "radius": 8, "intensity": 0.45, "above": true}, "m10_key_isolator": [{"condition": "globalVars.gallery_shutter_cut === true", "color": "#7dffa0", "radius": 8, "intensity": 0.45, "above": true}, {"color": "#ffb040", "radius": 8, "intensity": 0.45, "above": true}], "aes_battery_rack": {"color": "#7dffa8", "radius": 26, "intensity": 0.3, "leds": 0.5, "ledColor": "#7dffa8"}, "pnw_batteries": {"color": "#7dffa8", "radius": 26, "intensity": 0.3, "leds": 0.5, "ledColor": "#7dffa8"}}},
       "door_sign": "Power Room",
       "locked": true,
       "lockType": "rfid",
@@ -3247,6 +3257,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     door (flags 2 and 3 and the cut). ===================================== %>
     "server_hall": {
       "type": "room_m10_hall",
+      "lighting": {"mode": "on", "ambient": "#a8b0c4", "emitters": {"hq_rack": {"color": "#6dffb0", "radius": 34, "intensity": 0.4, "effect": "blink", "leds": 0.7}, "m10_plotting_board": {"color": "#9fc8ff", "radius": 44, "intensity": 0.3, "above": true, "hueKeep": false}, "m10_readout": {"color": "#ffb040", "radius": 10, "intensity": 0.5, "above": true}, "m10_console_controls": {"color": "#ffb040", "radius": 10, "intensity": 0.5, "above": true}, "m10_hatch": {"color": "#7dffa0", "radius": 6, "intensity": 0.45, "above": true, "offsetX": 6, "offsetY": 4}, "m10_caged_lamp": {"color": "#ffd9a0", "radius": 12, "intensity": 0.8, "above": true, "offsetY": 4}, "vm-launcher": {"color": "#9fd4ff", "radius": 18, "intensity": 0.4, "effect": "screen", "above": true}, "safetynet_flag_terminal": {"color": "#9fd4ff", "radius": 18, "intensity": 0.4, "effect": "screen", "above": true}, "aes_round_terminal": {"color": "#7dffa0", "radius": 16, "intensity": 0.35, "effect": "screen", "above": true}}},
       "door_sign": "Server Hall",
       "connections": { "west": "power_room", "east": "gallery" },
       "npcs": [
@@ -3471,6 +3482,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     stair but HaX's unlockDoor mapping (intended validator warning). ====== %>
     "gallery": {
       "type": "room_m10_gallery",
+      "lighting": {"mode": "on", "ambient": "#a8b0c0", "panels": false, "lights": [{"x": 3.6, "y": 3.0, "color": "#ffd090", "radius": 52, "intensity": 0.5}, {"x": 5.5, "y": 3.0, "color": "#ffd090", "radius": 52, "intensity": 0.5}, {"x": 3.7, "y": 2.4, "color": "#c8d8f0", "radius": 60, "intensity": 0.35}], "emitters": {"m10_caged_lamp": {"color": "#ffd9a0", "radius": 12, "intensity": 0.8, "above": true, "offsetY": 4}, "m10_slit_window": {"color": "#c8d8f0", "radius": 56, "intensity": 0.4, "above": true, "floorTint": 0.5, "offsetY": 20}, "m10_door_panel": {"color": "#ffb040", "radius": 8, "intensity": 0.5, "above": true}}},
       "door_sign": "Gallery Stair",
       "locked": true,
       "lockType": "rfid",
@@ -3820,6 +3832,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     he is hidden (stage 8 m-8; no down pose yet, ASSET_LIST 8). ============ %>
     "core": {
       "type": "room_m10_core",
+      "lighting": {"mode": "on", "ambient": "#aeb2bc", "panels": false, "lights": [{"x": 2.3, "y": 2.6, "color": "#ece8dc", "radius": 80, "intensity": 0.5}, {"x": 6.9, "y": 2.6, "color": "#ece8dc", "radius": 80, "intensity": 0.5}], "emitters": {"m10_caged_lamp": {"color": "#ece8dc", "radius": 12, "intensity": 0.7, "above": true, "offsetY": 4}, "m10_key_console": {"color": "#8fb0d0", "radius": 18, "intensity": 0.45, "effect": "screen", "above": true, "offsetX": -10, "offsetY": -10}, "m10_wall_screen": {"color": "#a0c0e0", "radius": 24, "intensity": 0.4, "effect": "screen", "above": true}, "m10_readout": {"color": "#ffb040", "radius": 10, "intensity": 0.5, "above": true}, "vm-launcher": {"color": "#9fd4ff", "radius": 18, "intensity": 0.4, "effect": "screen", "above": true}, "safetynet_flag_terminal": {"color": "#9fd4ff", "radius": 18, "intensity": 0.4, "effect": "screen", "above": true}}},
       "door_sign": "Outer Lock",
       "locked": true,
       "lockType": "pin",

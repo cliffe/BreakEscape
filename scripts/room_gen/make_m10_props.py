@@ -985,9 +985,28 @@ def steel_chair():
     c.save(OBJ, "m10_steel_chair1")
 
 
+def field_screen_curve():
+    """The projection desk's screen lit (the hardened branch): the same rugged monitor
+    showing the Council's casualty curve, a red line climbing and never flattening."""
+    w, h = 24, 18
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, 13, OUTLINE)
+    c.rect(1, 1, w - 2, 12, (54, 58, 52))
+    c.rect(3, 3, w - 4, 10, GLASS_DARK)
+    c.hline(4, w - 5, 10, (90, 110, 130))           # axis
+    c.rect(4, 3, 4, 10, (90, 110, 130))
+    for x, y in ((5, 9), (7, 9), (9, 8), (11, 8), (13, 7), (15, 6), (17, 5), (19, 4)):
+        c.px(x, y, (240, 80, 70))
+        c.px(x + 1, y, (240, 80, 70))
+    c.rect(10, 14, 13, 15, (54, 58, 52))
+    c.rect(6, 16, 17, 17, OUTLINE)
+    c.save(OBJ, "m10_field_screen_curve1")
+
+
 def round4():
     steel_bench()
     steel_chair()
+    field_screen_curve()
 
 
 if __name__ == "__main__":

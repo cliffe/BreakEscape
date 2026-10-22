@@ -230,3 +230,17 @@ Lessons:
 - A "warm light in the dark" needs everything else in the room turned down: the screens and a neighbour's lamp outshone an amber rack at r 40 and 0.55. Give the rack `ledColor` too, or its LEDs read stock green once lit.
 - A desk lamp's colour needs `above` in a lit room, or the pool reads white-cream.
 - A status lamp that says a story state (a wipe running or halted) should use the same condition as the task that records that state, not a looser one.
+
+### m10_full_disclosure (2026-10-22, finale, lighting rounds 1-2)
+
+Plan and log: `scenarios/m10_full_disclosure/LIGHTING_PLAN.md`. Tomb Gamma, a 1962 bunker, one night (scenario ambient `#b8bfce`); each room's light from stage 5's "Mood" lines.
+- **On:** forward post (exterior) `#a4b0d0` cold, no panels, sodium pool at the gate, work lamp over the table, the vans' doors warm (`above` emitters with `floorTint` on the decor vans, plus spill lights); tunnel `#aeb2bc`, no panels, three caged-bulb floor pools; security `#b2b8c8`; workshop `#b4b8c4`; hall `#a8b0c4`, rack LEDs, backlit plotting board (`hueKeep: false`); gallery `#a8b0c0`, no panels, cold slit-window light (`floorTint`) and warm bulb pools; core `#aeb2bc`, no panels, two neutral bulb pools.
+- **Motion:** power room `#b0b4bc`, dark `#141a24`: load board lamps, battery LEDs (`ledColor`), the isolator amber while live and green once cut.
+- Call points off. No engine change.
+
+Lessons:
+- A wall-hung bulb (feet above the floor line) pools on the wall, not the floor: give it a small `above` glow for the bulb and put the floor pool in room `lights` about a tile below it.
+- Room emitters don't follow a motion room's on/off state, so a "ceiling" bulb emitter lights the dark room before the strike; set it to 0 in motion rooms until the engine has such a flag.
+- Room `lights` add without keeping hue, so a warm light on a cold ambient clips towards white at its centre; carry a "warm thing" with an `above` emitter (hue kept) and `floorTint`, and use a room light only for the spill.
+- Check every proposed ambient against the readability floor (luma about 175): two review suggestions fell below it.
+

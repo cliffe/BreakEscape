@@ -1443,6 +1443,7 @@ export function preload() {
     this.load.image('se_sign_blueteam1', 'objects/se_sign_blueteam1.png');
     this.load.image('m10_steel_bench1', 'objects/m10_steel_bench1.png');
     this.load.image('m10_steel_chair1', 'objects/m10_steel_chair1.png');
+    this.load.image('m10_field_screen_curve1', 'objects/m10_field_screen_curve1.png');
 
     // Load audio files
     // NPC system sounds
