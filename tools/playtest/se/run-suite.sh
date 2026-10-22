@@ -33,6 +33,7 @@ JOBS=(
   e1-full:awareness_e1_invoice_fraud e2-full:awareness_e2_cv_lures
   e3-full:awareness_e3_helpdesk_reset e4-full:awareness_e4_exec_whaling
   e5-full:awareness_e5_signin_pages e6-full:awareness_e6_texts_and_qr
+  e7-full:awareness_e7_voice_ceo
 )
 
 new_game() { # scenario -> game id

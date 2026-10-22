@@ -2835,7 +2835,7 @@ The first six lines are the shell's own. The last four belong to the attack (`se
   "tasks": [ { "taskId": "finish_episode", "title": "Finish the episode", "type": "custom", "status": "active" } ] }
 ```
 
-The validator errors when no aim (or more than one) has `missionConclusion`, when `concludeRequires.globals` leaves out the done global (it gates the ending on a finished round, not on the declared defaults), and warns when `conclusionScreen` is missing. A training episode ends on the `success` screen, not the credits. A full episode may have a first aim for the attack (E1's `red_team_aim`, whose task a host mapping completes on `phish_supplier_contact_landed`); only the conclusion aim carries `missionConclusion`.
+The validator errors when no aim (or more than one) has `missionConclusion`, when `concludeRequires.globals` leaves out the done global (it gates the ending on a finished round, not on the declared defaults), and warns when `conclusionScreen` is missing. A training episode ends on the `success` screen, not the credits. A full episode may have a first aim for the attack. The score is defence only (design 11 §4.1), so that aim's task must complete when the write stage finishes whatever the result, never on the attack landing: its host mapping fires on `phish_<target>_attempts` with `value > 0` (written on every send), or on a call attack on `pretext_<callId>_outcome` with any non-empty outcome, not on `phish_<target>_landed`. Title the task for the act of sending ("Send your email …"), not for landing it. Only the conclusion aim carries `missionConclusion`.
 
 **5. The room, the host and the kiosk.** One `room_office` with a host NPC and one kiosk:
 

@@ -57,7 +57,7 @@
       {
         "id": "e4_pa_inbox",
         "title": "Merrin & Sallow PA inbox",
-        "brief": "You're Tomás Carvalho, PA to Catherine Merrin, the managing partner, and she flies to Lisbon this morning. Five emails and voicemails are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. A voice you know is not proof on its own. Checking or reporting something real never costs you anything.",
+        "brief": "You're Tomás Carvalho, PA to Catherine Merrin, the managing partner, and she flies to Lisbon this morning. Yasmin in finance approves the firm's payments. Five emails and voicemails are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. A voice you know is not proof on its own. Checking or reporting something real never costs you anything.",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
@@ -219,11 +219,13 @@
               "isPhish": true,
               "flags": [
                 "lookalike_domain",
-                "changed_bank_details"
+                "changed_bank_details",
+                "senderTrust"
               ],
               "perFlagNote": {
                 "lookalike_domain": "This morning's itinerary came from wrenfieldtravel.example. This one is wrenfield-travel.example, with an added hyphen",
-                "changed_bank_details": "'Use these details, not the ones on file' is the commonest invoice-fraud move. The itinerary said everything was paid on the firm's account. The safe step is to ring Wrenfield on the number you already hold"
+                "changed_bank_details": "'Use these details, not the ones on file' is the commonest invoice-fraud move. The itinerary said everything was paid on the firm's account. The safe step is to ring Wrenfield on the number you already hold",
+                "senderTrust": "The name says Wrenfield, but the address is on wrenfield-travel.example, which isn't Wrenfield's"
               },
               "ifTrusted": "£1,860 would go to an account the sender controls, and the hotel was already paid.",
               "reportReply": "Thanks. Wrenfield say they sent nothing and the hotel is paid. The look-alike address has been blocked."
@@ -257,11 +259,8 @@
       },
       "strings": {
         "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. You're Tomás Carvalho, PA to the managing partner, Catherine Merrin, and she's travelling today. Five emails and voicemails are waiting. Some are real and some were made to trick you, including one that sounds just like her. Sort them, and check or report anything that doesn't sit right. Checking or reporting something real never costs you anything.",
-        "flipHeading": "Now you're the PA",
-        "flipIntro": "This is the email you just sent, as Tomás saw it on his phone. The lines picked out below are what make it believable.",
-        "flipDefenderLine": "Tomás read it ten minutes before Catherine's flight was due to leave, with two meetings to set up. It fitted her day and sounded like her, so he opened the payment form. People who fall for messages like this are not stupid: this one was built to look right.",
-        "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, messages like it arrive in Tomás's inbox and voicemail, and you're the one reading them.",
-        "noBlameLine": "Nobody is marked down for a miss here. Every one of these messages was built to look and sound right, and the people who act on them are busy and trying to help, not careless.",
+        "noBlameLine": "Nobody is marked down for a miss here. Every one of these was built to look and sound right, and the people who act on them are trying to help in a hurry. A miss is about the pressure, not the person.",
+        "defendIntro": "Now you're in Tomás's seat. Five emails and voicemails are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed.",
         "mondayCard": "On Monday: if someone senior asks you to pay, buy or send something in a hurry, or to keep it from finance, check before you act, even when it's their voice on a voicemail. Ring them on the number already in your contacts, or ask finance, then report the message the way your organisation asks you to.",
         "defendOnly": "You went straight to the inbox this time. These messages were made by people whose job is to make them look and sound right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine.",
         "voicePanel": {

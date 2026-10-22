@@ -16,7 +16,7 @@
     ],
     "aliases": "Invented names that only ever sign fakes: 'Liam Baxter' (episode row 2), 'Jordan Kerr' (episode row 4), 'Alex Hollins' (form A row 2), 'Ray Turner' (form B row 2), 'Dean Holroyd' (form A row 8). Checked: none of the surnames is used elsewhere in the repo.",
     "realHosts": "tarrowby.example (mail), hire.tarrowby.example (the recruitment system), intranet.tarrowby.example. Applicant mail arrives at jobs@tarrowby.example (the address the episode's social post asks people to send CVs to); the team's internal list is recruitment@tarrowby.example. The recruitment system and the onboarding provider send through outside services (send.hirerelay.example, mail.starterhub.example), which is why their SPF fails in form rows 9.",
-    "lookalikes": "Episode: tarrowby-careers.example (added word; already in the roster). Form A: tarrowbey.example (swapped letters; already in the roster). Form B: kettlewick-talent.example (added word), new, a look-alike of the genuine agency kettlewick.example",
+    "lookalikes": "Episode: tarrowby-careers.example (added word; already in the roster). Form A: careers-tarrowby.example (added word, so its look-alike kind matches form B row 8; m20). Form B: kettlewick-talent.example (added word), new, a look-alike of the genuine agency kettlewick.example",
     "vacancies": "Warehouse supervisor (nights) for Colin Mather, HGV driver (Class 1) and forklift driver (nights). The attack fragment may name its own vacancy; nothing in this file depends on it matching."
   },
   "_tells": {
@@ -42,7 +42,7 @@
       "5 | genuine, honest link | all pass | easy | A: Jun, feedback forms in the recruitment system | B: Ibrahim, how to preview attachments",
       "6 | phish, spoofed From | senderAuth, reply_to_differs | SPF fail, DKIM none, DMARC fail | hard | A: spoofed Roseanne wants candidates' addresses | B: spoofed Thanh wants starters' passports",
       "7 | genuine, real deadline, normal process | all pass | medium | A: Colin moves interviews to Wednesday | B: Roseanne, a candidate has another offer",
-      "8 | phish, 'attached' but missing, link to a look-alike | lookalike_domain, attachmentPlausible | all pass (the look-alike owner signs its own mail) | medium | A: 'Dean Holroyd', CV on careers.tarrowbey.example | B: Kettlewick look-alike, shortlist on kettlewick-talent.example",
+      "8 | phish, 'attached' but missing, link to a look-alike | lookalike_domain, attachmentPlausible | all pass (the look-alike owner signs its own mail) | medium | A: 'Dean Holroyd', CV on careers-tarrowby.example (added word, matching B's look-alike kind; m20) | B: Kettlewick look-alike, shortlist on kettlewick-talent.example",
       "9 | genuine, fail-but-fine | SPF fail, DKIM and DMARC pass | medium | A: the recruitment system's new-applications notice | B: the onboarding provider's forms-complete notice",
       "10 | genuine | all pass | easy | A: Minjun Ahn withdraws | B: Bethany Hirst says thank you"
     ]
@@ -183,7 +183,7 @@
             "flags": [],
             "whyFine": {
               "senderTrust": "Colin's real Tarrowby address, and it's his vacancy.",
-              "default": "The hiring manager, from his own address, asking for interviews through the normal system. Nothing to open, pay or sign in to."
+              "default": "The hiring manager, writing from his own address, wants three candidates seen through the normal system. Nothing is attached, and nothing needs signing in to."
             }
           }
         }
@@ -308,7 +308,7 @@
             "isPhish": true,
             "flags": ["senderAuth", "reply_to_differs"],
             "perFlagNote": {
-              "senderAuth": "SPF and DMARC both failed for kettlewick.example: the agency's own servers didn't send this",
+              "senderAuth": "Kettlewick's own mail system didn't send this; it only looks as though Roseanne did.",
               "reply_to_differs": "Replies go to roseanne.kettlewick@inboxly.example, not to Roseanne's Kettlewick address"
             },
             "headerNote": "Open the details: the From shows Roseanne's real address, but the checks failed and the reply-to points somewhere else.",
@@ -340,17 +340,17 @@
           "subject": "CV attached: HGV driver",
           "time": "11:05",
           "body": "Hi,\nMy CV is attached for the HGV driver job. If it hasn't come through, it's also on your careers page here:\n{{link:cv}}\nSign in with your work email to view it.\nDean",
-          "links": [ { "id": "cv", "text": "careers.tarrowbey.example/cv/5520", "destination": "https://careers.tarrowbey.example/cv/5520" } ],
+          "links": [ { "id": "cv", "text": "careers-tarrowby.example/cv/5520", "destination": "https://careers-tarrowby.example/cv/5520" } ],
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "dean.holroyd@quickpost-mail.example" },
           "truth": {
             "isPhish": true,
             "flags": ["lookalike_domain", "attachmentPlausible"],
             "perFlagNote": {
-              "lookalike_domain": "Read it slowly: tarrowbey has an extra e. Tarrowby's own sites end in tarrowby.example",
+              "lookalike_domain": "Read it slowly: careers-tarrowby.example isn't tarrowby.example. Tarrowby's own sites end in tarrowby.example; an added word with a hyphen makes it someone else's",
               "attachmentPlausible": "It says the CV is attached, but nothing is, and the link that replaces it wants you to sign in"
             },
             "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password.",
-            "reportReply": "Thanks. tarrowbey.example isn't ours, and we've blocked it."
+            "reportReply": "Thanks. careers-tarrowby.example isn't ours, and we've blocked it."
           }
         },
         {
@@ -366,11 +366,11 @@
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "senderAuth": "SPF failed because the recruitment system's mail service sent it for Tarrowby, but DKIM passed and DMARC passed for tarrowby.example, the real domain.",
+              "senderAuth": "The recruitment system sends on Tarrowby's behalf through an outside service, so one automatic sender check didn't line up, but the message still comes from Tarrowby's real domain.",
               "linkCredible": "The link goes where it says, to Tarrowby's own recruitment system.",
               "default": "The recruitment system's usual notice, linking to Tarrowby's own address."
             },
-            "headerNote": "One failed check on its own is a clue, not proof. Mail sent through a service often breaks SPF while DKIM still passes."
+            "headerNote": "One check failing on its own is a clue, not proof. Mail sent through an outside service often trips one of these checks while the rest still pass."
           }
         },
         {
@@ -510,7 +510,7 @@
             "isPhish": true,
             "flags": ["senderAuth", "reply_to_differs"],
             "perFlagNote": {
-              "senderAuth": "SPF and DMARC both failed for tarrowby.example: Tarrowby's own servers didn't send this",
+              "senderAuth": "Tarrowby's own mail system didn't send this; it only looks as though Thanh did.",
               "reply_to_differs": "Replies go to thanh.onboarding@quickpost-mail.example, not to Thanh's Tarrowby address"
             },
             "headerNote": "Open the details: the From shows Thanh's real address, but the checks failed and the reply-to points somewhere else.",
@@ -567,10 +567,10 @@
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "senderAuth": "SPF failed because Tarrowby's onboarding provider sent it, but DKIM passed and DMARC passed for tarrowby.example, the real domain.",
+              "senderAuth": "The onboarding provider sends on Tarrowby's behalf through an outside service, so one automatic sender check didn't line up, but the message still comes from Tarrowby's real domain.",
               "default": "The onboarding system's usual notice, and it sends you to the intranet rather than a link."
             },
-            "headerNote": "One failed check on its own is a clue, not proof. Mail sent through a service often breaks SPF while DKIM still passes."
+            "headerNote": "One check failing on its own is a clue, not proof. Mail sent through an outside service often trips one of these checks while the rest still pass."
           }
         },
         {
@@ -603,10 +603,10 @@
     "strings": {
       "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. First you're on the red team: look at what Tarrowby has posted about its open jobs, then write one job application to its recruitment team, with an attachment picked from a list of labels. Nothing real is attached or sent. Then you swap seats and sort a recruitment inbox like the one your email landed in. Only the inbox is scored.",
       "flipHeading": "Now it lands on you",
-      "flipIntro": "This is the application you just sent, as Tarrowby's recruitment team would see it. The parts picked out below are what make it believable.",
-      "flipDefenderLine": "Jun in HR opened it between two interviews, with forty applications still to read. It looked like one more CV for the warehouse job, so he opened the attachment and did what it asked. People who fall for messages like this are not stupid: this one was built to look right.",
+      "flipIntro": "This is the application you just sent, the way it looked to Fatima, Tarrowby's recruitment lead. The parts picked out below are what make it believable.",
+      "flipDefenderLine": "Fatima opened it between two interviews, forty applications still unread. One more CV for the warehouse job, from someone who named the role, so she opened the attachment. Anyone that busy would. Being taken in by a message built this carefully is not carelessness.",
       "flipNoSend": "Your application didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives in a recruitment inbox, and you're the one opening it.",
-      "noBlameLine": "Nobody is marked down for a miss here. Every one of these messages was built to look right, and opening attachments from strangers is part of a recruiter's job. The people who get caught out are busy, not careless.",
+      "noBlameLine": "Nobody is marked down for a miss here. Every one of these was built to look right, and opening attachments from strangers is a recruiter's whole job. A miss here is a sign of a busy inbox, nothing more.",
       "mondayCard": "On Monday: read CVs in the viewer, and if a document asks you to enable editing or content, don't. If a CV is 'too big to attach' and sits behind a link that wants you to sign in, ask the candidate to send it as an attachment instead. Then report anything odd the way your organisation asks you to.",
       "defendOnly": "You went straight to the inbox this time. These messages were written by people whose job is to make them look right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine."
     },

@@ -18,7 +18,7 @@
     ],
     "readsLanded": "Something must read phish_recruiter_contact_landed (as E1 reads phish_supplier_contact_landed) so the exported global is used.",
     "newCastName": "Alex Rendell — the applicant persona on the learner's exercise account (a.rendell.jobs@inboxly.example). Invented for E2; add to BRAND_SET.md Tarrowby cast if adopted.",
-    "storedTells": "A good landed send stores [urgencyCalibrated]. The attachment is seen in the flip but is NOT an engine tell: phish-rules only stores senderTrust/senderAuth/linkCredible/urgencyCalibrated. The E2 defend-side channel tells (sender-attachment mismatch, enable-content prompt, unexpected link, generic greeting, lookalike domain) live only in the defend set."
+    "storedTells": "The application pretext is calm (urgency low; M2). A landed send that keeps the ask's same-day deadline (ask_review, medium) still reads as overdone against advisoryMax low and stores [urgencyCalibrated]; pairing the application with ask_calm (low) clears the urgency advisory and stores no tell, so a careful learner can lower the meter while still landing. The attachment is seen in the flip but is NOT an engine tell: phish-rules only stores senderTrust/senderAuth/linkCredible/urgencyCalibrated. The E2 defend-side channel tells (sender-attachment mismatch, enable-content prompt, unexpected link, generic greeting, lookalike domain) live only in the defend set."
   },
 
   "people": [
@@ -70,7 +70,7 @@
         { "id": "vacancy", "type": "reference", "label": "which vacancy" },
         { "id": "hiring_manager", "type": "name", "label": "the hiring manager" }
       ],
-      "urgency": "high" },
+      "urgency": "low" },
     "pretext_general": { "part": "pretext",
       "text": "I wanted to introduce myself and tell you a little about my background, in case anything suitable comes up.",
       "slots": [],
@@ -78,7 +78,11 @@
     "ask_review": { "part": "ask",
       "text": "Could you confirm you have received my CV and let me know the next steps before the closing date today?",
       "slots": [],
-      "urgency": "medium" }
+      "urgency": "medium" },
+    "ask_calm": { "part": "ask",
+      "text": "No rush at all — take a look whenever you have a chance.",
+      "slots": [],
+      "urgency": "low" }
   },
 
   "mailClient": {
@@ -153,7 +157,7 @@
         "from": ["from_own"],
         "greeting": ["greet_generic"],
         "pretext": ["pretext_application", "pretext_general"],
-        "ask": ["ask_review"]
+        "ask": ["ask_review", "ask_calm"]
       },
       "primedFor": {
         "distinctiveValues": ["vacancy_who114"],

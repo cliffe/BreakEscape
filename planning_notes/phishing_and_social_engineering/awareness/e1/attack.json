@@ -27,10 +27,10 @@
       "reduceNote": "Do not publish a named supplier contact and address; it lets an attacker spoof a sender the finance team already trusts."
     },
     "brightwell_open_invoice": {
-      "text": "Quarter-end note: invoice INV-4471 from Harlow Packaging is still open and due for payment this week.",
+      "text": "Quarter-end note: invoice INV-2217 from Harlow Packaging is still open and due for payment this week.",
       "subject": "adaeze", "source": "blk_invoice",
       "provides": [
-        { "type": "reference", "value": "inv_4471", "label": "invoice INV-4471", "kind": "distinctive" }
+        { "type": "reference", "value": "inv_4471", "label": "invoice INV-2217", "kind": "distinctive" }
       ],
       "reduceNote": "Open invoice numbers and amounts posted publicly give a fraudster the exact pretext to reference."
     },
@@ -53,8 +53,14 @@
       "urgency": "high" },
     "pretext_statement": { "part": "pretext", "text": "Please find our latest monthly statement for your records.", "slots": [],
       "urgency": "low" },
+    "pretext_bank_change_calm": { "part": "pretext",
+      "text": "When you have a moment on {invoice}: our bank account has recently changed, so the payee details will need updating before the next payment run. No rush today.",
+      "slots": [ { "id": "invoice", "type": "reference", "label": "which invoice" } ],
+      "urgency": "low" },
     "ask_confirm": { "part": "ask", "text": "Can you confirm once the new details are saved?", "slots": [],
-      "urgency": "medium" }
+      "urgency": "medium" },
+    "ask_when_convenient": { "part": "ask", "text": "Just drop me a line whenever it's sorted.", "slots": [],
+      "urgency": "low" }
   },
 
   "mailClient": {
@@ -97,7 +103,7 @@
               "fact": "harlow_supplier_contact" } ] },
           { "id": "finance_news", "title": "Finance update", "blocks": [
             { "id": "blk_invoice", "kind": "p",
-              "text": "Quarter-end: invoice INV-4471 from Harlow Packaging is still open and due for payment this week.",
+              "text": "Quarter-end: invoice INV-2217 from Harlow Packaging is still open and due for payment this week.",
               "fact": "brightwell_open_invoice" } ] } ] },
 
       { "id": "brightwell_social", "name": "Friendface", "url": "friendface.example", "type": "social",
@@ -116,7 +122,7 @@
       "displayName": "Adaeze Okafor",
       "role": "Finance Manager",
       "subjects": [
-        { "id": "s_invoice", "text": "Invoice INV-4471", "topic": "finance" },
+        { "id": "s_invoice", "text": "Invoice INV-2217", "topic": "finance" },
         { "id": "s_other", "text": "Quick note", "topic": "general" }
       ],
       "interests": { "topics": ["finance"] },
@@ -126,8 +132,8 @@
       "templateSets": {
         "from": ["from_named"],
         "greeting": ["greet_generic"],
-        "pretext": ["pretext_bank_change", "pretext_statement"],
-        "ask": ["ask_confirm"]
+        "pretext": ["pretext_bank_change", "pretext_bank_change_calm", "pretext_statement"],
+        "ask": ["ask_confirm", "ask_when_convenient"]
       },
       "primedFor": {
         "distinctiveValues": ["inv_4471"],
@@ -139,7 +145,7 @@
       "advisoryFactors": ["urgencyCalibrated"],
       "factorStrings": {
         "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
-        "senderTrust": { "pass": "✓ From the supplier contact she deals with", "fail": "She does not recognise this sender. She acts on invoice mail from the supplier contact already on file.", "redFlag": null },
+        "senderTrust": { "pass": "✓ From the supplier contact she deals with", "fail": "She does not recognise this sender. She acts on invoice mail from the supplier contact already on file.", "redFlag": "The From line carries Derek Mason's real Harlow address, so it reads as the supplier she trusts, but it was forged: Harlow never sent it." },
         "pretextRelevant": { "pass": "✓ Ties to an invoice she is expecting to pay", "fail": "No open invoice she can match this to, so no reason to act on it.", "redFlag": null },
         "urgencyCalibrated": { "pass": "✓ The pressure reads as believable" }
       },

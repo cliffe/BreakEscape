@@ -320,6 +320,12 @@ def defend_only(ekey):
     s['outcome']['setGlobalPrefix'] = prefix
     strings = copy.deepcopy(EP['strings'])
     strings['brief'] = EP['_defendOnly']['brief']
+    # m27: the defend-only runner never shows the flip, so drop the flip-only strings
+    # (a later author could otherwise wire dead copy back in). Keep noBlameLine, mondayCard,
+    # defendOnly, brief and defendIntro.
+    for _k in ('flipHeading', 'flipIntro', 'flipDefenderLine', 'flipNoSend',
+               'flipMissed', 'flipPageIntro', 'flipCallIntro'):
+        strings.pop(_k, None)
     defend = strip_private(copy.deepcopy(EP['defend']))   # keeps E3's calls and callsFrom
     defend['stage'] = None
     ep = {
@@ -412,7 +418,7 @@ def check(ekey, pair, stage):
     company = 'Quayholt Insurance, a fictional company'
     if stage == 'pre':
         name = f"{c['name']}: before ({letters})"
-        brief = (f"The first of two short checks for {cfg['role_label']} at {company} (pair {letters}, form {first}). "
+        brief = (f"The first of two short checks for {cfg['role_label']} at {company}. "
                  f"{c['items_pre']} Decide what to do with each one. Your result is saved so the second check can compare with it.")
         aim = ('first_check_aim', 'Do the first check', c['aim_desc'])
         task = ('finish_check', 'Finish the first check')
@@ -424,7 +430,7 @@ def check(ekey, pair, stage):
         ending = success_screen('First check done', 'Your result is saved, ready for the second check to compare with.')
     else:
         name = f"{c['name']}: after ({letters})"
-        brief = (f"The second of two short checks for {cfg['role_label']} at {company} (pair {letters}, form {second}). "
+        brief = (f"The second of two short checks for {cfg['role_label']} at {company}. "
                  f"{c['items_post']} If you took the first check, the end screen shows how the two compare.")
         aim = ('second_check_aim', 'Do the second check', c['aim_desc'])
         task = ('finish_check', 'Finish the second check')

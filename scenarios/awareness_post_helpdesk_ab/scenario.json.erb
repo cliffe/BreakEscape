@@ -1,7 +1,7 @@
 {
   "scenario_id": "awareness_post_helpdesk_ab",
   "scenario_name": "Service desk check: after (AB)",
-  "scenario_brief": "The second of two short checks for IT service desk staff at Quayholt Insurance, a fictional company (pair AB, form B). Ten new items from the IT service desk queue, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
+  "scenario_brief": "The second of two short checks for IT service desk staff at Quayholt Insurance, a fictional company. Ten new items from the IT service desk queue, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
   "endGoal": "Work through the ten items at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -101,15 +101,15 @@
         },
         "messages": [
           {
-            "id": "hb_report_calls",
+            "id": "hb_policy_refresh",
             "from": {
               "name": "Anjali Rao",
               "address": "anjali.rao@quayholt.example"
             },
             "to": "servicedesk@quayholt.example",
-            "subject": "Reporting an odd call: the short version",
+            "subject": "Security policies refreshed on the intranet",
             "time": "08:02",
-            "body": "Hi all,\nA reminder, since a few of you asked: if a call feels off, log it under 'Suspicious contact' in the queue and I'll pick it up. You don't need to be sure. Thanks for every one you send.\nAnjali\nInformation Security",
+            "body": "Hi all,\nThe yearly refresh of our security policies is now on the intranet. Nothing has changed day to day; have a read when you get a chance. No action needed.\nAnjali\nInformation Security",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
@@ -121,17 +121,17 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "The security team's real address and a reminder of the normal route. It asks you for nothing."
+                "default": "Information Security's real address, and a routine notice that asks you for nothing."
               }
             }
           },
           {
             "id": "hb_call_payroll",
             "kind": "call",
-            "callerId": "Says she's Pauline Hendry, Payroll (mobile, not on file)",
+            "callerId": "Says she's Pauline Hendry, Payroll (calling from a mobile)",
             "from": {
               "name": "Pauline Hendry",
-              "address": "07700 900733 (not on file)"
+              "address": "07700 900733"
             },
             "time": "08:20",
             "transcript": [
@@ -165,10 +165,10 @@
           {
             "id": "hb_call_comms_awkward",
             "kind": "call",
-            "callerId": "Niamh Doherty, Internal Communications (mobile on file)",
+            "callerId": "Niamh Doherty, Internal Communications (calling from a mobile)",
             "from": {
               "name": "Niamh Doherty",
-              "address": "Mobile on file, ending 907"
+              "address": "Mobile, ending 907"
             },
             "time": "08:41",
             "transcript": [
@@ -223,7 +223,7 @@
                 "secrecy_or_bypass": "'Keep it off the ticket system' and 'no need to ring me' remove the record and the check",
                 "urgencyCalibrated": "'Boarding in twenty minutes' leaves no time to ring him"
               },
-              "headerNote": "All three checks passed because the sender owns quickpost-mail.example. A pass tells you which domain sent it, not that it's Patrick.",
+              "headerNote": "The automatic checks pass because the message really was sent from quickpost-mail.example. A pass tells you which mail system sent it, not that it's Patrick.",
               "ifTrusted": "A new password would go to whoever owns that inbox, and they would be in Patrick's account.",
               "reportReply": "Thanks. Patrick didn't send it. His real address is on quayholt.example."
             }
@@ -273,10 +273,10 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "SPF failed because the HR system sends through its supplier's mail service, but DKIM and DMARC passed for quayholt.example.",
+                "senderAuth": "One of the automatic sender checks didn't pass because the HR system sends through its supplier's mail service, but the checks that confirm the real sender still passed for quayholt.example.",
                 "default": "HR's real domain, and the accounts go through tickets as normal. Nothing here skips a step."
               },
-              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through another company's service often fails SPF while DKIM still passes."
+              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through an outside company's service often trips one of these checks while the others still confirm the real sender."
             }
           },
           {
@@ -303,7 +303,7 @@
                 "reply_to_differs"
               ],
               "perFlagNote": {
-                "senderAuth": "SPF and DMARC both failed for quayholt.example: Quayholt's own servers didn't send this",
+                "senderAuth": "The automatic checks that prove an email really came from quayholt.example didn't pass, so Quayholt's own mail system didn't send this",
                 "reply_to_differs": "Replies go to anjali.rao.secteam@quickpost-mail.example, not to Anjali's Quayholt address"
               },
               "headerNote": "Open the details: the From shows Anjali's real address, but the checks failed and the reply-to points somewhere else.",
@@ -370,7 +370,7 @@
             }
           },
           {
-            "id": "hb_call_new_starter_log",
+            "id": "hb_call_monitor",
             "kind": "call",
             "callerId": "Darren Price, Service Desk lead (ext. 4100)",
             "from": {
@@ -381,22 +381,22 @@
             "transcript": [
               {
                 "who": "Darren",
-                "text": "Hi, it's Darren. HR's three new starters are in the queue for Monday. Could you build their accounts this afternoon?"
+                "text": "Hi, it's Darren. The second-floor meeting room monitor keeps flickering. Could you take a look this afternoon?"
               },
               {
                 "who": "You",
-                "text": "Will do. The tickets are SD-44790 to 92?"
+                "text": "Will do. I'll pop up after lunch."
               },
               {
                 "who": "Darren",
-                "text": "That's them. Shout if anything's missing."
+                "text": "Great, thanks."
               }
             ],
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "Your own team lead on his desk extension, pointing you at tickets that already exist. The normal process is kept, so helping is right."
+                "default": "Your own team lead on his desk extension, asking for a routine fix. Nothing here is sensitive, so helping is right."
               }
             }
           }

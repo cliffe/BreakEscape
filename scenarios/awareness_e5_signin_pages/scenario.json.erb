@@ -26,7 +26,7 @@
       "tasks": [
         {
           "taskId": "send_signin_phish",
-          "title": "Land your link on the staff member",
+          "title": "Send your link to the staff member",
           "type": "manual",
           "status": "active"
         }
@@ -82,7 +82,7 @@
       {
         "id": "e5_links_inbox",
         "title": "Quayholt sign-in pages",
-        "brief": "Five pages are open in your browser, each one reached from a link in your Quayholt inbox this morning. For each one, choose Trust (you'd sign in), Report or Delete (you'd close it), then tick what you noticed. Press the address bar, the padlock and the certificate to look closer. Reporting a real page never costs you anything.",
+        "brief": "Five pages are open in your browser, each one reached from a link in your Quayholt inbox this morning. For each one, choose Trust (you'd sign in), Report or Delete (you'd close it), then tick what you noticed. Press the address bar, the padlock and the certificate to look closer. Quayholt's own sites all end in .quayholt.example, such as sso.quayholt.example. Reporting a real page never costs you anything.",
         "scoringProfile": "awareness",
         "verifyVerdict": false,
         "feedbackMode": "immediate",
@@ -321,15 +321,15 @@
         "stage": null
       },
       "strings": {
-        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: put together a fake Quayholt sign-in page from ready-made parts and choose the web address it would sit at. Nothing is built for real and nothing is collected. Then you swap seats and check five pages that Quayholt staff reached from links in their inbox. Only the pages are scored.",
+        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: put together a fake Quayholt sign-in page from ready-made parts, choose the web address it would sit at, and send one email carrying its link. Nothing is built for real and nothing is collected. Then you swap seats and check five pages that Quayholt staff reached from links in their inbox. Only the pages are scored.",
         "flipHeading": "Now it lands on you",
-        "flipIntro": "This is the page you put together, as a Quayholt colleague would meet it after clicking a link. The parts picked out below are what make it believable.",
-        "flipDefenderLine": "Ayaan in claims clicked the link between two calls. The page looked like the Quayholt sign-in and it had a padlock, so he started typing his password. People who fall for pages like this are not stupid: this one was built to look right.",
+        "flipIntro": "This is the page you put together, as Hana Novak, the claims handler you sent it to, would meet it after following the link. The parts picked out below are what make it believable.",
+        "flipDefenderLine": "Hana Novak, the claims handler you sent it to, opened the link between two claims. The page wore the Quayholt look and showed a padlock, so she began typing her password. That isn't carelessness: the page was built to pass for the real sign-in, and only the address in the bar gave it away.",
         "flipNoSend": "Your page didn't go out this time, so there's nothing of yours to show. Next, the same kind of page turns up behind a link in a Quayholt inbox, and you're the one deciding whether to sign in.",
-        "noBlameLine": "Nobody is marked down for a miss here. Every one of these pages was built to look right, and the people who sign in to pages like them are busy, not careless.",
+        "noBlameLine": "Nobody is marked down for a miss here. Every one of these pages was built to pass for the real thing, and signing in to one says nothing about how careful a person is.",
         "mondayCard": "On Monday: before you type a password, read the address bar. Your organisation's real sign-in page sits on its own domain, and your password manager knows it. If a page asks you to sign in and the address is new to you, close it, go to the site the way you normally would, and report the link the way your organisation asks you to.",
         "defendOnly": "You went straight to the pages this time. They were made by people whose job is to make them look right, and people who fall for pages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine.",
-        "flipPageIntro": "This is the sign-in page you built, as a Quayholt colleague would meet it after following the link. The parts picked out below are what make it believable.",
+        "flipPageIntro": "This is the sign-in page you built, as Hana Novak, the claims handler you sent it to, would meet it after following the link. The parts picked out below are what make it believable.",
         "defendIntro": "Now you're the one reading your inbox. Five pages are open, each from a link. For each one, decide whether you'd sign in, then tick what you noticed."
       },
       "debrief": {
@@ -457,11 +457,29 @@
         "slots": [],
         "urgency": "low"
       },
+      "e5_pretext_reauth_calm": {
+        "part": "pretext",
+        "text": "We are moving {portal} to a new provider this month, so you may be asked to sign in again. When you have a moment, please sign in to confirm your access.",
+        "slots": [
+          {
+            "id": "portal",
+            "type": "reference",
+            "label": "which sign-on system"
+          }
+        ],
+        "urgency": "medium"
+      },
       "e5_ask": {
         "part": "ask",
         "text": "Follow the link to sign in before the end of the day.",
         "slots": [],
         "urgency": "medium"
+      },
+      "e5_ask_calm": {
+        "part": "ask",
+        "text": "There's no rush: sign in through the link when it next suits you.",
+        "slots": [],
+        "urgency": "low"
       }
     },
     "mailClient": {
@@ -803,10 +821,12 @@
           ],
           "pretext": [
             "e5_pretext_reauth",
+            "e5_pretext_reauth_calm",
             "e5_pretext_newsletter"
           ],
           "ask": [
-            "e5_ask"
+            "e5_ask",
+            "e5_ask_calm"
           ]
         },
         "primedFor": {
@@ -896,8 +916,8 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:phish_sso_staff_landed",
-              "condition": "value === true",
+              "eventPattern": "global_variable_changed:phish_sso_staff_attempts",
+              "condition": "value > 0",
               "onceOnly": true,
               "completeTask": "send_signin_phish"
             },

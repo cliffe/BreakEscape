@@ -1,7 +1,7 @@
 {
   "scenario_id": "awareness_post_mobile_ba",
   "scenario_name": "Work phone check: after (BA)",
-  "scenario_brief": "The second of two short checks for staff with a work phone at Tarrowby Logistics, a fictional company (pair BA, form A). Ten new items from a Tarrowby work phone, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
+  "scenario_brief": "The second of two short checks for staff with a work phone at Tarrowby Logistics, a fictional company. Ten new items from a Tarrowby work phone, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
   "endGoal": "Go through the ten items at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -81,9 +81,10 @@
       {
         "id": "mobile_form_a",
         "title": "Work phone check",
-        "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+        "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
         "stage": "post",
         "scoringProfile": "awareness",
+        "verifyVerdict": true,
         "feedbackMode": "end",
         "headerPanel": "collapsed",
         "glossary": "closed",
@@ -242,10 +243,10 @@
                 "reply_to_differs"
               ],
               "perFlagNote": {
-                "senderAuth": "SPF and DMARC both failed for tarrowby.example: Tarrowby's own servers didn't send this",
+                "senderAuth": "Tarrowby's own mail system didn't send this, even though the From line shows a real Tarrowby address",
                 "reply_to_differs": "Replies go to shauna.planning@quickpost-mail.example, not to Shauna's Tarrowby address"
               },
-              "headerNote": "Open the details: the From shows Shauna's real address, but the checks failed and the reply-to points somewhere else.",
+              "headerNote": "Open the details: the From shows Shauna's real address, but Tarrowby's mail system didn't send it, and a reply would go to an outside inbox.",
               "ifTrusted": "A list of drivers' mobile numbers is exactly what a run of fake texts needs.",
               "reportReply": "Thanks. Shauna is in Shipley today and didn't send it. There is no new rota app."
             }
@@ -301,10 +302,10 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "SPF failed because the rota service, ShiftPlanner, sends it for Tarrowby, but DKIM passed and DMARC passed for tarrowby.example.",
+                "senderAuth": "One of the mail checks didn't line up because the rota service, ShiftPlanner, sends this for Tarrowby, but the rest confirm it really is from tarrowby.example.",
                 "default": "Tarrowby's real domain, nothing to click, and it sends you to the staff app and to a person you know."
               },
-              "headerNote": "One failed check on its own is a clue, not proof. Services that send mail for a company often break SPF while DKIM still passes."
+              "headerNote": "One check not lining up on its own is a clue, not proof. A service that sends mail for a company often trips one check while the rest still confirm the domain."
             }
           },
           {

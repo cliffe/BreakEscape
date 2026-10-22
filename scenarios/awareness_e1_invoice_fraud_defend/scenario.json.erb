@@ -108,7 +108,7 @@
           },
           {
             "id": "e1_lookalike_bank",
-            "_worked": "The 11 section 4.2 worked example. F = 2. Report + both = 100, Report + lookalike only = 80, Delete + both = 70, Trust + none = 0.",
+            "_worked": "The 11 section 4.2 worked example. Now F = 3 (senderTrust, lookalike_domain, changed_bank_details): the sender-trust chip applies because the address isn't Brightwell's.",
             "from": {
               "name": "Brightwell Foods Accounts",
               "address": "accounts@brightwel1foods.example"
@@ -127,10 +127,12 @@
             "truth": {
               "isPhish": true,
               "flags": [
+                "senderTrust",
                 "lookalike_domain",
                 "changed_bank_details"
               ],
               "perFlagNote": {
+                "senderTrust": "It signs off as Brightwell Accounts, but the address isn't a Brightwell one at all, so it isn't who it says it is",
                 "lookalike_domain": "The display name is right, but the address is brightwel1foods, with a digit 1 where the l should be",
                 "changed_bank_details": "A bank-detail change on an open invoice is the commonest invoice-fraud move. The safe step is to ring the supplier on the number you already hold"
               },
@@ -253,11 +255,7 @@
       },
       "strings": {
         "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. You're covering the payments inbox this afternoon, and five messages are waiting. Some are real and some were built to trick you. Sort them, and report or check anything that doesn't sit right. Reporting a real message never costs you anything.",
-        "flipHeading": "Now it lands on you",
-        "flipIntro": "This is the email you just sent, as Brightwell's accounts payable team would see it. The lines picked out below are what make it believable.",
-        "flipDefenderLine": "Tom in accounts payable opened it between two invoices, with the payment run due at three. It looked like Harlow, so he started updating the bank details. People who fall for messages like this are not stupid: this one was built to look right.",
-        "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives in a payments inbox, and you're the one reading it.",
-        "noBlameLine": "Nobody is marked down for a miss here. Every one of these messages was built to look right, and the people who act on messages like them are busy, not careless.",
+        "noBlameLine": "Nobody is marked down for a miss here. Every one of these was written by someone whose job is making it look right, and anyone working at pace can act on one.",
         "mondayCard": "On Monday: if an email asks you to change bank details or to pay in a hurry, don't reply and don't use any number in the email. Ring the person on a number you already hold, then report the email the way your organisation asks you to.",
         "defendOnly": "You went straight to the inbox this time. These messages were written by people whose job is to make them look right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine."
       },

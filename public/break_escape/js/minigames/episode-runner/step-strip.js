@@ -7,8 +7,8 @@
 // hex colour is accepted) and draws a wordmark from brand.logoText in CSS, no image.
 
 export const STAGE_LABELS = Object.freeze({
-    brief: 'Brief', osint: 'Research', write: 'Write', flip: 'Flip', defend: 'Defend',
-    debrief: 'Debrief', check: 'Check', mfa: 'Approve', build: 'Build'
+    brief: 'Brief', osint: 'Research', write: 'Write', flip: 'Your message', defend: 'Defend',
+    debrief: 'Debrief', check: 'Check', mfa: 'Prompts', build: 'Build'
 });
 
 const HEX = /^#[0-9a-f]{3,8}$/i;

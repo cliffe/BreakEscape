@@ -26,7 +26,7 @@
       "tasks": [
         {
           "taskId": "place_vishing_call",
-          "title": "Win the password reset on the call",
+          "title": "Make the call to the service desk",
           "type": "manual",
           "status": "active"
         }
@@ -203,7 +203,7 @@
           {
             "id": "e3_call_gordon_impostor",
             "genuine": false,
-            "callerId": "Says he's Gordon McLeish, Claims (mobile, not on file)",
+            "callerId": "Gordon McLeish, Claims (calling from a mobile)",
             "claims": [
               {
                 "fact": "who",
@@ -264,7 +264,7 @@
           {
             "id": "e3_call_gordon_real",
             "genuine": true,
-            "callerId": "Gordon McLeish, Claims (mobile on file)",
+            "callerId": "Gordon McLeish, Claims (calling from a mobile)",
             "claims": [
               {
                 "fact": "who",
@@ -312,7 +312,7 @@
             ],
             "notes": {
               "whyFine": {
-                "vish_callback_pressure": "He's grumpy about it, but he agrees to the callback on the number already on file. Grumbling is not the tell; talking you out of the callback is.",
+                "vish_callback_pressure": "He's grumpy about it, but he agrees to the callback on the number already on file. What marks out an impostor is refusing that callback, and he doesn't.",
                 "borrowed_authority": "He mentions his own meeting, not someone senior who wants the check skipped.",
                 "default": "This is the real Gordon, giving the same four facts as the earlier caller. The facts couldn't tell them apart; the callback could. Ring him back and reset it. Refusing would leave a real colleague stuck, so if you're unsure, offer the callback rather than saying no."
               }
@@ -396,7 +396,7 @@
               },
               {
                 "who": "You",
-                "text": "No bother. I'll ring you back on the number we hold for you so we know it's you, then we'll move them over."
+                "text": "No bother. Let me see what I can do."
               },
               {
                 "who": "Jiayi",
@@ -416,13 +416,13 @@
         "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: look at what Quayholt and its staff have put online, then ring the IT service desk as Gordon McLeish, a claims manager who's locked out, and try to talk the agent, Leila Nassar, into a password reset. You'll also watch what happens when someone fills a phone with sign-in prompts. Then you swap seats: you're Leila, taking four calls and one prompt on your own phone. Only Leila's seat is scored.",
         "flipHeading": "Now you're the one answering",
         "flipIntro": "This is your call as Leila heard it on the service desk. The lines picked out below are what made it believable.",
-        "flipDefenderLine": "Leila took it twenty minutes before the end of a long shift, with three more calls waiting. The caller had Gordon's name, his team, his manager and his staff number, and he sounded stressed, so she started the reset. People who fall for calls like this are not stupid: this one was built to sound right.",
+        "flipDefenderLine": "Twenty minutes from the end of a long shift, three more calls holding, Leila picked this one up. The caller had Gordon's name, his team, his manager and his staff number, every answer right, and he sounded rushed, so she reached for the reset. Anyone in that seat might have: he had done his homework, and the call was built to sound like an ordinary morning. The callback was the one thing that would have told him from the real Gordon.",
         "flipNoSend": "Your call didn't get through this time, so there's nothing of yours to show. Next, the same kind of call comes in to the service desk, and you're the one answering.",
-        "noBlameLine": "Nobody is marked down for a miss here. Every one of these callers was practised at sounding right, and the agents who help them are busy and kind, not careless.",
+        "noBlameLine": "Nobody is marked down for a miss here. These callers rehearse sounding right, and a service desk that tries to help them is doing its job under pressure.",
         "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password or move someone's sign-in prompts, hang up and ring them back on the number already on file, not one they give you. If a sign-in prompt arrives that you didn't start, deny it and report it the way your organisation asks you to.",
         "defendOnly": "You went straight to the service desk this time. These calls were made by people whose job is to sound right, and people who fall for calls like these are not stupid. Each card shows what gave the impostors away, and why the real callers were fine.",
         "flipCallIntro": "This is your call to the service desk, as Leila heard it. The lines picked out below are what would have caught it.",
-        "defendIntro": "Now you're in Leila's seat. Four calls are waiting and a sign-in prompt has come up on your phone. For each one, choose Comply, Ring back, Escalate or Refuse, then tick what you noticed."
+        "defendIntro": "Now you're in Leila's seat. Four calls are waiting and a sign-in prompt has come up on your phone. For each call, choose Comply, Ring back, Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report."
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
@@ -864,7 +864,7 @@
           "eventMappings": [
             {
               "eventPattern": "global_variable_changed:pretext_quayholt_helpdesk_reset_outcome",
-              "condition": "value === 'got_it'",
+              "condition": "value !== \"\"",
               "onceOnly": true,
               "completeTask": "place_vishing_call"
             },

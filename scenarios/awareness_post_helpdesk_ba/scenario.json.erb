@@ -1,7 +1,7 @@
 {
   "scenario_id": "awareness_post_helpdesk_ba",
   "scenario_name": "Service desk check: after (BA)",
-  "scenario_brief": "The second of two short checks for IT service desk staff at Quayholt Insurance, a fictional company (pair BA, form A). Ten new items from the IT service desk queue, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
+  "scenario_brief": "The second of two short checks for IT service desk staff at Quayholt Insurance, a fictional company. Ten new items from the IT service desk queue, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
   "endGoal": "Work through the ten items at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -128,10 +128,10 @@
           {
             "id": "ha_call_facilities",
             "kind": "call",
-            "callerId": "Says he's Owen Treharne, Facilities (mobile, not on file)",
+            "callerId": "Says he's Owen Treharne, Facilities (calling from a mobile)",
             "from": {
               "name": "Owen Treharne",
-              "address": "07700 900418 (not on file)"
+              "address": "07700 900418"
             },
             "time": "08:20",
             "transcript": [
@@ -165,10 +165,10 @@
           {
             "id": "ha_call_hr_awkward",
             "kind": "call",
-            "callerId": "Sofia Marchetti, HR (mobile on file)",
+            "callerId": "Sofia Marchetti, HR (calling from a mobile)",
             "from": {
               "name": "Sofia Marchetti",
-              "address": "Mobile on file, ending 562"
+              "address": "Mobile, ending 562"
             },
             "time": "08:41",
             "transcript": [
@@ -223,7 +223,7 @@
                 "secrecy_or_bypass": "'No need to raise a ticket or tell Darren' skips the record and the person who would check",
                 "urgencyCalibrated": "'Before 10' while she's 'flying' leaves no time to ring her"
               },
-              "headerNote": "All three checks passed because the sender owns inboxly.example. A pass tells you which domain sent it, not that it's Helen.",
+              "headerNote": "The automatic checks pass because the message really was sent from inboxly.example. A pass tells you which mail system sent it, not that it's Helen.",
               "ifTrusted": "Her account would lose its second sign-in step, so anyone with her password could get straight in.",
               "reportReply": "Thanks. Helen didn't send it, and her account is unchanged. Her real address is on quayholt.example."
             }
@@ -273,10 +273,10 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "SPF failed because the ticket system sends through its supplier's mail service, but DKIM and DMARC passed for quayholt.example.",
+                "senderAuth": "One of the automatic sender checks didn't pass because the ticket system sends through its supplier's mail service, but the checks that confirm the real sender still passed for quayholt.example.",
                 "default": "An ordinary ticket notice from Quayholt's own domain. It asks you to open the queue the way you always do, not to follow a link."
               },
-              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through another company's service often fails SPF while DKIM still passes."
+              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through an outside company's service often trips one of these checks while the others still confirm the real sender."
             }
           },
           {
@@ -303,7 +303,7 @@
                 "reply_to_differs"
               ],
               "perFlagNote": {
-                "senderAuth": "SPF and DMARC both failed for quayholt.example: Quayholt's own servers didn't send this",
+                "senderAuth": "The automatic checks that prove an email really came from quayholt.example didn't pass, so Quayholt's own mail system didn't send this",
                 "reply_to_differs": "Replies go to d.price.servicedesk@inboxly.example, not to Darren's Quayholt address"
               },
               "headerNote": "Open the details: the From shows Darren's real address, but the checks failed and the reply-to points somewhere else.",

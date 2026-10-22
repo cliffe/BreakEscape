@@ -24,10 +24,10 @@
       "reduceNote": "Publishing who handles an executive's diary and payments tells an attacker exactly whom to send the request to."
     },
     "ms_exec_calendar": {
-      "text": "The events page shows Catherine Merrin is chairing the Westgate regeneration review offsite this week.",
+      "text": "The events page shows Catherine Merrin is speaking at the Lisbon Design Forum this week, flying out Tuesday morning and back Thursday.",
       "subject": "catherine", "source": "blk_calendar",
       "provides": [
-        { "type": "reference", "value": "ms_offsite", "label": "the Westgate offsite", "kind": "distinctive" }
+        { "type": "reference", "value": "ms_offsite", "label": "the Lisbon Design Forum", "kind": "distinctive" }
       ],
       "reduceNote": "A public diary tells an attacker when the executive is unreachable and gives a believable reason to be emailing on the move."
     },
@@ -40,7 +40,7 @@
       "reduceNote": "An executive's personal or travel email in public lets an attacker send as a name staff trust, on a channel nobody can check against the company address book."
     },
     "ms_travel_post": {
-      "text": "Catherine posted that she is between sites all week and barely online.",
+      "text": "Catherine posted that she is flying to Lisbon for the Design Forum this week, giving her flight time, and will be barely online until Thursday.",
       "subject": "catherine", "source": "post_offsite",
       "provides": [],
       "reduceNote": "A post confirming the executive is away and distracted gives the attacker both the window and the urgency to work with."
@@ -56,11 +56,17 @@
       "text": "I'm about to board for {trip} and I'll have no signal for a few hours. There's a contractor invoice that has to be settled today or we lose the slot. Can you push it through from the practice account? Keep it between us for now, no need to trouble finance, and I'll square it with them when I land.",
       "slots": [ { "id": "trip", "type": "reference", "label": "which trip" } ],
       "urgency": "high" },
+    "ms_pretext_pay_calm": { "part": "pretext",
+      "text": "I'm away at {trip} this week. There's a contractor invoice to settle from the practice account when you get a chance this week, nothing urgent. I'll confirm it with finance when I'm back.",
+      "slots": [ { "id": "trip", "type": "reference", "label": "which trip" } ],
+      "urgency": "low" },
     "ms_pretext_diary": { "part": "pretext",
       "text": "When you get a moment, could you send me next week's diary?", "slots": [],
       "urgency": "low" },
     "ms_ask_confirm": { "part": "ask", "text": "Drop me a line here once it's gone through.", "slots": [],
-      "urgency": "medium" }
+      "urgency": "medium" },
+    "ms_ask_calm": { "part": "ask", "text": "No rush, let me know once it's sorted.", "slots": [],
+      "urgency": "low" }
   },
 
   "mailClient": {
@@ -99,7 +105,7 @@
               "role": "Executive Assistant to Catherine Merrin", "address": "tomas.carvalho@merrinsallow.example", "fact": "ms_pa_name" } ] },
           { "id": "events", "title": "Events & talks", "blocks": [
             { "id": "blk_calendar", "kind": "p",
-              "text": "This week: Catherine Merrin chairs the Westgate regeneration review offsite.",
+              "text": "This week: Catherine Merrin speaks at the Lisbon Design Forum (Wednesday 10:00), flying out Tuesday at 09:55 and home Thursday evening.",
               "fact": "ms_exec_calendar" },
             { "id": "blk_bio", "kind": "p",
               "text": "Speaker: Catherine Merrin. While she is travelling, urgent enquiries reach her at catherine.merrin@inboxly.example.",
@@ -108,7 +114,7 @@
       { "id": "merrinsallow_social", "name": "Friendface", "url": "friendface.example", "type": "social",
         "profiles": [
           { "person": "catherine", "posts": [
-            { "id": "post_offsite", "text": "Three sites in two days, living out of a suitcase again. Barely online this week.",
+            { "id": "post_offsite", "text": "Off to Lisbon Tuesday for the Design Forum — speaking Wednesday morning, home Thursday. 09:55 flight out. Barely online till then.",
               "fact": "ms_travel_post" },
             { "id": "post_catherine_other", "text": "The new footbridge model came back from the workshop. Worth every late night." } ] } ] }
     ]
@@ -131,8 +137,8 @@
       "templateSets": {
         "from": ["ms_from"],
         "greeting": ["ms_greet"],
-        "pretext": ["ms_pretext_pay_now", "ms_pretext_diary"],
-        "ask": ["ms_ask_confirm"]
+        "pretext": ["ms_pretext_pay_now", "ms_pretext_pay_calm", "ms_pretext_diary"],
+        "ask": ["ms_ask_confirm", "ms_ask_calm"]
       },
       "primedFor": {
         "distinctiveValues": ["ms_offsite"],
@@ -152,7 +158,7 @@
       "hints": [
         "Whose name would make the PA act on a payment without checking?",
         "What trip is she publicly on this week, so an email from the road reads as expected?",
-        "Set the From line to Catherine's name and her travel email, and tie the message to the Westgate offsite."
+        "Set the From line to Catherine's name and her travel email, and tie the message to the Lisbon Design Forum."
       ],
       "outcome": { "setGlobal": { "phish_exec_pa_landed": true } }
     }

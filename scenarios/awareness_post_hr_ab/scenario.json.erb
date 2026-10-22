@@ -1,7 +1,7 @@
 {
   "scenario_id": "awareness_post_hr_ab",
   "scenario_name": "Recruitment inbox check: after (AB)",
-  "scenario_brief": "The second of two short checks for HR and recruitment staff at Tarrowby Logistics, a fictional company (pair AB, form B). Ten new emails from the Tarrowby recruitment inbox, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
+  "scenario_brief": "The second of two short checks for HR and recruitment staff at Tarrowby Logistics, a fictional company. Ten new emails from the Tarrowby recruitment inbox, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
   "endGoal": "Sort the ten emails at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -292,7 +292,7 @@
                 "reply_to_differs"
               ],
               "perFlagNote": {
-                "senderAuth": "SPF and DMARC both failed for tarrowby.example: Tarrowby's own servers didn't send this",
+                "senderAuth": "Tarrowby's own mail system didn't send this; it only looks as though Thanh did.",
                 "reply_to_differs": "Replies go to thanh.onboarding@quickpost-mail.example, not to Thanh's Tarrowby address"
               },
               "headerNote": "Open the details: the From shows Thanh's real address, but the checks failed and the reply-to points somewhere else.",
@@ -385,10 +385,10 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "SPF failed because Tarrowby's onboarding provider sent it, but DKIM passed and DMARC passed for tarrowby.example, the real domain.",
+                "senderAuth": "The onboarding provider sends on Tarrowby's behalf through an outside service, so one automatic sender check didn't line up, but the message still comes from Tarrowby's real domain.",
                 "default": "The onboarding system's usual notice, and it sends you to the intranet rather than a link."
               },
-              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through a service often breaks SPF while DKIM still passes."
+              "headerNote": "One check failing on its own is a clue, not proof. Mail sent through an outside service often trips one of these checks while the rest still pass."
             }
           },
           {

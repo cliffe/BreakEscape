@@ -26,7 +26,7 @@
       "tasks": [
         {
           "taskId": "land_exec_pa",
-          "title": "Land your email on the PA",
+          "title": "Send your email to the PA",
           "type": "manual",
           "status": "active"
         }
@@ -47,7 +47,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "Executive whaling episode done",
-        "body": "You've written your message, seen it from the other side and worked through the PA's inbox, so this episode is finished."
+        "body": "You've seen both sides of executive fraud and worked through the PA's inbox, so this episode is finished."
       },
       "tasks": [
         {
@@ -81,7 +81,7 @@
         "id": "e4_pa_inbox",
         "playerSentAuth": { "accounts": { "analyst": { "spf": "pass", "dkim": "fail", "dmarc": "fail", "envelopeFrom": "bounce.merrinsallow.example", "replyTo": "{account_address}" } } },
         "title": "Merrin & Sallow PA inbox",
-        "brief": "You're Tomás Carvalho, PA to Catherine Merrin, the managing partner, and she flies to Lisbon this morning. Five emails and voicemails are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. A voice you know is not proof on its own. Checking or reporting something real never costs you anything.",
+        "brief": "You're Tomás Carvalho, PA to Catherine Merrin, the managing partner, and she flies to Lisbon this morning. Yasmin in finance approves the firm's payments. Five emails and voicemails are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. A voice you know is not proof on its own. Checking or reporting something real never costs you anything.",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
@@ -243,11 +243,13 @@
               "isPhish": true,
               "flags": [
                 "lookalike_domain",
-                "changed_bank_details"
+                "changed_bank_details",
+                "senderTrust"
               ],
               "perFlagNote": {
                 "lookalike_domain": "This morning's itinerary came from wrenfieldtravel.example. This one is wrenfield-travel.example, with an added hyphen",
-                "changed_bank_details": "'Use these details, not the ones on file' is the commonest invoice-fraud move. The itinerary said everything was paid on the firm's account. The safe step is to ring Wrenfield on the number you already hold"
+                "changed_bank_details": "'Use these details, not the ones on file' is the commonest invoice-fraud move. The itinerary said everything was paid on the firm's account. The safe step is to ring Wrenfield on the number you already hold",
+                "senderTrust": "The name says Wrenfield, but the address is on wrenfield-travel.example, which isn't Wrenfield's"
               },
               "ifTrusted": "£1,860 would go to an account the sender controls, and the hotel was already paid.",
               "reportReply": "Thanks. Wrenfield say they sent nothing and the hotel is paid. The look-alike address has been blocked."
@@ -300,9 +302,10 @@
         "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. First you're on the red team: look at what's public about Catherine Merrin, the managing partner, and her trip this week, then write one short email to her PA, Tomás Carvalho, that looks as if it came from her. Then you swap seats: you're Tomás, with emails and voicemails waiting while Catherine travels. Only Tomás's inbox is scored.",
         "flipHeading": "Now you're the PA",
         "flipIntro": "This is the email you just sent, as Tomás saw it on his phone. The lines picked out below are what make it believable.",
-        "flipDefenderLine": "Tomás read it ten minutes before Catherine's flight was due to leave, with two meetings to set up. It fitted her day and sounded like her, so he opened the payment form. People who fall for messages like this are not stupid: this one was built to look right.",
+        "flipDefenderLine": "Ten minutes before the flight, two meetings still to set up, Tomás read it. It fitted her day and it sounded like her, so he opened the payment form. Being fooled by something built this well is not a sign of carelessness.",
         "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, messages like it arrive in Tomás's inbox and voicemail, and you're the one reading them.",
-        "noBlameLine": "Nobody is marked down for a miss here. Every one of these messages was built to look and sound right, and the people who act on them are busy and trying to help, not careless.",
+        "noBlameLine": "Nobody is marked down for a miss here. Every one of these was built to look and sound right, and the people who act on them are trying to help in a hurry. A miss is about the pressure, not the person.",
+        "defendIntro": "Now you're in Tomás's seat. Five emails and voicemails are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed.",
         "mondayCard": "On Monday: if someone senior asks you to pay, buy or send something in a hurry, or to keep it from finance, check before you act, even when it's their voice on a voicemail. Ring them on the number already in your contacts, or ask finance, then report the message the way your organisation asks you to.",
         "defendOnly": "You went straight to the inbox this time. These messages were made by people whose job is to make them look and sound right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine.",
         "voicePanel": {
@@ -360,14 +363,14 @@
         "reduceNote": "Publishing who handles an executive's diary and payments tells an attacker exactly whom to send the request to."
       },
       "ms_exec_calendar": {
-        "text": "The events page shows Catherine Merrin is chairing the Westgate regeneration review offsite this week.",
+        "text": "The events page shows Catherine Merrin is speaking at the Lisbon Design Forum this week, flying out Tuesday morning and back Thursday.",
         "subject": "catherine",
         "source": "blk_calendar",
         "provides": [
           {
             "type": "reference",
             "value": "ms_offsite",
-            "label": "the Westgate offsite",
+            "label": "the Lisbon Design Forum",
             "kind": "distinctive"
           }
         ],
@@ -388,7 +391,7 @@
         "reduceNote": "An executive's personal or travel email in public lets an attacker send as a name staff trust, on a channel nobody can check against the company address book."
       },
       "ms_travel_post": {
-        "text": "Catherine posted that she is between sites all week and barely online.",
+        "text": "Catherine posted that she is flying to Lisbon for the Design Forum this week, giving her flight time, and will be barely online until Thursday.",
         "subject": "catherine",
         "source": "post_offsite",
         "provides": [],
@@ -430,6 +433,18 @@
         ],
         "urgency": "high"
       },
+      "ms_pretext_pay_calm": {
+        "part": "pretext",
+        "text": "I'm away at {trip} this week. There's a contractor invoice to settle from the practice account when you get a chance this week, nothing urgent. I'll confirm it with finance when I'm back.",
+        "slots": [
+          {
+            "id": "trip",
+            "type": "reference",
+            "label": "which trip"
+          }
+        ],
+        "urgency": "low"
+      },
       "ms_pretext_diary": {
         "part": "pretext",
         "text": "When you get a moment, could you send me next week's diary?",
@@ -441,6 +456,12 @@
         "text": "Drop me a line here once it's gone through.",
         "slots": [],
         "urgency": "medium"
+      },
+      "ms_ask_calm": {
+        "part": "ask",
+        "text": "No rush, let me know once it's sorted.",
+        "slots": [],
+        "urgency": "low"
       }
     },
     "mailClient": {
@@ -535,7 +556,7 @@
                 {
                   "id": "blk_calendar",
                   "kind": "p",
-                  "text": "This week: Catherine Merrin chairs the Westgate regeneration review offsite.",
+                  "text": "This week: Catherine Merrin speaks at the Lisbon Design Forum (Wednesday 10:00), flying out Tuesday at 09:55 and home Thursday evening.",
                   "fact": "ms_exec_calendar"
                 },
                 {
@@ -559,7 +580,7 @@
               "posts": [
                 {
                   "id": "post_offsite",
-                  "text": "Three sites in two days, living out of a suitcase again. Barely online this week.",
+                  "text": "Off to Lisbon Tuesday for the Design Forum — speaking Wednesday morning, home Thursday. 09:55 flight out. Barely online till then.",
                   "fact": "ms_travel_post"
                 },
                 {
@@ -609,10 +630,12 @@
           ],
           "pretext": [
             "ms_pretext_pay_now",
+            "ms_pretext_pay_calm",
             "ms_pretext_diary"
           ],
           "ask": [
-            "ms_ask_confirm"
+            "ms_ask_confirm",
+            "ms_ask_calm"
           ]
         },
         "primedFor": {
@@ -658,7 +681,7 @@
         "hints": [
           "Whose name would make the PA act on a payment without checking?",
           "What trip is she publicly on this week, so an email from the road reads as expected?",
-          "Set the From line to Catherine's name and her travel email, and tie the message to the Westgate offsite."
+          "Set the From line to Catherine's name and her travel email, and tie the message to the Lisbon Design Forum."
         ],
         "outcome": {
           "setGlobal": {
@@ -689,8 +712,8 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:phish_exec_pa_landed",
-              "condition": "value === true",
+              "eventPattern": "global_variable_changed:phish_exec_pa_attempts",
+              "condition": "value > 0",
               "onceOnly": true,
               "completeTask": "land_exec_pa"
             },

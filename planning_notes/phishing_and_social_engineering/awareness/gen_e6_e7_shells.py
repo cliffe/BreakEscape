@@ -246,7 +246,7 @@ EPISODES = {
             'display': 'Awareness E6: Texts and QR codes (phone only)',
             'desc': "An eight-minute awareness episode for staff with a work phone, on the defending side only. Six items on a phone at Tarrowby Logistics, a fictional haulier: texts, printed notices with QR codes and an email. Some are real and some were built to trick you. Each answer is explained, and reporting a real message never costs you anything.",
             'minutes': 8,
-            'defendIntro': "Go through the work phone and decide what to do with each text, notice and email. On a notice, check where the code goes before you would scan it. Take your time: there is no trick to it, just the habits that catch these.",
+            'defendIntro': "Go through the work phone and decide what to do with each text, notice and email. On a notice, check where the code goes before you would scan it. Take your time. Each one comes down to a habit or two, and that's all you need here.",
             'conclusion': ('Work phone done', "You've been through all six items and finished this episode."),
         },
         'check': {
@@ -278,10 +278,10 @@ EPISODES = {
             'display': 'Awareness E7: Voice and the CEO (phone and inbox only)',
             'desc': "An eight-minute awareness episode for all staff, on the defending side only. Cover the finance office's phone and inbox at Brightwell Foods, a fictional company: three voicemails, one of them in a copied voice, and two emails. Each answer is explained, and ringing someone back on a number you already hold never costs you anything.",
             'minutes': 8,
-            'defendIntro': "Go through the voicemails and emails and decide what to do with each one. Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Take your time: there is no trick to it, just the habits that catch these.",
+            'defendIntro': "Go through the voicemails and emails and decide what to do with each one. Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Take your time. Each one comes down to a habit or two, and that's all you need here.",
             'voicePanel': {
-                'heading': 'How a voice gets copied',
-                'text': "Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. If you can't reach the person to check, ask someone who would know, such as the finance manager.",
+                'heading': 'A voice is not proof',
+                'text': "A voice can be copied. Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. So a familiar voice on a voicemail or a call doesn't tell you who is speaking. What still works is the route: ring the person back on a number you already hold, or check with someone who would know, such as the finance manager.",
             },
             'conclusion': ('Finance line done', "You've been through all five messages and finished this episode."),
         },
@@ -318,6 +318,11 @@ def defend_only(ekey):
     s = clean_set(sets, cfg['defend_set'])
     s['outcome']['setGlobalPrefix'] = prefix
     strings = strip_private(copy.deepcopy(EP['strings']))
+    # m27: a defend-only shell has no flip stage, so drop the flip-only strings
+    # (the runner never reads them). Keep noBlameLine, defendOnly, mondayCard, brief.
+    for _flip_key in ('flipHeading', 'flipIntro', 'flipDefenderLine', 'flipNoSend',
+                      'flipMissed', 'flipPageIntro', 'flipCallIntro'):
+        strings.pop(_flip_key, None)
     strings['brief'] = EP['_defendOnly']['brief']
     strings['defendIntro'] = d['defendIntro']
     if 'voicePanel' in d:
@@ -403,7 +408,7 @@ def check(ekey, pair, stage):
     company = cfg['company']
     if stage == 'pre':
         name = f"{c['name']}: before ({letters})"
-        brief = (f"The first of two short checks for {cfg['role_label']} at {company} (pair {letters}, form {first}). "
+        brief = (f"The first of two short checks for {cfg['role_label']} at {company}. "
                  f"{c['items_pre']} Decide what to do with each one. Your result is saved so the second check can compare with it.")
         aim = ('first_check_aim', 'Do the first check', c['aim_desc'])
         task = ('finish_check', 'Finish the first check')
@@ -415,7 +420,7 @@ def check(ekey, pair, stage):
         conclusion = ('First check done', 'Your result is saved, ready for the second check to compare with.')
     else:
         name = f"{c['name']}: after ({letters})"
-        brief = (f"The second of two short checks for {cfg['role_label']} at {company} (pair {letters}, form {second}). "
+        brief = (f"The second of two short checks for {cfg['role_label']} at {company}. "
                  f"{c['items_post']} If you took the first check, the end screen shows how the two compare.")
         aim = ('second_check_aim', 'Do the second check', c['aim_desc'])
         task = ('finish_check', 'Finish the second check')

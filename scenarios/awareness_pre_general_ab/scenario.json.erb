@@ -1,7 +1,7 @@
 {
   "scenario_id": "awareness_pre_general_ab",
   "scenario_name": "Inbox and sign-in check: before (AB)",
-  "scenario_brief": "The first of two short checks for all staff at Quayholt Insurance, a fictional company (pair AB, form A). Ten items from a Quayholt inbox, emails and pages opened from links. Decide what to do with each one. Your result is saved so the second check can compare with it.",
+  "scenario_brief": "The first of two short checks for all staff at Quayholt Insurance, a fictional company. Ten items from a Quayholt inbox, emails and pages opened from links. Decide what to do with each one. Your result is saved so the second check can compare with it.",
   "endGoal": "Sort the ten items at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -105,6 +105,36 @@
             }
           },
           {
+            "id": "ga_benefits_real",
+            "kind": "page",
+            "subject": "From the intranet: Staff benefits",
+            "time": "08:50",
+            "body": "Sign in to see your benefits and make changes for next year.",
+            "page": {
+              "url": "https://benefits.quayholt.example/",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "benefits.quayholt.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "autofill": "filled",
+              "heading": "Quayholt Staff Benefits",
+              "fields": [
+                "Work email",
+                "Password"
+              ],
+              "button": "Sign in"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "lookalike_domain": "benefits.quayholt.example ends in quayholt.example, Quayholt's own domain.",
+                "default": "You came from the intranet, the address is Quayholt's, and your password manager recognised the site and filled it in."
+              }
+            }
+          },
+          {
             "id": "ga_benefits_lookalike",
             "kind": "page",
             "subject": "From an email: 'Benefits window closes Friday'",
@@ -137,36 +167,6 @@
               },
               "ifTrusted": "Your Quayholt password would go to whoever runs quayholt-benefits.example.",
               "reportReply": "Thanks. That isn't our benefits site, and nothing lapses on Friday. We've blocked it."
-            }
-          },
-          {
-            "id": "ga_benefits_real",
-            "kind": "page",
-            "subject": "From the intranet: Staff benefits",
-            "time": "08:50",
-            "body": "Sign in to see your benefits and make changes for next year.",
-            "page": {
-              "url": "https://benefits.quayholt.example/",
-              "padlock": true,
-              "certificate": {
-                "issuedTo": "benefits.quayholt.example",
-                "issuer": "Open Certs Ltd"
-              },
-              "autofill": "filled",
-              "heading": "Quayholt Staff Benefits",
-              "fields": [
-                "Work email",
-                "Password"
-              ],
-              "button": "Sign in"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "lookalike_domain": "benefits.quayholt.example ends in quayholt.example, Quayholt's own domain.",
-                "default": "You came from the intranet, the address is Quayholt's, and your password manager recognised the site and filled it in."
-              }
             }
           },
           {
@@ -259,7 +259,7 @@
                 "reply_to_differs"
               ],
               "perFlagNote": {
-                "senderAuth": "SPF and DMARC both failed for quayholt.example: Quayholt's own servers didn't send this",
+                "senderAuth": "The automatic checks that prove an email really came from quayholt.example didn't pass, so Quayholt's own mail system didn't send this",
                 "reply_to_differs": "Replies go to p.hendry.payroll@inboxly.example, not to Pauline's Quayholt address"
               },
               "headerNote": "Open the details: the From shows Pauline's real address, but the checks failed and the reply-to points somewhere else.",
@@ -324,12 +324,10 @@
             "truth": {
               "isPhish": true,
               "flags": [
-                "linkCredible",
-                "pretextRelevant"
+                "linkCredible"
               ],
               "perFlagNote": {
-                "linkCredible": "The link text says ashcombelaw.example, but it goes to docshare-login.example",
-                "pretextRelevant": "You have no case with Ashcombe, and legal papers reach Quayholt through the claims system, not a share link"
+                "linkCredible": "The link text says ashcombelaw.example, but it goes to docshare-login.example"
               },
               "ifTrusted": "The link opens a sign-in page that collects your Quayholt password.",
               "reportReply": "Thanks. Nobody here has a matter with Ashcombe, and the link went to a sign-in page we've now blocked."
@@ -363,11 +361,11 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "SPF failed because the survey service sent it for Quayholt, but DKIM passed and DMARC passed for quayholt.example, the real domain.",
+                "senderAuth": "One of the automatic sender checks didn't pass because the survey service sent it for Quayholt, but the checks that confirm the real sender still passed for quayholt.example, the real domain.",
                 "linkCredible": "The link goes where it says, to Quayholt's own survey address, and the survey asks for no sign-in.",
                 "default": "The People Team's real address, a survey with a month to answer, and nothing to sign in to."
               },
-              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through a service often breaks SPF while DKIM still passes."
+              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through an outside service often trips one of these checks while the others still confirm the real sender."
             }
           },
           {

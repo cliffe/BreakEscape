@@ -1,7 +1,7 @@
 {
   "scenario_id": "awareness_post_finance_ab",
   "scenario_name": "Payments inbox check: after (AB)",
-  "scenario_brief": "The second of two short checks for finance staff at Brightwell Foods, a fictional company (pair AB, form B). Ten new messages from a payments inbox. If you took the first check, the end screen shows how the two compare.",
+  "scenario_brief": "The second of two short checks for finance staff at Brightwell Foods, a fictional company. Ten new messages from a payments inbox. If you took the first check, the end screen shows how the two compare.",
   "endGoal": "Sort the ten messages at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -84,6 +84,7 @@
         "brief": "Ten messages from a Brightwell Foods payments inbox. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
         "stage": "post",
         "scoringProfile": "awareness",
+        "verifyVerdict": true,
         "feedbackMode": "end",
         "headerPanel": "collapsed",
         "glossary": "closed",
@@ -120,40 +121,8 @@
               "flags": [],
               "whyFine": {
                 "urgencyCalibrated": "Thursday is the normal payroll cut-off, and anything late simply rolls to next month.",
-                "default": "Payroll's real address, a routine reminder, and nothing to pay or sign in to."
+                "default": "Payroll's real address, a routine reminder, and no link or payment anywhere in it."
               }
-            }
-          },
-          {
-            "id": "fb_castell_bank",
-            "from": {
-              "name": "Castell Fruit Co. Accounts",
-              "address": "accounts@castellfruit-co.example"
-            },
-            "to": "payments@brightwellfoods.example",
-            "subject": "Our bank details have changed",
-            "time": "08:32",
-            "body": "Dear Accounts Payable,\nWe have moved our business banking. Please update your records and pay all invoices from today, including CF-20931, to the account below.\nAccount name: Castell Fruit Co. Ltd\nAccount number ending 5521\nDiolch,\nIfan Jenkins\nAccounts",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "bounce.castellfruit-co.example",
-              "replyTo": "accounts@castellfruit-co.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "lookalike_domain",
-                "changed_bank_details"
-              ],
-              "perFlagNote": {
-                "lookalike_domain": "Castell's real domain is castellfruit.example; this one adds -co",
-                "changed_bank_details": "New bank details for every invoice from today is the change invoice fraud depends on. Ring Castell on the number in your supplier file"
-              },
-              "headerNote": "All three checks passed because the sender owns castellfruit-co.example. A pass tells you which domain sent it, not that it's Castell's.",
-              "ifTrusted": "Castell's payments would go to the sender's account until someone noticed Castell hadn't been paid.",
-              "reportReply": "Thanks. That isn't Castell's domain. We've rung them on the number on file: their bank hasn't changed."
             }
           },
           {
@@ -183,10 +152,44 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "SPF failed because it came through Castell's billing service, but DKIM passed and DMARC passed for castellfruit.example, their real domain.",
+                "senderAuth": "It came in through Castell's billing service rather than their main mail server, which is why one automatic sender check didn't line up, but the message still proves it came from castellfruit.example, their real domain.",
                 "default": "Castell's real domain, a purchase order Brightwell raised, and no change to how you pay them."
               },
-              "headerNote": "One failed check on its own is a clue, not proof. Billing services and forwarding often break SPF while DKIM still passes."
+              "headerNote": "One check not lining up, on its own, is a clue rather than proof. Billing services and forwarded mail often trip it even when the message is genuine."
+            }
+          },
+          {
+            "id": "fb_castell_bank",
+            "from": {
+              "name": "Castell Fruit Co. Accounts",
+              "address": "accounts@castellfruit-co.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Our bank details have changed",
+            "time": "08:32",
+            "body": "Dear Accounts Payable,\nWe have moved our business banking. Please update your records and pay all invoices from today, including CF-20931, to the account below.\nAccount name: Castell Fruit Co. Ltd\nAccount number ending 5521\nDiolch,\nIfan Jenkins\nAccounts",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.castellfruit-co.example",
+              "replyTo": "accounts@castellfruit-co.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "lookalike_domain",
+                "changed_bank_details"
+              ],
+              "perFlagNote": {
+                "senderTrust": "This isn't the address Castell's accounts team use, so it isn't really who it says it is",
+                "lookalike_domain": "Castell's real domain is castellfruit.example; this one adds -co",
+                "changed_bank_details": "New bank details for every invoice from today is the change invoice fraud depends on. Ring Castell on the number in your supplier file"
+              },
+              "headerNote": "These pass because whoever owns castellfruit-co.example really did send it. That proves the sending domain, not that the domain belongs to Castell.",
+              "ifTrusted": "Castell's payments would go to the sender's account until someone noticed Castell hadn't been paid.",
+              "reportReply": "Thanks. That isn't Castell's domain. We've rung them on the number on file: their bank hasn't changed."
             }
           },
           {
@@ -279,10 +282,10 @@
                 "reply_to_differs"
               ],
               "perFlagNote": {
-                "senderAuth": "SPF and DMARC both failed for brightwellfoods.example: Brightwell's own servers didn't send this",
+                "senderAuth": "Brightwell's own mail system didn't send this, even though the From line shows a Brightwell address",
                 "reply_to_differs": "Replies go to meilin.chau.procure@quickpost-mail.example, not to Mei Lin's Brightwell address"
               },
-              "headerNote": "Open the details: the From shows Mei Lin's real address, but the checks failed and the reply-to points somewhere else.",
+              "headerNote": "Open the details: the From line shows Mei Lin's real address, but the message didn't come from Brightwell's mail system, and a reply would go to a private inbox instead.",
               "ifTrusted": "An aged creditors list names every supplier, what they're owed and who to contact: everything needed to write a convincing bank-change email.",
               "reportReply": "Thanks. Mei Lin is in the office today and didn't send it."
             }
@@ -341,12 +344,10 @@
             "truth": {
               "isPhish": true,
               "flags": [
-                "linkCredible",
-                "pretextRelevant"
+                "linkCredible"
               ],
               "perFlagNote": {
-                "linkCredible": "The link text says fernhillbusinessbank.example, but it goes to fernhill-secure-login.example",
-                "pretextRelevant": "Brightwell doesn't bank with Fernhill, so there's no payment of yours for them to hold"
+                "linkCredible": "The link text says fernhillbusinessbank.example, but it goes to fernhill-secure-login.example"
               },
               "ifTrusted": "The link opens a sign-in page that collects banking passwords.",
               "reportReply": "Thanks. Brightwell doesn't bank with Fernhill, and we've blocked the sign-in page."

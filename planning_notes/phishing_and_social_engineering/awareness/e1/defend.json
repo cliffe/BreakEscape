@@ -3,7 +3,17 @@
   "triageSets": [
     {
       "id": "e1_payments_inbox",
-      "playerSentAuth": { "accounts": { "analyst": { "spf": "pass", "dkim": "fail", "dmarc": "fail", "envelopeFrom": "bounce.brightwellfoods.example", "replyTo": "{account_address}" } } },
+      "playerSentAuth": {
+        "accounts": {
+          "analyst": {
+            "spf": "pass",
+            "dkim": "fail",
+            "dmarc": "fail",
+            "envelopeFrom": "bounce.brightwellfoods.example",
+            "replyTo": "{account_address}"
+          }
+        }
+      },
       "_prefix": "Prefix for the full episode (id e1_invoice_fraud). The defend-only shell (id e1_invoice_fraud_defend) sets episode_e1_invoice_fraud_defend_defend_ instead. No stage on purpose: the effective stage is 'mission', and an explicit training or mission stage with passPercent 0 draws a validator warning.",
       "title": "Brightwell payments inbox",
       "brief": "You're covering Brightwell's payments inbox before the three o'clock payment run. Five messages are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. Reporting a real message never costs you anything.",
@@ -12,18 +22,40 @@
       "feedbackMode": "immediate",
       "headerPanel": "off",
       "glossary": "closed",
-      "channelTells": ["lookalike_domain", "changed_bank_details", "secrecy_or_bypass", "reply_to_differs"],
-      "outcome": { "setGlobalPrefix": "episode_e1_invoice_fraud_defend_", "passPercent": 0 },
+      "channelTells": [
+        "lookalike_domain",
+        "changed_bank_details",
+        "secrecy_or_bypass",
+        "reply_to_differs"
+      ],
+      "outcome": {
+        "setGlobalPrefix": "episode_e1_invoice_fraud_defend_",
+        "passPercent": 0
+      },
       "messages": [
         {
           "id": "e1_harlow_invoice",
-          "from": { "name": "Harlow Packaging Ltd", "address": "accounts@harlowpackaging.example" },
+          "from": {
+            "name": "Harlow Packaging Ltd",
+            "address": "accounts@harlowpackaging.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Invoice INV-2217: October cartons",
           "time": "09:05",
           "body": "Hello,\nPlease find attached invoice INV-2217 for October's delivery of printed cartons (your PO-4290), for £6,412.80 on our usual 30-day terms.\nOur bank details are unchanged.\nKind regards,\nCredit Control\nHarlow Packaging Ltd",
-          "attachments": [ { "label": "INV-2217.pdf", "kind": "pdf" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.harlowpackaging.example", "replyTo": "accounts@harlowpackaging.example" },
+          "attachments": [
+            {
+              "label": "INV-2217.pdf",
+              "kind": "pdf"
+            }
+          ],
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "bounce.harlowpackaging.example",
+            "replyTo": "accounts@harlowpackaging.example"
+          },
           "truth": {
             "isPhish": false,
             "flags": [],
@@ -35,17 +67,31 @@
         },
         {
           "id": "e1_lookalike_bank",
-          "_worked": "The 11 section 4.2 worked example. F = 2. Report + both = 100, Report + lookalike only = 80, Delete + both = 70, Trust + none = 0.",
-          "from": { "name": "Brightwell Foods Accounts", "address": "accounts@brightwel1foods.example" },
+          "_worked": "The 11 section 4.2 worked example. Now F = 3 (senderTrust, lookalike_domain, changed_bank_details): the sender-trust chip applies because the address isn't Brightwell's.",
+          "from": {
+            "name": "Brightwell Foods Accounts",
+            "address": "accounts@brightwel1foods.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Updated bank details — please action today",
           "time": "10:12",
           "body": "Hi team,\nHarlow Packaging have moved to a new bank. Please change the payee account on invoice INV-2217 before today's payment run, so the payment doesn't bounce.\nNew account name: Harlow Packaging Ltd\nNew account number ending 7716\nThanks,\nAccounts",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.brightwel1foods.example", "replyTo": "accounts@brightwel1foods.example" },
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "bounce.brightwel1foods.example",
+            "replyTo": "accounts@brightwel1foods.example"
+          },
           "truth": {
             "isPhish": true,
-            "flags": ["lookalike_domain", "changed_bank_details"],
+            "flags": [
+              "senderTrust",
+              "lookalike_domain",
+              "changed_bank_details"
+            ],
             "perFlagNote": {
+              "senderTrust": "It signs off as Brightwell Accounts, but the address isn't a Brightwell one at all, so it isn't who it says it is",
               "lookalike_domain": "The display name is right, but the address is brightwel1foods, with a digit 1 where the l should be",
               "changed_bank_details": "A bank-detail change on an open invoice is the commonest invoice-fraud move. The safe step is to ring the supplier on the number you already hold"
             },
@@ -55,12 +101,21 @@
         },
         {
           "id": "e1_po_pennine",
-          "from": { "name": "Mei Lin Chau", "address": "meilin.chau@brightwellfoods.example" },
+          "from": {
+            "name": "Mei Lin Chau",
+            "address": "meilin.chau@brightwellfoods.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "PO-4471 raised: Pennine Oat Mills",
           "time": "10:40",
           "body": "Hi payments team,\nI've raised PO-4471 for 12 pallets of oat flour from Pennine Oat Mills, arriving Thursday. Goods-in will send the delivery note. Could you match it when their invoice comes in?\nThanks,\nMei Lin\nProcurement",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "brightwellfoods.example", "replyTo": "meilin.chau@brightwellfoods.example" },
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "brightwellfoods.example",
+            "replyTo": "meilin.chau@brightwellfoods.example"
+          },
           "truth": {
             "isPhish": false,
             "flags": [],
@@ -72,15 +127,28 @@
         },
         {
           "id": "e1_ceo_wire",
-          "from": { "name": "Ravinder Sandhu", "address": "ravinder.sandhu.private@inboxly.example" },
+          "from": {
+            "name": "Ravinder Sandhu",
+            "address": "ravinder.sandhu.private@inboxly.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Need this paid today",
           "time": "11:58",
           "body": "Are you at your desk? I need a payment of £18,400 made today to secure a new site in Leeds. It's confidential until the board announces it, so please keep it to yourself and don't put it through the usual approval. I'll sign it off when I'm back.\nI'm in meetings all afternoon, so reply here rather than calling.\nRavinder\nSent from my phone",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "ravinder.sandhu.private@inboxly.example" },
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "inboxly.example",
+            "replyTo": "ravinder.sandhu.private@inboxly.example"
+          },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "flags": [
+              "senderTrust",
+              "secrecy_or_bypass",
+              "urgencyCalibrated"
+            ],
             "perFlagNote": {
               "senderTrust": "The name is the chief executive's, but the address is a personal inbox at inboxly.example, not brightwellfoods.example",
               "secrecy_or_bypass": "'Keep it to yourself' and 'don't put it through the usual approval' ask you to skip the check that would catch this",
@@ -93,12 +161,21 @@
         {
           "id": "e1_bank_confirmed",
           "_note": "The genuine change of bank that carries the 'confirmed by phone' note (11 section 3.2, E1).",
-          "from": { "name": "Adaeze Okafor", "address": "adaeze.okafor@brightwellfoods.example" },
+          "from": {
+            "name": "Adaeze Okafor",
+            "address": "adaeze.okafor@brightwellfoods.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Marsh End Eggs: new bank details (confirmed by phone)",
           "time": "13:20",
           "body": "Hi team,\nMarsh End Eggs wrote last week to say they've changed bank. Before acting on it, I rang them on the number in our supplier file (not the one on their letter) and spoke to Joyce in their accounts office. She confirmed the new account.\nI've updated the supplier record and signed off the change, so their next invoice can go to the new account in Friday's run.\nConfirmed by phone: Adaeze Okafor, 21 October\nAdaeze",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "brightwellfoods.example", "replyTo": "adaeze.okafor@brightwellfoods.example" },
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "brightwellfoods.example",
+            "replyTo": "adaeze.okafor@brightwellfoods.example"
+          },
           "truth": {
             "isPhish": false,
             "flags": [],
@@ -119,20 +196,38 @@
       "stage": "pre",
       "pairedWith": "finance_form_b",
       "scoringProfile": "awareness",
+      "verifyVerdict": true,
       "feedbackMode": "end",
       "headerPanel": "collapsed",
       "glossary": "closed",
-      "channelTells": ["lookalike_domain", "changed_bank_details", "secrecy_or_bypass", "reply_to_differs"],
-      "outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 },
+      "channelTells": [
+        "lookalike_domain",
+        "changed_bank_details",
+        "secrecy_or_bypass",
+        "reply_to_differs"
+      ],
+      "outcome": {
+        "setGlobalPrefix": "triage_{stage}_",
+        "passPercent": 0
+      },
       "messages": [
         {
           "id": "fa_close_timetable",
-          "from": { "name": "Adaeze Okafor", "address": "adaeze.okafor@brightwellfoods.example" },
+          "from": {
+            "name": "Adaeze Okafor",
+            "address": "adaeze.okafor@brightwellfoods.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "October month-end timetable",
           "time": "08:05",
           "body": "Morning all,\nThe October close timetable is below. Same as last month, one day earlier because of the bank holiday.\nSupplier invoices in by Wednesday 5pm. Accruals by Thursday noon. Final reports Monday.\nShout if anything clashes.\nAdaeze",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "brightwellfoods.example", "replyTo": "adaeze.okafor@brightwellfoods.example" },
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "brightwellfoods.example",
+            "replyTo": "adaeze.okafor@brightwellfoods.example"
+          },
           "truth": {
             "isPhish": false,
             "flags": [],
@@ -143,55 +238,96 @@
           }
         },
         {
+          "id": "fa_pennine_invoice",
+          "from": {
+            "name": "Pennine Oat Mills",
+            "address": "invoices@pennineoatmills.example"
+          },
+          "to": "payments@brightwellfoods.example",
+          "subject": "Invoice POM-5498 for PO-4302",
+          "time": "08:50",
+          "body": "Hello,\nPlease find attached invoice POM-5498 for the oat flour delivered on 14 October against your PO-4302.\nPayment terms as agreed. Any questions, call us on the number on your supplier record.\nPennine Oat Mills",
+          "attachments": [
+            {
+              "label": "POM-5498.pdf",
+              "kind": "pdf"
+            }
+          ],
+          "auth": {
+            "spf": "fail",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "billing-relay.pennineoatmills.example",
+            "replyTo": "invoices@pennineoatmills.example"
+          },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "senderAuth": "It came in through Pennine's billing service rather than their main mail server, which is why one automatic sender check didn't line up, but the message still proves it came from pennineoatmills.example, their real domain.",
+              "default": "Pennine's real domain, a purchase order Brightwell raised, and no change to how you pay them."
+            },
+            "headerNote": "One check not lining up, on its own, is a clue rather than proof. Billing services and forwarded mail often trip it even when the message is genuine."
+          }
+        },
+        {
           "id": "fa_pennine_bank",
-          "from": { "name": "Pennine Oat Mills Accounts", "address": "accounts@pennine-oatmills.example" },
+          "from": {
+            "name": "Pennine Oat Mills Accounts",
+            "address": "accounts@pennine-oatmills.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Change of bank account from 1 November",
           "time": "08:32",
           "body": "Dear Accounts Payable,\nFrom 1 November our bank account has changed. Please update your records and make all future payments, including invoice POM-5512, to the account below.\nAccount name: Pennine Oat Mills Ltd\nAccount number ending 3048\nKind regards,\nBryony Thwaite\nCredit Control",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.pennine-oatmills.example", "replyTo": "accounts@pennine-oatmills.example" },
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "bounce.pennine-oatmills.example",
+            "replyTo": "accounts@pennine-oatmills.example"
+          },
           "truth": {
             "isPhish": true,
-            "flags": ["lookalike_domain", "changed_bank_details"],
+            "flags": [
+              "senderTrust",
+              "lookalike_domain",
+              "changed_bank_details"
+            ],
             "perFlagNote": {
+              "senderTrust": "This isn't the address Pennine's accounts team use, so it isn't really who it says it is",
               "lookalike_domain": "Pennine's real domain is pennineoatmills.example; this one adds a hyphen",
               "changed_bank_details": "A new bank account for future payments is the change invoice fraud depends on. Ring Pennine on the number in your supplier file"
             },
-            "headerNote": "All three checks passed because the sender owns pennine-oatmills.example. A pass tells you which domain sent it, not that it's Pennine's.",
+            "headerNote": "These pass because whoever owns pennine-oatmills.example really did send it. That proves the sending domain, not that the domain belongs to Pennine.",
             "ifTrusted": "Pennine's next payments would go to the sender's account until someone noticed Pennine hadn't been paid.",
             "reportReply": "Thanks. That isn't Pennine's domain. We've rung them on the number on file: their bank hasn't changed."
           }
         },
         {
-          "id": "fa_pennine_invoice",
-          "from": { "name": "Pennine Oat Mills", "address": "invoices@pennineoatmills.example" },
-          "to": "payments@brightwellfoods.example",
-          "subject": "Invoice POM-5498 for PO-4302",
-          "time": "08:50",
-          "body": "Hello,\nPlease find attached invoice POM-5498 for the oat flour delivered on 14 October against your PO-4302.\nPayment terms as agreed. Any questions, call us on the number on your supplier record.\nPennine Oat Mills",
-          "attachments": [ { "label": "POM-5498.pdf", "kind": "pdf" } ],
-          "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "billing-relay.pennineoatmills.example", "replyTo": "invoices@pennineoatmills.example" },
-          "truth": {
-            "isPhish": false,
-            "flags": [],
-            "whyFine": {
-              "senderAuth": "SPF failed because it came through Pennine's billing service, but DKIM passed and DMARC passed for pennineoatmills.example, their real domain.",
-              "default": "Pennine's real domain, a purchase order Brightwell raised, and no change to how you pay them."
-            },
-            "headerNote": "One failed check on its own is a clue, not proof. Billing services and forwarding often break SPF while DKIM still passes."
-          }
-        },
-        {
           "id": "fa_ceo_transfer",
-          "from": { "name": "Ravinder Sandhu", "address": "ravinder.sandhu.ceo@inboxly.example" },
+          "from": {
+            "name": "Ravinder Sandhu",
+            "address": "ravinder.sandhu.ceo@inboxly.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Confidential: payment needed this morning",
           "time": "09:14",
           "body": "Are you at your desk? I need £24,750 sent to a new supplier before 11. It's tied to a deal I can't talk about yet, so keep it between us and don't raise it with Adaeze.\nI'm in meetings all day, so email only. I'll send the account details once you confirm.\nRavinder",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "ravinder.sandhu.ceo@inboxly.example" },
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "inboxly.example",
+            "replyTo": "ravinder.sandhu.ceo@inboxly.example"
+          },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "flags": [
+              "senderTrust",
+              "secrecy_or_bypass",
+              "urgencyCalibrated"
+            ],
             "perFlagNote": {
               "senderTrust": "The chief executive's name on a personal inbox at inboxly.example",
               "secrecy_or_bypass": "'Keep it between us' and 'don't raise it with Adaeze' cut out the person who approves payments",
@@ -203,13 +339,28 @@
         },
         {
           "id": "fa_payslip",
-          "from": { "name": "Brightwell HR", "address": "hr@brightwellfoods.example" },
+          "from": {
+            "name": "Brightwell HR",
+            "address": "hr@brightwellfoods.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Your October payslip is ready",
           "time": "09:40",
           "body": "Your October payslip is now on the HR portal.\n{{link:payslips}}\nYou can also reach the portal from the intranet home page.\nBrightwell HR",
-          "links": [ { "id": "payslips", "text": "hr.brightwellfoods.example/payslips", "destination": "https://hr.brightwellfoods.example/payslips" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "brightwellfoods.example", "replyTo": "hr@brightwellfoods.example" },
+          "links": [
+            {
+              "id": "payslips",
+              "text": "hr.brightwellfoods.example/payslips",
+              "destination": "https://hr.brightwellfoods.example/payslips"
+            }
+          ],
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "brightwellfoods.example",
+            "replyTo": "hr@brightwellfoods.example"
+          },
           "truth": {
             "isPhish": false,
             "flags": [],
@@ -221,32 +372,53 @@
         },
         {
           "id": "fa_remittance_spoof",
-          "from": { "name": "Tom Reilly", "address": "tom.reilly@brightwellfoods.example" },
+          "from": {
+            "name": "Tom Reilly",
+            "address": "tom.reilly@brightwellfoods.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Remittance copies for last week's run",
           "time": "10:05",
           "body": "Hi,\nI'm working from home and can't get into the shared drive. Could you reply with the remittance advices from last Friday's supplier run? Just attach them to your reply.\nThanks,\nTom",
-          "auth": { "spf": "fail", "dkim": "none", "dmarc": "fail", "envelopeFrom": "mailer.inboxly.example", "replyTo": "t.reilly.work@inboxly.example" },
+          "auth": {
+            "spf": "fail",
+            "dkim": "none",
+            "dmarc": "fail",
+            "envelopeFrom": "mailer.inboxly.example",
+            "replyTo": "t.reilly.work@inboxly.example"
+          },
           "truth": {
             "isPhish": true,
-            "flags": ["senderAuth", "reply_to_differs"],
+            "flags": [
+              "senderAuth",
+              "reply_to_differs"
+            ],
             "perFlagNote": {
-              "senderAuth": "SPF and DMARC both failed for brightwellfoods.example: Brightwell's own servers didn't send this",
+              "senderAuth": "Brightwell's own mail system didn't send this, even though the From line shows a Brightwell address",
               "reply_to_differs": "Replies go to t.reilly.work@inboxly.example, not to Tom's Brightwell address"
             },
-            "headerNote": "Open the details: the From shows Tom's real address, but the checks failed and the reply-to points somewhere else.",
+            "headerNote": "Open the details: the From line shows Tom's real address, but the message didn't come from Brightwell's mail system, and a reply would go to a private inbox instead.",
             "ifTrusted": "Remittance advices list suppliers, amounts and bank details: everything needed to write a convincing bank-change email.",
             "reportReply": "Thanks. Tom is in the office today and didn't send it."
           }
         },
         {
           "id": "fa_run_thursday",
-          "from": { "name": "Tom Reilly", "address": "tom.reilly@brightwellfoods.example" },
+          "from": {
+            "name": "Tom Reilly",
+            "address": "tom.reilly@brightwellfoods.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Payment run is Thursday this week",
           "time": "10:30",
           "body": "Heads up: the payment run moves to Thursday this week because of Friday's bank holiday. Approvals still need to be in Adaeze's queue by 3pm Wednesday, same process as always.\nTom",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "brightwellfoods.example", "replyTo": "tom.reilly@brightwellfoods.example" },
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "brightwellfoods.example",
+            "replyTo": "tom.reilly@brightwellfoods.example"
+          },
           "truth": {
             "isPhish": false,
             "flags": [],
@@ -258,19 +430,35 @@
         },
         {
           "id": "fa_invoice_share",
-          "from": { "name": "Merrow Logistics", "address": "invoices@merrowlogistics.example" },
+          "from": {
+            "name": "Merrow Logistics",
+            "address": "invoices@merrowlogistics.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Invoice ML-7731 shared with you",
           "time": "11:02",
           "body": "Merrow Logistics has shared an invoice with you.\n{{link:view}}\nThis link expires in 48 hours.",
-          "links": [ { "id": "view", "text": "View invoice ML-7731 on merrowlogistics.example", "destination": "https://docshare-login.example/merrow/ml-7731" } ],
-          "auth": { "spf": "pass", "dkim": "none", "dmarc": "none", "envelopeFrom": "merrowlogistics.example", "replyTo": "invoices@merrowlogistics.example" },
+          "links": [
+            {
+              "id": "view",
+              "text": "View invoice ML-7731 on merrowlogistics.example",
+              "destination": "https://docshare-login.example/merrow/ml-7731"
+            }
+          ],
+          "auth": {
+            "spf": "pass",
+            "dkim": "none",
+            "dmarc": "none",
+            "envelopeFrom": "merrowlogistics.example",
+            "replyTo": "invoices@merrowlogistics.example"
+          },
           "truth": {
             "isPhish": true,
-            "flags": ["linkCredible", "pretextRelevant"],
+            "flags": [
+              "linkCredible"
+            ],
             "perFlagNote": {
-              "linkCredible": "The link text says merrowlogistics.example, but it goes to docshare-login.example",
-              "pretextRelevant": "Brightwell has no purchase order with Merrow Logistics, so there's no invoice to expect"
+              "linkCredible": "The link text says merrowlogistics.example, but it goes to docshare-login.example"
             },
             "ifTrusted": "The link opens a sign-in page that collects your email password.",
             "reportReply": "Thanks. We don't use Merrow, and the link went to a sign-in page we've now blocked."
@@ -278,13 +466,27 @@
         },
         {
           "id": "fa_audit_request",
-          "from": { "name": "Priyanka Deshpande", "address": "p.deshpande@fairleymarsh.example" },
+          "from": {
+            "name": "Priyanka Deshpande",
+            "address": "p.deshpande@fairleymarsh.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Year-end audit: request list",
           "time": "11:45",
           "body": "Hello,\nAhead of next month's audit fieldwork, our request list is attached. Adaeze has the same list, and we've agreed to collect everything through your usual secure upload area rather than by email.\nThanks,\nPriyanka Deshpande\nAudit Senior, Fairley Marsh LLP",
-          "attachments": [ { "label": "Brightwell_audit_requests.xlsx", "kind": "spreadsheet" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "fairleymarsh.example", "replyTo": "p.deshpande@fairleymarsh.example" },
+          "attachments": [
+            {
+              "label": "Brightwell_audit_requests.xlsx",
+              "kind": "spreadsheet"
+            }
+          ],
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "fairleymarsh.example",
+            "replyTo": "p.deshpande@fairleymarsh.example"
+          },
           "truth": {
             "isPhish": false,
             "flags": [],
@@ -296,13 +498,27 @@
         },
         {
           "id": "fa_dunmore_statement",
-          "from": { "name": "Hamid Rahimi", "address": "hamid.rahimi@dunmoredairy.example" },
+          "from": {
+            "name": "Hamid Rahimi",
+            "address": "hamid.rahimi@dunmoredairy.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Statement of account: September",
           "time": "12:20",
           "body": "Hi,\nOur September statement is attached. Everything matches your remittances apart from DD-1187, which I think crossed in the post. No rush; let me know when you've had a look.\nHamid Rahimi\nAccounts, Dunmore Dairy",
-          "attachments": [ { "label": "Dunmore_statement_Sep.pdf", "kind": "pdf" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "dunmoredairy.example", "replyTo": "hamid.rahimi@dunmoredairy.example" },
+          "attachments": [
+            {
+              "label": "Dunmore_statement_Sep.pdf",
+              "kind": "pdf"
+            }
+          ],
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "dunmoredairy.example",
+            "replyTo": "hamid.rahimi@dunmoredairy.example"
+          },
           "truth": {
             "isPhish": false,
             "flags": [],
@@ -321,79 +537,138 @@
       "stage": "post",
       "pairedWith": "finance_form_a",
       "scoringProfile": "awareness",
+      "verifyVerdict": true,
       "feedbackMode": "end",
       "headerPanel": "collapsed",
       "glossary": "closed",
-      "channelTells": ["lookalike_domain", "changed_bank_details", "secrecy_or_bypass", "reply_to_differs"],
-      "outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 },
+      "channelTells": [
+        "lookalike_domain",
+        "changed_bank_details",
+        "secrecy_or_bypass",
+        "reply_to_differs"
+      ],
+      "outcome": {
+        "setGlobalPrefix": "triage_{stage}_",
+        "passPercent": 0
+      },
       "messages": [
         {
           "id": "fb_expenses_cutoff",
-          "from": { "name": "Agnieszka Duda", "address": "agnieszka.duda@brightwellfoods.example" },
+          "from": {
+            "name": "Agnieszka Duda",
+            "address": "agnieszka.duda@brightwellfoods.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "October expenses: claims by Thursday",
           "time": "08:05",
           "body": "Hi everyone,\nOctober expense claims need to be approved in the expenses system by Thursday to make this month's payroll. Anything later goes into November as usual.\nThanks,\nAgnieszka\nPayroll",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "brightwellfoods.example", "replyTo": "agnieszka.duda@brightwellfoods.example" },
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "brightwellfoods.example",
+            "replyTo": "agnieszka.duda@brightwellfoods.example"
+          },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
               "urgencyCalibrated": "Thursday is the normal payroll cut-off, and anything late simply rolls to next month.",
-              "default": "Payroll's real address, a routine reminder, and nothing to pay or sign in to."
+              "default": "Payroll's real address, a routine reminder, and no link or payment anywhere in it."
             }
           }
         },
         {
+          "id": "fb_castell_invoice",
+          "from": {
+            "name": "Castell Fruit Co.",
+            "address": "invoices@castellfruit.example"
+          },
+          "to": "payments@brightwellfoods.example",
+          "subject": "Invoice CF-20874 for PO-4318",
+          "time": "08:50",
+          "body": "Hello,\nPlease find attached invoice CF-20874 for the apple purée delivered on 15 October against your PO-4318.\nPayment terms as agreed. Any questions, ring us on the number on your supplier record.\nCastell Fruit Co.",
+          "attachments": [
+            {
+              "label": "CF-20874.pdf",
+              "kind": "pdf"
+            }
+          ],
+          "auth": {
+            "spf": "fail",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "billing-relay.castellfruit.example",
+            "replyTo": "invoices@castellfruit.example"
+          },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "senderAuth": "It came in through Castell's billing service rather than their main mail server, which is why one automatic sender check didn't line up, but the message still proves it came from castellfruit.example, their real domain.",
+              "default": "Castell's real domain, a purchase order Brightwell raised, and no change to how you pay them."
+            },
+            "headerNote": "One check not lining up, on its own, is a clue rather than proof. Billing services and forwarded mail often trip it even when the message is genuine."
+          }
+        },
+        {
           "id": "fb_castell_bank",
-          "from": { "name": "Castell Fruit Co. Accounts", "address": "accounts@castellfruit-co.example" },
+          "from": {
+            "name": "Castell Fruit Co. Accounts",
+            "address": "accounts@castellfruit-co.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Our bank details have changed",
           "time": "08:32",
           "body": "Dear Accounts Payable,\nWe have moved our business banking. Please update your records and pay all invoices from today, including CF-20931, to the account below.\nAccount name: Castell Fruit Co. Ltd\nAccount number ending 5521\nDiolch,\nIfan Jenkins\nAccounts",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.castellfruit-co.example", "replyTo": "accounts@castellfruit-co.example" },
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "bounce.castellfruit-co.example",
+            "replyTo": "accounts@castellfruit-co.example"
+          },
           "truth": {
             "isPhish": true,
-            "flags": ["lookalike_domain", "changed_bank_details"],
+            "flags": [
+              "senderTrust",
+              "lookalike_domain",
+              "changed_bank_details"
+            ],
             "perFlagNote": {
+              "senderTrust": "This isn't the address Castell's accounts team use, so it isn't really who it says it is",
               "lookalike_domain": "Castell's real domain is castellfruit.example; this one adds -co",
               "changed_bank_details": "New bank details for every invoice from today is the change invoice fraud depends on. Ring Castell on the number in your supplier file"
             },
-            "headerNote": "All three checks passed because the sender owns castellfruit-co.example. A pass tells you which domain sent it, not that it's Castell's.",
+            "headerNote": "These pass because whoever owns castellfruit-co.example really did send it. That proves the sending domain, not that the domain belongs to Castell.",
             "ifTrusted": "Castell's payments would go to the sender's account until someone noticed Castell hadn't been paid.",
             "reportReply": "Thanks. That isn't Castell's domain. We've rung them on the number on file: their bank hasn't changed."
           }
         },
         {
-          "id": "fb_castell_invoice",
-          "from": { "name": "Castell Fruit Co.", "address": "invoices@castellfruit.example" },
-          "to": "payments@brightwellfoods.example",
-          "subject": "Invoice CF-20874 for PO-4318",
-          "time": "08:50",
-          "body": "Hello,\nPlease find attached invoice CF-20874 for the apple purée delivered on 15 October against your PO-4318.\nPayment terms as agreed. Any questions, ring us on the number on your supplier record.\nCastell Fruit Co.",
-          "attachments": [ { "label": "CF-20874.pdf", "kind": "pdf" } ],
-          "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "billing-relay.castellfruit.example", "replyTo": "invoices@castellfruit.example" },
-          "truth": {
-            "isPhish": false,
-            "flags": [],
-            "whyFine": {
-              "senderAuth": "SPF failed because it came through Castell's billing service, but DKIM passed and DMARC passed for castellfruit.example, their real domain.",
-              "default": "Castell's real domain, a purchase order Brightwell raised, and no change to how you pay them."
-            },
-            "headerNote": "One failed check on its own is a clue, not proof. Billing services and forwarding often break SPF while DKIM still passes."
-          }
-        },
-        {
           "id": "fb_fd_vouchers",
-          "from": { "name": "Adaeze Okafor", "address": "adaeze.okafor.finance@quickpost-mail.example" },
+          "from": {
+            "name": "Adaeze Okafor",
+            "address": "adaeze.okafor.finance@quickpost-mail.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Quick favour before 2pm",
           "time": "09:14",
           "body": "Hi, are you free? I need ten £100 shopping vouchers for this afternoon's staff awards. It's a surprise, so don't mention it to anyone, and put it through petty cash rather than a purchase order.\nSend me the voucher codes by 2. I'm on calls all day so email is best.\nAdaeze",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "adaeze.okafor.finance@quickpost-mail.example" },
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "quickpost-mail.example",
+            "replyTo": "adaeze.okafor.finance@quickpost-mail.example"
+          },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "flags": [
+              "senderTrust",
+              "secrecy_or_bypass",
+              "urgencyCalibrated"
+            ],
             "perFlagNote": {
               "senderTrust": "The finance manager's name on a personal inbox at quickpost-mail.example",
               "secrecy_or_bypass": "'Don't mention it' and 'petty cash rather than a purchase order' route round the normal checks",
@@ -405,13 +680,28 @@
         },
         {
           "id": "fb_system_maintenance",
-          "from": { "name": "Gwen Pritchard", "address": "gwen.pritchard@brightwellfoods.example" },
+          "from": {
+            "name": "Gwen Pritchard",
+            "address": "gwen.pritchard@brightwellfoods.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Finance system offline Saturday 08:00 to 12:00",
           "time": "09:40",
           "body": "Hi all,\nThe finance system will be offline on Saturday from 08:00 to 12:00 for planned updates. You don't need to do anything. Progress will be on the IT status page:\n{{link:status}}\nGwen\nIT Service Desk",
-          "links": [ { "id": "status", "text": "status.brightwellfoods.example", "destination": "https://status.brightwellfoods.example/" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "brightwellfoods.example", "replyTo": "gwen.pritchard@brightwellfoods.example" },
+          "links": [
+            {
+              "id": "status",
+              "text": "status.brightwellfoods.example",
+              "destination": "https://status.brightwellfoods.example/"
+            }
+          ],
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "brightwellfoods.example",
+            "replyTo": "gwen.pritchard@brightwellfoods.example"
+          },
           "truth": {
             "isPhish": false,
             "flags": [],
@@ -423,32 +713,53 @@
         },
         {
           "id": "fb_creditors_spoof",
-          "from": { "name": "Mei Lin Chau", "address": "meilin.chau@brightwellfoods.example" },
+          "from": {
+            "name": "Mei Lin Chau",
+            "address": "meilin.chau@brightwellfoods.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Aged creditors list please",
           "time": "10:05",
           "body": "Hi,\nCould you send me this month's aged creditors list, with the supplier contact details column included? I'm reviewing suppliers off site today, so just reply with it attached.\nThanks,\nMei Lin",
-          "auth": { "spf": "fail", "dkim": "none", "dmarc": "fail", "envelopeFrom": "mailer.quickpost-mail.example", "replyTo": "meilin.chau.procure@quickpost-mail.example" },
+          "auth": {
+            "spf": "fail",
+            "dkim": "none",
+            "dmarc": "fail",
+            "envelopeFrom": "mailer.quickpost-mail.example",
+            "replyTo": "meilin.chau.procure@quickpost-mail.example"
+          },
           "truth": {
             "isPhish": true,
-            "flags": ["senderAuth", "reply_to_differs"],
+            "flags": [
+              "senderAuth",
+              "reply_to_differs"
+            ],
             "perFlagNote": {
-              "senderAuth": "SPF and DMARC both failed for brightwellfoods.example: Brightwell's own servers didn't send this",
+              "senderAuth": "Brightwell's own mail system didn't send this, even though the From line shows a Brightwell address",
               "reply_to_differs": "Replies go to meilin.chau.procure@quickpost-mail.example, not to Mei Lin's Brightwell address"
             },
-            "headerNote": "Open the details: the From shows Mei Lin's real address, but the checks failed and the reply-to points somewhere else.",
+            "headerNote": "Open the details: the From line shows Mei Lin's real address, but the message didn't come from Brightwell's mail system, and a reply would go to a private inbox instead.",
             "ifTrusted": "An aged creditors list names every supplier, what they're owed and who to contact: everything needed to write a convincing bank-change email.",
             "reportReply": "Thanks. Mei Lin is in the office today and didn't send it."
           }
         },
         {
           "id": "fb_quarter_end",
-          "from": { "name": "Ravinder Sandhu", "address": "ravinder.sandhu@brightwellfoods.example" },
+          "from": {
+            "name": "Ravinder Sandhu",
+            "address": "ravinder.sandhu@brightwellfoods.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Quarter end: approvals by Friday",
           "time": "10:30",
           "body": "Hi all,\nThank you for a strong quarter. To close it on time, please make sure every supplier invoice you're holding is in the approval queue by Friday. Adaeze's team will take it from there as usual.\nRavinder",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "brightwellfoods.example", "replyTo": "ravinder.sandhu@brightwellfoods.example" },
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "brightwellfoods.example",
+            "replyTo": "ravinder.sandhu@brightwellfoods.example"
+          },
           "truth": {
             "isPhish": false,
             "flags": [],
@@ -461,19 +772,35 @@
         },
         {
           "id": "fb_bank_portal",
-          "from": { "name": "Fernhill Business Bank", "address": "alerts@fernhillbusinessbank.example" },
+          "from": {
+            "name": "Fernhill Business Bank",
+            "address": "alerts@fernhillbusinessbank.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Payment held: sign in to release",
           "time": "11:02",
           "body": "A payment from your business account has been held for review. Sign in to release it.\n{{link:signin}}\nFernhill Business Bank",
-          "links": [ { "id": "signin", "text": "fernhillbusinessbank.example/secure", "destination": "https://fernhill-secure-login.example/release" } ],
-          "auth": { "spf": "pass", "dkim": "none", "dmarc": "none", "envelopeFrom": "fernhillbusinessbank.example", "replyTo": "alerts@fernhillbusinessbank.example" },
+          "links": [
+            {
+              "id": "signin",
+              "text": "fernhillbusinessbank.example/secure",
+              "destination": "https://fernhill-secure-login.example/release"
+            }
+          ],
+          "auth": {
+            "spf": "pass",
+            "dkim": "none",
+            "dmarc": "none",
+            "envelopeFrom": "fernhillbusinessbank.example",
+            "replyTo": "alerts@fernhillbusinessbank.example"
+          },
           "truth": {
             "isPhish": true,
-            "flags": ["linkCredible", "pretextRelevant"],
+            "flags": [
+              "linkCredible"
+            ],
             "perFlagNote": {
-              "linkCredible": "The link text says fernhillbusinessbank.example, but it goes to fernhill-secure-login.example",
-              "pretextRelevant": "Brightwell doesn't bank with Fernhill, so there's no payment of yours for them to hold"
+              "linkCredible": "The link text says fernhillbusinessbank.example, but it goes to fernhill-secure-login.example"
             },
             "ifTrusted": "The link opens a sign-in page that collects banking passwords.",
             "reportReply": "Thanks. Brightwell doesn't bank with Fernhill, and we've blocked the sign-in page."
@@ -481,13 +808,27 @@
         },
         {
           "id": "fb_insurance_renewal",
-          "from": { "name": "Marcus Bell", "address": "marcus.bell@brookwaterbrokers.example" },
+          "from": {
+            "name": "Marcus Bell",
+            "address": "marcus.bell@brookwaterbrokers.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Your insurance renewal schedule",
           "time": "11:45",
           "body": "Hello,\nAttached is the renewal schedule for Brightwell's property and stock cover, as discussed with Adaeze last week. The premium is collected by direct debit as before, so there's nothing to pay by hand.\nBest wishes,\nMarcus Bell\nAccount Manager, Brookwater Insurance Brokers",
-          "attachments": [ { "label": "Brightwell_renewal_schedule.pdf", "kind": "pdf" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "brookwaterbrokers.example", "replyTo": "marcus.bell@brookwaterbrokers.example" },
+          "attachments": [
+            {
+              "label": "Brightwell_renewal_schedule.pdf",
+              "kind": "pdf"
+            }
+          ],
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "brookwaterbrokers.example",
+            "replyTo": "marcus.bell@brookwaterbrokers.example"
+          },
           "truth": {
             "isPhish": false,
             "flags": [],
@@ -499,12 +840,21 @@
         },
         {
           "id": "fb_seren_query",
-          "from": { "name": "Daniel Osei", "address": "daniel.osei@serenvalley.example" },
+          "from": {
+            "name": "Daniel Osei",
+            "address": "daniel.osei@serenvalley.example"
+          },
           "to": "payments@brightwellfoods.example",
           "subject": "Query on remittance for SV-3310",
           "time": "12:20",
           "body": "Hi,\nThanks for last week's payment. I can't match SV-3310 on the remittance; it may have been paid with another invoice. No rush; when you get a moment, could you check?\nDaniel Osei\nAccounts, Seren Valley Mushrooms",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "serenvalley.example", "replyTo": "daniel.osei@serenvalley.example" },
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "serenvalley.example",
+            "replyTo": "daniel.osei@serenvalley.example"
+          },
           "truth": {
             "isPhish": false,
             "flags": [],
@@ -519,17 +869,27 @@
   "awarenessEpisode": {
     "role": "finance",
     "company": "brightwell_foods",
-    "brand": { "name": "Brightwell Foods", "logoText": "BRIGHTWELL", "accent": "#2f6f5e" },
+    "brand": {
+      "name": "Brightwell Foods",
+      "logoText": "BRIGHTWELL",
+      "accent": "#2f6f5e"
+    },
     "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: one email to the Harlow Packaging contact you find, and the Brightwell payments inbox. Nothing you write leaves the game.",
-    "defend": { "setId": "e1_payments_inbox", "reportAlwaysVisible": true },
-    "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
+    "defend": {
+      "setId": "e1_payments_inbox",
+      "reportAlwaysVisible": true
+    },
+    "debrief": {
+      "mondayCard": "slot:customer_report_route",
+      "noBlameLine": true
+    },
     "strings": {
-      "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. First you're on the red team: look at what's public about Brightwell and its supplier Harlow Packaging, then write one email to Brightwell's accounts team that looks as if it came from Harlow. Then you swap seats and sort a payments inbox like the one your email landed in. Only the inbox is scored.",
+      "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. First you're on the red team: look at what's public about Brightwell and its supplier Harlow Packaging, then write one email to Adaeze, Brightwell's finance manager, that looks as if it came from Harlow. Then you swap seats and sort a payments inbox like the one your email landed in. Only the inbox is scored.",
       "flipHeading": "Now it lands on you",
-      "flipIntro": "This is the email you just sent, as Brightwell's accounts payable team would see it. The lines picked out below are what make it believable.",
-      "flipDefenderLine": "Tom in accounts payable opened it between two invoices, with the payment run due at three. It looked like Harlow, so he started updating the bank details. People who fall for messages like this are not stupid: this one was built to look right.",
+      "flipIntro": "This is the email you just sent, as Adaeze, Brightwell's finance manager, would see it. The lines picked out below are what make it believable.",
+      "flipDefenderLine": "Adaeze reads it between the morning's invoices, with the payment run due at three. Derek's name is on it and the invoice number is real, so changing the payee details looks like the job in front of her. Acting on a message built this carefully is not carelessness; it was made to pass for the real thing.",
       "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives in a payments inbox, and you're the one reading it.",
-      "noBlameLine": "Nobody is marked down for a miss here. Every one of these messages was built to look right, and the people who act on messages like them are busy, not careless.",
+      "noBlameLine": "Nobody is marked down for a miss here. Every one of these was written by someone whose job is making it look right, and anyone working at pace can act on one.",
       "mondayCard": "On Monday: if an email asks you to change bank details or to pay in a hurry, don't reply and don't use any number in the email. Ring the person on a number you already hold, then report the email the way your organisation asks you to.",
       "defendOnly": "You went straight to the inbox this time. These messages were written by people whose job is to make them look right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine."
     },

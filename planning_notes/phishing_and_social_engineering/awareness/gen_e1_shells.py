@@ -158,6 +158,10 @@ def defend_only():
     s['outcome']['setGlobalPrefix'] = prefix
     strings = copy.deepcopy(EP['strings'])
     strings['brief'] = EP['_defendOnly']['brief']
+    # m27: the defend-only runner never shows the flip, so drop its dead strings.
+    for k in ('flipHeading', 'flipIntro', 'flipDefenderLine', 'flipNoSend',
+              'flipMissed', 'flipPageIntro', 'flipCallIntro'):
+        strings.pop(k, None)
     ep = {
         'id': ep_id, **brand_block(),
         'variant': 'defendOnly',
@@ -244,7 +248,7 @@ def check(pair, stage):
     first, second = (letters[0], letters[1])
     if stage == 'pre':
         name = f'Payments inbox check: before ({letters})'
-        brief = (f"The first of two short checks for finance staff at Brightwell Foods, a fictional company (pair {letters}, form {first}). "
+        brief = ("The first of two short checks for finance staff at Brightwell Foods, a fictional company. "
                  "Ten messages from a payments inbox: decide what to do with each one. Your result is saved so the second check can compare with it.")
         aim = ('first_check_aim', 'Do the first check', 'Sort ten messages at the training kiosk.')
         task = ('finish_check', 'Finish the first check')
@@ -256,7 +260,7 @@ def check(pair, stage):
         ending = success_screen('First check done', 'Your result is saved, ready for the second check to compare with.')
     else:
         name = f'Payments inbox check: after ({letters})'
-        brief = (f"The second of two short checks for finance staff at Brightwell Foods, a fictional company (pair {letters}, form {second}). "
+        brief = ("The second of two short checks for finance staff at Brightwell Foods, a fictional company. "
                  "Ten new messages from a payments inbox. If you took the first check, the end screen shows how the two compare.")
         aim = ('second_check_aim', 'Do the second check', 'Sort ten messages at the training kiosk.')
         task = ('finish_check', 'Finish the second check')

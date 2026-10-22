@@ -1,7 +1,7 @@
 {
   "scenario_id": "awareness_pre_hr_ab",
   "scenario_name": "Recruitment inbox check: before (AB)",
-  "scenario_brief": "The first of two short checks for HR and recruitment staff at Tarrowby Logistics, a fictional company (pair AB, form A). Ten emails from the Tarrowby recruitment inbox: applications, CVs and messages from colleagues and agencies. Decide what to do with each one. Your result is saved so the second check can compare with it.",
+  "scenario_brief": "The first of two short checks for HR and recruitment staff at Tarrowby Logistics, a fictional company. Ten emails from the Tarrowby recruitment inbox: applications, CVs and messages from colleagues and agencies. Decide what to do with each one. Your result is saved so the second check can compare with it.",
   "endGoal": "Sort the ten emails at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -274,7 +274,7 @@
                 "reply_to_differs"
               ],
               "perFlagNote": {
-                "senderAuth": "SPF and DMARC both failed for kettlewick.example: the agency's own servers didn't send this",
+                "senderAuth": "Kettlewick's own mail system didn't send this; it only looks as though Roseanne did.",
                 "reply_to_differs": "Replies go to roseanne.kettlewick@inboxly.example, not to Roseanne's Kettlewick address"
               },
               "headerNote": "Open the details: the From shows Roseanne's real address, but the checks failed and the reply-to points somewhere else.",
@@ -321,8 +321,8 @@
             "links": [
               {
                 "id": "cv",
-                "text": "careers.tarrowbey.example/cv/5520",
-                "destination": "https://careers.tarrowbey.example/cv/5520"
+                "text": "careers-tarrowby.example/cv/5520",
+                "destination": "https://careers-tarrowby.example/cv/5520"
               }
             ],
             "auth": {
@@ -339,11 +339,11 @@
                 "attachmentPlausible"
               ],
               "perFlagNote": {
-                "lookalike_domain": "Read it slowly: tarrowbey has an extra e. Tarrowby's own sites end in tarrowby.example",
+                "lookalike_domain": "Read it slowly: careers-tarrowby.example isn't tarrowby.example. Tarrowby's own sites end in tarrowby.example; an added word with a hyphen makes it someone else's",
                 "attachmentPlausible": "It says the CV is attached, but nothing is, and the link that replaces it wants you to sign in"
               },
               "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password.",
-              "reportReply": "Thanks. tarrowbey.example isn't ours, and we've blocked it."
+              "reportReply": "Thanks. careers-tarrowby.example isn't ours, and we've blocked it."
             }
           },
           {
@@ -374,11 +374,11 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "SPF failed because the recruitment system's mail service sent it for Tarrowby, but DKIM passed and DMARC passed for tarrowby.example, the real domain.",
+                "senderAuth": "The recruitment system sends on Tarrowby's behalf through an outside service, so one automatic sender check didn't line up, but the message still comes from Tarrowby's real domain.",
                 "linkCredible": "The link goes where it says, to Tarrowby's own recruitment system.",
                 "default": "The recruitment system's usual notice, linking to Tarrowby's own address."
               },
-              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through a service often breaks SPF while DKIM still passes."
+              "headerNote": "One check failing on its own is a clue, not proof. Mail sent through an outside service often trips one of these checks while the rest still pass."
             }
           },
           {

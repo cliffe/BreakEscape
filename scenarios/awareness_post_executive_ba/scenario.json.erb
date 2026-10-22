@@ -1,7 +1,7 @@
 {
   "scenario_id": "awareness_post_executive_ba",
   "scenario_name": "PA inbox check: after (BA)",
-  "scenario_brief": "The second of two short checks for executive assistants and PAs at Merrin & Sallow Architects, a fictional practice (pair BA, form A). Ten new emails and voicemails from a PA's inbox, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
+  "scenario_brief": "The second of two short checks for executive assistants and PAs at Merrin & Sallow Architects, a fictional practice. Ten new emails and voicemails from a PA's inbox, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
   "endGoal": "Work through the ten items at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -127,38 +127,6 @@
             }
           },
           {
-            "id": "ea_larkspur_bank",
-            "from": {
-              "name": "Larkspur Travel",
-              "address": "accounts@larkspur-travel.example"
-            },
-            "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Milan booking LT-5528: our bank details have changed",
-            "time": "08:40",
-            "body": "Dear Tomás,\nPlease note that we have moved to a new bank. Invoice LT-5528 for the partners' Milan trip should now be paid to:\nAccount name: Larkspur Travel Ltd\nAccount number ending 6150\nPlease update your records before payment.\nKind regards,\nLarkspur Travel Accounts",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "bounce.larkspur-travel.example",
-              "replyTo": "accounts@larkspur-travel.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "lookalike_domain",
-                "changed_bank_details"
-              ],
-              "perFlagNote": {
-                "lookalike_domain": "Larkspur's real domain is larkspurtravel.example. This is larkspur-travel.example, with an added hyphen",
-                "changed_bank_details": "New bank details on an open invoice is the commonest invoice-fraud move. The safe step is to ring Larkspur on the number you already hold"
-              },
-              "headerNote": "All three checks passed because the sender owns larkspur-travel.example. A pass tells you which domain sent it, not that it's Larkspur.",
-              "ifTrusted": "The Milan payment would go to an account the sender controls.",
-              "reportReply": "Thanks. Larkspur haven't changed bank, and that domain isn't theirs."
-            }
-          },
-          {
             "id": "ea_larkspur_invoice",
             "from": {
               "name": "Larkspur Travel",
@@ -166,7 +134,7 @@
             },
             "to": "tomas.carvalho@merrinsallow.example",
             "subject": "Invoice LT-5528: Milan, partners' trip",
-            "time": "09:10",
+            "time": "08:40",
             "body": "Dear Tomás,\nPlease find attached invoice LT-5528 for the partners' Milan trip, payable on the usual 30-day terms to the account on file.\nKind regards,\nLarkspur Travel",
             "attachments": [
               {
@@ -185,11 +153,45 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "SPF failed because Larkspur's booking system sends through its supplier's mail service, but DKIM and DMARC passed for larkspurtravel.example.",
+                "senderAuth": "Larkspur sends its invoices through a booking service rather than its own mail system, so one automatic sender check didn't line up. The address is still Larkspur's real domain, which is what matters.",
                 "attachmentPlausible": "An invoice PDF for a trip you booked is what you'd expect.",
                 "default": "Larkspur's real domain, a trip you booked, and payment to the account on file. Nothing has changed."
               },
-              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through another company's service often fails SPF while DKIM still passes."
+              "headerNote": "One check failing on its own is a clue, not proof. Mail sent through another company's service often trips one of these checks while the rest still pass."
+            }
+          },
+          {
+            "id": "ea_larkspur_bank",
+            "from": {
+              "name": "Larkspur Travel",
+              "address": "accounts@larkspur-travel.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Milan booking LT-5528: our bank details have changed",
+            "time": "09:10",
+            "body": "Dear Tomás,\nPlease note that we have moved to a new bank. Invoice LT-5528 for the partners' Milan trip should now be paid to:\nAccount name: Larkspur Travel Ltd\nAccount number ending 6150\nPlease update your records before payment.\nKind regards,\nLarkspur Travel Accounts",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.larkspur-travel.example",
+              "replyTo": "accounts@larkspur-travel.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "changed_bank_details",
+                "senderTrust"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "Larkspur's real domain is larkspurtravel.example. This is larkspur-travel.example, with an added hyphen",
+                "changed_bank_details": "New bank details on an open invoice is the commonest invoice-fraud move. The safe step is to ring Larkspur on the number you already hold",
+                "senderTrust": "The name says Larkspur, but the address is on larkspur-travel.example, which isn't Larkspur's"
+              },
+              "headerNote": "All three checks passed because the sender owns larkspur-travel.example. A pass tells you which domain sent it, not that it's Larkspur.",
+              "ifTrusted": "The Milan payment would go to an account the sender controls.",
+              "reportReply": "Thanks. Larkspur haven't changed bank, and that domain isn't theirs."
             }
           },
           {
@@ -283,7 +285,7 @@
                 "reply_to_differs"
               ],
               "perFlagNote": {
-                "senderAuth": "SPF and DMARC both failed for merrinsallow.example: the firm's own servers didn't send this",
+                "senderAuth": "Merrin & Sallow's own mail system didn't send this; it only looks as though Yasmin did",
                 "reply_to_differs": "Replies go to yasmin.chaudhry.finance@inboxly.example, not to Yasmin's work address"
               },
               "headerNote": "Open the details: the From shows Yasmin's real address, but the checks failed and the reply-to points somewhere else.",
@@ -345,12 +347,10 @@
             "truth": {
               "isPhish": true,
               "flags": [
-                "linkCredible",
-                "pretextRelevant"
+                "linkCredible"
               ],
               "perFlagNote": {
-                "linkCredible": "The link text names one site, but it really goes to speaker-portal-signin.example",
-                "pretextRelevant": "Nobody at Merrin & Sallow is speaking at Fennick Summit, so there's no reason for this to reach you"
+                "linkCredible": "The link text names one site, but it really goes to speaker-portal-signin.example"
               },
               "ifTrusted": "The page would ask for passport details and a sign-in, and the sender would keep both.",
               "reportReply": "Thanks. Nobody here is booked at that event, and the link went to a sign-in page that isn't theirs."

@@ -1,7 +1,7 @@
 {
   "scenario_id": "awareness_post_finance_ba",
   "scenario_name": "Payments inbox check: after (BA)",
-  "scenario_brief": "The second of two short checks for finance staff at Brightwell Foods, a fictional company (pair BA, form A). Ten new messages from a payments inbox. If you took the first check, the end screen shows how the two compare.",
+  "scenario_brief": "The second of two short checks for finance staff at Brightwell Foods, a fictional company. Ten new messages from a payments inbox. If you took the first check, the end screen shows how the two compare.",
   "endGoal": "Sort the ten messages at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -84,6 +84,7 @@
         "brief": "Ten messages from a Brightwell Foods payments inbox. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
         "stage": "post",
         "scoringProfile": "awareness",
+        "verifyVerdict": true,
         "feedbackMode": "end",
         "headerPanel": "collapsed",
         "glossary": "closed",
@@ -125,38 +126,6 @@
             }
           },
           {
-            "id": "fa_pennine_bank",
-            "from": {
-              "name": "Pennine Oat Mills Accounts",
-              "address": "accounts@pennine-oatmills.example"
-            },
-            "to": "payments@brightwellfoods.example",
-            "subject": "Change of bank account from 1 November",
-            "time": "08:32",
-            "body": "Dear Accounts Payable,\nFrom 1 November our bank account has changed. Please update your records and make all future payments, including invoice POM-5512, to the account below.\nAccount name: Pennine Oat Mills Ltd\nAccount number ending 3048\nKind regards,\nBryony Thwaite\nCredit Control",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "bounce.pennine-oatmills.example",
-              "replyTo": "accounts@pennine-oatmills.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "lookalike_domain",
-                "changed_bank_details"
-              ],
-              "perFlagNote": {
-                "lookalike_domain": "Pennine's real domain is pennineoatmills.example; this one adds a hyphen",
-                "changed_bank_details": "A new bank account for future payments is the change invoice fraud depends on. Ring Pennine on the number in your supplier file"
-              },
-              "headerNote": "All three checks passed because the sender owns pennine-oatmills.example. A pass tells you which domain sent it, not that it's Pennine's.",
-              "ifTrusted": "Pennine's next payments would go to the sender's account until someone noticed Pennine hadn't been paid.",
-              "reportReply": "Thanks. That isn't Pennine's domain. We've rung them on the number on file: their bank hasn't changed."
-            }
-          },
-          {
             "id": "fa_pennine_invoice",
             "from": {
               "name": "Pennine Oat Mills",
@@ -183,10 +152,44 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "SPF failed because it came through Pennine's billing service, but DKIM passed and DMARC passed for pennineoatmills.example, their real domain.",
+                "senderAuth": "It came in through Pennine's billing service rather than their main mail server, which is why one automatic sender check didn't line up, but the message still proves it came from pennineoatmills.example, their real domain.",
                 "default": "Pennine's real domain, a purchase order Brightwell raised, and no change to how you pay them."
               },
-              "headerNote": "One failed check on its own is a clue, not proof. Billing services and forwarding often break SPF while DKIM still passes."
+              "headerNote": "One check not lining up, on its own, is a clue rather than proof. Billing services and forwarded mail often trip it even when the message is genuine."
+            }
+          },
+          {
+            "id": "fa_pennine_bank",
+            "from": {
+              "name": "Pennine Oat Mills Accounts",
+              "address": "accounts@pennine-oatmills.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Change of bank account from 1 November",
+            "time": "08:32",
+            "body": "Dear Accounts Payable,\nFrom 1 November our bank account has changed. Please update your records and make all future payments, including invoice POM-5512, to the account below.\nAccount name: Pennine Oat Mills Ltd\nAccount number ending 3048\nKind regards,\nBryony Thwaite\nCredit Control",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.pennine-oatmills.example",
+              "replyTo": "accounts@pennine-oatmills.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "lookalike_domain",
+                "changed_bank_details"
+              ],
+              "perFlagNote": {
+                "senderTrust": "This isn't the address Pennine's accounts team use, so it isn't really who it says it is",
+                "lookalike_domain": "Pennine's real domain is pennineoatmills.example; this one adds a hyphen",
+                "changed_bank_details": "A new bank account for future payments is the change invoice fraud depends on. Ring Pennine on the number in your supplier file"
+              },
+              "headerNote": "These pass because whoever owns pennine-oatmills.example really did send it. That proves the sending domain, not that the domain belongs to Pennine.",
+              "ifTrusted": "Pennine's next payments would go to the sender's account until someone noticed Pennine hadn't been paid.",
+              "reportReply": "Thanks. That isn't Pennine's domain. We've rung them on the number on file: their bank hasn't changed."
             }
           },
           {
@@ -279,10 +282,10 @@
                 "reply_to_differs"
               ],
               "perFlagNote": {
-                "senderAuth": "SPF and DMARC both failed for brightwellfoods.example: Brightwell's own servers didn't send this",
+                "senderAuth": "Brightwell's own mail system didn't send this, even though the From line shows a Brightwell address",
                 "reply_to_differs": "Replies go to t.reilly.work@inboxly.example, not to Tom's Brightwell address"
               },
-              "headerNote": "Open the details: the From shows Tom's real address, but the checks failed and the reply-to points somewhere else.",
+              "headerNote": "Open the details: the From line shows Tom's real address, but the message didn't come from Brightwell's mail system, and a reply would go to a private inbox instead.",
               "ifTrusted": "Remittance advices list suppliers, amounts and bank details: everything needed to write a convincing bank-change email.",
               "reportReply": "Thanks. Tom is in the office today and didn't send it."
             }
@@ -340,12 +343,10 @@
             "truth": {
               "isPhish": true,
               "flags": [
-                "linkCredible",
-                "pretextRelevant"
+                "linkCredible"
               ],
               "perFlagNote": {
-                "linkCredible": "The link text says merrowlogistics.example, but it goes to docshare-login.example",
-                "pretextRelevant": "Brightwell has no purchase order with Merrow Logistics, so there's no invoice to expect"
+                "linkCredible": "The link text says merrowlogistics.example, but it goes to docshare-login.example"
               },
               "ifTrusted": "The link opens a sign-in page that collects your email password.",
               "reportReply": "Thanks. We don't use Merrow, and the link went to a sign-in page we've now blocked."

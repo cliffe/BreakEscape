@@ -361,6 +361,12 @@ def defend_only(ekey):
     s['outcome']['setGlobalPrefix'] = prefix
     strings = copy.deepcopy(EP['strings'])
     strings['brief'] = EP['_defendOnly']['brief']
+    # m27: a defend-only shell never shows the flip, so drop the flip-only strings
+    # (a later author could otherwise wire them up). Keep brief, noBlameLine, mondayCard,
+    # defendOnly, defendIntro and the debrief panels.
+    for k in ('flipHeading', 'flipIntro', 'flipDefenderLine', 'flipNoSend',
+              'flipMissed', 'flipPageIntro', 'flipCallIntro'):
+        strings.pop(k, None)
     strings.update(panels(ekey, frag, EP))
     defend = strip_private(copy.deepcopy(EP['defend']))
     defend['stage'] = None
@@ -438,7 +444,7 @@ def check(ekey, pair, stage):
     company = cfg['company_line']
     if stage == 'pre':
         name = f"{c['name']}: before ({letters})"
-        brief = (f"The first of two short checks for {cfg['role_label']} at {company} (pair {letters}, form {first}). "
+        brief = (f"The first of two short checks for {cfg['role_label']} at {company}. "
                  f"{c['items_pre']} Decide what to do with each one. Your result is saved so the second check can compare with it.")
         aim = ('first_check_aim', 'Do the first check', c['aim_desc'])
         task = ('finish_check', 'Finish the first check')
@@ -449,7 +455,7 @@ def check(ekey, pair, stage):
         obs = c['kiosk'].format(nth='first')
     else:
         name = f"{c['name']}: after ({letters})"
-        brief = (f"The second of two short checks for {cfg['role_label']} at {company} (pair {letters}, form {second}). "
+        brief = (f"The second of two short checks for {cfg['role_label']} at {company}. "
                  f"{c['items_post']} If you took the first check, the end screen shows how the two compare.")
         aim = ('second_check_aim', 'Do the second check', c['aim_desc'])
         task = ('finish_check', 'Finish the second check')

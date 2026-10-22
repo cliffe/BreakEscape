@@ -51,7 +51,7 @@
         {
           "id": "e6_parcel_fee",
           "kind": "sms",
-          "from": { "address": "07700 900583" },
+          "from": { "address": "07700 900583 (not in your contacts)" },
           "time": "10:02",
           "body": "Parceline: we couldn't deliver your parcel. A £1.45 redelivery fee is due by 6pm today or it goes back to the sender: {{link:fee}}",
           "links": [ { "id": "fee", "text": "shrtn.example/Pk3x9", "destination": "https://parceline-redelivery.example/fee" } ],
@@ -61,14 +61,14 @@
             "perFlagNote": {
               "smish_shortlink_urgency": "A text from a number you don't have saved, a shortened link that hides where it goes, and 'by 6pm today'. A small fee is the hook: the page behind it asks for your card details, not £1.45"
             },
-            "ifTrusted": "The link opens a payment page that collects your card number. The fee is never the point; the card details are.",
+            "ifTrusted": "The link opens a payment page that collects your card number. The tiny fee is just the hook to get you onto it.",
             "reportReply": "Thanks. That link went to a card-collecting page, not a courier. We've added the number to the block list for Tarrowby phones."
           }
         },
         {
           "id": "e6_shift_moved",
           "kind": "sms",
-          "from": { "name": "Shauna Lofthouse (Transport)", "address": "07700 900412" },
+          "from": { "name": "Shauna Lofthouse (Transport)", "address": "Shauna (mobile), in your contacts" },
           "time": "10:15",
           "earlier": [
             { "text": "Thanks for covering Tuesday. Shauna", "time": "Mon 16:40" }
@@ -86,11 +86,11 @@
         {
           "id": "e6_parking_permit",
           "kind": "qr",
-          "subject": "Staff parking permits: register by Friday",
+          "subject": "Staff car park: set up contactless payment",
           "time": "10:20",
-          "body": "All staff vehicles need a new 2027 permit. Scan to register your number plate and pay the £5 admin fee. Unregistered vehicles may be ticketed from Monday.",
+          "body": "The staff car park is switching to contactless payment from Monday. Scan to set up your vehicle and card. Vehicles not set up may be clamped.",
           "qr": {
-            "destination": "https://tarrowby-parking.example/permit",
+            "destination": "https://tarrowby-parking.example/pay",
             "location": "Taped to the barrier at the staff car park entrance",
             "caption": "Tarrowby Facilities"
           },
@@ -98,11 +98,11 @@
             "isPhish": true,
             "flags": ["unexpected_qr", "lookalike_domain"],
             "perFlagNote": {
-              "unexpected_qr": "A taped-on notice with a code and a fee is exactly where you can't see the address before you scan. Anyone can stick a notice to a barrier",
+              "unexpected_qr": "A taped-on notice with a code and a payment set-up is exactly where you can't see the address before you scan. Anyone can stick a notice to a barrier",
               "lookalike_domain": "The code goes to tarrowby-parking.example. Tarrowby's own pages are on tarrowby.example; the added word makes it a different site"
             },
-            "ifTrusted": "The page would take your card details for a permit that doesn't exist, and your number plate to make the next message look real.",
-            "reportReply": "Thanks. Facilities didn't put that up, and staff parking is free. We've taken the notices down and checked the other gates."
+            "ifTrusted": "The page would take your card details and your number plate. A change to how you park would not reach you first as a code taped to a barrier.",
+            "reportReply": "Thanks. Facilities didn't put that up, and there's no contactless parking scheme. We've taken the notices down and checked the other gates."
           }
         },
         {
@@ -122,13 +122,13 @@
             "whyFine": {
               "unexpected_qr": "A QR code is fine when you'd expect one, it comes from someone you know, and it goes to Tarrowby's own domain. This one asks for no password and no card.",
               "lookalike_domain": "forms.tarrowby.example is a page on Tarrowby's real domain; the part before tarrowby.example is just the name of the page.",
-              "default": "Printed table cards in the canteen, signed by the facilities manager, going to forms.tarrowby.example and asking nothing personal."
+              "default": "Printed table cards in the canteen, put up by the facilities manager you know, and the code goes to Tarrowby's own forms page. It asks for no password and no card."
             }
           }
         },
         {
           "id": "e6_mfa_scan",
-          "_worked": "The worked item for this set (F = 3). Report or Verify + all three = 100; Report + two = 87; Delete + all three = 70; Trust + none = 0.",
+          "_worked": "The worked item for this set (F = 4). Report or Verify + all four = 100; Report + three = 87 (rounded); Delete + all four = 70; Trust + none = 0.",
           "from": { "name": "Tarrowby IT Service Desk", "address": "it-servicedesk@tarrowbey.example" },
           "to": "all-staff@tarrowby.example",
           "subject": "Action needed: scan to keep your work sign-in",
@@ -138,8 +138,9 @@
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.tarrowbey.example", "replyTo": "it-servicedesk@tarrowbey.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["unexpected_qr", "lookalike_domain", "urgencyCalibrated"],
+            "flags": ["senderTrust", "unexpected_qr", "lookalike_domain", "urgencyCalibrated"],
             "perFlagNote": {
+              "senderTrust": "It signs off as the Tarrowby IT Service Desk, but the address is it-servicedesk@tarrowbey.example, not Tarrowby's own domain. The name on it doesn't match where it came from",
               "unexpected_qr": "A code in an email does what a link does, but you can't read where it goes, and it moves you onto your phone, away from the checks on your work mail",
               "lookalike_domain": "The sender is tarrowbey.example, with an extra e. Tarrowby's IT desk writes from tarrowby.example",
               "urgencyCalibrated": "'Midnight tonight' and 'your account will be locked' are there to make you scan before you think"
@@ -151,7 +152,7 @@
         {
           "id": "e6_fuel_card_offer",
           "kind": "sms",
-          "from": { "address": "07700 900702" },
+          "from": { "address": "07700 900702 (not in your contacts)" },
           "time": "10:40",
           "body": "FUELWISE: as a professional driver you've been picked for a free £250 fuel card. Claim before midnight: {{link:claim}} Reply STOP to opt out",
           "links": [ { "id": "claim", "text": "shrtn.example/Fw25x", "destination": "https://fuelwise-rewards.example/claim" } ],
@@ -172,10 +173,11 @@
       "id": "mobile_form_a",
       "_form": "Mobile parallel form A. Authored as pre; the BA check pair launches it as post (minigameData.stage). Item n here matches item n in mobile_form_b; the table is in _formPairing above.",
       "title": "Work phone check",
-      "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
       "stage": "pre",
       "pairedWith": "mobile_form_b",
       "scoringProfile": "awareness",
+      "verifyVerdict": true,
       "feedbackMode": "end",
       "headerPanel": "collapsed",
       "glossary": "closed",
@@ -284,10 +286,10 @@
             "isPhish": true,
             "flags": ["senderAuth", "reply_to_differs"],
             "perFlagNote": {
-              "senderAuth": "SPF and DMARC both failed for tarrowby.example: Tarrowby's own servers didn't send this",
+              "senderAuth": "Tarrowby's own mail system didn't send this, even though the From line shows a real Tarrowby address",
               "reply_to_differs": "Replies go to shauna.planning@quickpost-mail.example, not to Shauna's Tarrowby address"
             },
-            "headerNote": "Open the details: the From shows Shauna's real address, but the checks failed and the reply-to points somewhere else.",
+            "headerNote": "Open the details: the From shows Shauna's real address, but Tarrowby's mail system didn't send it, and a reply would go to an outside inbox.",
             "ifTrusted": "A list of drivers' mobile numbers is exactly what a run of fake texts needs.",
             "reportReply": "Thanks. Shauna is in Shipley today and didn't send it. There is no new rota app."
           }
@@ -322,10 +324,10 @@
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "senderAuth": "SPF failed because the rota service, ShiftPlanner, sends it for Tarrowby, but DKIM passed and DMARC passed for tarrowby.example.",
+              "senderAuth": "One of the mail checks didn't line up because the rota service, ShiftPlanner, sends this for Tarrowby, but the rest confirm it really is from tarrowby.example.",
               "default": "Tarrowby's real domain, nothing to click, and it sends you to the staff app and to a person you know."
             },
-            "headerNote": "One failed check on its own is a clue, not proof. Services that send mail for a company often break SPF while DKIM still passes."
+            "headerNote": "One check not lining up on its own is a clue, not proof. A service that sends mail for a company often trips one check while the rest still confirm the domain."
           }
         },
         {
@@ -365,10 +367,11 @@
       "id": "mobile_form_b",
       "_form": "Mobile parallel form B. Authored as post; the BA check pair launches it as pre (minigameData.stage). Item n here matches item n in mobile_form_a; the table is in _formPairing above.",
       "title": "Work phone check",
-      "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
       "stage": "post",
       "pairedWith": "mobile_form_a",
       "scoringProfile": "awareness",
+      "verifyVerdict": true,
       "feedbackMode": "end",
       "headerPanel": "collapsed",
       "glossary": "closed",
@@ -477,10 +480,10 @@
             "isPhish": true,
             "flags": ["senderAuth", "reply_to_differs"],
             "perFlagNote": {
-              "senderAuth": "SPF and DMARC both failed for tarrowby.example: Tarrowby's own servers didn't send this",
+              "senderAuth": "Tarrowby's own mail system didn't send this, even though the From line shows a real Tarrowby address",
               "reply_to_differs": "Replies go to jun.w.hr@inboxly.example, not to Jun's Tarrowby address"
             },
-            "headerNote": "Open the details: the From shows Jun's real address, but the checks failed and the reply-to points somewhere else.",
+            "headerNote": "Open the details: the From shows Jun's real address, but Tarrowby's mail system didn't send it, and a reply would go to an outside inbox.",
             "ifTrusted": "New drivers' mobile numbers would go to someone planning to text them, at the point they know least about how Tarrowby works.",
             "reportReply": "Thanks. Jun is in the office and didn't send it. There is no induction app."
           }
@@ -515,10 +518,10 @@
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "senderAuth": "SPF failed because the payroll service, PaySuite, sends it for Tarrowby, but DKIM passed and DMARC passed for tarrowby.example.",
+              "senderAuth": "One of the mail checks didn't line up because the payroll service, PaySuite, sends this for Tarrowby, but the rest confirm it really is from tarrowby.example.",
               "default": "Tarrowby's real domain, nothing to click, and it sends you to the staff app and to a named person on an internal extension."
             },
-            "headerNote": "One failed check on its own is a clue, not proof. Services that send mail for a company often break SPF while DKIM still passes."
+            "headerNote": "One check not lining up on its own is a clue, not proof. A service that sends mail for a company often trips one check while the rest still confirm the domain."
           }
         },
         {
@@ -563,12 +566,12 @@
     "defend": { "setId": "e6_phone_messages", "reportAlwaysVisible": true },
     "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
     "strings": {
-      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier in West Yorkshire. First you're on the red team: look at what's public about Tarrowby, then write one message aimed at Tarrowby staff on their phones, choosing the story and whether it arrives as a text or as a printed notice with a QR code. Then you swap seats and go through what's waiting on a Tarrowby work phone. Only the phone is scored.",
+      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier in West Yorkshire. First you're on the red team: look at what's public about Tarrowby, then write one email to depot staff, as Facilities, asking them to scan a code. Then you swap seats and go through what's waiting on a Tarrowby work phone. Only the phone is scored.",
       "flipHeading": "Now it lands on you",
-      "flipIntro": "This is the message you just wrote, as a Tarrowby driver would see it on their phone. The parts picked out below are what make it believable.",
-      "flipDefenderLine": "Bogdan read it in his cab at the Halifax drop, between unloading and his next slot. On a small screen it looked like something Tarrowby would send, so he tapped through. People who fall for messages like this are not stupid: this one was built to look right.",
+      "flipIntro": "This is the message you just wrote, as Kaylee would see it on her phone. The parts picked out below are what make it believable.",
+      "flipDefenderLine": "Kaylee was in the yard with a pallet truck when it buzzed. It named the parking permit she'd already been told to register for, so scanning it felt like getting a job off her list. Nobody who scans one of these is being careless: it was built to read as the notice she was waiting for.",
       "flipNoSend": "Your message didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives on a Tarrowby work phone, and you're the one reading it.",
-      "noBlameLine": "Nobody is marked down for a miss here. Every one of these was built to look right, and the people who tap on them are reading a small screen between jobs, not being careless.",
+      "noBlameLine": "Nobody is marked down for a miss here. These were built to look like Tarrowby's own messages, and they land on a phone you're reading between jobs. Catching them is a habit, not a test of how clever you are.",
       "mondayCard": "On Monday: if a text, a notice or an email wants you to scan a code or tap a short link to pay, sign in or confirm something, stop. Don't reply, not even STOP. Open the app or site the way you normally would, or ring the sender on a number you already hold, then report the message the way your organisation asks you to.",
       "defendOnly": "You went straight to the phone this time. These messages were written by people whose job is to make them look right, and people who fall for messages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine."
     },

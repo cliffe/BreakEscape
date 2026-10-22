@@ -27,12 +27,13 @@
       "text": "Ravinder Sandhu is Brightwell Foods' chief executive and often speaks at food-industry events.",
       "subject": "ravinder", "source": "blk_ceo",
       "provides": [
-        { "type": "name", "about": "sender", "value": "sandhu_full", "label": "Ravinder Sandhu", "kind": "distinctive" }
+        { "type": "name", "about": "sender", "value": "ravinder_full", "label": "Ravinder Sandhu", "kind": "distinctive" },
+        { "type": "address", "value": "ravinder_address", "label": "ravinder.sandhu@brightwellfoods.example", "kind": "distinctive" }
       ],
       "reduceNote": "Recordings of a leader speaking in public are the raw material for a cloned voice; the voice is no longer private once it is on a conference stage."
     },
     "brightwell_ceo_travel": {
-      "text": "Ravinder Sandhu posted that he is away at a trade show this week with a packed schedule.",
+      "text": "Ravinder Sandhu posted that he is away in Leeds this week visiting a supplier site, with a packed schedule.",
       "subject": "ravinder", "source": "post_tradeshow",
       "provides": [],
       "reduceNote": "A post that puts a leader out of the office with no time to talk gives a caller a believable reason to be rushed and hard to reach back."
@@ -54,8 +55,9 @@
   },
 
   "templates": {
-    "caller_ceo": { "part": "from", "text": "Incoming call: {caller_name} (chief executive)",
-      "slots": [ { "id": "caller_name", "type": "name", "about": "sender", "label": "who the call sounds like" } ] },
+    "caller_ceo": { "part": "from", "text": "{sender_name} <{sender_address}>",
+      "slots": [ { "id": "sender_name", "type": "name", "about": "sender", "label": "whose voice the call uses" },
+                 { "id": "sender_address", "type": "address", "label": "the line it comes from" } ] },
     "greet_rushed": { "part": "greeting", "text": "Tom, it's me, I've only got a minute between sessions.", "slots": [] },
     "pretext_ceo_payment": { "part": "pretext",
       "text": "I need {payment} pushed through today while I'm off-site. It's signed off at my end, I just can't get to a desk to do it myself.",
@@ -112,7 +114,7 @@
       { "id": "brightwell_e7_social", "name": "Friendface", "url": "friendface.example", "type": "social",
         "profiles": [
           { "person": "ravinder", "posts": [
-            { "id": "post_tradeshow", "text": "At the trade show all week — back to back, so bear with me on email. Great to see so many suppliers here.",
+            { "id": "post_tradeshow", "text": "In Leeds all week visiting sites, back to back, so bear with me on email. Good to see the teams up here.",
               "fact": "brightwell_ceo_travel" },
             { "id": "post_ravinder_other", "text": "Twenty-five years of the chilled range this month. Proud of the whole team." } ] } ] }
     ]
@@ -152,7 +154,7 @@
         "pretextRelevant": { "pass": "✓ Ties to a payment he is already expecting to release", "fail": "No payment he can match this to, so no reason to act on it.", "redFlag": null },
         "urgencyCalibrated": { "pass": "✓ The pressure reads as believable" }
       },
-      "replies": { "landed": "Of course — I'll release it now and keep it quiet until you're back." },
+      "replies": { "landed": "Of course, I'll release it now and keep it quiet until you're back." },
       "hints": [
         "Whose voice would a clerk in accounts payable act on without a second thought?",
         "What payment is already due this week, so the request sounds like normal business?",

@@ -1,7 +1,7 @@
 {
   "scenario_id": "awareness_post_executive_ab",
   "scenario_name": "PA inbox check: after (AB)",
-  "scenario_brief": "The second of two short checks for executive assistants and PAs at Merrin & Sallow Architects, a fictional practice (pair AB, form B). Ten new emails and voicemails from a PA's inbox, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
+  "scenario_brief": "The second of two short checks for executive assistants and PAs at Merrin & Sallow Architects, a fictional practice. Ten new emails and voicemails from a PA's inbox, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
   "endGoal": "Work through the ten items at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -127,38 +127,6 @@
             }
           },
           {
-            "id": "eb_ropewalk_bank",
-            "from": {
-              "name": "The Ropewalk Events",
-              "address": "accounts@theropewalk-events.example"
-            },
-            "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Booking RW-1907: please use our new bank details",
-            "time": "08:40",
-            "body": "Dear Tomás,\nWe have changed banks. The balance on booking RW-1907 (Julian Sallow's talk and stand) should now be paid to:\nAccount name: The Ropewalk Ltd\nAccount number ending 2274\nPlease update your records before you pay.\nKind regards,\nThe Ropewalk Accounts",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "bounce.theropewalk-events.example",
-              "replyTo": "accounts@theropewalk-events.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "lookalike_domain",
-                "changed_bank_details"
-              ],
-              "perFlagNote": {
-                "lookalike_domain": "The Ropewalk's real domain is theropewalk.example. This is theropewalk-events.example, with an added word",
-                "changed_bank_details": "New bank details on an open booking is the commonest invoice-fraud move. The safe step is to ring the venue on the number you already hold"
-              },
-              "headerNote": "All three checks passed because the sender owns theropewalk-events.example. A pass tells you which domain sent it, not that it's the venue.",
-              "ifTrusted": "The booking payment would go to an account the sender controls.",
-              "reportReply": "Thanks. The Ropewalk haven't changed bank, and that domain isn't theirs."
-            }
-          },
-          {
             "id": "eb_ropewalk_booking",
             "from": {
               "name": "The Ropewalk",
@@ -166,7 +134,7 @@
             },
             "to": "tomas.carvalho@merrinsallow.example",
             "subject": "Booking RW-1907 confirmed: Julian Sallow",
-            "time": "09:10",
+            "time": "08:40",
             "body": "Dear Tomás,\nThis confirms booking RW-1907: Julian Sallow's talk on Thursday at 14:00 and a stand in the main hall. Our invoice follows on the usual terms, payable to the account on file.\nKind regards,\nThe Ropewalk Events Team",
             "attachments": [
               {
@@ -185,11 +153,45 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "SPF failed because the venue's booking system sends through its supplier's mail service, but DKIM and DMARC passed for theropewalk.example.",
+                "senderAuth": "The Ropewalk sends its confirmations through a booking service rather than its own mail system, so one automatic sender check didn't line up. The address is still the venue's real domain, which is what matters.",
                 "attachmentPlausible": "A booking confirmation PDF for a booking you made is what you'd expect.",
                 "default": "The venue's real domain, a booking you made, and payment to the account on file. Nothing has changed."
               },
-              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through another company's service often fails SPF while DKIM still passes."
+              "headerNote": "One check failing on its own is a clue, not proof. Mail sent through another company's service often trips one of these checks while the rest still pass."
+            }
+          },
+          {
+            "id": "eb_ropewalk_bank",
+            "from": {
+              "name": "The Ropewalk Events",
+              "address": "accounts@theropewalk-events.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Booking RW-1907: please use our new bank details",
+            "time": "09:10",
+            "body": "Dear Tomás,\nWe have changed banks. The balance on booking RW-1907 (Julian Sallow's talk and stand) should now be paid to:\nAccount name: The Ropewalk Ltd\nAccount number ending 2274\nPlease update your records before you pay.\nKind regards,\nThe Ropewalk Accounts",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.theropewalk-events.example",
+              "replyTo": "accounts@theropewalk-events.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "changed_bank_details",
+                "senderTrust"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "The Ropewalk's real domain is theropewalk.example. This is theropewalk-events.example, with an added word",
+                "changed_bank_details": "New bank details on an open booking is the commonest invoice-fraud move. The safe step is to ring the venue on the number you already hold",
+                "senderTrust": "The name says The Ropewalk, but the address is on theropewalk-events.example, which isn't the venue's"
+              },
+              "headerNote": "All three checks passed because the sender owns theropewalk-events.example. A pass tells you which domain sent it, not that it's the venue.",
+              "ifTrusted": "The booking payment would go to an account the sender controls.",
+              "reportReply": "Thanks. The Ropewalk haven't changed bank, and that domain isn't theirs."
             }
           },
           {
@@ -283,7 +285,7 @@
                 "reply_to_differs"
               ],
               "perFlagNote": {
-                "senderAuth": "SPF and DMARC both failed for merrinsallow.example: the firm's own servers didn't send this",
+                "senderAuth": "Merrin & Sallow's own mail system didn't send this; it only looks as though Thandiwe did",
                 "reply_to_differs": "Replies go to thandiwe.moyo.office@quickpost-mail.example, not to Thandiwe's work address"
               },
               "headerNote": "Open the details: the From shows Thandiwe's real address, but the checks failed and the reply-to points somewhere else.",
@@ -345,12 +347,10 @@
             "truth": {
               "isPhish": true,
               "flags": [
-                "linkCredible",
-                "pretextRelevant"
+                "linkCredible"
               ],
               "perFlagNote": {
-                "linkCredible": "The link text names the courier's tracking page, but it really goes to swiftlane-pay.example",
-                "pretextRelevant": "The firm has never used SwiftLane and isn't expecting a parcel from abroad, so there's no reason for this to reach you"
+                "linkCredible": "The link text names the courier's tracking page, but it really goes to swiftlane-pay.example"
               },
               "ifTrusted": "The payment page would take card details, and the sender would keep them.",
               "reportReply": "Thanks. We don't use that courier and no parcel is held."
