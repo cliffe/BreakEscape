@@ -69,19 +69,43 @@ if (!only || only === 'A') {
     L(`sources whose removal strands an unjudged suspect (${e.modes} verdict combinations, baseline ${e.base} already stranding)${v.favourAfterVerdict === false ? ' [a verdict ends the favour]' : ''}:`);
     for (const [id, x] of Object.entries(e.out)) L(`  ${id}: ${x.n - e.base > 0 ? '+' + (x.n - e.base) + ' combinations' : 'never'}${x.n > e.base && x.ex ? ' e.g. ' + x.ex : ''}`);
   }
-  // L-96: the glass lost (an excellent lift logged as unidentified): no ring, so the favour is never offered
+  // L-96 / S4: the glass has two outcomes. 'glass' = identified lift (ring); 'glass_smudge' = an excellent lift logged as
+  // unidentified (no ring, a_glass_smudged set), which opens the bar staff's fallback ring topic 'bar_marsh_ring'.
+  const modesA = fx.verdictModes({});
+  const strandCount = drop => { let n = 0; const ex = []; for (const vm of modesA) { const t = withDropped(fx, drop, () => terminalsUndecided(fx, vm.m)); if (t.bad.length) { n++; if (ex.length < 3) ex.push(`${vm.label}: ${t.bad[0].u.join('+')} (${fmt(fx, t.bad[0].e)})`); } } return { n, ex }; };
+  for (const [lab, drop] of [
+    ['as authored (both outcomes possible)', []],
+    ['lift lost (identified outcome removed: every run smudges)', ['glass']],
+    ['lift lost and no fallback topic (the S3 fixture)', ['glass', 'bar_marsh_ring']],
+    ['glass never dusted (both outcomes removed)', ['glass', 'glass_smudge']],
+    ['identified lift, fallback topic removed', ['glass_smudge', 'bar_marsh_ring']],
+  ]) {
+    const base = withDropped(fx, drop, () => terminalsUndecided(fx, {}, false));
+    const v = strandCount(drop);
+    L(`glass: ${lab}: no verdicts ${base.terminals} terminals, ${base.bad.length} undecided; ${v.n} of ${modesA.length} verdict combinations strand an unjudged suspect${v.ex.length ? ', e.g. ' + v.ex.join(' | ') : ''}`);
+  }
   {
-    const base = withDropped(fx, ['glass'], () => terminalsUndecided(fx, {}, false));
-    L(`glass lost, no verdicts: ${base.terminals} terminals, ${base.bad.length} leave someone undecided${base.bad[0] ? ': ' + fmt(fx, base.bad[0].e) : ''}`);
     const r = withDropped(fx, ['glass'], () => explore(fx, {}, {}));
     const marshBy = {}; for (const t of r.terminals) { const ev = require('./eval').evaluateAll(fx, fx._.factsOf(fx._.fmOfAtoms(t))); const k = `${ev.marsh.status}/${ev.marsh.decidedBy}/${ev.marsh.byCount.map(b => b.how).join('+')}`; marshBy[k] = (marshBy[k] || 0) + 1; }
-    L(`  Marsh at those terminals (status/decidedBy/byCount): ${JSON.stringify(marshBy)}`);
-    let n = 0, ex = [];
-    for (const vm of fx.verdictModes({})) { const t = withDropped(fx, ['glass'], () => terminalsUndecided(fx, vm.m)); if (t.bad.length) { n++; if (ex.length < 3) ex.push(`${vm.label}: ${t.bad[0].u.join('+')} (${fmt(fx, t.bad[0].e)})`); } }
-    L(`  glass lost, ${fx.verdictModes({}).length} verdict combinations: ${n} leave an unjudged suspect undecidable, e.g. ${ex.join(' | ')}`);
+    L(`  lift lost: Marsh at the terminals (status/decidedBy/byCount): ${JSON.stringify(marshBy)}`);
     const one = { ko: new Set(), gone: new Set(), judged: new Set(['delacroix']), wrongLanded: 1, allyLost: false };
-    const t1 = withDropped(fx, ['glass'], () => terminalsUndecided(fx, one, false));
-    L(`  glass lost + one wrong call (accuse Delacroix): undecided ${t1.bad.map(b => fmt(fx, b.e)).join(' | ') || 'none'}`);
+    for (const [lab, drop] of [['with the fallback', ['glass']], ['without the fallback', ['glass', 'bar_marsh_ring']]]) {
+      const t1 = withDropped(fx, drop, () => terminalsUndecided(fx, one, false));
+      L(`  lift lost + one wrong call (accuse Delacroix), ${lab}: ${t1.terminals} terminals, undecided ${t1.bad.map(b => fmt(fx, b.e)).join(' | ') || 'none'}`);
+    }
+    // a bar staff order that spends three topics first, then the kind word, then the ring
+    const r2 = replay(fx, one, ['bar_okafor_want', 'bar_venn_want', 'bar_delacroix_umbrella', 'glass_smudge', 'bar_marsh_ring', 'bar_kind', 'bar_marsh_ring']);
+    L(`  replay, three bar topics first, then the smudge: ${r2.log.join('; ')}`);
+  }
+  // the glass changes a status: (status vector) sets reachable with and without the glass object, per verdict mode
+  {
+    let modesDiff = 0, ex = null;
+    for (const vm of [{ label: 'none', m: {} }, ...modesA]) {
+      const sets = [[], ['glass', 'glass_smudge']].map(drop => withDropped(fx, drop, () => { const seen = new Set(); explore(fx, vm.m, { onState: mk => seen.add(fmt(fx, fx._.statusE(fx._.fmOfAtoms(mk)))) }); return seen; }));
+      const only = [...sets[0]].filter(x => !sets[1].has(x));
+      if (only.length) { modesDiff++; if (!ex) ex = `${vm.label}: ${only[0]}`; }
+    }
+    L(`  status vectors reachable only with the glass: in ${modesDiff} of ${modesA.length + 1} modes (no verdicts included), e.g. ${ex}`);
   }
   // D7 explicit: KO Marsh then one wrong call (accuse Delacroix), then everything
   const vm = { ko: new Set(['marsh']), gone: new Set(['marsh']), judged: new Set(['marsh', 'delacroix']), wrongLanded: 1, allyLost: false };

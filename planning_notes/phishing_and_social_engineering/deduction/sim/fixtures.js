@@ -3,6 +3,8 @@
 // S3 (R6 fold, 2026-10-23): A's favour gated on the ring (L-10), labels/clauses/profile text for DL23; C's
 // travel ids renamed off "arkham" and the gossip moved to Ahmed's ink, granting Baptiste's no_quarry_trip
 // (L-84), releases as a verdict mode (L-85); D's main bridge takes the notebook and the glass (L-102).
+// S4: A's glass has a lost-lift outcome (glass_smudge) and the bar staff's fallback ring topic (bar_marsh_ring),
+// with the bar staff's kind word modelled (bar_kind).
 //
 // Atom = one acquisition step. req(S, m):
 //   S.has(atomId), S.held(factId), S.infl(witness) (influence before the next question),
@@ -105,7 +107,7 @@ const A = {
     ishikawa: { pass: ['archive_pass'], want: ['wants_codex'], carry: ['ward_charm', 'notebook'] },
     delacroix: { pass: ['lecture_hall'], want: ['wants_codex'], carry: ['umbrella'] },
   }, 'a'),
-  witnesses: { barstaff: { step: 15, wary: -20, refuses: -40 }, intern: { step: 15, wary: -20, refuses: -40 } },
+  witnesses: { barstaff: { step: 15, wary: -20, refuses: -40, kind: 'bar_kind' }, intern: { step: 15, wary: -20, refuses: -40 } },
 };
 const coatsOpen = m => !(m.wrongLanded > 0); // a_lodge_suspicious (cost, at verdict under reveal now)
 const archive = S => S.has('code_note') || S.has('venn_code');
@@ -117,7 +119,13 @@ A.atoms = [
   { id: 'intern_marsh_want', room: 'a_hall', facts: ['a_marsh_wants_promotion'], witness: 'intern', charged: true, req: () => true },
   { id: 'intern_ishikawa_want', room: 'a_hall', facts: ['a_ishikawa_wants_codex'], witness: 'intern', charged: true, req: () => true },
   { id: 'intern_delacroix_want', room: 'a_hall', facts: ['a_delacroix_wants_codex'], witness: 'intern', charged: true, req: () => true },
-  { id: 'glass', room: 'a_hall', facts: ['a_marsh_sigil_ring'], req: () => true, place: 'the wine glass in the hall' },
+  // the glass: one dusting, two outcomes (S4). An identified lift grants the ring (t_a_glass); an excellent lift
+  // logged as unidentified (fingerprint_collected, identified false) sets a_glass_smudged instead (t_a_glass_smudged),
+  // which opens the bar staff's fallback topic "Whose glass was that?" (a fourth charged topic; the kind word recovers).
+  { id: 'glass', room: 'a_hall', facts: ['a_marsh_sigil_ring'], forbid: ['glass_smudge'], req: () => true, place: 'the wine glass in the hall' },
+  { id: 'glass_smudge', room: 'a_hall', facts: [], progress: true, forbid: ['glass'], req: () => true },
+  { id: 'bar_marsh_ring', room: 'a_hall', facts: ['a_marsh_sigil_ring'], witness: 'barstaff', charged: true, req: S => S.has('glass_smudge'), place: 'the bar staff (whose glass it was)' },
+  { id: 'bar_kind', room: 'a_hall', facts: [], witness: 'barstaff', kindWord: true, progress: true, req: () => true },
   // cloakroom: lockpick (start inventory)
   { id: 'coat_venn', room: 'a_cloakroom', facts: ['a_venn_ward_charm'], req: (S, m) => coatsOpen(m), v: { costGated: true } },
   { id: 'coat_ishikawa', room: 'a_cloakroom', facts: ['a_ishikawa_ward_charm', 'a_ishikawa_notebook'], req: (S, m) => coatsOpen(m), v: { costGated: true } },
@@ -145,6 +153,7 @@ A.planStates = [
   { name: 'H+A', atoms: [...AH, 'code_note', 'badge_log', 'camera', 'desk'], claim: { okafor: 'guilty', delacroix: 'clear', venn: 'clear', ishikawa: 'undetermined', marsh: 'undetermined' }, line: '2328-2330' },
   { name: 'H+F', atoms: [...AH, 'phone', 'favour'], claim: { marsh: 'guilty', okafor: 'undetermined', venn: 'undetermined', ishikawa: 'undetermined', delacroix: 'undetermined' }, line: '2331-2332' },
   { name: 'H+F+A', atoms: [...AH, 'phone', 'favour', 'code_note', 'badge_log', 'camera', 'desk'], claim: { marsh: 'guilty', okafor: 'guilty', delacroix: 'clear', venn: 'clear', ishikawa: 'clear' }, line: '2333-2335' },
+  { name: 'H, lift lost, ring from the bar staff (S4)', atoms: [...AH.filter(x => x !== 'glass'), 'glass_smudge', 'bar_kind', 'bar_marsh_ring'], claim: { okafor: 'undetermined', venn: 'undetermined', marsh: 'undetermined', ishikawa: 'undetermined', delacroix: 'undetermined' }, line: '§9.2 glass lost' },
   { name: 'H+C+F (byCount/decidedBy case)', atoms: [...AH, 'coat_venn', 'coat_ishikawa', 'phone', 'favour'], claim: { okafor: 'guilty', marsh: 'guilty' }, line: '§9.2 conformance' },
   // A-wrong bridge (2420-2429): hall clues, coats closed, KO Okafor + key pickup; Marsh missed at close
   { name: 'A-wrong at close (hall + key drop)', atoms: [...AH, 'ko_key'], mode: { ko: new Set(['venn', 'okafor']), gone: new Set(['venn', 'okafor']), judged: new Set(['venn', 'delacroix', 'ishikawa', 'okafor']), wrongLanded: 3, allyLost: true },

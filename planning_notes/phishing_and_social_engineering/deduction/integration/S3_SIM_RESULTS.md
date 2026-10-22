@@ -146,3 +146,47 @@ verdict mode; D by 5,000 random walks):
 No evaluator contradiction, no evaluator U where enumeration decides, no dead end in any fixture, verdict
 mode, release set or KO set beyond the two accepted A cases above (rows 3 and the 24 KO-Marsh
 combinations).
+
+## S4: fixture A's lost lift (orchestrator decision)
+
+**Change.** Row 3 above was a hidden trap: an excellent lift logged as unidentified cannot be redone, and
+with a wrong call it stranded Marsh and Ishikawa. A lost lift still emits `fingerprint_collected:ded_a_marsh`
+with `identified: false` (`systems/biometrics.js` `recordLift`), so §9.2 now has a trigger
+`t_a_glass_smudged` (`where: { objectId: "a_wine_glass", identified: false }`) that sets `a_glass_smudged`
+and gives a titled hint, and the bar staff gain a fourth, charged clue topic "Whose glass was that?" (shown
+only while `a_glass_smudged` and the ring is not held) that grants `a_marsh_sigil_ring`. Their kind word is
+the budget recovery. The glass is still the only way in to either route.
+
+**Sim.** `fixtures.js`: the glass is one dusting with two outcomes, `glass` (ring) and `glass_smudge`
+(progress, no fact), each forbidding the other; `bar_marsh_ring` (bar staff, charged, needs `glass_smudge`);
+`bar_kind` (the bar staff's kind word, +20; the S3 sim left A's kind words out because they granted
+nothing); a plan state for the hall with a lost lift. `extra.js`'s glass block now compares five variants.
+S3 originals in the scratchpad `s4sim/orig/`; outputs `s4sim/run_A.txt`, `extra_A.txt`, `strat_A.txt`,
+`how_steps.txt`, `how_table.txt`, `mutations.txt`. Plan checked: 4,811 lines after the S4 edits.
+
+| Check | Result |
+|---|---|
+| States / terminals (no verdicts) | 85,408 / 4 (was 21,760 / 2: the lost-lift branch and the kind word), 0 dead ends |
+| Evaluator vs oracle; unsound | 0; 0 |
+| Plan states H to H+F+A, A-wrong at close, the byCount/decidedBy cases | all agree, unchanged |
+| H with a lost lift and the ring from the bar staff | 0 decided, 5 open (same as H; DL8 unchanged) |
+| DL8 single-room, DL6 validator view | unchanged (cloakroom leaves Delacroix, archive leaves Ishikawa and Marsh; DL6 clean) |
+| Verdict modes (243), as authored | 24 strand an unjudged suspect, all KO-Marsh plus a wrong call (Ishikawa; accepted, L-11) |
+| **Lift lost** (every run smudges) | **24**, the same KO-Marsh set: **no new stranding**. Lift lost + accusing Delacroix: everyone decided |
+| Lift lost, no fallback (the S3 fixture) | 126 of 243 (reproduces row 3) |
+| Glass never dusted (both outcomes removed) | 126 of 243: dusting the glass is needed in **102** combinations, as in S3 |
+| Identified lift, fallback removed | 24 (the fallback is idle when the lift works) |
+| Glass changes a status | some status vectors are reachable only with the glass in 163 of the 244 modes (no verdicts included; e.g. no verdicts: Okafor G, Venn U, Marsh G, Ishikawa C, Delacroix C). The per-state counterfactual of `strategies.js` stays 0 for the glass and for the fallback, as in S3, because the favour also grants the ring |
+| Per-atom removal (`extra.js`) | `glass` alone: never (the smudge branch covers it); `bar_marsh_ring` alone: +102 (the smudge branch then strands). Read together with the two rows above: each outcome of one dusting has a route to the ring |
+| Witness budget | three bar topics first (influence −30, wary), smudge: the ring topic is withheld; kind word (−10): answered (−25) |
+| Lift lost, no verdicts: Marsh at the terminals | guilty, `card` (the favour is reached) |
+| A bridges (`how.js steps`) | unchanged: A2 Venn, Ishikawa card; A3 Okafor count, Marsh card; A4 Delacroix card |
+| Stop-at-first (20,000 random runs) | 54.3 % only Okafor, 38.9 % only Marsh, 6.8 % both (93 % miss a cultist; §9.2 updated from 54.2 / 38.7) |
+| DL23, DL4 (`mutations.js`) | quiet on all four; every profile satisfiable (unchanged) |
+| Q7 table, A | card/guilty 2,599,440, card/clear 1,932,000, count/guilty 244,032, count/clear 3,592,248: both values still run both ways (B and C unchanged; D not re-run, its fixture is unchanged) |
+
+**Plan edits for this.** §9.2 Data (`deduction_decidable_*` for the five suspects and `a_glass_smudged`
+declared), Rooms (the bar staff's fourth topic and kind word; the lost-lift trigger, hint and topic), Clue
+routes (the ring's second route and its `routes` entry), hand check ("The glass matters" and "Lift lost"
+rewritten from the sim), the stop-at-first numbers, `bridge-deduction-a-out` (the lost lift from the
+console), Proves; §11.1 (A's atoms); §11.6 (the console emit); §13.6 (a settlement row); §14.

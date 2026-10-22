@@ -1,8 +1,9 @@
 # Implementation plan: the deduction board
 
-Status: plan, 2026-10-22, rounds 1 to 4 folded in (twelve reviews) and round R5 (workflow review, 82
-confirmed findings, `deduction/REVIEW_R5_CONSOLIDATED.md`) applied (§14); the user's answers of 2026-10-22
-are in §13.1. Nothing here is built.
+Status: plan, 2026-10-23, rounds 1 to 4 folded in (twelve reviews), R5 (workflow review, 82 confirmed
+findings, `deduction/REVIEW_R5_CONSOLIDATED.md`) and R6 (engine, integration, fixture-simulation reviews
+and the sidecar/gap integration, `deduction/integration/FOLD_LEDGER.md`) applied (§14); the user's answers
+of 2026-10-22 (Q1 to Q9) are in §13.1. Nothing here is built.
 
 This file wins over `designs/12_deduction_board.md` where they differ. Until packet P10-X1 copies its
 contract into `designs/00_data_contract.md`, this file is also the data contract for deduction. It is
@@ -117,8 +118,8 @@ Adapted from `IMPLEMENTATION_PLAN.md` "How this plan is run" and AGENTS.md.
   both pointers are made by the orchestrator before wave 0 (§10.3). This plan creates none of them.
 - **Loops.** This is engine work, so it runs the mission loop's implementation half: spikes first,
   implement, static checks, a fresh Opus implementation review, Sonnet bridge checks and playtests, fix,
-  confirm. The plan itself went through four adversarial review rounds and a fifth, workflow-run round
-before any building (§14).
+  confirm. The plan itself went through four adversarial review rounds, a fifth, workflow-run round and a
+  sixth round with the integration fold before any building (§14).
 - **Models** (AGENTS.md "Choosing a model"). Opus for the evaluator semantics, the runtime, the new
   `applyActions` cases, the board's views and debrief, the lints that derive sets or parse ink (P10-C2b:
   DL5 to DL9, DL12, DL18), the end-of-case spike (P10-F3), fixture ink and every review. Sonnet for
@@ -309,8 +310,8 @@ losing verdict never closes the case on its own.
 rule (`README_scenario_design.md:1550`, "Warn before the point of no return", with a "Not yet" option):
 `#verdict_close` on the line after a choice whose sibling is "Not yet" (lint DL12), the `verdict_close`
 action inside a `confirm_action`, or the final call's confirm step. When every suspect has a verdict the
-case does not close by itself: the runtime shows the authored `closeHint` ("Everyone has been dealt with.
-Call HaX when you're ready to leave.") and waits. An optional authored `closeRoute` says from the start
+case does not close by itself: the runtime shows the authored `closeHint` (A's: "Every guest has a
+verdict. Call HaX when you're ready for the sanctum.") and waits. An optional authored `closeRoute` says from the start
 how the case closes; the board footer shows it until every suspect has a verdict, then `closeHint` replaces
 it. A report or a final call can name any number of suspects;
 nothing in the interface may imply how many are guilty (§3.1). On close, every suspect with no verdict is ruled
@@ -469,7 +470,7 @@ closed (`additionalProperties: false`), as the rest of `social` is (`scripts/sce
     "reveal": "end",                                         // "now" | "end"
     "finalCall": { "requiresAll": false, "requireGlobal": null }   // board submit only (§6.6)
   },
-  "closeHint": "Everyone has been dealt with. Use the exit phone when you're ready to leave.",
+  "closeHint": "Every contact has a verdict. Use the exit phone when you're ready to leave.",
   //   shown once when every suspect has a verdict and the case is still open (§3.8); required when
   //   `when` is "anytime"
   "closeRoute": "How this case closes: use the exit phone. Anyone you haven't named stays free.",
@@ -707,7 +708,7 @@ Made by packets P10-X1 and P10-X2 (§10), not by this plan.
 - **`00` §12 rows S16 to S23** (one line each, pointing here): S16 `social.deduction` schema and the
   fact field; S17 evaluator, grader, Ruby port and conformance fixtures; S18 scenario `triggers`; S19 ink
   tags; S20 new `applyActions` cases; S21 deduction runtime; S22 board `deduction` mode and debrief; S23
-  deduction lints DL1 to DL22 (defined in this plan's §8; they are lint ids, not design-12 work items).
+  deduction lints DL1 to DL23 (defined in this plan's §8; they are lint ids, not design-12 work items).
   The back-compat sentence at the end of `00` §12 gains: "the new actions, tags, triggers and the
   deduction runtime are no-ops without `social.deduction` or `triggers`".
 - **`00` §13 settled values:** suspects 1–6 (fixtures 3–5); the evaluator rules of §4.3 (sound, with the
@@ -724,7 +725,7 @@ Made by packets P10-X1 and P10-X2 (§10), not by this plan.
 - **`IMPLEMENTATION_PLAN.md`:** a §1 phase-table row for Phase 10 (alongside, §1 of this plan), §2.3
   back-compat rows 9–13 (§11.7 here), and a §4 pointer to §10 here.
 - **`designs/12_deduction_board.md`:** the pointer at its top is already in place; P10-X1 adds "lint ids
-  DL1–DL22 are defined in the implementation plan's §8".
+  DL1–DL23 are defined in the implementation plan's §8".
 - **`README_scenario_design.md`:** a "Deduction cases" section (§7 condensed, the lints, the fixtures as
   examples, the word "cell" defined, and the advice to split at least one slot across per-person sources
   so negative evidence has to be sought out).
@@ -2219,7 +2220,8 @@ end on the success screen (`:1540-1546`). For a deduction case:
   default ticker reads "MISSION COMPLETE … WELL PLAYED, AGENT" (§5.4). DL9(h) makes each missing piece an
   error, and DL9(e) rejects a strict case with a `success` conclusion screen.
 - Outcomes reach the ending through conditional lines (`music/closing-sequence.js:11-38`):
-  `{ "text": "Okafor walked free.", "condition": "globalVars.deduction_outcome_ded_a_okafor === 'missed_guilty'" }`.
+  `{ "text": "Marsh walked free.", "condition": "globalVars.deduction_outcome_ded_a_marsh === 'missed_guilty'" }`
+  (Okafor's missed line is her key line, §9.2).
 - Where something must happen between the debrief and the credits (fixture A's sanctum), `onClose` does not
   set the ending global; a later warned beat does (§9.2).
 
@@ -2390,7 +2392,7 @@ modules.
 | DL7 | Every fadable fact: (a) declares `deduction_faded_<f>` (bool, false); (b) has at least one route with `closedBy: "deduction_faded_<f>"` and at least one without; (c) each `closedBy` route is gated: a `trigger` route's `condition` names `deduction_faded_<f>`; an `npc` route's ink names it in a condition; an `object` route is ⚠️ (cannot be traced; gate it with a trigger); (d) each route without `closedBy` is a different `via`/`id` pair from every `closedBy` route. On any cell, a `closedBy` naming another global (§4.2, e.g. A's `a_lodge_suspicious`) needs that global declared as a bool, and the route gated on it as in (c) (its trigger's `condition` or the NPC's ink names it; an `object` route ⚠️) | "fact '<f>' can be destroyed but has no other route" / "route trigger 't_y' of fact '<f>' is closedBy 'a_lodge_suspicious' but its condition does not name it" | add a `deduction_tamper` of `b_okoro_access` to a timer (co-fires: DL13 for the undeclared `deduction_faded_b_okoro_access`; not DL6: the badge-log route has no `closedBy`, so the fact stays reachable) |
 | DL8 | No early collapse: with the opening facts held, (a) at most `earlyCollapse.maxGuilty` (default 0) suspects are guilty, and (b) at least `ceil(minOpen × suspects)` (default 0.5) are undetermined. Suspects in `allowEarly` are left out of both counts; `allowEarly` without `_why` is an error. ⚠️ when at least two rooms are closed at the start (hold routes and are not opening rooms; a container in an opening room that is not open from the start, and holds routes, counts as a closed place of its own, both in that count and as "any one of them") and the opening facts plus those of any **one** of them decide every suspect (the rest of the map would not matter). A case with one closed room never gets this warning | "the opening rooms decide 3 of 4 suspects; the case collapses early" / "⚠️ the opening rooms and 'a_cloakroom' decide every suspect" | move the DHCP printout into the office |
 | DL9 | Rigidity, wrong-call costs, retry and endings. *Play-changing* effects: `fail_mission`, `remove_item`, `lose_ally`, `reveal_hostiles`, `deduction_tamper`, and a `set_global` with `cost: true` whose global has a gate reader. (a) Derived rigidity: `strict` if any `fail_mission` is in `onWrongGuilty`, `onMissedGuilty`, `escalation` or a per-suspect list; else `costly` if any of those lists holds a play-changing effect; else `light`. It must equal `stakes.rigidity`. (b) A `cost: true` global with no gate reader is an error. (c) ⚠️ when `when` is `anytime`, `accuse`, `act` or `ko` is allowed, and some innocent's wrong-guilty lists (global, per-suspect, and any `escalation`) hold no play-changing effect. (d) `disclosure: "brief"` needs a non-empty `briefText` that appears verbatim in the brief; `disclosure: "hidden"` needs a non-empty `twistNote` and no `briefText`. (e) A strict case needs `when: "final"`, `stakes.solvedTask`, an ending in credits (not a `success` conclusion screen), and two music entries on its ending trigger, one conditioned on `!globalVars.mission_failed` and one on `globalVars.mission_failed`, the second with a non-victory playlist and its own `headerText` or credits title (§7.10); each missing piece is an error. (f) `retry: 1` needs `when: "final"` and `final` in `allowed`. (j) `reveal: "now"` with `when: "final"` is an error (nothing is graded before the close, so "now" has no meaning); escalation under `when: "final"` is allowed and runs at Finish, `wrongCount` being set at close (§5.5). (i) ⚠️ when `reveal` is `end` and a `cost: true` global, or an escalation step meant to change play, has no `"at": "verdict"`: it would run only at Finish, after the case has closed, so it gates nothing. (g) Scoring (read from `mission.json` in `ctx.scenario_dir`, default `tasks`; §8 "Where the scenario is"): `stakes.scoreLine: true` needs `solvedTask` and scoring `tasks`; ⚠️ when `briefText` mentions the score (`\bscore\b`) under any other mode. A skipped `solvedTask` never counts as a play-changing effect, so under `completion` or `partial_then_complete` a `costly` case still needs one from the list above. (h) A case whose **declared** `stakes.rigidity` is `strict` or `costly` (a mismatch with the derived one is (a)'s message, not (h)'s) needs, all three (§5.4; the ticker clause only when the case can end in credits): its conclusion screen, when `bond_visualiser`, has `bondVisualiserOpts.headerText` with neither "COMPLETE" nor "SUCCESS"; every music entry with `credits` or `closingCard` (on any trigger the case's ending can fire) has a `headerText` with neither word; and the scenario has a `creditsOverlay.ticker` whose lines have none of "COMPLETE", "SUCCESS", "WELL PLAYED", or uses `creditsTheme: "cyber"` (its fixed STATUS "COMPLETE" is accepted, §5.4) | "stakes.rigidity is 'light' but onWrongGuilty holds fail_mission, which is 'strict'" / "cost global 'a_lodge_suspicious' is read by no gate" / "strict case: no music entry for a loss (condition on mission_failed)" | change B's rigidity to `costly` |
-| DL10 | The brief: every profile `text`, and each `parts.items` entry of a profile that has `parts` (the board shows those in its place, §6.3), appears verbatim (whitespace-normalised) in `scenario_brief` (`brief.source: "scenario_brief"`) or in the named `.ink` file's text (`"ink"`). ⚠️ when a case with a `markedAtLeast` rule has a brief that says "marked" (or the `markedLabel`) nowhere outside the profile text ("the brief never says what makes a clue marked", §7.9). ⚠️ when the brief, `briefText`, `verdictNoun`, `title`, `closeHint`, `closeRoute`, `debrief.closingLine`, `debrief.notes[].text`, the objectives' aim and task titles, the `mission.json` `description` (read through `ctx.scenario_dir`), or the ink text of any NPC whose story carries a `#verdict*` tag or the favour warning implies a number of guilty: case-insensitive `\b(exactly|only)\s+(one|two|three|\d)\s+(of (them|you|these|the suspects)|people|persons?|suspects?|<guilty noun>s?)\b` (so a clue count such as "There is only one" in a profile does not match), `\bone of (them|you|these)\s+(is|was)\b`, `\b(two|three|\d) of (them|you|these)\b`, `\bthe one who\b`, and `\bthe (real |actual )?<guilty noun>\b` or `\bnot the <guilty noun>\b` with the case's own noun | "profile '<p>' text is not in the brief" / "⚠️ 'Not the insider' implies there is one insider" | set B's clear noun back to "Not the insider" |
+| DL10 | The brief: every profile `text`, and each `parts.items` entry of a profile that has `parts` (the board shows those in its place, §6.3), appears verbatim (whitespace-normalised) in `scenario_brief` (`brief.source: "scenario_brief"`) or in the named `.ink` file's text (`"ink"`). ⚠️ when a case with a `markedAtLeast` rule has a brief that says "marked" (or the `markedLabel`) nowhere outside the profile text ("the brief never says what makes a clue marked", §7.9). ⚠️ when the brief, `briefText`, `verdictNoun`, `title`, `closeHint`, `closeRoute`, `debrief.closingLine`, `debrief.notes[].text`, the objectives' aim and task titles, the `mission.json` `description` (read through `ctx.scenario_dir`), or the ink text of any NPC whose story carries a `#verdict*` tag or the favour warning implies a number of guilty: case-insensitive `\b(exactly\|only)\s+(one\|two\|three\|\d)\s+(of (them\|you\|these\|the suspects)\|people\|persons?\|suspects?\|<guilty noun>s?)\b` (so a clue count such as "There is only one" in a profile does not match), `\bone of (them\|you\|these)\s+(is\|was)\b`, `\b(two\|three\|\d) of (them\|you\|these)\b`, `\bthe one who\b`, and `\bthe (real \|actual )?<guilty noun>\b` or `\bnot the <guilty noun>\b` with the case's own noun | "profile '<p>' text is not in the brief" / "⚠️ 'Not the insider' implies there is one insider" | set B's clear noun back to "Not the insider" |
 | DL11 | KO: `ko` in `allowed` with `disableAttacks: true` is an error; attacks on and `ko` not in `allowed` is an error (a KO always counts, §5.11); a suspect with `koImmune: true` is ⚠️ | "verdict kind 'ko' is allowed but disableAttacks is true: nobody can be knocked out" / "attacks are on, so a knockout counts as a verdict: add 'ko' to verdicts.allowed" | add `ko` to B's `allowed` (first message; co-fires: DL12, no delivery route for `ko`) |
 | DL12 | Verdict and close wiring. Each allowed kind has a delivery route (`accuse`: an ink `#verdict:accuse` in a suspect's own story or `#verdict:accuse:<s>` anywhere; `report`: `#verdict:report:<s>`; `act`: a `verdict` action with value `guilty` (the default) or `#verdict:act:<s>`; `trust`: an ink `#verdict:trust` in a suspect's own story, `#verdict:trust:<s>` anywhere, or a `verdict` action with `value: "clear"`; `final`: a `case-file` with `mode: "deduction"` and `allowSubmit: true`; `ko`: attacks on). Every `#verdict:<kind>` without a suspect is in a suspect's own story; every `#verdict:<kind>:<s>` names a suspect and an allowed kind; with `when: "final"`, `accuse`, `act` and `trust` tags are errors, and so are `accuse`, `act` or `trust` in `allowed` and any `verdict` action (§4.1); `final` in `allowed` without `when: "final"` is an error. There is at least one close route (`#verdict_close`, a `verdict_close` action, or the final call). Each `#verdict_close` is in a *close knot* (§8, derived sets: in a choice body, or a knot reached only through choices, with a sibling choice starting "Not yet"); each `verdict_close` action is inside a `confirm_action`'s `onConfirm`. `when: "anytime"` needs a non-empty `closeHint`; ⚠️ when `when` is `anytime`, `allowed` has no `trust` and the case has no `closeRoute` ("nothing tells the player how this case closes or that anyone left unnamed is cleared: set closeRoute"). ⚠️ when ink reads `deduction_decidable_<s>` in a case with `nudge: false` (the runtime never writes it, §4.4). ⚠️ when a close route cannot reach *the ending*: after each close route, the ending must be set by `onClose`, by a trigger whose `on` is a global `onClose` sets (its condition may narrow it), or by an object in a room that the same close route unlocks ("close route in knot 'pull_out' leaves no way to the ending"). A witness (an `npc` route that is not a suspect) that is not a `social.characters` entry with a `reports` threshold is ⚠️ | "#verdict_close in knot 'send' has no 'Not yet' choice beside it" | drop `close_check`'s "Not yet" choice from Nair's ink (§7.5; co-fires: none) |
 | DL13 | Declared globals, not imported: `deduction_state` (`{}`), `deduction_closed` (false), `deduction_verdict_<s>` and `deduction_outcome_<s>` (`""`) for every suspect, `deduction_favour_<s>` (false) for every favour, `deduction_faded_<f>` (false) for every fadable fact, `se_intel_<f>` (false) for every cell, `deduction_decidable_<s>` (false) for every suspect when `nudge` is on (§4.4), `mission_failed` (`""`) when any `fail_mission` exists | "global 'deduction_outcome_ded_b_morgan' is not declared" | delete one declaration |
@@ -2637,6 +2639,8 @@ gated on the ring).
   guilty; DL10's pattern does not match it.) The brief and HaX's opening call explain the charm clause in
   the fiction: "A Courier carrying the Codex can't carry a ward charm with it." DL23 is quiet on all three
   (`deduction/sim/mutations.js`).
+- `deduction_decidable_*` is declared for the five suspects (the nudge is on, DL13), and `a_glass_smudged`
+  (false) for the lost-lift fallback below.
 
 | Suspect | Name, role (placeholder; P10-K-A may recast) | Pass | Want | Carry | Truth |
 |---|---|---|---|---|---|
@@ -2656,7 +2660,9 @@ Counts check: `wants_codex` 3 (Okafor, Ishikawa, Delacroix); `archive_pass` 2, `
 the default thresholds of §7.2, a `reports` threshold, three clue topics, the answer-then-cost rule and a
 once-only kind word, so each answers all three topics before turning wary, and each `koImmune: true`:
 they are the only routes to the wants and the umbrella, and attacks are on, so a punch must not strand a
-suspect, DL6; each gets one tell when its charge passes `wary` and one wary opener, as Tomás has, §7.2),
+suspect, DL6; each gets one tell when its charge passes `wary` and one wary opener, as Tomás has, §7.2;
+the bar staff also have a fourth, fallback clue topic that appears only after a lost lift, and their kind
+word is the recovery that budget needs, §7.2),
 the board, a wine glass `a_wine_glass` to dust; HaX `ded_a_handler` as a phone NPC in this room's `npcs`,
 carrying `"unlockable": ["a_sanctum"]` (the server refuses an NPC's `#unlock_door` unless the room is in that
 NPC's `unlockable` and the player has met the NPC; a phone NPC listed in a room's `npcs` is met when that
@@ -2701,8 +2707,15 @@ takeable `phone` item with no `phoneId`, `text`, `voice` or `npcIds`, so it open
 `onPickup.setVariable` sets `has_marsh_phone`. The glass `a_wine_glass` has `hasFingerprint: true`,
 `fingerprintOwner: "ded_a_marsh"`, `fingerprintDifficulty: "easy"`. Identification needs no reference
 sample and a wrong card can be retried, but an excellent lift logged as "unidentified" fires no
-`fingerprint_identified` and the glass cannot be dusted again, so the ring route can be lost (the hand
-check's glass-lost line). Every `hint` action in A has a `title` in the lodge's voice (§5.4).
+`fingerprint_identified` and the glass cannot be dusted again. That lift still emits
+`fingerprint_collected:ded_a_marsh` with `identified: false` (`systems/biometrics.js`, `recordLift`), so a
+second trigger `t_a_glass_smudged` (`where: { "objectId": "a_wine_glass", "identified": false }`) sets
+`a_glass_smudged` and runs a `hint` (title in the lodge's voice; message "The print smudged. The bar staff
+poured that glass: ask them whose it was."). The bar staff's hub then offers `+ {a_glass_smudged and not
+se_intel_a_marsh_sigil_ring} [Whose glass was that?]`, a charged clue topic with the usual wary branch:
+"Ms Marsh's. She kept tapping it with that sigil ring of hers." `#grant_fact:a_marsh_sigil_ring`. So a lost
+lift costs a question, not the ring (the hand check's lift-lost line). Every `hint` action in A has a
+`title` in the lodge's voice (§5.4).
 
 **Clue routes.**
 
@@ -2716,7 +2729,7 @@ check's glass-lost line). Every `hint` action in A has a `title` in the lodge's 
 | Delacroix `umbrella` ("a folded umbrella") | bar staff (hall) |
 | Venn `ward_charm` | `t_a_coat_venn` (cloakroom, condition `!globalVars.a_lodge_suspicious`, `closedBy: "a_lodge_suspicious"`) |
 | Ishikawa `ward_charm`, `notebook` | `t_a_coat_ishikawa` (cloakroom, same condition and `closedBy`) |
-| Marsh `sigil_ring` | `t_a_glass`: `fingerprint_identified:ded_a_marsh`, `where: { objectId: "a_wine_glass" }` (hall); her prints are on no other object (§7.7). It is also the favour's `unlockFact`, so the glass is what opens Marsh's ask |
+| Marsh `sigil_ring` | `t_a_glass`: `fingerprint_identified:ded_a_marsh`, `where: { objectId: "a_wine_glass" }` (hall); her prints are on no other object (§7.7). Fallback after a lost lift: bar staff, "Whose glass was that?", shown only once `a_glass_smudged` is set by `t_a_glass_smudged` (hall); the fact's `routes` list both, the second as `{ "via": "npc", "id": "ded_a_barstaff" }` (DL18). It is also the favour's `unlockFact`, so the glass (either outcome) is what opens Marsh's ask |
 | Marsh `burner_sim` | Marsh's favour only (errand room: cloakroom) |
 
 **Hand check, every order the map allows** (§4.3, pigeonhole step included). The hall is the only
@@ -2767,14 +2780,19 @@ exact `byCount` and `decidedBy` lists `deduction/sim/` gives; the two P10-A must
   (terminal state Okafor G, Venn C, Marsh U, Ishikawa U, Delacroix C); she still grades `right_clear` as
   Not named (24 of 243 verdict combinations, every one a KO of Marsh plus a wrong call; `deduction/sim/`,
   rechecked with the ring gate).
-- **The glass matters.** With the ask gated on the ring, the glass is needed in 102 of the 243 verdict
-  combinations (without it, after a wrong call, no favour, so Marsh and Ishikawa stay open). **Glass lost**
-  (an excellent lift logged as unidentified, so no ring and no favour): with no wrong call, Marsh is still
-  decided once the archive and the coats are done (`markedForced`, `decidedBy` `count`) and everyone is
-  decided. After a wrong call as well, the coats close and **both Marsh and Ishikawa stay undetermined**
-  (126 of 243 verdict combinations then leave someone unjudged undecidable); Ishikawa grades `right_clear`,
-  Marsh `missed_guilty` unless the player names her on a guess. This needs a lost lift and a wrong call
-  together; it is accepted for the fixture and DL6 does not model a lost lift (§7.7 needs no change).
+- **The glass matters.** With the ask gated on the ring, dusting the glass (either outcome) is needed in
+  102 of the 243 verdict combinations: never dusted, after a wrong call there is no favour, so Marsh and
+  Ishikawa stay open (126 of 243 strand someone, against 24 as authored). Some board states are reachable
+  only with the glass (in 163 of the 244 verdict modes, no verdicts included; for example, no verdicts:
+  Okafor G, Venn U, Marsh G, Ishikawa C, Delacroix C).
+- **Lift lost** (an excellent lift logged as unidentified): no ring from the glass, but `t_a_glass_smudged`
+  opens the bar staff's "Whose glass was that?", which grants it, so the favour stays reachable. The topic
+  is the bar staff's fourth; asked last it comes after the wary turn, and the kind word (+20, from −30 to
+  −10) lets them answer it. With the fallback, a lost lift strands no one beyond the 24 KO-Marsh
+  combinations above (with no verdicts, Marsh is decided by her card once the favour is done); a lost lift
+  plus a wrong call (for example, accusing Delacroix) leaves everyone decidable. Without the fallback the
+  same pair left Marsh and Ishikawa undetermined in 126 of 243 combinations (`deduction/sim/extra.js A`).
+  DL6 does not model a lost lift (§7.7 needs no change).
 - Truth with every fact held: as the table. DL6: Okafor through the camera (no KO).
 
 **Favour.** Marsh, unlocked by `a_marsh_sigil_ring` (from dusting the glass; §7.3's sample gate),
@@ -2841,8 +2859,8 @@ conclusion aim's `conclusionScreen` is `{ "type": "bond_visualiser", "bondVisual
 Costs compared: a probe accusation loses the coats; a second brings the doorman; a third ends the evening
 early. Accusing all five pays all of that, loses Venn, and has every innocent named in the credits. A
 careful player who misses Marsh meets the acolyte. Deducing wins clearly. Stopping at the first guilty
-signal misses a cultist 93 % of the time (random players: 54.2 % name only Okafor, 38.7 % only Marsh,
-`deduction/sim/strategies.js` with the ring gate) and meets the acolyte; it costs about as much as accusing
+signal misses a cultist 93 % of the time (random players: 54.3 % name only Okafor, 38.9 % only Marsh,
+`deduction/sim/strategies.js` with the ring gate and the lost-lift fallback) and meets the acolyte; it costs about as much as accusing
 everyone, and both lose to deducing.
 
 **Bridges.** Each main script covers §11.6's checks and finishes inside 600 s; a long script may split into a second `JOBS` entry, which starts a fresh game and sets the state it needs from the console (grants, globals), as the `-wrong` scripts do; the `1b`/`3b` chain is hard-coded in `run-suite.sh` `job()` and is not open to T0 packets.
@@ -2889,7 +2907,11 @@ everyone, and both lose to deducing.
   sanctum (its room not yet loaded when revealed, so this proves the deferred path; the fight starts after
   the debrief).
 - `bridge-deduction-a-out.jsonl` (`deduction-a-out:test_social_deduction_a`, a fresh game, facts granted from
-  the console): accuse three innocents; at the third, HaX's "Get out" call; choose "Get out" (`a_got_out`
+  the console). First the lost lift: ask the bar staff their three topics (wary after the third), then emit
+  `fingerprint_collected:ded_a_marsh` with `{ objectId: "a_wine_glass", identified: false }` from the console
+  (reported as "exercised, not earned"): `a_glass_smudged` true, the titled hint; the bar staff's hub shows
+  "Whose glass was that?" and answers it with the wary line; the kind word, then the question again grants
+  `a_marsh_sigil_ring` and Marsh's ask appears. Then accuse three innocents; at the third, HaX's "Get out" call; choose "Get out" (`a_got_out`
   true): the debrief opens after the call; Finish: `t_a_thrown_out_end` completes `a_evening_over` and sets
   `a_ending`; the credits roll with "You were thrown out before the ritual."; the header, the ticker and the
   credits never read "MISSION COMPLETE" (`.bv-ticker-inner` text checked); `a_evening_over` completed
@@ -2900,7 +2922,7 @@ everyone, and both lose to deducing.
 **Proves:** all three profile types, each deciding someone; the pass slot clearing someone; more than one
 guilty; `not` (the charm) and a negative clause decided by a pass; the marked threshold; count elimination
 and the pigeonhole step (Okafor after the favour, Marsh after the archive); items held as evidence by KO;
-dusting that matters (the glass opens Marsh's ask); lockpicking and a PIN door; an NPC-only RFID door; a
+dusting that matters (the glass opens Marsh's ask), with a witness fallback when the lift is lost; lockpicking and a PIN door; an NPC-only RFID door; a
 favour gated on a clue the player works for, with an errand, a unique yield and a backfire; the pulp
 voice; `closeRoute`; the
 unique-item choice from a sighting, with `accuse` and `act` options; accusation from the suspect's story and
@@ -3073,7 +3095,7 @@ can be sent. The lock is a HaX choice, "Lock
 the comms room with whoever is waiting inside", offered only while some `c_waiting_<id>` is true and
 `!c_comms_locked` (so it can never be used on an empty room or twice) with a "Not yet" beside it; its line
 carries `#set_global:c_comms_locked:true`. Before the choice, HaX says who is inside, one fixed line per
-waiting contact ("HaX: Ahmed's in there." conditioned on `c_waiting_ded_c_ahmed`, and the same for Novak
+waiting contact ("Ahmed's in there." conditioned on `c_waiting_ded_c_ahmed`, unprefixed as phone ink is, §7.8; and the same for Novak
 and Baptiste).
 
 **Release** (user Q6, 2026-10-22). While `c_waiting_<id>` is true and `!c_comms_locked`, HaX's hub
@@ -3082,9 +3104,9 @@ offers "[Let <name> go]" for that contact. It leads to a warned knot:
 ```ink
 + {c_waiting_ded_c_ahmed && not c_comms_locked} [Let Ahmed go] -> release_ahmed
 === release_ahmed ===
-HaX: I open the back door, he walks, and he's done with us. You won't get him back on this. Sure?
+I open the back door, he walks, and he's done with us. You won't get him back on this. Sure?
 + [Let him go. I can't take this back.]
-    HaX: Done. He's out of it. #set_global:c_waiting_ded_c_ahmed:false #set_global:c_released_ded_c_ahmed:true
+    Done. He's out of it. #set_global:c_waiting_ded_c_ahmed:false #set_global:c_released_ded_c_ahmed:true
     + + [Go on] -> hax_hub
 + [Not yet] -> hax_hub
 ```
@@ -3687,7 +3709,7 @@ seeds `conformance.json` from it.
   both device facts for Lindqvist), empty when only a pair decides.
 - `brokenClause`, recursive: a leaf root (A's Keyholder `{has}`, Devotee `{markedAtLeast}`) returns
   itself; `all` its first F child; `any` one failing leaf per branch (C's Ahmed: `has cult_burner` and `not
-  has verified_alibi`; Baptiste: `has cult_burner` and `has arkham_trip`). `matchedClause`: the first T
+  has verified_alibi`; Baptiste: `has cult_burner` and `has quarry_trip`). `matchedClause`: the first T
   branch of an `any` (C's Novak: `has cult_burner`), every child of an `all`, and for `markedAtLeast` the
   counted cells (A's Marsh). `heldDeciders`: B-wrong's Lindqvist gives his `no_personal_device` cell.
   These cases are also in `conformance.json` (optional `settling`, `deciders`, `matched` keys), so both
@@ -3709,9 +3731,10 @@ seeds `conformance.json` from it.
   are atoms): (1) in no reachable state does the evaluator say U while full enumeration decides the suspect
   (a failure means the fixture needs a chained inference, risk 6); (2) every terminal state decides every
   suspect, in normal mode only; after a wrong call or a KO, DL6's rule is asserted instead (A's
-  KO-Marsh-plus-wrong-call terminal leaves Ishikawa U, accepted: §9.2 "After a wrong call", §13.6 R6F-3). B, A and C run in full (under a
-  second each); D (about 3.85 million states, about 20 s) runs sampled by default and in full behind a
-  flag. For A, B and D the same walk records the table of (`decidedBy`, direction) over every step at which
+  KO-Marsh-plus-wrong-call terminal leaves Ishikawa U, accepted: §9.2 "After a wrong call", §13.6 R6F-3;
+  A's atoms include the glass's lost-lift outcome and the bar staff's fallback topic). B, A and C run in
+  full (about a second each); D (about 3.85 million states, about 20 s) runs sampled by default and in full
+  behind a flag. For every fixture the same walk records the table of (`decidedBy`, direction) over every step at which
   a suspect turns decidable; each value seen must occur both ways, except the one-way pairs the test lists
   (B: `count` only clears; risk 18).
 - Malformed data: `evalRule` and `truth` throw on a rule that fails `validateRule`; a fact with an
@@ -4127,7 +4150,8 @@ carries every §6.8 key.
 - Bridges drive lockpicking, dusting and the log filter as their existing bridges do (P10-T0-A finds the
   commands in `docs/test-bridge.md` and `tools/playtest/se/`). Where no command exists, the step sets the
   result from the console (`a_badge_log_done`; `fingerprint_identified:ded_a_marsh` emitted with
-  `objectId: "a_wine_glass"`; the cloakroom unlocked), notes it in the script, and the T packet's playtest
+  `objectId: "a_wine_glass"`; for A's lost lift, `fingerprint_collected:ded_a_marsh` with that `objectId`
+  and `identified: false`; the cloakroom unlocked), notes it in the script, and the T packet's playtest
   does that step by hand.
 - Nudge assertions carry the how line (B2, A2 to A4, and D's from K-D's record).
 - One Sonnet regression playtest per fixture (the T packets), each with a reload and `verify-run.rb`.
@@ -4259,7 +4283,7 @@ The user's own decisions (retry, KO, score, how a loss ends) are in §13.1 and a
 | Nudge on by default; fixture C covers the off switch | Fun, not hard; D stays strict but fair (orchestrator decision 5) |
 | Suspects 1–6, fixtures use 3–5 | Design 12 Q1; art, voice and diversity cost per character |
 | Early collapse = no guilty and at least half open in the opening rooms | "No suspect decided" is too strict for a single all-of profile |
-| Lint ids DL1–DL22 | SE `N` ids are design work items (R1I-12) |
+| Lint ids DL1–DL23 | SE `N` ids are design work items (R1I-12; DL23 added in R6) |
 | Phase 10 runs alongside the SE work, with an early regression and an engine commit before any fixture | The tree is shared and other agents' playtests run on it (R1D-28, R1I-6) |
 | Two opposition groups in one case deferred | No use case needs it; `profiles[].group` is reserved (R1D-22) |
 
@@ -4324,6 +4348,7 @@ There are no open questions for the user: the round 2 answers (Q5 to Q9) are in 
 | D's fades: no single unrecovered fade strands the player, and that is accepted; declined: every stop always costs something | Option (a) of SIDECAR-32; the two-fact lists of GAPSCD-22's alternative would add a route per stop for no gain the hand check needs (§9.4) |
 | A suspect holds at most one cell of any one clue | The plan was silent; DL3 checks it, and the evaluator stays sound without it (SIM-11, §4.1, §4.3) |
 | DL9(h) reads the declared `stakes.rigidity` | A mismatch with the derived rigidity is DL9(a)'s error, so the two lints never disagree on co-fires (R6I-5, §8) |
+| A: a lost lift on the glass opens a fallback ring topic with the bar staff (`t_a_glass_smudged`, `a_glass_smudged`) | Without it a lost lift plus a wrong call stranded Marsh and Ishikawa in 126 of 243 verdict combinations, a hidden trap; the glass still opens both routes (orchestrator, S4; §9.2) |
 
 ## 14. Review log
 
@@ -4331,7 +4356,7 @@ Each round is a fresh read-only Opus reviewer who verifies claims against the co
 findings are fixed, withdrawn with a reason, or deferred with a reason. Each round lists its own review
 files: round 1 `deduction/REVIEW_R1_ENGINE.md`, `REVIEW_R1_DESIGN.md`, `REVIEW_R1_INTEGRATION.md`; rounds 2
 to 4 the `REVIEW_R2_*`, `REVIEW_R3_*` and `REVIEW_R4_*` files named under their headings; round R5
-`REVIEW_R5_CONSOLIDATED.md`.
+`REVIEW_R5_CONSOLIDATED.md`; round R6 the `REVIEW_R6_*` files and `deduction/integration/`.
 
 | Round | Reviewer | Blockers | Majors | Minors | Outcome |
 |---|---|---|---|---|---|
@@ -4543,7 +4568,7 @@ R2I-15 (the spikes use an untracked spike scenario built for them, R3I-2).
 | R3D-7 | minor | fixed: DL8 treats a code given freely as opening its door; A's code is gated on Venn's coat, so the archive is never open before the cloakroom | §8, §9.2 |
 | R3D-8 | minor | fixed: DL6 re-checks with every cost gate set and every `remove_item` applied ("after a wrong call") | §8 |
 | R3D-9 | minor | fixed: "a route other than the favour itself" | DL14 |
-| R3D-10 | minor | fixed: C says "the quarry site"; clue ids unchanged | §9.3 |
+| R3D-10 | minor | fixed: C says "the quarry site"; clue ids unchanged (R6 renamed the travel ids too: `quarry_trip`, `no_quarry_trip`, L-84) | §9.3 |
 | R3D-11 | minor | fixed: DL10 also scans `title`, `closeHint`, `closingLine`; every fixture states its `title` and `verdictNoun`; B's line is "Okoro fitted all three" | §4.9, §7.9, §9, DL10 |
 | R3D-12 | minor | fixed: "one wrong or missed call loses the mission"; "A wrong one loses the mission" | §3.8, §6.3, §9.4 |
 | R3D-13 | minor | fixed: C's escalation at 2 forces a warned pull-out and a "network scattered" line | §9.3 |
@@ -4747,3 +4772,40 @@ inventory; hint timers cancelled; D3 order; reloads). §9.5 rows updated for B's
 | R5-84 | minor | fixed: hidden and destroyed cells carry no clue, label or mark, and no ids in the DOM | §6.2, §11.4 |
 | R5-87 | minor | fixed: X1 owns the test-bridge row; X2 adds a triggers subsection | §10.1, §10.3 |
 | R5-88 | minor | fixed: the spike is deleted by its own mission row, never the global seed prune | §10.1, §10.3 |
+
+### Round R6 and integration fold
+
+Three read-only reviews of the R5 plan (`deduction/REVIEW_R6_ENGINE.md`, `REVIEW_R6_INTEGRATION.md`,
+`REVIEW_R6_FIXTURES.md`, the last by simulation in `deduction/sim/`), plus the integration items gathered
+from the fixture sidecar drafts, the gap reviews of fixtures A to D and the simulation's decision spec
+(`deduction/integration/items_*.json`).
+
+| Round | Reviewer | Blockers | Majors | Minors |
+|---|---|---|---|---|
+| R6 | Engine and runtime | 0 | 3 | 8 |
+| R6 | Integration (packets, validator, tests, builder dry-runs) | 1 | 5 | 19 |
+| R6 | Fixtures by simulation | 0 | 2 | 9 |
+
+**Integration verification.** Each of the 94 integration items was checked against the plan and the code
+before folding: `deduction/integration/VERIFIED_SIDECAR_a.md`, `VERIFIED_SIDECAR_b.md`,
+`VERIFIED_GAPSAB.md`, `VERIFIED_GAPSCD.md`, `VERIFIED_SIM_DECISIONS.md` (32 confirmed, 57 partly
+confirmed, 2 rejected, 3 deferred).
+
+**The ledger.** `deduction/integration/FOLD_LEDGER.md` is the per-item record: every R6 finding, verified
+item and the user's Q1 to Q9 answers (`deduction/DECISIONS_PENDING.md`) map to a ledger row L-1 to L-105 or
+to its table 2. 105 items were applied in four stages: S1 (§1, §3 to §7, §13; 56 items), S2 (§2, §8, §10
+to §12; 27), S3 (§4.9, §9, with a hand and `deduction/sim/` re-check; 19) and S4 (this log, the status
+line and a consistency sweep; 3). 46 source items were rejected, superseded, already handled or deferred
+(table 2 gives the reason for each; two deferrals are backlog items for the orchestrator). One applied item
+was partly withdrawn: L-12's DL22 error for a gate global that `onClose` sets was narrowed once S1 had
+Finish run those `set_global`s before the conclusion tasks. The simulation re-checks are in
+`deduction/integration/S3_SIM_RESULTS.md`. The user's round 2 answers went in as Q5 the `trust` kind
+(L-4), Q6 C's release (L-85), Q7 the nudge's how line (L-5), Q8 the action nouns and truth line (L-6) and
+Q9 `deduction.voice` (L-7), with their §13.1 rows (L-8).
+
+**After the fold (S4, orchestrator).** Fixture A's lost lift: an excellent lift logged as unidentified
+could not be redone, and with a wrong call it stranded Marsh and Ishikawa in 126 of 243 verdict
+combinations. A second trigger on `fingerprint_collected` now opens a fallback topic with the bar staff
+(§9.2, §13.6); re-simulated, the lost lift strands no one beyond the 24 accepted KO-Marsh combinations, and
+the glass is still needed in 102 (`S3_SIM_RESULTS.md`, S4 section). The S4 sweep's fixes are listed in
+the ledger's L-105 row.
