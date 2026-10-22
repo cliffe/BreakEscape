@@ -99,7 +99,8 @@ You turned me down. Why?
     We said we'd be watching. We were.
     You took my keys, and the papers never left that conference room.
 - m02_completed:
-    You never answered me. You'll want to now.
+    // Regression fix pass n-1: m02's offer went unanswered; this is his first ring tonight.
+    You left my last offer on the table. Don't leave this one.
 - else:
     You don't know me. That's rather the point.
 }

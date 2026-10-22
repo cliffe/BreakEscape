@@ -1725,13 +1725,20 @@ end
             <%# Alignment R8-m3: a stand-down stands (as Wendell's told); the cut is by hand only while the shutter is live. %>
             { "eventPattern": "npc_ko:voltage_power", "condition": "globalVars.voltage_outcome !== 'stood_down_print' && globalVars.voltage_outcome !== 'talked_down'", "setGlobal": { "voltage_outcome": "ko" } },
             { "eventPattern": "npc_ko:voltage_power", "condition": "!globalVars.gallery_shutter_cut", "setGlobal": { "cut_by_hand": true } },
+            <%# Regression fix pass m-3: the Voltage fight is over when he is down and Static is down or was never there (&&-only, so three forms plus Static's own KO). %>
+            { "eventPattern": "global_variable_changed:voltage_outcome", "condition": "value === 'ko' && !globalVars.m04_static_left", "setGlobal": { "power_fight_over": true } },
+            { "eventPattern": "global_variable_changed:voltage_outcome", "condition": "value === 'ko' && globalVars.m04_static_left_alone === true", "setGlobal": { "power_fight_over": true } },
+            { "eventPattern": "global_variable_changed:voltage_outcome", "condition": "value === 'ko' && globalVars.static_power_ko === true", "setGlobal": { "power_fight_over": true } },
+            { "eventPattern": "global_variable_changed:static_power_ko", "condition": "value === true && globalVars.voltage_outcome === 'ko'", "setGlobal": { "power_fight_over": true } },
             { "eventPattern": "conversation_closed:wendell", "condition": "globalVars.wendell_outcome !== 'told' && !globalVars.gallery_shutter_cut && !globalVars.cut_by_hand", "setGlobal": { "cut_by_hand": true } },
             { "eventPattern": "room_exited", "condition": "data.roomId === 'power_room' && !globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && globalVars.wendell_outcome === ''", "setGlobal": { "wendell_outcome": "avoided" } },
             { "eventPattern": "room_exited", "condition": "data.roomId === 'power_room' && globalVars.m04_voltage_captured === true && globalVars.voltage_outcome === ''", "setGlobal": { "voltage_outcome": "avoided" } },
             { "eventPattern": "room_exited", "condition": "data.roomId === 'power_room' && globalVars.m04_voltage_escaped === true && globalVars.voltage_outcome === ''", "setGlobal": { "voltage_outcome": "avoided" } },
             { "eventPattern": "fingerprint_collected:voltage", "condition": "data.objectId === 'bypass_panel' && globalVars.m04_voltage_escaped === true && !globalVars.voltage_print_lifted", "setGlobal": { "voltage_print_lifted": true } },
-            { "eventPattern": "global_variable_changed:cut_by_hand", "condition": "value === true && globalVars.phone_voice_is_hax === true && !globalVars.gallery_shutter_cut && !globalVars.hax_jammed", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
-            { "eventPattern": "room_entered:power_room", "condition": "globalVars.cut_by_hand === true && !globalVars.gallery_shutter_cut && globalVars.phone_voice_is_hax === true && !globalVars.hax_jammed", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500, "cooldown": 0 },
+            <%# Regression fix pass m-3: no call opens during the Voltage fight; it rings once the fight is over (power_fight_over). %>
+            { "eventPattern": "global_variable_changed:power_fight_over", "condition": "value === true && globalVars.cut_by_hand === true && globalVars.phone_voice_is_hax === true && !globalVars.gallery_shutter_cut && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
+            { "eventPattern": "global_variable_changed:cut_by_hand", "condition": "value === true && globalVars.phone_voice_is_hax === true && !globalVars.gallery_shutter_cut && !globalVars.hax_jammed && globalVars.voltage_outcome !== 'fought'", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
+            { "eventPattern": "room_entered:power_room", "condition": "globalVars.cut_by_hand === true && !globalVars.gallery_shutter_cut && globalVars.phone_voice_is_hax === true && !globalVars.hax_jammed && globalVars.voltage_outcome !== 'fought'", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500, "cooldown": 0 },
             <%# Scenario design R1 m3: the isolator itself starts the by-hand cut with the phone voice. %>
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.cut_step !== 2 && globalVars.cut_by_hand === true && !globalVars.gallery_shutter_cut && globalVars.phone_voice_is_hax === true && !globalVars.hax_jammed", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500, "cooldown": 0 },
             { "eventPattern": "conversation_closed:agent_0x99", "condition": "globalVars.cut_by_hand === true && globalVars.cut_step !== 2 && !globalVars.gallery_shutter_cut && globalVars.phone_voice_is_hax === true && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
@@ -2344,8 +2351,9 @@ end
           "eventMappings": [
             <%# Puzzle chains P2: his success line, once the player has pulled the breaker. %>
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.cut_step === 3 && globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "cut_done", "voiced": true, "delayMs": 1500 },
-            { "eventPattern": "global_variable_changed:cut_by_hand", "condition": "value === true && globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
-            { "eventPattern": "room_entered:power_room", "condition": "globalVars.cut_by_hand === true && globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
+            { "eventPattern": "global_variable_changed:power_fight_over", "condition": "value === true && globalVars.cut_by_hand === true && globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
+            { "eventPattern": "global_variable_changed:cut_by_hand", "condition": "value === true && globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut && globalVars.voltage_outcome !== 'fought'", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
+            { "eventPattern": "room_entered:power_room", "condition": "globalVars.cut_by_hand === true && globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut && globalVars.voltage_outcome !== 'fought'", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
             <%# Scenario design R1 m3: the isolator itself starts the by-hand cut with the phone voice. %>
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.cut_step !== 2 && globalVars.cut_by_hand === true && globalVars.m04_vance_is_ally === true && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
             { "eventPattern": "room_entered:power_room", "condition": "!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && globalVars.m04_vance_is_ally === true", "onceOnly": true, "sendTimedMessage": { "delay": 1000, "message": "He doesn't know. Tell him, and he'll want to warn somebody. Their switchboard will hear it." } }
@@ -2364,8 +2372,9 @@ end
           "eventMappings": [
             <%# Puzzle chains P2: her success line, once the player has pulled the breaker. %>
             { "eventPattern": "global_variable_changed:gallery_shutter_cut", "condition": "value === true && globalVars.cut_step === 3 && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "cut_done", "voiced": true, "delayMs": 1500 },
-            { "eventPattern": "global_variable_changed:cut_by_hand", "condition": "value === true && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
-            { "eventPattern": "room_entered:power_room", "condition": "globalVars.cut_by_hand === true && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
+            { "eventPattern": "global_variable_changed:power_fight_over", "condition": "value === true && globalVars.cut_by_hand === true && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
+            { "eventPattern": "global_variable_changed:cut_by_hand", "condition": "value === true && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut && globalVars.voltage_outcome !== 'fought'", "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
+            { "eventPattern": "room_entered:power_room", "condition": "globalVars.cut_by_hand === true && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut && globalVars.voltage_outcome !== 'fought'", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
             <%# Scenario design R1 m3: the isolator itself starts the by-hand cut with the phone voice. %>
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Shutter Isolator' && globalVars.cut_step !== 2 && globalVars.cut_by_hand === true && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured && !globalVars.gallery_shutter_cut", "conversationMode": "phone-chat", "targetKnot": "cut_call", "resume": true, "voiced": true, "delayMs": 1500, "cooldown": 0 },
             { "eventPattern": "room_entered:power_room", "condition": "!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && !globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned'", "onceOnly": true, "sendTimedMessage": { "delay": 1000, "message": "He doesn't know. Tell him, and he'll want to warn somebody. Their switchboard will hear it." } }
@@ -3394,6 +3403,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_static.json",
           "currentKnot": "power",
+          "globalVarOnKO": "static_power_ko",
           "voice": <%= voice.(:static) %>,
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 135, "attackDamage": 12, "pauseToAttack": true, "fightStyle": "slugger" } },
           "eventMappings": [
@@ -4414,6 +4424,8 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "margin_note_read": false,
     "phone_voice_is_hax": false,
     "cut_by_hand": false,
+    "static_power_ko": false,
+    "power_fight_over": false,
     "cut_step": 0,
     "gallery_shutter_cut": false,
     "voltage_print_lifted": false,

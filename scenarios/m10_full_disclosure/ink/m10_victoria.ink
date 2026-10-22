@@ -62,7 +62,12 @@ Victoria Sterling: I can open that lock for you. I can also open it for them. No
     // Alignment R12-m3: the unlock rides the reply's first line, so a close or reload can't keep the outcome without the door.
     #unlock_door:core
     Victoria Sterling: Then you know I'm hedging. So is everyone. Open.
-    Victoria Sterling: And the order's withdrawn. Remember that I didn't have to.
+    // Regression fix pass m-4: the order may already be dead at the console.
+    {share_zero_day == "stopped":
+        Victoria Sterling: And you've killed their order already, so this one's free. Remember that.
+    - else:
+        Victoria Sterling: And the order's withdrawn. Remember that I didn't have to.
+    }
     ~ vic_quiet = true
     #exit_conversation
     -> gallery_rest

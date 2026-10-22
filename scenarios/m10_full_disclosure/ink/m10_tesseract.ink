@@ -1139,7 +1139,8 @@ Agent HaX: That's coordinated disclosure. Vendors first, with time to fix, then 
 + [And if I wipe both copies?]
     Agent HaX: If both copies die, this room purges itself. He'll be ready for it, and you won't have him after.
 + [There's a third way.]
-    Director Magnus Netherton: There is. Wipe both copies, his and ours.
+    // Regression fix pass n-2: the player's idea, named back.
+    Director Magnus Netherton: I know the one you mean. Wipe both copies, his and ours.
     Agent HaX: And if both copies die, this room purges itself. He'll be ready for it. You won't have him after.
 -
 Director Magnus Netherton: Then nobody has it, and nobody fixes anything either. We both answer for it.

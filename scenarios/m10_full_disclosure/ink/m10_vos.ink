@@ -65,6 +65,10 @@ Pieter Vos: I don't do philosophy. I do delivery dates.
     #unlock_door:core
     Pieter Vos: *pause* Who told you that. No. Don't. The door is open.
     Pieter Vos: The order goes with me, and so do I. I'm leaving.
+    // Regression fix pass n-4: the trace's cost, said at the pick.
+    {head_start_killed == "trace":
+        Pieter Vos: Whoever you were waiting to watch collect it will be waiting a long time.
+    }
     ~ vos_l_quiet = true
     #exit_conversation
     -> vos_rest

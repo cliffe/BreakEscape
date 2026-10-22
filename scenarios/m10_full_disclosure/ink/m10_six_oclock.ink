@@ -54,8 +54,13 @@ Narrator: The forward post, a few minutes before six. Floodlights, engines runni
 ~ temp vic_here = victoria_gallery == "arrested_here" or victoria_gallery == "ko"
 ~ temp kow_here = sleeper_caught or wren_at_core
 ~ temp officer_here = officer_out != "" and officer_out != "quintero"
+// Regression fix pass m-2: the cap is said in the scene (one more, then Netherton calls the agent over).
 { six_picks >= 3:
+    Director Magnus Netherton: Agent. With me.
     -> phone_beat
+}
+{ six_picks == 2:
+    Narrator: Netherton's at the lead car, watching you. Time for one more.
 }
 + { not six_q } { quintero_wounded } [(Go to Quintero's stretcher.)]
     -> walk_quintero
