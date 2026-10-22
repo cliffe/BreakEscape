@@ -420,3 +420,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 
 ## Five-phase improvement loop on the built missions (user, 2026-10-22)
 - Gap acknowledged: the AGENTS.md loop had not run on built m09/m10 (skills used only at design stages). User: run all phases in full, cut a phase short only at 0 major and 0 minor; ending must land the player's earlier choices and wrap up satisfyingly. Phase 1 alignment started for both missions.
+- m10 alignment R1 (fresh reviewer): 0/8/12, another round. A1 player missing from own credits; A2 last beats lost under the credits on executed/Join/06:00; A3–A4 m05 and m01 barely reach the finale (cold-start 'You handed Derek over'); A5 no backward clause at 06:00; A6 Tesseract's evidence speech a list; A7 music; A8 endings' gains/costs unsaid. Rulings: D1 yes (one season line at 06:00 + matching credit, per the user's ending priority); D2 yes (executed headline as unvoiced Screen: text in the scene).
