@@ -428,19 +428,25 @@ export async function addToInventory(sprite) {
                 // Create item data with ID from scenario if available
                 const itemData = sprite.scenarioData;
 
+                const addBody = JSON.stringify({
+                    action_type: 'add',
+                    item: itemData,
+                    source_npc_id: sprite.sourceNpcId || undefined
+                });
                 const response = await fetch(`/break_escape/games/${gameId}/inventory`, {
                     method: 'POST',
                     credentials: 'same-origin',
+                    // A choice's reply flushes its give_item as the page unloads (person-chat
+                    // _flushPendingReply); without keepalive the browser can cancel this POST
+                    // and the item is lost. Keepalive bodies are capped at 64 KB (a bigger one
+                    // makes fetch throw), so fall back to a plain request past 60 000 chars.
+                    keepalive: addBody.length < 60000,
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
                         'X-CSRF-Token': CSRF_TOKEN
                     },
-                    body: JSON.stringify({
-                        action_type: 'add',
-                        item: itemData,
-                        source_npc_id: sprite.sourceNpcId || undefined
-                    })
+                    body: addBody
                 });
 
                 const result = await response.json();
