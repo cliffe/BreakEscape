@@ -442,3 +442,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - m09 alignment R7: 0/0/2 (Noor's clone button on the warned route and after a saved read; status-ladder rows missing from the contract body).
 - m09 alignment R7 fixes: 2/2 (Noor's clone button hides after a saved read and on the warned route via staff_card_cloned; contract status ladder rows).
 - m10 alignment R3 JSON fixes: Noor rows exclusive; KO'd Vector/Phantom/Quintero credits; inert T-47..T-57 deleted (scenes carry the beats); season fallback; comments.
+- m09 alignment R8: 0/0/0. Phase 1 complete for m09 (rounds 1–8). Queued for phase 5 playtests: Noor's clone button on a cold start (cancel, then save) and one walk of the m05 warned-in-time route.
