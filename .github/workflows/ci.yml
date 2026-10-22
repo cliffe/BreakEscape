@@ -102,34 +102,15 @@ jobs:
       # The validator tests spawn plain `ruby`; bundle exec puts Bundler's
       # RUBYOPT in the environment so the child can load the json-schema gem.
       - name: Social and validator tests
-        run: bundle exec node --test test/js/validator-*.test.mjs test/js/social-*.test.mjs
+        run: bundle exec bin/test-js -j 4 test/js/validator-*.test.mjs test/js/social-*.test.mjs
 
+      # bin/test-js runs each file in its own `node --test` process (one
+      # `node --test test/js/*.test.mjs` hits a Node 18 runner IPC error, "Unable to
+      # deserialize cloned data", from test children that log heavily to stdout).
+      # It re-runs a file only on that exact error and prints the retry. No
+      # quarantine list: every file is a real gate.
       - name: Whole test/js suite (regression cover for m01-m08)
-        env:
-          # Quarantine: file name -> reason. Each is skipped in the full run and
-          # then run alone below. Drop an entry once it passes the full run on Node 20.
-          #   engine-fixes-round4.test.mjs, engine-fixes-pass3.test.mjs:
-          #   "fail intermittently in the full run on Node 18 with a structured-clone
-          #   runner error, pass alone"
-          QUARANTINE: >-
-            engine-fixes-round4.test.mjs
-            engine-fixes-pass3.test.mjs
-        run: |
-          set -euo pipefail
-          files=()
-          for f in test/js/*.test.mjs; do
-            skip=0
-            for q in $QUARANTINE; do
-              [ "$(basename "$f")" = "$q" ] && skip=1
-            done
-            [ "$skip" -eq 0 ] && files+=("$f")
-          done
-          echo "Full run: ${#files[@]} files"
-          bundle exec node --test "${files[@]}"
-          for q in $QUARANTINE; do
-            echo "Quarantined, run alone: $q"
-            bundle exec node --test "test/js/$q"
-          done
+        run: bundle exec bin/test-js -j 4
 
       # Social scenarios are found by rendering each scenario.json.erb with the
       # validator's own render_erb_to_json and checking the top-level `social` key,
