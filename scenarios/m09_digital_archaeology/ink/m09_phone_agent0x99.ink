@@ -41,6 +41,7 @@ VAR legacy_clock_run = false
 VAR reading_found = false
 VAR reading_finished = false   // scenario design R1 n4: the Reading topic waits for the last page
 VAR deed_found = false   // scenario design R1 m3: the lease file's onPickup
+VAR hl_box_opened = false   // scenario design R2 n3: the H&L lid's unlock (HaX latch)
 VAR tape_card_held = false   // scenario design R1 n2: the tape room card taken from the safe
 VAR salvage_keypad_seen = false
 VAR tape_room_entered = false
@@ -934,12 +935,13 @@ Sent. He'll read it tonight.
     Flag two. The ledger's still on the catalogue server.
 - cage_opened:
     The plan cabinet takes her print. It's on her stamp, on the hatch shelf. Then flag two, the ledger.
+// Scenario design R1 m1 (R2 n4: above the hatch row): Victoria's m03 payoff,
+// until the code is asked for.
+- stacks_entered and m03_victoria_fate == "recruited" and not maintenance_code_used and not cage_opened:
+    Victoria's people can open that gate. Ask me.
 // Walkthrough R1 m-04: after the hatch, name the gate and the cabinet.
 - hatch_talked and not cage_opened:
     Clone her card at the hatch if you haven't. The gate's beside her, and the cabinet inside takes her print.
-// Scenario design R1 m1: Victoria's m03 payoff, until the code is asked for.
-- stacks_entered and m03_victoria_fate == "recruited" and not maintenance_code_used:
-    Victoria's people can open that gate. Ask me.
 - stacks_entered:
     The hatch. Talk to her across the counter, and take what you can off her.
 - flag1_submitted:
@@ -958,13 +960,18 @@ Sent. He'll read it tonight.
 === bring_in_confirm ===
 ~ temp open_told = 0
 That's Helena done. Once you're on the plane, the archive's closed to us.
-{not albion_notified:
+// Scenario design R2 m1: the threads that close for good first, at most two.
+{m08_nightshade_triple_agent and nightshade_file_held and not nightshade_file_decided:
     ~ open_told = open_told + 1
-    The notice is still on his box. Netherton will ask.
+    You haven't said what we do with Nightshade's file.
 }
-{not sleeper_named and not sleeper_shortlist:
+{open_told < 2 and not sleeper_named and not sleeper_shortlist:
     ~ open_told = open_told + 1
-    H&L's boxes are still shut. That's yours to leave, if you leave it.
+    {hl_box_opened:
+        H&L's placing sheet is still in their box. You haven't read it.
+    - else:
+        H&L's boxes are still shut. That's yours to leave, if you leave it.
+    }
 }
 {open_told < 2 and not deed_found:
     ~ open_told = open_told + 1
@@ -974,9 +981,9 @@ That's Helena done. Once you're on the plane, the archive's closed to us.
     ~ open_told = open_told + 1
     Tran's still at his tapes. Arakawa's people can collect him.
 }
-{open_told < 2 and m08_nightshade_triple_agent and nightshade_file_held and not nightshade_file_decided:
-    ~ open_told = open_told + 1
-    You haven't said what we do with Nightshade's file.
+// The notice isn't lost here (the debrief asks), so it is a heads-up outside the cap.
+{not albion_notified:
+    The notice is still on his box. Netherton will ask.
 }
 + [Bring me in.]
     // Copied once, never again, so a replayed debrief reads a stable value.
@@ -989,7 +996,7 @@ That's Helena done. Once you're on the plane, the archive's closed to us.
     #exit_conversation
     -> DONE
 + [Not yet. I want to finish something.]
-    Line's open.
+    Go on. I'll be here.
     -> support_hub
 
 // ================================================

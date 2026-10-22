@@ -35,7 +35,8 @@ Margaret Sorensen: Paper was the only thing that could ever have hurt them. So t
     Margaret Sorensen: Torres cost us one hospital bill, and he got us within an afternoon of a nation's dispatch keys. I'd call that good value. So would you, if you were honest.
 }
 ~ cage_met = true
--> back
+// Scenario design R2 n2: with the file in hand, the hub's glance plays after her opening.
+{nightshade_file_held: -> hub | -> back}
 
 === back ===
 ~ hub_quiet = true

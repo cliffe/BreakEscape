@@ -23,6 +23,7 @@ VAR sleeper_named = false
 VAR sleeper_shortlist = false
 VAR recruiter_secret = ""
 VAR hax_confession_answer = ""
+VAR deed_found = false   // scenario design R2 m2: the lease file was taken
 VAR albion_notified = false
 VAR legacy_files_saved = false
 // Local to m09.
@@ -258,7 +259,15 @@ Narrator: He reads the first name off the card. He doesn't look down for the sec
 // The order, and his reply to the stance at the pen (N-07).
 // Scenario design R1 m3: the briefing's open question ("Not the bunker. Not
 // yet."), answered for every player before he signs.
-Director Magnus Netherton: Sun River. A civil defence bunker Tesseract's people leased from the state in 2016. That is where the order sends us.
+// R2 m2: sourced on every route; the lease arm rewards going back for it.
+{
+- deed_found:
+    Director Magnus Netherton: Sun River. A civil defence bunker Tesseract's people leased from the state in 2016. Her own file gave us the address. That is where the order sends us.
+- m08_tomb_gamma_location_known:
+    Director Magnus Netherton: Sun River. Nightshade's coordinate, and a lease Tesseract's people took in 2016. That is where the order sends us.
+- else:
+    Director Magnus Netherton: Sun River. Analysis found the lease an hour ago. It was in her office all night. That is where the order sends us.
+}
 Narrator: He lays the Montana order on a crate and uncaps a pen.
 // R3 I-7: the ruthless save, remembered once (pays off the briefing's
 // "Nobody mentions why.").
