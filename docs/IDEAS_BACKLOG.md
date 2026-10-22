@@ -74,9 +74,8 @@ From the PIN cracker fix (2026-10-10), found but not fixed:
 - **KO item drops land on top of each other** (m06 dressing, 2026-10-13; S). Items dropped by a knocked-out NPC land about 8 px apart, so picking one up opens a pick-one menu. Spread drops at least 32 px.
 
 - **Follow-ups from the backlog batch (2026-10-22):**
-  - **Browser checks still owed** (S). "Prefer to route around" (game 3110, lab_tesseract_trials common room: off, on, boxed in; plus a chair-heavy office) and combat healing (game 3108, m04: drink the operations_office cup, regen after a hit, a chaser turning back at its door). The permission classifier blocked both agents' harness runs. The RFID cracked-MIFARE screen's button fix (compact data box) also needs one look.
+  - **A wheeled chair ended up through a wall** (route-around browser check, m01 game 3224; S, unconfirmed). Chair 1 in main_office_area moved from (99,-60) to (99,19), below the office's south wall in reception, while the player clicked on and beside it. Not isolated to one click and not compared with the build before 5a8bf225; likely chair pushing, not pathfinding. Reproduce, then keep pushed props inside their room.
   - **Playtest harness needs Node 20** (S). Playwright 1.64.1 refuses Node 18.19.1, the machine's Node. Install Node 20+ or pin an older Playwright.
-  - **m06 blind run of the settlement tracer** (S). The board replaced a deduction step; nothing in HaX's dialogue points to it yet, only the transaction server's look-at text.
   - **m02: Gary's catch fires for the IT door pick** (S). His `lockpick_used_in_view` mapping has no target condition, so picking the IT door from the staff room plays his "That's my filing cabinet" line (he now has `los.occlusion: false` so the cabinet catch always fires). Condition the mapping on the cabinet.
   - **Sight-blocking prop list** (S). Fig plants, x-ray scanners, the DVR stack and `brochure_rack` don't block sight; flag any with `blocksSight: true` where a mission wants cover.
 

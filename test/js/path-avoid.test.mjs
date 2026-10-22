@@ -75,8 +75,8 @@ const through = (path, cells) => path.some(([x, y]) => cells.some(c => c.cx === 
 test('which objects are avoided', () => {
     assert.equal(prefersAvoid(vending(0, 0)), true);
     assert.equal(prefersAvoid({ scenarioData: { type: 'notes' } }), false);
-    assert.equal(prefersAvoid({ hasWheels: true }), true, 'wheeled props default to avoided');
-    assert.equal(prefersAvoid({ hasWheels: true, scenarioData: { preferAvoid: false } }), false, 'scenario false wins');
+    assert.equal(prefersAvoid({ hasWheels: true }), false, 'wheeled props are pushed, not avoided');
+    assert.equal(prefersAvoid({ hasWheels: true, scenarioData: { preferAvoid: true } }), true, 'only an explicit preferAvoid opts in');
     assert.equal(prefersAvoid(vending(0, 0, { visible: false })), false, 'hidden or taken objects are ignored');
 });
 

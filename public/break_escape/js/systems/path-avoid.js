@@ -12,9 +12,10 @@
  * direct-line and smoothing shortcuts also refuse a straight line through one,
  * unless the raw route itself goes through it. WASD movement is unaffected.
  *
- * Which objects: scenario `preferAvoid: true|false` wins; otherwise wheeled
- * (pushable) props default to true. Objects with a solid immovable body are
- * already walls on the grid and are skipped.
+ * Which objects: only those with scenario `preferAvoid: true`. Wheeled props
+ * and animated plants are left out on purpose (user, 2026-10-22): bumping a
+ * chair or brushing through a plant is a satisfying moment. Objects with a
+ * solid immovable body are already walls on the grid and are skipped.
  */
 
 // Cost of entering one 8px cell of an avoided object (a free cell costs 1).
@@ -25,9 +26,7 @@ export const AVOID_CELL_COST = 20;
 /** Does this sprite ask click-to-move to route round it? */
 export function prefersAvoid(sprite) {
     if (!sprite || sprite.active === false || sprite.visible === false) return false;
-    const flag = sprite.scenarioData?.preferAvoid;
-    if (typeof flag === 'boolean') return flag;
-    return sprite.hasWheels === true;
+    return sprite.scenarioData?.preferAvoid === true;
 }
 
 /**

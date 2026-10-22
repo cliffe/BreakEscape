@@ -517,7 +517,7 @@ This laptop object will be placed at the next available `pc` slot in the room te
 | `onPickup` | optional | `{ "setVariable": { "var_name": true } }` — sets a global variable on pickup |
 | `onInteract` | deprecated | Legacy interaction handler. Use `triggerOnInteract` + `observationDisplay` instead. |
 | `minigameData` | optional | Configuration object for interactive minigames. All minigame-specific configuration goes here, not at the object level. See Minigame Configuration below. |
-| `preferAvoid` | optional | `true`: click-to-move paths go round the object when there is a reasonable way round (a detour shorter than a room's width or so), and walk through it only when there isn't. For objects the player can walk through or push, such as a vending machine with no collision. Wheeled props (chairs, trolleys, wheelchairs) default to `true`; set `false` to let paths go straight through. Objects with solid collision are walls already, so it has no effect on them. WASD movement ignores it (`js/systems/path-avoid.js`) |
+| `preferAvoid` | optional | `true`: click-to-move paths go round the object when there is a reasonable way round (a detour shorter than a room's width or so), and walk through it only when there isn't. For objects the player can walk through, such as a vending machine with no collision. Off by default. Leave it off for wheeled props (chairs, trolleys, wheelchairs) and plants that animate as the player walks through: bumping a chair or brushing a plant is part of the fun. Objects with solid collision are walls already, so it has no effect on them. WASD movement ignores it (`js/systems/path-avoid.js`) |
 
 Example (dynamic bedside monitor copy):
 
