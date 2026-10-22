@@ -409,3 +409,4 @@ the orchestrator passes it to that wave's owner.
   - **Runner minors:** the defend stage says "on the receiving end" on a defend-only run, and the Finished panel shows two Close buttons.
   - **Kiosk text:** it still says "Five messages are waiting" after the round is done.
   - **Cast:** Graham Whitfield and Farah Qureshi go into BRAND_SET.
+- **P7-W3:** `window.startAuthenticator(params)` is wired. In one run the Mission Brief showed after Esc closed the overlay; check this when the runner launches it. Use a fresh game for each run.
