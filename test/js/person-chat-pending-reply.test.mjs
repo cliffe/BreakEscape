@@ -103,11 +103,11 @@ test('normal play: tags run once, when the scheduled reply is displayed, not at 
     t.mock.timers.tick(1499);
     assert.equal(applied.length, 0, 'nothing applied before 1.5 s');
     t.mock.timers.tick(1);
-    assert.equal(applied.length, 1, 'applied when the reply is displayed');
-    assert.equal(applied[0][0].length, 6, 'the whole tag list goes through, as before');
+    assert.equal(applied.length, 2, 'applied when the reply is displayed (quick tags, then give_item)');
+    assert.equal(flat(applied).length, 6, 'the whole tag list goes through, once');
     assert.equal(o._pendingReply, null);
     o._flushPendingReply();    // a close after the reply has shown
-    assert.equal(applied.length, 1, 'no second application after display');
+    assert.equal(applied.length, 2, 'no second application after display');
 });
 
 test('click-through: tags run on the click, once', () => {
@@ -116,9 +116,10 @@ test('click-through: tags run on the click, once', () => {
     o._deferReply(reply());
     assert.equal(applied.length, 0);
     o.pendingContinueCallback();    // the Continue click
-    assert.equal(applied.length, 1);
+    assert.equal(applied.length, 2);
+    assert.equal(flat(applied).length, 6);
     o._flushPendingReply();
-    assert.equal(applied.length, 1);
+    assert.equal(applied.length, 2);
 });
 
 test('close mid-reply: state tags apply exactly once, the timer is cleared and the reply never shows', async (t) => {
@@ -225,4 +226,66 @@ test('give_npc_inventory_items and clone_keycard are never flushed; a closed cha
     assert.equal(applied.length, 2, 'applied immediately (fast, then slow)');
     assert.equal(win.listeners.length, 0, 'no page hooks registered after cleanup');
     assert.equal(o.autoAdvanceTimer, null);
+});
+
+test('display path: tags that never wait run before give_item, which keeps its ink order among the slow ones (R10 m2)', async () => {
+    const { o, applied } = harness();
+    o.displayAccumulatedDialogue({
+        text: 'Here you go.',
+        tags: ['speaker:kevin', 'give_item:lockpick', 'set_global:given_all:true', 'give_item:keycard', 'complete_task:t1', 'remove_npc:kevin']
+    });
+    await drain();
+    assert.deepEqual(applied.map(a => a[0]), [
+        ['speaker:kevin', 'set_global:given_all:true', 'complete_task:t1'],
+        ['give_item:lockpick', 'give_item:keycard', 'remove_npc:kevin']]);
+});
+
+test('display path after a flush: only presentation tags run, nothing twice', async () => {
+    const { o, applied } = harness();
+    const r = reply();
+    o._pendingReply = r;
+    o._flushPendingReply({ keepPending: true });
+    o.displayAccumulatedDialogue(r);
+    await drain();
+    const state = flat(applied).filter(x => STATE.includes(x));
+    assert.equal(state.length, STATE.length);
+});
+
+// ---- inventory restore of a notes item (R10 m1) ----
+const invSrc = readFileSync(join(here, '../../public/break_escape/js/systems/inventory.js'), 'utf8');
+function restoreNote(notes) {
+    const m = invSrc.match(/export function restoreNoteFromSave\(item\) \{\n([\s\S]*?)\n\}\n/);
+    assert.ok(m, 'restoreNoteFromSave found');
+    const added = [];
+    const win = { gameState: { notes }, addNote: (t, b, i) => { added.push([t, b, i]); notes.push({ title: t, text: b }); } };
+    const fn = new Function('window', `return function (item) {\n${m[1]}\n};`)(win);
+    return { fn, added };
+}
+
+test('restore puts a notes item in the notepad once, quietly', () => {
+    const notes = [];
+    const { fn, added } = restoreNote(notes);
+    const item = { type: 'notes', name: 'Asset File: D. Lawson', text: 'Why he did it.', observations: 'smudged', important: true };
+    assert.equal(fn(item), true);
+    assert.deepEqual(added, [['Asset File: D. Lawson', 'Why he did it.\n\nObservation: smudged', true]]);
+    assert.equal(fn(item), false, 'a second restore adds nothing');
+    assert.equal(added.length, 1);
+});
+
+test('restore leaves an existing or annotated note with the same title alone, and skips textless items', () => {
+    const notes = [{ title: 'Letters', text: 'resolved text\n\nObservation: mine' }];
+    const { fn, added } = restoreNote(notes);
+    assert.equal(fn({ type: 'notes', name: 'Letters', text: 'raw conditional text' }), false);
+    assert.equal(fn({ type: 'notes', name: 'Blank' }), false);
+    assert.equal(added.length, 0);
+});
+
+test('restore wiring: only the server-inventory loop restores notes, before the duplicate check, with no toast or event', () => {
+    const fnBody = invSrc.match(/export function restoreNoteFromSave\(item\) \{\n([\s\S]*?)\n\}\n/)[1];
+    assert.ok(!/gameAlert|eventDispatcher|onRead|setVariable/.test(fnBody));
+    const loop = invSrc.indexOf('Processing ${window.gameScenario.playerInventory.length} items from server inventory');
+    const call = invSrc.indexOf('restoreNoteFromSave(itemData)');
+    const fallback = invSrc.indexOf('startItemsInInventory.forEach');
+    assert.ok(loop < call && call < fallback);
+    assert.equal((invSrc.match(/restoreNoteFromSave\(itemData\)/g) || []).length, 1);
 });

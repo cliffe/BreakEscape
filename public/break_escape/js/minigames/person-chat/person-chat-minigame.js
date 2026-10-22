@@ -1227,9 +1227,16 @@ export class PersonChatMinigame extends MinigameScene {
             if (result.tags && result.tags.length > 0) {
                 console.log('🏷️ Processing action tags from accumulated dialogue:', result.tags);
                 // State tags already flushed by _flushPendingReply must not run twice
-                processGameActionTags(
-                    result._stateTagsApplied ? splitReplyTags(result.tags).presentation : result.tags,
-                    this.ui, this._tagOptions());
+                // Tags that never wait run first, in ink order, in one call that finishes
+                // synchronously; give_item / remove_npc (a server round trip each) follow,
+                // in ink order. A reload during that round trip used to lose every tag
+                // listed after the give_item (R10 m2). No scenario relies on a give_item
+                // landing before a later tag in the same reply (checked against every
+                // item_picked_up mapping that reads a global).
+                const { fast, slow } = partitionSlowTags(
+                    result._stateTagsApplied ? splitReplyTags(result.tags).presentation : result.tags);
+                if (fast.length > 0) processGameActionTags(fast, this.ui, this._tagOptions());
+                if (slow.length > 0) processGameActionTags(slow, this.ui, this._tagOptions());
                 
                 // Check for exit_conversation tag
                 const shouldExit = result.tags.some(tag => tag.includes('exit_conversation'));

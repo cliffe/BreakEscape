@@ -126,6 +126,10 @@ export function processInitialInventoryItems() {
                 return;
             }
             
+            // A notes item given just before a reload reached the server but its notepad
+            // entry is only written after the response (R10 m1); put it back quietly
+            if (/^notes\d*$/.test(itemData.type)) restoreNoteFromSave(itemData);
+
             // Check if item already exists in inventory (by ID, type, or name)
             const itemId = itemData.id || window.lockRef(itemData);
             const alreadyExists = window.inventory.items.some(existing => {
@@ -253,6 +257,24 @@ function createInventorySprite(itemData) {
         console.error('Error creating inventory sprite:', error);
         return null;
     }
+}
+
+/**
+ * Restore a notes item's notepad entry after a reload, with no toast, no
+ * item_picked_up and no onRead (all of those ran when it was first taken).
+ * Skips when the notepad already holds a note with the item's title: world notes
+ * are added with their conditional text resolved, so matching on text alone
+ * could double one, and a title match also leaves an annotated note and its
+ * read/unread state alone.
+ */
+export function restoreNoteFromSave(item) {
+    const text = item?.text || item?.observations || '';
+    if (!text || !window.addNote) return false;
+    const title = item.name || 'Note';
+    if ((window.gameState?.notes || []).some(n => n.title === title)) return false;
+    const body = item.observations && item.text ? `${item.text}\n\nObservation: ${item.observations}` : text;
+    window.addNote(title, body, !!item.important);
+    return true;
 }
 
 /**
