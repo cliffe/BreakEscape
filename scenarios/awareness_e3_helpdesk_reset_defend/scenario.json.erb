@@ -29,6 +29,11 @@
           "episode_e3_helpdesk_reset_defend_defend_done"
         ]
       },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Service desk queue done",
+        "body": "You've worked through all four calls and the sign-in prompt, and finished this episode."
+      },
       "tasks": [
         {
           "taskId": "work_service_desk_queue",
@@ -41,7 +46,7 @@
   ],
   "globalVariables": {
     "episode_e3_helpdesk_reset_defend_state": {},
-    "se_awareness_records": {},
+    "se_awareness_records": [],
     "episode_e3_helpdesk_reset_defend_defend_percent": 0,
     "episode_e3_helpdesk_reset_defend_defend_reportRate": 0,
     "episode_e3_helpdesk_reset_defend_defend_done": false,
@@ -126,19 +131,23 @@
             "claims": [
               {
                 "fact": "who",
-                "value": "gordon_full"
+                "value": "gordon_full",
+                "label": "Gordon McLeish"
               },
               {
                 "fact": "team",
-                "value": "claims"
+                "value": "claims",
+                "label": "Claims"
               },
               {
                 "fact": "manager",
-                "value": "okonkwo_full"
+                "value": "okonkwo_full",
+                "label": "Ngozi Okonkwo"
               },
               {
                 "fact": "staffId",
-                "value": "gordon_staffid"
+                "value": "gordon_staffid",
+                "label": "QH-20719"
               }
             ],
             "tells": [
@@ -183,19 +192,23 @@
             "claims": [
               {
                 "fact": "who",
-                "value": "gordon_full"
+                "value": "gordon_full",
+                "label": "Gordon McLeish"
               },
               {
                 "fact": "team",
-                "value": "claims"
+                "value": "claims",
+                "label": "Claims"
               },
               {
                 "fact": "manager",
-                "value": "okonkwo_full"
+                "value": "okonkwo_full",
+                "label": "Ngozi Okonkwo"
               },
               {
                 "fact": "staffId",
-                "value": "gordon_staffid"
+                "value": "gordon_staffid",
+                "label": "QH-20719"
               }
             ],
             "tells": [],
@@ -236,15 +249,18 @@
             "claims": [
               {
                 "fact": "team",
-                "value": "claims"
+                "value": "claims",
+                "label": "Claims"
               },
               {
                 "fact": "manager",
-                "value": "okonkwo_full"
+                "value": "okonkwo_full",
+                "label": "Ngozi Okonkwo"
               },
               {
                 "fact": "staffId",
-                "value": "gordon_staffid"
+                "value": "gordon_staffid",
+                "label": "QH-20719"
               }
             ],
             "tells": [
@@ -287,11 +303,13 @@
             "claims": [
               {
                 "fact": "team",
-                "value": "claims"
+                "value": "claims",
+                "label": "Claims"
               },
               {
                 "fact": "manager",
-                "value": "okonkwo_full"
+                "value": "okonkwo_full",
+                "label": "Ngozi Okonkwo"
               }
             ],
             "tells": [],

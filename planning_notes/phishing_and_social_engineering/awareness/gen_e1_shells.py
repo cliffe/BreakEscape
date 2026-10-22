@@ -162,7 +162,7 @@ def defend_only():
     }
     globals_ = {
         f'episode_{ep_id}_state': {},
-        'se_awareness_records': {},
+        'se_awareness_records': [],
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
@@ -211,7 +211,7 @@ def check(pair, stage):
     }
     globals_ = {
         f'episode_{ep_id}_state': {},
-        'se_awareness_records': {},
+        'se_awareness_records': [],
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
@@ -222,8 +222,7 @@ def check(pair, stage):
     if stage == 'pre':
         extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_done']
     else:
-        globals_.update({'triage_pre_percent': 0, 'triage_pre_reportRate': 0, 'triage_pre_done': False,
-                         'pre_check_completed': False})
+        # Imported names are not redeclared (the validator rejects the collision).
         extra['importGlobals'] = [
             {'from': pre_mission, 'var': 'triage_pre_percent', 'as': 'triage_pre_percent', 'default': 0},
             {'from': pre_mission, 'var': 'triage_pre_reportRate', 'as': 'triage_pre_reportRate', 'default': 0},

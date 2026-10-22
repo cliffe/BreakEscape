@@ -104,6 +104,7 @@ EPISODES = {
             'display': 'Awareness E3: Helpdesk reset (service desk only)',
             'desc': "An eight-minute awareness episode for IT service desk staff, on the defending side only. Sit in the service desk seat at Quayholt Insurance, a fictional company: four callers want password resets or changes to their sign-in, and a sign-in prompt turns up on your own phone. Each answer is explained, and ringing back a real caller never costs you anything.",
             'minutes': 8,
+            'ending': ('Service desk queue done', "You've worked through all four calls and the sign-in prompt, and finished this episode."),
         },
         'check': {
             'items_pre': 'Ten items from the IT service desk queue: calls, a voicemail, emails and a sign-in prompt.',
@@ -137,6 +138,7 @@ EPISODES = {
             'display': 'Awareness E5: Sign-in pages (pages only)',
             'desc': "An eight-minute awareness episode for all staff, on the defending side only. Five web pages from links in an inbox at Quayholt Insurance, a fictional company: some are the real sign-in, some were built to collect passwords. Each answer is explained, and reporting a real page never costs you anything.",
             'minutes': 8,
+            'ending': ('Sign-in pages checked', "You've checked all five pages and finished this episode."),
         },
         'check': {
             'items_pre': 'Ten items from a Quayholt inbox, emails and pages opened from links.',
@@ -212,8 +214,13 @@ def kiosk(ep_id, observations):
     }
 
 
+def success_screen(title, body):
+    """The ending for a short training episode (README_scenario_design.md, "The ending convention")."""
+    return {'type': 'success', 'title': title, 'body': body}
+
+
 def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, host, ink_name,
-             kiosk_obs, extra=None):
+             kiosk_obs, ending, extra=None):
     ink_path = f'scenarios/{mission}/ink/{ink_name}.json'
     ep_id = social['awarenessEpisode']['id']
     sc = {
@@ -233,6 +240,7 @@ def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, 
             'order': 0,
             'missionConclusion': True,
             'concludeRequires': {'globals': [done]},
+            'conclusionScreen': ending,
             'tasks': [{'taskId': task[0], 'title': task[1], 'type': 'custom', 'status': 'active'}],
         }],
         'globalVariables': globals_,
@@ -318,7 +326,7 @@ def defend_only(ekey):
     }
     globals_ = {
         f'episode_{ep_id}_state': {},
-        'se_awareness_records': {},
+        'se_awareness_records': [],
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
@@ -327,7 +335,8 @@ def defend_only(ekey):
     host = HOSTS[cfg['defend_host']]
     ink_name = host['id']
     sc = scenario(mission, d['name'], d['brief'], d['endGoal'], d['aim'], d['task'], done, globals_,
-                  {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, d['kiosk'])
+                  {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, d['kiosk'],
+                  success_screen(*d['ending']))
     meta = {
         'display_name': d['display'],
         'description': d['desc'],
@@ -368,7 +377,7 @@ def check(ekey, pair, stage):
     }
     globals_ = {
         f'episode_{ep_id}_state': {},
-        'se_awareness_records': {},
+        'se_awareness_records': [],
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
@@ -401,6 +410,7 @@ def check(ekey, pair, stage):
                 f"{c['items_pre']} The result is kept so the matching after-check (awareness_post_{word}_{pair}) "
                 "can show how the two compare.")
         obs = c['kiosk'].format(nth='first')
+        ending = success_screen('First check done', 'Your result is saved, ready for the second check to compare with.')
     else:
         name = f"{c['name']}: after ({letters})"
         brief = (f"The second of two short checks for {cfg['role_label']} at {company} (pair {letters}, form {second}). "
@@ -412,9 +422,10 @@ def check(ekey, pair, stage):
                 f"{c['items_post']} It is matched to the first check (awareness_pre_{word}_{pair}), and the end screen "
                 "compares the two results when the first check was finished.")
         obs = c['kiosk'].format(nth='second')
+        ending = success_screen('Second check done', 'Thank you for taking both checks.')
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, c['end'], aim, task, done, globals_,
-                  {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, extra)
+                  {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, ending, extra)
     meta = {
         'display_name': display,
         'description': desc,

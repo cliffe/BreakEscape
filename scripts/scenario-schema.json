@@ -132,7 +132,8 @@
           { "type": "boolean" },
           { "type": "number" },
           { "type": "string" },
-          { "type": "object", "description": "Object-valued globals are for the social systems' state (se_board_state, se_landing_pages, se_landing_drafts), default {}" }
+          { "type": "object", "description": "Object-valued globals are for the social systems' state (se_board_state, se_landing_pages, se_landing_drafts), default {}" },
+          { "type": "array", "description": "Array-valued globals are for list state the social systems write, such as se_awareness_records, default []" }
         ]
       }
     },

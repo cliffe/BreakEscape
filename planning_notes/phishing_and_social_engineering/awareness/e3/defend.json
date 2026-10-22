@@ -504,10 +504,10 @@
           "genuine": false,
           "callerId": "Says he's Gordon McLeish, Claims (mobile, not on file)",
           "claims": [
-            { "fact": "who", "value": "gordon_full" },
-            { "fact": "team", "value": "claims" },
-            { "fact": "manager", "value": "okonkwo_full" },
-            { "fact": "staffId", "value": "gordon_staffid" }
+            { "fact": "who", "value": "gordon_full", "label": "Gordon McLeish" },
+            { "fact": "team", "value": "claims", "label": "Claims" },
+            { "fact": "manager", "value": "okonkwo_full", "label": "Ngozi Okonkwo" },
+            { "fact": "staffId", "value": "gordon_staffid", "label": "QH-20719" }
           ],
           "tells": ["vish_callback_pressure", "borrowed_authority"],
           "transcript": [
@@ -531,10 +531,10 @@
           "genuine": true,
           "callerId": "Gordon McLeish, Claims (mobile on file)",
           "claims": [
-            { "fact": "who", "value": "gordon_full" },
-            { "fact": "team", "value": "claims" },
-            { "fact": "manager", "value": "okonkwo_full" },
-            { "fact": "staffId", "value": "gordon_staffid" }
+            { "fact": "who", "value": "gordon_full", "label": "Gordon McLeish" },
+            { "fact": "team", "value": "claims", "label": "Claims" },
+            { "fact": "manager", "value": "okonkwo_full", "label": "Ngozi Okonkwo" },
+            { "fact": "staffId", "value": "gordon_staffid", "label": "QH-20719" }
           ],
           "tells": [],
           "transcript": [
@@ -557,9 +557,9 @@
           "genuine": false,
           "callerId": "Says he's Josh Henley, from the Head of Claims' office (withheld)",
           "claims": [
-            { "fact": "team", "value": "claims" },
-            { "fact": "manager", "value": "okonkwo_full" },
-            { "fact": "staffId", "value": "gordon_staffid" }
+            { "fact": "team", "value": "claims", "label": "Claims" },
+            { "fact": "manager", "value": "okonkwo_full", "label": "Ngozi Okonkwo" },
+            { "fact": "staffId", "value": "gordon_staffid", "label": "QH-20719" }
           ],
           "tells": ["borrowed_authority", "secrecy_or_bypass", "vish_callback_pressure"],
           "transcript": [
@@ -583,8 +583,8 @@
           "genuine": true,
           "callerId": "Chen Jiayi, Claims (ext. 4431)",
           "claims": [
-            { "fact": "team", "value": "claims" },
-            { "fact": "manager", "value": "okonkwo_full" }
+            { "fact": "team", "value": "claims", "label": "Claims" },
+            { "fact": "manager", "value": "okonkwo_full", "label": "Ngozi Okonkwo" }
           ],
           "tells": [],
           "transcript": [
