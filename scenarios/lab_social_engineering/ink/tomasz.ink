@@ -118,7 +118,7 @@ Tomasz: Here's what it showed. An open inbox trusts anyone, a From line is just 
 - dev_reported:
     Tomasz: Dev gave you what Sofia's email needed, and he reported a call too. Credit for that, but a call-back rule stops it without him noticing a thing.
 - pretext_service_desk_call_outcome == "got_it" and pretext_service_desk_call_lowest >= 0:
-    Tomasz: Dev handed you the portal and the date, no fuss. A call-back to a number on file stops every line of that.
+    Tomasz: Dev handed you the portal and the date. A call-back to a number on file stops every line of that.
 - pretext_service_desk_call_outcome == "got_it":
     Tomasz: You had to lean on Dev, but he still gave up the portal and the date. A call-back to a number on file stops every line of that.
 - else:

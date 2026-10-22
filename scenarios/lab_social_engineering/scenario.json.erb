@@ -731,7 +731,8 @@
         "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
         "factorStrings": {
           "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
-          "senderTrust": { "pass": "✓ From someone she trusts", "fail": "She doesn't know this sender. She acts on mail from someone she trusts in Finance.", "redFlag": null },
+          "senderTrust": { "pass": "✓ From someone she trusts", "fail": "She doesn't know this sender. She acts on mail from someone she trusts in Finance.", "redFlag": null,
+            "mismatch": { "fail": "The name is one she trusts, but the address isn't that person's. She knows her colleagues' addresses.", "redFlag": null } },
           "addressedTo": { "pass": "✓ Addressed her by name", "fail": "No name, or not the one her colleagues use.", "redFlag": null },
           "pretextRelevant": { "pass": "✓ Relevant to her work", "fail": "Nothing she was expecting, and no reason for this to reach her.", "redFlag": null },
           "senderAuth": {
@@ -789,7 +790,8 @@
         "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
         "factorStrings": {
           "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
-          "senderTrust": { "pass": "✓ From the portal she expects", "fail": "She doesn't know this sender. Her payroll notices come from the portal's own address.", "redFlag": null },
+          "senderTrust": { "pass": "✓ From the portal she expects", "fail": "She doesn't know this sender. Her payroll notices come from the portal's own address.", "redFlag": null,
+            "mismatch": { "fail": "The name and the address don't belong together. Her payroll notices come from the portal's own address.", "redFlag": null } },
           "addressedTo": { "pass": "✓ Addressed her by name", "fail": "No name, or not the one the portal uses.", "redFlag": null },
           "pretextRelevant": { "pass": "✓ Reads like a payslip notice", "fail": "Not a payslip notice she was expecting; she'd check with the office first.", "redFlag": null },
           "linkCredible": { "pass": "✓ The link looked right", "fail": "The link's address isn't her portal's.", "redFlag": null },
@@ -799,7 +801,7 @@
             "redFlag": null
           }
         },
-        "hints": ["She only trusts the portal's own notices.", "You need the portal's name, its sender and the release date — the social post only says there is a portal."],
+        "hints": ["She only trusts the portal's own notices. The service desk knows who sends them.", "You need the portal's name, its sender and the release date — the social post only says there is a portal."],
         "hintsByFactor": {
           "senderTrust": "She only trusts the portal's own notification address. Dev at the service desk can tell you who its emails come from; put that in the From line.",
           "addressedTo": "Address her by her first name, the way the portal would.",
@@ -1192,7 +1194,7 @@
                 "why": "That's the mail table: sent, failed and landed for each target." },
               { "id": "staff_reported", "correct": true,
                 "text": "Whether anyone reported the emails or the page",
-                "why": "Ledgerwell has no report button, so nobody could report a suspicious email or page, and there was nothing to count. The only report a test like this can see is a call the desk flags. The missing button is a gap that belongs in the report." },
+                "why": "Look at what the tables count: sends, landings, page visits, what the call got. None of them counts a report. The only report this test can see is a call the desk flags. Measuring reports needs a way to report, and that is a finding in itself." },
               { "id": "page_used", "correct": false,
                 "text": "Whether anyone signed in on the look-alike page",
                 "why": "The landing page line shows the visit and the simulated sign-in." },
@@ -1419,13 +1421,13 @@
           "livePreview": true,
           "eventMappings": [
             { "eventPattern": "global_variable_changed:plan_done", "condition": "value === true", "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Plan's signed off. Come and find me for the Recon key." } },
+              "bark": "Plan's signed off. The Recon key's ready for you.", "barkDelay": 1500 },
             { "eventPattern": "global_variable_changed:osint_done", "condition": "value === true && globalVars.se_intel_username_convention === true", "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Recon's done, PDF and all. Come and see me for the Operations key." } },
+              "bark": "Recon's done, PDF and all. The Operations key's ready.", "barkDelay": 1500 },
             { "eventPattern": "global_variable_changed:se_intel_username_convention", "condition": "value === true && globalVars.osint_done === true", "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Recon's done, PDF and all. Come and see me for the Operations key." } },
+              "bark": "Recon's done, PDF and all. The Operations key's ready.", "barkDelay": 1500 },
             { "eventPattern": "global_variable_changed:report_filed", "condition": "value === true", "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Report's filed. Come and get the Blue Team key from me. Gareth wants a word too." } }
+              "bark": "Report's filed. The Blue Team key's ready, and Gareth wants a word.", "barkDelay": 1500 }
           ]
         }
       ],

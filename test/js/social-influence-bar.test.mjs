@@ -366,3 +366,12 @@ test('mount 2, board honours social.influenceDisplay { bar: false }', () => {
     assert.equal(scene.container.querySelector('.influence-bar'), null);
     scene.cleanup();
 });
+
+test('an id-style reason reads as words in the change line (lab R9 F4)', () => {
+    setup();
+    const bar = mount({ characterId: 'pierce' });
+    window.gameState.globalVariables.pierce_influence = -10;
+    window.eventDispatcher.emit('npc_influence_changed', { character: 'pierce', value: -10, delta: -10, reason: 'payslip_date' });
+    assert.match(bar.el.querySelector('.ib-infl-change').textContent, /Last change: -10 payslip date$/);
+    bar.destroy();
+});

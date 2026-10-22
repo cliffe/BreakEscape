@@ -17,6 +17,8 @@ module ValidateSocial
     FACTORS = %w[open senderTrust senderAuth addressedTo pretextRelevant attachmentPlausible
                  urgencyCalibrated linkCredible].freeze
     ATTACHMENT_STATES = %w[missing wrong-type].freeze
+    # Per-state { fail, redFlag } entries a factor may carry (phish-rules.js entry(): ts[state]).
+    FACTOR_STATES = { 'attachmentPlausible' => ATTACHMENT_STATES, 'senderTrust' => %w[mismatch] }.freeze
     ACCOUNT_KINDS = %w[given found created].freeze
     BUILTIN_PLACEHOLDERS = %w[account_name account_address].freeze
     # 04 "Pre-send gate": the fixed neutral line. The mail client owns it.
@@ -148,12 +150,12 @@ module ValidateSocial
           issues << err("#{where}.#{factor} must be an object with pass, fail and redFlag")
           next
         end
-        issues.concat(string_entry(entry, "#{where}.#{factor}", factor == 'attachmentPlausible'))
+        issues.concat(string_entry(entry, "#{where}.#{factor}", FACTOR_STATES[factor]))
       end
       issues
     end
 
-    def self.string_entry(entry, where, with_states)
+    def self.string_entry(entry, where, states)
       issues = []
       entry.each do |k, v|
         case k
@@ -162,11 +164,11 @@ module ValidateSocial
         when 'redFlag'
           issues << err("#{where}.redFlag is empty; use null for 'deliberately none' or omit it for the canonical line") if !v.nil? && blank?(v)
         else
-          if with_states && ATTACHMENT_STATES.include?(k) && v.is_a?(Hash)
-            issues.concat(string_entry(v.reject { |sk, _| sk == 'pass' }, "#{where}.#{k}", false))
+          if states && states.include?(k) && v.is_a?(Hash)
+            issues.concat(string_entry(v.reject { |sk, _| sk == 'pass' }, "#{where}.#{k}", nil))
             issues << err("#{where}.#{k} has a pass line; the states are failures") if v.key?('pass')
           else
-            issues << err("#{where} has the key '#{k}'; allowed: pass, fail, redFlag#{with_states ? ", #{ATTACHMENT_STATES.join(', ')}" : ''}")
+            issues << err("#{where} has the key '#{k}'; allowed: pass, fail, redFlag#{states ? ", #{states.join(', ')}" : ''}")
           end
         end
       end

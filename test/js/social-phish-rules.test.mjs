@@ -671,3 +671,16 @@ test('evaluateMessage rejects a missing target or message and runs with no DOM d
   assert.equal(typeof globalThis.document, 'undefined');
   assert.equal(evaluateMessage(T.pierce, pierceLand(), ctx()).landed, true);
 });
+
+// A per-state `mismatch` line on senderTrust (lab design C3): a trusted name with another
+// person's address reads the authored mismatch line, not the "don't know this sender" fail.
+test('senderTrust: an authored mismatch line is used for a name/address mismatch only', () => {
+  const t = JSON.parse(JSON.stringify(T.pierce));
+  t.factorStrings = { ...(t.factorStrings || {}), senderTrust: { fail: 'Unknown sender.', redFlag: null,
+    mismatch: { fail: 'Right name, wrong address.', redFlag: null } } };
+  const m = pierceLand();
+  const mismatch = evaluateMessage(t, { ...m, headerFrom: { name: 'baker_full', address: 'leeds_baker_address' } }, ctx());
+  assert.equal(factor(mismatch, 'senderTrust').line, 'Right name, wrong address.');
+  const plainFail = evaluateMessage(t, { ...m, headerFrom: { name: 'leeds_baker_full', address: 'leeds_baker_address' } }, ctx());
+  assert.equal(factor(plainFail, 'senderTrust').line, 'Unknown sender.');
+});

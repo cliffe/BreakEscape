@@ -76,6 +76,7 @@ export const DEFAULT_STRINGS = Object.freeze({
 
   brandPass: '✓ Brand: this is the service {firstName} actually uses.',
   brandFail: '✗ Brand: {firstName} doesn’t use that service.',
+  brandUnset: '✗ Brand: no service chosen yet. Pick the one {firstName} uses.',
   purposePass: '✓ Page: a payslip notice is what the email promised.',
   purposePartial: '~ Page: a plain sign-in is believable but isn’t what the email promised.',
   purposeFail: '✗ Page: this isn’t what the email said would be here.',
@@ -219,8 +220,11 @@ export function isDomainBlocked(pageDef, choices) {
 function scoreBrand(pageDef, choices, p) {
   const pretextBrand = pageDef && isObj(pageDef.pretext) ? pageDef.pretext.brandId : undefined;
   const pass = choices.brand != null && choices.brand === pretextBrand;
+  // No pick yet reads as "not chosen", not as the wrong service (lab R9 F11). Same
+  // result and points as a wrong pick; only the builder line differs.
+  const unset = choices.brand == null;
   return {
-    id: 'brand', result: pass ? 'pass' : 'fail', variant: pass ? 'pass' : 'fail',
+    id: 'brand', result: pass ? 'pass' : 'fail', variant: pass ? 'pass' : (unset ? 'unset' : 'fail'),
     points: pass ? p.brand : 0, gateBrand: pass
   };
 }
@@ -292,7 +296,7 @@ function scorePadlock(choices, p) {
 
 // Builder line and defender line for a scored factor.
 const BUILDER_KEY = {
-  'brand.pass': 'brandPass', 'brand.fail': 'brandFail',
+  'brand.pass': 'brandPass', 'brand.fail': 'brandFail', 'brand.unset': 'brandUnset',
   'purpose.pass': 'purposePass', 'purpose.partial': 'purposePartial', 'purpose.fail': 'purposeFail',
   'domain.tier3': 'domainTier3', 'domain.tier2': 'domainTier2', 'domain.tier1': 'domainTier1', 'domain.tier0': 'domainTier0',
   'logo.pass': 'logoPass', 'logo.blurry': 'logoBlurry', 'logo.stretched': 'logoStretched', 'logo.fail': 'logoFail',
@@ -301,7 +305,7 @@ const BUILDER_KEY = {
   'padlock.pass': 'padlockPass', 'padlock.fail': 'padlockFail'
 };
 const DEFENDER_KEY = {
-  'brand.fail': 'defBrand',
+  'brand.fail': 'defBrand', 'brand.unset': 'defBrand',
   'purpose.partial': 'defPurposePartial', 'purpose.fail': 'defPurposeFail',
   'domain.tier3': 'defDomainTier3', 'domain.tier2': 'defDomainTier2', 'domain.tier1': 'defDomainTier1', 'domain.tier0': 'defDomainTier0',
   'logo.blurry': 'defLogoBlurry', 'logo.stretched': 'defLogoStretched', 'logo.fail': 'defLogoFail',

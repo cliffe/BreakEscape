@@ -289,3 +289,14 @@ test('the model touches no DOM or global (document/window/globalThis members und
   }, 'lord'));
   assert.deepEqual([...FACTOR_ORDER], ['brand', 'purpose', 'domain', 'logo', 'wording', 'form', 'padlock']);
 });
+
+test('no service picked reads as "not chosen", not the wrong service (lab R9 F11)', () => {
+  const base = { purpose: 'payslip', domainId: 'd_word', logo: 'crisp', wording: 'w_formal', fields: ['email', 'password'], padlock: true };
+  const r = scorePage(pageDef, base, lord);
+  assert.equal(r.blocked, false, "the builder scores a page with no service picked (R9 saw the line)");
+  assert.equal(factor(r, 'brand').points, 0);
+  assert.equal(factor(r, 'brand').result, 'fail');
+  assert.match(factor(r, 'brand').line, /no service chosen yet\. Pick the one Sofia uses/);
+  const wrong = scorePage(pageDef, { ...base, brand: 'cloudboxy', domainId: 'c_letter' }, lord);
+  assert.match(factor(wrong, 'brand').line, /Sofia doesn’t use that service/);
+});

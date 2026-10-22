@@ -165,7 +165,14 @@ Operations now. If that door's locked, I've got the key — come and see me.
 // ---- Stage 5: hard phish to Lord ----
 === stage5 ===
 { phish_lord_landed: -> hub }
-Now Sofia. She'll want the right sender, the portal's name and the date.
+{
+- se_intel_lord_portal_name and se_intel_lord_payslip_date:
+    Now Sofia. You've got her portal's sender, its name and the date. Use all three.
+- se_intel_lord_portal_name:
+    Now Sofia. You've got the portal. She'll want the date as well.
+- else:
+    Now Sofia. You've got the date. She'll want the portal's sender and its name too.
+}
 + [Who do I send as?]
     { se_intel_lord_portal_name:
         The portal's own notification address. Dev told you how its emails read.

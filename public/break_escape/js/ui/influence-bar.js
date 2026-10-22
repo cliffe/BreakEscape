@@ -204,7 +204,7 @@ export class InfluenceBar {
     _changeLine(delta, reason) {
         const sign = delta > 0 ? '+' : '';
         const word = typeof reason === 'string' && reason && reason !== 'ink'
-            ? ` ${REASON_WORDS[reason] || reason}` : '';
+            ? ` ${REASON_WORDS[reason] || reason.replace(/_/g, ' ')}` : '';  // an id such as payslip_date reads as words (lab R9 F4)
         return `Last change: ${sign}${delta}${word}`;
     }
 

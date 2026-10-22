@@ -247,8 +247,15 @@ Ruth Adeyemi: Chris's careers inbox takes anything. Melanie's trickier — you'l
 -> hub
 
 === topic_hard ===
-Ruth Adeyemi: Sofia checks things. You need a page like her portal, and a pretext call to fill the gaps.
-Ruth Adeyemi: Ring the desk as her buddy. Know her name and team before you dial. Push too hard and Dev flags you to his manager.
+{
+- landing_payroll_login_built and se_intel_lord_portal_name and se_intel_lord_payslip_date:
+    Ruth Adeyemi: You've got everything she checks: the page, the portal's sender and name, and the date. Put them together in one email.
+- landing_payroll_login_built and pretext_call_done:
+    Ruth Adeyemi: The page is built. What you're missing from Dev, ring him back for. Name Sofia first or he won't say a thing.
+- else:
+    Ruth Adeyemi: Sofia checks things. You need a page like her portal, and a pretext call to fill the gaps.
+    Ruth Adeyemi: Ring the desk as her buddy. Know her name and team before you dial. Push too hard and Dev flags you to his manager.
+}
 ~ quiet = true
 -> hub
 

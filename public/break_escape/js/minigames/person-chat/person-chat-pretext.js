@@ -448,7 +448,12 @@ export function renderDebrief(container, { session, spec, onDone } = {}) {
     // `got_it` means at least one ask was granted, but the call may also have had an
     // ask refused (an earlier grant, a later refusal). Saying "You got what you came
     // for." over a refused ask misleads (lab R5 F3). Word the partial case plainly.
-    outcome.textContent = (outcomeKey === 'got_it' && session.refusals > 0)
+    // The same goes for an ask that went pending and was never granted on this call
+    // (lab R9 F3: the portal ask waited on the intern check, only the date was given).
+    const askedIds = (Array.isArray(session.log) ? session.log : [])
+        .filter((row) => row && row.kind === 'ask' && typeof row.id === 'string').map((row) => row.id);
+    const ungranted = askedIds.some((id) => !(session.grantedAsks || []).includes(id));
+    outcome.textContent = (outcomeKey === 'got_it' && (session.refusals > 0 || ungranted))
         ? 'You got some of what you came for.'
         : (outcomeText[outcomeKey] || '');
     panel.appendChild(outcome);

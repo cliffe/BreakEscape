@@ -1360,6 +1360,13 @@
                   "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
                   "patternProperties": {"^_": {}},
                   "additionalProperties": false
+                },
+                "mismatch": {
+                  "type": "object",
+                  "description": "The name and address belong to different people (phish-rules.js judgeSender state 'mismatch')",
+                  "properties": {"fail": {"type": "string"}, "redFlag": {"type": ["string", "null"]}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
                 }
               },
               "patternProperties": {"^_": {}},

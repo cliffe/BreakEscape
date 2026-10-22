@@ -114,3 +114,64 @@ A safety classifier then stopped my turn while I was reading the harness's door-
 ### Noticed, not acted on
 
 - A headless session from another agent was still running when I checked processes: PID 474145, `playtest-session.js` on game 3516, logging to `.../scratchpad/lab-design-c2-playtest/session.jsonl`, with its chrome-headless-shell children. It looks like the reviewer's tester, the one the C2 review says it could not stop. I didn't start it, so I left it for the orchestrator to check and stop by PID.
+
+## Cycle 3 (2026-10-22)
+
+Inputs:
+- `playtests/R9.md`, the browser pass: 7 minors and 6 trivials.
+- An earlier partial tester's six notes, relayed by the orchestrator.
+- The orchestrator's decision on C2 m-e: keep the Leeds address in the picker as a visible clue.
+
+| Source | Found | Fixed | Kept as is (decided) | Deferred |
+|---|---:|---:|---:|---:|
+| R9 minors | 7 | 6 | 1 (F7) | 0 |
+| R9 trivials | 6 | 4 | 0 | 2 (F10, F12) |
+| Partial tester | 6 | 2 | 4 | 0 |
+
+### R9
+
+| # | Sev | Finding | Outcome | What changed |
+|---|---|---|---|---|
+| F1 | minor | Phone stage 5 opener lists the date when it's already held | **Fixed** | ruth_phone `stage5` opener now branches on which of the portal name and the date are held. |
+| F2 | minor | "How do I reach Sofia?" ignores progress | **Fixed** | ruth.ink `topic_hard` has three branches: all held ("put them together in one email"), page and call done but something still missing ("ring him back… name Sofia first"), and the original two lines before that. |
+| F3 | minor | Dev's call debrief says "You got what you came for." when the portal ask was left pending | **Fixed (engine, harmless)** | `person-chat-pretext.js renderDebrief` now uses the existing partial line "You got some of what you came for." when any ask made on the call was not granted, not only after a refusal. It changes wording only, in the partial case. One Node test is added (`social-pretext-debrief.test.mjs`). |
+| F4 | trivial | The bar prints the raw id `payslip_date` | **Fixed (engine, harmless)** | `influence-bar.js` now shows an id-style reason with spaces, "payslip date", matching what the debrief already did. Authored phrases and the mapped factor words are unchanged. One Node test is added. |
+| F5 | minor | One failed send to Sofia never shows the desk pointer | **Fixed** | Lord's first general hint is now "She only trusts the portal's own notices. The service desk knows who sends them." |
+| F6 | trivial | Two Ruth texts per key, the second repeating the first | **Fixed** | The key-ready messages are now `bark`s and say only that the key is ready ("…The Operations key's ready."). The stage opener that follows says where to go, so it no longer repeats the ask. The openers keep their "come and see me" line for students who reach a locked door later; `social-lab-ruth-phone-keys` asserts it. |
+| F7 | minor | Leeds address in the picker (C2 m-e) | **Kept (orchestrator)** | It stays as a visible clue. See the partial tester's sender note below for what such a send now says. |
+| F8 | minor | Q1's right answer states a fact the student never saw | **Fixed** | The why now argues from what's on screen: "Look at what the tables count… None of them counts a report. The only report this test can see is a call the desk flags. Measuring reports needs a way to report, and that is a finding in itself." Confirmed in the browser (game 3540). |
+| F9 | minor | (a) The hard-send toasts are returned twice. (b) No toast when the report completes | **(b) not reproduced; (a) explained, no change** | Game 3540: finishing the report while it is open holds the toasts. On close, "Task Complete ×2, Objective Complete!: Write the report, New Objective: Defend" all show once (`c3.log` seq 37). (a) matches the shared hold rule in `notifications.js`: a toast shown less than 1.5 s before a panel opens is pulled back and shown again when the panel closes, and the harness logs both renders. That is designed behaviour shared by m01–m10, so I left it. |
+| F10 | trivial | The "Ready to approach" toasts arrive as one batch when OSINT closes | **Deferred** | Same shared hold rule. Batching them would mean changing it for every mission. |
+| F11 | trivial | The page builder says "Sofia doesn't use that service" when none is picked | **Fixed (engine, harmless)** | `landing-page-model.js` has a new `brand.unset` variant with its own line, "✗ Brand: no service chosen yet. Pick the one {firstName} uses." Points and gate are the same as a wrong pick. One Node test is added. |
+| F12 | trivial | After a reload, the player is back at the start position | **Deferred** | An engine save-position issue carried from R8 F6. It is not lab data. |
+| F13 | trivial | Tomasz's "no fuss" doesn't fit a pending-then-granted route | **Fixed** | "no fuss" is dropped from the `debrief` line. |
+
+### The partial tester's notes (decided on teaching grounds)
+
+| Note | Outcome | Reason |
+|---|---|---|
+| Key-ready texts have no toast; the contact preview shows the next line | **Fixed** | `sendTimedMessage` only writes to the thread. A mapping `bark` both pops a notification and adds the line to the thread. In the browser (game 3541), the Recon and Ops barks each appeared once as a popup and once in the thread. The preview still shows the stage opener, which now carries the next step. |
+| The wrong-key hint shows only after the lock screen closes | **Kept** | The hint is a pointer back to Ruth, and the student now gets the key-ready bark before reaching the door, so the pointer arrives earlier anyway. Changing the lock screen's timing is shared engine work for little teaching gain. |
+| "Recon's done" fires on the last Recon task, not when the PDF is read | **Kept** | The Operations key is gated on both the recon and the PDF, so the text fires exactly when the key is due. Firing on the PDF alone would promise a key Ruth won't hand over. Browser check (game 3541), PDF read last: one Ops text. |
+| "Jed Baker" can be paired with the Leeds address; check what that send does | **Fixed** | The rules mark it `mismatch`, but the student saw the plain fail, "She doesn't know this sender", which is wrong for Jed. Pierce and Lord now have an authored `senderTrust.mismatch` line ("The name is one she trusts, but the address isn't that person's…"). The engine already reads per-state strings (`phish-rules.js entry()`). The schema and `validate_social/mail.rb` now accept `mismatch` on `senderTrust` only, through a new `FACTOR_STATES` map; attachment states are unchanged. Two Node tests are added: the rules test and the validator test. |
+| The case file prints the derived `m.pierce@`/`s.lord@` | **Kept** | The To address is not the exercise: the mail client's contact book gives it once the person is known. The address-pattern exercise is the spoofed sender `j.baker@`, and the case file never shows Baker. Seeing the pattern applied to the targets demonstrates it rather than giving the answer away. |
+| The Xero trap isn't marked "old or unverified" | **Kept** | Xero is current and true; Ledgerwell does use it. It's the wrong kind of fact for a payroll-portal blank. Marking it stale would be false and would give the trap away. Since cycle 2, the miss hint explains it ("The careers page lists the finance tools, not her payroll portal."), and R9 saw that hint. |
+
+### Checks run (cycle 3)
+
+- Recompiled ruth, ruth_phone and tomasz. Tagdiff against HEAD: ruth adds `topic_hard`'s three branches, ruth_phone adds the stage 5 opener's three branches, and tomasz's structure is unchanged. An inkjs scratch run (`scratchpad/lab-design-fixer/c3check.cjs`) shows each branch's line for the date-only, portal-only and both routes.
+- `validate_scenario.rb --strict-social`: no ❌ errors. Only the carried narrator-voice warning and m13's phone-avatar warnings remain.
+- dialoguelint: only the withdrawn fairbairn finding.
+- `bin/test-js` over all `social-*` and `validator-social-*` tests: 84 of 85 files pass. The one failure, `social-p7-followups` ("E7 debrief: the voice panel…"), tests the awareness episode's debrief and E7 content, which another agent is changing. None of my files touch it.
+- Bridges: bridge-6 36/36 and r4-door 3/3.
+- Browser, headless with Node 24 on :3001, start room only. The setup globals were written from the console, so they count as exercised, not earned.
+  - Game 3540: key bark text in the thread, the report's neutral note, the two questions, the new Q1 why, and the completion toasts on close.
+  - Game 3541: Recon and Ops bark popups, and one Ops text when the PDF is read last.
+  - Not run in a browser, but covered by Node tests: the page builder's unset-brand line, the mismatch send line, the debrief partial line and the bar's reason words. These need the Operations room. I stayed away from the door-lock path after cycle 2's classifier stop.
+
+### Spoken lines changed (cycle 3)
+
+- Ruth (person): `topic_hard`, which has two new lines.
+- Ruth (phone): the stage 5 opener, now three variants.
+- Tomasz: the debrief line without "no fuss".
+- Barks: the three key-ready texts.

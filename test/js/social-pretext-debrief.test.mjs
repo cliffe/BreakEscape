@@ -60,3 +60,20 @@ test('walked away (no grant) and reported lines are unchanged', () => {
     assert.equal(outcomeLine(session({ granted: [], refusals: 1 })), 'You rang off.');
     assert.equal(outcomeLine(session({ granted: ['portal_name'], refusals: 2, reported: true })), 'The call was reported.');
 });
+
+test('got_it with an ask left pending and never granted reads as partial (lab R9 F3)', () => {
+    const s = {
+        grantedAsks: ['payslip_date'], refusals: 0, reportedThisCall: false,
+        log: [
+            { turn: 1, kind: 'ask', id: 'portal_name', entries: [], band: 0, result: 2 },
+            { turn: 2, kind: 'say', id: 'open_buddy', entries: [{ delta: 10, reason: 'intern' }], band: 0 },
+            { turn: 3, kind: 'ask', id: 'payslip_date', entries: [{ delta: -10, reason: 'payslip_date' }], band: 0, result: 1 }
+        ]
+    };
+    assert.equal(P.outcomeFor(s), 'got_it');
+    assert.equal(outcomeLine(s), 'You got some of what you came for.');
+    // The same ask pending, then granted on a re-ask, is a full success.
+    s.grantedAsks = ['payslip_date', 'portal_name'];
+    s.log.push({ turn: 4, kind: 'ask', id: 'portal_name', entries: [], band: 0, result: 1 });
+    assert.equal(outcomeLine(s), 'You got what you came for.');
+});

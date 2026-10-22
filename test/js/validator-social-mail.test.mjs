@@ -426,3 +426,20 @@ test('--strict-social: exit 1 on the broken fixture, 0 on the clean one and on a
 test('the fixture folder is unchanged by the runs', () => {
   assert.equal(folderHash(fx), fixturesBefore);
 });
+
+test('factorStrings: senderTrust takes a mismatch state; other factors do not (lab design C3)', { skip }, () => {
+  const run = (fs) => {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_social.rb'))}
+      puts JSON.generate(ValidateSocial::Mail.factor_strings(JSON.parse(${JSON.stringify(JSON.stringify(fs))}), 'fs'))`;
+    const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+  };
+  assert.deepEqual(run({ senderTrust: { fail: 'f', redFlag: null, mismatch: { fail: 'm', redFlag: null } } }), []);
+  const bad = run({ senderAuth: { fail: 'f', redFlag: null, mismatch: { fail: 'm', redFlag: null } } });
+  assert.equal(bad.filter((s) => /❌.*fs\.senderAuth has the key 'mismatch'; allowed: pass, fail, redFlag$/.test(s)).length, 1, bad.join('\n'));
+  const empty = run({ senderTrust: { mismatch: { fail: ' ', redFlag: null } } });
+  assert.equal(empty.filter((s) => /❌.*fs\.senderTrust\.mismatch\.fail is empty/.test(s)).length, 1, empty.join('\n'));
+  // attachmentPlausible keeps its own states
+  assert.deepEqual(run({ attachmentPlausible: { missing: { fail: 'x', redFlag: null } } }), []);
+});
