@@ -278,7 +278,7 @@ hax_maps << { "eventPattern" => "item_picked_up:keycard", "condition" => "data.i
 hax_maps << { "eventPattern" => "door_unlock_attempt", "condition" => "data.connectedRoom === 'salvage_cage'", "onceOnly" => true, "setGlobal" => { "salvage_keypad_seen" => true } }
 hax_maps << { "eventPattern" => "door_unlocked", "condition" => "data.connectedRoom === 'salvage_cage'", "onceOnly" => true, "setGlobal" => { "salvage_opened" => true } }
 # Educational R1 E-M2: the Kerckhoffs point the chart makes (A3-37).
-hax_maps << text_map("global_variable_changed:salvage_opened", "value === true", "She never wrote a code down. She hung the key beside the lock. A cipher is only as safe as its key.", delay: 2000)
+hax_maps << text_map("global_variable_changed:salvage_opened", "value === true", "She never wrote a code down. She hung the key beside the lock. A cipher is only as safe as its key.", delay: 2000, msg_delay: 6000)
 hax_maps << text_map("global_variable_changed:salvage_keypad_seen", "value === true && !globalVars.m02_gary_protected",
                      "If the cipher's new to you, there's an archive-code field guide. Ask me.", set: { "archive_code_guide_offered" => true })
 hax_maps << { "eventPattern" => "global_variable_changed:salvage_keypad_seen", "condition" => "value === true && globalVars.m02_gary_protected", "onceOnly" => true, "setGlobal" => { "archive_code_guide_offered" => true } }
@@ -359,7 +359,7 @@ hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true 
 hax_maps << text_map("global_variable_changed:legacy_box_read", "value === true && !globalVars.legacy_clock_run && !globalVars.legacy_files_saved && !globalVars.legacy_remark_sent",
                      "Nobody of ours in here. Ours are on her tape, by codename.", set: { "legacy_remark_sent" => true })
 # Educational R1 E-M3: name the motives the notes column shows (A3-38), after the remark.
-hax_maps << text_map("global_variable_changed:legacy_remark_sent", "value === true", "Read the notes column. Money, a son, a drink, a lonely night. That's how she chose them, and how she kept them.", delay: 5000)
+hax_maps << text_map("global_variable_changed:legacy_remark_sent", "value === true", "Read the notes column. A son, a drink, boredom, a lonely night. That's how she chose them, and how she kept them.", delay: 5000)
 # Educational R1 E-M3: the recruiter's method, once Noor has been told (A3-39).
 hax_maps << text_map("global_variable_changed:noor_told", "value === true", "That's how they start. A kindness, then a need they already knew about.", delay: 3000)
 # Educational R1 E-M4: leavers' access is now a line in HaX's "[About the name.]" topic
@@ -403,10 +403,11 @@ rec_maps << { "eventPattern" => "room_entered:restricted_cage", "setGlobal" => {
 rec_maps << { "eventPattern" => "room_exited", "condition" => "data.roomId === 'restricted_cage'", "setGlobal" => { "in_cage" => false }, "cooldown" => 0 }
 rec_maps << call_map("room_exited", "data.roomId === 'restricted_cage' && #{ring_c}", "call", delay: 3000, voiced: true, once: true,
                      comment: "Ring (a): walking out of the cage with the ledger read.")
-rec_maps << call_map("global_variable_changed:ledger_read_heard", "value === true && #{ring_c}", "call", delay: 3000, voiced: true, once: true,
-                     comment: "Ring (b): the ledger read closes with the cage already open and the player outside it.")
-rec_maps << call_map("room_entered", "data.roomId !== 'restricted_cage' && #{ring_c}", "call", voiced: true, once: true,
-                     comment: "Ring (c), backstop: any room entry outside the cage (also on load).")
+# Scenario design R4 m3: ring (b) removed (it rang as the ledger read closed, so the
+# offer and afterwards ran back to back at the drop terminal). Ring (c) waits 15 s, so
+# the call comes once the player is walking; its condition is checked again then.
+rec_maps << call_map("room_entered", "data.roomId !== 'restricted_cage' && #{ring_c}", "call", delay: 15000, voiced: true, once: true,
+                     comment: "Ring (c): any room entry outside the cage (also on load), 15 s on.")
 re1 = "globalVars.recruiter_call_started && !globalVars.recruiter_said_yes && !globalVars.recruiter_gone && !globalVars.deck_choice_made"
 re2 = "globalVars.recruiter_said_yes && !globalVars.sleeper_named && !globalVars.deck_choice_made"
 rec_maps << call_map("room_exited", "data.nextRoom !== 'restricted_cage' && #{re1}", "call", voiced: true, resume: true, cooldown0: true, comment: "Re-ring 1: before any answer.")
@@ -560,7 +561,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
             { "text": "Shredded: Derek Lawson's file.", "condition": "globalVars.cage_bin === 'nightshade_copy'" },
             { "text": "The legacy placement files: kept from the shredder.", "condition": "globalVars.legacy_files_saved" },
             { "text": "The legacy placement files: shredded. Eleven names.", "condition": "!globalVars.legacy_files_saved" },
-            { "text": "The tape side: 97 of 212 reels kept.", "condition": "globalVars.tran_outcome !== 'left'" },
+            { "text": "The tape side: 97 of 212 reels kept. Analysis is listening.", "condition": "globalVars.tran_outcome !== 'left'" },
             { "text": "The tape side: wiped, 212 reels.", "condition": "globalVars.tran_outcome === 'left'" },
             { "text": "The deck: wiped, all of it.", "condition": "globalVars.deck_pulled === 'none'" },
             { "text": "The deck: her file pulled, the rest wiped.", "condition": "globalVars.deck_pulled === 'her_file'" },
@@ -1081,7 +1082,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
-          "text": "MON. SHREDDER RUNNING, NIGHT. MRS. S SAYS SCHEDULED. NOTED.\nTUE. SAME. NOTED.\nWED. SAME.\nTHU. SAME.\nFRI. SAME. NOBODY READS THIS.",
+          "text": "MON. SHREDDER RUNNING, NIGHT. NOT ON THE ROTA. MRS. S SAYS SCHEDULED. NOTED.\nTUE. SAME. NOTED.\nWED. SAME.\nTHU. SAME.\nFRI. SAME. NOBODY READS THIS.",
           "observations": "A guard's log in block capitals. The same entry, five nights running.",
           "onRead": { "setVariable": { "incident_log_read": true } }
         }
@@ -1457,9 +1458,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "observations": "A console running a degausser through a rack of reels.",
-          "text": "WIPE IN PROGRESS. Series LI, legacy interviews: 212 reels.",
+          "text": "WIPE IN PROGRESS. Series LI, legacy recruitment interviews: 212 reels.",
           "textVariants": [
-            { "condition": "globalVars.tran_outcome !== 'left'", "value": "WIPE HALTED. Series LI, legacy interviews: 97 of 212 reels intact." }
+            { "condition": "globalVars.tran_outcome !== 'left'", "value": "WIPE HALTED. Series LI, legacy recruitment interviews: 97 of 212 reels intact." }
           ]
         }
       ]
@@ -2239,7 +2240,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "readable": true,
           "readDisplay": "gameDisplay",
           "observations": "A framed chart of the archive's shelf marks, beside the salvage keypad.",
-          "text": "MOUNTAIN STATES RECORDS & RETENTION -- SHELF MARKS\nBay 1 ....... Reading room ..... COTTONWOOD\nBays 2 to 9 . Open stacks ...... MERIDIAN\nBay 10 ...... Restricted ....... WATCHTOWER\nBay 11 ...... Tape store ....... STANDBY\nBay 12 ...... Salvage .......... BONEYARD\nHouse rule: each keypad takes its own bay's word. Never write a code down. M.S.",
+          "text": "MOUNTAIN STATES RECORDS & RETENTION -- SHELF MARKS\nBay 1 ....... Reading room ..... COTTONWOOD\nBays 2 to 9 . Open stacks ...... MERIDIAN\nBay 10 ...... Restricted ....... WATCHTOWER\nBay 11 ...... Tape store ....... STANDBY\nBay 12 ...... Salvage .......... BONEYARD\nHouse rule: each keypad's code is keyed to its own bay's word. Never write a code down. M.S.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": ["salvage_cage"],
           "puzzle_graph_and_with": "Catalogue: salvage cage",

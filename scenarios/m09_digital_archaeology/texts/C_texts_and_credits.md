@@ -95,7 +95,7 @@ Every person ends on an unconditional clause, so each always has a line; clauses
     { "text": "Shredded: Derek Lawson's file.", "condition": "globalVars.cage_bin === 'nightshade_copy'" },
     { "text": "The legacy placement files: kept from the shredder.", "condition": "globalVars.legacy_files_saved" },
     { "text": "The legacy placement files: shredded. Eleven names.", "condition": "!globalVars.legacy_files_saved" },
-    { "text": "The tape side: 97 of 212 reels kept.", "condition": "globalVars.tran_outcome !== 'left'" },
+    { "text": "The tape side: 97 of 212 reels kept. Analysis is listening.", "condition": "globalVars.tran_outcome !== 'left'" },
     { "text": "The tape side: wiped, 212 reels.", "condition": "globalVars.tran_outcome === 'left'" },
     { "text": "The deck: wiped, all of it.", "condition": "globalVars.deck_pulled === 'none'" },
     { "text": "The deck: her file pulled, the rest wiped.", "condition": "globalVars.deck_pulled === 'her_file'" },

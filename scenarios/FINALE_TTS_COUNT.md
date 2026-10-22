@@ -195,3 +195,4 @@ No audio exists yet, so nothing is orphaned by the change. The officers' m09 and
 - 2026-10-22 m09 dialogue R1: 373 → 376 voiced lines; 10 reworded, 3 new (13 clips).
 - 2026-10-22 m09 educational R1 + scenario design R3: 2 Netherton lines reworded; count stays 376.
 - 2026-10-22 m09 dialogue R2: net 0 (376); 5 clips (1 new Sorensen, 4 reworded, 1 HaX dropped).
+- 2026-10-22 m09 scenario design R4: +2 HaX voiced (376 → 378).

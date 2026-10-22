@@ -187,7 +187,7 @@ Every HaX line the scenario sends as a text (unvoiced, `sendTimedMessage`, no pr
 | "The salvage cage is through there. Tomb Beta's server. Still running." | `room_entered:tape_room` (once, message delay 5 s) | A3-42 |
 | "Lease date. People pick numbers they'll never forget. That's what makes them easy to find." | `objective_task_completed:open_the_safe`, `!globalVars.sleeper_named && globalVars.rent_ledger_read` | A3-12b |
 | "She never wrote a code down. She hung the key beside the lock. A cipher is only as safe as its key." | `global_variable_changed:salvage_opened`, `value === true`, `delayMs` 2000 | A3-37 |
-| "Read the notes column. Money, a son, a drink, a lonely night. That's how she chose them, and how she kept them." | `global_variable_changed:legacy_remark_sent`, `value === true`, `delayMs` 5000 (after A3-27a) | A3-38 |
+| "Read the notes column. A son, a drink, boredom, a lonely night. That's how she chose them, and how she kept them." | `global_variable_changed:legacy_remark_sent`, `value === true`, `delayMs` 5000 (after A3-27a) | A3-38 |
 | "That's how they start. A kindness, then a need they already knew about." | `global_variable_changed:noor_told`, `value === true`, `delayMs` 3000 | A3-39 |
 | "Five nights of warnings, and nobody read them. A log nobody reads is a diary." | `global_variable_changed:incident_log_read`, `value === true` (the guard's log `onRead`) | A3-41 |
 | "Your tags, from HashChain. Someone's paying rent on a building in Montana that isn't this one." | `global_variable_changed:case_file_read` with `value === true && globalVars.m06_monitoring_enabled` (once) | A3-30 |
@@ -461,7 +461,7 @@ Writers don't build these, but the ink must set the global the mapping listens f
 
 | Ink sets | Where | The mapping that hears it |
 |---|---|---|
-| `ledger_read_heard` | A1 `ledger_read`, first line | the Recruiter's ring (b) and the room-entry backstop (c) |
+| `ledger_read_heard` | A1 `ledger_read`, first line | the Recruiter's ring (a) on leaving the cage and ring (c) on any room entry outside it, 15 s on (scenario design R4 m3 removed ring (b)) |
 | `recruiter_call_started`, `recruiter_said_yes`, `recruiter_gone` | B1 | Recruiter re-rings 1 and 2; HaX re-ring 3 (`deck_resume`) |
 | `deck_choice_made` | B1 / A1 outcome | HaX `unlockDoor: "sorensen_office"`; `afterwards` ring; aims 4–5 (via `answer_the_offer`) |
 | `recruiter_offer` (`taken` / `double_crossed`) | outcome | the invoice text on `office_entered`; the double-cross text |
@@ -910,10 +910,10 @@ Voiced delta (TtsLineExtractor, 373 → 376 lines):
 - E-M3: two texts. A3-38 names the notes column's motives after the legacy remark. A3-39 names the recruiter's method once Noor is told; departure: a text rather than the review's in-scene HaX line, so no audio.
 - E-M4: HaX's "[About the name.]" topic adds "When someone leaves, their accounts and their kit go the same day. His were never revoked. Seven years on, the credential still works." The wording was drafted and checked against the VM plan by the opus48 agent; I opened no VM file. The A3-40 text that said nearly the same thing was withdrawn, so the fact isn't said twice. E-m6 is left to the VM drafting.
 - E-m2: HaX's "[Not yet.]" on the notice names the keep-or-tell call.
-- E-m3: the notice topic separates m04's inquiry from the vendor notice (on `m04_disclosure_choice`).
+- E-m3: the notice topic separates m04's inquiry from the vendor notice (on `m04_disclosure_choice`; since scenario design R4 m1, "inquiry" only on `full or m04_crew_lost`, else "What you said about Albion…").
 - E-m9: the safe text credits the lease date when the ledger was read (A3-12b).
 - E-n1: A3-41 on the guard's log (new latch `incident_log_read`).
-- E-n7: the chart's house rule reads "each keypad takes its own bay's word".
+- E-n7: the chart's house rule reads "each keypad takes its own bay's word" (since scenario design R4 m2: "each keypad's code is keyed to its own bay's word").
 - E-m11: m09's CyBOK block is replaced. The CyBOK Mapper checker was run before and after: 9 errors before, 0 errors and 0 warnings after.
 
 Voiced delta: 0.
@@ -944,6 +944,20 @@ Voiced delta: two Netherton lines reworded (briefing n3, debrief n2), so 2 clips
   - n8: "what Sorensen's burning".
 
 Voiced delta: one HaX line dropped (the long notebook line, orphaned). Reworded: Sorensen ×1 (one shared clip for hatch and door), Tran ×1, Netherton ×1, Old Coyote ×1. One new Sorensen line. Net 0 lines (376), with 5 clips to generate.
+
+**Scenario design round 4** (`SCENARIO_DESIGN_REVIEW_R4.md`, 0/0/5/4, all applied).
+- m1: the notice topic says "inquiry" only on `m04_disclosure_choice == "full" or m04_crew_lost` (as the `albion` stitch), else "What you said about Albion was about what happened…".
+- m2: the chart reads "House rule: each keypad's code is keyed to its own bay's word." S6 §1.9 and §2.3 now carry the as-built wording.
+- m3: npc-manager's delayed mappings wait while any minigame (a call included) is open and re-check their condition when they fire. So the Recruiter's ring (b) is removed, and ring (c) has `delayMs` 15000. I did not take the optional `afterwards` delay.
+- m4: on `sleeper_shortlist`, the offer adds "Agent HaX: We're down to two off that firm's sheet. She's selling you a coin toss." and the her-file answer reads "WREN's still one of the two on that firm's sheet." The answer is identical in B1 `tape_choice` and A1 `deck_resume.no_block`, kept character for character. Departure: the review's "One of two, and now her handlers too." is replaced, because pulling her file doesn't narrow WREN. `sleeper_shortlist` is declared in the Recruiter ink.
+- m5: HaX's Tran topic adds "Those reels are her recruiting interviews. The legacy names, in their own voices, saying yes." The console reads "legacy recruitment interviews" (both variants; FINALE_ARC row 847, S6 §1), and the credit adds "Analysis is listening."
+- Nits:
+  - n1: the guard's Monday entry adds "NOT ON THE ROTA."
+  - n2: A3-38 lists "A son, a drink, boredom, a lonely night".
+  - n3: A3-37 arrives at `msg_delay` 6000.
+  - n4: the safe status row names Tomb Beta's server past the tape room.
+
+Voiced delta: +2 HaX lines (the coin toss; "WREN's still one of the two…", one clip shared by B1 and A1). 376 → 378.
 
 **Voiced counts as built (stage 9, after alignment R4)**, from `TtsLineExtractor.for_scenario("m09_digital_archaeology")` (no API calls; distinct texts per host and speaker; a line shared by two hosts is counted once, under the first): HaX's voiced calls (`deck_resume`, `identity_scene`, `identity_resume`, `tesseract_call`) 56 (HaX 53, Netherton 3); the Recruiter's call 25 (Recruiter 14, HaX 11 not shared with `deck_resume`); the briefing 92 character lines (Netherton 25 as the host, HaX 58, Quintero 3, Kowalczyk 3, Malhotra 2, Arakawa 1) plus 8 Narrator; the debrief 55 (Netherton 48 as the host, HaX 4, Kowalczyk 3) plus 16 Narrator; the Alpha clip 4 plus 2 Narrator; Sorensen 32 across her three records (hatch 20, cage 9, door 3) plus 16 Narrator and 8 HaX; Noor 20 plus 4 Narrator and 2 HaX; Old Coyote 16; Tran 11 plus 1 Narrator; Dillard 1. In all, 369 distinct (speaker, line) pairs.
 

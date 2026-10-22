@@ -348,7 +348,12 @@ She only watched the counter. I can pull one before it wipes. Which?
     #set_global:recruiter_offer:named
     #set_global:deck_pulled:her_file
     First name on it is a handler in Baltimore.
-    One of four. Two, if that firm's boxes say so.
+    // Scenario design R4 m4: the H&L sheet already read (identical in the Recruiter's tape_choice).
+    {sleeper_shortlist:
+        WREN's still one of the two on that firm's sheet.
+    - else:
+        One of four. Two, if that firm's boxes say so.
+    }
     -> office
 + [The Alpha tapes.]
     #set_global:recruiter_offer:refused
@@ -688,8 +693,12 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 + {identity_scene_done and not albion_notified and not notice_sent_here} [His notice.]
     // Educational R1 E-m3: incident disclosure (m04) and vulnerability disclosure, kept apart.
     // Dialogue R2 n5: the cue line last, above the buttons.
-    {m04_disclosure_choice != "":
+    // Scenario design R4 m1: "inquiry" only on the routes that had one (as the albion stitch).
+    {
+    - m04_disclosure_choice == "full" or m04_crew_lost:
         Albion's inquiry was about what happened. This is about the hole itself, and who else has it.
+    - m04_disclosure_choice != "":
+        What you said about Albion was about what happened. This is about the hole itself, and who else has it.
     }
     Still on his box. Say the word.
     -> notice_ask
@@ -830,6 +839,8 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     {not tran_topic_heard:
         -> tran_warning ->
         He's wiping tapes from the server closet off the open stacks.
+        // Scenario design R4 m5: what the reels are (FINALE_ARC row 847).
+        Those reels are her recruiting interviews. The legacy names, in their own voices, saying yes.
     }
     ~ tran_topic_heard = true
     // Puzzle chains R1 P4: on tidied there is no paper lever (Nightshade burned it).
@@ -946,7 +957,7 @@ Sent. He'll read it tonight.
 - deck_choice_made and tape_card_held:
     Her card's in your hand. The tape room's north of the restricted stacks.
 - deck_choice_made:
-    Her office. Get the safe open, and her card for the tape room is in it.
+    Her office. Get the safe open. Her card opens the tape room, and Tomb Beta's server is past it.
 - flag2_submitted and cage_opened:
     Step out of the cage. Someone's been waiting for you to come up for air.
 // Scenario design R1 m1 (R2 n4, R3 n1: above the hatch and flag-2 rows): Victoria's m03 payoff,

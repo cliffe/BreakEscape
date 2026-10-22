@@ -12,6 +12,7 @@
 INCLUDE m09_carryover_vars.ink
 
 // Scenario globals this file reads or writes (CONTRACT §5).
+VAR sleeper_shortlist = false   // Synced scenario global (scenario design R4 m4)
 VAR recruiter_call_started = false
 VAR recruiter_offer = ""   // Synced scenario global (also written by HaX's deck_resume)
 VAR deck_pulled = ""   // Synced scenario global (also written by HaX's deck_resume)
@@ -130,6 +131,10 @@ Margaret's shredding eleven years of my placements tonight, for his schedule. I'
 = offer
 One of your four is mine. Was mine, until your Architect took them for Montana. The name tonight. You let my tape deck wipe.
 Say no and I wipe it myself. Same deck, no name.
+// Scenario design R4 m4: a player who has read the H&L placing sheet.
+{sleeper_shortlist:
+    Agent HaX: We're down to two off that firm's sheet. She's selling you a coin toss.
+}
 I can't see which tape you pull, only that you pulled one. Take the name and pull anything, and I call my placement.
 // B-2: HaX on what her file holds, by m05 (group A to sign off). No
 // default arm: it repeated the next line (script edit B-03).
@@ -211,7 +216,12 @@ Agent HaX: One of them. Now.
     #set_global:recruiter_offer:named
     #set_global:deck_pulled:her_file
     Agent HaX: First name on it is a handler in Baltimore.
-    Agent HaX: One of four. Two, if that firm's boxes say so.
+    // Scenario design R4 m4 (identical in HaX's deck_resume).
+    {sleeper_shortlist:
+        Agent HaX: WREN's still one of the two on that firm's sheet.
+    - else:
+        Agent HaX: One of four. Two, if that firm's boxes say so.
+    }
     #set_global:deck_choice_made:true
     #complete_task:answer_the_offer
     Agent HaX: She fired it from Sorensen's office. I'm on the door.
