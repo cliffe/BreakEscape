@@ -1308,7 +1308,8 @@ function _startCredits(lines) {
                 for (const line of item.lines) {
                     const row = document.createElement('div');
                     row.className = 'bv-cr-card-line';
-                    row.style.margin = '0.25em 0';
+                    // auto sides: centre the row once CSS caps it to the map panel's width
+                    row.style.margin = '0.25em auto';
                     row.textContent = displayDashes(line);
                     label.appendChild(row);
                     if (_themeDef.logCredits) addLog('> ' + displayDashes(line));

@@ -30,3 +30,25 @@ test('the close control comes back once the last credits line has shown', () => 
     assert.match(fn, /_disableClose = false/);
     assert.match(fn, /closeBtn\.style\.display = ''/);
 });
+
+// m10's closing-card lines run to 80-102 characters and spilled past the central
+// map panel, with a lone last word ("out.") on its own row.
+test('closing-card lines are capped to the centre panel and balance-wrapped', () => {
+    const r = rule('.bv-cr-card-line');
+    // window - 2*16 padding - 2*180 side panels - 2*12 gaps = 100vw - 416px; 440 leaves air
+    assert.match(r, /max-width: calc\(100vw - 440px\)/);
+    assert.match(r, /margin-left: auto/);
+    assert.match(r, /margin-right: auto/);
+    // pretty first, balance second: a browser without balance keeps pretty
+    assert.ok(r.indexOf('text-wrap: pretty') >= 0 && r.indexOf('text-wrap: pretty') < r.indexOf('text-wrap: balance'));
+    // with the side panels hidden the cap is lifted
+    const narrow = css.slice(css.lastIndexOf('@media (max-width: 900px)'));
+    assert.match(narrow, /\.bv-cr-card-line \{ max-width: none; \}/);
+});
+
+test('card rows centre with auto side margins and are still capped by MAX_CARD_LINES', async () => {
+    const fn = js.slice(js.indexOf('function showNext()'), js.indexOf('function _stopCredits()'));
+    assert.match(fn, /row\.style\.margin = '0\.25em auto'/);
+    const seq = readFileSync(join(root, 'js/music/closing-sequence.js'), 'utf8');
+    assert.match(seq, /export const MAX_CARD_LINES = 5;/);
+});

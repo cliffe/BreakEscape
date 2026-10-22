@@ -466,3 +466,22 @@
 .bv-cr-gap {
   height: 22px;
 }
+
+/* Closing-card lines (bond-visualiser.js _startCredits): no wider than the
+   central map panel (window minus 16px padding, two 180px side panels and two
+   12px gaps, plus a little air), and balanced so a short last word ("out.")
+   does not sit alone. Browsers without text-wrap: balance fall back to pretty,
+   then to normal wrapping inside the same width. A line that already fits is
+   left on one row. */
+.bv-cr-card-line {
+  max-width: calc(100vw - 440px);
+  margin-left: auto;
+  margin-right: auto;
+  text-wrap: pretty;
+  text-wrap: balance;
+}
+
+@media (max-width: 900px) {
+  /* side panels are hidden here, so the centre is the whole width */
+  .bv-cr-card-line { max-width: none; }
+}
