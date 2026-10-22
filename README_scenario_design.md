@@ -513,6 +513,7 @@ This laptop object will be placed at the next available `pc` slot in the room te
 | `onPickup` | optional | `{ "setVariable": { "var_name": true } }` — sets a global variable on pickup |
 | `onInteract` | deprecated | Legacy interaction handler. Use `triggerOnInteract` + `observationDisplay` instead. |
 | `minigameData` | optional | Configuration object for interactive minigames. All minigame-specific configuration goes here, not at the object level. See Minigame Configuration below. |
+| `preferAvoid` | optional | `true`: click-to-move paths go round the object when there is a reasonable way round (a detour shorter than a room's width or so), and walk through it only when there isn't. For objects the player can walk through or push, such as a vending machine with no collision. Wheeled props (chairs, trolleys, wheelchairs) default to `true`; set `false` to let paths go straight through. Objects with solid collision are walls already, so it has no effect on them. WASD movement ignores it (`js/systems/path-avoid.js`) |
 
 Example (dynamic bedside monitor copy):
 
@@ -1071,6 +1072,13 @@ The player can attack **any** person NPC at any time, and **KO is permanent** �
 
 The win condition itself (usually a `mission_complete` global set from a terminal/decision, not a conversation) should never route solely through an NPC that can be KO'd. The validator's objective-wiring check flags a KO-vulnerable **critical-path** task as a warning (a real soft-lock) and a KO-vulnerable **side-objective** task as a suggestion (acceptable if intended).
 
+#### Healing, regeneration and the chase leash
+
+- **Coffee in rooms.** A cup of coffee or tea on a room map (office-misc-cup 1–5, coffee_cups1, mugs_tray1) can be drunk once for 20 HP, then it's gone, including after a reload. A scenario object with one of those sprites heals too, unless it has a role (fingerprint, contents, lock, text, trigger, puzzle-graph field), so evidence mugs stay evidence. Set `"consumable": false` to stop a cup being drunk.
+- **Heal items.** Any object or item heals when it has `"healAmount": <n>` (`0` opts out), or `"consumable": true` for its type's default (coffee 15, energy drink 20, sandwich 25, first aid kit 40, otherwise 15). A takeable item is picked up and used from the inventory. At full health nothing is used up.
+- **Regeneration.** Out of combat (10 s since the last hit) the player gets back 1 HP every 2 s, up to half of max HP. Above that, only heal items help. Override it with a top-level `"playerRegen": { "delayMs", "tickMs", "hpPerTick", "capFraction" }`, or turn it off with `"playerRegen": false`.
+- **Leash.** A hostile gives up the chase when the player leaves its room, or goes further than `behavior.hostile.chaseRange` px (default 400) from its post, then walks back. `"chaseAcrossRooms": true` lets it follow through doors.
+
 #### Patrol Behaviour
 
 The `behavior.patrol` object controls how the NPC moves around its room:
@@ -1212,6 +1220,8 @@ Event mapping actions (can be combined):
 #### Guards who challenge on sight (`los.challengeOnSight`)
 
 A person NPC's `los` block sets his line of sight: `range` (pixels, default 200), `angle` (cone width in degrees, default 120, facing the way he walks or looks) and `visualize` (draw the cone). By default the cone is only used to decide whether he sees a lock being picked (`lockpick_used_in_view`). Add `challengeOnSight` and he also reacts when the player simply walks into his sight. It is off unless you add it, so no existing mission changes.
+
+Walls, closed doors and tall props block his view and clip the drawn cone (`npc-sight-occlusion.js`). Tall props are racks, shelving, bookcases, vending machines, lockers, filing and other tall cabinets (by sprite name, at least 50 px high, not hung on the back wall); give a scenario object `"blocksSight": true` or `false` to override. Sight is tested at floor level, feet to feet, so standing behind a rack hides the player and standing beside it doesn't. `"occlusion": false` in a `los` block makes that NPC see through everything, for a catch that must always fire (m02's Gary).
 
 ```json
 "los": {

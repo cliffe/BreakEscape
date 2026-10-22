@@ -751,7 +751,9 @@ export function movePlayerToPoint(x, y) {
 
         // Prefer a direct route when the full width of the player body has clear
         // physics LOS to the destination (world-aware: checks all rooms' wall boxes).
-        if (pathfindingManager.hasWorldPhysicsLineOfSight(px, py, x, y)) {
+        // hasPlayerLineOfSight also refuses a line through a "prefer to route
+        // around" object (systems/path-avoid.js); EasyStar then decides.
+        if (pathfindingManager.hasPlayerLineOfSight(px, py, x, y)) {
             console.log('  → Direct LOS clear — going straight');
             drawPathDebug(px, py, [{ x, y }], null);
             playerFollowingPath = false;
@@ -775,7 +777,7 @@ export function movePlayerToPoint(x, y) {
                 // so the feet go through the opening square instead of clipping
                 // its frame on a diagonal (path-doorways.js).
                 path = insertDoorwayWaypoints({ x: cx, y: cy }, path, pathfindingManager.openDoorways);
-                const smoothed = pathfindingManager.smoothWorldPathForPlayer(cx, cy, path);
+                const smoothed = pathfindingManager.smoothWorldPathForPlayer(cx, cy, path, true);
                 console.log(`  → Smoothed to ${smoothed.length} waypoints:`,
                     smoothed.map((p, i) => `[${i}](${p.x.toFixed(0)},${p.y.toFixed(0)})`).join(' → '));
 
@@ -1112,8 +1114,9 @@ function updatePlayerKeyboardMovement() {
             player.anims.stop(); // Stop current animation
             // Don't interrupt special animations: punch, death, hit, etc.
             const currentAnim = player.anims.currentAnim?.key || '';
-            if (!currentAnim.includes('punch') && !currentAnim.includes('jab') && 
+            if (!currentAnim.includes('punch') && !currentAnim.includes('jab') &&
                 !currentAnim.includes('death') && !currentAnim.includes('taking-punch')) {
+                player.anims.stop();
                 player.anims.play(`idle-${animDir}`, true);
             }
         }
@@ -1250,7 +1253,8 @@ function updatePlayerMouseMovement() {
         || playerPath.slice(playerPathIndex).some(p => p.pinned));
     if (playerFollowingPath && playerFinalGoal && !pinnedAhead) {
         const pm  = window.pathfindingManager;
-        if (pm && pm.hasWorldPhysicsLineOfSight(px, py, playerFinalGoal.x, playerFinalGoal.y)) {
+        if (pm && pm.hasPlayerLineOfSight(px, py, playerFinalGoal.x, playerFinalGoal.y,
+                [targetPoint, ...playerPath.slice(playerPathIndex)])) {
             targetPoint = playerFinalGoal;
             playerFinalGoal = null;
             playerPath = [];
@@ -1285,7 +1289,7 @@ function updatePlayerMouseMovement() {
         const pm = window.pathfindingManager;
         if (targetPoint.pinned) {
             arrived = false;
-        } else if (pm && !pm.hasWorldPhysicsLineOfSight(px, py, next.x, next.y)) {
+        } else if (pm && !pm.hasPlayerLineOfSight(px, py, next.x, next.y, [targetPoint])) {
             arrived = false;
         }
     }
@@ -1311,6 +1315,7 @@ function updatePlayerMouseMovement() {
             const currentAnim = player.anims.currentAnim?.key || '';
             if (!currentAnim.includes('punch') && !currentAnim.includes('jab') &&
                 !currentAnim.includes('death') && !currentAnim.includes('taking-punch')) {
+                player.anims.stop();
                 player.anims.play(`idle-${animDir}`, true);
             }
         }

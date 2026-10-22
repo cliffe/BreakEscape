@@ -1,6 +1,7 @@
 // 7.1c (m07 E3): coffee cups and other consumables heal the player
 // (window.playerHealth.heal), show a toast and are used up. healAmount in the
-// scenario overrides the type's default. No out-of-combat regeneration.
+// scenario overrides the type's default. Cups of coffee in rooms (room-map
+// decor or scenario objects with no role) heal too (2026-10-22).
 // Run with: node --test test/js/consumables.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,7 +16,8 @@ const dir = mkdtempSync(join(tmpdir(), 'consumables-'));
 writeFileSync(join(dir, 'consumables.mjs'), readFileSync(join(js, 'systems/consumables.js'), 'utf8'));
 const emitted = [];
 globalThis.window = { eventDispatcher: { emit: (name, data) => emitted.push({ name, data }) } };
-const { consumableHealAmount, shouldConsumeOnInteract, useConsumable } =
+const { consumableHealAmount, shouldConsumeOnInteract, useConsumable,
+        drinkableCupName, hasScenarioRole, isObjectConsumed, markObjectConsumed, CUP_HEAL, CONSUMED_GLOBAL } =
     await import(pathToFileURL(join(dir, 'consumables.mjs')).href);
 
 function health(hp, maxHP = 100) {
@@ -44,7 +46,7 @@ test('in the inventory (takeable is set false there) the type default still appl
     assert.equal(consumableHealAmount({ type: 'coffee', takeable: false }, { inInventory: true }), 15);
 });
 
-test('a world object that is not takeable is never a consumable by type alone', () => {
+test('a world object that is not takeable is not a consumable by type alone, cups aside', () => {
     // m05's fingerprinted mug on Torres' desk, a water cooler
     assert.equal(consumableHealAmount({ type: 'office-misc-cup', takeable: false, hasFingerprint: true }), 0);
     assert.equal(consumableHealAmount({ type: 'water_cooler', takeable: false }), 0);
@@ -104,4 +106,53 @@ test('wiring: interactions.js consumes before anything else handles the object',
     const consumeAt = fn.indexOf('shouldConsumeOnInteract(sprite, window.inventory?.items)');
     const keycardAt = fn.indexOf("sprite.scenarioData.type === 'keycard'");
     assert.ok(consumeAt > 0 && consumeAt < keycardAt);
+});
+
+test('cups of coffee in rooms heal unless the scenario gives them a role', () => {
+    assert.equal(CUP_HEAL, 20);
+    assert.equal(drinkableCupName('office-misc-cup2'), 'Mug of coffee');
+    assert.equal(drinkableCupName('dirty_mugs1'), null, 'empty dirty mugs are not drinks');
+    assert.equal(drinkableCupName('coffee_station1'), null, 'a machine is not a cup');
+    // room-map decor (rooms.js sets decor: true)
+    assert.equal(consumableHealAmount({ type: 'office-misc-cup', takeable: false, decor: true }), 20);
+    assert.equal(consumableHealAmount({ type: 'mugs_tray1', takeable: false }), 20);
+    // a scenario cup with no role
+    assert.equal(consumableHealAmount({ id: 'c', type: 'office-misc-cup3', name: 'Mug', takeable: false, observations: 'Cold.' }), 20);
+    // a role keeps it: evidence, a container, a clue
+    assert.equal(hasScenarioRole({ hasFingerprint: true }), true);
+    assert.equal(hasScenarioRole({ contents: [{ type: 'key' }] }), true);
+    assert.equal(hasScenarioRole({ contents: [] }), false);
+    assert.equal(hasScenarioRole({ puzzle_graph_unlocks: 'data_center' }), true);
+    assert.equal(consumableHealAmount({ type: 'office-misc-cup', takeable: false, readable: true, text: 'note' }), 0);
+    assert.equal(consumableHealAmount({ type: 'office-misc-cup', consumable: false }), 0, 'opt out');
+    assert.equal(consumableHealAmount({ type: 'office-misc-cup', healAmount: 5 }), 5, 'scenario number wins');
+    // picked up, then drunk from the inventory
+    assert.equal(consumableHealAmount({ type: 'office-misc-cup4', takeable: false }, { inInventory: true }), 20);
+    const decor = { scenarioData: { type: 'office-misc-cup', takeable: false, decor: true } };
+    assert.equal(shouldConsumeOnInteract(decor, []), true);
+});
+
+test('m05 Torres mug (the only print surface for him) stays evidence', () => {
+    const torres = { type: 'office-misc-cup', id: 'torres_mug', name: 'Mug', takeable: false, hasFingerprint: true,
+                     fingerprintOwner: 'David Torres', puzzle_graph_unlocks: 'data_center' };
+    assert.equal(consumableHealAmount(torres), 0);
+});
+
+test('a drunk room-map cup is remembered in a synced global', () => {
+    const g = {};
+    assert.equal(isObjectConsumed('r_office-misc-cup_7', g), false);
+    markObjectConsumed('r_office-misc-cup_7', g);
+    const first = g[CONSUMED_GLOBAL];
+    markObjectConsumed('r_office-misc-cup_7', g);
+    assert.deepEqual(g[CONSUMED_GLOBAL], ['r_office-misc-cup_7'], 'no duplicates');
+    markObjectConsumed('r_mugs_tray1_9', g);
+    assert.notEqual(g[CONSUMED_GLOBAL], first, 'a new array, so state-sync sees a change');
+    assert.equal(isObjectConsumed('r_mugs_tray1_9', g), true);
+});
+
+test('wiring: rooms.js makes map cups drinkable and hides ones drunk before', () => {
+    const rooms = readFileSync(join(js, 'core/rooms.js'), 'utf8');
+    assert.match(rooms, /import \{ drinkableCupName, isObjectConsumed \} from '\.\.\/systems\/consumables\.js'/);
+    assert.match(rooms, /const cupName = drinkableCupName\(imageName\)/);
+    assert.match(rooms, /isObjectConsumed\(sprite\.objectId\)/);
 });

@@ -78,6 +78,7 @@ import { initializeCollision, createWallCollisionBoxes, removeTilesUnderDoor, re
 import { NPCPathfindingManager } from '../systems/npc-pathfinding.js';
 import NPCSpriteManager from '../systems/npc-sprites.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
+import { drinkableCupName, isObjectConsumed } from '../systems/consumables.js';
 
 // Default hover text for decor: "drug_trolley1" -> "A drug trolley."
 // The site-set prefix on an asset name is dropped, so "aes_tool_trolley1" reads
@@ -2713,6 +2714,23 @@ export function createRoom(roomId, roomData, position) {
                             observations: describeDecor(cleanName)
                         };
                         console.log(`Applied default properties to ${type} ${imageName} -> ${cleanName}`);
+
+                        // A cup of coffee or tea on the map can be drunk for HP
+                        // (consumables.js); one drunk before a reload stays gone
+                        const cupName = drinkableCupName(imageName);
+                        if (cupName) {
+                            Object.assign(sprite.scenarioData, {
+                                name: cupName, type: imageName, decor: true,
+                                observations: `${cupName}, still warm. Drink it to get some energy back.`
+                            });
+                            if (isObjectConsumed(sprite.objectId)) {
+                                sprite.scenarioData.consumed = true;
+                                sprite.setVisible(false);
+                                sprite.active = false;
+                            } else {
+                                sprite.interactable = true;
+                            }
+                        }
                     }
                     
                     // Make swivel chairs interactable but don't highlight them

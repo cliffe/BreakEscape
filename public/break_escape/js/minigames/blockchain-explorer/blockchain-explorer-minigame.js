@@ -1,5 +1,6 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { MixerMatchBoard } from './mixer-match-board.js';
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -55,6 +56,10 @@ export class BlockchainExplorerMinigame extends MinigameScene {
         const sd = params.lockable?.scenarioData || {};
         const md = sd.minigameData || {};
 
+        // "Match across the mixer" tracing board (mixer-match-board.js). The
+        // explorer fields below are unused in that mode.
+        this._mixerBoard = md.mode === 'mixer_match' ? new MixerMatchBoard(this, md, params) : null;
+
         this._title          = params.title          || md.title          || 'Chain Tracer';
         this._caseRef        = params.caseRef        || md.caseRef        || '';
         this._currency       = params.currency       || md.currency       || 'BTC';
@@ -87,6 +92,12 @@ export class BlockchainExplorerMinigame extends MinigameScene {
         this.container.classList.add('bce-container');
         this.gameContainer.classList.add('bce-game-container');
         if (this.headerElement) this.headerElement.style.display = 'none';
+
+        if (this._mixerBoard) {
+            this.container.classList.add('bce-mx-container');
+            this._mixerBoard.init();
+            return;
+        }
 
         if (this._stateWrites.onMixerFlagged && readGlobal(this._stateWrites.onMixerFlagged)) {
             this._mixerFlagged = true;
@@ -422,6 +433,7 @@ export class BlockchainExplorerMinigame extends MinigameScene {
     // ── Main render ────────────────────────────────────────────────────────────
 
     render() {
+        if (this._mixerBoard) return this._mixerBoard.render();
         // Preserve graph pane scroll so clicking a node doesn't reset position
         const existingPane = this.gameContainer.querySelector('#bce-graph-pane');
         const scrollLeft = existingPane?.scrollLeft ?? 0;

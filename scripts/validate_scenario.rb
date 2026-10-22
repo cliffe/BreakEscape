@@ -311,8 +311,9 @@ def check_unknown_fields(json_data)
     md = obj['minigameData']
     return unless md.is_a?(Hash)
 
-    schema      = minigame_schemas[obj['type']] || minigame_schemas[obj['lockType']] || minigame_schemas[obj['id']]
-    schema_key  = [obj['type'], obj['lockType'], obj['id']].find { |k| k && minigame_schemas[k] }
+    # interactionType last: a generic 'pc' that opens a named minigame (blockchain_explorer).
+    schema      = minigame_schemas[obj['type']] || minigame_schemas[obj['lockType']] || minigame_schemas[obj['id']] || minigame_schemas[obj['interactionType']]
+    schema_key  = [obj['type'], obj['lockType'], obj['id'], obj['interactionType']].find { |k| k && minigame_schemas[k] }
     unless schema
       dispatch_key = obj['type'] || obj['lockType'] || obj['id']
       warnings << "⚠️ WARNING: '#{path}' has minigameData but no schema is defined for '#{dispatch_key}' — add an entry to minigame-data-schemas.json."
@@ -351,7 +352,7 @@ def check_unknown_fields(json_data)
     hacktivityMode vm acceptsVms flags flagRewards
     mode onAbort onLaunch abortConfirmText launchConfirmText
     itemsHeld contents triggerOnInteract
-    minigameData
+    minigameData interactionType
     gateVar sealedMessage openableReadyMessage
     puzzle_graph_role puzzle_graph_aim puzzle_graph_unlocks
     puzzle_graph_and_with puzzle_graph_reveals puzzle_graph_optional puzzle_graph_note

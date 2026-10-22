@@ -116,7 +116,9 @@ export class RFIDMinigame extends MinigameScene {
         } else {
             if (window.playUISound) window.playUISound('reject');
             this.animations.showTapFailure();
-            this._showDenial('Access Denied', () => this.ui.showTapInterface(), 'wrong_card');
+            const name = card.scenarioData?.name || 'This card';
+            this._showDenial('Access Denied', () => this.ui.showTapInterface(), 'wrong_card',
+                `${name} is not the card this reader wants.`);
         }
     }
 
@@ -124,10 +126,12 @@ export class RFIDMinigame extends MinigameScene {
      * Show a refusal until the player taps the screen or DENIAL_HOLD_MS passes, then go
      * back(). On a door, also report it (params.onRefused: unlock-system's
      * emitDoorUnlockFailed, which emits door_unlock_failed and door_unlock_failed:<room>).
+     * `detail` is a short line under the message saying why; tone 'notice' shows it in
+     * amber with no cross, for "nothing happened" rather than "refused".
      */
-    _showDenial(message, back, reason) {
+    _showDenial(message, back, reason, detail, tone) {
         this._endDenial();
-        this.ui.showError(message);
+        this.ui.showError(message, detail, tone);
         const screen = this.ui.getScreen && this.ui.getScreen();
         if (screen && typeof document !== 'undefined') {
             const hint = document.createElement('div');
@@ -175,7 +179,15 @@ export class RFIDMinigame extends MinigameScene {
 
         // Get card ID (standard: card_id, else the lock the card opens)
         const cardId = savedCard.card_id || window.lockRef(savedCard);
-        const isCorrect = !this.isLockingAttempt || this.requiredCardIds.includes(cardId);
+
+        // Opened from the inventory: there is no reader to present the card to. Say so,
+        // rather than "Card Emulated" and closing with nothing unlocked.
+        if (!this.isLockingAttempt) {
+            this._showDenial('No reader here', () => this.ui.showSavedCards(), 'no_reader',
+                `Use the cloner at a door's card reader to emulate ${savedCard.name || 'this card'}.`, 'notice');
+            return;
+        }
+        const isCorrect = this.requiredCardIds.includes(cardId);
 
         // Check if UID-only emulation (MIFARE DESFire without master key)
         const protocol = savedCard.rfid_protocol || 'EM4100';
@@ -199,14 +211,15 @@ export class RFIDMinigame extends MinigameScene {
                 });
             }
 
-            this._showDenial('Reader requires full authentication', () => this.ui.showSavedCards(), 'uid_only');
+            this._showDenial('Reader requires full authentication', () => this.ui.showSavedCards(), 'uid_only',
+                'Only the UID was copied. This reader checks the card\'s encryption keys too.');
             return;
         }
 
         if (isCorrect) {
             if (window.playUISound) window.playUISound('card_scan');
             this.animations.showEmulationSuccess();
-            this.ui.showSuccess(this.isLockingAttempt ? 'Access Granted' : 'Card Emulated');
+            this.ui.showSuccess('Access Granted');
 
             // Emit event
             if (window.eventDispatcher) {
@@ -223,8 +236,7 @@ export class RFIDMinigame extends MinigameScene {
             setTimeout(() => {
                 this.complete(true);
             }, 2000);
-        } else if (this.isLockingAttempt) {
-            // Only show "Access Denied" when actually trying to unlock a door
+        } else {
             if (window.playUISound) window.playUISound('reject');
             this.animations.showEmulationFailure();
 
@@ -240,27 +252,21 @@ export class RFIDMinigame extends MinigameScene {
             }
 
             // The clone ran; this reader just doesn't take that card
-            this._showDenial('Card not accepted', () => this.ui.showSavedCards(), 'wrong_card');
-        } else {
-            // When just browsing, show card info instead of error
-            this.ui.showSuccess(`Card Info: ${savedCard.name} (${protocol})`);
-
-            setTimeout(() => {
-                this.ui.showSavedCards();
-            }, 1500);
+            this._showDenial('Card not accepted', () => this.ui.showSavedCards(), 'wrong_card',
+                `The clone works, but this reader doesn't take ${savedCard.name || 'that card'}.`);
         }
     }
 
     /**
      * Start card reading (clone mode)
      */
-    startCardReading() {
+    startCardReading(readMs) {
         console.log('📡 Starting card read...');
 
-        // Animate reading progress
+        // Animate reading progress (readMs from getReadProfile: EM4100 is quickest)
         this.animations.animateReading((progress) => {
             this.ui.updateReadingProgress(progress);
-        }).then(() => {
+        }, readMs).then(() => {
             // Reading complete - show card data
             console.log('📡 Card read complete');
             this.ui.showCardDataScreen(this.cardToClone);

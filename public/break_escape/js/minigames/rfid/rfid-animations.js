@@ -20,13 +20,16 @@ export class RFIDAnimations {
     /**
      * Animate card reading progress
      * @param {Function} progressCallback - Called with progress (0-100)
+     * @param {number} [durationMs=2500] - How long the read takes (an EM4100 ID is quicker)
      * @returns {Promise} Resolves when reading complete
      */
-    animateReading(progressCallback) {
+    animateReading(progressCallback, durationMs = 2500) {
+        // 50 ms ticks; the step is sized so the bar fills in about durationMs
+        const step = Math.max(2, Math.ceil(100 / Math.max(1, durationMs / 50)));
         return new Promise((resolve) => {
             let progress = 0;
             const interval = setInterval(() => {
-                progress += 2;
+                progress = Math.min(100, progress + step);
                 progressCallback(progress);
 
                 if (progress >= 100) {
@@ -34,7 +37,7 @@ export class RFIDAnimations {
                     this.activeIntervals = this.activeIntervals.filter(i => i !== interval);
                     resolve();
                 }
-            }, 50); // 2% every 50ms = 2.5 seconds total
+            }, 50);
 
             this.activeIntervals.push(interval);
         });

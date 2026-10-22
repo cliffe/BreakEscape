@@ -641,6 +641,11 @@ export class PinMinigame extends MinigameScene {
     }
     
     complete(success) {
+        // Closing the pad (Cancel, x, Esc, a hit) without a verdict is not a wrong PIN:
+        // flag it so callers can close quietly (no "PIN Rejected", no failure sound).
+        if (!success && !this.gameResult) {
+            this.gameResult = { success: false, cancelled: true, attempts: this.attemptCount || 0 };
+        }
         // Call parent complete with result
         super.complete(success, this.gameResult);
     }

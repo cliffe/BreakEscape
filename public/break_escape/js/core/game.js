@@ -12,6 +12,7 @@ import { introduceScenario } from '../utils/helpers.js';
 import '../minigames/index.js';
 import SoundManager from '../systems/sound-manager.js';
 import { initPlayerHealth } from '../systems/player-health.js';
+import { startPlayerRegen } from '../systems/player-regen.js';
 import { initNPCHostileSystem } from '../systems/npc-hostile.js';
 import { COMBAT_CONFIG } from '../config/combat-config.js';
 import { initCombatDebug } from '../utils/combat-debug.js';
@@ -34,6 +35,7 @@ import { ScenarioTimerUI } from '../ui/scenario-timer.js';  // [Phase 5] Countdo
 import { ScenarioTimerDispatcher } from '../ui/scenario-timer-dispatcher.js';  // [Phase 5] Timer event dispatcher
 import { GameClock } from '../systems/game-clock.js';  // Elapsed game time (resumes after a reload) and the in-game clock
 import { sightChallengeWatcher } from '../systems/npc-sight-challenge.js';  // Opt-in los.challengeOnSight guards
+import '../systems/npc-sight-occlusion.js';  // Walls, doors and tall props block NPC sight (sets window.npcSightOcclusion)
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
 import { initLighting } from '../systems/lighting.js';
 import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture } from '../systems/character-textures.js';
@@ -1813,6 +1815,10 @@ export async function create() {
     if (gameScenario?.savedPlayerHealth) {
         window.playerHealth.restore(gameScenario.savedPlayerHealth);
     }
+    // Slow regen out of combat, up to half HP (player-regen.js; scenario playerRegen)
+    window.playerRegen?.stop?.();
+    window.playerRegen = startPlayerRegen({ scenario: gameScenario, defaults: COMBAT_CONFIG.player.regen,
+        eventDispatcher: window.eventDispatcher, hpEvent: 'player_hp_changed', getHealth: () => window.playerHealth });
     window.npcHostileSystem = initNPCHostileSystem();
     // NPCs that turned hostile or were knocked out before a reload (E-B), before
     // any room's NPCs load; each behavior announces its restored hostility.

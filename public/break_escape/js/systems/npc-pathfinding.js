@@ -16,6 +16,7 @@
 
 import { TILE_SIZE, GRID_SIZE, PATHFINDING_STEP } from '../utils/constants.js';
 import { addDoorway } from './path-doorways.js';
+import { AVOID_CELL_COST, collectAvoidRects, avoidCells, crossesAvoidRect } from './path-avoid.js';
 
 const PATROL_EDGE_OFFSET = 2; // Distance from room edge (2 tiles)
 
@@ -745,12 +746,50 @@ export class NPCPathfindingManager {
         }
 
         if (avoidNPCs) this._avoidNPCPositions(sx, sy);
+        // Player paths also pay extra to cross "prefer to route around" objects
+        // (path-avoid.js). calculate() runs every queued search to the end
+        // before it returns, so the costs are cleared straight after it.
+        const costed = avoidNPCs ? this._applyPreferAvoidCosts() : 0;
 
         this.worldPathfinder.findPath(sx, sy, toCX(endX), toCY(endY), (tilePath) => {
             if (avoidNPCs) this.worldPathfinder.stopAvoidingAllAdditionalPoints();
             callback(tilePath?.length > 0 ? tilePath.map(p => toWorld(p.x, p.y)) : null);
         });
         this.worldPathfinder.calculate();
+        if (costed) this.worldPathfinder.removeAllAdditionalPointCosts();
+    }
+
+    /** Footprints of every "prefer to route around" object in the loaded rooms. */
+    getPreferAvoidRects() {
+        const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+        if (this._avoidRectCache && now - this._avoidRectCache.at < 100) return this._avoidRectCache.rects;
+        const sprites = [];
+        for (const roomId in (window.rooms || {})) {
+            const objs = window.rooms[roomId]?.objects;
+            if (objs) for (const k in objs) sprites.push(objs[k]);
+        }
+        if (Array.isArray(window.chairs)) sprites.push(...window.chairs);
+        const rects = collectAvoidRects(sprites);
+        this._avoidRectCache = { at: now, rects };
+        return rects;
+    }
+
+    /** Put AVOID_CELL_COST on the world pathfinder for every avoided cell; returns the count. */
+    _applyPreferAvoidCosts() {
+        if (!this.worldPathfinder?.setAdditionalPointCost || !this.worldGrid) return 0;
+        const cells = avoidCells(this.getPreferAvoidRects(), this.worldGridBounds, this.worldGrid);
+        for (const { cx, cy } of cells) this.worldPathfinder.setAdditionalPointCost(cx, cy, AVOID_CELL_COST);
+        return cells.length;
+    }
+
+    /**
+     * Player LOS: hasWorldPhysicsLineOfSight, and the line doesn't cross a
+     * "prefer to route around" object (path-avoid.js). `via`: raw route points
+     * between the two ends; an object the route goes through anyway is allowed.
+     */
+    hasPlayerLineOfSight(x1, y1, x2, y2, via = null) {
+        if (!this.hasWorldPhysicsLineOfSight(x1, y1, x2, y2)) return false;
+        return !crossesAvoidRect(x1, y1, x2, y2, this.getPreferAvoidRects(), { via });
     }
 
     /**
@@ -1064,8 +1103,10 @@ export class NPCPathfindingManager {
     /**
      * Greedy string-pull using hasWorldPhysicsLineOfSight — no roomId needed.
      * Should be used for all player path smoothing.
+     * avoidProps (player click-to-move): also keep shortcuts off "prefer to
+     * route around" objects the raw route went round (path-avoid.js).
      */
-    smoothWorldPathForPlayer(startX, startY, path) {
+    smoothWorldPathForPlayer(startX, startY, path, avoidProps = false) {
         if (!path || path.length <= 1) return path;
         const debug = isDebug();
         const smoothed = [];
@@ -1078,7 +1119,10 @@ export class NPCPathfindingManager {
             let limit = path.length - 1;
             for (let k = i; k < path.length; k++) if (path[k].pinned) { limit = k; break; }
             for (let j = limit; j > i; j--) {
-                if (this.hasWorldPhysicsLineOfSight(cx, cy, path[j].x, path[j].y)) {
+                const clear = avoidProps
+                    ? this.hasPlayerLineOfSight(cx, cy, path[j].x, path[j].y, path.slice(i, j))
+                    : this.hasWorldPhysicsLineOfSight(cx, cy, path[j].x, path[j].y);
+                if (clear) {
                     farthest = j; break;
                 }
             }

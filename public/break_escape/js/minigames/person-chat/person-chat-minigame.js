@@ -23,9 +23,10 @@ import TTSManager from '../../systems/tts-manager.js';
 import { rememberNpcLine, getRememberedNpcLine, reopenContextLine } from './person-chat-reopen.js';
 import { startEventConversation } from './person-chat-event-start.js';
 import { personChatBackgroundFor } from './person-chat-background.js';
+import { advanceDelayMs, readingTimeMs } from './dialogue-pacing.js';
 import { isSessionOverlayShowing, onSessionOverlayClosed, whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
 
-// Configuration constants for dialogue auto-advance timing
+// Auto-advance timing: readingTimeMs()/advanceDelayMs() in dialogue-pacing.js; this is only the scheduleDialogueAdvance default
 const DIALOGUE_AUTO_ADVANCE_DELAY = 5000; // Default delay in milliseconds for new dialogue text (5 seconds)
 const DIALOGUE_END_DELAY = 1000; // Delay in milliseconds for ending conversations (1 second)
 
@@ -1457,8 +1458,9 @@ export class PersonChatMinigame extends MinigameScene {
         );
         rememberNpcLine(this.npcId, { text: line, speaker: block.speaker, isNarrator: block.isNarrator });
 
-        // Determine auto-advance delay — use TTS audio duration if available
-        let advanceDelay = DIALOGUE_AUTO_ADVANCE_DELAY;
+        // Auto-advance delay: TTS audio duration if there is audio, else a reading-time
+        // estimate for the line (set again below once TTS has answered).
+        let advanceDelay = readingTimeMs(line);
 
         // Play TTS for NPC speakers (not player, not system)
         if (this.ttsManager && block.speaker && block.speaker !== 'player' && block.speaker !== 'system') {
@@ -1489,10 +1491,8 @@ export class PersonChatMinigame extends MinigameScene {
             await whenSessionOverlayClosed();
             if (!this.ttsManager) return;
             const audioDuration = await this.ttsManager.play(ttsSpeakerId, ttsText);
-            if (audioDuration && audioDuration > 0) {
-                // Use audio duration + buffer as advance delay
-                advanceDelay = audioDuration + 500;
-            }
+            // Audio length + buffer; null (no key, fetch or load failure) uses the estimate
+            advanceDelay = advanceDelayMs(line, audioDuration);
 
             // Preload next line while current plays. Resolve its speaker the same way
             // so multi-NPC conversations preload against the correct voice.
@@ -1562,8 +1562,9 @@ export class PersonChatMinigame extends MinigameScene {
                 console.log(`📋 ${result.choices.length} choices available`);
             } else if (result.canContinue) {
                 // No choices but can continue - auto-advance after delay
-                console.log(`⏳ Auto-continuing in ${DIALOGUE_AUTO_ADVANCE_DELAY / 1000} seconds...`);
-                this.scheduleDialogueAdvance(() => this.showCurrentDialogue(), DIALOGUE_AUTO_ADVANCE_DELAY);
+                const holdMs = readingTimeMs(result.text);
+                console.log(`⏳ Auto-continuing in ${holdMs / 1000} seconds...`);
+                this.scheduleDialogueAdvance(() => this.showCurrentDialogue(), holdMs);
             } else {
                 // No choices and can't continue - check if there's more content
                 // Try to continue anyway (for linear scripted conversations)
@@ -1588,7 +1589,7 @@ export class PersonChatMinigame extends MinigameScene {
                         }
                         this.showConversationOverMessage('(No more dialogue available - press ESC to close)');
                     }
-                }, DIALOGUE_AUTO_ADVANCE_DELAY);
+                }, readingTimeMs(result.text));
             }
         } catch (error) {
             console.error('❌ Error displaying dialogue:', error);

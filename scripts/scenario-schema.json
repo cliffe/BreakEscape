@@ -962,6 +962,7 @@
             "range": { "type": "number", "description": "Detection radius in pixels" },
             "angle": { "type": "number", "description": "Field-of-view width in degrees" },
             "visualize": { "type": "boolean", "description": "Draw the detection cone on screen" },
+            "occlusion": { "type": "boolean", "description": "Default true: walls, closed doors and tall props (npc-sight-occlusion.js) block this NPC's view and clip the drawn cone. false = sees through everything (range and angle only)" },
             "challengeOnSight": {
               "description": "Opt-in (default off). When the player is in this NPC's room and inside his cone, emit an event (default player_spotted:<npcId>) once per sighting, at most once per cooldown. Map the event in eventMappings to a person-chat knot, setGlobal, bark or emitEvent. true = all defaults. See README_scenario_design.md, 'Guards who challenge on sight'.",
               "oneOf": [
@@ -1185,6 +1186,7 @@
         "id": { "type": "string", "description": "This object's own unique identity, distinct from opens_lock (which names the lock it opens). Used to target this specific object." },
         "name": { "type": "string" },
         "takeable": { "type": "boolean" },
+        "blocksSight": { "type": "boolean", "description": "true: this prop blocks NPC sight like a wall; false: it never does. Unset: tall racks, shelving, cabinets, lockers and vending machines block (npc-sight-occlusion.js)" },
         "readable": { "type": "boolean" },
         "interactable": { "type": "boolean" },
         "active": { "type": "boolean" },

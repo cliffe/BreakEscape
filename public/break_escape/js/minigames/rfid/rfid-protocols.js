@@ -169,6 +169,29 @@ export function isMIFARE(protocol) {
 }
 
 /**
+ * What the cloner says while it reads a card, and how long the read takes. The point
+ * is the contrast: an EM4100 card has no crypto, so its ID comes off in under a
+ * second; a MIFARE Classic card gives up its UID just as fast, but its sectors are
+ * encrypted and need their keys recovered before they can be read.
+ * @param {string} protocol - Protocol name
+ * @returns {{readMs: number, band: string, cryptoLine: string, cryptoClass: string}}
+ */
+export function getReadProfile(protocol) {
+  switch (protocol) {
+    case 'MIFARE_Classic_Weak_Defaults':
+    case 'MIFARE_Classic_Custom_Keys':
+      return { readMs: 1200, band: '13.56 MHz  MIFARE Classic',
+        cryptoLine: 'UID read in clear. Sectors encrypted', cryptoClass: 'locked' };
+    case 'MIFARE_DESFire':
+      return { readMs: 1200, band: '13.56 MHz  DESFire',
+        cryptoLine: 'AES encrypted: UID only', cryptoClass: 'locked' };
+    default:
+      return { readMs: 800, band: '125 kHz  EM4100',
+        cryptoLine: 'No encryption: ID read in clear', cryptoClass: 'open' };
+  }
+}
+
+/**
  * Get security level display text
  * @param {string} security - Security level ('low', 'medium', 'high')
  * @returns {string} Display text

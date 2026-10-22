@@ -52,7 +52,17 @@ export const COMBAT_CONFIG = {
     // Half-angle of the punch cone either side of the facing direction (7.1h:
     // widened from 30°, which missed an attacker standing a little off-axis)
     punchConeHalfAngle: 40,
-    punchAnimationDuration: 500
+    punchAnimationDuration: 500,
+    // Slow regen out of combat (player-regen.js): once nothing has hurt the
+    // player for delayMs, +hpPerTick every tickMs, up to capFraction of max
+    // HP. A scenario's top-level playerRegen overrides any of these, or turns
+    // it off with false. Kept low so coffee and snacks still matter.
+    regen: {
+      delayMs: 10000,
+      tickMs: 2000,
+      hpPerTick: 1,
+      capFraction: 0.5
+    }
   },
   npc: {
     defaultMaxHP: 100,

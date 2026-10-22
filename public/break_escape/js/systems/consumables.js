@@ -1,7 +1,7 @@
 /**
  * Consumables heal the player (7.1c; m07 E3; user, 2026-10-16: "Make coffee
- * cups and other consumables health boosts"). There is no regeneration out of
- * combat: HP comes back only from something the player eats or drinks.
+ * cups and other consumables health boosts"). Out of combat a slow regen
+ * (player-regen.js) brings HP back to half; above that only consumables help.
  *
  * Which objects count:
  *   - any object with a positive `healAmount` (the scenario's number wins);
@@ -9,8 +9,13 @@
  *   - any object with `consumable: true` (its type's default, else 15);
  *   - a takeable item whose type is a known consumable (coffee, energy drink,
  *     water bottle, snack, sandwich, first aid kit), once it is in the
- *     inventory. A world object that isn't takeable (a fingerprinted mug on a
- *     desk, a water cooler) is never a consumable by type alone.
+ *     inventory;
+ *   - a cup of coffee or tea standing in a room (the DRINKABLE_CUPS sprites),
+ *     whether it is room-map decor or a scenario object, unless the scenario
+ *     gives it a role (a fingerprint, contents, a lock, text, a trigger, a
+ *     puzzle-graph entry). m05's fingerprinted mug on Torres' desk stays
+ *     evidence: drinking it would lose the only print surface for him. Empty
+ *     dirty mugs, coffee machines and water coolers are not cups.
  *
  * Using one heals by its amount (capped at max HP), shows a toast and uses it
  * up: an inventory item leaves the inventory (and the server's copy), a world
@@ -32,6 +37,60 @@ export const DEFAULT_HEAL_BY_TYPE = [
 ];
 export const GENERIC_HEAL = 15;
 
+// Cups of coffee or tea in rooms (user, 2026-10-22: "any coffee cups in rooms
+// are consumed for health"), by sprite name: what the hover says and the heal.
+export const CUP_HEAL = 20;
+export const DRINKABLE_CUPS = {
+  'office-misc-cup': 'Cup of coffee',
+  'office-misc-cup2': 'Mug of coffee',
+  'office-misc-cup3': 'Mug of coffee',
+  'office-misc-cup4': 'Glass of tea',
+  'office-misc-cup5': 'Iced coffees',
+  'coffee_cups1': 'Takeaway coffees',
+  'mugs_tray1': 'Tray of coffee'
+};
+
+/** The hover name of a drinkable cup sprite, or null. */
+export function drinkableCupName(type) {
+  return DRINKABLE_CUPS[String(type || '')] || null;
+}
+
+// Fields that give a scenario object a job beyond being drunk.
+const ROLE_FIELDS = ['hasFingerprint', 'fingerprintOwner', 'contents', 'locked', 'lockType',
+  'readable', 'text', 'triggerOnInteract', 'puzzle_graph_role', 'puzzle_graph_unlocks',
+  'requires', 'interactionGate', 'onInteract'];
+
+/** True when a scenario object has a role (evidence, container, clue...). */
+export function hasScenarioRole(data) {
+  if (!data) return false;
+  return ROLE_FIELDS.some(f => {
+    const v = data[f];
+    if (Array.isArray(v)) return v.length > 0;
+    return v !== undefined && v !== null && v !== false && v !== '';
+  });
+}
+
+// Used-up room-map cups have no server-side object to remove, so their ids
+// are kept in this global (synced and restored with the others; undeclared,
+// so it never reaches ink).
+export const CONSUMED_GLOBAL = '_consumedObjects';
+
+/** True when this object id was drunk before (this session or a saved one). */
+export function isObjectConsumed(objectId, globals) {
+  const g = globals ?? (typeof window !== 'undefined' ? window.gameState?.globalVariables : null);
+  const list = g?.[CONSUMED_GLOBAL];
+  return !!objectId && Array.isArray(list) && list.includes(objectId);
+}
+
+/** Record an object id as used up. */
+export function markObjectConsumed(objectId, globals) {
+  const g = globals ?? (typeof window !== 'undefined' ? window.gameState?.globalVariables : null);
+  if (!objectId || !g) return;
+  const list = Array.isArray(g[CONSUMED_GLOBAL]) ? g[CONSUMED_GLOBAL] : [];
+  // A new array, so state-sync sees the key change
+  if (!list.includes(objectId)) g[CONSUMED_GLOBAL] = [...list, objectId];
+}
+
 function defaultHealForType(type) {
   const t = String(type || '').toLowerCase();
   const hit = DEFAULT_HEAL_BY_TYPE.find(([re]) => re.test(t));
@@ -50,8 +109,9 @@ export function consumableHealAmount(data, { inInventory = false } = {}) {
   }
   if (data.consumable === true) return defaultHealForType(data.type) || GENERIC_HEAL;
   if (data.consumable === false) return 0;
-  if (inInventory || data.takeable === true) return defaultHealForType(data.type);
-  return 0;
+  const cup = drinkableCupName(data.type) && !hasScenarioRole(data) ? CUP_HEAL : 0;
+  if (inInventory || data.takeable === true) return defaultHealForType(data.type) || cup;
+  return cup;
 }
 
 /**
@@ -96,6 +156,12 @@ export function useConsumable(sprite, deps = {}) {
   const healed = Math.min(amount, maxHP - hp);
   health.heal(amount);
   notify(`${name}: +${healed} HP`, 'success', '', 2500);
+  // A green +N over the player and a green flash on the sprite
+  const player = w.player;
+  if (player) {
+    w.damageNumbers?.show?.(player.x, player.y - 30, healed, 'heal');
+    w.spriteEffects?.flashTint?.(player, 0x66ff66, 300);
+  }
   w.eventDispatcher?.emit?.('item_consumed', {
     itemId: data.id || null, itemType: data.type, itemName: data.name, healed
   });
@@ -132,6 +198,7 @@ function removeWorldConsumable(sprite) {
   const w = window;
   const roomId = sprite.roomId || w.currentPlayerRoom;
   sprite.scenarioData.consumed = true;
+  markObjectConsumed(sprite.objectId);
   if (typeof sprite.setVisible === 'function') sprite.setVisible(false);
   sprite.active = false;
   sprite.isHighlighted = false;
@@ -140,7 +207,8 @@ function removeWorldConsumable(sprite) {
     delete sprite.proximityGhost;
   }
   w.eventDispatcher?.emit?.('item_removed_from_scene', { sprite });
-  if (roomId && sprite.objectId && w.RoomStateSync?.removeItemFromRoom) {
+  // Room-map decor isn't a server room object: the global above keeps it gone
+  if (roomId && sprite.objectId && !sprite.scenarioData.decor && w.RoomStateSync?.removeItemFromRoom) {
     w.RoomStateSync.removeItemFromRoom(roomId, sprite.objectId)
       .catch(err => console.error('Failed to sync consumed object:', err));
   }

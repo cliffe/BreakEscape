@@ -552,7 +552,8 @@ export function startPinMinigame(lockable, type, correctPin, callback) {
                 callback(true, result); // Pass result with serverResponse
             } else {
                 console.log('PIN MINIGAME FAILED');
-                if (!window.minigameClosedByDamage?.()) {
+                // result.cancelled: the player just closed the pad -- say nothing
+                if (!result?.cancelled && !window.minigameClosedByDamage?.()) {
                     window.gameAlert("Failed to enter correct PIN.", 'error', 'PIN Rejected', 3000);
                 }
                 callback(false, result);
