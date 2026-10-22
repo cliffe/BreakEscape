@@ -237,3 +237,15 @@ steps copy), so that is a quality trade, not a free swap.
   presence in `public/break_escape/assets/characters/`. Lighting and `chatBackground` come from the scenario blocks.
 - Not checked: whether each v1 talk sheet matches the v2 walk sprite's face; the per-role company mapping of check missions
   other than "general"; ages and backgrounds of the unpinned cast.
+
+## User decisions (2026-10-22)
+- **Characters:** all 26: the 15 core plus the 11 check-mission hosts.
+- **Generation:** batch all; no sign-off on a first image.
+- **Awareness POV backgrounds:** four, one per company. Each training room gets the full polish passes (dressing and lighting, five cycles) before its background is made.
+- **Cast diversity:** concept prompts must state each character's ethnicity and age, taken from BRAND_SET.md. Never default to "light skin".
+
+## Character batches (pixellab-character-pipeline, run in parallel)
+- **A, lab (7):** Ruth Adeyemi, Gareth Fairbairn and Tomasz in full sets; Dev, bust only; Melanie Pierce, Sofia Lord and Jed Baker, headshots only.
+- **B, episode hosts (7):** Adaeze Okafor, Fatima Begum, Darren Price, Thandiwe Moyo, Niamh Doherty, Chidi Okeke and Agnieszka Duda. Leila Nassar, bust only, makes 8.
+- **C, check hosts 1:** Yasmin Chaudhry, Julian Sallow, Graham Whitfield, Farah Qureshi, Owen Treharne and Pauline Hendry.
+- **D, check hosts 2:** Anjali Rao, Sofia Marchetti, Jun Watanabe, Ibrahim Diallo and Lerato Dlamini.
