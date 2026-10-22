@@ -1081,6 +1081,18 @@ WALL_MOUNTED_EXTRAS = {
     "m10_map_board",
     "m10_bypass_panel",
     "m10_wall_screen",
+    "m10_portal_head",
+    "m10_blast_leaf",
+    "m10_key_isolator",
+    "m10_wall_phone",
+    "m10_coat_hooks",
+    "m10_sign_core",
+    "m10_fire_buckets",
+    "se_logo_sign",
+    "se_sign_engagement",
+    "se_sign_recon",
+    "se_sign_ops",
+    "se_sign_blueteam",
 }
 
 
@@ -4660,6 +4672,9 @@ def main():
     #   (copies of room_hospital_office, edited with scripts/room_gen/room_edit.py)
     # room_hospital_reception's .json has also been hand-edited since it was
     # generated (45 objects vs the builder's 34) — regenerating it loses that.
+    #   room_se_engagement, room_se_recon, room_se_ops, room_se_blueteam
+    #   (lab_social_engineering; copies of room_zds_conference, room_zds_office,
+    #   room_qdc_open and room_aes_security, edited with room_edit.py)
     builders = {
         "small_office_room4_1x1gu": room_small_office_4,
         "room_security": room_security,
