@@ -542,7 +542,7 @@ closing_card = lambda do |ending, teaser|
 end
 join_card = { 'lines' => [cl.('Dr Adrian Tesseract: free.'), cl.('The database: everywhere.'), cl.('Every cell has it.')] }
 
-person = ->(name, clauses) { { 'name' => name, 'clauses' => clauses } }
+person = ->(name, clauses) { name ? { 'name' => name, 'clauses' => clauses } : { 'clauses' => clauses } }
 tesseract_clause = {
   'arrest' => cl.('Held out his wrists before anyone asked.'),
   'surrender' => cl.('Typed the cells\' protocol himself, without hurrying.'),
@@ -553,9 +553,20 @@ tesseract_clause = {
 }
 in_this_operation = lambda do |ending|
   people = []
+  # Alignment R1 A1: the player heads their own credits on every ending, as an
+  # outcome (the told clause first where it applies; one clause per person).
   people << person.('AGENT 0x00', [
     cl.('Pressed the key.', "globalVars.ending === 'joined'", w),
-    cl.("Told their handler about the Recruiter's call.", "globalVars.m09_recruiter_secret === 'told'")
+    cl.("Told their handler about the Recruiter's call.", "globalVars.m09_recruiter_secret === 'told'"),
+    cl.('Brought him out alive, in front of a court.', "globalVars.ending === 'arrest'"),
+    cl.('Took his surrender. Kept his protocol.', "globalVars.ending === 'surrender'"),
+    cl.('Fired when his hand was on the key.', "globalVars.ending === 'lethal'"),
+    cl.('Fired when his hands were empty.', "globalVars.ending === 'executed'", w),
+    cl.('Wiped both copies. Suspended.', "globalVars.ending === 'scorched'", w)
+  ])
+  # D1 (c): the season, once, as an unnamed line under 0x00 on a save that played m09.
+  people << person.(nil, [
+    cl.('Ten operations. Still answering for every one.', "globalVars.m09_completed === true && globalVars.ending !== 'joined'")
   ])
   people << person.('DIRECTOR MAGNUS NETHERTON', [
     cl.('Ordered 0x00 brought in.', "globalVars.ending === 'joined'"),
@@ -767,6 +778,17 @@ elsewhere_one = [
   cl.("Social Fabric's story ran at six. One paragraph of it was true.", "globalVars.ending === 'executed'", w),
   cl.("Social Fabric's story ran from outside: a massacre that never happened.", "globalVars.media_story_ran === true && globalVars.ending !== 'executed'", w),
   cl.('It named SAFETYNET, and 0x00.', "globalVars.media_story_ran === true && globalVars.ending !== 'executed' && globalVars.m05_entropy_program_exposed === true", w),
+  # Alignment R1 A4 / A3: the season's first operation and m05's choice, each by its exported value.
+  cl.("Derek Lawson: serving. He still hasn't said who.", "globalVars.m01_completed === true && globalVars.m01_final_choice === 'arrest'"),
+  cl.("Derek Lawson: serving. He still hasn't said who.", "globalVars.m01_completed === true && globalVars.m01_final_choice === 'fight'"),
+  cl.("Derek Lawson: serving. He gave himself up, and nothing else.", "globalVars.m01_completed === true && globalVars.m01_final_choice === 'surrender'"),
+  cl.('Derek Lawson: working for us. Still careful what he gives.', "globalVars.m01_completed === true && globalVars.m01_final_choice === 'recruit'"),
+  cl.('Derek Lawson: exposed in public. Social Fabric took his name off its door.', "globalVars.m01_completed === true && globalVars.m01_final_choice === 'expose'"),
+  cl.('David Torres: still turned. Still sending.', "globalVars.m05_completed === true && globalVars.m05_final_choice === 'turn_double_agent'"),
+  cl.('David Torres: serving.', "globalVars.m05_completed === true && globalVars.m05_final_choice === 'arrest'"),
+  cl.('David Torres: serving. He walks with a stick now.', "globalVars.m05_completed === true && globalVars.m05_final_choice === 'combat_nonlethal'"),
+  cl.('David Torres: died under his own server rack.', "globalVars.m05_completed === true && globalVars.m05_final_choice === 'combat_lethal'", w),
+  cl.('David Torres: named in public. Awaiting trial.', "globalVars.m05_completed === true && globalVars.m05_final_choice === 'public_exposure'"),
   # Playtest FULL_1 / S6 3.5: a stopped share gets its own row, and the "still trading" rows skip it.
   cl.('Zero Day: got nothing tonight. Still trading.', "globalVars.share_zero_day === 'stopped' && globalVars.close_zero_day === 'trading'"),
   cl.('Zero Day: got nothing tonight. Its broker, Pieter Vos, named.', "globalVars.share_zero_day === 'stopped' && globalVars.close_zero_day === 'vos_named'"),
@@ -1044,6 +1066,12 @@ if File.exist?(credits_src)
     raise "m10: credits_fragment['#{k}'] differs from #{credits_src}" unless src[k] == credits_fragment[k]
   end
 end
+safetynet_name = {
+  'DIRECTOR MAGNUS NETHERTON' => 'DIRECTOR MAGNUS NETHERTON', 'AGENT HAX' => 'AGENT HAX',
+  'MARISOL QUINTERO' => "AGENT 0x2D 'ANCHOR'", 'HALINA KOWALCZYK' => "HALINA KOWALCZYK, 'WREN'",
+  'OFFICER DEV MALHOTRA' => 'OFFICER DEV MALHOTRA', 'OFFICER KENJI ARAKAWA' => 'OFFICER KENJI ARAKAWA',
+  "AGENT 0x23 'VECTOR'" => "AGENT 0x23 'VECTOR'", "AGENT 0x88 'PHANTOM'" => "AGENT 0x88 'PHANTOM'"
+}
 credits_for = lambda do |ending|
   join = ending == 'joined'
   c = []
@@ -1062,17 +1090,31 @@ credits_for = lambda do |ending|
     c << cl.('FULL DISCLOSURE', nil, 'subtitle')
     c << { 'text' => '' }
   end
-  c << in_this_operation.(ending)
+  # Alignment R1 m4: one entry per SAFETYNET person. Their IN THIS OPERATION
+  # conditional clauses (tonight's outcome) move ahead of their SAFETYNET role
+  # clauses, and they leave IN THIS OPERATION; with no outcome, the role line shows.
+  # credits_sections.json is unchanged (the drift check still holds).
+  ito = in_this_operation.(ending)
+  sn = JSON.parse(JSON.generate(credits_fragment[join ? 'safetynet_join' : 'safetynet']))
+  sn_names = sn['people'].map { |pp| pp['name'] }
+  ito['people'] = ito['people'].reject do |pp|
+    target = safetynet_name[pp['name']]
+    next false unless target && sn_names.include?(target)
+    entry = sn['people'].find { |q| q['name'] == target }
+    entry['clauses'] = pp['clauses'].select { |cc| cc['condition'] } + entry['clauses']
+    true
+  end
+  c << ito
   c << the_cells unless join
   # ELSEWHERE: three movements in order; Join keeps movement 1 only (W-21).
   c << { 'section' => 'ELSEWHERE', 'lines' => join ? elsewhere_one : elsewhere_one + elsewhere_two + elsewhere_three }
-  c << credits_fragment[join ? 'safetynet_join' : 'safetynet']
+  c << sn
   c << credits_fragment['in_memory']
   c
 end
 %>
 {
-  "scenario_brief": "Tomb Gamma is a Cold War bunker under the Montana hills, and the man behind ENTROPY's plan is waiting at its core. At six o'clock UTC his release sends every weakness SAFETYNET ever catalogued to every city at once. At four, two cells get it early. Director Netherton is running the raid from a folding table at the gate with Task Force Null. Get a foothold on the bunker's systems, get below ground, and reach the core before the clock does. One of tonight's team was placed eleven years ago. Netherton knows. WREN doesn't know he knows.",
+  "scenario_brief": "Tomb Gamma is a Cold War bunker under the Montana hills, and the man behind ENTROPY's plan is waiting at its core. At six o'clock UTC his release sends every weakness SAFETYNET ever catalogued to every city at once. At four, two cells get it early. Director Netherton is running the raid from a folding table at the gate with Task Force Null. Get a foothold on the bunker's systems, get below ground, and reach the core before the clock does. Helena gave us the shape of a sleeper on tonight's team.",
 
   "show_scenario_brief": "on_resume",
 
@@ -1119,7 +1161,22 @@ end
       { "trigger": "game_loaded", "condition": "!globalVars.briefing_played", "playlist": "cutscene", "fade": false },
       { "trigger": "game_loaded", "condition": "globalVars.briefing_played === true && !globalVars.breach_open", "playlist": "noir", "fade": false },
       { "trigger": "game_loaded", "condition": "globalVars.breach_open === true && !globalVars.outer_lock_open", "playlist": "spy-action", "fade": false },
-      { "trigger": "game_loaded", "condition": "globalVars.outer_lock_open === true", "playlist": "noir", "track": "Steel Shadows in E Minor", "fade": false },
+      { "trigger": "game_loaded", "condition": "globalVars.outer_lock_open === true && globalVars.ending === '' && !globalVars.wren_entering", "playlist": "noir", "track": "Steel Shadows in E Minor", "fade": false },
+<%# Alignment R1 A7: the core's climax and the epilogue. Each live cue has a game_loaded twin; the twins are exclusive, in story order. The core's arrival keeps the head start's "Steel Shadows" (already playing by then), so it has no cue of its own. %>
+      { "trigger": "game_loaded", "condition": "globalVars.wren_entering === true && globalVars.ending === ''", "playlist": "threat", "fade": false },
+<% [['executed', 'silence'], ['scorched', 'threat'], ['joined', 'end'], ['arrest', 'silence'], ['surrender', 'silence'], ['lethal', 'silence']].each do |e, pl| %>
+      { "trigger": "game_loaded", "condition": "globalVars.ending === '<%= e %>' && !globalVars.six_open && !globalVars.hearing_open && !globalVars.citadel_open", "playlist": "<%= pl %>", "fade": false },
+<% end %>
+      { "trigger": "game_loaded", "condition": "globalVars.six_open === true && !globalVars.hearing_open && !globalVars.night_closed", "playlist": "cutscene", "fade": false },
+      { "trigger": "game_loaded", "condition": "globalVars.hearing_open === true && !globalVars.night_closed", "playlist": "cutscene", "fade": false },
+      { "trigger": "game_loaded", "condition": "globalVars.citadel_open === true && !globalVars.night_closed", "playlist": "cutscene", "fade": false },
+      { "trigger": "global_variable_changed:wren_entering", "condition": "value === true && globalVars.ending === ''", "playlist": "threat", "fade": true },
+<% [['executed', 'silence'], ['scorched', 'threat'], ['joined', 'end'], ['arrest', 'silence'], ['surrender', 'silence'], ['lethal', 'silence']].each do |e, pl| %>
+      { "trigger": "global_variable_changed:ending", "condition": "value === '<%= e %>'", "playlist": "<%= pl %>", "fade": true },
+<% end %>
+<% %w[six_open hearing_open citadel_open].each do |g| %>
+      { "trigger": "global_variable_changed:<%= g %>", "condition": "value === true && !globalVars.night_closed", "playlist": "cutscene", "fade": true },
+<% end %>
       { "trigger": "global_variable_changed:briefing_done", "condition": "value === true", "playlist": "noir", "fade": true },
       { "trigger": "global_variable_changed:breach_open", "condition": "value === true", "playlist": "spy-action", "fade": true },
       { "trigger": "npc_hostile_state_changed", "condition": "isHostile === true && !globalVars.hax_jammed && !globalVars.outer_lock_open", "playlist": "threat", "fade": true },
@@ -1137,7 +1194,7 @@ end
       { "trigger": "global_variable_changed:exchange_3", "condition": "globalVars.exchange_1 !== 'miss' && globalVars.exchange_2 !== 'miss'", "playlist": "silence", "fade": true },
       { "trigger": "global_variable_changed:exchange_3", "condition": "globalVars.exchange_1 !== 'miss' && globalVars.exchange_2 === 'miss' && globalVars.exchange_3 !== '' && globalVars.exchange_3 !== 'miss'", "playlist": "silence", "fade": true },
       { "trigger": "global_variable_changed:exchange_3", "condition": "globalVars.exchange_1 === 'miss' && globalVars.exchange_2 !== 'miss' && globalVars.exchange_3 !== '' && globalVars.exchange_3 !== 'miss'", "playlist": "silence", "fade": true },
-<% [['six_oclock', 'arrest', 'victory', true], ['six_oclock', 'surrender', 'victory', true], ['six_oclock', 'lethal', 'victory', true],
+<% [['six_oclock', 'arrest', 'victory', true], ['six_oclock', 'surrender', 'victory', true], ['six_oclock', 'lethal', 'end', true],
     ['six_oclock', 'executed', 'end', false], ['hearing', 'scorched', 'end', true], ['citadel', 'joined', 'end', false]].each_with_index do |(npc, ending, playlist, teaser), ei| %>
       {
         "trigger": "global_variable_changed:night_closed",
@@ -1629,8 +1686,8 @@ end
             { "eventPattern": "global_variable_changed:console_choice", "condition": "value !== ''", "onceOnly": true, "completeTask": "decide_the_console" },
             { "eventPattern": "global_variable_changed:database_outcome", "condition": "value !== ''", "onceOnly": true, "completeTask": "decide_the_database" },
             { "eventPattern": "global_variable_changed:ending", "condition": "value !== ''", "onceOnly": true, "completeTask": "decide_his_end" },
-            { "eventPattern": "global_variable_changed:ending", "condition": "value === 'joined'", "onceOnly": true, "sendTimedMessage": { "delay": 3000, "message": "0x00." } },
-            { "eventPattern": "global_variable_changed:six_done", "condition": "value === true && globalVars.ending === 'executed'", "onceOnly": true, "sendTimedMessage": { "delay": 30000, "message": "I'll be at the board. I don't know what I'll say." } },
+            { "eventPattern": "global_variable_changed:ending", "condition": "value === 'joined'", "onceOnly": true, "sendTimedMessage": { "delay": 3000, "message": "0x00.", "skipIfGlobal": "night_closed" } },
+            { "eventPattern": "global_variable_changed:six_done", "condition": "value === true && globalVars.ending === 'executed'", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "I'll be at the board. I don't know what I'll say.", "skipIfGlobal": "night_closed" } },
 <%# Impl R1 minor 11: a required story task whose one onceOnly completion was lost catches up on load (completeTask returns early on a done task; m08's take_the_debrief). %>
 <% [['settle_the_table', 'globalVars.door_scene_done === true'], ['answer_the_handset', 'globalVars.ghost_call_done === true'],
     ['cut_the_shutter', 'globalVars.gallery_shutter_cut === true'], ['open_the_outer_lock', "globalVars.head_start_out !== ''"],
@@ -2117,7 +2174,7 @@ end
     ["globalVars.ghost_sale === 'stopped' && globalVars.ghost_answer === ''", 'Left on a quiet day, as you asked. First sale I ever turned down. Clean exit.'],
     ["globalVars.ghost_sale === 'bait' && globalVars.head_start_killed === 'ghost'", 'Five buyers paid for nothing, and you have their names. I kept the money. Clean exit.'],
     ["globalVars.ghost_sale === 'bait' && globalVars.head_start_killed !== 'ghost'", 'Sold. You watched who bought it. I hope the names were worth it. Clean exit.']].each_with_index do |(cond, msg), i| %>
-            { "eventPattern": "global_variable_changed:six_done", "condition": "value === true && <%= cond %>", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": <%= j.(msg) %> } }<%= i < 7 ? ',' : '' %>
+            { "eventPattern": "global_variable_changed:six_done", "condition": "value === true && <%= cond %>", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": <%= j.(msg) %>, "skipIfGlobal": "night_closed" } }<%= i < 7 ? ',' : '' %>
 <% end %>
           ]
         },
@@ -2178,7 +2235,7 @@ end
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_recruiter_phone.json",
           "currentKnot": "start",
           "eventMappings": [
-            { "eventPattern": "global_variable_changed:six_done", "condition": "value === true && globalVars.m09_recruiter_offer === 'double_crossed'", "onceOnly": true, "sendTimedMessage": { "delay": 5000, "message": "I'll remember the shape of you." } }
+            { "eventPattern": "global_variable_changed:six_done", "condition": "value === true && globalVars.m09_recruiter_offer === 'double_crossed'", "onceOnly": true, "sendTimedMessage": { "delay": 5000, "message": "I'll remember the shape of you.", "skipIfGlobal": "night_closed" } }
           ]
         },
 <%# --- The closing scenes (OT 4.7): hidden person NPCs, each opened by its own mapping. Every closing mapping carries !closing_done and onceOnly; game_loaded backstops re-open a scene whose last line hasn't run. --- %>
@@ -4042,7 +4099,7 @@ not_tethered = '!globalVars.nightshade_tethered'
     rows until it lands. ===================================================== %>
 <%
 m10_imports = {
-  'm01_first_contact' => [['final_choice', ''], ['player_launched_attack', false], ['maya_ko', false], ['kevin_ko', false], ['sarah_ko', false]],
+  'm01_first_contact' => [['final_choice', ''], ['player_launched_attack', false], ['player_aborted_attack', false], ['maya_ko', false], ['kevin_ko', false], ['sarah_ko', false]],
   'm02_ransomed_trust' => [['ghost_deal_accepted', false], ['exposed_hospital', false], ['ghost_deal_refused', false], ['ghost_keys_used', false], ['gary_protected', false], ['reeves_fate', ''], ['insider_asset_arrested', false], ['insider_asset_escaped', false], ['patient_assaulted', false], ['receptionist_ko', false], ['ward_nurse_ko', false], ['raval_ko', false], ['gary_ko', false], ['dr_kim_ko', false], ['bed4_manually_stabilised', false], ['patient_bed4_deceased', false]],
   'm03_ghost_in_the_machine' => [['victoria_fate', ''], ['sterling_on_call_seen', false], ['guard_bribed', false], ['guard_knocked_out', false], ['receptionist_ko', false], ['danny_ko', false]],
   'm04_critical_failure' => [['voltage_captured', false], ['voltage_escaped', false], ['voltage_print_on_bypass', false], ['static_left', false], ['static_left_alone', false], ['vance_is_ally', false], ['disclosure_choice', ''], ['crew_lost', false], ['robert_vance_ko', false], ['security_guard_ko', false]],
@@ -4233,6 +4290,10 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
 <%# --- The server hall's talk-past (playtest B-03; set by staging mappings and m10_guards) --- %>
     "hall_team_present": false,
     "hall_guards_stood_down": false,
+<%# --- The closing scenes' first lines (alignment R1 A7; set in six_oclock, hearing and citadel ink) --- %>
+    "six_open": false,
+    "hearing_open": false,
+    "citadel_open": false,
 <%# --- JSON-only --- %>
     "teaser_enabled": false,
     "night_closed": false,
