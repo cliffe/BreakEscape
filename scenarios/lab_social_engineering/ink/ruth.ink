@@ -193,12 +193,20 @@ Ruth Adeyemi: Read the rules of engagement. The sheet on the table. Properly. Ga
     Ruth Adeyemi: Recon's through the west door. Public pages only. If you'd need a password to see it, it's off the sheet.
 - phish_lord_landed and not (phish_hampshire_landed and phish_pierce_landed):
     Ruth Adeyemi: Sofia's in, but the report needs all three. Whoever's left still has to act before you can write it up.
+// R12 F2: the lockout nudge sits above the throwaway and "delivered isn't landed" branches, so a
+// player who gets Dev reported before the two easy sends land still hears it while the lockout is live.
+- pretext_call_reported and not se_intel_lord_portal_name and not se_intel_lord_payslip_date:
+    Ruth Adeyemi: Dev's manager rang Gareth about a dodgy call. Gareth kept a straight face. Give the desk a minute, then ring back softer.
 - operations_key_given and not acct_freemail and not (phish_hampshire_landed or phish_pierce_landed or phish_lord_landed):
     Ruth Adeyemi: Mail's in Operations. Make your throwaway address before you write to anyone.
 - operations_key_given and not (phish_hampshire_landed and phish_pierce_landed):
     Ruth Adeyemi: Delivered isn't landed. It lands when they'd open the file or click the link, the way they would a real one.
-- pretext_call_reported and not se_intel_lord_portal_name and not se_intel_lord_payslip_date:
-    Ruth Adeyemi: Dev's manager rang Gareth about a dodgy call. Gareth kept a straight face. Give the desk a minute, then ring back softer.
+// R12 F3: before the page is built, a call that got only one fact should name the one still missing,
+// not say "Call's done". Both single-fact cases come before the both-facts line.
+- phish_hampshire_landed and phish_pierce_landed and pretext_call_done and not landing_payroll_login_built and not se_intel_lord_portal_name:
+    Ruth Adeyemi: Call got the date, not the portal's name or sender. Ring Dev back for those, and build the look-alike page.
+- phish_hampshire_landed and phish_pierce_landed and pretext_call_done and not landing_payroll_login_built and not se_intel_lord_payslip_date:
+    Ruth Adeyemi: Call got the portal, not the payslip date. Ring Dev back for it, and build the look-alike page.
 - phish_hampshire_landed and phish_pierce_landed and pretext_call_done and not landing_payroll_login_built:
     Ruth Adeyemi: Call's done. Now the page: a look-alike of her payroll portal.
 - phish_hampshire_landed and phish_pierce_landed and landing_payroll_login_built and not pretext_call_done:

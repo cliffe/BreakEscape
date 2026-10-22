@@ -82,15 +82,16 @@ test('stage 4: the "Dev flagged" lockout shows while reported with no Dev fact y
 
     // A later call got one fact (the date): "give the desk a minute, then ring back softer" is
     // now stale (they just rang back), so M-C3-1 narrowed the gate to zero-facts and the lockout
-    // clears. Stage 4 falls through to the page steer; stage 5 gives the specific missing-fact
-    // guidance once the page is built.
+    // clears. R12 F3: with only one fact in, stage 4 now names the fact still missing (not a bare
+    // "Call's done") while still steering to the page.
     const oneFact = opener({ ...base,
         roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true,
         phish_hampshire_landed: true, phish_pierce_landed: true, pretext_call_reported: true, pretext_call_done: true,
         se_intel_lord_payslip_date: true, se_intel_lord_portal_name: false,
         landing_payroll_login_built: false });
     assert.doesNotMatch(oneFact, /flagged that last call/i, 'lockout clears once a Dev fact is in');
-    assert.match(oneFact, /Now the page/i, 'falls through to the page steer');
+    assert.match(oneFact, /not the portal/i, 'R12 F3: names the fact still missing, not "Call\'s done"');
+    assert.match(oneFact, /the page/i, 'still steers to the page');
 
     // Both facts held: lockout still clear.
     const recovered = opener({ ...base,
@@ -99,6 +100,7 @@ test('stage 4: the "Dev flagged" lockout shows while reported with no Dev fact y
         se_intel_lord_portal_name: true, se_intel_lord_payslip_date: true,
         landing_payroll_login_built: false });
     assert.doesNotMatch(recovered, /flagged that last call/i, 'lockout clears once both Dev facts are held');
+    assert.match(recovered, /Call's done\. Now the page/i, 'both facts held: the plain page steer');
 });
 
 const allDone = {

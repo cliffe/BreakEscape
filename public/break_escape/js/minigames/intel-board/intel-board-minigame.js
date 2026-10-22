@@ -663,10 +663,23 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         if (t.slots.length) {
             const check = h('ul', { class: 'ib-check', 'aria-label': 'Readiness checklist' });
             for (const s of t.slots) {
-                check.appendChild(h('li', { class: `ib-slot ${s.done ? 'done' : 'missing'}`, 'data-done': String(s.done) },
+                const li = h('li', { class: `ib-slot ${s.done ? 'done' : 'missing'}`, 'data-done': String(s.done) },
                     icon(s.done ? 'mark-tick' : 'mark-cross'),
-                    h('span', { class: 'ib-slot-word', text: s.done ? 'Done:' : 'Missing:' }),
-                    h('span', { class: 'ib-slot-text', text: s.done ? s.doneString : s.goalString })));
+                    h('span', { class: 'ib-slot-word', text: s.done ? 'Done:' : 'Missing:' }));
+                if (s.done) {
+                    li.appendChild(h('span', { class: 'ib-slot-text', text: s.doneString }));
+                } else if (s.gapString) {
+                    // lab6 (opt-in): a slot with a gapString names only the gap; the explicit
+                    // where-to-look pointer (goalString) hides behind a "Stuck?" disclosure, so a
+                    // capable student works recon out and a stuck one still has the net one click away.
+                    li.appendChild(h('span', { class: 'ib-slot-text', text: s.gapString }));
+                    li.appendChild(h('details', { class: 'ib-slot-stuck' },
+                        h('summary', { class: 'ib-slot-stuck-summary', text: 'Stuck? Show me where to look' }),
+                        h('span', { class: 'ib-slot-goal', text: s.goalString })));
+                } else {
+                    li.appendChild(h('span', { class: 'ib-slot-text', text: s.goalString }));
+                }
+                check.appendChild(li);
             }
             card.appendChild(check);
         }
@@ -811,7 +824,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
                     id: t.id, name: t.name, identified: t.identified, role: t.role, address: t.address,
                     status: t.status, facts: [...t.factIds], emptySlots: [...t.emptySlots],
                     fromCall: (t.fromCall || []).map((f) => f.id),
-                    slots: t.slots.map((s) => ({ label: s.label, done: s.done }))
+                    slots: t.slots.map((s) => ({ label: s.label, done: s.done, gap: s.gapString || '', goal: s.goalString || '' }))
                 })),
                 influence: this._bars.map((b) => b.getState()),
                 contacts: m.contacts.map((c) => c.id),

@@ -108,6 +108,14 @@ Tomasz: Once we start, that's the engagement closed. Report goes to Gareth and n
     -> hub
 
 === debrief ===
+// lab3: the attack-to-defence mirror lands for everyone here, not only for a player who opened
+// the optional "Two of those emails were mine" topic. If they already heard it there (explained_own),
+// this is skipped so it never doubles.
+{ not explained_own:
+    ~ explained_own = true
+    Tomasz: Two of those were yours. Melanie's and Sofia's, straight out of your outbox.
+    Tomasz: Bit different reading them from this side, isn't it? The headers had you the whole time.
+}
 Tomasz: Here's what it showed. An open inbox trusts anyone, a From line is just a label, and a padlock only tells you nobody's listening in.
 { phish_pierce_attempts == 1:
     Tomasz: Melanie first try. A borrowed name gets past a lot of careful people.

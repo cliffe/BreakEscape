@@ -682,6 +682,7 @@
       "properties": {
         "label": {"type": "string"},
         "goalString": {"type": "string"},
+        "gapString": {"type": "string", "description": "Opt-in (intel-board-minigame.js): names only the gap; goalString then hides behind a 'Stuck?' disclosure"},
         "doneString": {"type": "string"},
         "needsIntel": {"type": "array", "items": {"type": "string"}},
         "needsGlobal": {"type": "array", "items": {"type": "string"}}
@@ -1916,6 +1917,7 @@
         "headerPanel": {"type": "string", "enum": ["collapsed", "open", "off"]},
         "glossary": {"type": "string", "enum": ["closed", "open", "off"]},
         "chipStyle": {"type": "string", "enum": ["plain", "technical", "character"]},
+        "flagPlayerSent": {"type": ["string", "boolean"], "description": "Opt-in (inbox-triage-minigame.js): marks the player's own sends on the review flip; a string is the line shown, true uses a default"},
         "verifyVerdict": {"type": "boolean"},
         "brief": {"type": "string"},
         "pairedWith": {"type": "string"},

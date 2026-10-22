@@ -458,7 +458,11 @@
         "subject": "company", "source": "org_old_chart",
         "provides": [
           { "type": "name", "about": "manager", "value": "baker_full", "label": "Jed Baker", "kind": "stale" },
-          { "type": "team", "about": "intern", "value": "accounts", "label": "Accounts", "kind": "stale" }
+          <%# lab1: about "recipient" (not "intern") so this stale "Accounts" value is offered in
+              Dev's team blank beside the live "Finance". The blank's slot resolves to about
+              "recipient" (pierce_role wins the canonical "finance" lookup), so a stale "intern"
+              value never matched and the wrong-team opener was unreachable. %>
+          { "type": "team", "about": "recipient", "value": "accounts", "label": "Accounts", "kind": "stale" }
         ]
       }
     },
@@ -650,28 +654,35 @@
       "readinessSlots": {
         "pierce": [
           { "label": "Who she is", "needsIntel": ["pierce_role"],
+            "gapString": "You still don't know what Melanie does here.",
             "goalString": "You still don't know what Melanie does here. The team page names the staff.",
             "doneString": "She works in Finance." },
           { "label": "Who she trusts", "needsIntel": ["pierce_trusts_jed", "email_pattern"],
+            "gapString": "You still don't know who Melanie would open an email from.",
             "goalString": "You still don't know who Melanie would open an email from. Try her social profile and a lookup on the domain.",
             "doneString": "She trusts Jed Baker; you know the email pattern." },
           { "label": "What she expects", "needsIntel": ["pierce_expects_balance_sheet"],
+            "gapString": "You still don't know what Melanie expects to receive.",
             "goalString": "You still don't know what Melanie expects to receive. Check the team notes.",
             "doneString": "She expects a Q3 balance sheet from Jed on Friday." }
         ],
         "hampshire": [
           { "label": "Where mail goes", "needsIntel": ["hampshire_careers"],
+            "gapString": "You still don't know how Chris receives mail from strangers.",
             "goalString": "You still don't know how Chris receives mail from strangers. Open the careers page and select its careers inbox line.",
             "doneString": "The careers inbox accepts CVs from anyone." },
           { "label": "What the file should be", "needsIntel": ["careers_attachment"],
+            "gapString": "You still don't know what kind of file Chris will open.",
             "goalString": "You still don't know what kind of file Chris will open. Read how to apply.",
             "doneString": "Chris takes .odt and .docx files." },
           { "label": "Why she would read it", "needsIntel": ["hampshire_cv_backlog"],
+            "gapString": "You still don't know what Chris is busy with.",
             "goalString": "You still don't know what Chris is busy with. Check the careers inbox, then her social profile.",
             "doneString": "Chris is racing through CVs before Friday, so one more won't get a close look." }
         ],
         "lord": [
           { "label": "Her payroll system", "needsIntel": ["lord_portal", "lord_intern"],
+            "gapString": "You still don't know which staff system Sofia uses.",
             "goalString": "You still don't know which staff system Sofia uses. The team page and her social profile help.",
             "doneString": "She is a new intern and uses a staff payroll portal." }
         ]
@@ -841,7 +852,10 @@
         "lines": {
           "open_buddy": { "blanks": { "intern": "intern", "team": "team" },
                           "claims": [ { "fact": "intern", "from": "blank:intern" }, { "fact": "team", "from": "blank:team" } ] },
-          "repair_team": { "technique": "candour", "repairs": "team" },
+          <%# lab1: the repair names the right team value (finance) so pretext-judge credits it
+              (the claim credit + the candour modifier); since 5e0bf9934 a repair with no
+              right-valued claim earns nothing and leaves the mismatch open. %>
+          "repair_team": { "technique": "candour", "repairs": "team", "claims": [ { "fact": "team", "from": "finance" } ] },
           "urgent_payslip": { "technique": "urgency", "claims": [] },
           "name_drop_manager": { "technique": "authority_borrowed", "claims": [] }
         },
@@ -889,6 +903,9 @@
         "headerPanel": "open",
         "glossary": "open",
         "title": "Ledgerwell inbox: trust, report or delete",
+        <%# lab3: on the flip, mark the player's own two sends, so the attack-to-defence mirror
+            lands for everyone (not only those who open Tomasz's optional topic). UI text only. %>
+        "flagPlayerSent": "You sent this one. From the blue-team side, the header gives it away.",
         "bands": [
           { "min": 85, "headline": "Sharp" },
           { "min": 60, "headline": "A pass" },
@@ -1140,10 +1157,10 @@
             "inScope": false, "why": "The sheet limits the test to work accounts; personal addresses are out of scope." },
           { "id": "service_desk", "kind": "sort", "step": "scope", "text": "Call the published service-desk line",
             "inScope": true, "why": "The published service-desk line is named in scope." },
-          { "id": "tailgate", "kind": "sort", "step": "scope", "text": "Tailgate into the building",
-            "inScope": false, "why": "Physical entry is out of scope for this engagement." },
-          { "id": "real_customers", "kind": "sort", "step": "scope", "text": "Phish Ledgerwell's real customers",
-            "inScope": false, "why": "The test covers Ledgerwell's own staff, not their customers." },
+          <%# lab7: the scope sort was five cards before any tool; thinned to three (work email in,
+              personal out, the service-desk line in) to shorten the low-agency opening while
+              keeping the in/out teaching. Physical entry and real customers stay documented as
+              out of scope in the RoE list (engagement.roe.outScope), so nothing is lost there. %>
           { "id": "real_compromise", "kind": "question", "step": "stoprule",
             "text": "You find a real compromise, or a real person in distress. What do you do?",
             "options": [
@@ -1194,7 +1211,10 @@
       "report": {
         "onCompleteGlobal": "report_filed",
         "labelBy": "role",
-        "unseenNote": "Some things a test like this cannot measure. Gareth will ask which.",
+        <%# lab4: seed the "no report button" fact as a visible results datum, so Q1 (which can
+            these results NOT tell him?) is a deduction from the table, not a fact the answer
+            supplies. The note sits in the results view, above the question. %>
+        "unseenNote": "Reports received: none — Ledgerwell has no button or inbox for staff to report a suspect email or page, so there was nothing to count. Some things this test still can't measure; Gareth will ask which.",
         "steps": [
           { "id": "results", "onCompleteGlobal": "report_results_done" },
           { "id": "findings", "onCompleteGlobal": "report_findings_done" }
@@ -1322,25 +1342,12 @@
                 "why": "Good practice, but it doesn't touch this exposure. The username still leaks with every file Ledgerwell publishes." },
               { "id": "strip_metadata", "text": "Strip author and application details from files before publishing", "good": true,
                 "why": "The files stay up and the author field no longer gives away a username." }
-            ] },
-          { "intel": "lord_portal",
-            "options": [
-              { "id": "private_accounts", "text": "Ask staff to set their social accounts to private", "good": false,
-                "why": "Private accounts still have followers, and friends reshare. What gets posted about work is the problem, not who can see it." },
-              { "id": "social_policy", "text": "A social-media policy on posting about internal systems", "good": true,
-                "why": "Staff stop posting what they're waiting for on work systems, and they still get to post about their weekend. Here the post gave the pretext; the desk filled in the details." },
-              { "id": "desk_callback", "text": "A call-back rule on the service desk", "good": false,
-                "why": "That fixes the call, and it's in your report. This card is about the post: it told you Sofia was new and waiting on her first payslip, before you rang anyone." }
-            ] },
-          { "intel": "hampshire_careers",
-            "options": [
-              { "id": "filter_and_scan", "text": "Route the careers inbox through a filtering gateway that scans attachments", "good": true,
-                "why": "The inbox stays open to applicants, and a bad file is caught before Chris opens it." },
-              { "id": "pdf_only", "text": "Accept CVs as PDF files only", "good": false,
-                "why": "A PDF can carry a link or a malicious file too; an attacker just sends a PDF. Scanning checks every file, whatever its type." },
-              { "id": "known_senders", "text": "Only accept CVs from addresses Careers has written to before", "good": false,
-                "why": "Careers exists to hear from strangers. An allow-list would turn away every new applicant." }
             ] }
+          <%# lab2: the SOC board keeps only the two recon-hygiene exposures the report does not
+              already cover (the address pattern and the username leak). The social-post and
+              open-inbox cards were the same "read a fact, pick one of three fixes" interaction the
+              report's findings already run minutes earlier (lord_portal echoed the desk finding,
+              hampshire_careers the page finding), so they were cut, not reworded. %>
         ]
       }
     }

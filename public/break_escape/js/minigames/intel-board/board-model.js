@@ -277,8 +277,8 @@ export function buildBoardModel(social, globals) {
             const needsIntel = Array.isArray(s.needsIntel) ? s.needsIntel : [];
             const needsGlobal = Array.isArray(s.needsGlobal) ? s.needsGlobal : [];
             const done = needsIntel.every((f) => isHeld(g, f)) && needsGlobal.every((n) => isTrue(g[n]));
-            return { label: s.label || '', done, goalString: s.goalString || '', doneString: s.doneString || '',
-                needsIntel, needsGlobal };
+            return { label: s.label || '', done, goalString: s.goalString || '', gapString: s.gapString || '',
+                doneString: s.doneString || '', needsIntel, needsGlobal };
         });
 
         return {

@@ -641,6 +641,14 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             el('span', null, `You chose ${this._actionLabel(rec, ans)}. ${this._verdictLine(rec, ans.verdict)}`));
         card.appendChild(verdict);
 
+        // lab3 (opt-in): mark the player's own sends on the flip, so the attack-to-defence mirror
+        // lands in the mandatory review and not only in an NPC's optional topic. Shown only when the
+        // triage set authors `flagPlayerSent` (a string, or true for a plain default); off elsewhere.
+        if (rec.playerSent === true && this.set && this.set.flagPlayerSent) {
+            const sentLine = typeof this.set.flagPlayerSent === 'string' ? this.set.flagPlayerSent : 'You sent this one.';
+            card.appendChild(el('p', 'tri-player-sent', sentLine));
+        }
+
         const notes = isObj(truth.perFlagNote) ? truth.perFlagNote : {};
         if (truth.isPhish) {
             const ul = el('ul', 'tri-flags');

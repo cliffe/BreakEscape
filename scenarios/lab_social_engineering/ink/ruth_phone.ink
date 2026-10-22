@@ -154,6 +154,11 @@ Recon's next. If that door's locked, I've got the key — come and see me. The O
 {
 - pretext_call_reported and not se_intel_lord_portal_name and not se_intel_lord_payslip_date:
     Dev flagged that last call to his manager. Leave it a while, then try again — softer, and have your facts straight.
+// R12 F3: a one-fact call-back names the fact still missing instead of "Call's done".
+- pretext_call_done and not se_intel_lord_portal_name:
+    Call got the date, not the portal. Ring Dev back for its name and sender, then the page.
+- pretext_call_done and not se_intel_lord_payslip_date:
+    Call got the portal, not the date. Ring Dev back for it, then the page.
 - pretext_call_done:
     Call's done. Now the page.
 - landing_payroll_login_built:
