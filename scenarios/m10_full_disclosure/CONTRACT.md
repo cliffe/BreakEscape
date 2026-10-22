@@ -1036,3 +1036,15 @@ Applied 2026-10-21 by the m10 fixer from `finale/STAGE_8_RULINGS.md` and the rev
 - **R2-m12:** `season` opens with "[Sir?]" / "[(Wait.)]" so Netherton never runs five lines. It returns at once when it has nothing to say.
 - **R2-m16:** "He said it had to be one of ours…" and "Whitlock came to the table…".
 - **R2-m17:** the ink comments are fixed (the `tess_*` VAR comments, the case header, the executed knot's comment).
+
+**Alignment round 2 (JSON side; ALIGNMENT_REVIEW_F_R2.md).**
+- R2-M1: `AGENT 0x00` holds only the six ending clauses. "Told their handler about the Recruiter's call." is an unnamed row under it (`m09_recruiter_secret === 'told' && ending !== 'joined'`).
+- R2-m11: "Ten operations. Still answering for every one." needs `m01_completed` to `m09_completed` all true; otherwise "Still answering for every one." on `m09_completed` (neither on Join).
+- R2-M2: "David Torres: serving. His wife's treatment goes on." (funded arrest); unfunded arrest stays "David Torres: serving."
+- R2-m15: "Elena Torres: a widow since the server room. Her treatment was never funded." (warning) on `m05_completed && m05_final_choice === 'combat_lethal'` (m05 funds the treatment only on the turn and arrest paths).
+- R2-M4: imports `m09_reading_told_hax`, `m09_noor_ko`, `m09_old_coyote_ko`, `m09_debrief_notice_before` (Tier 2, false).
+- R2-M5: Noor's ELSEWHERE rows are exclusive (every holding row prints): told → "Noor Haddad: told in time. A witness in Great Falls, safe tonight."; m05's list kept and not told or knocked out → "Noor Haddad: warned in October. Back at the archive."; knocked out and not told → "Noor Haddad: woke at her own desk. Still asking who hit her." (warning); otherwise two rows (`!m05_found_pipeline_list`, `m05_recruiter_deal_accepted`) → "Noor Haddad: never told. Still on the list."
+- R2-m10: the 06:00 texts (T-47 to T-56) skip on `six_open`, and T-57 on `citadel_open`; the scenes carry those beats, so no toast lands between scenes or over the card.
+- R2-m13: a reload during the exchanges restores the talk-down score: `game_loaded` twins after the "Steel Shadows" twin, one per order-valid exchange state with a landed point (one landed: "Shadow In E Minor"; two or more: `silence`).
+- R2-m14: the SAFETYNET merge now puts each person's SAFETYNET conditional clauses first, then their IN THIS OPERATION conditional clauses, then the SAFETYNET default. The 25 IN THIS OPERATION clauses that could never print under that order are deleted from the ERB (HaX's ending clauses and `fire_held`; Netherton's joined, executed and scorched; Quintero's KO, wrong accusation and wound; Arakawa's and Malhotra's wrong accusation; Vector's and Phantom's on-team four). HaX's SAFETYNET default "Handler." is removed from `credits_sections.json` and the ERB copy (every ending has its own clause). Kowalczyk's IN THIS OPERATION clauses stay: on Join she is still listed there. Netherton's SAFETYNET default doesn't print on executed or scorched; it does on the other three.
+- R2-m17: the music and carry-over comments in the ERB now match the code.

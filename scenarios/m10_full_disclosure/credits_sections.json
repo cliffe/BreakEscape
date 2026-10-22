@@ -41,9 +41,6 @@
           {
             "text": "Handler. Her name is under her agent's on the board's papers.",
             "condition": "globalVars.ending === 'lethal'"
-          },
-          {
-            "text": "Handler."
           }
         ]
       },
