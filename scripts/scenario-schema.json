@@ -3318,6 +3318,11 @@
           "type": "array",
           "items": { "$ref": "#/definitions/flagReward" }
         },
+        "hintOnlyFlags": {
+          "type": "object",
+          "description": "Flag reference => hint message. A flag listed here is validated but not submitted or scored; the station just shows the message (used when a flag is spent elsewhere). Server-side only, stripped from the client scenario.",
+          "additionalProperties": { "type": "string" }
+        },
         "mode": {
           "type": "string",
           "description": "Operational mode for launch-device items (e.g., 'launch-abort')"

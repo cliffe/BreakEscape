@@ -158,8 +158,13 @@ def main():
     a = ap.parse_args()
     if a.list_rooms:
         seg = scenario_room(a.scenario, "rooms")
-        for rid, typ in re.findall(r'\n {4}"([A-Za-z0-9_]+)"\s*:\s*\{\s*"type"\s*:\s*"([^"]+)"', seg or ""):
-            print(f"{rid}  ({typ})")
+        # a room's "type" need not be its first key (e.g. "_comment" can come first); take the first
+        # "type" before the room's objects/npcs lists, whose entries have their own "type"
+        for rm in re.finditer(r'\n {4}"([A-Za-z0-9_]+)"\s*:\s*\{', seg or ""):
+            head = re.split(r'"(?:objects|npcs)"\s*:', (seg or "")[rm.end():rm.end() + 3000], 1)[0]
+            tm = re.search(r'"type"\s*:\s*"([^"]+)"', head)
+            if tm and not rm.group(1).startswith("_"):
+                print(f"{rm.group(1)}  ({tm.group(1)})")
         return
     if not (a.room and a.out_dir):
         ap.error("ROOM_TYPE and OUT_DIR are required")

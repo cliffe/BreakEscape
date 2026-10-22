@@ -70,6 +70,15 @@ class ScenarioBinding
     fallback.to_json
   end
 
+  # Get a slice of flags for a VM (mirrors Mission::ScenarioBinding#flags_for_vm_slice).
+  def flags_for_vm_slice(vm_name, start_index, count, fallback = [])
+    if vm_context && vm_context['flags_by_vm']
+      flags = vm_context['flags_by_vm'][vm_name]
+      return flags.slice(start_index, count).to_json if flags
+    end
+    fallback.to_json
+  end
+
   # Get VM flags as a JSON array for use in the top-level 'flags' object.
   # Mirrors flags_for_vm but used in the top-level flags: { vm_name: vm_flags_json('vm_name') } pattern.
   def vm_flags_json(vm_name, fallback = [])
@@ -358,7 +367,7 @@ def check_unknown_fields(json_data)
     puzzle_graph_and_with puzzle_graph_reveals puzzle_graph_optional puzzle_graph_note
     storyPath currentKnot
     completesTask completesTaskOnOpen
-    puzzle_graph_links
+    puzzle_graph_links hintOnlyFlags
     _comment
   ]
 
@@ -2578,9 +2587,10 @@ def check_common_issues(json_data, valid_item_types = nil)
                   # Event mappings that produce no visible effect are likely broken/incomplete.
                   # phone-chat trigger mappings are self-evidently visible (they open the chat), so skip that check.
                   has_effect = phone_chat_trigger || mapping['setGlobal'] || mapping['sendTimedMessage'] ||
-                               mapping['completeTask'] || mapping['unlockTask'] || mapping['unlockAim']
+                               mapping['completeTask'] || mapping['unlockTask'] || mapping['unlockAim'] ||
+                               mapping['unlockDoor'] || mapping['bark']
                   unless has_effect
-                    issues << "⚠️ WARNING: '#{mapping_path}' is a phone NPC event mapping with no visible effect (no setGlobal, sendTimedMessage, completeTask, unlockTask, or unlockAim). Use 'sendTimedMessage' to notify the player, and 'setGlobal' to flag that a new hub option is available. Example: { \"eventPattern\": \"...\", \"onceOnly\": true, \"setGlobal\": { \"flag_var\": true }, \"sendTimedMessage\": { \"delay\": 1000, \"message\": \"...\" } }"
+                    issues << "⚠️ WARNING: '#{mapping_path}' is a phone NPC event mapping with no visible effect (no setGlobal, sendTimedMessage, completeTask, unlockTask, unlockAim, unlockDoor, bark or phone-chat trigger). Use 'sendTimedMessage' to notify the player, and 'setGlobal' to flag that a new hub option is available. Example: { \"eventPattern\": \"...\", \"onceOnly\": true, \"setGlobal\": { \"flag_var\": true }, \"sendTimedMessage\": { \"delay\": 1000, \"message\": \"...\" } }"
                   end
                 end
               end
