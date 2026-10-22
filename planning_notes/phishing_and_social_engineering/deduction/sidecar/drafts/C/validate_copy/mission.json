@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: deduction C, safe house",
+  "description": "Three field contacts at a safe house, and a leak to the cult. Covers knockouts and locking contacts away as the only verdicts, hidden stakes, the nudge switched off and an RFID clone used as evidence. Not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing",
+  "scoring": "tasks",
+  "_note": "display_name and description wording invented: plan silent beyond 'Not a mission.'. Scoring is the default (plan §9.3 'Scoring: the default'); written out as \"tasks\" so DL9(g) reads it without falling back."
+}
