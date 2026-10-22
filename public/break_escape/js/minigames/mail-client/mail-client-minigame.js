@@ -17,7 +17,12 @@
 //   now              number    elapsed game ms stamped on seeded mail
 //   checklistTiming  string    'onSend' | 'withReply'; falls back to mailClient.checklistTiming
 //   onStateChange    function  called with { type, mailbox, id? } after a read flag or arrival changes mailState
+//   maxSends         number    episode cap: after this many sends this session Compose is disabled and a
+//                              line says the message has gone. Close carries on. Absent means no cap.
+//   layout           string    'phone' puts the narrow layout in a phone frame on any viewport (E6)
+//   sentIds          string[]  set by returnParams() on a reopen: the record ids sent so far
 //   onComplete       function  (success, result) as for every minigame
+// The close result carries sentIds: this session's sent record ids, oldest first.
 // requiresKeyboardInput and disableClose are set by the base class.
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
@@ -51,7 +56,8 @@ export class MailClientMinigame extends SocialOverlayScene {
     constructor(container, params) {
         super(container, params);
         this.folder = 'inbox';
-        this.sentThisSession = 0;
+        this.sentIds = Array.isArray(this.params.sentIds) ? this.params.sentIds.filter((id) => typeof id === 'string') : [];
+        this.sentThisSession = this.sentIds.length;
         this.lastSendResult = null;
         this.notice = '';
         this.contactsOpen = false;
@@ -157,6 +163,7 @@ export class MailClientMinigame extends SocialOverlayScene {
         if (this.account) ensureMailbox(this.mailState, this.account.mailbox);
 
         const root = el('div', 'mail-client');
+        if (this.params.layout === 'phone') root.classList.add('mail-client--phone');
         root.setAttribute('role', 'region');
         root.setAttribute('aria-label', 'Mail');
         this.root = root;
@@ -166,6 +173,9 @@ export class MailClientMinigame extends SocialOverlayScene {
         this.noticeEl = el('p', 'mail-notice');
         this.noticeEl.setAttribute('aria-live', 'polite');
         root.appendChild(this.noticeEl);
+        this.capEl = el('p', 'mail-cap-note');
+        this.capEl.setAttribute('aria-live', 'polite');
+        root.appendChild(this.capEl);
 
         this.reader = new MailReader(root, {
             pushLayer: (close, name) => this.pushLayer(close, name),
@@ -330,6 +340,40 @@ export class MailClientMinigame extends SocialOverlayScene {
         count.setAttribute('aria-label', unread > 0 ? `${unread} unread` : '');
         this.reader.setMessages(acct ? folderMessages(this.mailState, acct.mailbox, this.folder) : [], this.folder);
         this.noticeEl.textContent = this.notice;
+        this._syncCap();
+    }
+
+    // ── send cap (episodes) ──────────────────────────────────────────────────────
+
+    /** The send cap from the starter params, or 0 for none. */
+    _maxSends() {
+        const n = Number(this.params.maxSends);
+        return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 0;
+    }
+
+    /** Episode options in use: a cap, a phone layout, or ids carried over from an earlier open. */
+    _episodeMode() {
+        return this._maxSends() > 0 || this.params.layout === 'phone' || Array.isArray(this.params.sentIds);
+    }
+
+    /** Whether the cap has been reached this session. */
+    _sendCapReached() {
+        const max = this._maxSends();
+        return max > 0 && this.sentThisSession >= max;
+    }
+
+    /** Disable Compose and show the line once the cap is reached. */
+    _syncCap() {
+        const capped = this._sendCapReached();
+        if (this.composeBtn) {
+            this.composeBtn.disabled = capped;
+            if (capped) this.composeBtn.setAttribute('aria-disabled', 'true'); else this.composeBtn.removeAttribute('aria-disabled');
+        }
+        if (this.capEl) {
+            this.capEl.textContent = capped
+                ? (this._maxSends() === 1 ? 'Your message has gone. You cannot send another.' : 'Your messages have gone. You cannot send any more.')
+                : '';
+        }
     }
 
     // ── account switcher and Create account (P1-L; 01 N11) ───────────────────────
@@ -643,7 +687,7 @@ export class MailClientMinigame extends SocialOverlayScene {
      * threads the reply. A fresh crafted message passes nothing.
      */
     openCompose(extra = {}) {
-        if (this.composeOpen || !this.account) return;
+        if (this.composeOpen || !this.account || this._sendCapReached()) return;
         this.composeOpen = true;
         const social = this.social;
         // A judged follow-up does not reuse the unsent draft of a fresh message.
@@ -755,6 +799,7 @@ export class MailClientMinigame extends SocialOverlayScene {
      * open so the player can read it and edit/resend (01 §3 "the overlay stays open").
      */
     _handleComposeSend(message, composer) {
+        if (this._sendCapReached()) return;
         this.lastComposed = message;
         let sendInfo = null;
         try {
@@ -764,6 +809,7 @@ export class MailClientMinigame extends SocialOverlayScene {
         }
         if (sendInfo && !sendInfo.lockedOut) {
             this.recordSend(sendInfo.gameResult);
+            if (typeof sendInfo.record?.id === 'string') this.sentIds.push(sendInfo.record.id);
             // A judged send clears the saved draft so reopening Compose starts fresh,
             // not on the last send's choices (P1-T). The open composer keeps its form
             // in memory for an Edit & resend.
@@ -777,6 +823,10 @@ export class MailClientMinigame extends SocialOverlayScene {
             } else {
                 this._dismissChecklist();
             }
+            // At the cap there is nothing left to edit: a shown checklist closes the composer
+            // when dismissed (below), otherwise it closes now.
+            if (this._sendCapReached() && !this.checklistPanel) this.closeCompose(false);
+            this._syncCap();
         }
         try { this.params.onSend?.(message, composer, this, sendInfo); } catch (err) { console.error('mail onSend hook failed:', err); }
     }
@@ -799,8 +849,13 @@ export class MailClientMinigame extends SocialOverlayScene {
             account: this.account,
             showReplyToNote,
             showReplyPending,
-            onEdit: () => { this._dismissChecklist(); if (sendInfo.result && sendInfo.result.landed) this.closeCompose(); }
+            onEdit: () => { this._dismissChecklist(); if ((sendInfo.result && sendInfo.result.landed) || this._sendCapReached()) this.closeCompose(); }
         });
+        // With no resend left, "Edit & resend" would be a lie.
+        if (this._sendCapReached()) {
+            const edit = panel.querySelector('.mail-checklist-edit');
+            if (edit) edit.textContent = 'Done';
+        }
         this.root.appendChild(panel);
         this.checklistPanel = panel;
         this._syncCovered();
@@ -1040,11 +1095,14 @@ export class MailClientMinigame extends SocialOverlayScene {
     }
 
     closeResult() {
-        return this.lastSendResult || { outcome: 'closed' };
+        const base = this.lastSendResult || { outcome: 'closed' };
+        // sentIds only in episode mode (a cap or a reopen carrying ids), so a plain client's result is as before.
+        return this._episodeMode() ? { ...base, sentIds: [...this.sentIds] } : base;
     }
 
     returnParams() {
         const params = { accountId: this.account?.id || null, suspended: false };
+        if (this._episodeMode()) params.sentIds = [...this.sentIds];
         // Coming back from the landing-page builder: reopen Compose and attach the link if
         // its page is now built (01 §2 "Attach a link that has no page").
         if (this._pendingLinkKit) {
@@ -1063,6 +1121,7 @@ export class MailClientMinigame extends SocialOverlayScene {
         const reader = this.reader?.getState?.() || null;
         const narrow = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
             ? window.matchMedia(NARROW_QUERY).matches : false;
+        const phone = this.params.layout === 'phone';
         // The open reply's one follow-up expectation (01 N8), for the bridge check.
         const selRec = this.reader?.selected?.() || null;
         const ft = selRec ? this._threadFor(selRec) : { thread: null };
@@ -1097,8 +1156,14 @@ export class MailClientMinigame extends SocialOverlayScene {
                 contactsOpen: this.contactsOpen,
                 contacts: this.contacts().map((c) => c.id),
                 sentThisSession: this.sentThisSession,
+                ...(this._episodeMode() ? {
+                    sentIds: [...this.sentIds],
+                    maxSends: this._maxSends() || null,
+                    sendCapReached: this._sendCapReached(),
+                    layout: phone ? 'phone' : null
+                } : {}),
                 notice: this.notice,
-                narrow
+                narrow: narrow || phone
             }
         };
     }

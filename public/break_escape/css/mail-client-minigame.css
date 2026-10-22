@@ -516,3 +516,46 @@
     .mail-account { flex: 1 1 100%; }
     .mail-create-panel { inset: 8px; }
 }
+
+/* Send cap line (episodes): shown once maxSends is reached. */
+.mail-cap-note {
+    margin: 0;
+    font-family: var(--se-font-readable);
+    font-size: 15px;
+    color: var(--ui-accent, #ffcc44);
+}
+.mail-cap-note:empty { min-height: 0; height: 0; overflow: hidden; }
+.mail-compose-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Phone layout (layout: "phone", E6): the narrow rules above, applied at any viewport width
+   and wrapped in a phone-shaped frame. Keep in step with the two max-width: 767px blocks. */
+.mail-client.mail-client--phone {
+    width: 390px; max-width: 100%; height: min(85vh, 760px); max-height: none;
+    padding: 8px; overflow-x: hidden;
+    border-radius: 36px;
+    box-shadow: 0 0 0 6px #0b0e18, 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+.mail-client--phone * { max-width: 100%; }
+.mail-client--phone .mail-toolbar > * { min-width: 0; }
+.mail-client--phone .mail-account { flex: 1 1 100%; margin-right: 0; }
+.mail-client--phone .mail-toolbar .se-overlay-close { margin-left: 0; }
+.mail-client--phone .mail-list-pane, .mail-client--phone .mail-read-pane { overflow-x: hidden; }
+.mail-client--phone .mail-chip { max-width: 100%; box-sizing: border-box; }
+.mail-client--phone .mail-back { min-height: 44px; display: inline-block; }
+.mail-client--phone .mail-checklist, .mail-client--phone .mail-contacts-panel { inset: 8px; }
+.mail-client--phone .mail-compose-row { flex-direction: column; align-items: stretch; }
+.mail-client--phone .mail-compose-label { min-width: 0; }
+.mail-client--phone .mail-composer select { min-width: 0; width: 100%; flex: none; box-sizing: border-box; }
+.mail-client--phone .mail-compose-fixed { min-width: 0; }
+.mail-client--phone .mail-toolbar { flex-wrap: wrap; }
+.mail-client--phone .mail-reader { grid-template-columns: 1fr; }
+.mail-client--phone .mail-reader.has-selection .mail-list-pane { display: none; }
+.mail-client--phone .mail-reader:not(.has-selection) .mail-read-pane { display: none; }
+.mail-client--phone .mail-composer { inset: 8px; }
+.mail-client--phone .mail-compose-blanks { margin-left: 0; }
+.mail-client--phone .mail-blank-field { width: 100%; }
+.mail-client--phone .mail-blank { width: 100%; }
+.mail-client--phone .mail-picker { align-items: flex-end; }
+.mail-client--phone .mail-picker-list { width: 100%; min-width: 0; max-height: 60%; }
+.mail-client--phone .mail-account-select { width: 100%; }
+.mail-client--phone .mail-create-panel { inset: 8px; }
