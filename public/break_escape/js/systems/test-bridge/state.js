@@ -154,7 +154,9 @@ export function detectBlockingUi() {
         // ARE the end of play, and when the scenario sets disableClose nothing
         // can dismiss them. Telling an agent to dismiss it sends it into a wait
         // loop that cannot terminate, which has cost several runs.
-        hint: credits
+        hint: credits?.kind === 'success'
+            ? 'This is the mission\'s success screen, not an obstacle: the mission is over. Stop playing and check the game record on the server for status/mission_concluded_at. "Close" dismisses it if you need the canvas back; do not press "Return to missions", which leaves the game.'
+            : credits
             ? 'This is the end-of-mission credits overlay, not an obstacle. The mission is over; nothing dismisses it. Stop playing and check the game record on the server for status/mission_concluded_at.'
             : 'Main-world clicks land on this element, not the canvas. Dismiss it with __test.dismissBlockingUi().'
     };
@@ -176,6 +178,8 @@ export function detectBlockingUi() {
  * when they do the server is right.
  */
 function missionEndState() {
+    const success = successScreenState();
+    if (success) return success;
     const stage = document.querySelector('.bv-stage');
     if (!stage) return null;
     const overlay = stage.closest('.bv-overlay') || stage.parentElement;
@@ -187,12 +191,38 @@ function missionEndState() {
                      closeBtn.getBoundingClientRect().width > 0;
 
     return {
+        kind: 'credits',
         creditsShowing: true,
         closable,
         creditsText: (stage.innerText || '').trim().slice(0, 500) || null,
         note: closable
             ? 'End-of-mission credits. Closable via the ✕ CLOSE button if you need the canvas back.'
             : 'End-of-mission credits, and the scenario disabled closing. Nothing will dismiss this and no event is coming. The run is over.',
+        hint: 'Client-side end of the mission. Whether it CONCLUDED is a server fact: check status and mission_concluded_at on the game record. They can disagree, and the server is authoritative.'
+    };
+}
+
+/**
+ * The simple success screen (ui/success-screen.js), shown when a scenario's
+ * conclusionScreen is `success`. Like the credits it is the end of play, so it
+ * is reported here and harness helpers stop on it instead of clicking it: its
+ * "Return to missions" leaves the game, and a reload shows it again. Unlike the
+ * forced credits it always has a working Close. creditsText carries its text so
+ * helpers written for the credits read it the same way.
+ */
+function successScreenState() {
+    const el = document.getElementById('scenario-success-screen');
+    if (!el || el.getBoundingClientRect().width <= 0) return null;
+    const text = (el.innerText || el.textContent || '').trim().slice(0, 500) || null;
+    const closeBtn = document.getElementById('success-screen-close');
+    return {
+        kind: 'success',
+        creditsShowing: false,
+        successScreen: true,
+        closable: !!closeBtn,
+        title: (document.getElementById('success-screen-title')?.textContent || '').trim() || null,
+        creditsText: text,
+        note: 'End-of-mission success screen. "Close" dismisses it if you need the canvas back; "Return to missions" leaves the game.',
         hint: 'Client-side end of the mission. Whether it CONCLUDED is a server fact: check status and mission_concluded_at on the game record. They can disagree, and the server is authoritative.'
     };
 }

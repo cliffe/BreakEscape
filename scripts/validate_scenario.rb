@@ -2013,7 +2013,9 @@ def check_common_issues(json_data, valid_item_types = nil)
     aim_path = "objectives/#{aim['aimId']}"
     next unless aim['missionConclusion']
     if aim['conclusionScreen'].nil?
-      issues << "⚠️ WARNING: #{aim_path} has missionConclusion:true but no conclusionScreen — the player will see no end-of-mission overlay."
+      issues << "⚠️ WARNING: #{aim_path} has missionConclusion:true but no conclusionScreen — the player will see no end-of-mission overlay. " \
+                "Choose one per scenario: { \"type\": \"bond_visualiser\" } for a story mission (the credits, rolled from a music event), " \
+                "or { \"type\": \"success\", \"title\": \"...\" } for a short training episode (see the ending convention in README_scenario_design.md)."
     end
     Array(aim.dig('concludeRequires', 'tasksCompleted')).each do |task_id|
       unless all_task_ids.include?(task_id)

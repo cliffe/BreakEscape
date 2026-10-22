@@ -280,6 +280,15 @@ hung on blocked audio.
 It also appears in `blockingUi`, whose `hint` changes to say so rather than
 telling you to dismiss it.
 
+`kind` says which ending is up: `"credits"` (above) or `"success"`, the simple
+success screen of a scenario whose `conclusionScreen` is `success` (short
+training episodes). The success screen reports `creditsShowing: false`,
+`successScreen: true`, `closable: true`, its `title`, and its text in
+`creditsText`. It always has a working "Close"; its other button, "Return to
+missions", leaves the game. It shows once per page load, so a reload of a
+concluded game shows it again. The playtest harness's `bootstrap` stops on
+either kind (`ended: true`) without clicking anything.
+
 **It does not mean the mission concluded.** That is a server fact, decided by
 `check_mission_conclusion` from persisted `concludeRequires` tasks. The two can
 disagree — a game can reach the credits with a task whose write was lost, and

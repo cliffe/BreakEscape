@@ -2275,13 +2275,25 @@
           "properties": {
             "type": {
               "type": "string",
-              "enum": ["end_screen", "bond_visualiser"],
-              "description": "end_screen: shows the standard mission complete overlay. bond_visualiser: opens the fullscreen SAFETYNET audio visualiser."
+              "enum": ["end_screen", "bond_visualiser", "success"],
+              "description": "Chosen per scenario. bond_visualiser: the credits (the fullscreen audio visualiser); story missions use this, with the credits rolled from a music event. success: a simple success screen (title, optional body, Return to missions, Close) for short training episodes; it waits until no minigame is open, shows once per page load and can be closed. end_screen: the old blocking mission-complete card, for test and demo scenarios only."
             },
             "bondVisualiserOpts": {
               "type": "object",
               "description": "Options forwarded to BondVisualiser.open() when type is bond_visualiser.",
               "additionalProperties": true
+            },
+            "title": {
+              "type": "string",
+              "description": "success and end_screen: the heading. Defaults to 'Exercise complete' (success) or 'MISSION COMPLETE' (end_screen)."
+            },
+            "body": {
+              "type": "string",
+              "description": "success: one or two plain-text sentences under the title (optional). end_screen: HTML."
+            },
+            "buttonText": {
+              "type": "string",
+              "description": "success and end_screen: the label of the button that leaves the game. Defaults to 'Return to missions'."
             }
           },
           "required": ["type"]

@@ -1120,6 +1120,14 @@ export class ObjectivesManager {
       } else {
         console.warn('[ObjectivesManager] window.BondVisualiser is not defined');
       }
+    } else if (screen.type === 'success') {
+      // The simple success screen for short training episodes (ui/success-screen.js):
+      // waits until no minigame is open, shows once per page load, and can be closed.
+      if (window.showSuccessScreen) {
+        window.showSuccessScreen(screen);
+      } else {
+        console.warn('[ObjectivesManager] window.showSuccessScreen is not defined');
+      }
     }
   }
 

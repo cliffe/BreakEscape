@@ -1520,26 +1520,37 @@ Defines which overlay the client shows when the conclusion is confirmed by the s
 
 | `type` | Behaviour |
 |---|---|
-| `end_screen` | Shows the standard mission-complete overlay (`window.showEndScreen`). For test and demo scenarios with no story only; see the ending convention below. |
-| `bond_visualiser` | Opens the fullscreen SAFETYNET audio visualiser (`window.BondVisualiser.open()`). |
+| `bond_visualiser` | Opens the credits, the fullscreen audio visualiser (`window.BondVisualiser.open()`). Story missions. |
+| `success` | Shows a simple success screen (`window.showSuccessScreen`, `ui/success-screen.js`): `title`, an optional short plain-text `body`, a "Return to missions" button (`buttonText` renames it) and a "Close" button. Short training episodes. |
+| `end_screen` | Shows the old blocking mission-complete card (`window.showEndScreen`). Test and demo scenarios only (`lockpick_gauntlet`, `test_simple_success`); don't use it in anything new. |
 
 ```json
-"conclusionScreen": { "type": "end_screen" }
 "conclusionScreen": { "type": "bond_visualiser" }
+"conclusionScreen": { "type": "success", "title": "Inbox sorted", "body": "That's the payments inbox done." }
 ```
+
+The `success` screen waits until no minigame has been open for a second, so it never covers a debrief or a result screen that is still up when the mission concludes. It shows once per page load: after a reload of a concluded game it appears once more, and "Close" (or Esc) dismisses it and gives the game back, as the credits do. "Return to missions" closes the game tab in Hacktivity mode and goes to `/break_escape/missions` otherwise. The playtest harness's `bootstrap` stops on it, as it does on the credits.
 
 For `bond_visualiser` the credits sequence and victory music are normally wired through the music event system (e.g. a `conversation_closed:closing_debrief_person` trigger). `conclusionScreen` is only used on page reload to re-open the visualiser without replaying the conversation chain.
 
 The validator warns if `missionConclusion: true` is present but `conclusionScreen` is absent.
 
-#### The ending convention (every scenario with a story)
+#### The ending convention
 
-A finished mission ends in the credits and nothing else. Follow this in every new scenario, lab games included:
+The ending is chosen per scenario. **Story missions end in the credits** (`bond_visualiser`, rolled from a music event): the Licence to Hack missions, the SIS games and the lab games with a story. **Short training episodes**, such as the awareness shells (`scenarios/awareness_*`), may end on the simple success screen (`success`) instead. Either way the player is warned before the ending.
+
+For a training episode on the success screen:
+
+- **Warn before the step that ends it.** The prompt or brief for the last step says that finishing it ends the exercise, so nobody is surprised when the screen appears.
+- **Complete the conclusion task from the last step's result** (for the awareness shells, the triage `done` global through the host's `eventMappings`).
+- **`conclusionScreen` is `{ "type": "success", "title": "...", "body": "..." }`.** Keep the body to one or two plain sentences. There are no credits and no music event.
+
+For a story mission, follow all four of these in every new scenario, lab games included:
 
 1. **Warn before the point of no return.** The choice that starts the debrief or ending scene first gets a line, in the speaker's own voice, saying this closes the mission, with two options: go ahead, or "Not yet, I want to finish something", which returns to the hub (or closes the call) with the game carrying on. Mention anything obvious the player has left, such as a character still waiting to talk. m01's "Operation Shatter resolved — I'm ready for debrief" choice predates this rule; `lab_social_engineering`'s `debrief_confirm` knot (Tomasz) is the reference.
 2. **The debrief's last line completes the conclusion task** (`#complete_task`, then `#exit_conversation`), as described under "Common bugs" below.
 3. **The credits roll from a music event** carrying `credits` (and optionally `closingCard`), triggered when the debrief closes: `conversation_closed:<debrief npc>`, or `global_variable_changed:<global>` for a global set on the last line. If the debrief NPC is also an ordinary hub NPC, guard the trigger with a condition on a global the last line sets (`"condition": "globalVars.engagement_closed === true"`), because their conversation closes many times before the ending. Put any closing sentiment in `closingCard.lines`, not in a separate end card. See [Closing card and credits](#closing-card-and-credits).
-4. **`conclusionScreen` is `{ "type": "bond_visualiser" }`.** It only re-opens the credits screen when a concluded game is reloaded, as m02–m10 do. Don't use `end_screen` in a scenario with a story: it blocks the game with its own card in place of the credits, and it reappears on every reload. Pick `"creditsTheme": "cyber"` for anything outside the SAFETYNET campaign.
+4. **`conclusionScreen` is `{ "type": "bond_visualiser" }`.** It only re-opens the credits screen when a concluded game is reloaded, as m02–m10 do. Don't use `success` in a scenario with a story, because the story's ending is the credits. Don't use `end_screen` at all: it blocks the game with its own card in place of the credits, and it reappears on every reload. Pick `"creditsTheme": "cyber"` for anything outside the SAFETYNET campaign.
 
 #### Score and `missionConclusion`
 
@@ -1819,7 +1830,7 @@ The canonical reference scenario is `scenarios/m01_first_contact/scenario.json.e
 8. **Opening + Closing Cutscenes**: Canonical pattern from m01:
    - Opening: person NPC with `timedConversation` + `skipIfGlobal` + `setGlobalOnStart` in the start room
    - Closing: person NPC with `behavior.initiallyHidden: true` triggered by a phone NPC Ink story using `#set_global:start_debrief_cutscene:true` + `#exit_conversation`
-   - Before that choice, warn the player they are about to end the mission and offer "Not yet"; after the debrief, roll the credits. See [The ending convention](#the-ending-convention-every-scenario-with-a-story)
+   - Before that choice, warn the player they are about to end the mission and offer "Not yet"; after the debrief, roll the credits. See [The ending convention](#the-ending-convention)
 
 9. **Fingerprint Mechanics**: When using biometric locks:
    - Ensure required fingerprints can be collected from objects with `hasFingerprint` in accessible rooms

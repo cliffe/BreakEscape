@@ -90,8 +90,13 @@ def kiosk(ep_id, observations):
     }
 
 
+def success_screen(title, body):
+    """The ending for a short training episode (README_scenario_design.md, "The ending convention")."""
+    return {'type': 'success', 'title': title, 'body': body}
+
+
 def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, host, ink_name,
-             kiosk_obs, extra=None):
+             kiosk_obs, ending, extra=None):
     ink_path = f'scenarios/{mission}/ink/{ink_name}.json'
     ep_id = social['awarenessEpisode']['id']
     sc = {
@@ -111,6 +116,7 @@ def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, 
             'order': 0,
             'missionConclusion': True,
             'concludeRequires': {'globals': [done]},
+            'conclusionScreen': ending,
             'tasks': [{'taskId': task[0], 'title': task[1], 'type': 'custom', 'status': 'active'}],
         }],
         'globalVariables': globals_,
@@ -170,7 +176,8 @@ def defend_only():
         ('sort_payments_inbox', 'Sort the payments inbox'),
         done, globals_, {'triageSets': [s], 'awarenessEpisode': ep},
         HOSTS['adaeze'], 'adaeze_okafor',
-        "A touch-screen kiosk showing Brightwell's payments inbox. Five messages are waiting.")
+        "A touch-screen kiosk showing Brightwell's payments inbox. Five messages are waiting.",
+        success_screen('Payments inbox done', "You've sorted all five messages and finished this episode."))
     meta = {
         'display_name': 'Awareness E1: Invoice fraud (inbox only)',
         'description': "An eight-minute awareness episode for finance staff, on the inbox side only. Cover the payments inbox at Brightwell Foods, a fictional company, before the afternoon payment run: five messages, some real and some built to trick you. Each answer is explained, and reporting a real message never costs you anything.",
@@ -237,6 +244,7 @@ def check(pair, stage):
                 "Ten messages from the payments inbox of Brightwell Foods, a fictional company. The result is kept so the "
                 f"matching after-check (awareness_post_finance_{pair}) can show how the two compare.")
         obs = 'A touch-screen kiosk with ten messages from a payments inbox, ready for the first check.'
+        ending = success_screen('First check done', 'Your result is saved, ready for the second check to compare with.')
     else:
         name = f'Payments inbox check: after ({letters})'
         brief = (f"The second of two short checks for finance staff at Brightwell Foods, a fictional company (pair {letters}, form {second}). "
@@ -248,9 +256,10 @@ def check(pair, stage):
                 "Ten new messages from the payments inbox of Brightwell Foods, a fictional company, matched to the "
                 f"first check (awareness_pre_finance_{pair}). The end screen compares the two results when the first check was finished.")
         obs = 'A touch-screen kiosk with ten messages from a payments inbox, ready for the second check.'
+        ending = success_screen('Second check done', 'Thank you for taking both checks.')
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, 'Sort the ten messages at the training kiosk.', aim, task, done,
-                  globals_, {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, extra)
+                  globals_, {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, ending, extra)
     meta = {
         'display_name': display,
         'description': desc,
