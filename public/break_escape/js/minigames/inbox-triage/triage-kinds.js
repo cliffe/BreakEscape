@@ -214,8 +214,10 @@ function transcriptList(lines, className) {
     const ol = el('ol', className);
     for (const line of Array.isArray(lines) ? lines : []) {
         if (!isObj(line) || !isStr(line.text)) continue;
-        const li = el('li', `tri-line tri-line-${line.who === 'you' ? 'you' : 'them'}`);
-        li.append(el('span', 'tri-line-who', isStr(line.who) ? (line.who === 'you' ? 'You' : line.who) : 'Caller'),
+        // "you" in any case marks the learner's side (authored data has used both "you" and "You").
+        const isYou = isStr(line.who) && line.who.trim().toLowerCase() === 'you';
+        const li = el('li', `tri-line tri-line-${isYou ? 'you' : 'them'}`);
+        li.append(el('span', 'tri-line-who', isStr(line.who) ? (isYou ? 'You' : line.who) : 'Caller'),
             el('span', 'tri-line-text', line.text));
         ol.appendChild(li);
     }

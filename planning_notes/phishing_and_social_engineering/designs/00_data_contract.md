@@ -1777,7 +1777,7 @@ brands are invented (`07` §1), so no brand name needs an exception here.
 | `page-builder` | `{ landingPageId, targetId? }` | |
 | `phone` (existing type) / NPC with call data | `{ callId }` | ids from `social.pretextNpcs`. **Engine change:** the whole phone path in `systems/interactions.js` is gated at line 1355 by `data.type === 'phone' && (data.text || data.voice || data.npcIds)`, so a phone carrying only `{ callId }` never enters it. The `callId` check goes **above that gate** (a separate `if (data.type === 'phone' && data.callId)`, or `data.callId` added to the gate condition with the `callId` branch first inside it). It checks the lockout (§8) and then opens `pretext-prep`; no new sprite, and a schema entry for the `callId` pointer. **Which record opens:** `pretextNpcs[callId].character` names the `social.characters` entry; a `phone` object opens that character's `channels.phone` record in `phone-chat`, and an NPC sprite opens `channels.person` in `person-chat` and carries `callId` as a top-level NPC field (add it to the NPC schema), which `pretext-prep` reads |
 | `report-workstation` | `{ requiresGlobal?, lockedMessage? }` | reads `social.engagement`. With `requiresGlobal` set and not yet `true`, a toast shows `lockedMessage` (default "There is nothing to write up yet.") and the report does not open, so its tasks cannot complete before the stage they report on (lab R-b5; back-ported 2026-10-22) |
-| `kiosk` | `{ episodeId }` | opens the episode runner (11) |
+| `kiosk` | `{ episodeId }` | opens the episode runner (`11`; built 2026-10-22). `episodeId` must equal `social.awarenessEpisode.id`; a mismatch shows "This kiosk has no exercise to run." and opens nothing. One kiosk per shell (lint). Sprite `assets/objects/kiosk.png`. The branch in `systems/interactions.js` calls `window.startEpisodeRunner(sprite)` |
 
 `mode` is the pointer's one name everywhere. A nested launch passes the child's parameters in the
 call (`mode`, `targetId`, `landingPageId`), not through the object (§6 "Return to").
@@ -1829,6 +1829,8 @@ and lives only in `engagement`; `intelBoard` holds the title, `people` (ids) and
 | `<character>_forced` | the influence service | comma list of threshold ids latched by a forced report while the value was not past their `at`, so a reload does not re-arm them (N-01). Engine-written; need not be declared (back-ported 2026-10-22) |
 | `se_mail_applied`, `se_mail_last_account` | the mail runner; the mail client | engine-written, need not be declared: a per-job marker so a reload never applies a reply's influence twice (T2-1), and the account the client was last on, so a reload reopens there (lab R1 F11) (back-ported 2026-10-22) |
 | `<prefix>percent`, `<prefix>reportRate`, `<prefix>done`, `<prefix>pass` | the triage starter | the set's `setGlobalPrefix` (05). `pass` is never cleared by a lower round, and `percent` and `reportRate` keep the best round (back-ported 2026-10-22, packet M7). After the confirmed save the starter emits the changed names, `done` last, then the done event `inbox_triage_completed`. These four scalars are all that persists of a finished round: a later read-only reopen shows the headline, percent and report rate from them, while per-answer data (`answers[].ms`, `perFactor`, the stage) lives only in the in-memory result until a server record exists (`05` OQ1) |
+| `se_awareness_records` | the awareness measurement store (`systems/awareness-measure.js`), after each finished defend or check round | **array** of blocks, default `[]` (built 2026-10-22). Block: `{ v: 1, key, setId, form, stage, episodeId, variant, at, percent, reportRate, items[] }` with `key` = `<stage>:<setId>`, `stage` `pre` \| `post` \| `episode`, `form` the set id, `at` an ISO time, `percent` 0 to 100 (integer), `reportRate` 0 to 1 and `items[]` of `{ itemId, verdict, action, chips[], score, ms }` (`verdict` is `trust`, `report`, `delete` or `verify`; `action` is empty unless the button differs from the verdict, as a call's `escalate`). First answer wins: a key already present is never overwritten, and an aborted round or a read-only reopen writes nothing. Ids, enums, numbers and a timestamp only; no free text. Written through the shared writer without `deferEmit` (nothing listens on it). The reader (`readBlocks`) accepts `[]`, `{}` or a JSON string and treats anything but an array as empty; the lint accepts `[]` or `{}` as the declared default, and the shells declare `[]`. Not exported between missions. `toXapi(block, actor)` maps a block to xAPI statements (one per item plus one for the round; the actor is the caller's) and nothing calls it yet |
+| `episode_<id>_defend_percent`, `_reportRate`, `_pass`, `_done` | the triage starter, for the episode's defend set | The set's `setGlobalPrefix` is `episode_<id>_defend_` (a defend-only id already ends `_defend`, so its prefix reads `episode_<id>_defend_defend_`). The lint requires `done` to be declared; the shells declare all four. A check mission uses `triage_{stage}_` instead |
 | `se_osint_state`, `se_board_state`, `se_landing_pages`, `se_landing_drafts`, `se_report_state`, `episode_<id>_state` | their minigames; `se_landing_drafts[<pageId>]` holds the builder's draft choices before the first Score, written on every change and on close (`07` N4), and `se_landing_pages` holds only scored records (§11a); `se_report_state` is the report builder's in-progress pairings (finding id to chosen cause and control; ids only, saved and synced as the board does) | object-valued, default `{}` |
 
 **Missions that carry a score (check missions, `11`).** A mission whose result another mission reads
@@ -1885,6 +1887,42 @@ Shell rules for these missions and for the awareness episode shells:
 - **Every episode shell scores.** An episode shell has at least one aim (`missionConclusion: true`)
   with a task that completes on the episode's defend-set done global, using the rules above, so
   Hacktivity's task and aim share (`game.rb` scores 0 when a mission has no tasks) exists for it.
+
+**The awareness episode block and its mail option (built 2026-10-22).** `social.awarenessEpisode` is the
+episode definition `11` §5.1 sketched; the schema is `socialAwarenessEpisode` in `scenario-schema.json`
+and the lint is `scripts/validate_social/awareness.rb`. Author documentation: README "Awareness
+episodes". Where it differs from or adds to `11` §5.1:
+
+| Field | Contract |
+|-------|----------|
+| `stages[]` | Closed list: `brief`, `osint`, `build`, `write`, `mfa`, `flip`, `defend`, `debrief`, `check`. Full: `brief, osint, write, flip, defend, debrief`, with `build` straight after `osint` and `mfa` straight after `write` or `flip` as options (six lists in all). Defend-only: exactly `brief, defend, debrief`. Check mission: exactly `["check"]`. The runner drops attack stages from a defend-only episode whatever is authored |
+| `variant` | `full` or `defendOnly`; optional only when `stages` is `["check"]` |
+| `id` | A defend-only id is the full id plus `_defend` (lint). `episodeId` on the kiosk equals it |
+| `conclusionTaskId` | Required by the lint: a task of the conclusion aim, which the host NPC's mapping on `global_variable_changed:<done global>` completes. Passed to the triage starter for the reopen re-emit |
+| `brand` | `{ name, logoText, accent }`; `accent` matches `^#[0-9a-fA-F]{3,8}$`. The wordmark is drawn in CSS from `logoText` |
+| `defend` | `{ setId, stage?, reportAlwaysVisible?, callsFrom?, calls? }`. `stage` is `pre` or `post` on a check mission and null otherwise. `reportAlwaysVisible` is accepted and not read |
+| `defend.calls[]` | The role swap (N15). `{ id, genuine, callerId?, claims[{ fact, value, label? }], tells[], transcript[{ who, text }], notes }`. Each becomes a `call` message in the defend set, ahead of the set's own, with `truth` = `notes` plus `isPhish: !genuine` and `flags: tells`; `claims` ride on the message for the call card. A claim's shown text is `label`, else the `social.intelFacts` `provides` label for `value`, else the raw value. Lint: the set is `awareness` with `verifyVerdict: true`; at least one genuine and one impostor call; ids unique and not message ids; each `fact` is a `knows` id of `callsFrom` (else of any `pretextNpcs` entry); with no `pretextNpcs` (defend-only) each claim carries a `label` and `callsFrom` is not read. Calls count towards the 5 to 8 messages |
+| `attack` | `{ target?, siteIds, accountIds, defaultAccount?, callId?, landingPageId?, layout?, showRedFlagMeter?, maxMessages, scored }`. Lint: `scored` is `false`; `maxMessages` is `1` unless `callId` is set; `siteIds` resolve to `osint.sites` and are not empty; `accountIds` resolve and are not empty unless `callId`; `emailReplyDelay` of the target 5 to 8 (warning). The runner always passes `maxSends: 1`; `maxMessages` and `showRedFlagMeter` are not read |
+| `attack.callId` | A `pretextNpcs` `callId`. The `write` stage then launches that pretext call instead of the mail client (the write-as-call rule); the runner watches `pretext_<callId>_outcome` and holds `{ kind: "call", callId, outcome }` for the flip |
+| `attack.landingPageId` | A `landingPages` id whose `targets` has an entry for `attack.target`; required by the `build` stage |
+| `attack.layout` | `phone`, passed to the mail client |
+| `mfa` | `{ pushes[{ id?, at, app, account?, location?, device? }], approvesAt, mode? }`; required when `stages` has `mfa` (warning for the reverse). `at` and `approvesAt` are `"HH:MM"` or a number, not mixed; `approvesAt` is not before the first push; `mode` is `attacker`. Launched on the `authenticator` scene; the demonstration is unscored and records nothing |
+| `strings` | `brief`, `flipHeading`, `flipIntro`, `flipPageIntro`, `flipCallIntro`, `flipDefenderLine`, `flipNoSend`, `flipMissed`, `continue`, `defendIntro`, `noBlameLine`, `mondayCard`, `defendOnly`, `conceptPanel` and `voicePanel` (a string or `{ heading?, text }`), and `facilitator` (`{ <stage id>: string, pause: string }`). All plain text. Closed: any other key fails the schema. Every key but `brief` has a default in the views |
+| `facilitated` | Boolean (N5). Shows `strings.facilitator[<stage>]` as a group prompt, hides the per-learner score on the shared debrief and pauses between stages |
+| `role`, `company`, `durationTargetMin`, `debrief` | Accepted, not read by any code |
+
+The runner state `episode_<id>_state` is `{ v: 1, variant, stage, done[], sent, defend }` (ids and numbers
+only; `sent` is `{ recordId, targetId, templateId, blankIds[] }` or `{ kind: "call", callId, outcome }`, held
+for the flip and then set to `null`; `defend` is `{ percent, reportRate, verifyCount }`).
+
+**Mail client launch parameters for an episode.** The write stage opens `mail-client` with
+`{ accountIds, defaultAccount, maxSends: 1, layout? }`. `maxSends` (number, absent means no cap): after that
+many sends this session Compose is disabled and a line says the message has gone ("Your message has gone. You
+cannot send another."); Close carries on. `layout: "phone"` puts the narrow layout in a phone frame on any
+viewport. `sentIds` (string[]) is set by the client's `returnParams()` on a reopen and carries the sent record
+ids so far. The close result carries `sentIds`, this session's sent record ids oldest first, but only in episode
+mode (a cap, a phone layout or carried ids), so a plain mail terminal's result is as before. The runner picks
+the newest id that is a sent record to the target.
 
 **Object-valued state globals** hold ids only and stay small (the 60 KB `pagehide` flush shares one
 budget with every global). A call's tells log keeps the last 40 entries. Mail is not stored this way;

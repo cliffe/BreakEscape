@@ -1977,6 +1977,7 @@ Everything lives under one top-level key. `scripts/scenario-schema.json` closes 
 | `phishTargets` | Who can be phished and how the rules engine judges them | [Phishing targets and the rules engine](#phishing-targets-and-the-rules-engine-socialphishtargets) |
 | `pretextNpcs` | Pretext calls | [Pretext calls](#pretext-calls-socialpretextnpcs) |
 | `landingPages` | The landing-page builder | [Landing pages](#landing-pages-sociallandingpages) |
+| `awarenessEpisode` | The episode an awareness shell's kiosk runs: stages, attack and defend halves, strings | [Awareness episodes](#awareness-episodes) |
 
 Each overlay opens from an object that carries only a pointer in `minigameData` (checked against `scripts/minigame-data-schemas.json`):
 
@@ -1988,6 +1989,7 @@ Each overlay opens from an object that carries only a pointer in `minigameData` 
 | `report-workstation` | `{ requiresGlobal?, lockedMessage? }` | the engagement report; with `requiresGlobal` set and not yet true, a toast shows `lockedMessage` (default "There is nothing to write up yet.") instead |
 | `mail_terminal` | `{ accountIds, defaultAccount? }` | the mail client (attack section) |
 | `page-builder` | `{ landingPageId, targetId? }` | the landing-page builder (attack section) |
+| `kiosk` | `{ episodeId }` | the awareness episode runner; `episodeId` must equal `social.awarenessEpisode.id` ([Awareness episodes](#the-kiosk)) |
 
 Lab examples: `{"type": "case-file", "minigameData": {"mode": "scope"}}` is the Rules of Engagement sheet; the report workstation carries `{"requiresGlobal": "phish_lord_landed", "lockedMessage": "Nothing to write up yet. Finish the sending first, then come back to the report."}`. Each object type also needs its sprite, `assets/objects/<type>.png` (a missing one is a social lint error), and the lab places them on real furniture with `"position": "as-type:pc"` and similar.
 
@@ -2342,9 +2344,9 @@ A message's `kind` defaults to `email`. Six other kinds are drawn in their own s
 | `kind` | Fields it reads (beyond `id`, `time`, `truth`) | Drawn as |
 |---|---|---|
 | `sms` | `from.address` (the number; `from.name` only if the phone would know the sender), `body` (may hold `{{link:<id>}}` with `links[]`, shown inline with the hover status line), `earlier[]` (`{ text, time? }` bubbles above) | A phone with one text thread |
-| `voicemail` | `from` (the caller), `duration` (`"0:41"`), `body` as the transcript, or `transcript[]` | A voicemail card with a static waveform and the words |
+| `voicemail` | `from` (the caller), `duration` (`"0:41"`), `body` as the transcript, or `transcript[]`; optional `audio: { clipId }` | A voicemail card with a static waveform and the words. `audio.clipId` names a clip for a later player and is ignored until one exists |
 | `qr` | `subject` (the notice heading), `body`, `qr: { destination, location?, caption? }` | A printed notice with a QR pattern. "Where does this code go?" shows `destination` in the status line. The pattern is decorative and encodes nothing |
-| `page` | `body`, `page: { url, padlock?, heading?, fields[]?, button? }` | A browser window. Clicking the address shows the full URL and its host; clicking the padlock explains that it means the connection is encrypted, not who runs the site. The form fields are drawn, never typed into |
+| `page` | `body`, `page: { url, padlock?, heading?, fields[]?, button?, certificate?, autofill? }` | A browser window. `certificate: { issuedTo, issuer?, note? }` adds a Certificate button on a padlocked page (who the certificate was issued to, and a line on what it does not prove, which `note` replaces); `autofill` is `"filled"` or `"none"` and adds a line saying whether the password manager filled the form in. Clicking the address shows the full URL and its host; clicking the padlock explains that it means the connection is encrypted, not who runs the site. The form fields are drawn, never typed into |
 | `call` | `callerId` and/or `from`, `transcript[]` of `{ who, text }` (`who: "you"` marks the player's own lines) | A call transcript card |
 | `push` | `push: { app, request?, account?, location?, device? }`, and `time` (an odd hour is often the tell) | An authenticator prompt |
 
@@ -2769,6 +2771,408 @@ The credential-harvest page the player builds, inspected by a defender afterward
 | `capture` | `{ address, note }` | The fictional `.example` address "captured", and an authored note that holds no password value. |
 
 **`brands[]`** — `{ id, name, look, realDomain, realFields[], decoyWords[], domains[] }`. `name` is an invented brand (denylist-checked); `look` is `generic` or `parody`; `realDomain` is the genuine `.example` host; `decoyWords[]` are allowlisted domain labels. Each entry in `domains[]` is `{ id, domain, browserDomain?, trick, tier, minProfile? }`: `domain` is shown as typed (ASCII, unless `trick` is `homograph`, when it uses a `\u` escape); `browserDomain` is the punycode `xn--` form shown as a teaching contrast and must equal the encoding of `domain`; `tier` ranks how convincing the look-alike is, checked against each target's `minDomainTier`.
+
+## Awareness episodes
+
+The awareness product is a set of short attack-then-defend episodes for non-technical staff. It is a separate product line from the lab (`lab_social_engineering`) and from SAFETYNET: browser-only, no VM, `"disableAttacks": true`, fictional companies only, and a neutral corporate skin (`"ui_theme": "general"` in `mission.json`). An episode reuses the mechanics documented above (the OSINT browser, the mail client, the phishing rules engine, inbox triage, pretext calls, the landing-page builder) and adds one block, `social.awarenessEpisode`, one object, the `kiosk`, and a small amount of scenery around them. Design: `planning_notes/phishing_and_social_engineering/designs/11_awareness_product_episodes.md`; the contract: `00_data_contract.md` §11.
+
+Everything here is checked by `ruby scripts/validate_scenario.rb scenarios/<id>/scenario.json.erb --strict-social --no-graph --skip-ink` (`scripts/validate_social/awareness.rb`). Examples to copy from, all of which exit 0:
+
+| Shell | Kind | What it shows |
+|---|---|---|
+| `scenarios/awareness_e1_invoice_fraud` | full | The attack (OSINT, one mail, the flip), the defend round and the debrief; two aims |
+| `scenarios/awareness_e1_invoice_fraud_defend` | defend-only | The same defend set with no attack; the `_defend` id and its doubled prefix |
+| `scenarios/awareness_pre_finance_ab`, `awareness_post_finance_ab` | check pair | Ten-message forms, `exportGlobals` and `importGlobals`, the comparison panel |
+| `scenarios/awareness_e3_helpdesk_reset` | full, call attack | `attack.callId`, the `mfa` stage, the role swap (`defend.calls`) |
+| `scenarios/awareness_e5_signin_pages` | full, page attack | The `build` stage and `attack.landingPageId` |
+| `scenarios/test_social_episode` | fixture | The smallest full shell that validates. Stub content, `collection: "testing"` |
+
+### Three kinds of shell
+
+| Kind | `variant` | `stages` | Id | Attack block |
+|---|---|---|---|---|
+| Full episode | `full` | `brief, osint, write, flip, defend, debrief` (with `build` and `mfa` optional, see [Stages](#stages)) | any, not ending `_defend` | Required |
+| Defend-only | `defendOnly` | `brief, defend, debrief` exactly | the full episode's id plus `_defend` | Not read |
+| Check mission | optional | `["check"]` | any | None |
+
+A defend-only shell is the full episode without the attack: the same defend set, so the measurement is the same, but the learner loses the "I wrote that" moment. Every full episode has one. A check mission is a ten-message spot-the-phish form taken before and after the training, and only one of those forms is in each mission ([Check missions](#check-missions-and-how-their-results-carry-over)).
+
+### Building a shell
+
+A shell is one scenario folder (`scenarios/<id>/` with `scenario.json.erb`, `mission.json` and an `ink/` folder for the host) holding one training room. Do these in order. The numbered pieces are what `test_social_episode` is made of.
+
+**1. `mission.json`.** `display_name`, `description`, `difficulty_level: 1`, `secgen_scenario: null`, `ui_theme: "general"` and `collection`: `training` for a real shell, `testing` for a fixture. Real shells also carry `estimated_duration_minutes` and a `cybok` block.
+
+**2. Top level.** `scenario_id` equal to the folder name, `scenario_name`, `scenario_brief`, `endGoal`, `version`, `"disableAttacks": true`, `startRoom`, a `player` (any existing sprite sheet).
+
+**3. Globals.** The shell declares every global its mechanics write; `id` below is `awarenessEpisode.id`.
+
+```json
+"globalVariables": {
+  "episode_e1_stub_state": {},
+  "se_awareness_records": [],
+  "episode_e1_stub_defend_percent": 0,
+  "episode_e1_stub_defend_reportRate": 0,
+  "episode_e1_stub_defend_done": false,
+  "episode_e1_stub_defend_pass": false,
+  "se_osint_state": {},
+  "se_intel_supplier_contact": false,
+  "phish_supplier_contact_landed": false,
+  "phish_supplier_contact_attempts": 0
+}
+```
+
+The first six lines are the shell's own. The last four belong to the attack (`se_osint_state`, `se_intel_<fact id>` once per fact, `phish_<target>_landed` and `_attempts`; see [The attack data](#the-attack-data)). The lint errors if `episode_<id>_state` or `se_awareness_records` is missing or not empty, and if the done global is undeclared (also in `concludeRequires` and in the host's mapping). It does not notice a missing `percent`, `reportRate` or `pass`; declare all four as every shell does. `se_awareness_records` is `[]`: the store writes an array. `{}` is accepted because older shells declared it that way, and the reader treats it as empty. A defend-only or check shell declares only the first six (check shells declare `triage_<stage>_*` instead of the `episode_..._defend_*` four). Something should read `phish_<target>_landed`, or the validator suggests dropping it; E1 uses it in the host's ink and to complete the attack aim's task.
+
+**4. The conclusion aim.** One aim with `missionConclusion: true`, whose `concludeRequires.globals` lists the defend set's done global, a task for the host to complete, and a `success` ending ([Mission Conclusion](#mission-conclusion)):
+
+```json
+{ "aimId": "finish_episode_aim", "title": "Finish the episode", "description": "Run the episode at the kiosk.",
+  "status": "active", "order": 0,
+  "missionConclusion": true,
+  "concludeRequires": { "globals": ["episode_e1_stub_defend_done"] },
+  "conclusionScreen": { "type": "success", "title": "Episode done", "body": "You have finished this exercise." },
+  "tasks": [ { "taskId": "finish_episode", "title": "Finish the episode", "type": "custom", "status": "active" } ] }
+```
+
+The validator errors when no aim (or more than one) has `missionConclusion`, when `concludeRequires.globals` leaves out the done global (it gates the ending on a finished round, not on the declared defaults), and warns when `conclusionScreen` is missing. A training episode ends on the `success` screen, not the credits. A full episode may have a first aim for the attack (E1's `red_team_aim`, whose task a host mapping completes on `phish_supplier_contact_landed`); only the conclusion aim carries `missionConclusion`.
+
+**5. The room, the host and the kiosk.** One `room_office` with a host NPC and one kiosk:
+
+```json
+"rooms": { "ep_room": { "type": "room_office", "door_sign": "Training Room", "connections": {},
+  "npcs": [ { "id": "ep_host", "displayName": "Host", "npcType": "person", "position": { "x": 3, "y": 3 },
+    "spriteSheet": "female_blowse_v2", "spriteTalk": "assets/characters/female_blowse_talk.png",
+    "storyPath": "scenarios/ink/generic-npc.json", "currentKnot": "start",
+    "eventMappings": [ { "eventPattern": "global_variable_changed:episode_e1_stub_defend_done",
+      "condition": "value === true", "onceOnly": true, "completeTask": "finish_episode" } ] } ],
+  "objects": [ { "type": "kiosk", "id": "ep_kiosk", "name": "Training Kiosk", "position": { "x": 6, "y": 2 },
+    "takeable": false, "interactable": true, "active": true, "locked": false,
+    "observations": "A training kiosk. It runs the episode.",
+    "minigameData": { "episodeId": "e1_stub" } } ] } }
+```
+
+The host is not decoration. A global cannot complete a task by itself, and `eventMappings` live on NPC records, so the host's mapping on the done global is what completes `conclusionTaskId`. The validator errors if no NPC carries it. A real shell gives the host a character, a sprite and one ink file (a welcome line that changes once the done global is true, resting in a hub as in m03; see `scenarios/awareness_e1_invoice_fraud/ink/adaeze_okafor.ink`), and adds a block for the shell in `scripts/ink_runtime_check/missions.json` so `reopencheck.mjs` covers it. `scenarios/ink/generic-npc.json` will do for a throwaway fixture.
+
+**6. The defend set** (`social.triageSets[]`), described under [Attack and defend](#attack-and-defend).
+
+**7. The attack data**, full episodes only: a `people` entry, an `intelFacts` entry, an OSINT site, composer templates, a mail account, a contact, a phishing target. Each is documented in its own section; the smallest working set is in [The attack data](#the-attack-data).
+
+**8. The episode block** (`social.awarenessEpisode`), below.
+
+**9. Validate.** Fix every error. Read each warning.
+
+### The kiosk
+
+```json
+{ "type": "kiosk", "id": "ep_kiosk", "minigameData": { "episodeId": "e1_stub" }, ... }
+```
+
+The only object type that opens an episode. `minigameData` is `{ episodeId }` and nothing else, and the id must equal `social.awarenessEpisode.id`. If the two differ the player gets "This kiosk has no exercise to run." and nothing opens; the validator catches it as an error. A shell has exactly one kiosk (a second could start a second runner on the same state), and a kiosk with no `awarenessEpisode` block is an error. Its sprite is `assets/objects/kiosk.png`. It opens the `episode-runner` overlay (`systems/episode-starter.js`), which shows the step strip and runs the stages in order. Close and Esc are a normal exit, not a failure, and the overlay takes the keyboard while open (Space and E do nothing).
+
+**Progress.** The runner keeps its place in the declared global `episode_<id>_state`: `{ v, variant, stage, done[], sent, defend }`, ids and numbers only. Reopening the kiosk resumes at the stage the learner left, after a reload too. `sent` holds what the write stage produced (the sent record's id, the template ids, or the call's id and outcome, never message text) until the flip has been shown, then is cleared. A child tool that closes without finishing (mail closed with nothing sent, triage closed before the result) leaves the stage where it was.
+
+### The `awarenessEpisode` block
+
+`social.awarenessEpisode` is closed by the schema (`socialAwarenessEpisode`): unknown keys fail it, except keys starting with `_`.
+
+| Field | Shape | Notes |
+|---|---|---|
+| `id` | string | Required. Names everything else: the kiosk pointer, `episode_<id>_state`, the defend prefix. A defend-only id is the full id plus `_defend` |
+| `stages` | string[] | Required. See [Stages](#stages) |
+| `defend` | object | Required: `{ setId, stage?, reportAlwaysVisible?, callsFrom?, calls? }`. See [Attack and defend](#attack-and-defend) |
+| `variant` | `full` \| `defendOnly` | Required, except on a check mission (`stages: ["check"]`) |
+| `conclusionTaskId` | string | Required by the lint. The conclusion aim's task that the host NPC's mapping completes. Passed to the triage starter, which on a reopen of a finished round re-emits the done event if that task is not yet complete (a tab closed before the sync was confirmed) |
+| `attack` | object | Full episodes. See [Attack and defend](#attack-and-defend) |
+| `mfa` | `{ pushes[], approvesAt, mode? }` | With the `mfa` stage. See [The authenticator](#the-authenticator-the-mfa-stage) |
+| `strings` | object | The learner-facing lines. See [Strings](#strings) |
+| `brand` | `{ name, logoText, accent }` | The neutral skin's wordmark, drawn in CSS from `logoText` (else `name`), and the accent colour (`#` plus 3 to 8 hex digits; the schema rejects anything else). No image |
+| `scopeNote` | string | Shown under the brief ("Authorised exercise at ..., a fictional company. In scope: ...") |
+| `facilitated` | boolean | A workshop run. See [Facilitated mode](#facilitated-mode) |
+| `role`, `company`, `durationTargetMin`, `debrief` | | Accepted, and not read by any code. They are notes for the author (`debrief` held the Monday card slot; the text lives in `strings`) |
+
+### Stages
+
+`stages` is the ordered list of what the runner does. Ids are a closed list. Each stage ends in a normal exit, and the runner then moves to the next stage not yet in `state.done`.
+
+| Stage | What happens | Needs |
+|---|---|---|
+| `brief` | The runner's own panel: `strings.brief`, the `scopeNote`, then Start | `strings.brief` |
+| `osint` | Opens the OSINT browser limited to `attack.siteIds` | `attack.siteIds` |
+| `build` | Opens the landing-page builder on `attack.landingPageId`, aimed at `attack.target`. The learner builds the page the message links to | `attack.landingPageId`: a `social.landingPages` id whose `targets` has an entry for `attack.target` |
+| `write` | Mail: opens the mail client with `accountIds`, `defaultAccount`, `maxSends: 1` and `layout`; or, with `attack.callId`, a pretext call (the write-as-call rule below). Done when something was sent, or the call has ended | `attack.accountIds`, or `attack.callId` |
+| `mfa` | Opens the mock authenticator: a stream of unrequested sign-in prompts and the target's approval. Unscored | `awarenessEpisode.mfa` |
+| `flip` | Shows what the learner just made from the other side: the sent email, the built page or the call | See below |
+| `defend` | Opens the triage round on `defend.setId` with the awareness skin; records the result | `defend.setId` |
+| `debrief` | A card per answer, the concept and voice panels if authored, the Monday card, the no-blame line, then Finish | `strings` |
+| `check` | A check mission's only stage: the triage round at `defend.stage`, ending on its own result screen | `defend.stage` |
+
+**Order.** A full episode is `brief, osint, write, flip, defend, debrief`, with two optional insertions: `build` straight after `osint`, and `mfa` straight after `write` or straight after `flip`. Both may be present, giving six valid lists. The lint rejects any other order. A defend-only episode is exactly `brief, defend, debrief`, and the runner drops any attack stage from one whatever is authored. `mfa` and `build` never appear in a defend-only or check shell.
+
+**The write-as-call rule.** `write` normally launches the mail client. If `attack.callId` is set (a `social.pretextNpcs` `callId`), `write` launches that pretext call instead, and the mail fields (`accountIds`, `defaultAccount`, `maxMessages`) are not needed. The stage id stays `write`. The call's own chat takes over and never returns to the runner, so the runner watches the `pretext_<callId>_outcome` global and reopens itself once the call has ended and been closed. It holds the call and its outcome for the flip. The globals `pretext_<callId>_outcome`, `_lowest`, `_reports`, `_state` and the character's influence globals must be declared as they are in the lab ([Pretext calls](#pretext-calls-socialpretextnpcs)).
+
+**The flip.** It rebuilds the learner's own work as the target would see it:
+
+- *Mail:* the sent message, drawn read-only with the tells it raised, each as its library sentence. It needs the defend set to carry `playerSentAuth.accounts.<accountId>` for every account in `attack.accountIds` (see [Inbox triage](#inbox-triage-socialtriagesets)). Nothing lints this. Without the row, or if the send raised no tell, the flip falls back to `strings.flipMissed`.
+- *Page* (when the episode has a `build` stage and the page was built): the built address, padlock, fields and the page's tells.
+- *Call* (when the call landed, outcome `got_it`): the learner's own lines rebuilt from the session log, with the claims they made, and the call spec's `defenderNotes`. A call that did not land shows `flipMissed`.
+- Nothing sent at all shows `strings.flipNoSend`.
+
+### Attack and defend
+
+**`attack`** (read only by a full episode):
+
+| Field | Notes |
+|---|---|
+| `target` | A `social.phishTargets` id. Required for a mail attack. A call attack may leave it out |
+| `siteIds` | `social.osint.sites` ids for the OSINT stage. Not empty |
+| `accountIds`, `defaultAccount` | `social.mailClient.accounts` ids for the write stage (mail attacks). `defaultAccount` must be in `accountIds` |
+| `callId` | A `social.pretextNpcs` `callId`: the write stage is a call ([Stages](#stages)) |
+| `landingPageId` | For the `build` stage |
+| `layout` | `phone` puts the mail client's narrow layout in a phone frame on any viewport (E6) |
+| `maxMessages` | Must be `1` on a mail attack (lint). The runner always passes `maxSends: 1` to the mail client: after one send, Compose is disabled and a line says the message has gone. Close carries on |
+| `scored` | Must be `false` (lint). The write stage is never scored; only the defend round is |
+| `showRedFlagMeter` | Accepted, not read. The meter comes from `mailClient.showRedFlagMeter` and the target's `redFlagMeter` |
+
+The lint warns if the target's `emailReplyDelay` is outside 5 to 8 seconds (the default, 20, is too long to wait in a 13 minute episode).
+
+**`defend`**:
+
+| Field | Notes |
+|---|---|
+| `setId` | A `social.triageSets` id. The set must use `scoringProfile: "awareness"` and `outcome.passPercent: 0` |
+| `stage` | `pre` or `post` on a check mission, `null` or absent otherwise. It is passed to the triage starter as its `stage` |
+| `calls`, `callsFrom` | The role swap, below |
+| `reportAlwaysVisible` | Accepted, not read |
+
+The defend set is an ordinary triage set ([Inbox triage](#inbox-triage-socialtriagesets)) with these rules from the lint:
+
+- **Size:** 5 to 8 messages (counting `defend.calls`), or exactly 10 on a check mission. Mix phish and genuine mail, and make one genuine message awkward (E1 has one with a "confirmed by phone" note) so that reporting everything is not the whole lesson. `verifyVerdict: true` adds Verify.
+- **Prefix:** `outcome.setGlobalPrefix` must be `episode_<id>_defend_`, so the done global is `episode_<id>_defend_done`. Because a defend-only id already ends in `_defend`, its prefix reads `episode_<id>_defend_defend_`. That is deliberate and the runner builds it the same way. Check missions use `triage_{stage}_`.
+- **Leave the set's own `stage` out** in a full or defend-only episode. The runner passes `defend.stage`, which is `null` there.
+- **Feedback:** `immediate` suits an episode, `end` a check.
+- **No-blame wording.** Every note says what gave the message away or why it was fine. Nothing says the learner fell for it.
+
+The `awareness` scoring profile gives a phish 60 for Report or Verify, 30 for Delete and 0 for Trust; real mail gets 60 for Trust, Report or Verify and 30 for Delete. The reasons are worth 40: on a phish `40 × caught / authored flags` with no penalty for extra chips, and a full 40 on real mail. So reporting is never wrong. Tells that cross from the attack to the defend half are channel tells (`changed_bank_details`, `secrecy_or_bypass`) and email factors, listed in `00` §2. A good send stores the factor tells it raised (`senderTrust`, `urgencyCalibrated`), and the defend set uses those same ids.
+
+#### The attack data
+
+A full episode needs, under `social`, the pieces below. They are the same blocks the lab uses, so the field lists are in the sections linked beside each. This is the smallest set that validates (`test_social_episode`):
+
+```json
+"people": [ { "id": "supplier_contact", "kind": "cast", "address": "pat@halden-supply.example", "forms": { "full": "Pat Halden" } } ],
+"intelFacts": { "supplier_contact": { "text": "Pat Halden handles Halden Supply's accounts.", "subject": "supplier_contact",
+  "source": "ep_staff", "provides": [ { "type": "name", "about": "recipient", "value": "pat", "label": "Pat", "kind": "generic" } ] } },
+"osint": { "profile": "awareness", "sites": [ { "id": "supplier_site", "url": "halden-supply.example", "type": "company-site",
+  "pages": [ { "id": "team", "title": "Our team", "url": "halden-supply.example/team", "blocks": [
+    { "id": "ep_staff", "kind": "staff", "person": "supplier_contact", "name": "Pat Halden",
+      "address": "pat@halden-supply.example", "fact": "supplier_contact" } ] } ] } ] },
+"templates": {
+  "from_own": { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] },
+  "greet_generic": { "part": "greeting", "text": "Hello,", "slots": [] },
+  "pretext_invoice": { "part": "pretext", "text": "I'm checking the status of an invoice.", "slots": [], "urgency": "low" },
+  "pretext_account": { "part": "pretext", "text": "I'm updating our account records.", "slots": [], "urgency": "low" },
+  "ask_confirm": { "part": "ask", "text": "Could you confirm it is due this week?", "slots": [] } },
+"mailClient": {
+  "accounts": [ { "id": "analyst", "address": "analyst@brightwell.example", "displayName": "Analyst", "kind": "given",
+    "person": null, "mailbox": "analyst", "spoofsFrom": true } ],
+  "mailboxes": [ { "id": "analyst" } ],
+  "contacts": [ { "id": "supplier_contact", "person": "supplier_contact", "name": "Pat Halden",
+    "addresses": ["pat@halden-supply.example"], "role": "Accounts",
+    "revealedBy": "se_intel_supplier_contact", "targetId": "supplier_contact" } ],
+  "seededMessages": [], "checklistTiming": "onSend", "showRedFlagMeter": true },
+"phishTargets": [ { "id": "supplier_contact", "address": "pat@halden-supply.example", "displayName": "Pat Halden",
+  "subjects": [ { "id": "s_invoice", "text": "Invoice query", "topic": "finance" }, { "id": "s_canteen", "text": "Canteen menu", "topic": "catering" } ],
+  "interests": { "topics": ["finance"] }, "emailReplyDelay": 6,
+  "templateSets": { "from": ["from_own"], "greeting": ["greet_generic"], "pretext": ["pretext_invoice", "pretext_account"], "ask": ["ask_confirm"] },
+  "requiredFactors": ["senderTrust", "pretextRelevant"], "advisoryFactors": ["senderAuth"],
+  "replies": { "landed": "Thanks, I'll check that invoice." },
+  "factorStrings": { "senderTrust": { "pass": "The request comes from a known contact", "redFlag": null } },
+  "outcome": { "setGlobal": { "phish_supplier_contact_landed": true } } } ]
+```
+
+The contact's `revealedBy` is the fact's `se_intel_` global, so the learner finds Pat in OSINT before Pat can be written to. The `source` of the fact is the OSINT block that grants it. E1 (`awareness_e1_invoice_fraud`) is the full-size example: two OSINT sites, four facts, a spoofed sender, a named reply, and an `analyst` account that can spoof From.
+
+#### The defend set, minimally
+
+```json
+"triageSets": [ { "id": "e1_stub_inbox", "title": "Payments inbox", "brief": "Decide what each message is.",
+  "scoringProfile": "awareness", "feedbackMode": "immediate", "headerPanel": "collapsed", "glossary": "closed",
+  "channelTells": ["lookalike_domain", "changed_bank_details"],
+  "outcome": { "setGlobalPrefix": "episode_e1_stub_defend_", "passPercent": 0 },
+  "messages": [ ... five messages: at least two phish and one genuine ... ] } ]
+```
+
+A phish message is `{ id, from, to, subject, time, body, auth, truth: { isPhish: true, flags: [...], perFlagNote, ifTrusted, reportReply } }`; a genuine one has `truth: { isPhish: false, flags: [], whyFine: { default: "..." } }`. The shapes are in [Inbox triage](#inbox-triage-socialtriagesets).
+
+#### The block, filled in
+
+```json
+"awarenessEpisode": {
+  "id": "e1_stub", "role": "finance", "company": "brightwell_foods", "variant": "full", "durationTargetMin": 13,
+  "brand": { "name": "Brightwell Foods", "logoText": "BRIGHTWELL", "accent": "#2f6f5e" },
+  "scopeNote": "Authorised exercise at fictional Brightwell Foods. In scope: this inbox.",
+  "stages": ["brief", "osint", "write", "flip", "defend", "debrief"],
+  "conclusionTaskId": "finish_episode",
+  "attack": { "target": "supplier_contact", "siteIds": ["supplier_site"], "accountIds": ["analyst"],
+              "defaultAccount": "analyst", "maxMessages": 1, "scored": false },
+  "defend": { "setId": "e1_stub_inbox", "stage": null },
+  "strings": { "brief": "Stub brief.", "flipHeading": "Now you are the target", "flipIntro": "This is the message you sent.",
+    "flipDefenderLine": "Here is what a careful reader would notice.", "flipNoSend": "You did not send a message this time.",
+    "noBlameLine": "Anyone can miss one of these.", "mondayCard": "Next time, check bank changes by phone.",
+    "defendOnly": "This version skips the attack." }
+}
+```
+
+### Strings
+
+`strings` holds every learner-facing line, as data. Every string is shown as plain text (HTML in one renders as text). All have a built-in default in the views except `brief`, and the stage panels' own button labels and instructions (Open the browser, Write one message..., Pause) are fixed English in the runner, apart from the defend intro below. Write them in the voice of the fictional company's training lead.
+
+| Key | Where it shows | Default |
+|---|---|---|
+| `brief` | The brief panel's text | None, and no lint asks for one, but the panel is empty without it. Say who they are, where, what happens and which part is scored |
+| `flipHeading` | The flip's heading | "Your message, from the other side" |
+| `flipIntro` | Above the replayed email | "This is the message you just wrote, as the person who receives it would see it." |
+| `flipPageIntro` | Above a built page | "This is the page you built, as the person who follows the link would see it." |
+| `flipCallIntro` | Above a call | "This is your call from the other end of the line. Here is what would have caught it." |
+| `flipDefenderLine` | Under the replay, in the target's voice: why it worked on them | "People who fall for messages like this are not stupid. This one was built to look right." |
+| `flipNoSend` | When nothing was sent | "You did not send a message this time, so there is nothing to flip. On to the next step." |
+| `flipMissed` | When something was sent but there is nothing to replay (no tell raised, no auth row, the call did not land) | "Your attempt did not land this time, so there is nothing to show from the other side. The defence is the same either way. On to the next step." |
+| `continue` | The flip's Continue button | "Continue" |
+| `defendIntro` | The defend stage's panel line, replacing the runner's fixed one, which talks about an inbox | A line that fits the set: messages, pages or calls, and defend-only or not |
+| `noBlameLine` | The last line of the debrief | "Nobody here is being marked down for a miss. These messages are built to look right." |
+| `mondayCard` | The "one thing to do on Monday" card | "What to do on Monday: if something looks wrong, report it through your organisation's usual route. Reporting is never wrong." |
+| `defendOnly` | The debrief's opening paragraph on a defend-only run, in place of anything about the learner's own message | "You went straight to the inbox this time. Each message below shows what to look for and why." |
+| `conceptPanel`, `voicePanel` | Optional debrief panels between the cards and the Monday card. A string, or `{ heading, text }`; a blank line starts a new paragraph. `voicePanel` is for copied voices (E4, E7) and stays at concept level | No panel. Headings default to "How it works" and "A voice is not proof" |
+| `facilitator` | See [Facilitated mode](#facilitated-mode) | |
+
+The lint errors on a `conceptPanel` or `voicePanel` with no text, and on a `facilitator` key that is neither a stage id nor `pause`.
+
+The debrief and flip copy never blames. "Nobody is marked down" and "built to look right" are the register; "you fell for it" is not.
+
+### Facilitated mode
+
+`"facilitated": true` makes an episode a workshop run on a shared screen. The runner adds a group prompt to each stage from `strings.facilitator[<stage id>]`, hides the per-learner score (the percent, the headline and each card's score) on the shared debrief, and stops on a pause panel after every stage but the last (`strings.facilitator.pause`, else "Stop here and talk it over as a group before the next step.") until Continue. The pause is held in memory only, so a reopen from the kiosk goes straight to the stage. `strings.facilitator` is `{ brief, osint, build, write, mfa, flip, defend, debrief, check, pause }`, any subset; the lint warns about a stage in `stages` with no line when `facilitated` is true. The triage round itself is still done individually. The measurement is recorded as usual.
+
+### Check missions and how their results carry over
+
+A check mission is the measurement half of the product: ten messages from the role's inbox, taken before the training (`pre`) and again after it (`post`), with a before-and-after panel at the end of the second. Each role has a matched pair of forms, A and B, and two orderings, so half of a group sees A first (the `ab` missions) and half B first (`ba`). The shipped set is `awareness_pre_<role>_ab`, `_ba` and `awareness_post_<role>_ab`, `_ba`.
+
+A check mission has `stages: ["check"]`, `variant` optional, `defend.stage` `pre` or `post`, no `attack`, and its set:
+
+- carries `stage` equal to `defend.stage`, has **ten** messages, `feedbackMode: "end"`, `scoringProfile: "awareness"` and `outcome: { setGlobalPrefix: "triage_{stage}_", passPercent: 0 }`;
+- has no `pairedWith` partner in the same game (the lint errors). The two forms are in two missions, so balance them by hand: the same number of messages and phish, the same factor counts, the same difficulty.
+
+**The pre mission** declares `triage_pre_percent`, `triage_pre_reportRate`, `triage_pre_done` and `triage_pre_pass`, and exports three of them:
+
+```json
+"exportGlobals": ["triage_pre_percent", "triage_pre_reportRate", "triage_pre_done"]
+```
+
+Its conclusion aim completes on `triage_pre_done`, because the carry-over reads only concluded runs: a game that ends without a finished round exports nothing.
+
+**The post mission** imports them under the same names, and imports the "pre was finished" flag:
+
+```json
+"importGlobals": [
+  { "from": "awareness_pre_finance_ab", "var": "triage_pre_percent",    "as": "triage_pre_percent",    "default": 0 },
+  { "from": "awareness_pre_finance_ab", "var": "triage_pre_reportRate", "as": "triage_pre_reportRate", "default": 0 },
+  { "from": "awareness_pre_finance_ab", "var": "triage_pre_done",       "as": "triage_pre_done",       "default": false },
+  { "from": "awareness_pre_finance_ab", "completed": "pre_check_completed" }
+]
+```
+
+and its set carries `"comparison": { "requireGlobal": "pre_check_completed" }`. Rules the lint enforces: each `as` equals the name (the folder has no `mNN_` prefix, so without `as` the name would be wrong); all four come from the same pre mission; the post mission declares `triage_post_*` and **does not also declare** the names it imports (the import declares them, and a second declaration is a collision).
+
+**What the learner sees.** After the post round, the result adds "Before and after": the pre round's score and report rate beside this round's. If the pre check was never finished, the panel says there is no baseline and the round stands on its own. The platform does not order missions or stop someone opening the post check first; the organiser sequences them, and the carry-over uses the learner's most recent concluded run of the pre mission. Only the two headline numbers carry over; per-item answers are in `se_awareness_records` ([The measurement global](#the-measurement-global)). See [Pre and post checks](#pre-and-post-checks-the-comparison-panel) for the panel itself.
+
+### The role swap
+
+In E3 the learner first phones a helpdesk as a locked-out manager, then sits in the helpdesk agent's seat and takes calls. The calls the learner takes are authored in `defend.calls[]`, and the facts they used in the attack are the facts they now check. The runner converts each entry into a `call` message ahead of the set's own messages and runs the merged set through the same triage starter, so scoring and the done global are unchanged.
+
+```json
+"defend": { "setId": "e3_service_desk_queue", "callsFrom": "quayholt_helpdesk_reset", "calls": [
+  { "id": "e3_call_gordon_impostor", "genuine": false,
+    "callerId": "Says he's Gordon McLeish, Claims (mobile, not on file)",
+    "claims": [ { "fact": "who", "value": "gordon_full", "label": "Gordon McLeish" },
+                { "fact": "team", "value": "claims", "label": "Claims" } ],
+    "tells": ["vish_callback_pressure", "borrowed_authority"],
+    "transcript": [ { "who": "Caller", "text": "Hello, Gordon McLeish, Claims Manager. I'm locked out..." },
+                    { "who": "you", "text": "Sorry to hear that. Can you confirm your staff number?" } ],
+    "notes": { "perFlagNote": { "vish_callback_pressure": "..." }, "ifTrusted": "...", "reportReply": "..." } } ] }
+```
+
+| Field | Notes |
+|---|---|
+| `id` | Unique among the calls and not the id of any message in the set |
+| `genuine` | Required boolean. The merged message gets `truth.isPhish = !genuine` |
+| `callerId` | What the card calls the caller. Say what they claim ("Says he's ...") |
+| `claims[]` | `{ fact, value, label? }`: what the caller asserts, shown on the card as "What the caller claims". `fact` is a `knows` id of the pretext call the learner attacked; `value` is that id's value; `label` is what the card shows. A `label` wins; otherwise the card uses the `provides` label of the `social.intelFacts` entry that carries the value; otherwise the raw value shows |
+| `tells` | Channel tell ids; become `truth.flags`. Each must be in the set's `channelTells` (E3: `vish_callback_pressure`, `borrowed_authority`, `secrecy_or_bypass`, `unrequested_mfa_push`). Genuine calls have `[]` |
+| `transcript[]` | `{ who, text }`. `who: "you"` (lower case) marks the learner's own lines; any other `who` is the caller |
+| `notes` | The same note fields as `truth`: `perFlagNote`, `whyFine`, `ifTrusted`, `reportReply`, copied into the message's `truth` |
+
+How the lint treats them: the set must be an `awareness` set with `verifyVerdict: true` (a call card has four buttons: Comply, Escalate, Refuse, Ring back); there must be at least one genuine and at least one impostor call (otherwise refusing everyone, or complying with everyone, would win; make one genuine call awkward); and each claim's `fact` must be a `knows` id of one pretext call. `callsFrom` names that call (a `callId`); left out, a claim may match any `pretextNpcs` entry's `knows`. A genuine caller's claim should hold the value the record holds (a warning otherwise), and a claim with neither `label` nor an intelFacts label warns.
+
+**A defend-only shell** has no attack, so it usually has no `pretextNpcs` for the claims to resolve against. Then `callsFrom` is not read, each claim must carry its own `label` (an error otherwise), and `fact` is only checked to be present.
+
+**Scoring** is the existing call row, unchanged: Comply scores as Trust, Escalate as Report (and counts towards the report rate), Refuse as Delete and Ring back as Verify. Refusing a genuine caller therefore scores as Delete, and the review card says what the safe route was. The attack-to-defend tell map is `name_drop_director` to `borrowed_authority`, `cant_callback` to `vish_callback_pressure`, `skip_verification` to `secrecy_or_bypass`, and the push stream to `unrequested_mfa_push`. A `push` item in the same set (an unrequested sign-in prompt) is the push stream's defend half.
+
+### The authenticator (the `mfa` stage)
+
+E3's second attack beat shows MFA fatigue: the learner already has the password, and watches the target's phone as unrequested sign-in prompts keep arriving until the target taps Approve. It is a demonstration, not scored, and it records nothing. Add `mfa` to `stages` straight after `write` or straight after `flip`, and author the stream:
+
+```json
+"mfa": { "mode": "attacker", "approvesAt": "06:50", "pushes": [
+  { "at": "06:31", "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example",
+    "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" },
+  { "at": "06:38", "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example",
+    "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" } ] }
+```
+
+- `pushes[]`: `app` is required. `at` is `"HH:MM"` (00:00 to 23:59) or a number of minutes; do not mix the two, and give `approvesAt` in the same form. `account`, `location`, `device` and `id` are optional.
+- `approvesAt`: when the target taps Approve. It must not be before the first push. On a tie the approval plays after the pushes that share its time.
+- `mode`: `attacker`, the only value.
+- The lint errors if `stages` has `mfa` and there is no `mfa` block, and warns about the reverse. It warns if there is only one push (fatigue is a run of prompts).
+- The overlay plays the pushes in time order on a phone, then the approval. A "Send another push" button lets the learner add their own; it counts towards the overlay's `sent` and nothing else. Esc and Close are normal exits.
+
+The defend half is a `push` message in the defend set ([Messages that aren't email](#messages-that-arent-email)), with the tell `unrequested_mfa_push`.
+
+### The measurement global
+
+Each finished defend or check round writes one block into `se_awareness_records`, an array in the game's global state:
+
+```json
+{ "v": 1, "key": "episode:e1_payments_inbox", "setId": "e1_payments_inbox", "form": "e1_payments_inbox",
+  "stage": "episode", "episodeId": "e1_invoice_fraud", "variant": "full", "at": "2026-10-22T09:41:07.000Z",
+  "percent": 80, "reportRate": 0.5,
+  "items": [ { "itemId": "e1_lookalike_bank", "verdict": "report", "action": "",
+               "chips": ["changed_bank_details"], "score": 100, "ms": 14210 } ] }
+```
+
+- `key` is `<stage>:<setId>`. `stage` is `pre` or `post` for a check, `episode` otherwise. `form` is the set id, so the A and B forms can be told apart.
+- **The first answer is the one kept.** A key already in the array is never overwritten; a replay of the same set writes nothing. Nothing is written for a round closed before the result, or for the read-only reopen of a round that was already done.
+- `reportRate` is the share of the phish that were reported, 0 to 1. `items` has an entry per message: the learner's `verdict` (`trust`, `report`, `delete` or `verify`), the `action` when the button used differs from the verdict (a call's `escalate` or `comply`; otherwise empty), the chips ticked, the score (0 to 100) and the time taken in milliseconds. **No free text is stored**: ids, numbers and a timestamp. A ten-item block is well under 4 KB.
+- It is written through the shared writer without deferring, because nothing listens on it. It is not exported between missions. Nothing reads the records back in the game yet; they ride along in the saved state. `systems/awareness-measure.js` also holds `readBlocks(globals)` and `toXapi(block, actor)`, which maps a block to xAPI statements (one per item and one for the round; the caller supplies the actor).
+
+Declare it `[]` ([Building a shell](#building-a-shell), step 3).
+
+### Names an episode derives
+
+None of these is authored apart from the declaration in `globalVariables`.
+
+| Name | Meaning |
+|---|---|
+| `episode_<id>_state` | The runner's progress. Object, `{}` |
+| `episode_<id>_defend_`, then `percent`, `reportRate`, `pass`, `done` | The defend set's four result globals. Defend-only: `episode_<id>_defend_defend_...` |
+| `triage_<stage>_`, then the same four | A check mission's result globals |
+| `se_awareness_records` | The measurement array |
+| `pretext_<callId>_outcome`, `_state` | A call attack's progress, watched by the runner |
+| `landing_<pageId>_built`, `_domain`, `se_landing_pages` | A page attack's builder state, read by the flip |
+
+### Mail client episode options
+
+The runner opens the mail client with three extra parameters, which the client honours whenever they are present: `maxSends` (after that many sends this session Compose is disabled, and a line says the message has gone; Close carries on), `layout: "phone"` (the narrow layout in a phone frame on any viewport) and, on a reopen, `sentIds`. The close result carries `sentIds`, this session's sent record ids oldest first, only in this mode. A plain mail terminal passes none of them and behaves as before.
 
 ## Dungeon Graph Metadata
 

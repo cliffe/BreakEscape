@@ -562,3 +562,41 @@ The same list is in `README.md`.
 - Statistics on BEC loss share, quishing and smishing prevalence: none quoted here; any figure
   added later needs a source (e.g. an annual national cyber-crime report) (to verify).
 
+
+## 10. Built note (2026-10-22)
+
+The engine and authoring side of this design is built; the plan above is otherwise unchanged. The author
+documentation is README_scenario_design.md "Awareness episodes", and the contract additions are in
+`00_data_contract.md` §11 ("The awareness episode block and its mail option").
+
+**Built.**
+
+- N1 the episode runner (`episode-runner` scene, `systems/episode-starter.js`, state in `episode_<id>_state`,
+  resume on reopen), N2 the flip view, the debrief and the step strip, N8's skin half (CSS wordmark from
+  `brand`, no image).
+- N4 the measurement store, `systems/awareness-measure.js`, global `se_awareness_records` (an array).
+- N5 `facilitated`, N6 the mail client's `maxSends`, `layout: "phone"` and `sentIds`, N11 the authenticator
+  (`mfa` stage), N15 the role swap (`defend.calls`), N13's page certificate and autofill fields, and
+  N16's kiosk object, host NPC rule and lints (`scripts/validate_social/awareness.rb`).
+- Shells under `scenarios/awareness_*`: E1 full and defend-only, defend-only shells for E2 to E7, and the
+  pre and post check pairs (AB and BA) for six roles. E3 and E5 full shells were in the working tree, not yet
+  committed, when this note was written.
+
+**Where the build differs from the sketch in §5.1.**
+
+- `stages` gained `build` (E5, the landing-page builder, after `osint`) and `mfa` (E3, after `write` or `flip`),
+  and the call attack of E3 is the `write` stage with `attack.callId` set. The push stream is `awarenessEpisode.mfa`,
+  not `attack.pushStream`.
+- `conclusionTaskId` is required: the host NPC's mapping on the done global completes it, and the starter
+  re-emits on a reopen.
+- `strings` is a closed list (the keys are in `00` §11), and `facilitator`, `conceptPanel` and `voicePanel` were
+  added to it. `role`, `company`, `durationTargetMin`, `debrief`, `defend.reportAlwaysVisible`,
+  `attack.showRedFlagMeter` and `attack.maxMessages` are accepted and not read by the runner (the runner passes
+  `maxSends: 1` itself; `maxMessages` is only linted).
+- A defend-only episode's set prefix is `episode_<id>_defend_defend_` because its id already ends `_defend`.
+- The flip needs `playerSentAuth.accounts.<account>` on the defend set, and falls back to `flipMissed` without it
+  or when the send raised no tell. No lint catches a missing row.
+
+**Still held or open.** N7 (the cloned-voice TTS style) and the audio half of N12 wait for the user, so voicemail
+items are transcripts. PixelLab art is not made (CSS wordmark and placeholder sprites). The E7 full shell waits for
+the audio decision. The measurement records are written and nothing reads them back yet; `toXapi` is unused.
