@@ -1,0 +1,186 @@
+// Awareness episodes, packet P7-B: the step strip, flip view, debrief view and the neutral skin.
+// Real modules run in jsdom on fixtures. Run with: bundle exec node --test test/js/social-episode-views.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { JSDOM } from 'jsdom';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const js = join(here, '../../public/break_escape/js');
+const css = readFileSync(join(here, '../../public/break_escape/css/awareness-skin.css'), 'utf8');
+
+const dir = mkdtempSync(join(tmpdir(), 'social-episode-views-'));
+writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
+for (const rel of [
+    'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
+    'minigames/episode-runner/debrief-view.js', 'minigames/inbox-triage/triage-flags.js',
+    'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
+    'utils/display-dashes.js', 'ui/influence-bar.js', 'systems/social-influence.js',
+    'systems/phish-rules.js', 'systems/global-writer.js'
+]) {
+    mkdirSync(dirname(join(dir, rel)), { recursive: true });
+    writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
+}
+
+const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
+globalThis.window = dom.window;
+globalThis.document = dom.window.document;
+globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
+console.log = () => {};
+console.warn = () => {};
+window.gameState = { globalVariables: {} };
+
+const mod = (rel) => import(pathToFileURL(join(dir, rel)));
+const { renderStepStrip, renderWordmark } = await mod('minigames/episode-runner/step-strip.js');
+const { renderFlipView } = await mod('minigames/episode-runner/flip-view.js');
+const { renderDebrief } = await mod('minigames/episode-runner/debrief-view.js');
+const { redFlagString } = await mod('minigames/inbox-triage/triage-flags.js');
+
+const host = () => { document.body.textContent = ''; const d = document.createElement('div'); document.body.appendChild(d); return d; };
+
+const sent = () => ({
+    id: 'sent_1', kind: 'email', playerSent: true,
+    from: { name: 'Harlow Packaging', address: 'accounts@brightwel1foods.example' },
+    to: 'tom.reilly@brightwellfoods.example', subject: 'Updated bank details', time: '09:10',
+    body: 'Please update the payee account on INV-2217 today.\nDo not mention this to anyone.',
+    links: [], attachments: [],
+    truth: { isPhish: true, flags: ['senderTrust', 'changed_bank_details', 'secrecy_or_bypass'] }
+});
+
+test('step strip: marks the current stage and done stages', () => {
+    const h = host();
+    const strip = renderStepStrip(h, { stages: ['brief', 'osint', 'flip'], current: 'osint', done: ['brief'] });
+    const items = [...h.querySelectorAll('.aw-step')];
+    assert.equal(items.length, 3);
+    assert.equal(items[1].getAttribute('aria-current'), 'step');
+    assert.ok(items[0].classList.contains('aw-step-done'));
+    strip.update({ current: 'flip', done: ['brief', 'osint'] });
+    assert.equal(h.querySelectorAll('[aria-current="step"]').length, 1);
+    assert.equal(h.querySelector('[data-stage="flip"]').getAttribute('aria-current'), 'step');
+    strip.destroy();
+    assert.equal(h.querySelector('.aw-strip'), null);
+});
+
+test('wordmark is text from brand.logoText; a bad accent is ignored, a hex accent applied', () => {
+    const h = host();
+    renderStepStrip(h, { stages: ['brief'], current: 'brief', brand: { name: 'Brightwell Foods', logoText: 'BRIGHTWELL', accent: '#2f6f5e' } });
+    assert.equal(h.querySelector('.aw-wordmark').textContent, 'BRIGHTWELL');
+    assert.equal(h.querySelector('.aw-wordmark img'), null);
+    assert.equal(h.querySelector('.aw-strip').style.getPropertyValue('--aw-accent'), '#2f6f5e');
+    const h2 = host();
+    renderStepStrip(h2, { stages: ['brief'], current: 'brief', brand: { logoText: 'X', accent: 'red; background:url(x)' } });
+    assert.equal(h2.querySelector('.aw-strip').style.getPropertyValue('--aw-accent'), '');
+    assert.equal(renderWordmark({}), null);
+});
+
+test('flip lists exactly the stored tells with their canonical strings', () => {
+    const h = host();
+    const message = sent();
+    let continued = 0;
+    const flip = renderFlipView(h, { message, strings: {}, onContinue: () => { continued += 1; } });
+    const shown = [...h.querySelectorAll('.aw-tell')].map((n) => n.textContent);
+    const expected = message.truth.flags.map((id) => redFlagString(id, message));
+    assert.deepEqual(shown, expected);
+    assert.deepEqual(flip.getState(), { shown: 'message', tells: expected });
+    assert.ok(h.querySelector('.mail-reader'), 'the shared reader draws the message');
+    assert.ok(h.textContent.includes('INV-2217'));
+    h.querySelector('.aw-continue').click();
+    assert.equal(continued, 1);
+    flip.destroy();
+    assert.equal(h.querySelector('.aw-flip'), null);
+});
+
+test('flip with message null shows flipNoSend and no tells', () => {
+    const h = host();
+    const flip = renderFlipView(h, { message: null, strings: { flipNoSend: 'Nothing was sent.' }, onContinue() {} });
+    assert.equal(h.querySelector('.aw-no-send').textContent, 'Nothing was sent.');
+    assert.equal(h.querySelectorAll('.aw-tell').length, 0);
+    assert.equal(h.querySelector('.mail-reader'), null);
+    assert.deepEqual(flip.getState(), { shown: 'noSend', tells: [] });
+});
+
+const set = () => ({
+    id: 'e1_payments_inbox',
+    messages: [
+        { id: 'm1', kind: 'email', subject: 'Updated bank details', from: { name: 'Accounts', address: 'a@brightwel1foods.example' },
+          truth: { isPhish: true, flags: ['lookalike_domain', 'changed_bank_details'], ifTrusted: 'The payment would go to the sender.' } },
+        { id: 'm2', kind: 'email', subject: 'Purchase order 88', from: { name: 'Procurement', address: 'po@brightwellfoods.example' },
+          truth: { isPhish: false, flags: [], whyFine: { default: 'It came from the known address and matches an open order.' } } },
+        { id: 'm3', kind: 'email', subject: 'Invoice 5', from: { name: 'Harlow', address: 'a@harlowpackaging.example' },
+          truth: { isPhish: false, flags: [] } }
+    ]
+});
+const result = () => ({
+    percent: 72, headline: 'Getting there', reportRate: 0.5, verifyCount: 1,
+    answers: [
+        { id: 'm1', verdict: 'trust', flags: [], score: 0, ms: 4000 },
+        { id: 'm2', verdict: 'report', flags: [], score: 100, ms: 3000 },
+        { id: 'm3', verdict: 'trust', flags: [], score: 100, ms: 2000 }
+    ]
+});
+
+test('debrief: one card per answer, the Monday card and the no-blame line', () => {
+    const h = host();
+    let finished = 0;
+    const d = renderDebrief(h, { result: result(), set: set(), strings: { mondayCard: 'On Monday, use the Report button.', noBlameLine: 'No blame here.' }, variant: 'full', onFinish: () => { finished += 1; } });
+    assert.equal(h.querySelectorAll('.aw-card').length, 3);
+    assert.deepEqual(d.getState(), { items: 3, mondayCard: true, noBlame: true });
+    assert.equal(h.querySelector('.aw-monday').textContent, 'On Monday, use the Report button.');
+    assert.equal(h.querySelector('.aw-no-blame').textContent, 'No blame here.');
+    const first = h.querySelector('[data-message-id="m1"]');
+    assert.ok(first.textContent.includes(redFlagString('changed_bank_details', set().messages[0])));
+    assert.ok(first.textContent.includes('The payment would go to the sender.'));
+    assert.ok(h.querySelector('[data-message-id="m2"]').textContent.includes('known address'));
+    assert.ok(!/fell for|your fault|stupid/i.test(h.textContent));
+    h.querySelector('.aw-finish').click();
+    assert.equal(finished, 1);
+});
+
+test('debrief defendOnly shows its string and no flip wording', () => {
+    const h = host();
+    renderDebrief(h, { result: result(), set: set(), strings: { defendOnly: 'You skipped the writing step.' }, variant: 'defendOnly', onFinish() {} });
+    assert.equal(h.querySelector('.aw-defend-only').textContent, 'You skipped the writing step.');
+    assert.ok(h.querySelector('.aw-no-blame'));
+    assert.ok(!/your message|you wrote|flip/i.test(h.textContent));
+    const h2 = host();
+    renderDebrief(h2, { result: result(), set: set(), strings: {}, variant: 'full', onFinish() {} });
+    assert.equal(h2.querySelector('.aw-defend-only'), null);
+});
+
+test('every string goes through textContent: HTML-like text renders as text', () => {
+    const evil = '<img src=x onerror="window.pwned=1"><b>bold</b>';
+    const h = host();
+    renderFlipView(h, {
+        message: { ...sent(), subject: evil, body: evil, factorStrings: { senderTrust: { redFlag: evil } } },
+        strings: { flipHeading: evil, flipIntro: evil, flipDefenderLine: evil }, onContinue() {}
+    });
+    assert.equal(h.querySelector('.aw-flip').querySelectorAll('img[src="x"], b').length, 0);
+    assert.ok(h.querySelector('.aw-heading').textContent === evil);
+    assert.ok([...h.querySelectorAll('.aw-tell')].some((n) => n.textContent === evil));
+
+    const h2 = host();
+    renderDebrief(h2, {
+        result: { percent: 50, headline: evil, answers: [{ id: 'x', verdict: 'report', flags: [], score: 60 }] },
+        set: { messages: [{ id: 'x', subject: evil, from: { name: evil, address: '' }, truth: { isPhish: true, flags: ['senderTrust'], perFlagNote: { senderTrust: evil }, ifTrusted: evil } }] },
+        strings: { mondayCard: evil, noBlameLine: evil, defendOnly: evil }, variant: 'defendOnly', onFinish() {}
+    });
+    assert.equal(h2.querySelectorAll('img, b').length, 0);
+    assert.equal(h2.querySelector('.aw-monday').textContent, evil);
+    assert.equal(window.pwned, undefined);
+
+    const h3 = host();
+    renderStepStrip(h3, { stages: ['brief'], current: 'brief', labels: { brief: evil }, brand: { logoText: evil } });
+    assert.equal(h3.querySelectorAll('img, b').length, 0);
+});
+
+test('skin: tokens defined and reduced motion turns the report animation off', () => {
+    for (const t of ['--aw-accent', '--aw-ink', '--aw-surface']) assert.ok(css.includes(`${t}:`), t);
+    assert.match(css, /\.aw-report-win\s*\{[^}]*animation:\s*aw-report-pop/);
+    const m = /@media \(prefers-reduced-motion: reduce\)\s*\{([\s\S]*?)\n\}/.exec(css);
+    assert.ok(m, 'reduced-motion block present');
+    assert.match(m[1], /\.aw-report-win[^{]*\{\s*animation:\s*none/);
+    assert.ok(!/url\(/i.test(css), 'no image assets');
+});
