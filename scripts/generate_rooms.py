@@ -1093,6 +1093,14 @@ WALL_MOUNTED_EXTRAS = {
     "se_sign_recon",
     "se_sign_ops",
     "se_sign_blueteam",
+    "aw_logo_brightwell",
+    "aw_logo_tarrowby",
+    "aw_logo_quayholt",
+    "aw_logo_merrin_sallow",
+    "aw_poster_report_brightwell",
+    "aw_poster_report_tarrowby",
+    "aw_poster_report_quayholt",
+    "aw_poster_report_merrin_sallow",
 }
 
 
@@ -4675,6 +4683,9 @@ def main():
     #   room_se_engagement, room_se_recon, room_se_ops, room_se_blueteam
     #   (lab_social_engineering; copies of room_zds_conference, room_zds_office,
     #   room_qdc_open and room_aes_security, edited with room_edit.py)
+    #   room_aw_brightwell, room_aw_tarrowby, room_aw_quayholt, room_aw_merrin_sallow
+    #   (awareness training rooms; copies of room_uni_seminar, edited with room_edit.py;
+    #   sheets from room_gen/make_aw_tileset.py, signs from room_gen/make_aw_props.py)
     builders = {
         "small_office_room4_1x1gu": room_small_office_4,
         "room_security": room_security,

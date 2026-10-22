@@ -1,6 +1,7 @@
 # Awareness training rooms: dressing, lighting and POV plan
 
-Status: plan only, 2026-10-22. Nothing here has been built. It covers ART_SCOPE.md §4b and §6c and the user's decision of
+Status: steps 1–2 of §8 built 2026-10-22 (maps, sheets, signs, kiosk slot, lighting blocks, `training_room.py`); see
+§10. The shells and generators are not wired yet. It covers ART_SCOPE.md §4b and §6c and the user's decision of
 2026-10-22: each company's training room gets the full dressing and lighting passes (about five cycles), then one POV
 background per company.
 
@@ -387,3 +388,37 @@ No PixelLab or Gemini spend before step 5. No commits until the user asks; stage
 2. Merrin & Sallow on a concrete floor (an architects' studio) rather than carpet.
 3. The "REPORT IT" side poster in each room: keep, or leave the walls to the logo alone.
 4. The hooded player sprite seen in the tour, if that isn't intended for `female_office_worker_v2`.
+
+## 10. Build log (2026-10-22, §8 steps 1–2)
+
+Built: the four `room_aw_*` maps (copies of `room_uni_seminar`, which is unchanged), their sheets
+(`scripts/room_gen/make_aw_tileset.py`), the logo plates and posters (`scripts/room_gen/make_aw_props.py`, registered
+`--wall`), the `kiosk` catalogue entry (`register_object.py kiosk`; game.js already loaded it, so no second load line),
+the wider `room_edit.py floor` regex, the registrations (game.js map and sheet loads, schema enum, README room table, the
+hand-maintained note in `generate_rooms.py`), `training_room.py` and `training_room_lighting.json` beside it. Not
+wired into any shell or generator (§6 is next).
+
+Where the build differs from §3–§5, and why:
+
+| Item | Plan | Built | Why |
+|---|---|---|---|
+| Poster text | "REPORT IT" over a mail icon | "SEE" header, envelope with a red alert dot, "SAY" | "REPORT IT" is 35px in the 3x5 font; the poster is 16px wide. "See it, say it" is the British reporting slogan. §9.3: kept, it reads well beside the logo |
+| Merrin & Sallow floor | `concrete_pixel` | as planned | §9.2: concrete, as recommended |
+| Merrin & Sallow chairs | `chair-grey-1` / `chair-grey-4` | `chair-white-1-rotate5` (north side, facing S) and `chair-white-1-rotate1` (south side, facing N) at x 46/85/124 | both grey chairs face south (their swivel frames start at S), so the south side would have faced away from the table. The oak chairs suit a studio |
+| Brightwell stacked chairs | keep (#22) | deleted | at its old spot it sat on the moved table |
+| Quayholt desk | `pc8` + `keyboard1` | `pc8` (x 228, feet 280) + `phone3` (x 258, feet 276) | `pc8` carries its own keyboard; the extra one overhung the desk |
+| All four | — | `fire_extinguisher1` at x 292, feet 176, under the call point | the dressing skill's call point and extinguisher pair (as `room_qdc_open`) |
+| Merrin `m10_plans1` | on the table | x 133, feet 236 | clear of the mugs tray |
+| Kiosk emitter | no offset | `offsetY: -20` | the screen is at the top of the 60px kiosk |
+| Host spot | "feet near y 144" | sprite centre (176,81), feet near y 110 in game | the engine reads `position` lower than §4 assumed; the host stands just under the logo plate, clear of the kiosk |
+
+Checks: `check_room_walls.py 'room_aw_*'` 64 on all four; `generate_rooms.py --check` OK on all four (warnings are the
+bottom-two-rows and N-door-corner kind, which don't apply to a room with no doors and nothing south of it, plus the
+extinguisher on the east wall strip, as `room_qdc_open`). Slot audit and the validator were run on scratch copies of
+the four defend shells with the §6 fields applied: kiosk `ok` on its slot, 0 problems, validator output identical to
+the unpatched shells. In game (keyless :3001, the game's own scenario copy patched, no repo file touched): spawn at
+(192,198), host and kiosk both reached by `moveToNear`, the kiosk tap opens the episode runner directly (no pick-one
+menu), and the walk back to the spawn arrives.
+
+Left for the dressing cycles: Brightwell's oat-bar box (§3.2 candidate) was not drawn; the right-hand floor between
+kiosk and the bottom-right props is open in all four (the host and player stand there, so it was left).

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="615" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="624" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -1845,5 +1845,32 @@
  </tile>
  <tile id="624">
   <image source="../objects/m10_field_screen_curve1.png" width="24" height="18"/>
+ </tile>
+ <tile id="625">
+  <image source="../objects/aw_logo_brightwell1.png" width="64" height="19"/>
+ </tile>
+ <tile id="626">
+  <image source="../objects/aw_logo_tarrowby1.png" width="64" height="19"/>
+ </tile>
+ <tile id="627">
+  <image source="../objects/aw_logo_quayholt1.png" width="64" height="19"/>
+ </tile>
+ <tile id="628">
+  <image source="../objects/aw_logo_merrin_sallow1.png" width="64" height="19"/>
+ </tile>
+ <tile id="629">
+  <image source="../objects/aw_poster_report_brightwell1.png" width="16" height="21"/>
+ </tile>
+ <tile id="630">
+  <image source="../objects/aw_poster_report_tarrowby1.png" width="16" height="21"/>
+ </tile>
+ <tile id="631">
+  <image source="../objects/aw_poster_report_quayholt1.png" width="16" height="21"/>
+ </tile>
+ <tile id="632">
+  <image source="../objects/aw_poster_report_merrin_sallow1.png" width="16" height="21"/>
+ </tile>
+ <tile id="633">
+  <image source="../objects/kiosk.png" width="27" height="60"/>
  </tile>
 </tileset>

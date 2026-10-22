@@ -5959,6 +5959,60 @@
       "w": 24,
       "h": 18,
       "gid": 1425
+    },
+    "aw_logo_brightwell1": {
+      "id": 625,
+      "w": 64,
+      "h": 19,
+      "gid": 1426
+    },
+    "aw_logo_tarrowby1": {
+      "id": 626,
+      "w": 64,
+      "h": 19,
+      "gid": 1427
+    },
+    "aw_logo_quayholt1": {
+      "id": 627,
+      "w": 64,
+      "h": 19,
+      "gid": 1428
+    },
+    "aw_logo_merrin_sallow1": {
+      "id": 628,
+      "w": 64,
+      "h": 19,
+      "gid": 1429
+    },
+    "aw_poster_report_brightwell1": {
+      "id": 629,
+      "w": 16,
+      "h": 21,
+      "gid": 1430
+    },
+    "aw_poster_report_tarrowby1": {
+      "id": 630,
+      "w": 16,
+      "h": 21,
+      "gid": 1431
+    },
+    "aw_poster_report_quayholt1": {
+      "id": 631,
+      "w": 16,
+      "h": 21,
+      "gid": 1432
+    },
+    "aw_poster_report_merrin_sallow1": {
+      "id": 632,
+      "w": 16,
+      "h": 21,
+      "gid": 1433
+    },
+    "kiosk": {
+      "id": 633,
+      "w": 27,
+      "h": 60,
+      "gid": 1434
     }
   }
 }

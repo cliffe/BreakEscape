@@ -135,6 +135,11 @@ export function preload() {
     this.load.tilemapTiledJSON('room_uni_special', 'rooms/room_uni_special.json'); // Special Collections: bookcases, reading table on a rug, archive safe slot (2x2 GU)
     this.load.tilemapTiledJSON('room_uni_seminar', 'rooms/room_uni_seminar.json'); // Seminar room: whiteboard between blinds, long table, flip chart (2x2 GU)
     this.load.tilemapTiledJSON('room_uni_staff', 'rooms/room_uni_staff.json'); // Open-plan staff office: three desk pods, kitchenette, pigeonholes, photocopier (4x2 GU)
+    // Awareness training rooms, one per company (copies of room_uni_seminar, hand-maintained with room_edit.py)
+    this.load.tilemapTiledJSON('room_aw_brightwell', 'rooms/room_aw_brightwell.json'); // Brightwell Foods finance training room (2x2 GU)
+    this.load.tilemapTiledJSON('room_aw_tarrowby', 'rooms/room_aw_tarrowby.json'); // Tarrowby Logistics depot training room (2x2 GU)
+    this.load.tilemapTiledJSON('room_aw_quayholt', 'rooms/room_aw_quayholt.json'); // Quayholt Insurance service-desk training room (2x2 GU)
+    this.load.tilemapTiledJSON('room_aw_merrin_sallow', 'rooms/room_aw_merrin_sallow.json'); // Merrin & Sallow Architects studio meeting room (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_reception', 'rooms/room_zds_reception.json'); // m03 Zero Day lobby: WHITEHAT sign, marble desk, plaque, awards, leather sofa (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_conference', 'rooms/room_zds_conference.json'); // m03 boardroom: whiteboard, wall screen, walnut table, leather chairs (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_office', 'rooms/room_zds_office.json'); // m03 consultant's office: desk with PC and photo, review, camp bed (2x2 GU)
@@ -227,6 +232,10 @@ export function preload() {
     this.load.image('room_uni_library', 'tiles/rooms/room_uni_library.png'); // deep green carpet
     this.load.image('room_uni_special', 'tiles/rooms/room_uni_special.png'); // oxblood carpet with a rug
     this.load.image('room_uni_workshop', 'tiles/rooms/room_uni_workshop.png'); // concrete, hazard line round the bench
+    this.load.image('room_aw_brightwell', 'tiles/rooms/room_aw_brightwell.png'); // awareness: off-white, green skirting, charcoal carpet
+    this.load.image('room_aw_tarrowby', 'tiles/rooms/room_aw_tarrowby.png'); // awareness: pale grey, steel-blue skirting, sheet vinyl
+    this.load.image('room_aw_quayholt', 'tiles/rooms/room_aw_quayholt.png'); // awareness: cool white, purple skirting, blue carpet
+    this.load.image('room_aw_merrin_sallow', 'tiles/rooms/room_aw_merrin_sallow.png'); // awareness: warm stone, bronze skirting, concrete
     this.load.image('room_zds_lobby', 'tiles/rooms/room_zds_lobby.png'); // m03: polished stone, hat-mark inlay
     this.load.image('room_zds_carpet', 'tiles/rooms/room_zds_carpet.png'); // m03: slate-blue carpet tiles
     this.load.image('room_zds_exec', 'tiles/rooms/room_zds_exec.png'); // m03: walnut parquet with a navy and gold rug
@@ -1446,6 +1455,14 @@ export function preload() {
     this.load.image('m10_steel_bench1', 'objects/m10_steel_bench1.png');
     this.load.image('m10_steel_chair1', 'objects/m10_steel_chair1.png');
     this.load.image('m10_field_screen_curve1', 'objects/m10_field_screen_curve1.png');
+    this.load.image('aw_logo_brightwell1', 'objects/aw_logo_brightwell1.png');
+    this.load.image('aw_logo_tarrowby1', 'objects/aw_logo_tarrowby1.png');
+    this.load.image('aw_logo_quayholt1', 'objects/aw_logo_quayholt1.png');
+    this.load.image('aw_logo_merrin_sallow1', 'objects/aw_logo_merrin_sallow1.png');
+    this.load.image('aw_poster_report_brightwell1', 'objects/aw_poster_report_brightwell1.png');
+    this.load.image('aw_poster_report_tarrowby1', 'objects/aw_poster_report_tarrowby1.png');
+    this.load.image('aw_poster_report_quayholt1', 'objects/aw_poster_report_quayholt1.png');
+    this.load.image('aw_poster_report_merrin_sallow1', 'objects/aw_poster_report_merrin_sallow1.png');
 
     // Load audio files
     // NPC system sounds
