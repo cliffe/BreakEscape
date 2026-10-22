@@ -452,3 +452,5 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - Queued for m10 phase 5 browser checks: trace Zero Day → open outer lock → '[Go.]' to Victoria (share stays traced); same with Vos's secret.
 - m09 puzzle chains R2 fixes: 2/2 (Tran topic split on the hatch bin, "No. It hasn't.") plus notes n1–n3 (P7 wording in CONTRACT, keypad_topic_asks in S4 and FINALE_ARC, tier 2 method first). Voiced delta: 0.
 - m09 puzzle chains R3 fixes: 2/2 (Tran topic retires only after the hatch bin or on tidied, warning said once; letters line "He's the J.T. in them. Show him."). Optional letters text not added. Voiced delta: 0.
+- m10 alignment R8 fixes: 3/3 (no lock deals after the lock opens for recruited Victoria and Vos; Gary's pick keeps a knocked-out Imran's ko; escaped Voltage's stand-down survives a later knock-out). Voiced delta: +2 (Victoria, Gary).
+- Queued for m10 phase 5 browser checks: post-lock Victoria/Vos resting; Gary with Imran knocked out; escaped Voltage knocked out after stand-down.

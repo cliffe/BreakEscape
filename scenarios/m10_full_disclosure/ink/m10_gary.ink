@@ -133,16 +133,23 @@ Agent HaX: A man on their bench who ships nothing is worth something. Later.
 === tech_menu ===
 + {gary_t_stage >= 3 and not gary_t_dismissed} [Walk out with us. Tell them what you didn't ship.]
     ~ gary_outcome = "talked_round"
-    ~ imran_outcome = "talked_round"
     #unlock_door:power_room
-    Gary Whitlock: Right. Power room's open. Imran, coat. We're going.
-    Imran Siddiqui: I'm ringing Farah first. She's on the gallery till six.
+    // Alignment R8-m2: a knocked-out Imran keeps his "ko".
+    { imran_outcome != "ko":
+        ~ imran_outcome = "talked_round"
+        Gary Whitlock: Right. Power room's open. Imran, coat. We're going.
+        Imran Siddiqui: I'm ringing Farah first. She's on the gallery till six.
+    - else:
+        Gary Whitlock: Right. Power room's open. I'll get Imran to the medics first.
+    }
     ~ gary_quiet = true
     #exit_conversation
     -> tech_rest
 + [Stay where you are. I'll take a copy of your card.]
     ~ gary_outcome = "left_in_place"
-    ~ imran_outcome = "card_cloned"
+    { imran_outcome != "ko":
+        ~ imran_outcome = "card_cloned"
+    }
     #clone_keycard:tg_power_room_card
     Gary Whitlock: Go on, then. I'll carry on not shipping.
     ~ gary_quiet = true
@@ -150,7 +157,9 @@ Agent HaX: A man on their bench who ships nothing is worth something. Later.
     -> tech_rest
 + [You're coming in, Gary.]
     ~ gary_outcome = "taken_in"
-    ~ imran_outcome = "taken_in"
+    { imran_outcome != "ko":
+        ~ imran_outcome = "taken_in"
+    }
     #clone_keycard:tg_power_room_card
     Gary Whitlock: Then write it down. Three weeks, and not one unit out of that door.
     ~ gary_quiet = true

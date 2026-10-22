@@ -186,3 +186,4 @@ No audio exists yet, so nothing is orphaned by the change. The officers' m09 and
 - 2026-10-22 m10 alignment R4: +1 Netherton line (scorched 'whole map' form), 1 Netherton line reworded (both-wiped St. Catherine's). Recount before generation.
 - 2026-10-22 m10 alignment R5: 1 Netherton line (scorched St. Catherine's ending) and 1 narrator line (Citadel close) reworded; no new lines.
 - 2026-10-22 m09 puzzle chains R1: 1 HaX line reworded (identity_scene.albion, 'in the tape room'); count unchanged.
+- 2026-10-22 m10 alignment R8: +2 lines (Victoria 'You found your own way in. I'll remember that.'; Gary 'Right. Power room's open. I'll get Imran to the medics first.').

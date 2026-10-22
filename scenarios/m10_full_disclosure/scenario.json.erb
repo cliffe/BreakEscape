@@ -1676,7 +1676,9 @@ end
 <%# --- The power room and the by-hand cut (OT 4.9) --------------------------- %>
             { "eventPattern": "npc_ko:wendell", "condition": "globalVars.wendell_outcome !== 'told'", "setGlobal": { "wendell_outcome": "ko" } },
             { "eventPattern": "npc_ko:wendell", "condition": "!globalVars.gallery_shutter_cut", "setGlobal": { "cut_by_hand": true } },
-            { "eventPattern": "npc_ko:voltage_power", "setGlobal": { "voltage_outcome": "ko", "cut_by_hand": true } },
+            <%# Alignment R8-m3: a stand-down stands (as Wendell's told); the cut is by hand only while the shutter is live. %>
+            { "eventPattern": "npc_ko:voltage_power", "condition": "globalVars.voltage_outcome !== 'stood_down_print' && globalVars.voltage_outcome !== 'talked_down'", "setGlobal": { "voltage_outcome": "ko" } },
+            { "eventPattern": "npc_ko:voltage_power", "condition": "!globalVars.gallery_shutter_cut", "setGlobal": { "cut_by_hand": true } },
             { "eventPattern": "conversation_closed:wendell", "condition": "globalVars.wendell_outcome !== 'told' && !globalVars.gallery_shutter_cut && !globalVars.cut_by_hand", "setGlobal": { "cut_by_hand": true } },
             { "eventPattern": "room_exited", "condition": "data.roomId === 'power_room' && !globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && globalVars.wendell_outcome === ''", "setGlobal": { "wendell_outcome": "avoided" } },
             { "eventPattern": "room_exited", "condition": "data.roomId === 'power_room' && globalVars.m04_voltage_captured === true && globalVars.voltage_outcome === ''", "setGlobal": { "voltage_outcome": "avoided" } },

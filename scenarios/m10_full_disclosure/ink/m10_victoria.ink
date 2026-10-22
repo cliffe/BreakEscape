@@ -27,6 +27,10 @@ VAR vic_missed = false  // threat: a miss raised the pistol
 {victoria_gallery == "":
     ~ victoria_gallery = "refused"
 }
+// Alignment R8-m1: no lock deal once the lock is open.
+{outer_lock_open:
+    -> gallery_rest
+}
 {victoria_gallery == "confronted" or victoria_gallery == "trusted":
     -> gallery_rest
 }
@@ -193,6 +197,8 @@ Victoria Sterling: If I walk out of here, I walk out owing nobody. Including you
         Victoria Sterling: Go on. It's open, and I'm still on your side.
     - victoria_gallery == "arrested_here":
         Victoria Sterling: I'll be here. The rail and I are getting acquainted.
+    - victoria_gallery == "refused":
+        Victoria Sterling: You found your own way in. I'll remember that.
     - else:
         Victoria Sterling: I'm leaving. That was the deal.
     }

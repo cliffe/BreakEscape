@@ -14,6 +14,10 @@ VAR vos_l_seen = false    // the opener has played
 {vos_outcome == "":
     ~ vos_outcome = "avoided"
 }
+// Alignment R8-m1: no code card to sell once the lock is open.
+{outer_lock_open:
+    -> vos_rest
+}
 {vos_outcome == "stood_aside" or vos_outcome == "bought" or vos_outcome == "refused":
     -> vos_rest
 }
