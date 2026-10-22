@@ -15,9 +15,11 @@ VAR alpha_clip_played = false
 === deck ===
 {
 - deck_pulled != "alpha_tapes":
-    Narrator: Empty spools. Degaussed.
+    // Playtest phase 5 M-1: Narrator[none] keeps the portrait hidden, so his face
+    // isn't shown before the identity scene names him.
+    Narrator[none]: Empty spools. Degaussed.
 - not identity_scene_done:
-    Narrator: The reel turns. A man clears his throat in a lecture hall, years ago.
+    Narrator[none]: The reel turns. A man clears his throat in a lecture hall, years ago.
     Agent HaX: I know whose voice that is. After.
 - else:
     Dr Adrian Tesseract (recording): The best lock there is opens for the right name. Nobody fights a door that's expecting them.

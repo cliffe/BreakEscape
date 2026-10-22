@@ -198,6 +198,9 @@ Narrator: She walks the wall fast, like someone who has rehearsed it.
     Agent HaX: Quantum Dynamics. David Torres died in that building.
 - m05_completed and m05_final_choice == "combat_nonlethal":
     Agent HaX: Quantum Dynamics. You put David Torres down and handed him over.
+// Playtest phase 5 m-5: a turned Torres (he rings tonight as a live placement).
+- m05_torres_turned:
+    Agent HaX: Quantum Dynamics. David Torres works for us now, from inside the Recruiter's network.
 - else:
     // SE R1 C-08: arrest and the canon share one line.
     Agent HaX: Quantum Dynamics. David Torres stole for the Recruiter to pay for his wife's treatment. Arrested.

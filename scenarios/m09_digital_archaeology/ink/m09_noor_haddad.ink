@@ -119,6 +119,10 @@ VAR staff_card_cloned = false
     ~ noor_asked_peg = true
     Noor Haddad: Three years. She hired me off a temp agency in Billings.
     Noor Haddad: She knew my name before I said it. Gave me a five-hundred-dollar filing bonus my first week.
+    // Playtest phase 5 m-6: the tell sends her home for good, so say so before it's on offer.
+    {not (m05_found_pipeline_list and not m05_recruiter_deal_accepted):
+        Agent HaX: Tell her what that bonus was and she goes home tonight. Anything you need from her, get it first.
+    }
     -> back
 // R2 B-R2-02: the bonus button only once she has mentioned the bonus.
 + {not (m05_found_pipeline_list and not m05_recruiter_deal_accepted) and not noor_told and not ledger_page_seen and noor_asked_peg} [That bonus wasn't for filing. She was sizing you up.]

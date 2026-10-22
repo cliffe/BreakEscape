@@ -1000,6 +1000,19 @@ Voiced delta: 3 reworded (the cage narrator line, Netherton's briefing line, HaX
 
 **Dialogue round 5 (phase closed)** (`NPC_DIALOG_REVIEW_R5.md`, 0/0/0, 3 nits, all unvoiced texts). Four strings changed, in the ERB, texts/A and §2.3: A3-14 "…Then we say the name."; A3-15 "…Then the rest of the box."; A3-27a, in all four mappings, "Ours are on the Recruiter's books, by codename."; A3-38 "That's how Sorensen chose them, and how she kept them." Voiced delta: 0.
 
+**Playtest round 1** (`PLAYTEST_PHASE5_STRUGGLING.md`, 0/1/8; content-side items).
+- M-1: the Alpha clip's two Narrator lines before the identity scene ("Empty spools. Degaussed." and "The reel turns…") are `Narrator[none]:`, so the portrait stays hidden and Tesseract's face isn't shown before he is named. HaX's "I know whose voice that is. After." shows her own portrait (the global character registry). His portrait appears only on the identity-done branch, where he speaks. The text is unchanged, so no new clip.
+- m-1: the bring-in notice heads-up also needs `not notice_sent_here`, so a send earlier in the same call isn't warned about.
+- m-5: the briefing's m05 card has a `m05_torres_turned` arm, reusing "David Torres works for us now, from inside the Recruiter's network.", before the arrest default.
+- m-6: when Noor mentions the bonus (not warned in time), HaX adds "Tell her what that bonus was and she goes home tonight. Anything you need from her, get it first." (voiced, +1). This tells the player before the tell that it sends her home, and nudges the card clone.
+- m-8: cage Sorensen's "[It's over. Step away from the feed.]" is asked once (ink-local `stop_asked`), so it no longer loops. The file glance and the lever still follow the file.
+- Not changed:
+  - m-7: the RFID Dictionary Attack's missing reply is engine; `rfid-attacks.js` builds a message, and the UI doesn't show it.
+  - m-2, m-3, m-4: engine or UI, going to the user.
+  - The nits: thread timestamps and the harness's range report are engine or harness; the dock call's last-line close was fixed earlier; "the other thirteen" follows its own "eighty-seven per cent" line.
+
+Voiced delta: +1 HaX line (378 → 379).
+
 **Voiced counts as built (stage 9, after alignment R4)**, from `TtsLineExtractor.for_scenario("m09_digital_archaeology")` (no API calls; distinct texts per host and speaker; a line shared by two hosts is counted once, under the first): HaX's voiced calls (`deck_resume`, `identity_scene`, `identity_resume`, `tesseract_call`) 56 (HaX 53, Netherton 3); the Recruiter's call 25 (Recruiter 14, HaX 11 not shared with `deck_resume`); the briefing 92 character lines (Netherton 25 as the host, HaX 58, Quintero 3, Kowalczyk 3, Malhotra 2, Arakawa 1) plus 8 Narrator; the debrief 55 (Netherton 48 as the host, HaX 4, Kowalczyk 3) plus 16 Narrator; the Alpha clip 4 plus 2 Narrator; Sorensen 32 across her three records (hatch 20, cage 9, door 3) plus 16 Narrator and 8 HaX; Noor 20 plus 4 Narrator and 2 HaX; Old Coyote 16; Tran 11 plus 1 Narrator; Dillard 1. In all, 369 distinct (speaker, line) pairs.
 
 **Voiced counts after stage 8**: group A calls 56 distinct (HaX 53, Netherton 3; one new HaX line, one Netherton line reworded); the Recruiter 14 and B1's HaX 17, unchanged; briefing 91 character lines plus 8 Narrator (7 new: Netherton 3, HaX 4; 2 reworded); debrief 50 plus 16 Narrator (2 reworded); Sorensen 2 new lines (B5), 1 Narrator line reworded (B4); Noor 1 reworded.

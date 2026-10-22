@@ -23,6 +23,8 @@ VAR hub_quiet = false
 // Full-route playtest #7: closes the stamp line at once (the #set_global of
 // sorensen_fate reaches the story too late for the next menu).
 VAR talked_down = false
+// Playtest phase 5 m-8: the refusal is heard once, so the button doesn't loop.
+VAR stop_asked = false
 
 === start ===
 {cage_met or sorensen_fate != "left": -> hub}
@@ -56,7 +58,8 @@ Margaret Sorensen: Paper was the only thing that could ever have hurt them. So t
     }
 }
 ~ hub_quiet = false
-+ {sorensen_fate == "left" and not talked_down} [It's over. Step away from the feed.]
++ {sorensen_fate == "left" and not talked_down and not stop_asked} [It's over. Step away from the feed.]
+    ~ stop_asked = true
     Narrator: She doesn't look up.
     Margaret Sorensen: When I've finished, dear. You'll want the list to be complete.
     -> back

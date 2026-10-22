@@ -1027,7 +1027,8 @@ That's Helena done. Once you're on the plane, the archive's closed to us.
     Tran's still at his tapes. Arakawa's people can collect him.
 }
 // The notice isn't lost here (the debrief asks), so it is a heads-up outside the cap.
-{not albion_notified:
+// Playtest phase 5 m-1: notice_sent_here covers a send earlier in this same call.
+{not albion_notified and not notice_sent_here:
     The notice is still on his box. Netherton will ask.
 }
 + [Bring me in.]

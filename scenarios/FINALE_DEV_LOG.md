@@ -481,3 +481,5 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - m10 scenario design R2 + dialogue R2: the ending warning names the open backdoor first, T-59 and Nightshade's hint fixed, silent-branch tether asked at once, Wendell's bark guarded; dialogue nits. Voiced: +2, -1, 6 reworded.
 - 2026-10-22 m09 dialogue closed at R5 (0/0/0, 3 nits).
 - m09 dialogue R5 (phase 4 closed): four HaX text strings (A3-14, A3-15, A3-27a ×4, A3-38). Voiced delta: 0.
+- m09 playtest R1 content fixes: M-1 (reel deck hides Tesseract's portrait until the identity scene), m-1, m-5, m-6 (+1 HaX line), m-8. m-7 is engine. Voiced: +1 (379).
+- m10 puzzle chains R1: P1, P2, P4, P5, P6, P7, P9, F9 (the shutter topic waits for the cut to fall to the player; the player pulls the breaker at the isolator; rack-seen evidence; Fonoti's stand-down). Voiced: +4, -1, 3 reworded.
