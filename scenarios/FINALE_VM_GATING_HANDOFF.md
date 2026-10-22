@@ -45,5 +45,16 @@ Puzzle-chains R4 (`scenarios/m10_full_disclosure/PUZZLE_CHAINS_REVIEW_R4.md` M1)
 - **What the login opens, at story level:** the staging copy of the release schedule, held on the bunker's monitoring host. (So the game label can say so.)
 - **VM-side (in the plan / draft notes).** A separate account **`staging`** on the monitoring host, fixed password **`Staging!Copy25`**, with the staging copy of the schedule in its `0600` home; not readable by the other accounts or a pre-login page. Flag 1's login no longer gates flag 2.
 
+### B8. m10 needs the target addresses on its finds (concept level)
+
+From the m09 blind playtest: a player had the logins but no address for the target servers, so the m09 builder added the host address to each find via a helper that reads each VM's address by title (`catalogue_server`, `tomb_beta_server`) and falls back to neutral text standalone. **m10 has the same gap** — the game names the Kali but not the target hosts, and the finds give logins only. Each m10 find should also carry the address of the machine it logs into, read by VM title the same way (titles `bunker_monitor`, `release_host`, `core_host`, matching the build):
+
+- **Gate-console maintenance tag** (flag 1, `secmon`): add the **monitoring host** address (`bunker_monitor`).
+- **Release-console staging card** (flag 2, `staging`): the staging copy lives on the **monitoring host**, so the same `bunker_monitor` address (the card already says "monitoring host").
+- **Operator duty card** (flag 3, `relops`): the **release host** address (`release_host`).
+- **Core access-key envelope** (flag 4): the **core host** address (`core_host`).
+
+Standalone fallbacks should read in game (e.g. "the release host on your VM list"), not placeholder text. No VM/technique detail — just the address, as m09 does.
+
 ---
 

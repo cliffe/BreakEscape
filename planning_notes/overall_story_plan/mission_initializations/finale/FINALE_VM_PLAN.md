@@ -137,3 +137,5 @@ Each gated flag needs a matching in-game found object holding the credential (ca
 ### Build note
 
 Fixing root login over SSH on `release_host` / `core_host` (existing build note) is part of F12 too: left in, it is a module-level cold route straight to flags 3 and 4.
+
+**Target addresses are dynamic.** Both the m09 and m10 drafts assign addresses with `network_ip` (not static literals like m02's hard-coded target), so the game reads each target's address at runtime by VM title (m09 helper `vm_ip_for`; titles `catalogue_server`, `tomb_beta_server`, and for m10 `bunker_monitor`, `release_host`, `core_host`). The in-game finds must carry the target address alongside the login, or the player has a credential with no host to use it on (m09 blind-playtest finding). m09 is done; m10 still needs it — see `scenarios/FINALE_VM_GATING_HANDOFF.md` B8.
