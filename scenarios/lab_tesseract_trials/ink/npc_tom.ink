@@ -21,7 +21,6 @@ VAR corridor_open = false
 === start ===
 { met_tom: -> hub }
 #complete_task:get_lab_laptop
-~ met_tom = true
 #give_item:workstation:lab_laptop
 #give_item:notes:fn01_bits_bytes_bases
 #give_item:notes:fn02_ascii_encodings
@@ -31,9 +30,13 @@ Narrator: He slides a battered department laptop across the desk.
 Dr Tom Shaw: That's yours for the year. CyberChef's on it. No rocket science, just base two.
 Dr Tom Shaw: Pop it out into its own tab with the little arrow by the cross, top of the laptop. Then you can have the clue and the recipe side by side.
 Dr Tom Shaw: I've put the induction handouts in your notepad. It's got a pencil on every page. Write down owt you'll need later in there.
+// met_tom is set once the opening choice is made, so a reload mid-opening replays it
+// (the task and item tags are idempotent).
 + [What's CyberChef actually do?]
+    ~ met_tom = true
     -> magic
 + [Thanks. Anything else I should know?]
+    ~ met_tom = true
     -> hub
 
 === magic ===

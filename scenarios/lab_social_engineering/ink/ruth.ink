@@ -59,7 +59,6 @@ VAR quiet = false
 
 === start ===
 { greeted: -> hub }
-~ greeted = true
 Ruth Adeyemi: Morning. Ruth Adeyemi, I'm leading the Ledgerwell job and you're with me today.
 Ruth Adeyemi: Ledgerwell's a small finance firm. Last quarter one of Gareth's team nearly wired a five-figure invoice to a spoofed supplier.
 Ruth Adeyemi: He isn't angry at her. He's scared the next one gets through. We find out how far it would get before a real one does.
@@ -73,6 +72,8 @@ Gareth Fairbairn: Before you start. This test of yours. Is it going to make my p
     -> brief_close
 
 === brief_close ===
+// greeted is set once the opening choice is made, so a reload mid-opening replays it.
+~ greeted = true
 Ruth Adeyemi: Read the rules of engagement. The sheet on the table. Properly. Gareth will be watching you do it.
 ~ quiet = true
 -> hub
