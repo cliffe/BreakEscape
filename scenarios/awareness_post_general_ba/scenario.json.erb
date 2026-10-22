@@ -127,7 +127,7 @@
             "id": "ga_benefits_real",
             "kind": "page",
             "subject": "From the intranet: Staff benefits",
-            "time": "08:50",
+            "time": "08:32",
             "body": "Sign in to see your benefits and make changes for next year.",
             "page": {
               "url": "https://benefits.quayholt.example/",
@@ -157,7 +157,7 @@
             "id": "ga_benefits_lookalike",
             "kind": "page",
             "subject": "From an email: 'Benefits window closes Friday'",
-            "time": "08:32",
+            "time": "08:50",
             "body": "Choose your benefits for next year before Friday, or your current choices will lapse. This is a secure page: check for the padlock, then sign in with your Quayholt account.",
             "page": {
               "url": "https://quayholt-benefits.example/signin",
@@ -257,33 +257,32 @@
           {
             "id": "ga_payroll_spoof",
             "from": {
-              "name": "Pauline Hendry",
-              "address": "pauline.hendry@quayholt.example"
+              "name": "Payroll Team",
+              "address": "payroll@quayholt-payroll.example"
             },
             "to": "you@quayholt.example",
             "subject": "Payroll record check",
             "time": "10:05",
-            "body": "Hi,\nWe're moving to a new payroll system and a few records don't match. Could you reply with your staff number and your home postcode so I can fix yours before the next run?\nThanks,\nPauline\nPayroll",
+            "body": "Hi,\nWe're moving to a new payroll system and a few records don't match. Could you reply with your staff number and your home postcode so we can fix yours before the next run?\nThanks,\nThe Payroll Team",
             "auth": {
-              "spf": "fail",
-              "dkim": "none",
-              "dmarc": "fail",
-              "envelopeFrom": "mailer.inboxly.example",
-              "replyTo": "p.hendry.payroll@inboxly.example"
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt-payroll.example",
+              "replyTo": "payroll@quayholt-payroll.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderAuth",
-                "reply_to_differs"
+                "senderTrust",
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "senderAuth": "The automatic checks that prove an email really came from quayholt.example didn't pass, so Quayholt's own mail system didn't send this",
-                "reply_to_differs": "Replies go to p.hendry.payroll@inboxly.example, not to Pauline's Quayholt address"
+                "senderTrust": "Payroll writes to you from quayholt.example, the address your payslips come from, not from a sender you don't recognise",
+                "lookalike_domain": "Read the address: it ends in quayholt-payroll.example, not quayholt.example. The added word makes a separate domain anyone can register"
               },
-              "headerNote": "Open the details: the From shows Pauline's real address, but the checks failed and the reply-to points somewhere else.",
               "ifTrusted": "Your staff number and postcode are what a caller needs to sound like you when they ring the service desk to reset your password.",
-              "reportReply": "Thanks. Pauline didn't send it, and payroll isn't changing systems."
+              "reportReply": "Thanks. That address isn't ours, and payroll isn't changing systems. We've blocked quayholt-payroll.example."
             }
           },
           {
@@ -370,21 +369,19 @@
               }
             ],
             "auth": {
-              "spf": "fail",
+              "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "send.surveyrelay.example",
+              "envelopeFrom": "quayholt.example",
               "replyTo": "survey@quayholt.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "One of the automatic sender checks didn't pass because the survey service sent it for Quayholt, but the checks that confirm the real sender still passed for quayholt.example, the real domain.",
                 "linkCredible": "The link goes where it says, to Quayholt's own survey address, and the survey asks for no sign-in.",
-                "default": "The People Team's real address, a survey with a month to answer, and nothing to sign in to."
-              },
-              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through an outside service often trips one of these checks while the others still confirm the real sender."
+                "default": "The People Team's real address at quayholt.example, a survey with a month to answer, and nothing to sign in to."
+              }
             }
           },
           {

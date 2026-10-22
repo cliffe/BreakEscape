@@ -8,7 +8,7 @@
 // Resting point is the hub (m03 hub_quiet pattern).
 // ================================================
 
-VAR leila_reset_granted = false
+VAR pretext_quayholt_helpdesk_reset_outcome = ""
 VAR episode_e3_helpdesk_reset_defend_done = false
 VAR hub_quiet = false
 
@@ -20,10 +20,10 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e3_helpdesk_reset_defend_done:
-        Darren Price: Both sides done, thank you. The lesson's the same whichever seat you're in: a name, a team and a staff number can all be found online, so ring the caller back on the number already on file before you reset anything.
+        Darren Price: That's the desk covered from both seats, thanks. Online you can find a name, a team and a staff number, so none of them prove a caller is who they say. The callback on the number already on file is the check that does.
     - else:
-        { leila_reset_granted:
-            Darren Price: You talked the agent into that reset with facts anyone could look up. Now take the other seat at the kiosk and cover the service desk queue the way those calls land in real life.
+        { pretext_quayholt_helpdesk_reset_outcome != "":
+            Darren Price: Your call to the service desk has gone through. Now take the other seat at the kiosk and cover the queue the way those calls land in real life.
         - else:
             Darren Price: Welcome to the Quayholt exercise. Start at the kiosk: research us, ring the service desk as the locked-out manager, then swap seats and cover the queue yourself.
         }

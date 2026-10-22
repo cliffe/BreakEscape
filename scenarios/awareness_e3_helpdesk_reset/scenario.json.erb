@@ -46,8 +46,8 @@
       },
       "conclusionScreen": {
         "type": "success",
-        "title": "Both sides done",
-        "body": "You ran the service desk from both seats. A name, a team, a manager and a staff number can all be found online, so on a call they prove nothing: ring back on the number already on file, and deny any sign-in prompt you didn't start."
+        "title": "Helpdesk reset episode done",
+        "body": "You've seen both sides of a helpdesk reset call and worked the service desk queue, so this episode is finished."
       },
       "tasks": [
         {
@@ -88,7 +88,7 @@
       {
         "id": "e3_service_desk_queue",
         "title": "Quayholt service desk",
-        "brief": "You're on the Quayholt IT service desk in Leila Nassar's seat. Four calls are waiting, and a sign-in prompt has just come up on your own phone. For each call, choose Comply, Ring back (hang up and ring the number already on file), Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report. Ringing back a real caller never costs you anything.",
+        "brief": "You're on the Quayholt IT service desk in Leila Nassar's seat. You started at 07:00 and it's mid-morning now: four calls are waiting, and a sign-in prompt from overnight is still on your own phone. For each call, choose Comply, Ring back (hang up and ring the number already on file), Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report. Ringing back a real caller never costs you anything.",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
@@ -108,7 +108,7 @@
           {
             "id": "e3_push_early",
             "kind": "push",
-            "time": "06:52",
+            "time": "02:14",
             "push": {
               "app": "Quayholt Sign-in",
               "request": "Are you trying to sign in?",
@@ -122,7 +122,7 @@
                 "unrequested_mfa_push"
               ],
               "perFlagNote": {
-                "unrequested_mfa_push": "Your shift starts at eight and you weren't signing in at 06:52, so someone else has your password and is hoping you'll tap Approve"
+                "unrequested_mfa_push": "That prompt arrived at 02:14, when you were asleep and nowhere near a sign-in, so someone else has your password and is hoping you'll tap Approve"
               },
               "ifTrusted": "Approving would let the sender into your account, with your service desk access, from a computer you've never used.",
               "reportReply": "Thanks. We've reset your password and blocked that sign-in. Someone was trying your account, and the prompt is what stopped them."
@@ -258,7 +258,7 @@
                 "borrowed_authority": "Ngozi and 'the board at ten' are there to make checking feel like holding things up"
               },
               "ifTrusted": "The caller would have Gordon's account: his email, the claims system, and a way to ring the desk again as Gordon.",
-              "reportReply": "Thanks. We rang Gordon on the number on file. He's in the office and hadn't called. His staff number was on a conference photo, so we've asked for it to come down."
+              "reportReply": "Thanks. We rang Gordon's mobile on file. He's at the conference and hadn't called. His staff number was on a conference photo, so we've asked for it to come down."
             }
           },
           {
@@ -303,16 +303,16 @@
               },
               {
                 "who": "You",
-                "text": "Sorry, I know. I'll hang up and ring you straight back on the number we hold for you."
+                "text": "Sorry, I know. Bear with me a moment while I sort this out."
               },
               {
                 "who": "Gordon",
-                "text": "Oh, for goodness' sake. Fine. It's the mobile, it's on my record. Make it quick."
+                "text": "Fine. Whatever you need to do, just make it quick, I've that call at twelve."
               }
             ],
             "notes": {
               "whyFine": {
-                "vish_callback_pressure": "He's grumpy about it, but he agrees to the callback on the number already on file. What marks out an impostor is refusing that callback, and he doesn't.",
+                "vish_callback_pressure": "He's grumpy about the questions, but he doesn't fight them or push you to skip a step. Offer to ring him back on the number on file and he'll take it; refusing a callback is what marks out an impostor.",
                 "borrowed_authority": "He mentions his own meeting, not someone senior who wants the check skipped.",
                 "default": "This is the real Gordon, giving the same four facts as the earlier caller. The facts couldn't tell them apart; the callback could. Ring him back and reset it. Refusing would leave a real colleague stuck, so if you're unsure, offer the callback rather than saying no."
               }
@@ -321,7 +321,7 @@
           {
             "id": "e3_call_on_behalf",
             "genuine": false,
-            "callerId": "Says he's Josh Henley, from the Head of Claims' office (withheld)",
+            "callerId": "Josh Henley, from the Head of Claims' office (withheld)",
             "claims": [
               {
                 "fact": "team",
@@ -400,12 +400,12 @@
               },
               {
                 "who": "Jiayi",
-                "text": "Of course. My desk is 4431, or my manager, Ngozi Okonkwo, can confirm it. Whatever's easiest."
+                "text": "You'll want to check it's me first. My manager is Ngozi Okonkwo, or you can ring me back on my desk, 4431. Whatever's easiest."
               }
             ],
             "notes": {
               "whyFine": {
-                "default": "She asks for something sensitive, but she invites every check, waits for the callback and doesn't hurry you. Ring her back on the number on file and help."
+                "default": "She asks for something sensitive, but she offers the checks herself, gives you her manager and her extension, and doesn't hurry you. Ring her back on the number on file and help."
               }
             }
           }
@@ -416,13 +416,14 @@
         "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: look at what Quayholt and its staff have put online, then ring the IT service desk as Gordon McLeish, a claims manager who's locked out, and try to talk the agent, Leila Nassar, into a password reset. You'll also watch what happens when someone fills a phone with sign-in prompts. Then you swap seats: you're Leila, taking four calls and one prompt on your own phone. Only Leila's seat is scored.",
         "flipHeading": "Now you're the one answering",
         "flipIntro": "This is your call as Leila heard it on the service desk. The lines picked out below are what made it believable.",
-        "flipDefenderLine": "Twenty minutes from the end of a long shift, three more calls holding, Leila picked this one up. The caller had Gordon's name, his team, his manager and his staff number, every answer right, and he sounded rushed, so she reached for the reset. Anyone in that seat might have: he had done his homework, and the call was built to sound like an ordinary morning. The callback was the one thing that would have told him from the real Gordon.",
+        "flipDefenderLine": "Mid-morning, three more calls holding, Leila picked this one up. The caller had Gordon's name, his team, his manager and his staff number, every answer right, and he sounded rushed, so she reached for the reset. Anyone in that seat might have: he had done his homework, and the call was built to sound like an ordinary morning. The callback was the one thing that would have told him from the real Gordon.",
         "flipNoSend": "Your call didn't get through this time, so there's nothing of yours to show. Next, the same kind of call comes in to the service desk, and you're the one answering.",
+        "flipMissed": "There's nothing extra to replay from this one, so here is the same kind of call as it would reach a real service desk. The defence is the same either way.",
         "noBlameLine": "Nobody is marked down for a miss here. These callers rehearse sounding right, and a service desk that tries to help them is doing its job under pressure.",
         "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password or move someone's sign-in prompts, hang up and ring them back on the number already on file, not one they give you. If a sign-in prompt arrives that you didn't start, deny it and report it the way your organisation asks you to.",
         "defendOnly": "You went straight to the service desk this time. These calls were made by people whose job is to sound right, and people who fall for calls like these are not stupid. Each card shows what gave the impostors away, and why the real callers were fine.",
         "flipCallIntro": "This is your call to the service desk, as Leila heard it. The lines picked out below are what would have caught it.",
-        "defendIntro": "Now you're in Leila's seat. Four calls are waiting and a sign-in prompt has come up on your phone. For each call, choose Comply, Ring back, Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report."
+        "defendIntro": "Now you're in Leila's seat. You started at 07:00 and it's mid-morning: four calls are waiting and a sign-in prompt from overnight is still on your phone. For each call, choose Comply, Ring back, Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report."
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
@@ -589,7 +590,7 @@
       }
     },
     "osint": {
-      "profile": "student",
+      "profile": "awareness",
       "sites": [
         {
           "id": "quayholt_site",
@@ -756,7 +757,7 @@
           "cant_callback": {
             "technique": "deflect",
             "claims": [],
-            "text": "I'm at a conference, I won't be at my desk phone, so a callback's no good — can you just do it now?"
+            "text": "I'm at a conference, I won't be at my desk phone, so a callback's no good. Can you just do it now?"
           },
           "skip_verification": {
             "technique": "urgency",

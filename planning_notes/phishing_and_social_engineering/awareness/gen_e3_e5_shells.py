@@ -54,32 +54,61 @@ HOSTS = {
     },
 }
 
-# Host lines: (before, after, choice, reply). One welcome line; the kiosk does the rest.
+# Defend-host lines: (before, after, choice, reply). One welcome line; the kiosk does the rest.
 LINES = {
     ('e3', 'defend'): (
-        "You're in Leila's seat this morning. Four calls are queued on the kiosk, and her phone's just buzzed. Take your time with each one.",
+        "You're in Leila's seat this morning. Four calls are queued on the kiosk, and there's a sign-in prompt from overnight on her phone. Take your time with each one.",
         "That's the queue cleared, thanks. If a caller won't let you ring them back, that tells you most of what you need.",
         'Thanks, Darren.', 'Shout if you need me.'),
     ('e5', 'defend'): (
         "Hiya. There are five pages open on the kiosk, each one from a link somebody got this morning. Have a look at each before you'd sign in.",
         "That's all five checked. The address bar is the bit to read, every time.",
         'Thanks, Niamh.', 'No bother.'),
-    ('e3', 'pre'): (
-        "Hello. Before the training there's a short check on the kiosk: ten items from the service desk queue. Just do what you'd normally do on a shift.",
-        "That's your first check saved. You'll do another after the training, and see how the two compare.",
-        'Thanks.', "You're welcome."),
-    ('e3', 'post'): (
-        "Welcome back. Ten new items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
-        "That's the second check saved. Thanks for doing both.",
-        'Thanks.', "You're welcome."),
-    ('e5', 'pre'): (
-        "Morning. Before the training there's a short check on the kiosk: ten emails and pages from a Quayholt inbox. Just do what you'd normally do.",
-        "That's your first check saved. You'll do another after the training, and see how the two compare.",
-        'Thanks.', 'No problem.'),
-    ('e5', 'post'): (
-        "Welcome back. Ten new emails and pages on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
-        "That's the second check saved. Thanks for doing both.",
-        'Thanks.', 'No problem.'),
+}
+
+# Check-host lines, varied per host (C2-m18: the post hosts no longer share one script).
+# Keyed by host id, then stage. (before, after, choice, reply).
+CHECK_LINES = {
+    'anjali_rao': {
+        'pre': (
+            "I'm Anjali, I look after security here and these reports come to me. Before the training there's a short check on the kiosk: ten items from the service desk queue. Just do what you'd normally do on a shift.",
+            "That's your first check saved. We'll do another after the training and see how the two compare.",
+            'Thanks, Anjali.', 'Any time.'),
+        'post': (
+            "Welcome back. Ten fresh items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
+            "Second check saved. Thanks for doing both.",
+            'Thanks, Anjali.', 'Any time.'),
+    },
+    'sofia_marchetti': {
+        'pre': (
+            "Hiya, I'm Sofia from HR, running this one. There's a short check on the kiosk first: ten items from the service desk queue. Just handle them the way you usually would.",
+            "First check saved. There's a matching one after the training, and you'll see how they compare.",
+            'Thanks, Sofia.', 'No trouble.'),
+        'post': (
+            "Good to see you back. Ten new items on the kiosk, same as before. If you did the first check, the end screen compares the two.",
+            "That's the second one saved. Thanks for sitting both.",
+            'Thanks, Sofia.', 'No trouble.'),
+    },
+    'owen_treharne': {
+        'pre': (
+            "Owen here, Facilities, minding the check for our floor. Short one on the kiosk before the training: ten emails and pages from a Quayholt inbox. Just do what you'd normally do.",
+            "First check's saved. You'll do another afterwards and see how the two line up.",
+            'Thanks, Owen.', 'No bother at all.'),
+        'post': (
+            "Back again, good. Ten new emails and pages on the kiosk, same idea as last time. If you did the first, the end screen shows how they compare.",
+            "Second check saved. Thanks for doing the pair.",
+            'Thanks, Owen.', 'No bother at all.'),
+    },
+    'pauline_hendry': {
+        'pre': (
+            "I'm Pauline from Payroll, looking after this check. There's a short one on the kiosk first: ten emails and pages from a Quayholt inbox. Just do what you'd normally do.",
+            "First check saved. There's another after the training, and you'll see how they compare.",
+            'Thanks, Pauline.', "You're welcome."),
+        'post': (
+            "Welcome back. Ten new emails and pages waiting on the kiosk, same idea as before. If you did the first check, the end screen compares them.",
+            "Second check saved. Thank you for doing both.",
+            'Thanks, Pauline.', "You're welcome."),
+    },
 }
 
 EPISODES = {
@@ -455,7 +484,7 @@ def check(ekey, pair, stage):
     }
     when = 'before' if stage == 'pre' else 'after'
     header = f"Awareness check, {word}, {when} ({letters})"
-    ink = ink_source(header, host, done, LINES[(ekey, stage)])
+    ink = ink_source(header, host, done, CHECK_LINES[host['id']][stage])
     return mission, sc, meta, ink_name, ink
 
 

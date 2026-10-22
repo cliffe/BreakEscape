@@ -220,7 +220,7 @@
       "advisoryFactors": ["pretextRelevant", "urgencyCalibrated", "senderAuth"],
       "factorStrings": {
         "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
-        "senderTrust": { "pass": "✓ From the IT service desk she acts on", "fail": "She does not recognise this sender. IT notices reach her from the service desk address.", "redFlag": null },
+        "senderTrust": { "pass": "✓ From the IT service desk she acts on", "fail": "She does not recognise this sender. IT notices reach her from the service desk address.", "redFlag": "The From line carries the service desk's real address, so it reads as the IT notice Hana trusts, but it was forged: the service desk never sent it." },
         "linkCredible": { "pass": "✓ The sign-in link looked like her own", "fail": "The link's address is not Quayholt's own sign-on; she would not type her password into it.", "redFlag": null },
         "pretextRelevant": { "pass": "✓ Matches the SSO move she was told about", "fail": "No change she can match this to, so no reason to sign in again.", "redFlag": null },
         "urgencyCalibrated": { "pass": "✓ The pressure reads as believable" },
@@ -230,7 +230,7 @@
           "redFlag": null
         }
       },
-      "replies": { "landed": "Thanks, signing in now before I lose access." },
+      "replies": { "landed": "Thanks, I'll sign in through that link." },
       "hints": [
         "Which address do Quayholt staff already trust for IT notices? Put that in the From line.",
         "What change were staff told about, so an unexpected sign-in prompt reads as expected?",

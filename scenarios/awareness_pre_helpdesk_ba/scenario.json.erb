@@ -74,7 +74,8 @@
           "borrowed_authority",
           "secrecy_or_bypass",
           "unrequested_mfa_push",
-          "reply_to_differs"
+          "reply_to_differs",
+          "lookalike_domain"
         ],
         "outcome": {
           "setGlobalPrefix": "triage_{stage}_",
@@ -109,7 +110,7 @@
           {
             "id": "hb_call_payroll",
             "kind": "call",
-            "callerId": "Says she's Pauline Hendry, Payroll (calling from a mobile)",
+            "callerId": "Pauline Hendry, Payroll (calling from a mobile)",
             "from": {
               "name": "Pauline Hendry",
               "address": "07700 900733"
@@ -244,52 +245,49 @@
             "time": "09:30",
             "body": "Hello service desk,\nThree new starters join Claims on Monday. Their accounts are already requested in tickets SD-44790 to SD-44792, so there's nothing extra to do. Laptops can be collected from Facilities.\nQuayholt HR",
             "auth": {
-              "spf": "fail",
+              "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "hr-relay.quayholt.example",
+              "envelopeFrom": "quayholt.example",
               "replyTo": "hr@quayholt.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "One of the automatic sender checks didn't pass because the HR system sends through its supplier's mail service, but the checks that confirm the real sender still passed for quayholt.example.",
-                "default": "HR's real domain, and the accounts go through tickets as normal. Nothing here skips a step."
-              },
-              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through an outside company's service often trips one of these checks while the others still confirm the real sender."
+                "default": "HR's real address, hr@quayholt.example. The accounts go through tickets as normal, and nothing here asks you to skip a step or send anything back."
+              }
             }
           },
           {
             "id": "hb_resets_spoof",
             "from": {
-              "name": "Anjali Rao",
-              "address": "anjali.rao@quayholt.example"
+              "name": "Security Review",
+              "address": "reviews@quayholt-team.example"
             },
             "to": "servicedesk@quayholt.example",
             "subject": "This week's password resets",
             "time": "10:12",
-            "body": "Hi,\nFor a review I'm doing, could you reply with this week's password resets: name, team and the phone number each person gave? A pasted list is fine.\nThanks,\nAnjali",
+            "body": "Hi,\nFor a review I'm running, could you reply with this week's password resets: name, team and the phone number each person gave? A pasted list is fine.\nThanks,\nSecurity Review",
             "auth": {
-              "spf": "fail",
-              "dkim": "none",
-              "dmarc": "fail",
-              "envelopeFrom": "mailer.quickpost-mail.example",
-              "replyTo": "anjali.rao.secteam@quickpost-mail.example"
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt-team.example",
+              "replyTo": "reviews@quayholt-team.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderAuth",
-                "reply_to_differs"
+                "senderTrust",
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "senderAuth": "The automatic checks that prove an email really came from quayholt.example didn't pass, so Quayholt's own mail system didn't send this",
-                "reply_to_differs": "Replies go to anjali.rao.secteam@quickpost-mail.example, not to Anjali's Quayholt address"
+                "senderTrust": "A review like this would come from a Quayholt address the desk already knows, not from a sender nobody has dealt with",
+                "lookalike_domain": "Read the address: it ends in quayholt-team.example, not quayholt.example. The added '-team' makes a separate domain anyone can register"
               },
-              "headerNote": "Open the details: the From shows Anjali's real address, but the checks failed and the reply-to points somewhere else.",
               "ifTrusted": "A list of who was reset, and the numbers they gave, tells an attacker who to impersonate next and how.",
-              "reportReply": "Thanks. Anjali didn't send it, and she'd never ask for that by email."
+              "reportReply": "Thanks. That address isn't ours, and no review asked for that list. We've blocked quayholt-team.example."
             }
           },
           {

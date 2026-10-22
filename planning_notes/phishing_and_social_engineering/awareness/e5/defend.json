@@ -14,17 +14,17 @@
     "thirdParties": "Ashcombe Solicitors (ashcombelaw.example), a firm Quayholt staff have no matter with; MailGuard (mailguard-notify.example, mailguard-review.example), a mail-filtering service Quayholt does not use. docshare-login.example is the roster's shared file-share sign-in page"
   },
   "_formPairing": {
-    "_use": "Item n in form A matches item n in form B on kind, phish or genuine, flags, header results and difficulty. Per form: 10 items (4 phish, 6 genuine; 7 emails, 3 pages); flags lookalike_domain 1, padlock_myth 1, senderTrust 1, secrecy_or_bypass 1, urgencyCalibrated 1, senderAuth 1, reply_to_differs 1, linkCredible 1; difficulty 4 easy, 5 medium, 1 hard. The real site (row 2) comes before the look-alike that imitates it (row 3), so a learner doing the check sees the genuine address first (m19).",
+    "_use": "Item n in form A matches item n in form B on kind, phish or genuine, flags, header results and difficulty. Per form: 10 items (4 phish, 6 genuine; 7 emails, 3 pages); flags lookalike_domain 2, padlock_myth 1, senderTrust 2, secrecy_or_bypass 1, urgencyCalibrated 1, linkCredible 1 (C2-M6: row 6 is now a visible look-alike-domain spoof scored senderTrust + lookalike_domain, not senderAuth + reply_to_differs; row 9 is a plain all-pass genuine item, no header dependency). difficulty 4 easy, 5 medium, 1 hard. The real site (row 2) comes before the look-alike that imitates it (row 3), so a learner doing the check sees the genuine address first (m19). m11: within rows 2 and 3 the earlier timestamp (08:32) now sits on the row shown first.",
     "rows": [
       "1 | email | genuine | all pass | easy | A: Owen, kitchen closed | B: Niamh, town hall moved",
       "2 | page | genuine | (no header) | medium | A: benefits.quayholt.example | B: learning.quayholt.example",
       "3 | page | phish | lookalike_domain, padlock_myth | (no header) | medium | A: quayholt-benefits.example | B: quayholt-learning.example",
       "4 | email | phish | senderTrust, secrecy_or_bypass, urgencyCalibrated | all pass (freemail owns its domain) | easy | A: 'Gordon' wants your sign-in | B: 'Darren' wants your code",
       "5 | email | genuine, honest link | all pass | easy | A: Sofia, leave on the HR portal | B: Niamh, staff handbook link",
-      "6 | email | phish, spoofed From | senderAuth, reply_to_differs | SPF fail, DKIM none, DMARC fail | hard | A: spoofed Pauline | B: spoofed Owen",
+      "6 | email | phish, visible look-alike sender domain | senderTrust, lookalike_domain | hard | A: Payroll Team on quayholt-payroll.example | B: Facilities Team on quayholt-site.example",
       "7 | page | genuine, a sign-in prompt the learner caused, on the real site | (no header) | medium | A: expenses.quayholt.example after a timeout | B: mail.quayholt.example on a new laptop",
       "8 | email | phish, link text and destination differ | linkCredible | SPF pass, DKIM none, DMARC none | medium | A: Ashcombe 'shared papers' | B: MailGuard 'held messages'",
-      "9 | email | genuine, fail-but-fine | SPF fail, DKIM and DMARC pass | medium | A: staff survey via the survey service | B: payroll notice via the payroll provider",
+      "9 | email | genuine, all pass, plain visible reason (no header dependency) | medium | A: staff survey from quayholt.example | B: payroll notice from quayholt.example",
       "10 | email | genuine | all pass | easy | A: Leila, laptop swap booked | B: Darren, service desk hours"
     ]
   },
@@ -208,7 +208,7 @@
           "id": "ga_benefits_real",
           "kind": "page",
           "subject": "From the intranet: Staff benefits",
-          "time": "08:50",
+          "time": "08:32",
           "body": "Sign in to see your benefits and make changes for next year.",
           "page": {
             "url": "https://benefits.quayholt.example/",
@@ -232,7 +232,7 @@
           "id": "ga_benefits_lookalike",
           "kind": "page",
           "subject": "From an email: 'Benefits window closes Friday'",
-          "time": "08:32",
+          "time": "08:50",
           "body": "Choose your benefits for next year before Friday, or your current choices will lapse. This is a secure page: check for the padlock, then sign in with your Quayholt account.",
           "page": {
             "url": "https://quayholt-benefits.example/signin",
@@ -294,22 +294,21 @@
         },
         {
           "id": "ga_payroll_spoof",
-          "from": { "name": "Pauline Hendry", "address": "pauline.hendry@quayholt.example" },
+          "from": { "name": "Payroll Team", "address": "payroll@quayholt-payroll.example" },
           "to": "you@quayholt.example",
           "subject": "Payroll record check",
           "time": "10:05",
-          "body": "Hi,\nWe're moving to a new payroll system and a few records don't match. Could you reply with your staff number and your home postcode so I can fix yours before the next run?\nThanks,\nPauline\nPayroll",
-          "auth": { "spf": "fail", "dkim": "none", "dmarc": "fail", "envelopeFrom": "mailer.inboxly.example", "replyTo": "p.hendry.payroll@inboxly.example" },
+          "body": "Hi,\nWe're moving to a new payroll system and a few records don't match. Could you reply with your staff number and your home postcode so we can fix yours before the next run?\nThanks,\nThe Payroll Team",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt-payroll.example", "replyTo": "payroll@quayholt-payroll.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderAuth", "reply_to_differs"],
+            "flags": ["senderTrust", "lookalike_domain"],
             "perFlagNote": {
-              "senderAuth": "The automatic checks that prove an email really came from quayholt.example didn't pass, so Quayholt's own mail system didn't send this",
-              "reply_to_differs": "Replies go to p.hendry.payroll@inboxly.example, not to Pauline's Quayholt address"
+              "senderTrust": "Payroll writes to you from quayholt.example, the address your payslips come from, not from a sender you don't recognise",
+              "lookalike_domain": "Read the address: it ends in quayholt-payroll.example, not quayholt.example. The added word makes a separate domain anyone can register"
             },
-            "headerNote": "Open the details: the From shows Pauline's real address, but the checks failed and the reply-to points somewhere else.",
             "ifTrusted": "Your staff number and postcode are what a caller needs to sound like you when they ring the service desk to reset your password.",
-            "reportReply": "Thanks. Pauline didn't send it, and payroll isn't changing systems."
+            "reportReply": "Thanks. That address isn't ours, and payroll isn't changing systems. We've blocked quayholt-payroll.example."
           }
         },
         {
@@ -363,16 +362,14 @@
           "time": "11:45",
           "body": "Hello,\nThis year's staff survey is open until the end of the month. It takes about ten minutes and doesn't ask you to sign in.\n{{link:survey}}\nThank you,\nThe People Team",
           "links": [ { "id": "survey", "text": "survey.quayholt.example/2026", "destination": "https://survey.quayholt.example/2026" } ],
-          "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "send.surveyrelay.example", "replyTo": "survey@quayholt.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "survey@quayholt.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "senderAuth": "One of the automatic sender checks didn't pass because the survey service sent it for Quayholt, but the checks that confirm the real sender still passed for quayholt.example, the real domain.",
               "linkCredible": "The link goes where it says, to Quayholt's own survey address, and the survey asks for no sign-in.",
-              "default": "The People Team's real address, a survey with a month to answer, and nothing to sign in to."
-            },
-            "headerNote": "One failed check on its own is a clue, not proof. Mail sent through an outside service often trips one of these checks while the others still confirm the real sender."
+              "default": "The People Team's real address at quayholt.example, a survey with a month to answer, and nothing to sign in to."
+            }
           }
         },
         {
@@ -427,7 +424,7 @@
           "id": "gb_learning_real",
           "kind": "page",
           "subject": "From the intranet: Training",
-          "time": "08:50",
+          "time": "08:32",
           "body": "Sign in to see your courses and what's due this year.",
           "page": {
             "url": "https://learning.quayholt.example/",
@@ -451,7 +448,7 @@
           "id": "gb_learning_lookalike",
           "kind": "page",
           "subject": "From an email: 'Mandatory training overdue'",
-          "time": "08:32",
+          "time": "08:50",
           "body": "Your data protection training is overdue and must be finished today. This is a secure page: check for the padlock, then sign in with your Quayholt account.",
           "page": {
             "url": "https://quayholt-learning.example/signin",
@@ -513,22 +510,21 @@
         },
         {
           "id": "gb_facilities_spoof",
-          "from": { "name": "Owen Treharne", "address": "owen.treharne@quayholt.example" },
+          "from": { "name": "Facilities Team", "address": "facilities@quayholt-site.example" },
           "to": "you@quayholt.example",
           "subject": "Building pass reissue",
           "time": "10:05",
-          "body": "Hi,\nWe're reissuing building passes this month. Could you reply with your pass number and a photo of the front of your pass so we can print the new one?\nThanks,\nOwen\nFacilities",
-          "auth": { "spf": "fail", "dkim": "none", "dmarc": "fail", "envelopeFrom": "mailer.quickpost-mail.example", "replyTo": "owen.treharne.facilities@quickpost-mail.example" },
+          "body": "Hi,\nWe're reissuing building passes this month. Could you reply with your pass number and a photo of the front of your pass so we can print the new one?\nThanks,\nThe Facilities Team",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt-site.example", "replyTo": "facilities@quayholt-site.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderAuth", "reply_to_differs"],
+            "flags": ["senderTrust", "lookalike_domain"],
             "perFlagNote": {
-              "senderAuth": "The automatic checks that prove an email really came from quayholt.example didn't pass, so Quayholt's own mail system didn't send this",
-              "reply_to_differs": "Replies go to owen.treharne.facilities@quickpost-mail.example, not to Owen's Quayholt address"
+              "senderTrust": "Facilities notices reach you from quayholt.example, not from a sender you've never dealt with",
+              "lookalike_domain": "Read the address: it ends in quayholt-site.example, not quayholt.example. The added word makes a separate domain anyone can register"
             },
-            "headerNote": "Open the details: the From shows Owen's real address, but the checks failed and the reply-to points somewhere else.",
             "ifTrusted": "A pass number and a photo of a pass are enough to make a copy that gets someone through the front door.",
-            "reportReply": "Thanks. Owen didn't send it, and passes aren't being reissued."
+            "reportReply": "Thanks. That address isn't ours, and passes aren't being reissued. We've blocked quayholt-site.example."
           }
         },
         {
@@ -581,15 +577,13 @@
           "subject": "Your payslip is on the HR portal",
           "time": "11:45",
           "body": "Hello,\nThis month's payslip is now on the HR portal. Go there from the intranet as usual; this email has no link on purpose.\nQuayholt Payroll",
-          "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "out.payrollhub.example", "replyTo": "payroll@quayholt.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "payroll@quayholt.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "senderAuth": "One of the automatic sender checks didn't pass because Quayholt's payroll provider sent it, but the checks that confirm the real sender still passed for quayholt.example, the real domain.",
-              "default": "Payroll's real address, a monthly notice, and it sends you to the intranet rather than a link."
-            },
-            "headerNote": "One failed check on its own is a clue, not proof. Mail sent through an outside service often trips one of these checks while the others still confirm the real sender."
+              "default": "Payroll's real address at quayholt.example, a monthly notice, and it sends you to the intranet rather than a link."
+            }
           }
         },
         {
@@ -624,9 +618,11 @@
       "flipIntro": "This is the page you put together, as Hana Novak, the claims handler you sent it to, would meet it after following the link. The parts picked out below are what make it believable.",
       "flipDefenderLine": "Hana Novak, the claims handler you sent it to, opened the link between two claims. The page wore the Quayholt look and showed a padlock, so she began typing her password. That isn't carelessness: the page was built to pass for the real sign-in, and only the address in the bar gave it away.",
       "flipNoSend": "Your page didn't go out this time, so there's nothing of yours to show. Next, the same kind of page turns up behind a link in a Quayholt inbox, and you're the one deciding whether to sign in.",
+      "flipMissed": "There's nothing extra to replay from this one, so here is the same kind of page as it would arrive behind a link in a real inbox. The defence is the same either way.",
       "noBlameLine": "Nobody is marked down for a miss here. Every one of these pages was built to pass for the real thing, and signing in to one says nothing about how careful a person is.",
       "mondayCard": "On Monday: before you type a password, read the address bar. Your organisation's real sign-in page sits on its own domain, and your password manager knows it. If a page asks you to sign in and the address is new to you, close it, go to the site the way you normally would, and report the link the way your organisation asks you to.",
-      "defendOnly": "You went straight to the pages this time. They were made by people whose job is to make them look right, and people who fall for pages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine."
+      "defendOnly": "You went straight to the pages this time. They were made by people whose job is to make them look right, and people who fall for pages like these are not stupid. Each card shows what gave the fake ones away, and why the real ones were fine.",
+      "defendIntro": "Five pages are open, each from a link. For each one, decide whether you'd sign in, then tick what you noticed."
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e5_signin_pages_defend), which has no OSINT, write or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",

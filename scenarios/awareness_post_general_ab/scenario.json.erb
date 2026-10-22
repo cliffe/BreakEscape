@@ -127,7 +127,7 @@
             "id": "gb_learning_real",
             "kind": "page",
             "subject": "From the intranet: Training",
-            "time": "08:50",
+            "time": "08:32",
             "body": "Sign in to see your courses and what's due this year.",
             "page": {
               "url": "https://learning.quayholt.example/",
@@ -157,7 +157,7 @@
             "id": "gb_learning_lookalike",
             "kind": "page",
             "subject": "From an email: 'Mandatory training overdue'",
-            "time": "08:32",
+            "time": "08:50",
             "body": "Your data protection training is overdue and must be finished today. This is a secure page: check for the padlock, then sign in with your Quayholt account.",
             "page": {
               "url": "https://quayholt-learning.example/signin",
@@ -257,33 +257,32 @@
           {
             "id": "gb_facilities_spoof",
             "from": {
-              "name": "Owen Treharne",
-              "address": "owen.treharne@quayholt.example"
+              "name": "Facilities Team",
+              "address": "facilities@quayholt-site.example"
             },
             "to": "you@quayholt.example",
             "subject": "Building pass reissue",
             "time": "10:05",
-            "body": "Hi,\nWe're reissuing building passes this month. Could you reply with your pass number and a photo of the front of your pass so we can print the new one?\nThanks,\nOwen\nFacilities",
+            "body": "Hi,\nWe're reissuing building passes this month. Could you reply with your pass number and a photo of the front of your pass so we can print the new one?\nThanks,\nThe Facilities Team",
             "auth": {
-              "spf": "fail",
-              "dkim": "none",
-              "dmarc": "fail",
-              "envelopeFrom": "mailer.quickpost-mail.example",
-              "replyTo": "owen.treharne.facilities@quickpost-mail.example"
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt-site.example",
+              "replyTo": "facilities@quayholt-site.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderAuth",
-                "reply_to_differs"
+                "senderTrust",
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "senderAuth": "The automatic checks that prove an email really came from quayholt.example didn't pass, so Quayholt's own mail system didn't send this",
-                "reply_to_differs": "Replies go to owen.treharne.facilities@quickpost-mail.example, not to Owen's Quayholt address"
+                "senderTrust": "Facilities notices reach you from quayholt.example, not from a sender you've never dealt with",
+                "lookalike_domain": "Read the address: it ends in quayholt-site.example, not quayholt.example. The added word makes a separate domain anyone can register"
               },
-              "headerNote": "Open the details: the From shows Owen's real address, but the checks failed and the reply-to points somewhere else.",
               "ifTrusted": "A pass number and a photo of a pass are enough to make a copy that gets someone through the front door.",
-              "reportReply": "Thanks. Owen didn't send it, and passes aren't being reissued."
+              "reportReply": "Thanks. That address isn't ours, and passes aren't being reissued. We've blocked quayholt-site.example."
             }
           },
           {
@@ -363,20 +362,18 @@
             "time": "11:45",
             "body": "Hello,\nThis month's payslip is now on the HR portal. Go there from the intranet as usual; this email has no link on purpose.\nQuayholt Payroll",
             "auth": {
-              "spf": "fail",
+              "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "out.payrollhub.example",
+              "envelopeFrom": "quayholt.example",
               "replyTo": "payroll@quayholt.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "One of the automatic sender checks didn't pass because Quayholt's payroll provider sent it, but the checks that confirm the real sender still passed for quayholt.example, the real domain.",
-                "default": "Payroll's real address, a monthly notice, and it sends you to the intranet rather than a link."
-              },
-              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through an outside service often trips one of these checks while the others still confirm the real sender."
+                "default": "Payroll's real address at quayholt.example, a monthly notice, and it sends you to the intranet rather than a link."
+              }
             }
           },
           {

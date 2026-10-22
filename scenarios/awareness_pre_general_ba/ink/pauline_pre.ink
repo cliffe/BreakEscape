@@ -19,13 +19,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { triage_pre_done:
-        Pauline Hendry: That's your first check saved. You'll do another after the training, and see how the two compare.
+        Pauline Hendry: First check saved. There's another after the training, and you'll see how they compare.
     - else:
-        Pauline Hendry: Morning. Before the training there's a short check on the kiosk: ten emails and pages from a Quayholt inbox. Just do what you'd normally do.
+        Pauline Hendry: I'm Pauline from Payroll, looking after this check. There's a short one on the kiosk first: ten emails and pages from a Quayholt inbox. Just do what you'd normally do.
     }
 }
-+ [Thanks.]
-    Pauline Hendry: No problem.
++ [Thanks, Pauline.]
+    Pauline Hendry: You're welcome.
     ~ hub_quiet = true
     #exit_conversation
     -> hub

@@ -11,15 +11,15 @@
     "nameCheck": "Henley, Achterberg, Kerrigan and Jiayi had no hits in scenarios, planning_notes or docs on 2026-10-22."
   },
   "_formPairing": {
-    "_use": "Helpdesk parallel forms A and B: item n in A matches item n in B on kind, phish or genuine, flags, header results and difficulty. 4 phish and 6 genuine per form. Per form the phish flags are vish_callback_pressure 1, borrowed_authority 1, senderTrust 1, secrecy_or_bypass 1, urgencyCalibrated 1, unrequested_mfa_push 1, senderAuth 1, reply_to_differs 1 (8 in all). Difficulty: 5 easy, 4 medium, 1 hard. Verify is on in both forms because call items need it, so the pre and post still compare like with like. No item repeats the episode set's calls or push.",
+    "_use": "Helpdesk parallel forms A and B: item n in A matches item n in B on kind, phish or genuine, flags, header results and difficulty. 4 phish and 6 genuine per form. Per form the phish flags are vish_callback_pressure 1, borrowed_authority 1, senderTrust 2, lookalike_domain 1, secrecy_or_bypass 1, urgencyCalibrated 1, unrequested_mfa_push 1 (C2-M6: row 7 is now a visible look-alike-domain spoof scored senderTrust + lookalike_domain, not senderAuth + reply_to_differs; row 6 is a plain all-pass genuine item, no header dependency). Difficulty: 5 easy, 4 medium, 1 hard. Verify is on in both forms because call items need it, so the pre and post still compare like with like. No item repeats the episode set's calls or push.",
     "rows": [
       "1 email, genuine, all pass, easy | A ha_rota_weekend (Darren, weekend rota) | B hb_policy_refresh (Anjali, security policies refreshed, no action)",
       "2 call, impostor, vish_callback_pressure + borrowed_authority, medium | A ha_call_facilities (fake Owen Treharne, door system) | B hb_call_payroll (fake Pauline Hendry, payroll system)",
       "3 call, genuine and awkward, medium | A ha_call_hr_awkward (Sofia, impatient, accepts the callback) | B hb_call_comms_awkward (Niamh, stressed, accepts the callback)",
       "4 email, impostor on freemail, senderTrust + secrecy_or_bypass + urgencyCalibrated, all pass (pass-but-bad), easy | A ha_ceo_mfa_bypass (fake Helen Achterberg) | B hb_coo_reset_bypass (fake Patrick Kerrigan)",
       "5 push, unrequested, unrequested_mfa_push, easy | A ha_push_night (02:14) | B hb_push_weekend (23:52)",
-      "6 email, genuine, SPF fail with DKIM and DMARC pass (fail-but-fine), medium | A ha_ticket_relay (ticket system via its vendor) | B hb_hr_relay (HR system via its vendor)",
-      "7 email, impostor, real From address spoofed, senderAuth + reply_to_differs, SPF fail DKIM none DMARC fail, hard | A ha_list_spoof (spoofed Darren) | B hb_resets_spoof (spoofed Anjali)",
+      "6 email, genuine, all pass, plain visible reason (no header dependency), medium | A ha_ticket_relay (ticket notice from quayholt.example) | B hb_hr_relay (HR notice from quayholt.example)",
+      "7 email, impostor, visible look-alike sender domain, senderTrust + lookalike_domain, hard | A ha_list_spoof (IT Security on quayholt-corp.example) | B hb_resets_spoof (Security Review on quayholt-team.example)",
       "8 voicemail, genuine, easy | A ha_vm_locked (Hana Novak) | B hb_vm_locked (Ayaan Warsame)",
       "9 email, genuine link to a real Quayholt host, all pass, medium | A ha_password_expiry | B hb_laptop_rollout",
       "10 call, genuine and easy, easy | A ha_call_printer (printer jam) | B hb_call_monitor (flickering monitor)"
@@ -31,7 +31,7 @@
       "_prefix": "Prefix for the full episode (id e3_helpdesk_reset). The defend-only shell (id e3_helpdesk_reset_defend) sets episode_e3_helpdesk_reset_defend_defend_ instead, as E1 and E5 do. No stage on purpose, as in E1.",
       "_calls": "The four calls are in awarenessEpisode.defend.calls; the role swap (P7-P) merges them into this set as call messages, so the round has 5 items.",
       "title": "Quayholt service desk",
-      "brief": "You're on the Quayholt IT service desk in Leila Nassar's seat. Four calls are waiting, and a sign-in prompt has just come up on your own phone. For each call, choose Comply, Ring back (hang up and ring the number already on file), Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report. Ringing back a real caller never costs you anything.",
+      "brief": "You're on the Quayholt IT service desk in Leila Nassar's seat. You started at 07:00 and it's mid-morning now: four calls are waiting, and a sign-in prompt from overnight is still on your own phone. For each call, choose Comply, Ring back (hang up and ring the number already on file), Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report. Ringing back a real caller never costs you anything.",
       "scoringProfile": "awareness",
       "verifyVerdict": true,
       "feedbackMode": "immediate",
@@ -43,7 +43,7 @@
         {
           "id": "e3_push_early",
           "kind": "push",
-          "time": "06:52",
+          "time": "02:14",
           "push": {
             "app": "Quayholt Sign-in",
             "request": "Are you trying to sign in?",
@@ -55,7 +55,7 @@
             "isPhish": true,
             "flags": ["unrequested_mfa_push"],
             "perFlagNote": {
-              "unrequested_mfa_push": "Your shift starts at eight and you weren't signing in at 06:52, so someone else has your password and is hoping you'll tap Approve"
+              "unrequested_mfa_push": "That prompt arrived at 02:14, when you were asleep and nowhere near a sign-in, so someone else has your password and is hoping you'll tap Approve"
             },
             "ifTrusted": "Approving would let the sender into your account, with your service desk access, from a computer you've never used.",
             "reportReply": "Thanks. We've reset your password and blocked that sign-in. Someone was trying your account, and the prompt is what stopped them."
@@ -75,7 +75,7 @@
       "feedbackMode": "end",
       "headerPanel": "collapsed",
       "glossary": "closed",
-      "channelTells": ["vish_callback_pressure", "borrowed_authority", "secrecy_or_bypass", "unrequested_mfa_push", "reply_to_differs"],
+      "channelTells": ["vish_callback_pressure", "borrowed_authority", "secrecy_or_bypass", "unrequested_mfa_push", "reply_to_differs", "lookalike_domain"],
       "outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 },
       "messages": [
         {
@@ -97,7 +97,7 @@
         {
           "id": "ha_call_facilities",
           "kind": "call",
-          "callerId": "Says he's Owen Treharne, Facilities (calling from a mobile)",
+          "callerId": "Owen Treharne, Facilities (calling from a mobile)",
           "from": { "name": "Owen Treharne", "address": "07700 900418" },
           "time": "08:20",
           "transcript": [
@@ -186,35 +186,32 @@
           "subject": "Ticket SD-44817 assigned to you",
           "time": "09:30",
           "body": "Ticket SD-44817 (printer jam, second floor) has been assigned to you.\nOpen it from the service desk queue as usual.\nQuayholt Service Desk",
-          "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "notify-relay.quayholt.example", "replyTo": "tickets@quayholt.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "tickets@quayholt.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "senderAuth": "One of the automatic sender checks didn't pass because the ticket system sends through its supplier's mail service, but the checks that confirm the real sender still passed for quayholt.example.",
-              "default": "An ordinary ticket notice from Quayholt's own domain. It asks you to open the queue the way you always do, not to follow a link."
-            },
-            "headerNote": "One failed check on its own is a clue, not proof. Mail sent through an outside company's service often trips one of these checks while the others still confirm the real sender."
+              "default": "An ordinary ticket notice from Quayholt's own address, tickets@quayholt.example. It points you to the service desk queue you already use, with nothing to follow and nothing to send back."
+            }
           }
         },
         {
           "id": "ha_list_spoof",
-          "from": { "name": "Darren Price", "address": "darren.price@quayholt.example" },
+          "from": { "name": "IT Security", "address": "it-security@quayholt-corp.example" },
           "to": "servicedesk@quayholt.example",
           "subject": "Quick one: MFA exemption list",
           "time": "10:12",
-          "body": "Hi,\nI'm at the audit meeting and can't get on the admin console. Could you reply with the list of staff accounts that are exempt from the sign-in prompts? Just paste it into your reply.\nThanks,\nDarren",
-          "auth": { "spf": "fail", "dkim": "none", "dmarc": "fail", "envelopeFrom": "mailer.inboxly.example", "replyTo": "d.price.servicedesk@inboxly.example" },
+          "body": "Hi,\nFor an audit we need the list of staff accounts that are exempt from the sign-in prompts. Could you reply with it? Just paste it into your reply.\nThanks,\nIT Security",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt-corp.example", "replyTo": "it-security@quayholt-corp.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderAuth", "reply_to_differs"],
+            "flags": ["senderTrust", "lookalike_domain"],
             "perFlagNote": {
-              "senderAuth": "The automatic checks that prove an email really came from quayholt.example didn't pass, so Quayholt's own mail system didn't send this",
-              "reply_to_differs": "Replies go to d.price.servicedesk@inboxly.example, not to Darren's Quayholt address"
+              "senderTrust": "A request like this would come from a Quayholt address the desk already knows, not from a sender no one has dealt with",
+              "lookalike_domain": "Read the address: it ends in quayholt-corp.example, not quayholt.example. The added '-corp' makes a separate domain anyone can register"
             },
-            "headerNote": "Open the details: the From shows Darren's real address, but the checks failed and the reply-to points somewhere else.",
             "ifTrusted": "A list of accounts with no second sign-in step is a list of the easiest accounts to break into.",
-            "reportReply": "Thanks. Darren is at his desk and didn't send it."
+            "reportReply": "Thanks. That address isn't ours, and no audit asked for that list. We've blocked quayholt-corp.example."
           }
         },
         {
@@ -287,7 +284,7 @@
       "feedbackMode": "end",
       "headerPanel": "collapsed",
       "glossary": "closed",
-      "channelTells": ["vish_callback_pressure", "borrowed_authority", "secrecy_or_bypass", "unrequested_mfa_push", "reply_to_differs"],
+      "channelTells": ["vish_callback_pressure", "borrowed_authority", "secrecy_or_bypass", "unrequested_mfa_push", "reply_to_differs", "lookalike_domain"],
       "outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 },
       "messages": [
         {
@@ -309,7 +306,7 @@
         {
           "id": "hb_call_payroll",
           "kind": "call",
-          "callerId": "Says she's Pauline Hendry, Payroll (calling from a mobile)",
+          "callerId": "Pauline Hendry, Payroll (calling from a mobile)",
           "from": { "name": "Pauline Hendry", "address": "07700 900733" },
           "time": "08:20",
           "transcript": [
@@ -398,35 +395,32 @@
           "subject": "New starters next Monday",
           "time": "09:30",
           "body": "Hello service desk,\nThree new starters join Claims on Monday. Their accounts are already requested in tickets SD-44790 to SD-44792, so there's nothing extra to do. Laptops can be collected from Facilities.\nQuayholt HR",
-          "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hr-relay.quayholt.example", "replyTo": "hr@quayholt.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "hr@quayholt.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "senderAuth": "One of the automatic sender checks didn't pass because the HR system sends through its supplier's mail service, but the checks that confirm the real sender still passed for quayholt.example.",
-              "default": "HR's real domain, and the accounts go through tickets as normal. Nothing here skips a step."
-            },
-            "headerNote": "One failed check on its own is a clue, not proof. Mail sent through an outside company's service often trips one of these checks while the others still confirm the real sender."
+              "default": "HR's real address, hr@quayholt.example. The accounts go through tickets as normal, and nothing here asks you to skip a step or send anything back."
+            }
           }
         },
         {
           "id": "hb_resets_spoof",
-          "from": { "name": "Anjali Rao", "address": "anjali.rao@quayholt.example" },
+          "from": { "name": "Security Review", "address": "reviews@quayholt-team.example" },
           "to": "servicedesk@quayholt.example",
           "subject": "This week's password resets",
           "time": "10:12",
-          "body": "Hi,\nFor a review I'm doing, could you reply with this week's password resets: name, team and the phone number each person gave? A pasted list is fine.\nThanks,\nAnjali",
-          "auth": { "spf": "fail", "dkim": "none", "dmarc": "fail", "envelopeFrom": "mailer.quickpost-mail.example", "replyTo": "anjali.rao.secteam@quickpost-mail.example" },
+          "body": "Hi,\nFor a review I'm running, could you reply with this week's password resets: name, team and the phone number each person gave? A pasted list is fine.\nThanks,\nSecurity Review",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt-team.example", "replyTo": "reviews@quayholt-team.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderAuth", "reply_to_differs"],
+            "flags": ["senderTrust", "lookalike_domain"],
             "perFlagNote": {
-              "senderAuth": "The automatic checks that prove an email really came from quayholt.example didn't pass, so Quayholt's own mail system didn't send this",
-              "reply_to_differs": "Replies go to anjali.rao.secteam@quickpost-mail.example, not to Anjali's Quayholt address"
+              "senderTrust": "A review like this would come from a Quayholt address the desk already knows, not from a sender nobody has dealt with",
+              "lookalike_domain": "Read the address: it ends in quayholt-team.example, not quayholt.example. The added '-team' makes a separate domain anyone can register"
             },
-            "headerNote": "Open the details: the From shows Anjali's real address, but the checks failed and the reply-to points somewhere else.",
             "ifTrusted": "A list of who was reset, and the numbers they gave, tells an attacker who to impersonate next and how.",
-            "reportReply": "Thanks. Anjali didn't send it, and she'd never ask for that by email."
+            "reportReply": "Thanks. That address isn't ours, and no review asked for that list. We've blocked quayholt-team.example."
           }
         },
         {
@@ -523,7 +517,7 @@
               "borrowed_authority": "Ngozi and 'the board at ten' are there to make checking feel like holding things up"
             },
             "ifTrusted": "The caller would have Gordon's account: his email, the claims system, and a way to ring the desk again as Gordon.",
-            "reportReply": "Thanks. We rang Gordon on the number on file. He's in the office and hadn't called. His staff number was on a conference photo, so we've asked for it to come down."
+            "reportReply": "Thanks. We rang Gordon's mobile on file. He's at the conference and hadn't called. His staff number was on a conference photo, so we've asked for it to come down."
           }
         },
         {
@@ -541,12 +535,12 @@
             { "who": "Gordon", "text": "Gordon McLeish. My password's expired while I was on leave and now nothing works. I've a settlement call at twelve." },
             { "who": "You", "text": "I can help. Can you confirm your staff number and your manager for me?" },
             { "who": "Gordon", "text": "QH-20719, Ngozi Okonkwo. Twenty-two years I've been here, and I still get the questions." },
-            { "who": "You", "text": "Sorry, I know. I'll hang up and ring you straight back on the number we hold for you." },
-            { "who": "Gordon", "text": "Oh, for goodness' sake. Fine. It's the mobile, it's on my record. Make it quick." }
+            { "who": "You", "text": "Sorry, I know. Bear with me a moment while I sort this out." },
+            { "who": "Gordon", "text": "Fine. Whatever you need to do, just make it quick, I've that call at twelve." }
           ],
           "notes": {
             "whyFine": {
-              "vish_callback_pressure": "He's grumpy about it, but he agrees to the callback on the number already on file. What marks out an impostor is refusing that callback, and he doesn't.",
+              "vish_callback_pressure": "He's grumpy about the questions, but he doesn't fight them or push you to skip a step. Offer to ring him back on the number on file and he'll take it; refusing a callback is what marks out an impostor.",
               "borrowed_authority": "He mentions his own meeting, not someone senior who wants the check skipped.",
               "default": "This is the real Gordon, giving the same four facts as the earlier caller. The facts couldn't tell them apart; the callback could. Ring him back and reset it. Refusing would leave a real colleague stuck, so if you're unsure, offer the callback rather than saying no."
             }
@@ -555,7 +549,7 @@
         {
           "id": "e3_call_on_behalf",
           "genuine": false,
-          "callerId": "Says he's Josh Henley, from the Head of Claims' office (withheld)",
+          "callerId": "Josh Henley, from the Head of Claims' office (withheld)",
           "claims": [
             { "fact": "team", "value": "claims", "label": "Claims" },
             { "fact": "manager", "value": "okonkwo_full", "label": "Ngozi Okonkwo" },
@@ -590,11 +584,11 @@
           "transcript": [
             { "who": "Jiayi", "text": "Hi, sorry to bother you. I'm Chen Jiayi, I started in Claims last week. I've got a new phone and my sign-in prompts still go to the old one." },
             { "who": "You", "text": "No bother. Let me see what I can do." },
-            { "who": "Jiayi", "text": "Of course. My desk is 4431, or my manager, Ngozi Okonkwo, can confirm it. Whatever's easiest." }
+            { "who": "Jiayi", "text": "You'll want to check it's me first. My manager is Ngozi Okonkwo, or you can ring me back on my desk, 4431. Whatever's easiest." }
           ],
           "notes": {
             "whyFine": {
-              "default": "She asks for something sensitive, but she invites every check, waits for the callback and doesn't hurry you. Ring her back on the number on file and help."
+              "default": "She asks for something sensitive, but she offers the checks herself, gives you her manager and her extension, and doesn't hurry you. Ring her back on the number on file and help."
             }
           }
         }
@@ -605,15 +599,17 @@
       "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: look at what Quayholt and its staff have put online, then ring the IT service desk as Gordon McLeish, a claims manager who's locked out, and try to talk the agent, Leila Nassar, into a password reset. You'll also watch what happens when someone fills a phone with sign-in prompts. Then you swap seats: you're Leila, taking four calls and one prompt on your own phone. Only Leila's seat is scored.",
       "flipHeading": "Now you're the one answering",
       "flipIntro": "This is your call as Leila heard it on the service desk. The lines picked out below are what made it believable.",
-      "flipDefenderLine": "Twenty minutes from the end of a long shift, three more calls holding, Leila picked this one up. The caller had Gordon's name, his team, his manager and his staff number, every answer right, and he sounded rushed, so she reached for the reset. Anyone in that seat might have: he had done his homework, and the call was built to sound like an ordinary morning. The callback was the one thing that would have told him from the real Gordon.",
+      "flipDefenderLine": "Mid-morning, three more calls holding, Leila picked this one up. The caller had Gordon's name, his team, his manager and his staff number, every answer right, and he sounded rushed, so she reached for the reset. Anyone in that seat might have: he had done his homework, and the call was built to sound like an ordinary morning. The callback was the one thing that would have told him from the real Gordon.",
       "flipNoSend": "Your call didn't get through this time, so there's nothing of yours to show. Next, the same kind of call comes in to the service desk, and you're the one answering.",
+      "flipMissed": "There's nothing extra to replay from this one, so here is the same kind of call as it would reach a real service desk. The defence is the same either way.",
       "noBlameLine": "Nobody is marked down for a miss here. These callers rehearse sounding right, and a service desk that tries to help them is doing its job under pressure.",
       "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password or move someone's sign-in prompts, hang up and ring them back on the number already on file, not one they give you. If a sign-in prompt arrives that you didn't start, deny it and report it the way your organisation asks you to.",
-      "defendOnly": "You went straight to the service desk this time. These calls were made by people whose job is to sound right, and people who fall for calls like these are not stupid. Each card shows what gave the impostors away, and why the real callers were fine."
+      "defendOnly": "You went straight to the service desk this time. These calls were made by people whose job is to sound right, and people who fall for calls like these are not stupid. Each card shows what gave the impostors away, and why the real callers were fine.",
+      "defendIntro": "Four calls are waiting and a sign-in prompt from overnight is still on your phone. For each call, choose Comply, Ring back, Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report."
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e3_helpdesk_reset_defend), which has no OSINT, write, mfa or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",
-      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. You're on the IT service desk in Leila Nassar's seat. Four calls are waiting and a sign-in prompt has come up on your phone. Some callers are who they say, and some are reading facts they found online. Help the real ones, and ring back or escalate anything that doesn't sit right. Ringing back a real caller never costs you anything.",
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. You're on the IT service desk in Leila Nassar's seat. Four calls are waiting and a sign-in prompt from overnight is still on your phone. Some callers are who they say, and some are reading facts they found online. Help the real ones, and ring back or escalate anything that doesn't sit right. Ringing back a real caller never costs you anything.",
       "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: four calls and one sign-in prompt in the service desk seat."
     }
   }

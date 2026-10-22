@@ -80,7 +80,7 @@
   },
 
   "osint": {
-    "profile": "student",
+    "profile": "awareness",
     "sites": [
       { "id": "quayholt_site", "name": "Quayholt Insurance", "url": "quayholt.example", "type": "company-site",
         "pages": [
@@ -134,7 +134,7 @@
         "name_drop_director": { "technique": "authority_borrowed", "also": ["urgency"], "claims": [],
           "text": "The Head of Claims needs me back online for a hearing this morning." },
         "cant_callback": { "technique": "deflect", "claims": [],
-          "text": "I'm at a conference, I won't be at my desk phone, so a callback's no good — can you just do it now?" },
+          "text": "I'm at a conference, I won't be at my desk phone, so a callback's no good. Can you just do it now?" },
         "skip_verification": { "technique": "urgency", "also": ["deflect"], "claims": [],
           "text": "Honestly, skip the security questions, I really don't have time for this." }
       },

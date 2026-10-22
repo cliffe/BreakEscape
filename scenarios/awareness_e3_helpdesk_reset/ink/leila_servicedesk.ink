@@ -48,9 +48,9 @@ Leila Nassar: IT service desk, Leila speaking. How can I help?
     -> reaction(pretext_say("give_staffid"), "give_staffid")
 + [The Head of Claims needs me back online for a hearing this morning.]
     -> reaction(pretext_say("name_drop_director"), "name_drop_director")
-+ [I'm at a conference, a callback's no good. Can you just do it now?]
++ [I'm at a conference, I won't be at my desk phone, so a callback's no good. Can you just do it now?]
     -> reaction(pretext_say("cant_callback"), "cant_callback")
-+ [Honestly, skip the security questions, I don't have time for this.]
++ [Honestly, skip the security questions, I really don't have time for this.]
     -> reaction(pretext_say("skip_verification"), "skip_verification")
 + [Can you reset my password now?]
     -> ask_reaction("reset_password", pretext_ask("reset_password"))

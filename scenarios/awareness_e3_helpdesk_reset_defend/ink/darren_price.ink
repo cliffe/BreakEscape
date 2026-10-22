@@ -21,7 +21,7 @@ VAR hub_quiet = false
     { episode_e3_helpdesk_reset_defend_defend_done:
         Darren Price: That's the queue cleared, thanks. If a caller won't let you ring them back, that tells you most of what you need.
     - else:
-        Darren Price: You're in Leila's seat this morning. Four calls are queued on the kiosk, and her phone's just buzzed. Take your time with each one.
+        Darren Price: You're in Leila's seat this morning. Four calls are queued on the kiosk, and there's a sign-in prompt from overnight on her phone. Take your time with each one.
     }
 }
 + [Thanks, Darren.]

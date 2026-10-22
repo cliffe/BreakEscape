@@ -93,7 +93,8 @@
           "borrowed_authority",
           "secrecy_or_bypass",
           "unrequested_mfa_push",
-          "reply_to_differs"
+          "reply_to_differs",
+          "lookalike_domain"
         ],
         "outcome": {
           "setGlobalPrefix": "triage_{stage}_",
@@ -128,7 +129,7 @@
           {
             "id": "ha_call_facilities",
             "kind": "call",
-            "callerId": "Says he's Owen Treharne, Facilities (calling from a mobile)",
+            "callerId": "Owen Treharne, Facilities (calling from a mobile)",
             "from": {
               "name": "Owen Treharne",
               "address": "07700 900418"
@@ -263,52 +264,49 @@
             "time": "09:30",
             "body": "Ticket SD-44817 (printer jam, second floor) has been assigned to you.\nOpen it from the service desk queue as usual.\nQuayholt Service Desk",
             "auth": {
-              "spf": "fail",
+              "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "notify-relay.quayholt.example",
+              "envelopeFrom": "quayholt.example",
               "replyTo": "tickets@quayholt.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "One of the automatic sender checks didn't pass because the ticket system sends through its supplier's mail service, but the checks that confirm the real sender still passed for quayholt.example.",
-                "default": "An ordinary ticket notice from Quayholt's own domain. It asks you to open the queue the way you always do, not to follow a link."
-              },
-              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through an outside company's service often trips one of these checks while the others still confirm the real sender."
+                "default": "An ordinary ticket notice from Quayholt's own address, tickets@quayholt.example. It points you to the service desk queue you already use, with nothing to follow and nothing to send back."
+              }
             }
           },
           {
             "id": "ha_list_spoof",
             "from": {
-              "name": "Darren Price",
-              "address": "darren.price@quayholt.example"
+              "name": "IT Security",
+              "address": "it-security@quayholt-corp.example"
             },
             "to": "servicedesk@quayholt.example",
             "subject": "Quick one: MFA exemption list",
             "time": "10:12",
-            "body": "Hi,\nI'm at the audit meeting and can't get on the admin console. Could you reply with the list of staff accounts that are exempt from the sign-in prompts? Just paste it into your reply.\nThanks,\nDarren",
+            "body": "Hi,\nFor an audit we need the list of staff accounts that are exempt from the sign-in prompts. Could you reply with it? Just paste it into your reply.\nThanks,\nIT Security",
             "auth": {
-              "spf": "fail",
-              "dkim": "none",
-              "dmarc": "fail",
-              "envelopeFrom": "mailer.inboxly.example",
-              "replyTo": "d.price.servicedesk@inboxly.example"
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt-corp.example",
+              "replyTo": "it-security@quayholt-corp.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderAuth",
-                "reply_to_differs"
+                "senderTrust",
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "senderAuth": "The automatic checks that prove an email really came from quayholt.example didn't pass, so Quayholt's own mail system didn't send this",
-                "reply_to_differs": "Replies go to d.price.servicedesk@inboxly.example, not to Darren's Quayholt address"
+                "senderTrust": "A request like this would come from a Quayholt address the desk already knows, not from a sender no one has dealt with",
+                "lookalike_domain": "Read the address: it ends in quayholt-corp.example, not quayholt.example. The added '-corp' makes a separate domain anyone can register"
               },
-              "headerNote": "Open the details: the From shows Darren's real address, but the checks failed and the reply-to points somewhere else.",
               "ifTrusted": "A list of accounts with no second sign-in step is a list of the easiest accounts to break into.",
-              "reportReply": "Thanks. Darren is at his desk and didn't send it."
+              "reportReply": "Thanks. That address isn't ours, and no audit asked for that list. We've blocked quayholt-corp.example."
             }
           },
           {
