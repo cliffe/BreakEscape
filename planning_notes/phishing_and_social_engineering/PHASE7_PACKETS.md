@@ -474,3 +474,4 @@ the orchestrator passes it to that wave's owner.
   - `toXapi` is unused.
 
   The transcript "You" case bug is fixed in triage-kinds.js.
+- **Lint gap (from E5):** a sender name value must end in a suffix that `personOfValue` resolves (`_first`, `_short`, `_formal`, `_full` or `_address`). E5's `itdesk_name` silently broke senderTrust. Add a mail lint for name and address provides on a trusted sender.
