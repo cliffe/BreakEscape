@@ -124,6 +124,8 @@ end
 # with re-rings that repeat on purpose. The legacy-box arms are made disjoint
 # (m05_found_pipeline_list) rather than declared. No boolean import pair is
 # exclusive by construction, so there is no mutuallyExclusiveGlobals entry.
+# The two card_cloned latches (Sorensen's and Noor's cards, alignment R7) key
+# on different card names, so they never fire for the same read.
 hax_maps = []
 
 # M1 (CONTRACT §5.5): the dock call after the briefing. Not forced, unvoiced.
@@ -187,6 +189,8 @@ hax_maps << { "eventPattern" => "global_variable_changed:hatch_talked", "conditi
 # Confirm run: the hatch's clone option retires once her card is saved to the
 # cloner (card_cloned fires only on a saved read, so a cancel keeps it).
 hax_maps << { "eventPattern" => "card_cloned", "condition" => "data.cardName.includes('M. Sorensen')", "onceOnly" => true, "setGlobal" => { "stacks_card_cloned" => true } }
+# Alignment R7 r7-1: the same for Noor's card (her rfidCard name "Staff Card, N. Haddad").
+hax_maps << { "eventPattern" => "card_cloned", "condition" => "data.cardName.includes('N. Haddad')", "onceOnly" => true, "setGlobal" => { "staff_card_cloned" => true } }
 hax_maps << { "eventPattern" => "global_variable_changed:cage_opened", "condition" => "value === true", "onceOnly" => true,
               "completeTask" => ["talk_at_the_hatch", "open_the_cage"], "unlockTask" => "stop_the_shredding" }
 
@@ -1072,7 +1076,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       },
       "npcs": [
         {
-          "_comment": "Noor Haddad, records clerk (B2). On the floor by the trolleys so she can be reached (review m5). Clone on every branch (#clone_keycard:reading_staff_door, EM4100, the night's easy card); warned in time she hands over noor_staff_card. Leaves on noor_told. PLACEHOLDER art: female_telecom (ASSET_LIST §1.2).",
+          "_comment": "Noor Haddad, records clerk (B2). On the floor by the trolleys so she can be reached (review m5). Clone on every branch until saved, except warned in time, when she hands the card over (alignment R7: staff_card_cloned) (#clone_keycard:reading_staff_door, EM4100, the night's easy card); warned in time she hands over noor_staff_card. Leaves on noor_told. PLACEHOLDER art: female_telecom (ASSET_LIST §1.2).",
           "id": "noor_haddad",
           "displayName": "Noor Haddad",
           "npcType": "person",
@@ -2518,6 +2522,7 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "dock_done": false,
     "debrief_closed": false,
     "stacks_card_cloned": false,
+    "staff_card_cloned": false,
     "noor_met": false,
     "albion_folder_opened": false,
     "memo_read": false,

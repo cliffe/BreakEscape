@@ -21,6 +21,9 @@ VAR noor_tell_signposted = false
 VAR noor_list_checked = false
 VAR noor_asked_peg = false
 VAR hub_quiet = false
+// Synced scenario global (alignment R7 r7-1): set by HaX on card_cloned for
+// her card, so the clone choice retires once a read is saved (kept after a cancel).
+VAR staff_card_cloned = false
 
 === start ===
 // A reopen lands on hub; this guard covers a page reload (ink vars survive).
@@ -82,8 +85,10 @@ VAR hub_quiet = false
 // has told her, so it no longer hints at the choice.
 // Playtest R1 B-M2 / A-m5: the clone choice says what it is, Noor answers
 // first, and the clone runs on a narrator beat (m08 Netherton's pattern).
-// Sticky so a cancelled read can be tried again.
-+ [Lean in over her list, close to the card on her belt.]
+// Sticky so a cancelled read can be tried again. Alignment R7 r7-1: hidden once
+// her card is saved to the cloner, and on the warned-in-time route, where she
+// has already handed it over.
++ {not staff_card_cloned and not (m05_found_pipeline_list and not m05_recruiter_deal_accepted)} [Lean in over her list, close to the card on her belt.]
     {noor_list_checked:
         Noor Haddad: Same list. Fewer boxes.
     - else:
