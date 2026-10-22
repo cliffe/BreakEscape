@@ -54,6 +54,7 @@ VAR greeted = false
 VAR recon_key_given = false
 VAR operations_key_given = false
 VAR blue_team_key_given = false
+VAR sends_done_marked = false
 VAR quiet = false
 
 === start ===
@@ -120,11 +121,17 @@ Ruth Adeyemi: Read the rules of engagement. The sheet on the table. Properly. Ga
 { landing_payroll_login_built:
     #complete_task:payroll_page_attached
 }
-{ pretext_call_done:
+{ se_intel_lord_portal_name and se_intel_lord_payslip_date:
     #complete_task:call_dev
 }
 { phish_lord_landed:
     #complete_task:lord_landed
+}
+// P2 backup: if the live eventMappings missed a landing order, set sends_done here
+// once all three targets have acted, so the report workstation unlocks. Once-only.
+{ phish_hampshire_landed and phish_pierce_landed and phish_lord_landed and not sends_done_marked:
+    ~ sends_done_marked = true
+    #set_global:sends_done:true
 }
 { report_results_done:
     #complete_task:results_reviewed
@@ -141,10 +148,10 @@ Ruth Adeyemi: Read the rules of engagement. The sheet on the table. Properly. Ga
 ->->
 
 === keys ===
-{ plan_done and not recon_key_given:
+{ plan_done and fairbairn_condition_heard and not recon_key_given:
     ~ recon_key_given = true
     #give_item:key:recon_key
-    Ruth Adeyemi: Plan holds up. Here's the Recon key. Open-source intelligence only: what anyone could find, nothing behind a login.
+    Ruth Adeyemi: Plan holds up, and Gareth's signed. Here's the Recon key. Open-source intelligence only: what anyone could find, nothing behind a login.
     ~ quiet = true
 }
 { osint_done and se_intel_username_convention and not operations_key_given:
@@ -176,11 +183,13 @@ Ruth Adeyemi: Read the rules of engagement. The sheet on the table. Properly. Ga
     Ruth Adeyemi: Sheet's done. Take it to Gareth by the window. He wants to sign it himself.
 - not plan_done:
     Ruth Adeyemi: Now tell me what you'll actually do. The whiteboard.
+- plan_done and not fairbairn_condition_heard:
+    Ruth Adeyemi: Plan's good. Gareth still hasn't signed. Take the sheet to him by the window, then the key's yours.
 - plan_done and osint_done and not se_intel_username_convention:
     Ruth Adeyemi: Case file's full, but you haven't read the Q3 PDF's properties. Check the author field. Then Operations is yours.
 - plan_done and not (osint_done and se_intel_username_convention):
     Ruth Adeyemi: Recon's through the west door. Public pages only. If you'd need a password to see it, it's off the sheet.
-- operations_key_given and not acct_freemail:
+- operations_key_given and not acct_freemail and not phish_hampshire_landed:
     Ruth Adeyemi: Mail's in Operations. Make your throwaway address before you write to anyone.
 - operations_key_given and not (phish_hampshire_landed and phish_pierce_landed):
     Ruth Adeyemi: Delivered isn't landed. It lands when they'd open the file or click the link, the way they would a real one.

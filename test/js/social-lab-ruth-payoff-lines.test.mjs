@@ -70,7 +70,7 @@ test('C3 item 5: Ruth\'s phone drops the "see Gareth" choices once the payoff is
     const json = load('scenarios/lab_social_engineering/ink/ruth_phone.json');
     // Stage 7: report filed, defender flip not yet done.
     const stage7 = {
-        roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
+        roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true,
         phish_hampshire_landed: true, phish_pierce_landed: true, landing_payroll_login_built: true, pretext_call_done: true,
         phish_lord_landed: true, report_filed: true, triage_pass: false, profile_done: false
     };

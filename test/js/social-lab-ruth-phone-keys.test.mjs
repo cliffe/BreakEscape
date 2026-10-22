@@ -37,7 +37,7 @@ function opener(globals) {
 }
 
 const base = {
-    roe_signed: false, plan_done: false, osint_done: false, se_intel_username_convention: false,
+    roe_signed: false, plan_done: false, fairbairn_condition_heard: false, osint_done: false, se_intel_username_convention: false,
     se_intel_email_pattern: false, se_intel_hampshire_cv_backlog: false, phish_hampshire_landed: false,
     phish_pierce_landed: false, acct_freemail: false, landing_payroll_login_built: false,
     pretext_call_done: false, pretext_call_reported: false, se_intel_lord_payslip_date: false,
@@ -45,14 +45,14 @@ const base = {
 };
 
 test('stage 2 (Recon) opener points the student to Ruth for the key, not "you already have it"', { skip }, () => {
-    const t = opener({ ...base, roe_signed: true, plan_done: true });
+    const t = opener({ ...base, roe_signed: true, plan_done: true, fairbairn_condition_heard: true });
     assert.match(t, /key/i, 'names the key');
     assert.match(t, /come and see me|I've got the key/i, 'points back to Ruth');
     assert.doesNotMatch(t, /you've the key already/i, 'does not assume the key is held');
 });
 
 test('stage 3 (Operations) opener points the student to Ruth for the key', { skip }, () => {
-    const t = opener({ ...base, roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true });
+    const t = opener({ ...base, roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true });
     assert.match(t, /key/i);
     assert.match(t, /come and see me|I've got the key/i, 'points back to Ruth');
 });
@@ -62,7 +62,7 @@ test('stage 7 (Blue Team) opener points to Tomasz and does NOT re-offer the key 
     // at report_filed, so the key is in the ring by now. The opener must not tell the
     // student to come to Ruth for a key they already have (lab R6 F3).
     const t = opener({ ...base,
-        roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
+        roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true,
         phish_hampshire_landed: true, phish_pierce_landed: true, landing_payroll_login_built: true, pretext_call_done: true,
         phish_lord_landed: true, report_filed: true });
     assert.match(t, /Blue Team|Tomasz/i, 'points to the Blue Team room / Tomasz');
@@ -73,7 +73,7 @@ test('stage 7 (Blue Team) opener points to Tomasz and does NOT re-offer the key 
 test('stage 4: the "Dev flagged" line shows while the call is still unmade, and stops once it succeeds', { skip }, () => {
     // Reported, call not yet successfully made (page not built): the flagged line shows.
     const stuck = opener({ ...base,
-        roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
+        roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true,
         phish_hampshire_landed: true, phish_pierce_landed: true, pretext_call_reported: true, pretext_call_done: false,
         landing_payroll_login_built: false });
     assert.match(stuck, /flagged that last call/i, 'flagged line shows while the call is unmade');
@@ -81,14 +81,14 @@ test('stage 4: the "Dev flagged" line shows while the call is still unmade, and 
     // A clean call-back succeeded (pretext_call_done) but the page is not built yet, so stage 4
     // is still current: the flagged line must be gone (R2 F6-c).
     const recovered = opener({ ...base,
-        roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
+        roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true,
         phish_hampshire_landed: true, phish_pierce_landed: true, pretext_call_reported: true, pretext_call_done: true,
         landing_payroll_login_built: false });
     assert.doesNotMatch(recovered, /flagged that last call/i, 'flagged line clears after a clean second call');
 });
 
 const allDone = {
-    roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
+    roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true,
     phish_hampshire_landed: true, phish_pierce_landed: true, landing_payroll_login_built: true, pretext_call_done: true,
     phish_lord_landed: true, report_filed: true, triage_pass: true, profile_done: true
 };
@@ -106,7 +106,7 @@ test('once the engagement is closed the phone stops pointing at Tomasz, with a c
 test('stage 7 pointer is printed once, not after every reply (R6 F3)', { skip }, () => {
     const s = new Story(json);
     const g = { ...base,
-        roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
+        roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true,
         phish_hampshire_landed: true, phish_pierce_landed: true, landing_payroll_login_built: true, pretext_call_done: true,
         phish_lord_landed: true, report_filed: true };
     for (const [k, v] of Object.entries(g)) {
@@ -128,7 +128,7 @@ test('stage 7 pointer is printed once, not after every reply (R6 F3)', { skip },
 });
 
 test('C4 n4: Melanie landed before Careers keeps the phone on stage 3, with the Careers pointer', { skip }, () => {
-    const g = { ...base, roe_signed: true, plan_done: true, osint_done: true, se_intel_username_convention: true,
+    const g = { ...base, roe_signed: true, plan_done: true, fairbairn_condition_heard: true, osint_done: true, se_intel_username_convention: true,
         acct_freemail: true, phish_pierce_landed: true, phish_hampshire_landed: false };
     const s = new Story(json);
     for (const [k, v] of Object.entries(g)) if (s.variablesState.GlobalVariableExistsWithName(k)) s.variablesState[k] = v;

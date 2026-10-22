@@ -352,7 +352,15 @@ export function finalisePretext({ session, spec, service, ctx, writeGlobal = wri
     const lowest = (session.lowestInfluence === null) ? influenceEnd : session.lowestInfluence;
     const w = { engine: ctx?.engine || null, npcId: ctx?.npcId || null };
 
-    writeGlobal(`pretext_${session.callId}_outcome`, outcome, w);
+    // P6 (lab): `got_it` is sticky across calls. Once the engagement has got what it
+    // came for, a later check-in or walk-away on the same callId must not downgrade the
+    // recorded outcome: the report row and Tomasz's debrief both read this global, and
+    // "the call ended without a result" over an earlier success is a lie. A call that
+    // upgrades the outcome (a reported first call, then a got_it) still writes got_it.
+    const outcomeKey = `pretext_${session.callId}_outcome`;
+    const prevOutcome = (typeof window !== 'undefined') ? window.gameState?.globalVariables?.[outcomeKey] : undefined;
+    const alreadyGotIt = prevOutcome === 'got_it';
+    writeGlobal(outcomeKey, alreadyGotIt ? 'got_it' : outcome, w);
     // The report's pretext row shows the worst the engagement reached, so `_lowest` is a
     // running minimum across every call, not just the latest one (R2 F6-F10: a clean
     // call-back must not erase the -60 of a reported first call).
@@ -364,7 +372,12 @@ export function finalisePretext({ session, spec, service, ctx, writeGlobal = wri
     // 06 §4.5: the hint ladder advances on any failed call, not only a report. A call
     // that is reported, refused, or walked away from with nothing granted all count as
     // a failed attempt; only `got_it` (the player left with a grant) does not advance it.
-    if (outcome !== 'got_it') {
+    // Once the engagement has already reached got_it (sticky, above), a later failed
+    // call is a pointless check-in, not a meaningful earlier attempt, so it must not
+    // advance the ladder either: otherwise failedAttempts > 0 with a got_it outcome
+    // makes the report read as "an earlier call got nothing" when the earlier call is
+    // the one that succeeded (P6). A failed call before any success still advances it.
+    if (outcome !== 'got_it' && !alreadyGotIt) {
         const key = `pretext_${session.callId}_reports`;
         const globals = (typeof window !== 'undefined') ? window.gameState?.globalVariables : null;
         const prev = Number(globals?.[key]);

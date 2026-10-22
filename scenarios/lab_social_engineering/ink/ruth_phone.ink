@@ -45,7 +45,7 @@ VAR stage7_seen = false
 === hub ===
 {
 - not roe_signed: -> stage0
-- not plan_done: -> stage1
+- not (plan_done and fairbairn_condition_heard): -> stage1
 - not (osint_done and se_intel_username_convention): -> stage2
 - not (phish_hampshire_landed and phish_pierce_landed): -> stage3
 - not (landing_payroll_login_built and pretext_call_done): -> stage4
@@ -82,8 +82,11 @@ On the sheet still?
 
 // ---- Stage 1: scope and plan ----
 === stage1 ===
-{ plan_done: -> hub }
-{ fairbairn_condition_heard:
+{ plan_done and fairbairn_condition_heard: -> hub }
+{
+- plan_done and not fairbairn_condition_heard:
+    Whiteboard's done. Gareth still needs to sign the sheet, by the window, before the key.
+- fairbairn_condition_heard:
     Gareth's signed. The whiteboard next.
 - else:
     Sheet's done. Gareth wants to sign it himself, by the window. Then the whiteboard.
@@ -190,6 +193,9 @@ Operations now. If that door's locked, I've got the key — come and see me.
     -> stage5
 + {not se_intel_lord_payslip_date} [The date blank's empty.]
     You don't have the release date yet. Ring Dev back and ask when payslips go out.
+    -> stage5
++ {not se_intel_lord_portal_name} [The "which system" blank won't take the right thing.]
+    The careers page names Xero, but that's their finance tool, not her payslip portal. Ring Dev for the portal's real name.
     -> stage5
 + [What makes it land?]
     Her name, the portal pretext with the date, and the page as the link.

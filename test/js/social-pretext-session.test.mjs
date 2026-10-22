@@ -415,4 +415,60 @@ test('outcomeFor: reported, else any grant, else walked away', () => {
     assert.equal(P.outcomeFor(r), 'reported');
 });
 
+test('P6: got_it is sticky — a later check-in call does not downgrade the outcome or advance the ladder', () => {
+    const { service, grantFact } = setup({ start: 0 });
+
+    // Call 1: grants the portal name -> got_it. The outcome global is written got_it.
+    const s1 = new P.PretextSession({ callId: CALL, character: 'dev' });
+    s1.blanks = { ...CARD };
+    const e1 = externals({ service, session: s1, grantFact, runId: 'c1' });
+    quiet(() => e1.pretext_ask('portal_name'));
+    const p1 = P.finalisePretext({ session: s1, spec: e1.spec, service, ctx: e1.ctx });
+    assert.equal(p1.outcome, 'got_it');
+    assert.equal(globals()[`pretext_${CALL}_outcome`], 'got_it');
+    assert.equal(Number(globals()[`pretext_${CALL}_reports`]) || 0, 0, 'a clean got_it leaves the ladder at 0');
+
+    // Call 2 on the same callId: a pointless check-in that ends with nothing granted.
+    // outcomeFor is walked_away for this call, but the engagement already got what it
+    // came for, so the recorded outcome must stay got_it and the ladder must not move.
+    const s2 = new P.PretextSession({ callId: CALL, character: 'dev' });
+    s2.blanks = { ...CARD };
+    const e2 = externals({ service, session: s2, grantFact, runId: 'c2' });
+    const p2 = P.finalisePretext({ session: s2, spec: e2.spec, service, ctx: e2.ctx });
+    assert.equal(p2.outcome, 'walked_away', 'this call on its own walked away');
+    assert.equal(globals()[`pretext_${CALL}_outcome`], 'got_it', 'the engagement outcome stays got_it');
+    assert.equal(Number(globals()[`pretext_${CALL}_reports`]) || 0, 0, 'a check-in after success does not advance the ladder');
+});
+
+test('P6: a reported first call then a got_it still reads as two calls (ladder = 1, outcome got_it)', () => {
+    const { service, grantFact } = setup({ start: -65 });
+
+    // Call 1: pushed over the report threshold, nothing granted -> reported.
+    const s1 = new P.PretextSession({ callId: CALL, character: 'dev' });
+    s1.blanks = { ...CARD };
+    const e1 = externals({ service, session: s1, runId: 'r1' });
+    for (let i = 0; i < 4 && !s1.reportedThisCall; i++) {
+        service.advanceTurn('r1');
+        quiet(() => e1.pretext_say('urgent_payslip'));
+    }
+    assert.equal(s1.reportedThisCall, true, 'call 1 crossed the report threshold');
+    const p1 = P.finalisePretext({ session: s1, spec: e1.spec, service, ctx: e1.ctx });
+    assert.equal(p1.outcome, 'reported');
+    assert.equal(Number(globals()[`pretext_${CALL}_reports`]), 1, 'the reported call advanced the ladder');
+
+    // Call 2: grants the portal -> got_it. Outcome upgrades, ladder stays at 1 so the
+    // report still reads the earlier reported call (twoCalls).
+    const s2 = new P.PretextSession({ callId: CALL, character: 'dev' });
+    s2.blanks = { ...CARD };
+    const e2 = externals({ service, session: s2, grantFact, runId: 'r2' });
+    // A fresh call resets influence to the character's start (attachPretext's new_call),
+    // so the lean of the first call does not carry into the second.
+    quiet(() => service.setInfluence('dev', service.getCharacterConfig('dev').start, 'new_call', e2.ctx));
+    quiet(() => e2.pretext_ask('portal_name'));
+    const p2 = P.finalisePretext({ session: s2, spec: e2.spec, service, ctx: e2.ctx });
+    assert.equal(p2.outcome, 'got_it');
+    assert.equal(globals()[`pretext_${CALL}_outcome`], 'got_it', 'the outcome upgrades to got_it');
+    assert.equal(Number(globals()[`pretext_${CALL}_reports`]), 1, 'the earlier reported call is still counted');
+});
+
 test.after(() => { try { uninstallSocialInfluence(); } catch (e) { /* ignore */ } });

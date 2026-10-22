@@ -30,8 +30,11 @@ Gareth Fairbairn: We weren't introduced properly. Gareth. Forty years I've had t
 // from `start` (lab R4 D1). sign and payoff set their own once-flags, so the tunnel
 // is a no-op on every later open.
 === scenecheck ===
-{ report_filed and not said_payoff: -> payoff }
+// sign is checked before payoff (P1 insurance): a report can only be filed after the
+// Recon key, which is now gated on the signature, so the sign scene always plays first.
+// If the two were ever both pending, Gareth signs this open and gives the payoff next.
 { roe_signed and not signed_scene: -> sign }
+{ report_filed and not said_payoff: -> payoff }
 ->->
 
 === hub ===

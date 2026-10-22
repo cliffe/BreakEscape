@@ -60,8 +60,10 @@ test('Ruth hands over each key once on a hub reopen and never re-gives it after 
     assert.deepEqual(opening, [], 'no key before the plan is done');
     let saved = s.state.ToJson();
 
-    // plan_done -> the Recon key is handed over on the next open, exactly once.
+    // plan_done AND Gareth's signature (P1) -> the Recon key is handed over on the next
+    // open, exactly once. The plan alone no longer unlocks the key: authorisation first.
     const plan = { roe_signed: true, roe_scope_done: true, roe_stoprule_done: true,
+        fairbairn_condition_heard: true,
         plan_objective_done: true, plan_measures_done: true, plan_done: true };
     let r = reopen(saved, plan);
     assert.deepEqual(r.gives, ['give_item:key:recon_key'], 'Recon key given on the hub reopen');
@@ -88,6 +90,24 @@ test('Ruth hands over each key once on a hub reopen and never re-gives it after 
     saved = r.saved;
     r = reopen(saved, blue);
     assert.deepEqual(r.gives, [], 'Blue Team key not re-given');
+});
+
+test('P1: the Recon key is withheld until Gareth has signed, even with the plan done', { skip }, () => {
+    const s = new Story(json);
+    s.ChoosePathString('start');
+    drain(s);
+    const saved = s.state.ToJson();
+
+    // Plan done but no signature (the whiteboard-first route): no key.
+    const planNoSig = { roe_signed: true, roe_scope_done: true, roe_stoprule_done: true,
+        plan_objective_done: true, plan_measures_done: true, plan_done: true };
+    let r = reopen(saved, planNoSig);
+    assert.deepEqual(r.gives, [], 'no Recon key before Gareth signs');
+
+    // The signature arrives: the key is handed over on the next open.
+    const planSigned = { ...planNoSig, fairbairn_condition_heard: true };
+    r = reopen(r.saved, planSigned);
+    assert.deepEqual(r.gives, ['give_item:key:recon_key'], 'Recon key given once Gareth has signed');
 });
 
 test('stop_rule completes only once Gareth has signed, not when the sheet alone is done (R6 F5)', { skip }, () => {

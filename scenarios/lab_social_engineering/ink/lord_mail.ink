@@ -40,7 +40,7 @@ VAR email_link = "none"
 - "senderTrust": Sofia Lord: I don't know this address. Our payroll notices don't come from there.
 - "addressedTo": Sofia Lord: This doesn't have my name on it. The portal always uses it.
 - "pretextRelevant": Sofia Lord: I wasn't told to expect this. I'll check with the office first.
-- "linkCredible": { email_link == "none": Sofia Lord: There's no link here to log in with. | Sofia Lord: That link isn't our portal — the address is wrong. }
+- "linkCredible": { email_link == "none": Sofia Lord: There's no link here to log in with. | Sofia Lord: That link's page doesn't look like our portal. I'll check with the office first. }
 - else: Sofia Lord: I'm not sure about this. I'd rather ask someone.
 }
 ~ se_influence(-10, email_first_fail)

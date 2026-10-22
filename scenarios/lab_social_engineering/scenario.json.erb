@@ -222,6 +222,7 @@
     "phish_hampshire_landed": false,
     "phish_pierce_landed": false,
     "phish_lord_landed": false,
+    "sends_done": false,
     "phish_hampshire_attempts": 0,
     "phish_pierce_attempts": 0,
     "phish_lord_attempts": 0,
@@ -793,11 +794,11 @@
         "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
         "factorStrings": {
           "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
-          "senderTrust": { "pass": "✓ From the portal she expects", "fail": "She doesn't know this sender. Her payroll notices come from the portal's own address.", "redFlag": null,
-            "mismatch": { "fail": "The name and the address don't belong together. Her payroll notices come from the portal's own address.", "redFlag": null } },
+          "senderTrust": { "pass": "✓ From the portal she expects", "fail": "She doesn't know this sender. Her payroll notices come from the portal's own address — the service desk knows which.", "redFlag": null,
+            "mismatch": { "fail": "The name and the address don't belong together. Her payroll notices come from the portal's own address — Dev at the service desk knows it.", "redFlag": null } },
           "addressedTo": { "pass": "✓ Addressed her by name", "fail": "No name, or not the one the portal uses.", "redFlag": null },
           "pretextRelevant": { "pass": "✓ Reads like a payslip notice", "fail": "Not a payslip notice she was expecting; she'd check with the office first.", "redFlag": null },
-          "linkCredible": { "pass": "✓ The link looked right", "fail": "The link's address isn't her portal's.", "redFlag": null },
+          "linkCredible": { "pass": "✓ The link looked right", "fail": "The page didn't pass the builder's score for her.", "redFlag": null },
           "senderAuth": {
             "pass": "✓ Sender authentication would pass",
             "fail": "This didn't really come from the address it claims, so it fails the domain's alignment check. Ledgerwell publishes p=none, so a receiver would still deliver it.",
@@ -811,7 +812,7 @@
           "pretextRelevant": "It must read like a real payslip notice: the portal's name and the release date. The careers page lists the finance tools, not her payroll portal. Dev at the service desk has both.",
           "linkCredible": {
             "missing": "She won't act on a link with no site behind it. Build the payroll login page in the builder and attach it.",
-            "wrong": "There is a page, but its address isn't her portal's. Look at the domain options in the builder."
+            "wrong": "There is a page, but it didn't pass the builder's score for her. Open it in the builder and see which part fell short."
           }
         }
       }
@@ -1097,6 +1098,7 @@
           "defDomainTier1": "The address is {shown}, not {real}. One letter is wrong.",
           "defDomainTier2": "The address is {shown}, not {real}. Read it from the right.",
           "defDomainTier3": "The address is {shown}, not {real}. Compare every letter.",
+          "gateBrand": "{firstName} only logs in to the service she actually uses. Choose it in the builder.",
           "verdictHigh": "Convincing enough for {firstName}."
         },
         "conceptCards": ["typo-squat", "homograph", "padlock", "hover-link", "right-to-left", "five-habits"],
@@ -1394,8 +1396,18 @@
             { "eventPattern": "global_variable_changed:phish_hampshire_landed", "condition": "value === true", "onceOnly": true, "completeTask": "hampshire_landed" },
             { "eventPattern": "global_variable_changed:phish_pierce_landed", "condition": "value === true", "onceOnly": true, "completeTask": "pierce_landed" },
             { "eventPattern": "global_variable_changed:landing_payroll_login_built", "condition": "value === true", "onceOnly": true, "completeTask": "payroll_page_attached" },
-            { "eventPattern": "global_variable_changed:pretext_call_done", "condition": "value === true", "onceOnly": true, "completeTask": "call_dev" },
+            <%# P3: call_dev ticks only when Dev has given up BOTH facts (the portal's
+                name/sender and the payslip date), not on a single granting ask. One
+                mapping per fact catches whichever is granted last. %>
+            { "eventPattern": "global_variable_changed:se_intel_lord_portal_name", "condition": "value === true && globalVars.se_intel_lord_payslip_date === true", "onceOnly": true, "completeTask": "call_dev" },
+            { "eventPattern": "global_variable_changed:se_intel_lord_payslip_date", "condition": "value === true && globalVars.se_intel_lord_portal_name === true", "onceOnly": true, "completeTask": "call_dev" },
             { "eventPattern": "global_variable_changed:phish_lord_landed", "condition": "value === true", "onceOnly": true, "completeTask": "lord_landed" },
+            <%# P2: the report workstation is gated on sends_done, set only when all three
+                targets have acted, so landing Sofia first cannot skip the two easy sends.
+                One mapping per landing catches whichever lands last. %>
+            { "eventPattern": "global_variable_changed:phish_hampshire_landed", "condition": "value === true && globalVars.phish_pierce_landed === true && globalVars.phish_lord_landed === true", "onceOnly": true, "setGlobal": { "sends_done": true } },
+            { "eventPattern": "global_variable_changed:phish_pierce_landed", "condition": "value === true && globalVars.phish_hampshire_landed === true && globalVars.phish_lord_landed === true", "onceOnly": true, "setGlobal": { "sends_done": true } },
+            { "eventPattern": "global_variable_changed:phish_lord_landed", "condition": "value === true && globalVars.phish_hampshire_landed === true && globalVars.phish_pierce_landed === true", "onceOnly": true, "setGlobal": { "sends_done": true } },
             { "eventPattern": "global_variable_changed:report_results_done", "condition": "value === true", "onceOnly": true, "completeTask": "results_reviewed" },
             { "eventPattern": "global_variable_changed:report_findings_done", "condition": "value === true", "onceOnly": true, "completeTask": "findings_paired" },
             { "eventPattern": "global_variable_changed:triage_pass", "condition": "value === true", "onceOnly": true, "completeTask": "triage_passed" },
@@ -1423,8 +1435,13 @@
           "currentKnot": "start",
           "livePreview": true,
           "eventMappings": [
-            { "eventPattern": "global_variable_changed:plan_done", "condition": "value === true", "onceOnly": true,
-              "bark": "Plan's signed off. The Recon key's ready for you.", "barkDelay": 1500 },
+            <%# P1: the Recon key waits on Gareth's signature as well as the plan, so the
+                bark fires only when both are true. One mapping per global catches whichever
+                is set last. %>
+            { "eventPattern": "global_variable_changed:plan_done", "condition": "value === true && globalVars.fairbairn_condition_heard === true", "onceOnly": true,
+              "bark": "Plan's good and Gareth's signed. The Recon key's ready for you.", "barkDelay": 1500 },
+            { "eventPattern": "global_variable_changed:fairbairn_condition_heard", "condition": "value === true && globalVars.plan_done === true", "onceOnly": true,
+              "bark": "Plan's good and Gareth's signed. The Recon key's ready for you.", "barkDelay": 1500 },
             { "eventPattern": "global_variable_changed:osint_done", "condition": "value === true && globalVars.se_intel_username_convention === true", "onceOnly": true,
               "bark": "Recon's done, PDF and all. The Operations key's ready.", "barkDelay": 1500 },
             { "eventPattern": "global_variable_changed:se_intel_username_convention", "condition": "value === true && globalVars.osint_done === true", "onceOnly": true,
@@ -1486,8 +1503,8 @@
           "puzzle_graph_role": "lock",
           "puzzle_graph_links": [ { "from": "lock_report_workstation", "to": "blue_team_room_key" } ],
           "minigameData": {
-            "requiresGlobal": "phish_lord_landed",
-            "lockedMessage": "Nothing to write up yet. Finish the sending first, then come back to the report."
+            "requiresGlobal": "sends_done",
+            "lockedMessage": "Nothing to write up yet. All three targets have to act on a message first, then come back to the report."
           }
         }
       ]
@@ -1504,7 +1521,7 @@
       "lockType": "key",
       "requires": "recon_door",
       "keyPins": [12, 24, 36, 48],
-      "lockedHint": "Collect the key from Ruth once your plan is signed off.",
+      "lockedHint": "Collect the key from Ruth once Gareth has signed and your plan is done.",
       "connections": { "east": "engagement_office" },
       "npcs": [],
       "objects": [
