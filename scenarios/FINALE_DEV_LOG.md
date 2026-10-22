@@ -435,3 +435,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - m10 alignment R2 JSON fixes: 0x00 tonight-first plus separate told and season rows; Noor rows exclusive; Elena widow row; four m09 imports; closing texts skip once the scene opens; 11 music reload twins for the exchanges; credits merge order (SAFETYNET aftermath, then tonight, then default) with 25 dead clauses removed. Browser checks queued for the playtest phase (Noor on m05 good path, Join gap toast, reload mid-exchange, case resume).
 - m09 alignment R5: 0/0/2 (Tran KO before flag 1 still lets Tran 'send the guard'; three docs lag the R4 fixes).
 - m09 alignment R5 fixes: 2/2.
+- m09 alignment R6: 0/0/2 (Victoria-route 'She's still feeding it.' after the cage is opened; contract doc cells).
