@@ -226,3 +226,17 @@ Validator exit 0, 0 errors, schema passes. `slot_audit`: 0 problems. Walls: all 
 2. Art still owed (ASSET_LIST §4): the trolley and bin states. Both need scenario objects first.
 3. Four rooms use the cream `desk1` (front desk ×2, hub sorting table, reading desk). Noted, not changed.
 4. Ready for lighting, in my view: every room now reads as its place, props sit square to the walls, and no door or tap area is blocked.
+
+## Round 4 (2026-10-22): the R4 review's five minors
+
+Review: `DRESSING_REVIEW_R4.md` (0/0/5, ready for lighting). All five are fixed. Browser check in game 3111 (log in the session scratchpad, `dress_r1/pt4/`).
+
+| # | Fix | Checked |
+|---|---|---|
+| D3 | The PERSONNEL plate is dropped; the BAY 1 plate and the hatched apron mark the door | render |
+| D4 | Spawn moved to (7, 6.8). A collision rect over the fence (x 32–288, y 280–304) | the player spawns at (224, 218), on the yard above the fence (`dress_r1/pt4/spawn.png`) |
+| H4 | The yellow wheelie bin is now a small `bin1` against the strip's south rail (feet y 236), clear of Sorensen's legs | render |
+| S5 | Old Coyote's west-end waypoint is (5, 7.5) (approved), clear of Dillard's spot; noted in his comment | a full lap: turns at x 160, up the cross aisle to y 124, east to x 541 |
+| H5 | The hub's sorting table is now a steel workbench (`zds_desk3`) with the same boxes | render |
+
+Checks: `slot_audit` 0 problems, walls all 64, doors 11 of 11, door clearance no hits. The validator's one error is the character agent's `halina_kowalczyk` spriteSheet (no walk atlas yet), not a dressing change.

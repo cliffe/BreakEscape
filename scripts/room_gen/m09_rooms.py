@@ -87,7 +87,6 @@ def room_m09_dock():
     """
     r = G._Uni()
     r.item("m09_sign_bay1", 70.0, 30.0)
-    r.item("m09_sign_personnel1", 70.0, 44.0)          # R3 D1: the open bay is the way in
     r.solid("aes_bollard1", 104.0, 112.0)
     r.item("aes_shutter_ctrl1", 92.0, 56.0)
     r.item("aes_roller_shutter1", 116.0, 64.0)          # BAY 2, down
@@ -116,6 +115,7 @@ def room_m09_dock():
     # the yard fence along the south
     for x in (32.0, 85.0, 138.0, 191.0, 235.0):
         r.item("hce_cage_panel1", x, 304.0)
+    r.collision(32.0, 280.0, 256.0, 24.0)               # R4 D4: nobody walks into the fence
     return _build(r, "room_m09_dock")
 
 
@@ -340,10 +340,10 @@ def room_m09_restricted():
     r.collision(240.0, 228.0, 48.0, 10.0)               # and the south
     r.item("m09_mesh_rail1", 240.0, 128.0)             # low rails close the strip (R3 H1)
     r.item("m09_mesh_rail1", 240.0, 238.0)
-    r.item("yellow_bin1", 262.0, 226.0)                 # her bin, behind her
+    r.item("bin1", 266.0, 236.0)                        # R4 H4: a small bin against the south rail, clear of her legs
     r.conditional_table_items.append(G.make_obj("objects", "m09_rubber_stamp2", 222.0, 216.0, r._next()))   # R3 H2
     # the sorting table
-    st = r.table("desk1", 96.0, 224.0)                  # x 96-174
+    st = r.table("zds_desk3", 96.0, 224.0, kind="objects")   # R4 H5: a steel workbench, x 96-147
     r.on(st, "m09_box_open1", 0.20, 0.40)
     r.on(st, "m09_box_open1", 0.48, 0.40)
     r.on(st, "notes4", 0.80, 0.36)
