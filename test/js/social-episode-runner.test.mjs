@@ -52,7 +52,7 @@ window.gameAlert = (msg) => alerts.push(msg);
 const load = (rel) => import(pathToFileURL(join(dir, rel)).href);
 const { MinigameFramework: FW } = await load('minigames/framework/minigame-manager.js');
 const { SocialOverlayScene } = await load('minigames/framework/social-overlay.js');
-const { EpisodeRunnerMinigame } = await load('minigames/episode-runner/episode-runner-minigame.js');
+const { EpisodeRunnerMinigame, defendCopy, defendSetKind } = await load('minigames/episode-runner/episode-runner-minigame.js');
 const { startEpisodeRunner } = await load('systems/episode-starter.js');
 const M = await load('minigames/episode-runner/episode-model.js');
 window.MinigameFramework = FW;
@@ -836,4 +836,45 @@ test('a defendOnly role swap reads Take the calls without the "seat you just cal
     assert.equal(epState().stage, 'defend');
     assert.equal(panelHeading(), 'Take the calls');
     assert.equal(panelText().includes('just called'), false);
+});
+
+test('defend intro: strings.defendIntro replaces the line; without it the default fits messages, pages or calls', () => {
+    // set kinds, from the merged set: the most common of call / page / everything else
+    const kinds = (...k) => ({ messages: k.map((kind, i) => ({ id: `m${i}`, kind })) });
+    assert.equal(defendSetKind(kinds('email', 'playerSent', 'sms')), 'messages');
+    assert.equal(defendSetKind(kinds('page', 'page', 'page', 'email')), 'pages');
+    assert.equal(defendSetKind(kinds('call', 'call', 'push')), 'calls');
+    assert.equal(defendSetKind(kinds('page', 'email')), 'messages', 'a tie is messages');
+    assert.equal(defendSetKind(null, { defend: { calls: [{ id: 'c' }] } }), 'calls');
+    assert.equal(defendSetKind(kinds('call', 'email', 'email'), { defend: { calls: [{ id: 'c' }] } }), 'calls',
+        'the role swap reads as calls even when the set has more emails');
+    assert.equal(defendSetKind(null), 'messages');
+    const pagesFull = defendCopy({ variant: 'full' }, kinds('page', 'page'));
+    assert.ok(pagesFull.text.includes('page') && !pagesFull.text.includes('inbox'));
+    assert.equal(pagesFull.button, 'Open the pages');
+    assert.ok(!defendCopy({ variant: 'defendOnly' }, kinds('page')).text.includes('following the links'));
+
+    // E1-like run: the inbox line, then the authored line in the real panel
+    const full = fullEpisode();
+    setup(full, { [M.stateKey(full.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
+    open(full);
+    assert.equal(epState().stage, 'defend');
+    assert.ok(panelText().includes('Go through the inbox'));
+    const authored = { ...fullEpisode(), strings: { ...fullEpisode().strings, defendIntro: 'Now read the <b>queue</b> as Tom would.' } };
+    setup(authored, { [M.stateKey(authored.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
+    open(authored);
+    assert.equal(cur().container.querySelector('.er-text').textContent, 'Now read the <b>queue</b> as Tom would.');
+    assert.equal(cur().container.querySelector('.er-text b'), null, 'text, not HTML');
+    assert.equal(cur().container.querySelector('.er-launch').textContent, 'Open the inbox', 'the button still fits the set');
+
+    // E5-like defendOnly run on a page set: no inbox wording
+    const pages = { ...fullEpisode(), id: 'e5_fixture_defend', variant: 'defendOnly' };
+    setup(pages, { [M.stateKey(pages.id)]: { v: 1, done: ['brief'] } });
+    window.gameScenario.social.triageSets = [{ ...defendSet(), messages: [
+        { id: 'p1', kind: 'page', page: { url: 'https://a.example/' } }, { id: 'p2', kind: 'page', page: { url: 'https://b.example/' } }] }];
+    open(pages);
+    assert.equal(epState().stage, 'defend');
+    assert.ok(panelText().includes('Look at each page'));
+    assert.equal(panelText().includes('inbox'), false);
+    assert.equal(cur().container.querySelector('.er-launch').textContent, 'Open the pages');
 });

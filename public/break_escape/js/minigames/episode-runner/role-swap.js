@@ -3,7 +3,7 @@
 // In E3 the learner first rings a helpdesk as an impostor, then sits in the helpdesk agent's
 // seat. The calls they take are authored in the episode as `defend.calls[]`:
 //
-//   { id, genuine, callerId, claims: [{ fact, value }], tells: [...], transcript: [{ who, text }], notes }
+//   { id, genuine, callerId, claims: [{ fact, value, label? }], tells: [...], transcript: [{ who, text }], notes }
 //
 // and become `call` messages in the episode's own triage set, so the existing triage starter
 // scores them and writes episode_<id>_defend_done (N16: one writer). The conversion:
@@ -15,6 +15,9 @@
 //                                     they now check. A claim's value is a 06 `knows` value id
 //                                     (gordon_staffid); the card shows its label (QH-20719),
 //                                     found in the intelFacts `provides` that carry that value.
+//                                     A claim's own `label` wins over the intelFacts one (a
+//                                     defendOnly shell has no intelFacts); with neither, the
+//                                     raw value is shown.
 //
 // In the merged round the calls come first, then the set's own messages (E3: four calls,
 // then the push).
@@ -63,7 +66,7 @@ export function callToMessage(call, labels = {}) {
         transcript: Array.isArray(call.transcript) ? call.transcript.filter(isObj).map((l) => ({ ...l })) : [],
         claims: Array.isArray(call.claims)
             ? call.claims.filter((c) => isObj(c) && isStr(c.fact))
-                .map((c) => ({ fact: c.fact, value: label(c.value), valueId: String(c.value ?? '') }))
+                .map((c) => ({ fact: c.fact, value: isStr(c.label) ? c.label : label(c.value), valueId: String(c.value ?? '') }))
             : [],
         truth
     };

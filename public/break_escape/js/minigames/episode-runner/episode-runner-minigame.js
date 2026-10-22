@@ -18,7 +18,8 @@
 //            call (E3); flipMissed when something went but did not land. Continue clears the
 //            held ids
 //   defend   opens the triage starter with the defend set (role-swap calls merged in, 11 N15)
-//            and the awareness skin; its onComplete records the round
+//            and the awareness skin; its onComplete records the round. The panel line is
+//            strings.defendIntro, else a default that fits the set (messages, pages or calls)
 //   check    (check missions) the same, with defend.stage ('pre' or 'post')
 //   debrief  drawn here with renderDebrief (P7-B); Finish closes the runner
 //
@@ -77,6 +78,9 @@ const DEFEND_ONLY_COPY = Object.freeze({ heading: 'Defend', text: 'Go through th
 // The defend stage when the round is calls the learner takes (11 N15, the role swap).
 const ROLE_SWAP_COPY = Object.freeze({ heading: 'Take the calls', text: 'Now you are in the seat you just called. Take each call and decide what to do with it.', button: 'Open the queue' });
 const ROLE_SWAP_DEFEND_ONLY_COPY = Object.freeze({ heading: 'Take the calls', text: 'You are on the service desk. Take each call and decide what to do with it.', button: 'Open the queue' });
+// The defend stage when the round is mostly sign-in pages (E5).
+const PAGES_COPY = Object.freeze({ heading: 'Defend', text: 'Now you are the one following the links. Look at each page and decide what to do with it.', button: 'Open the pages' });
+const PAGES_DEFEND_ONLY_COPY = Object.freeze({ heading: 'Defend', text: 'Look at each page and decide what to do with it. Take your time: there is no trick to it, just the habits that catch these.', button: 'Open the pages' });
 const FINISHED_TEXT = 'You have finished this exercise. You can close this window.';
 const CALL_WAIT_MS = 300;                 // how often the call watcher looks for the chat closing
 const CALL_WAIT_LIMIT = 4 * 60 * 60 * 1000 / CALL_WAIT_MS; // gives up after four hours (a reopen still resumes)
@@ -92,6 +96,40 @@ const PAUSE_COPY = Object.freeze({
 export function facilitatorPrompt(strings, key) {
     const f = isObj(strings?.facilitator) ? strings.facilitator : null;
     return f && isStr(f[key]) ? f[key] : null;
+}
+
+/**
+ * What the defend round is: 'calls', 'pages' or 'messages' (the default). An episode with
+ * defend.calls is the role swap, so 'calls' whatever else the set holds. Otherwise the most
+ * common of call, page and everything else in the set, with a tie read as 'messages'.
+ */
+export function defendSetKind(set, episode) {
+    if (Array.isArray(episode?.defend?.calls) && episode.defend.calls.length) return 'calls';
+    const list = Array.isArray(set?.messages) ? set.messages.filter(isObj) : [];
+    let calls = 0, pages = 0;
+    for (const m of list) {
+        if (m.kind === 'call') calls++;
+        else if (m.kind === 'page') pages++;
+    }
+    const other = list.length - calls - pages;
+    if (calls > pages && calls > other) return 'calls';
+    if (pages > calls && pages > other) return 'pages';
+    return 'messages';
+}
+
+/**
+ * The defend stage's panel copy. The heading and button fit the set; the line is
+ * strings.defendIntro when the episode sets it, else the default for the set and variant.
+ */
+export function defendCopy(episode, set) {
+    const defendOnly = variantOf(episode) === 'defendOnly';
+    const kind = defendSetKind(set, episode);
+    let copy;
+    if (kind === 'calls') copy = defendOnly ? ROLE_SWAP_DEFEND_ONLY_COPY : ROLE_SWAP_COPY;
+    else if (kind === 'pages') copy = defendOnly ? PAGES_DEFEND_ONLY_COPY : PAGES_COPY;
+    else copy = defendOnly ? DEFEND_ONLY_COPY : STAGE_COPY.defend;
+    const intro = isObj(episode?.strings) ? episode.strings.defendIntro : null;
+    return isStr(intro) ? { ...copy, text: intro } : copy;
 }
 
 /** The triage result as the shared screen shows it in facilitated mode: no per-learner score. */
@@ -319,10 +357,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     _stageCopy(stage) {
         if (stage === 'write' && writeKind(this.episode) === 'call') return CALL_COPY;
         if (stage === 'defend') {
-            const defendOnly = variantOf(this.episode) === 'defendOnly';
-            const calls = Array.isArray(this.episode.defend?.calls) && this.episode.defend.calls.length > 0;
-            if (calls) return defendOnly ? ROLE_SWAP_DEFEND_ONLY_COPY : ROLE_SWAP_COPY;
-            if (defendOnly) return DEFEND_ONLY_COPY;
+            let set = null;
+            try { set = this.defendSet; } catch (e) { console.warn('[episode] could not read the defend set:', e); }
+            return defendCopy(this.episode, set);
         }
         return STAGE_COPY[stage];
     }

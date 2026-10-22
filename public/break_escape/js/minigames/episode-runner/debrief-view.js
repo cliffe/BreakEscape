@@ -6,7 +6,11 @@
 // triage set, read for each message's subject and `truth`. One card per answer, then the
 // "one thing to do on Monday" card and the no-blame line. On variant "defendOnly" the
 // strings.defendOnly paragraph stands in for anything about the learner's own message.
-// getState() -> { items: number, mondayCard: boolean, noBlame: boolean }.
+// Two optional panels sit between the cards and the Monday card: strings.conceptPanel (E2's
+// macro explainer) and strings.voicePanel (E4 and E7, copied voices). Each is plain text, or
+// { heading, text } of plain text; a blank line in the text starts a new paragraph.
+// getState() -> { items: number, mondayCard: boolean, noBlame: boolean,
+//                 conceptPanel: boolean, voicePanel: boolean }.
 // Every string goes in with textContent. The wording never blames the learner.
 
 import { redFlagString } from '../inbox-triage/triage-flags.js';
@@ -17,6 +21,12 @@ const DEFAULTS = Object.freeze({
     noBlameLine: 'Nobody here is being marked down for a miss. These messages are built to look right.',
     defendOnly: 'You went straight to the inbox this time. Each message below shows what to look for and why.',
     finish: 'Finish'
+});
+
+// Headings for the optional panels when the episode gives text only.
+const PANEL_HEADINGS = Object.freeze({
+    conceptPanel: 'How it works',
+    voicePanel: 'A voice is not proof'
 });
 
 const VERDICT_WORD = Object.freeze({ trust: 'Trust', report: 'Report', delete: 'Delete', verify: 'Verify' });
@@ -105,6 +115,22 @@ function buildCard(answer, msg) {
     return card;
 }
 
+/** An optional plain-text panel (strings.conceptPanel, strings.voicePanel), or null. */
+function buildPanel(strings, key) {
+    const raw = isObj(strings) ? strings[key] : null;
+    const text = typeof raw === 'string' ? raw : (isObj(raw) && typeof raw.text === 'string' ? raw.text : '');
+    if (!text.trim()) return null;
+    const heading = isObj(raw) && typeof raw.heading === 'string' && raw.heading.trim() ? raw.heading : PANEL_HEADINGS[key];
+    const cls = key === 'voicePanel' ? 'aw-voice-panel' : 'aw-concept-panel';
+    const panel = el('aside', `aw-panel ${cls}`);
+    panel.setAttribute('aria-label', heading);
+    panel.appendChild(el('h3', 'aw-panel-heading', heading));
+    for (const para of text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)) {
+        panel.appendChild(el('p', 'aw-panel-text', para));
+    }
+    return panel;
+}
+
 export function renderDebrief(container, { result, set, strings = {}, variant = 'full', onFinish } = {}) {
     const root = el('section', 'aw-debrief');
     const heading = el('h2', 'aw-heading', DEFAULTS.heading);
@@ -127,6 +153,11 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     for (const a of answers) cards.appendChild(buildCard(a, messageFor(set, a.id)));
     root.appendChild(cards);
 
+    const concept = buildPanel(strings, 'conceptPanel');
+    if (concept) root.appendChild(concept);
+    const voice = buildPanel(strings, 'voicePanel');
+    if (voice) root.appendChild(voice);
+
     const monday = el('aside', 'aw-monday', str(strings, 'mondayCard'));
     monday.setAttribute('aria-label', 'One thing to do on Monday');
     root.appendChild(monday);
@@ -140,6 +171,6 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
 
     return {
         destroy() { root.remove(); },
-        getState() { return { items: answers.length, mondayCard: true, noBlame: true }; }
+        getState() { return { items: answers.length, mondayCard: true, noBlame: true, conceptPanel: !!concept, voicePanel: !!voice }; }
     };
 }

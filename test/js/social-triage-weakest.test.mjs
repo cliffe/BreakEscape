@@ -118,3 +118,28 @@ test('J10 control: ticking at least one flag keeps the "Weakest skill:" line', (
     assert.match(weak.textContent, /Weakest skill:/);
     assert.doesNotMatch(weak.textContent, /didn't name any flags/);
 });
+
+test('enable_content_prompt is a library tell: chip label, red flag and a skill name in words', async () => {
+    const F = await import(pathToFileURL(join(dir, 'minigames/inbox-triage/triage-flags.js')));
+    assert.ok(F.CHANNEL_TELLS.enable_content_prompt);
+    for (const id of Object.keys(F.CHANNEL_TELLS)) assert.ok(F.SKILL_NAMES[id], `${id} has a skill name`);
+    const set = makeSet({ channelTells: ['enable_content_prompt'] });
+    assert.ok(F.chipIdsFor(set).includes('enable_content_prompt'), 'enabled without a set-local flagChips label');
+    assert.equal(F.chipLabel(set, 'enable_content_prompt'), 'It asks me to turn on editing or content to see it');
+    assert.match(F.chipLabel({ chipStyle: 'technical' }, 'enable_content_prompt'), /enable editing or content/);
+    assert.equal(F.redFlagString('enable_content_prompt', {}), F.CHANNEL_TELLS.enable_content_prompt);
+
+    const m = msgs();
+    m[2].truth.flags = ['senderTrust', 'enable_content_prompt'];
+    const s = open(makeSet({ messages: m, channelTells: ['enable_content_prompt'] }));
+    click($(s, '.tri-start'));
+    verdict(s, 'm1_it', 'trust');
+    verdict(s, 'm2_payroll', 'report', ['senderTrust']);
+    verdict(s, 'm3_parcel', 'delete', ['enable_content_prompt']);
+    click($(s, '.tri-next'));
+    assert.equal(state(s).step, 'result');
+    const li = $(s, '.tri-skill[data-factor="enable_content_prompt"]');
+    assert.ok(li, 'the breakdown lists the tell');
+    assert.equal(li.textContent, 'Enable-content prompts: caught 1 of 1');
+    assert.doesNotMatch($(s, '.tri-skills').textContent, /enable_content_prompt/);
+});

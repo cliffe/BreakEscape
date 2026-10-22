@@ -128,7 +128,7 @@ test('debrief: one card per answer, the Monday card and the no-blame line', () =
     let finished = 0;
     const d = renderDebrief(h, { result: result(), set: set(), strings: { mondayCard: 'On Monday, use the Report button.', noBlameLine: 'No blame here.' }, variant: 'full', onFinish: () => { finished += 1; } });
     assert.equal(h.querySelectorAll('.aw-card').length, 3);
-    assert.deepEqual(d.getState(), { items: 3, mondayCard: true, noBlame: true });
+    assert.deepEqual(d.getState(), { items: 3, mondayCard: true, noBlame: true, conceptPanel: false, voicePanel: false });
     assert.equal(h.querySelector('.aw-monday').textContent, 'On Monday, use the Report button.');
     assert.equal(h.querySelector('.aw-no-blame').textContent, 'No blame here.');
     const first = h.querySelector('[data-message-id="m1"]');
@@ -229,4 +229,33 @@ test('flip with missed: true shows flipMissed, not flipNoSend', () => {
     const h2 = host();
     renderFlipView(h2, { missed: true, onContinue() {} });
     assert.ok(h2.querySelector('.aw-missed').textContent.startsWith('Your attempt did not land'));
+});
+
+test('debrief: the optional concept and voice panels render as plain text, between the cards and the Monday card', () => {
+    const evil = '<img src=x onerror="window.pwned=1"><b>macro</b>';
+    const h = host();
+    const d = renderDebrief(h, { result: result(), set: set(), variant: 'full', onFinish() {},
+        strings: { conceptPanel: `Why enable content matters. ${evil}\n\nA real CV never needs it.`,
+                   voicePanel: { heading: 'Voices can be copied', text: 'Ring back on a number you hold.' } } });
+    assert.deepEqual(d.getState(), { items: 3, mondayCard: true, noBlame: true, conceptPanel: true, voicePanel: true });
+    const concept = h.querySelector('.aw-concept-panel');
+    assert.equal(concept.querySelector('.aw-panel-heading').textContent, 'How it works');
+    assert.deepEqual([...concept.querySelectorAll('.aw-panel-text')].map((p) => p.textContent),
+        [`Why enable content matters. ${evil}`, 'A real CV never needs it.']);
+    assert.equal(concept.querySelector('img, b'), null, 'never parsed as HTML');
+    assert.equal(window.pwned, undefined);
+    const voice = h.querySelector('.aw-voice-panel');
+    assert.equal(voice.querySelector('.aw-panel-heading').textContent, 'Voices can be copied');
+    assert.equal(voice.querySelector('.aw-panel-text').textContent, 'Ring back on a number you hold.');
+    const order = [...h.querySelector('.aw-debrief').children].map((n) => n.className.split(' ').find((c) => c.startsWith('aw-')));
+    assert.ok(order.indexOf('aw-cards') < order.indexOf('aw-panel'));
+    assert.ok(order.lastIndexOf('aw-panel') < order.indexOf('aw-monday'));
+    // a string panel alone gets the default voice heading; blank or missing panels are left out
+    const h2 = host();
+    const d2 = renderDebrief(h2, { result: result(), set: set(), variant: 'defendOnly', onFinish() {},
+        strings: { voicePanel: 'A voice is not proof of who is speaking.', conceptPanel: '   ' } });
+    assert.equal(h2.querySelector('.aw-voice-panel .aw-panel-heading').textContent, 'A voice is not proof');
+    assert.equal(h2.querySelector('.aw-concept-panel'), null);
+    assert.equal(d2.getState().conceptPanel, false);
+    assert.ok(/\.aw-panel\s*\{/.test(css), 'the skin styles the panels');
 });

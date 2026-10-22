@@ -371,6 +371,7 @@ are marked so.
 | `reply_to_differs` | email | "The reply-to address differs from the From address" | defend-only |
 | `reply_stop_trick` | smishing | "'Reply STOP' to opt out, which confirms your number is live" | defend-only |
 | `padlock_myth` | link/web | "A padlock shows the connection is private to the address owner, not that the site is safe" | defend-only |
+| `enable_content_prompt` | malicious document | "A document asks you to enable editing or content before it will show anything" | defend-only (E2) |
 
 An author may add scenario-local tells; a reusable one belongs here.
 

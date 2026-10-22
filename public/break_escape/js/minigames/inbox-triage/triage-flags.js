@@ -25,7 +25,8 @@ export const CHANNEL_TELLS = Object.freeze({
     borrowed_authority: 'Someone senior is invoked to skip a check',
     reply_to_differs: 'The reply-to address differs from the From address',
     reply_stop_trick: '\'Reply STOP\' to opt out, which confirms your number is live',
-    padlock_myth: 'A padlock shows the connection is private to the address owner, not that the site is safe'
+    padlock_myth: 'A padlock shows the connection is private to the address owner, not that the site is safe',
+    enable_content_prompt: 'A document asks you to enable editing or content before it will show anything'
 });
 
 export const NONE_ID = 'none';
@@ -40,7 +41,8 @@ export const CHIP_LABELS = Object.freeze({
         pretextRelevant: "There's no good reason I'd get this",
         attachmentPlausible: "The attachment doesn't fit",
         urgencyCalibrated: "It's pushing me to hurry",
-        linkCredible: 'The link goes somewhere else'
+        linkCredible: 'The link goes somewhere else',
+        enable_content_prompt: 'It asks me to turn on editing or content to see it'
     }),
     technical: Object.freeze({
         senderTrust: 'Sender trust: display name and real address differ',
@@ -49,7 +51,8 @@ export const CHIP_LABELS = Object.freeze({
         pretextRelevant: 'Pretext: no plausible reason for this to reach me',
         attachmentPlausible: 'Attachment: wrong type, or claimed but missing',
         urgencyCalibrated: 'Urgency: pressure to act fast',
-        linkCredible: 'Link: text and real destination differ'
+        linkCredible: 'Link: text and real destination differ',
+        enable_content_prompt: 'Document: asks to enable editing or content (macros)'
     })
 });
 
@@ -72,7 +75,8 @@ export const SKILL_NAMES = Object.freeze({
     borrowed_authority: 'Borrowed authority',
     reply_to_differs: 'Reply-to address',
     reply_stop_trick: 'Reply STOP',
-    padlock_myth: 'Padlock myth'
+    padlock_myth: 'Padlock myth',
+    enable_content_prompt: 'Enable-content prompts'
 });
 
 const isStr = (v) => typeof v === 'string' && v.length > 0;

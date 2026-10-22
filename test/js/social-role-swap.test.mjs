@@ -252,3 +252,22 @@ test('the skin CSS: tokens on .aw-skin, the win animation, and reduced motion tu
     assert.match(css, /\.aw-report-win\s*\{\s*animation:/);
     assert.match(css, /prefers-reduced-motion: reduce\)\s*\{[^}]*\.aw-report-win[^}]*animation: none/);
 });
+
+test('a claim\'s own label wins over the intelFacts label, which wins over the raw value', () => {
+    const labels = RS.valueLabels(fixture());
+    const call = { id: 'c', genuine: false, claims: [
+        { fact: 'staffId', value: 'gordon_staffid', label: 'QH-99999' },   // own label wins
+        { fact: 'who', value: 'gordon_full' },                              // intelFacts label
+        { fact: 'team', value: 'no_such_value' },                           // raw value
+        { fact: 'manager', value: 'okonkwo_full', label: '' }               // blank label is ignored
+    ] };
+    const m = RS.callToMessage(call, labels);
+    assert.deepEqual(m.claims.map((c) => [c.fact, c.value, c.valueId]), [
+        ['staffId', 'QH-99999', 'gordon_staffid'], ['who', 'Gordon McLeish', 'gordon_full'],
+        ['team', 'no_such_value', 'no_such_value'], ['manager', 'Ngozi Okonkwo', 'okonkwo_full']
+    ]);
+    // a defendOnly shell with no intelFacts: the labels carry the card
+    const s = { triageSets: [{ id: 'q', messages: [] }] };
+    const ep = { defend: { setId: 'q', calls: [{ id: 'c1', genuine: true, claims: [{ fact: 'who', value: 'gordon_full', label: 'Gordon McLeish' }] }] } };
+    assert.equal(RS.episodeDefendSet(ep, s).messages[0].claims[0].value, 'Gordon McLeish');
+});

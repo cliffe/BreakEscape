@@ -66,6 +66,10 @@
 .aw-flag-caught .aw-flag-word { color: var(--aw-accent); }
 .aw-flag-missed .aw-flag-word { color: var(--aw-warn); }
 .aw-if-trusted { margin: 6px 0; font-size: 15px; }
+/* optional concept and voice panels (strings.conceptPanel, strings.voicePanel) */
+.aw-panel { margin: 0 0 12px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-left: 4px solid var(--aw-accent); border-radius: 4px; }
+.aw-panel-heading { margin: 0 0 4px; font-size: 16px; }
+.aw-panel-text { margin: 4px 0; font-size: 15px; }
 .aw-monday { margin: 0 0 10px; padding: 12px 14px; background: #fff; border: 2px solid var(--aw-accent); border-radius: 4px; font-weight: 600; }
 .aw-no-blame { margin: 0; font-size: 15px; }
 
