@@ -367,3 +367,8 @@ the orchestrator passes it to that wave's owner.
   - `mfa` must sit after `write` or after `flip`. Pass `episode.mfa` `{pushes, approvesAt, mode}` to the authenticator.
   - The call conversion copies `notes` into `truth` (`perFlagNote`, `whyFine`).
   - Claims resolve against every `pretextNpcs` `knows` id, unless `defend.callsFrom` names one call.
+- **P7-V, for P7-Y1, P7-Y2, the runner and P7-O3:**
+  - **Prefix:** the E5 defend-only prefix is `episode_e5_signin_pages_defend_defend_`.
+  - **Ids:** `e5_signin_pages`, `e5_links_inbox`, `general_form_a` and `general_form_b`.
+  - **Flip view:** E5's flip shows a built page, not an email, so the flip view needs a page path.
+  - **Red flags:** "session expired" and "password manager didn't fill in" are not library tells, so they are left out of the chips. They would need adding to `00` §2 and `triage-flags.js` to become scored chips.
