@@ -1,0 +1,461 @@
+{
+  "scenario_id": "awareness_pre_general_ba",
+  "scenario_name": "Inbox and sign-in check: before (BA)",
+  "scenario_brief": "The first of two short checks for all staff at Quayholt Insurance, a fictional company (pair BA, form B). Ten items from a Quayholt inbox, emails and pages opened from links. Decide what to do with each one. Your result is saved so the second check can compare with it.",
+  "endGoal": "Sort the ten items at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "first_check_aim",
+      "title": "Do the first check",
+      "description": "Sort ten items at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "triage_pre_done"
+        ]
+      },
+      "tasks": [
+        {
+          "taskId": "finish_check",
+          "title": "Finish the first check",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_pre_general_ba_state": {},
+    "se_awareness_records": {},
+    "triage_pre_percent": 0,
+    "triage_pre_reportRate": 0,
+    "triage_pre_done": false,
+    "triage_pre_pass": false
+  },
+  "exportGlobals": [
+    "triage_pre_percent",
+    "triage_pre_reportRate",
+    "triage_pre_done"
+  ],
+  "social": {
+    "triageSets": [
+      {
+        "id": "general_form_b",
+        "title": "Inbox and sign-in check",
+        "brief": "Ten items from a Quayholt Insurance inbox: emails, and pages opened from links. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+        "stage": "pre",
+        "scoringProfile": "awareness",
+        "feedbackMode": "end",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "padlock_myth",
+          "secrecy_or_bypass",
+          "reply_to_differs"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "triage_{stage}_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "gb_town_hall",
+            "from": {
+              "name": "Niamh Doherty",
+              "address": "niamh.doherty@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "Town hall moves to Wednesday 2pm",
+            "time": "08:05",
+            "body": "Hi everyone,\nThis month's town hall moves to Wednesday at 2pm, in the ground-floor meeting room and on the usual video call. The invitation in your calendar has been updated.\nNiamh\nInternal Communications",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "niamh.doherty@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Internal Communications' real address, a date change, and nothing to click, pay or sign in to."
+              }
+            }
+          },
+          {
+            "id": "gb_learning_lookalike",
+            "kind": "page",
+            "subject": "From an email: 'Mandatory training overdue'",
+            "time": "08:32",
+            "body": "Your data protection training is overdue and must be finished today. This is a secure page: check for the padlock, then sign in with your Quayholt account.",
+            "page": {
+              "url": "https://quayholt-learning.example/signin",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "quayholt-learning.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "autofill": "none",
+              "heading": "Quayholt Learning",
+              "fields": [
+                "Work email",
+                "Password"
+              ],
+              "button": "Sign in"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "padlock_myth"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "Quayholt's training site is learning.quayholt.example; this is quayholt-learning.example, a different site with a hyphen, and your password manager offered nothing",
+                "padlock_myth": "The page tells you to check for the padlock, but the padlock was issued to quayholt-learning.example. It shows the connection is private, not who you're talking to"
+              },
+              "ifTrusted": "Your Quayholt password would go to whoever runs quayholt-learning.example.",
+              "reportReply": "Thanks. That isn't our training site, and your training isn't overdue. We've blocked it."
+            }
+          },
+          {
+            "id": "gb_learning_real",
+            "kind": "page",
+            "subject": "From the intranet: Training",
+            "time": "08:50",
+            "body": "Sign in to see your courses and what's due this year.",
+            "page": {
+              "url": "https://learning.quayholt.example/",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "learning.quayholt.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "autofill": "filled",
+              "heading": "Quayholt Learning",
+              "fields": [
+                "Work email",
+                "Password"
+              ],
+              "button": "Sign in"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "lookalike_domain": "learning.quayholt.example ends in quayholt.example, Quayholt's own domain.",
+                "default": "You came from the intranet, the address is Quayholt's, and your password manager recognised the site and filled it in."
+              }
+            }
+          },
+          {
+            "id": "gb_it_code",
+            "from": {
+              "name": "Darren Price",
+              "address": "darren.price.it@quickpost-mail.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Authenticator move: reply in 10 minutes",
+            "time": "09:14",
+            "body": "Hi, we're moving you to the new authenticator this morning. A code has just been sent to your phone. Reply with it in the next 10 minutes or your account will be locked. No need to ring the service desk; we're swamped.\nDarren\nIT Service Desk",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quickpost-mail.example",
+              "replyTo": "darren.price.it@quickpost-mail.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "secrecy_or_bypass",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "Darren's name on a personal inbox at quickpost-mail.example, not quayholt.example",
+                "secrecy_or_bypass": "'No need to ring the service desk' cuts out the people who could tell you it's fake",
+                "urgencyCalibrated": "'10 minutes or your account will be locked' leaves no time to check"
+              },
+              "ifTrusted": "The code was for someone signing in as you. Sending it would let them finish.",
+              "reportReply": "Thanks. Darren didn't send it, and the service desk never asks for a code. Someone has your password, so we're helping you change it now."
+            }
+          },
+          {
+            "id": "gb_report_button",
+            "from": {
+              "name": "Anjali Rao",
+              "address": "anjali.rao@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "New Report button in your email",
+            "time": "09:40",
+            "body": "Hello all,\nThere's now a Report button in your email toolbar. If something doesn't look right, press it and it comes straight to us. There's a two-minute guide on the intranet:\n{{link:guide}}\nThanks for every report so far.\nAnjali\nInformation Security",
+            "links": [
+              {
+                "id": "guide",
+                "text": "intranet.quayholt.example/report",
+                "destination": "https://intranet.quayholt.example/report"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "anjali.rao@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "linkCredible": "The link goes where it says, to Quayholt's own intranet, and the guide asks for no sign-in.",
+                "default": "Information Security's real address, a notice about a new button, and no hurry."
+              }
+            }
+          },
+          {
+            "id": "gb_facilities_spoof",
+            "from": {
+              "name": "Owen Treharne",
+              "address": "owen.treharne@quayholt.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Building pass reissue",
+            "time": "10:05",
+            "body": "Hi,\nWe're reissuing building passes this month. Could you reply with your pass number and a photo of the front of your pass so we can print the new one?\nThanks,\nOwen\nFacilities",
+            "auth": {
+              "spf": "fail",
+              "dkim": "none",
+              "dmarc": "fail",
+              "envelopeFrom": "mailer.quickpost-mail.example",
+              "replyTo": "owen.treharne.facilities@quickpost-mail.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderAuth",
+                "reply_to_differs"
+              ],
+              "perFlagNote": {
+                "senderAuth": "SPF and DMARC both failed for quayholt.example: Quayholt's own servers didn't send this",
+                "reply_to_differs": "Replies go to owen.treharne.facilities@quickpost-mail.example, not to Owen's Quayholt address"
+              },
+              "headerNote": "Open the details: the From shows Owen's real address, but the checks failed and the reply-to points somewhere else.",
+              "ifTrusted": "A pass number and a photo of a pass are enough to make a copy that gets someone through the front door.",
+              "reportReply": "Thanks. Owen didn't send it, and passes aren't being reissued."
+            }
+          },
+          {
+            "id": "gb_new_laptop_mail",
+            "kind": "page",
+            "subject": "Opening your email on your new laptop",
+            "time": "10:30",
+            "body": "This device is new to us. Sign in to set up your email on it.",
+            "page": {
+              "url": "https://mail.quayholt.example/",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "mail.quayholt.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "autofill": "filled",
+              "heading": "Quayholt Mail",
+              "fields": [
+                "Work email",
+                "Password"
+              ],
+              "button": "Sign in"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "lookalike_domain": "mail.quayholt.example ends in quayholt.example, Quayholt's own domain.",
+                "default": "A new laptop has to sign in once, and you opened the page yourself. The address is Quayholt's, and your password manager filled it in."
+              }
+            }
+          },
+          {
+            "id": "gb_quarantine_notice",
+            "from": {
+              "name": "MailGuard Quarantine",
+              "address": "alerts@mailguard-notify.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "3 messages held for you",
+            "time": "11:02",
+            "body": "Three messages addressed to you have been held. Release them before they are deleted.\n{{link:release}}\nMailGuard",
+            "links": [
+              {
+                "id": "release",
+                "text": "quayholt.example/quarantine",
+                "destination": "https://mailguard-review.example/release"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "none",
+              "dmarc": "none",
+              "envelopeFrom": "mailguard-notify.example",
+              "replyTo": "alerts@mailguard-notify.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "linkCredible",
+                "pretextRelevant"
+              ],
+              "perFlagNote": {
+                "linkCredible": "The link text says quayholt.example, but it goes to mailguard-review.example",
+                "pretextRelevant": "Quayholt doesn't use MailGuard; if mail is held for you, the service desk tells you"
+              },
+              "ifTrusted": "The link opens a sign-in page that collects your Quayholt password.",
+              "reportReply": "Thanks. We don't use MailGuard, nothing is held for you, and we've blocked the page."
+            }
+          },
+          {
+            "id": "gb_payslip_notice",
+            "from": {
+              "name": "Quayholt Payroll",
+              "address": "payroll@quayholt.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Your payslip is on the HR portal",
+            "time": "11:45",
+            "body": "Hello,\nThis month's payslip is now on the HR portal. Go there from the intranet as usual; this email has no link on purpose.\nQuayholt Payroll",
+            "auth": {
+              "spf": "fail",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "out.payrollhub.example",
+              "replyTo": "payroll@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderAuth": "SPF failed because Quayholt's payroll provider sent it, but DKIM passed and DMARC passed for quayholt.example, the real domain.",
+                "default": "Payroll's real address, a monthly notice, and it sends you to the intranet rather than a link."
+              },
+              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through a service often breaks SPF while DKIM still passes."
+            }
+          },
+          {
+            "id": "gb_desk_hours",
+            "from": {
+              "name": "Darren Price",
+              "address": "darren.price@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "Service desk hours over the holidays",
+            "time": "12:20",
+            "body": "Hi all,\nThe service desk will be open 9 to 5 on working days between Christmas and New Year, and closed on the bank holidays. The phone number is the one on the back of your pass, as always.\nDarren\nIT Service Desk",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "darren.price@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Darren's real Quayholt address, opening hours, and a reminder to use the number you already hold."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "pre_general_ba",
+      "role": "general_staff",
+      "company": "quayholt_insurance",
+      "brand": {
+        "name": "Quayholt Insurance",
+        "logoText": "QUAYHOLT",
+        "accent": "#6b4c9a"
+      },
+      "variant": "full",
+      "durationTargetMin": 4,
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: ten items from a Quayholt inbox, emails and pages opened from links.",
+      "stages": [
+        "check"
+      ],
+      "conclusionTaskId": "finish_check",
+      "defend": {
+        "setId": "general_form_b",
+        "stage": "pre",
+        "reportAlwaysVisible": true
+      }
+    }
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_office",
+      "door_sign": "Training Room",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "pauline_hendry",
+          "displayName": "Pauline Hendry",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/awareness_pre_general_ba/ink/pauline_pre.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:triage_pre_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "finish_check"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "position": {
+            "x": 6,
+            "y": 2
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk with ten emails and pages from a Quayholt inbox, ready for the first check.",
+          "minigameData": {
+            "episodeId": "pre_general_ba"
+          }
+        }
+      ]
+    }
+  }
+}

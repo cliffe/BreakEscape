@@ -2650,5 +2650,175 @@
         "room": "training_room"
       }
     ]
+  },
+  "awareness_e3_helpdesk_reset_defend": {
+    "globals": {
+      "episode_e3_helpdesk_reset_defend_defend_percent": 0,
+      "episode_e3_helpdesk_reset_defend_defend_reportRate": 0,
+      "episode_e3_helpdesk_reset_defend_defend_done": false,
+      "episode_e3_helpdesk_reset_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "darren_price",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e3_helpdesk_reset_defend/ink/darren_price.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e5_signin_pages_defend": {
+    "globals": {
+      "episode_e5_signin_pages_defend_defend_percent": 0,
+      "episode_e5_signin_pages_defend_defend_reportRate": 0,
+      "episode_e5_signin_pages_defend_defend_done": false,
+      "episode_e5_signin_pages_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "niamh_doherty",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e5_signin_pages_defend/ink/niamh_doherty.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_helpdesk_ab": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_done": false,
+      "triage_pre_pass": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_helpdesk_ab/ink/anjali_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_helpdesk_ab": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_done": false,
+      "triage_post_pass": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_helpdesk_ab/ink/anjali_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_helpdesk_ba": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_done": false,
+      "triage_pre_pass": false
+    },
+    "npcs": [
+      {
+        "id": "sofia_marchetti",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_helpdesk_ba/ink/sofia_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_helpdesk_ba": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_done": false,
+      "triage_post_pass": false
+    },
+    "npcs": [
+      {
+        "id": "sofia_marchetti",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_helpdesk_ba/ink/sofia_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_general_ab": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_done": false,
+      "triage_pre_pass": false
+    },
+    "npcs": [
+      {
+        "id": "owen_treharne",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_general_ab/ink/owen_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_general_ab": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_done": false,
+      "triage_post_pass": false
+    },
+    "npcs": [
+      {
+        "id": "owen_treharne",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_general_ab/ink/owen_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_general_ba": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_done": false,
+      "triage_pre_pass": false
+    },
+    "npcs": [
+      {
+        "id": "pauline_hendry",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_general_ba/ink/pauline_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_general_ba": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_done": false,
+      "triage_post_pass": false
+    },
+    "npcs": [
+      {
+        "id": "pauline_hendry",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_general_ba/ink/pauline_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
   }
 }

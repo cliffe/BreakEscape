@@ -1,0 +1,477 @@
+{
+  "scenario_id": "awareness_post_helpdesk_ba",
+  "scenario_name": "Service desk check: after (BA)",
+  "scenario_brief": "The second of two short checks for IT service desk staff at Quayholt Insurance, a fictional company (pair BA, form A). Ten new items from the IT service desk queue, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
+  "endGoal": "Work through the ten items at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "second_check_aim",
+      "title": "Do the second check",
+      "description": "Work through ten items at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "triage_post_done"
+        ]
+      },
+      "tasks": [
+        {
+          "taskId": "finish_check",
+          "title": "Finish the second check",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_post_helpdesk_ba_state": {},
+    "se_awareness_records": {},
+    "triage_post_percent": 0,
+    "triage_post_reportRate": 0,
+    "triage_post_done": false,
+    "triage_post_pass": false
+  },
+  "importGlobals": [
+    {
+      "from": "awareness_pre_helpdesk_ba",
+      "var": "triage_pre_percent",
+      "as": "triage_pre_percent",
+      "default": 0
+    },
+    {
+      "from": "awareness_pre_helpdesk_ba",
+      "var": "triage_pre_reportRate",
+      "as": "triage_pre_reportRate",
+      "default": 0
+    },
+    {
+      "from": "awareness_pre_helpdesk_ba",
+      "var": "triage_pre_done",
+      "as": "triage_pre_done",
+      "default": false
+    },
+    {
+      "from": "awareness_pre_helpdesk_ba",
+      "completed": "pre_check_completed"
+    }
+  ],
+  "social": {
+    "triageSets": [
+      {
+        "id": "helpdesk_form_a",
+        "title": "Service desk check",
+        "brief": "Ten items from the Quayholt IT service desk: calls, a voicemail, emails and a sign-in prompt on your phone. For each one, pick what you'd do, then tick what you noticed. Ring back or Verify means checking on a number already on file. You'll see how you did at the end. Reporting or checking something real never costs you anything.",
+        "stage": "post",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "end",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "channelTells": [
+          "vish_callback_pressure",
+          "borrowed_authority",
+          "secrecy_or_bypass",
+          "unrequested_mfa_push",
+          "reply_to_differs"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "triage_{stage}_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "ha_rota_weekend",
+            "from": {
+              "name": "Darren Price",
+              "address": "darren.price@quayholt.example"
+            },
+            "to": "servicedesk@quayholt.example",
+            "subject": "Weekend cover rota",
+            "time": "08:02",
+            "body": "Morning all,\nThis weekend's cover rota is on the team page. Leila and Owen are on Saturday, I'm on call Sunday. Swaps through me as usual, please.\nDarren",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "darren.price@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Your team lead's real address, a routine rota, and nothing to reset, sign in to or keep quiet."
+              }
+            }
+          },
+          {
+            "id": "ha_call_facilities",
+            "kind": "call",
+            "callerId": "Says he's Owen Treharne, Facilities (mobile, not on file)",
+            "from": {
+              "name": "Owen Treharne",
+              "address": "07700 900418 (not on file)"
+            },
+            "time": "08:20",
+            "transcript": [
+              {
+                "who": "Caller",
+                "text": "Hiya, Owen Treharne, Facilities. I'm locked out of the door-access system and the contractors are stood outside the loading bay."
+              },
+              {
+                "who": "You",
+                "text": "No problem. I'll ring you back on the number we've got for you, then we'll sort it."
+              },
+              {
+                "who": "Caller",
+                "text": "I'm on my personal phone, the work one's dead. Look, the Operations Director wants that bay open by half eight. Just reset it now and I'll sort the paperwork later."
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "vish_callback_pressure",
+                "borrowed_authority"
+              ],
+              "perFlagNote": {
+                "vish_callback_pressure": "He steers you off the callback: the work phone is 'dead', so the number on file can't be used",
+                "borrowed_authority": "'The Operations Director wants it open' is there to rush you past the check"
+              },
+              "ifTrusted": "The caller would have Owen's door-access account, and with it every door on the site.",
+              "reportReply": "Thanks. We rang Owen's desk on the number on file and he's in a meeting upstairs. He hasn't been locked out of anything."
+            }
+          },
+          {
+            "id": "ha_call_hr_awkward",
+            "kind": "call",
+            "callerId": "Sofia Marchetti, HR (mobile on file)",
+            "from": {
+              "name": "Sofia Marchetti",
+              "address": "Mobile on file, ending 562"
+            },
+            "time": "08:41",
+            "transcript": [
+              {
+                "who": "Sofia",
+                "text": "It's Sofia in HR. I'm locked out of the HR system and I've got interviews from nine. This is the third time this month."
+              },
+              {
+                "who": "You",
+                "text": "Sorry about that. I'll hang up and ring you back on the number we hold for you, then reset it."
+              },
+              {
+                "who": "Sofia",
+                "text": "Honestly, it's me. Fine, ring the mobile, but please be quick."
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "vish_callback_pressure": "She's fed up and in a hurry, but she lets you ring back on the number on file. Impatience isn't a tell; talking you out of the callback is.",
+                "default": "A real colleague having a bad morning. Ringing her back on the number on file costs her a minute and settles it. Refusing to help would leave her stuck, so offer the callback rather than saying no."
+              }
+            }
+          },
+          {
+            "id": "ha_ceo_mfa_bypass",
+            "from": {
+              "name": "Helen Achterberg",
+              "address": "helen.achterberg.ceo@inboxly.example"
+            },
+            "to": "servicedesk@quayholt.example",
+            "subject": "Urgent: remove my sign-in prompts today",
+            "time": "09:05",
+            "body": "I'm flying to Rotterdam this morning and the sign-in prompts keep failing on my new phone. Please turn off the extra sign-in step on my account before 10. No need to raise a ticket or tell Darren, I'll explain when I'm back.\nHelen\nSent from my phone",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "helen.achterberg.ceo@inboxly.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "secrecy_or_bypass",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The chief executive's name on a personal inbox at inboxly.example, not quayholt.example",
+                "secrecy_or_bypass": "'No need to raise a ticket or tell Darren' skips the record and the person who would check",
+                "urgencyCalibrated": "'Before 10' while she's 'flying' leaves no time to ring her"
+              },
+              "headerNote": "All three checks passed because the sender owns inboxly.example. A pass tells you which domain sent it, not that it's Helen.",
+              "ifTrusted": "Her account would lose its second sign-in step, so anyone with her password could get straight in.",
+              "reportReply": "Thanks. Helen didn't send it, and her account is unchanged. Her real address is on quayholt.example."
+            }
+          },
+          {
+            "id": "ha_push_night",
+            "kind": "push",
+            "subject": "Sign-in request at 02:14",
+            "time": "02:14",
+            "push": {
+              "app": "Quayholt Sign-in",
+              "request": "Are you trying to sign in?",
+              "account": "leila.nassar@quayholt.example",
+              "location": "Unknown location, outside the UK",
+              "device": "Windows PC"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unrequested_mfa_push"
+              ],
+              "perFlagNote": {
+                "unrequested_mfa_push": "You were asleep at 02:14. A prompt you didn't start means someone else has your password"
+              },
+              "ifTrusted": "Approving would let the sender into your account.",
+              "reportReply": "Thanks. We've reset your password and blocked that sign-in."
+            }
+          },
+          {
+            "id": "ha_ticket_relay",
+            "from": {
+              "name": "Quayholt Service Desk",
+              "address": "tickets@quayholt.example"
+            },
+            "to": "servicedesk@quayholt.example",
+            "subject": "Ticket SD-44817 assigned to you",
+            "time": "09:30",
+            "body": "Ticket SD-44817 (printer jam, second floor) has been assigned to you.\nOpen it from the service desk queue as usual.\nQuayholt Service Desk",
+            "auth": {
+              "spf": "fail",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "notify-relay.quayholt.example",
+              "replyTo": "tickets@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderAuth": "SPF failed because the ticket system sends through its supplier's mail service, but DKIM and DMARC passed for quayholt.example.",
+                "default": "An ordinary ticket notice from Quayholt's own domain. It asks you to open the queue the way you always do, not to follow a link."
+              },
+              "headerNote": "One failed check on its own is a clue, not proof. Mail sent through another company's service often fails SPF while DKIM still passes."
+            }
+          },
+          {
+            "id": "ha_list_spoof",
+            "from": {
+              "name": "Darren Price",
+              "address": "darren.price@quayholt.example"
+            },
+            "to": "servicedesk@quayholt.example",
+            "subject": "Quick one: MFA exemption list",
+            "time": "10:12",
+            "body": "Hi,\nI'm at the audit meeting and can't get on the admin console. Could you reply with the list of staff accounts that are exempt from the sign-in prompts? Just paste it into your reply.\nThanks,\nDarren",
+            "auth": {
+              "spf": "fail",
+              "dkim": "none",
+              "dmarc": "fail",
+              "envelopeFrom": "mailer.inboxly.example",
+              "replyTo": "d.price.servicedesk@inboxly.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderAuth",
+                "reply_to_differs"
+              ],
+              "perFlagNote": {
+                "senderAuth": "SPF and DMARC both failed for quayholt.example: Quayholt's own servers didn't send this",
+                "reply_to_differs": "Replies go to d.price.servicedesk@inboxly.example, not to Darren's Quayholt address"
+              },
+              "headerNote": "Open the details: the From shows Darren's real address, but the checks failed and the reply-to points somewhere else.",
+              "ifTrusted": "A list of accounts with no second sign-in step is a list of the easiest accounts to break into.",
+              "reportReply": "Thanks. Darren is at his desk and didn't send it."
+            }
+          },
+          {
+            "id": "ha_vm_locked",
+            "kind": "voicemail",
+            "from": {
+              "name": "Hana Novak",
+              "address": "ext. 4402"
+            },
+            "subject": "Voicemail from Hana Novak",
+            "time": "10:40",
+            "duration": "0:21",
+            "transcript": [
+              {
+                "who": "Hana",
+                "text": "Hi, it's Hana Novak in Claims. I think I've locked myself out after the password change. No rush, I'm on paper files this morning. Ring me back when you can, I'm on 4402, it's in the directory. Thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "She points you to the directory and gives you time. Ring her back on the extension the directory lists, then help as usual."
+              }
+            }
+          },
+          {
+            "id": "ha_password_expiry",
+            "from": {
+              "name": "Quayholt IT",
+              "address": "it-notices@quayholt.example"
+            },
+            "to": "servicedesk@quayholt.example",
+            "subject": "Your password expires in 7 days",
+            "time": "11:15",
+            "body": "Your Quayholt password expires in 7 days. You can change it at any time on the sign-in page:\n{{link:sso}}\nOr press Ctrl+Alt+Del on your work laptop and choose Change a password.\nQuayholt IT",
+            "links": [
+              {
+                "id": "sso",
+                "text": "sso.quayholt.example/password",
+                "destination": "https://sso.quayholt.example/password"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "it-notices@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "linkCredible": "The link goes where it says, to Quayholt's own sign-in page, and the email gives you a way that needs no link at all.",
+                "urgencyCalibrated": "Seven days is a normal reminder, not a rush.",
+                "default": "IT's real address, a routine reminder, and no request to reply with anything."
+              }
+            }
+          },
+          {
+            "id": "ha_call_printer",
+            "kind": "call",
+            "callerId": "Ayaan Warsame, Claims (ext. 4415)",
+            "from": {
+              "name": "Ayaan Warsame",
+              "address": "ext. 4415"
+            },
+            "time": "11:50",
+            "transcript": [
+              {
+                "who": "Ayaan",
+                "text": "Hi, Ayaan in Claims. The second-floor printer is jammed again. Could someone have a look this afternoon?"
+              },
+              {
+                "who": "You",
+                "text": "Sure, I'll log it. Is 4415 the best number for you?"
+              },
+              {
+                "who": "Ayaan",
+                "text": "Yes, that's my desk. Thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "A printer job asks for nothing that a caller could misuse, and he's calling from his own desk extension. Helping is the right call."
+              }
+            }
+          }
+        ],
+        "comparison": {
+          "requireGlobal": "pre_check_completed"
+        }
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "post_helpdesk_ba",
+      "role": "helpdesk",
+      "company": "quayholt_insurance",
+      "brand": {
+        "name": "Quayholt Insurance",
+        "logoText": "QUAYHOLT",
+        "accent": "#6b4c9a"
+      },
+      "variant": "full",
+      "durationTargetMin": 5,
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: ten items from the Quayholt IT service desk queue.",
+      "stages": [
+        "check"
+      ],
+      "conclusionTaskId": "finish_check",
+      "defend": {
+        "setId": "helpdesk_form_a",
+        "stage": "post",
+        "reportAlwaysVisible": true
+      }
+    }
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_office",
+      "door_sign": "Training Room",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "sofia_marchetti",
+          "displayName": "Sofia Marchetti",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/awareness_post_helpdesk_ba/ink/sofia_post.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:triage_post_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "finish_check"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "position": {
+            "x": 6,
+            "y": 2
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk with ten items from the service desk queue, ready for the second check.",
+          "minigameData": {
+            "episodeId": "post_helpdesk_ba"
+          }
+        }
+      ]
+    }
+  }
+}
