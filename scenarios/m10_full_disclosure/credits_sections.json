@@ -48,8 +48,9 @@
         "name": "AGENT 0x2D 'ANCHOR'",
         "clauses": [
           {
-            "text": "Raid lead. On her feet by Friday, and asking questions.",
-            "condition": "globalVars.quintero_ko === true"
+            "text": "Raid lead. Put on the floor by her own agent. On her feet by Friday, and asking questions.",
+            "condition": "globalVars.quintero_ko === true",
+            "style": "warning"
           },
           {
             "text": "Raid lead. Back on light duties in six weeks.",
@@ -92,6 +93,11 @@
         "name": "AGENT 0x23 'VECTOR'",
         "clauses": [
           {
+            "text": "Cryptographer. Knocked out by his own agent. Back at the annex on Monday.",
+            "condition": "globalVars.vector_on_team === true && globalVars.vector_ko === true",
+            "style": "warning"
+          },
+          {
             "text": "Cryptographer. Still waiting for an apology.",
             "condition": "globalVars.vector_on_team === true && globalVars.officer_out === 'vector'"
           },
@@ -104,6 +110,11 @@
       {
         "name": "AGENT 0x88 'PHANTOM'",
         "clauses": [
+          {
+            "text": "Auditor. Floored by the agent whose kit he audits. He has filed it.",
+            "condition": "globalVars.phantom_on_team === true && globalVars.phantom_ko === true",
+            "style": "warning"
+          },
           {
             "text": "Auditor. Filed a complaint about tonight. It was upheld.",
             "condition": "globalVars.phantom_on_team === true && globalVars.officer_out === 'phantom'"

@@ -116,7 +116,7 @@ Ghost's, the Recruiter's and HaX's executed texts arrive as the 06:00 scene clos
 | T-54 | `ghost_phone` | Sold. You watched who bought it. I hope the names were worth it. Clean exit. | `globalVars.ghost_sale === 'bait' && globalVars.head_start_killed !== 'ghost'` | the bait, the resale went out. New (M-5) **Cut** (alignment R3-m3: the closing scene carries it; the mapping is deleted) |
 | T-55 | `recruiter_phone` | I'll remember the shape of you. | `globalVars.m09_recruiter_offer === 'double_crossed'` | `delayMs: 5000`. **Fixed** (SE §3.5; `m10_recruiter_phone.ink` exists only to carry it) **Cut** (alignment R3-m3: the closing scene carries it; the mapping is deleted) |
 | T-56 | `agent_0x99` | I'll be at the board. I don't know what I'll say. | `globalVars.ending === 'executed'` | `delayMs: 30000`: "later, a message" (SE §3.1). **Fixed** **Cut** (alignment R3-m3: the closing scene carries it; the mapping is deleted) |
-| T-57 | `agent_0x99` | 0x00. | `global_variable_changed:ending` with `value === 'joined'` (not on `six_done`) | `delayMs: 3000`. Her designation, nothing else, unanswered (SE §3.1; FA §4.6 Join row). The credit reads "Handler. Her last message to 0x00 went unanswered." (ruling 9) Alignment R3-m4: `skipIfGlobal: "console_choice"`, so the text never arrives; the Citadel narrates it. |
+| T-57 | `agent_0x99` | 0x00. | `global_variable_changed:ending` with `value === 'joined'` (not on `six_done`) | `delayMs: 3000`. Her designation, nothing else, unanswered (SE §3.1; FA §4.6 Join row). The credit reads "Handler. Her last message to 0x00 went unanswered." (ruling 9) **Cut** (alignment R3-m4: the Citadel carries "0x00."; the mapping is deleted) |
 
 ## 7. Not placed here
 

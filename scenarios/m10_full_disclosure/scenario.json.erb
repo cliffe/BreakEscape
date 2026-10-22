@@ -553,8 +553,8 @@ tesseract_clause = {
 }
 in_this_operation = lambda do |ending|
   people = []
-  # Alignment R1 A1: the player heads their own credits on every ending, as an
-  # outcome (the told clause first where it applies; one clause per person).
+  # Alignment R1 A1, R2-M1: the player heads their own credits on every ending,
+  # as an outcome; m09's told answer is its own unnamed row below.
   people << person.('AGENT 0x00', [
     cl.('Pressed the key.', "globalVars.ending === 'joined'", w),
     cl.('Brought him out alive, in front of a court.', "globalVars.ending === 'arrest'"),
@@ -570,7 +570,7 @@ in_this_operation = lambda do |ending|
   # D1 (c), R2 m11: "Ten operations." only when m01-m09 were all played.
   people << person.(nil, [
     cl.('Ten operations. Still answering for every one.', "globalVars.m01_completed === true && globalVars.m02_completed === true && globalVars.m03_completed === true && globalVars.m04_completed === true && globalVars.m05_completed === true && globalVars.m06_completed === true && globalVars.m07_completed === true && globalVars.m08_completed === true && globalVars.m09_completed === true && globalVars.ending !== 'joined'"),
-    cl.('Still answering for every one.', "globalVars.m09_completed === true && globalVars.ending !== 'joined'")
+    cl.('Still answering for every operation.', "globalVars.m09_completed === true && globalVars.ending !== 'joined'")
   ])
   people << person.('DIRECTOR MAGNUS NETHERTON', [
     cl.('Signed for all of it.')
@@ -778,7 +778,7 @@ elsewhere_one = [
   cl.('Noor Haddad: warned in October. Back at the archive.', 'globalVars.m09_completed === true && !globalVars.m09_noor_told && !globalVars.m09_noor_ko && globalVars.m05_completed === true && globalVars.m05_found_pipeline_list === true && !globalVars.m05_recruiter_deal_accepted'),
   cl.('Noor Haddad: woke at her own desk. Still asking who hit her.', 'globalVars.m09_completed === true && !globalVars.m09_noor_told && globalVars.m09_noor_ko === true', w),
   cl.("Noor Haddad: never told. Still on the list.", "globalVars.m09_completed === true && !globalVars.m09_noor_told && !globalVars.m09_noor_ko && !globalVars.m05_found_pipeline_list"),
-  cl.("Noor Haddad: never told. Still on the list.", "globalVars.m09_completed === true && !globalVars.m09_noor_told && !globalVars.m09_noor_ko && globalVars.m05_recruiter_deal_accepted === true"),
+  cl.("Noor Haddad: never told. Still on the list.", "globalVars.m09_completed === true && !globalVars.m09_noor_told && !globalVars.m09_noor_ko && globalVars.m05_found_pipeline_list === true && globalVars.m05_recruiter_deal_accepted === true"),
   # Playtest FULL_1 / S6 3.5: a stopped share gets its own row, and the "still trading" rows skip it.
   cl.('Zero Day: got nothing tonight. Still trading.', "globalVars.share_zero_day === 'stopped' && globalVars.close_zero_day === 'trading'"),
   cl.('Zero Day: got nothing tonight. Its broker, Pieter Vos, named.', "globalVars.share_zero_day === 'stopped' && globalVars.close_zero_day === 'vos_named'"),
@@ -863,8 +863,9 @@ credits_fragment = JSON.parse(<<~'JSON')
           "name": "AGENT 0x2D 'ANCHOR'",
           "clauses": [
             {
-              "text": "Raid lead. On her feet by Friday, and asking questions.",
-              "condition": "globalVars.quintero_ko === true"
+              "text": "Raid lead. Put on the floor by her own agent. On her feet by Friday, and asking questions.",
+              "condition": "globalVars.quintero_ko === true",
+              "style": "warning"
             },
             {
               "text": "Raid lead. Back on light duties in six weeks.",
@@ -907,6 +908,11 @@ credits_fragment = JSON.parse(<<~'JSON')
           "name": "AGENT 0x23 'VECTOR'",
           "clauses": [
             {
+              "text": "Cryptographer. Knocked out by his own agent. Back at the annex on Monday.",
+              "condition": "globalVars.vector_on_team === true && globalVars.vector_ko === true",
+              "style": "warning"
+            },
+            {
               "text": "Cryptographer. Still waiting for an apology.",
               "condition": "globalVars.vector_on_team === true && globalVars.officer_out === 'vector'"
             },
@@ -919,6 +925,11 @@ credits_fragment = JSON.parse(<<~'JSON')
         {
           "name": "AGENT 0x88 'PHANTOM'",
           "clauses": [
+            {
+              "text": "Auditor. Floored by the agent whose kit he audits. He has filed it.",
+              "condition": "globalVars.phantom_on_team === true && globalVars.phantom_ko === true",
+              "style": "warning"
+            },
             {
               "text": "Auditor. Filed a complaint about tonight. It was upheld.",
               "condition": "globalVars.phantom_on_team === true && globalVars.officer_out === 'phantom'"
@@ -1077,9 +1088,9 @@ credits_for = lambda do |ending|
     c << cl.('FULL DISCLOSURE', nil, 'subtitle')
     c << { 'text' => '' }
   end
-  # Alignment R1 m4: one entry per SAFETYNET person. Their IN THIS OPERATION
-  # conditional clauses (tonight's outcome) move ahead of their SAFETYNET role
-  # clauses, and they leave IN THIS OPERATION; with no outcome, the role line shows.
+  # Alignment R1 m4, R2-m14: one entry per SAFETYNET person. Order: their
+  # SAFETYNET conditional clauses, then their IN THIS OPERATION conditional
+  # clauses, then the SAFETYNET default; they leave IN THIS OPERATION.
   # credits_sections.json is unchanged (the drift check still holds).
   ito = in_this_operation.(ending)
   sn = JSON.parse(JSON.generate(credits_fragment[join ? 'safetynet_join' : 'safetynet']))
@@ -1689,9 +1700,7 @@ end
             { "eventPattern": "global_variable_changed:console_choice", "condition": "value !== ''", "onceOnly": true, "completeTask": "decide_the_console" },
             { "eventPattern": "global_variable_changed:database_outcome", "condition": "value !== ''", "onceOnly": true, "completeTask": "decide_the_database" },
             { "eventPattern": "global_variable_changed:ending", "condition": "value !== ''", "onceOnly": true, "completeTask": "decide_his_end" },
-            <%# Alignment R2 m10: T-57 skips once the Citadel opens (it narrates the same word). %>
-            { "eventPattern": "global_variable_changed:ending", "condition": "value === 'joined'", "onceOnly": true, "sendTimedMessage": { "delay": 3000, "message": "0x00.", "skipIfGlobal": "citadel_open" } },
-            { "eventPattern": "global_variable_changed:six_done", "condition": "value === true && globalVars.ending === 'executed'", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "I'll be at the board. I don't know what I'll say.", "skipIfGlobal": "six_open" } },
+            <%# Alignment R3-m3/m4: T-56 and T-57 are cut; the executed scene and the Citadel carry them. %>
 <%# Impl R1 minor 11: a required story task whose one onceOnly completion was lost catches up on load (completeTask returns early on a done task; m08's take_the_debrief). %>
 <% [['settle_the_table', 'globalVars.door_scene_done === true'], ['answer_the_handset', 'globalVars.ghost_call_done === true'],
     ['cut_the_shutter', 'globalVars.gallery_shutter_cut === true'], ['open_the_outer_lock', "globalVars.head_start_out !== ''"],
@@ -2169,17 +2178,8 @@ end
           ],
           "eventMappings": [
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Duty Handset' && data.roomId === 'security_office' && !globalVars.ghost_call_done", "cooldown": 0, "conversationMode": "phone-chat", "targetKnot": "ghost_call", "resume": true, "disableClose": true, "voiced": true },
-            { "eventPattern": "global_variable_changed:ghost_watch_on_route", "condition": "value === true", "onceOnly": true, "sendTimedMessage": { "delay": 500, "message": "Left at the stairs. I can see you, and so can they." } },
-<% [["globalVars.ghost_answer === 'not_why'", 'Neither was this. Clean exit.'],
-    ["globalVars.ghost_answer === 'card_unsigned'", 'Mine will be too. Clean exit.'],
-    ["globalVars.ghost_answer === 'ask_them'", "I did. They didn't know who I was. Clean exit."],
-    ["globalVars.ghost_answer === 'hospitals'", 'Clean. I noticed.'],
-    ["globalVars.ghost_answer === 'trust'", "You checked. Most don't."],
-    ["globalVars.ghost_sale === 'stopped' && globalVars.ghost_answer === ''", 'Left on a quiet day, as you asked. First sale I ever turned down. Clean exit.'],
-    ["globalVars.ghost_sale === 'bait' && globalVars.head_start_killed === 'ghost'", 'Five buyers paid for nothing, and you have their names. I kept the money. Clean exit.'],
-    ["globalVars.ghost_sale === 'bait' && globalVars.head_start_killed !== 'ghost'", 'Sold. You watched who bought it. I hope the names were worth it. Clean exit.']].each_with_index do |(cond, msg), i| %>
-            { "eventPattern": "global_variable_changed:six_done", "condition": "value === true && <%= cond %>", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": <%= j.(msg) %>, "skipIfGlobal": "six_open" } }<%= i < 7 ? ',' : '' %>
-<% end %>
+            { "eventPattern": "global_variable_changed:ghost_watch_on_route", "condition": "value === true", "onceOnly": true, "sendTimedMessage": { "delay": 500, "message": "Left at the stairs. I can see you, and so can they." } }
+            <%# Alignment R3-m3: Ghost's last texts (T-47 to T-54) are cut; six_oclock's phone_beat carries them. %>
           ]
         },
         {
@@ -2238,8 +2238,8 @@ end
           "avatar": "assets/characters/the_recruiter_headshot.png",
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_recruiter_phone.json",
           "currentKnot": "start",
+          <%# Alignment R3-m3: the Recruiter's last text (T-55) is cut; six_oclock's phone_beat carries it. %>
           "eventMappings": [
-            { "eventPattern": "global_variable_changed:six_done", "condition": "value === true && globalVars.m09_recruiter_offer === 'double_crossed'", "onceOnly": true, "sendTimedMessage": { "delay": 5000, "message": "I'll remember the shape of you.", "skipIfGlobal": "six_open" } }
           ]
         },
 <%# --- The closing scenes (OT 4.7): hidden person NPCs, each opened by its own mapping. Every closing mapping carries !closing_done and onceOnly; game_loaded backstops re-open a scene whose last line hasn't run. --- %>

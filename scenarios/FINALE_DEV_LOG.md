@@ -441,3 +441,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - m10 alignment R3 ink fixes: St. Catherine's season line by database_outcome; three-message van line; hearing Reading payoff; funded-arrest sting; Citadel road line; dead-text comments; contract note.
 - m09 alignment R7: 0/0/2 (Noor's clone button on the warned route and after a saved read; status-ladder rows missing from the contract body).
 - m09 alignment R7 fixes: 2/2 (Noor's clone button hides after a saved read and on the warned route via staff_card_cloned; contract status ladder rows).
+- m10 alignment R3 JSON fixes: Noor rows exclusive; KO'd Vector/Phantom/Quintero credits; inert T-47..T-57 deleted (scenes carry the beats); season fallback; comments.

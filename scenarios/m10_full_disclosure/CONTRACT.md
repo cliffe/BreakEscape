@@ -1061,3 +1061,11 @@ Applied 2026-10-21 by the m10 fixer from `finale/STAGE_8_RULINGS.md` and the rev
 - **R3-m9:** the Citadel's phone line is "Somewhere on a road out of Montana, your phone lights. One message from HaX. '0x00.' You don't answer.".
 - **R3-m3:** the ink and texts comments no longer call T-47 to T-56 the thread's record. Since R2-m10 they are inert (skipped on `six_open`). Deleting the mappings is the builder's call.
 - **Corrected above:** the R2-m14 note.
+
+**Alignment round 3 (JSON side; ALIGNMENT_REVIEW_F_R3.md).**
+- R3-m1: the second "never told" Noor row also needs `m05_found_pipeline_list === true`, so the two never both print.
+- R3-m2: first SAFETYNET clauses (warning), in `credits_sections.json` and the ERB copy: Vector on `vector_on_team && vector_ko` "Cryptographer. Knocked out by his own agent. Back at the annex on Monday."; Phantom on `phantom_on_team && phantom_ko` "Auditor. Floored by the agent whose kit he audits. He has filed it."; Quintero on `quintero_ko` "Raid lead. Put on the floor by her own agent. On her feet by Friday, and asking questions." (replacing her old `quintero_ko` clause, which it covers). The merge order stays as in R2-m14.
+- R3-m3: the 06:00 texts T-47 to T-56 are deleted from the ERB (Ghost's eight, the Recruiter's, executed's HaX). The closing scenes carry them, and the phone can't be opened between `six_open` and the credits. This supersedes R1 A2's "keep the JSON texts for the thread" and R2-m10's `six_open` skip. The texts file marks them cut.
+- R3-m4: T-57 ("0x00.") is deleted from the ERB; the Citadel scene carries it.
+- R3-m8: the season fallback row reads "Still answering for every operation."
+- R3-m10: the 0x00 and merge-order comments in the ERB match the code. Correction to R2-m14: two of the 25 deleted clauses did print, Netherton's and HaX's Join clauses; `safetynet_join`'s defaults now say the same.
