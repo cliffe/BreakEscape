@@ -71,7 +71,8 @@ def audit(key):
     root = export_root(work)
     ov = OVERRIDES / key
     for f in ov.rglob("*.png") if ov.exists() else []:
-        dest = root / "animations" / f.relative_to(ov)
+        rel = f.relative_to(ov)
+        dest = root / rel if rel.parts[0] == "rotations" else root / "animations" / rel
         if dest.parent.exists():
             shutil.copy(f, dest)
     out = WORK / "atlas" / key

@@ -1705,8 +1705,9 @@ def apply_overrides(key, root):
         return 0
     n = 0
     for f in src.rglob("*.png"):
-        rel = f.relative_to(src)  # <template>/<direction>/frame_NNN.png
-        dest = root / "animations" / rel
+        rel = f.relative_to(src)  # <template>/<direction>/frame_NNN.png, or rotations/<direction>.png
+        # rotations/south.png is where the converter cuts the 32px headshot from
+        dest = root / rel if rel.parts[0] == "rotations" else root / "animations" / rel
         if dest.parent.exists():
             shutil.copy(f, dest)
             n += 1
