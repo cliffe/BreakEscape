@@ -1238,6 +1238,26 @@ export function startEngagementReport(sprite, options = {}) {
 }
 window.startEngagementReport = startEngagementReport;
 
+// Mock authenticator (P7-W3): params { pushes, approvesAt, mode, onComplete, returnTo }.
+// socialOverlayParams sets requiresKeyboardInput and disableClose before construction.
+export function startAuthenticator(params = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Authenticator unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    window.MinigameFramework.startMinigame('authenticator', null, socialOverlayParams({
+        ...params,
+        onComplete: (success, result) => {
+            if (typeof params.onComplete === 'function') params.onComplete(success, result);
+        }
+    }));
+}
+window.startAuthenticator = startAuthenticator;
+
 // Pretext preparation (P4-T0). The callId branches in interactions.js call this
 // after the lockout check. socialOverlayParams sets requiresKeyboardInput and
 // disableClose before startMinigame reads them. The overlay draws its own Close.

@@ -20,6 +20,7 @@ export { InboxTriageMinigame } from './inbox-triage/inbox-triage-minigame.js';
 export { PretextPrepMinigame } from './pretext-prep/pretext-prep-minigame.js';
 export { LandingPageBuilderMinigame } from './landing-page-builder/landing-page-builder-minigame.js';
 export { EngagementReportMinigame } from './engagement-report/engagement-report-minigame.js';
+export { AuthenticatorMinigame } from './authenticator/authenticator-minigame.js';
 export { PinMinigame, startPinMinigame } from './pin/pin-minigame.js';
 export { PasswordMinigame } from './password/password-minigame.js';
 export { TextFileMinigame, returnToTextFileAfterNotes } from './text-file/text-file-minigame.js';
@@ -110,6 +111,7 @@ import { EpisodeRunnerMinigame } from './episode-runner/episode-runner-minigame.
 import { PretextPrepMinigame } from './pretext-prep/pretext-prep-minigame.js';
 import { LandingPageBuilderMinigame } from './landing-page-builder/landing-page-builder-minigame.js';
 import { EngagementReportMinigame } from './engagement-report/engagement-report-minigame.js';
+import { AuthenticatorMinigame } from './authenticator/authenticator-minigame.js';
 
 // Import the PIN minigame
 import { PinMinigame } from './pin/pin-minigame.js';
@@ -180,6 +182,7 @@ MinigameFramework.registerScene('episode-runner', EpisodeRunnerMinigame);
 MinigameFramework.registerScene('pretext-prep', PretextPrepMinigame);
 MinigameFramework.registerScene('landing-page-builder', LandingPageBuilderMinigame);
 MinigameFramework.registerScene('engagement-report', EngagementReportMinigame);
+MinigameFramework.registerScene('authenticator', AuthenticatorMinigame);
 MinigameFramework.registerScene('pin', PinMinigame);
 MinigameFramework.registerScene('password', PasswordMinigame);
 MinigameFramework.registerScene('text-file', TextFileMinigame);
