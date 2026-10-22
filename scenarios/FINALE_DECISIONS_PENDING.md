@@ -23,3 +23,8 @@ The VM has no recovery or undelete step. The archaeology is thematic: an abandon
 ## F11. Season 2 teaser on m10's closing card? (story call)
 
 The closing card has an optional teaser slot, currently off (no eldritch content, per the brief, apart from this slot). Leave it off, or write a one-line teaser?
+
+m10 build addendum (scenario-design R1 VM answers, 2026-10-22, `finale/FINALE_EDU_VM_LINES.md` Task B):
+- The later hosts are reachable from the gate (flat network, as in m08), so a fast student could take all four flags early; only the in-game stations enforce order. Decide: segment the network, or accept (as for m09's early peek).
+- The release host holds no "disarm" file and the core host no unsent notice; both are in-game only. The game side is being worded so it doesn't promise VM content. If you'd rather the VM carry them, seed them at build.
+- Timed VM run still owed (cut order starts with the backdoor task if the VM portion runs over ~34 min).
