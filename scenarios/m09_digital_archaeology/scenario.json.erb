@@ -53,6 +53,19 @@ hl_file_number = "HL2015-0477"
 salvage_code = "LEWISANDCLARK"           # Vigenere Decode of MSJMQAEGDZNVI, key BONEYARD
 salvage_tail = %q{\n\nSALVAGE CAGE ACCESS\nMSJMQAEGDZNVI}
 
+# --- VM gating, F12 (FINALE_VM_GATING_HANDOFF.md A5) ---------------------------
+# PLACEHOLDER (VM): these four strings must equal the accounts the SecGen build
+# creates for the catalogue server (gates flag 1) and Tomb Beta's web service
+# (gates flag 3). The scenario binding carries only flags (flags_for_vm), not
+# account names or passwords, so they are fixed strings here, as m01's password
+# list is. Not checked against the VM: Opus agents don't open the VM plan. The
+# opus48 agent or the user fills them; until then the player-facing text shows
+# the PLACEHOLDER marker.
+catalogue_login_user = "PLACEHOLDER_catalogue_user"
+catalogue_login_password = "PLACEHOLDER_catalogue_password"
+tomb_beta_login_user = "PLACEHOLDER_tomb_beta_user"
+tomb_beta_login_password = "PLACEHOLDER_tomb_beta_password"
+
 # --- Fixed document strings reused in more than one variant (S6 §1) ----------
 series_l = %q{SERIES L -- LEGACY PLACEMENTS, NOT SAFETYNET. M.S.\nName / placed / post / cost to date / yield / notes\nRuth Lindqvist -- 2009 -- deputy clerk, Cascade County -- $14,000 -- voter rolls -- Quiet. Reliable.\nGail Pettibone -- 2010 -- dispatcher, county 911 center -- $8,500 -- call routing -- Asks nothing.\nDolores Ortega -- 2012 -- billing director, regional hospital -- $31,500 -- records, three systems -- Wants out. Remind her of her son.\nHector Salas -- 2012 -- shift supervisor, water treatment plant -- $12,000 -- control room schedule -- Steady.\nJune Akiyama -- 2013 -- IT contractor, state DMV -- $22,000 -- license data -- Careful. Too careful.\nTom Brekke -- 2014 -- school board, Bozeman -- $6,000 -- vendor contracts -- Enjoys it.\nVernon Teague -- 2014 -- lineman foreman, rural co-op -- $9,800 -- substation keys -- Drinks. Watch.\nLeah Brandvold -- 2015 -- paralegal, county attorney -- $11,200 -- case lists -- Bright. Bored.\nAmit Deshmukh -- 2016 -- zoning officer, Billings -- $9,200 -- substation permits -- Never asked for anything yet. Will be.\nSamuel Ocampo -- 2017 -- records officer, VA clinic -- $7,400 -- patient lists -- Grateful.\nDoreen Fitch -- 2018 -- court reporter, district court -- $5,600 -- transcripts -- Lonely.\nPenciled at the foot: The best work I have done. Nobody will ever know. That was the point.}
 
@@ -1550,13 +1563,13 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "observations": "PUBLIC CATALOGUE. County deeds, land records, corporate deposits.",
+          "observations": "PUBLIC CATALOGUE. County deeds, land records, corporate deposits. Staff sign in as <%= catalogue_login_user %>.",
           "observationVariants": [
             { "condition": "globalVars.invoice_booked", "value": "LIVE CAPTURE -- INITIATIVE LEDGER, NEW ENTRY" },
             { "condition": "globalVars.flag2_submitted", "value": "LIVE CAPTURE -- INITIATIVE LEDGER" },
             { "condition": "globalVars.flag1_submitted", "value": "LIVE CAPTURE -- FULL CATALOGUE" }
           ],
-          "text": "PUBLIC CATALOGUE. County deeds, land records, corporate deposits.",
+          "text": "PUBLIC CATALOGUE. County deeds, land records, corporate deposits.\nStaff sign-in: <%= catalogue_login_user %>. Password from the duty desk, never on screen.",
           "textVariants": [
             { "condition": "globalVars.invoice_booked", "value": "LIVE CAPTURE -- INITIATIVE LEDGER, NEW ENTRY\nSale. WREN. To Agent 0x00. Consideration, one deck. Booked. M.S.\n\nPlacements 23. Candidates 47. Legacy 11.\nWREN -- H&L -- placed 11 yrs -- LIVE\nSource file: HL2015-0477<%= salvage_tail %>" },
             { "condition": "globalVars.flag2_submitted && globalVars.m05_final_choice === 'combat_lethal'", "value": "<%= ledger_block %>\nTORRES -- placed 1 yr -- CLOSED PLACEMENT. M.S.<%= salvage_tail %>" },
@@ -1565,6 +1578,20 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
             { "condition": "globalVars.flag2_submitted", "value": "<%= ledger_block %>\nTORRES -- placed 1 yr -- LOST<%= salvage_tail %>" },
             { "condition": "globalVars.flag1_submitted", "value": "LIVE CAPTURE -- FULL CATALOGUE\nSeries R, restricted: R-114 to R-161. Location: restricted cage, bay 10.\nUnindexed entry:<%= salvage_tail %>" }
           ],
+          "puzzle_graph_role": "clue"
+        },
+        {
+          "_comment": "VM gating F12 (handoff A5 item 1): the catalogue's service login, a slip on the drop desk, so flag 1 needs this room reached and this find. Position is on the drop desk between the laptop and the terminal; check it in the next dressing pass. The account strings are VM PLACEHOLDERs (Codes block).",
+          "type": "notes",
+          "sprite": "notes_postit1",
+          "id": "catalogue_login_slip",
+          "name": "Login Slip",
+          "position": { "x": 4.9, "y": 2.2 },
+          "takeable": true,
+          "readable": true,
+          "observations": "A slip in a duty clerk's hand, stuck to the drop desk.",
+          "text": "CATALOGUE -- OVERNIGHT INDEX RUN\nUser: <%= catalogue_login_user %>\nPassword: <%= catalogue_login_password %>\nNoor -- for the night run only. Don't leave this out. M.S.",
+          "onRead": { "setVariable": { "catalogue_login_found": true } },
           "puzzle_graph_role": "clue"
         },
         {
@@ -2419,7 +2446,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
                 { "condition": "globalVars.notebook_read", "value": "A ring binder of enrolment sheets, pencilled in a hand you have seen tonight." },
                 { "condition": "globalVars.nightshade_file_held", "value": "A ring binder of enrolment sheets, pencilled in a hand you have seen tonight." }
               ],
-              "text": "TOMB BETA -- WORKSHOP ENROLMENT, SPRING INTAKE\nTwelve names, a photograph clipped to each.\nPencilled beside most of them: Ready. Not yet. Ask properly."
+              "text": "TOMB BETA -- WORKSHOP ENROLMENT, SPRING INTAKE\nTwelve names, a photograph clipped to each.\nPencilled beside most of them: Ready. Not yet. Ask properly.\nInside the back cover, typed: Enrolment site login. User: <%= tomb_beta_login_user %>. Password: <%= tomb_beta_login_password %>.",
+              "onRead": { "setVariable": { "tomb_beta_login_found": true } }
             }
           ]
         }
@@ -2575,6 +2603,8 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "noor_card_given": false,
     "noor_cover": "",
     "deed_found": false,
+    "catalogue_login_found": false,
+    "tomb_beta_login_found": false,
     "incident_log_read": false,
     "tape_card_held": false,
     "albion_folder_opened": false,

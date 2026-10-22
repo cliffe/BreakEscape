@@ -1013,6 +1013,18 @@ Voiced delta: 3 reworded (the cage narrator line, Netherton's briefing line, HaX
 
 Voiced delta: +1 HaX line (378 → 379).
 
+**VM gating (F12)** (user rulings F12/F13; `../FINALE_VM_GATING_HANDOFF.md` A5, concept level only; no VM file opened).
+1. A new readable, `catalogue_login_slip` ("Login Slip", a post-it on the drop desk in the reading room), holds the catalogue's staff login. Flag 1 now needs the reading room reached and the slip found. It latches `catalogue_login_found`. Departure: the room map has no desk drawer, so the slip sits on the drop desk at tile (4.9, 2.2), between the laptop and the terminal. Check it in the next dressing pass.
+2. The Tomb Beta enrolment binder (in the BETA crate in the salvage cage) adds "Inside the back cover, typed: Enrolment site login…". It latches `tomb_beta_login_found`. Flag 3 therefore needs the cage, the crate and the binder.
+3. Steers:
+   - The drop terminal screen says "Staff sign-in: <user>. Password from the duty desk, never on screen."
+   - HaX's catalogue topic adds "It runs on a staff service account. Somebody left its login on a slip at the drop desk.", and the `catalogue_guide_offered` status row points at the slip.
+   - HaX's flag-3 steer adds "Its web login's in the enrolment binder, in the crate stencilled BETA.", and a new status row above the other salvage rows reads, until the binder is read, "Flag three. His box's login is in the enrolment binder, in the BETA crate. Then find out whose box it is."
+
+**PLACEHOLDER (VM):** the four account strings (`catalogue_login_user`/`_password`, `tomb_beta_login_user`/`_password`, the Codes block of the ERB) must equal what the SecGen build creates. The scenario binding carries flags only, so like m01's password list they are fixed strings. Until the opus48 agent or the user fills them, the player sees the PLACEHOLDER markers.
+
+All unvoiced: voiced delta 0.
+
 **Voiced counts as built (stage 9, after alignment R4)**, from `TtsLineExtractor.for_scenario("m09_digital_archaeology")` (no API calls; distinct texts per host and speaker; a line shared by two hosts is counted once, under the first): HaX's voiced calls (`deck_resume`, `identity_scene`, `identity_resume`, `tesseract_call`) 56 (HaX 53, Netherton 3); the Recruiter's call 25 (Recruiter 14, HaX 11 not shared with `deck_resume`); the briefing 92 character lines (Netherton 25 as the host, HaX 58, Quintero 3, Kowalczyk 3, Malhotra 2, Arakawa 1) plus 8 Narrator; the debrief 55 (Netherton 48 as the host, HaX 4, Kowalczyk 3) plus 16 Narrator; the Alpha clip 4 plus 2 Narrator; Sorensen 32 across her three records (hatch 20, cage 9, door 3) plus 16 Narrator and 8 HaX; Noor 20 plus 4 Narrator and 2 HaX; Old Coyote 16; Tran 11 plus 1 Narrator; Dillard 1. In all, 369 distinct (speaker, line) pairs.
 
 **Voiced counts after stage 8**: group A calls 56 distinct (HaX 53, Netherton 3; one new HaX line, one Netherton line reworded); the Recruiter 14 and B1's HaX 17, unchanged; briefing 91 character lines plus 8 Narrator (7 new: Netherton 3, HaX 4; 2 reworded); debrief 50 plus 16 Narrator (2 reworded); Sorensen 2 new lines (B5), 1 Narrator line reworded (B4); Noor 1 reworded.

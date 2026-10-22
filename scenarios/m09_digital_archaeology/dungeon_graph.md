@@ -14,7 +14,7 @@ Helena, Montana, after hours. Last night a courier carried the Architect's order
 | Physical locks | 11 |
 | AND-gate convergences | 1 |
 | Rooms | 11 |
-| Puzzle graph nodes / edges | 64 / 71 |
+| Puzzle graph nodes / edges | 65 / 72 |
 | Story graph nodes / edges | 6 / 5 |
 
 ## Critical Path
@@ -105,6 +105,7 @@ flowchart TD
   field_laptop["Field Laptop"]
   safetynet_drop_terminal{"SAFETYNET Drop Terminal"}
   drop_terminal_screen{"Drop Terminal Screen"}
+  login_slip{"Login Slip"}
   training_notebook_scan{"Training Notebook (scan)"}
   rubber_stamp{"Rubber Stamp"}
   lock_plan_cabinet["Plan Cabinet"]
@@ -166,6 +167,7 @@ flowchart TD
   reading_room --> safetynet_drop_terminal
   safetynet_drop_terminal --> door_restricted_stacks
   reading_room --> drop_terminal_screen
+  reading_room --> login_slip
   reading_room --> training_notebook_scan
   restricted_stacks --> rubber_stamp
   rubber_stamp --> lock_plan_cabinet
@@ -208,7 +210,7 @@ flowchart TD
 
   class door_front_desk,door_staff_passage,door_restricted_stacks,door_restricted_cage,door_sorensen_office,door_tape_room,door_salvage_cage,lock_enrolment_crate,lock_director_safe,lock_hl_box,lock_plan_cabinet lock
   class front_desk,staff_passage,restricted_stacks,restricted_cage,sorensen_office,tape_room,salvage_cage,loading_dock,open_stacks,reading_room,server_closet room
-  class lock_pick_kit,rfid_cloner,fingerprint_kit,cyberchef_workstation,pin_cracker_kowalczyk_s,catalogue_salvage_cage,placement_record_hl2015_0477,harwick_lowe_dead_files,safetynet_drop_terminal,drop_terminal_screen,training_notebook_scan,rubber_stamp,candidate_assessment_intake_2011,plan_cabinet,the_reading_1_viral_dynamics,the_reading_2_the_innocents,the_reading_3_albion,the_reading_4_portland,the_reading_last_page,destruction_schedule_master,floor_safe,rent_ledger,lease_abstract_and_construction_file,shelf_marks,crate_stencilled_beta item
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,cyberchef_workstation,pin_cracker_kowalczyk_s,catalogue_salvage_cage,placement_record_hl2015_0477,harwick_lowe_dead_files,safetynet_drop_terminal,drop_terminal_screen,login_slip,training_notebook_scan,rubber_stamp,candidate_assessment_intake_2011,plan_cabinet,the_reading_1_viral_dynamics,the_reading_2_the_innocents,the_reading_3_albion,the_reading_4_portland,the_reading_last_page,destruction_schedule_master,floor_safe,rent_ledger,lease_abstract_and_construction_file,shelf_marks,crate_stencilled_beta item
   class npc_agent_hax,npc_noor_haddad,staff_card_n_haddad,npc_cody_old_coyote,key_ring_dock_office,key_card_tape_store key
   class field_laptop,field_kit_link,vmch_submit_catalogue_flag,vmch_submit_ledger_flag,vmch_submit_owner_flag,vmch_submit_control_flag vm
   class andgate1 gate
@@ -319,6 +321,7 @@ flowchart TD
   field_laptop["Field Laptop"]
   safetynet_drop_terminal{"SAFETYNET Drop Terminal"}
   drop_terminal_screen{"Drop Terminal Screen"}
+  login_slip{"Login Slip"}
   training_notebook_scan{"Training Notebook (scan)"}
   rubber_stamp{"Rubber Stamp"}
   lock_plan_cabinet["Plan Cabinet"]
@@ -386,6 +389,7 @@ flowchart TD
   reading_room --> safetynet_drop_terminal
   safetynet_drop_terminal --> door_restricted_stacks
   reading_room --> drop_terminal_screen
+  reading_room --> login_slip
   reading_room --> training_notebook_scan
   restricted_stacks --> rubber_stamp
   rubber_stamp --> lock_plan_cabinet
@@ -443,7 +447,7 @@ flowchart TD
 
   class door_front_desk,door_staff_passage,door_restricted_stacks,door_restricted_cage,door_sorensen_office,door_tape_room,door_salvage_cage,lock_enrolment_crate,lock_director_safe,lock_hl_box,lock_plan_cabinet lock
   class front_desk,staff_passage,restricted_stacks,restricted_cage,sorensen_office,tape_room,salvage_cage,loading_dock,open_stacks,reading_room,server_closet room
-  class lock_pick_kit,rfid_cloner,fingerprint_kit,cyberchef_workstation,pin_cracker_kowalczyk_s,catalogue_salvage_cage,placement_record_hl2015_0477,harwick_lowe_dead_files,safetynet_drop_terminal,drop_terminal_screen,training_notebook_scan,rubber_stamp,candidate_assessment_intake_2011,plan_cabinet,the_reading_1_viral_dynamics,the_reading_2_the_innocents,the_reading_3_albion,the_reading_4_portland,the_reading_last_page,destruction_schedule_master,floor_safe,rent_ledger,lease_abstract_and_construction_file,shelf_marks,crate_stencilled_beta item
+  class lock_pick_kit,rfid_cloner,fingerprint_kit,cyberchef_workstation,pin_cracker_kowalczyk_s,catalogue_salvage_cage,placement_record_hl2015_0477,harwick_lowe_dead_files,safetynet_drop_terminal,drop_terminal_screen,login_slip,training_notebook_scan,rubber_stamp,candidate_assessment_intake_2011,plan_cabinet,the_reading_1_viral_dynamics,the_reading_2_the_innocents,the_reading_3_albion,the_reading_4_portland,the_reading_last_page,destruction_schedule_master,floor_safe,rent_ledger,lease_abstract_and_construction_file,shelf_marks,crate_stencilled_beta item
   class npc_agent_hax,npc_noor_haddad,staff_card_n_haddad,npc_cody_old_coyote,key_ring_dock_office,key_card_tape_store key
   class field_laptop,field_kit_link,vmch_submit_catalogue_flag,vmch_submit_ledger_flag,vmch_submit_owner_flag,vmch_submit_control_flag vm
   class andgate1 gate
@@ -580,50 +584,51 @@ flowchart TD
   rc_field_laptop_32{"Field Laptop"}
   rc_drop_terminal_33{"SAFETYNET Drop Terminal"}
   rc_drop_terminal_screen_34{"Drop Terminal Screen"}
-  rc_case_file_35{"Case File, Helena"}
-  rc_notebook_scan_36{"Training Notebook (scan)"}
-  rc_sorensen_stamp_37{"Rubber Stamp"}
-  rc_npc_margaret_sorensen_38("Margaret Sorensen")
-  rc_derek_file_39{"Asset File: D. Lawson"}
-  rc_letters_40{"Initiative to Social Fabric, Handoff 14"}
-  rc_nightshade_copy_41{"Cleared from Locker 47"}
-  rc_cage_shredder_42{"Cross-Cut Shredder"}
-  rc_feed_table_box_43{"The Last Box"}
-  rc_plan_cabinet_44[["Plan Cabinet"]]
-  rc_nightshade_file_45{"Candidate Assessment, Intake 2011"}
-  rc_printed_ledger_46{"Initiative Ledger, Print Copy"}
-  rc_npc_margaret_sorensen_47("Margaret Sorensen")
-  rc_sorensen_stacks_card_48{"Stacks Card, M. Sorensen"}
-  rc_npc_margaret_sorensen_49("Margaret Sorensen")
-  rc_derek_file_50{"Asset File: D. Lawson"}
-  rc_letters_51{"Initiative to Social Fabric, Handoff 14"}
-  rc_nightshade_copy_52{"Cleared from Locker 47"}
-  rc_director_safe_53[["Floor Safe"]]
-  rc_the_reading_54{"The Reading, 1: Viral Dynamics"}
-  rc_the_reading_2_55{"The Reading, 2: The Innocents"}
-  rc_the_reading_3_56{"The Reading, 3: Albion"}
-  rc_the_reading_4_57{"The Reading, 4: Portland"}
-  rc_the_reading_last_page_58{"The Reading, Last Page"}
-  rc_master_schedule_59{"Destruction Schedule (master)"}
-  rc_tape_room_keycard_60{"Key Card, Tape Store"}
-  rc_rent_book_61{"Rent Ledger"}
-  rc_lease_file_62{"Lease Abstract and Construction File"}
-  rc_danny_sheet_63{"Broker's Note: D. Foster"}
-  rc_refit_ledger_64{"Build-Out Ledger"}
-  rc_deck_controller_65{"Tape Deck Controller"}
-  rc_clerk_certificate_66{"Framed Certificate"}
-  rc_shelf_code_legend_67{"Shelf Marks"}
-  rc_alpha_tape_deck_68{"Reel Deck"}
-  rc_alpha_annotations_69{"Annotation Sheets, Series ALPHA"}
-  rc_npc_dr_adrian_tesseract_recording_70("Dr Adrian Tesseract (recording)")
-  rc_tomb_beta_rack_71{"Rack Server"}
-  rc_beta_asset_tag_72{"Property Label"}
-  rc_field_kit_link_73{"Field Kit Link"}
-  rc_tomb_beta_station_74{"Tomb Beta Drop Link"}
-  rc_albion_folder_75{"Printed Folder: VH-2017-0312"}
-  rc_mirror_job_printout_76{"Mirror Job Printout"}
-  rc_enrolment_crate_77[["Crate, Stencilled BETA"]]
-  rc_enrolment_binders_78{"Enrolment Binder, Tomb Beta"}
+  rc_catalogue_login_slip_35{"Login Slip"}
+  rc_case_file_36{"Case File, Helena"}
+  rc_notebook_scan_37{"Training Notebook (scan)"}
+  rc_sorensen_stamp_38{"Rubber Stamp"}
+  rc_npc_margaret_sorensen_39("Margaret Sorensen")
+  rc_derek_file_40{"Asset File: D. Lawson"}
+  rc_letters_41{"Initiative to Social Fabric, Handoff 14"}
+  rc_nightshade_copy_42{"Cleared from Locker 47"}
+  rc_cage_shredder_43{"Cross-Cut Shredder"}
+  rc_feed_table_box_44{"The Last Box"}
+  rc_plan_cabinet_45[["Plan Cabinet"]]
+  rc_nightshade_file_46{"Candidate Assessment, Intake 2011"}
+  rc_printed_ledger_47{"Initiative Ledger, Print Copy"}
+  rc_npc_margaret_sorensen_48("Margaret Sorensen")
+  rc_sorensen_stacks_card_49{"Stacks Card, M. Sorensen"}
+  rc_npc_margaret_sorensen_50("Margaret Sorensen")
+  rc_derek_file_51{"Asset File: D. Lawson"}
+  rc_letters_52{"Initiative to Social Fabric, Handoff 14"}
+  rc_nightshade_copy_53{"Cleared from Locker 47"}
+  rc_director_safe_54[["Floor Safe"]]
+  rc_the_reading_55{"The Reading, 1: Viral Dynamics"}
+  rc_the_reading_2_56{"The Reading, 2: The Innocents"}
+  rc_the_reading_3_57{"The Reading, 3: Albion"}
+  rc_the_reading_4_58{"The Reading, 4: Portland"}
+  rc_the_reading_last_page_59{"The Reading, Last Page"}
+  rc_master_schedule_60{"Destruction Schedule (master)"}
+  rc_tape_room_keycard_61{"Key Card, Tape Store"}
+  rc_rent_book_62{"Rent Ledger"}
+  rc_lease_file_63{"Lease Abstract and Construction File"}
+  rc_danny_sheet_64{"Broker's Note: D. Foster"}
+  rc_refit_ledger_65{"Build-Out Ledger"}
+  rc_deck_controller_66{"Tape Deck Controller"}
+  rc_clerk_certificate_67{"Framed Certificate"}
+  rc_shelf_code_legend_68{"Shelf Marks"}
+  rc_alpha_tape_deck_69{"Reel Deck"}
+  rc_alpha_annotations_70{"Annotation Sheets, Series ALPHA"}
+  rc_npc_dr_adrian_tesseract_recording_71("Dr Adrian Tesseract (recording)")
+  rc_tomb_beta_rack_72{"Rack Server"}
+  rc_beta_asset_tag_73{"Property Label"}
+  rc_field_kit_link_74{"Field Kit Link"}
+  rc_tomb_beta_station_75{"Tomb Beta Drop Link"}
+  rc_albion_folder_76{"Printed Folder: VH-2017-0312"}
+  rc_mirror_job_printout_77{"Mirror Job Printout"}
+  rc_enrolment_crate_78[["Crate, Stencilled BETA"]]
+  rc_enrolment_binders_79{"Enrolment Binder, Tomb Beta"}
 
   loading_dock --> open_stacks
   loading_dock --> front_desk
@@ -670,55 +675,56 @@ flowchart TD
   reading_room --> rc_field_laptop_32
   reading_room --> rc_drop_terminal_33
   reading_room --> rc_drop_terminal_screen_34
-  reading_room --> rc_case_file_35
-  reading_room --> rc_notebook_scan_36
-  restricted_stacks --> rc_sorensen_stamp_37
-  restricted_stacks --> rc_npc_margaret_sorensen_38
-  rc_npc_margaret_sorensen_38 --> rc_derek_file_39
-  rc_npc_margaret_sorensen_38 --> rc_letters_40
-  rc_npc_margaret_sorensen_38 --> rc_nightshade_copy_41
-  restricted_cage --> rc_cage_shredder_42
-  restricted_cage --> rc_feed_table_box_43
-  restricted_cage --> rc_plan_cabinet_44
-  rc_plan_cabinet_44 --> rc_nightshade_file_45
-  restricted_cage --> rc_printed_ledger_46
-  restricted_cage --> rc_npc_margaret_sorensen_47
-  rc_npc_margaret_sorensen_47 --> rc_sorensen_stacks_card_48
-  restricted_cage --> rc_npc_margaret_sorensen_49
-  rc_npc_margaret_sorensen_49 --> rc_derek_file_50
-  rc_npc_margaret_sorensen_49 --> rc_letters_51
-  rc_npc_margaret_sorensen_49 --> rc_nightshade_copy_52
-  sorensen_office --> rc_director_safe_53
-  rc_director_safe_53 --> rc_the_reading_54
-  rc_director_safe_53 --> rc_the_reading_2_55
-  rc_director_safe_53 --> rc_the_reading_3_56
-  rc_director_safe_53 --> rc_the_reading_4_57
-  rc_director_safe_53 --> rc_the_reading_last_page_58
-  rc_director_safe_53 --> rc_master_schedule_59
-  rc_director_safe_53 --> rc_tape_room_keycard_60
-  sorensen_office --> rc_rent_book_61
-  sorensen_office --> rc_lease_file_62
-  sorensen_office --> rc_danny_sheet_63
-  sorensen_office --> rc_refit_ledger_64
-  sorensen_office --> rc_deck_controller_65
-  sorensen_office --> rc_clerk_certificate_66
-  tape_room --> rc_shelf_code_legend_67
-  tape_room --> rc_alpha_tape_deck_68
-  tape_room --> rc_alpha_annotations_69
-  tape_room --> rc_npc_dr_adrian_tesseract_recording_70
-  salvage_cage --> rc_tomb_beta_rack_71
-  salvage_cage --> rc_beta_asset_tag_72
-  salvage_cage --> rc_field_kit_link_73
-  salvage_cage --> rc_tomb_beta_station_74
-  salvage_cage --> rc_albion_folder_75
-  salvage_cage --> rc_mirror_job_printout_76
-  salvage_cage --> rc_enrolment_crate_77
-  rc_enrolment_crate_77 --> rc_enrolment_binders_78
+  reading_room --> rc_catalogue_login_slip_35
+  reading_room --> rc_case_file_36
+  reading_room --> rc_notebook_scan_37
+  restricted_stacks --> rc_sorensen_stamp_38
+  restricted_stacks --> rc_npc_margaret_sorensen_39
+  rc_npc_margaret_sorensen_39 --> rc_derek_file_40
+  rc_npc_margaret_sorensen_39 --> rc_letters_41
+  rc_npc_margaret_sorensen_39 --> rc_nightshade_copy_42
+  restricted_cage --> rc_cage_shredder_43
+  restricted_cage --> rc_feed_table_box_44
+  restricted_cage --> rc_plan_cabinet_45
+  rc_plan_cabinet_45 --> rc_nightshade_file_46
+  restricted_cage --> rc_printed_ledger_47
+  restricted_cage --> rc_npc_margaret_sorensen_48
+  rc_npc_margaret_sorensen_48 --> rc_sorensen_stacks_card_49
+  restricted_cage --> rc_npc_margaret_sorensen_50
+  rc_npc_margaret_sorensen_50 --> rc_derek_file_51
+  rc_npc_margaret_sorensen_50 --> rc_letters_52
+  rc_npc_margaret_sorensen_50 --> rc_nightshade_copy_53
+  sorensen_office --> rc_director_safe_54
+  rc_director_safe_54 --> rc_the_reading_55
+  rc_director_safe_54 --> rc_the_reading_2_56
+  rc_director_safe_54 --> rc_the_reading_3_57
+  rc_director_safe_54 --> rc_the_reading_4_58
+  rc_director_safe_54 --> rc_the_reading_last_page_59
+  rc_director_safe_54 --> rc_master_schedule_60
+  rc_director_safe_54 --> rc_tape_room_keycard_61
+  sorensen_office --> rc_rent_book_62
+  sorensen_office --> rc_lease_file_63
+  sorensen_office --> rc_danny_sheet_64
+  sorensen_office --> rc_refit_ledger_65
+  sorensen_office --> rc_deck_controller_66
+  sorensen_office --> rc_clerk_certificate_67
+  tape_room --> rc_shelf_code_legend_68
+  tape_room --> rc_alpha_tape_deck_69
+  tape_room --> rc_alpha_annotations_70
+  tape_room --> rc_npc_dr_adrian_tesseract_recording_71
+  salvage_cage --> rc_tomb_beta_rack_72
+  salvage_cage --> rc_beta_asset_tag_73
+  salvage_cage --> rc_field_kit_link_74
+  salvage_cage --> rc_tomb_beta_station_75
+  salvage_cage --> rc_albion_folder_76
+  salvage_cage --> rc_mirror_job_printout_77
+  salvage_cage --> rc_enrolment_crate_78
+  rc_enrolment_crate_78 --> rc_enrolment_binders_79
 
   class loading_dock,open_stacks,server_closet,reading_room room
   class front_desk,staff_passage,restricted_stacks,restricted_cage,sorensen_office,tape_room,salvage_cage lock
-  class rc_incident_book_1,rc_m09_catalogue_field_guide_3,rc_m09_ledger_field_guide_4,rc_m09_tomb_beta_field_guide_5,rc_m09_archive_code_guide_6,rc_catalogue_salvage_line_7,rc_trolley_list_20,rc_noor_desk_box_21,rc_noor_staff_card_23,rc_hl_bay_label_24,rc_hl_placing_sheet_26,rc_dock_office_key_28,rc_tape_side_console_30,rc_field_laptop_32,rc_drop_terminal_33,rc_drop_terminal_screen_34,rc_case_file_35,rc_notebook_scan_36,rc_sorensen_stamp_37,rc_derek_file_39,rc_letters_40,rc_nightshade_copy_41,rc_cage_shredder_42,rc_feed_table_box_43,rc_nightshade_file_45,rc_printed_ledger_46,rc_sorensen_stacks_card_48,rc_derek_file_50,rc_letters_51,rc_nightshade_copy_52,rc_the_reading_54,rc_the_reading_2_55,rc_the_reading_3_56,rc_the_reading_4_57,rc_the_reading_last_page_58,rc_master_schedule_59,rc_tape_room_keycard_60,rc_rent_book_61,rc_lease_file_62,rc_danny_sheet_63,rc_refit_ledger_64,rc_deck_controller_65,rc_clerk_certificate_66,rc_shelf_code_legend_67,rc_alpha_tape_deck_68,rc_alpha_annotations_69,rc_tomb_beta_rack_71,rc_beta_asset_tag_72,rc_field_kit_link_73,rc_tomb_beta_station_74,rc_albion_folder_75,rc_mirror_job_printout_76,rc_enrolment_binders_78 item
-  class rc_npc_agent_hax_2,rc_npc_the_recruiter_8,rc_npc_agent_0x47_nightshade_9,rc_npc_david_torres_10,rc_npc_gary_whitlock_11,rc_npc_director_magnus_netherton_12,rc_npc_agent_hax_13,rc_npc_agent_0x2d_anchor_14,rc_npc_agent_0x5e_lantern_15,rc_npc_officer_dev_malhotra_16,rc_npc_officer_kenji_arakawa_17,rc_npc_director_magnus_netherton_18,rc_npc_director_magnus_netherton_19,rc_npc_noor_haddad_22,rc_npc_cody_old_coyote_27,rc_npc_lyle_dillard_29,rc_npc_jesse_tran_31,rc_npc_margaret_sorensen_38,rc_npc_margaret_sorensen_47,rc_npc_margaret_sorensen_49,rc_npc_dr_adrian_tesseract_recording_70 npc
-  class rc_hl_box_25,rc_plan_cabinet_44,rc_director_safe_53,rc_enrolment_crate_77 container
+  class rc_incident_book_1,rc_m09_catalogue_field_guide_3,rc_m09_ledger_field_guide_4,rc_m09_tomb_beta_field_guide_5,rc_m09_archive_code_guide_6,rc_catalogue_salvage_line_7,rc_trolley_list_20,rc_noor_desk_box_21,rc_noor_staff_card_23,rc_hl_bay_label_24,rc_hl_placing_sheet_26,rc_dock_office_key_28,rc_tape_side_console_30,rc_field_laptop_32,rc_drop_terminal_33,rc_drop_terminal_screen_34,rc_catalogue_login_slip_35,rc_case_file_36,rc_notebook_scan_37,rc_sorensen_stamp_38,rc_derek_file_40,rc_letters_41,rc_nightshade_copy_42,rc_cage_shredder_43,rc_feed_table_box_44,rc_nightshade_file_46,rc_printed_ledger_47,rc_sorensen_stacks_card_49,rc_derek_file_51,rc_letters_52,rc_nightshade_copy_53,rc_the_reading_55,rc_the_reading_2_56,rc_the_reading_3_57,rc_the_reading_4_58,rc_the_reading_last_page_59,rc_master_schedule_60,rc_tape_room_keycard_61,rc_rent_book_62,rc_lease_file_63,rc_danny_sheet_64,rc_refit_ledger_65,rc_deck_controller_66,rc_clerk_certificate_67,rc_shelf_code_legend_68,rc_alpha_tape_deck_69,rc_alpha_annotations_70,rc_tomb_beta_rack_72,rc_beta_asset_tag_73,rc_field_kit_link_74,rc_tomb_beta_station_75,rc_albion_folder_76,rc_mirror_job_printout_77,rc_enrolment_binders_79 item
+  class rc_npc_agent_hax_2,rc_npc_the_recruiter_8,rc_npc_agent_0x47_nightshade_9,rc_npc_david_torres_10,rc_npc_gary_whitlock_11,rc_npc_director_magnus_netherton_12,rc_npc_agent_hax_13,rc_npc_agent_0x2d_anchor_14,rc_npc_agent_0x5e_lantern_15,rc_npc_officer_dev_malhotra_16,rc_npc_officer_kenji_arakawa_17,rc_npc_director_magnus_netherton_18,rc_npc_director_magnus_netherton_19,rc_npc_noor_haddad_22,rc_npc_cody_old_coyote_27,rc_npc_lyle_dillard_29,rc_npc_jesse_tran_31,rc_npc_margaret_sorensen_39,rc_npc_margaret_sorensen_48,rc_npc_margaret_sorensen_50,rc_npc_dr_adrian_tesseract_recording_71 npc
+  class rc_hl_box_25,rc_plan_cabinet_45,rc_director_safe_54,rc_enrolment_crate_78 container
   class node_start start
 ```

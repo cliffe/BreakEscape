@@ -490,3 +490,4 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - F13 m10 disarm and unsent notice: seed them on the VM too (as m01's VM holds the launch code). Audit all missions for both patterns.
 - F16 phone tag batching: fix in the engine now. F18 five UI rough edges: fix all five now.
 - m10 playtest R1 (struggling): a traced share stopped by Vos or Victoria is explained by HaX; accusation checks conditional; Gary over a knocked-out Imran; reload pointer; core resume flags are globals; trace acknowledged at the core. Engine: room-init timeout, phone clock. Voiced: +3, 6 reworded.
+- m09 VM gating (F12, handoff A5): catalogue login slip on the reading-room drop desk; Tomb Beta login in the enrolment binder; drop screen and HaX steers point at both. Account strings are VM PLACEHOLDERs (ERB Codes block) for opus48/the user. Voiced delta: 0.

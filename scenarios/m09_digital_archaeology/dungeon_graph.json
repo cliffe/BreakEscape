@@ -219,6 +219,12 @@
       "optional": false
     },
     {
+      "id": "login_slip",
+      "label": "Login Slip",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "training_notebook_scan",
       "label": "Training Notebook (scan)",
       "kind": "item",
@@ -546,6 +552,11 @@
     {
       "from": "reading_room",
       "to": "drop_terminal_screen",
+      "soft": false
+    },
+    {
+      "from": "reading_room",
+      "to": "login_slip",
       "soft": false
     },
     {

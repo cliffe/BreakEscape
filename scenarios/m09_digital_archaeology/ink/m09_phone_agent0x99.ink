@@ -41,6 +41,7 @@ VAR legacy_clock_run = false
 VAR reading_found = false
 VAR reading_finished = false   // scenario design R1 n4: the Reading topic waits for the last page
 VAR deed_found = false   // scenario design R1 m3: the lease file's onPickup
+VAR tomb_beta_login_found = false   // VM gating F12: the enrolment binder's onRead
 VAR hl_box_opened = false   // scenario design R2 n3: the H&L lid's unlock (HaX latch)
 VAR in_cage = false   // Synced scenario global (scenario design R5 m1)
 VAR tape_card_held = false   // scenario design R1 n2: the tape room card taken from the safe
@@ -727,6 +728,8 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     - else:
         // VM hint, flag 3: checked against the VM plan (opus48). Line kept vague: the owner reveal is the player's to make, not spoken here.
         First, whose box it is. Somebody set it up and never handed it back.
+        // VM gating F12 (handoff A5 item 2): the login is a find in the cage.
+        Its web login's in the enrolment binder, in the crate stencilled BETA.
     }
     -> support_hub
 // 5. The salvage keypad. First ask quotes the coded line (S6 §2.3), each its
@@ -830,6 +833,8 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 + {not flag1_submitted and not catalogue_topic_given} [The catalogue. What am I looking for?]
     ~ catalogue_topic_given = true
     The catalogue's the index. Find the part that isn't public.
+    // VM gating F12 (handoff A5): name the account, point at the find.
+    It runs on a staff service account. Somebody left its login on a slip at the drop desk.
     -> support_hub
 // 17. Tran.
 // Alignment R4 r4-2: not once Tran is talked off the wipe or down.
@@ -953,6 +958,9 @@ Sent. He'll read it tonight.
     Flag three's in. Bring me Nightshade's file from the plan cabinet in the cage. Then we say the name.
 - flag3_submitted:
     Flag three's in. Stay on. I'm ringing you.
+// VM gating F12: the login before anything else on his box.
+- salvage_opened and not tomb_beta_login_found:
+    Flag three. His box's login is in the enrolment binder, in the BETA crate. Then find out whose box it is.
 - salvage_opened and nightshade_file_held:
     Flag three. Find out whose box that is.
 - salvage_opened:
@@ -993,7 +1001,7 @@ Sent. He'll read it tonight.
     The restricted stacks, through the reading room. Series R is in there.
 // Playtest R1 A-M2: the laptop's set up (its click offers the guide).
 - catalogue_guide_offered:
-    The laptop's live. Get into the catalogue server, then bring what you find to the drop terminal.
+    The laptop's live. The catalogue's staff login is on the slip at the drop desk. Use it, then bring me what you find.
 - else:
     Get inside, set up the laptop on a reading desk, and get into the catalogue.
 }
