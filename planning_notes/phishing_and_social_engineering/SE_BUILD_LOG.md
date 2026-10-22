@@ -460,6 +460,8 @@ Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fi
     - F7: triage "Pressure: caught 0 of 1".
     - The raw id `payslip_date`.
 
+- **R8 F4 resolved: not a regression.** "Accounts" comes only from the `old_org_chart` fact on the OSINT Archive page, which R8 never visited. The card code is unchanged since before R6. Design note for the polish pass: the stale-fact trap and the wrong-team correction are optional, so a student who skips Archive never meets them. This is intended (out-of-date intel is a lesson, not a gate); reconsider when polishing.
+
 ## Review rounds
 
 ### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
