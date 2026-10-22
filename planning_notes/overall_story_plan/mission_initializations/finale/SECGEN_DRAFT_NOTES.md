@@ -74,9 +74,9 @@ From the F12/F13 ruling (`scenarios/FINALE_DEV_LOG.md:487-490`) and `scenarios/V
 
 **Mechanism.** For each foothold flag, add a dedicated account with a **fixed password** set to a literal the game will also hand the player in-game (as m02's `gary` uses `Hospital1987`, `m02_ransomed_trust.xml:141-149`). Place the flag and its story file in that account's home at mode `0600`. Keep the existing exploit module as the foothold, but it must land in a context that **cannot** read the `0600` flag home, so reading the flag requires the in-game login. The deeper (root) flags stay as the drafted sudo/escape steps — transitively gated once the foothold needs a found credential.
 
-**m09**
-- `catalogue_server`: new catalogue service account, fixed password = in-game literal; flag 1 + catalogue-index text in its home. Seed the index body (Series R, R-114–R-161, bay 10) to match the drop screen. Flag 2 unchanged; seed the ledger body + `HL2015-0477` in root's home only.
-- `tomb_beta_server`: the web service account (`nostromousr` or a new account) gets a fixed password = in-game literal (the literal lives on the salvage-cage enrolment binder in-game); flag 3 + credential + memo + notice in its `0600` home. `strings_to_pre_leak` stays empty. Flag 4 unchanged.
+**m09** (login strings chosen 2026-10-22, now in the m09 ERB Codes block — the build must seed these exact values)
+- `catalogue_server`: catalogue service account **`catalogsvc`**, fixed password **`Catalog!Helena2016`**; flag 1 + catalogue-index text in its `0600` home. Seed the index body (Series R, R-114–R-161, bay 10) to match the drop screen. Flag 2 unchanged; seed the ledger body + `HL2015-0477` in root's home only.
+- `tomb_beta_server`: keep the module's hard-coded web service account **`nostromousr`** and set its login password to **`TombBeta!Enrol16`** (the literal the player reads on the salvage-cage enrolment binder in-game); flag 3 + credential + memo + notice in its `0600` home. `strings_to_pre_leak` stays empty. Flag 4 unchanged.
 
 **m10**
 - `bunker_monitor`: monitoring account (`maltrail`) gets a fixed password = in-game literal (forward-post gate console in-game); flag 1 in its `0600` home. Flag 2 unchanged; seed the schedule record (channels, cities, early-access orders).

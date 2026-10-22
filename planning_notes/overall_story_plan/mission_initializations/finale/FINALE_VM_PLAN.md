@@ -112,7 +112,10 @@ From the F12/F13 ruling (`scenarios/FINALE_DEV_LOG.md:487-490`) and the audit `s
 
 - **Flag 1 (catalogue).** Move flag 1 and the catalogue-index text into a **catalogue service account whose shell login password is a fixed in-game string** (the m02 `Hospital1987` mechanism). The Druid RCE stays as the foothold but lands unprivileged and cannot read that account's `0600` home; flag 1 needs the found login. Seed the index body (Series R, R-114–R-161, restricted cage, bay 10) to match the drop screen.
 - **Flag 2 (ledger, root).** Unchanged route (`sudo_root_more` from flag 1); transitively gated. Seed the ledger body **and the H&L number `HL2015-0477`** inside flag 2's root-home file only.
+
+  Chosen login strings (2026-10-22, now in the m09 ERB Codes block): catalogue account **`catalogsvc`**, password **`Catalog!Helena2016`**. The build must create this account on `catalogue_server` with that exact password and place flag 1 + the catalogue-index text in its `0600` home.
 - **Flag 3 (Tomb Beta owner).** Move flag 3, the Tesseract credential, the Albion memo and the unsent notice into a **web service account whose login password is a fixed in-game string**; nostromo RCE stays as the foothold but lands unprivileged; flag 3 needs the found login. `strings_to_pre_leak` stays empty. The in-game password lives on the salvage-cage enrolment binder, so the name cannot be read before the identity scene (fixes D1).
+  Chosen login strings (2026-10-22, now in the m09 ERB Codes block): Tomb Beta web service account **`nostromousr`** (the module's hard-coded account name — keep it), password **`TombBeta!Enrol16`**. The build must set that account's login password to this exact string and place flag 3 + the credential + memo + notice in its `0600` home. These strings appear in-game on the salvage-cage enrolment binder.
 - **Flag 4 (Tomb Beta control).** Unchanged route (`sudo_root_less` from flag 3); transitively gated; mirror job already seeded.
 
 ### m10
