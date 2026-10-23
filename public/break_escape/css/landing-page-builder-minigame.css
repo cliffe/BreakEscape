@@ -423,6 +423,7 @@
 .lpb-check-item.is-pass .lpb-check-word { color: var(--ui-success, #6ee08f); }
 .lpb-check-item.is-partial .lpb-check-word { color: var(--ui-accent, #ffcc44); }
 .lpb-check-item.is-fail .lpb-check-word { color: var(--ui-danger, #ff7a6b); }
+.lpb-check-item.is-neutral .lpb-check-word { color: var(--ui-muted, #b9c0d4); }
 
 .lpb-check-line { font-size: 14px; }
 

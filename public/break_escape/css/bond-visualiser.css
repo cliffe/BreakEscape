@@ -124,6 +124,9 @@
   color: var(--bv-green);
   margin-top: 4px;
   letter-spacing: 1px;
+  /* A long mission name wraps at narrow widths; without a line height of its own the two
+     caption lines drew on top of each other (lab R15 T4). */
+  line-height: 1.6;
 }
 
 #bond-vis-overlay .bv-status-block {
@@ -144,6 +147,8 @@
   padding: 3px 6px;
   border: 1px solid currentColor;
   display: inline-block;
+  white-space: nowrap; /* "● REVIEW" split over two lines at 900 px (lab R15 T4) */
+  line-height: 1.6;
 }
 #bond-vis-overlay .bv-badge.red  { color: var(--bv-red);  border-color: var(--bv-red);  box-shadow: 0 0 6px var(--bv-red); }
 #bond-vis-overlay .bv-badge.gold { color: var(--bv-gold); border-color: var(--bv-gold); }

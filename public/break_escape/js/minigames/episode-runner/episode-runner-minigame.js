@@ -414,7 +414,10 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         // Send disabled and no route back — the one restart-or-nothing dead end (P1 B1 blocker,
         // E5-2). Research reopens as a child; closing it leaves the write stage where it was.
         if (stage === 'write' && stagesFor(this.episode).includes('osint')) {
-            this._button(panel, 'Back to research', () => this._launch('osint'), 'er-back-research');
+            // It opens on the first site, where a fresh visit starts, not on the last page seen:
+            // a learner coming back for something they missed needs every source in reach
+            // (E1-E4 P4-10: index-based clicks landed on Friendface or Events after a return).
+            this._button(panel, 'Back to research', () => this._launch('osint', { home: true }), 'er-back-research');
         }
     }
 
@@ -531,9 +534,10 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
 
     // ── child launches (§2.3) ────────────────────────────────────────────────
 
-    _launch(stage) {
+    _launch(stage, opts = {}) {
         const spec = childLaunch(this.episode, stage);
         if (!spec) return;
+        if (spec.kind === 'osint' && opts.home) spec.params = { ...spec.params, start: '@home' };
         let child = null;
         this._launching = stage; // read by returnParams() while launchChild builds returnTo
         if (spec.kind === 'osint') {

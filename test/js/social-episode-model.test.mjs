@@ -180,8 +180,14 @@ test('flipPage: only for an episode with a build stage and a built record', () =
     const rec = { built: true, tellsFound: ['domain', 'formOrigin', 'domain'], choices: { domainId: 'd1', purpose: 'p1', fields: ['email', 'one_time_code'], padlock: false } };
     assert.deepEqual(M.flipPage(e5(), social, { se_landing_pages: { sso_login: rec } }), {
         url: 'https://look-alike.example/sso/', padlock: false, heading: 'Confirm your account',
-        fields: ['Email address', 'One-time code'], button: 'Confirm your account', tells: ['domain', 'formOrigin']
+        fields: ['Email address', 'One-time code'], button: 'Sign in', tells: ['domain', 'formOrigin'],
+        pageDef: social.landingPages[0], choices: rec.choices
     });
+    // P4-1: the purpose's own button face, never the purpose label.
+    const withBtn = { landingPages: [{ ...social.landingPages[0], purposes: [{ id: 'p1', label: 'Session expired', button: 'Sign in again' }] }] };
+    const fp = M.flipPage(e5(), withBtn, { se_landing_pages: { sso_login: rec } });
+    assert.equal(fp.heading, 'Session expired');
+    assert.equal(fp.button, 'Sign in again');
     assert.equal(M.flipPage(e5(), social, { se_landing_pages: { sso_login: { ...rec, built: false } } }), null);
     assert.equal(M.flipPage(full(), social, { se_landing_pages: { sso_login: rec } }), null, 'no build stage');
     assert.equal(M.flipPage(e5(), social, {}), null);

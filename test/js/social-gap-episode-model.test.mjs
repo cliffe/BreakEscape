@@ -335,7 +335,7 @@ test('flipPage: heading and button come from the chosen purpose, else the page t
     const base = { built: true, choices: { domainId: 'd1', purpose: 'p1', fields: ['email', 'password', 'custom_field', '', 5], padlock: true } };
     const p = M.flipPage(buildEp(), social, { se_landing_pages: { pg: base } });
     assert.equal(p.heading, 'Reset password');
-    assert.equal(p.button, 'Reset password');
+    assert.equal(p.button, 'Sign in', 'the purpose label is the heading, never the button face (P4-1)');
     assert.deepEqual(p.fields, ['Email address', 'Password', 'custom_field']);
     assert.equal(p.padlock, true);
     const q = M.flipPage(buildEp(), social, { se_landing_pages: { pg: { built: true, choices: { domainId: 'd1', purpose: 'zzz', padlock: 'yes' } } } });

@@ -18,8 +18,8 @@
  *
  * Each message is worth 100: 60 for the verdict, 40 for the reasons. Per-message scores are
  * rounded to whole points (halves up) and the round percent is the mean of those, halves up,
- * less CRITICAL_PENALTY for each critical miss (an approved attacker's sign-in prompt, or a call
- * complied with for an impostor; awareness only), floored at 0.
+ * less CRITICAL_PENALTY for each critical miss (an approved attacker's sign-in prompt, a call
+ * complied with for an impostor, or a trusted phish email; awareness only), floored at 0.
  */
 
 export const PROFILES = ['analyst', 'awareness'];
@@ -50,8 +50,20 @@ const KIND_VERDICT_POINTS = {
  * round percent on top of the item's own zero, and the round can never reach the top band
  * (P3 N17: one approved overnight prompt still read "Sharp" territory at 84%).
  */
-export const CRITICAL_KINDS = Object.freeze(['push', 'call']);
+export const CRITICAL_KINDS = Object.freeze(['push', 'call', 'email']);
 export const CRITICAL_PENALTY = 15;
+// P4-3: trusting a phish email (paying the invoice, sending the passport scans, signing in through
+// its link) hands over as much as an approved prompt, so Trust on a phish email is a critical
+// miss too, at the same cost. A message can opt in or out with `truth.critical` (true / false):
+// a phish whose Trust gives nothing away can say false, and another kind (a page, a voicemail)
+// whose Trust hands over credentials or money can say true.
+
+/** Which kinds a critical miss names in the result line, in this order. */
+export const CRITICAL_WHAT = Object.freeze({
+    push: "approving a sign-in you didn't start",
+    call: 'doing what an impostor asked on a call',
+    email: 'trusting a phish email'
+});
 
 /** Verdict points (out of 60) by profile, truth and verdict. Verify scores like Report. */
 const VERDICT_POINTS = {
@@ -89,9 +101,30 @@ export function verdictPoints(profile, isPhish, verdict, kind = null) {
 /** The most verdict points any verdict can earn on this message (60): "handled right" means this. */
 export const FULL_VERDICT_POINTS = 60;
 
-/** A critical miss: a phish push approved, or an impostor's call complied with (awareness only). */
-export function isCriticalMiss(profile, isPhish, verdict, kind) {
-    return profile === 'awareness' && isPhish && verdict === 'trust' && CRITICAL_KINDS.includes(kind);
+/**
+ * A critical miss (awareness only): Trust on a phish push (approved), call (complied with) or
+ * email (P4-3). `critical` is the message's own `truth.critical`: true makes Trust on any phish
+ * critical, false makes it never critical; anything else leaves the kind rule.
+ */
+export function isCriticalMiss(profile, isPhish, verdict, kind, critical = null) {
+    if (profile !== 'awareness' || !isPhish || verdict !== 'trust') return false;
+    if (critical === true || critical === false) return critical;
+    return CRITICAL_KINDS.includes(kind || 'email');
+}
+
+/**
+ * The bracketed "what counts" part of the result's critical-miss line, naming only the kinds
+ * this round's critical misses were ("approving a sign-in you didn't start, or trusting a
+ * phish email"). Kinds outside CRITICAL_WHAT read "trusting a phish".
+ */
+export function criticalWhat(kinds) {
+    const seen = [];
+    for (const k of kinds || []) {
+        const w = CRITICAL_WHAT[k] || 'trusting a phish';
+        if (!seen.includes(w)) seen.push(w);
+    }
+    if (!seen.length) return '';
+    return seen.length === 1 ? seen[0] : `${seen.slice(0, -1).join(', ')}, or ${seen[seen.length - 1]}`;
 }
 
 /**
@@ -117,16 +150,34 @@ export function bandFor(percent, bands = DEFAULT_BANDS) {
 }
 
 /**
- * The factor the player missed most, for the Result step's pointer (ties go to the factor met
- * first in `perFactor`). Returns null when nothing was missed.
+ * The factor the player missed most, for the Result step's pointer. A tie on misses goes to the
+ * one caught least (a skill at zero before one half caught), then to the factor met first in
+ * `perFactor` (P4-10). Returns null when nothing was missed. `ties` lists every factor equal
+ * to it on both counts (itself included), so the pointer can name them all.
  */
 export function weakestFactor(perFactor) {
     let best = null;
+    const worse = (c, b) => c.missed > b.missed || (c.missed === b.missed && c.caught < b.caught);
     for (const [id, c] of Object.entries(perFactor || {})) {
-        if (c.missed > 0 && (!best || c.missed > best.missed)) best = { id, caught: c.caught, missed: c.missed };
+        if (c.missed > 0 && (!best || worse(c, best))) best = { id, caught: c.caught, missed: c.missed };
     }
+    if (!best) return null;
+    best.ties = Object.entries(perFactor || {})
+        .filter(([, c]) => c.missed === best.missed && c.caught === best.caught).map(([id]) => id);
     return best;
 }
+
+/** Skills ticked on at least one item and never caught (caught 0, missed 1 or more). */
+export function zeroSkills(perFactor) {
+    return Object.entries(perFactor || {}).filter(([, c]) => c.caught === 0 && c.missed > 0).map(([id]) => id);
+}
+
+/**
+ * Three or more tells missed in skills never caught keep the round out of the top band (P4-9:
+ * "Sharp: you caught the phish and knew why" at 90% beside Pressure 0 of 1 and Secrecy 0 of 2).
+ * The 05 worked example (two skills at 0 of 1, 86%) stays Sharp.
+ */
+export const ZERO_SKILL_MISSES_CAP = 3;
 
 /**
  * Group a message's authored flags into scoring units, honouring `truth.flagAlternatives`
@@ -188,6 +239,8 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
     let phishTotal = 0, phishCaught = 0, reportCount = 0, verifyCount = 0, falseAlarms = 0;
     let flagsCaught = 0, flagsAuthored = 0;
     const criticalMisses = [];
+    const criticalKinds = [];
+    let phishVerified = 0;
 
     for (const msg of messages) {
         const truth = msg.truth || {};
@@ -219,8 +272,8 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         const caughtUnits = units.filter(unitCaught).length;
         const fPts = flagPoints(profile, isPhish, { caught: caughtUnits, falseClaims: falseClaims.length, authored: units.length });
         const score = roundHalfUp(vPts + fPts);
-        const critical = isCriticalMiss(profile, isPhish, verdict, kind);
-        if (critical) criticalMisses.push(msg.id);
+        const critical = isCriticalMiss(profile, isPhish, verdict, kind, truth.critical);
+        if (critical) { criticalMisses.push(msg.id); criticalKinds.push(kind); }
         perMessage.push({
             id: msg.id, isPhish, verdict, verdictPoints: vPts, flagPoints: roundHalfUp(fPts), score,
             caught, missed, falseClaims, answered: true,
@@ -249,6 +302,7 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
             // Report only (05 "Extensions for the awareness episodes").
             if (verdict === 'report' || verdict === 'delete' || verdict === 'verify') phishCaught += 1;
             if (verdict === 'report') reportCount += 1;
+            if (verdict === 'verify') phishVerified += 1;
             flagsCaught += caughtUnits;
             flagsAuthored += units.length;
         } else if (verdict === 'report' || verdict === 'delete') {
@@ -261,8 +315,11 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         : 0;
     const percent = Math.max(0, mean - CRITICAL_PENALTY * criticalMisses.length);
     let band = bandFor(percent, bands);
-    if (criticalMisses.length) {
-        // A critical miss caps the round below the top band, whatever the percent.
+    const zeros = zeroSkills(perFactor);
+    const zeroMisses = zeros.reduce((n, id) => n + perFactor[id].missed, 0);
+    if (criticalMisses.length || zeroMisses >= ZERO_SKILL_MISSES_CAP) {
+        // A critical miss, or three or more tells missed in skills never caught, caps the round below the top
+        // band, whatever the percent: the top band says "you caught the phish and knew why".
         const sorted = [...(bands && bands.length ? bands : DEFAULT_BANDS)].sort((x, y) => y.min - x.min);
         if (sorted.length > 1 && band === sorted[0]) band = sorted[1];
     }
@@ -289,6 +346,11 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         realHandledRight: perMessage.filter((m) => m.answered && !m.isPhish && m.handledRight).length,
         realTotal: perMessage.filter((m) => !m.isPhish).length,
         criticalMisses,
+        criticalKinds,
         criticalPenalty: CRITICAL_PENALTY * criticalMisses.length,
+        // Phish answered Verify / Ring back: caught, but not reported (N7: the report line
+        // read like a miss beside a near-perfect round).
+        phishVerified,
+        zeroSkills: zeros,
     };
 }

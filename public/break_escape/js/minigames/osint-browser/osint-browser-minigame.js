@@ -122,7 +122,10 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         this._buildShell();
         const state = readOsintState(this.globals);
         let place = null;
-        for (const key of [this.params.start, state.at, this._sites[0]?.id]) {
+        // start '@home' opens the first site, ignoring the last page visited (the episode's
+        // "Back to research", E1-E4 P4-10).
+        const start = this.params.start === '@home' ? this._sites[0]?.id : this.params.start;
+        for (const key of [start, this.params.start === '@home' ? null : state.at, this._sites[0]?.id]) {
             if (!key) continue;
             if (key === TOOLS_KEY && !this.toolsOn) continue;
             place = locate(this._sites, key, this.globals);

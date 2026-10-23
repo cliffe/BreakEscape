@@ -67,6 +67,26 @@ const FIELD_LABELS = {
 };
 const RESULT_WORD = { pass: 'Pass', partial: 'Partly', fail: 'Fail' };
 
+// What each giveaway is, in words, so the count names every one: the address is always one,
+// and every page also gives itself away by where its form sends and where its link goes, which
+// no score row shows (P4-4: "5 giveaways" over three marked rows).
+const GIVEAWAY_WORDS = Object.freeze({
+    brand: 'the service', purpose: 'what the page is for', domain: 'the address', logo: 'the logo',
+    wording: 'the wording', form: 'the form fields', padlock: 'the missing padlock',
+    formOrigin: 'where the form sends what you type', hoverMismatch: 'where the link really goes'
+});
+
+/** "This page has N giveaways: a, b and c." — the count and every giveaway it counts. */
+export function giveawayLine(tells) {
+    const list = Array.isArray(tells) ? tells : [];
+    const n = list.length;
+    const words = list.map((t) => GIVEAWAY_WORDS[t && t.id]).filter(Boolean);
+    const head = `This page has ${n} giveaway${n === 1 ? '' : 's'}`;
+    if (words.length !== n || !n) return `${head}.`;
+    const joined = n === 1 ? words[0] : `${words.slice(0, -1).join(', ')} and ${words[n - 1]}`;
+    return `${head}: ${joined}.`;
+}
+
 // The step strip. "Inspect" (step 6) is shown but owned by P5-E.
 const STEPS = [
     { id: 'pretext', label: 'Pretext' },
@@ -638,9 +658,8 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
 
     // ── step 3: score ─────────────────────────────────────────────────────────
     _tellCounter() {
-        const n = this.scored ? this.scored.tells.length : 0;
         return h('p', { class: 'lpb-tell-counter',
-            text: this.scored ? `This page has ${n} giveaway${n === 1 ? '' : 's'}.` : 'Score the page to count its giveaways.' });
+            text: this.scored ? giveawayLine(this.scored.tells) : 'Score the page to count its giveaways.' });
     }
 
     _scorePanel() {
@@ -667,11 +686,15 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         for (const line of s.gateLines) panel.appendChild(h('p', { class: 'lpb-gate-line lpb-readable', text: line }));
 
         const list = h('ul', { class: 'lpb-checklist', 'aria-label': 'Per-factor result' });
+        // With the Brand row failing, a passing Page row is shown as neutral, not a green tick
+        // beside the FAIL (P4-11): the page fits the email, but the service is still wrong.
+        const brandFails = s.factors.some((f) => f.id === 'brand' && f.result !== 'pass');
         for (const f of s.factors) {
             if (f.id === 'logo' && this._logoUnavailable()) continue;
-            list.appendChild(h('li', { class: `lpb-check-item is-${f.result}`, 'data-factor': f.id },
-                h('span', { class: 'lpb-check-word', text: RESULT_WORD[f.result] || f.result }),
-                h('span', { class: 'lpb-check-line lpb-readable', text: f.line })));
+            const neutral = brandFails && f.id === 'purpose' && f.result === 'pass';
+            list.appendChild(h('li', { class: `lpb-check-item is-${neutral ? 'neutral' : f.result}`, 'data-factor': f.id },
+                h('span', { class: 'lpb-check-word', text: neutral ? 'Fits' : (RESULT_WORD[f.result] || f.result) }),
+                h('span', { class: 'lpb-check-line lpb-readable', text: neutral ? String(f.line).replace(/^✓\s*/, '') : f.line })));
         }
         panel.appendChild(list);
         if (this._stale()) panel.appendChild(h('p', { class: 'lpb-stale-note', text: 'Score again — a choice changed.' }));

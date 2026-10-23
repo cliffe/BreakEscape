@@ -450,3 +450,11 @@ test('formatAddress returns the authored host as typed', () => {
     assert.equal(formatAddress({ url: 'a.example' }, { url: 'b.example/x' }), 'b.example/x');
     assert.equal(formatAddress(null), '');
 });
+
+test('E1-E4 P4-10: start "@home" opens the first site, not the last page visited; without it the last page comes back', () => {
+    setGlobals();
+    const first = open().getTestState().osint.location;
+    window.gameState.globalVariables.se_osint_state = { visited: ['company.notes'], at: 'company.notes' };
+    assert.equal(open().getTestState().osint.location, 'company.notes', 'a plain reopen resumes');
+    assert.equal(open({ start: '@home' }).getTestState().osint.location, first, '@home ignores the last page');
+});

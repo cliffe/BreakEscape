@@ -60,7 +60,10 @@ const REASON_WORDS = {
     pretextRelevant: 'relevance',
     attachmentPlausible: 'the attachment',
     urgencyCalibrated: 'the tone',
-    linkCredible: 'the link'
+    linkCredible: 'the link',
+    // A repair's lead entry is its candour modifier: "+20 candour" beside a row reading
+    // "Corrected" read like jargon (lab R15 T6).
+    candour: 'for correcting yourself'
 };
 
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -188,7 +191,7 @@ export class InfluenceBar {
      * is taken from the largest-magnitude entry — the factor the tells row leads with
      * — with ties going to the later entry, as the live path already did.
      */
-    setChangeFromTurn(entries) {
+    setChangeFromTurn(entries, opts = {}) {
         const list = Array.isArray(entries)
             ? entries.filter((e) => isObject(e) && typeof e.delta === 'number')
             : [];
@@ -196,8 +199,20 @@ export class InfluenceBar {
         const total = list.reduce((n, e) => n + e.delta, 0);
         let lead = list[0];
         for (const e of list) if (Math.abs(e.delta) >= Math.abs(lead.delta)) lead = e;
-        this.changeText = this._changeLine(total, lead.reason);
+        // An ask's own entry is the price of asking, paid even when the ask works: "-10 reset
+        // password" under "All done, I've reset it" read as a failed ask (E3 P4-8).
+        this.changeText = isObject(opts) && opts.kind === 'ask'
+            ? this._askLine(total, lead.reason)
+            : this._changeLine(total, lead.reason);
         this.update();
+    }
+
+    /** "Last change: -10 for asking (reset password)". */
+    _askLine(delta, reason) {
+        const sign = delta > 0 ? '+' : '';
+        const what = typeof reason === 'string' && reason && reason !== 'ink'
+            ? ` (${REASON_WORDS[reason] || reason.replace(/_/g, ' ')})` : '';
+        return `Last change: ${sign}${delta} for asking${what}`;
     }
 
     /** The "Last change: +N reason" line, shared by live events and the log seed. */

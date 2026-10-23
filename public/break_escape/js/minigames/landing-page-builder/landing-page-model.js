@@ -71,6 +71,9 @@ export const DEFAULT_STRINGS = Object.freeze({
   verdictLow: 'That wouldn’t fool anyone.',
   verdictMid: 'Some people would fall for it. Not {firstName}.',
   verdictHigh: 'Convincing enough for {firstName}.',
+  // Over the threshold on looks, but the Brand row fails (a target with brandGate off): the
+  // verdict must not call it convincing beside "doesn't use that service" (P4-4).
+  verdictHighBrandFail: 'Close enough to pass a quick look, but {firstName} doesn’t use that service.',
   gateBrand: '{firstName} doesn’t use that service. They wouldn’t open it.',
   gateCareful: '{firstName} reads addresses carefully. This one isn’t close enough.',
 
@@ -390,7 +393,7 @@ export function scorePage(pageDef, choices, target) {
   let verdict;
   if (credibility < 40) verdict = fill(str(pageDef, 'verdictLow'), ctx);
   else if (!meetsThreshold) verdict = fill(str(pageDef, 'verdictMid'), ctx);
-  else verdict = fill(str(pageDef, 'verdictHigh'), ctx);
+  else verdict = fill(str(pageDef, scored.brand.result === 'pass' ? 'verdictHigh' : 'verdictHighBrandFail'), ctx);
   const gateLines = gates.filter((g) => !g.passed).map((g) => g.line);
 
   // Step-6 tells for the current choices: every factor with a defender line (domain always

@@ -258,7 +258,9 @@ test('weakestFactor: null for empty, undefined, all-caught; ties go to the first
     assert.equal(weakestFactor({}), null);
     assert.equal(weakestFactor(undefined), null);
     assert.equal(weakestFactor({ a: { caught: 3, missed: 0 } }), null);
-    assert.deepEqual(weakestFactor({ a: { caught: 0, missed: 2 }, b: { caught: 0, missed: 2 }, c: { caught: 0, missed: 1 } }), { id: 'a', caught: 0, missed: 2 });
+    assert.deepEqual(weakestFactor({ a: { caught: 0, missed: 2 }, b: { caught: 0, missed: 2 }, c: { caught: 0, missed: 1 } }), { id: 'a', caught: 0, missed: 2, ties: ['a', 'b'] });
+    // P4-10: a tie on misses goes to the skill caught least.
+    assert.equal(weakestFactor({ a: { caught: 2, missed: 1 }, b: { caught: 0, missed: 1 } }).id, 'b');
     assert.equal(weakestFactor({ a: { caught: 0, missed: 1 }, b: { caught: 5, missed: 3 } }).id, 'b');
 });
 

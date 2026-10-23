@@ -41,7 +41,7 @@
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { MailReader } from '../mail-client/mail-reader.js';
-import { scoreTriage, weakestFactor, bandFor, verdictPoints, FULL_VERDICT_POINTS, CRITICAL_PENALTY } from './triage-scoring.js';
+import { scoreTriage, weakestFactor, bandFor, verdictPoints, FULL_VERDICT_POINTS, CRITICAL_PENALTY, criticalWhat } from './triage-scoring.js';
 import { buildTriageMessages } from './triage-messages.js';
 import { buildHeaderPanel } from './header-panel.js';
 import {
@@ -60,6 +60,19 @@ const STAGE_LABEL = { pre: 'Pre-assessment', post: 'Follow-up assessment', train
 const REPORT_THANKS = 'Thanks for reporting. That warns everyone else.';
 const VERDICT_LABEL = { trust: 'Trust', report: 'Report', delete: 'Delete', verify: 'Verify' };
 const VERDICT_PAST = { trust: 'Trusted', report: 'Reported', delete: 'Deleted', verify: 'Verified' };
+
+/**
+ * "Weakest skill: Links (caught 0 of 1)." — or, when several skills tie on both counts, every
+ * one of them: "Weakest skills: Greeting and Attachments (caught 0 of 1 each)." (P4-10: the
+ * first zero used to win with no word about the others.)
+ */
+export function weakestText(weak, one, many) {
+    const ids = Array.isArray(weak.ties) && weak.ties.length ? weak.ties : [weak.id];
+    const counts = `caught ${weak.caught} of ${weak.caught + weak.missed}`;
+    if (ids.length === 1) return `${one}: ${skillName(ids[0])} (${counts}).`;
+    const names = ids.map(skillName);
+    return `${many}: ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} (${counts} each).`;
+}
 const VERDICT_HINT = {
     trust: "This is real. I'd open it or act on it.",
     report: 'This is a phish. Send it to security.',
@@ -696,26 +709,37 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             for (const u of units) if (!u.caught) ul.appendChild(this._flagRow(rec, u.note, false, notes[u.note]));
             card.appendChild(ul);
         }
+        // whyFine sentences already printed on a "Not a flag here" line, so the "why this one was
+        // fine" list below does not print the same sentence a second time (P4-5).
+        const shownWhy = new Set();
         if (per.falseClaims.length) {
             const why = isObj(truth.whyFine) ? truth.whyFine : {};
             const ul = el('ul', 'tri-false-flags');
             for (const id of per.falseClaims) {
                 const li = el('li', 'tri-false-flag');
                 li.dataset.flag = id;
+                const reason = why[id] || why.default || "It wasn't one of this message's tells.";
+                shownWhy.add(String(reason).trim());
                 li.append(icon('mark-question'), el('span', 'tri-flag-word', 'Not a flag here:'),
-                    el('span', 'tri-flag-text', `${chipLabel(this.set, id)}. ${why[id] || why.default || "It wasn't one of this message's tells."}`));
+                    el('span', 'tri-flag-text', `${chipLabel(this.set, id)}. ${reason}`));
                 ul.appendChild(li);
             }
             card.appendChild(ul);
         }
         if (truth.isPhish && (ans.verdict === 'trust' || ans.verdict === 'delete') && truth.ifTrusted) {
-            card.appendChild(el('p', 'tri-if-trusted', `What would have happened: ${truth.ifTrusted}`));
+            // After Trust it is what the learner let happen; after a safe Delete/Refuse nothing
+            // happened, so name it as what the attacker was after (E1-E4 P4-6).
+            const lead = ans.verdict === 'trust' ? 'What would have happened'
+                : (kindOf(rec) === 'call' ? 'What this caller was after' : 'What this one was after');
+            card.appendChild(el('p', 'tri-if-trusted', `${lead}: ${truth.ifTrusted}`));
         }
         if (!truth.isPhish) {
             const why = isObj(truth.whyFine) ? truth.whyFine : {};
-            const lines = Object.entries(why).filter(([k, v]) => k !== 'default' && typeof v === 'string' && v)
+            let lines = Object.entries(why).filter(([k, v]) => k !== 'default' && typeof v === 'string' && v)
                 .map(([, v]) => v);
             if (typeof why.default === 'string' && why.default) lines.push(why.default);
+            // Each sentence once: not again after a "Not a flag here" line, and not twice in the list.
+            lines = [...new Set(lines.map((l) => l.trim()))].filter((l) => !shownWhy.has(l));
             if (lines.length) {
                 const ul = el('ul', 'tri-why-fine');
                 ul.setAttribute('aria-label', 'Why this one was fine');
@@ -866,6 +890,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             realHandledRight: s.realHandledRight,
             realTotal: s.realTotal,
             criticalMisses: s.criticalMisses,
+            criticalKinds: s.criticalKinds,
+            phishVerified: s.phishVerified,
             total: this.messages.length,
             skipped: this.skipped.map((x) => x.id),
             // Per-answer ms stays in memory (05): the starter writes only the four globals.
@@ -906,7 +932,10 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // is "never wrong" (D4, P3 N-2). Comply on an unchecked genuine caller is not. The
             // noun follows the queue's kind.
             addNum('Phish caught', `${result.phishCaught} of ${result.phishTotal}`, 'phishCaught');
-            addNum(info.reportLabel, `${result.reportCount} of ${result.phishTotal}`, 'reported');
+            // A phish checked by another route (Verify, Ring back) was caught, not missed: say so
+            // on the same line, so "1 of 4" beside two correct Ring backs is not read as a miss (N7).
+            addNum(info.reportLabel, `${result.reportCount} of ${result.phishTotal}` +
+                (result.phishVerified ? `, and ${result.phishVerified} more checked by another route` : ''), 'reported');
             addNum(`${info.real} handled right`, `${result.realHandledRight} of ${result.realTotal}`, 'realTrusted');
             if (this.profile === 'analyst') addNum('False alarms', String(result.falseAlarms), 'falseAlarms');
             if (this.verifyEnabled && result.verifyCount) addNum('Checked by another route', String(result.verifyCount), 'verify');
@@ -916,8 +945,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         if (!stored && result.criticalMisses?.length) {
             p.appendChild(el('p', 'tri-critical',
                 `${result.criticalMisses.length === 1 ? 'One answer' : `${result.criticalMisses.length} answers`} let an attacker straight in ` +
-                `(approving a sign-in you didn't start, or doing what an impostor asked on a call). ` +
-                `That costs ${CRITICAL_PENALTY} points off the round each, on top of the item itself.`));
+                `(${criticalWhat(result.criticalKinds) || "approving a sign-in you didn't start, or doing what an impostor asked on a call"}). ` +
+                `That costs ${CRITICAL_PENALTY} points off the round${result.criticalMisses.length === 1 ? "" : " each"}, on top of the item itself.`));
         }
         if (!stored && this.feedbackMode === 'end') p.appendChild(this._itemList());
 
@@ -948,7 +977,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                     if (weak) {
                         const nudges = isObj(this.set.nudges) ? this.set.nudges : {};
                         p.appendChild(el('p', 'tri-weakest',
-                            `Weakest skill: ${skillName(weak.id)} (caught ${weak.caught} of ${weak.caught + weak.missed}). ` +
+                            `${weakestText(weak, 'Weakest skill', 'Weakest skills')} ` +
                             (nudges[weak.id] || this._resultCopy().weakest)));
                     }
                 } else {
@@ -1089,6 +1118,52 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     /** Before the Result step, Close and Esc end the run as { aborted: true }: a half-finished round is never scored. */
     get closeMode() {
         return this.step === 'result' ? 'close' : 'abort';
+    }
+
+    /**
+     * Close or Esc partway through a round, with at least one answer given, asks first (N-19):
+     * the round is not kept, so reopening starts it again. "Keep going" (or Esc) returns to the
+     * round; "Close anyway" (or Close pressed again) leaves as before. A round with no answers
+     * yet, and the Result step, close at once.
+     */
+    requestClose() {
+        if (this.closeMode === 'abort' && !this.stored && this.answers.size > 0) {
+            if (this._closeAsk) { this._dropCloseAsk(); this.abort(); return; }
+            this._askClose();
+            return;
+        }
+        super.requestClose();
+    }
+
+    _askClose() {
+        const box = el('div', 'tri-close-ask');
+        box.setAttribute('role', 'alertdialog');
+        box.setAttribute('aria-label', 'Close this round?');
+        const n = this.answers.size;
+        box.appendChild(el('p', 'tri-close-ask-text',
+            `Close now and the ${n === 1 ? 'answer' : `${n} answers`} you've given so far won't be kept. ` +
+            'The round starts again from the first item next time.'));
+        const keep = el('button', 'tri-close-keep minigame-button', 'Keep going');
+        keep.type = 'button';
+        const leave = el('button', 'tri-close-leave minigame-button', 'Close anyway');
+        leave.type = 'button';
+        this.addEventListener(keep, 'click', () => this._dropCloseAsk(true));
+        this.addEventListener(leave, 'click', () => { this._dropCloseAsk(); this.abort(); });
+        const row = el('div', 'tri-close-ask-actions');
+        row.append(keep, leave);
+        box.appendChild(row);
+        (this.toolbar?.parentNode || this.container).insertBefore(box, this.toolbar?.nextSibling || null);
+        this._closeAsk = { box, pop: this.pushLayer(() => this._dropCloseAsk(true), 'close-ask') };
+        keep.focus?.();
+    }
+
+    _dropCloseAsk(restoreFocus = false) {
+        const ask = this._closeAsk;
+        if (!ask) return;
+        this._closeAsk = null;
+        ask.pop?.();
+        ask.box.remove();
+        if (restoreFocus) this.closeButton?.focus?.();
     }
 
     closeResult() {

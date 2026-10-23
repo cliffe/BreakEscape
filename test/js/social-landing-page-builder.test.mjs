@@ -52,7 +52,7 @@ window.MinigameFramework = {
     startMinigame(type, c, params) { started.push({ type, params }); return { type, params }; }
 };
 
-const { LandingPageBuilderMinigame, PAGES_KEY, DRAFTS_KEY } =
+const { LandingPageBuilderMinigame, PAGES_KEY, DRAFTS_KEY, giveawayLine } =
     await import(pathToFileURL(join(dir, 'minigames/landing-page-builder/landing-page-builder-minigame.js')));
 
 // Build a social block: the canonical page from lp_clean, plus the people, pretext facts and an
@@ -348,4 +348,33 @@ test('P3 N-7: when the brand\'s logo image fails to load, the score panel leaves
     img.dispatchEvent(new window.Event('error'));
     assert.equal(logoLine(), null);
     assert.equal(s.container.querySelector('.lpb-logo-img'), null);
+});
+
+test('P4-4: the giveaway count names every giveaway it counts, including the two no score row shows', () => {
+    assert.equal(giveawayLine([{ id: 'domain' }, { id: 'formOrigin' }, { id: 'hoverMismatch' }]),
+        'This page has 3 giveaways: the address, where the form sends what you type and where the link really goes.');
+    assert.equal(giveawayLine([{ id: 'domain' }]), 'This page has 1 giveaway: the address.');
+    assert.equal(giveawayLine([{ id: 'domain' }, { id: 'zzz' }]), 'This page has 2 giveaways.');
+    setGlobals();
+    social.landingPages[0].tellCounter = true;
+    const s = open();
+    buildAttempt(s, ATTEMPT1);
+    pickChip(s, 'score');
+    const line = s.container.querySelector('.lpb-tell-counter');
+    assert.ok(line, 'counter shown after Score');
+    const n = Number(/has (\d+) giveaway/.exec(line.textContent)[1]);
+    assert.ok(n >= 3);
+    assert.equal((line.textContent.match(/,| and /g) || []).length, n - 1, 'one name per giveaway');
+});
+
+test('P4-11: with the Brand row failing, a passing Page row is neutral, not a green Pass', () => {
+    setGlobals();
+    const s = open();
+    buildAttempt(s, { ...ATTEMPT2, brand: 'cloudboxy', domainId: 'c_letter' });
+    pickChip(s, 'score');
+    const row = s.container.querySelector('.lpb-check-item[data-factor="purpose"]');
+    assert.ok(row.classList.contains('is-neutral'));
+    assert.equal(row.querySelector('.lpb-check-word').textContent, 'Fits');
+    assert.doesNotMatch(row.textContent, /✓/);
+    assert.ok(s.container.querySelector('.lpb-check-item[data-factor="brand"]').classList.contains('is-fail'));
 });

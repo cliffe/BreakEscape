@@ -115,7 +115,7 @@ test('J10 control: ticking at least one flag keeps the "Weakest skill:" line', (
     assert.equal(state(s).step, 'result');
     const weak = $(s, '.tri-weakest');
     assert.ok(weak);
-    assert.match(weak.textContent, /Weakest skill:/);
+    assert.match(weak.textContent, /Weakest skills?:/);
     assert.doesNotMatch(weak.textContent, /didn't name any flags/);
 });
 
@@ -157,7 +157,7 @@ test('weakest skill: the awareness skin and the awareness profile use staff-trai
     ];
     for (const [name, make] of runs) {
         const line = playWeakest(make());
-        assert.match(line, /^Weakest skill:/, name);
+        assert.match(line, /^Weakest skills?:/, name);
         assert.doesNotMatch(line, /lab sheet|mail client/, name);
         assert.match(line, /IT or security team/, name);
     }
@@ -165,7 +165,8 @@ test('weakest skill: the awareness skin and the awareness profile use staff-trai
     assert.match(none, /didn't name any flags/);
     assert.doesNotMatch(none, /lab sheet/);
     // an authored nudge still wins over either default
-    const nudged = playWeakest(openWith(makeSet({ nudges: { senderTrust: 'Hover first.' } }), { skin: 'awareness' }));
+    // (P4-10: the tie on misses goes to a skill caught least, here Links at 0 of 1, not Sender address at 1 of 2.)
+    const nudged = playWeakest(openWith(makeSet({ nudges: { linkCredible: 'Hover first.' } }), { skin: 'awareness' }));
     assert.ok(nudged.endsWith('Hover first.'), nudged);
 });
 
@@ -188,7 +189,7 @@ test('result summary: a phish answered Verify (or Ring back) counts as caught, n
     assert.equal(state(s).step, 'result');
     const num = (k) => $(s, `.tri-numbers dd[data-number="${k}"]`)?.textContent;
     assert.equal(num('phishCaught'), '3 of 3');
-    assert.equal(num('reported'), '1 of 3', 'Verify is not a report (05 Decisions)');
+    assert.equal(num('reported'), '1 of 3, and 2 more checked by another route', 'Verify is not a report (05 Decisions), but it is a catch (N7)');
     assert.equal(num('verify'), '2');
     assert.equal(s.result.phishCaught, 3);
     assert.equal(s.result.reportRate, 1 / 3);

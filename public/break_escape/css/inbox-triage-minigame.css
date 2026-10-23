@@ -416,3 +416,15 @@
 /* Awareness skin in the triage overlay (P7-P): the thank-you line under a reported message.
    The colours and the animation are in awareness-skin.css (.aw-skin, .aw-report-win). */
 .triage-client.aw-skin .aw-report-thanks { margin: 6px 0 0; }
+
+/* N-19: Close partway through a round asks first. */
+.tri-close-ask {
+    margin: 8px 12px;
+    padding: 10px 12px;
+    border: 2px solid var(--ui-accent, #ffcc44);
+    background: var(--ui-surface-raised, rgba(38, 48, 74, 1));
+    color: var(--ui-text, #eef1f8);
+    font-family: var(--se-font-readable);
+}
+.tri-close-ask-text { margin: 0 0 8px; }
+.tri-close-ask-actions { display: flex; gap: 8px; flex-wrap: wrap; }

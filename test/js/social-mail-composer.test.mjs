@@ -427,3 +427,11 @@ test('a defaulted part with no authored urgency keeps the first option', () => {
     assert.equal(composer.getState().templates.greeting,
         fx.phishTargets.find((t) => t.id === 'pierce').templateSets.greeting[0]);
 });
+
+test('E1 P4-9: with nobody to send to, the To picker says so without claiming no one has been found', () => {
+    const { host } = makeComposer({}, { contacts: [] });
+    const to = host.querySelector('.mail-compose-to');
+    assert.equal(to.disabled, true);
+    assert.equal(to.textContent, 'Nobody to write to yet — find who to send it to first.');
+    assert.doesNotMatch(to.textContent, /No contacts/);
+});

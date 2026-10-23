@@ -259,6 +259,14 @@ test('setChangeFromTurn: empty, junk and non-numeric entries are ignored; the to
     assert.equal(change(b), 'Last change: 0 urgency');
     b.setChangeFromTurn([{ delta: -20, reason: 'first' }, { delta: 5, reason: 'small' }, { delta: -20, reason: 'second' }]);
     assert.equal(change(b), 'Last change: -35 second');
+    // lab R15 T6: a repair (claim credit plus candour) reads in plain words, not "+20 candour"
+    b.setChangeFromTurn([{ delta: 10, reason: 'team' }, { delta: 10, reason: 'candour' }]);
+    assert.equal(change(b), 'Last change: +20 for correcting yourself');
+    // E3 P4-8: an ask's cost reads as the price of asking, not as a failed ask
+    b.setChangeFromTurn([{ delta: -10, reason: 'reset_password' }], { kind: 'ask' });
+    assert.equal(change(b), 'Last change: -10 for asking (reset password)');
+    b.setChangeFromTurn([{ delta: -10, reason: 'reset_password' }], { kind: 'say' });
+    assert.equal(change(b), 'Last change: -10 reset password');
 });
 
 // ── seeding on mount ─────────────────────────────────────────────────────────

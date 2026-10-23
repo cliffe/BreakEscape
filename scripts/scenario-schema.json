@@ -1599,6 +1599,7 @@
             "isPhish": {"type": "boolean"},
             "flags": {"type": "array", "items": {"type": "string"}},
             "flagAlternatives": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}},
+            "critical": {"type": "boolean", "description": "Awareness scoring: true makes Trust on this phish a critical miss whatever its kind; false makes it never one. Unset: Trust on a phish push, call or email is critical."},
             "perFlagNote": {"type": "object", "additionalProperties": {"type": "string"}},
             "whyFine": {"type": "object", "additionalProperties": {"type": "string"}},
             "ifTrusted": {"type": "string"},

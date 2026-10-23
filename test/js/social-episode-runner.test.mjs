@@ -22,7 +22,7 @@ for (const rel of [
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
     'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js', 'systems/episode-starter.js',
     'systems/awareness-measure.js', 'systems/global-writer.js',
-    'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-kinds.js',
+    'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-kinds.js', 'minigames/landing-page-builder/landing-page-render.js', 'minigames/landing-page-builder/landing-page-model.js',
     'minigames/inbox-triage/triage-flags.js', 'minigames/inbox-triage/triage-scoring.js', 'systems/phish-rules.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'ui/influence-bar.js', 'systems/social-influence.js',
@@ -420,6 +420,7 @@ test('the write stage offers Back to research, which reopens osint and leaves th
     assert.ok(cur().container.querySelector('.er-back-research'), 'the write stage shows Back to research');
     click('.er-back-research');
     assert.equal(scene(), 'osint-browser', 'it reopens the research browser');
+    assert.equal(cur().params?.start, '@home', 'on the first site, not the last page seen (E1-E4 P4-10)');
     closeChild();
     assert.equal(scene(), 'episode-runner');
     assert.equal(epState().stage, 'write', 'research stays done; still on write');
@@ -885,8 +886,11 @@ test('E5: the flip gets the built page; a mail send with nothing to replay is mi
     window.gameScenario.social.landingPages = [e5Page()];
     open(ep);
     assert.equal(epState().stage, 'flip');
-    assert.deepEqual(calls.flip[0].page, { url: 'https://quayho1t-sso.example/', padlock: true, heading: 'Sign in again',
-        fields: ['Email address', 'Password'], button: 'Sign in again', tells: ['domain'] });
+    const { pageDef, choices, ...flat } = calls.flip[0].page;
+    assert.deepEqual(flat, { url: 'https://quayho1t-sso.example/', padlock: true, heading: 'Sign in again',
+        fields: ['Email address', 'Password'], button: 'Sign in', tells: ['domain'] });
+    assert.equal(pageDef.id, 'sso_login', 'the flip gets the page definition for the builder renderer (P4-1)');
+    assert.equal(choices.purpose, 'p_expired');
     assert.equal(calls.flip[0].missed, false, 'the page is there to show');
 
     // no page built and the sent record cannot be replayed: missed

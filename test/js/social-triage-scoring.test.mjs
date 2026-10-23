@@ -202,7 +202,7 @@ test('pass: null without passPercent, 0 always passes, 60 is inclusive', () => {
 
 test('weakestFactor picks the most missed, first on ties, null when none', () => {
     const r = scoreTriage({ messages, answers, profile: 'analyst' });
-    assert.deepEqual(weakestFactor(r.perFactor), { id: 'urgencyCalibrated', caught: 0, missed: 1 });
+    assert.deepEqual(weakestFactor(r.perFactor), { id: 'urgencyCalibrated', caught: 0, missed: 1, ties: ['urgencyCalibrated', 'attachmentPlausible'] });
     assert.equal(weakestFactor({ a: { caught: 2, missed: 0 } }), null);
     assert.equal(weakestFactor({ a: { caught: 0, missed: 1 }, b: { caught: 0, missed: 3 } }).id, 'b');
 });

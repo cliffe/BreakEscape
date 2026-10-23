@@ -327,3 +327,16 @@
 .minigame-active .objectives-panel {
   display: none !important;
 }
+
+/* Lab R15 T5: at about 900 px wide the panel covered a third of the screen and the room drew
+   small beside it. Between the phone layout and a full desktop, keep it narrower and shorter;
+   the list scrolls inside it, and the header still collapses it. */
+@media (min-width: 769px) and (max-width: 1100px), (min-width: 769px) and (max-height: 820px) {
+  .objectives-panel {
+    width: 240px;
+    max-height: 42vh;
+  }
+  .objectives-content {
+    max-height: calc(42vh - 40px);
+  }
+}

@@ -14,7 +14,7 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'minigames/inbox-triage/inbox-triage-minigame.js', 'minigames/inbox-triage/triage-scoring.js',
     'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-flags.js',
-    'minigames/inbox-triage/triage-kinds.js', 'minigames/inbox-triage/triage-comparison.js',
+    'minigames/inbox-triage/triage-kinds.js', 'minigames/landing-page-builder/landing-page-render.js', 'minigames/landing-page-builder/landing-page-model.js', 'minigames/inbox-triage/triage-comparison.js',
     'minigames/inbox-triage/header-panel.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',

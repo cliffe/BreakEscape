@@ -797,7 +797,7 @@ export class MailComposer {
         const select = el('select', 'mail-compose-to');
         select.id = id;
         if (!this.contacts.length) {
-            const opt = el('option', null, 'No contacts yet — find someone first.');
+            const opt = el('option', null, 'Nobody to write to yet — find who to send it to first.');
             opt.value = '';
             select.append(opt);
             select.disabled = true;

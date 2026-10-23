@@ -299,7 +299,8 @@ test('the chip sheet for a non-email kind offers only the channel tells and Noth
     // scored on any of the dropped tells, so none is kept by the authored-flag union.
     // P3 N-4 extended the filter: no text-message, QR or callback tells on a prompt either.
     const PUSH_TELLS = TELLS.filter((t) => !['lookalike_domain', 'padlock_myth', 'smish_shortlink_urgency',
-        'reply_stop_trick', 'unexpected_qr', 'vish_callback_pressure'].includes(t));
+        'reply_stop_trick', 'unexpected_qr', 'vish_callback_pressure',
+        'secrecy_or_bypass', 'borrowed_authority', 'changed_bank_details'].includes(t)); // P4-6
     assert.deepEqual(sheet.chips.map((c) => c.id), [...PUSH_TELLS, 'none']);
     assert.ok(!sheet.chips.some((c) => FACTOR_ORDER.includes(c.id)));
     assert.match($(s, '.tri-sheet-chosen').textContent, /You chose: Deny and report\./);

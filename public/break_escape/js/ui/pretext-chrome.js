@@ -326,7 +326,7 @@ export class ChatInfluence {
             // The bar's "Last change" is otherwise driven by the per-entry live events,
             // so a multi-entry line shows only its last entry while the tells row shows
             // the sum. Hand the bar the turn's entries so the two agree (lab R6 F1).
-            if (this.bar && typeof this.bar.setChangeFromTurn === 'function') this.bar.setChangeFromTurn(last.entries);
+            if (this.bar && typeof this.bar.setChangeFromTurn === 'function') this.bar.setChangeFromTurn(last.entries, { kind: last.kind });
             if (typeof last.band === 'number') {
                 this.band = last.band;
                 if (typeof this.onBand === 'function') this.onBand(last.band);

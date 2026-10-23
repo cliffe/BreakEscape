@@ -53,8 +53,9 @@ test('chipIdsFor: a call/voicemail/push drops email-and-web-only tells, unless t
     const set = { channelTells: ['vish_callback_pressure', 'secrecy_or_bypass', 'reply_to_differs', 'lookalike_domain', 'padlock_myth', 'enable_content_prompt'] };
     // A call keeps the voice/pressure tells and drops the ones that can only apply to email or a web page.
     assert.deepEqual(F.chipIdsFor(set, 'call'), ['vish_callback_pressure', 'secrecy_or_bypass']);
-    // A sign-in prompt has no caller, so the callback tell goes too (P3 N-4).
-    assert.deepEqual(F.chipIdsFor(set, 'push'), ['secrecy_or_bypass']);
+    // A sign-in prompt has no caller, so the callback tell goes too (P3 N-4), and nothing on a
+    // prompt can ask for secrecy or invoke someone senior (P4-6).
+    assert.deepEqual(F.chipIdsFor(set, 'push'), []);
     assert.deepEqual(F.chipIdsFor(set, 'voicemail'), ['vish_callback_pressure', 'secrecy_or_bypass']);
     // A link-bearing kind (sms/qr/page) is unaffected: the look-alike-domain tell still applies.
     assert.ok(F.chipIdsFor(set, 'sms').includes('lookalike_domain'));

@@ -17,7 +17,7 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
     'minigames/episode-runner/debrief-view.js', 'minigames/inbox-triage/triage-flags.js',
-    'minigames/inbox-triage/triage-kinds.js', 'minigames/inbox-triage/triage-scoring.js',
+    'minigames/inbox-triage/triage-kinds.js', 'minigames/landing-page-builder/landing-page-render.js', 'minigames/landing-page-builder/landing-page-model.js', 'minigames/inbox-triage/triage-scoring.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'utils/display-dashes.js', 'ui/influence-bar.js', 'systems/social-influence.js',
     'systems/phish-rules.js', 'systems/global-writer.js'
@@ -186,7 +186,18 @@ test('debrief (Cut A): everything right shows one short line and no cards', () =
     assert.ok(h.querySelector('.aw-all-right'), 'a short all-right line stands in for the cards');
     assert.equal(h.querySelector('.aw-weakest'), null, 'no weakest line when nothing was missed');
     assert.ok(h.querySelector('.aw-monday'), 'the Monday card stays');
-    assert.ok(h.querySelector('.aw-no-blame'), 'the no-blame line stays');
+    // N-17: "a miss is no reflection on you" answers a miss; with nothing missed it is not shown.
+    assert.equal(h.querySelector('.aw-no-blame'), null, 'no no-blame line when nothing was missed');
+    assert.equal(d.getState().noBlame, false);
+});
+
+test('debrief summary (N7): phish caught, and how, instead of a bare report percentage', () => {
+    const h = host();
+    renderDebrief(h, { result: { percent: 97, headline: 'Sharp', reportRate: 2 / 3, reportCount: 2, phishCaught: 3, phishTotal: 3,
+        phishVerified: 1, verifyCount: 1, answers: [] }, set: set(), strings: {}, onFinish() {} });
+    const t = h.querySelector('.aw-summary').textContent;
+    assert.match(t, /Phish caught: 3 of 3 \(2 reported, 1 checked by another route\)/);
+    assert.doesNotMatch(t, /Reported 67%/);
 });
 
 test('debrief (Cut A): a weakest-skill line appears when a tell was missed and perFactor is present', () => {
@@ -292,6 +303,22 @@ test('flip with a built page draws the page card and its tells; with the email t
     const lists = [...h2.querySelectorAll('.aw-tells')].map((ul) => [...ul.children].map((li) => li.dataset.flag));
     assert.deepEqual(lists, [['senderTrust', 'hoverMismatch'], ['domain', 'formOrigin']]);
     assert.equal(h2.querySelectorAll('.aw-defender-line').length, 1);
+});
+
+test('flip with a built page and its choices draws it with the builder renderer: same button face and logo (P4-1)', () => {
+    const h = host();
+    const pageDef = { id: 'sso', brands: [{ id: 'quayholt', name: 'Quayholt', domains: [{ id: 'd1', domain: 'quayholt-sso.example' }] }],
+        purposes: [{ id: 'expired', label: 'Session expired', button: 'Sign in again' }], wordings: [] };
+    const choices = { brand: 'quayholt', domainId: 'd1', purpose: 'expired', logo: 'crisp', fields: ['email', 'password'], padlock: true };
+    const page = { url: 'https://quayholt-sso.example/', padlock: true, heading: 'Session expired', fields: ['Email address', 'Password'],
+        button: 'Sign in again', tells: ['domain'], pageDef, choices };
+    renderFlipView(h, { page, strings: {}, onContinue() {} });
+    assert.ok(h.querySelector('.aw-flip-page .lpb-preview.aw-flip-built'), 'builder renderer used');
+    assert.ok(!h.querySelector('.aw-flip-page .tri-kind-page'));
+    assert.equal(h.querySelector('.lpb-submit').textContent, 'Sign in again');
+    assert.equal(h.querySelector('.lpb-purpose').textContent, 'Session expired');
+    assert.match(h.querySelector('.lpb-logo-img').getAttribute('src'), /logo-quayholt\.png$/);
+    assert.equal(h.querySelector('.lpb-address-text').textContent, 'quayholt-sso.example');
 });
 
 test('flip with a call draws the call card with its claims and the notes', () => {

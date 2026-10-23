@@ -111,9 +111,23 @@ const KIND_TELL_EXCLUDE = Object.freeze({
         'unrequested_mfa_push', 'vish_callback_pressure'],
     call: VOICE,
     voicemail: VOICE,
+    // A sign-in prompt carries an app, an account, a time and a place: nothing on it can invoke
+    // someone senior, ask for secrecy or change bank details (P4-6).
     push: ['reply_to_differs', 'lookalike_domain', 'enable_content_prompt', 'padlock_myth',
-        'smish_shortlink_urgency', 'reply_stop_trick', 'unexpected_qr', 'vish_callback_pressure']
+        'smish_shortlink_urgency', 'reply_stop_trick', 'unexpected_qr', 'vish_callback_pressure',
+        'secrecy_or_bypass', 'borrowed_authority', 'changed_bank_details']
 });
+
+// An email can put you off ringing back ("reply here rather than calling"), but only one that
+// talks about calling at all. On an email that never mentions a call or a number the tick could
+// never be right (P4-6: it was offered on a printer-ticket email). The test reads the message's
+// own words, real or fake alike, so the tick's presence never hints at the verdict.
+const CALL_WORDS = /\b(call(?:s|ed|ing)?|ring(?:s|ing)?|rang|phone(?:d|s)?|mobile|landline|number|voicemail|extension)\b/i;
+function mentionsCalling(message) {
+    const text = [message?.subject, message?.body, message?.preview]
+        .map((v) => (typeof v === 'string' ? v : (Array.isArray(v) ? v.join(' ') : ''))).join(' ');
+    return CALL_WORDS.test(text);
+}
 
 /** Header-panel tells: only readable once the header details are open (P3 F7). */
 export const HEADER_TELLS = Object.freeze(['senderAuth', 'reply_to_differs']);
@@ -140,9 +154,17 @@ export function chipIdsFor(set, kind = 'email', message = null, opts = {}) {
     const email = !NON_EMAIL.includes(kind);
     let ids = email ? [...FACTOR_ORDER, ...tells] : tells;
     const exclude = KIND_TELL_EXCLUDE[email ? 'email' : kind];
+    // Kept whatever the kind: the message's authored flags and every member of its either-tick
+    // groups (truth.flagAlternatives), so nothing the message is scored on is ever hidden.
+    const keep = new Set(Array.isArray(message?.truth?.flags) ? message.truth.flags : []);
+    for (const g of Array.isArray(message?.truth?.flagAlternatives) ? message.truth.flagAlternatives : []) {
+        if (Array.isArray(g)) for (const id of g) if (isStr(id)) keep.add(id);
+    }
     if (exclude && (message || !email)) {
-        const authored = new Set(Array.isArray(message?.truth?.flags) ? message.truth.flags : []);
-        ids = ids.filter((id) => !exclude.includes(id) || authored.has(id));
+        ids = ids.filter((id) => !exclude.includes(id) || keep.has(id));
+    }
+    if (email && message && !keep.has('vish_callback_pressure') && !mentionsCalling(message)) {
+        ids = ids.filter((id) => id !== 'vish_callback_pressure');
     }
     if (opts.hideHeaderTells) ids = ids.filter((id) => !HEADER_TELLS.includes(id));
     return ids;

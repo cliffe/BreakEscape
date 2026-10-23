@@ -300,3 +300,15 @@ test('no service picked reads as "not chosen", not the wrong service (lab R9 F11
   const wrong = scorePage(pageDef, { ...base, brand: 'cloudboxy', domainId: 'c_letter' }, lord);
   assert.match(factor(wrong, 'brand').line, /Sofia doesn’t use that service/);
 });
+
+test('P4-4: over the threshold with the Brand row failing (brand gate off), the verdict never says "Convincing enough"', () => {
+  const noGate = { ...pageDef, targets: { ...pageDef.targets, open: { linkThreshold: 55, brandGate: false } } };
+  const r = scorePage(noGate, {
+    brand: 'cloudboxy', purpose: 'payslip', domainId: 'c_letter', logo: 'crisp',
+    wording: 'w_formal', fields: ['email', 'password'], padlock: true
+  }, { id: 'open', firstName: 'Hana' });
+  assert.equal(r.meetsThreshold, true);
+  assert.equal(factor(r, 'brand').result, 'fail');
+  assert.doesNotMatch(r.verdict, /Convincing enough/);
+  assert.equal(r.verdict, 'Close enough to pass a quick look, but Hana doesn’t use that service.');
+});

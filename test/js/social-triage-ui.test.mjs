@@ -220,7 +220,7 @@ test('immediate feedback: the review card names caught, missed and false flags a
 
     verdict(s, 'm3_parcel', 'delete', ['senderTrust', 'addressedTo']);
     assert.match($(s, '.tri-review-card').textContent, /Safe, but not reported/);
-    assert.match($(s, '.tri-review-card').textContent, /What would have happened: Opening it/);
+    assert.match($(s, '.tri-review-card').textContent, /What this one was after: Opening it/);
     verdict(s, 'm4_jed', 'report', ['senderAuth']);
     assert.match($(s, '.tri-review-card').textContent, /real, but reporting is never wrong/);
     const mark = $(s, '.tri-card-verdict');
@@ -250,7 +250,7 @@ test('the worked example: analyst 68 Getting there, with the headline numbers an
     assert.equal(nums.falseAlarms, '1');
     assert.match($(s, '.tri-skills').textContent, /Sender address: caught 2 of 2/);
     assert.match($(s, '.tri-skills').textContent, /Links: caught 1 of 1/);
-    assert.match($(s, '.tri-weakest').textContent, /Weakest skill:/);
+    assert.match($(s, '.tri-weakest').textContent, /Weakest skills: Pressure and Attachments \(caught 0 of 1 each\)/);
     assert.equal(state(s).result.pass, true);
     assert.equal($(s, '.tri-again'), null, '68 meets passPercent 60: no retry');
 });
@@ -306,6 +306,10 @@ test('Close or Esc before the result aborts and records nothing; at the result i
     const s = open(makeSet());
     click($(s, '.tri-start'));
     verdict(s, 'm1_it', 'trust');
+    click($(s, '.se-overlay-close'));
+    // With an answer given, Close asks first (N-19); Close again (or "Close anyway") leaves.
+    assert.deepEqual(ended, []);
+    assert.ok($(s, '.tri-close-ask'));
     click($(s, '.se-overlay-close'));
     assert.deepEqual(ended, [{ success: false, result: { aborted: true } }]);
 

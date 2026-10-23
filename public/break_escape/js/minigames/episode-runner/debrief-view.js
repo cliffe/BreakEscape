@@ -156,7 +156,9 @@ function buildCard(answer, msg) {
         }
     }
     if (phish && (verdict === 'trust' || verdict === 'delete') && typeof truth.ifTrusted === 'string' && truth.ifTrusted) {
-        card.appendChild(el('p', 'aw-if-trusted', `What could have happened: ${truth.ifTrusted}`));
+        const lead = verdict === 'trust' ? 'What could have happened'
+            : (kindOf(msg) === 'call' ? 'What this caller was after' : 'What this one was after');
+        card.appendChild(el('p', 'aw-if-trusted', `${lead}: ${truth.ifTrusted}`));
     }
     if (Number.isFinite(answer.score)) card.appendChild(el('p', 'aw-card-score', `Score for this message: ${answer.score} of 100`));
     return card;
@@ -190,8 +192,23 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     const bits = [];
     if (Number.isFinite(result?.percent)) bits.push(`Round score: ${result.percent}%`);
     if (typeof result?.headline === 'string' && result.headline) bits.push(result.headline);
-    if (Number.isFinite(result?.reportRate)) bits.push(`Reported ${Math.round(result.reportRate * 100)}% of the phish`);
-    if (Number.isFinite(result?.verifyCount) && result.verifyCount > 0) bits.push(`Checked by another route: ${result.verifyCount}`);
+    // N7: "Reported 67% of the phish" beside a 97% round read as a miss. With the counts to hand,
+    // say how many phish were caught and how: reported, checked by another route (Verify, Ring
+    // back) or deleted. All three are catches.
+    const total = Number(result?.phishTotal);
+    if (Number.isFinite(total) && total > 0 && Number.isFinite(result?.phishCaught)) {
+        const reported = Number.isFinite(result.reportCount) ? result.reportCount : Math.round((result.reportRate || 0) * total);
+        const checked = Number.isFinite(result.phishVerified) ? result.phishVerified : 0;
+        const deleted = Math.max(0, result.phishCaught - reported - checked);
+        const how = [];
+        if (reported) how.push(`${reported} reported`);
+        if (checked) how.push(`${checked} checked by another route`);
+        if (deleted) how.push(`${deleted} deleted`);
+        bits.push(`Phish caught: ${result.phishCaught} of ${total}${how.length ? ` (${how.join(', ')})` : ''}`);
+    } else {
+        if (Number.isFinite(result?.reportRate)) bits.push(`Reported ${Math.round(result.reportRate * 100)}% of the phish`);
+        if (Number.isFinite(result?.verifyCount) && result.verifyCount > 0) bits.push(`Checked by another route: ${result.verifyCount}`);
+    }
     summary.textContent = bits.join('. ');
     if (bits.length) root.appendChild(summary);
 
@@ -208,8 +225,12 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     if (reviewed.length) {
         const weak = weakestFactor(isObj(result?.perFactor) ? result.perFactor : {});
         if (weak && weak.missed > 0) {
-            root.appendChild(el('p', 'aw-weakest',
-                `The tell most often missed: ${skillName(weak.id)} (caught ${weak.caught} of ${weak.caught + weak.missed}).`));
+            const ids = Array.isArray(weak.ties) && weak.ties.length ? weak.ties : [weak.id];
+            const counts = `caught ${weak.caught} of ${weak.caught + weak.missed}`;
+            const names = ids.map(skillName);
+            root.appendChild(el('p', 'aw-weakest', names.length === 1
+                ? `The tell most often missed: ${names[0]} (${counts}).`
+                : `The tells most often missed: ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} (${counts} each).`));
         }
     } else if (answers.length) {
         root.appendChild(el('p', 'aw-all-right', str(strings, 'allRight')));
@@ -223,7 +244,10 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     const monday = el('aside', 'aw-monday', str(strings, 'mondayCard'));
     monday.setAttribute('aria-label', 'One thing to do on Monday');
     root.appendChild(monday);
-    root.appendChild(el('p', 'aw-no-blame', str(strings, 'noBlameLine')));
+    // The no-blame line answers a miss; after a round with nothing missed it read oddly
+    // ("A miss here is no reflection on you" under 100%: N-17), so it shows only with a card.
+    const noBlame = reviewed.length > 0 || !answers.length;
+    if (noBlame) root.appendChild(el('p', 'aw-no-blame', str(strings, 'noBlameLine')));
 
     const finish = el('button', 'aw-button aw-finish', DEFAULTS.finish);
     finish.type = 'button';
@@ -233,6 +257,6 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
 
     return {
         destroy() { root.remove(); },
-        getState() { return { items: reviewed.length, mondayCard: true, noBlame: true, conceptPanel: !!concept, voicePanel: !!voice }; }
+        getState() { return { items: reviewed.length, mondayCard: true, noBlame, conceptPanel: !!concept, voicePanel: !!voice }; }
     };
 }

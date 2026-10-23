@@ -232,7 +232,7 @@ const FIELD_LABELS = Object.freeze({
  * The built look-alike page the flip shows (E5), from the builder's record
  * se_landing_pages[<attack.landingPageId>] and the page definition in social.landingPages.
  * Null unless the episode runs a build stage and the record is built.
- *   { url, padlock, heading, fields, button, tells }
+ *   { url, padlock, heading, fields, button, tells, pageDef, choices }
  * `tells` are the record's page tells (07 tell ids such as domain, formOrigin, hoverMismatch).
  */
 export function flipPage(episode, social, globals) {
@@ -262,13 +262,22 @@ export function flipPage(episode, social, globals) {
     const heading = labelOf(def.purposes, choices.purpose) || (isStr(def.title) ? def.title : '');
     const fields = (Array.isArray(choices.fields) ? choices.fields : []).filter(isStr).map((f) => FIELD_LABELS[f] || f);
     const own = Array.isArray(rec.tells) ? rec.tells : (Array.isArray(rec.tellsFound) ? rec.tellsFound : []);
+    // The button face is the purpose's `button` (default "Sign in"), as the builder draws it; the
+    // purpose label is the page heading, never the button (P4-1: the flip read "Session expired"
+    // twice where the builder showed "Sign in again").
+    const purpose = (Array.isArray(def.purposes) ? def.purposes : []).find((o) => isObj(o) && o.id === choices.purpose);
+    const button = isObj(purpose) && isStr(purpose.button) && purpose.button.trim() ? purpose.button : 'Sign in';
     return {
         url,
         padlock: choices.padlock === true,
         heading: isStr(heading) ? heading : '',
         fields,
-        button: isStr(labelOf(def.purposes, choices.purpose)) ? labelOf(def.purposes, choices.purpose) : 'Sign in',
-        tells: [...new Set(own.filter(isStr))]
+        button,
+        tells: [...new Set(own.filter(isStr))],
+        // The page definition and the learner's choices, so the flip draws the page with the
+        // builder's own renderer (logo, button, wording): the page they scored, not a copy (P4-1).
+        pageDef: isStr(def.id) ? def : null,
+        choices: { ...choices }
     };
 }
 

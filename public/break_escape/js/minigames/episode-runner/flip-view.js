@@ -6,8 +6,10 @@
 // canonical red-flag sentence:
 //   message  the sent email: the `message` of resolvePlayerSent(...), drawn in the read-only
 //            mail reader;
-//   page     a built look-alike page (E5): { url, padlock, heading, fields, button, tells },
-//            drawn as the triage `page` card the defender will see;
+//   page     a built look-alike page (E5): { url, padlock, heading, fields, button, tells,
+//            pageDef?, choices? }. With pageDef and choices it is drawn by the builder's renderer
+//            (renderLandingPage), so the flip matches the page built; otherwise as the triage
+//            `page` card;
 //   call     a pretext call (E3): { callerId, claims, transcript, notes }, drawn as the
 //            triage `call` card the helpdesk agent sees (the learner's own lines and the
 //            facts they claimed), then the helpdesk side's notes on what would have caught it.
@@ -23,6 +25,7 @@
 import { MailReader } from '../mail-client/mail-reader.js';
 import { redFlagString } from '../inbox-triage/triage-flags.js';
 import { renderKindSurface } from '../inbox-triage/triage-kinds.js';
+import { renderLandingPage } from '../landing-page-builder/landing-page-render.js';
 
 const DEFAULTS = Object.freeze({
     flipHeading: 'Your message, from the other side',
@@ -131,11 +134,23 @@ export function renderFlipView(container, { message = null, page = null, call = 
                 button: typeof page.button === 'string' ? page.button : 'Sign in'
             }
         };
-        const surface = renderKindSurface(rec, {
-            showNote: (t) => { note.textContent = t; },
-            showLink: (t) => { note.textContent = t; },
-            bodyNode: () => el('div')
-        });
+        // A page that carries its definition and the learner's choices is drawn with the
+        // builder's own renderer, so the flip shows the page that was built and scored: the same
+        // logo, wording and button face (P4-1). Without them, the triage page card stands in.
+        let surface = null;
+        if (isObj(page.pageDef) && isObj(page.choices)) {
+            try {
+                const drawn = renderLandingPage({ pageDef: page.pageDef, choices: page.choices, mode: 'build', doc: root.ownerDocument });
+                if (drawn && !drawn.blocked) { surface = drawn.root; surface.classList.add('aw-flip-built'); }
+            } catch (e) { surface = null; }
+        }
+        if (!surface) {
+            surface = renderKindSurface(rec, {
+                showNote: (t) => { note.textContent = t; },
+                showLink: (t) => { note.textContent = t; },
+                bodyNode: () => el('div')
+            });
+        }
         const host = el('div', 'aw-flip-page');
         if (surface) host.appendChild(surface);
         root.append(host, note);
