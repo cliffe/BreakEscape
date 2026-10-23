@@ -53,6 +53,8 @@ VAR salvage_opened = false
 VAR bin_chosen = false
 VAR maintenance_code_used = false
 VAR hand_matched = false
+// Targeted recheck N1: the file came after flag 3; the scene waits for the hand.
+VAR hand_before_name = false
 VAR ledger_read_heard = false
 VAR recruiter_call_started = false
 VAR recruiter_said_yes = false
@@ -937,6 +939,11 @@ Sent. He'll read it tonight.
         Two samples. One pen.
     }
     Hold that. I want it from two directions before anyone says a word.
+    // N1: flag 3 already in, so the identity scene rings as this thread closes.
+    {flag3_submitted:
+        #exit_conversation
+        -> DONE
+    }
     -> support_hub
 + [Different hands.]
     Look at the loop on the g. Then look again.
@@ -963,6 +970,9 @@ Sent. He'll read it tonight.
     Flag four. Take the whole box, and we'll see what it still does.
 - flag3_submitted and not nightshade_file_held:
     Flag three's in. Bring me Nightshade's file from the plan cabinet in the cage. Then we say the name.
+// N1: file taken after flag 3, hand not matched yet; the scene waits for it.
+- hand_before_name:
+    Flag three's in. Before the name, put his file beside the notebook scan in my case file. Then tell me what you see.
 - flag3_submitted:
     Flag three's in. Stay on. I'm ringing you.
 // VM gating F12: the login before anything else on his box.

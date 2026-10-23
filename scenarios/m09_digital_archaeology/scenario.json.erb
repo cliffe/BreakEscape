@@ -144,7 +144,8 @@ end
 # are separate effects of one moment, not alternatives: flag 1 (door unlock,
 # setup task, flag1_read, guide text, Tran-wipe task), cage_opened (tasks,
 # default bin, Noor's save and the legacy texts, whose m05 conditions are
-# disjoint), nightshade_file_held (clock, task unlock, text), npc_ko:sorensen
+# disjoint), nightshade_file_held (clock, task unlock, N1 latch, text),
+# hand_matched (N1 latch clear, identity scene), npc_ko:sorensen
 # (fate, save, two texts 5 s apart), flag 2, the deck, the office entry,
 # sleeper_shortlist; room_entered / conversation_closed pair a once-only text
 # with re-rings that repeat on purpose. The legacy-box arms are made disjoint
@@ -254,7 +255,13 @@ hax_maps << { "eventPattern" => "global_variable_changed:sorensen_fate", "condit
 
 # Nightshade's file and the hand (S4 §3.2, stage 8 m-03: the task ships locked).
 hax_maps << { "eventPattern" => "global_variable_changed:nightshade_file_held", "condition" => "value === true", "onceOnly" => true, "unlockTask" => "match_the_hand" }
-hax_maps << text_map("global_variable_changed:nightshade_file_held", "value === true && !globalVars.flag3_submitted",
+# Targeted recheck N1: the prompt also plays when flag 3 is already in (it was
+# gated on !flag3_submitted while the scene fired 1.5 s after the pick-up).
+# On that order hand_before_name holds the identity scene until the hand is
+# matched in HaX's hub (topic 11); the latch clears on hand_matched.
+hax_maps << { "eventPattern" => "global_variable_changed:nightshade_file_held", "condition" => "value === true && globalVars.flag3_submitted && !globalVars.hand_matched && !globalVars.identity_scene_started", "onceOnly" => true, "setGlobal" => { "hand_before_name" => true } }
+hax_maps << { "eventPattern" => "global_variable_changed:hand_matched", "condition" => "value === true", "onceOnly" => true, "setGlobal" => { "hand_before_name" => false } }
+hax_maps << text_map("global_variable_changed:nightshade_file_held", "value === true",
                      "Hold his file next to the notebook scan in my case file. Then tell me what you see.")
 
 # Tran (S4 §3.2 brief-gated pair; S5 §3.4).
@@ -313,8 +320,9 @@ hax_maps << text_map("room_entered:salvage_cage", nil, "Field guide for his box 
 # Flag 3 and the identity scene (S4 §4 row 9, §6.2). Voiced (F17/F20).
 hax_maps << call_map("global_variable_changed:flag3_submitted", "value === true && globalVars.nightshade_file_held && !globalVars.identity_scene_started", "identity_scene", delay: 2500, voiced: true)
 hax_maps << text_map("global_variable_changed:flag3_submitted", "value === true && !globalVars.nightshade_file_held", "Bring me Nightshade's file from the plan cabinet. Then we say the name.", delay: 2500)
-hax_maps << call_map("global_variable_changed:nightshade_file_held", "value === true && globalVars.flag3_submitted && !globalVars.identity_scene_started", "identity_scene", delay: 1500, voiced: true)
-hax_maps << call_map("room_entered", "globalVars.flag3_submitted && globalVars.nightshade_file_held && !globalVars.identity_scene_started", "identity_scene", voiced: true,
+# N1: on the file-after-flag-3 order the scene follows the comparison, not the pick-up.
+hax_maps << call_map("global_variable_changed:hand_matched", "value === true && globalVars.flag3_submitted && globalVars.nightshade_file_held && !globalVars.identity_scene_started", "identity_scene", delay: 1500, voiced: true)
+hax_maps << call_map("room_entered", "globalVars.flag3_submitted && globalVars.nightshade_file_held && !globalVars.hand_before_name && !globalVars.identity_scene_started", "identity_scene", voiced: true,
                      comment: "First-ring backstop (S4 §5): room entry, which also fires on load.")
 hax_maps.concat(hax_rerings("globalVars.identity_scene_started && !globalVars.identity_scene_done", "identity_resume", voiced: true))
 hax_maps << call_map("global_variable_changed:flag4_submitted", "value === true && globalVars.identity_scene_started && !globalVars.identity_scene_done", "identity_resume", delay: 1500, voiced: true, cooldown0: true)
@@ -326,6 +334,8 @@ hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true 
                      "Nightshade's file first. Then the rest of the box.", once: false, delay: 1500)
 hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true && !globalVars.identity_scene_started && globalVars.nightshade_file_held && !globalVars.flag3_submitted",
                      "Owner first. Get me flag three, then we read the rest of his box.", once: false, delay: 1500)
+hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true && !globalVars.identity_scene_started && globalVars.hand_before_name",
+                     "His hand first. Put his file beside my notebook scan and tell me. Then the name.", once: false, delay: 1500)
 hax_maps << call_map("room_entered", "globalVars.flag4_submitted && globalVars.identity_scene_done && !globalVars.hour_read_started", "hour_read",
                      comment: "First-ring backstop (S4 §5).")
 hax_maps.concat(hax_rerings("globalVars.hour_read_started && !globalVars.hour_read_done && globalVars.schedule_read", "hour_read_resume", voiced: false))
@@ -2572,6 +2582,7 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "bin_chosen": false,
     "maintenance_code_used": false,
     "hand_matched": false,
+    "hand_before_name": false,
     "ledger_read_heard": false,
     "recruiter_call_started": false,
     "recruiter_said_yes": false,
