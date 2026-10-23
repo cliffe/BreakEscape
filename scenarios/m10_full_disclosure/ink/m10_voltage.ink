@@ -165,7 +165,8 @@ Voltage (Critical Mass): Turn the key a quarter right and leave it there. That t
 {gallery_shutter_cut:
     -> captured_rest
 }
-+ [Key's turned.]
+// Blind fix pass F4: the key turn is the player's act at the panel, said as one.
++ [(Turn the key a quarter right.)]
     ~ cut_step = 2
     -> cut_p2
 + [Give me a minute.]

@@ -712,7 +712,7 @@ in_this_operation = lambda do |ending|
     cl.('On the line for the switching. Still turned.', "!globalVars.m04_vance_is_ally && globalVars.m07_elena_outcome === 'turned' && !globalVars.m04_voltage_captured && globalVars.cut_by_hand === true")
   ])
   people << person.('DR ABENA ASANTE', [
-    cl.('Off the floor all night, on the uplink.', mercer_here),
+    cl.('Kept off the hall floor all night by Mercer, on the uplink.', mercer_here),
     cl.('Knocked out beside the console she wrote.', 'globalVars.asante_ko === true', w),
     cl.('Watched her release go out.', "globalVars.ending === 'joined'"),
     cl.('Showed the schedule. Confirmed her own sums.', "globalVars.asante_outcome === 'talked'"),
@@ -721,7 +721,7 @@ in_this_operation = lambda do |ending|
   people << person.('DR JAMES MERCER', [
     cl.('Knocked out in the server hall.', "#{mercer_here} && globalVars.mercer_ko === true", w),
     cl.('Still at the release console.', "#{mercer_here} && globalVars.ending === 'joined'"),
-    cl.('Arrested in the server hall, still arguing his arithmetic.', mercer_here)
+    cl.('Taken in the six o\'clock sweep, still arguing his arithmetic.', mercer_here)
   ])
   people << person.('VICTORIA STERLING', [
     cl.("Held, and opened the lock. The tap on Zero Day's brokers went dark at five.", "globalVars.m03_victoria_fate === 'recruited' && globalVars.victoria_gallery === 'confronted'"),
@@ -847,7 +847,10 @@ elsewhere_two = [
   cl.('Carrow Controls: told nine years late. A fix is on its way.', "globalVars.m09_albion_notified === true && globalVars.m04_disclosure_choice === 'partial' && !globalVars.m04_crew_lost"),
   cl.('Eleven placements outside SAFETYNET, picked up from the Helena files.', 'globalVars.m09_legacy_files_saved === true'),
   # Alignment R4-m9: m06's choice, one row per save (m06 sets one or the other; a deferred decision gets none).
-  cl.('The twelve point eight million: frozen in a SAFETYNET wallet. It never reached the cells.', 'globalVars.m06_completed === true && globalVars.m06_assets_seized === true'),
+  # Blind fix pass F10: agrees with Netherton at 06:00 (kept as evidence on secured, the victims' fund otherwise; the executed ending has no 06:00 line).
+  cl.('The twelve point eight million: frozen in a SAFETYNET wallet, kept with the copy as evidence. It never reached the cells.', "globalVars.m06_completed === true && globalVars.m06_assets_seized === true && globalVars.database_outcome === 'secured' && globalVars.ending !== 'executed'"),
+  cl.("The twelve point eight million: frozen in a SAFETYNET wallet, then signed over to the victims' fund. It never reached the cells.", "globalVars.m06_completed === true && globalVars.m06_assets_seized === true && globalVars.database_outcome !== 'secured' && globalVars.ending !== 'executed'"),
+  cl.('The twelve point eight million: frozen in a SAFETYNET wallet. It never reached the cells.', "globalVars.m06_completed === true && globalVars.m06_assets_seized === true && globalVars.ending === 'executed'"),
   cl.("The HashChain wallets: tagged since the Architect's Fund paid out. Dark since the disclosure.", "globalVars.m06_completed === true && !globalVars.m06_assets_seized && globalVars.m06_monitoring_enabled === true && globalVars.database_outcome === 'disclosed'", w),
   cl.('The HashChain wallets: still tagged. Still watched.', "globalVars.m06_completed === true && !globalVars.m06_assets_seized && globalVars.m06_monitoring_enabled === true && globalVars.database_outcome !== 'disclosed'")
 ]
@@ -1495,7 +1498,7 @@ end
       "tasks": [
         { "taskId": "read_the_door_log", "title": "Read the door log at the security office's monitoring desk", "type": "custom", "optional": true, "status": "active" },
         { "taskId": "check_the_alibis", "title": "Work out who nobody could see at ten past two", "type": "custom", "optional": true, "status": "active" },
-        { "taskId": "read_the_bench_log", "title": "Read the bench log on the workshop floor", "type": "custom", "optional": true, "status": "active" },
+        { "taskId": "read_the_bench_log", "title": "Find out who signed out the breaching case", "type": "custom", "optional": true, "status": "active" },
         { "taskId": "name_the_sleeper", "title": "Name the sleeper, or decide not to", "type": "custom", "optional": true, "status": "active" }
       ]
     }
@@ -1687,7 +1690,7 @@ end
             <%# Walkthrough R1 m-2: every later try at the locked inner door points at the ladder (texts R1 m-2: above the tripwire setter, so not on the first push). %>
             { "eventPattern": "door_unlock_attempt", "condition": "data.connectedRoom === 'security_office' && globalVars.tripwire_tripped === true && !globalVars.ladder_used && !globalVars.inner_door_open", "bark": "The ladder at the guard post. Up and round." },
             { "eventPattern": "door_unlock_attempt", "condition": "data.connectedRoom === 'security_office' && globalVars.tripwire_armed === true && !globalVars.tripwire_tripped", "setGlobal": { "tripwire_tripped": true, "wren_warned": true, "security_alerted": true } },
-            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Guard Post Ladder' && data.roomId === 'blast_tunnel' && globalVars.tripwire_armed === true && !globalVars.ladder_used", "cooldown": 0, "setGlobal": { "ladder_used": true, "tripwire_tripped": true, "wren_warned": true, "security_alerted": true } },
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Guard Post Ladder' && data.roomId === 'blast_tunnel' && globalVars.tripwire_armed === true && globalVars.tripwire_tripped === true && !globalVars.ladder_used", "cooldown": 0, "setGlobal": { "ladder_used": true, "tripwire_tripped": true, "wren_warned": true, "security_alerted": true } },
             { "eventPattern": "global_variable_changed:ladder_used", "condition": "value === true && !globalVars.inner_door_open", "unlockDoor": "security_office", "delayMs": 1500 },
             { "eventPattern": "game_loaded", "condition": "globalVars.ladder_used === true && !globalVars.inner_door_open", "unlockDoor": "security_office", "delayMs": 1500 },
             { "eventPattern": "door_unlocked_by_npc", "condition": "data.roomId === 'security_office' && data.npcId === 'agent_0x99' && !globalVars.inner_door_open", "setGlobal": { "inner_door_open": true } },
@@ -1796,7 +1799,14 @@ end
             { "eventPattern": "door_unlock_attempt", "condition": "data.connectedRoom === 'gallery' && globalVars.flag2_submitted === true && !globalVars.flag3_submitted", "bark": "The hatch. Get under the release service." },
             { "eventPattern": "door_unlock_attempt", "condition": "data.connectedRoom === 'gallery' && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true && !globalVars.gallery_shutter_cut", "bark": "The shutter's still live. Power room." },
             <%# Playtest C F3: the call (head start still to come, the lock ahead) is untrue once the outer lock has opened; a late re-fire after a reload stays silent. %>
-            { "eventPattern": "global_variable_changed:gallery_open", "condition": "value === true && !globalVars.hax_jammed && !globalVars.outer_lock_open && globalVars.head_start_out === ''", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "gallery_open_call", "voiced": true, "disableClose": true, "delayMs": 1500 },
+            <%# Blind fix pass F1: no scripted call opens while Mercer is fighting. Track his hostility, defer the gallery call, and ring it when the fight ends. %>
+            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'mercer' && data.isHostile === true", "setGlobal": { "mercer_fighting": true } },
+            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'mercer' && data.isHostile === false", "setGlobal": { "mercer_fighting": false } },
+            { "eventPattern": "global_variable_changed:mercer_ko", "condition": "value === true", "setGlobal": { "mercer_fighting": false } },
+            { "eventPattern": "npc_attacked:mercer", "setGlobal": { "mercer_fighting": true } },
+            { "eventPattern": "global_variable_changed:gallery_open", "condition": "value === true && globalVars.mercer_fighting === true && !globalVars.outer_lock_open", "setGlobal": { "gallery_call_deferred": true } },
+            { "eventPattern": "global_variable_changed:mercer_fighting", "condition": "value === false && globalVars.gallery_call_deferred === true && !globalVars.hax_jammed && !globalVars.outer_lock_open && globalVars.head_start_out === ''", "onceOnly": true, "setGlobal": { "gallery_call_deferred": false }, "conversationMode": "phone-chat", "targetKnot": "gallery_open_call", "voiced": true, "disableClose": true, "delayMs": 1500 },
+            { "eventPattern": "global_variable_changed:gallery_open", "condition": "value === true && !globalVars.hax_jammed && !globalVars.outer_lock_open && globalVars.head_start_out === '' && !globalVars.mercer_fighting", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "gallery_open_call", "voiced": true, "disableClose": true, "delayMs": 1500 },
 <%# --- The gallery: Victoria's line abandoned, decisions on the shares, defaults (MC 3.5; stage 8 M-4) --- %>
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate === 'arrested' && !globalVars.victoria_line_done", "setGlobal": { "victoria_line_done": true } },
             { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate === 'arrested' && globalVars.victoria_line_deal === ''", "setGlobal": { "victoria_line_deal": "no_deal" } },
@@ -2334,8 +2344,10 @@ end
           "currentKnot": "start",
           "voice": <%= voice.(:victoria) %>,
           "eventMappings": [
-            { "eventPattern": "global_variable_changed:flag2_submitted", "condition": "value === true && globalVars.m03_victoria_fate === 'arrested' && !globalVars.victoria_line_done && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "victoria_call", "resume": true, "voiced": true, "delayMs": 1500 },
-            { "eventPattern": "conversation_closed:agent_0x99", "condition": "globalVars.gallery_open === true && globalVars.m03_victoria_fate === 'arrested' && !globalVars.victoria_line_done && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "victoria_call", "resume": true, "voiced": true, "delayMs": 1500 }
+            <%# Blind fix pass F1: her call waits out a Mercer fight. %>
+            { "eventPattern": "global_variable_changed:mercer_fighting", "condition": "value === false && globalVars.flag2_submitted === true && globalVars.m03_victoria_fate === 'arrested' && !globalVars.victoria_line_done && !globalVars.hax_jammed", "conversationMode": "phone-chat", "targetKnot": "victoria_call", "resume": true, "voiced": true, "delayMs": 1500 },
+            { "eventPattern": "global_variable_changed:flag2_submitted", "condition": "value === true && globalVars.m03_victoria_fate === 'arrested' && !globalVars.victoria_line_done && !globalVars.hax_jammed && !globalVars.mercer_fighting", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "victoria_call", "resume": true, "voiced": true, "delayMs": 1500 },
+            { "eventPattern": "conversation_closed:agent_0x99", "condition": "globalVars.gallery_open === true && globalVars.m03_victoria_fate === 'arrested' && !globalVars.victoria_line_done && !globalVars.hax_jammed && !globalVars.mercer_fighting", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "victoria_call", "resume": true, "voiced": true, "delayMs": 1500 }
           ]
         },
         {
@@ -3430,6 +3442,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "puzzle_graph_links": [{ "from": "action_cut_the_shutter", "to": "door_gallery" }],
           "observations": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it.",
           "observationVariants": [
+            <%# Blind fix pass F4: the key's turned, the pull is still to do. %>
+            { "condition": "globalVars.cut_step === 2 && !globalVars.gallery_shutter_cut", "value": "The key turned a quarter right; the row is off their board. Third breaker from the left, GALLERY SHUTTER, still up." },
             <%# Puzzle chains P2: the player's own pull (cut_step 3); the NPC cuts keep the variants below. %>
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3 && globalVars.gallery_camera_blinded === true", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED. Under the row, the painted toggle thrown: GALLERY CAMERA: OFF." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED." },
@@ -3438,6 +3452,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           ],
           "text": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it.",
           "textVariants": [
+            <%# Blind fix pass F4: the key's turned, the pull is still to do. %>
+            { "condition": "globalVars.cut_step === 2 && !globalVars.gallery_shutter_cut", "value": "The key turned a quarter right; the row is off their board. Third breaker from the left, GALLERY SHUTTER, still up." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3 && globalVars.gallery_camera_blinded === true", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED. Under the row, the painted toggle thrown: GALLERY CAMERA: OFF." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.gallery_camera_blinded === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED. Under it, a smaller switch thrown the other way: GALLERY CAMERA: OFF." },
@@ -3467,7 +3483,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "hasFingerprint": true,
           <%# Impl R1 minor 2 / ROOMS m4: no condition on an owner, so the lifted print shows a neutral name on every branch; the owner id stays "voltage" for fingerprint_collected:voltage, and the escaped branch's observation variants make the match. %>
           "fingerprintOwner": "voltage",
-          "fingerprintOwnerName": "Unknown fitter",
+          "fingerprintOwnerName": "an unidentified fitter",
           "fingerprintCandidates": ["Wendell Briggs", "the fitters"],
           "fingerprintDifficulty": "easy",
           "observations": "The refit's bypass panel, bolted over the 1960s switchgear. Smudged by every fitter who has touched it.",
@@ -3541,6 +3557,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "globalVarOnKO": "mercer_ko",
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 125, "attackDamage": 10, "pauseToAttack": true } },
           "eventMappings": [
+            <%# Blind fix pass F1: the fight is the player's act (a strike); he says so as it starts. %>
+            { "eventPattern": "npc_attacked:mercer", "onceOnly": true, "bark": "Right. Come on, then." },
             <%= after_end_json.('server_hall') %>
             { "eventPattern": "room_entered:server_hall", "condition": "<%= mercer_here %> && !globalVars.closing_done", "setVisible": true }
           ],
@@ -4424,6 +4442,8 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "margin_note_read": false,
     "phone_voice_is_hax": false,
     "cut_by_hand": false,
+    "mercer_fighting": false,
+    "gallery_call_deferred": false,
     "static_power_ko": false,
     "power_fight_over": false,
     "cut_step": 0,

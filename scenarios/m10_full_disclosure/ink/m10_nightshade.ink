@@ -221,14 +221,11 @@ Director Magnus Netherton: The plans are good plans. They are old plans.
     -> unshown_close
 
 // ---------------------------------------------------------------
-// Arrested. First line writes nightshade_deal = "refused".
+// Arrested. Blind fix pass F9: the deal stays open ("") until the closing choice writes it.
 // Refusing is the closing choice; the deal hands over the payment and
 // moves to deal_close, where the check is still possible.
 // ---------------------------------------------------------------
 === arrested ===
-{nightshade_deal == "":
-    ~ nightshade_deal = "refused"
-}
 {nightshade_map_used:
     -> deal_close
 }

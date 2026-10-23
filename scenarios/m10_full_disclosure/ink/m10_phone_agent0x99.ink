@@ -799,7 +799,8 @@ A key switch and a breaker row, labelled GALLERY SHUTTER.
     -> cut_call
 }
 Turn the key a quarter. That takes the row off their board.
-+ [Key's turned.]
+// Blind fix pass F4: the key turn is the player's act at the panel, said as one.
++ [(Turn the key a quarter right.)]
     ~ cut_step = 2
     -> cut_step_2
 + [Give me a minute.]

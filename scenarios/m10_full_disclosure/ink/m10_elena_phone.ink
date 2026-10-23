@@ -57,7 +57,8 @@ There's a gray cabinet by the door. A key switch and a breaker row, labeled GALL
 Turn the key a quarter right and leave it. That takes the row off their board. It's ours now, not theirs.
 -> cut_1_menu
 = cut_1_menu
-+ [Key's turned.]
+// Blind fix pass F4: the key turn is the player's act at the panel, said as one.
++ [(Turn the key a quarter right.)]
     ~ cut_step = 2
     -> cut_2
 + [Give me a minute.]
