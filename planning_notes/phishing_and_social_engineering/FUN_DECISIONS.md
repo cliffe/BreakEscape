@@ -46,3 +46,15 @@ These are new work, not polish fixes. Within each track they slot in after the c
 | timing | Human timing runs, both tracks | Later |
 | e3_length | E3 runs ~17 min against a 13 min target | Accept ~17 min |
 | e5_logo | Missing Quayholt logo | Make one (PixelLab) — done, 574d9db4d |
+
+## Decisions on the fun-engine questions (2026-10-23, https://claude.ai/artifact/SDjwPM12bgKW3zrk8oaRvj)
+
+| Id | Question | Decision |
+|---|---|---|
+| route_config | Deployment-wide reporting route | Hacktivity setting (concrete Hacktivity change to be confirmed with the user before editing) |
+| sting_sound | Sound when a learner reports a phish | Keep the generic confirm sound |
+| disc_visible | Show learners how well they spotted genuine mail? | Discrimination figure stays organiser-only, but give learners detailed feedback on it: "they will benefit from it" |
+| hood | Fallback for a player with no avatar | Leave it |
+| brief_reload | Lab Mission Brief popup after a reload | Leave it |
+| lab_audio | Generate the lab NPC audio | Not yet |
+| e7_mirror | E7 mirror pair (aw5) | Keep E7's existing voicemail mirror; revisit with aw7 |
