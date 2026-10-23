@@ -41,7 +41,7 @@
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { MailReader } from '../mail-client/mail-reader.js';
-import { scoreTriage, weakestFactor, bandFor } from './triage-scoring.js';
+import { scoreTriage, weakestFactor, bandFor, verdictPoints, FULL_VERDICT_POINTS, CRITICAL_PENALTY } from './triage-scoring.js';
 import { buildTriageMessages } from './triage-messages.js';
 import { buildHeaderPanel } from './header-panel.js';
 import {
@@ -103,6 +103,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         this.stored = null;
         this.saving = false;
         this.saveFailed = false;
+        this.headerSeen = new Set();
         this._popSheet = null;
         this._live = '';
     }
@@ -151,6 +152,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         this.skipped = built.skipped;
         this.answers = new Map();
         this.openedAt = new Map();
+        this.headerSeen = new Set();
         this.result = null;
         this.view = { glossaryOpen: set?.glossary === 'open', explain: null };
     }
@@ -201,7 +203,13 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             afterBody: (rec, pane) => this._afterBody(rec, pane),
             // Non-email kinds (05 N1, N10) draw their own surface; email keeps the reader's layout.
             paneRenderer: (rec, h) => (isNonEmail(rec) ? renderKindSurface(rec, h) : null),
-            rowTag: (rec) => (isNonEmail(rec) ? KIND_LABEL[kindOf(rec)] : null),
+            // The kind tag, unless the row's subject already opens with it ("Voicemail (0:24)"
+            // read "Voicemail Voicemail (0:24)", P3 N-16).
+            rowTag: (rec) => {
+                if (!isNonEmail(rec)) return null;
+                const tag = KIND_LABEL[kindOf(rec)];
+                return String(rec.subject || '').toLowerCase().startsWith(String(tag).toLowerCase()) ? null : tag;
+            },
             rowBadge: (rec) => {
                 const a = this.answers.get(rec.id);
                 if (!a) return null;
@@ -359,11 +367,18 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         } else {
             p.appendChild(el('p', 'tri-brief-score', 'Right call is most of the score; naming the flags is the rest.'));
         }
+        // The set's own brief often already says "You'll see how you did at the end"; the engine
+        // line then says it once, not twice (P3 N13/N-9). An end-of-round set shows each item
+        // marked on the Review step and a short item list on the Result step, so "right and
+        // wrong" is true.
+        const briefSaysEnd = typeof this.set.brief === 'string' && /\bat the end\b/i.test(this.set.brief);
+        const endLine = "You'll see what you got right and wrong at the end.";
+        const noun = info.item[0];
         let when;
-        if (this.stage === 'pre') when = "This one is just to see where you are. You'll see what you got right and wrong at the end.";
-        else if (this.feedbackMode === 'end') when = "You'll see what you got right and wrong at the end.";
-        else when = "You'll get feedback after each message.";
-        p.appendChild(el('p', 'tri-brief-when', when));
+        if (this.stage === 'pre') when = briefSaysEnd ? 'This one is just to see where you are.' : `This one is just to see where you are. ${endLine}`;
+        else if (this.feedbackMode === 'end') when = briefSaysEnd ? '' : endLine;
+        else when = `You'll get feedback after each ${noun}.`;
+        if (when) p.appendChild(el('p', 'tri-brief-when', when));
         // F12: closing or reloading mid-round restarts it from the top (only the result is
         // ever saved), so say so here rather than leave a student puzzled by a reset.
         p.appendChild(el('p', 'tri-brief-restart', 'Closing or reloading before the end restarts this round from the first message.'));
@@ -398,6 +413,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _headerPanel(rec) {
         const mode = this.set.headerPanel;
         if (mode === 'off') return el('p', 'tri-header-off', 'Header details are not part of this round.');
+        // The details are on screen for this message, so its header tells can now be ticked (F7).
+        if (rec?.id) this.headerSeen.add(rec.id);
         return buildHeaderPanel(rec, this.view, {
             glossary: this.set.glossary || 'closed',
             onToggleGlossary: () => { this.view.glossaryOpen = !this.view.glossaryOpen; this._rerender('[data-glossary="toggle"]'); },
@@ -476,8 +493,17 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
     // ── the "What made you say that?" sheet ────────────────────────────────────
 
+    /** The awareness round hides header tells until this message's header details are open (F7). */
+    _hideHeaderTells(rec) {
+        if (!(this.profile === 'awareness' || this.awarenessSkin)) return false;
+        if (isNonEmail(rec)) return false;
+        const mode = this.set.headerPanel;
+        if (mode === 'open') return false;
+        return mode === 'off' || !this.headerSeen.has(rec.id);
+    }
+
     _chipIds(rec) {
-        return chipIdsFor(this.set, kindOf(rec), rec);
+        return chipIdsFor(this.set, kindOf(rec), rec, { hideHeaderTells: this._hideHeaderTells(rec) });
     }
 
     /** The word for what the player did: the call or push action's label, else the verdict's. */
@@ -512,6 +538,10 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         };
         ids.forEach(addChip);
         addChip(NONE_ID);
+        if (this._hideHeaderTells(rec) && this.set.headerPanel !== 'off') {
+            fs.appendChild(el('p', 'tri-chip-header-note',
+                "Header checks are under 'Show details'. Go back and open them to tick a header tell."));
+        }
         for (const [id, input] of inputs) {
             this.addEventListener(input, 'change', () => {
                 if (!input.checked) return;
@@ -608,9 +638,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         }[verdict];
     }
 
+    /** Right means full verdict marks under the set's profile, the same rule the result grid uses. */
     _isRight(rec, verdict) {
-        const phish = rec.truth.isPhish === true;
-        return phish ? verdict === 'report' || verdict === 'verify' : verdict === 'trust' || verdict === 'verify';
+        return verdictPoints(this.profile, rec.truth.isPhish === true, verdict, kindOf(rec)) >= FULL_VERDICT_POINTS;
     }
 
     /**
@@ -658,9 +688,12 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
         const notes = isObj(truth.perFlagNote) ? truth.perFlagNote : {};
         if (truth.isPhish) {
+            // One row per tell: an either-tick group is one row, shown under the member the
+            // learner ticked (its own note), or under its first member when missed.
             const ul = el('ul', 'tri-flags');
-            for (const id of per.caught) ul.appendChild(this._flagRow(rec, id, true, notes[id]));
-            for (const id of per.missed) ul.appendChild(this._flagRow(rec, id, false, notes[id]));
+            const units = Array.isArray(per.units) ? per.units : [];
+            for (const u of units) if (u.caught) ul.appendChild(this._flagRow(rec, u.shown, true, notes[u.shown] || notes[u.note]));
+            for (const u of units) if (!u.caught) ul.appendChild(this._flagRow(rec, u.note, false, notes[u.note]));
             card.appendChild(ul);
         }
         if (per.falseClaims.length) {
@@ -830,6 +863,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             flagRecall: s.flagRecall,
             perFactor: s.perFactor,
             falseByFactor: s.falseByFactor,
+            realHandledRight: s.realHandledRight,
+            realTotal: s.realTotal,
+            criticalMisses: s.criticalMisses,
             total: this.messages.length,
             skipped: this.skipped.map((x) => x.id),
             // Per-answer ms stays in memory (05): the starter writes only the four globals.
@@ -865,18 +901,25 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             addNum('Reported rather than just deleted', `${Math.round(reportRate * 100)}% of the phish`, 'reportRate');
         } else {
             const info = this._queueInfo();
-            const real = this.messages.filter((m) => m.truth.isPhish !== true);
-            // A genuine item handled right is one trusted OR checked (Verify / Ring back): ringing
-            // back a real caller is correct and "never costs you anything", so it must not read as
-            // a miss (D4). The noun follows the queue's kind.
-            const handledRight = real.filter((m) => ['trust', 'verify'].includes(this.answers.get(m.id)?.verdict)).length;
+            // A genuine item is handled right when its verdict earned full marks, the same rule
+            // the review card uses: Trust, Verify / Ring back, and (under awareness) Report, which
+            // is "never wrong" (D4, P3 N-2). Comply on an unchecked genuine caller is not. The
+            // noun follows the queue's kind.
             addNum('Phish caught', `${result.phishCaught} of ${result.phishTotal}`, 'phishCaught');
             addNum(info.reportLabel, `${result.reportCount} of ${result.phishTotal}`, 'reported');
-            addNum(`${info.real} handled right`, `${handledRight} of ${real.length}`, 'realTrusted');
+            addNum(`${info.real} handled right`, `${result.realHandledRight} of ${result.realTotal}`, 'realTrusted');
             if (this.profile === 'analyst') addNum('False alarms', String(result.falseAlarms), 'falseAlarms');
             if (this.verifyEnabled && result.verifyCount) addNum('Checked by another route', String(result.verifyCount), 'verify');
         }
         p.appendChild(nums);
+
+        if (!stored && result.criticalMisses?.length) {
+            p.appendChild(el('p', 'tri-critical',
+                `${result.criticalMisses.length === 1 ? 'One answer' : `${result.criticalMisses.length} answers`} let an attacker straight in ` +
+                `(approving a sign-in you didn't start, or doing what an impostor asked on a call). ` +
+                `That costs ${CRITICAL_PENALTY} points off the round each, on top of the item itself.`));
+        }
+        if (!stored && this.feedbackMode === 'end') p.appendChild(this._itemList());
 
         if (!stored) {
             const entries = Object.entries(result.perFactor);
@@ -957,6 +1000,32 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         if (!stored) this._notifyResult(result);
     }
 
+    /**
+     * A short item-by-item list for an end-of-round set (a pre/post check): each item's title, what
+     * the learner did and a plain right / worth-another-look mark, so the brief's "right and wrong
+     * at the end" holds on the last screen too (P3 N-9). Same rule as the review cards; the
+     * wording never blames.
+     */
+    _itemList() {
+        const box = el('section', 'tri-items');
+        box.setAttribute('aria-label', 'Item by item');
+        box.appendChild(el('h4', 'tri-items-title', 'Item by item'));
+        const ol = el('ol', 'tri-item-list');
+        for (const m of this.messages) {
+            const ans = this.answers.get(m.id);
+            if (!ans) continue;
+            const right = this._isRight(m, ans.verdict) || this._verdictTone(m, ans.verdict) === 'acceptable';
+            const li = el('li', `tri-item ${right ? 'right' : 'review'}`);
+            li.dataset.messageId = m.id;
+            li.append(icon(right ? 'mark-tick' : 'mark-question'),
+                el('span', 'tri-item-title', this._cardTitle(m)),
+                el('span', 'tri-item-verdict', ` · ${this._actionLabel(m, ans)}: ${right ? 'right call' : 'worth another look'}`));
+            ol.appendChild(li);
+        }
+        box.appendChild(ol);
+        return box;
+    }
+
     _notifyResult(result) {
         const fn = this.params.persistResult || this.params.onResult;
         if (typeof fn !== 'function') return;
@@ -983,7 +1052,12 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 : state === 'failed' ? "We couldn't save your result yet. It will save the next time you open this round."
                 : '';
         }
-        if (this.finishBtn) this.finishBtn.disabled = this.saving;
+        if (this.finishBtn) {
+            this.finishBtn.disabled = this.saving;
+            // Say why Finish is held: the first save can take a while under load (P3 new).
+            this.finishBtn.textContent = this.saving ? 'Saving…' : 'Finish';
+            this.finishBtn.setAttribute('aria-busy', this.saving ? 'true' : 'false');
+        }
     }
 
     _restart(set) {

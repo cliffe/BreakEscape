@@ -85,7 +85,7 @@ export class HealthUI {
 
     // Listen for player KO
     window.eventDispatcher.on(CombatEvents.PLAYER_KO, () => {
-      this.show(); // Always show when KO
+      this.show(true); // Always show when KO
       this.stopHeartbeat();
     });
   }
@@ -135,7 +135,23 @@ export class HealthUI {
     });
   }
 
-  show() {
+  /**
+   * Hearts mean nothing in a scenario with no combat ("disableAttacks": true, e.g. the awareness
+   * training room and the SIS games) while the player is unhurt, so the HUD stays hidden there
+   * (P3 N21). Any damage or a KO still shows it.
+   */
+  hiddenForNoCombat() {
+    if (window.gameScenario?.disableAttacks !== true) return false;
+    const hp = this.currentHP, max = this.maxHP;
+    return !(Number.isFinite(hp) && Number.isFinite(max) && hp < max);
+  }
+
+  show(force = false) {
+    if (!force && this.hiddenForNoCombat()) {
+      if (this.container) this.container.style.display = 'none';
+      this.isVisible = false;
+      return;
+    }
     if (!this.isVisible) {
       this.container.style.display = 'flex';
       this.isVisible = true;

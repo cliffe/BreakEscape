@@ -561,6 +561,8 @@ export function dataOnlyReply(target, result) {
   let text;
   if (result.landed) {
     text = pick(target && target.replies && target.replies.landed, 'Thanks, received.');
+  } else if (target && target.replies && isStr(target.replies.missed)) {
+    text = target.replies.missed; // an in-voice decline, in place of the factor's line (P3 N4)
   } else {
     const first = result.factors.find((f) => f.mode === 'required' && !f.pass);
     text = first ? first.reply : result.openLine;

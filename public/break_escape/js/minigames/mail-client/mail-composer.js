@@ -613,9 +613,22 @@ export class MailComposer {
         return this.gate;
     }
 
-    get subjectId() {
+    /**
+     * The target's subjects the player may use: a subject with `requires` (intel fact ids) is
+     * offered only once every one is held, so a subject naming a detail (E1's "Invoice
+     * INV-2217") is not handed over before it is found (P3 N15). If that would leave none, the
+     * full list stands, so a target always has a subject.
+     */
+    visibleSubjects() {
         const t = this.target;
-        const subjects = arr(t && t.subjects);
+        const all = arr(t && t.subjects);
+        const held = arr(this.heldIds);
+        const ok = all.filter((s) => !Array.isArray(s?.requires) || s.requires.every((id) => held.includes(id)));
+        return ok.length ? ok : all;
+    }
+
+    get subjectId() {
+        const subjects = this.visibleSubjects();
         if (!subjects.length) return null;
         if (this._subjectId && subjects.some((s) => s.id === this._subjectId)) return this._subjectId;
         return subjects[0].id;
@@ -814,8 +827,7 @@ export class MailComposer {
     }
 
     _renderSubject() {
-        const t = this.target;
-        const subjects = arr(t && t.subjects);
+        const subjects = this.visibleSubjects();
         if (!subjects.length) return;
         const row = el('div', 'mail-compose-row');
         const id = 'mail-compose-subject';

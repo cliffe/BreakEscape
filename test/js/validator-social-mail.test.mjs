@@ -437,7 +437,7 @@ test('factorStrings: senderTrust takes a mismatch state; other factors do not (l
   };
   assert.deepEqual(run({ senderTrust: { fail: 'f', redFlag: null, mismatch: { fail: 'm', redFlag: null } } }), []);
   const bad = run({ senderAuth: { fail: 'f', redFlag: null, mismatch: { fail: 'm', redFlag: null } } });
-  assert.equal(bad.filter((s) => /❌.*fs\.senderAuth has the key 'mismatch'; allowed: pass, fail, redFlag$/.test(s)).length, 1, bad.join('\n'));
+  assert.equal(bad.filter((s) => /❌.*fs\.senderAuth has the key 'mismatch'; allowed: pass, fail, failMissed, redFlag$/.test(s)).length, 1, bad.join('\n'));
   const empty = run({ senderTrust: { mismatch: { fail: ' ', redFlag: null } } });
   assert.equal(empty.filter((s) => /❌.*fs\.senderTrust\.mismatch\.fail is empty/.test(s)).length, 1, empty.join('\n'));
   // attachmentPlausible keeps its own states

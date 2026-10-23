@@ -33,7 +33,7 @@
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import { createConceptCard } from '../osint-browser/concept-card.js';
-import { renderLandingPage } from './landing-page-render.js';
+import { renderLandingPage, logoMissing, logoSrc } from './landing-page-render.js';
 import {
     scorePage, applyScore, setBuilt, buildRecord, linkInfoFor, CHOICE_KEYS, TELL_IDS
 } from './landing-page-model.js';
@@ -393,6 +393,16 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         });
         this.previewPane.appendChild(root);
         if (this._inspecting && regions) this._wireHotspots(regions);
+        if (!this._logoListen) {
+            // A brand with no logo asset: redraw the panel without the Logo line (P3 N-7).
+            this._logoListen = true;
+            this.addEventListener(this.previewPane, 'lpb-logo-missing', () => this._renderPanel());
+        }
+    }
+
+    /** The chosen brand's logo image failed to load, so its score line is left out. */
+    _logoUnavailable() {
+        return !!this.choices?.logo && this.choices.logo !== 'none' && logoMissing(logoSrc(this.choices.brand));
     }
 
     /** In step 6 the preview regions are focusable hot-spots (07 §6); wire each to a pick. */
@@ -658,6 +668,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
 
         const list = h('ul', { class: 'lpb-checklist', 'aria-label': 'Per-factor result' });
         for (const f of s.factors) {
+            if (f.id === 'logo' && this._logoUnavailable()) continue;
             list.appendChild(h('li', { class: `lpb-check-item is-${f.result}`, 'data-factor': f.id },
                 h('span', { class: 'lpb-check-word', text: RESULT_WORD[f.result] || f.result }),
                 h('span', { class: 'lpb-check-line lpb-readable', text: f.line })));
@@ -727,6 +738,9 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
     _onChoiceChanged() {
         this._writeDraft();
         if (this.scored) {
+            // The live line still held the last verdict ("Convincing enough for Hana.") under a
+            // panel that now asks for a new Score (E5-13): replace it.
+            this._announce('A choice changed. Score again to see how convincing the page is now.');
             this.scored = null;
             this.scoredSig = null;
             const existing = this._record();

@@ -418,15 +418,18 @@ export function performSend(scene, message) {
     } else if (opened) {
         const outcomeGlobal = target.outcome && target.outcome.setGlobal;
         const firstGlobal = isObject(outcomeGlobal) ? Object.keys(outcomeGlobal)[0] : (isStr(outcomeGlobal) ? outcomeGlobal : null);
+        const replyText = dataOnlyText(target, result, social);
+        // The job runs even with no text, so withReply timing still reveals the checklist; an
+        // empty text delivers no message (mail-scheduler _deliverText).
         scheduler?.scheduleTextJob({
             targetId: target.id,
             accountId,
             msgId: record.id,
-            text: dataOnlyText(target, result),
+            text: replyText,
             outcomeGlobal: firstGlobal,
             landed: result.landed
         });
-        replyScheduled = true;
+        replyScheduled = replyText !== '';
     } else if (timing === 'withReply') {
         // Unopened, assessment timing: a silent job (empty text, no outcome) so the verdict and
         // checklist are still revealed after the usual delay (00 §10, 01 N17).
@@ -474,9 +477,18 @@ function resolveClaimedFrom(social, account, claimed) {
     return p ? (p.name || (p.forms && p.forms.full) || p.address || claimed) : claimed;
 }
 
-/** The data-only reply text: replies.landed, else the first failed factor's line (00 §10, N7). */
-function dataOnlyText(target, result) {
-    if (result.landed) return (target.replies && isStr(target.replies.landed)) ? target.replies.landed : 'Thanks, received.';
+/**
+ * The data-only reply text: replies.landed, else replies.missed, else the first failed factor's
+ * line (00 §10, N7). An awareness episode's factor lines are written as the red-flag meter's
+ * narration ("No open invoice she can match this to..."), not in the target's voice, so there a
+ * miss gets a reply only when the target authors `replies.missed`; otherwise nothing comes back
+ * (P3 N4/N-5). Returns '' for no reply.
+ */
+export function dataOnlyText(target, result, social = null) {
+    const replies = isObject(target && target.replies) ? target.replies : {};
+    if (result.landed) return isStr(replies.landed) ? replies.landed : 'Thanks, received.';
+    if (isStr(replies.missed)) return replies.missed;
+    if (isObject(social && social.awarenessEpisode)) return '';
     const first = arr(result.factors).find((f) => f.mode === 'required' && !f.pass);
     return first ? (first.reply || first.line || '') : (result.openLine || '');
 }
@@ -608,7 +620,13 @@ export function renderChecklist(result, target, { claimedFrom = null, account = 
 
     const advisory = arr(result.factors).filter((f) => f.mode === 'advisory' && !f.pass);
     for (const f of advisory) {
-        panel.appendChild(cl('p', 'mail-checklist-advisory', `Advisory: ${stripMark(f.line)}`));
+        // A send that did not land can carry its own advisory wording (factorStrings[id].failMissed):
+        // a line such as "the debrief shows why it works" presumes a landing, and an empty
+        // failMissed hides the line on a miss (P3 N-5).
+        const fs = target && isObject(target.factorStrings) && isObject(target.factorStrings[f.id]) ? target.factorStrings[f.id] : null;
+        const missed = !result.landed && fs && typeof fs.failMissed === 'string' ? fs.failMissed : null;
+        if (missed === '') continue;
+        panel.appendChild(cl('p', 'mail-checklist-advisory', `Advisory: ${stripMark(missed || f.line)}`));
     }
 
     // Feedback layer 3 (04 N4): the escalating hint, surfaced after a repeated failure on this

@@ -22,7 +22,7 @@
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import {
-    blankSlot, blanksPayload, briefCopy, callGate, callLaunch, cardFacts, cardLines,
+    blankSlot, blanksPayload, briefCopy, callGate, callLaunch, cardFacts, cardLines, heldIdsFor,
     factLabel, heldOnBoard, hintLine, kindText, optionsForFact, readinessLines, textParts
 } from './pretext-card.js';
 
@@ -124,7 +124,7 @@ export class PretextPrepMinigame extends SocialOverlayScene {
         const ready = readinessLines(facts, options);
         const npcMissing = gate.ok && !this.npc();
         const gateText = npcMissing ? 'This call has no contact.' : gate.line;
-        const lines = cardLines(spec);
+        const lines = cardLines(spec, heldIdsFor(this.social, this.globals));
         const factIds = facts.map((fact) => fact.factId);
         const labelFor = (id) => options[id]?.find((option) => option.value === this.chosen[id])?.label || '';
         const npc = npcMissing ? null : this.npc();

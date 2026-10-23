@@ -281,3 +281,11 @@ test('--strict-social: the broken call exits 1, the call lints run beside the ot
 test('no run wrote or changed anything under the fixtures', { skip }, () => {
   assert.equal(folderHash(join(root, fixtureRel)), fixturesBefore);
 });
+
+test('P3 N9: lines[].requires names held intel facts; an unknown id or a non-array is refused', { skip }, () => {
+  const first = (j) => Object.keys(call(j).lines)[0];
+  const known = (j) => Object.keys(j.social.intelFacts || {})[0];
+  none(lint('sp_clean', { mutate: (j) => { if (known(j)) call(j).lines[first(j)].requires = [known(j)]; } }), /requires/);
+  one(lint('sp_clean', { mutate: (j) => { call(j).lines[first(j)].requires = ['no_such_fact'] } }), /requires 'no_such_fact' is not a social\.intelFacts id/);
+  one(lint('sp_clean', { mutate: (j) => { call(j).lines[first(j)].requires = 'org_chart' } }), /requires must be an array/);
+});

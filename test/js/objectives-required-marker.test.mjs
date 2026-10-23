@@ -160,3 +160,16 @@ test('the stylesheet styles the marker, the dimmer optional text and the key', (
     assert.match(css, /\.task-active\.task-optional\s*\{[^}]*color:/);
     assert.match(css, /\.aim-required-key\s*\{/);
 });
+
+test('P3 F11: a lone task with its aim\'s own title is not printed twice; other tasks are unchanged', () => {
+    const m = manager([
+        { aimId: 'echo', title: 'Check the work phone', status: 'active', order: 0,
+          tasks: [task('check_phone', { title: 'Check the work phone' }), task('hidden', { status: 'locked' })] },
+        { aimId: 'two', title: 'Cover the finance line', status: 'active', order: 1,
+          tasks: [task('cover', { title: 'Cover the finance line' }), task('other')] }
+    ]);
+    const { html } = render(m);
+    assert.ok(!html.includes('data-task-id="check_phone"'), 'the echo row is left out');
+    assert.ok(html.includes('data-aim-id="echo"'), 'the aim line still shows');
+    assert.ok(html.includes('data-task-id="cover"') && html.includes('data-task-id="other"'), 'an aim with two tasks keeps both');
+});

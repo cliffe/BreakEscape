@@ -133,11 +133,24 @@ function firstString(...values) {
  * the ink, so this is empty unless a line carries text.
  * @returns {{ lineId: string, text: string }[]}
  */
-export function cardLines(spec) {
+/** The intel fact ids the player holds (for cardLines' `requires` gate). */
+export function heldIdsFor(social, globals) {
+    return heldFactIds(isObject(social?.intelFacts) ? social.intelFacts : {}, globals);
+}
+
+export function cardLines(spec, held = null) {
     const lines = isObject(spec?.lines) ? spec.lines : {};
     const out = [];
     for (const [lineId, line] of Object.entries(lines)) {
-        if (isStr(line?.text)) out.push({ lineId, text: line.text });
+        if (!isStr(line?.text)) continue;
+        // A line that rests on something the player must find first (`requires`: intel fact
+        // ids, e.g. "The Head of Claims needs me back..." needs the org chart) stays off the
+        // card until every one is held, so the card never offers a fact nobody has found
+        // under "Use only details you have found" (P3 N9). `held` is the held fact-id list;
+        // without one (an old caller) nothing is filtered.
+        const req = Array.isArray(line.requires) ? line.requires.filter(isStr) : [];
+        if (held && req.some((id) => !held.includes(id))) continue;
+        out.push({ lineId, text: line.text });
     }
     return out;
 }

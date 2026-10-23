@@ -221,3 +221,21 @@ test('a blocked address injected straight into the renderer still draws the plac
     assert.equal(blocked, true);
     assert.equal(root.querySelector('.lpb-address-text').textContent, 'Blocked address');
 });
+
+test('P3 N-7: a logo image that fails to load is removed, the region marked, and the builder told once', () => {
+    const doc = freshDoc();
+    const { root, regions } = renderLandingPage({ pageDef, choices: { ...workedChoices, logo: 'crisp' }, doc, logoBase: '/nope-r3/' });
+    doc.body.appendChild(root);
+    const img = regions.logo.querySelector('img');
+    assert.ok(img, 'drawn until it fails');
+    const seen = [];
+    doc.body.addEventListener('lpb-logo-missing', (e) => seen.push(e.detail.src));
+    img.dispatchEvent(new doc.defaultView.Event('error'));
+    assert.equal(regions.logo.querySelector('img'), null);
+    assert.ok(regions.logo.classList.contains('is-unavailable'));
+    assert.equal(seen.length, 1);
+    // the next render of the same brand draws no broken image at all
+    const again = renderLandingPage({ pageDef, choices: { ...workedChoices, logo: 'crisp' }, doc: freshDoc(), logoBase: '/nope-r3/' });
+    assert.equal(again.regions.logo.querySelector('img'), null);
+    assert.ok(again.regions.logo.classList.contains('is-unavailable'));
+});

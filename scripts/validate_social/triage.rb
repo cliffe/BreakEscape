@@ -556,8 +556,10 @@ module ValidateSocial
 
       # flagAlternatives: groups of flags that name one tell two ways (05 "Either tick counts").
       # Each group is scored as one unit: credited if any member is ticked, reported missed once
-      # under its first member's note. Every member must be an authored flag, and a flag may sit
-      # in only one group.
+      # under its first authored member's note. At least one member must be an authored flag; a
+      # member that is not in truth.flags is another name for the same tell (ticking it credits the
+      # unit and is never "Not a flag here", P3 N-3), so it must be a tick the set offers. A flag
+      # may sit in only one group.
       if t.key?('flagAlternatives')
         alts = t['flagAlternatives']
         if !alts.is_a?(Array) || alts.any? { |g| !g.is_a?(Array) }
@@ -568,8 +570,13 @@ module ValidateSocial
           alts.each_with_index do |g, gi|
             issues << err("#{mw}.truth.flagAlternatives[#{gi}] needs at least two flag ids (a group names one tell two flags can describe)") if g.length < 2
             issues << err("#{mw}.truth.flagAlternatives[#{gi}] lists the same id twice") if g.uniq.length != g.length
+            unless g.any? { |f| flag_list.include?(f) }
+              issues << err("#{mw}.truth.flagAlternatives[#{gi}] names no flag in truth.flags, so it is never scored; at least one member must be an authored flag")
+            end
             g.each do |f|
-              issues << err("#{mw}.truth.flagAlternatives[#{gi}]: '#{f}' is not in truth.flags, so it is never scored; every alternative must be an authored flag") unless flag_list.include?(f)
+              unless flag_list.include?(f) || universe.include?(f)
+                issues << err("#{mw}.truth.flagAlternatives[#{gi}]: '#{f}' is neither in truth.flags nor a tick this set offers (00 section 2's factors or its enabled channel tells)")
+              end
               issues << err("#{mw}.truth.flagAlternatives: '#{f}' appears in more than one group") if seen_alt.key?(f)
               seen_alt[f] = true
             end

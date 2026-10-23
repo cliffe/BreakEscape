@@ -156,8 +156,16 @@ export class ObjectivesPanel {
           <div class="aim-tasks">
       `;
       
+      // An aim whose one visible task carries the aim's own title would print the same line twice
+      // (P3 F11: "Check the work phone" under "Check the work phone"). The aim line already says it
+      // and ticks when the task does, so that task row is left out.
+      const norm = (t) => String(t || '').trim().toLowerCase();
+      const visible = aim.tasks.filter(t => t.status !== 'locked');
+      const echoTaskId = visible.length === 1 && norm(visible[0].title) === norm(aim.title) ? visible[0].taskId : null;
+
       aim.tasks.forEach(task => {
         if (task.status === 'locked') return; // Don't show locked tasks
+        if (task.taskId === echoTaskId) return;
         
         // Skipped: the story closed it off. Greyed and struck through with a
         // label, never a tick (it doesn't count as done; see skipTask)

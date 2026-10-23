@@ -271,7 +271,9 @@ test('result with no flags ticked hides the per-factor breakdown, leaving only t
 });
 
 test('the same answers under the awareness profile give 86 and hide false alarms', () => {
-    const s = open(makeSet({ scoringProfile: 'awareness', stage: 'training' }));
+    // headerPanel 'open': under awareness the header tells are offered only once the header is
+    // on screen (P3 F7), and the worked example ticks senderAuth on m4_jed.
+    const s = open(makeSet({ scoringProfile: 'awareness', stage: 'training', headerPanel: 'open' }));
     playWorkedExample(s);
     click($(s, '.tri-next'));
     assert.equal(state(s).result.percent, 86);

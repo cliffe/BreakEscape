@@ -149,8 +149,10 @@ test('the four call actions score through the verdict rows on an impostor and a 
     assert.equal(imp.escalate, imp.verify_callback);
     // with every tell ticked, escalating an impostor scores full marks
     assert.equal(score(impostor, 'escalate', impostor.truth.flags), 100);
-    // genuine: refusing without the safe route loses points (scores as Delete); the rest score full
-    assert.equal(gen.comply, 100);
+    // genuine: refusing without the safe route loses points (scores as Delete); complying without
+    // checking is not full marks either (P3 N16: the callback is the lesson); the rest score full
+    assert.equal(gen.comply, 70);
+    assert.equal(gen.comply, gen.refuse);
     assert.equal(gen.verify_callback, 100);
     assert.equal(gen.escalate, 100);
     assert.ok(gen.refuse < 100, JSON.stringify(gen));

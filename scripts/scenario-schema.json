@@ -1029,7 +1029,8 @@
           "items": {
             "type": "object",
             "required": ["id", "text"],
-            "properties": {"id": {"type": "string"}, "text": {"type": "string"}, "topic": {"type": "string"}},
+            "properties": {"id": {"type": "string"}, "text": {"type": "string"}, "topic": {"type": "string"},
+              "requires": {"type": "array", "items": {"type": "string"}, "description": "social.intelFacts ids that must all be held before this subject is offered (P3 N15)"}},
             "patternProperties": {"^_": {}},
             "additionalProperties": false
           }
@@ -1327,6 +1328,7 @@
               "properties": {
                 "pass": {"type": "string"},
                 "fail": {"type": "string"},
+                "failMissed": {"type": "string", "description": "Shown in place of fail when the send did not land; empty hides the line (advisory factors)"},
                 "redFlag": {"type": ["string", "null"]},
                 "missing": {
                   "type": "object",
@@ -1349,6 +1351,7 @@
               "properties": {
                 "pass": {"type": "string"},
                 "fail": {"type": "string"},
+                "failMissed": {"type": "string", "description": "Shown in place of fail when the send did not land; empty hides the line (advisory factors)"},
                 "redFlag": {"type": ["string", "null"]},
                 "missing": {
                   "type": "object",
@@ -1378,6 +1381,7 @@
               "properties": {
                 "pass": {"type": "string"},
                 "fail": {"type": "string"},
+                "failMissed": {"type": "string", "description": "Shown in place of fail when the send did not land; empty hides the line (advisory factors)"},
                 "redFlag": {"type": ["string", "null"]},
                 "missing": {
                   "type": "object",
@@ -1400,6 +1404,7 @@
               "properties": {
                 "pass": {"type": "string"},
                 "fail": {"type": "string"},
+                "failMissed": {"type": "string", "description": "Shown in place of fail when the send did not land; empty hides the line (advisory factors)"},
                 "redFlag": {"type": ["string", "null"]},
                 "missing": {
                   "type": "object",
@@ -1422,6 +1427,7 @@
               "properties": {
                 "pass": {"type": "string"},
                 "fail": {"type": "string"},
+                "failMissed": {"type": "string", "description": "Shown in place of fail when the send did not land; empty hides the line (advisory factors)"},
                 "redFlag": {"type": ["string", "null"]},
                 "missing": {
                   "type": "object",
@@ -1444,6 +1450,7 @@
               "properties": {
                 "pass": {"type": "string"},
                 "fail": {"type": "string"},
+                "failMissed": {"type": "string", "description": "Shown in place of fail when the send did not land; empty hides the line (advisory factors)"},
                 "redFlag": {"type": ["string", "null"]},
                 "missing": {
                   "type": "object",
@@ -1466,6 +1473,7 @@
               "properties": {
                 "pass": {"type": "string"},
                 "fail": {"type": "string"},
+                "failMissed": {"type": "string", "description": "Shown in place of fail when the send did not land; empty hides the line (advisory factors)"},
                 "redFlag": {"type": ["string", "null"]},
                 "missing": {
                   "type": "object",
@@ -1830,6 +1838,8 @@
             "defendOnly": {"type": "string"},
             "defendIntro": {"type": "string", "description": "Replaces the runner's fixed defend-stage intro, which talks about an inbox (wrong for a page or call set)"},
             "flipMissed": {"type": "string", "description": "The flip's line after a send that did not land"},
+            "flipLandedNoTells": {"type": "string", "description": "The flip's line after a send that landed but has nothing to replay (no tells); falls back to flipMissed"},
+            "flipMissedHeading": {"type": "string", "description": "The flip's heading when nothing is replayed (a miss, or a landing with no tells); default 'Nothing to replay this time'"},
             "flipPageIntro": {"type": "string", "description": "The flip's intro when it shows a built landing page"},
             "flipCallIntro": {"type": "string", "description": "The flip's intro when it shows a pretext call"},
             "continue": {"type": "string", "description": "The label of the Continue button"},
@@ -2001,7 +2011,8 @@
         "repairs": {"type": "string"},
         "doublesDown": {"type": "string"},
         "extra": {"type": "number"},
-        "text": {"type": "string"}
+        "text": {"type": "string"},
+        "requires": {"type": "array", "items": {"type": "string"}, "description": "social.intelFacts ids that must all be held before the prep card shows this line (P3 N9); gate the ink choice on the same facts"}
       },
       "patternProperties": {"^_": {}},
       "additionalProperties": false

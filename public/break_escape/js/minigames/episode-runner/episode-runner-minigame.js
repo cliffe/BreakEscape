@@ -474,8 +474,12 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         const message = this._flipMessage();
         let page = null;
         try { page = flipPage(this.episode, this.social, globals); } catch (e) { console.error('[episode] could not rebuild the page:', e); }
-        const missed = !message && !page && !!sent?.recordId;
-        return { message, page, call: null, missed };
+        // Something went but there is nothing to replay. When the record says it landed (a careful
+        // message with no tells), that is not a miss and gets its own line (flipLandedNoTells,
+        // falling back to flipMissed); a record that cannot be found reads as a miss, as before.
+        const nothing = !message && !page && !!sent?.recordId;
+        const landedNoTells = nothing && rec?.landed === true;
+        return { message, page, call: null, missed: nothing && !landedNoTells, landedNoTells };
     }
 
     _renderFlip() {

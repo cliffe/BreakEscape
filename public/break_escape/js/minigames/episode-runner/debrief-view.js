@@ -14,7 +14,7 @@
 // Every string goes in with textContent. The wording never blames the learner.
 
 import { redFlagString, skillName } from '../inbox-triage/triage-flags.js';
-import { weakestFactor } from '../inbox-triage/triage-scoring.js';
+import { weakestFactor, flagUnits, unitAccepts } from '../inbox-triage/triage-scoring.js';
 import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject } from '../inbox-triage/triage-kinds.js';
 
 const DEFAULTS = Object.freeze({
@@ -108,7 +108,7 @@ function reviewNeeded(answer, msg) {
     if (!verdictRight) return true;
     if (phish && Array.isArray(truth.flags)) {
         const picked = new Set(Array.isArray(answer.flags) ? answer.flags : []);
-        return truth.flags.some((f) => !picked.has(f));
+        return flagUnits(truth.flags, truth.flagAlternatives).some((u) => !unitAccepts(u).some((m) => picked.has(m)));
     }
     return false;
 }
@@ -129,8 +129,12 @@ function buildCard(answer, msg) {
     const notes = isObj(truth.perFlagNote) ? truth.perFlagNote : {};
     if (phish && Array.isArray(truth.flags) && truth.flags.length) {
         const ul = el('ul', 'aw-flags');
-        for (const id of [...new Set(truth.flags)]) {
-            const caught = picked.has(id);
+        // One line per tell: an either-tick group (truth.flagAlternatives) is listed once, under
+        // the member the learner ticked, else its first member, as the message feedback does (P3 N6).
+        for (const unit of flagUnits(truth.flags, truth.flagAlternatives)) {
+            const hit = unitAccepts(unit).find((m) => picked.has(m));
+            const caught = !!hit;
+            const id = hit && unit.members.includes(hit) ? hit : unit.note;
             const li = el('li', `aw-flag ${caught ? 'aw-flag-caught' : 'aw-flag-missed'}`);
             li.dataset.flag = id;
             const sentence = redFlagString(id, msg);

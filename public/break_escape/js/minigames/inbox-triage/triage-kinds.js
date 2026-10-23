@@ -109,7 +109,8 @@ export function kindVerdictLine(kind, isPhish, verdict) {
             delete: 'Safe, but nobody was warned. Escalating tells security this caller is working through the office.',
             verify: 'Right call: ringing back on a number you already hold is how you check.'
         } : {
-            trust: 'Right call. This caller was genuine.',
+            // Comply on a genuine caller is not full marks: the check is the lesson (P3 N16).
+            trust: 'This caller was genuine, but you did what they asked without checking. An impostor sounds just the same, so ring back on the number you hold first.',
             report: 'That caller was genuine, but escalating when unsure is never wrong.',
             delete: 'That caller was genuine. Hanging up without offering a safe way to check left them stuck.',
             verify: 'Checking first is fine. This caller was genuine, and ringing back confirmed it.'
@@ -382,15 +383,24 @@ function page(rec, h) {
         if (isStr(p.button)) form.appendChild(el('span', 'tri-page-button', p.button));
         view.appendChild(form);
         // 11 N13: `page.autofill` is 'none' (the password manager offered nothing here) or
-        // 'filled'. Only 'none' is a cue; 'filled' is shown quietly so the two can be told apart.
-        // A password manager only offers to fill a password, so the cue is shown only on a form
-        // that actually asks for one — otherwise "did not fill this in" is said about a page where
-        // it never would (E5-10, accuracy).
+        // 'filled'. A password manager only offers to fill a password, so the cue exists only on a
+        // form that asks for one (E5-10, accuracy). It is not printed on the page: a line on every
+        // page read as the answer to every item (P3 E5-10). The learner checks for it, the way
+        // they would at a real sign-in box, with "Try your password manager", which reveals it.
         const hasPassword = fields.some((f) => /pass(word|code)/i.test(f));
-        if (hasPassword && p.autofill === 'none') {
-            view.appendChild(el('p', 'tri-autofill tri-autofill-none', 'Your password manager did not fill this in.'));
-        } else if (hasPassword && p.autofill === 'filled') {
-            view.appendChild(el('p', 'tri-autofill tri-autofill-filled', 'Your password manager filled this in.'));
+        if (hasPassword && (p.autofill === 'none' || p.autofill === 'filled')) {
+            const filled = p.autofill === 'filled';
+            const cue = el('p', `tri-autofill ${filled ? 'tri-autofill-filled' : 'tri-autofill-none'}`,
+                filled ? 'Your password manager filled this in.' : 'Your password manager did not fill this in.');
+            cue.hidden = true;
+            const btn = el('button', 'tri-autofill-btn minigame-button', 'Try your password manager');
+            btn.type = 'button';
+            btn.setAttribute('aria-expanded', 'false');
+            btn.addEventListener('click', () => {
+                cue.hidden = false;
+                btn.setAttribute('aria-expanded', 'true');
+            });
+            view.append(btn, cue);
         }
     }
     box.appendChild(view);

@@ -107,7 +107,10 @@ test('actions per kind: email gets the verdicts, call four actions, push three, 
 test('chips: an email gets the seven factors then the tells; a non-email kind gets the tells only', () => {
     const set = makeSet({ channelTells: ['unexpected_qr', 'reply_stop_trick'] });
     assert.deepEqual(chipIdsFor(set), [...FACTOR_ORDER, 'unexpected_qr', 'reply_stop_trick']);
-    for (const k of kinds.NON_EMAIL_KINDS) assert.deepEqual(chipIdsFor(set, k), ['unexpected_qr', 'reply_stop_trick']);
+    // P3 N-4: each kind drops the tells that cannot apply to it (a QR code on a text, call, page
+    // or prompt; Reply STOP anywhere but a text).
+    const expected = { sms: ['reply_stop_trick'], qr: ['unexpected_qr'], voicemail: [], page: [], call: [], push: [] };
+    for (const k of kinds.NON_EMAIL_KINDS) assert.deepEqual(chipIdsFor(set, k), expected[k], k);
     assert.deepEqual(chipIdsFor({}, 'sms'), []);
 });
 
@@ -221,8 +224,11 @@ test('each non-email kind draws its own surface, with no email headers and no he
     assert.ok($(s, '.mail-details-toggle'));
     // list rows carry a kind tag for non-email kinds only
     const tags = Object.fromEntries($$(s, '.mail-row').map((r) => [r.dataset.id, r.querySelector('.mail-row-tag')?.textContent || null]));
-    assert.deepEqual(tags, { sms_parcel: 'Text', vm_ceo: 'Voicemail', qr_parking: 'QR notice', page_sso: 'Web page',
+    // vm_ceo's subject is already "Voicemail (0:41)", so it carries no second "Voicemail" (P3 N-16)
+    assert.deepEqual(tags, { sms_parcel: 'Text', vm_ceo: null, qr_parking: 'QR notice', page_sso: 'Web page',
         call_helpdesk: 'Call', push_odd: 'Sign-in prompt', mail_real: null });
+    const vmRow = $(s, '.mail-row[data-id="vm_ceo"] .mail-row-subject').textContent;
+    assert.equal((vmRow.match(/Voicemail/g) || []).length, 1, vmRow);
 });
 
 test('surface details: sms link hover, voicemail transcript, QR destination, page address and padlock notes', () => {
@@ -291,7 +297,9 @@ test('the chip sheet for a non-email kind offers only the channel tells and Noth
     // A sign-in prompt drops the email/web-structural tells (look-alike domain, padlock myth,
     // reply-to, enable-content), which cannot apply to it; the others stay (N6). push_odd is not
     // scored on any of the dropped tells, so none is kept by the authored-flag union.
-    const PUSH_TELLS = TELLS.filter((t) => !['lookalike_domain', 'padlock_myth'].includes(t));
+    // P3 N-4 extended the filter: no text-message, QR or callback tells on a prompt either.
+    const PUSH_TELLS = TELLS.filter((t) => !['lookalike_domain', 'padlock_myth', 'smish_shortlink_urgency',
+        'reply_stop_trick', 'unexpected_qr', 'vish_callback_pressure'].includes(t));
     assert.deepEqual(sheet.chips.map((c) => c.id), [...PUSH_TELLS, 'none']);
     assert.ok(!sheet.chips.some((c) => FACTOR_ORDER.includes(c.id)));
     assert.match($(s, '.tri-sheet-chosen').textContent, /You chose: Deny and report\./);
@@ -407,6 +415,10 @@ test('page card: the autofill cue appears for none and filled only', () => {
     const none = open(certSet({ autofill: 'none' }));
     click($(none, '.tri-start'));
     pick(none, 'page_sso');
+    // P3 E5-10: the cue is not printed on the page; "Try your password manager" reveals it.
+    assert.equal($(none, '.tri-autofill-none').hidden, true, 'hidden until the learner checks');
+    click($(none, '.tri-autofill-btn'));
+    assert.equal($(none, '.tri-autofill-none').hidden, false);
     assert.equal($(none, '.tri-autofill-none').textContent, 'Your password manager did not fill this in.');
     const filled = open(certSet({ autofill: 'filled' }));
     click($(filled, '.tri-start'));
@@ -423,6 +435,7 @@ test('page card: the autofill cue appears for none and filled only', () => {
     const noPass = open(certSet({ autofill: 'none', fields: ['Work email'] }));
     click($(noPass, '.tri-start'));
     pick(noPass, 'page_sso');
+    assert.equal($(noPass, '.tri-autofill-btn'), null, 'no password field, no password-manager button');
     assert.equal($(noPass, '.tri-autofill'), null, 'no password field, no password-manager cue');
 });
 

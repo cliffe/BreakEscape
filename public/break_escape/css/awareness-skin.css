@@ -70,7 +70,13 @@
 .aw-missed { padding: 10px 12px; background: #fff; border-left: 4px solid var(--aw-line); }
 
 /* flip */
-.aw-flip-reader { margin: 8px 0; border: 1px solid var(--aw-line); background: #fff; max-height: 320px; overflow: auto; }
+/* The flip shows one message, so it drops the list column and lets the reading pane grow to its
+   full height. A fixed-height box cut the link chip (the evidence a tell points at) off at the
+   bottom edge (P3 N-8). */
+.aw-flip-reader { margin: 8px 0; border: 1px solid var(--aw-line); background: #fff; }
+.aw-flip-reader .mail-reader { display: block; }
+.aw-flip-reader .mail-list-pane { display: none; }
+.aw-flip-reader .mail-read-pane { display: block; overflow: visible; max-height: none; border: 0; }
 /* N1: the link/attachment chip fills its own background from a dark pixel-art border-image, which
    the flip's light re-pointing of --ui-* cannot reach, so the chip stayed dark navy with dark
    link text. On the flip/debrief light surface, drop the dark fill and give the chip a light

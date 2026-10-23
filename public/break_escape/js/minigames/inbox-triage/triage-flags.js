@@ -84,16 +84,39 @@ const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
 const NON_EMAIL = ['sms', 'voicemail', 'qr', 'page', 'call', 'push'];
 
-// Tells that are structural to email or the web and cannot apply to a voice call, a voicemail
-// or an MFA prompt: the reply-to header, a link/sender look-alike domain, a document's
-// enable-content prompt and the padlock myth. Showing them as tick options on those kinds let a
-// learner tick something that could never be right (N6). A tell the message is actually scored
-// on is always kept (see chipIdsFor), so no authored flag is ever hidden.
+// Tells that cannot apply to a kind of message, so offering them as ticks let a learner tick
+// something that could never be right (N6; P3 N-4 extended it past calls, voicemails and prompts):
+//   - email-structural: the reply-to header and a document's enable-content prompt;
+//   - web-structural: the padlock myth (only a page has an address bar);
+//   - text-message tells: a shortened link sent by SMS and the "Reply STOP" trick;
+//   - a QR code (an email or a printed notice can carry one; a text, a call or a page cannot);
+//   - an unrequested MFA prompt (only a sign-in prompt is one);
+//   - a caller putting you off ringing back (a call or a voicemail; an email can say "don't
+//     ring me" too, so email keeps it);
+//   - a look-alike domain (anything with an address or a link, so not a call, voicemail or prompt).
+// A tell the message is actually scored on is always kept (see chipIdsFor), so no authored flag
+// is ever hidden. A scenario-local tell (a flagChips label the table does not know) is never
+// filtered.
+const VOICE = ['reply_to_differs', 'lookalike_domain', 'enable_content_prompt', 'padlock_myth',
+    'smish_shortlink_urgency', 'reply_stop_trick', 'unexpected_qr', 'unrequested_mfa_push'];
+const EMAIL_EXCLUDE = ['padlock_myth', 'smish_shortlink_urgency', 'reply_stop_trick', 'unrequested_mfa_push'];
 const KIND_TELL_EXCLUDE = Object.freeze({
-    call: ['reply_to_differs', 'lookalike_domain', 'enable_content_prompt', 'padlock_myth'],
-    voicemail: ['reply_to_differs', 'lookalike_domain', 'enable_content_prompt', 'padlock_myth'],
-    push: ['reply_to_differs', 'lookalike_domain', 'enable_content_prompt', 'padlock_myth']
+    email: EMAIL_EXCLUDE,
+    playerSent: EMAIL_EXCLUDE,
+    sms: ['reply_to_differs', 'enable_content_prompt', 'padlock_myth', 'unexpected_qr', 'unrequested_mfa_push',
+        'vish_callback_pressure'],
+    qr: ['reply_to_differs', 'enable_content_prompt', 'padlock_myth', 'smish_shortlink_urgency', 'reply_stop_trick',
+        'unrequested_mfa_push', 'vish_callback_pressure'],
+    page: ['reply_to_differs', 'enable_content_prompt', 'smish_shortlink_urgency', 'reply_stop_trick', 'unexpected_qr',
+        'unrequested_mfa_push', 'vish_callback_pressure'],
+    call: VOICE,
+    voicemail: VOICE,
+    push: ['reply_to_differs', 'lookalike_domain', 'enable_content_prompt', 'padlock_myth',
+        'smish_shortlink_urgency', 'reply_stop_trick', 'unexpected_qr', 'vish_callback_pressure']
 });
+
+/** Header-panel tells: only readable once the header details are open (P3 F7). */
+export const HEADER_TELLS = Object.freeze(['senderAuth', 'reply_to_differs']);
 
 /**
  * The ids a set shows as chips, in the fixed order. An email (the default kind) gets the
@@ -101,18 +124,28 @@ const KIND_TELL_EXCLUDE = Object.freeze({
  * channel tells, because the email factors do not apply to it (05 OQ7). A scenario-local
  * tell counts as enabled when the set gives it a `flagChips` label (00 section 2).
  *
- * `message` (optional) is the triage message the chips are for: on a call/voicemail/push, a
- * tell that cannot apply to that kind is dropped, unless the message is scored on it (its
- * `truth.flags`), which keeps every authored flag tickable.
+ * `message` (optional) is the triage message the chips are for: a tell that cannot apply to
+ * its kind is dropped (KIND_TELL_EXCLUDE), unless the message is scored on it (its
+ * `truth.flags`), which keeps every authored flag tickable. Without a message nothing is
+ * dropped from an email's list (the set-level view).
+ *
+ * `opts.hideHeaderTells` drops the header-panel tells (HEADER_TELLS) whether or not they are
+ * authored: the awareness round passes it while the header details for this message are still
+ * closed, so the learner is never asked to judge a header they have not opened. It is applied
+ * to every message alike, so the presence of a chip never hints at the answer.
  */
-export function chipIdsFor(set, kind = 'email', message = null) {
+export function chipIdsFor(set, kind = 'email', message = null, opts = {}) {
     const local = (id) => isObj(set?.flagChips) && isStr(set.flagChips[id]) && !FACTOR_ORDER.includes(id);
     const tells = (Array.isArray(set?.channelTells) ? set.channelTells : []).filter((id) => CHANNEL_TELLS[id] || local(id));
-    if (!NON_EMAIL.includes(kind)) return [...FACTOR_ORDER, ...tells];
-    const exclude = KIND_TELL_EXCLUDE[kind];
-    if (!exclude) return tells;
-    const authored = new Set(Array.isArray(message?.truth?.flags) ? message.truth.flags : []);
-    return tells.filter((id) => !exclude.includes(id) || authored.has(id));
+    const email = !NON_EMAIL.includes(kind);
+    let ids = email ? [...FACTOR_ORDER, ...tells] : tells;
+    const exclude = KIND_TELL_EXCLUDE[email ? 'email' : kind];
+    if (exclude && (message || !email)) {
+        const authored = new Set(Array.isArray(message?.truth?.flags) ? message.truth.flags : []);
+        ids = ids.filter((id) => !exclude.includes(id) || authored.has(id));
+    }
+    if (opts.hideHeaderTells) ids = ids.filter((id) => !HEADER_TELLS.includes(id));
+    return ids;
 }
 
 /** The chip label for one id: the set's `flagChips` override, else the built-in table for its `chipStyle`. */

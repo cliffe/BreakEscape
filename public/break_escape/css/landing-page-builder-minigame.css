@@ -226,6 +226,9 @@
     font-style: italic;
 }
 
+/* A brand with no logo asset: nothing drawn, and no space held for it (P3 N-7). */
+.lpb-logo.is-unavailable { min-height: 0; margin-bottom: 0; }
+
 .lpb-purpose { margin: 0 0 6px; font-size: 18px; }
 .lpb-copy { margin: 0 0 14px; font-size: 15px; line-height: 1.4; }
 

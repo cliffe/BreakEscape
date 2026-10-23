@@ -996,3 +996,17 @@ test('defend button follows the set kind (phone, voice) even when strings.defend
         assert.equal(cur().container.querySelector('.er-launch').textContent, button, `${id}: the button fits the set`);
     }
 });
+
+test('flip split: a landed send with no tells to replay is landedNoTells, not missed', () => {
+    const ep = fullEpisode();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, stage: 'flip', done: ['brief', 'osint', 'write'],
+        sent: { recordId: 'sent_1', targetId: 'supplier_contact', templateId: 'tpl_bank', blankIds: [] } } });
+    window.mailState.mailboxes.analyst.messages.push({
+        id: 'sent_1', folder: 'sent', fromAccount: 'analyst', targetId: 'supplier_contact', gameTime: 100,
+        subject: 'Updated bank details', templates: { opening: 'tpl_bank' }, slots: {}, landed: true, tells: []
+    });
+    open(ep);
+    const f = calls.flip[0];
+    assert.equal(f.missed, false);
+    assert.equal(f.landedNoTells, true);
+});

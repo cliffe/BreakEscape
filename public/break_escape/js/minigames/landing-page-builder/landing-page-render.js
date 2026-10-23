@@ -39,6 +39,15 @@ const PADLOCK_ICON = '/break_escape/assets/icons/padlock_32.png';
 // shows as a labelled box rather than a broken image.
 const LOGO_BASE = '/break_escape/assets/social/landing/';
 
+// Logo images that failed to load (a brand with no logo asset, e.g. logo-quayholt.png: P3 N-7).
+// A failed logo is hidden rather than drawn as a broken-image box, and the builder drops its
+// "Logo" score line, so the scorer never praises a logo the learner cannot see.
+const missingLogos = new Set();
+/** True once the logo image for this src has failed to load in this session. */
+export function logoMissing(src) { return missingLogos.has(src); }
+/** The logo src the page uses for a brand. */
+export function logoSrc(brand, base = LOGO_BASE) { return `${base}logo-${brand || 'unknown'}.png`; }
+
 // Human labels for the form-field ids a page may ask for (07 §3 step 6, 00 §1).
 const FIELD_LABELS = {
     email: 'Email',
@@ -178,12 +187,26 @@ export function renderLandingPage(options = {}) {
     const logo = make('div', 'lpb-logo');
     if (choices.logo && choices.logo !== 'none') {
         const brand = brandById(pageDef, choices.brand);
-        const img = make('img', 'lpb-logo-img');
-        img.src = `${logoBase}logo-${choices.brand || 'unknown'}.png`;
-        img.alt = brand && brand.name ? brand.name : '';
-        if (choices.logo === 'blurry') img.classList.add('is-blurry');
-        else if (choices.logo === 'stretched') img.classList.add('is-stretched');
-        logo.appendChild(img);
+        const src = logoSrc(choices.brand, logoBase);
+        if (missingLogos.has(src)) {
+            logo.classList.add('is-unavailable');
+        } else {
+            const img = make('img', 'lpb-logo-img');
+            img.alt = brand && brand.name ? brand.name : '';
+            if (choices.logo === 'blurry') img.classList.add('is-blurry');
+            else if (choices.logo === 'stretched') img.classList.add('is-stretched');
+            img.addEventListener('error', () => {
+                const first = !missingLogos.has(src);
+                missingLogos.add(src);
+                img.remove();
+                logo.classList.add('is-unavailable');
+                // Tell the builder (if any) so it can drop the Logo line from its score panel.
+                const CE = (logo.ownerDocument && logo.ownerDocument.defaultView && logo.ownerDocument.defaultView.CustomEvent) || globalThis.CustomEvent;
+                if (first && CE) logo.dispatchEvent(new CE('lpb-logo-missing', { bubbles: true, detail: { src } }));
+            });
+            img.src = src;
+            logo.appendChild(img);
+        }
     } else {
         logo.classList.add('is-missing');
     }

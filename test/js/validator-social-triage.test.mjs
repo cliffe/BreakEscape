@@ -435,8 +435,18 @@ test('05 "Either tick counts": truth.flagAlternatives shape and membership', { s
   expectIn(mut({ flagAlternatives: 'nope' }), /flagAlternatives must be an array of groups/);
   expectIn(mut({ flagAlternatives: [['senderTrust']] }), /flagAlternatives\[0\] needs at least two flag ids/);
   expectIn(mut({ flagAlternatives: [['senderTrust', 'senderTrust']] }), /flagAlternatives\[0\] lists the same id twice/);
-  expectIn(mut({ flags: ['senderTrust', 'lookalike_domain'], flagAlternatives: [['senderTrust', 'urgencyCalibrated']] }),
-    /flagAlternatives\[0\]: 'urgencyCalibrated' is not in truth\.flags/);
+  // P3 N-3: a member outside truth.flags is another name for the tell, allowed when the set
+  // offers it as a tick; a group with no authored member, or an unknown tick, is still refused.
+  const altOnly = withTell();
+  altOnly.social.triageSets[0].messages[1].truth = {
+    isPhish: true, flags: ['lookalike_domain'], flagAlternatives: [['lookalike_domain', 'senderTrust']],
+    perFlagNote: { lookalike_domain: 'n' },
+  };
+  assert.deepEqual(lintJson(altOnly), []);
+  expectIn(mut({ flags: ['senderTrust', 'lookalike_domain'], flagAlternatives: [['urgencyCalibrated', 'addressedTo']] }),
+    /flagAlternatives\[0\] names no flag in truth\.flags/);
+  expectIn(mut({ flags: ['senderTrust', 'lookalike_domain'], flagAlternatives: [['senderTrust', 'qr_nonsense']] }),
+    /flagAlternatives\[0\]: 'qr_nonsense' is neither in truth\.flags nor a tick this set offers/);
 
   // A flag may sit in only one group.
   const two = withTell();

@@ -17,7 +17,9 @@
  * counts Report only.
  *
  * Each message is worth 100: 60 for the verdict, 40 for the reasons. Per-message scores are
- * rounded to whole points (halves up) and the round percent is the mean of those, halves up.
+ * rounded to whole points (halves up) and the round percent is the mean of those, halves up,
+ * less CRITICAL_PENALTY for each critical miss (an approved attacker's sign-in prompt, or a call
+ * complied with for an impostor; awareness only), floored at 0.
  */
 
 export const PROFILES = ['analyst', 'awareness'];
@@ -30,6 +32,26 @@ export const DEFAULT_BANDS = [
     { min: 60, headline: 'Getting there: a few tells slipped past' },
     { min: 0, headline: "Worth practising: here's where to look first" },
 ];
+
+/**
+ * Per-kind exceptions to VERDICT_POINTS (awareness only). A call's Comply on a genuine caller
+ * scores as Trust would, but the lesson of the call queue is "check before you act" (11 N15: the
+ * taught action is the callback, which also serves the genuine caller). Doing what an unchecked
+ * caller asks is the same act that lets the impostor in, so it is not full marks: 30, the same as
+ * hanging up on them (P3 N16).
+ */
+const KIND_VERDICT_POINTS = {
+    call: { real: { trust: 30 } },
+};
+
+/**
+ * Approving a sign-in prompt you did not start, or doing what an impostor asks on a call, hands
+ * the attacker the account outright. Each such answer takes CRITICAL_PENALTY points off the
+ * round percent on top of the item's own zero, and the round can never reach the top band
+ * (P3 N17: one approved overnight prompt still read "Sharp" territory at 84%).
+ */
+export const CRITICAL_KINDS = Object.freeze(['push', 'call']);
+export const CRITICAL_PENALTY = 15;
 
 /** Verdict points (out of 60) by profile, truth and verdict. Verify scores like Report. */
 const VERDICT_POINTS = {
@@ -46,15 +68,30 @@ const VERDICT_POINTS = {
 const clamp01 = (n) => Math.min(1, Math.max(0, n));
 const roundHalfUp = (n) => Math.floor(n + 0.5);
 
-/** Verdict points for one message. Throws on an unknown profile or verdict. */
-export function verdictPoints(profile, isPhish, verdict) {
+/**
+ * Verdict points for one message. Throws on an unknown profile or verdict. `kind` (optional,
+ * the message's kind) applies KIND_VERDICT_POINTS under the awareness profile.
+ */
+export function verdictPoints(profile, isPhish, verdict, kind = null) {
     const table = VERDICT_POINTS[profile];
     if (!table) throw new RangeError(`triage-scoring: unknown scoringProfile "${profile}"`);
     const pts = table[isPhish ? 'phish' : 'real'][verdict];
     if (pts === undefined) {
         throw new RangeError(`triage-scoring: verdict "${verdict}" is not available in the ${profile} profile`);
     }
+    if (profile === 'awareness' && kind) {
+        const own = KIND_VERDICT_POINTS[kind]?.[isPhish ? 'phish' : 'real']?.[verdict];
+        if (own !== undefined) return own;
+    }
     return pts;
+}
+
+/** The most verdict points any verdict can earn on this message (60): "handled right" means this. */
+export const FULL_VERDICT_POINTS = 60;
+
+/** A critical miss: a phish push approved, or an impostor's call complied with (awareness only). */
+export function isCriticalMiss(profile, isPhish, verdict, kind) {
+    return profile === 'awareness' && isPhish && verdict === 'trust' && CRITICAL_KINDS.includes(kind);
 }
 
 /**
@@ -100,9 +137,14 @@ export function weakestFactor(perFactor) {
  *
  * Each returned unit is { members: [authored flag ids, in group order], note: members[0] }. A flag
  * in no group is its own singleton unit, so a message without the field groups one flag per unit
- * and scores exactly as before. Only members listed in `authoredFlags` are kept; a group with no
- * authored member produces no unit. Units come out in the order the first member appears in
+ * and scores exactly as before. Units come out in the order the first member appears in
  * `authoredFlags`, so an unchanged message keeps its original flag order.
+ *
+ * A group may also name flags that are not in `truth.flags` (P3 N-3: the sender's address on a
+ * look-alike From line is senderTrust as much as lookalike_domain). Such a member is another name
+ * for the same tell: ticking it credits the unit and is never a false claim, but it is never
+ * reported missed on its own. The unit then carries `alternates: [those ids]` (the key is left out
+ * when there are none). A group with no authored member produces no unit.
  */
 export function flagUnits(authoredFlags, flagAlternatives) {
     const authored = [...new Set(authoredFlags || [])];
@@ -110,17 +152,27 @@ export function flagUnits(authoredFlags, flagAlternatives) {
     const groupOf = new Map();
     for (const g of groups) {
         const members = g.filter((id) => authored.includes(id));
-        if (members.length) for (const id of members) if (!groupOf.has(id)) groupOf.set(id, members);
+        if (!members.length) continue;
+        const alternates = [...new Set(g.filter((id) => typeof id === 'string' && !authored.includes(id)))];
+        const unit = alternates.length ? { members, alternates } : { members };
+        for (const id of members) if (!groupOf.has(id)) groupOf.set(id, unit);
     }
     const seen = new Set();
     const units = [];
     for (const id of authored) {
         if (seen.has(id)) continue;
-        const members = groupOf.get(id) || [id];
-        for (const m of members) seen.add(m);
-        units.push({ members, note: members[0] });
+        const g = groupOf.get(id) || { members: [id] };
+        for (const m of g.members) seen.add(m);
+        const unit = { members: g.members, note: g.members[0] };
+        if (g.alternates) unit.alternates = g.alternates;
+        units.push(unit);
     }
     return units;
+}
+
+/** Every flag id that credits a unit: its authored members and any alternates. */
+export function unitAccepts(unit) {
+    return [...unit.members, ...(unit.alternates || [])];
 }
 
 export function scoreTriage({ messages, answers, profile = 'awareness', bands, passPercent } = {}) {
@@ -135,6 +187,7 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
     const unanswered = [];
     let phishTotal = 0, phishCaught = 0, reportCount = 0, verifyCount = 0, falseAlarms = 0;
     let flagsCaught = 0, flagsAuthored = 0;
+    const criticalMisses = [];
 
     for (const msg of messages) {
         const truth = msg.truth || {};
@@ -150,23 +203,35 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
             continue;
         }
         const verdict = a.verdict;
-        const vPts = verdictPoints(profile, isPhish, verdict);
+        const kind = typeof msg.kind === 'string' && msg.kind ? msg.kind : 'email';
+        const vPts = verdictPoints(profile, isPhish, verdict, kind);
         const ticked = [...new Set(a.flags || [])].filter((f) => f !== NONE_CHIP);
         const tickedSet = new Set(ticked);
         // Score by units, not raw flags: an alternatives group counts once (05 "Either tick
         // counts"). Without truth.flagAlternatives every flag is its own unit and this is
         // identical to one-flag-one-unit scoring.
         const units = flagUnits(authoredFlags, truth.flagAlternatives);
-        const unitCaught = (u) => u.members.some((m) => tickedSet.has(m));
-        const caught = authoredFlags.filter((f) => tickedSet.has(f));
+        const accepted = new Set(units.flatMap(unitAccepts));
+        const unitCaught = (u) => unitAccepts(u).some((m) => tickedSet.has(m));
+        const caught = ticked.filter((f) => accepted.has(f));
         const missed = units.filter((u) => !unitCaught(u)).map((u) => u.note);
-        const falseClaims = ticked.filter((f) => !authoredFlags.includes(f));
+        const falseClaims = ticked.filter((f) => !accepted.has(f));
         const caughtUnits = units.filter(unitCaught).length;
         const fPts = flagPoints(profile, isPhish, { caught: caughtUnits, falseClaims: falseClaims.length, authored: units.length });
         const score = roundHalfUp(vPts + fPts);
+        const critical = isCriticalMiss(profile, isPhish, verdict, kind);
+        if (critical) criticalMisses.push(msg.id);
         perMessage.push({
             id: msg.id, isPhish, verdict, verdictPoints: vPts, flagPoints: roundHalfUp(fPts), score,
             caught, missed, falseClaims, answered: true,
+            // One line per tell for the review card and the debrief: a group shows once, under
+            // the first member the learner ticked (or its note when none was ticked).
+            units: units.map((u) => {
+                const hit = unitAccepts(u).find((m) => tickedSet.has(m));
+                return { note: u.note, caught: !!hit, shown: hit && u.members.includes(hit) ? hit : u.note };
+            }),
+            handledRight: vPts >= FULL_VERDICT_POINTS,
+            critical,
         });
 
         for (const u of units) {
@@ -191,10 +256,16 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         }
     }
 
-    const percent = perMessage.length
+    const mean = perMessage.length
         ? roundHalfUp(perMessage.reduce((s, m) => s + m.score, 0) / perMessage.length)
         : 0;
-    const band = bandFor(percent, bands);
+    const percent = Math.max(0, mean - CRITICAL_PENALTY * criticalMisses.length);
+    let band = bandFor(percent, bands);
+    if (criticalMisses.length) {
+        // A critical miss caps the round below the top band, whatever the percent.
+        const sorted = [...(bands && bands.length ? bands : DEFAULT_BANDS)].sort((x, y) => y.min - x.min);
+        if (sorted.length > 1 && band === sorted[0]) band = sorted[1];
+    }
 
     return {
         profile,
@@ -213,5 +284,11 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         flagRecall: { caught: flagsCaught, total: flagsAuthored },
         perFactor,
         falseByFactor,
+        // Real items given full verdict marks (Trust, Verify, or Report under awareness), so the
+        // result grid counts exactly what the review cards call right (P3 N-2).
+        realHandledRight: perMessage.filter((m) => m.answered && !m.isPhish && m.handledRight).length,
+        realTotal: perMessage.filter((m) => !m.isPhish).length,
+        criticalMisses,
+        criticalPenalty: CRITICAL_PENALTY * criticalMisses.length,
     };
 }

@@ -41,7 +41,7 @@ globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
 globalThis.MouseEvent = dom.window.MouseEvent;
 globalThis.KeyboardEvent = dom.window.KeyboardEvent;
 
-const { blankSlot, optionsForFact, blanksPayload, callGate, callLaunch, hintLine, kindText } = await import(pathToFileURL(join(dir, 'minigames/pretext-prep/pretext-card.js')));
+const { blankSlot, optionsForFact, blanksPayload, callGate, callLaunch, hintLine, kindText, cardLines, heldIdsFor } = await import(pathToFileURL(join(dir, 'minigames/pretext-prep/pretext-card.js')));
 const { PretextPrepMinigame } = await import(pathToFileURL(join(dir, 'minigames/pretext-prep/pretext-prep-minigame.js')));
 const { fillPretextVars } = await import(pathToFileURL(join(dir, 'minigames/person-chat/person-chat-pretext.js')));
 
@@ -402,4 +402,18 @@ test('R-5/R-6: the hint ladder advances by the failed-call counter, not only rep
     assert.equal(hintLine(spec, { pretext_c1_reports: 2 }), 'second nudge', 'two advance to hints[1]');
     assert.equal(hintLine(spec, { pretext_c1_reports: 9 }), 'recipe step', 'further failures stay on the last line');
     assert.equal(hintLine({ callId: 'c1' }, { pretext_c1_reports: 3 }), '', 'no hints authored, no line');
+});
+
+test('P3 N9: a line with `requires` stays off the card until every intel fact it rests on is held', () => {
+    const spec = { lines: {
+        plain: { text: "Morning, I'm locked out." },
+        name_drop: { text: 'The Head of Claims needs me back online.', requires: ['org_chart'] },
+        both: { text: 'Back from the conference.', requires: ['org_chart', 'events_page'] }
+    } };
+    const social = { intelFacts: { org_chart: { text: 'x' }, events_page: { text: 'y' } } };
+    const ids = (held) => cardLines(spec, held).map((l) => l.lineId);
+    assert.deepEqual(ids(heldIdsFor(social, {})), ['plain']);
+    assert.deepEqual(ids(heldIdsFor(social, { se_intel_org_chart: true })), ['plain', 'name_drop']);
+    assert.deepEqual(ids(heldIdsFor(social, { se_intel_org_chart: true, se_intel_events_page: true })), ['plain', 'name_drop', 'both']);
+    assert.deepEqual(ids(null), ['plain', 'name_drop', 'both'], 'no held list: unfiltered (old callers)');
 });

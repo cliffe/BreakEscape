@@ -163,12 +163,15 @@ module ValidateSocial
           issues << err("#{where}.#{k} is empty; omit the key (or use null) to take the canonical line") if v.nil? ? false : blank?(v)
         when 'redFlag'
           issues << err("#{where}.redFlag is empty; use null for 'deliberately none' or omit it for the canonical line") if !v.nil? && blank?(v)
+        when 'failMissed'
+          # The advisory line on a send that did not land (mail-bridge renderChecklist); "" hides it.
+          issues << err("#{where}.failMissed must be a string (\"\" hides the line on a miss)") unless v.is_a?(String)
         else
           if states && states.include?(k) && v.is_a?(Hash)
             issues.concat(string_entry(v.reject { |sk, _| sk == 'pass' }, "#{where}.#{k}", nil))
             issues << err("#{where}.#{k} has a pass line; the states are failures") if v.key?('pass')
           else
-            issues << err("#{where} has the key '#{k}'; allowed: pass, fail, redFlag#{states ? ", #{states.join(', ')}" : ''}")
+            issues << err("#{where} has the key '#{k}'; allowed: pass, fail, failMissed, redFlag#{states ? ", #{states.join(', ')}" : ''}")
           end
         end
       end
@@ -236,7 +239,7 @@ module ValidateSocial
         issues << err("#{where}.character '#{t['character']}' is not a social.characters entry") if t['character'] && !chars.key?(t['character'])
         issues.concat(target_templates(t, tpls, where))
         issues.concat(closed_target_decoy(ctx, t, tpls, where))
-        issues.concat(target_subjects(t, where))
+        issues.concat(target_subjects(t, where, ctx.social['intelFacts']))
         issues.concat(target_values(ctx, t, prov, people, where))
         issues.concat(target_outcome(ctx, t, where))
         issues.concat(target_sender_auth(t, where))
@@ -413,7 +416,7 @@ module ValidateSocial
       issues
     end
 
-    def self.target_subjects(t, where)
+    def self.target_subjects(t, where, intel_facts = nil)
       issues = []
       subs = list(t['subjects'])
       if subs.empty?
@@ -430,6 +433,17 @@ module ValidateSocial
         seen[s['id']] = true if s['id'].is_a?(String)
         issues << err("#{where}.subjects[#{i}].text is empty; the sent record and reply subject read it") if blank?(s['text'])
         issues << err("#{where}.subjects[#{i}].topic is missing; the open check reads it") if blank?(s['topic'])
+        if s.key?('requires')
+          req = s['requires']
+          if !req.is_a?(Array) || req.any? { |f| blank?(f) }
+            issues << err("#{where}.subjects[#{i}].requires must be an array of social.intelFacts ids")
+          elsif intel_facts.is_a?(Hash)
+            req.each { |f| issues << err("#{where}.subjects[#{i}].requires '#{f}' is not a social.intelFacts id, so the subject would never be offered") unless intel_facts.key?(f) }
+          end
+        end
+      end
+      if !subs.empty? && subs.all? { |s| s.is_a?(Hash) && s.key?('requires') }
+        issues << warn_("#{where}.subjects all carry 'requires'; with nothing found the composer falls back to offering every one")
       end
       topics = t.dig('interests', 'topics')
       if !topics.is_a?(Array) || topics.empty?

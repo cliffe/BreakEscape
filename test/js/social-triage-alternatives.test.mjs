@@ -37,9 +37,9 @@ test('flagUnits: a group collapses to one unit named by its first member; other 
     ]);
 });
 
-test('flagUnits: a group member not in truth.flags is dropped; an all-unauthored group makes no unit', () => {
+test('flagUnits: a group member not in truth.flags becomes an alternate; an all-unauthored group makes no unit', () => {
     assert.deepEqual(flagUnits(['senderTrust'], [['senderTrust', 'lookalike_domain']]), [
-        { members: ['senderTrust'], note: 'senderTrust' },
+        { members: ['senderTrust'], note: 'senderTrust', alternates: ['lookalike_domain'] },
     ]);
     assert.deepEqual(flagUnits(['urgencyCalibrated'], [['senderTrust', 'lookalike_domain']]), [
         { members: ['urgencyCalibrated'], note: 'urgencyCalibrated' },
@@ -114,4 +114,32 @@ test('no field: a three-flag message still counts three units (unchanged behavio
     assert.equal(m.score, 73);
     assert.deepEqual(m.missed, ['lookalike_domain', 'attachmentPlausible']);
     assert.deepEqual(r.flagRecall, { caught: 1, total: 3 });
+});
+
+// P3 N-3: the twin of a credited tell is never "Not a flag here". E6's IT email is scored on
+// lookalike_domain (tarrowbey.example); its group names senderTrust as another way to say it.
+const twin = [{ id: 'it', truth: { isPhish: true, flags: ['unexpected_qr', 'lookalike_domain', 'urgencyCalibrated'],
+    flagAlternatives: [['lookalike_domain', 'senderTrust']] } }];
+
+test('an alternate outside truth.flags credits its unit and is never a false claim', () => {
+    const r = scoreTriage({ messages: twin, answers: [{ id: 'it', verdict: 'report', flags: ['senderTrust', 'unexpected_qr', 'urgencyCalibrated'] }] });
+    const m = one(r);
+    assert.equal(m.score, 100);
+    assert.deepEqual(m.falseClaims, []);
+    assert.deepEqual(m.missed, []);
+    assert.deepEqual(m.caught, ['senderTrust', 'unexpected_qr', 'urgencyCalibrated']);
+    // one display row per tell: the group shows under its authored note
+    assert.deepEqual(m.units.map((u) => [u.note, u.caught, u.shown]),
+        [['unexpected_qr', true, 'unexpected_qr'], ['lookalike_domain', true, 'lookalike_domain'], ['urgencyCalibrated', true, 'urgencyCalibrated']]);
+    assert.deepEqual(r.perFactor.lookalike_domain, { caught: 1, missed: 0 });
+});
+
+test('ticking both members gives one display row, under the member ticked first in the group', () => {
+    const r = scoreTriage({ messages: spoof, answers: [{ id: 'spoof', verdict: 'report', flags: ['lookalike_domain', 'senderTrust'] }] });
+    assert.deepEqual(one(r).units, [{ note: 'senderTrust', caught: true, shown: 'senderTrust' }]);
+});
+
+test('an alternate on its own is never reported missed: a missed group shows once under its authored note', () => {
+    const r = scoreTriage({ messages: twin, answers: [{ id: 'it', verdict: 'report', flags: [] }] });
+    assert.deepEqual(one(r).missed, ['unexpected_qr', 'lookalike_domain', 'urgencyCalibrated']);
 });

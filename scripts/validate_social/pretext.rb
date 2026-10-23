@@ -232,6 +232,15 @@ module ValidateSocial
           issues << err("#{lw} must be an object")
           next
         end
+        if line.key?('requires')
+          req = line['requires']
+          facts = ctx.social['intelFacts']
+          if !req.is_a?(Array) || req.any? { |f| blank?(f) }
+            issues << err("#{lw}.requires must be an array of social.intelFacts ids")
+          else
+            req.each { |f| issues << err("#{lw}.requires '#{f}' is not a social.intelFacts id, so the line would never show") if facts.is_a?(Hash) && !facts.key?(f) }
+          end
+        end
         blanks = hash(line['blanks'])
         if blanks.length > 2
           issues << err("#{lw}.blanks has #{blanks.length} blanks; a template carries at most two")

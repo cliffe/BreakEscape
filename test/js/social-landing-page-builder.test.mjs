@@ -325,3 +325,27 @@ test('the awareness profile edits only brand, domain and padlock, with the rest 
     assert.equal(s.container.querySelector('[data-focus="domain:d_homo"]'), null);
     assert.ok(s.container.querySelector('[data-focus="domain:d_letter"]'));
 });
+
+test('E5-13: a choice changed after a Score replaces the old verdict in the live line', () => {
+    setGlobals();
+    const s = open();
+    buildAttempt(s, ATTEMPT2);
+    pickChip(s, 'score');
+    assert.match(s.live.textContent, /Convincing enough/);
+    pickChip(s, 'padlock:off');
+    assert.doesNotMatch(s.live.textContent, /Convincing enough/);
+    assert.match(s.live.textContent, /Score again/);
+});
+
+test('P3 N-7: when the brand\'s logo image fails to load, the score panel leaves out the Logo line', () => {
+    setGlobals();
+    const s = open();
+    buildAttempt(s, ATTEMPT2);
+    pickChip(s, 'score');
+    const logoLine = () => s.container.querySelector('.lpb-check-item[data-factor="logo"]');
+    assert.ok(logoLine(), 'shown while the logo loads');
+    const img = s.container.querySelector('.lpb-logo-img');
+    img.dispatchEvent(new window.Event('error'));
+    assert.equal(logoLine(), null);
+    assert.equal(s.container.querySelector('.lpb-logo-img'), null);
+});

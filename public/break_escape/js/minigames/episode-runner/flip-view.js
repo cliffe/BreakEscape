@@ -13,8 +13,10 @@
 //            facts they claimed), then the helpdesk side's notes on what would have caught it.
 // A page may come with a message (E5 sends the email that links to it). With none of them,
 // the view shows flipMissed when `missed` is true (something was sent but did not land, so
-// there is nothing to replay) and flipNoSend otherwise.
-// getState() -> { shown: 'message' | 'page' | 'call' | 'missed' | 'noSend', parts: string[], tells: string[] }
+// there is nothing to replay), flipLandedNoTells when `landedNoTells` is true (it landed but
+// carries no tells to replay; falls back to flipMissed), and flipNoSend otherwise. With nothing
+// to replay the heading is flipMissedHeading, not the "it lands on you" heading (P3 N-6).
+// getState() -> { shown: 'message' | 'page' | 'call' | 'missed' | 'landedNoTells' | 'noSend', parts, tells }
 // (`shown` is the first part shown; `parts` lists every part; `tells` the sentences on screen).
 // Every string goes in with textContent.
 
@@ -30,6 +32,7 @@ const DEFAULTS = Object.freeze({
     flipDefenderLine: 'People who fall for messages like this are not stupid. This one was built to look right.',
     flipNoSend: 'You did not send a message this time, so there is nothing to flip. On to the next step.',
     flipMissed: 'Your attempt did not land this time, so there is nothing to show from the other side. The defence is the same either way. On to the next step.',
+    flipMissedHeading: 'Nothing to replay this time',
     continue: 'Continue'
 });
 
@@ -54,6 +57,7 @@ function el(tag, className, text) {
 }
 
 const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+const isStr = (v) => typeof v === 'string' && v.length > 0;
 const str = (strings, key) => (strings && typeof strings[key] === 'string' && strings[key]) ? strings[key] : DEFAULTS[key];
 
 const UNKNOWN_TELL = 'Something about this one did not add up.';
@@ -65,7 +69,7 @@ export function tellSentence(id, message) {
     return PAGE_TELLS[id] || UNKNOWN_TELL;
 }
 
-export function renderFlipView(container, { message = null, page = null, call = null, missed = false, strings = {}, onContinue } = {}) {
+export function renderFlipView(container, { message = null, page = null, call = null, missed = false, landedNoTells = false, strings = {}, onContinue } = {}) {
     const root = el('section', 'aw-flip');
     const heading = el('h2', 'aw-heading', str(strings, 'flipHeading'));
     heading.tabIndex = -1;
@@ -166,9 +170,12 @@ export function renderFlipView(container, { message = null, page = null, call = 
 
     if (parts.length) {
         root.appendChild(el('p', 'aw-defender-line', str(strings, 'flipDefenderLine')));
-    } else if (missed) {
-        parts.push('missed');
-        root.appendChild(el('p', 'aw-lead aw-missed', str(strings, 'flipMissed')));
+    } else if (missed || landedNoTells) {
+        const landed = !missed && landedNoTells;
+        parts.push(landed ? 'landedNoTells' : 'missed');
+        heading.textContent = str(strings, 'flipMissedHeading');
+        const line = landed && isStr(strings?.flipLandedNoTells) ? strings.flipLandedNoTells : str(strings, 'flipMissed');
+        root.appendChild(el('p', `aw-lead aw-missed${landed ? ' aw-landed-no-tells' : ''}`, line));
     } else {
         parts.push('noSend');
         root.appendChild(el('p', 'aw-lead aw-no-send', str(strings, 'flipNoSend')));

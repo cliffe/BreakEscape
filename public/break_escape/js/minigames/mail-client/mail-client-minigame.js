@@ -677,8 +677,17 @@ export class MailClientMinigame extends SocialOverlayScene {
 
     // ── compose (P1-E2) ────────────────────────────────────────────────────────
 
+    /**
+     * The Compose button opens the composer. Pressed again while it is open, it keeps the draft
+     * on screen and moves focus into it: a second press used to close the pane, so a learner who
+     * clicked Compose twice lost the form (F12). The composer's own Close closes it.
+     */
     toggleCompose() {
-        if (this.composeOpen) this.closeCompose(); else this.openCompose();
+        if (!this.composeOpen) { this.openCompose(); return; }
+        const r = this.composer?.root;
+        const first = r?.querySelector?.('select, input, textarea, button');
+        if (first) first.focus?.();
+        else r?.focus?.();
     }
 
     /**
@@ -835,7 +844,9 @@ export class MailClientMinigame extends SocialOverlayScene {
 
     _showChecklist(sendInfo) {
         this._dismissChecklist();
-        const showReplyToNote = !!sendInfo.claimedFrom && !this._claimedFromNoticeShown;
+        // The reply-to note talks about where the reply goes, so it waits for a send that gets a
+        // reply (an awareness miss gets none; P3 N-5).
+        const showReplyToNote = !!sendInfo.claimedFrom && !this._claimedFromNoticeShown && sendInfo.replyScheduled !== false;
         if (showReplyToNote) this._claimedFromNoticeShown = true;
         // A reply is on its way whenever the send scheduled one (a data-only text job
         // or a character's on_email ink job), so the player is not left at a dead end

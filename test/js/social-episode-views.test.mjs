@@ -344,3 +344,21 @@ test('debrief: the optional concept and voice panels render as plain text, betwe
     assert.equal(d2.getState().conceptPanel, false);
     assert.ok(/\.aw-panel\s*\{/.test(css), 'the skin styles the panels');
 });
+
+test('P3 N-6 / flip split: nothing to replay gets the miss heading; a landing with no tells has its own line', () => {
+    const h = host();
+    renderFlipView(h, { missed: true, strings: { flipHeading: 'Now it lands on you' }, onContinue() {} });
+    assert.equal(h.querySelector('.aw-heading').textContent, 'Nothing to replay this time');
+    const h2 = host();
+    const f2 = renderFlipView(h2, { landedNoTells: true, strings: { flipHeading: 'Now it lands on you', flipMissed: 'Missed.',
+        flipLandedNoTells: 'It landed, and nothing in it gave you away.', flipMissedHeading: 'Nothing to show' }, onContinue() {} });
+    assert.equal(h2.querySelector('.aw-heading').textContent, 'Nothing to show');
+    assert.equal(h2.querySelector('.aw-landed-no-tells').textContent, 'It landed, and nothing in it gave you away.');
+    assert.equal(f2.getState().shown, 'landedNoTells');
+    const h3 = host();
+    renderFlipView(h3, { landedNoTells: true, strings: { flipMissed: 'Fallback line.' }, onContinue() {} });
+    assert.equal(h3.querySelector('.aw-missed').textContent, 'Fallback line.', 'falls back to flipMissed');
+    const h4 = host();
+    renderFlipView(h4, { message: null, page: { url: 'https://x.example/', fields: [] }, strings: { flipHeading: 'Now it lands on you' }, onContinue() {} });
+    assert.equal(h4.querySelector('.aw-heading').textContent, 'Now it lands on you', 'a replay keeps the episode heading');
+});
