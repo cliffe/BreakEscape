@@ -5,11 +5,10 @@ Source: `scenarios/VM_INTEGRATION_REVIEW.md` (commit bbc7e25c6), section "Ranked
 Repo: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape (shared tree; other sessions edit it). SecGen: /home/cliffe/Files/Projects/Code/SecGen.
 Scratchpad root: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/98239259-d4cb-4c96-b1e0-dec3f5568942/scratchpad/vmreview — write helper files only in your own subfolder `fix-<you>/`.
 
-## Hard rules (user, 2026-10-23)
-- H1: for m01–m10 the VM is on the critical path; the mission must not complete without the VM flags. Never add a route that skips them.
-- H2: the VM is well integrated and diegetic. m01 is the good-practice example.
-- A player must never be able to hold a flag they can't yet submit (newer missions m09/m10 must meet this; shipped m01–m08 are not hard-retrofitted, decision F20).
-- Each VM step should need information found in the game. **Network segmentation is not the fix** (user rule); gate by an in-game find instead.
+## Hard rules (user, 2026-10-23, corrected the same day)
+- The VM work is **diegetic** (part of the story world), and the VM challenges are **required** to complete the mission. Never add a route that skips them.
+- More generally: fun, and the player sees the practical impact of the technical work.
+- Good practice, not mandates: VM steps that use in-game finds; VM story artefacts the game uses. Holding a flag before it can be submitted is fine (m01's launch code does it on purpose). Don't trade away a mission's teaching or rebuild a VM only to make a find strictly gate a step. Network segmentation is not the tool.
 
 ## Deployment context
 Focus on the **Hacktivity deployment**, where Hacktivity integrates the VM (console in the Hacktivity page). Standalone is a valid way to test or try the game and must keep working, but don't build features only for it. R10 (standalone launcher/station blurbs) is dropped for that reason. Hacktivity repo (/home/cliffe/Files/Projects/Code/Hacktivity) is read-only for this work; any change there goes to the user first.
