@@ -274,9 +274,11 @@ export class PhoneChatMinigame extends MinigameScene {
         // Preload intro messages for NPCs without history
         await this.preloadIntroMessages();
 
-        // Closed while the intros were preloading (open and close in quick succession):
-        // the UI is torn down (elements = {}), so there is no thread or list to show
-        if (!this.gameState.isActive) return;
+        // Closed while the intros were preloading (open and close in quick succession),
+        // or ended by another minigame opening over it (no complete(), so isActive was
+        // still true: m10 R3 M-1, two calls 150 ms apart): the UI is torn down
+        // (elements = {}), so there is no thread or list to show
+        if (!this.gameState.isActive || this._ending) return;
         
         // If NPC ID provided, open that conversation directly
         if (this.currentNPCId) {
@@ -1474,6 +1476,10 @@ export class PhoneChatMinigame extends MinigameScene {
         
         // Clear NPC context
         window.currentConversationNPCId = null;
+
+        // Ended without complete() (another minigame opened over this one): a start()
+        // or deferred reopen still awaiting must see the phone as closed
+        this.gameState.isActive = false;
         
         // Call parent cleanup
         super.cleanup();

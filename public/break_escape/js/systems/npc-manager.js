@@ -123,6 +123,10 @@ export default class NPCManager {
   static PHONE_HISTORY_MAX_MESSAGES = 150;
   // A delayMs mapping whose delay is up while a minigame is open checks again this often
   static DELAYED_MAPPING_RETRY_MS = 500;
+  // An event-mapping phone call opens this long after its event, so whatever it closed
+  // has torn down; a call queued behind another checks this often whether it can open
+  static SCRIPTED_CALL_START_MS = 500;
+  static SCRIPTED_CALL_RETRY_MS = 500;
   static PHONE_MESSAGE_MAX_CHARS = 4000;
   static PHONE_STORY_STATE_MAX_CHARS = 60000;
   // gameTime: elapsed game ms when the message arrived (window.gameClock), so its
@@ -180,6 +184,9 @@ export default class NPCManager {
     this._timedMessageSeq = 0; // ids for mapping texts (see exportTimedMessages)
     this._savedPhoneState = new Map(); // npcId -> saved phone thread, applied when the NPC registers
     this._delayedMappings = new Map(); // npcId -> Map(eventKey -> timer id) for mappings with delayMs
+    this._scriptedCall = null;        // the event-mapping phone call starting or open: { npcId, minigame }
+    this._scriptedCallQueue = [];     // calls that arrived while one was starting or open
+    this._scriptedCallTimer = null;   // retry timer for the queue
     this._restoredTimedPending = new Map(); // id -> { triggerTime } for NPC-level texts not yet re-registered
     this._restoredTimedDelivered = new Set(); // ids of NPC-level texts delivered before a reload
     this._phoneStateSent = new Map(); // npcId -> JSON last confirmed saved (markPhoneStateSynced)
@@ -627,6 +634,79 @@ export default class NPCManager {
     };
     pending.set(check.eventKey, setTimeout(fire, config.delayMs));
     console.log(`⏳ ${eventPattern} for ${npcId} fires in ${config.delayMs}ms (condition re-checked then)`);
+  }
+
+  /**
+   * Open an event-mapping phone call. With no other such call starting or open it
+   * goes as it always has: whatever minigame is open closes, and the call opens
+   * SCRIPTED_CALL_START_MS later. A second call arriving in that window, or while the
+   * first is open, used to open over it: the new phone-chat tore down the first
+   * while its start() was still awaiting the intro preload, which threw "reading
+   * 'style'", and the first call was gone for good (its onceOnly trigger persisted
+   * on the close, its deferred flag already cleared). m10 R3 M-1: HaX's gallery
+   * call and Victoria's, both released 120-160 ms apart when the Mission Brief
+   * notes closed. Now it waits in a queue and opens once the first call, and any
+   * minigame opened from it, has closed.
+   * @param {{ npcId: string, eventPattern: string, params: Function, onStart: Function }} call
+   */
+  _queueScriptedPhoneCall(call) {
+    const framework = window.MinigameFramework;
+    if (!this._scriptedCallBusy() && this._scriptedCallQueue.length === 0) {
+      if (framework.currentMinigame) {
+        framework.endMinigame(false, null);
+      }
+      this._scriptedCall = { npcId: call.npcId, minigame: null };
+      setTimeout(() => this._openScriptedPhoneCall(call), NPCManager.SCRIPTED_CALL_START_MS);
+      return;
+    }
+    console.log(`📵 Phone call from ${call.npcId} (${call.eventPattern}) waits: ${this._scriptedCall?.npcId || 'another call'}'s call is starting or open`);
+    this._scriptedCallQueue.push(call);
+    this._pumpScriptedCallQueue();
+  }
+
+  /** True while an event-mapping phone call is starting, or is the open minigame. */
+  _scriptedCallBusy() {
+    const current = this._scriptedCall;
+    if (!current) return false;
+    if (!current.minigame) return true;   // inside the start delay
+    const open = window.MinigameFramework?.currentMinigame;
+    if (open === current.minigame && !open._ending) return true;
+    this._scriptedCall = null;
+    return false;
+  }
+
+  _openScriptedPhoneCall(call) {
+    let started = null;
+    try {
+      started = window.MinigameFramework.startMinigame('phone-chat', null, call.params());
+    } catch (error) {
+      console.error(`❌ Phone call from ${call.npcId} failed to open:`, error);
+    }
+    this._scriptedCall = started ? { npcId: call.npcId, minigame: started } : null;
+    call.onStart();
+    console.log(`[NPCManager] Event '${call.eventPattern}' triggered for NPC '${call.npcId}' → phone-chat conversation`);
+    if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
+  }
+
+  // A queued call opens when no call is starting or open, no minigame is open (the
+  // player may have gone from the call to the notepad and back) and the player is not
+  // knocked out (startMinigame would refuse it, and the call would be lost)
+  _pumpScriptedCallQueue() {
+    if (this._scriptedCallTimer) return;
+    const tick = () => {
+      this._scriptedCallTimer = null;
+      if (!this._scriptedCallQueue.length) return;
+      const framework = window.MinigameFramework;
+      if (!framework || this._scriptedCallBusy() || framework.currentMinigame ||
+          window.playerIsKnockedOut?.()) {
+        this._scriptedCallTimer = setTimeout(tick, NPCManager.SCRIPTED_CALL_RETRY_MS);
+        return;
+      }
+      const call = this._scriptedCallQueue.shift();
+      this._scriptedCall = { npcId: call.npcId, minigame: null };
+      this._openScriptedPhoneCall(call);
+    };
+    this._scriptedCallTimer = setTimeout(tick, NPCManager.SCRIPTED_CALL_RETRY_MS);
   }
 
   /** Cancel an NPC's pending delayMs mappings. */
@@ -1167,13 +1247,12 @@ export default class NPCManager {
       if (window.MinigameFramework) {
         const knotToUse = config.targetKnot || config.knot || npc.currentKnot;
 
-        // Close any currently running minigame first
-        if (window.MinigameFramework.currentMinigame) {
-          window.MinigameFramework.endMinigame(false, null);
-        }
-
-        setTimeout(() => {
-          window.MinigameFramework.startMinigame('phone-chat', null, {
+        // The params are built when the call opens: a call queued behind another reads
+        // the NPC's saved story (resume) as it is by then
+        this._queueScriptedPhoneCall({
+          npcId: npc.id,
+          eventPattern,
+          params: () => ({
             npcId: npc.id,
             phoneId: npc.phoneId || 'player_phone',
             // resume: a re-ring of an unfinished call. No knot, so phone-chat restores the
@@ -1184,10 +1263,9 @@ export default class NPCManager {
             theme: npc.phoneTheme,
             disableClose: config.disableClose || false,
             voiced: config.voiced === true
-          });
-          persistOnClose();
-          console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → phone-chat conversation`);
-        }, 500);
+          }),
+          onStart: persistOnClose
+        });
 
         return;
       } else {
@@ -2293,6 +2371,10 @@ export default class NPCManager {
     this._clearLOSVisualizations();
     this.stopTimedMessages();
     for (const npcId of [...this._delayedMappings.keys()]) this._cancelDelayedMappings(npcId);
+    clearTimeout(this._scriptedCallTimer);
+    this._scriptedCallTimer = null;
+    this._scriptedCallQueue = [];
+    this._scriptedCall = null;
     
     // Clear all event listeners
     for (const listeners of this.eventListeners.values()) {

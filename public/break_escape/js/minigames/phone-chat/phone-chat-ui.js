@@ -367,6 +367,11 @@ export default class PhoneChatUI {
      * @param {string} phoneId - Optional phone ID to filter contacts
      */
     showContactList(phoneId = null) {
+        // Torn down (the phone closed while a start was still awaiting): nothing to show
+        if (!this.elements.contactListView || !this.elements.conversationView) {
+            console.warn('⚠️ Phone UI torn down; not showing the contact list');
+            return;
+        }
         this.currentView = 'contact-list';
         this.currentNPCId = null;
         
@@ -556,6 +561,12 @@ export default class PhoneChatUI {
             return;
         }
         
+        // Torn down (the phone closed while a start was still awaiting): nothing to show
+        if (!this.elements.contactListView || !this.elements.conversationView) {
+            console.warn(`⚠️ Phone UI torn down; not showing conversation with ${npcId}`);
+            return;
+        }
+
         this.currentView = 'conversation';
         this.currentNPCId = npcId;
         
