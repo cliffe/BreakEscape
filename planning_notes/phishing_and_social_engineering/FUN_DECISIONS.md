@@ -32,3 +32,17 @@ Source reviews: `scenarios/lab_social_engineering/FUN_REVIEW.md` and `awareness/
 ## Order
 
 These are new work, not polish fixes. Within each track they slot in after the current dialogue cycle, so they don't collide with the files the dialogue fixers are editing. Each change gets a review → fix → playtest pass of its own. Engine items (aw1, aw3, aw6, aw9, lab8's load line) go to an engine fixer with tests.
+
+## Later decisions (2026-10-23, review page https://claude.ai/artifact/McvYsBc9GSzU6HSJKed5Hd)
+
+| Id | Question | Decision |
+|---|---|---|
+| ops_pov | Finish the Operations POV background (Gemini edit left the waist stripe) | Paint the stripe out in PIL, then convert |
+| namesake | Always show Pierce's `j.baker@` namesake decoy? | Leave it optional |
+| xero | Always show Sofia's Xero decoy? | Leave it as is |
+| dev_art | Dev's bust: bluish eye highlights and pocket mark | Fix the eyes only: whiten the blue eye pixels (whites of the eyes); leave the pocket mark |
+| mouths | Weak lip-sync shapes (Ruth round/small_open, Dev round) | Accept as is |
+| voices | Lab NPC voices | Choose voices now (audio generation still needs a go-ahead) |
+| timing | Human timing runs, both tracks | Later |
+| e3_length | E3 runs ~17 min against a 13 min target | Accept ~17 min |
+| e5_logo | Missing Quayholt logo | Make one (PixelLab) — done, 574d9db4d |
