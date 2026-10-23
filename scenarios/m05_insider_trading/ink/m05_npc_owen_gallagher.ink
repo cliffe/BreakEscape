@@ -292,8 +292,10 @@ Narrator: He keeps scrolling.
 
 === request_password ===
 // Puzzle R1 (P6): Patricia's authority is the way round a refusal, so it
-// waits for one.
-~ owen_refused_password = true
+// waits for one. VM weave fix R24: owen_refused_password is no longer set on
+// entry (Owen hasn't refused if the player has a reason in hand and he hands
+// the password over at once). It is set only on the branches where he declines
+// to hand it over -- the "what counts as a reason?" explanation and the walk-away.
 #speaker:owen_gallagher
 Owen Gallagher: After-hours server access gets logged with IT. That's me.
 {patricia_authorised_office and not patricia_authorised_server:
@@ -310,6 +312,8 @@ Owen Gallagher: After-hours server access gets logged with IT. That's me.
     Owen Gallagher: ...Nobody logged that with me. Right.
     -> password_given
 * {not found_incident_log} [What counts as a reason?]
+    // VM weave fix R24: he won't hand it over without a reason -- a refusal.
+    ~ owen_refused_password = true
     Owen Gallagher: Something on Security's books that never reached mine. A badge where it shouldn't be, at an hour nobody told me about.
     Owen Gallagher: Patricia keeps an incident log on her desk. Bring me a line out of that and I'll write it up.
     -> password_reason
@@ -321,6 +325,8 @@ Owen Gallagher: After-hours server access gets logged with IT. That's me.
     }
     -> password_given
 + [Fair enough. I'll be back.]
+    // VM weave fix R24: the player leaves without the password -- a refusal.
+    ~ owen_refused_password = true
     Owen Gallagher: Password's not going anywhere. Neither am I.
     ~ hub_quiet = true
     #exit_conversation

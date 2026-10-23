@@ -326,8 +326,10 @@ Read it twice. A casualty projection, reviewed, and signed off as an acceptable 
 No rogue cell improvised that. Someone priced human lives and approved the invoice.
 
 // Blind run A (2026-10-16, M1): HaX doesn't name Torres before the player
-// has something on him (torres_suspected).
-{torres_suspected:
+// has something on him. VM weave fix R19: the name is held until the player
+// has actually named Torres (torres_identified), not merely suspects him, so
+// the flag-3/flag-4 deduction stays the player's to make.
+{torres_identified:
     It's the strongest thing you'll find tonight. It puts this above Torres.
 - else:
     It's the strongest thing you'll find tonight. It puts this above whoever's staging it here.
@@ -337,18 +339,18 @@ No rogue cell improvised that. Someone priced human lives and approved the invoi
 
 === topic_architect_choices ===
 + [This is bigger than one insider.]
-    {torres_suspected:
+    {torres_identified:
         It always was. Torres is the delivery. The Architect is the decision. Keep both in the file.
     - else:
         It always was. Your insider is the delivery. The Architect is the decision. Keep both in the file.
     }
     -> support_hub
 
-+ {torres_suspected} [Then Torres is the only thread we've got to it.]
++ {torres_identified} [Then Torres is the only thread we've got to it.]
     For tonight, yes. Bear that in mind when you decide what happens to him.
     -> support_hub
 
-+ {not torres_suspected} [Then the insider is the only thread we've got to it.]
++ {not torres_identified} [Then the insider is the only thread we've got to it.]
     For tonight, yes. Find them first. Then bear it in mind when you decide what happens to them.
     -> support_hub
 

@@ -1815,30 +1815,35 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "takeable": false,
           "observations": "Secure SAFETYNET terminal for submitting the flags you capture from the research portal. Each flag validates a stage of the exfiltration case.",
           "acceptsVms": ["qdc_research_server"],
+          "acceptsVmLabels": { "qdc_research_server": "QDC research portal" },
           "flags": <%= flags_for_vm('qdc_research_server', ['flag{leaked_bludit_admin_credentials}', 'flag{bludit_authenticated_upload_rce}', 'flag{torres_staging_manifest}', 'flag{architect_acquisition_authorisation}']) %>,
           "flagRewards": [
             {
               "type": "set_global",
               "key": "flag1_submitted",
               "value": true,
+              "label": "Admin login recovered from the handover note",
               "description": "Flag 1: Leaked Bludit admin credentials found - recon complete"
             },
             {
               "type": "set_global",
               "key": "flag2_submitted",
               "value": true,
+              "label": "Foothold on the research portal",
               "description": "Flag 2: Authenticated Bludit image-upload RCE - shell access confirmed"
             },
             {
               "type": "set_global",
               "key": "flag3_submitted",
               "value": true,
+              "label": "Exfiltration staging manifest recovered",
               "description": "Flag 3: Torres' exfiltration staging manifest recovered - user access confirmed"
             },
             {
               "type": "set_global",
               "key": "flag4_submitted",
               "value": true,
+              "label": "Architect's acquisition authorisation recovered",
               "description": "Flag 4: The Architect's acquisition authorisation recovered - root access confirmed"
             }
           ]
