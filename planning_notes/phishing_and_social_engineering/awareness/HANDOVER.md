@@ -83,4 +83,4 @@ From `../FUN_DECISIONS.md`:
 - Trivials carried from P5 not yet handled: E5 rule-of-thumb fit (reworded in r7; recheck), P5 timing not re-measured, the E3 MFA demo has no learner decision (E3-11), E4 offers only a webmail sender (kept deliberately).
 - The lab (`lab_social_engineering`) is separate and not on hold.
 
-Hold status: (filled in when data round 8 reports)
+Hold status (2026-10-23): data round 8 finished items 1–4 and was committed as f459e86a6. Those items: subjects bound to pretexts in E1, E2, E4–E7; secrecy and authority tells on the E4 and E7 pretexts and asks; no-blame lines reworded, plus an E3 critical variant; E6 canteen notes de-duplicated. Its checks passed (parity 7/7, 1810/1810 node tests, all 38 shells validate). **Bridges were not run after round 8: run all seven e*-full bridges first on resume.** Item 5 (re-audit the round-7 brief wording and E1 count against engine round 5) was not started. Judgement calls to confirm on resume: binding subjects in E1/E2/E4/E7 as well as E5/E6; `borrowed_authority` on E4's pay-now pretext; a critical no-blame line authored for E3 only. Nothing was left half-done in the tree.
