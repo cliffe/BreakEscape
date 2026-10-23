@@ -238,7 +238,7 @@ Same shape: exploit stays the foothold; an in-game find is required to read the 
 
 ### B2. Flag 2 (staging schedule) — keep VM-internal, seed the schedule
 
-- Stays on `bunker_monitor` behind the flag-1 foothold; transitively gated. Seed the channel list, the cells' early-access orders and the first entries by city in the threat-data record (already drafted at `...xml:179`; this is FINALE_VM_PLAN M4). Confirm city choices with the user (SECGEN_DRAFT_NOTES: Seattle first fixed; Austin + third are placeholders).
+- Stays on `bunker_monitor` behind the flag-1 foothold; transitively gated. Seed the channel list, the cells' early-access orders and the first entries by city in the threat-data record (already drafted at `...xml:179`; this is FINALE_VM_PLAN M4). City choices decided (F28, 2026-10-23): Seattle first (hospital group, infusion pumps), Austin second (county, dispatch software), Cleveland third (a water utility, controllers); no real utility company named.
 
 ### B3. Flag 3 (container escape) — gate on a find in the server hall; seed the DISARM (F13)
 

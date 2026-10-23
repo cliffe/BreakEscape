@@ -49,10 +49,10 @@ Tesseract's memo (`albion_memo`) and his unsent vendor notice (`vendor_notice_dr
 ## Story text not written into the scenarios
 
 - Flag 1 (`catalogue_index`) and flag 2 (`insider_ledger`) carry the flag only. The index text and the ledger (23 placements, 47 candidates, WREN's day-10 entry) are not seeded. This is outside the M3 and M4 rulings.
-- City and order choices in the m10 schedule, which the user must confirm:
-  - Seattle is first, as the finale docs give it. Austin is my choice for second.
+- City and order choices in the m10 schedule (decided by the user 2026-10-23, F28):
+  - Seattle first (a hospital group, infusion pumps), Austin second (a county, dispatch software), Cleveland third (a water utility, controllers). Seeded in the schedule record at `m10_full_disclosure.xml:179`.
   - Zero Day's order is filed under the Sterling name. The story allows Sterling or Vos, and the file is static.
-  - Only Seattle is named in the finale docs. The other two cities are placeholders.
+  - No real utility company is named; the third entry stays worded as "a water utility".
 - No `lab_sheet_url`. Add one when the Hacktivity sheet exists.
 
 ## What to check when building
