@@ -239,3 +239,23 @@ test('P3 N-7: a logo image that fails to load is removed, the region marked, and
     assert.equal(again.regions.logo.querySelector('img'), null);
     assert.ok(again.regions.logo.classList.contains('is-unavailable'));
 });
+
+test('the drawn submit button reads purposes[].button, default Sign in, never the purpose label', () => {
+    const btn = (def, purpose) => renderLandingPage({ pageDef: def, choices: { ...workedChoices, purpose }, doc: freshDoc() })
+        .root.querySelector('.lpb-submit').textContent;
+    // no button set: the heading says "Payslip ready", the button still says Sign in
+    const plain = renderLandingPage({ pageDef, choices: workedChoices, doc: freshDoc() }).root;
+    assert.equal(plain.querySelector('.lpb-purpose').textContent, 'Payslip ready');
+    assert.equal(plain.querySelector('.lpb-submit').textContent, 'Sign in');
+    const withButtons = { ...pageDef, purposes: [
+        { id: 'signin', label: 'Sign in' },
+        { id: 'payslip', label: 'Payslip ready', button: 'Sign in to view' },
+        { id: 'reset', label: 'Password reset', button: 'Reset password' },
+        { id: 'blank', label: 'Session expired', button: '  ' },
+    ] };
+    assert.equal(btn(withButtons, 'payslip'), 'Sign in to view');
+    assert.equal(btn(withButtons, 'reset'), 'Reset password');
+    assert.equal(btn(withButtons, 'blank'), 'Sign in', 'a blank button falls back to Sign in');
+    assert.equal(btn(withButtons, 'signin'), 'Sign in');
+    assert.equal(btn(withButtons, 'no_such_purpose'), 'Sign in');
+});

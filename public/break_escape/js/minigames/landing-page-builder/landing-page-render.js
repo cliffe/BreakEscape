@@ -85,6 +85,13 @@ function labelFromList(list, id) {
     return hit && typeof hit.label === 'string' ? hit.label : '';
 }
 
+// The drawn submit button's words. A purpose is a page heading ("Session expired"), so it is
+// never the button face; `purposes[].button` sets the face, and "Sign in" is the default.
+function buttonFromPurposes(list, id) {
+    const hit = Array.isArray(list) ? list.find((x) => x && x.id === id) : null;
+    return hit && typeof hit.button === 'string' && hit.button.trim() ? hit.button : 'Sign in';
+}
+
 function wordingText(pageDef, id) {
     if (!pageDef || !Array.isArray(pageDef.wordings)) return '';
     const hit = pageDef.wordings.find((w) => w && w.id === id);
@@ -233,7 +240,7 @@ export function renderLandingPage(options = {}) {
         box.appendChild(make('div', 'lpb-field-input'));
         form.appendChild(box);
     }
-    const submit = make('div', 'lpb-submit', purposeLabel || 'Sign in');
+    const submit = make('div', 'lpb-submit', buttonFromPurposes(pageDef.purposes, choices.purpose));
     submit.setAttribute('aria-hidden', 'true'); // a drawn button face, not a control
     form.appendChild(submit);
     body.appendChild(asRegion(form, 'form'));

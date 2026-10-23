@@ -161,6 +161,7 @@ module ValidateSocial
       issues.concat(Osint.lint_field(ctx, pg['linkText'], "#{where}.linkText")) unless Mail.blank?(pg['linkText'])
       issues.concat(capture_block(ctx, pg, where))
       issues.concat(wordings_block(pg, where))
+      issues.concat(purposes_block(pg, where))
       issues.concat(strings_block(pg, where))
       issues.concat(tier_defender_strings(pg, where))
       issues.concat(concept_cards(pg, cards, where))
@@ -374,6 +375,22 @@ module ValidateSocial
       return [] if Mail.blank?(cap['address'])
 
       Osint.lint_field(ctx, cap['address'], "#{where}.capture.address", address: true)
+    end
+
+    # A purpose's label is the builder chip and the page heading ("Session expired"); the drawn
+    # submit button reads `button`, default "Sign in". When given, button must be a non-blank
+    # string (button words are not host-shaped, so the host lint does not run on them).
+    def self.purposes_block(pg, where)
+      issues = []
+      Mail.hash_list(pg['purposes']).each_with_index do |p, i|
+        next unless p.key?('button')
+
+        next if p['button'].is_a?(String) && !p['button'].strip.empty?
+
+        issues << err("#{where}.purposes[#{p['id'] || i}].button must be a non-blank string " \
+                      "(the words on the page's submit button; leave it out for 'Sign in')")
+      end
+      issues
     end
 
     # Wording variants (07 §5). The P5-A scorer reads full when `match: true`, zero when

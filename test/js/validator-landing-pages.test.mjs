@@ -240,6 +240,17 @@ test('wordings must offer exactly one match and at least one slips, and not both
   assert.equal(hits(both, /wordings\[w_formal\] sets both match: true and slips: true/).length, 1, both.join('\n'));
 });
 
+// ---- purposes[].button (the drawn submit button, not the purpose label) ----------
+
+test('purposes[].button, when given, must be a non-blank string; a set button passes', { skip }, () => {
+  const ok = lint(mutated((s) => { page(s).purposes[1].button = 'Change password'; }), { raw: cleanRaw });
+  assert.equal(hits(ok, /purposes\[.*\]\.button/).length, 0, ok.join('\n'));
+  const blank = lint(mutated((s) => { page(s).purposes[1].button = '  '; }), { raw: cleanRaw });
+  assert.equal(hits(blank, /purposes\[expired\]\.button must be a non-blank string/).length, 1, blank.join('\n'));
+  const notStr = lint(mutated((s) => { page(s).purposes[0].button = 3; }), { raw: cleanRaw });
+  assert.equal(hits(notStr, /purposes\[signin\]\.button must be a non-blank string/).length, 1, notStr.join('\n'));
+});
+
 // ---- expectedLink cross-check (P1-M left) -----------------------------------------
 
 test('expectedLink.brandId must name a brand on the serving page', { skip }, () => {

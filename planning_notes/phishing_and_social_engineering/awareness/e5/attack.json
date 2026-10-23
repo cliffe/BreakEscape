@@ -162,9 +162,9 @@
         }
       ],
       "purposes": [
-        { "id": "signin", "label": "Sign in" },
-        { "id": "expired", "label": "Session expired" },
-        { "id": "reset", "label": "Password reset" }
+        { "id": "signin", "label": "Sign in", "button": "Sign in" },
+        { "id": "expired", "label": "Session expired", "button": "Sign in again" },
+        { "id": "reset", "label": "Password reset", "button": "Reset password" }
       ],
       "wordings": [
         { "id": "w_formal", "match": true, "text": "Your Quayholt single sign-on session has expired. Sign in again to continue." },

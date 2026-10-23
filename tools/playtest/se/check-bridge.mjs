@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Checks the assertions in a playtest-session output.
 //
-//   node tools/playtest/se/check-bridge.mjs <session-output.jsonl> [--allow-empty] [--expect <script.jsonl>]
+//   node tools/playtest/se/check-bridge.mjs <session-output.jsonl> [--allow-empty] [--expect <script.jsonl>] [--all-sessions]
 //
 // playtest-session.js has no assert command, so a bridge script asserts with
 // {"cmd":"eval","fn":"() => <boolean expression>"} lines. This reads the
@@ -21,17 +21,23 @@
 // results are matched to nothing and reported by position. Other failed
 // commands (ok:false, such as a waitFor timeout) are listed as warnings and
 // do not change the exit status.
+//
+// playtest-session.js appends to --log, so a reused log path holds every past
+// run. Only the last session (from its last session-open line) is scored, and
+// the output says how many earlier sessions were skipped; --all-sessions scores
+// the whole file as before.
 import { readFileSync } from 'node:fs';
 
 const args = process.argv.slice(2);
 const allowEmpty = args.includes('--allow-empty');
+const allSessions = args.includes('--all-sessions');
 const expectIdx = args.indexOf('--expect');
 const expectFile = expectIdx !== -1 ? args[expectIdx + 1] : null;
 const expectValueIdx = expectIdx === -1 ? -1 : expectIdx + 1;
 const positional = args.filter((a, i) => !a.startsWith('--') && i !== expectValueIdx);
 const file = positional[0];
 if (!file) {
-  console.error('usage: check-bridge.mjs <session-output.jsonl> [--allow-empty] [--expect <script.jsonl>]');
+  console.error('usage: check-bridge.mjs <session-output.jsonl> [--allow-empty] [--expect <script.jsonl>] [--all-sessions]');
   process.exit(2);
 }
 
@@ -62,14 +68,23 @@ const short = s => {
   return t.length > 110 ? t.slice(0, 107) + '...' : t;
 };
 
+// Score only the last session in an appended log (see the header).
+let lines = text.split('\n');
+let skippedSessions = 0, firstLine = 0;
+if (!allSessions) {
+  const opens = [];
+  lines.forEach((line, i) => { if (line.includes('"event":"session-open"')) opens.push(i); });
+  if (opens.length > 1) { skippedSessions = opens.length - 1; firstLine = opens[opens.length - 1]; }
+}
+
 let pendingFn = null;
 let n = 0, passed = 0;
 const failures = [];
 const warnings = [];
 const unparsed = [];
 
-text.split('\n').forEach((line, i) => {
-  if (!line.trim()) return;
+lines.forEach((line, i) => {
+  if (i < firstLine || !line.trim()) return;
   let o;
   try { o = JSON.parse(line); } catch { unparsed.push(i + 1); return; }
 
@@ -92,6 +107,7 @@ text.split('\n').forEach((line, i) => {
 });
 
 console.log(`check-bridge: ${file}`);
+if (skippedSessions) console.log(`note: the log holds ${skippedSessions + 1} sessions (appended runs); scoring only the last, from line ${firstLine + 1} (--all-sessions scores all)`);
 console.log(`eval assertions: ${n}, passed: ${passed}, failed: ${failures.length}${expected !== null ? `, expected: ${expected}` : ''}`);
 for (const f of failures) console.log(`  FAIL ${f}`);
 for (const w of warnings) console.log(`  warn ${w}`);
