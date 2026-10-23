@@ -2337,7 +2337,10 @@ export function update() {
     }
 
     // NPCs with los.challengeOnSight react when the player walks into their sight
-    sightChallengeWatcher.update(Date.now());
+    // (not while the player is on the VM: R13, vm-context-pause.js)
+    if (!window.isVmContextActive?.()) {
+        sightChallengeWatcher.update(Date.now());
+    }
 
     // [Phase 5] Update scenario timers (fire timers and dispatch events)
     if (window.scenarioTimerDispatcher) {

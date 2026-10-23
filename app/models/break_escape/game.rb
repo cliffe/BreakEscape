@@ -3046,13 +3046,13 @@ module BreakEscape
         if BreakEscape::Mission.hacktivity_mode? && hacktivity_flag_solved?(flag_key)
           return { success: true, message: 'Flag accepted!', already_in_hacktivity: true }
         end
-        return { success: false, message: 'Flag already submitted' }
+        return { success: false, message: 'Flag already submitted', reason: 'already_submitted' }
       end
 
       # Validate flag exists in scenario
       valid_flags = extract_valid_flags_from_scenario
       unless valid_flags.any? { |f| f.downcase == flag_key.downcase }
-        return { success: false, message: 'Invalid flag' }
+        return { success: false, message: 'Invalid flag', reason: 'invalid' }
       end
 
       # Submit to Hacktivity if in Hacktivity mode

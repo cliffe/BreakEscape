@@ -113,7 +113,7 @@ test('starters use the flag wording; password and PIN pads keep theirs', () => {
     const p = src.indexOf("window.MinigameFramework.startMinigame('pin'");
     assert.match(src.slice(p, p + 2500), /PIN Rejected/);
     const fs = read('public/break_escape/js/minigames/flag-station/flag-station-minigame.js');
-    assert.match(fs, /flagRefusalLine\(data\.message\)/);
+    assert.match(fs, /flagRefusalLine\(data\.message, \{ reason, ownerName \}\)/);
     assert.doesNotMatch(fs, /Incorrect decryption key/);
 });
 

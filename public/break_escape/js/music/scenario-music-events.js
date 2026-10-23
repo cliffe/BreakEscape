@@ -22,6 +22,7 @@ import MusicController from './music-controller.js';
 import { buildEndSequence, replayEndingEntry } from './closing-sequence.js';
 import { playEndingMusic, whenEndingAudible } from './ending-audio.js';
 import { MUSIC_CONFIG } from './music-config.js';
+import { concludeWithRetry, offlineEndingOptions, queueConcludeRetry } from './conclude-mission.js';
 
 const TAG = '[ScenarioMusic]';
 
@@ -261,7 +262,7 @@ function switchIfConditionMet(entry, data) {
         // has agreed, so MISSION COMPLETE can no longer print over a game the
         // server still calls in_progress -- which is exactly what used to
         // happen here, because this path opened the visualiser and never asked.
-        const openCredits = () => window.BondVisualiser.open({
+        const openCredits = (adjust = (o) => o) => window.BondVisualiser.open(adjust({
             credits:      filteredLines,
             autoClose:    !!entry.stopAfterTrack,  // legacy: close when track ends
             autoStop:     !!entry.autoStop,         // new: stop music, keep vis open
@@ -269,13 +270,21 @@ function switchIfConditionMet(entry, data) {
             headerText:   entry.headerText,             // optional, e.g. "MISSION FAILED // AUDIO INTEL"
             statusText:   entry.statusText,             // optional, e.g. "COMPROMISED"
             creditsAfter: MusicController.context?.state === 'suspended' ? audible?.ready : undefined,
-        });
+        }));
 
         concludeMission().then((result) => {
             // Decision made: restore normal auto-open behaviour for any later
             // victory playlist change.
             window.BondVisualiser?.setAutoOpenSuppressed?.(false);
 
+            if (result.concluded && result.offline) {
+                // R14: the server never answered. The player keeps the ending, but it
+                // says the result is not recorded yet, and the conclude is retried.
+                _endingOwnsMusic = true;
+                openCredits(offlineEndingOptions);
+                queueConcludeRetry(window.breakEscapeConfig?.gameId);
+                return;
+            }
             if (result.concluded) {
                 _endingOwnsMusic = true;
                 openCredits();
@@ -297,15 +306,17 @@ function switchIfConditionMet(entry, data) {
 }
 
 /**
- * Ask the server to conclude the mission. Resolves { concluded, missing }.
+ * Ask the server to conclude the mission. Resolves { concluded, missing, offline }.
  *
- * A network failure resolves as concluded:true. The player has reached the end
- * of the story and a dropped request must not cost them the ending; the server
- * record reconciles on the next sync either way.
+ * A request that never gets an answer (network failure, HTTP error, a body that
+ * is not JSON) is retried; if every attempt fails it resolves concluded:true with
+ * offline:true. The player has reached the end of the story and a dropped request
+ * must not cost them the ending, but the ending then says the result is not
+ * recorded yet (R14, conclude-mission.js) and the conclude keeps retrying.
  */
 async function concludeMission() {
     const gameId = window.breakEscapeConfig?.gameId;
-    if (!gameId) return { concluded: true, missing: [] };
+    if (!gameId) return { concluded: true, missing: [], offline: false };
 
     // Save first: the server checks concludeRequires against stored state, and a
     // global set moments ago (sis01's debrief_complete) only reaches it with the
@@ -316,48 +327,7 @@ async function concludeMission() {
     // missions import (CARRY_OVER_PLAN.md), so the debrief's last choices matter.
     await window.stateSync?.sync?.();
 
-    let response;
-    try {
-        response = await fetch(`/break_escape/games/${gameId}/conclude`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '',
-            },
-        });
-    } catch (err) {
-        // The request never arrived (offline, navigation, connection dropped).
-        // Fail open: the player reached the end of the story and must not lose
-        // the ending to a dropped packet.
-        console.warn(`${TAG} conclude request did not reach the server; showing credits anyway`, err);
-        return { concluded: true, missing: [] };
-    }
-
-    // A broken endpoint must be loud. This used to be swallowed by the catch
-    // above -- response.json() throws on a 500's HTML body -- so a server that
-    // never concluded the mission still rolled the credits, and the only trace
-    // was a game record stuck in in_progress that nothing pointed at. Credits
-    // still show (that is the fail-open choice, and it is the player's ending),
-    // but the failure is now stated rather than disguised as success.
-    if (!response.ok) {
-        console.error(
-            `${TAG} conclude endpoint returned HTTP ${response.status}. ` +
-            'Showing credits, but the server has NOT recorded this mission as concluded — ' +
-            'the game record will still say in_progress. This is a bug, not a player action.'
-        );
-        return { concluded: true, missing: [] };
-    }
-
-    try {
-        const json = await response.json();
-        return {
-            concluded: !!(json.success || json.alreadyConcluded),
-            missing: json.missing || [],
-        };
-    } catch (err) {
-        console.error(`${TAG} conclude endpoint returned a 200 that is not JSON; showing credits anyway`, err);
-        return { concluded: true, missing: [] };
-    }
+    return concludeWithRetry(gameId);
 }
 
 /**

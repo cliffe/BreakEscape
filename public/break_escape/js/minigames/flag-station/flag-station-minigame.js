@@ -8,9 +8,14 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { applyActions } from '../../systems/apply-actions.js';
 import { displayDashes } from '../../utils/display-dashes.js';
-import { flagRefusalLine } from '../../utils/flag-wording.js';
+import { flagRefusalLine, flagRejectReason } from '../../utils/flag-wording.js';
 
 export class FlagStationMinigame extends MinigameScene {
+    static REWARD_ICONS = {
+        give_item: '📦', unlock_door: '🔓', unlock_object: '🔓',
+        emit_event: '⚡', hint: '💡', set_global: '✦'
+    };
+
     constructor(container, params) {
         super(container, params);
         this.stationId = params.stationId || 'flag-station';
@@ -21,6 +26,10 @@ export class FlagStationMinigame extends MinigameScene {
         // still passes an array; never rely on its contents.
         this.expectedFlagCount = params.flagCount ?? (params.flags || []).length;
         this.acceptsVms = params.acceptsVms || []; // List of VM names whose flags are accepted
+        // R8: in-world names for those VMs, { "<vm id>": "<name>" }. The raw id stays the
+        // server's matching key; only the badge text changes.
+        this.acceptsVmLabels = (params.acceptsVmLabels && typeof params.acceptsVmLabels === 'object')
+            ? params.acceptsVmLabels : {};
         // Only THIS station's flags. The caller passes the server's per-station list; the
         // game-wide list (every machine's flags) is never used, or a link for one VM
         // shows another VM's flags as submitted (m09 Tomb Beta, m-4).
@@ -181,6 +190,14 @@ export class FlagStationMinigame extends MinigameScene {
                 border: 2px solid #ffaa00;
                 color: #ffaa00;
             }
+
+            /* R7: a flag that belongs elsewhere: a note, not a success */
+            .flag-result.info {
+                display: block;
+                background: rgba(136, 136, 136, 0.12);
+                border: 2px solid #777;
+                color: #ccc;
+            }
             
             .flag-history {
                 margin-top: 30px;
@@ -295,7 +312,7 @@ export class FlagStationMinigame extends MinigameScene {
         const vmBadges = this.acceptsVms.length > 0
             ? `<div class="accepts-vms">
                 <span class="accepts-label">Accepts flags from:</span>
-                ${this.acceptsVms.map(vm => `<span class="vm-badge">${this.escapeHtml(vm)}</span>`).join('')}
+                ${this.acceptsVms.map(vm => `<span class="vm-badge">${this.escapeHtml(this.vmLabel(vm))}</span>`).join('')}
                </div>`
             : '';
         
@@ -333,6 +350,26 @@ export class FlagStationMinigame extends MinigameScene {
         `;
     }
     
+    /** The badge text for a VM: its in-world label (acceptsVmLabels), else the raw id. */
+    vmLabel(vm) {
+        const label = this.acceptsVmLabels?.[vm];
+        return (typeof label === 'string' && label.trim()) ? label.trim() : String(vm);
+    }
+
+    /**
+     * R9: tell the scenario a flag was refused, so a mission can map it to a bark or
+     * a nudge. reason: invalid | wrong_station | already_submitted.
+     */
+    emitFlagRejected(reason, extra = {}) {
+        const data = { stationId: this.stationId, reason, ...extra };
+        try {
+            window.eventDispatcher?.emit?.('flag_rejected', data);
+        } catch (err) {
+            console.warn('[FlagStation] flag_rejected listener failed:', err);
+        }
+        return data;
+    }
+
     buildFlagHistory() {
         if (this.submittedFlags.length === 0) {
             return '<li class="no-flags-yet">No flags submitted yet</li>';
@@ -513,10 +550,22 @@ export class FlagStationMinigame extends MinigameScene {
             } else {
                 if (window.playUISound) window.playUISound('reject');
                 this.showResult(resultEl, 'error', flagRefusalLine(null));
+                this.emitFlagRejected('invalid', { objectId: targetId });
             }
         } catch (error) {
-            console.error('[FlagLock] Unlock error:', error);
-            this.showResult(resultEl, 'error', '✗ Validation failed. Try again.');
+            // The server answered "no" (422 with a body): a refused flag, not a dropped
+            // connection. ApiClient throws for any non-2xx, so a wrong flag used to land
+            // here as "Validation failed".
+            if (error?.status && error.status < 500) {
+                const body = error.body || {};
+                const reason = flagRejectReason(body.message || body.error, body.reason);
+                if (window.playUISound) window.playUISound('reject');
+                this.showResult(resultEl, 'error', flagRefusalLine(body.message || body.error, { reason }));
+                this.emitFlagRejected(reason, { objectId: targetId });
+            } else {
+                console.error('[FlagLock] Unlock error:', error);
+                this.showResult(resultEl, 'error', '✗ Validation failed. Try again.');
+            }
         } finally {
             this.isSubmitting = false;
             submitBtn.disabled = false;
@@ -658,7 +707,15 @@ export class FlagStationMinigame extends MinigameScene {
             const data = await response.json();
             console.log('[FlagDebug] submitFlag response:', response.status, data);
 
-            if (response.ok && data.success) {
+            if (response.ok && data.success && data.hint) {
+                // R7: a flag for another device (hintOnlyFlags). Not consumed and not
+                // scored here, so no success tick or confirm chime: a neutral note with
+                // a soft sound, saying where it goes.
+                if (window.playUISound) window.playUISound('notification');
+                const note = (data.rewards || []).find(r => r?.type === 'hint' && r.message)?.message;
+                this.showResult(resultEl, 'info', `ℹ ${note || 'Flag recognised, but this station does not take it.'}`);
+                this.emitFlagRejected('wrong_station', { hint: true });
+            } else if (response.ok && data.success) {
                 // Success!
                 if (window.playUISound) window.playUISound('confirm');
                 this.showResult(resultEl, 'success', `✓ ${data.message || 'Flag accepted!'}`);
@@ -730,7 +787,10 @@ export class FlagStationMinigame extends MinigameScene {
 
             } else {
                 if (window.playUISound) window.playUISound('reject');
-                this.showResult(resultEl, 'error', flagRefusalLine(data.message));
+                const reason = flagRejectReason(data.message, data.reason);
+                const ownerName = reason === 'wrong_station' ? (data.ownerStationName || null) : null;
+                this.showResult(resultEl, 'error', flagRefusalLine(data.message, { reason, ownerName }));
+                this.emitFlagRejected(reason, ownerName ? { ownerStationName: ownerName } : {});
             }
             
         } catch (error) {
@@ -751,6 +811,17 @@ export class FlagStationMinigame extends MinigameScene {
     
     showRewards(element, rewards) {
         const rewardHtml = rewards.map(reward => {
+            // R1: a reward's in-world label, when the scenario gives one, replaces the
+            // generic line ("Event triggered", "Door unlocked: <room id>")
+            const label = typeof reward?.label === 'string' ? reward.label.trim() : '';
+            if (label) {
+                return `
+                        <div class="reward-item">
+                            <span class="reward-icon">${FlagStationMinigame.REWARD_ICONS[reward.type] || '✦'}</span>
+                            <span>${this.escapeHtml(displayDashes(label))}</span>
+                        </div>
+                    `;
+            }
             switch (reward.type) {
                 case 'give_item':
                     return `

@@ -88,6 +88,17 @@ export class NPCBehaviorManager {
      * Main update loop (called from game.js update())
      */
     update(time, delta) {
+        // R13: while the player is on the VM (vm-context-pause.js), NPCs hold still.
+        // Read through window so this file keeps no extra import.
+        if (typeof window !== 'undefined' && window.isVmContextActive?.()) {
+            if (!this._vmPaused) {
+                this._vmPaused = true;
+                this.freezeAll();
+            }
+            return;
+        }
+        this._vmPaused = false;
+
         // Throttle updates to every 50ms for performance
         if (time - this.lastUpdate < this.updateInterval) {
             return;
@@ -109,6 +120,29 @@ export class NPCBehaviorManager {
         for (const [npcId, behavior] of this.behaviors) {
             behavior.update(time, delta, playerPos);
         }
+    }
+
+    /**
+     * Stand every NPC still: velocity 0 and the idle animation. Skipping behaviour
+     * updates alone leaves each NPC with its last velocity, and it slides on.
+     * @returns {number} how many NPCs were stopped
+     */
+    freezeAll() {
+        let n = 0;
+        for (const behavior of this.behaviors.values()) {
+            const sprite = behavior?.sprite;
+            if (!sprite?.body || sprite.destroyed) continue;
+            try {
+                sprite.body.setVelocity(0, 0);
+                behavior.isMoving = false;
+                const ko = window.npcHostileSystem?.isNPCKO?.(behavior.npcId);
+                if (!ko && behavior.direction) behavior.playAnimation('idle', behavior.direction);
+                n++;
+            } catch (err) {
+                // one bad sprite must not stop the rest
+            }
+        }
+        return n;
     }
 
     /**

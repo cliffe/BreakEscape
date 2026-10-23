@@ -1205,6 +1205,7 @@ export function handleObjectInteraction(sprite) {
                 // Server sends a count, not the values (see Game#filter_requires_and_contents_recursive).
                 flagCount:         sprite.scenarioData.flagCount ?? (sprite.scenarioData.flags || []).length,
                 acceptsVms:        sprite.scenarioData.acceptsVms || [],
+                acceptsVmLabels:   sprite.scenarioData.acceptsVmLabels || null,
                 onAbort:           sprite.scenarioData.onAbort  || null,
                 onLaunch:          sprite.scenarioData.onLaunch || null,
                 abortConfirmText:  sprite.scenarioData.abortConfirmText  || null,

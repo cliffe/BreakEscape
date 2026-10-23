@@ -1234,7 +1234,16 @@ module BreakEscape
         if owning_station
           unless owning_id == station_id
             Rails.logger.info "[FlagDebug] REJECTED: owning #{owning_id.inspect} != submitted #{station_id.inspect}"
-            return render json: { success: false, message: 'Incorrect flag', debug: { owning_id: owning_id, station_id: station_id } }, status: :unprocessable_entity
+            # R9: say which station takes it, but only one the player has already
+            # found (its room is unlocked), so a refusal never leaks a device
+            # they haven't met yet.
+            return render json: {
+              success: false,
+              message: 'Incorrect flag',
+              reason: 'wrong_station',
+              ownerStationName: discovered_station_name(owning_station),
+              debug: { owning_id: owning_id, station_id: station_id }
+            }, status: :unprocessable_entity
           end
         else
           Rails.logger.info "[FlagDebug] No owning station found for flag — will proceed to submit_flag validation"
@@ -1293,7 +1302,7 @@ module BreakEscape
           updatedTasks:   task_outcomes[:updated_tasks]
         }
       else
-        render json: result, status: :unprocessable_entity
+        render json: result.merge(reason: result[:reason] || 'invalid'), status: :unprocessable_entity
       end
     end
 
@@ -2261,6 +2270,14 @@ module BreakEscape
         else
           results << { type: 'unknown', data: reward }
         end
+
+        # R1: an optional in-world `label` the station shows instead of the
+        # generic "Event triggered" / "Door unlocked: <room id>" line. Forwarded
+        # rewards above already carry it.
+        last = results.last
+        if reward['label'].present? && last.is_a?(Hash) && !last.key?('label') && !last.key?(:label)
+          results[-1] = last.merge(label: reward['label'])
+        end
       end
 
       # Mark rewards as claimed
@@ -2478,6 +2495,27 @@ module BreakEscape
 
     # Check whether a flag matches a hintOnlyFlags entry on the station identified by station_id.
     # Returns the hint message string if matched, nil otherwise.
+    # The owning station's name for a wrong-station refusal, or nil when the
+    # player hasn't found it yet. "Found" means the room it stands in (or the
+    # room of the NPC carrying it) is unlocked; a station whose room can't be
+    # located is not named.
+    def discovered_station_name(station)
+      return nil unless station.is_a?(Hash)
+
+      name = station['name'].presence
+      return nil unless name
+
+      station_id = station['id'] || station['name']
+      @game.scenario_data['rooms']&.each do |room_id, room|
+        in_room = room['objects']&.any? { |o| (o['id'] || o['name']) == station_id } ||
+                  room['npcs']&.any? { |npc| npc['itemsHeld']&.any? { |i| (i['id'] || i['name']) == station_id } }
+        next unless in_room
+
+        return @game.room_unlocked?(room_id) ? name : nil
+      end
+      nil
+    end
+
     def find_hint_only_message(flag_key, station_id)
       @game.scenario_data['rooms']&.each do |_room_id, room|
         room['objects']&.each do |obj|

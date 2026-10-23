@@ -392,7 +392,7 @@ def check_unknown_fields(json_data)
     puzzle_graph_and_with puzzle_graph_reveals puzzle_graph_optional puzzle_graph_note
     storyPath currentKnot
     completesTask completesTaskOnOpen
-    puzzle_graph_links hintOnlyFlags
+    puzzle_graph_links hintOnlyFlags acceptsVmLabels
     _comment
   ]
 
@@ -5008,6 +5008,100 @@ def unsupported_condition_syntax(condition, allow_includes:)
   problems.empty? ? nil : problems.join(' and ')
 end
 
+# R29 (VM integration review): every VM flag a mission's stations accept must be
+# load-bearing for the ending. A flag counts when the server can't conclude
+# without it: a submit_flags task matching it is in the conclusion aim's
+# concludeRequires.tasksCompleted, a flag lock taking it completes such a task
+# (completesTask), or its reward / launch choice sets a global listed in
+# concludeRequires.globals (for a launch device both choices must set it).
+# A flag that is none of these can be dropped from the critical path by a later
+# edit without anything noticing (m01 flag_3 was load-bearing only through the
+# finale's launch aim). Warning level: an optional or bonus flag is a valid
+# design, and says so in the message. hintOnlyFlags are not accepted, so they are
+# skipped. Scenarios with no concludeRequires are covered by the gate check.
+def check_vm_flags_load_bearing(json_data)
+  issues = []
+  aim = Array(json_data['objectives']).find { |a| a.is_a?(Hash) && a['missionConclusion'] }
+  return issues unless aim && aim['concludeRequires'].is_a?(Hash)
+
+  gate_tasks = Array(aim['concludeRequires']['tasksCompleted'])
+  gate_globals = Array(aim['concludeRequires']['globals'])
+  tasks = Array(json_data['objectives']).flat_map { |a| Array(a.is_a?(Hash) ? a['tasks'] : nil) }
+  gate_targets = tasks.select { |t| t['type'] == 'submit_flags' && gate_tasks.include?(t['taskId']) }
+                      .flat_map { |t| Array(t['targetFlags']) }
+
+  # Literal flag value -> "vm:flag_N", from the top-level flags block (vm_flags_json)
+  literal_refs = {}
+  (json_data['flags'].is_a?(Hash) ? json_data['flags'] : {}).each do |vm, by_n|
+    next unless by_n.is_a?(Hash)
+    by_n.each { |n, value| literal_refs[value.to_s.downcase] = "#{vm}:#{n}" if value.is_a?(String) }
+  end
+  ref_of = ->(entry) { entry.to_s.match?(/\A[\w.-]+:flag_\d+\z/) ? entry.to_s : literal_refs[entry.to_s.downcase] }
+
+  sets_gate_global = lambda do |hash|
+    hash.is_a?(Hash) && hash.any? { |k, v| gate_globals.include?(k) && v }
+  end
+
+  stations = []
+  locks = []
+  walk = lambda do |obj, path|
+    return unless obj.is_a?(Hash)
+    if %w[flag-station flag_station launch-device].include?(obj['type']) && obj['flags'].is_a?(Array)
+      stations << [obj, path]
+    elsif obj['lockType'] == 'flag' && obj['requires'].is_a?(String) && !obj['requires'].empty?
+      locks << [obj, path]
+    end
+    Array(obj['itemsHeld']).each_with_index { |i, idx| walk.call(i, "#{path}/itemsHeld[#{idx}]") }
+    Array(obj['contents']).each_with_index { |i, idx| walk.call(i, "#{path}/contents[#{idx}]") }
+  end
+  (json_data['rooms'] || {}).each do |room_id, room|
+    next unless room.is_a?(Hash)
+    Array(room['objects']).each_with_index { |o, i| walk.call(o, "rooms/#{room_id}/objects[#{i}]") }
+    Array(room['npcs']).each_with_index { |n, i| walk.call(n, "rooms/#{room_id}/npcs[#{i}]") }
+  end
+
+  stations.each do |obj, path|
+    vm = Array(obj['acceptsVms']).first
+    key = obj['id'].to_s.empty? ? obj['name'] : obj['id']
+    choice_ok = obj['type'] == 'launch-device' &&
+                sets_gate_global.call(obj.dig('onLaunch', 'setGlobal')) &&
+                sets_gate_global.call(obj.dig('onAbort', 'setGlobal'))
+    obj['flags'].each_with_index do |entry, i|
+      ids = []
+      ids << "#{vm}-flag#{i + 1}" if vm
+      ids << "#{key}:#{vm}-flag#{i + 1}" if vm && key
+      ref = ref_of.call(entry)
+      ids << ref if ref
+      next if (ids & gate_targets).any? || choice_ok
+
+      reward = obj['flagRewards'].is_a?(Array) ? obj['flagRewards'][i] : nil
+      next if reward.is_a?(Hash) && reward['type'] == 'set_global' && gate_globals.include?(reward['key'])
+
+      label = ref || "#{vm}-flag#{i + 1}"
+      issues << "⚠️ WARNING: '#{path}' (#{obj['name'] || key}) accepts VM flag #{label}, but nothing the " \
+                "conclusion aim's concludeRequires needs depends on it: no submit_flags task in " \
+                "tasksCompleted targets it (#{ids.map { |x| "\"#{x}\"" }.join(' or ')}), and it sets no " \
+                "concludeRequires global. The mission can conclude without it, and a later edit could drop " \
+                "it from the critical path unnoticed (R29). Add its task to concludeRequires.tasksCompleted, " \
+                "or leave it out only if this flag is meant to be optional."
+    end
+  end
+
+  locks.each do |obj, path|
+    ref = ref_of.call(obj['requires']) || obj['requires']
+    next if gate_targets.include?(ref)
+    next if obj['completesTask'] && gate_tasks.include?(obj['completesTask'])
+    next if Array(obj['flagRewards']).any? { |r| r.is_a?(Hash) && r['type'] == 'set_global' && gate_globals.include?(r['key']) }
+
+    issues << "⚠️ WARNING: '#{path}' (#{obj['name'] || obj['id']}) is a flag lock taking #{ref}, but the " \
+              "conclusion aim's concludeRequires doesn't depend on it (no gate task targets it or is its " \
+              "completesTask). The mission can conclude without this VM flag (R29). Add its task to " \
+              "concludeRequires.tasksCompleted, or leave it out only if the flag is meant to be optional."
+  end
+
+  issues
+end
+
 def check_engine_limits(json_data)
   issues = []
   rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
@@ -5472,6 +5566,7 @@ def main
     common_issues += check_pin_locks(json_data)
     common_issues += check_npc_patrol_and_catch_locks(json_data, repo_root)
     common_issues += check_engine_limits(json_data)
+    common_issues += check_vm_flags_load_bearing(json_data)
     common_issues += check_recurring_bugs(json_data, repo_root)
     common_issues += check_unheard_room_triggers(json_data, repo_root)
     common_issues += check_tooling_pass4c(json_data, repo_root)

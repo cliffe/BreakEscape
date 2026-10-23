@@ -41,6 +41,7 @@ import MusicController from './music/music-controller.js';
 import { wirePhaserGameSoundToBreakEscape } from './music/phaser-audio-bus.js';
 import { createMusicWidget } from './music/music-widget.js';
 import { createVmControlsWidget } from './ui/vm-controls-widget.js';
+import { initVmContextPause } from './systems/vm-context-pause.js';
 import { getDisplaySettings, applyTheme } from './ui/display-settings.js';
 import { createGameMenu } from './ui/game-menu.js';
 
@@ -192,6 +193,10 @@ function initializeGame() {
 
     // Mount VM controls widget — only renders when vmSetPanelUrl is set (VM-backed missions)
     window.vmControlsWidget = createVmControlsWidget();
+
+    // R13: NPCs hold still while the player is on the VM (launcher, VM Controls
+    // overlay, console in another tab or window)
+    initVmContextPause();
 
     // Activate VM set on game start/resume — POST directly to Hacktivity's
     // activate_and_start endpoint (same action the VM controls panel uses).

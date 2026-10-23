@@ -126,7 +126,8 @@ const src = read('music/scenario-music-events.js')
     .replace("import MusicController from './music-controller.js';", 'const MusicController = globalThis.__mc;')
     .replace("'./closing-sequence.js'", `'${fileUrl('music/closing-sequence.js')}'`)
     .replace("'./ending-audio.js'", `'${fileUrl('music/ending-audio.js')}'`)
-    .replace("'./music-config.js'", `'${fileUrl('music/music-config.js')}'`);
+    .replace("'./music-config.js'", `'${fileUrl('music/music-config.js')}'`)
+    .replace("'./conclude-mission.js'", `'${fileUrl('music/conclude-mission.js')}'`);
 globalThis.__mc = new Proxy({}, { get: (_, k) => (typeof mc[k] === 'function' ? mc[k].bind(mc) : mc[k]) });
 const sme = await import(dataUrl(src));
 const tick = () => new Promise(r => setTimeout(r, 0));

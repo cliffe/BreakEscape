@@ -38,12 +38,28 @@ const ATTACKABLE_SCENES = new Set(['phone-chat']);
 export const ATTACK_RESUME_GRACE_MS = 800;
 
 /**
+ * R13: true while the player is on the VM (launcher, flag station, VM Controls
+ * overlay, or the page hidden or out of focus): see vm-context-pause.js, which
+ * sets window.isVmContextActive. Read through window so this file stays free of
+ * imports. No attack starts then, and a windup already running doesn't land.
+ * @param {object} [deps] - deps.vmContextActive overrides for tests
+ */
+function vmContextActive(deps) {
+  if (typeof deps.vmContextActive === 'boolean') return deps.vmContextActive;
+  if (typeof deps.vmContextActive === 'function') return !!deps.vmContextActive();
+  if ('framework' in deps) return false; // a test that injects the framework only
+  const fn = typeof window !== 'undefined' ? window.isVmContextActive : null;
+  return typeof fn === 'function' ? !!fn() : false;
+}
+
+/**
  * True while a conversation or a cutscene is open: no hostile NPC starts a
  * windup, and a windup already running doesn't land.
  * @param {object} [deps] - overridable for tests
  * @returns {boolean}
  */
 export function attacksPausedByUI(deps = {}) {
+  if (vmContextActive(deps)) return true;
   const framework = deps.framework ?? (typeof window !== 'undefined' ? window.MinigameFramework : null);
   const current = framework?.currentMinigame;
   if (!current || current._ending) return false;
@@ -57,6 +73,7 @@ export function attacksPausedByUI(deps = {}) {
  * @returns {boolean}
  */
 export function minigameBlocksAttacks(deps = {}) {
+  if (vmContextActive(deps)) return true;
   const framework = deps.framework ?? (typeof window !== 'undefined' ? window.MinigameFramework : null);
   const current = framework?.currentMinigame;
   if (!current) return false;
