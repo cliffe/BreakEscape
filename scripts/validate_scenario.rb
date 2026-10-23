@@ -4340,16 +4340,6 @@ CARRY_OVER_NAME_RE = /\A[a-z][a-z0-9]*_[a-z0-9_]+\z/.freeze
 CARRY_OVER_STRUCTURAL_MAPPING_KEYS = %w[setVisible completeTask unlockAim unlockTask skipTask emitEvent].freeze
 $carry_over_source_cache = {}
 
-# The name an import is known by in this mission (Game CarryOver.import_name).
-def carry_over_import_name(entry)
-  return nil unless entry.is_a?(Hash)
-  return entry['completed'].to_s if entry.key?('completed')
-  return entry['as'].to_s if entry['as'].is_a?(String) && !entry['as'].empty?
-
-  prefix = entry['from'].to_s[/\A((?:m|sis)\d\d)_/, 1]
-  prefix && entry['var'].is_a?(String) ? "#{prefix}_#{entry['var']}" : nil
-end
-
 # A triage set writes camelCase result globals (<setGlobalPrefix>reportRate), and a post check
 # imports the pre check's. Those names are set by the set's prefix, not chosen, so the lower_snake_case
 # rule does not apply to them: the prefix with {stage} filled by pre or post (or left as is) plus a
@@ -4376,6 +4366,16 @@ def carry_over_triage_result_name?(json_data, name)
     prefixes << pre if pre.is_a?(String) && !pre.empty?
     prefixes.any? { |pf| TRIAGE_RESULT_SUFFIXES.any? { |suf| name == "#{pf}#{suf}" } }
   end
+end
+
+# The name an import is known by in this mission (Game CarryOver.import_name).
+def carry_over_import_name(entry)
+  return nil unless entry.is_a?(Hash)
+  return entry['completed'].to_s if entry.key?('completed')
+  return entry['as'].to_s if entry['as'].is_a?(String) && !entry['as'].empty?
+
+  prefix = entry['from'].to_s[/\A((?:m|sis)\d\d)_/, 1]
+  prefix && entry['var'].is_a?(String) ? "#{prefix}_#{entry['var']}" : nil
 end
 
 # Before the other checks run: the imports become declared globals (with their
