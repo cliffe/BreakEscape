@@ -5,7 +5,7 @@ description: Writes or rewrites the student-facing lab sheet for a Break Escape 
 
 # Break Escape mission lab sheet
 
-Produce one Markdown page a student can follow from launch to debrief. It must get them started, teach the ideas each lock depends on, and get them unstuck without simply handing over answers. The model is `scenarios/lab_tesseract_trials/labsheet.md`; read it before writing anything.
+Produce one Markdown page a student can follow from launch to debrief. It must get them started, teach the ideas each lock depends on, and get them unstuck without simply handing over answers. Sheets live only in HacktivityLabSheets (`_labs/<category>/`); there is no `scenarios/<mission>/labsheet.md` copy any more. The model is a published sheet in HacktivityLabSheets, e.g. `HacktivityLabSheets/_labs/safetynet/m02_ransomed_trust.md`; read it before writing anything.
 
 ## Pick the mode
 
@@ -24,7 +24,7 @@ The scenario file is the truth. Design docs, solution guides and old playtests g
 2. `mission.json`: title, difficulty, `secgen_scenario` (VMs), collection, CyBOK.
 3. The handler's hint ladder in the ink (grep for `stuck`, `hint_rung`, `[I'm stuck.]`). Your hints should agree with it in substance and go a little further.
 4. `SOLUTION_GUIDE.md`, `TESTING_WALKTHROUGH.md`, `dungeon_graph.md`: the critical path, common mistakes, exact error messages, time estimates. Check every claim against the scenario file before using it.
-5. `information_pack.md` (SIS missions) and any existing `labsheet.md`: keep the existing learning outcomes, CyBOK mapping, reflection questions and authors unless they are wrong.
+5. `information_pack.md` (SIS missions) and any existing sheet for this mission in `HacktivityLabSheets/_labs/<category>/`: keep the existing learning outcomes, CyBOK mapping, reflection questions and authors unless they are wrong.
 6. VM missions: the SecGen scenario (`secgen_scenario` in mission.json; the XML in the SecGen repo) and any field guides the handler hands out (`labUrl` in the scenario, pages under `HacktivityLabSheets/_labs/safetynet/`). Link to field guides rather than duplicating them.
 
 Write down, for each stage on the critical path: where the clue is (room, object, exact in-game name), what the lock is and where, what shape of answer it wants (word, 4 digits, a flag), the operation or technique, and the traps. Note which values are generated per game.
@@ -46,7 +46,7 @@ Before you finish, list every in-game name the sheet uses and grep each one in `
 
 ### Front matter
 
-Keep the HacktivityLabSheets front matter: `title`, `author` (keep existing authors), `license: "CC BY-SA 4.0"`, `description`, `overview` (mention that the sheet has a getting-started guide, concepts and stage-by-stage hints), `tags`, `categories` (one HacktivityLabSheets category; it sets the URL), `type` (include `"game-based-learning"` and `"lab-sheet"`), `difficulty`, `source` (GitHub URL of the BreakEscape copy), `cybok`.
+Keep the HacktivityLabSheets front matter: `title`, `author` (keep existing authors), `license: "CC BY-SA 4.0"`, `description`, `overview` (mention that the sheet has a getting-started guide, concepts and stage-by-stage hints), `tags`, `categories` (one HacktivityLabSheets category; it sets the URL), `type` (include `"game-based-learning"` and `"lab-sheet"`), `difficulty`, `source` (GitHub URL of the mission's scenario folder in BreakEscape; there is no `labsheet.md` copy to point at any more), `cybok`.
 
 ### Full mode sections
 

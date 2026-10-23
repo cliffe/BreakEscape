@@ -5,6 +5,7 @@
   "scoring": "partial_then_complete",
   "secgen_scenario": null,
   "collection": "lab_games",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/cyber_security_landscape/phishing-and-social-engineering-game/",
   "cybok": [
     {
       "ka": "HF",
