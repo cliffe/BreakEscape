@@ -265,7 +265,17 @@ export function judgeUtterance(spec, session, utteranceId, blanks, influence) {
       const candour = isNum(susc[candourKey]) ? susc[candourKey] : DEFAULTS.candourCredit;
       entries.push({ delta: candour, reason: candourKey, line: repairTell(spec) });
       repairs.push(fact);
+      // The corrected claim checked out, so it counts as proven: saying it again earns nothing.
+      proven.push(fact);
     }
+  }
+  // A repair line with nothing to repair (no open mismatch, or the repair still names a
+  // wrong value) is not owning a correction, so its candour technique pays nothing. Without
+  // this a sticky repair choice could be repeated for +10 a click (lab R14 M1).
+  if (isStr(line.repairs) && !repairs.includes(line.repairs)) {
+    const candourKey = isStr(line.technique) ? line.technique : 'candour';
+    const ti = techniques.indexOf(candourKey);
+    if (ti !== -1) techniques.splice(ti, 1);
   }
 
   // Doubling down on an open mismatch (06 section 4.2): a flat penalty, fact stays open.

@@ -366,18 +366,6 @@
      "y": 180.0
     },
     {
-     "gid": 110,
-     "height": 41,
-     "id": 2,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 32,
-     "x": 132.0,
-     "y": 182.0
-    },
-    {
      "gid": 107,
      "height": 39,
      "id": 30,
@@ -402,7 +390,7 @@
    "name": "items",
    "objects": [
     {
-     "gid": 851,
+     "gid": 852,
      "height": 28,
      "id": 3,
      "name": "",
@@ -544,6 +532,18 @@
      "width": 24,
      "x": 88,
      "y": 226
+    },
+    {
+     "gid": 899,
+     "height": 24,
+     "id": 34,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 18,
+     "x": 150,
+     "y": 250
     }
    ],
    "opacity": 1,
@@ -567,20 +567,7 @@
    "draworder": "topdown",
    "id": 11,
    "name": "conditional_table_items",
-   "objects": [
-    {
-     "gid": 304,
-     "height": 16,
-     "id": 25,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 16,
-     "x": 140.0,
-     "y": 157.4
-    }
-   ],
+   "objects": [],
    "opacity": 1,
    "type": "objectgroup",
    "visible": true,
@@ -641,18 +628,6 @@
      "y": 227
     },
     {
-     "gid": 1029,
-     "height": 23,
-     "id": 26,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 17,
-     "x": 149.1,
-     "y": 150.02
-    },
-    {
      "gid": 830,
      "height": 22,
      "id": 33,
@@ -684,7 +659,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 34,
+ "nextobjectid": 35,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",

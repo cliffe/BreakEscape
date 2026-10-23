@@ -41,7 +41,7 @@ globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
 globalThis.MouseEvent = dom.window.MouseEvent;
 globalThis.KeyboardEvent = dom.window.KeyboardEvent;
 
-const { blankSlot, optionsForFact, blanksPayload, callGate, callLaunch, hintLine } = await import(pathToFileURL(join(dir, 'minigames/pretext-prep/pretext-card.js')));
+const { blankSlot, optionsForFact, blanksPayload, callGate, callLaunch, hintLine, kindText } = await import(pathToFileURL(join(dir, 'minigames/pretext-prep/pretext-card.js')));
 const { PretextPrepMinigame } = await import(pathToFileURL(join(dir, 'minigames/pretext-prep/pretext-prep-minigame.js')));
 const { fillPretextVars } = await import(pathToFileURL(join(dir, 'minigames/person-chat/person-chat-pretext.js')));
 
@@ -200,6 +200,12 @@ test('a team blank drops untagged finance and keeps the intern-tagged stale team
     const options = optionsForFact('team', devCall, social, held('pierce_role', 'lord_intern', 'old_org_chart'));
     assert.deepEqual(options.map((o) => o.value), ['finance', 'accounts']);
     assert.equal(options.find((o) => o.value === 'accounts').kind, 'stale');
+});
+
+test('a stale option carries no tag, so the decoy is not labelled as the trap (lab R14 m1)', () => {
+    assert.equal(kindText('stale'), '');
+    assert.equal(kindText('generic'), '');
+    assert.equal(kindText('distinctive'), 'a specific detail');
 });
 
 test('a manager blank prefers about manager, so a recipient form of the same value stays out', () => {

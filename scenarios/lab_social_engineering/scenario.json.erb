@@ -660,10 +660,23 @@
             "gapString": "You still don't know what she does here.",
             "goalString": "The team page names the staff.",
             "doneString": "She works in Finance." },
-          { "label": "Who she trusts", "needsIntel": ["pierce_trusts_jed", "email_pattern"],
+          <%# lab R14 m2: the trust slot used to need the email pattern too, so it stayed
+              "Not yet found" with the Jed fact ticked. Split: who she trusts, then how to
+              address mail from him. R14 m4: the Q3 PDF's author field (her sign-in name) is a
+              slot too, so "Recon complete" waits for it and the board points at it. Ruth's
+              Operations key already needed both, so the gating is unchanged. %>
+          { "label": "Who she trusts", "needsIntel": ["pierce_trusts_jed"],
             "gapString": "You still don't know who she'd open an email from.",
-            "goalString": "Try her social profile and a lookup on the domain.",
-            "doneString": "She trusts Jed Baker; you know the email pattern." },
+            "goalString": "Try her social profile.",
+            "doneString": "She trusts Jed Baker." },
+          { "label": "How addresses are built", "needsIntel": ["email_pattern"],
+            "gapString": "You still don't know how Ledgerwell's email addresses are built.",
+            "goalString": "Run a lookup on the domain.",
+            "doneString": "You know the email pattern, so you can write any staff address." },
+          { "label": "Her sign-in name", "needsIntel": ["username_convention"],
+            "gapString": "You still don't know the name she signs in with.",
+            "goalString": "Published files keep their author's name. Open Q3.pdf and read its properties.",
+            "doneString": "She signs in as mpierce: the Q3 PDF's author field." },
           { "label": "What she expects", "needsIntel": ["pierce_expects_balance_sheet"],
             "gapString": "You still don't know what she expects to receive.",
             "goalString": "Check the team notes.",
@@ -678,7 +691,7 @@
             "gapString": "You still don't know what kind of file they'll open.",
             "goalString": "Read how to apply.",
             "doneString": "Chris takes .odt and .docx files." },
-          { "label": "Why she would read it", "needsIntel": ["hampshire_cv_backlog"],
+          { "label": "Why they would read it", "needsIntel": ["hampshire_cv_backlog"],
             "gapString": "You still don't know what they're busy with.",
             "goalString": "Check the careers inbox, then their social profile.",
             "doneString": "Chris is racing through CVs before Friday, so one more won't get a close look." }
@@ -770,7 +783,7 @@
           "attachmentPlausible": {
             "pass": "✓ The balance sheet is attached",
             "missing": { "fail": "The message promises the file Jed would send, but nothing is attached.", "redFlag": null },
-            "wrong-type": { "fail": "The attachment isn't the spreadsheet a balance sheet would be.", "redFlag": null }
+            "wrong-type": { "fail": "The attachment isn't a file she would expect from a colleague.", "redFlag": null }
           }
         },
         "hints": ["Think about who Melanie trusts in Finance.", "What does she expect to receive, and from whom?"],
@@ -848,6 +861,8 @@
         "tuning": { "matchCreditCapPerLine": 10, "maxRefusals": 2, "feedbackMode": "live", "tellDetail": "full", "showTechniqueNames": "live" },
         "susceptibility": { "urgency": -10, "authority_borrowed": -20, "candour": 10 },
         "unverifiableCost": -10,
+        <%# lab R14 t2: the fail tell prints the record's value; without a label it read "finance". %>
+        "labels": { "finance": "Finance", "accounts": "Accounts", "lord_full": "Sofia Lord", "lord_first": "Sofia" },
         "knows": {
           "intern": { "value": "lord_full", "accept": ["lord_first", "lord_full"], "grade": "identity" },
           "team": { "value": "finance", "grade": "identity" }
@@ -1412,6 +1427,12 @@
             { "eventPattern": "global_variable_changed:target_ready_pierce", "condition": "value === true", "onceOnly": true, "completeTask": "ready_pierce" },
             { "eventPattern": "global_variable_changed:target_ready_lord", "condition": "value === true", "onceOnly": true, "completeTask": "ready_lord" },
             { "eventPattern": "global_variable_changed:acct_freemail", "condition": "value === true", "onceOnly": true, "completeTask": "test_account" },
+            <%# lab R14 m6: both easy sends landed from the guest workstation, so the throwaway
+                step is marked skipped (struck through, left out of the task count) instead of
+                staying open to the credits. No gate: the guest account is a valid test. Ruth's
+                phone bark says what skipping it cost. Creating the account later still ticks it. %>
+            { "eventPattern": "global_variable_changed:phish_hampshire_landed", "condition": "value === true && globalVars.phish_pierce_landed === true && globalVars.acct_freemail !== true", "onceOnly": true, "skipTask": "test_account" },
+            { "eventPattern": "global_variable_changed:phish_pierce_landed", "condition": "value === true && globalVars.phish_hampshire_landed === true && globalVars.acct_freemail !== true", "onceOnly": true, "skipTask": "test_account" },
             { "eventPattern": "global_variable_changed:phish_hampshire_landed", "condition": "value === true", "onceOnly": true, "completeTask": "hampshire_landed" },
             { "eventPattern": "global_variable_changed:phish_pierce_landed", "condition": "value === true", "onceOnly": true, "completeTask": "pierce_landed" },
             { "eventPattern": "global_variable_changed:landing_payroll_login_built", "condition": "value === true", "onceOnly": true, "completeTask": "payroll_page_attached" },
@@ -1468,6 +1489,11 @@
               "bark": "Recon's done, PDF and all. The Operations key's ready.", "barkDelay": 1500 },
             { "eventPattern": "global_variable_changed:se_intel_username_convention", "condition": "value === true && globalVars.osint_done === true", "onceOnly": true,
               "bark": "Recon's done, PDF and all. The Operations key's ready.", "barkDelay": 1500 },
+            <%# lab R14 m6: the honest note when both easy sends went from the guest account. %>
+            { "eventPattern": "global_variable_changed:phish_hampshire_landed", "condition": "value === true && globalVars.phish_pierce_landed === true && globalVars.acct_freemail !== true", "onceOnly": true,
+              "bark": "Both landed from the guest workstation. Fine for a test, but its headers lead straight back to this office. That's what a throwaway avoids.", "barkDelay": 2500 },
+            { "eventPattern": "global_variable_changed:phish_pierce_landed", "condition": "value === true && globalVars.phish_hampshire_landed === true && globalVars.acct_freemail !== true", "onceOnly": true,
+              "bark": "Both landed from the guest workstation. Fine for a test, but its headers lead straight back to this office. That's what a throwaway avoids.", "barkDelay": 2500 },
             { "eventPattern": "global_variable_changed:report_filed", "condition": "value === true", "onceOnly": true,
               "bark": "Report's filed. The Blue Team key's ready, and Gareth wants a word.", "barkDelay": 1500 }
           ]
@@ -1539,7 +1565,8 @@
         "mode": "motion", "darkAmbient": "#1e2740",
         "emitters": {
           "fire_alarm_point": [ { "intensity": 0 } ],
-          "office-misc-lamp": { "color": "#ffd9a0", "radius": 44, "intensity": 0.55, "effect": null }
+          "info_screen": [ { "intensity": 0 } ],
+          "office-misc-lamp": { "color": "#ffd9a0", "radius": 36, "intensity": 0.55, "offsetX": 10, "effect": null }
         }
       },
       "locked": true,
@@ -1574,6 +1601,8 @@
         "mode": "motion",
         "emitters": {
           "fire_alarm_point": [ { "intensity": 0 } ],
+          "pc12": [ { "intensity": 0 } ],
+          "laptop7": [ { "intensity": 0 } ],
           "mail_terminal": { "color": "#9fd4ff", "radius": 44, "intensity": 0.65, "offsetY": 6, "effect": "screen" }
         }
       },
@@ -1649,6 +1678,7 @@
         "emitters": {
           "aes_dvr": { "color": "#7dffa0", "radius": 10, "intensity": 0.5, "above": true },
           "fire_alarm_point": [ { "intensity": 0 } ],
+          "pc8": [ { "intensity": 0 } ],
           "siem_dashboard": { "color": "#7dffb0", "radius": 40, "intensity": 0.5, "offsetY": 16, "effect": "screen" }
         }
       },
@@ -1677,7 +1707,7 @@
           "type": "triage-workstation",
           "id": "triage_workstation",
           "name": "Triage Workstation",
-          "position": "as-type:security_monitor",
+          "position": "as-type:pc",
           "takeable": false,
           "interactable": true,
           "active": true,

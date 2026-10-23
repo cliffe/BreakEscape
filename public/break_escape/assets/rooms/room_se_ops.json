@@ -299,7 +299,7 @@
                  "y":160
                 }, 
                 {
-                 "gid":851,
+                 "gid":852,
                  "height":28,
                  "id":33,
                  "name":"",
@@ -440,14 +440,14 @@
                  "y":217.38
                 }, 
                 {
-                 "gid":335,
-                 "height":18,
+                 "gid":329,
+                 "height":17,
                  "id":21,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":24,
+                 "width":22,
                  "x":166.5,
                  "y":216.6
                 }, 
@@ -464,14 +464,14 @@
                  "y":212.7
                 }, 
                 {
-                 "gid":368,
-                 "height":22,
+                 "gid":372,
+                 "height":24,
                  "id":14,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":34,
+                 "width":31,
                  "x":124,
                  "y":155
                 }],

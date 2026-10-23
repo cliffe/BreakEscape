@@ -510,3 +510,19 @@ R13 F5 (phone stage-3 lockout) reuses the existing phone line "Dev flagged that 
 manager. Leave it a while, then try again — softer, and have your facts straight." (already listed), so
 it is not a new line. The lab1 F1 fix, the F3/F4 board gap/pointer rewording and the Q1 results-row
 reword are all data / UI text, not voiced.
+
+## R14 fixes (2026-10-23) — spoken-line changes for TTS
+
+The lab is still unvoiced. Caps held (person ≤30, phone ≤25). dialoguelint: no new findings.
+
+### R14 m5 — Ruth's "What does the board want from me?" (`ruth.ink` topic_recon, person)
+
+1. **OLD:** `Fill the three cards from public sources. The "Missing" rows tell you where to look.`
+   **NEW:** `Fill the three cards from public sources. Each gap says what's missing, and the "Stuck?" link under it shows where to look.`
+
+### R14 m6 — both easy sends landed from the guest account (Ruth phone bark, `scenario.json.erb` ruth_phone eventMappings)
+
+2. **NEW (phone, 24 words):** `Both landed from the guest workstation. Fine for a test, but its headers lead straight back to this office. That's what a throwaway avoids.`
+
+M1 (Dev's repair once per call) changed choice conditions only; no spoken text changed. The board
+slot strings (m2, m4), Dev's tell labels and the Melanie attachment fail line (t2, t4) are UI text.

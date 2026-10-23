@@ -260,7 +260,7 @@ Ruth Adeyemi: Decide that before you send a thing. Count how far each attempt go
 -> hub
 
 === topic_recon ===
-Ruth Adeyemi: Fill the three cards from public sources. The "Missing" rows tell you where to look.
+Ruth Adeyemi: Fill the three cards from public sources. Each gap says what's missing, and the "Stuck?" link under it shows where to look.
 Ruth Adeyemi: And open the published PDF's properties. The author field shows how usernames are built.
 ~ quiet = true
 -> hub

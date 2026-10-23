@@ -1091,8 +1091,10 @@ export class MailComposer {
             // Name where the fact came from, in plain words, without judging which is
             // the better pick (the student should reason from the board, not the label;
             // lab fix round L): a specific detail versus an older one.
-            if (opt.kind && opt.kind !== 'generic') {
-                const kindText = { distinctive: 'a specific detail', stale: 'an older detail' }[opt.kind] || opt.kind;
+            // A stale value gets no tag (lab R14 m1): labelling the decoy "an older detail"
+            // gave the trap away; the board still marks the old source.
+            if (opt.kind && opt.kind !== 'generic' && opt.kind !== 'stale') {
+                const kindText = { distinctive: 'a specific detail' }[opt.kind] || opt.kind;
                 li.append(el('span', `mail-picker-kind kind-${opt.kind}`, kindText));
             }
             li.setAttribute('aria-selected', opt.value === chosen ? 'true' : 'false');

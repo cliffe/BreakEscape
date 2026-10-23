@@ -237,7 +237,10 @@ export function callLaunch(spec, npc, npcId, blanks) {
     return { scene, params };
 }
 
-const KIND_TEXT = { distinctive: 'a specific detail', stale: 'an older detail' };
+// No tag for a stale value: "an older detail" on the option itself marked the decoy as the
+// trap, so only a curious student ever picked it (lab R14 m1). The board and the held-facts
+// list still say where an old fact came from; the student has to read them.
+const KIND_TEXT = { distinctive: 'a specific detail' };
 
 /** Plain words for a non-generic kind, matching the mail picker. */
 export function kindText(kind) {

@@ -170,6 +170,21 @@ test('Dev repair_team recovers an open team mismatch for +20', () => {
   assert.equal(sumDelta(r.entries), 20);
 });
 
+test('Dev repair_team cannot be farmed once the mismatch is closed (lab R14 M1)', () => {
+  const first = judgeUtterance(DEV, sess({ openMismatches: ['team'] }), 'repair_team', { team: 'finance' }, -20);
+  assert.equal(sumDelta(first.entries), 20);
+  assert.deepEqual(first.proven, ['team']);
+  // Second and later clicks: nothing open, team already proven. No candour, no claim credit.
+  const again = judgeUtterance(DEV, sess({ provenFacts: ['team'] }), 'repair_team', { team: 'finance' }, 0);
+  assert.equal(sumDelta(again.entries), 0);
+  assert.equal(again.influenceAfter, 0);
+  assert.equal(again.entries.some((e) => e.reason === 'candour'), false);
+  // A repair said with nothing ever wrong earns the plain claim credit, not candour.
+  const cold = judgeUtterance(DEV, sess(), 'repair_team', { team: 'finance' }, 0);
+  assert.equal(sumDelta(cold.entries), 10);
+  assert.equal(cold.entries.some((e) => e.reason === 'candour'), false);
+});
+
 test('Dev technique lines carry his susceptibility values', () => {
   assert.equal(judgeUtterance(DEV, sess(), 'urgent_payslip', {}, 0).influenceAfter, -10);
   assert.equal(judgeUtterance(DEV, sess(), 'name_drop_manager', {}, 0).influenceAfter, -20);
