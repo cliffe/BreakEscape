@@ -121,9 +121,9 @@
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "unexpected_qr": "A QR code is fine when you'd expect one, it comes from someone you know, and it goes to Tarrowby's own domain. This one asks for no password and no card.",
+              "unexpected_qr": "A QR code is fine when you'd expect one, it comes from someone you know, and it asks for nothing sensitive. This one wants no password and no card.",
               "lookalike_domain": "forms.tarrowby.example ends in tarrowby.example, Tarrowby's own domain. The 'forms.' in front is one of Tarrowby's own services, the same as 'mail.' or 'hr.' would be.",
-              "default": "Printed table cards in the canteen, put up by the facilities manager you know, and the code goes to Tarrowby's own forms page. It asks for no password and no card."
+              "default": "Printed table cards in the canteen, put up by the facilities manager you know in person, and all it collects is a menu rating."
             }
           }
         },

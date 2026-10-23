@@ -1221,3 +1221,64 @@ fit a page or a QR code).
   The bridges were last green at the commit that added the awareness block (DIALOG_LOG 2026-10-23);
   engine commits since (genuine-item feedback, 1c8106fd1) render `.aw-card` for trusted real items in a
   perfect round, which the stale invariant does not expect. HAND BACK to the engine/bridge owner.
+
+## Data round 8 (engine round 5 hooks) — 2026-10-23 — PAUSED mid-pass (items 1-4 done, item 5 not started)
+
+Authored the data hooks for engine round 5 (eb358d5d1). Development was put on hold by the user
+after items 1-4; item 5 was not started. Everything landed is self-consistent (parity + validator +
+node tests pass).
+
+### Item 1 — subjects bound to pretexts (`subjects[].requiresTemplate`, full erbs, attack side)
+A subject that only fits one pretext is now offered only while that pretext is chosen, so the composer
+can no longer pair, e.g., "Action needed: sign in again" with the benign newsletter. Bound:
+- E5 `s_sso` → `[e5_pretext_reauth, e5_pretext_reauth_calm]` (off the newsletter pretext).
+- E6 `s_permit` → `[pretext_qr_permit, pretext_qr_permit_calm]` (off the depot bulletin).
+- E1 `s_invoice` → `[pretext_bank_change, pretext_bank_change_calm]` (off the monthly-statement pretext).
+- E2 `s_application` → `[pretext_application]` (off the general "introduce myself" pretext).
+- E4 `s_payment` → `[ms_pretext_pay_now, ms_pretext_pay_calm]` (off the diary pretext).
+- E7 `s_payment` → `[pretext_ceo_payment]` (off the month-end catch-up pretext).
+Each episode's generic `s_other` ("Quick note"/"Quick one"/"Quick word") is left unbound, so a pretext
+is always covered and the "all subjects carry requiresTemplate" warning does not fire. E3 has no
+compose/subjects block (vishing), so nothing to bind.
+
+### Item 2 — template `flags` (social-pressure tells the wording carries, full erbs)
+Only the secrecy/authority tells are auto-undetectable, so these are the honest additions (audited
+E1/E2/E5/E6: none carry secrecy, bypass or borrowed-authority wording):
+- E4 `ms_pretext_pay_now` → `[secrecy_or_bypass, borrowed_authority]` ("keep it between us … no need to
+  trouble finance … I'll square it with them" — the senior partner invoked to skip finance). The calm
+  variant is left clean (it says "I'll confirm it with finance").
+- E7 `pretext_ceo_payment` → `[borrowed_authority]` ("signed off at my end" — the CEO's own sign-off
+  invoked to skip the check); `ask_pay_now` → `[secrecy_or_bypass]` ("keep it between us until I'm back").
+Both episodes' defend-set truth already carries the matching flags, so the meter/flip and the debrief
+now name the same tells.
+
+### Item 3 — no-blame lines (strings; fragment + erb)
+The engine now shows `noBlameLine` only after a wrong verdict, where a "nobody is marked down / no one
+is keeping score / nothing counts against you" claim is false (verdict points were lost). Reworded the
+four lines that made that claim, keeping the attack-quality reassurance and ending on "shows where to
+look next time" (the critical default's framing): E1, E2, E3, E4. E5/E6/E7 lines make no scoring claim
+and were left.
+`noBlameLineCritical`: the engine default ("These messages are built to fool careful people …") fits
+every episode whose critical miss is an email/push/text, so no per-episode line was needed — except E3,
+whose defend stage is a service-desk call set (plus one MFA push); "messages" does not fit, so authored
+a channel-neutral line: "This was built to catch you under pressure, not to test how careful you are.
+The points only show where to look next time." (propagates to the helpdesk check shells, also calls).
+
+### Item 4 — E6 canteen `whyFine` (truth; fragment + erb)
+Lines 1 (`unexpected_qr`) and 3 (`default`) both said the code goes to Tarrowby's own domain/forms page.
+The domain point now lives only in line 2 (`lookalike_domain`). Line 1 → expected QR from a known person,
+asks nothing sensitive; line 3 → physical provenance (printed table cards, facilities manager you know)
+and that all it collects is a menu rating. Three distinct reasons.
+
+### Item 5 — round-7 brief/count audit — NOT STARTED (paused by user).
+
+### Pipeline / parity / checks
+- No-change baseline: fresh regen of all 31 shells byte-identical to the repo before editing.
+- After edits, regenerated into scratch; only the 5 defend shells with changed fragment copy differed
+  (e1/e2/e3/e4 noBlameLine[+critical for e3], e6 canteen whyFine). Copied those 5 in; check shells carry
+  no noBlameLine/whyFine so are unchanged. Full erbs edited by hand (items 1-4 strings/whyFine, items
+  1-2 attack side).
+- `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs`: 1810/1810 pass. Parity 7/7.
+- Validator `--strict-social --no-graph --skip-ink` on all 38 shells: exit 0, only pre-existing suggestions.
+- Bridges skipped (paused). dungeon_graph untouched (--no-graph); the pre-existing lab_social_engineering
+  dungeon_graph churn and `sys,json` predate this pass and were left alone.

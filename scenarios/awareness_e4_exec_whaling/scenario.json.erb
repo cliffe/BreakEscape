@@ -330,7 +330,7 @@
         "flipMissed": "The defence is the same either way: next, messages like it arrive in Tomás's inbox and voicemail, and you're the one reading them.",
         "flipMissedHeading": "Nothing to replay this time",
         "flipLandedNoTells": "It read as an ordinary message from Catherine, with nothing in it to question. Next, messages like it arrive in Tomás's inbox and voicemail, and you're the one reading them.",
-        "noBlameLine": "There's no mark against you for a miss here. Every one of these was built to look and sound right, and the people who act on them are trying to help in a hurry. A miss here is about the pressure you were under.",
+        "noBlameLine": "Every one of these was built to look and sound right, and the people who act on them are trying to help in a hurry. A miss here is about the pressure you were under, and it shows where to look next time.",
         "defendIntro": "Now you're in Tomás's seat. Five emails and voicemails are waiting. Take them one at a time.",
         "mondayCard": "On Monday: if someone senior asks you to pay, buy or send something in a hurry, or to keep it from finance, check before you act, even when it's their voice on a voicemail. Ring them on the number already in your contacts, or ask finance, then report the message using the route in the box below.",
         "defendOnly": "These messages were made by people whose job is to make them look and sound right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
@@ -457,7 +457,11 @@
             "label": "which trip"
           }
         ],
-        "urgency": "high"
+        "urgency": "high",
+        "flags": [
+          "secrecy_or_bypass",
+          "borrowed_authority"
+        ]
       },
       "ms_pretext_pay_calm": {
         "part": "pretext",
@@ -632,6 +636,10 @@
             "topic": "finance",
             "requires": [
               "ms_exec_calendar"
+            ],
+            "requiresTemplate": [
+              "ms_pretext_pay_now",
+              "ms_pretext_pay_calm"
             ]
           },
           {

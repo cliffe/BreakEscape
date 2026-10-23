@@ -448,7 +448,10 @@
             "label": "which payment"
           }
         ],
-        "urgency": "high"
+        "urgency": "high",
+        "flags": [
+          "borrowed_authority"
+        ]
       },
       "pretext_catchup": {
         "part": "pretext",
@@ -460,7 +463,10 @@
         "part": "ask",
         "text": "Release it today, and keep it between us until I'm back and can explain.",
         "slots": [],
-        "urgency": "high"
+        "urgency": "high",
+        "flags": [
+          "secrecy_or_bypass"
+        ]
       }
     },
     "mailClient": {
@@ -602,7 +608,10 @@
           {
             "id": "s_payment",
             "text": "Urgent payment",
-            "topic": "finance"
+            "topic": "finance",
+            "requiresTemplate": [
+              "pretext_ceo_payment"
+            ]
           },
           {
             "id": "s_other",
