@@ -317,9 +317,14 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
     let band = bandFor(percent, bands);
     const zeros = zeroSkills(perFactor);
     const zeroMisses = zeros.reduce((n, id) => n + perFactor[id].missed, 0);
-    if (criticalMisses.length || zeroMisses >= ZERO_SKILL_MISSES_CAP) {
-        // A critical miss, or three or more tells missed in skills never caught, caps the round below the top
-        // band, whatever the percent: the top band says "you caught the phish and knew why".
+    // P5-3 (E5-E7): a phish trusted of a kind that is not critical (a look-alike page, a
+    // voicemail) still means a phish was not caught, so the top band ("you caught the phish")
+    // is out of reach too.
+    const phishTrusted = perMessage.filter((m) => m.answered && m.isPhish && m.verdict === 'trust').length;
+    if (criticalMisses.length || phishTrusted || zeroMisses >= ZERO_SKILL_MISSES_CAP) {
+        // A critical miss, a trusted phish, or three or more tells missed in skills never caught,
+        // caps the round below the top band, whatever the percent: the top band says "you caught
+        // the phish and knew why".
         const sorted = [...(bands && bands.length ? bands : DEFAULT_BANDS)].sort((x, y) => y.min - x.min);
         if (sorted.length > 1 && band === sorted[0]) band = sorted[1];
     }
@@ -373,19 +378,32 @@ export function listJoin(items) {
 const quoted = (t) => `‘${t}’`;
 
 /**
+ * A quoted title list capped at `max` names: "‘A’, ‘B’, ‘C’ and 3 more" (P5-2: six long
+ * titles in one sentence read as a wall).
+ */
+export function listCap(titles, max = 3) {
+    const xs = (titles || []).filter((x) => typeof x === 'string' && x).map(quoted);
+    if (xs.length <= max) return listJoin(xs);
+    return `${xs.slice(0, max).join(', ')} and ${xs.length - max} more`;
+}
+
+/**
  * The genuine items of a round, sorted by what the learner did. Pure.
  *
  *   genuineFeedback({ messages, answers, profile, titleOf?, actionLabel? }) -> null | {
- *     realTotal, trusted: [{ id, title }],
+ *     realTotal, trusted: [{ id, title }], checked: [{ id, title }],
  *     flagged: [{ id, title, verdict, action, why, cost }]
  *   }
  *
- * trusted  real items given Trust or Verify (Ring back) for full verdict marks. Comply on an
- *          unchecked genuine caller is not listed: the result grid does not count it as right.
+ * trusted  real items answered Trust for full verdict marks. Comply on an unchecked genuine
+ *          caller is not listed: the result grid does not count it as right.
+ * checked  real items answered Verify (Ring back): full marks too, but the learner did not
+ *          trust them, so they are named apart (P5-2: "You trusted" listed rung-back calls).
  * flagged  real items answered Report or Delete (Escalate, Refuse, Deny, Deny and report).
  *          `why` is the item's truth.whyFine.default (else its first whyFine line), `cost` its
  *          optional truth.falseAlarmCost. Report is full marks under awareness ("never wrong"),
  *          so the wording built from this never calls it a mistake.
+ * Trusted, checked and reported items are exactly what the result grid counts as handled right.
  * Returns null when the round has no answered real item, or the set opts out
  * (set.genuineFeedback === false, read by the callers).
  */
@@ -396,6 +414,7 @@ export function genuineFeedback({ messages, answers, profile = 'awareness', titl
     const title = (m) => (typeof titleOf === 'function' ? titleOf(m) : null) || m.subject || m.id;
     const label = (m, a) => (typeof actionLabel === 'function' ? actionLabel(m, a) : null) || a.verdict;
     const trusted = [];
+    const checked = [];
     const flagged = [];
     let realTotal = 0, answered = 0;
     for (const m of messages) {
@@ -413,7 +432,7 @@ export function genuineFeedback({ messages, answers, profile = 'awareness', titl
         let pts = 0;
         try { pts = verdictPoints(profile, false, a.verdict, kind); } catch (e) { continue; }
         if (TRUST_VERDICTS.includes(a.verdict) && pts >= FULL_VERDICT_POINTS) {
-            trusted.push({ id: m.id, title: title(m) });
+            (a.verdict === 'verify' ? checked : trusted).push({ id: m.id, title: title(m) });
         } else if (FLAG_VERDICTS.includes(a.verdict)) {
             const wf = truth.whyFine && typeof truth.whyFine === 'object' ? truth.whyFine : {};
             const why = (typeof wf.default === 'string' && wf.default.trim())
@@ -423,7 +442,7 @@ export function genuineFeedback({ messages, answers, profile = 'awareness', titl
         }
     }
     if (!answered) return null;
-    return { realTotal, trusted, flagged };
+    return { realTotal, trusted, checked, flagged };
 }
 
 /** Why both halves matter, in one sentence (no numbers). */
@@ -437,44 +456,96 @@ export const GENUINE_WHY_LINE = 'Both halves matter: catching a phish stops the 
  *     trusted: string, flaggedLead: string, items: [{ id, text }], cost: string, why: string
  *   }
  *
+ * `trusted` says which real ones were trusted and which were checked by another route first
+ * (both right). `flaggedLead` keeps a report on a real one apart from a delete (P5-3): a report
+ * counts as handled right on the result grid, so it is "reported just in case, which is fine
+ * when unsure", never "treated as a phish"; a delete or refusal is "treated as a phish".
  * detail false (immediate feedback: each card already said what made the item safe) names the
  * flagged items in `flaggedLead` and leaves `items` empty. detail true (end-of-round feedback,
- * the debrief) gives one line per flagged item with what made it safe. Empty strings are left out
- * by the callers. Reporting stays "never wrong", matching the cards and the result grid.
+ * the debrief) gives one line per flagged item with what made it safe. Title lists past three
+ * end "and N more". Empty strings are left out by the callers.
  */
 export function genuineFeedbackText(fb, { detail = false } = {}) {
     if (!fb || typeof fb !== 'object') return null;
     const trusted = Array.isArray(fb.trusted) ? fb.trusted : [];
+    const checked = Array.isArray(fb.checked) ? fb.checked : [];
     const flagged = Array.isArray(fb.flagged) ? fb.flagged : [];
+    const realTotal = fb.realTotal || 0;
     const out = { trusted: '', flaggedLead: '', items: [], cost: '', why: '' };
+    const names = (xs) => listCap(xs.map((t) => t.title));
+    const these = (n, all) => (all ? 'the real ones' : n === 1 ? 'this real one' : 'these real ones');
+    const sentences = [];
     if (trusted.length) {
-        const names = listJoin(trusted.map((t) => quoted(t.title)));
-        out.trusted = flagged.length || trusted.length < (fb.realTotal || 0)
-            ? `You trusted ${trusted.length === 1 ? 'this real one' : 'these real ones'}: ${names}.`
-            : `You trusted the real ones: ${names}.`;
+        sentences.push(`You trusted ${these(trusted.length, trusted.length === realTotal && trusted.length > 1)}: ${names(trusted)}.`);
     }
+    if (checked.length) {
+        const all = checked.length === realTotal && checked.length > 1;
+        sentences.push(`You checked ${these(checked.length, all)} by another route first, which is just as right: ${names(checked)}.`);
+    }
+    out.trusted = sentences.join(' ');
     if (flagged.length) {
-        const one = flagged.length === 1;
+        const reported = flagged.filter((f) => f.verdict === 'report');
+        const binned = flagged.filter((f) => f.verdict !== 'report');
+        const countOf = (n) => (n === 1 ? 'one real one' : `${n} real ones`);
+        const repLead = `You reported ${countOf(reported.length)} just in case, which is fine when unsure`;
+        const binLead = binned.length === 1 ? 'One real one was treated as a phish' : `${binned.length} real ones were treated as phish`;
         if (detail) {
-            out.flaggedLead = one ? 'One real one was treated as a phish:' : `${flagged.length} real ones were treated as phish:`;
+            out.flaggedLead = !binned.length ? `${repLead}:`
+                : !reported.length ? `${binLead}:`
+                    : `${flagged.length} real ones were reported or deleted (a report is fine when unsure):`;
             out.items = flagged.map((f) => ({
                 id: f.id,
                 text: `${quoted(f.title)} (you chose ${f.action}). ${f.why ? `What made it safe: ${f.why}` : 'It was real.'}`
                     + (f.cost ? ` ${f.cost}` : '')
             }));
         } else {
-            const names = listJoin(flagged.map((f) => `${quoted(f.title)} (${f.action})`));
-            out.flaggedLead = `${one ? 'One real one was treated as a phish' : `${flagged.length} real ones were treated as phish`}: ${names}. `
-                + `${one ? 'Its card' : 'Each card'} showed what made it safe.`;
+            const parts = [];
+            if (reported.length) parts.push(`${repLead}: ${namedList(reported)}.`);
+            if (binned.length) parts.push(`${binLead}: ${namedList(binned)}.`);
+            out.flaggedLead = `${parts.join(' ')} ${flagged.length === 1 ? 'Its card' : 'Each card'} showed what made it safe.`;
         }
-        const reported = flagged.some((f) => f.verdict === 'report');
-        const binned = flagged.some((f) => f.verdict === 'delete');
-        out.cost = reported && binned
+        const anyReport = reported.length > 0;
+        const anyBin = binned.length > 0;
+        out.cost = anyReport && anyBin
             ? "Reporting when you're unsure is never wrong, but treating a real message as a phish has a cost: a report takes a colleague's time to check, and a deleted or refused one can mean a missed payment or a colleague left waiting."
-            : reported
+            : anyReport
                 ? "Reporting when you're unsure is never wrong, but a report on a real message has a cost: a colleague has to stop and check it, and the real request waits."
                 : 'Deleting or refusing a real one has a cost: it can mean a missed payment, a missed shift change or a colleague left waiting.';
     }
     out.why = GENUINE_WHY_LINE;
+    return out;
+}
+
+/** "‘A’ (Report), ‘B’ (Delete) and 2 more": quoted titles with the action, capped at three. */
+function namedList(xs) {
+    const items = xs.map((f) => `${quoted(f.title)} (${f.action})`);
+    if (items.length <= 3) return listJoin(items);
+    return `${items.slice(0, 3).join(', ')} and ${items.length - 3} more`;
+}
+
+/**
+ * "Why this one was fine" lines with any sentence already said dropped (P5-9: the E6 canteen
+ * card said "This one asks for no password and no card." and then "It asks for no password and
+ * no card."). Sentences match after lower-casing, dropping punctuation and a leading "this one",
+ * "this", "it" or "that". `seen` (optional) holds sentences already shown on the card. A line
+ * left with no sentence is dropped. Pure.
+ */
+export function dedupeSentences(lines, seen = []) {
+    const key = (t) => String(t).toLowerCase().replace(/[‘’'"“”.,;:!?()]/g, '').replace(/\s+/g, ' ').trim()
+        .replace(/^(?:this one|this|it|that)\s+/, '');
+    const keys = new Set();
+    for (const l of seen || []) for (const sn of String(l).split(/(?<=[.!?])\s+/)) if (sn.trim()) keys.add(key(sn));
+    const out = [];
+    for (const line of lines || []) {
+        if (typeof line !== 'string' || !line.trim()) continue;
+        const kept = [];
+        for (const sn of line.trim().split(/(?<=[.!?])\s+/)) {
+            const k = key(sn);
+            if (!k || keys.has(k)) continue;
+            keys.add(k);
+            kept.push(sn);
+        }
+        if (kept.length) out.push(kept.join(' '));
+    }
     return out;
 }

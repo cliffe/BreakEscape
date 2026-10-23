@@ -17,7 +17,7 @@
 // empty and blocks Send with the neutral pre-send line, which never names the
 // missing fact (00 §10).
 
-import { preSendGate, PRE_SEND_GATE_LINE, evaluateMessage } from '../../systems/phish-rules.js';
+import { preSendGate, PRE_SEND_GATE_LINE, evaluateMessage, templateFlagLine } from '../../systems/phish-rules.js';
 
 export { PRE_SEND_GATE_LINE };
 
@@ -126,6 +126,13 @@ export function optionsForSlot(slot, { entries, people } = {}) {
 
 function templateOf(templates, id) {
     return isObject(templates) && isStr(id) && isObject(templates[id]) ? templates[id] : null;
+}
+
+/** A subject's `requiresTemplate` as a list of template ids (a string is one id). */
+function subjectTemplates(subject) {
+    const r = subject && subject.requiresTemplate;
+    if (isStr(r)) return [r];
+    return Array.isArray(r) ? r.filter(isStr) : [];
 }
 
 /** The From template's name/address slots, found by type (robust to slot id naming). */
@@ -341,6 +348,10 @@ export class MailComposer {
         const old = templateOf(this.templates, this.choice[part]);
         for (const s of arr(old && old.slots)) delete this.slots[s.id];
         this.choice[part] = id;
+        // P5-7: a subject bound to the template just chosen becomes the subject, so changing the
+        // pretext changes the subject with it. The learner can still pick another offered one.
+        const bound = this.visibleSubjects().find((s) => subjectTemplates(s).includes(id));
+        if (bound) this._subjectId = bound.id;
         this._emitChange();
         this.render();
     }
@@ -532,6 +543,9 @@ export class MailComposer {
                 if (f.id === 'senderTrust' && senderUnset) continue;
                 push(f.redFlag);
             }
+            // P5-8: the tells the chosen wording carries (templates[].flags: secrecy, borrowed
+            // authority), so the meter names what the flip and the defend card name.
+            for (const id of arr(result.templateFlags)) push(templateFlagLine(id, this.target));
         }
         const advice = [];
         if (result && arr(result.tells).includes('senderTrust')) {
@@ -623,8 +637,20 @@ export class MailComposer {
         const t = this.target;
         const all = arr(t && t.subjects);
         const held = arr(this.heldIds);
-        const ok = all.filter((s) => !Array.isArray(s?.requires) || s.requires.every((id) => held.includes(id)));
-        return ok.length ? ok : all;
+        const intelOk = (s) => !Array.isArray(s?.requires) || s.requires.every((id) => held.includes(id));
+        // P5-7: a subject with `requiresTemplate` (template ids) is offered only while one of
+        // those templates is chosen, so the subject follows the pretext ("Action needed: sign
+        // in again" never goes out on the newsletter pretext). If that would leave none, the
+        // template binding is dropped first, then the intel one.
+        const chosen = Object.values(this.choice || {}).filter(isStr);
+        const tplOk = (s) => {
+            const need = subjectTemplates(s);
+            return !need.length || need.some((id) => chosen.includes(id));
+        };
+        const ok = all.filter((s) => intelOk(s) && tplOk(s));
+        if (ok.length) return ok;
+        const intelOnly = all.filter(intelOk);
+        return intelOnly.length ? intelOnly : all;
     }
 
     get subjectId() {

@@ -185,6 +185,18 @@
 .tri-item-why summary { cursor: pointer; min-height: 32px; }
 .tri-save-note { min-height: 1.4em; color: var(--ui-accent, #ffcc44); }
 .tri-result-bar { display: flex; flex-wrap: wrap; }
+/* P5-1: the result panel scrolls, and Finish sat below the fold with no cue. Pin the action
+   bar to the bottom of the scroll area, opaque so the text scrolls under it. */
+.tri-result > .tri-result-bar {
+    position: sticky;
+    bottom: -16px;
+    z-index: 1;
+    margin: 8px -16px -16px;
+    padding: 0 16px 12px;
+    background-color: var(--ui-surface-raised, rgba(38, 48, 74, 1));
+    border-top: 2px solid var(--ui-line, #4c5b80);
+    box-shadow: 0 -6px 8px -6px rgba(0, 0, 0, 0.5);
+}
 
 /* The chip sheet */
 .tri-sheet-backdrop {
@@ -247,6 +259,7 @@
     .triage-client .tri-toolbar { flex-wrap: wrap; }
     .tri-steps { flex: 1 1 100%; }
     .tri-panel { padding: 10px; }
+    .tri-result > .tri-result-bar { bottom: -10px; margin: 8px -10px -10px; padding: 0 10px 10px; }
     .tri-numbers, .tri-header-fields, .tri-brief-buttons { grid-template-columns: 1fr; }
 }
 

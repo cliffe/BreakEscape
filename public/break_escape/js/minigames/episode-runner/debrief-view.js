@@ -20,19 +20,22 @@
 // getState() -> { items: number, mondayCard: boolean, noBlame: boolean,
 //                 conceptPanel: boolean, voicePanel: boolean, reportRoute: 'configured' |
 //                 'generic' | null, ruleOfThumb: boolean, teamProtected: number | null,
-//                 genuine: { trusted, flagged } | null }.
+//                 genuine: { trusted, checked, flagged } | null }.
 // The real items (disc_visible) follow the cards: the real ones trusted, what made each one
 // treated as a phish safe, the cost of a false alarm and why both halves matter (buildGenuine).
 // Every string goes in with textContent. The wording never blames the learner.
 
 import { redFlagString, skillName } from '../inbox-triage/triage-flags.js';
-import { weakestFactor, flagUnits, unitAccepts, genuineFeedback, genuineFeedbackText } from '../inbox-triage/triage-scoring.js';
+import { weakestFactor, flagUnits, unitAccepts, genuineFeedback, genuineFeedbackText, verdictPoints, FULL_VERDICT_POINTS, dedupeSentences } from '../inbox-triage/triage-scoring.js';
 import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject } from '../inbox-triage/triage-kinds.js';
 
 const DEFAULTS = Object.freeze({
     heading: 'What happened',
     mondayCard: "What to do on Monday: if something looks wrong, report it through your organisation's usual route. Reporting is never wrong.",
     noBlameLine: 'Nobody here is being marked down for a miss. These messages are built to look right.',
+    // P5-5: after a critical miss the result has just said what it cost, so the line owns the
+    // points rather than denying them.
+    noBlameLineCritical: 'These messages are built to fool careful people, so a miss here says more about the attack than about you. The points only show where to look next time.',
     defendOnly: 'This round is defence only. Anything you did not read the right way is picked out below.',
     allRight: 'You read every one of these the right way. Nothing to pick over here.',
     // Nothing needs a card, but a real one was reported: "every one the right way" would sit
@@ -128,6 +131,21 @@ function reviewNeeded(answer, msg) {
     return false;
 }
 
+/**
+ * Whether the learner's verdict on an item fell short of full marks: a phish trusted or
+ * deleted, a real one deleted, a genuine caller complied with unchecked. A missed tick alone
+ * is not a wrong verdict.
+ */
+function wrongVerdict(answer, msg, profile) {
+    if (!isStr(answer?.verdict)) return false;
+    const phish = answer.isPhish === true || (isObj(msg?.truth) && msg.truth.isPhish === true);
+    try {
+        return verdictPoints(profile, phish, answer.verdict, kindOf(msg)) < FULL_VERDICT_POINTS;
+    } catch (e) {
+        return false;
+    }
+}
+
 function buildCard(answer, msg) {
     const truth = isObj(msg?.truth) ? msg.truth : { isPhish: false, flags: [] };
     const phish = truth.isPhish === true;
@@ -160,9 +178,10 @@ function buildCard(answer, msg) {
         card.appendChild(ul);
     }
     if (!phish && isObj(truth.whyFine)) {
-        const lines = Object.entries(truth.whyFine)
+        let lines = Object.entries(truth.whyFine)
             .filter(([k, v]) => k !== 'default' && typeof v === 'string' && v).map(([, v]) => v);
         if (typeof truth.whyFine.default === 'string' && truth.whyFine.default) lines.push(truth.whyFine.default);
+        lines = dedupeSentences(lines); // P5-9: each sentence once
         if (lines.length) {
             const ul = el('ul', 'aw-why-fine');
             ul.setAttribute('aria-label', 'Why this one was fine');
@@ -254,7 +273,7 @@ function buildGenuine(set, answers, reviewedIds, profile) {
     }
     if (text.cost) box.appendChild(el('p', 'aw-genuine-cost', text.cost));
     if (text.why) box.appendChild(el('p', 'aw-genuine-why', text.why));
-    return { node: box, trusted: fb.trusted.length, flagged: fb.flagged.length };
+    return { node: box, trusted: fb.trusted.length, checked: (fb.checked || []).length, flagged: fb.flagged.length };
 }
 
 function textBox(tag, className, label, block) {
@@ -355,9 +374,16 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
         root.appendChild(box);
     }
     // The no-blame line answers a miss; after a round with nothing missed it read oddly
-    // ("A miss here is no reflection on you" under 100%: N-17), so it shows only with a card.
-    const noBlame = reviewed.length > 0 || !answers.length;
-    if (noBlame) root.appendChild(el('p', 'aw-no-blame', str(strings, 'noBlameLine')));
+    // ("A miss here is no reflection on you" under 100%: N-17), and after a missed tick alone it
+    // read oddly at 98% (P5-15), so it shows only after a wrong verdict. After a critical miss
+    // the result has just said what it cost, so a line that owns the points stands in (P5-5).
+    const profile = set?.scoringProfile === 'analyst' ? 'analyst' : 'awareness';
+    const noBlame = !answers.length || answers.some((a) => wrongVerdict(a, messageFor(set, a.id), profile));
+    const critical = Array.isArray(result?.criticalMisses) && result.criticalMisses.length > 0;
+    if (noBlame) {
+        root.appendChild(el('p', `aw-no-blame${critical ? ' aw-no-blame-critical' : ''}`,
+            str(strings, critical ? 'noBlameLineCritical' : 'noBlameLine')));
+    }
 
     const finish = el('button', 'aw-button aw-finish', DEFAULTS.finish);
     finish.type = 'button';
@@ -371,7 +397,7 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
             return { items: reviewed.length, mondayCard: true, noBlame, conceptPanel: !!concept, voicePanel: !!voice,
                 reportRoute: route ? (route.configured === true ? 'configured' : 'generic') : null,
                 ruleOfThumb: !!rule, teamProtected: teamText ? team : null,
-                genuine: genuine ? { trusted: genuine.trusted, flagged: genuine.flagged } : null };
+                genuine: genuine ? { trusted: genuine.trusted, checked: genuine.checked, flagged: genuine.flagged } : null };
         }
     };
 }

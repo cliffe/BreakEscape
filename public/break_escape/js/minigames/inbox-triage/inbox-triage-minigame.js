@@ -42,7 +42,7 @@
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { MailReader } from '../mail-client/mail-reader.js';
 import { scoreTriage, weakestFactor, bandFor, verdictPoints, FULL_VERDICT_POINTS, CRITICAL_PENALTY, criticalWhat,
-    genuineFeedback, genuineFeedbackText } from './triage-scoring.js';
+    genuineFeedback, genuineFeedbackText, dedupeSentences } from './triage-scoring.js';
 import { buildTriageMessages } from './triage-messages.js';
 import { buildHeaderPanel } from './header-panel.js';
 import {
@@ -59,6 +59,8 @@ const NARROW_QUERY = '(max-width: 767px)';
 const STEPS = [['brief', '1 Brief'], ['sort', '2 Sort'], ['review', '3 Review'], ['result', '4 Result']];
 const STAGE_LABEL = { pre: 'Pre-assessment', post: 'Follow-up assessment', training: 'Training round', mission: 'Inbox check' };
 const REPORT_THANKS = 'Thanks for reporting. That warns everyone else.';
+// P5-6: a report on a real item warns nobody of a phish, so it gets a neutral thank-you.
+const REPORT_THANKS_REAL = 'Thanks for reporting. A colleague will check it and let it through.';
 const VERDICT_LABEL = { trust: 'Trust', report: 'Report', delete: 'Delete', verify: 'Verify' };
 const VERDICT_PAST = { trust: 'Trusted', report: 'Reported', delete: 'Deleted', verify: 'Verified' };
 
@@ -510,7 +512,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 // The positive beat for a report: it plays once, on the render right after
                 // the report was locked; later renders show the line without the animation.
                 const win = this._reportWin === rec.id;
-                const thanks = el('p', `aw-report-thanks${win ? ' aw-report-win' : ''}`, REPORT_THANKS);
+                const thanks = el('p', `aw-report-thanks${win ? ' aw-report-win' : ''}`,
+                    rec.truth?.isPhish === true ? REPORT_THANKS : REPORT_THANKS_REAL);
                 if (win) {
                     lock.classList.add('aw-report-win');
                     this._reportWin = null;
@@ -780,7 +783,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 .map(([, v]) => v);
             if (typeof why.default === 'string' && why.default) lines.push(why.default);
             // Each sentence once: not again after a "Not a flag here" line, and not twice in the list.
-            lines = [...new Set(lines.map((l) => l.trim()))].filter((l) => !shownWhy.has(l));
+            // P5-9: and no sentence twice across lines (a reworded subject still counts).
+            lines = dedupeSentences(lines, [...shownWhy]);
             if (lines.length) {
                 const ul = el('ul', 'tri-why-fine');
                 ul.setAttribute('aria-label', 'Why this one was fine');

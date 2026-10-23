@@ -349,6 +349,25 @@ module ValidateSocial
       a.is_a?(String) && !a.empty? ? a : nil
     end
 
+    # P5-8: social.templates[id].flags names the channel tells the wording carries (the
+    # flip, the replayed defend card and the composer's meter read them).
+    TEMPLATE_FLAG_IDS = %w[lookalike_domain changed_bank_details unexpected_qr unrequested_mfa_push
+                           smish_shortlink_urgency vish_callback_pressure secrecy_or_bypass
+                           borrowed_authority reply_to_differs reply_stop_trick padlock_myth
+                           enable_content_prompt].freeze
+
+    def self.template_flags(name, tpl, where)
+      return [] unless tpl.key?('flags')
+
+      fl = tpl['flags']
+      unless fl.is_a?(Array) && fl.all? { |f| f.is_a?(String) && !f.empty? }
+        return [err("#{where}: template '#{name}'.flags must be an array of channel tell ids")]
+      end
+      fl.reject { |f| TEMPLATE_FLAG_IDS.include?(f) }.map do |f|
+        err("#{where}: template '#{name}'.flags '#{f}' is not a channel tell (#{TEMPLATE_FLAG_IDS.join(', ')}); the meter and flip would have no sentence for it")
+      end
+    end
+
     def self.target_templates(t, tpls, where)
       issues = []
       sets = t['templateSets']
@@ -373,6 +392,7 @@ module ValidateSocial
           end
           issues << err("#{where}.templateSets.#{part} offers template '#{name}', whose part is '#{tpl['part']}'") if tpl['part'] != part
           issues.concat(template_slots(name, tpl, where))
+          issues.concat(template_flags(name, tpl, where))
           list(tpl['slots']).each do |s|
             next unless s.is_a?(Hash) && s['id'].is_a?(String)
 
@@ -441,6 +461,26 @@ module ValidateSocial
             req.each { |f| issues << err("#{where}.subjects[#{i}].requires '#{f}' is not a social.intelFacts id, so the subject would never be offered") unless intel_facts.key?(f) }
           end
         end
+      end
+      # P5-7: subjects[].requiresTemplate binds a subject to the templates it fits (the
+      # composer offers it only while one of them is chosen, and picks it when one is chosen).
+      set_ids = (t['templateSets'].is_a?(Hash) ? t['templateSets'].values : []).select { |v| v.is_a?(Array) }.flatten
+      subs.each_with_index do |s, i|
+        next unless s.is_a?(Hash) && s.key?('requiresTemplate')
+        rt = s['requiresTemplate']
+        ids = rt.is_a?(String) ? [rt] : rt
+        if !ids.is_a?(Array) || ids.empty? || ids.any? { |x| blank?(x) || !x.is_a?(String) }
+          issues << err("#{where}.subjects[#{i}].requiresTemplate must be a template id or a non-empty array of them")
+          next
+        end
+        ids.each do |x|
+          next if set_ids.include?(x)
+          issues << err("#{where}.subjects[#{i}].requiresTemplate '#{x}' is not in this target's templateSets, so the subject would never be offered")
+        end
+      end
+      bound = subs.select { |s| s.is_a?(Hash) && s.key?('requiresTemplate') }
+      if !subs.empty? && bound.length == subs.length
+        issues << warn_("#{where}.subjects all carry 'requiresTemplate'; before a pretext is chosen (or with an unbound one) the composer falls back to offering every one")
       end
       if !subs.empty? && subs.all? { |s| s.is_a?(Hash) && s.key?('requires') }
         issues << warn_("#{where}.subjects all carry 'requires'; with nothing found the composer falls back to offering every one")

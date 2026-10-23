@@ -378,3 +378,19 @@ test('P4-11: with the Brand row failing, a passing Page row is neutral, not a gr
     assert.doesNotMatch(row.textContent, /✓/);
     assert.ok(s.container.querySelector('.lpb-check-item[data-factor="brand"]').classList.contains('is-fail'));
 });
+
+test('P5-14: every giveaway the count names has a row; the two every fake carries are neutral "Always" rows', () => {
+    setGlobals();
+    const s = open();
+    buildAttempt(s, ATTEMPT1);
+    pickChip(s, 'score');
+    const tells = s.scored.tells.map((t) => t.id);
+    for (const id of ['formOrigin', 'hoverMismatch']) {
+        if (!tells.includes(id)) continue;
+        const row = s.container.querySelector(`.lpb-check-item[data-factor="${id}"]`);
+        assert.ok(row, `a row for ${id}`);
+        assert.ok(row.classList.contains('is-neutral'));
+        assert.equal(row.querySelector('.lpb-check-word').textContent, 'Always');
+    }
+    assert.ok(tells.includes('formOrigin') || tells.includes('hoverMismatch'), tells.join(','));
+});

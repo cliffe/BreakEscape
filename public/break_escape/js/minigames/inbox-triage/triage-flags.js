@@ -9,25 +9,12 @@
 // Red-flag resolution (00 section 2): a per-message `factorStrings[id].redFlag`
 // if the author set one, otherwise the canonical string. Never null, never empty.
 
-import { CANONICAL, FACTOR_ORDER } from '../../systems/phish-rules.js';
+import { CANONICAL, FACTOR_ORDER, CHANNEL_TELLS } from '../../systems/phish-rules.js';
 
 export { FACTOR_ORDER };
 
-/** 00 section 2 channel tells: id -> canonical tell string. */
-export const CHANNEL_TELLS = Object.freeze({
-    lookalike_domain: 'Link or sender domain is a look-alike of the real one',
-    changed_bank_details: 'Payment or bank details changed at the last minute',
-    unexpected_qr: 'A QR code where you\'d expect a normal link',
-    unrequested_mfa_push: 'An MFA prompt you didn\'t trigger',
-    smish_shortlink_urgency: 'Unsolicited SMS with a shortened link and pressure',
-    vish_callback_pressure: 'Caller discourages you from calling back the official number',
-    secrecy_or_bypass: 'Asked to keep it secret or to skip the normal process',
-    borrowed_authority: 'Someone senior is invoked to skip a check',
-    reply_to_differs: 'The reply-to address differs from the From address',
-    reply_stop_trick: '\'Reply STOP\' to opt out, which confirms your number is live',
-    padlock_myth: 'A padlock shows the connection is private to the address owner, not that the site is safe',
-    enable_content_prompt: 'A document asks you to enable editing or content before it will show anything'
-});
+/** 00 section 2 channel tells: id -> canonical tell string (defined beside CANONICAL in phish-rules.js). */
+export { CHANNEL_TELLS };
 
 export const NONE_ID = 'none';
 export const NONE_LABEL = 'Nothing looks wrong';
@@ -118,15 +105,31 @@ const KIND_TELL_EXCLUDE = Object.freeze({
         'secrecy_or_bypass', 'borrowed_authority', 'changed_bank_details']
 });
 
-// An email can put you off ringing back ("reply here rather than calling"), but only one that
-// talks about calling at all. On an email that never mentions a call or a number the tick could
-// never be right (P4-6: it was offered on a printer-ticket email). The test reads the message's
-// own words, real or fake alike, so the tick's presence never hints at the verdict.
-const CALL_WORDS = /\b(call(?:s|ed|ing)?|ring(?:s|ing)?|rang|phone(?:d|s)?|mobile|landline|number|voicemail|extension)\b/i;
-function mentionsCalling(message) {
-    const text = [message?.subject, message?.body, message?.preview]
+// An email can put you off ringing back ("reply here rather than calling"). P4-6 offered the tick
+// only on an email that talks about calling at all; P5-10 narrows it to one whose words actually
+// discourage a call or steer you to reply (EMAIL_TELL_NEEDS below).
+
+// P5-10: emails still offered 9 to 11 ticks, some of which the message could never carry.
+// Each tell below is offered on an email only when the email's own words (or attachments)
+// could carry it. The tests read every message alike, real or fake, so a tick's presence never
+// hints at the verdict, and a tell the message is scored on is always kept (chipIdsFor).
+//   vish_callback_pressure  only an email that puts you off ringing or steers you to reply;
+//   changed_bank_details    only an email about money or bank details;
+//   unexpected_qr           only an email that mentions a QR code or scanning;
+//   enable_content_prompt   only an email with an attachment, or that talks about enabling.
+const CALL_DISCOURAGE = /\b(?:(?:don'?t|do not|no need to|please don'?t|can'?t|cannot|won'?t be able to|not able to|unable to)\s+(?:\w+\s+){0,2}(?:call|ring|phone|reach)|(?:rather than|instead of)\s+(?:a\s+)?(?:call(?:ing)?|ring(?:ing)?|phon(?:e|ing))|reply (?:here|to this|by email)|just (?:reply|email)|(?:not|no) (?:a )?callback|in (?:a )?meetings?|on (?:a|the) (?:plane|flight|train)|about to board|no signal|unreachable)\b/i;
+const MONEY_WORDS = /\b(bank|sort code|iban|account (?:number|details)|payee|payment|pay|paid|invoice|transfer|remit|salary|payroll|refund|card|supplier details)\b/i;
+const QR_WORDS = /\b(qr|scan(?:ning)?)\b/i;
+const ENABLE_WORDS = /\b(enable|macros?|editing|content)\b/i;
+const EMAIL_TELL_NEEDS = Object.freeze({
+    vish_callback_pressure: (m) => CALL_DISCOURAGE.test(messageText(m)),
+    changed_bank_details: (m) => MONEY_WORDS.test(messageText(m)),
+    unexpected_qr: (m) => QR_WORDS.test(messageText(m)),
+    enable_content_prompt: (m) => (Array.isArray(m?.attachments) && m.attachments.length > 0) || ENABLE_WORDS.test(messageText(m))
+});
+function messageText(message) {
+    return [message?.subject, message?.body, message?.preview]
         .map((v) => (typeof v === 'string' ? v : (Array.isArray(v) ? v.join(' ') : ''))).join(' ');
-    return CALL_WORDS.test(text);
 }
 
 /** Header-panel tells: only readable once the header details are open (P3 F7). */
@@ -163,8 +166,8 @@ export function chipIdsFor(set, kind = 'email', message = null, opts = {}) {
     if (exclude && (message || !email)) {
         ids = ids.filter((id) => !exclude.includes(id) || keep.has(id));
     }
-    if (email && message && !keep.has('vish_callback_pressure') && !mentionsCalling(message)) {
-        ids = ids.filter((id) => id !== 'vish_callback_pressure');
+    if (email && message) {
+        ids = ids.filter((id) => keep.has(id) || !EMAIL_TELL_NEEDS[id] || EMAIL_TELL_NEEDS[id](message));
     }
     if (opts.hideHeaderTells) ids = ids.filter((id) => !HEADER_TELLS.includes(id));
     return ids;

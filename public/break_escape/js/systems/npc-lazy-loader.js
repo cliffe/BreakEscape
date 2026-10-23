@@ -3,7 +3,9 @@
  * Loads NPC Ink stories via Rails API endpoint
  * Uses in-memory caching only (no persistent storage between sessions)
  */
-import { ensureCharacterTextures, spriteKeysForNPCs } from './character-textures.js';
+import { ensureCharacterTextures, spriteKeysForNPCs, collectCharacterSprites } from './character-textures.js';
+import { avoidPlayerLookalike } from '../utils/npc-lookalike.js';
+import { chosenPlayerSprite } from '../utils/player-avatar.js';
 import { headlessNpcRecords } from './scenario-npc-records.js';
 
 export default class NPCLazyLoader {
@@ -75,6 +77,12 @@ export default class NPCLazyLoader {
     if (storyPromises.length > 0) {
       console.log(`📖 Loading ${storyPromises.length} Ink stories for room ${roomId}`);
     }
+
+    // P5-4: an NPC wearing the player's chosen avatar swaps to a free stock sprite (and its
+    // stock portrait), so the learner and the host are never twins. The player's choice stands.
+    const swapped = avoidPlayerLookalike(roomData.npcs, chosenPlayerSprite(),
+      collectCharacterSprites(window.gameScenario || {}));
+    if (swapped.length) console.log(`🎭 Swapped look-alike NPC sprite(s) away from the player's avatar: ${swapped.join(', ')}`);
 
     // Character atlases are preloaded from the scenario's characterSprites list.
     // This loads any the list missed, alongside the stories, before sprites are made.

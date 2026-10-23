@@ -20,9 +20,14 @@ const read = (p) => readFileSync(join(sys, p), 'utf8');
 
 writeFileSync(join(dir, 'scenario-npc-records.mjs'), read('scenario-npc-records.js'));
 writeFileSync(join(dir, 'character-textures.mjs'),
-    'export const ensureCharacterTextures = async () => {};\nexport const spriteKeysForNPCs = () => [];\n');
+    'export const ensureCharacterTextures = async () => {};\nexport const spriteKeysForNPCs = () => [];\n'
+    + 'export const collectCharacterSprites = () => [];\n');
+writeFileSync(join(dir, 'npc-lookalike.mjs'), read('../utils/npc-lookalike.js'));
+writeFileSync(join(dir, 'player-avatar.mjs'), read('../utils/player-avatar.js'));
 writeFileSync(join(dir, 'npc-lazy-loader.mjs'), read('npc-lazy-loader.js')
     .replace("'./character-textures.js'", "'./character-textures.mjs'")
+    .replace("'../utils/npc-lookalike.js'", "'./npc-lookalike.mjs'")
+    .replace("'../utils/player-avatar.js'", "'./player-avatar.mjs'")
     .replace("'./scenario-npc-records.js'", "'./scenario-npc-records.mjs'"));
 writeFileSync(join(dir, 'npc-los.mjs'), read('npc-los.js'));
 writeFileSync(join(dir, 'phone-chat-speaker.mjs'), read('../minigames/phone-chat/phone-chat-speaker.js'));

@@ -44,6 +44,26 @@ export const PRE_SEND_GATE_LINE = "A blank needs evidence you haven't found yet"
 export const ATTACHMENT_STATES = Object.freeze(['pass', 'missing', 'wrong-type']);
 
 // 00 section 2: one canonical red-flag, pass and fail string per factor.
+/**
+ * 00 section 2 channel tells: id -> canonical tell string. Kept here beside CANONICAL so the
+ * composer's meter can name a template's own tells (templates[].flags, P5-8); triage-flags.js
+ * re-exports it.
+ */
+export const CHANNEL_TELLS = Object.freeze({
+    lookalike_domain: 'Link or sender domain is a look-alike of the real one',
+    changed_bank_details: 'Payment or bank details changed at the last minute',
+    unexpected_qr: 'A QR code where you\'d expect a normal link',
+    unrequested_mfa_push: 'An MFA prompt you didn\'t trigger',
+    smish_shortlink_urgency: 'Unsolicited SMS with a shortened link and pressure',
+    vish_callback_pressure: 'Caller discourages you from calling back the official number',
+    secrecy_or_bypass: 'Asked to keep it secret or to skip the normal process',
+    borrowed_authority: 'Someone senior is invoked to skip a check',
+    reply_to_differs: 'The reply-to address differs from the From address',
+    reply_stop_trick: '\'Reply STOP\' to opt out, which confirms your number is live',
+    padlock_myth: 'A padlock shows the connection is private to the address owner, not that the site is safe',
+    enable_content_prompt: 'A document asks you to enable editing or content before it will show anything'
+});
+
 export const CANONICAL = Object.freeze({
   open: Object.freeze({
     pass: '✓ They would open it',
@@ -281,6 +301,24 @@ function urgencyOf(ctx, message) {
   return top;
 }
 
+/** The red-flag sentence for a template tell: the target's factorStrings override, else the channel tell's. */
+export function templateFlagLine(id, target) {
+  const fs = target && target.factorStrings && target.factorStrings[id];
+  if (fs && isStr(fs.redFlag)) return fs.redFlag;
+  return CHANNEL_TELLS[id] || id;
+}
+
+/** The tells the chosen templates' own wording carries (`social.templates[id].flags`), deduplicated, in part order. */
+export function templateFlagsOf(ctx, message) {
+  const out = [];
+  const tpls = (message && message.templates) || {};
+  for (const part of ['from', 'greeting', 'pretext', 'ask']) {
+    const t = template(ctx, tpls[part]);
+    for (const f of arr(t && t.flags)) if (isStr(f) && !out.includes(f)) out.push(f);
+  }
+  return out;
+}
+
 function subjectTopicOf(target, message) {
   const s = arr(target.subjects).find((x) => x && x.id === message.subject);
   return s && isStr(s.topic) ? s.topic : null;
@@ -457,6 +495,12 @@ export function evaluateMessage(target, message, ctx) {
   if (isStr(message.link) && info && isStr(info.domain) && target.expectedLink &&
       info.domain !== target.expectedLink.realDomain) tells.push('linkCredible');
   if (urgencyOver) tells.push('urgencyCalibrated');
+  // P5-8 / N-10: a template can name the channel tells its own wording carries (an ask that
+  // says "keep it between us" is secrecy_or_bypass; one that leans on the managing partner is
+  // borrowed_authority). They join the tells (the flip and the replayed defend card read them)
+  // and the meter lists them, so the meter names what the flip and the debrief name.
+  const templateFlags = templateFlagsOf(ctx, message);
+  for (const f of templateFlags) if (!tells.includes(f)) tells.push(f);
 
   const hints = arr(target.hints);
   const prior = Number.isInteger(ctx && ctx.priorFailures) && ctx.priorFailures > 0 ? ctx.priorFailures : 0;
@@ -503,6 +547,7 @@ export function evaluateMessage(target, message, ctx) {
     hint,
     advisory: { urgency: urgencyRead || 'low', senderAuth: auth.read },
     tells,
+    templateFlags,
     firstFail: failedRequired.length ? failedRequired[0].id : '',
     failCount: failedRequired.length,
     attachment: attachmentState,

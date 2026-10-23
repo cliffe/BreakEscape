@@ -76,6 +76,12 @@ const GIVEAWAY_WORDS = Object.freeze({
     formOrigin: 'where the form sends what you type', hoverMismatch: 'where the link really goes'
 });
 
+// P5-14: the two giveaways every fake page carries, as neutral score rows (no factor scores them).
+const ALWAYS_TELL_ROWS = Object.freeze({
+    formOrigin: 'Form: sends what you type to an address that is not the real one. Every fake page does.',
+    hoverMismatch: 'Link: hover over it and the real destination shows. Every fake link does.'
+});
+
 /** "This page has N giveaways: a, b and c." — the count and every giveaway it counts. */
 export function giveawayLine(tells) {
     const list = Array.isArray(tells) ? tells : [];
@@ -695,6 +701,16 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
             list.appendChild(h('li', { class: `lpb-check-item is-${neutral ? 'neutral' : f.result}`, 'data-factor': f.id },
                 h('span', { class: 'lpb-check-word', text: neutral ? 'Fits' : (RESULT_WORD[f.result] || f.result) }),
                 h('span', { class: 'lpb-check-line lpb-readable', text: neutral ? String(f.line).replace(/^✓\s*/, '') : f.line })));
+        }
+        // P5-14: the count also names where the form sends and where the link goes, which no
+        // factor scores. Give each a neutral row, so every giveaway counted has a line.
+        const rowIds = new Set(s.factors.map((f) => f.id));
+        for (const t of Array.isArray(s.tells) ? s.tells : []) {
+            if (!t || !ALWAYS_TELL_ROWS[t.id] || rowIds.has(t.id)) continue;
+            rowIds.add(t.id);
+            list.appendChild(h('li', { class: 'lpb-check-item is-neutral lpb-check-always', 'data-factor': t.id },
+                h('span', { class: 'lpb-check-word', text: 'Always' }),
+                h('span', { class: 'lpb-check-line lpb-readable', text: ALWAYS_TELL_ROWS[t.id] })));
         }
         panel.appendChild(list);
         if (this._stale()) panel.appendChild(h('p', { class: 'lpb-stale-note', text: 'Score again — a choice changed.' }));

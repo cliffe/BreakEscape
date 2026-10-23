@@ -1025,6 +1025,7 @@
         "text": {"type": "string"},
         "slots": {"type": "array", "items": {"$ref": "#/definitions/socialTemplateSlot"}, "maxItems": 2},
         "urgency": {"type": "string", "enum": ["low", "medium", "high"]},
+        "flags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true, "description": "P5-8: channel tells this wording carries (e.g. secrecy_or_bypass, borrowed_authority). Added to the send's tells, so the flip, the replayed defend card and the composer's red-flag meter all name them"},
         "implies": {
           "type": "array",
           "items": {
@@ -1058,7 +1059,8 @@
             "type": "object",
             "required": ["id", "text"],
             "properties": {"id": {"type": "string"}, "text": {"type": "string"}, "topic": {"type": "string"},
-              "requires": {"type": "array", "items": {"type": "string"}, "description": "social.intelFacts ids that must all be held before this subject is offered (P3 N15)"}},
+              "requires": {"type": "array", "items": {"type": "string"}, "description": "social.intelFacts ids that must all be held before this subject is offered (P3 N15)"},
+              "requiresTemplate": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}, "minItems": 1}], "description": "P5-7: social.templates ids (usually pretexts) this subject fits. It is offered only while one of them is chosen, and choosing one makes it the subject; unbound subjects stay offered for any choice"}},
             "patternProperties": {"^_": {}},
             "additionalProperties": false
           }
@@ -1869,7 +1871,8 @@
               "patternProperties": {"^_": {}}
             },
             "flipNoSend": {"type": "string"},
-            "noBlameLine": {"type": "string"},
+            "noBlameLine": {"type": "string", "description": "The debrief's no-blame line. It shows only after a wrong verdict (a phish not caught, a real one deleted or complied with), never after missed ticks alone (P5-5/P5-15); after a critical miss noBlameLineCritical stands in for it"},
+            "noBlameLineCritical": {"type": "string", "description": "The no-blame line after a critical miss (the result has just said what it cost), so it must not claim nobody is marked down. Default: the engine's own line"},
             "mondayCard": {"type": "string"},
             "defendOnly": {"type": "string"},
             "defendIntro": {"type": "string", "description": "Replaces the runner's fixed defend-stage intro, which talks about an inbox (wrong for a page or call set)"},
