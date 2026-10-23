@@ -5,6 +5,7 @@
   "secgen_scenario": "break_escape/safetynet/m10_full_disclosure.xml",
   "_vm_wire": "VM-WIRE: secgen_scenario points at the SecGen draft (three targets — bunker_monitor, release_host, core_host — plus the Kali attack_vm). The box is not built yet; flag values are generated at build (F9: confirm the three hostnames, that each station takes the right flag, and that root login over SSH is refused on the release and core hosts). lab_sheet_url is added with the lab sheet, the last step.",
   "collection": "season_1",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m10-full-disclosure/",
   "ui_theme": "spy",
   "id": "m10_full_disclosure",
   "title": "Mission 10: Full Disclosure",
