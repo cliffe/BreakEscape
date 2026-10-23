@@ -1121,6 +1121,11 @@ export class ObjectivesManager {
         // rebuild them from the saved globals (F22) unless the aim brings its own.
         if (replay && !opts.credits?.length) {
           Object.assign(opts, window.endingReplayOptions?.(window.gameScenario) || {});
+          // ...and play the ending's own track with them. The credits wait for it
+          // (creditsAfter), since a fresh page may hold audio until the first click.
+          if (opts.credits?.length) {
+            Object.assign(opts, window.startEndingReplayMusic?.(window.gameScenario) || {});
+          }
         }
         window.BondVisualiser.open(opts);
       } else {

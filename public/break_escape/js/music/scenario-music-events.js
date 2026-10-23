@@ -20,6 +20,7 @@
 
 import MusicController from './music-controller.js';
 import { buildEndSequence, replayEndingEntry } from './closing-sequence.js';
+import { playEndingMusic, whenEndingAudible } from './ending-audio.js';
 
 const TAG = '[ScenarioMusic]';
 
@@ -72,6 +73,37 @@ export function endingReplayOptions(scenario, globals) {
 }
 if (typeof window !== 'undefined') window.endingReplayOptions = endingReplayOptions;
 
+// Once an ending's credits are up, the ending owns the music: no later event (a
+// game_loaded mood on reload, a global set after the credits) plays under or after it.
+let _endingOwnsMusic = false;
+export function endingOwnsMusic() { return _endingOwnsMusic; }
+export function _resetEndingMusicLock() { _endingOwnsMusic = false; }
+
+/**
+ * Reload of a concluded game: play the track the live ending played with these
+ * credits (the same entry endingReplayOptions rebuilds them from). On a fresh page
+ * the browser may hold audio until the first click or key; the returned options
+ * make the visualiser hold the credits until the track sounds.
+ * @param {object} scenario - window.gameScenario
+ * @param {object} [globals]
+ * @param {object} [deps] - passed to playEndingMusic (tests)
+ * @returns {{creditsAfter: Promise, autoStop?: boolean}|null}
+ */
+export function startEndingReplayMusic(scenario, globals, deps) {
+    const found = replayEndingEntry(
+        scenario?.music?.events,
+        globals || window.gameState?.globalVariables || {},
+        (cond, data) => evaluateCondition(cond, data)
+    );
+    if (!found) return null;
+    _endingOwnsMusic = true;
+    const { ready } = playEndingMusic(found.entry, { mc: MusicController, ...deps });
+    const opts = { creditsAfter: ready };
+    if (found.entry.autoStop) opts.autoStop = true;
+    return opts;
+}
+if (typeof window !== 'undefined') window.startEndingReplayMusic = startEndingReplayMusic;
+
 /**
  * Check whether any still-alive hostile NPC exists.
  * Returns true if at least one NPC is hostile AND not KO'd.
@@ -116,6 +148,12 @@ function anyHostilesAlive() {
 function switchIfConditionMet(entry, data) {
     if (!evaluateCondition(entry.condition, data)) return;
 
+    // The credits are up (or were, on a concluded game): leave the ending's music alone.
+    if (_endingOwnsMusic) {
+        console.log(`${TAG} Trigger '${entry.trigger}' ignored: the ending owns the music`);
+        return;
+    }
+
     const fade = entry.fade !== false; // default true
 
     // An entry carrying credits owns the visualiser itself, gated on the server
@@ -130,6 +168,12 @@ function switchIfConditionMet(entry, data) {
     if (ownsVisualiser && window.BondVisualiser?.setAutoOpenSuppressed) {
         window.BondVisualiser.setAutoOpenSuppressed(true);
     }
+
+    // An ending can fire before the player has clicked or pressed a key on this page
+    // (m10's catch-up on load), while the browser still holds audio: the credits then
+    // wait for the first gesture and the track, rather than scrolling past unheard.
+    // Watching starts before the track is asked for, so its trackchange is seen.
+    const audible = hasEnding ? whenEndingAudible(entry.track || entry.playlist, { mc: MusicController }) : null;
 
     // ── Music playback ────────────────────────────────────────────────────────
     if (entry.track && entry.playlist) {
@@ -172,6 +216,7 @@ function switchIfConditionMet(entry, data) {
             disableClose: !!entry.disableClose,
             headerText:   entry.headerText,             // optional, e.g. "MISSION FAILED // AUDIO INTEL"
             statusText:   entry.statusText,             // optional, e.g. "COMPROMISED"
+            creditsAfter: MusicController.context?.state === 'suspended' ? audible?.ready : undefined,
         });
 
         concludeMission().then((result) => {
@@ -180,6 +225,7 @@ function switchIfConditionMet(entry, data) {
             window.BondVisualiser?.setAutoOpenSuppressed?.(false);
 
             if (result.concluded) {
+                _endingOwnsMusic = true;
                 openCredits();
                 return;
             }

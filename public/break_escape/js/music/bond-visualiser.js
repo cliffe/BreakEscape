@@ -22,6 +22,7 @@
  */
 
 import MusicController from './music-controller.js';
+import { silenceBackgroundForEnding, AUDIO_HOLD_TEXT } from './ending-audio.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay, nextCreditsHeader, creditsHeader, nextCreditsText, creditsStatus } from './credits-theme.js';
 import { cardHoldMs } from './closing-sequence.js';
@@ -1327,6 +1328,26 @@ function _startCredits(lines) {
     showNext();
 }
 
+let _creditsHoldToken = 0;  // a later open (or close) drops a held credits start
+
+/** One steady line on the credits layer, shown while the credits wait for the music. */
+function _showCreditsHold(text) {
+    const overlay = document.getElementById('bv-credits-overlay');
+    if (!overlay) return;
+    clearTimeout(_creditsHideTimer); _creditsHideTimer = null;
+    overlay.style.cssText = 'display:flex;position:fixed;inset:0;z-index:200000;background:transparent;' +
+        'pointer-events:none;align-items:center;justify-content:center;opacity:1;transition:opacity 0.6s ease;';
+    let label = overlay.querySelector('#bv-cr-label');
+    if (!label) {
+        label = document.createElement('div');
+        label.id = 'bv-cr-label';
+        overlay.appendChild(label);
+    }
+    label.style.cssText = `text-align:center;padding:0 10%;transition:opacity 0.4s ease;${STYLE_MAP['entry']}`;
+    label.textContent = text;
+    label.style.opacity = '1';
+}
+
 function _stopCredits() {
     _creditsActive = false;
     clearTimeout(_creditsTimerId);
@@ -1628,8 +1649,20 @@ function _open_overlay(opts = {}) {
 
     // Credits — can be set on initial open or injected into an already-open visualiser
     if (opts.credits?.length) {
+        // Credits mean the ending: only its music plays under them (ending-audio.js).
+        silenceBackgroundForEnding();
         _stopCredits(); // cancel any in-progress credits first
-        _startCredits(opts.credits);
+        const token = ++_creditsHoldToken;
+        if (opts.creditsAfter && typeof opts.creditsAfter.then === 'function') {
+            // Reload: the ending's track may be waiting for the first click or key
+            // (autoplay). Hold the credits until it sounds, so they cannot finish first.
+            _showCreditsHold(opts.holdText || AUDIO_HOLD_TEXT);
+            opts.creditsAfter.then(() => {
+                if (_open && token === _creditsHoldToken) _startCredits(opts.credits);
+            });
+        } else {
+            _startCredits(opts.credits);
+        }
     }
 
     // Record whether we should auto-close when the track ends
@@ -1663,6 +1696,7 @@ function _close_overlay() {
     if (_resizeHandler) { window.removeEventListener('resize', _resizeHandler); _resizeHandler = null; }
 
     // Stop any credits immediately (no fade — overlay is closing anyway)
+    _creditsHoldToken++;
     _creditsActive = false;
     clearTimeout(_creditsTimerId);  _creditsTimerId  = null;
     clearTimeout(_creditsHideTimer); _creditsHideTimer = null;
