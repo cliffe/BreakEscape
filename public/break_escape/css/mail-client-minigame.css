@@ -10,7 +10,9 @@
     gap: 8px;
     width: 100%;
     max-width: 960px;
-    height: 70vh;
+    /* Fill the short viewports too (lab R15 N2: 70vh left a 490 px window and a 200 px empty
+       band at 900x700, and the Send bar covered the form rows). 80 px leaves the frame margin. */
+    height: min(640px, calc(100vh - 80px));
     max-height: 640px;
     margin: 0 auto;
     padding: 16px;
@@ -283,6 +285,11 @@
     box-sizing: border-box;
     border: 2px solid var(--ui-line, #4c5b80);
 }
+/* The composer scrolls; its rows keep their height instead of shrinking into each other
+   when the form is taller than the window (lab R15 N2: the blank's gate line and pointer
+   overlapped at 900x700). */
+.mail-composer > *,
+.mail-blank-field > * { flex-shrink: 0; }
 .mail-compose-title { margin: 0; font-family: var(--ui-heading-font, 'GNF', monospace); font-size: 16px; }
 .mail-compose-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
 .mail-compose-label {
@@ -309,10 +316,15 @@
     border: 1px solid var(--ui-line, #4c5b80);
 }
 .mail-compose-blanks { display: flex; flex-wrap: wrap; gap: 8px; margin-left: 94px; }
-.mail-blank-field { display: flex; flex-direction: column; gap: 2px; }
-.mail-blank { font-family: var(--se-font-readable); font-size: 15px; min-height: 44px; }
+/* line-height set here: dusting.css has a global [data-slot] { line-height: 0 } that reached
+   these fields and stacked the gate line and the Stuck? pointer on one line (R15 N2/N5). */
+.mail-blank-field { display: flex; flex-direction: column; gap: 2px; line-height: 1.3; }
+.mail-blank { font-family: var(--se-font-readable); font-size: 15px; min-height: 44px; line-height: 1.3; }
 .mail-blank[data-empty="true"] { opacity: 0.7; }
 .mail-blank-gate { margin: 0; font-family: var(--se-font-readable); font-size: 13px; color: var(--ui-warn, #e6b04d); }
+.mail-blank-stuck { max-width: 280px; font-family: var(--se-font-readable); font-size: 13px; color: var(--ui-text-dim, #a8b2c8); }
+.mail-blank-stuck-summary { cursor: pointer; text-decoration: underline; }
+.mail-blank-stuck-text { display: block; margin-top: 2px; color: var(--ui-text, #eef1f8); }
 /* Keep Send, Back and the gate line in view when the form is taller than the
    frame, so they are never clipped below the fold with no cue (A7). */
 .mail-compose-send-bar {
@@ -324,7 +336,12 @@
     position: sticky;
     bottom: -16px;
     padding: 8px 0 0;
-    background: linear-gradient(to bottom, transparent, var(--ui-surface, rgba(24, 30, 48, 1)) 8px);
+    /* The surface token is slightly translucent, so a single layer let the rows scrolling
+       under the bar show through it (R15 N2). Two layers make it opaque in every skin. */
+    background:
+        linear-gradient(to bottom, transparent, var(--ui-surface, rgba(24, 30, 48, 1)) 8px),
+        linear-gradient(to bottom, transparent 8px, var(--ui-surface, rgba(24, 30, 48, 1)) 8px);
+    z-index: 1;
 }
 .mail-compose-gate { margin: 0; font-family: var(--se-font-readable); font-size: 14px; color: var(--ui-warn, #e6b04d); }
 .mail-compose-send[disabled] { opacity: 0.5; cursor: not-allowed; }

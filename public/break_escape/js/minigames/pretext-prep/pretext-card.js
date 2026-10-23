@@ -250,12 +250,13 @@ export function callLaunch(spec, npc, npcId, blanks) {
     return { scene, params };
 }
 
-// No tag for a stale value: "an older detail" on the option itself marked the decoy as the
-// trap, so only a curious student ever picked it (lab R14 m1). The board and the held-facts
-// list still say where an old fact came from; the student has to read them.
-const KIND_TEXT = { distinctive: 'a specific detail' };
+// No kind tag on any option. "an older detail" marked the stale decoy as the trap (lab R14 m1),
+// and "a specific detail" then marked every right answer, since only the true facts are
+// distinctive (lab R15 N4: Xero and the plumbing J. Baker carried no tag). The kind still
+// drives the judge's scoring; the student has to tell the options apart from the board.
+const KIND_TEXT = {};
 
-/** Plain words for a non-generic kind, matching the mail picker. */
+/** Plain words for an option's kind. Empty for every kind, so options carry no tag. */
 export function kindText(kind) {
     return KIND_TEXT[kind] || '';
 }

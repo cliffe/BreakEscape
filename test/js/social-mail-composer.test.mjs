@@ -153,6 +153,29 @@ test('with no evidence held, Send is disabled and the neutral line shows, naming
     assert.equal(host.querySelector('.mail-compose-send').disabled, true);
 });
 
+test('an empty blank shows the slot\'s "Stuck?" pointer when the template gives one, and none otherwise (lab R15 N5)', () => {
+    const contacts = [{ id: 'pierce', name: 'Melanie Pierce', role: 'Finance', addresses: ['m.pierce@ledgerwell.example'], targetId: 'pierce' }];
+    let { composer, host } = makeComposer({}, { contacts });
+    composer.chooseTemplate('greeting', 'greet_named');
+    assert.equal(host.querySelector('.mail-blank-field[data-slot="name"] .mail-blank-stuck'), null, 'no pointer without slot.stuck');
+    const fx = fixture();
+    const tpl = fx.templates.greet_named;
+    tpl.slots = tpl.slots.map((sl) => (sl.id === 'name' ? { ...sl, stuck: 'Their social profile shows the name they go by.' } : sl));
+    ({ composer, host } = makeComposer({}, { contacts, templates: fx.templates }));
+    composer.chooseTemplate('greeting', 'greet_named');
+    const field = host.querySelector('.mail-blank-field[data-slot="name"]');
+    assert.equal(field.querySelector('.mail-blank-gate').textContent, PRE_SEND_GATE_LINE);
+    const stuck = field.querySelector('details.mail-blank-stuck');
+    assert.ok(stuck, 'pointer shown under the empty blank');
+    assert.equal(stuck.open, false, 'collapsed behind Stuck?');
+    assert.match(stuck.querySelector('summary').textContent, /^Stuck\?/);
+    assert.equal(stuck.querySelector('.mail-blank-stuck-text').textContent, 'Their social profile shows the name they go by.');
+    // Once evidence is held the blank is a picker and the pointer goes.
+    ({ composer, host } = makeComposer(grant('pierce_role'), { contacts, templates: fx.templates }));
+    composer.chooseTemplate('greeting', 'greet_named');
+    assert.equal(host.querySelector('.mail-blank-stuck'), null);
+});
+
 test('after the fact is granted the picker offers it, and choosing it enables Send', () => {
     const { composer, host, sends } = makeComposer(grant('pierce_role'),
         { contacts: [{ id: 'pierce', name: 'Melanie Pierce', role: 'Finance', addresses: ['m.pierce@ledgerwell.example'], targetId: 'pierce' }] });

@@ -470,29 +470,38 @@
       }
     },
 
+    <%# R15 N5: each slot's "stuck" is the where-to-look pointer the composer shows under an empty
+        blank, behind "Stuck?". It names a source, never the value. %>
     "templates": {
       "from_own": { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] },
       "from_named": { "part": "from", "text": "{sender_name} <{sender_address}>",
-        "slots": [ { "id": "sender_name", "type": "name", "about": "sender", "label": "sender's name" },
-                   { "id": "sender_address", "type": "address", "label": "sender's address" } ] },
+        "slots": [ { "id": "sender_name", "type": "name", "about": "sender", "label": "sender's name",
+                     "stuck": "Who would they expect this from? A colleague they trust shows on their social profile; for a system notice, the service desk knows who sends it." },
+                   { "id": "sender_address", "type": "address", "label": "sender's address",
+                     "stuck": "A colleague's address follows the pattern a lookup on the domain shows. A system's sending address is one the service desk knows." } ] },
       "greet_generic": { "part": "greeting", "text": "Hello,", "slots": [] },
       "greet_named": { "part": "greeting", "text": "Hi {name},",
-        "slots": [ { "id": "name", "type": "name", "about": "recipient", "label": "name to greet them by" } ] },
+        "slots": [ { "id": "name", "type": "name", "about": "recipient", "label": "name to greet them by",
+                     "stuck": "Their social profile or the company's team page shows the name they go by." } ] },
       "pretext_apply": { "part": "pretext", "text": "I'm applying for the open role.", "slots": [],
         "implies": [ { "type": "document", "value": "cv" } ], "urgency": "low" },
       "pretext_enquiry": { "part": "pretext", "text": "I'd like to ask about your accounting services.", "slots": [],
         "urgency": "low" },
       "pretext_sheet": { "part": "pretext", "text": "Here is {document} you wanted {when}.",
-        "slots": [ { "id": "document", "type": "document", "label": "which file" },
-                   { "id": "when", "type": "date", "label": "when they asked for it" } ],
+        "slots": [ { "id": "document", "type": "document", "label": "which file",
+                     "stuck": "Their own posts and their team's notes say what they are waiting for." },
+                   { "id": "when", "type": "date", "label": "when they asked for it",
+                     "stuck": "Their own posts and their team's notes say when they asked." } ],
         "urgency": "low" },
       "pretext_invoice": { "part": "pretext", "text": "Please find our latest supplier invoice attached for payment.", "slots": [],
         "urgency": "low" },
       "pretext_password": { "part": "pretext", "text": "Your password is about to expire. Please review the attached notice.", "slots": [],
         "urgency": "high" },
       "pretext_payslip": { "part": "pretext", "text": "Your payslip is ready on {portal}, released {when}.",
-        "slots": [ { "id": "portal", "type": "portal", "label": "which system" },
-                   { "id": "when", "type": "date", "about": "release", "label": "the release date" } ],
+        "slots": [ { "id": "portal", "type": "portal", "label": "which system",
+                     "stuck": "The service desk knows which systems staff sign in to. Ring them from the desk phone." },
+                   { "id": "when", "type": "date", "about": "release", "label": "the release date",
+                     "stuck": "The service desk can say when payslips go out. Ring them from the desk phone." } ],
         "urgency": "medium" },
       "ask_review_cv": { "part": "ask", "text": "Could you review my CV when you have a moment?", "slots": [],
         "urgency": "low" },
@@ -1112,7 +1121,9 @@
         "brands": [
           {
             "id": "ledgerwell",
-            "name": "Ledgerwell",
+            <%# R15 N7: the label is the portal Sofia knows (LedgerPay, on ledgerwell.example), so the
+                "Which service?" option matches the story; the id stays for logo, expectedLink and scoring. %>
+            "name": "LedgerPay",
             "look": "generic",
             "realDomain": "ledgerwell.example",
             "realFields": ["email", "password"],
@@ -1214,7 +1225,7 @@
         "measures": [
           { "id": "names", "step": "measures", "correct": false, "blame": true,
             "text": "Which named staff fell for it.",
-            "why": "Gareth's one condition is no names in anything he reads. Name people and they stop reporting." },
+            "why": "The client, Gareth, has one condition: no names in anything he reads. Name people and they stop reporting." },
           { "id": "how_far", "step": "measures", "correct": true,
             "text": "How far each attempt gets: sent, landed, failed, page visits and the call outcome.",
             "why": "Count these and the report shows how far each attempt got, without naming a single person." },
@@ -1232,8 +1243,9 @@
         <%# lab4 / R13 Q1: seed the "no report button" fact as a plain results datum, above Q1. It
             states the mechanism (no channel to flag mail), not the consequence, so Q1 ("which can
             these results NOT tell him?") still needs the step of reasoning from the datum rather
-            than matching its wording to the answer. %>
-        "unseenNote": "Reports received: none. Ledgerwell has no button or inbox for staff to flag a suspect email or page.",
+            than matching its wording to the answer. R15 N3: "Email and page reports", so the row
+            cannot read as contradicting the call line above it when Dev reported a call. %>
+        "unseenNote": "Email and page reports received: none. Ledgerwell has no button or inbox for staff to flag a suspect email or page.",
         "steps": [
           { "id": "results", "onCompleteGlobal": "report_results_done" },
           { "id": "findings", "onCompleteGlobal": "report_findings_done" }

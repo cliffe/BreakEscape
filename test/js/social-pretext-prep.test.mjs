@@ -202,10 +202,10 @@ test('a team blank drops untagged finance and keeps the intern-tagged stale team
     assert.equal(options.find((o) => o.value === 'accounts').kind, 'stale');
 });
 
-test('a stale option carries no tag, so the decoy is not labelled as the trap (lab R14 m1)', () => {
+test('no option carries a kind tag, so neither the decoy nor the right answer is labelled (lab R14 m1, R15 N4)', () => {
     assert.equal(kindText('stale'), '');
     assert.equal(kindText('generic'), '');
-    assert.equal(kindText('distinctive'), 'a specific detail');
+    assert.equal(kindText('distinctive'), '');
 });
 
 test('a manager blank prefers about manager, so a recipient form of the same value stays out', () => {
@@ -252,7 +252,7 @@ test('a contact blank offers the held sender name and not a recipient name', () 
     blank(scene, 'contact').click();
     const values = [...scene.container.querySelectorAll('.pretext-picker-option')].map((el) => el.dataset.value);
     assert.deepEqual(values, ['shah_full']);
-    assert.match(scene.container.querySelector('.pretext-picker-kind').textContent, /a specific detail/);
+    assert.equal(scene.container.querySelector('.pretext-picker-kind'), null, 'no kind tag on a right answer (R15 N4)');
     scene.container.querySelector('.pretext-picker-option').click();
     assert.equal(scene.payload().contact.value, 'shah_full');
     assert.equal(scene.payload().contact.label, 'Ravi Shah');

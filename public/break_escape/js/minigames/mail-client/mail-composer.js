@@ -915,6 +915,15 @@ export class MailComposer {
                 field.appendChild(btn);
                 // The neutral pre-send line, beside the empty blank, naming nothing (00 §10).
                 field.appendChild(el('p', 'mail-blank-gate', PRE_SEND_GATE_LINE));
+                // Optional where-to-look pointer from the template slot (lab R15 N5), behind
+                // the same "Stuck?" disclosure the Case file board uses. It names a source,
+                // never the value, so the gate line itself stays neutral.
+                if (isStr(slot.stuck) && slot.stuck.trim()) {
+                    const stuck = el('details', 'mail-blank-stuck');
+                    stuck.append(el('summary', 'mail-blank-stuck-summary', 'Stuck? Show me where to look'),
+                        el('span', 'mail-blank-stuck-text', slot.stuck));
+                    field.appendChild(stuck);
+                }
             } else {
                 btn.textContent = chosenOpt ? `${blankLabel}: ${chosenOpt.label}` : `${blankLabel}: choose…`;
                 btn.dataset.chosen = chosen || '';
@@ -1100,15 +1109,9 @@ export class MailComposer {
             li.dataset.value = opt.value;
             li.id = `mail-picker-opt-${i}`;
             li.append(el('span', 'mail-picker-label', opt.label));
-            // Name where the fact came from, in plain words, without judging which is
-            // the better pick (the student should reason from the board, not the label;
-            // lab fix round L): a specific detail versus an older one.
-            // A stale value gets no tag (lab R14 m1): labelling the decoy "an older detail"
-            // gave the trap away; the board still marks the old source.
-            if (opt.kind && opt.kind !== 'generic' && opt.kind !== 'stale') {
-                const kindText = { distinctive: 'a specific detail' }[opt.kind] || opt.kind;
-                li.append(el('span', `mail-picker-kind kind-${opt.kind}`, kindText));
-            }
+            // No kind tag on the option (lab R14 m1, R15 N4): "an older detail" marked the
+            // stale decoy and "a specific detail" marked every right answer, since only true
+            // facts are distinctive. The student reasons from the board, not the label.
             li.setAttribute('aria-selected', opt.value === chosen ? 'true' : 'false');
             li.addEventListener('click', () => this._pick(slot, opt.value));
             items.push(li);

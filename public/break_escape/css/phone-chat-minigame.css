@@ -5,7 +5,9 @@
 .phone-messages-container {
     display: flex;
     flex-direction: column;
-    height: 70vh;
+    /* Use the viewport height on short screens (lab R15 N1: 70vh gave a 490 px phone at
+       700 px tall). 125 px leaves room for the Notepad and Close buttons below. */
+    height: min(700px, max(70vh, calc(100vh - 125px)));
     max-height: 700px;
     width: 100%;
     max-width: 400px;
@@ -248,6 +250,8 @@
 
 .conversation-header {
     display: flex;
+    flex-wrap: wrap;
+    flex-shrink: 0;
     align-items: center;
     padding: 10px 15px;
     background: rgba(0, 0, 0, 0.1);
@@ -855,26 +859,55 @@
     background: transparent;
 }
 
-/* Influence bar and tells in the conversation header (06 N4). */
+/* Influence bar in the conversation header (06 N4). It takes a full-width row under the
+   avatar and name, laid out compactly, so a call keeps the latest reply and the choices in
+   view at 700 px tall (lab R15 N1). The header's tells list is hidden here: every tell is
+   already a bubble in the thread (pretext-chrome appendTellBubbles), in full, where it reads
+   in order with the replies, so the header no longer grows with each line (R15 T2). */
 .conversation-header .se-chat-header {
-    flex: 1;
+    flex: 1 1 100%;
     min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-.conversation-header .influence-bar {
-    max-width: 280px;
+.conversation-header .se-chat-header .influence-bar {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 10px;
+    max-width: none;
+    margin: 0;
+    padding: 4px 8px;
+    font-size: 13px;
+    line-height: 1.25;
 }
 
-.conversation-header .pretext-tells {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    max-height: 4.5em;
-    overflow: auto;
-    font-size: 13px;
+.conversation-header .ib-infl-head { gap: 6px; }
+.conversation-header .ib-infl-number { font-size: 16px; }
+.conversation-header .ib-infl-track { margin: 14px 8px 4px; }
+.conversation-header .ib-infl-legend,
+.conversation-header .ib-infl-change { grid-column: 1 / -1; }
+.conversation-header .ib-infl-legend { gap: 0 12px; margin-top: 2px; font-size: 12px; }
+.conversation-header .ib-infl-change { margin-top: 2px; font-size: 12px; }
+
+.conversation-header .se-chat-header .pretext-tells {
+    display: none;
+}
+
+/* The thread and the choices never collapse under a tall header. */
+.conversation-view .messages-container { min-height: 96px; }
+.conversation-view .choices-container { min-height: 64px; flex-shrink: 0; }
+
+@media (max-height: 820px) {
+    .conversation-header { padding: 6px 12px; row-gap: 6px; }
+    .conversation-avatar,
+    .conversation-avatar-placeholder { width: 44px; height: 44px; }
+    .conversation-header .back-button { font-size: 20px; padding: 2px 10px; }
+    .conversation-view .choices-container { max-height: 168px; padding: 8px 10px; gap: 6px; }
+    .conversation-view .choice-button { padding: 7px 10px; font-size: 15px; line-height: 1.3; }
+    .conversation-view .messages-container { padding: 8px 10px; gap: 8px; }
 }
 
 /* Render-only tell. Not part of the contact's saved history. */

@@ -988,7 +988,8 @@
         "id": {"type": "string"},
         "type": {"type": "string", "description": "Matched to intelFacts provides[].type (name, address, date, document, ...)"},
         "about": {"type": "string"},
-        "label": {"type": "string"}
+        "label": {"type": "string"},
+        "stuck": {"type": "string", "description": "Where-to-look pointer the composer shows under this blank while no evidence fills it, behind a 'Stuck?' disclosure (lab R15 N5). Names a source, never the value."}
       },
       "patternProperties": {"^_": {}},
       "additionalProperties": false
