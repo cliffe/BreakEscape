@@ -449,6 +449,22 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       "order": 8,
       "tasks": [
         {
+          "taskId": "submit_launch_code",
+          "title": "Enter the launch authorisation code",
+          "type": "submit_flags",
+          <%# flag_3 (launch authorisation) is only accepted at the launch device
+              taken from Derek at the finale; the drop-site echoes a hint for it.
+              The station-qualified id is the launch device's local flag-1 slot
+              (its flags list holds only shatter_server:flag_3), so this cannot be
+              satisfied by the drop-site's own flag-1 (submit_linux_flag). R29 makes
+              flag_3's necessity explicit in the conclude gate below. %>
+          "targetFlags": ["entropy_launch_device:shatter_server-flag1"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "status": "active",
+          "showProgress": true
+        },
+        {
           "taskId": "deactivate_launch",
           "title": "Deactivate the Launch",
           "type": "manual",
@@ -465,11 +481,13 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       "order": 9,
       "missionConclusion": true,
       "conclusionScreen": { "type": "bond_visualiser" },
-      <%# Ending gate: the three VM flags are the technical work this mission is
-          not allowed to skip. Story tasks are not listed -- they cost score if
-          unfinished, they do not withhold the ending. %>
+      <%# Ending gate: all four VM flags are the technical work this mission is
+          not allowed to skip. submit_launch_code (flag_3, entered at the launch
+          device) is listed explicitly so a future edit can't silently drop the
+          launch authorisation from the critical path (R29). Story tasks are not
+          listed -- they cost score if unfinished, they do not withhold the ending. %>
       "concludeRequires": {
-        "tasksCompleted": ["submit_ssh_flag", "submit_linux_flag", "submit_sudo_flag"]
+        "tasksCompleted": ["submit_ssh_flag", "submit_linux_flag", "submit_sudo_flag", "submit_launch_code"]
       },
       "tasks": [
         {
@@ -1395,9 +1413,10 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "takeable": true,
               "observations": "A ruggedised tactical device. Screen: OPERATION SHATTER — ARMED. T-72 HOURS TO LAUNCH WINDOW.",
               "acceptsVms": ["shatter_server"],
+              "acceptsVmLabels": { "shatter_server": "ENTROPY attack server" },
               "flags": ["shatter_server:flag_3"],
               "flagRewards": [
-                { "type": "set_global", "key": "launch_code_submitted", "value": true }
+                { "type": "set_global", "key": "launch_code_submitted", "value": true, "label": "Launch authorisation accepted — Operation Shatter is yours to abort." }
               ],
               "onAbort": {
                 "setGlobal": { "player_aborted_attack": true, "ready_for_debrief": true },
@@ -2054,7 +2073,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
         {
           "type": "vm-launcher",
           "id": "vm_launcher_intro_linux",
-          "name": "VM Access Terminal",
+          "name": "IT Audit Station (Kali)",
           "sprite": "vm-launcher-kali",
           "takeable": false,
           "observations": "A Kali Linux system IT have prepared for your security audit.",
@@ -2071,6 +2090,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "takeable": false,
           "observations": "Secure SAFETYNET terminal for submitting intercepted intelligence and VM flags",
           "acceptsVms": ["shatter_server"],
+          "acceptsVmLabels": { "shatter_server": "ENTROPY attack server" },
           "flags": ["shatter_server:flag_2", "shatter_server:flag_4"],
           "hintOnlyFlags": {
             "shatter_server:flag_1": "Decryption Key validated — this key unlocks the ENTROPY encrypted archive in the server room.",
@@ -2081,12 +2101,14 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "type": "set_global",
               "key": "linux_flag_submitted",
               "value": true,
+              "label": "Directory-traversal evidence secured — logged with SAFETYNET.",
               "description": "Directory traversal intel submitted (deployment_notes in operation_shatter/)"
             },
             {
               "type": "set_global",
               "key": "sudo_flag_submitted",
               "value": true,
+              "label": "Encoded deployment configuration secured — logged with SAFETYNET.",
               "description": "Encoded deployment intel submitted (shatter_configuration, base64) — requires sudo to shatter account"
             }
           ]
@@ -2108,6 +2130,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "type": "set_global",
               "key": "ssh_flag_submitted",
               "value": true,
+              "label": "Decryption key accepted — the ENTROPY archive unlocks.",
               "description": "ENTROPY archive decryption key confirmed — SSH brute force into derek's account complete"
             }
           ],

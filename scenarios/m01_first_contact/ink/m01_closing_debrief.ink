@@ -148,6 +148,10 @@ Agent HaX: But you did. And those people will never know how close they came.
 === evidence_review ===
 Agent HaX: Let's review what you recovered.
 
+Agent HaX: And the way you got there matters. You got onto their operative's account, escalated to the infrastructure account running Operation Shatter, and pulled its keys.
+
+Agent HaX: Gaining access, escalating privilege, turning their own key against them — that's the chain that stopped this.
+
 {found_casualty_projections && found_target_database:
     -> evidence_complete
 }
