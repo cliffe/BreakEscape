@@ -280,9 +280,13 @@ Agent HaX: And the control room believed its own sensors. The honest ones weren'
 // Scenario design M1 (orchestrator decision 1): what the four flags exposed, at
 // the brief's level (no commands, ports or exploit detail). Check against SecGen
 // by the user.
-Agent HaX: A legacy compile service on an OT box, trusting whatever it was sent. That comes off the network.
+Agent HaX: A remote-access service on an OT box, running commands before it ever asked who was calling. That's the crew's way back in, and it comes off the network.
 Agent HaX: An FTP service handing their cross-cell plan to anyone who looked, and a jump-server account with more privilege than it ever needed. Somebody reviews those.
 Agent HaX: And on site: encrypted cards, a second factor on the HV door, and a gauge in every hall that somebody reads.
+// VM weave fix R36 (m04): one beat naming the player's own access -> escalation ->
+// recover arc, at the brief's level (no commands). Conclude requires all four
+// flags, so this always has the VM work behind it.
+Agent HaX: You ran their own way in back at them tonight. Onto that jump server through the same service, up to root, and from there you could read the charge-ceiling override they'd pushed to every bank.
 
 * {vance_spoken or vance_is_ally} [It goes in the report. Vance will want every line.]
     -> debrief_big_picture

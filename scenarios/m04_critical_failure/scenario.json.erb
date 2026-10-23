@@ -1776,6 +1776,7 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
           "takeable": false,
           "observations": "Secure terminal for submitting intercepted intelligence and VM flags",
           "acceptsVms": ["bms_jump_server"],
+          "acceptsVmLabels": { "bms_jump_server": "BMS jump server" },
           "flags": <%= flags_for_vm('bms_jump_server', [
             'flag{network_scan_complete}',
             'flag{ftp_intel_gathered}',
@@ -1793,24 +1794,28 @@ voltage_attack_note = "CRITICAL MASS OPERATION LOG\n\nPhase 2 complete. BMS inte
               "type": "set_global",
               "key": "flag_network_scan_submitted",
               "value": true,
+              "label": "Falsified rack-status page captured",
               "description": "Network scan evidence submitted"
             },
             {
               "type": "set_global",
               "key": "flag_ftp_intel_submitted",
               "value": true,
+              "label": "Cross-cell plan pulled from their FTP drop",
               "description": "FTP intelligence submitted - cross-cell coordination revealed"
             },
             {
               "type": "set_global",
               "key": "flag_privesc_submitted",
               "value": true,
+              "label": "Root on the BMS jump server",
               "description": "Root on the jump server - where the charge-ceiling override was pushed from"
             },
             {
               "type": "set_global",
               "key": "flag_erlang_rce_submitted",
               "value": true,
+              "label": "Foothold on the BMS jump server",
               "description": "Erlang/OTP SSH foothold evidence submitted - unauthenticated remote code execution proven"
             }
           ]
