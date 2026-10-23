@@ -507,3 +507,8 @@ Plan: 7a a CONTRACT.md per mission in scenarios/<mission>/ (every ink file and o
 - m10 targeted check R2: cut calls held until both power-room fighters are down (power_fight_on; no re-emitted cut_by_hand; close re-ring removed); held Mercer-fight calls released on reload after a Restart; Victoria's call staggered. Style exception reported as engine (phone-chat-ui.js view switch). Voiced: 0.
 - m10 teaching R2 (n1, n4, n6, n7): Asante's patch answer ungated; why the key comes first; Malhotra's badge paid off; the player hears which answers landed. Voiced: +4 Narrator.
 - 2026-10-23: m10 phase 5 closed. R3 browser check passed the power-fight and Mercer call fixes. Its major, a phone-chat start race that lost a call, is fixed in the engine (93ed7976e) with a live before-and-after proof. Teaching round R2 is done for both missions (c39ec30b5, 80acfed5d, 9d9f4c9a9); validator clean on both.
+- 2026-10-23, user decisions F19–F30 (decisions page v5):
+  - Fix now: F19 (the doors wait for the room's load event), F22 (rebuild the credits on reload), F24 (remaining duplicate toasts), F25 (scripted person-chat, video and timed starts go through the call queue), F26 (visible difference on the fingerprint cards), F30 (mission clocks for m09 and m10).
+  - opus48: F28 (keep Austin, opus48 picks the third city) and F29 (check m01's password list against its VM now).
+  - Backlog: F21 (reload respawn room). Leave as is: F20 (no gating retrofit for m01–m08) and F23 (tutorial pop-up).
+  - Waiting on the user: F27 (foothold gating; reading the F9 write-up).
