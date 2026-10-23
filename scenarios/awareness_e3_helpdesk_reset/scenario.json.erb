@@ -177,13 +177,6 @@
             "device": "Chrome on Windows"
           },
           {
-            "at": "06:38",
-            "app": "Quayholt SSO",
-            "account": "gordon.mcleish@quayholt.example",
-            "location": "Rotterdam, Netherlands",
-            "device": "Chrome on Windows"
-          },
-          {
             "at": "06:44",
             "app": "Quayholt SSO",
             "account": "gordon.mcleish@quayholt.example",
@@ -240,16 +233,8 @@
                 "text": "Hello, Gordon McLeish, Claims Manager. I'm locked out of my account and I'm at the airport."
               },
               {
-                "who": "You",
-                "text": "Sorry to hear that, Gordon. Can you confirm your staff number and your manager?"
-              },
-              {
                 "who": "Caller",
                 "text": "QH-20719. I report to Ngozi Okonkwo, and she needs the claims report from me before the board meets at ten."
-              },
-              {
-                "who": "You",
-                "text": "Thanks. I'll hang up and ring you back on the number we have on file, then reset it."
               },
               {
                 "who": "Caller",
@@ -298,16 +283,8 @@
                 "text": "Gordon McLeish. My password's expired while I was on leave and now nothing works. I've a settlement call at twelve."
               },
               {
-                "who": "You",
-                "text": "I can help. Can you confirm your staff number and your manager for me?"
-              },
-              {
                 "who": "Gordon",
                 "text": "QH-20719, Ngozi Okonkwo. Twenty-two years I've been here, and I still get the questions."
-              },
-              {
-                "who": "You",
-                "text": "Sorry, I know. Bear with me a moment while I sort this out."
               },
               {
                 "who": "Gordon",
@@ -354,10 +331,6 @@
                 "text": "Hi, Josh Henley, I work for Ngozi Okonkwo in Claims. Gordon McLeish is stuck with a client and can't get into his account. His staff number's QH-20719."
               },
               {
-                "who": "You",
-                "text": "I'd need to speak to Gordon himself. I can ring him on the number we have on file."
-              },
-              {
                 "who": "Caller",
                 "text": "He's in with the client, he can't take calls. Ngozi's signed it off, so you don't need to go through the questions. Can you move his sign-in prompts to his new phone? Keep it low-key, he's embarrassed enough."
               },
@@ -385,12 +358,16 @@
         "flipIntro": "This is your call as Leila heard it on the service desk. The lines picked out below are what made it believable.",
         "flipDefenderLine": "Mid-morning, more calls holding, Leila picked this one up. The caller had Gordon's name, team, manager and staff number, every answer right, and sounded rushed, so she reached for the reset. Anyone might have: he'd done his homework. The callback was the one thing that would have told him from the real Gordon.",
         "flipNoSend": "Your call didn't get through this time, so there's nothing of yours to show. Next, the same kind of call comes in to the service desk, and you're the one answering.",
-        "flipMissed": "There's nothing extra to replay here, so here is the same kind of call as it reaches a real service desk.",
+        "flipMissed": "Your call didn't get what it was after this time, so there's nothing of yours to replay. The defence is the same either way: next, the same kind of call comes in to the service desk, and you're the one answering.",
         "noBlameLine": "Nothing here counts against you. These callers rehearse sounding right, and a service desk that tries to help them is doing its job under pressure.",
         "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password or move someone's sign-in prompts, hang up and ring them back on the number already on file, not one they give you. If a sign-in prompt arrives that you didn't start, deny it and report it the way your organisation asks you to.",
         "defendOnly": "These calls were made by people whose job is to sound right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
         "flipCallIntro": "This is your call to the service desk, as Leila heard it. The lines picked out below are what would have caught it.",
-        "defendIntro": "Now you're in Leila's seat. You started at 07:00 and it's mid-morning: three calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time."
+        "defendIntro": "Now you're in Leila's seat. You started at 07:00 and it's mid-morning: three calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time.",
+        "conceptPanel": {
+          "heading": "Why the call and the prompts worked",
+          "text": "The caller had Gordon's name, team, manager and staff number, and every one was findable online, so none of them proved who was on the line. Only a callback to the number already on file could tell the real Gordon from the imposter.\n\nThe sign-in prompts that followed are the same attack from another angle. Someone with the password fires off one approval request after another, counting on a tired person tapping approve just to stop the buzzing. A prompt you didn't start is never one to approve, however many times it comes."
+        }
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
@@ -744,7 +721,7 @@
         "asks": {
           "reset_password": {
             "pressure": -10,
-            "floor": -20,
+            "floor": 0,
             "verification": [
               "manager",
               "staffId"
@@ -794,7 +771,7 @@
             "deflect": "Dodging the callback. The number on file is exactly what would catch this, so discouraging it is the tell."
           },
           "ask": {
-            "accepted": "She reset it on two answers she could look up herself.",
+            "accepted": "She reset it on the manager's name and the staff reference, both of which are on the public site.",
             "pending": "She wants both of her checks before she does it.",
             "refused": "She will not reset it on this call."
           },

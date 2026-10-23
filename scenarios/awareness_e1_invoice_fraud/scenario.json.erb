@@ -155,12 +155,14 @@
               "flags": [
                 "senderTrust",
                 "lookalike_domain",
-                "changed_bank_details"
+                "changed_bank_details",
+                "urgencyCalibrated"
               ],
               "perFlagNote": {
                 "senderTrust": "It signs off as Brightwell Accounts, but the address isn't a Brightwell one at all, so it isn't who it says it is",
                 "lookalike_domain": "The display name is right, but the address is brightwel1foods, with a digit 1 where the l should be",
-                "changed_bank_details": "A bank-detail change on an open invoice is the commonest invoice-fraud move. The safe step is to ring the supplier on the number you already hold"
+                "changed_bank_details": "A bank-detail change on an open invoice is the commonest invoice-fraud move. The safe step is to ring the supplier on the number you already hold",
+                "urgencyCalibrated": "'Before today's payment run' pushes you to change the account before you'd stop to ring Harlow and check"
               },
               "ifTrusted": "Harlow's payment would go to an account the sender controls, and Harlow would still be waiting to be paid.",
               "reportReply": "Thanks. That address isn't ours: brightwel1foods has a digit 1 in it. We've blocked the domain and warned the rest of finance."
@@ -301,7 +303,7 @@
         "flipIntro": "This is the email you just sent, as the payments team at Brightwell would see it. The lines picked out below are what make it believable.",
         "flipDefenderLine": "The payments team read it between the morning's invoices, with the payment run due at three. Derek's name is on it and the invoice number is real, so changing the payee details looks like the job in front of them. Acting on a message built this carefully is not carelessness; it was made to pass for the real thing.",
         "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives in a payments inbox, and you're the one reading it.",
-        "flipMissed": "There's nothing extra to replay from this one, so here is the same kind of message as it would arrive in a real inbox. The defence is the same either way.",
+        "flipMissed": "Your email didn't land this time, so there's nothing of yours to replay from the other side. The defence is the same either way: next, the same kind of message turns up in a payments inbox, and you're the one reading it.",
         "noBlameLine": "Nobody is marked down for a miss here. Every one of these was written by someone whose job is making it look right, and anyone working at pace can act on one.",
         "mondayCard": "On Monday: if an email asks you to change bank details or to pay in a hurry, don't reply and don't use any number in the email. Ring the person on a number you already hold, then report the email the way your organisation asks you to.",
         "defendOnly": "These messages were written by people whose job is to make them look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away."

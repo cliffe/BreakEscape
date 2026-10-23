@@ -275,3 +275,76 @@ No commits.
   server start/stop; idempotent `start-keyless-server.sh` was not needed as :3001 was up): **all
   PASS** — e1-full 12/12, e2-full 13/13, e3-full 21/21, e4-full 13/13, e5-full 18/18, e6-full 14/14,
   e7-full 12/12 (games 3759–3765). No Finish-button race seen; no retry needed.
+
+## Data fixer round 3 (2026-10-23) — engine round 2 (ef267b2f1) data hand-off
+
+Ten data items handed over by the engine round-2 engineer. Each fragment edit was mirrored by hand
+in the matching full erb; the generated defend-only + check shells were rebuilt into scratch, diffed
+(only the intended changes appeared), then copied in. No host ink touched, so no TTS impact and the
+compiled ink `.json` are unchanged.
+
+### Items
+
+1. **E6 `e6_mfa_scan` double-authored tell (N5).** Dropped `senderTrust` from `truth.flags` and its
+   `perFlagNote`, kept `lookalike_domain` (the tarrowbey.example tell). `e6/defend.json` msg
+   `e6_mfa_scan`; mirrored in `awareness_e6_texts_and_qr` and regenerated into
+   `awareness_e6_texts_and_qr_defend`. **Not changed (flagged for decision):** the two check-form
+   rows `ma_drivers_numbers_spoof` / `mb_new_starters_spoof` author the same `senderTrust` +
+   `lookalike_domain` pair for one look-alike-domain tell; left out of scope (item named only the
+   tarrowbey.example message, and these sit in the documented A/B form parity multiset).
+2. **E1 "pushing me to hurry" (m1).** Added `urgencyCalibrated` (+perFlagNote) to `e1_lookalike_bank`
+   ("before today's payment run"). `e1/defend.json` + `awareness_e1_invoice_fraud` →
+   `awareness_e1_invoice_fraud_defend`. The two form bank-change rows carry the same "pay today"
+   urgency without the flag; left as the item named one message and the forms are parity-balanced.
+3. **E2 Liam Baxter (m2).** Added `linkCredible` (+perFlagNote) to `e2_portfolio_lookalike` so ticking
+   either `lookalike_domain` or `linkCredible` for the dodgy careers link is credited, not a false
+   claim. `e2/defend.json` + `awareness_e2_cv_lures` → `awareness_e2_cv_lures_defend`. (Awareness
+   scoring is caught/authored with no false-claim penalty, so full flag credit now wants both link
+   framings ticked; the un-ticked one shows as a debrief learning point.)
+4. **E3 call transcripts (E3-7 / N8).** Removed every player-side ("You") line from all E3 call
+   transcripts, leaving the caller lines verbatim (caller-only records the learner judges). Six
+   calls: `defend.calls` (gordon_impostor, gordon_real, on_behalf) + check forms helpdesk_form_a/b
+   (facilities, hr_awkward, printer, payroll, comms_awkward, monitor). `e3/defend.json` +
+   `awareness_e3_helpdesk_reset` → defend-only + the 4 helpdesk check shells. **Flagged:** removing
+   the ring-back offer leaves four caller replies slightly dangling (gordon_impostor "That's my desk
+   phone, am I?"; the genuine awkward calls hr_awkward/comms_awkward/facilities caller acceptances);
+   caller lines were kept verbatim per the brief's "(the caller's lines stay)".
+5. **E3 debrief recap (E3-9).** Added `strings.conceptPanel` ("Why the call and the prompts worked")
+   recapping the findable-facts/callback point and the MFA push-fatigue beat. `e3/defend.json` +
+   erb; also appears in `awareness_e3_helpdesk_reset_defend` (the generator keeps conceptPanel), so
+   both variants show it.
+6. **E3 `flipMissed` after a refused/failed call (E3-1).** Reworded to read naturally when the
+   vishing call did not land (distinct from flipNoSend). `e3/defend.json` + erb.
+7. **E5 + every mail-send `flipMissed` (did-not-land → missed flip).** Reworded E1, E5, E6, E7 (and
+   E3 in item 6) so none claims "here is the same kind of X" (the missed-flip view shows no message/
+   page). E2 and E4 already read correctly ("…next, you're the one opening/reading it") and were
+   left. E1/E5 edited in fragment+erb; E6/E7 edited in the erb only (their fragments never carried
+   `flipMissed`, matching the e2/e4 precedent; the generator pops it for defend-only anyway).
+8. **E3 ask meter (E3-3).** `asks.reset_password.floor` -20 → 0 so the meter reads "needs 0 or
+   better, now at N" instead of a confusing negative bar; reworded `tells.ask.accepted` to "She reset
+   it on the manager's name and the staff reference, both of which are on the public site." (names the
+   two security answers, so it no longer clashes with the three/four passed checks shown).
+   `e3/attack.json` + erb. The scripted bridge still reaches ASK OK with positive influence.
+9. **E3 MFA demo trimmed 4→3 pushes (E3-11, done).** Dropped the 06:38 push; kept 06:31/06:44/06:50,
+   approvesAt 06:50. Tightens the autoplay by one step for E3's length. `e3/attack.json` pushStream +
+   erb `mfa`. (3 pushes is clean; only a 1-push stream warns.)
+10. **mailClient.clock (declined).** Every mail-send episode has one seeded message at a sensible
+    morning time (08:41–09:05); the engine's new latest-seeded-time fallback already stamps sends in
+    scene time, so no explicit `social.mailClient.clock` was needed anywhere.
+
+### Checks run
+
+- **No-change baseline:** a fresh regen of all four generators into scratch is byte-identical to the
+  repo for scenario.json.erb / mission.json / .ink (only build artifacts differ).
+- **Regenerate → diff → copy:** 8 generated shells updated (e1/e2/e3/e6 defend-only + 4 helpdesk
+  checks); e5 defend-only unchanged (its only edit, flipMissed, is popped for defend-only). Each
+  diff showed only the intended change.
+- **Validator** (`--strict-social --no-graph --skip-ink`): **all 38 awareness shells exit 0.**
+  Warnings pre-existing only.
+- **Node tests:** `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs` —
+  **1701/1701 pass.**
+- **Full-episode bridges** (Node 24, one at a time on the live keyless :3001; no server start/stop):
+  **all PASS** — e1 12/12, e2 13/13, e3 21/21, e5 18/18, e6 14/14, e7 12/12 (games 3815–3825).
+  e1/e2/e6/e7 each needed one retry for the known flip send-timing race (first run failed only the
+  "sent record tells" flip assertion, an attack-side compose race unrelated to these defend-side
+  edits); e3/e5 passed first try. e4 untouched, not run.

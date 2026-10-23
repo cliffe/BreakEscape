@@ -151,11 +151,13 @@
               "isPhish": true,
               "flags": [
                 "lookalike_domain",
-                "attachmentPlausible"
+                "attachmentPlausible",
+                "linkCredible"
               ],
               "perFlagNote": {
                 "lookalike_domain": "The link goes to tarrowby-careers.example, not tarrowby.example. Tarrowby's own sites all end in tarrowby.example; the added word with a hyphen makes a separate domain anyone can register, so don't assume it's theirs",
-                "attachmentPlausible": "It says the CV is attached, but nothing is. The 'portfolio' link is there to replace it, and it wants your Tarrowby sign-in"
+                "attachmentPlausible": "It says the CV is attached, but nothing is. The 'portfolio' link is there to replace it, and it wants your Tarrowby sign-in",
+                "linkCredible": "Read it as a link and it still doesn't add up: it doesn't go to Tarrowby's own recruitment system, and a real CV never needs you to sign in on a careers portal you reached from an email"
               },
               "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password, so whoever runs tarrowby-careers.example could read the recruitment inbox and every candidate's details in it.",
               "reportReply": "Thanks. Tarrowby has no careers portal on that address, and no candidate needs your password to send a CV. We've blocked tarrowby-careers.example."

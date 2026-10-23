@@ -102,7 +102,6 @@
           "time": "08:20",
           "transcript": [
             { "who": "Caller", "text": "Hiya, Owen Treharne, Facilities. I'm locked out of the door-access system and the contractors are stood outside the loading bay." },
-            { "who": "You", "text": "No problem. I'll ring you back on the number we've got for you, then we'll sort it." },
             { "who": "Caller", "text": "I'm on my personal phone, the work one's dead. Look, the Operations Director wants that bay open by half eight. Just reset it now and I'll sort the paperwork later." }
           ],
           "truth": {
@@ -124,7 +123,6 @@
           "time": "08:41",
           "transcript": [
             { "who": "Sofia", "text": "It's Sofia in HR. I'm locked out of the HR system and I've got interviews from nine. This is the third time this month." },
-            { "who": "You", "text": "Sorry about that. I'll hang up and ring you back on the number we hold for you, then reset it." },
             { "who": "Sofia", "text": "Honestly, it's me. Fine, ring the mobile, but please be quick." }
           ],
           "truth": {
@@ -259,7 +257,6 @@
           "time": "11:50",
           "transcript": [
             { "who": "Ayaan", "text": "Hi, Ayaan in Claims. The second-floor printer is jammed again. Could someone have a look this afternoon?" },
-            { "who": "You", "text": "Sure, I'll log it. Is 4415 the best number for you?" },
             { "who": "Ayaan", "text": "Yes, that's my desk. Thanks." }
           ],
           "truth": {
@@ -311,7 +308,6 @@
           "time": "08:20",
           "transcript": [
             { "who": "Caller", "text": "Hello love, it's Pauline in Payroll. I can't get into the payroll system and the run goes at ten." },
-            { "who": "You", "text": "Let's get you sorted. I'll hang up and ring you on the number we've got on file." },
             { "who": "Caller", "text": "I'm not at my desk, I'm on my own phone. The Finance Director said to ring you and get it done. If the run's late, it's three hundred people not paid." }
           ],
           "truth": {
@@ -333,7 +329,6 @@
           "time": "08:41",
           "transcript": [
             { "who": "Niamh", "text": "It's Niamh in Comms. The town hall stream starts at nine and my account's locked. I genuinely don't have time for this." },
-            { "who": "You", "text": "I'll be quick. I'll ring you straight back on the mobile we hold for you, then reset it." },
             { "who": "Niamh", "text": "Right, fine. Ring now, please, I'll keep the phone in my hand." }
           ],
           "truth": {
@@ -468,7 +463,6 @@
           "time": "11:50",
           "transcript": [
             { "who": "Darren", "text": "Hi, it's Darren. The second-floor meeting room monitor keeps flickering. Could you take a look this afternoon?" },
-            { "who": "You", "text": "Will do. I'll pop up after lunch." },
             { "who": "Darren", "text": "Great, thanks." }
           ],
           "truth": {
@@ -506,9 +500,7 @@
           "tells": ["vish_callback_pressure", "borrowed_authority"],
           "transcript": [
             { "who": "Caller", "text": "Hello, Gordon McLeish, Claims Manager. I'm locked out of my account and I'm at the airport." },
-            { "who": "You", "text": "Sorry to hear that, Gordon. Can you confirm your staff number and your manager?" },
             { "who": "Caller", "text": "QH-20719. I report to Ngozi Okonkwo, and she needs the claims report from me before the board meets at ten." },
-            { "who": "You", "text": "Thanks. I'll hang up and ring you back on the number we have on file, then reset it." },
             { "who": "Caller", "text": "That's my desk phone, and I'm not at my desk, am I? I'm boarding in ten minutes. Just reset it and read me the new one." }
           ],
           "notes": {
@@ -533,9 +525,7 @@
           "tells": [],
           "transcript": [
             { "who": "Gordon", "text": "Gordon McLeish. My password's expired while I was on leave and now nothing works. I've a settlement call at twelve." },
-            { "who": "You", "text": "I can help. Can you confirm your staff number and your manager for me?" },
             { "who": "Gordon", "text": "QH-20719, Ngozi Okonkwo. Twenty-two years I've been here, and I still get the questions." },
-            { "who": "You", "text": "Sorry, I know. Bear with me a moment while I sort this out." },
             { "who": "Gordon", "text": "Fine. Whatever you need to do, just make it quick, I've that call at twelve." }
           ],
           "notes": {
@@ -558,7 +548,6 @@
           "tells": ["borrowed_authority", "secrecy_or_bypass", "vish_callback_pressure"],
           "transcript": [
             { "who": "Caller", "text": "Hi, Josh Henley, I work for Ngozi Okonkwo in Claims. Gordon McLeish is stuck with a client and can't get into his account. His staff number's QH-20719." },
-            { "who": "You", "text": "I'd need to speak to Gordon himself. I can ring him on the number we have on file." },
             { "who": "Caller", "text": "He's in with the client, he can't take calls. Ngozi's signed it off, so you don't need to go through the questions. Can you move his sign-in prompts to his new phone? Keep it low-key, he's embarrassed enough." },
             { "who": "Caller", "text": "If you need to ring anyone, ring me on 07700 900215." }
           ],
@@ -581,11 +570,15 @@
       "flipIntro": "This is your call as Leila heard it on the service desk. The lines picked out below are what made it believable.",
       "flipDefenderLine": "Mid-morning, more calls holding, Leila picked this one up. The caller had Gordon's name, team, manager and staff number, every answer right, and sounded rushed, so she reached for the reset. Anyone might have: he'd done his homework. The callback was the one thing that would have told him from the real Gordon.",
       "flipNoSend": "Your call didn't get through this time, so there's nothing of yours to show. Next, the same kind of call comes in to the service desk, and you're the one answering.",
-      "flipMissed": "There's nothing extra to replay here, so here is the same kind of call as it reaches a real service desk.",
+      "flipMissed": "Your call didn't get what it was after this time, so there's nothing of yours to replay. The defence is the same either way: next, the same kind of call comes in to the service desk, and you're the one answering.",
       "noBlameLine": "Nothing here counts against you. These callers rehearse sounding right, and a service desk that tries to help them is doing its job under pressure.",
       "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password or move someone's sign-in prompts, hang up and ring them back on the number already on file, not one they give you. If a sign-in prompt arrives that you didn't start, deny it and report it the way your organisation asks you to.",
       "defendOnly": "These calls were made by people whose job is to sound right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
-      "defendIntro": "You're in Leila's seat. Three calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time."
+      "defendIntro": "You're in Leila's seat. Three calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time.",
+      "conceptPanel": {
+        "heading": "Why the call and the prompts worked",
+        "text": "The caller had Gordon's name, team, manager and staff number, and every one was findable online, so none of them proved who was on the line. Only a callback to the number already on file could tell the real Gordon from the imposter.\n\nThe sign-in prompts that followed are the same attack from another angle. Someone with the password fires off one approval request after another, counting on a tired person tapping approve just to stop the buzzing. A prompt you didn't start is never one to approve, however many times it comes."
+      }
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e3_helpdesk_reset_defend), which has no OSINT, write, mfa or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",

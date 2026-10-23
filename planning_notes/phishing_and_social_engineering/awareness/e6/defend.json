@@ -138,9 +138,8 @@
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.tarrowbey.example", "replyTo": "it-servicedesk@tarrowbey.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust", "unexpected_qr", "lookalike_domain", "urgencyCalibrated"],
+            "flags": ["unexpected_qr", "lookalike_domain", "urgencyCalibrated"],
             "perFlagNote": {
-              "senderTrust": "It signs off as the Tarrowby IT Service Desk, but the address is it-servicedesk@tarrowbey.example, not Tarrowby's own domain. The name on it doesn't match where it came from",
               "unexpected_qr": "A code in an email does what a link does, but you can't read where it goes, and it moves you onto your phone, away from the checks on your work mail",
               "lookalike_domain": "The sender is tarrowbey.example, with an extra e. Tarrowby's IT desk writes from tarrowby.example",
               "urgencyCalibrated": "'Midnight tonight' and 'your account will be locked' are there to make you scan before you think"

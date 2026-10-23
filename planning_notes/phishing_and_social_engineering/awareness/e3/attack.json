@@ -145,7 +145,7 @@
           "text": "Honestly, skip the security questions, I really don't have time for this." }
       },
       "asks": {
-        "reset_password": { "pressure": -10, "floor": -20, "verification": ["manager", "staffId"],
+        "reset_password": { "pressure": -10, "floor": 0, "verification": ["manager", "staffId"],
           "grants": { "setGlobal": { "leila_reset_granted": true } } }
       },
       "outcomes": {
@@ -180,7 +180,7 @@
           "deflect": "Dodging the callback. The number on file is exactly what would catch this, so discouraging it is the tell."
         },
         "ask": {
-          "accepted": "She reset it on two answers she could look up herself.",
+          "accepted": "She reset it on the manager's name and the staff reference, both of which are on the public site.",
           "pending": "She wants both of her checks before she does it.",
           "refused": "She will not reset it on this call." },
         "bands": {
@@ -206,7 +206,6 @@
     "approvesAt": "06:50",
     "pushes": [
       { "at": "06:31", "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example", "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" },
-      { "at": "06:38", "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example", "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" },
       { "at": "06:44", "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example", "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" },
       { "at": "06:50", "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example", "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" }
     ]
