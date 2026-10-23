@@ -490,6 +490,9 @@ def check(ekey, pair, stage):
                 "compares the two results when the first check was finished.")
         obs = c['kiosk'].format(nth='second')
         ending = success_screen('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
+    desc += (" Organiser note: each role's check tests the channel that role meets in its "
+             "episode, and in a session that runs more than one episode only the learner's "
+             "primary-role check is recorded.")
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, c['end'], aim, task, done, globals_,
                   {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, ending, extra)

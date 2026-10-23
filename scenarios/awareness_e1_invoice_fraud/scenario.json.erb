@@ -201,6 +201,45 @@
             }
           },
           {
+            "id": "e1_pennine_bank_calm",
+            "from": {
+              "name": "Pennine Oat Mills",
+              "address": "accounts@pennine-oatmills.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Our bank details have changed (no rush)",
+            "time": "11:30",
+            "body": "Hello,\nJust a note for your records. We've moved our business banking, so when you next pay us please use the account below rather than the one on file. There's nothing outstanding today, so there's no rush at all: it can wait for your next run against PO-4471.\nNew account name: Pennine Oat Mills Ltd\nNew account number ending 2290\nMany thanks,\nBryony Thwaite\nCredit Control, Pennine Oat Mills",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.pennine-oatmills.example",
+              "replyTo": "accounts@pennine-oatmills.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "lookalike_domain",
+                "changed_bank_details"
+              ],
+              "flagAlternatives": [
+                [
+                  "senderTrust",
+                  "lookalike_domain"
+                ]
+              ],
+              "perFlagNote": {
+                "senderTrust": "This isn't the address Pennine's accounts team use. It reads as Pennine, but it came from pennine-oatmills.example.",
+                "lookalike_domain": "Pennine's real domain is pennineoatmills.example; this one puts a hyphen between pennine and oatmills.",
+                "changed_bank_details": "A new bank account is the change invoice fraud depends on, and the calm 'no rush' tone does the work the urgency did in the other one: it keeps you from stopping to ring and check. Ring Pennine on the number in your supplier file before you pay the new account."
+              },
+              "ifTrusted": "When Pennine's invoice for PO-4471 comes in, you'd pay it to the sender's account, and Pennine would still be waiting to be paid.",
+              "reportReply": "Thanks. That isn't Pennine's domain: pennine-oatmills adds a hyphen. We've rung them on the number on file, and their bank hasn't changed."
+            }
+          },
+          {
             "id": "e1_ceo_wire",
             "from": {
               "name": "Ravinder Sandhu",

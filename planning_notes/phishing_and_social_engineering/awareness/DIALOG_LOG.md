@@ -919,3 +919,107 @@ Proven: the test passes on the synced repo, and (temporarily perturbing one E1 e
 `scripts/validate_social/awareness.rb`, `test/js/validator-social-awareness.test.mjs`. The untracked
 `scenarios/awareness_*/dungeon_graph.*` predate this session (mtime 2026-10-22); the `--no-graph` runs
 here did not write them.
+
+---
+
+## Fun-and-learning data pass (2026-10-23): aw2, aw5, aw8, E5 check-form reword
+
+Scope: the DATA parts of the FUN_DECISIONS "Awareness" changes (aw1/aw3/aw6/aw9 are the parallel
+engine fixer's; aw4 held pending its engine hook; aw7 is "Later"). No JS/CSS/validator edits here.
+
+### aw2 — one consequential choice in each template attack, quoted back in the flip: STOPPED, needs an engine hook
+The flip replays the learner's composed message verbatim (`resolvePlayerSent` → the chosen pretext text
+shows in the message pane with its tells), so the *artefact* is already quoted back. But the flip's
+narration line is a single fixed string, `strings.flipDefenderLine`, rendered by
+`flip-view.js:187` with no awareness of the learner's choice; `episode-runner-minigame.js:_renderFlip`
+passes `strings` wholesale and never reads `state.sent.templateId` (which the model already records,
+`episode-model.js:sentFromRecord`). So a *choice-aware* defender line — FUN_REVIEW item 2's example,
+"the invoice number **you chose** is real…" — cannot be authored in data: there is no mechanism to pick
+a per-choice line. This applies to every template episode (E1, E2, E4, E6, E7), so aw2 is held for the
+engine builder. **Hook needed (small):** the runner selects, e.g.,
+`strings.flipDefenderLineByPretext?.[state.sent.templateId] ?? strings.flipDefenderLine` and passes it to
+`renderFlipView` (or the flip view resolves it from a passed `templateId`). Data would then be one extra
+string per meaningful pretext branch. No aw2 data shipped, to avoid a fixed `flipDefenderLine` that lies
+for some branch.
+
+### aw5 — a mirror pair (suspicious-looking genuine + normal-looking, on-screen-catchable phish) in every defend set
+Audited all seven defend sets (the episode's own `defend.setId` set):
+- **E1 `e1_payments_inbox`**: had the suspicious-genuine (`e1_bank_confirmed`, calm genuine bank change
+  "confirmed by phone") but **no calm/normal-looking phish** — both existing phish are loud (urgent
+  lookalike; CEO personal-inbox secrecy), so a learner could win on "pushy = phish." **ADDED**
+  `e1_pennine_bank_calm` (below).
+- **E2 `e2_recruitment_inbox`**: already compliant — suspicious-genuine `e2_cv_docx` / `e2_agency_shortlist`;
+  normal-looking phish `e2_enable_content` (a routine "Job application" macro lure, tell on screen). No change.
+- **E3 `e3_service_desk_queue`** (role-swap calls): already the gold mirror — `e3_call_gordon_real`
+  (grumpy, pressured, genuine; same four facts as the impostor) vs `e3_call_gordon_impostor` /
+  `e3_call_on_behalf`; only the callback distinguishes them. No change.
+- **E4 `e4_pa_inbox`**: compliant — suspicious-genuine `e4_vm_landed` (calm genuine voicemail mirroring the
+  phish `e4_vm_gate`) and `e4_wrenfield_itinerary`; normal-looking phish `e4_wrenfield_lookalike` (a mundane
+  hotel-billing email, tell = look-alike domain). No change (borderline: its mild "today" urgency, but the
+  scored tell is the domain, not the tone).
+- **E5 `e5_links_inbox`**: already several of each (the product's strongest set). No change.
+- **E6 `e6_phone_messages`**: compliant — suspicious-genuine `e6_shift_moved` / `e6_canteen_qr`;
+  normal-looking phish `e6_parking_permit` (QR mimicking the expected permit rollout, tell = look-alike
+  domain + unexpected QR). No change.
+- **E7 `e7_finance_line`**: has the suspicious-genuine (`e7_vm_lindiwe_gate`, a pressured-but-genuine gate
+  call) and a genuine/phish voicemail mirror, but no calm on-screen-catchable phish. **Tried** adding a calm
+  look-alike-domain email (`e7_pennine_bank_calm`) + `lookalike_domain` in the set's channelTells — but the
+  extra email flips `defendSetKind` (`episode-runner-minigame.js`) from `'voice'` to `'messages'` (a 3-voicemail
+  / 3-email tie resolves to `'messages'`), demoting the whole episode from a voicemail round to a generic
+  inbox round. Proven by the e7-full bridge: the change failed 8/13 ("Open the voicemail" no longer the
+  defend button, first voicemail verdict unreachable), while the HEAD baseline passed 13/13. A voicemail has
+  no domain/link, so a *calm, on-screen-catchable* phish cannot exist in E7's channel without changing the
+  round kind. **REVERTED** the E7 addition; E7 left at HEAD. Recommend the orchestrator either accept E7's
+  existing voicemail mirror, or defer to aw7 (E7 → defend-only).
+
+New message (E1), identical in fragment `e1/defend.json` and full erb (parity holds), inserted after
+`e1_po_pennine`, before `e1_ceo_wire`:
+- **`e1_pennine_bank_calm`** — From "Pennine Oat Mills" `accounts@pennine-oatmills.example` (look-alike:
+  a hyphen in the real `pennineoatmills.example`), subject "Our bank details have changed (no rush)". Body:
+  "Hello,\nJust a note for your records. We've moved our business banking, so when you next pay us please
+  use the account below rather than the one on file. There's nothing outstanding today, so there's no rush
+  at all: it can wait for your next run against PO-4471.\nNew account name: Pennine Oat Mills Ltd\nNew
+  account number ending 2290\nMany thanks,\nBryony Thwaite\nCredit Control, Pennine Oat Mills". Phish;
+  flags `senderTrust, lookalike_domain, changed_bank_details` (either-tick `[senderTrust, lookalike_domain]`),
+  on-screen tell = the look-alike domain in the From. It ties to the genuine `e1_po_pennine` (PO-4471) above
+  and mirrors the calm genuine `e1_bank_confirmed`, so the learner must check the domain, not the tone.
+  E1 set now 6 messages (3 phish / 3 genuine), within the validator's 4..8.
+
+### aw8 — tell organisers the pre/post checks are per role
+Appended one sentence to every pre/post **check** mission.json `description` (organiser/catalogue copy;
+FUN_REVIEW item 8 calls this "organiser copy"), via the four generators' `desc` build (one append each,
+covering pre and post): *"Organiser note: each role's check tests the channel that role meets in its
+episode, and in a session that runs more than one episode only the learner's primary-role check is
+recorded."* 24 mission.json regenerated and copied in. Not put in any learner-facing string. (Nuance for
+the orchestrator: a catalogue description is faintly learner-visible; phrased as an explicit "Organiser
+note" so it reads as meta-guidance. A dedicated organiser README would be fully learner-invisible if
+preferred.)
+
+### E5 — conditional password-manager wording in the general check forms
+The general-role check pages carried past-tense autofill wording ("your password manager recognised the
+site and filled it in", "filled it in", "offered nothing") although the autofill sits behind an optional
+button. Reworded to the conditional form the E5 defend set already uses ("would recognise the site and
+fill it in", "would fill it in", "would offer nothing"), in `e5/defend.json` (`general_form_a`/`_b`); the
+four general check scenarios regenerated and copied in. 0 residual past-tense; 3 conditional notes each.
+
+### Pipeline / parity
+- Fragments edited: `e1/defend.json` (aw5), `e5/defend.json` (E5 reword). Generators edited: all four
+  (aw8). Full erb edited directly: `awareness_e1_invoice_fraud` (aw5, hand-mirrored, parity holds).
+- No-change baseline before editing: fresh regen of all 31 shells byte-identical to the repo.
+- After editing, regen → diff → copied in **30 changed files**: `awareness_e1_invoice_fraud_defend`
+  scenario (new message), 4 general check scenarios (E5 reword), 24 check mission.json (aw8). E7 shells
+  reverted to HEAD. A fresh regen of my files is byte-identical apart from the parallel lighting agent's
+  `training_room.py` / `training_room_lighting.json` drift (not mine; not propagated — I used
+  `git show HEAD:` to revert E7, not a regen, to avoid pulling their uncommitted lighting into a shell).
+- Bridge updated deliberately: `tools/playtest/se/bridge-e1-full.jsonl` — the triage plan gained
+  `['e1_pennine_bank_calm','report',['lookalike_domain','changed_bank_details']]` for the new 6th message.
+  `bridge-e7-full.jsonl` left at HEAD (E7 reverted).
+
+### Checks run
+- Parity test `social-awareness-fragment-erb-parity`: **7/7 pass**.
+- Validator `--strict-social --no-graph --skip-ink` on all **38** awareness shells: **all exit 0**, no new
+  warnings.
+- `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs`: **1778/1778 pass**.
+- Full-episode bridges (keyless :3001, one at a time): **e1-full 13/13 PASS** (with the new 6-message plan);
+  **e7-full 13/13 PASS** at HEAD (after the E7 revert). The intermediate E7 attempt's 8/13 failure is the
+  evidence for the defendSetKind flip described above. e2–e6 unchanged by this pass (not re-run).

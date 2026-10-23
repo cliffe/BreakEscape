@@ -525,6 +525,9 @@ def check(ekey, pair, stage):
                 f"{c['items_post']} It is matched to the first check (awareness_pre_{word}_{pair}), and the end screen "
                 "compares the two results when the first check was finished.")
         obs = c['kiosk'].format(nth='second')
+    desc += (" Organiser note: each role's check tests the channel that role meets in its "
+             "episode, and in a session that runs more than one episode only the learner's "
+             "primary-role check is recorded.")
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, c['end'], aim, task, done, CHECK_ENDINGS[stage],
                   round_globals(ep_id, prefix, done),
