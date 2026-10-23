@@ -659,6 +659,12 @@ export default class NPCManager {
    */
   _queueScriptedConversation(conv) {
     const framework = window.MinigameFramework;
+    // A task or objective toast raised a moment ago (the room-entry task whose event
+    // started this) was showing when the conversation opened, got pulled back and showed
+    // again on close. Pull it back now, before it is visible, and hold toasts until the
+    // conversation is up (F24).
+    window.holdRecentNotifications?.();
+    window.expectPanelWithin?.((conv.startDelayMs || 0) + 1000);
     if (!this._scriptedCallBusy() && this._scriptedCallQueue.length === 0) {
       this._scriptedCall = { npcId: conv.npcId, minigame: null };
       if (!conv.startDelayMs) {

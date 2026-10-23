@@ -109,3 +109,23 @@ test('callers set the expectation before the toast', () => {
     assert.match(container.slice(noted - 300, noted), /expectPanelWithin/);
     assert.match(read('minigames/framework/minigame-manager.js'), /clearExpectedPanel/);
 });
+
+// A room-entry task toast followed by a scripted conversation: the queue pulls the toast
+// back before it is visible and holds later ones until the conversation opens.
+test('scripted conversations expect their panel before opening', () => {
+    const src = read('systems/npc-manager.js');
+    const at = src.indexOf('_queueScriptedConversation(conv) {');
+    assert.ok(at > 0);
+    const head = src.slice(at, at + 1200);
+    assert.match(head, /holdRecentNotifications/);
+    assert.match(head, /expectPanelWithin\?\.\(\(conv\.startDelayMs \|\| 0\) \+ 1000\)/);
+});
+
+// The Mission Brief popup opens on a poll; toasts raised while it is due wait for it
+test('the mission brief popup expects its panel while it waits', () => {
+    const src = read('utils/helpers.js');
+    const at = src.indexOf('export function showBriefWhenClear');
+    const body = src.slice(at, src.indexOf('\n}\n', at));
+    assert.match(body, /expectPanelWithin\?\./);
+    assert.match(body, /holdRecentNotifications\?\./);
+});
