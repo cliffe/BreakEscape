@@ -1,3 +1,7 @@
+# Resume note: VM weave fixes (started 2026-10-23)
+
+Brief `docs/agents/VM_WEAVE_FIX_BRIEF.md`; source `scenarios/VM_INTEGRATION_REVIEW.md` (bbc7e25c6), R1–R39 approved except R10 (standalone-only; Hacktivity deployment is the focus). Baseline commits before edits: d12120486, 4501b7c26, 6aebbed38; SecGen 7c2773df1. Running: engine (Opus), game m01–m03 / m04–m06 / m07–m08 / m09–m10 (opus48), SecGen m04+m08 / m09 / m10 (opus48). Status 2026-10-23: engine 74810fe06; m01 711851e39, m02 e5dac40ea, m03 49ca8dcd3, m04 3caa47eae, m05 e794996a1, m06 84f8ec099, m07 1f292b5f2, m08 (this commit); SecGen m04+m08 7c2532511. All m01–m08 changes browser-checked on :3001 (scratchpad check-* reports). Waiting on the user's foothold picks (https://claude.ai/artifact/3jn66bsrWoZRazGa5yVv6g) for m09/m10: SecGen m09/m10 edits and m09/m10 game edits (debrief lines describe the footholds) are uncommitted in the tree. Then: finish m09/m10 SecGen per picks (opus48), adjust the debrief lines, browser-check, commit; mark R-items done in the review; TTS list to the user.
+
 # Resume note: backlog batch (started 2026-10-22)
 
 Brief `docs/agents/BACKLOG_BATCH_BRIEF.md`. Done 2026-10-22: commits 5a8bf225 (engine), c98b7e55 (m06 tracer board), cf16ef61 (m02 Gary occlusion off); 13 backlog entries removed. Open follow-ups are in `docs/IDEAS_BACKLOG.md` under "Follow-ups from the backlog batch" (owed browser checks for route-around and combat, Node 20 for the harness, m06 blind run, Gary's mapping).
