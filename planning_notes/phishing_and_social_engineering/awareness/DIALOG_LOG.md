@@ -794,3 +794,128 @@ Verification:
   under load; a probe confirmed stage=flip, done includes write, `.aw-flip` present and
   `rec.tells=['urgencyCalibrated']` all satisfied) and passed clean on rerun; the lab fixer was editing
   the bridge files concurrently. No ink changed, so no ink recompile.
+
+## Dialogue fixer cycle 3 (2026-10-23) — formal `npc-dialog-review` cycle 3 + fragment/erb drift guard
+
+Acted on `DIALOGUE_REVIEW_C3.md` (C3-1 MAJOR, C3-2…C3-5 minors, C3-T1 trivial) plus three E5 data
+items handed over by the coordinator with engine round 4 (`dbcb43f56`). Data only: fragments, full
+erbs, generated defend-only shells, one new Node test. **No voiced lines changed** — every edit is
+flip narration, briefs, perFlagNotes, whyFine page notes or flipPageIntro, all on-screen panel/triage
+text, none of it NPC/host ink. No TTS impact. No ink, CSS or engine JS touched.
+
+### C3-1 (MAJOR) — fragment↔erb flip-string drift. The shipped full erbs are the current design.
+Synced the fragments to the erbs (erb = current learner-facing text), then applied C3-2…C3-5 to both
+sides identically. The drift, before fixing (fragment → erb, all in `awarenessEpisode.strings`):
+
+- **E7 — whole flip cluster + brief stale (the retired voicemail-script design).** Fragment
+  `e7/defend.json` still read "write the script for a short voicemail", flipIntro "the voicemail you
+  scripted", flipDefenderLine "in the voice the finance office hears every week", flip* "the same kind
+  of voicemail reaches the finance office's phone … you're the one listening", flipHeading "Now it's on
+  your phone". Replaced with the erb's email-design wording (write the email that rides with a
+  cloned-voice call; Tom reads it). Also rewrote the fragment's `_attack` note, which described the
+  retired design, to point at the shipped erb.
+- **E2 brief** fragment said "write one job application to its recruitment team"; erb names "its
+  recruiter, Fatima Begum" (consistent with the flip). Synced fragment → erb.
+- **E2/E6 flip "arrives/lands/turns up" verb drift**, **E2/E4 flipMissed** (erb had dropped the
+  leading sentence in round 6, fragment had not): resolved by the C3-2 dedup below, applied to both.
+- **E3/E5 `defendIntro`** differ (fragment trimmed, erb richer) — **left as a documented intentional
+  divergence** (DIALOG_LOG cycle 1 MINOR-5: "E3 erb kept its richer scene-set"; the erb value carries
+  the red-team→defend "Now you're …" transition, the fragment value feeds the standalone defend-only
+  shell). Allow-listed in the guard, not synced.
+
+### C3-2 — flipMissed / flipLandedNoTells no longer echo the `flipMissedHeading`
+`flipMissedHeading` is "Nothing to replay this time" everywhere. Dropped the heading-echoing opener
+("Your … didn't land this time, so there's nothing of yours to replay from the other side.") from
+`flipMissed` in E1/E5/E6/E7 (E2/E4 erbs already deduped in round 6; synced the fragments). Every
+send-episode `flipMissed` now opens "The defence is the same either way: next, …" (the review proposed
+this exact form). Removed the "so there's nothing to replay" echo from all six `flipLandedNoTells`.
+
+### C3-3 — flipLandedNoTells opener varied per role (was identical in all six)
+Each send episode now opens with a role-tinted, replay-free line, then keeps its existing role tail:
+E1 "It landed clean, with nothing in it to catch this time."; E2 "It opened like any real application,
+with nothing off to pick up on."; E4 "It read as an ordinary message from Catherine, with nothing in it
+to question."; E5 "The page passed without a slip this time, nothing in it to pull apart."; E6 "It
+landed clean on the phone, with nothing in it to flag."; E7 "Nothing in it tripped a check this time."
+
+### C3-4 — E7 full brief re-parsed (the stacked appositives split in two)
+Was one sentence with three stacked appositives ("in the name of … , the message that would go with
+… , asking for …"). Now: "write an email in the name of Brightwell's chief executive, Ravinder Sandhu,
+asking for something he would never ask for. It's the message that would land alongside a cloned-voice
+call to accounts payable." Applied to both the fragment and the erb (part of the E7 sync).
+
+### C3-5 — flip reassurance closer varied (dropped the repeated "built this carefully … is not carelessness")
+E1 closer → "Anyone clearing a payment run acts on the one that checks out."; E2 → "Forty applications
+deep, anyone opens the next one."; E4 → "When a message fits the week and sounds like the boss, acting
+on it is the ordinary thing to do." E5 kept (it already names the concrete address-bar tell); E3/E6/E7
+already varied.
+
+### C3-T1 — E7 perFlagNote full stops
+Added the terminal full stop to `e7` `vish_callback_pressure` perFlagNotes ("…the excuse." and "…is the
+warning sign, not the reassurance.") in the fragment **and** the erb (both carried the identical string;
+fixing both keeps them in sync). The "is Y, not X" shape kept per the review.
+
+### Coordinator E5 items (engine round 4 hand-off)
+1. **Password-manager feedback the learner never triggered → conditional.** The five E5 defend-set page
+   notes asserted "your password manager filled it in / offered nothing / stayed quiet / didn't fill it
+   in" as past fact, but the autofill is behind an optional "Try your password manager" button. Reworded
+   to "would fill it in / would offer nothing / would stay quiet / would not fill it in" in `e5/defend.json`,
+   the full erb and (via regen) the `_defend` shell. **Flagged, not changed:** the E5 general check-form
+   pages (`general_form_a/b`, fragment lines ~227/250/333/442/465/548) carry the same past-tense wording;
+   left to the coordinator's scope decision (they feed the pre/post_general shells and sit in the A/B
+   parity multiset; the coordinator's line list named only the defend set).
+2. **E5 `flipPageIntro` could promise tells that aren't there.** A learner can build a clean page with no
+   page tells, yet the string said "The parts picked out below are what make it believable." The engine
+   renders `flipPageIntro` unconditionally with no "no-tells" variant (`flip-view.js:125`). Reworded the
+   single string to read true either way: "Anything that would give it away is picked out below." (full
+   erb only — `flipPageIntro` is a full-episode-only key, allow-listed in the guard.)
+3. **Weakest-skill "Look for it…" nudge — engine-side, no data string.** The only occurrences are in
+   `inbox-triage-minigame.js:853,860`; naming several tied skills is already handled by `weakestText`
+   and `debrief-view.js` (`names.length`). No awareness data string says "Look for it". Nothing to change
+   here; flagged for the engine fixer.
+
+### Drift guard (new) — `test/js/social-awareness-fragment-erb-parity.test.mjs`
+Per episode, parses the fragment (`e<N>/defend.json`) and the full erb (`scenarios/awareness_e<N>_*/
+scenario.json.erb`, plain JSON — no ERB tags) and compares the keys meant to be shared, failing with a
+list of every mismatch:
+- `awarenessEpisode.strings` (values deep-equal for keys in both),
+- `awarenessEpisode.debrief`,
+- the full-episode triage set (`defend.setId`): every message (content + `truth`, matched by id) and
+  the set-level copy (`factorStrings`, `channelTells`, `outcome`, …).
+`"_"`-prefixed authoring notes (`_attack`, `_worked`, `_reusedFrom`, `_prefix`, `_order`, `_calls`,
+`_audio`) are stripped before comparison. **Allow-list (intentional differences, one reason each):**
+- `strings.defendIntro` value may differ — full erb keeps the richer scene-set and the red-team→defend
+  transition; the fragment's trimmed value feeds the standalone defend-only shell (cycle 1 MINOR-5).
+- erb-only `strings` keys are full-episode-only UI panels not needed in the fragment/defend-only shell:
+  `conceptPanel`, `flipCallIntro`, `flipPageIntro`, `voicePanel`, `defendIntro` (E6/E7 carry it only in
+  the erb).
+- the triage set's erb-only `playerSentAuth` records what the learner sent on the red-team side; the
+  fragment set (also feeding defend-only, which has no send) omits it.
+Proven: the test passes on the synced repo, and (temporarily perturbing one E1 erb string) fails listing
+`strings.flipMissed differs`, then passes again after restore.
+
+### Where each change lives (survives a regenerate)
+- Fragments (source of record): `e{1,2,4,5,6,7}/defend.json`.
+- Full episodes (hand-mirrored, edited directly): `awareness_e{1,2,4,5,6,7}` erbs (E3 unchanged).
+- Generated defend-only shells: regenerated into scratch (no-change baseline byte-identical first),
+  diffed, copied in — **6 changed** (`awareness_e{1,2,4,5,6,7}_*_defend/scenario.json.erb`: each picked
+  up its reworded `flipLandedNoTells`; e5 also the five conditional page notes; e7 also the two
+  perFlagNote full stops). e3 defend-only unchanged; no check shells changed (no check-set edits).
+- New test: `test/js/social-awareness-fragment-erb-parity.test.mjs`.
+
+### Checks run
+- **No-change baseline:** fresh regen of all four generators into scratch byte-identical to the repo
+  before editing (31 shells). **Post-copy:** a fresh regen is byte-identical again (0 diffs).
+- **Validator** (`--strict-social --no-graph --skip-ink`): **all 38 awareness shells exit 0.** Warnings
+  pre-existing only (E7 `phish_ceo_voice_target_landed` declared-but-not-read, a design-stage item).
+- **Node tests:** `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs` —
+  **1777/1777 pass**, including the 7 new parity subtests.
+- **Full-episode bridges** (Node, one at a time, live keyless :3001, no server start/stop; an engine
+  fixer's screenshot driver was running concurrently and was left alone): **all PASS** — e1 13/13
+  (4126), e2 14/14 (4127), e4 14/14 (4129), e5 18/18 (4131), e6 15/15 (4132), e7 13/13 (4134). e3 not
+  edited, not run.
+
+### Not mine (parallel engine fixer's WIP, untouched here)
+`public/break_escape/css/awareness-skin.css`, `public/break_escape/js/systems/awareness-measure.js`,
+`scripts/validate_social/awareness.rb`, `test/js/validator-social-awareness.test.mjs`. The untracked
+`scenarios/awareness_*/dungeon_graph.*` predate this session (mtime 2026-10-22); the `--no-graph` runs
+here did not write them.
