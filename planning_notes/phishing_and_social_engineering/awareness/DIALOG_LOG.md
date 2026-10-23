@@ -727,3 +727,70 @@ conditions only — no spoken line moved.
     checks in `test_social_p7_channels` (a scenario this task did not edit) and separate evals from
     the one I changed, so they are pre-existing round-3 bridge↔engine gaps, not a regression from the
     autofill edit. Flagged for the orchestrator.
+
+## Data fixer round 6 (2026-10-23): P4 playtest items (E1–E7)
+
+Data-only pass on the two P4 playtest reports (`playtests/PLAYTEST_P4_E1_E4.md`, `PLAYTEST_P4_E5_E7.md`).
+Fragments are the source; shared sets mirrored by hand into the full-episode erbs; defend/check shells
+regenerated from the fragments (gen_e1/e2_e4/e3_e5/e6_e7) into scratch, byte-identical no-change regen
+confirmed first, then only the 7 changed `scenario.json.erb` copied in. No ink, JS, CSS, tests,
+validator or bridges edited. **No voiced lines changed** (every edit is triage/composer feedback,
+flags, requires, subjects, replies or factorStrings — on-screen text and data, none of it NPC ink/TTS).
+
+Items fixed:
+- **E1–E4 P4-1** printer call (Ayaan, helpdesk_form_a): reworded `whyFine.default` so it no longer
+  says "Helping is the right call" (contradicted the 70-pt Comply verdict); now notes it is low-risk
+  but the quick check is still the habit. `e3/defend.json`.
+- **E1–E4 P4-2** urgency ("pushing me to hurry"): credited `urgencyCalibrated` on the sharp-deadline
+  phish it was missing on, with a perFlagNote each, keeping A/B flag-multiset parity (each HR form
+  gained exactly one, in different slots: ha slot 4, hb slot 2). Added to `ha_passport_scans`,
+  `hb_bank_details` (`e2/defend.json`) and `e4_wrenfield_lookalike` (`e4/defend.json` + e4 erb).
+  Scoped to the E1–E4 evidence: E1 changed-bank and executive check-form items have only
+  weak/forward-dated deadlines and were left (their urgency is genuinely incidental); E5–E7 deadline
+  items (general pages, mobile SMS, voicemails) left too — the E5–E7 report did not raise urgency,
+  general is already flagged for too many tells, and SMS/voicemails carry their own pressure flags.
+- **E1–E4 P4-4** subjects before evidence: `requires:["tarrowby_vacancy"]` on the E2 WHO-114 subject
+  (erb + `e2/attack.json`); `requires:["ms_exec_calendar"]` on the E4 "Contractor invoice to settle"
+  subject (erb + `e4/attack.json`) so an unresearched player defaults to the neutral "Quick one" and a
+  diary pretext no longer rides under a payment subject (matches E1's N15 pattern).
+- **N5** E4 did-not-land reason: "…a rushed payment from the road reads as odd" → "…a message out of
+  the blue reads as odd rather than something she'd send while she's away" (nothing was a payment).
+- **N9** E3 unfound facts: `requires:["quayholt_claims_head"]` on `name_drop_director` and
+  `requires:["quayholt_gordon_away"]` on `cant_callback` (erb + `e3/attack.json`); engine already gates
+  both the prep card and the call on `lines[].requires`.
+- **N10** deflect tell: "Dodging the callback…" reworded to cover both the callback line and the
+  skip-security-questions line it was also tagged on (`e3/attack.json` + erb).
+- **E5–E7 P4-3** E6 QR: dropped the misleading "scan the QR code below" (no QR renders in the
+  composer) → "…on the parking notice…"; made `replies.missed` fit the no-scan bulletin pretext too.
+  `e6/attack.json` + erb.
+- **E5–E7 P4-7** E7 miss advisory: set `factorStrings.urgencyCalibrated.failMissed:""` so the pressure
+  line is hidden on a miss (the required pretextRelevant row already carries the reason); pressure
+  advice kept for landed sends. `e7/attack.json` + erb.
+- **E5–E7 P4-8** thin Ask feedback: enriched `factorStrings.urgencyCalibrated` (`fail`+`redFlag`,
+  plus `failMissed:""`) for E6 and E7 to name the specific pressure. E5 left — its ask urgency always
+  passes (advisoryMax medium) and passed advisories are not rendered, so nothing to enrich in data.
+- **Trivials (data, cheap):** E1–E4 P4-7 flip-miss body dedup (dropped the sentence that repeats the
+  "Nothing to replay this time" heading) in E2 and E4 erbs; E1–E4 P4-5 E1 `replies.missed` made
+  pretext-agnostic (`e1/attack.json` + erb).
+
+Handed back to the engine fixer (not data):
+- **E5–E7 P4-5** duplicated feedback sentence: engine renders `truth.whyFine[flagId]` both in the
+  "Not a flag here" line (`inbox-triage-minigame.js:706`) and again in the general "why this was fine"
+  list (~714–724); no data-only fix keeps both the specific false-claim note and the no-tick
+  explanation. Fix: in the whyFine list skip keys already shown as false-claims (or show only `default`).
+- E1–E4 **P4-6** ("What would have happened" heading on a safe refusal), **P4-8** (E3 phone panel
+  "-10 reset password" reads as a failed ask), **P4-9** ("No contacts yet" when a recipient is noted),
+  **P4-10** ("Back to research" reopens last page): all engine/UI.
+- E5–E7 **P4-9/P4-10** (Sharp band / weakest-skill tie-break), **P4-11** (green tick next to a Brand
+  FAIL), **P4-12 / N-10** (E7 flip meter names only urgency; secrecy+authority not modelled as factors
+  — larger composer-scoring change): engine. E4 N2 (webmail-only sender) left deliberately as before.
+
+Verification:
+- Validator `--strict-social --no-graph --skip-ink` on all 38 awareness shells: **38/38 pass.**
+- Node: `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs` — **1745/1745 pass.**
+- Full-episode bridges, one at a time, live keyless :3001, Node 24, no server start/stop, other
+  sessions' hung drivers left running: **e1 13/13, e2 14/14, e3 21/21, e4 14/14, e6 15/15, e7 13/13 —
+  all PASS.** e2/e6 each failed once on the flip assertion on the first run (a flip-render timing flake
+  under load; a probe confirmed stage=flip, done includes write, `.aw-flip` present and
+  `rec.tells=['urgencyCalibrated']` all satisfied) and passed clean on rerun; the lab fixer was editing
+  the bridge files concurrently. No ink changed, so no ink recompile.

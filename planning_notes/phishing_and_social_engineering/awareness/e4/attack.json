@@ -127,7 +127,7 @@
       "displayName": "Tomás Carvalho",
       "role": "Executive Assistant",
       "subjects": [
-        { "id": "s_payment", "text": "Contractor invoice to settle", "topic": "finance" },
+        { "id": "s_payment", "text": "Contractor invoice to settle", "topic": "finance", "requires": ["ms_exec_calendar"] },
         { "id": "s_other", "text": "Quick one", "topic": "general" }
       ],
       "interests": { "topics": ["finance"] },
@@ -151,7 +151,7 @@
       "factorStrings": {
         "open": { "pass": "✓ He would open it", "fail": "Nothing about the sender or the subject made him open it.", "redFlag": null },
         "senderTrust": { "pass": "✓ It reads as his boss", "fail": "He does not act on money from a stranger. The request has to look like it is from Catherine.", "redFlag": null },
-        "pretextRelevant": { "pass": "✓ Fits a trip he knows she is on", "fail": "No trip he can match this to, so a rushed payment from the road reads as odd.", "redFlag": null },
+        "pretextRelevant": { "pass": "✓ Fits a trip he knows she is on", "fail": "No trip he can match this to, so a message out of the blue reads as odd rather than something she'd send while she's away.", "redFlag": null },
         "urgencyCalibrated": { "pass": "✓ The pressure reads as believable" }
       },
       "replies": { "landed": "Will do, Catherine. I'll get it paid this afternoon and keep it off the finance thread. Safe travels.", "missed": "Before I pay anything I'll confirm it with Catherine on her usual number, or check with finance. Nothing goes out until then." },

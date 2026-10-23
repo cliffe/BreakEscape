@@ -149,7 +149,7 @@
         "pretextRelevant": { "pass": "✓ Ties to an invoice she is expecting to pay", "fail": "No open invoice she can match this to, so no reason to act on it.", "redFlag": null },
         "urgencyCalibrated": { "pass": "✓ The pressure reads as believable" }
       },
-      "replies": { "landed": "Thanks Derek, I'll get the payee details updated before we run payment.", "missed": "Thanks, but I don't change payee details from an email. I'll ring Harlow on the number we already hold to check first." },
+      "replies": { "landed": "Thanks Derek, I'll get the payee details updated before we run payment.", "missed": "Thanks, but I don't act on this kind of email without checking. I'll ring the supplier on the number we already hold first." },
       "hints": [
         "Who does Brightwell's finance team already trust for invoices from this supplier?",
         "What open invoice could you tie the message to, so it reads as expected?",

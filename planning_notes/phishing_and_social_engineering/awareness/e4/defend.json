@@ -156,12 +156,13 @@
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.wrenfield-travel.example", "replyTo": "accounts@wrenfield-travel.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["lookalike_domain", "changed_bank_details", "senderTrust"],
+            "flags": ["lookalike_domain", "changed_bank_details", "senderTrust", "urgencyCalibrated"],
             "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
               "lookalike_domain": "This morning's itinerary came from wrenfieldtravel.example. This one is wrenfield-travel.example, with an added hyphen",
               "changed_bank_details": "'Use these details, not the ones on file' is the commonest invoice-fraud move. The itinerary said everything was paid on the firm's account. The safe step is to ring Wrenfield on the number you already hold",
-              "senderTrust": "The name says Wrenfield, but the address is on wrenfield-travel.example, which isn't Wrenfield's"
+              "senderTrust": "The name says Wrenfield, but the address is on wrenfield-travel.example, which isn't Wrenfield's",
+              "urgencyCalibrated": "'Pay the balance by bank transfer today' to keep the room is pressure to move the money before you can check the new account"
             },
             "ifTrusted": "£1,860 would go to an account the sender controls, and the hotel was already paid.",
             "reportReply": "Thanks. Wrenfield say they sent nothing and the hotel is paid. The look-alike address has been blocked."

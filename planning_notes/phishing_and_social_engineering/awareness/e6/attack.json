@@ -59,13 +59,13 @@
                  { "id": "sender_address", "type": "address", "label": "sender's address" } ] },
     "greet_generic": { "part": "greeting", "text": "Hi,", "slots": [] },
     "pretext_qr_permit": { "part": "pretext",
-      "text": "Quick one before Friday: we've moved the depot car park onto {scheme}, so everyone needs to register their vehicle. Scan the QR code below with your phone camera and you're done.",
+      "text": "Quick one before Friday: we've moved the depot car park onto {scheme}, so everyone needs to register their vehicle. Scan the QR code on the parking notice with your phone camera and you're done.",
       "slots": [ { "id": "scheme", "type": "reference", "label": "which permit scheme" } ],
       "urgency": "high" },
     "pretext_bulletin": { "part": "pretext", "text": "Here is this month's depot bulletin, no action needed.", "slots": [],
       "urgency": "low" },
     "pretext_qr_permit_calm": { "part": "pretext",
-      "text": "When you get a chance, we've moved the depot car park onto {scheme}, so staff need to register their vehicle. You can scan the QR code below with your phone camera, or do it from the staff app, whichever suits.",
+      "text": "When you get a chance, we've moved the depot car park onto {scheme}, so staff need to register their vehicle. You can scan the QR code on the parking notice with your phone camera, or do it from the staff app, whichever suits.",
       "slots": [ { "id": "scheme", "type": "reference", "label": "which permit scheme" } ],
       "urgency": "low" },
     "ask_scan": { "part": "ask", "text": "Can you scan it today so I can tick you off the list? You don't want to be clamped on Monday.", "slots": [],
@@ -154,9 +154,9 @@
         "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
         "senderTrust": { "pass": "✓ From Facilities, who she'd expect a parking notice from", "fail": "She does not recognise this sender. Depot notices reach her from Facilities, not from a name she has never seen.", "redFlag": "The From line carries Dev Acharya's real Facilities address, so it reads as the depot notice Kaylee acts on, but it was forged: Facilities never sent it, and a From line can be set to show any name and address." },
         "pretextRelevant": { "pass": "✓ Ties to the new parking permit she was told to register for", "fail": "No change she can match this to, so no reason to scan anything.", "redFlag": null },
-        "urgencyCalibrated": { "pass": "✓ The Friday deadline reads as believable" }
+        "urgencyCalibrated": { "pass": "✓ The Friday deadline reads as believable", "fail": "'Scan it today or you'll be clamped on Monday' is a deadline and a threat rolled into one, which is the pressure that gets someone to scan before they check.", "failMissed": "", "redFlag": "The 'today, or you'll be clamped' line rushes you past checking whether the notice is genuine." }
       },
-      "replies": { "landed": "Cheers Dev, scanning it now so I'm on the list.", "missed": "Not scanning that one — I'll check with the depot office first before I tap anything." },
+      "replies": { "landed": "Cheers Dev, scanning it now so I'm on the list.", "missed": "I'll check with the depot office first before I act on anything in this." },
       "hints": [
         "Which internal team would a member of depot staff expect a parking notice from?",
         "What change were staff told to sort out, so an unexpected prompt reads as expected?",

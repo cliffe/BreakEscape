@@ -248,7 +248,8 @@
               "flags": [
                 "lookalike_domain",
                 "changed_bank_details",
-                "senderTrust"
+                "senderTrust",
+                "urgencyCalibrated"
               ],
               "flagAlternatives": [
                 [
@@ -259,7 +260,8 @@
               "perFlagNote": {
                 "lookalike_domain": "This morning's itinerary came from wrenfieldtravel.example. This one is wrenfield-travel.example, with an added hyphen",
                 "changed_bank_details": "'Use these details, not the ones on file' is the commonest invoice-fraud move. The itinerary said everything was paid on the firm's account. The safe step is to ring Wrenfield on the number you already hold",
-                "senderTrust": "The name says Wrenfield, but the address is on wrenfield-travel.example, which isn't Wrenfield's"
+                "senderTrust": "The name says Wrenfield, but the address is on wrenfield-travel.example, which isn't Wrenfield's",
+                "urgencyCalibrated": "'Pay the balance by bank transfer today' to keep the room is pressure to move the money before you can check the new account"
               },
               "ifTrusted": "£1,860 would go to an account the sender controls, and the hotel was already paid.",
               "reportReply": "Thanks. Wrenfield say they sent nothing and the hotel is paid. The look-alike address has been blocked."
@@ -314,7 +316,7 @@
         "flipIntro": "This is the email you just sent, as Tomás saw it on his phone. The lines picked out below are what make it believable.",
         "flipDefenderLine": "Tomás read it between setting up two meetings, with more still to do. It fitted Catherine's week and it sounded like her, so he opened the payment form. Being fooled by something built this well is not a sign of carelessness.",
         "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, messages like it arrive in Tomás's inbox and voicemail, and you're the one reading them.",
-        "flipMissed": "There's nothing of yours to replay from the other side this time. The defence is the same either way: next, messages like it arrive in Tomás's inbox and voicemail, and you're the one reading them.",
+        "flipMissed": "The defence is the same either way: next, messages like it arrive in Tomás's inbox and voicemail, and you're the one reading them.",
         "flipMissedHeading": "Nothing to replay this time",
         "flipLandedNoTells": "It got through, but there was nothing in it to pick apart this time, so there's nothing to replay. Next, messages like it arrive in Tomás's inbox and voicemail, and you're the one reading them.",
         "noBlameLine": "There's no mark against you for a miss here. Every one of these was built to look and sound right, and the people who act on them are trying to help in a hurry. A miss here is about the pressure you were under.",
@@ -616,7 +618,10 @@
           {
             "id": "s_payment",
             "text": "Contractor invoice to settle",
-            "topic": "finance"
+            "topic": "finance",
+            "requires": [
+              "ms_exec_calendar"
+            ]
           },
           {
             "id": "s_other",
@@ -681,7 +686,7 @@
           },
           "pretextRelevant": {
             "pass": "✓ Fits a trip he knows she is on",
-            "fail": "No trip he can match this to, so a rushed payment from the road reads as odd.",
+            "fail": "No trip he can match this to, so a message out of the blue reads as odd rather than something she'd send while she's away.",
             "redFlag": null
           },
           "urgencyCalibrated": {

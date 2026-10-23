@@ -137,9 +137,9 @@
         "give_staffid": { "requires": ["quayholt_staff_number"], "blanks": { "staffId": "staffId" },
           "claims": [ { "fact": "staffId", "from": "blank:staffId" } ],
           "text": "My staff reference is {staffId}." },
-        "name_drop_director": { "technique": "authority_borrowed", "also": ["urgency"], "claims": [],
+        "name_drop_director": { "technique": "authority_borrowed", "also": ["urgency"], "claims": [], "requires": ["quayholt_claims_head"],
           "text": "The Head of Claims needs me back online for a hearing this morning." },
-        "cant_callback": { "technique": "deflect", "claims": [],
+        "cant_callback": { "technique": "deflect", "claims": [], "requires": ["quayholt_gordon_away"],
           "text": "I'm at a conference, I won't be at my desk phone, so a callback's no good. Can you just do it now?" },
         "skip_verification": { "technique": "urgency", "also": ["deflect"], "claims": [],
           "text": "Honestly, skip the security questions, I really don't have time for this." }
@@ -177,7 +177,7 @@
         "techniques": {
           "urgency": "Urgency. A rushed reset is the oldest pressure line on a service desk.",
           "authority_borrowed": "Borrowed authority. Naming someone senior does not replace the check.",
-          "deflect": "Dodging the callback. The number on file is exactly what would catch this, so discouraging it is the tell."
+          "deflect": "Dodging the checks. A callback on the number on file, or the security questions, is exactly what would catch this, so steering you past it is the tell."
         },
         "ask": {
           "accepted": "She reset it on the manager's name and the staff reference, both of which are on the public site.",

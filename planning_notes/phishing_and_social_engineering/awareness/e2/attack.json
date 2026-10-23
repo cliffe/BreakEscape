@@ -146,7 +146,7 @@
       "displayName": "Fatima Begum",
       "role": "Recruitment Lead",
       "subjects": [
-        { "id": "s_application", "text": "Application — Warehouse Operative (WHO-114)", "topic": "recruitment" },
+        { "id": "s_application", "text": "Application — Warehouse Operative (WHO-114)", "topic": "recruitment", "requires": ["tarrowby_vacancy"] },
         { "id": "s_other", "text": "Quick note", "topic": "general" }
       ],
       "interests": { "topics": ["recruitment"] },

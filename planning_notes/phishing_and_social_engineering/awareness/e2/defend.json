@@ -270,9 +270,10 @@
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "colin.mather.depot@inboxly.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust"],
+            "flags": ["senderTrust", "urgencyCalibrated"],
             "perFlagNote": {
-              "senderTrust": "Colin's name on a personal inbox at inboxly.example, not tarrowby.example"
+              "senderTrust": "Colin's name on a personal inbox at inboxly.example, not tarrowby.example",
+              "urgencyCalibrated": "'Send them before 3' and 'HR will only slow it down' rush you and steer you round the normal onboarding route"
             },
             "ifTrusted": "Two people's passport scans would go to a stranger, which is enough to open accounts in their names.",
             "reportReply": "Thanks. Colin has his laptop and didn't send this. Passport copies only ever go through the onboarding system."
@@ -468,9 +469,10 @@
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "deborah.haldane.hr@quickpost-mail.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust"],
+            "flags": ["senderTrust", "urgencyCalibrated"],
             "perFlagNote": {
-              "senderTrust": "Deborah's name on a personal inbox at quickpost-mail.example, not tarrowby.example"
+              "senderTrust": "Deborah's name on a personal inbox at quickpost-mail.example, not tarrowby.example",
+              "urgencyCalibrated": "'Needed today', 'before 5' and 'don't copy payroll in' push you to act fast and skip the people who would normally check"
             },
             "ifTrusted": "New starters' bank details would go to a stranger, who could use them to divert their first pay.",
             "reportReply": "Thanks. Deborah didn't send this. Bank details only ever go to payroll, through the onboarding system."

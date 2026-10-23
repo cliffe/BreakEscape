@@ -433,7 +433,7 @@
       },
       "pretext_qr_permit": {
         "part": "pretext",
-        "text": "Quick one before Friday: we've moved the depot car park onto {scheme}, so everyone needs to register their vehicle. Scan the QR code below with your phone camera and you're done.",
+        "text": "Quick one before Friday: we've moved the depot car park onto {scheme}, so everyone needs to register their vehicle. Scan the QR code on the parking notice with your phone camera and you're done.",
         "slots": [
           {
             "id": "scheme",
@@ -451,7 +451,7 @@
       },
       "pretext_qr_permit_calm": {
         "part": "pretext",
-        "text": "When you get a chance, we've moved the depot car park onto {scheme}, so staff need to register their vehicle. You can scan the QR code below with your phone camera, or do it from the staff app, whichever suits.",
+        "text": "When you get a chance, we've moved the depot car park onto {scheme}, so staff need to register their vehicle. You can scan the QR code on the parking notice with your phone camera, or do it from the staff app, whichever suits.",
         "slots": [
           {
             "id": "scheme",
@@ -676,12 +676,15 @@
             "redFlag": null
           },
           "urgencyCalibrated": {
-            "pass": "✓ The Friday deadline reads as believable"
+            "pass": "✓ The Friday deadline reads as believable",
+            "fail": "'Scan it today or you'll be clamped on Monday' is a deadline and a threat rolled into one, which is the pressure that gets someone to scan before they check.",
+            "failMissed": "",
+            "redFlag": "The 'today, or you'll be clamped' line rushes you past checking whether the notice is genuine."
           }
         },
         "replies": {
           "landed": "Cheers Dev, scanning it now so I'm on the list.",
-          "missed": "Not scanning that one — I'll check with the depot office first before I tap anything."
+          "missed": "I'll check with the depot office first before I act on anything in this."
         },
         "hints": [
           "Which internal team would a member of depot staff expect a parking notice from?",
