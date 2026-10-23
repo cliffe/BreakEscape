@@ -21,6 +21,7 @@
 import MusicController from './music-controller.js';
 import { buildEndSequence, replayEndingEntry } from './closing-sequence.js';
 import { playEndingMusic, whenEndingAudible } from './ending-audio.js';
+import { MUSIC_CONFIG } from './music-config.js';
 
 const TAG = '[ScenarioMusic]';
 
@@ -73,6 +74,48 @@ export function endingReplayOptions(scenario, globals) {
 }
 if (typeof window !== 'undefined') window.endingReplayOptions = endingReplayOptions;
 
+/**
+ * The global that records which song the live ending played, so a reload of the
+ * concluded game plays the same one (a shuffled playlist would pick another). It is
+ * not declared in any scenario, so it stays out of the inks; it is saved to the
+ * server with the other globals, so it holds on any device.
+ */
+export const ENDING_TRACK_GLOBAL = 'ending_track_heard';
+
+/** Set a global the way the game's own setters do, and save it. */
+function setEndingTrackGlobal(title, syncNow) {
+    const globals = window.gameState?.globalVariables;
+    if (!globals || !title) return;
+    const oldValue = globals[ENDING_TRACK_GLOBAL];
+    if (oldValue === title) return;
+    globals[ENDING_TRACK_GLOBAL] = title;
+    window.npcConversationStateManager?.broadcastGlobalVariableChange?.(ENDING_TRACK_GLOBAL, title, null);
+    window.eventDispatcher?.emit?.(`global_variable_changed:${ENDING_TRACK_GLOBAL}`,
+        { name: ENDING_TRACK_GLOBAL, value: title, oldValue });
+    console.log(`${TAG} Ending track recorded: '${title}'`);
+    if (syncNow) window.stateSync?.sync?.();
+}
+
+/**
+ * Record the song an ending entry is playing. Call right after asking
+ * MusicController for it: the leader has chosen the track by then (the conclude
+ * request's sync then carries it); otherwise wait for its trackchange and save then.
+ */
+function rememberEndingTrack(entry) {
+    if (!entry?.playlist) return;
+    const st = MusicController.getState?.();
+    if (MusicController.isLeader && st?.playlist === entry.playlist && st.trackTitle) {
+        setEndingTrackGlobal(st.trackTitle, false);
+        return;
+    }
+    const onTrack = (e) => {
+        if (e?.detail?.playlist !== entry.playlist) return;
+        window.removeEventListener('musiccontroller:trackchange', onTrack);
+        setEndingTrackGlobal(e.detail.title, true);
+    };
+    window.addEventListener('musiccontroller:trackchange', onTrack);
+}
+
 // Once an ending's credits are up, the ending owns the music: no later event (a
 // game_loaded mood on reload, a global set after the credits) plays under or after it.
 let _endingOwnsMusic = false;
@@ -90,14 +133,21 @@ export function _resetEndingMusicLock() { _endingOwnsMusic = false; }
  * @returns {{creditsAfter: Promise, autoStop?: boolean}|null}
  */
 export function startEndingReplayMusic(scenario, globals, deps) {
+    const saved = globals || window.gameState?.globalVariables || {};
     const found = replayEndingEntry(
         scenario?.music?.events,
-        globals || window.gameState?.globalVariables || {},
+        saved,
         (cond, data) => evaluateCondition(cond, data)
     );
     if (!found) return null;
     _endingOwnsMusic = true;
-    const { ready } = playEndingMusic(found.entry, { mc: MusicController, ...deps });
+    // A shuffled playlist (m10 arrest, m09 victory) picked a song at the live ending;
+    // play that one again, when it is still in the entry's playlist.
+    const heard = saved[ENDING_TRACK_GLOBAL];
+    const inPlaylist = typeof heard === 'string' &&
+        !!MUSIC_CONFIG.playlists[found.entry.playlist]?.tracks?.some(t => t.title === heard);
+    const entry = inPlaylist ? { ...found.entry, track: heard } : found.entry;
+    const { ready } = playEndingMusic(entry, { mc: MusicController, ...deps });
     const opts = { creditsAfter: ready };
     if (found.entry.autoStop) opts.autoStop = true;
     return opts;
@@ -183,6 +233,8 @@ function switchIfConditionMet(entry, data) {
         console.log(`${TAG} Trigger '${entry.trigger}' → playlist '${entry.playlist}' (fade=${fade})`);
         MusicController.switchPlaylist(entry.playlist, fade);
     }
+
+    if (hasEnding) rememberEndingTrack(entry);
 
     // ── Stop-after-one-track flag ─────────────────────────────────────────────
     // stopAfterTrack: stop music + auto-close visualiser (legacy)

@@ -117,6 +117,7 @@ function fakeMc(state = 'running') {
         switchPlaylist(p, f) { this.calls.push(['switchPlaylist', p, f]); },
         stopAfterCurrentTrack() { this.calls.push(['stopAfter']); },
         startDefault() { this.calls.push(['startDefault']); },
+        getState() { return this.state || {}; },
     };
     m.context.resume = () => { m.context.state = 'running'; m.calls.push(['resume']); return Promise.resolve(); };
     return m;
@@ -124,7 +125,8 @@ function fakeMc(state = 'running') {
 const src = read('music/scenario-music-events.js')
     .replace("import MusicController from './music-controller.js';", 'const MusicController = globalThis.__mc;')
     .replace("'./closing-sequence.js'", `'${fileUrl('music/closing-sequence.js')}'`)
-    .replace("'./ending-audio.js'", `'${fileUrl('music/ending-audio.js')}'`);
+    .replace("'./ending-audio.js'", `'${fileUrl('music/ending-audio.js')}'`)
+    .replace("'./music-config.js'", `'${fileUrl('music/music-config.js')}'`);
 globalThis.__mc = new Proxy({}, { get: (_, k) => (typeof mc[k] === 'function' ? mc[k].bind(mc) : mc[k]) });
 const sme = await import(dataUrl(src));
 const tick = () => new Promise(r => setTimeout(r, 0));
@@ -247,4 +249,52 @@ test('a live ending in a running context opens its credits straight away', async
     for (let i = 0; i < 5 && !opened.length; i++) await tick();
     assert.equal(opened[0].creditsAfter, undefined);
     assert.deepEqual(mc.calls[0], ['switchPlaylist', 'end', true]);
+});
+
+// Shuffled ending playlists: the reload plays the song the live ending played.
+test('the live ending records the song it plays in a saved global', async () => {
+    const { win } = setup({ night_closed: true, ending: 'arrest' }, 'running');
+    let synced = 0;
+    win.stateSync = { sync: async () => { synced++; } };
+    win.BondVisualiser = { setAutoOpenSuppressed() {}, open() {} };
+    mc.switchPlaylist = function (p, f) { this.calls.push(['switchPlaylist', p, f]); this.state = { playlist: p, trackTitle: 'Cipher Tide' }; };
+    const disp = dispatcher();
+    win.eventDispatcher = disp;
+    sme.initScenarioMusicEvents({ music: { events } });
+    disp.fire('global_variable_changed:night_closed', { name: 'night_closed', value: true });
+    // Set before the conclude request, whose syncs save it (no game id here, so none run).
+    assert.equal(win.gameState.globalVariables[sme.ENDING_TRACK_GLOBAL], 'Cipher Tide');
+    assert.equal(synced, 0, 'no extra sync on the leader path');
+});
+
+test('a follower tab records the song when its track starts, and saves it', () => {
+    const { win } = setup({ night_closed: true, ending: 'arrest' }, 'running');
+    let synced = 0;
+    win.stateSync = { sync: async () => { synced++; } };
+    win.BondVisualiser = { setAutoOpenSuppressed() {}, open() {} };
+    mc.isLeader = false;
+    mc.state = { playlist: 'cutscene', trackTitle: 'Shadow Code 0' };
+    const disp = dispatcher();
+    win.eventDispatcher = disp;
+    sme.initScenarioMusicEvents({ music: { events } });
+    disp.fire('global_variable_changed:night_closed', { name: 'night_closed', value: true });
+    assert.equal(win.gameState.globalVariables[sme.ENDING_TRACK_GLOBAL], undefined);
+    win.fire('musiccontroller:trackchange', { title: 'Digital Leashes', playlist: 'victory' });
+    assert.equal(win.gameState.globalVariables[sme.ENDING_TRACK_GLOBAL], 'Digital Leashes');
+    assert.equal(synced, 1);
+});
+
+test('the replay plays the recorded song; an unknown or missing one falls back to the playlist', () => {
+    let { deps } = setup({ night_closed: true, ending: 'arrest', [sme.ENDING_TRACK_GLOBAL]: 'Cipher Tide' });
+    sme.startEndingReplayMusic({ music: { events } }, undefined, deps);
+    assert.deepEqual(mc.calls[0], ['playTrack', 'Cipher Tide', 'victory', false]);
+
+    ({ deps } = setup({ night_closed: true, ending: 'arrest', [sme.ENDING_TRACK_GLOBAL]: 'Not A Song' }));
+    sme.startEndingReplayMusic({ music: { events } }, undefined, deps);
+    assert.deepEqual(mc.calls[0], ['switchPlaylist', 'victory', false]);
+
+    // A song from another playlist (a later ending's) is not forced onto this one.
+    ({ deps } = setup({ night_closed: true, ending: 'lethal', [sme.ENDING_TRACK_GLOBAL]: 'Cipher Tide' }));
+    sme.startEndingReplayMusic({ music: { events } }, undefined, deps);
+    assert.deepEqual(mc.calls[0], ['switchPlaylist', 'end', false]);
 });
