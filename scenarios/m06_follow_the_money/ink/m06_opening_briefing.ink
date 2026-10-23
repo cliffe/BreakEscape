@@ -133,6 +133,12 @@ Agent HaX: Then their records. Somewhere in there is a wallet every cell draws o
 // ================================================
 
 === deployment ===
+// VM weave fix R12: the backend is named on the mandatory path too, so an
+// "I'm ready." player doesn't meet it cold. Skipped if they took `targets`,
+// where HaX already spelled it out.
+{not targets:
+    Agent HaX: Their backend comes first. Crack the accounts from the terminal in their server room, and bring the flags to our drop-site.
+}
 Agent HaX: And there's a clock. The wallets we watch have gone quiet, the way they do before a big payout.
 
 Agent HaX: Find the fund. Then you'll have two calls to make: what happens to the money, and what happens to Volkova.

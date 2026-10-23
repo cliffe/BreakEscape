@@ -1119,7 +1119,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "onceOnly": true,
               "setGlobal": { "recon_guide_offered": true, "druid_guide_offered": true, "cracking_guide_offered": true },
               "completeTask": "access_hackme_vm",
-              "sendTimedMessage": { "delay": 1800, "message": "You're on the backend. A data-analytics service is listening that shouldn't be: that's your way in. Map first. I've guides for recon, Druid and cracking." }
+              "sendTimedMessage": { "delay": 1800, "message": "You're on the backend. A data-analytics service is listening that shouldn't be: that's your way in. Four accounts across their estate. Map first. I've recon, Druid and cracking guides." }
             },
             {
               "_comment": "PASS 2: used to read the passphrase out ('bitcoin2025') the moment the checklist was picked up, which made the puzzle a pickup. Now HaX points at the second half of the clue.",
@@ -1151,14 +1151,14 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "objective_task_completed:submit_flag1",
               "onceOnly": true,
               "setGlobal": { "flag1_submitted": true, "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 1200, "message": "First account's yours. People here reuse passwords, so that one opens more than one door. When you need administrator rights, I've a guide.", "skipIfGlobal": "flag2_submitted" }
+              "sendTimedMessage": { "delay": 1200, "message": "First account's yours, one of the weak staff passwords Volkova flagged on the floor. People reuse them here, so it opens more than one door. Admin rights? I've a guide.", "skipIfGlobal": "flag2_submitted" }
             },
             {
               "eventPattern": "objective_task_completed:submit_flag2",
               "onceOnly": true,
               "setGlobal": { "flag2_submitted": true },
               "_comment": "Pass 5 A6: flag 2 had no story reaction.",
-              "sendTimedMessage": { "delay": 5500, "message": "Second account. One password, two boxes, just as their own rack sheet admitted. Next is the financial database. Its account runs their doors.", "skipIfGlobal": "flag3_submitted" }
+              "sendTimedMessage": { "delay": 5500, "message": "Second account. One password, two boxes, just as their rack sheet admitted, and as Volkova warned you on the floor. Next is the financial database. Its account runs their doors.", "skipIfGlobal": "flag3_submitted" }
             },
             {
               "eventPattern": "objective_task_completed:submit_flag3",
@@ -2001,6 +2001,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "takeable": false,
           "observations": "Secure terminal for submitting recovered financial access flags to SAFETYNET",
           "acceptsVms": ["hackme_crack_me_lab"],
+          "acceptsVmLabels": { "hackme_crack_me_lab": "HashChain backend" },
           "flags": <%= flags_for_vm('hackme_crack_me_lab', ['flag{hackme_password_cracked}', 'flag{crackme_credential_reuse}', 'flag{financial_database_access}', 'flag{complete_network_access}']) %>,
           "puzzle_graph_role": "terminal",
           "flagRewards": [
@@ -2008,22 +2009,26 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "type": "set_global",
               "key": "flag1_submitted",
               "value": true,
+              "label": "First backend account cracked",
               "description": "Flag 1: First server password cracked — initial backend access"
             },
             {
               "type": "set_global",
               "key": "flag2_submitted",
               "value": true,
+              "label": "Credential reuse — a second account opened",
               "description": "Flag 2: Credential reuse — the same password opens a second account"
             },
             {
               "type": "give_item",
               "item_name": "Door Controller Export",
+              "label": "Financial-database account reached (runs the door controllers)",
               "description": "Flag 3: Financial database reached — the same service account runs the door controllers; the drop-site cuts you their export"
             },
             {
               "type": "give_item",
               "item_name": "Cold Storage Recovery Keys",
+              "label": "Full estate — the vault account's recovery keys",
               "description": "Flag 4: Vault account taken — the cold-storage recovery keys come with it"
             }
           ],

@@ -406,7 +406,7 @@ Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing h
 Agent HaX: All four flags in.
 // Dialogue C1 (D6-3): the player chooses whether to hear the chain again.
 + [Walk me through it.]
-    Agent HaX: A build service nobody had switched off got you onto their backend. One cracked password, and the same password opened a second account.
+    Agent HaX: An analytics service nobody had locked down got you onto their backend. One cracked password, and the same password opened a second account.
     Agent HaX: The financial database gave us their doors, and the vault account gave us the keys to every cold wallet they hold.
     // Scenario design R1, decision 1 (CyBOK kill chains): the night as one chain.
     // Dialogue C1 (D6-4): one line, not a list.
@@ -451,7 +451,8 @@ Agent HaX: All four flags in.
     ~ fca_right += 1
     -> fca_next
 // Scenario design R1 (m7): the way in is a finding too. Ten options, three picks.
-* [A build service on their backend runs whatever it's sent.]
+// VM weave fix R2: the foothold is an analytics service, not a build service.
+* [An analytics service on their backend nobody had locked down.]
     ~ fca_right += 1
     -> fca_next
 * [The CEO switched off compliance reporting on the mixer.]
