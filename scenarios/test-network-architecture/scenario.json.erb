@@ -1,0 +1,115 @@
+{
+  "scenario_brief": "Riverside Water Treatment Works has suffered a cyber intrusion. You are in the control room. The network architecture diagram is on the wall — review the Purdue Model layout, identify the attack paths through the IT/OT boundary, and understand how the attacker may have reached the process control network.",
+  "endGoal": "Review the network architecture diagram and identify the active attack paths.",
+  "startRoom": "control_room",
+  "startItemsInInventory": [],
+  "objectives": [
+    {
+      "aimId": "review_architecture",
+      "title": "Network Architecture Review",
+      "description": "Study the Riverside WTW network diagram and click through the attack paths.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "open_diagram",
+          "title": "Open the network architecture diagram",
+          "type": "unlock_object",
+          "targetObject": "nad_terminal",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "control_room": {
+      "type": "room_office",
+      "name": "Control Room",
+      "connections": {},
+      "objects": [
+        {
+          "type": "network_architecture",
+          "sprite": "pc",
+          "id": "nad_terminal",
+          "name": "Network Architecture Diagram",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "scenarioData": {
+            "type": "network_architecture",
+            "id": "nad_terminal",
+            "title": "RIVERSIDE WATER TREATMENT WORKS — NETWORK ARCHITECTURE (PURDUE MODEL)",
+            "reviewedVar": "network_architecture_reviewed",
+            "viewBox": "0 0 760 470",
+            "zones": [
+              { "id": "it",    "label": "LEVEL 4–5 — ENTERPRISE IT NETWORK",   "y": 18,  "h": 68, "fill": "#2a0808", "stroke": "#7f1d1d", "nodeClass": "it",   "x": 8, "width": 744 },
+              { "id": "dmz",   "label": "DMZ / IT-OT BOUNDARY",                "y": 136, "h": 68, "fill": "#2a1800", "stroke": "#92400e", "nodeClass": "it",   "x": 8, "width": 744 },
+              { "id": "scada", "label": "LEVEL 3 — SCADA / PROCESS CONTROL",   "y": 254, "h": 68, "fill": "#1a1500", "stroke": "#78650a", "nodeClass": "ot",   "x": 8, "width": 744 },
+              { "id": "field", "label": "LEVEL 0–2 — FIELD DEVICES",           "y": 372, "h": 68, "fill": "#111111", "stroke": "#374151", "nodeClass": "ot",   "x": 8, "width": 744 }
+            ],
+            "nodes": [
+              { "id": "INET",     "label": "Internet",      "sublabel": "Gateway",            "warn": false, "zone": "it",    "x": 30,  "y": 36,  "w": 80,  "h": 34, "paths": ["rw1","rw2"], "desc": "External internet connection. All remote access enters through here.", "vuln": null },
+              { "id": "CORP",     "label": "Corporate LAN", "sublabel": "Enterprise VLAN",    "warn": false, "zone": "it",    "x": 130, "y": 36,  "w": 100, "h": 34, "paths": ["rw1","rw2"], "desc": "Enterprise network VLAN. Office systems, SCADA historian, and management workstations.", "vuln": null },
+              { "id": "AD",       "label": "Active",        "sublabel": "Directory ⚠",        "warn": true,  "zone": "it",    "x": 250, "y": 36,  "w": 90,  "h": 34, "paths": ["rw1","rw2"], "desc": "Domain Controller. Credential compromise confirmed — attacker has domain admin.", "vuln": "Domain admin credentials obtained via phishing. All enterprise accounts must be considered compromised." },
+              { "id": "ERP",      "label": "Business",      "sublabel": "Systems",            "warn": false, "zone": "it",    "x": 360, "y": 36,  "w": 80,  "h": 34, "paths": [],            "desc": "ERP and business management systems. Not in attack path.", "vuln": null },
+              { "id": "EMAIL",    "label": "Email",         "sublabel": "Server",             "warn": false, "zone": "it",    "x": 460, "y": 36,  "w": 80,  "h": 34, "paths": [],            "desc": "Corporate email server. Initial phishing email delivered here.", "vuln": null },
+
+              { "id": "VPN",      "label": "VPN Gateway",   "sublabel": null,                 "warn": false, "zone": "dmz",   "x": 50,  "y": 154, "w": 100, "h": 34, "paths": ["rw1"],       "desc": "Remote access VPN. Authenticated with compromised AD credentials.", "vuln": null },
+              { "id": "JUMP",     "label": "Jump Server",   "sublabel": "Vendor Access ⚠",    "warn": true,  "zone": "dmz",   "x": 185, "y": 154, "w": 130, "h": 34, "paths": ["rw1"],       "desc": "Engineering jump server. Vendor remote access sessions permitted. Bidirectional RDP enabled.", "vuln": "Dormant vendor account (watertech_svc) active. Session open since 02:14 from unrecognised IP. Primary lateral movement pivot into OT." },
+              { "id": "HIST",     "label": "Historian",     "sublabel": "Dual-Homed ⚠",       "warn": true,  "zone": "dmz",   "x": 360, "y": 154, "w": 110, "h": 34, "paths": ["rw2"],       "desc": "Process historian. Dual-homed — one interface on enterprise VLAN, one on SCADA network.", "vuln": "Dual-home provides a silent bridge from enterprise into the SCADA network. No IDS on the SCADA-side interface." },
+
+              { "id": "SCADA",    "label": "SCADA",         "sublabel": "Server",             "warn": false, "zone": "scada", "x": 60,  "y": 272, "w": 90,  "h": 34, "paths": ["rw1","rw2"], "desc": "Central SCADA server. Manages treatment process: filtration, chlorination, pressure zones. Communicates via Modbus/TCP.", "vuln": "Reachable via jump server RDP and historian dual-home. Modbus/TCP has no authentication." },
+              { "id": "HMI",      "label": "Operator HMI",  "sublabel": null,                 "warn": false, "zone": "scada", "x": 175, "y": 272, "w": 100, "h": 34, "paths": [],            "desc": "Operator workstation. Displays real-time process values and alarm state.", "vuln": null },
+              { "id": "PLC_PUMP", "label": "Pump PLC",      "sublabel": "Modbus/TCP ⚠",       "warn": true,  "zone": "scada", "x": 305, "y": 272, "w": 110, "h": 34, "paths": ["rw1"],       "desc": "Controls booster pump stations. Unauthenticated Modbus/TCP on all ports.", "vuln": "No authentication on Modbus/TCP. Register writes accepted from any SCADA-networked host. Pump speed and pressure setpoints can be altered remotely." },
+              { "id": "PLC_CHEM", "label": "Dosing PLC",    "sublabel": "Chlorination",       "warn": false, "zone": "scada", "x": 445, "y": 272, "w": 100, "h": 34, "paths": [],            "desc": "Controls chlorine dosing rates across the treatment process.", "vuln": null },
+
+              { "id": "PUMPS",    "label": "Booster",       "sublabel": "Pumps",              "warn": false, "zone": "field", "x": 50,  "y": 390, "w": 70,  "h": 30, "paths": [], "desc": "Booster pump stations across the distribution network.", "vuln": null },
+              { "id": "FLOW",     "label": "Flow",          "sublabel": "Meters",             "warn": false, "zone": "field", "x": 140, "y": 390, "w": 70,  "h": 30, "paths": [], "desc": "Electromagnetic flow meters. Feed realtime flow data into SCADA.", "vuln": null },
+              { "id": "PRESS",    "label": "Pressure",      "sublabel": "Sensors",            "warn": false, "zone": "field", "x": 230, "y": 390, "w": 80,  "h": 30, "paths": [], "desc": "Pressure transmitters across the distribution network.", "vuln": null },
+              { "id": "CHLORINE", "label": "Chlorine",      "sublabel": "Dosers",             "warn": false, "zone": "field", "x": 330, "y": 390, "w": 80,  "h": 30, "paths": [], "desc": "Chemical dosing actuators. Controlled by Dosing PLC.", "vuln": null },
+              { "id": "LEVEL",    "label": "Level",         "sublabel": "Sensors",            "warn": false, "zone": "field", "x": 430, "y": 390, "w": 70,  "h": 30, "paths": [], "desc": "Reservoir and tank level sensors.", "vuln": null }
+            ],
+            "externalOrgs": [],
+            "attackPaths": [
+              {
+                "id": "rw1",
+                "label": "Path 1 — Remote Access Pivot",
+                "desc": "Phishing → AD compromise → VPN → Jump Server (dormant vendor account) → SCADA → Pump PLC",
+                "claim": "RW-001",
+                "nodes": ["INET","CORP","AD","VPN","JUMP","SCADA","PLC_PUMP"]
+              },
+              {
+                "id": "rw2",
+                "label": "Path 2 — Historian Bridge",
+                "desc": "AD compromise → Historian dual-home → SCADA server",
+                "claim": "RW-002",
+                "nodes": ["CORP","AD","HIST","SCADA"]
+              }
+            ],
+            "lines": [
+              { "from": "INET",     "to": "CORP",     "type": "normal",   "paths": ["rw1","rw2"] },
+              { "from": "CORP",     "to": "AD",       "type": "normal",   "paths": ["rw1","rw2"] },
+              { "from": "CORP",     "to": "ERP",      "type": "normal",   "paths": [] },
+              { "from": "CORP",     "to": "EMAIL",    "type": "normal",   "paths": [] },
+              { "from": "CORP",     "to": "VPN",      "type": "normal",   "paths": ["rw1"] },
+              { "from": "AD",       "to": "JUMP",     "type": "boundary", "paths": ["rw1"], "label": "RDP" },
+              { "from": "HIST",     "to": "CORP",     "type": "legacy",   "paths": ["rw2"], "label": "dual-home" },
+              { "from": "HIST",     "to": "SCADA",    "type": "normal",   "paths": ["rw2"], "label": "OPC-UA" },
+              { "from": "VPN",      "to": "JUMP",     "type": "normal",   "paths": ["rw1"] },
+              { "from": "JUMP",     "to": "SCADA",    "type": "boundary", "paths": ["rw1"] },
+              { "from": "SCADA",    "to": "HMI",      "type": "normal",   "paths": [] },
+              { "from": "SCADA",    "to": "PLC_PUMP", "type": "normal",   "paths": ["rw1"], "label": "Modbus/TCP" },
+              { "from": "SCADA",    "to": "PLC_CHEM", "type": "normal",   "paths": [] },
+              { "from": "PLC_PUMP", "to": "PUMPS",    "type": "normal",   "paths": [] },
+              { "from": "PLC_PUMP", "to": "FLOW",     "type": "normal",   "paths": [] },
+              { "from": "PLC_PUMP", "to": "PRESS",    "type": "normal",   "paths": [] },
+              { "from": "PLC_CHEM", "to": "CHLORINE", "type": "normal",   "paths": [] },
+              { "from": "PLC_CHEM", "to": "LEVEL",    "type": "normal",   "paths": [] }
+            ]
+          },
+          "observations": "A wall-mounted display showing the Riverside Water Treatment Works network architecture, organized by Purdue Model levels. Two attack paths are highlighted — one through the IT/OT boundary via the vendor jump server, one via the dual-homed historian."
+        }
+      ]
+    }
+  }
+}

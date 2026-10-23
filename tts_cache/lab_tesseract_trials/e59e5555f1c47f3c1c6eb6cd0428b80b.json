@@ -1,0 +1,13 @@
+{
+  "key": "e59e5555f1c47f3c1c6eb6cd0428b80b",
+  "npc": "oleg_illiashenko",
+  "text": "This time the laptop is mine. Please don't tell my students.",
+  "voice": "Algieba",
+  "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

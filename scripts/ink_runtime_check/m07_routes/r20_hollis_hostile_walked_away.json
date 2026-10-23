@@ -1,0 +1,33 @@
+{
+ "globals": {
+  "team_assigned": true,
+  "team_assignment": "fracture",
+  "hurt_line_said": true
+ },
+ "steps": [
+  {
+   "note": "R20 (puzzle chains closing round, F9): Hollis goes hostile and the player walks away, as HaX's text advises. HaX gives both fight-controls texts (Q cycles hand, jab, cross; walking is by clicking in the open-hand mode). He is neither talked round nor knocked out, so the credits say he went for the player and was left standing, not 'Left at his post'."
+  },
+  { "set": { "briefing_played": true } },
+  { "event": "player_spotted:ray_hollis" },
+  { "talk": "hollis", "knot": "start", "picks": ["Walk at him", "Put it down"] },
+  {
+   "said": [
+    "One more push and this turns into a fight.",
+    "[choice] Put it down. (Fight him.)",
+    "with his fists up. This is going to be a fight.",
+    "Fists up, face him, hit him. Q a second time throws the harder punch.",
+    "He's slower than you, and he won't leave the checkpoint. If it's going badly, walk out of his reach before you read anything else."
+   ],
+   "notSaid": ["stows", "Or walk away", "Q switches to fists"]
+  },
+  { "expect": { "hollis_resolved": "ko" } },
+  { "enter": "operations_floor" },
+  {
+   "creditsSaid": ["RAY HOLLIS: Went for you, left standing"],
+   "creditsNotSaid": ["Left at his post", "Neutralised on shift", "Evaded"]
+  },
+ { "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice." },
+ { "maxRun": 9 }
+]
+}

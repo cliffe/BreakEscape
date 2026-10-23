@@ -1,0 +1,13 @@
+{
+  "key": "17d8ccfbf6838e943c1f038acd636720",
+  "npc": "dr_sharma",
+  "text": "David wrote the gap down and put his name to it. That's residual risk with an owner, which is the minimum.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,129 @@
+/* Lockpicking Minigame Styles */
+
+/* Lockpicking feedback styling */
+.lockpick-feedback {
+    background: rgba(0, 0, 0, 0.8);
+    color: #00ff00;
+    padding: 10px 15px;
+    border: 2px solid #00ff00;
+    margin: 10px 0;
+    font-family: 'GNF', monospace;
+    font-size: 20px;
+    text-align: center;
+    border: 1px solid #00ff00;
+    min-height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    position: relative;
+    z-index: 1000;
+    width: 100%;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.lockpick-feedback:empty {
+    display: none;
+}
+
+/* Lockpicking item section styling */
+.lockpicking-item-section {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    margin-bottom: 20px;
+}
+
+.lockpicking-item-image {
+    min-width: 80px;
+    min-height: 80px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+}
+
+.lockpicking-item-info h4 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 20px;
+    margin: 0 0 10px 0;
+    color: #3498db;
+}
+
+.lockpicking-item-info p {
+    font-size: 16px;
+    margin: 0;
+    color: #ecf0f1;
+    line-height: 1.4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .lockpicking-item-section {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+    
+    .lockpicking-item-image {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .lockpicking-item-info h4 {
+        font-size: 16px;
+    }
+    
+    .lockpicking-item-info p {
+        font-size: 14px;
+    }
+}
+
+/* Phaser game container styling - prevent margin/padding shifts */
+#phaser-game-container {
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+#phaser-game-container canvas {
+    margin: 0 !important;
+    display: block;
+}
+
+/* Portrait mobile: let the canvas fill available vertical space */
+@media (max-width: 768px) and (orientation: portrait) {
+    #phaser-game-container {
+        max-width: 100%;
+        width: 100%;
+        margin: 10px auto;
+    }
+
+    /* Compact the item info strip so more room is given to the canvas */
+    .lockpicking-item-section {
+        padding: 10px;
+        margin-bottom: 10px;
+        gap: 10px;
+    }
+
+    .lockpicking-item-image {
+        width: 50px;
+        height: 50px;
+        min-width: 50px;
+        min-height: 50px;
+    }
+
+    .lockpicking-item-info h4 {
+        font-size: 13px;
+    }
+
+    .lockpicking-item-info p {
+        font-size: 12px;
+    }
+}

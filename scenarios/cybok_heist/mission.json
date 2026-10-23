@@ -1,0 +1,34 @@
+{
+  "display_name": "CyBOK Heist",
+  "description": "Recover the Professor's backup of the CyBOK LaTeX source files. Navigate through the department offices, solve puzzles, pick locks, and crack the safe containing the precious backup HDD.",
+  "difficulty_level": 2,
+  "secgen_scenario": null,
+  "collection": "escape_room",
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": ["Physical security", "Lock bypass", "Security awareness", "Social engineering"]
+    },
+    {
+      "ka": "C",
+      "topic": "Cryptography",
+      "keywords": ["Safe combinations", "Code breaking", "Cipher fundamentals"]
+    },
+    {
+      "ka": "AC",
+      "topic": "Applied Cryptography",
+      "keywords": ["Encoding", "Cipher solving", "Cryptanalysis basics"]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Physical Security",
+      "keywords": ["Lockpicking", "Physical access control", "Lock bypass"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["Access control bypass", "Physical authentication"]
+    }
+  ]
+}

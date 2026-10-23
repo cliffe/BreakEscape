@@ -1,0 +1,6 @@
+{
+  "display_name": "Test: KO immunity and countdown display",
+  "description": "Engine check for koImmune NPCs, the door_unlocked event and object text chosen by a global.",
+  "difficulty_level": 1,
+  "collection": "testing"
+}

@@ -1,0 +1,7 @@
+{
+  "display_name": "Complex Multidirection Test",
+  "description": "Technical test for complex multi-directional room navigation.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

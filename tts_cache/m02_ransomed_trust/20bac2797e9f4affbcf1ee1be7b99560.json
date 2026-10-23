@@ -1,0 +1,13 @@
+{
+  "key": "20bac2797e9f4affbcf1ee1be7b99560",
+  "npc": "narrator",
+  "text": "You describe the email. Board chair to Legal: call it an implementation failure, draw up termination papers and a non-disparagement agreement.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

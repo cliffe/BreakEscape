@@ -1,0 +1,13 @@
+{
+  "key": "dde23ea65b48b0ab15aecf86211acade",
+  "npc": "sidhu_selvarajan",
+  "text": "Take this. It is on signatures. Let us be exact about them, because people confuse them with hashes.",
+  "voice": "Enceladus",
+  "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

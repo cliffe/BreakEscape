@@ -1,0 +1,23 @@
+  Dr Oleg Illiashenko / The sign on that door says staff only. You read it and came in anyway. That's a good instinct for this department.
+  Dr Oleg Illiashenko / Oleg Illiashenko. I'm one of the lecturers here. Sit anywhere that isn't covered in marking.
+  CHOICES(1): You look annoyed. Is something wrong?;What do you make of CryptoSecure?;What are the others like? Dr Shaw, Dr Selvarajan, Dr Schreuders?;Busy week?;I'll leave you to it.
+  > look annoyed
+  Dr Oleg Illiashenko / Only the usual. The new staff system has made soup of my name again.
+  Dr Oleg Illiashenko / It's waiting in the photocopier, if the photocopier will give it back. My name, in letters nobody has ever been called.
+  CHOICES(2): What do you make of CryptoSecure?;What are the others like? Dr Shaw, Dr Selvarajan, Dr Schreuders?;Busy week?;I'll leave you to it.
+  > Busy week
+  Dr Oleg Illiashenko / Freshers' week. Lost students, free pizza, and one laptop that won't join the Wi-Fi.
+  Dr Oleg Illiashenko / This time the laptop is mine. Please don't tell my students.
+  CHOICES(3): What do you make of CryptoSecure?;What are the others like? Dr Shaw, Dr Selvarajan, Dr Schreuders?;I'll leave you to it.
+  > others like
+  Dr Oleg Illiashenko / Tom has three hundred first-years this week and still remembers their names. I don't know how. I suspect a spreadsheet.
+  Dr Oleg Illiashenko / Sidhu checks everything twice, which is why I give him my exam papers to check once.
+  Dr Oleg Illiashenko / Cliffe I mostly see in corridors, walking quickly away from a committee.
+  CHOICES(4): What do you make of CryptoSecure?;I'll leave you to it.
+  > CryptoSecure
+  Dr Oleg Illiashenko / A recovery company that recruits first-years with puzzles. I have seen better business models. Not many more interesting ones.
+  Dr Oleg Illiashenko / If they offer you money for your password, the answer is no. If they offer you money for theirs, also no.
+  CHOICES(5): I'll leave you to it.
+  > leave you to it
+  Dr Oleg Illiashenko / Close the door properly on your way out. It sticks.
+[closed: None]

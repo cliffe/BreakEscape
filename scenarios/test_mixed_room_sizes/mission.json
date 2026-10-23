@@ -1,0 +1,7 @@
+{
+  "display_name": "Mixed Room Sizes Test",
+  "description": "Technical test for scenarios with varying room dimensions.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

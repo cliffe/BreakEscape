@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: free-text body mode",
+  "description": "Fixture for the free-text body mode (design 01 §2 Body, 00 §13). One room, one mail terminal, one open-inbox target. The composer shows an unscored free-text box; typing in it is shown in the sent mail but never judged and never read by the ink, and the templated parts still decide the send. Used by the free-text bridge check.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

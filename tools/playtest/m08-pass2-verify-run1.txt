@@ -1,0 +1,14 @@
+game            1181  (mission 52)
+created         2026-10-01 02:00:47 UTC
+last write      2026-10-01 02:14:24 UTC
+played for      816s of wall clock
+current room    "main_lobby"
+unlocked rooms  9: main_lobby, cryptography_lab, interrogation_room, operations_floor, security_archives, intel_analysis, break_room, server_room, director_office
+unlocked objs   2: badge_printer, director_safe
+inventory       9: Your Phone, Lock Pick Kit, Notepad, Personnel Record Printout -- Agent 0x47, Post-It On The Coffee Machine, Printed Server-Zone Badge, Director's Access Keycard -- All Zones, Interrogation Room Key, Sealed Psych Evaluation -- Agent 0x47
+NPCs met        12: opening_briefing_cutscene, receptionist_ai, agent_0x99, closing_debrief, agent_nightshade, nightshade_confrontation, agent_cipher, background_analyst, agent_phantom, agent_0x99_person, background_agent, director_netherton
+flags submitted 4: flag{m08_the_mole_safetynet_gitlist_server_4_d772f3}, flag{m08_the_mole_safetynet_gitlist_server_1_977202}, flag{m08_the_mole_safetynet_gitlist_server_2_55cee1}, flag{m08_the_mole_safetynet_gitlist_server_3_b43053}
+globals set     43: accused_cipher, accused_nightshade, accused_phantom, all_flags_submitted, archives_entered, archives_password_found, badge_cloned, brief_taken, briefing_played, cipher_alibi_known, cipher_interviewed, database_theft_understood, debrief_played, debrief_stance, fate_decided, flag1_submitted, flag2_submitted, flag3_submitted, flag4_submitted, found_access_logs, found_access_logs_hint, found_architect_comms, found_gitlist_vuln, found_leaked_creds, found_nightshade_profile, infoleak_guide_offered, mission_complete, mole_identified, nightshade_arrested, nightshade_confronted, nightshade_interviewed, nightshade_suspected, phantom_alibi_known, phantom_interviewed, player_name, privesc_guide_offered, recon_guide_offered, safe_pin_found, server_room_entered, start_debrief_cutscene, suspect_theory, tomb_gamma_location_known, vulnanalysis_guide_offered
+
+VERDICT: progress recorded — 8 rooms beyond the first, 2 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.

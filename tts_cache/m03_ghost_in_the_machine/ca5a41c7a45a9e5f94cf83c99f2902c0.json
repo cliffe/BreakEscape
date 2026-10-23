@@ -1,0 +1,13 @@
+{
+  "key": "ca5a41c7a45a9e5f94cf83c99f2902c0",
+  "npc": "narrator",
+  "text": "She lets the bag slide off her shoulder onto the desk.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:25:21Z"
+}

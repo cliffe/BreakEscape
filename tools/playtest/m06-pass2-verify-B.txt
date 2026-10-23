@@ -1,0 +1,14 @@
+game            1174  (mission 50)
+created         2026-09-30 22:35:56 UTC
+last write      2026-09-30 22:51:03 UTC
+played for      907s of wall clock
+current room    "reception_lobby"
+unlocked rooms  8: reception_lobby, security_checkpoint, trading_floor, server_room, blockchain_lab, data_center, executive_wing, satoshi_office
+unlocked objs   1: executive_safe
+inventory       12: Your Phone, Notepad, IT New Starter Checklist, Password Dictionary List, CTO Access Badge, ENTROPY Transaction Network Analysis, Door Controller Export, The Architect's Fund Allocation, Executive Access Badge, Framed Press Clipping, Cold Storage Recovery Keys, The Architect's Identity File
+NPCs met        9: opening_briefing_npc, director_netherton, agent_nightshade, agent_0x99_handler, closing_debrief_person, elena_volkov, trader_npc, blockchain_analyst, satoshi_nakamoto
+flags submitted 4: flag{m06_follow_the_money_hackme_crack_me_lab_1_7d97e4}, flag{m06_follow_the_money_hackme_crack_me_lab_2_aaecc9}, flag{m06_follow_the_money_hackme_crack_me_lab_3_1e19e5}, flag{m06_follow_the_money_hackme_crack_me_lab_4_29f3d8}
+globals set     36: architect_identity_found, assets_decided, assets_seized, blockchain_debrief_available, briefing_played, cracking_guide_offered, debrief_played, elena_badge_obtained, elena_fate_decided, elena_recruited, exchange_infiltrated, final_choice, financial_network_mapped, flag1_submitted, flag2_submitted, flag3_submitted, flag4_submitted, found_architects_fund, found_blockchain_evidence, found_password_lists, found_wallet_keys, fund_debrief_available, knows_architects_fund, knows_coordinated_attack, mission_priority, player_approach, player_name, privesc_guide_offered, recon_guide_offered, resolve_aim_open, rfid_guide_offered, satoshi_arrested, satoshi_confronted, satoshi_revealed, server_passphrase_known, start_debrief_cutscene
+
+VERDICT: progress recorded — 7 rooms beyond the first, 1 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.

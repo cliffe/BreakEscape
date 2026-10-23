@@ -1,0 +1,13 @@
+{
+  "key": "b557a28f6f1fec84f315614e588de88d",
+  "npc": "night_security_supervisor",
+  "text": "The deferred patch, the scanner over the servers: every one of those was decided by somebody with a title, in daylight, with minutes taken.",
+  "voice": "Enceladus",
+  "style": "Night security supervisor, fifties, eleven years on the same post. Consistent Estuary English -- flat Home Counties, quiet, unhurried. Courteous to the point of being soothing. When cornered the warmth switches off completely and what is underneath is calm, articulate and entirely unrepentant.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

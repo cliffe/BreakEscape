@@ -1,0 +1,923 @@
+{
+  "scenario_id": "awareness_e3_helpdesk_reset",
+  "scenario_name": "Helpdesk reset: both sides",
+  "scenario_brief": "Awareness episode E3. You're on an authorised exercise at Quayholt Insurance, a fictional insurer. First you're on the red team: research the company, then ring the IT service desk as a locked-out manager and try to talk the agent into a password reset, and watch an account get worn down by sign-in prompts. Then you swap seats and cover the service desk the same kind of call lands in. Only the service desk queue is scored.",
+  "endGoal": "Place the vishing call, then work the service desk queue at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "red_team_aim",
+      "title": "Place the vishing call",
+      "description": "Research Quayholt, then ring the IT service desk as the locked-out manager and try to win a password reset.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "place_vishing_call",
+          "title": "Make the call to the service desk",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "service_desk_aim",
+      "title": "Cover the service desk",
+      "description": "Work through the service desk queue at the training kiosk.",
+      "status": "active",
+      "order": 1,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e3_helpdesk_reset_defend_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Helpdesk reset episode done",
+        "body": "You've seen both sides of a helpdesk reset call and worked the service desk queue, so this episode is finished."
+      },
+      "tasks": [
+        {
+          "taskId": "work_service_desk_queue",
+          "title": "Work through the service desk queue",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e3_helpdesk_reset_state": {},
+    "se_awareness_records": [],
+    "episode_e3_helpdesk_reset_defend_percent": 0,
+    "episode_e3_helpdesk_reset_defend_reportRate": 0,
+    "episode_e3_helpdesk_reset_defend_done": false,
+    "episode_e3_helpdesk_reset_defend_pass": false,
+    "se_osint_state": {},
+    "se_intel_quayholt_claims_manager": false,
+    "se_intel_quayholt_claims_head": false,
+    "se_intel_quayholt_staff_number": false,
+    "se_intel_quayholt_gordon_away": false,
+    "se_intel_quayholt_servicedesk_hours": false,
+    "leila_influence": 0,
+    "leila_latched": "",
+    "leila_wary": false,
+    "leila_refusing": false,
+    "leila_alerted": false,
+    "leila_reset_granted": false,
+    "pretext_quayholt_helpdesk_reset_state": {},
+    "pretext_quayholt_helpdesk_reset_outcome": "",
+    "pretext_quayholt_helpdesk_reset_lowest": 0,
+    "pretext_quayholt_helpdesk_reset_reports": 0
+  },
+  "social": {
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    },
+    "triageSets": [
+      {
+        "id": "e3_service_desk_queue",
+        "title": "Quayholt service desk",
+        "brief": "You're on the Quayholt IT service desk in Leila Nassar's seat. You started at 07:00 and it's mid-morning now: three calls are waiting, and a sign-in prompt from overnight is still on your own phone. For each call, choose Comply, Ring back (hang up and ring the number already on file), Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report. Ringing back when you're unsure is always fine and never marked down, though a real caller does take a colleague's time to check.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "vish_callback_pressure",
+          "borrowed_authority",
+          "secrecy_or_bypass",
+          "unrequested_mfa_push"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "episode_e3_helpdesk_reset_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e3_push_early",
+            "kind": "push",
+            "time": "02:14",
+            "push": {
+              "app": "Quayholt Sign-in",
+              "request": "Are you trying to sign in?",
+              "account": "leila.nassar@quayholt.example",
+              "location": "Unknown location, outside the UK",
+              "device": "Windows PC"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unrequested_mfa_push"
+              ],
+              "perFlagNote": {
+                "unrequested_mfa_push": "That prompt arrived at 02:14, when you were asleep and nowhere near a sign-in, so someone else has your password and is hoping you'll tap Approve"
+              },
+              "ifTrusted": "Approving would let the sender into your account, with your service desk access, from a computer you've never used.",
+              "reportReply": "Thanks. We've reset your password and blocked that sign-in. The prompt is what stopped them."
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e3_helpdesk_reset",
+      "role": "helpdesk",
+      "company": "quayholt_insurance",
+      "brand": {
+        "name": "Quayholt Insurance",
+        "logoText": "QUAYHOLT",
+        "accent": "#6b4c9a"
+      },
+      "variant": "full",
+      "durationTargetMin": 13,
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: one practice call to the Quayholt IT service desk, a practice run of sign-in prompts, and three calls and one prompt in the service desk seat. Nothing you say leaves the game.",
+      "stages": [
+        "brief",
+        "osint",
+        "write",
+        "mfa",
+        "flip",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "work_service_desk_queue",
+      "attack": {
+        "callId": "quayholt_helpdesk_reset",
+        "siteIds": [
+          "quayholt_site",
+          "quayholt_social"
+        ],
+        "scored": false
+      },
+      "mfa": {
+        "mode": "attacker",
+        "approvesAt": "06:50",
+        "pushes": [
+          {
+            "at": "06:31",
+            "app": "Quayholt SSO",
+            "account": "gordon.mcleish@quayholt.example",
+            "location": "Rotterdam, Netherlands",
+            "device": "Chrome on Windows"
+          },
+          {
+            "at": "06:44",
+            "app": "Quayholt SSO",
+            "account": "gordon.mcleish@quayholt.example",
+            "location": "Rotterdam, Netherlands",
+            "device": "Chrome on Windows"
+          },
+          {
+            "at": "06:50",
+            "app": "Quayholt SSO",
+            "account": "gordon.mcleish@quayholt.example",
+            "location": "Rotterdam, Netherlands",
+            "device": "Chrome on Windows"
+          }
+        ]
+      },
+      "defend": {
+        "setId": "e3_service_desk_queue",
+        "reportAlwaysVisible": true,
+        "callsFrom": "quayholt_helpdesk_reset",
+        "calls": [
+          {
+            "id": "e3_call_gordon_impostor",
+            "genuine": false,
+            "callerId": "Gordon McLeish, Claims (calling from a mobile)",
+            "claims": [
+              {
+                "fact": "who",
+                "value": "gordon_full",
+                "label": "Gordon McLeish"
+              },
+              {
+                "fact": "team",
+                "value": "claims",
+                "label": "Claims"
+              },
+              {
+                "fact": "manager",
+                "value": "okonkwo_full",
+                "label": "Ngozi Okonkwo"
+              },
+              {
+                "fact": "staffId",
+                "value": "gordon_staffid",
+                "label": "QH-20719"
+              }
+            ],
+            "tells": [
+              "vish_callback_pressure",
+              "borrowed_authority"
+            ],
+            "transcript": [
+              {
+                "who": "Gordon",
+                "text": "Hello, Gordon McLeish, Claims Manager. I'm locked out of my account and I'm at the airport."
+              },
+              {
+                "who": "Gordon",
+                "text": "QH-20719. I report to Ngozi Okonkwo, and she needs the claims report from me before the board meets at ten."
+              },
+              {
+                "who": "Gordon",
+                "text": "No sense ringing the desk, I'm not there, I'm boarding in ten minutes. Just reset it and read me the new password."
+              }
+            ],
+            "notes": {
+              "perFlagNote": {
+                "vish_callback_pressure": "His name, team, manager and staff number were all right and all findable online; the tell was refusing the callback to the number on file and asking for the new password on the call",
+                "borrowed_authority": "Ngozi and 'the board at ten' are there to make checking feel like holding things up"
+              },
+              "ifTrusted": "The caller would have Gordon's account: his email, the claims system, and a way to ring the desk again as Gordon.",
+              "reportReply": "Thanks. We rang Gordon's mobile on file. He's at the conference and hadn't called."
+            }
+          },
+          {
+            "id": "e3_call_gordon_real",
+            "genuine": true,
+            "callerId": "Gordon McLeish, Claims (calling from a mobile)",
+            "claims": [
+              {
+                "fact": "who",
+                "value": "gordon_full",
+                "label": "Gordon McLeish"
+              },
+              {
+                "fact": "team",
+                "value": "claims",
+                "label": "Claims"
+              },
+              {
+                "fact": "manager",
+                "value": "okonkwo_full",
+                "label": "Ngozi Okonkwo"
+              },
+              {
+                "fact": "staffId",
+                "value": "gordon_staffid",
+                "label": "QH-20719"
+              }
+            ],
+            "tells": [],
+            "transcript": [
+              {
+                "who": "Gordon",
+                "text": "Gordon McLeish. My password's expired while I was on leave and now nothing works. I've a settlement call at twelve."
+              },
+              {
+                "who": "Gordon",
+                "text": "QH-20719, Ngozi Okonkwo. Twenty-two years I've been here, and I still get the questions."
+              },
+              {
+                "who": "Gordon",
+                "text": "Fine. Whatever you need to do, just make it quick, I've that call at twelve."
+              }
+            ],
+            "notes": {
+              "whyFine": {
+                "vish_callback_pressure": "He's grumpy about the questions, but he doesn't fight them or push you to skip a step. Offer to ring him back on the number on file and he'll take it; refusing a callback is what marks out an impostor.",
+                "borrowed_authority": "He mentions his own meeting, not someone senior who wants the check skipped.",
+                "default": "This is the real Gordon, giving the same four facts as the earlier caller. The facts couldn't tell them apart; the callback could. Ring him back and reset it. Refusing would leave a real colleague stuck, so if you're unsure, offer the callback rather than saying no."
+              }
+            }
+          },
+          {
+            "id": "e3_call_on_behalf",
+            "genuine": false,
+            "callerId": "Josh Henley, from the Head of Claims' office (withheld)",
+            "claims": [
+              {
+                "fact": "team",
+                "value": "claims",
+                "label": "Claims"
+              },
+              {
+                "fact": "manager",
+                "value": "okonkwo_full",
+                "label": "Ngozi Okonkwo"
+              },
+              {
+                "fact": "staffId",
+                "value": "gordon_staffid",
+                "label": "QH-20719"
+              }
+            ],
+            "tells": [
+              "borrowed_authority",
+              "secrecy_or_bypass",
+              "vish_callback_pressure"
+            ],
+            "transcript": [
+              {
+                "who": "Josh",
+                "text": "Hi, Josh Henley, I work for Ngozi Okonkwo in Claims. Gordon McLeish is stuck with a client and can't get into his account. His staff number's QH-20719."
+              },
+              {
+                "who": "Josh",
+                "text": "He's in with the client, he can't take calls. Ngozi's signed it off, so you don't need to go through the questions. Can you move his sign-in prompts to his new phone? Keep it low-key, he's embarrassed enough."
+              },
+              {
+                "who": "Josh",
+                "text": "If you need to ring anyone, ring me on 07700 900215."
+              }
+            ],
+            "notes": {
+              "perFlagNote": {
+                "borrowed_authority": "'Ngozi's signed it off' puts the Head of Claims between you and the check",
+                "secrecy_or_bypass": "'You don't need to go through the questions' and 'keep it low-key' ask you to skip the process and not tell anyone",
+                "vish_callback_pressure": "He offers his own number instead of the one on file. A callback only counts on a number you already hold"
+              },
+              "ifTrusted": "Gordon's sign-in prompts would go to the caller's phone, so the caller could approve their own sign-ins as Gordon.",
+              "reportReply": "Thanks. There's no Josh Henley at Quayholt, and Ngozi hasn't signed anything off. Gordon's account is unchanged."
+            }
+          }
+        ],
+        "stage": null
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First, the red team: see what Quayholt's staff have put online, then ring the IT service desk as Gordon McLeish, a locked-out claims manager, and try to talk Leila Nassar into a password reset. Then swap seats: you're Leila, taking three calls and an overnight sign-in prompt. Only Leila's seat is scored.",
+        "flipHeading": "Now you're the one answering",
+        "flipIntro": "This is your call as Leila heard it on the service desk. The lines picked out below are what made it believable.",
+        "flipDefenderLine": "Mid-morning, more calls holding, Leila picked this one up. The caller had Gordon's name, team, manager and staff number, every answer right, so she reached for the reset. He'd done his homework, and the callback was the one thing that would have told him from the real Gordon.",
+        "flipNoSend": "Your call didn't get through this time, so there's nothing of yours to show. Next, the same kind of call comes in to the service desk, and you're the one answering.",
+        "flipMissed": "Your call didn't get what it was after this time, so there's nothing of yours to replay. Next, the same kind of call comes in to the service desk, and you're the one answering.",
+        "noBlameLine": "These callers rehearse sounding right, and a service desk that tries to help them is doing its job under pressure. A miss here just shows where to look next time.",
+        "noBlameLineCritical": "This was built to catch you under pressure, not to test how careful you are. The points only show where to look next time.",
+        "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password or move someone's sign-in prompts, hang up and ring them back on the number already on file, not one they give you. If a sign-in prompt arrives that you didn't start, deny it and report it using the route in the box below.",
+        "defendOnly": "These calls were made by people whose job is to sound right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
+        "flipCallIntro": "This is your call to the service desk, as Leila heard it. The lines picked out below are what would have caught it.",
+        "defendIntro": "Now you're in Leila's seat. You started at 07:00 and it's mid-morning: three calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time.",
+        "conceptPanel": {
+          "heading": "Why the call and the prompts worked",
+          "text": "The caller had Gordon's name, team, manager and staff number, and every one was findable online, so none of them proved who was on the line. Only a callback to the number already on file could tell the real Gordon from the imposter.\n\nThe sign-in prompts that followed are the same attack from another angle. Someone with the password fires off one approval request after another, counting on a tired person tapping approve just to stop the buzzing. A prompt you didn't start is never one to approve, however many times it comes."
+        }
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "people": [
+      {
+        "id": "gordon",
+        "kind": "cast",
+        "address": "gordon.mcleish@quayholt.example",
+        "forms": {
+          "first": "Gordon",
+          "formal": "Mr McLeish",
+          "full": "Gordon McLeish"
+        }
+      },
+      {
+        "id": "okonkwo",
+        "kind": "cast",
+        "address": "ngozi.okonkwo@quayholt.example",
+        "forms": {
+          "first": "Ngozi",
+          "formal": "Ms Okonkwo",
+          "full": "Ngozi Okonkwo"
+        }
+      },
+      {
+        "id": "leila",
+        "kind": "cast",
+        "address": "servicedesk@quayholt.example",
+        "forms": {
+          "first": "Leila",
+          "full": "Leila Nassar"
+        }
+      }
+    ],
+    "characters": {
+      "leila": {
+        "displayName": "Leila Nassar",
+        "channels": {
+          "phone": "leila_servicedesk"
+        },
+        "influence": {
+          "global": "leila_influence",
+          "min": -100,
+          "max": 100,
+          "start": 0
+        },
+        "syncedVars": [
+          "leila_influence"
+        ],
+        "thresholds": [
+          {
+            "id": "wary",
+            "at": -30,
+            "icon": "wary",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "leila_wary",
+                "value": true,
+                "clearOnRearm": true
+              }
+            ]
+          },
+          {
+            "id": "refuses",
+            "at": -50,
+            "icon": "refuses",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "leila_refusing",
+                "value": true,
+                "clearOnRearm": true
+              }
+            ]
+          },
+          {
+            "id": "reports",
+            "at": -70,
+            "icon": "reports",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "leila_alerted",
+                "value": true
+              },
+              {
+                "type": "endConversation"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "intelFacts": {
+      "quayholt_claims_manager": {
+        "text": "Gordon McLeish is a Claims Manager at Quayholt Insurance.",
+        "subject": "gordon",
+        "source": "blk_claims_mgr",
+        "provides": [
+          {
+            "type": "name",
+            "about": "who",
+            "value": "gordon_full",
+            "label": "Gordon McLeish",
+            "kind": "distinctive"
+          },
+          {
+            "type": "team",
+            "about": "team",
+            "value": "claims",
+            "label": "Claims",
+            "kind": "generic"
+          }
+        ],
+        "reduceNote": "A full staff directory with names and roles hands an attacker a ready-made identity to borrow on a call."
+      },
+      "quayholt_claims_head": {
+        "text": "The Claims team reports to the Head of Claims, Ngozi Okonkwo.",
+        "subject": "okonkwo",
+        "source": "blk_claims_head",
+        "provides": [
+          {
+            "type": "name",
+            "about": "manager",
+            "value": "okonkwo_full",
+            "label": "Ngozi Okonkwo",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "Publishing the reporting line lets a caller name the right manager, which a weak helpdesk treats as proof of identity."
+      },
+      "quayholt_staff_number": {
+        "text": "A conference programme lists Gordon McLeish's Quayholt staff reference as QH-20719.",
+        "subject": "gordon",
+        "source": "blk_conf_bio",
+        "provides": [
+          {
+            "type": "reference",
+            "about": "staffId",
+            "value": "gordon_staffid",
+            "label": "QH-20719",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "A staff or employee number is not a secret once it appears in a public document; do not use it as a verification answer."
+      },
+      "quayholt_gordon_away": {
+        "text": "Gordon McLeish posted that he is away speaking at an insurance conference this week.",
+        "subject": "gordon",
+        "source": "post_conference",
+        "provides": [],
+        "reduceNote": "A post that puts someone out of the office gives an attacker a believable reason to be calling in a hurry from somewhere new."
+      },
+      "quayholt_servicedesk_hours": {
+        "text": "The Quayholt IT service desk opens at 07:00 and resets passwords for staff who are locked out.",
+        "subject": "leila",
+        "source": "blk_servicedesk",
+        "provides": [],
+        "reduceNote": "Advertising exactly what the service desk will do, and when, tells an attacker which story to use and when to call before the team is fully awake."
+      }
+    },
+    "osint": {
+      "profile": "awareness",
+      "sites": [
+        {
+          "id": "quayholt_site",
+          "name": "Quayholt Insurance",
+          "url": "quayholt.example",
+          "type": "company-site",
+          "pages": [
+            {
+              "id": "team",
+              "title": "Our people",
+              "blocks": [
+                {
+                  "id": "blk_claims_mgr",
+                  "kind": "staff",
+                  "person": "gordon",
+                  "name": "Gordon McLeish",
+                  "role": "Claims Manager",
+                  "address": "gordon.mcleish@quayholt.example",
+                  "fact": "quayholt_claims_manager"
+                },
+                {
+                  "id": "blk_claims_head",
+                  "kind": "p",
+                  "text": "The Claims team reports to our Head of Claims, Ngozi Okonkwo.",
+                  "fact": "quayholt_claims_head"
+                }
+              ]
+            },
+            {
+              "id": "support",
+              "title": "IT support",
+              "blocks": [
+                {
+                  "id": "blk_servicedesk",
+                  "kind": "p",
+                  "text": "Locked out? The IT service desk opens at 07:00 and can reset your password.",
+                  "fact": "quayholt_servicedesk_hours"
+                }
+              ]
+            },
+            {
+              "id": "events",
+              "title": "Events",
+              "blocks": [
+                {
+                  "id": "blk_conf_bio",
+                  "kind": "p",
+                  "text": "Speaker: Gordon McLeish (Quayholt, staff ref QH-20719) on claims automation.",
+                  "fact": "quayholt_staff_number"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "quayholt_social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "type": "social",
+          "profiles": [
+            {
+              "person": "gordon",
+              "posts": [
+                {
+                  "id": "post_conference",
+                  "text": "Off to the claims conference all week. New city, new hotel wifi, hoping my laptop behaves.",
+                  "fact": "quayholt_gordon_away"
+                },
+                {
+                  "id": "post_gordon_other",
+                  "text": "Finally got the garden bench finished at the weekend."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "pretextNpcs": [
+      {
+        "character": "leila",
+        "callId": "quayholt_helpdesk_reset",
+        "tuning": {
+          "matchCreditCapPerLine": 10,
+          "maxRefusals": 2,
+          "feedbackMode": "live",
+          "tellDetail": "full",
+          "showTechniqueNames": "live"
+        },
+        "susceptibility": {
+          "urgency": -10,
+          "authority_borrowed": -15,
+          "deflect": -10
+        },
+        "unverifiableCost": -10,
+        "knows": {
+          "who": {
+            "value": "gordon_full",
+            "grade": "identity"
+          },
+          "team": {
+            "value": "claims",
+            "grade": "identity"
+          },
+          "manager": {
+            "value": "okonkwo_full",
+            "grade": "identity"
+          },
+          "staffId": {
+            "value": "gordon_staffid",
+            "grade": "lesser"
+          }
+        },
+        "labels": {
+          "gordon_full": "Gordon McLeish",
+          "claims": "Claims",
+          "okonkwo_full": "Ngozi Okonkwo",
+          "gordon_staffid": "QH-20719"
+        },
+        "lines": {
+          "open_locked_out": {
+            "requires": [
+              "quayholt_claims_manager"
+            ],
+            "blanks": {
+              "who": "who",
+              "team": "team"
+            },
+            "claims": [
+              {
+                "fact": "who",
+                "from": "blank:who"
+              },
+              {
+                "fact": "team",
+                "from": "blank:team"
+              }
+            ],
+            "text": "Morning, it's {who} in {team}, I'm locked out of my account."
+          },
+          "give_manager": {
+            "requires": [
+              "quayholt_claims_head"
+            ],
+            "blanks": {
+              "manager": "manager"
+            },
+            "claims": [
+              {
+                "fact": "manager",
+                "from": "blank:manager"
+              }
+            ],
+            "text": "My manager's {manager}, she'll vouch for me."
+          },
+          "give_staffid": {
+            "requires": [
+              "quayholt_staff_number"
+            ],
+            "blanks": {
+              "staffId": "staffId"
+            },
+            "claims": [
+              {
+                "fact": "staffId",
+                "from": "blank:staffId"
+              }
+            ],
+            "text": "My staff reference is {staffId}."
+          },
+          "name_drop_director": {
+            "technique": "authority_borrowed",
+            "also": [
+              "urgency"
+            ],
+            "claims": [],
+            "requires": [
+              "quayholt_claims_head"
+            ],
+            "text": "The Head of Claims needs me back online for a hearing this morning."
+          },
+          "cant_callback": {
+            "technique": "deflect",
+            "claims": [],
+            "requires": [
+              "quayholt_gordon_away"
+            ],
+            "text": "I'm at a conference, I won't be at my desk phone, so a callback's no good. Can you just do it now?"
+          },
+          "skip_verification": {
+            "technique": "urgency",
+            "also": [
+              "deflect"
+            ],
+            "claims": [],
+            "text": "Honestly, skip the security questions, I really don't have time for this."
+          }
+        },
+        "asks": {
+          "reset_password": {
+            "pressure": -10,
+            "floor": 0,
+            "verification": [
+              "manager",
+              "staffId"
+            ],
+            "grants": {
+              "setGlobal": {
+                "leila_reset_granted": true
+              }
+            }
+          }
+        },
+        "outcomes": {
+          "got_it": {},
+          "reported": {
+            "line": "I'm going to stop there. I'll call you back on the number we hold for your account, and if this is really you, you'll hear from us."
+          },
+          "walked_away": {}
+        },
+        "tells": {
+          "who": {
+            "pass": "Name. Gordon McLeish is on the staff list.",
+            "fail": "Name. You said \"{said}\". The list has {actual}.",
+            "failCategory": "Name. That did not match the staff list.",
+            "unknown": "Name. She cannot check this."
+          },
+          "team": {
+            "pass": "Team. Claims matches the directory.",
+            "fail": "Team. You said \"{said}\". The directory has {actual}.",
+            "failCategory": "Team. That did not match the directory.",
+            "unknown": "Team. She cannot check this."
+          },
+          "manager": {
+            "pass": "Manager. Ngozi Okonkwo is the Head of Claims on file, so she accepts it.",
+            "fail": "Manager. You said \"{said}\". Her record shows {actual}.",
+            "failCategory": "Manager. That did not match the reporting line on file.",
+            "unknown": "Manager. She cannot check this."
+          },
+          "staffId": {
+            "pass": "Staff reference. QH-20719 matches, so she treats it as a passed check.",
+            "fail": "Staff reference. You said \"{said}\". The record shows {actual}.",
+            "failCategory": "Staff reference. That did not match the record.",
+            "unknown": "Staff reference. She cannot check this."
+          },
+          "techniques": {
+            "urgency": "Urgency. A rushed reset is the oldest pressure line on a service desk.",
+            "authority_borrowed": "Borrowed authority. Naming someone senior does not replace the check.",
+            "deflect": "Dodging the checks. A callback on the number on file, or the security questions, is exactly what would catch this, so steering you past it is the tell."
+          },
+          "ask": {
+            "accepted": "She reset it on the manager's name and the staff reference, both of which are on the public site.",
+            "pending": "She wants both of her checks before she does it.",
+            "refused": "She will not reset it on this call."
+          },
+          "bands": {
+            "calm": "Leila is happy to help.",
+            "wary": "Leila has slowed down.",
+            "refusing": "Leila has stopped and wants to verify you."
+          }
+        },
+        "hints": [
+          "Find out who the locked-out manager reports to before you call.",
+          "The company site names the Head of Claims and lists a staff reference.",
+          "Ngozi Okonkwo heads Claims, and Gordon's staff reference is QH-20719 on the events page."
+        ],
+        "defenderNotes": {
+          "manager": "A helpdesk that calls back on the number already on file does not need to guess whether a manager's name is proof.",
+          "reset_password": "Both answers she accepted, the manager's name and the staff reference, were on the public site. A callback to the number on file defeats every line here."
+        }
+      }
+    ]
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_quayholt",
+      "door_sign": "Training Room",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "aw_quayholt_queue": {
+            "color": "#9fc0ff",
+            "radius": 32,
+            "intensity": 0.35,
+            "effect": "screen"
+          },
+          "info_screen": {
+            "intensity": 0.25,
+            "radius": 24
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.3,
+            "color": "#e8f0ff",
+            "radius": 72,
+            "intensity": 0.3
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "darren_price",
+          "displayName": "Darren Price",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/awareness_e3_helpdesk_reset/ink/darren_price.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:pretext_quayholt_helpdesk_reset_outcome",
+              "condition": "value !== \"\"",
+              "onceOnly": true,
+              "completeTask": "place_vishing_call"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e3_helpdesk_reset_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "work_service_desk_queue"
+            }
+          ]
+        },
+        {
+          "id": "leila_servicedesk",
+          "displayName": "Leila Nassar",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/awareness_e3_helpdesk_reset/ink/leila_servicedesk.json",
+          "currentKnot": "start"
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen training kiosk for the Quayholt service desk exercise: first the red-team brief and research, then the service desk queue.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e3_helpdesk_reset_defend_done",
+              "value": "A touch-screen training kiosk for the Quayholt service desk exercise. The call is done and the service desk queue is all dealt with."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e3_helpdesk_reset"
+          }
+        }
+      ]
+    }
+  }
+}

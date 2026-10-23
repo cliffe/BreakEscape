@@ -1,0 +1,10 @@
+Make portrait for Jun Watanabe
+A Japanese-British young man of about 22, in his first office job as an HR assistant at a logistics firm in Yorkshire, with East Asian features, light warm skin, a slim build and a slightly earnest, keen look. Straight black hair in a soft, slightly messy textured fringe, clean-shaven, dark brown eyes. He wears a pale blue oxford button-down shirt with the sleeves rolled to the forearm and the top button undone, no tie, navy chinos and a brown leather belt. Standing alone against an empty plain light-grey backdrop, no room or furniture behind him. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images. Reframed with reframe_portrait.py --flip. Batch D (check-mission hosts), batch generation approved by the user with no first-image sign-off.

@@ -1,0 +1,13 @@
+{
+  "key": "60fe8b193a515d8074caccbe964362b0",
+  "npc": "agent_nightshade",
+  "text": "Last time, a card meant getting it off somebody. This time you just stand next to it.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's technical analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T00:54:16Z"
+}

@@ -1,0 +1,161 @@
+{
+  "scenario_brief": "Welcome to the Encoding and Encryption Lab! Your Crypto Instructor will guide you through encoding schemes, symmetric and asymmetric encryption, OpenSSL, and GPG. Complete the instruction and then practice your skills in the VM lab environment.",
+  "endGoal": "Complete the lab instruction with the Crypto Instructor, launch the VM, and capture all available flags from the desktop system to demonstrate your understanding of encoding and encryption techniques.",
+  "startRoom": "instruction_room",
+  "startItemsInInventory": [],
+  "globalVariables": {
+    "player_name": "Agent 0x00",
+    "lab_instruction_complete": false,
+    "vm_launched": false,
+    "encoding_encryption_flag_submitted": false,
+    "instructor_rapport": 0
+  },
+  "objectives": [
+    {
+      "aimId": "complete_vm_lab",
+      "title": "Complete VM Lab Exercises",
+      "description": "Capture all flags from the desktop system",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "submit_all_flags",
+          "title": "Submit all required flags from desktop",
+          "type": "submit_flags",
+          "targetFlags": ["desktop-flag1", "desktop-flag2", "desktop-flag3", "desktop-flag4", "desktop-flag5", "desktop-flag6", "desktop-flag7", "desktop-flag8", "desktop-flag9", "desktop-flag10", "desktop-flag11"],
+          "targetCount": 11,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+  "rooms": {
+    "instruction_room": {
+      "type": "room_office",
+      "connections": {
+        "north": "vm_lab_room"
+      },
+      "locked": false,
+      "npcs": [
+        {
+          "id": "crypto_instructor",
+          "displayName": "Crypto Instructor",
+          "npcType": "person",
+          "position": { "x": 3.5, "y": 3.5 },
+          "spriteSheet": "hacker-red",
+          "spriteTalk": "assets/characters/hacker-red-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/lab_encoding_encryption/ink/instructor.json",
+          "currentKnot": "start",
+          "timedConversation": {
+            "delay": 5000,
+            "targetKnot": "intro_timed"
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "objective_aim_completed:complete_vm_lab",
+              "targetKnot": "flags_completed_congrats",
+              "conversationMode": "person-chat",
+              "autoTrigger": true,
+              "cooldown": 0
+            }
+          ],
+          "itemsHeld": []
+        }
+      ],
+      "objects": [
+        {
+          "type": "lab-workstation",
+          "id": "lab_workstation",
+          "name": "Lab Sheet Workstation",
+          "takeable": true,
+          "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/cyber_security_landscape/4-encoding-encryption/",
+          "observations": "A workstation for accessing the lab sheet with detailed instructions and exercises"
+        },
+        {
+          "type": "notes",
+          "name": "Lab Welcome Guide",
+          "takeable": true,
+          "readable": true,
+          "text": "Welcome to the Encoding and Encryption Lab!\n\nOBJECTIVES:\n1. Use the Lab Sheet Workstation to access detailed lab instructions\n2. Complete the lab sheet exercises\n3. Launch the VM and practice encoding and encryption techniques\n4. Capture all flags from the desktop system\n\nThe Crypto Instructor is available if you need guidance.\n\nGood luck!",
+          "observations": "A guide to the lab structure and objectives"
+        },
+        {
+          "type": "notes",
+          "name": "VM Lab Instructions",
+          "takeable": true,
+          "readable": true,
+          "text": "VM Lab Practice Instructions:\n\n1. Launch the VM in the VM Lab Room:\n   - Desktop Terminal: Your practice system with encoding and encryption challenges\n\n2. Your objectives:\n   - Decode various encoded data (hex, base64, morse, braille, binary, decimal, octal, rot13)\n   - Decrypt symmetrically-encrypted files (Caesar, shift, Vigenere)\n   - Use GPG for secure communication\n   - Break weak encryption\n   - Find flags hidden in encoded and encrypted files\n\n3. Submit flags at the Flag Submission Terminal in the VM Lab Room\n\nFlags to capture from desktop:\n- flag1 through flag11 - Found in various encoded and encrypted files\n\nRemember what the instructor taught you about encoding vs encryption, OpenSSL, and GPG!",
+          "observations": "Instructions for the VM lab exercises"
+        }
+      ]
+    },
+    "vm_lab_room": {
+      "type": "room_office",
+      "connections": {
+        "south": "instruction_room"
+      },
+      "locked": false,
+      "objects": [
+        {
+          "type": "vm-launcher",
+          "id": "vm_launcher_desktop",
+          "name": "Desktop Terminal",
+          "takeable": false,
+          "observations": "Terminal providing access to the desktop system for encoding and encryption practice",
+          "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+          "vm": <%= vm_object('encoding_encryption', {
+            "id": 1,
+            "title": "desktop",
+            "ip": "172.16.0.2",
+            "enable_console": true
+          }) %>
+        },
+        {
+          "type": "flag-station",
+          "id": "flag_station_lab",
+          "name": "Lab Flag Submission Terminal",
+          "takeable": false,
+          "observations": "Submit flags captured from the desktop system here",
+          "acceptsVms": ["desktop"],
+          "flags": <%= flags_for_vm('desktop', [
+            'flag{encoding_encryption_hex}',
+            'flag{encoding_encryption_base64}',
+            'flag{encoding_encryption_morse}',
+            'flag{encoding_encryption_braille}',
+            'flag{encoding_encryption_binary}',
+            'flag{encoding_encryption_decimal}',
+            'flag{encoding_encryption_octal}',
+            'flag{encoding_encryption_rot13}',
+            'flag{encoding_encryption_caesar}',
+            'flag{encoding_encryption_shift}',
+            'flag{encoding_encryption_vigenere}'
+          ]) %>,
+          "flagRewards": [
+            {
+              "type": "emit_event",
+              "event_name": "encoding_encryption_flag_submitted",
+              "description": "Encoding and encryption flag submitted - demonstrates cryptography skills"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+

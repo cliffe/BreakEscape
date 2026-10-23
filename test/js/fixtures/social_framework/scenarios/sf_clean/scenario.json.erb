@@ -1,0 +1,40 @@
+{
+  "scenario_brief": "Fixture: a clean social scenario.",
+  "startRoom": "office",
+  "globalVariables": {
+    "priya_influence": -20, "priya_latched": "", "priya_knows_sam": false,
+    "priya_wary": false, "priya_refusing": false, "helpdesk_alerted": false,
+    "priya_lockout_until": 0, "priya_lockout_channel": ""
+  },
+  "objectives": [
+    { "aimId": "a1", "title": "One", "status": "active", "order": 0, "tasks": [] },
+    { "aimId": "a2", "title": "Two", "status": "locked", "order": 1, "unlockCondition": { "aimCompleted": "a1" }, "tasks": [] },
+    { "aimId": "a3", "title": "Three", "status": "locked", "order": 2, "unlockCondition": { "globalVariable": "priya_knows_sam", "equals": true }, "tasks": [] }
+  ],
+  "rooms": {
+    "office": { "type": "room_office", "connections": { "north": "lab" }, "objects": [ { "type": "notes", "id": "desk_note", "name": "Note" } ],
+      "npcs": [ { "id": "priya_helpdesk_phone", "displayName": "Priya", "npcType": "phone", "phoneId": "player_phone",
+                  "storyPath": "test/js/fixtures/social_framework/scenarios/sf_clean/ink/priya_phone.json" },
+                { "id": "priya_helpdesk_mail", "displayName": "Priya mail", "npcType": "phone",
+                  "storyPath": "test/js/fixtures/social_framework/scenarios/sf_clean/ink/priya_mail.json" } ] },
+    "lab": { "type": "room_office", "connections": { "south": "office" }, "objects": [ { "type": "notes", "id": "lab_note", "name": "Note" } ] }
+  },
+  "social": {
+    "characters": {
+      "priya": {
+        "displayName": "Priya Nair",
+        "channels": { "phone": "priya_helpdesk_phone", "email": "priya_helpdesk_mail" },
+        "influence": { "global": "priya_influence", "min": -100, "max": 100, "start": -20, "display": { "bar": true, "number": false } },
+        "syncedVars": ["priya_influence", "priya_knows_sam"],
+        "thresholds": [
+          { "id": "wary", "at": -40, "icon": "wary", "effects": [ { "type": "setGlobal", "global": "priya_wary", "value": true, "clearOnRearm": true } ] },
+          { "id": "refuses", "at": -50, "icon": "refuses", "effects": [ { "type": "setGlobal", "global": "priya_refusing", "value": true, "clearOnRearm": true } ] },
+          { "id": "reports", "at": -70, "icon": "reports", "effects": [ { "type": "setGlobal", "global": "helpdesk_alerted", "value": true }, { "type": "endConversation" },
+              { "type": "lockout", "scope": "channel", "until": { "afterMinutes": 2 }, "recoverTo": -30 } ] },
+          { "id": "trusts", "at": 40, "when": "above", "icon": "trusts", "effects": [] }
+        ]
+      }
+    },
+    "influenceDisplay": { "pip": false }
+  }
+}

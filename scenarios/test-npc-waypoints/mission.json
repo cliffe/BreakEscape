@@ -1,0 +1,7 @@
+{
+  "display_name": "NPC Waypoints Test",
+  "description": "Technical test for NPC waypoint navigation system.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

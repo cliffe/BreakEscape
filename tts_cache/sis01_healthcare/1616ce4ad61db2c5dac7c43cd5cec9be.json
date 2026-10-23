@@ -1,0 +1,13 @@
+{
+  "key": "1616ce4ad61db2c5dac7c43cd5cec9be",
+  "npc": "dr_sharma",
+  "text": "His monitor went dark because of the attack. So when it would come back was an incident question, and the honest answer had to come from your team.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

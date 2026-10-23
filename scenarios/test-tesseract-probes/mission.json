@@ -1,0 +1,6 @@
+{
+  "display_name": "Test: Tesseract Trials Engine Probes",
+  "description": "Development probe for the Tesseract Trials lab. One room exercising NPC workstation giving, a phone device inside a locked briefcase, a video call triggered by a global, copyable text_files and notes, alarm_panel lamps, pigeonholes and unlocked pc containers, long password and PIN locks.",
+  "difficulty_level": 1,
+  "collection": "testing"
+}

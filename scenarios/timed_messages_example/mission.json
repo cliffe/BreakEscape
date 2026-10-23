@@ -1,0 +1,7 @@
+{
+  "display_name": "Timed Messages Example",
+  "description": "Example scenario demonstrating timed message delivery mechanics.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

@@ -1,0 +1,23 @@
+{
+  "display_name": "Awareness E3: Helpdesk reset (full episode)",
+  "description": "A thirteen-minute awareness episode for IT service desk staff. On an authorised exercise at Quayholt Insurance, a fictional company, you first play the attacker: research what's public, ring the service desk as a locked-out manager, and watch an account worn down by sign-in prompts. Then you swap seats and work the service desk queue a call like it lands in. Only the queue is scored, and ringing back when you're unsure is always fine and never marked down.",
+  "difficulty_level": 1,
+  "scoring": "completion",
+  "secgen_scenario": null,
+  "collection": "training",
+  "ui_theme": "general",
+  "estimated_duration_minutes": 13,
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": [
+        "Social engineering",
+        "Vishing",
+        "MFA fatigue",
+        "OSINT",
+        "Security awareness"
+      ]
+    }
+  ]
+}

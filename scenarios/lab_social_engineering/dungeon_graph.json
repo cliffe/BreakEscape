@@ -1,0 +1,247 @@
+{
+  "scenario": "lab_social_engineering",
+  "start_room": "engagement_office",
+  "nodes": [
+    {
+      "id": "door_recon_room",
+      "label": "Recon Room<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "recon_room",
+      "label": "Recon Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_operations_room",
+      "label": "Operations Room<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "operations_room",
+      "label": "Operations Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_blue_team_room",
+      "label": "Blue Team Room<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "blue_team_room",
+      "label": "Blue Team Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "engagement_office",
+      "label": "Engagement Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "rules_of_engagement",
+      "label": "Rules of Engagement",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "planning_whiteboard",
+      "label": "Planning Whiteboard",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_report_workstation",
+      "label": "Report Workstation",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "npc_ruth_adeyemi",
+      "label": "Ruth Adeyemi",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "recon_room_key",
+      "label": "Recon Room Key",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "operations_room_key",
+      "label": "Operations Room Key",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "blue_team_room_key",
+      "label": "Blue Team Room Key",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "osint_workstation",
+      "label": "OSINT Workstation",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "lock_mail_workstation",
+      "label": "Mail Workstation",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "page_builder",
+      "label": "Page Builder",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "desk_phone",
+      "label": "Desk Phone",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "andgate1",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_recon_room",
+      "to": "recon_room",
+      "soft": false
+    },
+    {
+      "from": "door_operations_room",
+      "to": "operations_room",
+      "soft": false
+    },
+    {
+      "from": "door_blue_team_room",
+      "to": "blue_team_room",
+      "soft": false
+    },
+    {
+      "from": "engagement_office",
+      "to": "rules_of_engagement",
+      "soft": false
+    },
+    {
+      "from": "engagement_office",
+      "to": "planning_whiteboard",
+      "soft": false
+    },
+    {
+      "from": "engagement_office",
+      "to": "lock_report_workstation",
+      "soft": false
+    },
+    {
+      "from": "engagement_office",
+      "to": "npc_ruth_adeyemi",
+      "soft": false
+    },
+    {
+      "from": "npc_ruth_adeyemi",
+      "to": "recon_room_key",
+      "soft": false
+    },
+    {
+      "from": "recon_room_key",
+      "to": "door_recon_room",
+      "soft": false
+    },
+    {
+      "from": "npc_ruth_adeyemi",
+      "to": "operations_room_key",
+      "soft": false
+    },
+    {
+      "from": "operations_room_key",
+      "to": "door_operations_room",
+      "soft": false
+    },
+    {
+      "from": "npc_ruth_adeyemi",
+      "to": "blue_team_room_key",
+      "soft": false
+    },
+    {
+      "from": "blue_team_room_key",
+      "to": "door_blue_team_room",
+      "soft": false
+    },
+    {
+      "from": "recon_room",
+      "to": "osint_workstation",
+      "soft": false
+    },
+    {
+      "from": "operations_room",
+      "to": "lock_mail_workstation",
+      "soft": false
+    },
+    {
+      "from": "lock_mail_workstation",
+      "to": "lock_report_workstation",
+      "soft": false
+    },
+    {
+      "from": "operations_room",
+      "to": "page_builder",
+      "soft": false
+    },
+    {
+      "from": "operations_room",
+      "to": "desk_phone",
+      "soft": false
+    },
+    {
+      "from": "desk_phone",
+      "to": "andgate1",
+      "soft": true
+    },
+    {
+      "from": "andgate1",
+      "to": "lock_mail_workstation",
+      "soft": false
+    },
+    {
+      "from": "page_builder",
+      "to": "andgate1",
+      "soft": false
+    },
+    {
+      "from": "rules_of_engagement",
+      "to": "recon_room_key",
+      "soft": false
+    },
+    {
+      "from": "planning_whiteboard",
+      "to": "recon_room_key",
+      "soft": false
+    },
+    {
+      "from": "lock_report_workstation",
+      "to": "blue_team_room_key",
+      "soft": false
+    },
+    {
+      "from": "osint_workstation",
+      "to": "operations_room_key",
+      "soft": false
+    }
+  ]
+}

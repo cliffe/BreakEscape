@@ -1,0 +1,10 @@
+{
+  "scenario": "test_timer_system",
+  "start_room": "test_room_1",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

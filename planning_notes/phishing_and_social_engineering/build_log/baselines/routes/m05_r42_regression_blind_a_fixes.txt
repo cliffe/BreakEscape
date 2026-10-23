@@ -1,0 +1,150 @@
+
+## R42 (engine regression E1/E4/E5/E9 and blind run A M1/M2/m2, 2026-10-17). Owen offers the server room once he has said he holds the spares. Late barks don't arrive after the step. HaX doesn't name Torres before suspicion. The Recruiter topic isn't 'just'. A Restart undoes the Torres fight for the credits. The ring-back doesn't replay.
+   {set {"briefing_played":true}}
+
+--- owen ---
+      [task: talk_to_owen]
+  Narrator: A bearded man in his late twenties at a workstation, three terminals of logs scrolling past, a staff badge on a lanyard round his neck. He swivels to face you.
+  Owen Gallagher: Alright. You're the security consultant? Owen Gallagher, sysadmin.
+  Owen Gallagher: Finally. Someone to fix our mess who isn't me.
+     (3 options)
+ > I'll need your help with access. Logs, badges, that kind of thing.
+  Owen Gallagher: Sure. I hold the spares for most of the doors here. Give me a reason I can write in the log and they're yours.
+  Owen Gallagher: What else?
+     (7 options)
+ > What about the server room?
+      [ink: owen_refused_password=true]
+  Owen Gallagher: After-hours server access gets logged with IT. That's me.
+  Owen Gallagher: Give me a reason I can write in the log. Or get Patricia to put her name to it.
+     (2 options)
+ > What counts as a reason?
+  Owen Gallagher: Something on Security's books that never reached mine. A badge where it shouldn't be, at an hour nobody told me about.
+  Owen Gallagher: Patricia keeps an incident log on her desk. Bring me a line out of that and I'll write it up.
+ > Fair enough. I'll be back.
+  Owen Gallagher: Password's not going anywhere. Neither am I.
+  [chat closes]
+   [PASS] said: "Give me a reason I can write in the log"
+   [PASS] said: "Patricia keeps an incident log on her desk"
+   [PASS] owen_refused_password = true (expected true)
+   {set {"server_badge_obtained":true}}
+   {event door_unlock_attempt}
+      [mapping agent_0x99_handler: set rfid_guide_offered=true]
+      [text from agent_0x99_handler skipped: server_badge_obtained]
+   [PASS] not said: "Staff prox reader. Your cloner will take a card"
+   {set {"architect_approval_confirmed":true}}
+
+--- phone ---
+  Agent. Four hours to the final upload window.
+  Patricia Morgan runs security. She called us in, and she can open doors for you. Keep her in the picture.
+  Someone in that building is feeding ENTROPY the keys to the 999 dispatch network. Find them before half past eight tonight.
+     (3 options)
+ > I'll get to work.
+     [0] The Architect signed off on the casualty projection.
+     [1] Send me a field guide.
+     [2] Where do I stand?
+     [3] Nothing right now.
+  [stopped: no pick]
+
+--- phone ---
+     (4 options)
+ > The Architect signed off on the casualty projection.
+      [ink: architect_discussed=true]
+  Read it twice. A casualty projection, reviewed, and signed off as an acceptable cost.
+  No rogue cell improvised that. Someone priced human lives and approved the invoice.
+  It's the strongest thing you'll find tonight. It puts this above whoever's staging it here.
+     (2 options)
+ > Then the insider is the only thread we've got to it.
+  For tonight, yes. Find them first. Then bear it in mind when you decide what happens to them.
+     [0] Send me a field guide.
+     [1] Where do I stand?
+     [2] Nothing right now.
+  [stopped: no pick]
+   [PASS] said: "It puts this above whoever's staging it here"
+   [PASS] said: "Find them first"
+   [PASS] not said: "It puts this above Torres"
+   [PASS] not said: "Then Torres is the only thread"
+   {set {"torres_print_collected":true}}
+   {event door_unlock_attempt}
+      [mapping agent_0x99_handler: set vault_reader_seen=true]
+   [PASS] not said: "You've already lifted his print"
+   {event door_unlock_failed:data_center}
+   [text agent_0x99_handler +1500ms] That's the vault reader. You've already lifted his print. Present that lift.
+   [PASS] said: "You've already lifted his print. Present that lift."
+
+## E4: a fight with Torres, then Restart (reset) clears torres_fought; a second fight sets it again.
+   {event npc_hostile_state_changed}
+   [text agent_0x99_handler +1000ms] He's coming for you. Q switches to fists (again for a harder punch), then E or click when he's in front.
+      [mapping agent_0x99_handler: set torres_hostile=true]
+      [mapping agent_0x99_handler: set torres_fought=true]
+   [text agent_0x99_handler +5500ms] Press Q till the open hand shows to walk by clicking. Can't take him? Leave the data centre, then call me for Security: he swings while you're on the phone.
+   [PASS] torres_hostile = true (expected true)
+   [PASS] torres_fought = true (expected true)
+   {event npc_hostile_state_changed}
+      [mapping agent_0x99_handler: set torres_fought=false]
+      [mapping agent_0x99_handler: set torres_hostile=false]
+   [PASS] torres_hostile = false (expected false)
+   [PASS] torres_fought = false (expected false)
+   {event npc_hostile_state_changed}
+      [mapping agent_0x99_handler: set torres_hostile=true]
+      [mapping agent_0x99_handler: set torres_fought=true]
+   [PASS] torres_hostile = true (expected true)
+   [PASS] torres_fought = true (expected true)
+
+--- credits ---
+   MISSION COMPLETE
+   INSIDER TRADING
+   OPERATION SCHRÖDINGER: STOPPED
+   CIVILIAN LIVES SAVED: 30-45 (estimated, first rollout wave)
+   ── THE CASE ──
+   RECRUITMENT PIPELINE — TalentStack link not documented
+   ── DAVID TORRES ──
+   ── ELENA TORRES ──
+   Still fighting Stage 3 cancer — treatment unfunded
+   ── SOFIA (11) AND MIGUEL (8) TORRES ──
+   ── THE RECRUITER ──
+   TALENTSTACK LIST — left unread under the terminal keyboard
+   ── QUANTUM DYNAMICS ──
+   WHO TOLD SECURITY TO STOP — never asked
+   ── QUANTUM DYNAMICS STAFF ──
+   Nobody else on staff hurt
+   The Architect remains at large...
+   [PASS] said: "Nobody else on staff hurt"
+   [PASS] not said: "Nobody on staff hurt"
+
+## E5 and m2: the Recruiter, after the fate.
+   {set {"recruiter_contacted_player":true,"final_choice":"arrest","torres_identified":true}}
+      [task unlocked: call_in_after_sweep]
+      [aim unlocked: confront_insider]
+      [mapping agent_0x99_handler: set named_before_portal=true]
+      [david_torres shown]
+
+--- phone ---
+     (5 options)
+ > The Recruiter rang me.
+      [ink: recruiter_discussed=true]
+  The Recruiter runs ENTROPY's talent pipeline from behind a search firm. If she rang you herself, you've worried her.
+  Whatever she offered, she's very good at making a bad trade sound reasonable. It's the whole of her job.
+     [0] She offered me a deal.
+     [1] I'll be careful.
+  [stopped: no pick]
+   [PASS] not said: "The Recruiter just called me"
+
+--- recruiter @idle ---
+     (2 options)
+ > Ring the TalentStack number back.
+  Agent. Torres is dealt with, and we never did talk terms. Pity.
+  There was an envelope under his keyboard I'd have liked back. Whatever you did with it, the next one will cost me more.
+  Narrator: The line goes dead.
+  [chat closes]
+   [PASS] said: "we never did talk terms"
+
+--- recruiter @idle ---
+     (2 options)
+ > Ring the number again.
+  Narrator: It rings out. Nobody's answering that number tonight.
+  [chat closes]
+   [PASS] said: "It rings out"
+   [PASS] not said: "we never did talk terms"
+
+[stats] spoken/narrated lines 23, choices 10, longest run without a choice 3 (owen); runs>=6: 
+[result] all expectations met

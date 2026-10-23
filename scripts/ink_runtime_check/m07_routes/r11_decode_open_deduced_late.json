@@ -1,0 +1,175 @@
+{
+ "steps": [
+  {
+   "note": "R11 (r2, m3, m4): commit Fracture; the decode read at minute 5 with the window open; the deduction only after the window shut at 40. The menu names fields, not values; 'The site' is wrong. Reported as late, not as the Architect's timing."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me",
+    "I've made the call",
+    "Fracture"
+   ]
+  },
+  {
+   "expect": {
+    "team_assignment": "fracture"
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Understood. Let"
+   ]
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "read": "shift_handover_sheet"
+  },
+  {
+   "pickup": "printed_contractor_badge"
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "event": "object_interacted",
+   "data": {
+    "objectType": "vm-launcher"
+   }
+  },
+  {
+   "advance": 5
+  },
+  {
+   "flag": 1
+  },
+  {
+   "read": "coordination_extract"
+  },
+  {
+   "expect": {
+    "decode_read_open": true
+   }
+  },
+  {
+   "advance": 36
+  },
+  {
+   "expect": {
+    "redirect_window_closed": true
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Their schedule doesn't match",
+    "Trojan",
+    "The site"
+   ]
+  },
+  {
+   "said": [
+    "The dormancy.",
+    "The manifest.",
+    "The key count.",
+    "The site.",
+    "That isn't what I'm reading"
+   ],
+   "notSaid": [
+    "Theirs says nine days. Ours says ninety.",
+    "EHR and CAD"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Their schedule doesn't match",
+    "Trojan",
+    "The dormancy"
+   ]
+  },
+  {
+   "said": [
+    "The window's shut. You had their schedule while it was open. It goes in the report as late."
+   ],
+   "notSaid": [
+    "as found, not as ignored"
+   ]
+  },
+  {
+   "expect": {
+    "projection_revised": true,
+    "revision_found_open": false
+   }
+  },
+  {
+   "flag": 2
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "flag": 3
+  },
+  {
+   "flag": 4
+  },
+  {
+   "task": "shut_down_the_cascade"
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Bring me in"
+   ]
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    1,
+    0,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    0,
+    "Nothing on the record",
+    "I made the call",
+    1
+   ]
+  },
+  {
+   "said": [
+    "Their schedule was in your hands with the window open. You put it against the brief after it shut.",
+    "Late is still found. It goes in the report as late."
+   ],
+   "notSaid": [
+    "The timing was his, not yours",
+    "You knew. You found it"
+   ]
+  },
+  {
+   "creditsSaid": [
+    "CORRECTION FOUND LATE"
+   ],
+   "creditsNotSaid": [
+    "CORRECTION FOUND AFTER THE WINDOW SHUT",
+    "CORRECTION FOUND WITH THE WINDOW OPEN"
+   ]
+  },
+  {
+   "note": "Run-length guard (Phase 4 dialogue C1, D7-1): no conversation, the debrief included, runs more than nine lines without a choice."
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

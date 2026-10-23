@@ -1,0 +1,242 @@
+TAP version 13
+# 🗂️ NPC Conversation State Manager initialized
+# 🗂️ NPC Conversation State Manager initialized
+# 🗂️ NPC Conversation State Manager initialized
+# 🗂️ NPC Conversation State Manager initialized
+# 🗂️ NPC Conversation State Manager initialized
+# ✅ Synced mission_phase = night to story
+# ✅ Synced briefing_seen = false to story
+# 🗂️ NPC Conversation State Manager initialized
+# ✅ Synced mission_phase = day to story
+# ✅ Synced briefing_seen = false to story
+# 🗂️ Applied 1 saved ink variable(s) to guard
+# 🗂️ NPC Conversation State Manager initialized
+# 📡 Broadcasted mission_phase = night to guard
+# 🗂️ NPC Conversation State Manager initialized
+# 🏷️ Processing game action tags: [ 'set_global:briefing_seen:true' ]
+# 🌐 Set global variable: briefing_seen = true (was: true)
+# 📡 Broadcasted briefing_seen = true to other
+# 📡 Emitted event: global_variable_changed:briefing_seen
+# 🗂️ NPC Conversation State Manager initialized
+# 📋 Setting up event mappings for hax: {}
+# ✅ Registered 0 event mappings for hax
+# 💬 PhoneChatConversation initialized for NPC: hax
+# 📖 Loading story from inline JSON for hax
+# ✅ Bound external function: player_name
+# ✅ Bound external function: current_mission_id
+# ✅ Bound external function: npc_location
+# ✅ Bound external function: mission_phase
+# ✅ Bound external function: operational_stress_level
+# ✅ Bound external function: equipment_status
+# ✅ External functions bound for hax
+# ✅ Synced mission_phase = day to story
+# ✅ Synced briefing_seen = false to story
+# ✅ Story loaded successfully for hax
+# 🎯 Navigated to knot: intro
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🔍 InkEngine.continue() - got text: Agent: Briefing's in your inbox.
+# 🔍 InkEngine.continue() - canContinue after: false
+# 🔍 InkEngine.continue() - currentChoices after: 2
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 💾 Saved story state
+# 📝 Preloaded 1 intro message(s) for hax
+# 🗂️ NPC Conversation State Manager initialized
+# 📋 Setting up event mappings for hax: {}
+# ✅ Registered 0 event mappings for hax
+# 💬 PhoneChatConversation initialized for NPC: hax
+# 📖 Loading story from inline JSON for hax
+# ✅ Bound external function: player_name
+# ✅ Bound external function: current_mission_id
+# ✅ Bound external function: npc_location
+# ✅ Bound external function: mission_phase
+# ✅ Bound external function: operational_stress_level
+# ✅ Bound external function: equipment_status
+# ✅ External functions bound for hax
+# ✅ Synced mission_phase = day to story
+# ✅ Synced briefing_seen = false to story
+# ✅ Story loaded successfully for hax
+# 🎯 Navigated to knot: intro
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🔍 InkEngine.continue() - got text: Agent: Briefing's in your inbox.
+# 🔍 InkEngine.continue() - canContinue after: false
+# 🔍 InkEngine.continue() - currentChoices after: 2
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 💾 Saved story state
+# 📝 Preloaded 1 intro message(s) for hax
+# 🗂️ NPC Conversation State Manager initialized
+# 📋 Setting up event mappings for hax: {}
+# ✅ Registered 0 event mappings for hax
+# 💬 PhoneChatConversation initialized for NPC: hax
+# 📖 Loading story from inline JSON for hax
+# ✅ Bound external function: player_name
+# ✅ Bound external function: current_mission_id
+# ✅ Bound external function: npc_location
+# ✅ Bound external function: mission_phase
+# ✅ Bound external function: operational_stress_level
+# ✅ Bound external function: equipment_status
+# ✅ External functions bound for hax
+# ✅ Synced mission_phase = day to story
+# ✅ Synced briefing_seen = false to story
+# ✅ Story loaded successfully for hax
+# 🎯 Navigated to knot: intro
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🔍 InkEngine.continue() - got text: Agent: Briefing's in your inbox.
+# 🔍 InkEngine.continue() - canContinue after: false
+# 🔍 InkEngine.continue() - currentChoices after: 2
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 💾 Saved story state
+# 📝 Preloaded 1 intro message(s) for hax
+# 📱 Deferred mission_phase = briefed from hax's intro not applied: set to night since
+# 🗂️ NPC Conversation State Manager initialized
+# 🗂️ NPC Conversation State Manager initialized
+# 🗂️ NPC Conversation State Manager initialized
+# 📋 Setting up event mappings for hax: {}
+# ✅ Registered 0 event mappings for hax
+# 💬 PhoneChatConversation initialized for NPC: hax
+# 📖 Loading story from inline JSON for hax
+# ✅ Bound external function: player_name
+# ✅ Bound external function: current_mission_id
+# ✅ Bound external function: npc_location
+# ✅ Bound external function: mission_phase
+# ✅ Bound external function: operational_stress_level
+# ✅ Bound external function: equipment_status
+# ✅ External functions bound for hax
+# ✅ Synced mission_phase = day to story
+# ✅ Synced briefing_seen = false to story
+# ✅ Story loaded successfully for hax
+# 🎯 Navigated to knot: intro
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🔍 InkEngine.continue() - got text: Agent: Briefing's in your inbox.
+# 🔍 InkEngine.continue() - canContinue after: false
+# 🔍 InkEngine.continue() - currentChoices after: 2
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 💾 Saved story state
+# 📝 Preloaded 1 intro message(s) for hax
+# 📋 Setting up event mappings for hax: {}
+# ✅ Registered 0 event mappings for hax
+# 📱 Restored hax's phone thread (1 message(s))
+# 📱 Restored saved phone state for 1 contact(s)
+# 🗂️ NPC Conversation State Manager initialized
+# ✅ Synced mission_phase = day to story
+# ✅ Synced briefing_seen = true to story
+# 🗂️ NPC Conversation State Manager initialized
+# ✅ Synced mission_phase = day to story
+# ✅ Synced briefing_seen = false to story
+# 🗂️ NPC Conversation State Manager initialized
+# 🗂️ NPC Conversation State Manager initialized
+# 🏷️ Processing game action tags: [ 'set_global:briefing_seen:true', 'set_variable:briefing_seen=true' ]
+# 🏷️ Processing game action tags: [ 'set_variable:mission_phase=night' ]
+# 🌐 set_variable: mission_phase = night (was: day)
+# Subtest: isGlobalVariable: declared names and global_* only, not every key gameState holds
+ok 1 - isGlobalVariable: declared names and global_* only, not every key gameState holds
+  ---
+  duration_ms: 3.164787
+  ...
+# Subtest: the declared set is fixed at load: a runtime key added to gameState does not join it
+ok 2 - the declared set is fixed at load: a runtime key added to gameState does not join it
+  ---
+  duration_ms: 0.403112
+  ...
+# Subtest: without a recorded set it reads the scenario, and with no scenario gameState (unit harnesses)
+ok 3 - without a recorded set it reads the scenario, and with no scenario gameState (unit harnesses)
+  ---
+  duration_ms: 0.34945
+  ...
+# Subtest: an old save key does not overwrite the ink VAR of the same name; declared ones do
+ok 4 - an old save key does not overwrite the ink VAR of the same name; declared ones do
+  ---
+  duration_ms: 11.152565
+  ...
+# Subtest: an ink assignment to a local VAR sharing an old save key stays local
+ok 5 - an ink assignment to a local VAR sharing an old save key stays local
+  ---
+  duration_ms: 9.61797
+  ...
+# Subtest: broadcast reaches loaded stories for declared globals only
+ok 6 - broadcast reaches loaded stories for declared globals only
+  ---
+  duration_ms: 1.556481
+  ...
+# Subtest: game.js records the declared globals before merging the saved ones
+ok 7 - game.js records the declared globals before merging the saved ones
+  ---
+  duration_ms: 1.062009
+  ...
+# Subtest: an unchanged \#set_global still writes the value through to loaded stories
+ok 8 - an unchanged \#set_global still writes the value through to loaded stories
+  ---
+  duration_ms: 3.973964
+  ...
+# Subtest: the preload defers an intro global with its preload-time value
+ok 9 - the preload defers an intro global with its preload-time value
+  ---
+  duration_ms: 11.449328
+  ...
+# Subtest: first open applies a deferred global nothing has set since
+ok 10 - first open applies a deferred global nothing has set since
+  ---
+  duration_ms: 6.046736
+  ...
+# Subtest: first open keeps a newer value set after the preload
+ok 11 - first open keeps a newer value set after the preload
+  ---
+  duration_ms: 4.67329
+  ...
+# Subtest: a deferred global already holding its value is not re-emitted; a legacy one without a base still applies
+ok 12 - a deferred global already holding its value is not re-emitted; a legacy one without a base still applies
+  ---
+  duration_ms: 0.357798
+  ...
+# Subtest: an undeclared deferred global (an older save) is not applied
+ok 13 - an undeclared deferred global (an older save) is not applied
+  ---
+  duration_ms: 0.24128
+  ...
+# Subtest: the preload-time values survive a reload with the phone state
+ok 14 - the preload-time values survive a reload with the phone state
+  ---
+  duration_ms: 4.433868
+  ...
+# Subtest: the phone-chat minigame applies deferred globals through the guarded helper
+ok 15 - the phone-chat minigame applies deferred globals through the guarded helper
+  ---
+  duration_ms: 0.431785
+  ...
+# Subtest: an imported global still syncs into a story
+ok 16 - an imported global still syncs into a story
+  ---
+  duration_ms: 0.711567
+  ...
+# Subtest: an ink assignment to an imported global is reverted with a warning and not written to gameState
+ok 17 - an ink assignment to an imported global is reverted with a warning and not written to gameState
+  ---
+  duration_ms: 2.542617
+  ...
+# Subtest: the full-scan fallback (no observer) never writes an imported global back
+ok 18 - the full-scan fallback (no observer) never writes an imported global back
+  ---
+  duration_ms: 0.837478
+  ...
+# Subtest: \#set_global and \#set_variable refuse an imported global
+ok 19 - \#set_global and \#set_variable refuse an imported global
+  ---
+  duration_ms: 0.502359
+  ...
+# Subtest: game.js marks the imports read-only and re-applies them over the saved globals
+ok 20 - game.js marks the imports read-only and re-applies them over the saved globals
+  ---
+  duration_ms: 0.803389
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 357.764025

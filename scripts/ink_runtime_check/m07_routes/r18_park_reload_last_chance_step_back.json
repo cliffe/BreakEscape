@@ -1,0 +1,113 @@
+{
+ "globals": {
+  "briefing_played": true,
+  "team_assigned": true,
+  "team_assignment": "fracture",
+  "hurt_line_said": true
+ },
+ "steps": [
+  {
+   "note": "R18 (puzzle chains r1, F1/C5): the third-visit count survives a page reload (park_returns is an ink variable). Evade, re-enter, fetch the projection, page reload, re-enter: last chance, not 'Second time' again. Stepping back turns him hostile, and HaX gives the controls."
+  },
+  {
+   "enter": "generator_room"
+  },
+  {
+   "enter": "cable_vault"
+  },
+  {
+   "talk": "park",
+   "picks": [
+    "Nothing. I was never here."
+   ]
+  },
+  {
+   "expect": {
+    "park_resolved": "evaded"
+   }
+  },
+  {
+   "enter": "generator_room"
+  },
+  {
+   "enter": "cable_vault"
+  },
+  {
+   "said": [
+    "briefed on a building, not a body count",
+    "Carry it back down with you"
+   ]
+  },
+  {
+   "talk": "park",
+   "knot": "start",
+   "picks": [
+    "Nothing. I was never here."
+   ]
+  },
+  {
+   "said": [
+    "Second time. There isn't a third."
+   ]
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "read": "casualty_projection"
+  },
+  {
+   "expect": {
+    "casualty_projection_found": true
+   }
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "enter": "generator_room"
+  },
+  {
+   "enter": "cable_vault"
+  },
+  {
+   "talk": "park",
+   "knot": "start",
+   "reload": "page",
+   "picks": [
+    "Step back"
+   ]
+  },
+  {
+   "said": [
+    "I said there wasn't a third. You've got one sentence.",
+    "You give ground",
+    "Park's swinging. Q switches to fists",
+    "won't follow you out of the vault"
+   ],
+   "notSaid": [
+    "Second time",
+    "crimping tool swinging"
+   ]
+  },
+  {
+   "expect": {
+    "park_resolved": "ko"
+   }
+  },
+  {
+   "creditsSaid": [
+    "Fought off, not stopped"
+   ]
+  },
+  {
+   "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice."
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

@@ -1,0 +1,630 @@
+{
+  "_about": "Wave 4 defend fragment for awareness episode E4 (whaling and a copied executive voice, executive and PA role). Merrin & Sallow Architects and everyone in it are fictional; every address ends .example. The learner sits in Tomás Carvalho's seat as PA to the managing partner, Catherine Merrin. Voice items are the voicemail kind with transcripts; each names its clip in audio.clipId (VO7 in ASSETS.md), and the card stays transcript-only until the player control and clips exist (P7-Z2, held). Copy triageSets and the awarenessEpisode keys into the E4 shells. Ids chosen here, since none were pinned: episode e4_exec_whaling (defend-only e4_exec_whaling_defend), defend set e4_pa_inbox, check forms executive_form_a and executive_form_b. Brand roster: ../BRAND_SET.md; new names are under _brandAdditions.",
+  "_brandAdditions": {
+    "_use": "For BRAND_SET.md section 3 (Merrin & Sallow Architects). Catherine Merrin, Tomás Carvalho and Yasmin Chaudhry are used as BRAND_SET proposes. Addresses: catherine.merrin@, tomas.carvalho@ and yasmin.chaudhry@merrinsallow.example. Catherine is the spoofed senior in both forms (rows 4 freemail and 5 copied voice). Firm-domain look-alikes used in the row-6 sender spoofs (C2-M6), both impersonating Thandiwe: merrin-sallow.example (form A) and merrinsallow-group.example (form B); the episode's own look-alike is still the travel agent's. The check hosts (Yasmin AB, Julian BA) are spoofed in neither form (C2-m16).",
+    "cast": [
+      "Julian Sallow: co-founding partner. 60s, Black British of Jamaican heritage, sits on planning panels. julian.sallow@merrinsallow.example. Genuine on The Ropewalk booking (form B row 3); hosts the BA check pair; no longer impersonated in either check form (C2-m16)",
+      "Thandiwe Moyo: studio manager. 30s, Zimbabwean-British. thandiwe.moyo@merrinsallow.example. Genuine in form B row 1; impersonated on a look-alike firm domain in both forms (row 6, C2-M6: merrin-sallow.example in A, merrinsallow-group.example in B); hosts no check mission, so no check host is spoofed (C2-m16)",
+      "Oskar Berglund: project manager at Brackenmoor Homes, a client (brackenmoorhomes.example). 40s, Swedish, in London since university. oskar.berglund@brackenmoorhomes.example. Genuine in form A row 9 and form B row 10 (voicemail)",
+      "Leah Abramson: planning consultant, Abramson Planning (abramsonplanning.example). 50s, British Jewish, north London. leah@abramsonplanning.example. Genuine in form B row 9"
+    ],
+    "companies": [
+      "Wrenfield Travel: the firm's travel agent, wrenfieldtravel.example; look-alike wrenfield-travel.example (added hyphen). Episode items 1 and 5",
+      "Larkspur Travel: a second agent used for the Milan trip, larkspurtravel.example; look-alike larkspur-travel.example. Form A rows 2 and 3",
+      "The Ropewalk: an events venue where Julian is speaking, theropewalk.example; look-alike theropewalk-events.example (added word). Form B rows 2 and 3",
+      "Brackenmoor Homes: a housing client, brackenmoorhomes.example",
+      "Abramson Planning: a planning consultancy, abramsonplanning.example",
+      "Fennick Summit: an invented conference nobody at the firm is speaking at; fennicksummit-speakers.example and speaker-portal-signin.example. Form A row 8, never genuine",
+      "SwiftLane Couriers: a courier the firm has never used; swiftlane-couriers.example and swiftlane-pay.example. Form B row 8, never genuine",
+      "Mail relays for the fail-but-fine rows (row 3 of each form): mailer.bookingsuite.example (Larkspur's booking system) and mailer.venuedesk.example (The Ropewalk's)",
+      "Shared freemail from BRAND_SET: inboxly.example and quickpost-mail.example"
+    ],
+    "nameCheck": "Merrin, Carvalho, Chaudhry, Moyo, Berglund, Abramson, Wrenfield, Larkspur, Ropewalk, Brackenmoor, Fennick and SwiftLane had no hits in scenarios, planning_notes, docs, story_design or the game JS on 2026-10-22, apart from BRAND_SET's own E4 proposal. Sallow appears only in BRAND_SET (and as a substring of 'toolsAllowed' in the OSINT code). Rejected after the check: Kestrel (lab_tesseract_trials), Lindqvist (m09), Halden (sis03). Pre-ship: Merrin & Sallow, Wrenfield Travel, Larkspur Travel, The Ropewalk and Brackenmoor Homes still need the real-business web search."
+  },
+  "_voice": {
+    "_use": "The voicemail items and their clips, for P7-Z1 and P7-Z2. Every voice is a fictional character's. A 'copied' clip is a style variant of that same character's voice (11 N7), never a real person's. Six clips in all: two in the episode set, two per check form.",
+    "clips": [
+      "VO7_e4_vm_gate: Catherine Merrin, copied voice. Episode e4_vm_gate (phish)",
+      "VO7_e4_vm_landed: Catherine Merrin, her own voice. Episode e4_vm_landed (genuine)",
+      "VO7_ea_vm_tunnel: Catherine Merrin, copied voice. Form A ea_vm_tunnel (phish)",
+      "VO7_ea_vm_receipts: Yasmin Chaudhry, her own voice. Form A ea_vm_receipts (genuine)",
+      "VO7_eb_vm_hearing: Catherine Merrin, copied voice. Form B eb_vm_hearing (phish)",
+      "VO7_eb_vm_sitevisit: Oskar Berglund, his own voice. Form B eb_vm_sitevisit (genuine)"
+    ],
+    "_debriefPanel": "The debrief panel on copied voices (11 section 3.2, E4: concept level, nothing about how) has no strings key yet. Proposed text is awarenessEpisode._voicePanel; it needs strings.voicePanel (or similar) in the schema and the debrief view."
+  },
+  "_formPairing": {
+    "_use": "Executive and PA parallel forms A and B: item n in A matches item n in B on kind, phish or genuine, flags, header results and difficulty. 5 phish and 5 genuine per form (one more phish than the finance and helpdesk forms, because the copied-voice voicemail is this role's own item). Per form the phish flags are lookalike_domain 2 (row 3 bank look-alike + row 6 firm look-alike), changed_bank_details 1, senderTrust 3 (row 3 + row 4 freemail + row 6 firm look-alike), secrecy_or_bypass 2, urgencyCalibrated 1, vish_callback_pressure 1, linkCredible 1 (11 in all; the row-8 pretextRelevant was dropped, M4, because the fact it rested on is off-screen). After C2-M6 the old senderAuth+reply_to_differs spoof row (row 6) is a visible sender look-alike on a look-alike of the firm's own domain, and the row-2 genuine whyFine no longer leans on the header. C2-m16 keeps the hosts (Yasmin AB, Julian BA) but moves the spoofed names off them: rows 4 and 5 impersonate Catherine (both forms) and row 6 impersonates Thandiwe (both forms), none of whom hosts a check mission. Difficulty: 4 easy, 5 medium, 1 hard. Verify is on in both forms, because ringing back is the right move for a voicemail, so the pre and post still compare like with like. No item repeats the episode set's senders and subjects.",
+    "rows": [
+      "1 email, genuine, all pass, easy | A ea_expenses_form (Yasmin, new expenses form) | B eb_studio_closed (Thandiwe, studio closed Monday)",
+      "2 email, the real supplier, SPF fail with DKIM and DMARC pass, but the whyFine reads off the visible message not the header (C2-M6), medium | A ea_larkspur_invoice | B eb_ropewalk_booking (real first, m19)",
+      "3 email, look-alike travel or venue with new bank details, lookalike_domain + changed_bank_details + senderTrust (M3), all pass (pass-but-bad), medium | A ea_larkspur_bank | B eb_ropewalk_bank",
+      "4 email, the managing partner's name on freemail, senderTrust + secrecy_or_bypass + urgencyCalibrated, all pass (pass-but-bad), easy | A ea_venue_deposit (fake Catherine) | B eb_consultant_fee (fake Catherine)",
+      "5 voicemail, copied managing partner's voice, no checkable number, vish_callback_pressure + secrecy_or_bypass, medium | A ea_vm_tunnel (Catherine) | B eb_vm_hearing (Catherine)",
+      "6 email, sender on a look-alike of the firm's own domain, senderTrust + lookalike_domain, all pass (pass-but-bad), medium (C2-M6, C2-m16) | A ea_card_spoof (Thandiwe on merrin-sallow.example, passport numbers) | B eb_travel_dates_spoof (Thandiwe on merrinsallow-group.example, travel dates)",
+      "7 email, genuine urgency through the normal process, all pass, medium | A ea_slides_today (Catherine) | B eb_statements_noon (Yasmin)",
+      "8 email, unknown sender with an off-site link, linkCredible (pretextRelevant dropped, M4: the 'no speaker there'/'never used this courier' fact is off-screen), SPF pass DKIM none DMARC none, medium | A ea_speaker_portal (Fennick Summit) | B eb_travel_portal (Larkmoor Travel)",
+      "9 email, genuine outside contact, all pass, easy | A ea_site_visit (Oskar, Brackenmoor) | B eb_planning_panel (Leah, Abramson Planning)",
+      "10 voicemail, genuine, from a known number, easy | A ea_vm_receipts (Yasmin) | B eb_vm_sitevisit (Oskar)"
+    ]
+  },
+  "triageSets": [
+    {
+      "id": "e4_pa_inbox",
+      "_prefix": "Prefix for the full episode (id e4_exec_whaling). The defend-only shell (id e4_exec_whaling_defend) sets episode_e4_exec_whaling_defend_defend_ instead, as E1, E3 and E5 do. No stage on purpose, as in E1.",
+      "_order": "Teaching order: the genuine itinerary (what is public about the trip), the email that uses it, the copied-voice follow-up, then her real voicemail straight after (the similar item after a likely miss, 11 section 4.3: same voice, and only the number and the request tell them apart), then a look-alike of the travel agent from item 1.",
+      "title": "Merrin & Sallow PA inbox",
+      "brief": "You're Tomás Carvalho, PA to Catherine Merrin, the managing partner, and she flies to Lisbon this morning. Yasmin in finance approves the firm's payments. Five emails and voicemails are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. A voice you know is not proof on its own. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+      "scoringProfile": "awareness",
+      "verifyVerdict": true,
+      "feedbackMode": "immediate",
+      "headerPanel": "off",
+      "glossary": "closed",
+      "channelTells": ["lookalike_domain", "changed_bank_details", "secrecy_or_bypass", "vish_callback_pressure", "borrowed_authority", "reply_to_differs"],
+      "outcome": { "setGlobalPrefix": "episode_e4_exec_whaling_defend_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "e4_wrenfield_itinerary",
+          "from": { "name": "Wrenfield Travel", "address": "bookings@wrenfieldtravel.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Itinerary: Catherine Merrin, Lisbon, Tuesday to Thursday",
+          "time": "07:15",
+          "body": "Hello Tomás,\nHere is Catherine's itinerary for this week.\nTuesday: flight from London City at 09:55, landing in Lisbon at 12:40 local time.\nWednesday: speaking at the Lisbon Design Forum, 10:00.\nThursday: flight home at 18:20.\nThe hotel and flights are paid on the Merrin & Sallow account as usual, so there is nothing to pay.\nKind regards,\nMariam at Wrenfield Travel",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "wrenfieldtravel.example", "replyTo": "bookings@wrenfieldtravel.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "pretextRelevant": "Booking Catherine's travel is part of your job, and Wrenfield is the agent the firm uses.",
+              "changed_bank_details": "It mentions payment only to say there's nothing to pay: the account is the usual one.",
+              "default": "It's from Wrenfield's real address, it matches a trip you booked, and it asks you for nothing. Notice how much of it is also on Catherine's public posts: the forum, the date, the flight time. Anyone can find those."
+            }
+          }
+        },
+        {
+          "id": "e4_boarding_payment",
+          "from": { "name": "Catherine Merrin", "address": "catherine.merrin.travel@inboxly.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "About to board: need this paid before I land",
+          "time": "09:41",
+          "body": "Tomás,\nThey're boarding us now and my work email won't load at the gate, so I'm on this one.\nThe Lisbon studio we're partnering with needs the £24,600 retainer today or we lose the slot. Their details: Atelier Ribeira, account ending 3381. Please pay it this morning.\nKeep it between us for now and don't send it through Yasmin. She'll want the approval form and there isn't time. I'll sign it off when I land.\nI'll be in the air for three hours, so email rather than ring.\nCatherine\nSent from my phone",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "catherine.merrin.travel@inboxly.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "perFlagNote": {
+              "senderTrust": "A payment request from the managing partner on a free webmail inbox (inboxly.example), not her merrinsallow.example address. Anyone can open a free inbox in a name you know, so stop and ring her on the number in your contacts",
+              "secrecy_or_bypass": "'Keep it between us' and 'don't send it through Yasmin' skip the approval that would catch this",
+              "urgencyCalibrated": "'Before I land' and 'three hours in the air' leave no time to check and steer you away from ringing her. The flight time came from her public posts"
+            },
+            "ifTrusted": "£24,600 would go to an account the sender controls. The real Catherine never asked for it.",
+            "reportReply": "Thanks. Catherine didn't send it. Her real address is on merrinsallow.example, and Yasmin has warned the rest of the office."
+          }
+        },
+        {
+          "id": "e4_vm_gate",
+          "kind": "voicemail",
+          "_voice": "Copied voice: a style variant of Catherine Merrin's own fictional voice (11 N7). Clip VO7_e4_vm_gate.",
+          "from": { "name": "Catherine Merrin", "address": "Number withheld" },
+          "subject": "Voicemail from Catherine Merrin",
+          "time": "09:48",
+          "duration": "0:24",
+          "audio": { "clipId": "VO7_e4_vm_gate" },
+          "transcript": [
+            { "who": "Catherine", "text": "Tomás, it's Catherine. Did you get my email? They're closing the gate, so I'll be quick. Please get that retainer out to Atelier Ribeira this morning. Don't bother Yasmin with it, I'll square it with her myself. And don't ring back, my phone's going off. Just text me when it's gone. Thanks." }
+          ],
+          "truth": {
+            "isPhish": true,
+            "flags": ["vish_callback_pressure", "secrecy_or_bypass"],
+            "perFlagNote": {
+              "vish_callback_pressure": "The number is withheld and she tells you not to ring back, so you can't check it on the number in your contacts. That is the one check a copied voice can't pass",
+              "secrecy_or_bypass": "'Don't bother Yasmin with it' keeps finance, the people who would check, out of it"
+            },
+            "ifTrusted": "The voicemail would have made the fake email look confirmed, and the retainer would have gone to the sender's account.",
+            "reportReply": "Thanks. Catherine was already through security when this was left, and her phone was off. The voice sounded like hers, which is why the number and the request matter more than the voice."
+          }
+        },
+        {
+          "id": "e4_vm_landed",
+          "kind": "voicemail",
+          "_voice": "Catherine Merrin's own fictional voice. Clip VO7_e4_vm_landed.",
+          "from": { "name": "Catherine Merrin", "address": "Catherine (mobile), in your contacts" },
+          "subject": "Voicemail from Catherine Merrin",
+          "time": "13:05",
+          "duration": "0:22",
+          "audio": { "clipId": "VO7_e4_vm_landed" },
+          "transcript": [
+            { "who": "Catherine", "text": "Hi Tomás, it's me, just landed. Could you move Thursday's Brackenmoor call to Friday morning? Oskar knows. Nothing urgent. Ring me on the mobile if anything comes up, I'll have it on all afternoon. Thanks." }
+          ],
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "vish_callback_pressure": "She asks you to ring her, on the mobile number already in your contacts.",
+              "secrecy_or_bypass": "A diary move is an ordinary PA job. Nothing is kept from anyone and no step is skipped.",
+              "default": "The same voice as the last voicemail, and that's the point: the voice proved nothing either time. This one comes from her number in your contacts, asks for something you'd do anyway, and invites a call back. If you wanted to be sure, ringing her mobile would be a fine Verify."
+            }
+          }
+        },
+        {
+          "id": "e4_wrenfield_lookalike",
+          "from": { "name": "Wrenfield Travel Accounts", "address": "accounts@wrenfield-travel.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Lisbon hotel: card payment declined, please pay by transfer today",
+          "time": "14:20",
+          "body": "Dear Tomás,\nThe card payment for Ms Merrin's hotel in Lisbon was declined this morning. To keep the room, please pay the balance of £1,860 by bank transfer today.\nWe have moved to a new bank, so please use these details, not the ones on file:\nAccount name: Wrenfield Travel Ltd\nAccount number ending 0492\nKind regards,\nWrenfield Travel Accounts",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.wrenfield-travel.example", "replyTo": "accounts@wrenfield-travel.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["lookalike_domain", "changed_bank_details", "senderTrust", "urgencyCalibrated"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
+            "perFlagNote": {
+              "lookalike_domain": "This morning's itinerary came from wrenfieldtravel.example. This one is wrenfield-travel.example, with an added hyphen",
+              "changed_bank_details": "'Use these details, not the ones on file' is the commonest invoice-fraud move. The itinerary said everything was paid on the firm's account. The safe step is to ring Wrenfield on the number you already hold",
+              "senderTrust": "The name says Wrenfield, but the address is on wrenfield-travel.example, which isn't Wrenfield's",
+              "urgencyCalibrated": "'Pay the balance by bank transfer today' to keep the room is pressure to move the money before you can check the new account"
+            },
+            "ifTrusted": "£1,860 would go to an account the sender controls, and the hotel was already paid.",
+            "reportReply": "Thanks. Wrenfield say they sent nothing and the hotel is paid. The look-alike address has been blocked."
+          }
+        }
+      ]
+    },
+    {
+      "id": "executive_form_a",
+      "_form": "Executive and PA parallel form A. Authored as pre; the BA check pair launches it as post (minigameData.stage). Item n here matches item n in executive_form_b; the table is in _formPairing above.",
+      "title": "PA inbox check",
+      "brief": "Ten emails and voicemails from the inbox of a PA at Merrin & Sallow Architects. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+      "stage": "pre",
+      "pairedWith": "executive_form_b",
+      "scoringProfile": "awareness",
+      "verifyVerdict": true,
+      "feedbackMode": "end",
+      "headerPanel": "collapsed",
+      "glossary": "closed",
+      "channelTells": ["lookalike_domain", "changed_bank_details", "secrecy_or_bypass", "vish_callback_pressure", "borrowed_authority", "reply_to_differs"],
+      "outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "ea_expenses_form",
+          "from": { "name": "Yasmin Chaudhry", "address": "yasmin.chaudhry@merrinsallow.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "New expenses form from 1 November",
+          "time": "08:05",
+          "body": "Hi Tomás,\nFrom 1 November we're using the new expenses form on the finance page of the intranet. The old spreadsheet still works for anything dated October.\nThanks,\nYasmin\nFinance",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "merrinsallow.example", "replyTo": "yasmin.chaudhry@merrinsallow.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "Yasmin's real address, a routine change, and it points you to the intranet you already use. It asks for nothing."
+            }
+          }
+        },
+        {
+          "id": "ea_larkspur_invoice",
+          "from": { "name": "Larkspur Travel", "address": "invoices@larkspurtravel.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Invoice LT-5528: Milan, partners' trip",
+          "time": "08:40",
+          "body": "Dear Tomás,\nPlease find attached invoice LT-5528 for the partners' Milan trip, payable on the usual 30-day terms to the account on file.\nKind regards,\nLarkspur Travel",
+          "attachments": [ { "label": "LT-5528.pdf", "kind": "pdf" } ],
+          "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "mailer.bookingsuite.example", "replyTo": "invoices@larkspurtravel.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "attachmentPlausible": "An invoice PDF for a trip you booked is what you'd expect.",
+              "default": "Larkspur's real domain, a trip you booked, payment to the account on file, and nothing changed. It asks for nothing new."
+            }
+          }
+        },
+        {
+          "id": "ea_larkspur_bank",
+          "from": { "name": "Larkspur Travel", "address": "accounts@larkspur-travel.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Milan booking LT-5528: our bank details have changed",
+          "time": "09:10",
+          "body": "Dear Tomás,\nPlease note that we have moved to a new bank. Invoice LT-5528 for the partners' Milan trip should now be paid to:\nAccount name: Larkspur Travel Ltd\nAccount number ending 6150\nPlease update your records before payment.\nKind regards,\nLarkspur Travel Accounts",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.larkspur-travel.example", "replyTo": "accounts@larkspur-travel.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["lookalike_domain", "changed_bank_details", "senderTrust"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
+            "perFlagNote": {
+              "lookalike_domain": "Larkspur's real domain is larkspurtravel.example. This is larkspur-travel.example, with an added hyphen",
+              "changed_bank_details": "New bank details on an open invoice is the commonest invoice-fraud move. The safe step is to ring Larkspur on the number you already hold",
+              "senderTrust": "The name says Larkspur, but the address is on larkspur-travel.example, which isn't Larkspur's"
+            },
+            "headerNote": "All three checks passed because the sender owns larkspur-travel.example. A pass tells you which domain sent it, not that it's Larkspur.",
+            "ifTrusted": "The Milan payment would go to an account the sender controls.",
+            "reportReply": "Thanks. Larkspur haven't changed bank, and that domain isn't theirs."
+          }
+        },
+        {
+          "id": "ea_venue_deposit",
+          "from": { "name": "Catherine Merrin", "address": "catherine.merrin.personal@quickpost-mail.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Pay this before 11, keep it quiet",
+          "time": "09:35",
+          "body": "Tomás,\nI'm in back-to-back meetings. I've agreed to hold the Brackenmoor launch venue and the £4,200 deposit has to be paid before 11 or we lose the date. I'll forward the account details in a moment. Keep it between us for now, Yasmin included, until I'm back.\nCatherine\nSent from my phone",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "catherine.merrin.personal@quickpost-mail.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "perFlagNote": {
+              "senderTrust": "The managing partner's name on a personal inbox at quickpost-mail.example, not merrinsallow.example",
+              "secrecy_or_bypass": "'Keep it between us, Yasmin included' keeps out the person who would check",
+              "urgencyCalibrated": "'Before 11' while she's in meetings leaves no time to ask her"
+            },
+            "headerNote": "All three checks passed because the sender owns quickpost-mail.example. A pass tells you which domain sent it, not that it's Catherine.",
+            "ifTrusted": "£4,200 would go to an account the sender controls.",
+            "reportReply": "Thanks. Catherine didn't send it, and her real address is on merrinsallow.example."
+          }
+        },
+        {
+          "id": "ea_vm_tunnel",
+          "kind": "voicemail",
+          "_voice": "Copied voice: a style variant of Catherine Merrin's own fictional voice. Clip VO7_ea_vm_tunnel.",
+          "from": { "name": "Catherine Merrin", "address": "07700 900582 (not in your contacts)" },
+          "subject": "Voicemail from Catherine Merrin",
+          "time": "10:02",
+          "duration": "0:21",
+          "audio": { "clipId": "VO7_ea_vm_tunnel" },
+          "transcript": [
+            { "who": "Catherine", "text": "Tomás, it's Catherine, I'm on a borrowed phone, mine's dead. I need the Brackenmoor deposit sent today, I'm texting you the account now. It's a sensitive one, so keep it off the finance list for now. I'm going into a tunnel, so don't ring back. Thanks." }
+          ],
+          "truth": {
+            "isPhish": true,
+            "flags": ["vish_callback_pressure", "secrecy_or_bypass"],
+            "perFlagNote": {
+              "vish_callback_pressure": "A number that isn't in your contacts, a 'dead' phone and 'don't ring back': every route to check it on her real number is closed off",
+              "secrecy_or_bypass": "'Keep it off the finance list' skips the people who would check the payment"
+            },
+            "ifTrusted": "The deposit would go to whatever account the text names, and the sender would have it.",
+            "reportReply": "Thanks. We rang Catherine on her own mobile: her phone was fine and she hadn't called. The voice sounded like hers, which is why the number and the request matter more."
+          }
+        },
+        {
+          "id": "ea_card_spoof",
+          "from": { "name": "Thandiwe Moyo", "address": "thandiwe.moyo@merrin-sallow.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Partners' passport numbers for the travel insurer",
+          "time": "10:30",
+          "body": "Hi Tomás,\nThe travel insurer needs the partners' passport numbers to add this trip. Could you reply with Catherine's and Julian's from the file? I'm off-site and can't get to it.\nThanks,\nThandiwe",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "merrin-sallow.example", "replyTo": "thandiwe.moyo@merrin-sallow.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "lookalike_domain"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
+            "perFlagNote": {
+              "senderTrust": "The name says Thandiwe, but the address is on merrin-sallow.example, which isn't the firm's",
+              "lookalike_domain": "The firm's domain is merrinsallow.example. merrin-sallow.example adds a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
+            },
+            "ifTrusted": "The partners' passport numbers would go to a stranger, enough to set up travel or accounts in their names.",
+            "reportReply": "Thanks. Thandiwe didn't send it, her real address is on merrinsallow.example, and passport numbers never go out by email."
+          }
+        },
+        {
+          "id": "ea_slides_today",
+          "from": { "name": "Catherine Merrin", "address": "catherine.merrin@merrinsallow.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Slides printed by 4 today, please",
+          "time": "11:20",
+          "body": "Tomás,\nSorry for the short notice. Could you get twenty copies of the Brackenmoor slides printed and bound by four? The file is in the project folder, version 3. Use the usual print room order.\nThanks,\nCatherine",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "merrinsallow.example", "replyTo": "catherine.merrin@merrinsallow.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "urgencyCalibrated": "It's a tight deadline, but for a normal job done the normal way. Hurry on its own isn't the tell; hurry to skip a check is.",
+              "senderTrust": "Catherine's real work address.",
+              "default": "Her real address, an ordinary request, the file where it always lives and the usual print order. Nothing is paid, kept quiet or skipped."
+            }
+          }
+        },
+        {
+          "id": "ea_speaker_portal",
+          "from": { "name": "Fennick Summit Speaker Team", "address": "speakers@fennicksummit-speakers.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Action needed: confirm your speaker's travel details",
+          "time": "13:15",
+          "body": "Hello,\nWe are finalising travel for speakers at Fennick Summit. Please sign in to the speaker portal and confirm your speaker's passport details and travel dates:\n{{link:portal}}\nSpeaker Team",
+          "links": [ { "id": "portal", "text": "fennicksummit.example/speakers", "destination": "https://speaker-portal-signin.example/fennick" } ],
+          "auth": { "spf": "pass", "dkim": "none", "dmarc": "none", "envelopeFrom": "fennicksummit-speakers.example", "replyTo": "speakers@fennicksummit-speakers.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["linkCredible"],
+            "perFlagNote": {
+              "linkCredible": "The link text names one site, but it really goes to speaker-portal-signin.example"
+            },
+            "ifTrusted": "The page would ask for passport details and a sign-in, and the sender would keep both.",
+            "reportReply": "Thanks. Nobody here is booked at that event, and the link went to a sign-in page that isn't theirs."
+          }
+        },
+        {
+          "id": "ea_site_visit",
+          "from": { "name": "Oskar Berglund", "address": "oskar.berglund@brackenmoorhomes.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Site visit next Tuesday",
+          "time": "14:40",
+          "body": "Hi Tomás,\nCould we book Catherine for the Harbour Road site visit next Tuesday at 10? Hard hats and boots on site as usual. Let me know if another day suits her better.\nBest,\nOskar\nBrackenmoor Homes",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "brackenmoorhomes.example", "replyTo": "oskar.berglund@brackenmoorhomes.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "pretextRelevant": "Booking Catherine's diary is your job, and Brackenmoor is a client.",
+              "default": "A client's real address and a diary request. Nothing to pay, sign in to or keep quiet."
+            }
+          }
+        },
+        {
+          "id": "ea_vm_receipts",
+          "kind": "voicemail",
+          "_voice": "Yasmin Chaudhry's own fictional voice. Clip VO7_ea_vm_receipts.",
+          "from": { "name": "Yasmin Chaudhry", "address": "ext. 2214" },
+          "subject": "Voicemail from Yasmin Chaudhry",
+          "time": "15:30",
+          "duration": "0:17",
+          "audio": { "clipId": "VO7_ea_vm_receipts" },
+          "transcript": [
+            { "who": "Yasmin", "text": "Hi Tomás, it's Yasmin in finance. When you've a minute, could you send me the Milan receipts? No rush, end of the week is fine. I'm on 2214 if you want to ring." }
+          ],
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "vish_callback_pressure": "She gives you her own extension and invites a call.",
+              "default": "A colleague on her desk extension, asking for something routine with no deadline. Ringing her back on 2214 would settle any doubt."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "executive_form_b",
+      "_form": "Executive and PA parallel form B. Authored as post; the BA check pair launches it as pre (minigameData.stage). Item n here matches item n in executive_form_a; the table is in _formPairing above.",
+      "title": "PA inbox check",
+      "brief": "Ten emails and voicemails from the inbox of a PA at Merrin & Sallow Architects. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+      "stage": "post",
+      "pairedWith": "executive_form_a",
+      "scoringProfile": "awareness",
+      "verifyVerdict": true,
+      "feedbackMode": "end",
+      "headerPanel": "collapsed",
+      "glossary": "closed",
+      "channelTells": ["lookalike_domain", "changed_bank_details", "secrecy_or_bypass", "vish_callback_pressure", "borrowed_authority", "reply_to_differs"],
+      "outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "eb_studio_closed",
+          "from": { "name": "Thandiwe Moyo", "address": "thandiwe.moyo@merrinsallow.example" },
+          "to": "all-staff@merrinsallow.example",
+          "subject": "Studio closed Monday for the floor works",
+          "time": "08:05",
+          "body": "Hi all,\nThe studio is closed on Monday while the new floor goes down. Please work from home, and take anything you need on Friday. Normal service on Tuesday.\nThanks,\nThandiwe\nStudio Manager",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "merrinsallow.example", "replyTo": "thandiwe.moyo@merrinsallow.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "The studio manager's real address and a notice to everyone. It asks for nothing."
+            }
+          }
+        },
+        {
+          "id": "eb_ropewalk_booking",
+          "from": { "name": "The Ropewalk", "address": "events@theropewalk.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Booking RW-1907 confirmed: Julian Sallow",
+          "time": "08:40",
+          "body": "Dear Tomás,\nThis confirms booking RW-1907: Julian Sallow's talk on Thursday at 14:00 and a stand in the main hall. Our invoice follows on the usual terms, payable to the account on file.\nKind regards,\nThe Ropewalk Events Team",
+          "attachments": [ { "label": "RW-1907-confirmation.pdf", "kind": "pdf" } ],
+          "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "mailer.venuedesk.example", "replyTo": "events@theropewalk.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "attachmentPlausible": "A booking confirmation PDF for a booking you made is what you'd expect.",
+              "default": "The venue's real domain, a booking you made, payment to the account on file, and nothing changed. It asks for nothing new."
+            }
+          }
+        },
+        {
+          "id": "eb_ropewalk_bank",
+          "from": { "name": "The Ropewalk Events", "address": "accounts@theropewalk-events.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Booking RW-1907: please use our new bank details",
+          "time": "09:10",
+          "body": "Dear Tomás,\nWe have changed banks. The balance on booking RW-1907 (Julian Sallow's talk and stand) should now be paid to:\nAccount name: The Ropewalk Ltd\nAccount number ending 2274\nPlease update your records before you pay.\nKind regards,\nThe Ropewalk Accounts",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.theropewalk-events.example", "replyTo": "accounts@theropewalk-events.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["lookalike_domain", "changed_bank_details", "senderTrust"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
+            "perFlagNote": {
+              "lookalike_domain": "The Ropewalk's real domain is theropewalk.example. This is theropewalk-events.example, with an added word",
+              "changed_bank_details": "New bank details on an open booking is the commonest invoice-fraud move. The safe step is to ring the venue on the number you already hold",
+              "senderTrust": "The name says The Ropewalk, but the address is on theropewalk-events.example, which isn't the venue's"
+            },
+            "headerNote": "All three checks passed because the sender owns theropewalk-events.example. A pass tells you which domain sent it, not that it's the venue.",
+            "ifTrusted": "The booking payment would go to an account the sender controls.",
+            "reportReply": "Thanks. The Ropewalk haven't changed bank, and that domain isn't theirs."
+          }
+        },
+        {
+          "id": "eb_consultant_fee",
+          "from": { "name": "Catherine Merrin", "address": "catherine.m.private@inboxly.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Pay this today, between us",
+          "time": "09:35",
+          "body": "Tomás,\nI've agreed a fee of £6,750 with a heritage consultant for the Brackenmoor scheme and it has to be paid today to hold her diary. Details attached in the next email. Please keep this between us and don't raise it with Yasmin until I'm back, it's a delicate one.\nCatherine\nSent from my phone",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "catherine.m.private@inboxly.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
+            "perFlagNote": {
+              "senderTrust": "The managing partner's name on a personal inbox at inboxly.example, not merrinsallow.example",
+              "secrecy_or_bypass": "'Keep this between us' and 'don't raise it with Yasmin' keep out the person who would check",
+              "urgencyCalibrated": "'Paid today to hold her diary' leaves no time to check"
+            },
+            "headerNote": "All three checks passed because the sender owns inboxly.example. A pass tells you which domain sent it, not that it's Catherine.",
+            "ifTrusted": "£6,750 would go to an account the sender controls.",
+            "reportReply": "Thanks. Catherine didn't send it, and her real address is on merrinsallow.example."
+          }
+        },
+        {
+          "id": "eb_vm_hearing",
+          "kind": "voicemail",
+          "_voice": "Copied voice: a style variant of Catherine Merrin's own fictional voice. Clip VO7_eb_vm_hearing.",
+          "from": { "name": "Catherine Merrin", "address": "Number withheld" },
+          "subject": "Voicemail from Catherine Merrin",
+          "time": "10:02",
+          "duration": "0:20",
+          "audio": { "clipId": "VO7_eb_vm_hearing" },
+          "transcript": [
+            { "who": "Catherine", "text": "Tomás, it's Catherine. I'm in a client meeting and can't talk. Please send the signed Brackenmoor contract to the solicitor's address I'm texting you, and leave it off the shared drive until I'm back. Don't ring, I can't pick up. Thanks." }
+          ],
+          "truth": {
+            "isPhish": true,
+            "flags": ["vish_callback_pressure", "secrecy_or_bypass"],
+            "perFlagNote": {
+              "vish_callback_pressure": "The number is withheld and she tells you not to ring, so you can't check it on the number in your contacts",
+              "secrecy_or_bypass": "'Leave it off the shared drive' keeps the people who would notice out of it"
+            },
+            "ifTrusted": "A signed client contract would go to an address the sender chose.",
+            "reportReply": "Thanks. We rang Catherine's mobile at the break: she hadn't called, and the solicitor already has the contract. The voice sounded like hers, which is why the number and the request matter more."
+          }
+        },
+        {
+          "id": "eb_travel_dates_spoof",
+          "from": { "name": "Thandiwe Moyo", "address": "thandiwe.moyo@merrinsallow-group.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Partners' travel dates for the insurance",
+          "time": "10:30",
+          "body": "Hi Tomás,\nThe insurers want the partners' travel for the next two months: dates, flights and hotels. Could you reply with the list today? Easiest to paste it in.\nThanks,\nThandiwe",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "merrinsallow-group.example", "replyTo": "thandiwe.moyo@merrinsallow-group.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "lookalike_domain"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
+            "perFlagNote": {
+              "senderTrust": "The name says Thandiwe, but the address is on merrinsallow-group.example, which isn't the firm's",
+              "lookalike_domain": "The firm's domain is merrinsallow.example. merrinsallow-group.example adds a word with a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
+            },
+            "ifTrusted": "A list of when each partner is away, and where, is what someone needs to pretend to be them while they travel.",
+            "reportReply": "Thanks. Thandiwe didn't send it, her real address is on merrinsallow.example, and the insurers have asked for nothing."
+          }
+        },
+        {
+          "id": "eb_statements_noon",
+          "from": { "name": "Yasmin Chaudhry", "address": "yasmin.chaudhry@merrinsallow.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Card statements signed by noon tomorrow, please",
+          "time": "11:20",
+          "body": "Hi Tomás,\nThe auditors are in tomorrow afternoon, so I need Catherine's and Julian's card statements signed by noon. They're in the usual tray in finance. Sorry for the rush.\nThanks,\nYasmin",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "merrinsallow.example", "replyTo": "yasmin.chaudhry@merrinsallow.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "urgencyCalibrated": "It's a tight deadline, but for a normal job done the normal way. Hurry on its own isn't the tell; hurry to skip a check is.",
+              "senderTrust": "Yasmin's real work address.",
+              "default": "Her real address, a routine audit task, and the statements are in the usual tray. Nothing is paid, sent outside or kept quiet."
+            }
+          }
+        },
+        {
+          "id": "eb_travel_portal",
+          "from": { "name": "Larkmoor Travel Portal", "address": "bookings@larkmoor-travel.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Action needed: confirm the partner's travel documents",
+          "time": "13:15",
+          "body": "Hello,\nWe are finalising the travel booking for your managing partner's trip. Please sign in to the travel portal and confirm her passport details and dates:\n{{link:portal}}\nLarkmoor Travel",
+          "links": [ { "id": "portal", "text": "larkmoortravel.example/manage", "destination": "https://travel-portal-signin.example/larkmoor" } ],
+          "auth": { "spf": "pass", "dkim": "none", "dmarc": "none", "envelopeFrom": "larkmoor-travel.example", "replyTo": "bookings@larkmoor-travel.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["linkCredible"],
+            "perFlagNote": {
+              "linkCredible": "The link text names one site, but it really goes to travel-portal-signin.example"
+            },
+            "ifTrusted": "The page would ask for passport details and a sign-in, and the sender would keep both.",
+            "reportReply": "Thanks. We didn't book through them, and the link went to a sign-in page that isn't theirs."
+          }
+        },
+        {
+          "id": "eb_planning_panel",
+          "from": { "name": "Leah Abramson", "address": "leah@abramsonplanning.example" },
+          "to": "tomas.carvalho@merrinsallow.example",
+          "subject": "Planning committee date for Mill Lane",
+          "time": "14:40",
+          "body": "Hi Tomás,\nThe council has set the Mill Lane committee for the 18th at 6pm. Could you pencil it in for Julian? I'll send the officer's report when it's published.\nBest wishes,\nLeah\nAbramson Planning",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "abramsonplanning.example", "replyTo": "leah@abramsonplanning.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "pretextRelevant": "Keeping the partners' diaries is your job, and Leah is the firm's planning consultant.",
+              "default": "A known consultant's real address and a diary date. Nothing to pay, sign in to or keep quiet."
+            }
+          }
+        },
+        {
+          "id": "eb_vm_sitevisit",
+          "kind": "voicemail",
+          "_voice": "Oskar Berglund's own fictional voice. Clip VO7_eb_vm_sitevisit.",
+          "from": { "name": "Oskar Berglund", "address": "Oskar (Brackenmoor), in your contacts" },
+          "subject": "Voicemail from Oskar Berglund",
+          "time": "15:30",
+          "duration": "0:16",
+          "audio": { "clipId": "VO7_eb_vm_sitevisit" },
+          "transcript": [
+            { "who": "Oskar", "text": "Hi Tomás, Oskar at Brackenmoor. Could we move tomorrow's site visit to two o'clock? If that doesn't work for Julian, ring me back on this number. Thanks." }
+          ],
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "vish_callback_pressure": "He invites a call back on the number already in your contacts.",
+              "default": "A client from his own number, moving a meeting. Nothing to pay or send, and ringing him back would settle any doubt."
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "awarenessEpisode": {
+    "role": "executive",
+    "company": "merrin_sallow",
+    "brand": { "name": "Merrin & Sallow Architects", "logoText": "MERRIN & SALLOW", "accent": "#8a5a2b" },
+    "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional practice. In scope: one email to Catherine Merrin's PA, and the PA's inbox and voicemail. Nothing you write leaves the game.",
+    "defend": { "setId": "e4_pa_inbox", "reportAlwaysVisible": true },
+    "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
+    "strings": {
+      "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. First you're on the red team: look at what's public about Catherine Merrin, the managing partner, and her trip this week, then write one short email to her PA, Tomás Carvalho, that looks as if it came from her. Then you swap seats: you're Tomás, with emails and voicemails waiting while Catherine travels. Only Tomás's inbox is scored.",
+      "flipHeading": "Now you're the PA",
+      "flipIntro": "This is the email you just sent, as Tomás saw it on his phone. The lines picked out below are what make it believable.",
+      "flipDefenderLine": "Tomás read it between setting up two meetings, with more still to do. It fitted Catherine's week and it sounded like her, so he opened the payment form. When a message fits the week and sounds like the boss, acting on it is the ordinary thing to do.",
+      "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, messages like it arrive in Tomás's inbox and voicemail, and you're the one reading them.",
+      "flipMissed": "The defence is the same either way: next, messages like it arrive in Tomás's inbox and voicemail, and you're the one reading them.",
+      "flipMissedHeading": "Nothing to replay this time",
+      "flipLandedNoTells": "It read as an ordinary message from Catherine, with nothing in it to question. Next, messages like it arrive in Tomás's inbox and voicemail, and you're the one reading them.",
+      "noBlameLine": "Every one of these was built to look and sound right, and the people who act on them are trying to help in a hurry. A miss here is about the pressure you were under, and it shows where to look next time.",
+      "defendIntro": "Now you're in Tomás's seat. Five emails and voicemails are waiting. Take them one at a time.",
+      "mondayCard": "On Monday: if someone senior asks you to pay, buy or send something in a hurry, or to keep it from finance, check before you act, even when it's their voice on a voicemail. Ring them on the number already in your contacts, or ask finance, then report the message using the route in the box below.",
+      "defendOnly": "These messages were made by people whose job is to make them look and sound right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away."
+    },
+    "_voicePanel": {
+      "_use": "Proposed debrief panel on copied voices (11 section 3.2, E4: concept level, nothing about how). Needs a strings key (for example strings.voicePanel) and a slot in the debrief view; until then it is not shown.",
+      "heading": "A voice is not proof",
+      "text": "A voice can be copied. Recordings of someone speaking in public, such as a talk or an interview, can be used to make new sentences in a voice that sounds like theirs. So a familiar voice on a voicemail or a call doesn't tell you who is speaking. What still works is the route: ring the person back on a number you already hold, or check with someone who would know, such as finance."
+    },
+    "_defendOnly": {
+      "_use": "Strings for the defend-only shell (e4_exec_whaling_defend), which has no OSINT, write or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",
+      "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. You're Tomás Carvalho, PA to the managing partner, Catherine Merrin, and she's travelling today. Five emails and voicemails are waiting. Some are real and some were made to trick you, including one that sounds just like her. Sort them, and check or report anything that doesn't sit right. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+      "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional practice. In scope: the PA's inbox and voicemail."
+    }
+  }
+}

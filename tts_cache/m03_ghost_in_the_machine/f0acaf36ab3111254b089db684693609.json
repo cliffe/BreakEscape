@@ -1,0 +1,13 @@
+{
+  "key": "f0acaf36ab3111254b089db684693609",
+  "npc": "narrator",
+  "text": "You drift back to the whiteboard with a question about the subnet, and stand close while she answers.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:20:44Z"
+}

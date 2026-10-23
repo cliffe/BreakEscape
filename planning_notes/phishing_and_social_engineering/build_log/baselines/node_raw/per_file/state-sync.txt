@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: the first sync sends a full snapshot; the next, with nothing changed, sends nothing
+ok 1 - the first sync sends a full snapshot; the next, with nothing changed, sends nothing
+  ---
+  duration_ms: 3.132544
+  ...
+# Subtest: one changed global sends only that key, with the clock
+ok 2 - one changed global sends only that key, with the clock
+  ---
+  duration_ms: 0.442901
+  ...
+# Subtest: a deleted global is sent as null, once
+ok 3 - a deleted global is sent as null, once
+  ---
+  duration_ms: 1.912287
+  ...
+# Subtest: notes, the room, phone threads and ink variables are sent only when they change
+ok 4 - notes, the room, phone threads and ink variables are sent only when they change
+  ---
+  duration_ms: 0.842053
+  ...
+# Subtest: elapsed time alone is sent at most every 5 minutes; a timer change is sent at once
+ok 5 - elapsed time alone is sent at most every 5 minutes; a timer change is sent at once
+  ---
+  duration_ms: 0.746014
+  ...
+# Subtest: a failed sync confirms nothing, so the next one resends the change with its current value
+ok 6 - a failed sync confirms nothing, so the next one resends the change with its current value
+  ---
+  duration_ms: 0.437353
+  ...
+# Subtest: a stale answer confirms nothing
+ok 7 - a stale answer confirms nothing
+  ---
+  duration_ms: 0.244752
+  ...
+# Subtest: one sync in flight: calls meanwhile share one run straight after it
+ok 8 - one sync in flight: calls meanwhile share one run straight after it
+  ---
+  duration_ms: 9.477526
+  ...
+# Subtest: clientTs always increases, even within one millisecond or with the clock set back
+ok 9 - clientTs always increases, even within one millisecond or with the clock set back
+  ---
+  duration_ms: 0.660851
+  ...
+# Subtest: flush sends the changes since the last confirmed sync, with the clock, by keepalive
+ok 10 - flush sends the changes since the last confirmed sync, with the clock, by keepalive
+  ---
+  duration_ms: 1.22552
+  ...
+# Subtest: an oversized flush falls back to the reload-critical sections and keeps clientTs
+ok 11 - an oversized flush falls back to the reload-critical sections and keeps clientTs
+  ---
+  duration_ms: 0.890079
+  ...
+# Subtest: scenarioBriefShown is sent once, then not again once confirmed
+ok 12 - scenarioBriefShown is sent once, then not again once confirmed
+  ---
+  duration_ms: 0.419098
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 133.789998

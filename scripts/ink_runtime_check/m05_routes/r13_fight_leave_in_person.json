@@ -1,0 +1,291 @@
+{
+"steps": [
+{
+"note": "R13 (round 2 m5, round 3 R3-2): the fight with flags 3 and 4 still out, then left to die in the post-KO person-chat. The nag, the hub and the last-flag text all have him on the floor: no 'Good.', no sweep. Then 'Not yet' at the call-in; AT A COST; end music. (r5 covers the lethal texts with every flag in.)"
+},
+{
+"talk": "briefing",
+"picks": [
+"Bought with what",
+"damage so far",
+"Who's this going to",
+"What's the mission",
+"And the third",
+"my cover",
+"Who else will I meet",
+"I'm ready",
+"Methodically",
+"Any last advice"
+]
+},
+{
+"set": {
+"briefing_played": true
+}
+},
+{
+"talk": "patricia",
+"picks": [
+"Fill me in",
+"Who has access",
+"without tipping",
+"Where should I start"
+]
+},
+{
+"read": "security_incident_log"
+},
+{
+"talk": "owen",
+"picks": [
+"What can you tell me",
+"That's useful",
+"Lean over",
+"Sorry. Habit",
+"23:47. Whose",
+"That's everything"
+]
+},
+{
+"enter": "server_hallway"
+},
+{
+"read": "it_access_notice"
+},
+{
+"event": "door_unlock_attempt",
+"data": {
+"connectedRoom": "server_room"
+}
+},
+{
+"talk": "owen",
+"picks": [
+"wants a password",
+"Patricia's log: a crypto badge",
+"That's everything"
+]
+},
+{
+"talk": "halloran",
+"picks": [
+"I need to talk to everyone",
+"I'm not here to judge",
+"Your spare badge",
+"That's all for now"
+]
+},
+{
+"talk": "patricia_phone",
+"picks": [
+"I know who it is",
+"David Torres",
+"front door",
+"Just checking in"
+]
+},
+{
+"expect": {
+"torres_suspected": true
+}
+},
+{
+"enter": "server_room"
+},
+{
+"set": {
+"flag1_submitted": true
+}
+},
+{
+"set": {
+"flag2_submitted": true
+}
+},
+{
+"talk": "owen",
+"picks": [
+"David Torres' office",
+"That's everything"
+]
+},
+{
+"enter": "torres_office"
+},
+{
+"read": "personal_journal"
+},
+{
+"event": "fingerprint_collected:david_torres",
+"data": {
+"identified": true
+}
+},
+{
+"event": "door_unlock_attempt",
+"data": {
+"connectedRoom": "data_center"
+}
+},
+{
+"enter": "data_center"
+},
+{
+"read": "upload_schedule"
+},
+{
+"read": "data_package_manifest"
+},
+{
+"talk": "patricia_phone",
+"picks": [
+"I know who it is",
+"David Torres",
+[
+"His own journal",
+"Money. His wife"
+],
+[
+"staging manifest. Badge 4471",
+"Staged by: D. Torres",
+"upload schedule. He's"
+],
+"On my way"
+]
+},
+{
+"expect": {
+"torres_identified": true
+}
+},
+{
+"said": []
+},
+{
+"talk": "torres",
+"picks": [
+"It's over, David",
+"They lied to you",
+"You knew people would die",
+"Drop the philosophy"
+]
+},
+{
+"ko": "david_torres"
+},
+{
+"talk": "torres",
+"knot": "post_ko_choice",
+"picks": [
+"walk out"
+]
+},
+{
+"expect": {
+"final_choice": "combat_lethal"
+}
+},
+{
+"said": [
+"You step over him. He doesn't move.",
+"He's still on that floor. The research server isn't finished"
+],
+"notSaid": [
+"dead. Good.",
+"sweep the vault",
+"Sweep the vault",
+"on the way out"
+]
+},
+{
+"music": "global_variable_changed:final_choice",
+"value": "combat_lethal",
+"expect": "end"
+},
+{
+"talk": "phone",
+"picks": [
+"Where do I stand",
+"Right",
+"Bring me in",
+"Nothing right now"
+]
+},
+{
+"said": [
+"The upload's dead and he's still on that floor. The research server isn't",
+"Not yet. The research server isn't finished"
+],
+"notSaid": [
+"Sweep the vault"
+]
+},
+{
+"set": {
+"flag3_submitted": true
+}
+},
+{
+"set": {
+"flag4_submitted": true
+}
+},
+{
+"said": [
+"That's the last flag. Call me."
+],
+"notSaid": [
+"Sweep the vault if you haven't"
+]
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Not yet",
+"Nothing right now"
+]
+},
+{
+"said": [
+"He hasn't got long"
+]
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"expect": {
+"mission_complete": true
+}
+},
+{
+"talk": "debrief",
+"picks": [
+0,
+"And the research portal",
+"Whose job",
+"I should have stayed",
+"Same hand",
+"Did I get him right"
+]
+},
+{
+"credits": true
+},
+{
+"said": [
+"MISSION COMPLETE — AT A COST",
+"DEAD — left injured"
+]
+},
+{
+"maxRun": 9
+}
+]
+}

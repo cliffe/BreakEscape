@@ -1,0 +1,10 @@
+Make portrait for Junior Analyst
+A British-Indian woman of about 25 with light brown skin, long black hair in a messy high ponytail coming loose, small gold stud earrings and tired eyes with faint shadows under them, a junior intelligence analyst who hasn't slept. She wears an oversized maroon university-style sweatshirt with no print over a white collared shirt with the collar out, a lanyard with a blank white ID card, black trousers and a black belt, and holds a plain takeaway coffee cup in both hands at chest height. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py --flip; unflipped original is junior_analyst_concept_1_raw.png.

@@ -1,0 +1,13 @@
+{
+  "key": "a541c7601f8624cb0e1a4ac40fe5b354",
+  "npc": "dr_sharma",
+  "text": "Cloud restore, after isolation. Slow, and clean. Eighteen hours on paper is a risk you chose with your eyes open.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

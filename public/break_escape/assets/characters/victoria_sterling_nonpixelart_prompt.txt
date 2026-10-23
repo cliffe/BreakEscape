@@ -1,0 +1,11 @@
+Make portrait for Victoria Sterling
+A polished British woman CEO in her late forties, light skin tone, former conference speaker, composed and sure of herself with a faint cool smile in the eyes. Long dark brown, almost black, hair worn loose past the shoulders with a side-swept parting. Wearing a tailored dark navy blue suit jacket with gold buttons over a deep crimson silk blouse, a slim gold necklace, matching navy tailored trousers with a thin black belt.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention). Background plain white.
+# No reference image: her only art is pixel art (female_blowse_v2 sprite, objects/victoria_portrait1.png). Colours follow the office-wall portrait: dark brown-black long hair, navy suit with gold buttons, crimson blouse.

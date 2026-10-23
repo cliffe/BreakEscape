@@ -1,0 +1,35 @@
+{
+ "imports": {
+  "m04_voltage_captured": true
+ },
+ "steps": [
+  {
+   "note": "R45 (carry-over, 2026-10-17): m04 finished with Voltage taken (arrest or KO). Netherton names it in the Task Force Null line."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Bought with what",
+    "I'm ready"
+   ]
+  },
+  {
+   "said": [
+    "Voltage is in custody, because you took him alive",
+    "Bought with what"
+   ],
+   "notSaid": [
+    "Voltage is at large. You chose the button over him",
+    "Task Force Null is three people and a whiteboard so far. Every cell we've hit bought something. This time it's bought a person. I want to know how."
+   ]
+  },
+  {
+   "set": {
+    "briefing_played": true
+   }
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

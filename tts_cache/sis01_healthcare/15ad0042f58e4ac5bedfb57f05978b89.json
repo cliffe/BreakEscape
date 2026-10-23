@@ -1,0 +1,13 @@
+{
+  "key": "15ad0042f58e4ac5bedfb57f05978b89",
+  "npc": "patrol_nurse",
+  "text": "He's not right. Obs at half six were borderline, and now he's drowsy and his monitor won't shut up.",
+  "voice": "Despina",
+  "style": "Busy NHS staff nurse in her late twenties, brisk and focused. Speak with a consistent Sheffield, South Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

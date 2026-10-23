@@ -1,0 +1,13 @@
+{
+  "key": "3fa799c13f9e082da61196968b677a1b",
+  "npc": "dr_sharma",
+  "text": "One question on that pump. Suppose it tells you the prescribed dose is below its minimum. What should the person at the pump do?",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: a conversation and a cutscene pause attacks; the phone does not
+ok 1 - a conversation and a cutscene pause attacks; the phone does not
+  ---
+  duration_ms: 0.897187
+  ...
+# Subtest: any minigame but the phone stops new attacks starting
+ok 2 - any minigame but the phone stops new attacks starting
+  ---
+  duration_ms: 0.133341
+  ...
+# Subtest: other minigames, nothing open, or one already closing: not paused
+ok 3 - other minigames, nothing open, or one already closing: not paused
+  ---
+  duration_ms: 0.105325
+  ...
+# Subtest: a short grace after a minigame closes
+ok 4 - a short grace after a minigame closes
+  ---
+  duration_ms: 0.208866
+  ...
+# Subtest: npc-combat: no windup while open or in the grace; a running windup does not land
+ok 5 - npc-combat: no windup while open or in the grace; a running windup does not land
+  ---
+  duration_ms: 0.457415
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 135.458901

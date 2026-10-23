@@ -1,0 +1,13 @@
+{
+  "key": "ba76c27d602494dba2548653401ec2e7",
+  "npc": "fairbairn",
+  "text": "I've read your report. Not one name in it, just like I asked.",
+  "voice": "Sadaltager",
+  "style": "Managing director who founded a small British firm, early sixties, white Scottish. Speak with a consistent soft Edinburgh Scottish accent throughout — do not shift to any other accent. Lower-mid pitch; unhurried, careful pace. Courteous and a little formal: a client who has agreed to the test and wants it done properly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:38:46Z"
+}

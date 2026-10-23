@@ -1,0 +1,453 @@
+{
+"steps": [
+{
+"note": "R1 (pass 5 alignment round 1): the main route. Briefing, Patricia, Owen's badge cloned and the password on her log, the badge log read properly, the four flags, the vault on Torres' print, the naming after flag 3. Turned. Then the sweep (A2): the debrief must not open on the fate; the call-in names what's unread; a turned-down call-in, a page reload, then 'Bring me in'. Music phases (A1) at each step."
+},
+{
+"music": "game_loaded",
+"expect": "cutscene"
+},
+{
+"talk": "briefing",
+"picks": [
+"Bought with what",
+"damage so far",
+"Who's this going to",
+"What's the mission",
+"And the third",
+"my cover",
+"Who else will I meet",
+"I'm ready",
+"Methodically",
+"Any last advice"
+]
+},
+{
+"said": [
+"Task Force Null is three people and a whiteboard"
+]
+},
+{
+"set": {
+"briefing_played": true
+}
+},
+{
+"music": "game_loaded",
+"expect": "noir"
+},
+{
+"talk": "phone",
+"picks": [
+"I'll get to work",
+"Where do I stand",
+"Right",
+"Nothing right now"
+]
+},
+{
+"said": [
+"Start with Patricia Morgan"
+],
+"notSaid": [
+"Let's use them"
+]
+},
+{
+"talk": "patricia",
+"picks": [
+"Fill me in",
+"Who has access",
+"without tipping",
+"Where should I start"
+]
+},
+{
+"read": "security_incident_log"
+},
+{
+"note": "Owen: the clone, then the badge log on Patricia's incident log."
+},
+{
+"talk": "owen",
+"picks": [
+"What can you tell me",
+"That's useful",
+"Lean over",
+"Sorry. Habit",
+"23:47. Whose",
+"That's everything"
+]
+},
+{
+"expect": {
+"server_badge_obtained": true,
+"found_door_log": true,
+"door_log_held": true,
+"torres_suspected": false
+}
+},
+{
+"said": []
+},
+{
+"talk": "phone",
+"picks": [
+"Where do I stand",
+"Right",
+"Nothing right now"
+]
+},
+{
+"said": [
+"Get to the server-room door",
+"Ask her who signs it out"
+],
+"notSaid": [
+"Torres",
+"David",
+"his office"
+]
+},
+{
+"note": "Hallway, the IT notice, the server-room door, then Owen's password. Owen's vault line names both leads (A3)."
+},
+{
+"enter": "server_hallway"
+},
+{
+"read": "it_access_notice"
+},
+{
+"event": "door_unlock_attempt",
+"data": {
+"connectedRoom": "server_room"
+}
+},
+{
+"talk": "owen",
+"picks": [
+"wants a password",
+"Patricia's log: a crypto badge",
+"That's everything"
+]
+},
+{
+"said": [
+"Two thumbs enrolled, Ruth Halloran's and David's"
+],
+"notSaid": [
+"cryptography lead's thumb"
+]
+},
+{
+"talk": "phone",
+"picks": [
+"Where do I stand",
+"Right",
+"Nothing right now"
+]
+},
+{
+"said": [
+"The server room is north"
+]
+},
+{
+"note": "The who: Halloran's alibi, then the front-door reason to Patricia's mobile."
+},
+{
+"talk": "halloran",
+"picks": [
+"I need to talk to everyone",
+"I'm not here to judge",
+"Your spare badge",
+"That's all for now"
+]
+},
+{
+"said": [
+"Amara some evenings, gone by ten. Ben, for his test runs. David, some nights"
+],
+"notSaid": [
+"David, mostly",
+"Oh, no"
+]
+},
+{
+"expect": {
+"halloran_questioned": true,
+"found_halloran_alibi": true,
+"torres_suspected": false
+}
+},
+{
+"talk": "patricia_phone",
+"picks": [
+"I know who it is",
+"David Torres",
+"front door",
+"Just checking in"
+]
+},
+{
+"expect": {
+"torres_suspected": true,
+"door_log_reasoned": true,
+"torres_identified": false
+}
+},
+{
+"enter": "server_room"
+},
+{
+"music": "game_loaded",
+"expect": "noir"
+},
+{
+"set": {
+"flag1_submitted": true
+}
+},
+{
+"set": {
+"flag2_submitted": true
+}
+},
+{
+"set": {
+"flag3_submitted": true
+}
+},
+{
+"set": {
+"flag4_submitted": true
+}
+},
+{
+"said": [
+"admin login, left lying about",
+"research portal's box"
+]
+},
+{
+"talk": "owen",
+"picks": [
+"David Torres' office",
+"That's everything"
+]
+},
+{
+"enter": "torres_office"
+},
+{
+"read": "personal_journal"
+},
+{
+"event": "fingerprint_collected:david_torres"
+},
+{
+"event": "door_unlock_attempt",
+"data": {
+"connectedRoom": "data_center"
+}
+},
+{
+"enter": "data_center"
+},
+{
+"note": "Named after flag 3: no early-naming credit. The vault paperwork is left unread on purpose, for the sweep."
+},
+{
+"talk": "patricia_phone",
+"picks": [
+"I know who it is",
+"David Torres",
+[
+"His own journal",
+"Money. His wife"
+],
+[
+"staging manifest. Badge 4471",
+"Staged by: D. Torres",
+"upload schedule. He's"
+],
+"On my way"
+]
+},
+{
+"expect": {
+"torres_identified": true,
+"named_before_portal": false
+}
+},
+{
+"music": "game_loaded",
+"expect": "spy-action"
+},
+{
+"talk": "torres",
+"picks": [
+"It's over, David",
+"They lied to you",
+"You knew people would die",
+"not too far gone",
+"recognise yourself",
+"Go back to your desk",
+"I need everything",
+"Pull the drive myself"
+]
+},
+{
+"said": [
+"94 per cent",
+"Sixteen minutes",
+"97 per cent",
+"Upload's dead. Sweep the vault"
+],
+"notSaid": [
+"99 per cent",
+"88 per cent"
+]
+},
+{
+"expect": {
+"final_choice": "turn_double_agent",
+"mission_complete": false,
+"debrief_played": false
+}
+},
+{
+"tasks": {
+"call_in_after_sweep": "unlocked"
+}
+},
+{
+"music": "game_loaded",
+"expect": "end"
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Not yet",
+"Nothing right now"
+]
+},
+{
+"said": [
+"envelope under the terminal keyboard",
+"upload schedule",
+"package manifest",
+"TalentStack text never got an answer. She's lost him"
+]
+},
+{
+"expect": {
+"mission_complete": false
+}
+},
+{
+"talk": "recruiter",
+"picks": []
+},
+{
+"read": "talentstack_envelope"
+},
+{
+"read": "upload_schedule"
+},
+{
+"read": "data_package_manifest"
+},
+{
+"note": "Page reload mid-sweep: the way out is still offered (final_choice and mission_complete are synced)."
+},
+{
+"talk": "phone",
+"reload": "page",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"notSaid": [
+"envelope under the terminal keyboard",
+"Agent. Four hours"
+]
+},
+{
+"expect": {
+"mission_complete": true
+}
+},
+{
+"tasks": {
+"call_in_after_sweep": "completed"
+}
+},
+{
+"backstops": {
+"expect": [
+"re-emit"
+]
+}
+},
+{
+"talk": "debrief",
+"picks": [
+0,
+"And the research portal",
+"Whose job",
+"What have we got",
+"Same hand",
+"Did I get him right"
+]
+},
+{
+"expect": {
+"debrief_played": true
+}
+},
+{
+"said": [
+"ninety-seven per cent",
+"Task Force Null's wall",
+"Old software with a known flaw nobody had patched"
+],
+"notSaid": [
+"before the server did",
+"East of England",
+"We never got the authorisation"
+]
+},
+{
+"backstops": {
+"expect": [
+"hear"
+]
+}
+},
+{
+"credits": true
+},
+{
+"said": [
+"MISSION COMPLETE",
+"TURNED",
+"SHE NEVER MADE HER PITCH — the TalentStack list went to SAFETYNET",
+"Nobody on staff hurt"
+],
+"notSaid": [
+"AT A COST",
+"TALENTSTACK LIST — left unread",
+"ROTATION WINDOW"
+]
+},
+{
+"maxRun": 9
+}
+]
+}

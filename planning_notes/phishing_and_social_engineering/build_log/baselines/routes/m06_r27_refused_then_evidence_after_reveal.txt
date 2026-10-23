@@ -1,0 +1,102 @@
+
+## R27 (dialogue C1): a direct reveal, a refusal and time given; then the write-up shown afterwards goes to her answer, not a second reveal, and doesn't replay the casualty narration (found during the fix). D6-9 the refusal line; D6-12 the turned re-entry cycle.
+   {set {"briefing_played":true,"guard_resolved":true}}
+   {room trading_floor}
+      [HaX text: You're on the floor. Two doors here are on RFID, and your cloner reads a badge from across a desk. Ask if you want the guide.]
+
+--- irina ---
+      [task: meet_irina]
+  Narrator: A sharp-eyed woman in her mid-thirties looks up from three monitors of transaction graphs.
+  Dr. Irina Volkova: You must be the FCA. Dr Irina Volkova, Chief Technology Officer.
+  Dr. Irina Volkova: A supervisory visit. Always a pleasure, I'm sure.
+     (3 options)
+ > Thanks for making the time, Dr Volkova. I know these visits are a nuisance.
+  Dr. Irina Volkova: Courtesy. Your colleagues usually treat us as criminals from the first handshake.
+  Dr. Irina Volkova: We run a privacy exchange. The law permits those, last time I read it.
+  Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are compliant. Our monitoring meets the thresholds.
+  Dr. Irina Volkova: Go on.
+     (5 options)
+ > That's all for now.
+  Dr. Irina Volkova: Alright. I'll be here.
+  [chat closes]
+      [engine: Irina's first close -> exchange_infiltrated=true]
+      [HaX text: Their analysts sit east of the floor. If anyone has drawn the money, it's them.]
+   {set {"found_architects_fund":true,"irina_exec_badge_given":true}}
+
+--- irina ---
+  Dr. Irina Volkova: What else?
+     (6 options)
+ > I'm not from the FCA. I'm SAFETYNET, and your exchange banks ENTROPY.
+  Narrator: You put your SAFETYNET credentials on the desk.
+  Narrator: Then the fund allocation, open at the casualty line.
+  Dr. Irina Volkova: *reads it twice* I wrote the mixer so nobody could see where money went. Not so nobody could see this.
+     (3 options)
+ > You're in this to your neck. The honest way out is helping us end it.
+  Dr. Irina Volkova: I won't turn on Satoshi because a stranger put a badge on my desk.
+  Dr. Irina Volkova: Financial privacy is a right. If people abuse it, that is on them.
+     (2 options)
+ > Think about it. I'll come back before anyone else does.
+  Dr. Irina Volkova: You're giving me time. Nobody in this building has ever done that.
+  [chat closes]
+   [PASS] said: "I won't turn on Satoshi because a stranger put a badge on my desk."
+   [PASS] said: "You're giving me time."
+   [PASS] given_time = true (expected true)
+   [PASS] irina_recruited = false (expected false)
+
+--- irina ---
+  Dr. Irina Volkova: Yes?
+     (6 options)
+ > I need an answer, Dr Volkova.
+  Dr. Irina Volkova: I said I'd think. I'm thinking. It's slower than you'd like.
+     (2 options)
+ > Then I'll leave you to it. For now.
+  Dr. Irina Volkova: Don't take too long. He notices when I'm quiet.
+  [chat closes]
+   [PASS] said: "I said I'd think. I'm thinking."
+   [PASS] said: "Don't take too long. He notices when I'm quiet."
+   [PASS] not said: "a stranger put a badge on my desk"
+   [PASS] not said: "Volkova: For now."
+   {set {"found_blockchain_evidence":true}}
+
+--- irina ---
+  Dr. Irina Volkova: Go on.
+     (7 options)
+ > There's something you need to see, Dr Volkova.
+  Narrator: You lay Priya's write-up on her desk. Money in from the cells, money back out.
+  Dr. Irina Volkova: Where did you get our internal analysis?
+     (2 options)
+ > Never mind where. Read what it pays for.
+  Dr. Irina Volkova: The hospital money as well. All of it through my mixer, and all of it to that page.
+  Dr. Irina Volkova: ...Then I'll help you. On one condition: what I give you tonight gets used. Not buried.
+  Narrator: You give her your word.
+      [set_variable irina_recruited=true]
+      [set_variable irina_fate_decided=true]
+  Dr. Irina Volkova: His safe is 2140. The year the last bitcoin is mined. He told me once, as if it were clever.
+  Dr. Irina Volkova: Whatever he keeps on The Architect is in there.
+  Dr. Irina Volkova: The pool keys and the wallet map go to your handler tonight, and the name on the account that pays me.
+  Dr. Irina Volkova: And thank you for treating this as a choice.
+  [chat closes]
+   [PASS] said: "The hospital money as well."
+   [PASS] not said: "You put your SAFETYNET credentials on the desk"
+   [PASS] not said: "open at the casualty projection"
+   [PASS] irina_recruited = true (expected true)
+
+--- irina ---
+  Dr. Irina Volkova: What else do you need?
+     (3 options)
+ > Nothing. Carry on.
+  Dr. Irina Volkova: Then be careful up there.
+  [chat closes]
+
+--- irina ---
+   (after a reload: variables kept, visit counts and position reset)
+  Dr. Irina Volkova: What else do you need?
+     (3 options)
+ > Nothing. Carry on.
+  Dr. Irina Volkova: Then be careful up there.
+  [chat closes]
+   [PASS] said: "What else do you need?"
+   [PASS] longest run 7 (irina) <= 9
+
+[stats] spoken/narrated lines 32, choices 11, longest run without a choice 7 (irina); runs>=6: irina:7
+[result] all expectations met

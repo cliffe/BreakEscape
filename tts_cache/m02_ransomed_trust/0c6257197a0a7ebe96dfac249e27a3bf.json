@@ -1,0 +1,13 @@
+{
+  "key": "0c6257197a0a7ebe96dfac249e27a3bf",
+  "npc": "roaming_ward_nurse",
+  "text": "Right you are.",
+  "voice": "Erinome",
+  "style": "Staff nurse, late twenties, four hours into doing the work of a monitoring system by hand. Consistent West Yorkshire accent -- Bradford, flat and quick. Brisk to the point of curt, not unkind, genuinely has no time for you. Talks while walking.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,7 @@
+{
+  "_comment": "checklistTiming lint fixture: the test sets social.mailClient.checklistTiming to each value in turn.",
+  "scenario_brief": "checklistTiming fixture",
+  "startRoom": "office",
+  "rooms": { "office": { "type": "room_office", "connections": {}, "objects": [] } },
+  "social": { "mailClient": { "checklistTiming": "withReply" } }
+}

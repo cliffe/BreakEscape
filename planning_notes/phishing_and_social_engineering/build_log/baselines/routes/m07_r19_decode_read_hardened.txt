@@ -1,0 +1,240 @@
+
+## R19 (puzzle chains r1, N3): r8 with the hardened stance. No speed praise and no 'Above expectations' after 'Nobody put it next to the brief'.
+
+--- briefing ---
+  Narrator: Two forty-one in the morning, Pacific time. Rain on the I-5, and the secure tablet on the passenger seat lights up. Behind the Director, a wall map with four red pins.
+  Director Magnus Netherton: Agent 0x00. Keep driving. I would rather you heard this from me than read it off a screen.
+  Director Magnus Netherton: Four ENTROPY operations went live inside the same sixty seconds. Three days ago you followed the fund behind them.
+  Director Magnus Netherton: Frozen or watched, the advances had already been paid. Tonight is what they paid for.
+  Director Magnus Netherton: Washington. Austin. San Francisco. And a grid control facility outside Portland, Oregon.
+  Narrator: The Portland pin stops blinking and goes solid.
+  Director Magnus Netherton: Pacific Northwest Regional Grid Control. One hundred and forty-seven substations. Eight point four million people in Washington, Oregon and Northern California.
+  Director Magnus Netherton: A sequence on their SCADA stack takes it all down in four steps. It waits on a signal from a host inside the building. Nobody stops it from outside.
+  Director Magnus Netherton: You have your go-bag: picks, the cloner, the print kit. No PIN cracker. Analysis still has it in pieces.
+     (5 options)
+ > Understood. Talk to me about the other three.
+  Narrator: He keeps the line open while the desk pulls the other three together. Forty minutes of rain and empty interstate. Then an industrial park outside Portland, three twenty-four by the dashboard clock.
+  Director Magnus Netherton: We have one tactical team airborne and uncommitted. One. It can reach one of the other three in time to matter.
+  Director Magnus Netherton: The other two go unanswered.
+  Narrator: The line holds for a second longer than a bad connection would explain.
+  Director Magnus Netherton: Fracture, in Washington. Trojan Horse, outside Austin. Meltdown, in San Francisco. Ask about any of them, in any order.
+  Director Magnus Netherton: The desk's summary is on your handset if you want the figures on paper. The team needs your call before you are through the gate.
+     (5 options)
+ > I've made the call.
+  Director Magnus Netherton: Say the word and their aircraft turns.
+     (4 options)
+ > Send them to Meltdown. San Francisco.
+      [set_global team_assignment=meltdown]
+      [set_global team_assigned=true]
+      [mapping agent_0x99: set hurt_line_said=true]
+      [clock: architect_taunt_t20 started at 0 min]
+      [clock: architect_taunt_t10 started at 0 min]
+      [clock: redirect_window_close started at 0 min]
+      [clock: redirect_window_display started at 0 min]
+   [text agent_0x99 +2000ms] Team's turned. Two of the three go unanswered tonight. Let it hurt afterwards, not during.
+      [task: assign_tactical_team]
+      [mapping agent_0x99: set team_assigned=true]
+  Director Magnus Netherton: Meltdown. Confirmed.
+  Narrator: The pin over San Francisco changes colour. The other two stay red.
+  Director Magnus Netherton: Twenty-fourth floor. If they hold it, four thousand two hundred hospitals have an ordinary night.
+  Director Magnus Netherton: Two operations now run with nobody in their way. On the record, that is my decision as much as yours.
+  Director Magnus Netherton: Go. I will pick you up on the secure channel when it matters.
+  Narrator: Chain-link, a lowered barrier, three storeys of concrete. People are coming out of the front doors with coats over their heads.
+  Director Magnus Netherton: The building is evacuating. The operations floor is past the security checkpoint, and one guard on that shift is compromised.
+  Director Magnus Netherton: Assume the badge readers are logging you. The sequence has not started. Assume that changes the moment they notice you. Agent HaX has your channel from here.
+  Director Magnus Netherton: Eight point four million people, Agent. Go and do the part you can reach.
+  [end]
+   [text agent_0x99 +2500ms] The checkpoint guard is bought. If anyone swings at you: Q for fists, E or click to punch, face them squarely. Q until the open hand shows to use anything.
+
+--- phone ---
+  HaX here, Agent. I've got your channel and the board.
+  The ops room's running four fires tonight. If I go quiet for ten seconds, it isn't personal.
+  The team's logged for Meltdown, San Francisco. It's on the record. It'd take something new to move it.
+  Get past the checkpoint to the operations floor.
+     (3 options)
+ > Understood. Let's go.
+  Call me the second you hit something you can't open.
+     [0] Talk to me about the two we're not covering.
+     [1] Where do I stand?
+     [2] Remind me of the layout and the clock.
+     [3] I'll call you back.
+  [stopped: no pick]
+   {enter operations_floor}
+      [mapping agent_0x99: set inside_reached=true]
+      [mapping agent_0x99: set rfid_guide_offered=true]
+   [text agent_0x99 +9500ms] Server hall door, far side of this floor, wants a server-zone badge. Hollis has one. His desk's badge station prints them too, with its PIN. RFID guide?
+      [mapping the_architect: set architect_contact=true]
+   [text the_architect +5000ms] Agent 0x00.
+      [reads: Shift Handover Sheet]
+   {pickup printed_contractor_badge}
+      [kit: Printed Contractor Badge]
+      [mapping agent_0x99: set badge_obtained=true]
+   [text agent_0x99 +1500ms] PIN set to the audit date, and the date's on a sheet in the next room. Anyone who reads the paperwork can print themselves a badge.
+   {enter server_room}
+      [mapping agent_0x99: set server_hall_reached=true]
+      [aim unlocked: reach_the_control_room,trace_the_intrusion]
+      [mapping agent_0x99: set lockpicking_guide_offered=true]
+   [text agent_0x99 +9000ms] Plant door, south side of this hall, is a keyed lock. There's a key on the ops floor, but your picks will open it. Want the lockpicking guide?
+   {event object_interacted}
+      [mapping agent_0x99: set vm_terminal_used=true]
+      [mapping agent_0x99: set recon_guide_offered=true]
+      [mapping agent_0x99: set nfs_guide_offered=true]
+   [text agent_0x99 +1500ms] Your attack box. Map the host first. NFS is the door they left open, and a listener on it talks too much. Recon guide, or the NFS and netcat one?
+   {flag 1: give_item}
+      [kit: Coordination Schedule -- Relay Decode]
+      [task: recover_coordination_traffic]
+      [mapping agent_0x99: set flag1_submitted=true]
+   [text agent_0x99 +1500ms] The relay's decoded the file their share points at: their own schedule, all four operations. Read it against the threat desk summary in your kit.
+      [reads: Coordination Schedule -- Relay Decode]
+   [text agent_0x99 +3000ms] If a row in there doesn't match what we were told, call me and say which.
+      [mapping agent_0x99: set decode_read_open=true]
+   [PASS] found_coordination_traffic = true (expected true)
+   [PASS] projection_revised = false (expected false)
+   [PASS] decode_read_open = true (expected true)
+   {flag 2: give_item}
+      [kit: Listener Capture -- Operator Credentials]
+      [task: intercept_c2_channel]
+      [mapping agent_0x99: set flag2_submitted=true]
+      [mapping agent_0x99: set scada_password_found=true]
+      [mapping agent_0x99: set ssh_guide_offered=true]
+   [text agent_0x99 +1500ms] Their listener gives out passwords in clear, the control room door's included. Capture's in your inventory. You've got a name and a password now. Want the SSH guide?
+   {enter scada_control}
+      [mapping agent_0x99: set scada_door_reached=true]
+   {flag 3: set_global}
+      [mapping agent_0x99: set redirect_window_closed=true]
+      [mapping agent_0x99: set cascade_armed=true]
+      [clock: architect_taunt_t5 started at 0 min]
+      [clock: architect_taunt_t1 started at 0 min]
+      [clock: cascade_zero started at 0 min]
+   [text agent_0x99 +1500ms] They saw you. Sequence armed: fifteen minutes. The window to move the team just shut. A user shell can't kill it. Get root. Privesc guide's yours if you want it.
+      [mapping agent_0x99: set privesc_guide_offered=true]
+      [task: escalate_on_attack_host]
+   {flag 4: unlock_object}
+      [unlocked: crisis_control_system]
+      [task: terminate_cascade_scripts]
+      [mapping agent_0x99: set flag4_submitted=true]
+   [text agent_0x99 +1500ms] Root. Their job's dead and they're locked out. The console in the control room will take an abort now. Go and give it one.
+   {task shut_down_the_cascade}
+      [task: shut_down_the_cascade]
+      [clock: debrief_fallback started at 0 min]
+
+--- phone ---
+     (5 options)
+ > Bring me in.
+      [ink: debrief_requested=true]
+  Putting you through. He's waiting.
+  [chat closes]
+   {enter server_room}
+      [mapping closing_debrief: set start_debrief_cutscene=true]
+   [opens closing_debrief @start (person-chat)]
+
+--- debrief ---
+      [set_global debrief_played=true]
+  Narrator: A borrowed office at the grid site, not long after the abort. On the secure link, Netherton sits down with a tablet, in the suit he briefed you in.
+  Director Magnus Netherton: Agent. Sit down. You have earned that much.
+  Director Magnus Netherton: The sequence is terminated. All twenty-three transformers held. One hundred and forty-seven substations are carrying load.
+  Director Magnus Netherton: Eight point four million people have power tonight.
+  Director Magnus Netherton: The projection on my desk said two hundred and forty to three hundred and eighty-five dead. That number is now zero.
+  Director Magnus Netherton: I am not going to qualify that. You did the thing. It is done.
+  Director Magnus Netherton: Their backup server shared its coordination file with anyone who asked. Its listener read the operator's password to anyone who connected. And that account could make itself root.
+  Director Magnus Netherton: Three doors they left open, and you went through all of them before the clock did.
+     (2 options)
+ > It doesn't feel done, sir.
+  Director Magnus Netherton: It will not, tonight. Count it anyway.
+  Director Magnus Netherton: You opened the door before you touched their host. That is the order that kept it clean.
+  Director Magnus Netherton: The other three operations started on schedule. One of them ran into our team. I have the first reporting from all of them.
+  Director Magnus Netherton: The team took TechCore's twenty-fourth floor and pushed defences to all twelve networks inside the window.
+  Director Magnus Netherton: The hospitals first, because that is what you were buying. Four thousand two hundred hospitals had an ordinary night.
+  Director Magnus Netherton: Eight of the twelve held clean. Four took damage, mostly money and stolen code. Futures are down three per cent.
+  Director Magnus Netherton: Two Digital Vanguard insiders were detained on the twenty-fourth floor. Ashford was not with them. Ashford is never with them.
+     (2 options)
+ > Was it worth it?
+  Director Magnus Netherton: For the people the team reached, yes. That is the only half I can answer tonight.
+  Director Magnus Netherton: One note from analysis, added an hour ago. The Trojan Horse projection was wrong, in the direction that made it easy to set aside.
+  Director Magnus Netherton: Their own schedule was in your hands tonight. The Austin row said nine days. Nobody put it next to the brief.
+  Director Magnus Netherton: Every figure you were briefed with came from material we captured.
+     (2 options)
+ > Then whose numbers were they?
+  Director Magnus Netherton: His. The Architect let us capture them. Our threat desk did not derive one.
+  Director Magnus Netherton: Two operations went unanswered. I am reading both.
+     (2 options)
+ > Read them, sir.
+  Director Magnus Netherton: Operation Fracture. Washington. The exfiltration completed. Every voter record in forty-three states.
+  Director Magnus Netherton: The Social Fabric package went out ninety minutes later, as designed.
+  Director Magnus Netherton: Two secretaries of state are already talking about postponing. The package is believable because the breach under it is real.
+  Director Magnus Netherton: The desk expects twenty to forty dead in the disorder this week. The records will be for sale by the weekend, permanently.
+     (2 options)
+ > Go on.
+  Director Magnus Netherton: Operation Trojan Horse. Austin. The injection run completed. Forty-seven million systems took a signed backdoor, and for nine days nothing will happen at all.
+  Narrator: He pauses on the number. It is the only word he emphasises all night.
+  Director Magnus Netherton: Nine. The brief said ninety. The brief also said no projected fatalities.
+  Director Magnus Netherton: On day nine, emergency dispatch in eleven counties starts dropping calls. Nobody will call it an attack for two more days.
+  Director Magnus Netherton: Ninety to a hundred and sixty dead over the following month, spread thin enough that no single coroner sees a cluster.
+  Director Magnus Netherton: Then the health record systems. Eighteen thousand hospitals rebuild from bare metal.
+  Agent HaX: It was in your hands. Nine days, in their own table.
+     (2 options)
+ > (Wait.)
+  Director Magnus Netherton: And two of ours. Names withheld until the families are told.
+  Director Magnus Netherton: The site, then. Shorter list.
+  Director Magnus Netherton: Dr. James Mercer was still at the master console when you left that room. By the time the police reached it, he was not.
+  Director Magnus Netherton: Nobody spoke to the engineer in the server hall. She is gone, with everything she knows.
+  Director Magnus Netherton: Ray Hollis was still at his post when the police reached the gate. Nobody had asked him anything yet. We will.
+  Director Magnus Netherton: Nobody reached the cable vault before the police. Tools on a mat, the control run cut. A later abort, and that control centre runs on nothing.
+  Narrator: Netherton lowers the tablet. Nobody speaks.
+     (2 options)
+ > Then it's over.
+  Agent HaX: Not quite. Director, one more thing. It isn't in the reporting yet.
+  Agent HaX: The calls. He had your handset tonight, and your designation.
+  Agent HaX: He knew you were in Portland. He knew there was one team and three targets.
+     (2 options)
+ > How?
+  Agent HaX: I've been through the tasking chain twice. There's no point where he could have learned any of that.
+  Director Magnus Netherton: Then explain it.
+  Agent HaX: I can't, sir. That's the report.
+  Narrator: Nobody fills the pause.
+  Agent HaX: Four operations, one clock, one team, and numbers we didn't derive ourselves. That's a test with a controlled variable.
+  Agent HaX: The variable was you. Something in that building could have shown us how he did it. We didn't find it.
+     (2 options)
+ > Then he got what he came for.
+  Director Magnus Netherton: Agent. Look at me.
+  Director Magnus Netherton: Eight point four million people have power. Nothing either of you has said changes that.
+  Director Magnus Netherton: He measured you. He did not beat you.
+  Narrator: He says it like a line he has decided to believe.
+  Director Magnus Netherton: Anything you want on the record before I close this?
+     (3 options)
+ > Nothing on the record, sir.
+  Director Magnus Netherton: One question, then, and it goes in your file in your words rather than mine.
+  Director Magnus Netherton: Three briefs. One team. You sent it where you sent it. Where do you stand on that?
+     (4 options)
+ > I want the numbers before he writes them. Next time.
+      [set_global debrief_stance=hardened]
+  Director Magnus Netherton: Yes. Their schedule was in your hands tonight. Next time it goes next to the brief.
+  Director Magnus Netherton: I will raise it with the Council on Monday. It will not be a pleasant meeting. I intend to have it.
+  Narrator: Netherton closes the tablet cover and holds it against his chest, which is what he does instead of sighing.
+  Director Magnus Netherton: You finished it, Agent. I will write the rest myself.
+  Director Magnus Netherton: When your leave ends, report to headquarters. I will find us a room without windows.
+     (2 options)
+ > (Say nothing.)
+  Agent HaX: Sir?
+  Director Magnus Netherton: Somebody told him where we were sending our agent before the order went out.
+  Director Magnus Netherton: Until I know who, every briefing I give is a message to ENTROPY with a delay on it.
+  Director Magnus Netherton: So we stop giving them. And we find out who has been reading.
+  Narrator: Outside, across three states, people are asleep with the lights on.
+  Narrator: Somewhere else, a man reads the same figures on the same kind of tablet, and is pleased with them.
+      [task: take_the_debrief]
+  [end]
+   [PASS] said: "Their own schedule was in your hands tonight. The Austin row said nine days. Nobody put it next to the brief."
+   [PASS] said: "It was in your hands. Nine days, in their own table."
+   [PASS] said: "Yes. Their schedule was in your hands tonight. Next time it goes next to the brief."
+   [PASS] not said: "Two copies. Nobody read them."
+   [PASS] not said: "Almost nobody gets there this quickly"
+   [PASS] not said: "Above expectations"
+   [PASS] credits say: "Their schedule was read; the Austin row was never put against the brief"
+   [PASS] credits don't say: "neither was read"
+   [PASS] credits don't say: "CORRECTION FOUND"
+
+## Run-length guard (Phase 4 dialogue C1, D7-1): no conversation, the debrief included, runs more than nine lines without a choice.
+   [PASS] longest run 9 (briefing) <= 9
+
+[stats] spoken/narrated lines 97, choices 17, longest run without a choice 9 (briefing); runs>=6: briefing:9, briefing:6, briefing:9, debrief:8, debrief:7, debrief:7, debrief:7, debrief:6, debrief:6
+[result] all expectations met

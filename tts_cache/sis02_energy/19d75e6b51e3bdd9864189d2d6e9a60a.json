@@ -1,0 +1,13 @@
+{
+  "key": "19d75e6b51e3bdd9864189d2d6e9a60a",
+  "npc": "helen_marsh",
+  "text": "Agreed. The station on my console's right here. Press it, and I'll tell Marcus.",
+  "voice": "Aoede",
+  "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:12:21Z"
+}

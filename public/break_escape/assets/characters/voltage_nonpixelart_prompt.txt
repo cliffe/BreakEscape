@@ -1,0 +1,11 @@
+Make portrait for Voltage
+An Indian South African man in his mid-forties from Johannesburg, light-brown skin tone, a former grid engineer who now runs an ENTROPY cell's operations in the field, thin and wiry, cold and contemptuous, utterly unimpressed: a narrow clean-shaven face with a long jaw, sharp cheekbones and a thin straight mouth, flat dark eyes under straight black brows, short neat black hair with a few threads of grey. Wearing a faded olive-green canvas field jacket with four patch pockets and no logos and no lettering, open over a black crew-neck t-shirt, a cheap black digital wristwatch, dark khaki work trousers with a worn brown leather belt.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention). Concept c03 of the m04 pass-5 set (2026-10-13), picked by the user.
+# No reference image (stand-in male_office_worker_v2 is pixel art). Kept clean-shaven and dark-haired to read apart from Robert Vance. Canon: voice style 'Critical Mass field lieutenant, a former grid engineer in his mid-forties ... South African English (Johannesburg)'.

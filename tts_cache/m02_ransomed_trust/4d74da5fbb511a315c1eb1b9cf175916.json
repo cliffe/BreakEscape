@@ -1,0 +1,13 @@
+{
+  "key": "4d74da5fbb511a315c1eb1b9cf175916",
+  "npc": "narrator",
+  "text": "She looks at the dead screen on her desk.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

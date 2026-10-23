@@ -1,0 +1,13 @@
+{
+  "key": "41c629bf61e13ee988f43af14842a03f",
+  "npc": "david_osei",
+  "text": "So the library had been changed, and you've restored it from the signed copy. HC-003 promised that couldn't happen. It did.",
+  "voice": "Iapetus",
+  "style": "Ghanaian-British head of clinical engineering in his mid-fifties, methodical, serious and deliberate. Speak with a consistent London-raised, settled in Leeds, with a slight Ghanaian lilt, accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

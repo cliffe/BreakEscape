@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deduction Board Mockup</title>
+<!--
+  Static mockup of the intel board's `deduction` mode for fixture A ("Open evening").
+  Built from DEDUCTION_IMPLEMENTATION_PLAN.md as read at 3,327 lines, latest review round 4.
+  Self-contained: inline CSS and one inline script, no external files. Every string is set
+  through textContent, as the plan's h() rule asks. Notes: BOARD_MOCKUP_NOTES.md beside this file.
+-->
+<style>
+/* ---------- page tokens (the review page around the board) ---------- */
+:root {
+  --page-bg: #ece6da;
+  --page-ink: #22201c;
+  --page-dim: #5d574c;
+  --page-line: #c4b9a4;
+  --page-panel: #f8f4ec;
+  --prop: #1d4f9a;
+
+  /* board chrome, a light reading of the house --ui-* tokens */
+  --ui-surface: #2b2433;
+  --ui-surface-raised: #3a3145;
+  --ui-line: #5f6e5c;
+  --ui-text: #f1f3ea;
+  --ui-text-dim: #c3cdb9;
+  --ui-accent: #ffcc44;
+
+  /* cork and paper (art in the game; approximated here) */
+  --cork: #b37b4b;
+  --cork-dot: #9a6539;
+  --cork-edge: #4a3220;
+  --paper: #f3e7cf;
+  --paper-2: #fff6e2;
+  --paper-ink: #2a2118;
+  --paper-dim: #5a4a3a;
+  --paper-line: #4a3220;
+  --good: #1d6a35;
+  --bad: #8a2b1f;
+  --mark-ink: #5b1f5e;
+  --focus: #1d4f9a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page-bg: #121016;
+    --page-ink: #e9e6df;
+    --page-dim: #a9a294;
+    --page-line: #3a3542;
+    --page-panel: #1c1922;
+    --prop: #8fb6ff;
+    /* the eldritch theme's tokens, ui-themes.css:212 */
+    --ui-surface: rgba(20, 14, 28, 0.97);
+    --ui-surface-raised: rgba(37, 29, 47, 0.97);
+    --ui-line: #4a5a48;
+    --ui-text: #dfe6d2;
+    --ui-text-dim: #a4b39c;
+    --ui-accent: #8ee07e;
+    --cork: #6f4a2c;
+    --cork-dot: #5b3b22;
+    --cork-edge: #2b1c10;
+    --paper: #e4d6b8;
+    --paper-2: #eee2c6;
+    --focus: #8ee07e;
+  }
+}
+:root[data-theme="dark"] {
+  --page-bg: #121016;
+  --page-ink: #e9e6df;
+  --page-dim: #a9a294;
+  --page-line: #3a3542;
+  --page-panel: #1c1922;
+  --prop: #8fb6ff;
+  --ui-surface: rgba(20, 14, 28, 0.97);
+  --ui-surface-raised: rgba(37, 29, 47, 0.97);
+  --ui-line: #4a5a48;
+  --ui-text: #dfe6d2;
+  --ui-text-dim: #a4b39c;
+  --ui-accent: #8ee07e;
+  --cork: #6f4a2c;
+  --cork-dot: #5b3b22;
+  --cork-edge: #2b1c10;
+  --paper: #e4d6b8;
+  --paper-2: #eee2c6;
+  --focus: #8ee07e;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--page-ink);
+  font-family: 'Source Sans 3', 'Source Sans Pro', 'Segoe UI', Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.page { max-width: 1140px; margin: 0 auto; padding: 16px; }
+
+/* ---------- review page header ---------- */
+.meta h1 { font-size: 22px; margin: 0 0 4px; }
+.meta p { margin: 0 0 8px; color: var(--page-dim); max-width: 75ch; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 16px; }
+.controls button {
+  min-height: 44px; padding: 8px 14px; font: inherit; cursor: pointer;
+  background: var(--page-panel); color: var(--page-ink);
+  border: 2px solid var(--page-line); border-radius: 0;
+}
+.controls button[aria-pressed="true"] { border-color: var(--page-ink); font-weight: 700; }
+.controls button:focus-visible, .board button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.caption { font-size: 14px; color: var(--page-dim); margin: 8px 0 18px; max-width: 80ch; }
+.legend-prop {
+  display: inline-block; padding: 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .03em;
+  color: var(--prop); border: 2px dashed var(--prop); vertical-align: middle;
+}
+
+/* ---------- the board overlay ---------- */
+.board {
+  border: 4px solid var(--cork-edge);
+  box-shadow: 0 0 0 2px var(--ui-line), inset 0 0 24px rgba(0,0,0,.45);
+  background-color: var(--cork);
+  background-image:
+    radial-gradient(var(--cork-dot) 1.2px, transparent 1.6px),
+    radial-gradient(var(--cork-dot) 1px, transparent 1.4px);
+  background-size: 14px 14px, 22px 22px;
+  background-position: 0 0, 7px 9px;
+  color: var(--paper-ink);
+}
+.ib-head {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
+  padding: 10px 14px; background: var(--ui-surface); color: var(--ui-text);
+  border-bottom: 3px solid var(--ui-line);
+}
+.ib-title {
+  margin: 0; flex: 1 1 auto;
+  font-family: 'Press Start 2P', 'Courier New', monospace; font-weight: 400;
+  font-size: 14px; line-height: 1.5; letter-spacing: .02em;
+}
+.ib-sub { margin: 0; font-size: 15px; color: var(--ui-text-dim); }
+.ib-close {
+  min-width: 88px; min-height: 44px; cursor: pointer;
+  font: 700 15px 'Courier New', monospace;
+  background: var(--ui-surface-raised); color: var(--ui-text); border: 2px solid var(--ui-line); border-radius: 0;
+}
+.ib-scroll { padding: 18px 14px; display: flex; flex-direction: column; gap: 22px; }
+.ib-h {
+  margin: 0 0 8px; font-family: 'Press Start 2P', 'Courier New', monospace; font-weight: 400;
+  font-size: 12px; color: #fff; text-shadow: 1px 1px 0 #000; letter-spacing: .02em;
+}
+
+/* paper card with a dog-eared corner (board-card.png in the game) */
+.card {
+  position: relative; background: var(--paper); color: var(--paper-ink);
+  border: 2px solid var(--paper-line); padding: 22px 14px 14px;
+  box-shadow: 3px 4px 0 rgba(0,0,0,.35);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+}
+.card::after {
+  content: ""; position: absolute; right: -2px; bottom: -2px; width: 16px; height: 16px;
+  background: linear-gradient(135deg, var(--paper-2) 50%, var(--paper-line) 50%, var(--paper-line) 56%, transparent 56%);
+}
+.pin {
+  position: absolute; top: 5px; left: 50%; width: 12px; height: 12px; margin-left: -6px;
+  background: #b0302a; border: 2px solid #4a1210; box-shadow: 1px 2px 0 rgba(0,0,0,.4);
+}
+.card h3 { margin: 0; font-size: 19px; font-weight: 700; }
+.card .role { margin: 0 0 8px; color: var(--paper-dim); }
+
+/* profile card */
+.profile-card { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 4px 28px; }
+.profile-card .ph { grid-column: 1 / -1; margin: 0 0 6px; font-size: 20px; }
+.profiles { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.profiles h4 { margin: 0; font-size: 17px; }
+.profiles p { margin: 0; }
+.counts-wrap h4 { margin: 0 0 4px; font-size: 15px; color: var(--paper-dim); font-weight: 700; }
+.counts { list-style: none; margin: 0 0 10px; padding: 0; }
+.counts li { display: flex; flex-wrap: wrap; gap: 0 6px; padding: 3px 0; border-bottom: 1px dotted rgba(42,33,24,.35); }
+.counts .c-label { flex: 1 1 150px; min-width: 0; }
+.counts .c-found { font-variant-numeric: tabular-nums; font-weight: 700; }
+.counts .all-found .c-found::after { content: " (all)"; font-weight: 400; color: var(--paper-dim); }
+.still { margin: 0 0 10px; padding: 6px 8px; border: 2px dashed var(--prop); color: var(--paper-ink); background: var(--paper-2); font-size: 15px; }
+.stakes {
+  grid-column: 1 / -1; margin: 10px 0 0; padding: 10px 12px; background: var(--paper-2);
+  border-left: 5px solid var(--paper-line);
+}
+.stakes p { margin: 0; }
+.stakes .line { font-weight: 700; }
+.stakes .brief { margin-top: 4px; font-style: italic; }
+
+/* suspects */
+.suspects { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 16px; }
+.slot { margin: 8px 0 0; }
+.slot-label { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: var(--paper-dim); text-transform: none; }
+.cells { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.cell {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px 6px;
+  min-height: 34px; padding: 4px 8px; border: 2px solid var(--paper-line); background: #fffaf0; color: var(--paper-ink);
+  max-width: 100%; overflow-wrap: anywhere;
+}
+.cell.is-hidden {
+  border-style: dashed; color: var(--paper-dim); font-style: italic;
+  background: repeating-linear-gradient(45deg, rgba(74,50,32,.12) 0 6px, transparent 6px 12px), var(--paper);
+}
+.cell.is-hidden::before { content: "?"; font-style: normal; font-weight: 700; display: inline-block; width: 1.1em; text-align: center; border: 1px solid var(--paper-dim); }
+.cell.is-destroyed {
+  color: var(--bad); font-weight: 700; border-style: double; border-width: 4px;
+  background: repeating-linear-gradient(-45deg, rgba(138,43,31,.16) 0 3px, transparent 3px 9px), #f0dccd;
+}
+.cell.is-destroyed::before { content: "\2715"; }
+.mk { display: inline-flex; align-items: center; gap: 3px; font-size: 13px; font-weight: 700; color: var(--mark-ink); padding: 0 4px; border: 1px solid var(--mark-ink); }
+.rec { font-size: 13px; font-weight: 700; color: var(--good); padding: 0 4px; border: 1px solid var(--good); }
+
+.mark-row { margin: 12px 0 0; padding-top: 10px; border-top: 2px dashed rgba(42,33,24,.45); }
+.mark-row .q { margin: 0 0 6px; font-weight: 700; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button, .pick button, .foot button, .confirm button {
+  min-height: 44px; padding: 6px 12px; font: inherit; cursor: pointer; border-radius: 0;
+  color: var(--paper-ink); background: var(--paper-2); border: 2px solid var(--paper-line);
+}
+.seg button[aria-pressed="true"], .pick button[aria-pressed="true"] { border-width: 4px; padding: 4px 10px; font-weight: 700; }
+.seg button[aria-pressed="true"]::before, .pick button[aria-pressed="true"]::before { content: "\2713 "; }
+.seg button:disabled { opacity: .55; cursor: default; }
+.pick { margin: 8px 0 0; }
+.pick .q { font-weight: 400; font-style: italic; margin: 0 0 4px; }
+.pick .seg button { min-height: 40px; font-size: 15px; }
+
+.nudge {
+  display: flex; gap: 8px; align-items: flex-start; margin: 10px 0 0; padding: 6px 8px;
+  background: #fff2a8; color: #2a2118; border: 2px solid #8a7420; font-weight: 600;
+}
+.nudge::before { content: "\270E"; font-weight: 700; }
+.verdict { margin: 10px 0 0; padding: 8px; border: 2px solid var(--paper-line); background: var(--paper-2); }
+.verdict p { margin: 0; }
+.outcome { font-weight: 700; }
+.outcome.good { color: var(--good); }
+.outcome.bad { color: var(--bad); }
+.locked { margin: 6px 0 0; font-size: 14px; color: var(--paper-dim); }
+
+.foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 14px; background: var(--ui-surface); color: var(--ui-text); border-top: 3px solid var(--ui-line); }
+.foot p { margin: 0; flex: 1 1 260px; }
+.foot button { background: var(--ui-accent); border-color: #000; font-weight: 700; color: #1a1a1a; }
+.foot button[aria-disabled="true"] { background: var(--ui-surface-raised); color: var(--ui-text-dim); border-color: var(--ui-line); }
+
+/* illustration strip */
+.illus { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.confirm { margin-top: 10px; }
+.confirm ul { margin: 6px 0 10px; padding-left: 20px; }
+.confirm .row { display: flex; flex-wrap: wrap; gap: 8px; }
+.confirm .primary { font-weight: 700; border-width: 4px; }
+.warn-line { margin: 8px 0 0; font-weight: 700; color: var(--bad); }
+
+/* debrief */
+.db-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; }
+.db-cards .card.wide { grid-column: 1 / -1; }
+.db-sec { margin: 10px 0 0; }
+.db-sec h4 { margin: 0 0 2px; font-size: 15px; color: var(--paper-dim); }
+.db-sec p, .db-sec ul { margin: 0; }
+.db-sec ul { padding-left: 18px; }
+.truth { margin: 2px 0 0; font-weight: 700; }
+.badge { display: inline-block; margin-top: 8px; padding: 4px 8px; font-weight: 700; border: 2px solid currentColor; }
+.badge.good { color: var(--good); }
+.badge.bad { color: var(--bad); }
+.badge.neutral { color: var(--paper-dim); }
+.settle { margin: 10px 0 0; padding: 8px; background: var(--paper-2); border-left: 5px solid var(--bad); }
+.settle.info { border-left-color: var(--paper-dim); }
+.summary p { margin: 0 0 8px; }
+.summary .noblame { font-weight: 700; }
+
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.toast {
+  display: inline-block; margin: 0 0 8px; padding: 8px 12px; background: var(--ui-surface); color: var(--ui-text);
+  border: 2px solid var(--ui-line); font-size: 15px;
+}
+.toast b { font-family: 'Courier New', monospace; margin-right: 6px; }
+.prop-box { outline: 2px dashed var(--prop); outline-offset: 3px; }
+
+[hidden] { display: none !important; }
+
+@media (max-width: 1000px) and (min-width: 701px) {
+  .suspects { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .page { padding: 16px 12px; }
+  .board { border-width: 0; margin: 0 -12px; }
+  .suspects, .db-cards, .illus, .profile-card { grid-template-columns: minmax(0, 1fr); }
+  .ib-title { font-size: 12px; }
+  .card { padding: 22px 12px 14px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="meta">
+    <h1>Deduction board: fixture A mockup</h1>
+    <p>Fixture A, "Open evening" (Eldritch Hacker skin). Built from the implementation plan as read at 3,327 lines, latest review round 4. Engine-owned strings follow plan §6.3. Clue labels, suspect roles and the toast placement are mine.</p>
+    <p>Anything boxed with a dashed blue line and tagged <span class="legend-prop">PROPOSED</span> is not in the plan. BOARD_MOCKUP_NOTES.md explains each one.</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="Mockup view">
+    <button type="button" data-view="board" aria-pressed="true">Board, mid-case</button>
+    <button type="button" data-view="debrief" aria-pressed="false">Debrief, a mixed run</button>
+    <button type="button" id="theme-btn" aria-pressed="false">Toggle light / dark</button>
+  </div>
+
+  <!-- ===================== BOARD VIEW ===================== -->
+  <section id="view-board">
+    <p class="caption">State: hall, cloakroom and Marsh's favour done (plan §9.2 row H+C+F; bridge A3). Marsh has already been accused (anytime verdicts, reveal now). The player has marked Okafor and Venn. Ishikawa is undecided but has the nudge. Delacroix is still open: her pass is hidden until the archive's badge log.</p>
+    <div class="toast" role="presentation"><b>Case file</b>You have enough to decide about Okafor.</div>
+    <div class="caption" style="margin-top:0">That toast fired when the favour revealed Marsh's last cell (§5.5 "The nudge"). It belongs to the game HUD, outside the board.</div>
+
+    <div class="board" id="board" role="dialog" aria-labelledby="b-title">
+      <div class="ib-head">
+        <h2 class="ib-title" id="b-title">Open evening</h2>
+        <p class="ib-sub">Case file</p>
+        <button type="button" class="ib-close">Close</button>
+      </div>
+      <div class="visually-hidden" role="status" aria-live="polite" id="live"></div>
+      <div class="ib-scroll">
+        <section aria-labelledby="h-look">
+          <h2 class="ib-h" id="h-look">What to look for</h2>
+          <div class="card profile-card" id="profile-card"><span class="pin" aria-hidden="true"></span></div>
+        </section>
+        <section aria-labelledby="h-sus">
+          <h2 class="ib-h" id="h-sus">Suspects</h2>
+          <ul class="suspects" id="suspects"></ul>
+        </section>
+      </div>
+      <div class="foot prop-box">
+        <p id="close-route"></p>
+        <span class="legend-prop" style="color:var(--ui-accent);border-color:var(--ui-accent)">PROPOSED</span>
+      </div>
+    </div>
+    <p class="caption">Fixture A uses <code>when: "anytime"</code>, so the footer has no "Make the call" button (§6.6). In the mockup, the footer tells the player how this case closes. That line is a proposal.</p>
+
+    <h2 style="font-size:18px;margin:26px 0 6px">States fixture A does not reach</h2>
+    <p class="caption">A has no tamper and no final call. These two cards show how those states would look on this board's skin, so the art and CSS can be settled once.</p>
+    <div class="illus board" style="padding:18px 14px">
+      <div class="card" id="ill-destroyed"><span class="pin" aria-hidden="true"></span></div>
+      <div class="card" id="ill-final"><span class="pin" aria-hidden="true"></span></div>
+    </div>
+  </section>
+
+  <!-- ===================== DEBRIEF VIEW ===================== -->
+  <section id="view-debrief" hidden>
+    <p class="caption">One possible run. The player probed by accusing Delacroix in the hall, which made the lodge suspicious, so the coats then gave nothing. They took the code note, did the archive (badge log, camera, desk), chose "Confront her now" on Okafor, and went into the sanctum without naming Marsh. Held at close: the hall, plus the archive (row H+A). The acolyte waits in the sanctum after Finish.</p>
+    <div class="board" role="dialog" aria-labelledby="d-title">
+      <div class="ib-head">
+        <h2 class="ib-title" id="d-title">How the case stood</h2>
+        <p class="ib-sub">Open evening</p>
+        <button type="button" class="ib-close">Finish</button>
+      </div>
+      <div class="ib-scroll">
+        <ul class="db-cards" id="db-cards"></ul>
+        <div class="card summary" id="db-summary"><span class="pin" aria-hidden="true"></span></div>
+      </div>
+      <div class="foot"><p>Close and Escape act as Finish here (§6.1).</p><button type="button">Finish</button></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  // ---------- helpers: every string through textContent ----------
+  function h(tag, attrs, kids) {
+    var el = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === 'text') el.textContent = attrs[k];
+      else if (k === 'cls') el.className = attrs[k];
+      else el.setAttribute(k, attrs[k]);
+    });
+    (kids || []).forEach(function (c) { if (c) el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    return el;
+  }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  // ---------- fixture A data (plan §9.2) ----------
+  var slots = [
+    { id: 'pass', label: 'Where they were' },
+    { id: 'want', label: 'What they want' },
+    { id: 'carry', label: 'What they carry' }
+  ];
+  var clues = {
+    archive_pass:    { slot: 'pass',  label: 'archive visitor pass', count: 2 },
+    lecture_hall:    { slot: 'pass',  label: 'lecture hall', count: 2 },
+    garden:          { slot: 'pass',  label: 'garden', count: 1 },
+    wants_codex:     { slot: 'want',  label: 'wants the Codex', count: 3, marked: true },
+    wants_promotion: { slot: 'want',  label: 'wants a promotion', count: 1, marked: true },
+    wants_funding:   { slot: 'want',  label: 'wants funding', count: 1 },
+    brass_key:       { slot: 'carry', label: 'brass Tesseract key', count: 1, marked: true },
+    sigil_ring:      { slot: 'carry', label: 'sigil ring', count: 1, marked: true },
+    burner_sim:      { slot: 'carry', label: 'burner SIM', count: 1, marked: true },
+    ward_charm:      { slot: 'carry', label: 'ward charm', count: 2 },
+    notebook:        { slot: 'carry', label: 'notebook', count: 2 },
+    umbrella:        { slot: 'carry', label: 'umbrella', count: 1 }
+  };
+  var profiles = [
+    { id: 'keyholder', label: 'Keyholder', text: 'Carries the brass Tesseract key. There is only one.' },
+    { id: 'courier',   label: 'Courier',   text: 'Was in the Archive, wants the Codex, and carries no ward charm.' },
+    { id: 'devotee',   label: 'Devotee',   text: 'Has three or more marked clues.' }
+  ];
+  // cells: [clueId, state]  state: s = shown, h = hidden
+  var suspects = [
+    { id: 'okafor', name: 'Dr Okafor', role: 'Visiting lecturer',
+      cells: { pass: [['lecture_hall','h']], want: [['wants_codex','s']], carry: [['brass_key','h'],['notebook','h']] },
+      mark: 'guilty', profile: 'keyholder', nudge: true },
+    { id: 'venn', name: 'Venn', role: 'Archivist’s assistant',
+      cells: { pass: [['archive_pass','h']], want: [['wants_funding','s']], carry: [['ward_charm','s']] },
+      mark: 'clear', because: ['wants_funding'], nudge: true },
+    { id: 'marsh', name: 'Marsh', role: 'Lodge secretary',
+      cells: { pass: [['garden','s']], want: [['wants_promotion','s']], carry: [['sigil_ring','s'],['burner_sim','s']] },
+      mark: 'guilty', profile: 'devotee', nudge: true, verdict: { kind: 'accused', outcome: 'Right call', good: true } },
+    { id: 'ishikawa', name: 'Ishikawa', role: 'Collector',
+      cells: { pass: [['archive_pass','h']], want: [['wants_codex','s']], carry: [['ward_charm','s'],['notebook','s']] },
+      mark: 'undecided', nudge: true },
+    { id: 'delacroix', name: 'Delacroix', role: 'Journalist',
+      cells: { pass: [['lecture_hall','h']], want: [['wants_codex','s']], carry: [['umbrella','s']] },
+      mark: 'undecided', nudge: false }
+  ];
+  var nouns = { guilty: 'Cultist', clear: 'Not a cultist' };
+
+  // found counts from the cells shown
+  var found = {};
+  Object.keys(clues).forEach(function (c) { found[c] = 0; });
+  suspects.forEach(function (s) { slots.forEach(function (sl) { s.cells[sl.id].forEach(function (c) { if (c[1] === 's') found[c[0]]++; }); }); });
+
+  function markedChip() { return h('span', { cls: 'mk', text: '✦ marked' }); }
+
+  // ---------- profile card ----------
+  var pc = document.getElementById('profile-card');
+  var pl = h('ul', { cls: 'profiles' });
+  profiles.forEach(function (p) { pl.appendChild(h('li', null, [h('h4', { text: p.label }), h('p', { text: p.text })])); });
+  pc.appendChild(h('div', null, [pl]));
+  var cw = h('div', { cls: 'counts-wrap' });
+  slots.forEach(function (sl) {
+    cw.appendChild(h('h4', { text: sl.label }));
+    var ul = h('ul', { cls: 'counts' });
+    Object.keys(clues).filter(function (c) { return clues[c].slot === sl.id; }).forEach(function (c) {
+      var cl = clues[c];
+      var li = h('li', { cls: found[c] === cl.count ? 'all-found' : '' }, [
+        h('span', { cls: 'c-label', text: cap(cl.label) + ': ' + cl.count + ' in this case, ' }),
+        h('span', { cls: 'c-found', text: found[c] + ' found' })
+      ]);
+      if (cl.marked) li.insertBefore(markedChip(), li.children[1]);
+      ul.appendChild(li);
+    });
+    cw.appendChild(ul);
+    if (sl.id === 'carry') {
+      cw.appendChild(h('p', { cls: 'still' }, [
+        h('span', { cls: 'legend-prop', text: 'PROPOSED' }), ' ',
+        'Still hidden here: 2 clues, both Dr Okafor’s. Not yet found: brass Tesseract key, 1 notebook.'
+      ]));
+    }
+  });
+  pc.appendChild(cw);
+  pc.appendChild(h('div', { cls: 'stakes' }, [
+    h('p', { cls: 'line', text: 'Stakes: a wrong call will change what you can do next. A wrong or missed call also costs part of your score.' }),
+    h('p', { cls: 'brief', text: 'Name an innocent guest and the lodge will close ranks against you. Miss a cultist and they will be waiting at the ritual.' })
+  ]));
+
+  // ---------- suspect cards ----------
+  var list = document.getElementById('suspects');
+  var live = document.getElementById('live');
+  function cellEl(slotLabel, clueId, state) {
+    var cl = clues[clueId];
+    if (state === 'h') return h('li', { cls: 'cell is-hidden', 'aria-label': slotLabel + ': hidden' }, ['Hidden']);
+    if (state === 'd') return h('li', { cls: 'cell is-destroyed', 'aria-label': slotLabel + ': evidence destroyed' }, ['Evidence destroyed']);
+    var li = h('li', { cls: 'cell', 'aria-label': slotLabel + ': ' + cl.label + (cl.marked ? ', marked' : '') + (state === 'r' ? ', recovered' : '') }, [cap(cl.label)]);
+    if (cl.marked) li.appendChild(markedChip());
+    if (state === 'r') li.appendChild(h('span', { cls: 'rec', text: 'recovered' }));
+    return li;
+  }
+  function slotBlock(s, sl, cells) {
+    var ul = h('ul', { cls: 'cells' });
+    cells.forEach(function (c) { ul.appendChild(cellEl(sl.label, c[0], c[1])); });
+    return h('div', { cls: 'slot' }, [h('p', { cls: 'slot-label', text: sl.label }), ul]);
+  }
+  function heldLabels(s) {
+    var out = [];
+    slots.forEach(function (sl) { s.cells[sl.id].forEach(function (c) { if (c[1] === 's') out.push(c[0]); }); });
+    return out;
+  }
+  function renderCard(s) {
+    var li = h('li', { cls: 'card', 'aria-labelledby': 'n-' + s.id });
+    li.appendChild(h('span', { cls: 'pin', 'aria-hidden': 'true' }));
+    li.appendChild(h('h3', { id: 'n-' + s.id, text: s.name }));
+    li.appendChild(h('p', { cls: 'role', text: s.role }));
+    slots.forEach(function (sl) { li.appendChild(slotBlock(s, sl, s.cells[sl.id])); });
+
+    var row = h('div', { cls: 'mark-row' });
+    if (s.verdict) {
+      var pf = profiles.filter(function (p) { return p.id === s.profile; })[0];
+      row.appendChild(h('div', { cls: 'verdict' }, [
+        h('p', { text: 'Verdict: ' + nouns.guilty + ' (' + s.verdict.kind + ')' }),
+        h('p', { cls: 'outcome ' + (s.verdict.good ? 'good' : 'bad'), text: (s.verdict.good ? '✓ ' : '✗ ') + s.verdict.outcome })
+      ]));
+      row.appendChild(h('p', { cls: 'locked', text: 'Verdict given. Your note: ' + nouns.guilty + (pf ? ', ' + pf.label : '') + '.' }));
+    } else {
+      row.appendChild(h('p', { cls: 'q', text: 'Your mark' }));
+      var seg = h('div', { cls: 'seg', role: 'group', 'aria-label': 'Your mark for ' + s.name });
+      [['undecided', 'Undecided'], ['guilty', nouns.guilty], ['clear', nouns.clear]].forEach(function (m) {
+        var b = h('button', { type: 'button', 'aria-pressed': String(s.mark === m[0]), text: m[1] });
+        b.addEventListener('click', function () { s.mark = m[0]; if (m[0] !== 'guilty') s.profile = null; rerender(s); live.textContent = s.name + ' marked ' + m[1] + '.'; });
+        seg.appendChild(b);
+      });
+      row.appendChild(seg);
+      if (s.mark === 'guilty') {
+        var pk = h('div', { cls: 'pick' }, [h('p', { cls: 'q', text: 'Which profile?' })]);
+        var ps = h('div', { cls: 'seg', role: 'group', 'aria-label': 'Which profile' });
+        profiles.forEach(function (p) {
+          var b = h('button', { type: 'button', 'aria-pressed': String(s.profile === p.id), text: p.label });
+          b.addEventListener('click', function () { s.profile = p.id; rerender(s); });
+          ps.appendChild(b);
+        });
+        pk.appendChild(ps); row.appendChild(pk);
+      }
+      if (s.mark === 'clear') {
+        s.because = s.because || [];
+        var rk = h('div', { cls: 'pick' }, [h('p', { cls: 'q', text: 'What rules them out? (optional)' })]);
+        var rs = h('div', { cls: 'seg', role: 'group', 'aria-label': 'What rules them out' });
+        heldLabels(s).forEach(function (c) {
+          var on = s.because.indexOf(c) >= 0;
+          var b = h('button', { type: 'button', 'aria-pressed': String(on), text: cap(clues[c].label) });
+          b.addEventListener('click', function () {
+            var i = s.because.indexOf(c); if (i >= 0) s.because.splice(i, 1); else s.because.push(c); rerender(s);
+          });
+          rs.appendChild(b);
+        });
+        rk.appendChild(rs); row.appendChild(rk);
+      }
+    }
+    li.appendChild(row);
+    if (s.nudge && !s.verdict) li.appendChild(h('p', { cls: 'nudge', text: 'You have enough to decide about ' + s.name + '.' }));
+    return li;
+  }
+  var cardEls = {};
+  function rerender(s) {
+    var focusText = document.activeElement && document.activeElement.textContent;
+    var n = renderCard(s); list.replaceChild(n, cardEls[s.id]); cardEls[s.id] = n;
+    var again = Array.prototype.filter.call(n.querySelectorAll('button'), function (b) { return b.textContent === focusText; })[0];
+    if (again) again.focus();
+  }
+  suspects.forEach(function (s) { cardEls[s.id] = renderCard(s); list.appendChild(cardEls[s.id]); });
+
+  document.getElementById('close-route').textContent =
+    'How this case closes: call HaX when you are ready for the sanctum. Anyone you have not named stays free.';
+
+  // ---------- illustration: destroyed cell, recovered cell ----------
+  var d = document.getElementById('ill-destroyed');
+  d.appendChild(h('h3', { text: 'Delacroix' }));
+  d.appendChild(h('p', { cls: 'role', text: 'If a tamper had faded her pass (not in fixture A)' }));
+  d.appendChild(slotBlock(null, slots[0], [['lecture_hall', 'd']]));
+  d.appendChild(h('p', { cls: 'role', style: 'margin-top:12px', text: 'The same cell after the shredder minigame recovers it' }));
+  var rb = slotBlock(null, slots[0], [['lecture_hall', 'r']]);
+  rb.classList.add('prop-box');
+  d.appendChild(rb);
+  d.appendChild(h('p', { cls: 'locked' }, [h('span', { cls: 'legend-prop', text: 'PROPOSED' }), ' the "recovered" tag; §6.3 has no string for it.']));
+
+  // ---------- illustration: final call footer ----------
+  var f = document.getElementById('ill-final');
+  f.appendChild(h('h3', { text: 'The final call' }));
+  f.appendChild(h('p', { cls: 'role', text: 'A when: "final" case with allowSubmit (fixtures B and D)' }));
+  var fb = h('div', { cls: 'seg' }, [h('button', { type: 'button', text: 'Make the call' })]);
+  f.appendChild(fb);
+  f.appendChild(h('p', { cls: 'warn-line', text: 'Mark every suspect first: Ishikawa, Delacroix still undecided.' }));
+  f.appendChild(h('p', { cls: 'role', style: 'margin-top:12px', text: 'Once all are marked, the confirm panel:' }));
+  var cf = h('div', { cls: 'confirm verdict' });
+  cf.appendChild(h('p', { text: 'Your call:' }));
+  var cl = h('ul');
+  [['Dr Okafor', 'Cultist, Keyholder'], ['Venn', 'Not a cultist'], ['Marsh', 'Cultist, Devotee'], ['Ishikawa', 'Not a cultist'], ['Delacroix', 'Not a cultist']]
+    .forEach(function (r) { cl.appendChild(h('li', { text: r[0] + ': ' + r[1] })); });
+  cf.appendChild(cl);
+  cf.appendChild(h('p', { style: 'font-weight:700;margin-bottom:8px', text: 'This closes the case.' }));
+  cf.appendChild(h('div', { cls: 'row' }, [
+    h('button', { type: 'button', cls: 'primary', text: 'Confirm the call' }),
+    h('button', { type: 'button', text: 'Go back' })
+  ]));
+  f.appendChild(cf);
+
+  // ---------- debrief ----------
+  var cards = [
+    { name: 'Dr Okafor', truth: 'Cultist: matches Keyholder', verdict: 'Verdict: Cultist (accused)',
+      note: 'Cultist, Keyholder', outcome: ['Right call', 'good'],
+      held: ['lecture hall', 'wants the Codex ✦', 'brass Tesseract key ✦', 'notebook'],
+      why: ['Keyholder: yes, carries the brass Tesseract key'] },
+    { name: 'Marsh', truth: 'Cultist: matches Devotee', verdict: 'Not named', note: 'Undecided',
+      outcome: ['Missed', 'bad'],
+      held: ['garden', 'wants a promotion ✦', 'sigil ring ✦'],
+      why: ['Devotee: yes, 3 marked clues (wants a promotion, sigil ring, burner SIM)'],
+      settle: ['The clue that would have settled it', 'Burner SIM, from Marsh’s favour'] },
+    { name: 'Delacroix', truth: 'Not a cultist: matches no profile', verdict: 'Verdict: Cultist (accused)',
+      note: 'Cultist, Courier', outcome: ['Wrong call', 'bad'],
+      held: ['lecture hall', 'wants the Codex ✦', 'umbrella'],
+      why: ['Keyholder: no, carries no brass Tesseract key', 'Courier: no, was in the lecture hall', 'Devotee: no, 1 marked clue (wants the Codex)'],
+      settle: ['The clue that would have settled it', 'Lecture hall, from the visitor badge log in the Archive'] },
+    { name: 'Venn', truth: 'Not a cultist: matches no profile', verdict: 'Not named',
+      note: 'Not a cultist, because: wants funding', outcome: ['Not named (innocent)', 'neutral'],
+      held: ['archive visitor pass', 'wants funding'],
+      why: ['Keyholder: no, carries no brass Tesseract key', 'Courier: no, wants funding', 'Devotee: no, 0 marked clues'],
+      count: 'The only brass Tesseract key was found elsewhere, so Venn could not have it.', countProp: true },
+    { name: 'Ishikawa', truth: 'Not a cultist: matches no profile', verdict: 'Not named', note: 'Undecided',
+      outcome: ['Not named (innocent)', 'neutral'],
+      held: ['archive visitor pass', 'wants the Codex ✦'],
+      why: ['Keyholder: no, carries no brass Tesseract key', 'Courier: no, carries a ward charm', 'Devotee: no, 1 marked clue (wants the Codex)'],
+      info: ['You had not ruled them out', 'Ward charm, from Ishikawa’s coat in the cloakroom, did.'],
+      infoProp: 'The coats closed after your wrong call on Delacroix. Marsh’s favour would also have settled it.' }
+  ];
+  var dc = document.getElementById('db-cards');
+  cards.forEach(function (c) {
+    var li = h('li', { cls: 'card' }, [h('span', { cls: 'pin', 'aria-hidden': 'true' })]);
+    li.appendChild(h('h3', { text: c.name }));
+    li.appendChild(h('p', { cls: 'truth', text: c.truth }));
+    li.appendChild(h('p', { style: 'margin:2px 0 0', text: c.verdict }));
+    var mark = { good: '✓ ', bad: '✗ ', neutral: '– ' }[c.outcome[1]];
+    li.appendChild(h('span', { cls: 'badge ' + c.outcome[1], text: mark + c.outcome[0] }));
+    li.appendChild(h('div', { cls: 'db-sec' }, [h('h4', { text: 'Your note' }), h('p', { text: c.note })]));
+    var hl = h('ul'); c.held.forEach(function (x) { hl.appendChild(h('li', { text: cap(x) })); });
+    li.appendChild(h('div', { cls: 'db-sec' }, [h('h4', { text: 'What you held' }), hl]));
+    var wl = h('ul'); c.why.forEach(function (x) { wl.appendChild(h('li', { text: x })); });
+    li.appendChild(h('div', { cls: 'db-sec' }, [h('h4', { text: 'Why' }), wl]));
+    if (c.settle) li.appendChild(h('div', { cls: 'settle' }, [h('strong', { text: c.settle[0] + ': ' }), c.settle[1] + '.']));
+    if (c.info) {
+      var box = h('div', { cls: 'settle info' }, [h('strong', { text: c.info[0] + ': ' }), c.info[1]]);
+      if (c.infoProp) box.appendChild(h('p', { cls: 'prop-box', style: 'margin:6px 0 0' }, [h('span', { cls: 'legend-prop', text: 'PROPOSED' }), ' ' + c.infoProp]));
+      li.appendChild(box);
+    }
+    if (c.count) {
+      var cp = h('p', { cls: 'db-sec' + (c.countProp ? ' prop-box' : '') }, [c.countProp ? h('span', { cls: 'legend-prop', text: 'PROPOSED' }) : null, ' ' + c.count]);
+      li.appendChild(cp);
+    }
+    dc.appendChild(li);
+  });
+  var sm = document.getElementById('db-summary');
+  sm.appendChild(h('h3', { text: 'The evening' }));
+  sm.appendChild(h('div', { cls: 'db-sec' }, [h('h4', { text: 'Evidence destroyed' }), h('p', { text: 'None.' })]));
+  sm.appendChild(h('div', { cls: 'db-sec' }, [h('h4', { text: 'Favours' }), h('p', { text: 'None done.' })]));
+  sm.appendChild(h('p', { style: 'margin:12px 0 8px', text: 'The ritual goes ahead tonight. Whoever you left free will be at it. [authored closingLine, placeholder]' }));
+  sm.appendChild(h('p', { cls: 'noblame', text: 'A missed clue is not a mistake in judgement. The debrief shows where the evidence was.' }));
+  sm.appendChild(h('p', { text: '3 of 5 calls right; 1 suspect cleared with a reason.' }));
+  sm.appendChild(h('p', { cls: 'prop-box' }, [h('span', { cls: 'legend-prop', text: 'PROPOSED' }),
+    ' Instead: 1 of 2 cultists named; 1 innocent wrongly accused; 2 innocents left alone, 1 with a reason.']));
+
+  // ---------- view and theme toggles ----------
+  var vbtns = document.querySelectorAll('[data-view]');
+  Array.prototype.forEach.call(vbtns, function (b) {
+    b.addEventListener('click', function () {
+      Array.prototype.forEach.call(vbtns, function (o) { o.setAttribute('aria-pressed', String(o === b)); });
+      document.getElementById('view-board').hidden = b.dataset.view !== 'board';
+      document.getElementById('view-debrief').hidden = b.dataset.view !== 'debrief';
+    });
+  });
+  var tb = document.getElementById('theme-btn');
+  tb.addEventListener('click', function () {
+    var root = document.documentElement;
+    var cur = root.getAttribute('data-theme');
+    var sysDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var isDark = cur ? cur === 'dark' : sysDark;
+    root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    tb.setAttribute('aria-pressed', String(!isDark));
+  });
+})();
+</script>
+</body>
+</html>

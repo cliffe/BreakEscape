@@ -1,0 +1,277 @@
+TAP version 13
+# 📋 Setting up event mappings for ghost: {}
+# ✅ Registered 0 event mappings for ghost
+# 💬 PhoneChatConversation initialized for NPC: ghost
+# 📖 Loading story from inline JSON for ghost
+# ✅ Bound external function: player_name
+# ✅ Bound external function: current_mission_id
+# ✅ Bound external function: npc_location
+# ✅ Bound external function: mission_phase
+# ✅ Bound external function: operational_stress_level
+# ✅ Bound external function: equipment_status
+# ✅ External functions bound for ghost
+# ✅ Story loaded successfully for ghost
+# 🚪 ghost: entering via "start" (same opening as "first_call")
+# 🎯 Navigated to knot: start
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🔍 InkEngine.continue() - got text: Agent: You're in. Good.
+# 🔍 InkEngine.continue() - canContinue after: true
+# 🔍 InkEngine.continue() - currentChoices after: 0
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🔍 InkEngine.continue() - got text: Agent: Front desk first.
+# 🔍 InkEngine.continue() - canContinue after: false
+# 🔍 InkEngine.continue() - currentChoices after: 1
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 💾 Saved story state
+# 📝 Preloaded 2 intro message(s) for ghost
+# 📋 Setting up event mappings for ghost: {}
+# ✅ Registered 0 event mappings for ghost
+# 💬 PhoneChatConversation initialized for NPC: ghost
+# 📖 Loading story from inline JSON for ghost
+# ✅ Bound external function: player_name
+# ✅ Bound external function: current_mission_id
+# ✅ Bound external function: npc_location
+# ✅ Bound external function: mission_phase
+# ✅ Bound external function: operational_stress_level
+# ✅ Bound external function: equipment_status
+# ✅ External functions bound for ghost
+# ✅ Story loaded successfully for ghost
+# 🚪 ghost: entering via "start" (same opening as "first_call")
+# 🎯 Navigated to knot: start
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🔍 InkEngine.continue() - got text: Agent: You're in. Good.
+# 🔍 InkEngine.continue() - canContinue after: true
+# 🔍 InkEngine.continue() - currentChoices after: 0
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🔍 InkEngine.continue() - got text: Agent: Front desk first.
+# 🔍 InkEngine.continue() - canContinue after: false
+# 🔍 InkEngine.continue() - currentChoices after: 1
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 💾 Saved story state
+# 📝 Preloaded 2 intro message(s) for ghost
+# 📋 Setting up event mappings for ghost: {}
+# ✅ Registered 0 event mappings for ghost
+# 💬 PhoneChatConversation initialized for NPC: ghost
+# 📖 Loading story from inline JSON for ghost
+# ✅ Bound external function: player_name
+# ✅ Bound external function: current_mission_id
+# ✅ Bound external function: npc_location
+# ✅ Bound external function: mission_phase
+# ✅ Bound external function: operational_stress_level
+# ✅ Bound external function: equipment_status
+# ✅ External functions bound for ghost
+# ✅ Story loaded successfully for ghost
+# 🚪 ghost: entering via "start" (same opening as "first_call")
+# 🎯 Navigated to knot: start
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🔍 InkEngine.continue() - got text: Agent: You're in. Good.
+# 🔍 InkEngine.continue() - canContinue after: true
+# 🔍 InkEngine.continue() - currentChoices after: 0
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🔍 InkEngine.continue() - got text: Agent: Front desk first.
+# 🔍 InkEngine.continue() - canContinue after: false
+# 🔍 InkEngine.continue() - currentChoices after: 1
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 📋 Setting up event mappings for ghost: {}
+# ✅ Registered 0 event mappings for ghost
+# 💬 PhoneChatConversation initialized for NPC: ghost
+# 📖 Loading story from inline JSON for ghost
+# ✅ Bound external function: player_name
+# ✅ Bound external function: current_mission_id
+# ✅ Bound external function: npc_location
+# ✅ Bound external function: mission_phase
+# ✅ Bound external function: operational_stress_level
+# ✅ Bound external function: equipment_status
+# ✅ External functions bound for ghost
+# ✅ Story loaded successfully for ghost
+# 🎯 Navigated to knot: start
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🔍 InkEngine.continue() - got text: Agent: You're in. Good.
+# 🔍 InkEngine.continue() - canContinue after: true
+# 🔍 InkEngine.continue() - currentChoices after: 0
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🔍 InkEngine.continue() - got text: Agent: Front desk first.
+# 🔍 InkEngine.continue() - canContinue after: false
+# 🔍 InkEngine.continue() - currentChoices after: 1
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 💾 Saved story state
+# 📝 Preloaded 2 intro message(s) for ghost
+# 📋 Setting up event mappings for ghost: {}
+# ✅ Registered 0 event mappings for ghost
+# 💬 PhoneChatConversation initialized for NPC: ghost
+# 📖 Loading story from inline JSON for ghost
+# ✅ Bound external function: player_name
+# ✅ Bound external function: current_mission_id
+# ✅ Bound external function: npc_location
+# ✅ Bound external function: mission_phase
+# ✅ Bound external function: operational_stress_level
+# ✅ Bound external function: equipment_status
+# ✅ External functions bound for ghost
+# ✅ Story loaded successfully for ghost
+# 🎯 Navigated to knot: start
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🔍 InkEngine.continue() - got text: Agent: You're in. Good.
+# 🔍 InkEngine.continue() - canContinue after: true
+# 🔍 InkEngine.continue() - currentChoices after: 0
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🔍 InkEngine.continue() - got text: Agent: Front desk first.
+# 🔍 InkEngine.continue() - canContinue after: false
+# 🔍 InkEngine.continue() - currentChoices after: 1
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 💾 Saved story state
+# 📝 Preloaded 2 intro message(s) for ghost
+# 📱 Restored saved phone state for 1 contact(s)
+# 📱 Restored ghost's phone thread (2 message(s))
+# 📋 Setting up event mappings for ghost: {}
+# ✅ Registered 0 event mappings for ghost
+# 📋 Setting up event mappings for hub: {}
+# ✅ Registered 0 event mappings for hub
+# 💬 PhoneChatConversation initialized for NPC: hub
+# 📖 Loading story from inline JSON for hub
+# ✅ Bound external function: player_name
+# ✅ Bound external function: current_mission_id
+# ✅ Bound external function: npc_location
+# ✅ Bound external function: mission_phase
+# ✅ Bound external function: operational_stress_level
+# ✅ Bound external function: equipment_status
+# ✅ External functions bound for hub
+# ✅ Story loaded successfully for hub
+# 🎯 Navigated to knot: start
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🏷️ InkEngine.continue() - found tags: [ 'note:leading' ]
+# 🔍 InkEngine.continue() - got text: Agent: What do you need?
+# 🔍 InkEngine.continue() - canContinue after: false
+# 🔍 InkEngine.continue() - currentChoices after: 1
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 💾 Saved story state
+# 📝 Preloaded 1 intro message(s) for hub
+# 💬 PhoneChatConversation initialized for NPC: hub
+# 📖 Loading story from inline JSON for hub
+# ✅ Bound external function: player_name
+# ✅ Bound external function: current_mission_id
+# ✅ Bound external function: npc_location
+# ✅ Bound external function: mission_phase
+# ✅ Bound external function: operational_stress_level
+# ✅ Bound external function: equipment_status
+# ✅ External functions bound for hub
+# ✅ Story loaded successfully for hub
+# 📂 Restored story state
+# 📋 Setting up event mappings for hub: {}
+# ✅ Registered 0 event mappings for hub
+# 💬 PhoneChatConversation initialized for NPC: hub
+# 📖 Loading story from inline JSON for hub
+# ✅ Bound external function: player_name
+# ✅ Bound external function: current_mission_id
+# ✅ Bound external function: npc_location
+# ✅ Bound external function: mission_phase
+# ✅ Bound external function: operational_stress_level
+# ✅ Bound external function: equipment_status
+# ✅ External functions bound for hub
+# ✅ Story loaded successfully for hub
+# 🎯 Navigated to knot: start
+# 🔍 InkEngine.continue() - canContinue: true
+# 🔍 InkEngine.continue() - currentChoices before: 0
+# 🏷️ InkEngine.continue() - found tags: [ 'note:leading' ]
+# 🔍 InkEngine.continue() - got text: Agent: What do you need?
+# 🔍 InkEngine.continue() - canContinue after: false
+# 🔍 InkEngine.continue() - currentChoices after: 1
+# 🔍 InkEngine.continue() - hasEnded: undefined
+# 💾 Saved story state
+# 📝 Preloaded 1 intro message(s) for hub
+# 💬 PhoneChatConversation initialized for NPC: hub
+# 📖 Loading story from inline JSON for hub
+# ✅ Bound external function: player_name
+# ✅ Bound external function: current_mission_id
+# ✅ Bound external function: npc_location
+# ✅ Bound external function: mission_phase
+# ✅ Bound external function: operational_stress_level
+# ✅ Bound external function: equipment_status
+# ✅ External functions bound for hub
+# ✅ Story loaded successfully for hub
+# 📂 Restored story state
+# 🔄 Re-navigated to "hub" with updated globals: 1 step(s) already seen, 0 new
+# Subtest: two preloads at once (inventory pickup, then phone-chat opening) add the opening once
+ok 1 - two preloads at once (inventory pickup, then phone-chat opening) add the opening once
+  ---
+  duration_ms: 31.327113
+  ...
+# Subtest: waitForPreload waits for a preload still running
+ok 2 - waitForPreload waits for a preload still running
+  ---
+  duration_ms: 5.633411
+  ...
+# Subtest: a preload whose thread filled while the story loaded adds nothing
+ok 3 - a preload whose thread filled while the story loaded adds nothing
+  ---
+  duration_ms: 3.421714
+  ...
+# Subtest: an explicit knot equal to the preloaded one, on an unanswered thread, is a first open
+ok 4 - an explicit knot equal to the preloaded one, on an unanswered thread, is a first open
+  ---
+  duration_ms: 2.908263
+  ...
+# Subtest: without a saved preload position, the explicit knot still plays
+ok 5 - without a saved preload position, the explicit knot still plays
+  ---
+  duration_ms: 0.16073
+  ...
+# Subtest: phone-chat waits for a running preload and checks the preloaded knot before playing an explicit one
+ok 6 - phone-chat waits for a running preload and checks the preloaded knot before playing an explicit one
+  ---
+  duration_ms: 0.45305
+  ...
+# Subtest: preloadedKnot is kept across a reload with the rest of the phone state
+ok 7 - preloadedKnot is kept across a reload with the rest of the phone state
+  ---
+  duration_ms: 2.882627
+  ...
+# Subtest: first open after a preload: deferred globals applied first, so the intro is not re-run
+ok 8 - first open after a preload: deferred globals applied first, so the intro is not re-run
+  ---
+  duration_ms: 13.880094
+  ...
+# Subtest: phone-chat applies deferred globals before the reopen sync
+ok 9 - phone-chat applies deferred globals before the reopen sync
+  ---
+  duration_ms: 0.636775
+  ...
+# Subtest: a text file goes into the notepad as its own text, with no header or footer
+ok 10 - a text file goes into the notepad as its own text, with no header or footer
+  ---
+  duration_ms: 0.53814
+  ...
+# Subtest: the source, when the scenario gives one, goes in the title
+ok 11 - the source, when the scenario gives one, goes in the title
+  ---
+  duration_ms: 0.16148
+  ...
+# Subtest: the text-file minigame uses the raw entry, and the old wrapper is gone
+ok 12 - the text-file minigame uses the raw entry, and the old wrapper is gone
+  ---
+  duration_ms: 0.276487
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 244.047989

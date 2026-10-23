@@ -1,0 +1,13 @@
+{
+  "key": "552a504a662d6a3e2f448e822f84df11",
+  "npc": "priya_s",
+  "text": "Helen didn't trust a perfect screen. Look after people like that. They're your last line of defence.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:24:59Z"
+}

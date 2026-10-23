@@ -1,0 +1,32 @@
+{"cmd":"bootstrap","tutorial":"decline","resume":"new"}
+{"cmd":"note","message":"P0 baseline: nothing found or landed"}
+{"cmd":"eval","fn":"async () => { const g = window.__test.getState().globals; return g.se_intel_portal_password === false && g.phish_wexley_landed === false; }"}
+{"cmd":"interact","id":"p9_mail_terminal"}
+{"cmd":"waitFor","kind":"minigame","id":"mail-client"}
+{"cmd":"eval","fn":"async () => { const s = window.MinigameFramework.currentMinigame.getTestState(); return s.mail.account.id === 'guest' && s.mail.accounts.includes('jed_pc') && s.mail.folder === 'inbox'; }"}
+{"cmd":"note","message":"N16: a highlighted span saves as evidence"}
+{"cmd":"mg","action":"clickText","args":["Your new laptop"]}
+{"cmd":"eval","fn":"async () => { const s = window.MinigameFramework.currentMinigame.getTestState(); return s.mail.selectedId === 'welcome' && s.mail.highlights.includes('h_pwd'); }"}
+{"cmd":"mg","action":"clickText","args":["hunter2"]}
+{"cmd":"waitFor","kind":"global","name":"se_intel_portal_password","expected":true}
+{"cmd":"waitFor","kind":"task","id":"found_password"}
+{"cmd":"eval","fn":"async () => { return window.__test.getState().globals.se_intel_portal_password === true; }"}
+{"cmd":"note","message":"N8/N15: deliverAt seed arrives"}
+{"cmd":"eval","fn":"async () => { for (let i = 0; i < 40; i++) { const b = window.mailState?.mailboxes?.guest?.messages || []; if (b.some(m => m.id === 'later_notice')) return true; await new Promise(r => setTimeout(r, 200)); } return false; }"}
+{"cmd":"note","message":"N15/found: switch to Jed's found account and read his history"}
+{"cmd":"eval","fn":"async () => { const mg = window.MinigameFramework.currentMinigame; mg.switchAccount('jed_pc'); const s = mg.getTestState(); return s.mail.account.id === 'jed_pc' && s.mail.messages.some(m => m.id === 'jed_in1'); }"}
+{"cmd":"eval","fn":"async () => { const mg = window.MinigameFramework.currentMinigame; mg.setFolder('sent'); const s = mg.getTestState(); return s.mail.folder === 'sent' && s.mail.messages.some(m => m.id === 'jed_sent1'); }"}
+{"cmd":"note","message":"N8: send to Wexley, her reply ends on choices"}
+{"cmd":"eval","fn":"async () => { const mg = window.MinigameFramework.currentMinigame; mg.switchAccount('guest'); mg.setFolder('inbox'); return mg.getTestState().mail.account.id === 'guest'; }"}
+{"cmd":"mg","action":"clickText","args":["Compose"]}
+{"cmd":"eval","fn":"async () => { const c = window.MinigameFramework.currentMinigame.composer; c.selectContact('wexley'); c.chooseTemplate('pretext', 'pretext_generic'); const ok = c.send(); return ok === true && c.target.id === 'wexley'; }"}
+{"cmd":"waitFor","kind":"global","name":"phish_wexley_landed","expected":true}
+{"cmd":"eval","fn":"async () => { const mg = window.MinigameFramework.currentMinigame; mg._dismissChecklist(); mg.closeCompose(false); for (let i = 0; i < 40; i++) { const b = window.mailState?.mailboxes?.guest?.messages || []; const reply = b.find(m => m.folder !== 'sent' && m.thread === 'wexley:guest'); if (reply) { mg._refresh(); mg.reader.select(reply.id); const s = mg.getTestState(); return !!(s.mail.followup && s.mail.followup.mode === 'choices' && s.mail.followup.options.length === 2); } await new Promise(r => setTimeout(r, 200)); } return false; }"}
+{"cmd":"note","message":"N8: pick a reply option -> quickReply record + continuation"}
+{"cmd":"mg","action":"clickText","args":["It's the Q3 export Ravi mentioned"]}
+{"cmd":"eval","fn":"async () => { const sent = (window.mailState.mailboxes.guest.messages || []).filter(m => m.folder === 'sent' && m.kind === 'quickReply'); return sent.length === 1 && sent[0].body === \"It's the Q3 export Ravi mentioned\"; }"}
+{"cmd":"note","message":"N8: continuation reply offers the judged composer (#compose_reply)"}
+{"cmd":"eval","fn":"async () => { const mg = window.MinigameFramework.currentMinigame; for (let i = 0; i < 40; i++) { const t = (window.mailState?.threads || {})['wexley:guest']; if (t && t.expects && t.expects.mode === 'compose' && t.expects.targetId === 'wexley_followup') { const box = window.mailState.mailboxes.guest.messages.filter(m => m.folder !== 'sent' && m.thread === 'wexley:guest'); const latest = box.sort((a, b) => (b.gameTime || 0) - (a.gameTime || 0))[0]; mg._refresh(); mg.reader.select(latest.id); const s = mg.getTestState(); return !!(s.mail.followup && s.mail.followup.mode === 'compose' && s.mail.followup.targetId === 'wexley_followup'); } await new Promise(r => setTimeout(r, 200)); } return false; }"}
+{"cmd":"mg","action":"clickText","args":["Write your reply. This one is judged"]}
+{"cmd":"eval","fn":"async () => { const mg = window.MinigameFramework.currentMinigame; return mg.composeOpen === true && !!mg.composer && mg.composer.target && mg.composer.target.id === 'wexley_followup'; }"}
+{"cmd":"quit"}

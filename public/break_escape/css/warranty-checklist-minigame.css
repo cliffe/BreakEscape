@@ -1,0 +1,426 @@
+/* ═══════════════════════════════════════════════════════════
+   Warranty Compliance Checklist — MG-04 sis03_cyber_insurance
+   Paper document inset in dark game frame.
+   Font: Courier New throughout. Palette aligned to CDF/FDP.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Outer containers (full-screen, matching FDP/CDF pattern) ── */
+
+.wcc-minigame-container {
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.wcc-minigame-game-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    padding: 0;
+}
+
+/* Framework game container override for correct flex behaviour */
+.wcc-minigame-container .minigame-game-container {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+    margin: 0;
+}
+
+/* ── Panel ────────────────────────────────────────────────── */
+
+.wcc-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: transparent;
+    box-sizing: border-box;
+}
+
+/* ── Desk: no padding — paper fills full width ───────────── */
+
+.wcc-desk {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: stretch;
+}
+
+/* ── The paper sheet ─────────────────────────────────────── */
+
+.wcc-paper {
+    background: #fefcf8;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ── Letterhead bar ──────────────────────────────────────── */
+
+.wcc-letterhead {
+    background: #1a233a;
+    padding: 9px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.wcc-letterhead-title {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    font-weight: bold;
+    color: #ffffff;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.wcc-letterhead-ref {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    color: #8899cc;
+    white-space: nowrap;
+}
+
+/* ── Document title area (on white paper) ────────────────── */
+
+.wcc-doc-header {
+    background: #fefcf8;
+    border-bottom: 2px solid #1a233a;
+    padding: 14px 24px 12px 24px;
+    flex-shrink: 0;
+}
+
+.wcc-doc-title {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    font-weight: bold;
+    color: #1a2240;
+    text-align: center;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.6;
+    margin: 0 0 10px 0;
+}
+
+.wcc-doc-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    color: #556;
+}
+
+.wcc-doc-status {
+    margin-left: auto;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    padding: 1px 5px;
+    border: 1px solid currentColor;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.wcc-status-ready       { color: #1a5830; }
+.wcc-status-in-progress { color: #6a3e00; }
+.wcc-status-pending     { color: #5a3a10; }
+.wcc-status-locked      { color: #7a1a18; }
+
+/* ── Gate note ───────────────────────────────────────────── */
+
+.wcc-gate-note {
+    margin-top: 10px;
+    border: 1px solid #e0a0a0;
+    background: #fdf4f4;
+    color: #7a1a18;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 7px 12px;
+}
+
+/* ── Scrollable document body ────────────────────────────── */
+
+.wcc-doc-body {
+    flex: 1;
+    overflow-y: auto;
+    background: #fefcf8;
+    padding: 0;
+}
+
+/* ── Warranty rows ───────────────────────────────────────── */
+
+.wcc-row {
+    border-top: 1px solid #d8d4ce;
+    padding: 12px 24px 14px 24px;
+    background: #fefcf8;
+    box-sizing: border-box;
+}
+
+.wcc-row:first-child {
+    border-top: none;
+}
+
+.wcc-row-breached { background: #fefafa; border-left: 3px solid #c03030; padding-left: 21px; }
+.wcc-row-arguable  { background: #fefdf5; border-left: 3px solid #b87800; padding-left: 21px; }
+.wcc-row-compliant { background: #f8fdfb; border-left: 3px solid #2a7048; padding-left: 21px; }
+
+/* Row header */
+.wcc-row-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+    padding: 0;
+    background: transparent;
+    border-bottom: none;
+}
+
+/* W-XX code badge */
+.wcc-code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    font-weight: bold;
+    color: #fefcf8;
+    background: #1a233a;
+    padding: 2px 6px;
+    white-space: nowrap;
+    line-height: 1.6;
+    flex-shrink: 0;
+}
+
+.wcc-row-title {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    font-weight: bold;
+    color: #1a2240;
+    line-height: 1.5;
+    flex: 1;
+}
+
+.wcc-claim-refs {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    color: #2a4878;
+    border: 1px solid #a8b8d0;
+    padding: 1px 5px;
+    background: #edf2fa;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.wcc-verdict-badge {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    padding: 1px 5px;
+    border: 1px solid currentColor;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.wcc-verdict-badge-breached { color: #7a1a18; background: #fdf0f0; }
+.wcc-verdict-badge-arguable  { color: #6a3e00; background: #fef4e2; }
+.wcc-verdict-badge-compliant { color: #1a5830; background: #eaf4ee; }
+
+/* Context/obligation text */
+.wcc-row-context {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #2a2a3a;
+    padding: 0 0 8px 0;
+}
+
+/* Controls container */
+.wcc-row-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0;
+}
+
+/* ── Verdict tick-box buttons ─────────────────────────────── */
+
+.wcc-verdict-group {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.wcc-verdict-btn {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    line-height: 1;
+    border: 2px solid #b0aba4;
+    background: #fff;
+    color: #2a2a3a;
+    padding: 5px 14px 5px 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+
+/* Tick-box indicator */
+.wcc-verdict-btn::before {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 2px solid #aaa;
+    background: #fff;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.wcc-verdict-btn:hover:not(:disabled),
+.wcc-verdict-btn:focus:not(:disabled) {
+    outline: none;
+    border-color: #555;
+    background: #f5f4f1;
+}
+
+.wcc-verdict-btn:hover:not(:disabled)::before,
+.wcc-verdict-btn:focus:not(:disabled)::before {
+    border-color: #555;
+}
+
+.wcc-verdict-btn:disabled {
+    cursor: default;
+    opacity: 0.7;
+}
+
+/* Selected states */
+.wcc-verdict-compliant.selected {
+    border-color: #2a7048;
+    background: #f4fbf7;
+    color: #1a5830;
+}
+.wcc-verdict-compliant.selected::before {
+    background: #2a7048;
+    border-color: #2a7048;
+}
+
+.wcc-verdict-arguable.selected {
+    border-color: #b87800;
+    background: #fef9ec;
+    color: #6a3e00;
+}
+.wcc-verdict-arguable.selected::before {
+    background: #b87800;
+    border-color: #b87800;
+}
+
+.wcc-verdict-breached.selected {
+    border-color: #c03030;
+    background: #fef4f4;
+    color: #7a1a18;
+}
+.wcc-verdict-breached.selected::before {
+    background: #c03030;
+    border-color: #c03030;
+}
+
+/* ── Hint ─────────────────────────────────────────────────── */
+
+.wcc-hint {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #445;
+    border-left: 3px solid #a8b8d0;
+    background: #f0f4fa;
+    padding: 4px 10px;
+    margin-top: 6px;
+}
+
+/* ── Header action buttons (Close / Submit, on paper background) ── */
+
+.wcc-header-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.wcc-header-btn {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    padding: 5px 16px;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid currentColor;
+}
+
+.wcc-header-btn-submit {
+    color: #1a5830;
+    border-color: #2a7048;
+}
+
+.wcc-header-btn-submit:hover:not(:disabled) {
+    background: #eaf4ee;
+    color: #0d3a1e;
+}
+
+.wcc-header-btn-submit:disabled {
+    color: #aaa;
+    border-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* ── Footer close bar ────────────────────────────────────── */
+
+.wcc-footer {
+    border-top: 2px solid #334466;
+    background: #0f1826;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.wcc-footer-btn {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    background: #1a233a;
+    border: 1px solid #334466;
+    color: #8899cc;
+    padding: 6px 20px;
+    cursor: pointer;
+}
+
+.wcc-footer-btn:hover {
+    background: #233350;
+    border-color: #4455aa;
+    color: #aabbdd;
+}
+
+/* ── Empty state ──────────────────────────────────────────── */
+
+.wcc-empty-state {
+    padding: 24px;
+    color: #555;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+}

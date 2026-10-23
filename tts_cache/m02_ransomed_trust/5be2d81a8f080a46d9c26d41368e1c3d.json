@@ -1,0 +1,13 @@
+{
+  "key": "5be2d81a8f080a46d9c26d41368e1c3d",
+  "npc": "closing_debrief_trigger",
+  "text": "Offline keys alone. Eleven hours and thirty-four minutes of manual restore, right up against the edge of the fuel.",
+  "voice": "Aoede",
+  "style": "Intelligence handler giving a mission debrief in person. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

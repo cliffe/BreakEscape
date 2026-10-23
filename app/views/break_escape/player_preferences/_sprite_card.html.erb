@@ -1,0 +1,41 @@
+<%# One avatar menu card. entry is an AvatarUnlocks.menu row; only locked ones can't be chosen. %>
+<%
+  sprite = entry['sprite']
+  is_valid = entry['status'] != 'locked'
+  is_selected = @player_preference.selected_sprite == sprite
+%>
+
+<label for="<%= id_prefix %><%= sprite %>"
+       class="sprite-card <%= 'invalid' unless is_valid %> <%= 'selected' if is_selected %> avatar-<%= entry['status'] %>"
+       title="<%= avatar_card_title(entry) %>"
+       data-sprite="<%= sprite %>">
+
+  <div class="sprite-headshot-container">
+    <%= image_tag sprite_headshot_path(sprite),
+                  class: 'sprite-headshot',
+                  alt: entry['name'],
+                  loading: 'lazy' %>
+    <span class="headshot-fallback headshot-fallback-hidden"><%= entry['name'] %></span>
+  </div>
+
+  <% unless is_valid %>
+    <div class="sprite-lock-overlay">
+      <%= image_tag '/break_escape/assets/icons/padlock_32.png',
+                    class: 'lock-icon',
+                    alt: 'Locked' %>
+    </div>
+  <% end %>
+
+  <% if (badge = avatar_badge(entry)) %>
+    <span class="avatar-badge"><%= badge %></span>
+  <% end %>
+
+  <div class="sprite-info">
+    <%= f.radio_button :selected_sprite,
+                       sprite,
+                       id: "#{id_prefix}#{sprite}",
+                       disabled: !is_valid,
+                       class: 'sprite-radio' %>
+    <span class="sprite-label"><%= entry['name'] %></span>
+  </div>
+</label>

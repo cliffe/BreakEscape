@@ -1,0 +1,6 @@
+{
+  "display_name": "Test: mapping unlocks, flag reward doors, silence",
+  "description": "Engine check for an eventMapping unlockDoor that survives a reload, a flag reward unlock_door that opens the room it names, and the silence music playlist.",
+  "difficulty_level": 1,
+  "collection": "testing"
+}
