@@ -318,6 +318,9 @@ Narrator: HaX is on the line from the Citadel, already packing.
 - hax_confession_answer == "afterwards":
     Agent HaX: You said afterwards. I'm holding you to it.
 }
+// R36 (VM weave): HaX names the player's own technical arc once, concept level.
+Agent HaX: And think how we did it. Onto their catalogue on a night-run login someone left on a slip, then up to the box's keeper to reach the ledger.
+Agent HaX: Onto the Architect's own server through a hole in his enrolment site, then the same climb to lift his name and his notice. Access, escalate, recover. Twice over.
 Agent HaX: I still owe you the rest. When this is over.
 // Why the team goes in together, the last spoken line. double_crossed first.
 {

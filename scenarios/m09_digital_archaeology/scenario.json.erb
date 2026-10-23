@@ -61,8 +61,9 @@ salvage_tail = %q{\n\nSALVAGE CAGE ACCESS\nMSJMQAEGDZNVI}
 # by the opus48 agent against the VM; Opus agents don't open the VM plan.
 catalogue_login_user = "catalogsvc"
 catalogue_login_password = "Catalog!Helena2016"
-tomb_beta_login_user = "nostromousr"
-tomb_beta_login_password = "TombBeta!Enrol16"
+# Tomb Beta's enrolment site is entered through a web-server weakness, not a
+# login (VM settled 2026-10-23), so no account strings here: the binder points
+# at the live enrolment site, it doesn't hand over a sign-in.
 
 # Blind playtest F13: the two target addresses. m01/m02 print a target's address
 # in an in-game note. Here the address comes from the binding when it has one
@@ -1590,12 +1591,18 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "takeable": false,
           "observations": "The drop terminal. Anything you pull off the catalogue server goes to HaX through here.",
           "acceptsVms": ["catalogue_server"],
+          "acceptsVmLabels": { "catalogue_server": "the catalogue server" },
           "puzzle_graph_unlocks": "restricted_stacks",
           "puzzle_graph_note": "Flag 1 here sets flag1_submitted; HaX's unlockDoor mapping opens the restricted stacks.",
           "flags": <%= flags_for_vm('catalogue_server', ['flag{m09_catalogue_index}', 'flag{m09_initiative_ledger}']) %>,
+          "_comment_hints": "R31 game-side fallback: a Tomb Beta flag tried here is a hint, not a submission, so it is not consumed and the player is sent to the salvage-cage link.",
+          "hintOnlyFlags": {
+            "tomb_beta_server:flag_1": "That flag's off Tomb Beta's box, not the catalogue. Its drop link is in the salvage cage.",
+            "tomb_beta_server:flag_2": "That flag's off Tomb Beta's box, not the catalogue. Its drop link is in the salvage cage."
+          },
           "flagRewards": [
-            { "type": "set_global", "key": "flag1_submitted", "value": true },
-            { "type": "set_global", "key": "flag2_submitted", "value": true }
+            { "type": "set_global", "key": "flag1_submitted", "value": true, "label": "Catalogue index captured. The restricted stacks are open." },
+            { "type": "set_global", "key": "flag2_submitted", "value": true, "label": "The Initiative's ledger captured." }
           ]
         },
         {
@@ -2420,10 +2427,11 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "takeable": false,
           "observations": "A drop link wired into Tomb Beta's rack. It takes what you pull off this server, and nothing else.",
           "acceptsVms": ["tomb_beta_server"],
+          "acceptsVmLabels": { "tomb_beta_server": "Tomb Beta's server" },
           "flags": <%= flags_for_vm('tomb_beta_server', ['flag{m09_tomb_beta_owner}', 'flag{m09_tomb_beta_control}']) %>,
           "flagRewards": [
-            { "type": "set_global", "key": "flag3_submitted", "value": true },
-            { "type": "set_global", "key": "flag4_submitted", "value": true }
+            { "type": "set_global", "key": "flag3_submitted", "value": true, "label": "Tomb Beta's owner credential captured." },
+            { "type": "set_global", "key": "flag4_submitted", "value": true, "label": "Full control of Tomb Beta captured." }
           ]
         },
         {
@@ -2491,7 +2499,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
                 { "condition": "globalVars.notebook_read", "value": "A ring binder of enrolment sheets, pencilled in a hand you have seen tonight." },
                 { "condition": "globalVars.nightshade_file_held", "value": "A ring binder of enrolment sheets, pencilled in a hand you have seen tonight." }
               ],
-              "text": "TOMB BETA -- WORKSHOP ENROLMENT, SPRING INTAKE\nTwelve names, a photograph clipped to each.\nPencilled beside most of them: Ready. Not yet. Ask properly.\nInside the back cover, typed: Enrolment site, on <%= tomb_beta_server_ip %>. User: <%= tomb_beta_login_user %>. Password: <%= tomb_beta_login_password %>.",
+              "text": "TOMB BETA -- WORKSHOP ENROLMENT, SPRING INTAKE\nTwelve names, a photograph clipped to each.\nPencilled beside most of them: Ready. Not yet. Ask properly.\nInside the back cover, typed: Enrolment site still answering on <%= tomb_beta_server_ip %>. The old web service was never shut down.",
               "onRead": { "setVariable": { "tomb_beta_login_found": true } }
             }
           ]

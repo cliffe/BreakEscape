@@ -739,8 +739,8 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     - else:
         // VM hint, flag 3: checked against the VM plan (opus48). Line kept vague: the owner reveal is the player's to make, not spoken here.
         First, whose box it is. Somebody set it up and never handed it back.
-        // VM gating F12 (handoff A5 item 2): the login is a find in the cage.
-        Its web login's in the enrolment binder, in the crate stencilled BETA.
+        // VM settled 2026-10-23: Tomb Beta is entered through its old enrolment site, not a login. The binder (BETA crate) points to it.
+        Its enrolment site's still live on the web. The binder in the crate stencilled BETA says where.
     }
     -> support_hub
 // 5. The salvage keypad. First ask quotes the coded line (S6 §2.3), each its
@@ -978,9 +978,9 @@ Sent. He'll read it tonight.
     Flag three's in. Before the name, put his file beside the notebook scan in my case file. Then tell me what you see.
 - flag3_submitted:
     Flag three's in. Stay on. I'm ringing you.
-// VM gating F12: the login before anything else on his box.
+// VM settled 2026-10-23: find the enrolment site before anything else on his box (tomb_beta_login_found latches the binder read).
 - salvage_opened and not tomb_beta_login_found:
-    Flag three. His box's login is in the enrolment binder, in the BETA crate. Then find out whose box it is.
+    Flag three. His box runs an enrolment site on the web; the binder in the BETA crate points to it.
 - salvage_opened and nightshade_file_held:
     Flag three. Find out whose box that is.
 - salvage_opened:
@@ -1097,7 +1097,7 @@ That's Helena done. Once you're on the plane, the archive's closed to us.
     ~ tomb_beta_guide_hint_given = true
     // VM hint, flag 3: checked against the VM plan (opus48). Points at the guide only, no method, no commands.
     #give_item:lab-workstation:m09_tomb_beta_field_guide
-    On your workstation. Read the part about old accounts nobody closed.
+    On your workstation. Read the part about old services nobody shut down.
     -> guides_menu
 + {archive_code_guide_offered and not archive_code_guide_hint_given} [The archive's code.]
     ~ archive_code_guide_hint_given = true
