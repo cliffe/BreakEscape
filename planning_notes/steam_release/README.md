@@ -1,6 +1,8 @@
 # Steam release plan
 
-Status: draft plan, 2026-10-22. Nothing here is decided until the user answers the questions in `OPEN_QUESTIONS.md`. Entitlements, keys and the subscription model are covered in `ENTITLEMENTS.md`.
+Status: draft plan, 2026-10-22. Entitlements, keys and the subscription model are covered in `ENTITLEMENTS.md`. The open architecture questions are in `OPEN_QUESTIONS.md`.
+
+**Decided 2026-10-24: the Steam games are online only, with Hacktivity as the back end.** Every game, Eldritch Hacker included, runs as Mode A below. The local engine (Mode B), the hybrid VM option and the offline VM pack are dropped. The sections on them are kept, struck through in the headings, as a record of what was considered.
 
 Scope: SAFETYNET: Licence to Hack (m01–m10) first. Eldritch Hacker and later games reuse the same desktop shell and entitlement model, and are easier because they need no VMs (see `planning_notes/eldritch_hacker/DIRECTION.md`).
 
@@ -9,7 +11,7 @@ Scope: SAFETYNET: Licence to Hack (m01–m10) first. Eldritch Hacker and later g
 Facts from the code (surveyed 2026-10-22), which shape every option below:
 
 - **The server holds the game logic.** `app/controllers/break_escape/games_controller.rb` (about 2,600 lines) serves scenario slices, lazy room loads, container contents, unlock validation (`Game#validate_unlock`, game.rb:1022), flag checks, objectives and `conclude`. The client never holds the real PIN or password. Ink is compiled on request by shelling out to `bin/inklecate`. `scenario.json.erb` is rendered once, when the game is created, into `games.scenario_data`.
-- **Standalone mode still needs Rails and PostgreSQL** (`BREAK_ESPACE_STANDALONE`, `DemoUser`, test/dummy). There is no working static mode.
+- **Standalone mode still needs Rails and PostgreSQL** (`BREAK_ESCAPE_STANDALONE`, `DemoUser`, test/dummy). There is no working static mode.
 - **No build step on the client.** Native ES modules, with Phaser 3.60 and easystar loaded from the jsdelivr CDN. They have to be vendored for a desktop build.
 - **Size:** public/break_escape is about 845 MB (characters 372 MB, backgrounds 243 MB, music 138 MB), plus tts_cache at about 197 MB. Fine for Steam.
 - **Every m01–m10 mission needs a SecGen VM set.** All of them have a `secgen_scenario`. Flags are per-build values from Hacktivity (`vm_flags_json`). With no VM there is no way to finish a mission: the `flag{N}` alias works only outside production.
@@ -40,7 +42,7 @@ Shared work for any shell:
 
 There are two ways to do this, and they can share one client.
 
-### Mode A: online thin client (fastest to ship)
+### Mode A: online thin client (chosen)
 
 The Electron window loads the game from Hacktivity, the same as the browser. The desktop app adds:
 
@@ -50,7 +52,7 @@ The Electron window loads the game from Hacktivity, the same as the browser. The
 
 For: almost no engine changes, and VMs and flags work as they do now. Against: online-only (needs a "requires internet" note on the store page), every Steam player costs us VM capacity, and an outage on Hacktivity breaks the Steam product.
 
-### Mode B: local engine (needed for Eldritch Hacker; optional for Licence to Hack)
+### ~~Mode B: local engine~~ (dropped 2026-10-24: online only)
 
 Move the server-side game logic into a JavaScript module that runs in Electron's main process and answers the same API the client already calls (`apiBasePath`). The client sees no difference.
 
@@ -71,16 +73,16 @@ The options, from least to most work:
 3. **Local VM pack.** Ship pre-built VM images (one SecGen build per mission, plus a Kali-style attacker image) as an optional free DLC/depot for VirtualBox or QEMU. Flags are fixed per release and checked locally against hashes. No server cost. Against: several GB per mission, players have to install and network a hypervisor (a big support load for a general Steam audience), and fixed flags will end up in online walkthroughs. That matters little for a single-player game but breaks the "every player gets their own build" idea.
 4. **Browser-only "Steam edition" of Licence to Hack.** Replace each VM step with an in-game simulated terminal. This contradicts the decided positioning ("real hacking on real VMs"), so it is listed only for completeness, and needs the user's call.
 
-Recommendation: ship Licence to Hack on Steam as **option 2 (hybrid)**, with **option 3 as an optional "offline lab pack"** for technical players later if demand shows up. Start with Mode A for an early access or beta build, because it can ship before the JS port is done. The same Mode A shell becomes Mode B by switching the API base path to the local engine.
+Decided 2026-10-24: **option 1 (hosted VMs only)**. Options 2 and 3 are dropped with Mode B, and option 4 contradicts the positioning. How capacity, allowance and queueing work is in `OPEN_QUESTIONS.md` (area D).
 
-VM cost guard rails (needed for options 1 and 2): a per-SteamID allowance of VM hours, idle shutdown (the activation timers already exist), one active set at a time, and a waiting room when the cluster is full. Add a dashboard for Steam-sourced VM usage so pricing can be checked against real cost after launch.
+VM cost guard rails: a per-SteamID allowance of VM hours, idle shutdown (the activation timers already exist), one active set at a time, and a waiting room when the cluster is full. Add a dashboard for Steam-sourced VM usage so pricing can be checked against real cost after launch.
 
 ## Store packaging
 
 - **One app per game:** "SAFETYNET: Licence to Hack" as one Steam app containing m01–m10. Eldritch Hacker is a separate app later. A Steam franchise/developer page ("Hacktivity Games") ties them together.
 - Don't split the missions into per-mission DLC: it fragments the story and makes VM allowance accounting harder. A **demo app** (m01 only, VM stage included, using a small allowance) is worth it: Steam demos have their own app ID and store page.
 - Achievements: map to existing objectives and the on_game_complete / on_task_complete hooks.
-- Steam Cloud: Mode B saves; for Mode A the server is the save.
+- Steam Cloud: not needed; the server holds the saves.
 - Steam Deck: needs controller input (the game is keyboard/mouse driven at the moment, so the minigames especially need a pass) and readable text at 1280×800. This is separate work and could follow launch, marked "Playable" rather than "Verified".
 - Ratings: IARC questionnaire through Steamworks; Steamworks app fee per app (currently US$100, refunded after enough revenue; verify).
 
@@ -90,7 +92,6 @@ VM cost guard rails (needed for options 1 and 2): a per-SteamID allowance of VM 
 2. **Client prep in BreakEscape:** vendor CDN scripts, precompile ink, make sure no code assumes a browser URL bar (back button, `window.location` redirects to Hacktivity pages).
 3. **Electron shell, Mode A:** Steam sign-in, account link, entitlement check, overlay, achievements. Internal testing on Windows, Linux and Deck.
 4. **Steamworks setup:** app, depots, demo app, store page, pricing, and the key and parity rules (see `ENTITLEMENTS.md`). Coming Soon page at least two weeks before launch (Steam requirement; verify).
-5. **Early access / beta release on Mode A** with VM allowance guard rails.
-6. **Local engine (Mode B)** plus the conformance suite; switch Licence to Hack to hybrid.
-7. **Eldritch Hacker** on Mode B from the start: fully offline, no VMs, no server cost.
-8. Optional: the offline lab pack, and a Deck controller pass.
+5. **Early access / beta release** with VM allowance guard rails.
+6. **Eldritch Hacker** as a second app on the same shell and back end. It needs no VMs, so its only running cost is the Hacktivity web load.
+7. Optional: a Deck controller pass.
