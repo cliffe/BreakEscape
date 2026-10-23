@@ -2279,7 +2279,7 @@ boardroom_pin = "0417"
         {
           "type": "vm-launcher",
           "id": "vm_launcher_rooting_for_a_win",
-          "name": "VM Access Terminal",
+          "name": "SAFETYNET Field Console",
           "takeable": false,
           "observations": "Your SAFETYNET field box -- the Kali kit you patched into the server room's isolated segment, the one point in the building that can still reach the backup server's network. HaX pushes your tools and field guides to it from here.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
@@ -2295,26 +2295,37 @@ boardroom_pin = "0417"
           "takeable": false,
           "observations": "Secure terminal for submitting intercepted intelligence and VM flags",
           "acceptsVms": ["hospital_backup_server"],
+          "acceptsVmLabels": { "hospital_backup_server": "St. Catherine's backup server" },
           "flags": <%= flags_for_vm('hospital_backup_server', ['flag{ssh_access_granted}', 'flag{proftpd_backdoor_exploited}', 'flag{database_backup_located}', 'flag{ghost_operational_log}']) %>,
+          <%# rewards[i] pairs with flags[i]. flags 1 and 2 used to fire emit_events
+              (ssh_flag_submitted / proftpd_flag_submitted) that nothing listened to --
+              the whole thread keys on objective_task_completed:submit_*_flag -- so they
+              showed only a toast. R18: each now prints a small carried artefact the VM
+              already holds (Gary's recovery crib for the SSH foothold, the root-only
+              deployment log for the ProFTPD step), matching flags 3/4. %>
           "flagRewards": [
             {
-              "type": "emit_event",
-              "event_name": "ssh_flag_submitted",
-              "description": "SSH access flag submitted - server credentials intercepted"
+              "type": "give_item",
+              "item_name": "Gary's Recovery Crib Sheet",
+              "label": "SSH foothold confirmed — a page lifted from Gary's account.",
+              "description": "SSH access flag submitted - the drop-site prints the recovery crib lifted from Gary's account"
             },
             {
-              "type": "emit_event",
-              "event_name": "proftpd_flag_submitted",
-              "description": "ProFTPD exploitation flag submitted - shell access established"
+              "type": "give_item",
+              "item_name": "Equipment Deployment Log",
+              "label": "ProFTPD backdoor exploited — root on the backup server, with Ghost's deployment log.",
+              "description": "ProFTPD exploitation flag submitted - root access prints Ghost's equipment deployment log"
             },
             {
               "type": "give_item",
               "item_name": "Verified Restore Manifest",
+              "label": "Backup catalogue mapped — a verified restore manifest is cut.",
               "description": "Database backup flag submitted - the drop-site cuts a verified restore manifest from the recovered catalogue"
             },
             {
               "type": "unlock_object",
               "objectId": "entropy_staging_cache",
+              "label": "Ghost's operational log recovered — the ENTROPY staging cache opens.",
               "description": "Ghost's operational log submitted - ENTROPY Staging Cache unlocks automatically"
             }
           ],
@@ -2323,6 +2334,26 @@ boardroom_pin = "0417"
     of which snapshot is safe to restore. Item-backed, so the console reads the
     player's inventory rather than a hidden global. %>
           "itemsHeld": [
+            {
+              "type": "text_file",
+              "id": "gary_recovery_crib",
+              "name": "Gary's Recovery Crib Sheet",
+              "takeable": true,
+              "readable": true,
+              "text": "ST. CATHERINE'S IT // BACKUP ADMIN CRIB SHEET\nCopied from gary's account on the backup server once the foothold was in.\n\n- Admin login is still the old shared password. Never rotated.\n- Nightly restore runbook: use the Hospital Recovery Console in the server room.\n- Vendor advisory (ignored): the file-transfer service on this box ships a known backdoor. Patch released years ago. Never applied -- flagged as 'no downtime window'.\n\nThe door was propped open and labelled. We just walked through it.",
+              "observations": "Lifted from Gary's account the moment the SSH foothold landed: the reused admin password and a file-transfer advisory nobody ever acted on. Not root yet -- but you are inside.",
+              "puzzle_graph_role": "reward"
+            },
+            {
+              "type": "text_file",
+              "id": "equipment_deployment_log",
+              "name": "Equipment Deployment Log",
+              "takeable": true,
+              "readable": true,
+              "text": "EQUIPMENT DEPLOYMENT LOG // RESTRICTED\nRecovered from root on the backup server after the ProFTPD backdoor gave way.\n\nInside contact: unpaid contractor, standing grievance over a withheld invoice.\nOverride badge ran the evacuation drill six weeks ago.\nSame badge held the server-room doors open again on Friday night.\nBadge number: withheld in this log.\n\nWhoever propped ENTROPY's door is on the staff list, not the payroll.",
+              "observations": "Pulled from root once the ProFTPD backdoor gave way -- Ghost's own deployment log. It describes the insider exactly, but stops short of a badge number.",
+              "puzzle_graph_role": "reward"
+            },
             {
               "type": "text_file",
               "id": "verified_restore_manifest",

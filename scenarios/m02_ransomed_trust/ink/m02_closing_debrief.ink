@@ -264,9 +264,12 @@ Agent HaX: We don't have a name. We have a philosophy, a signature, and now two 
     Agent HaX: The manifesto -- read it again when you have time. It's how they see themselves. Understanding their ideology matters for what comes next.
 }
 
-{not flag_ghost_log_submitted and not lore_ghosts_manifesto_found:
-    Agent HaX: The exploit chain was exactly what Ghost's communications suggested -- the ProFTPD 1.3.3c backdoor, fourteen years unpatched. Standard ENTROPY playbook.
-}
+// R6: the technical-arc recap is unconditional now. It used to be gated to
+// players who did NOT submit the ghost log and did NOT find the manifesto, so the
+// completionist -- who most earned the reflection -- was routed to the manifesto
+// lines and never heard it. Same line, always fires; it sits alongside, not
+// instead of, the manifesto beats above.
+Agent HaX: The exploit chain was exactly what Ghost's communications suggested -- the ProFTPD 1.3.3c backdoor, fourteen years unpatched. Standard ENTROPY playbook.
 
 {ghost_keys_used:
     Agent HaX: And you took Ghost's keys. Free, on Ghost's terms -- the restore ran on the attacker's goodwill, and the price was a promise.
