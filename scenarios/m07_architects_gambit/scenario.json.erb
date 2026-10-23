@@ -948,11 +948,11 @@ scada_password = "CascadeWindow19"
               "sendTimedMessage": { "delay": 1500, "message": "Their listener gives out passwords in clear, the control room door's included. Capture's in your inventory. You've got a name and a password now. Want the SSH guide?" }
             },
             {
-              "_comment": "PASS 5 alignment r1 (M3): the flag 3 login closes the redirect window. Say so before it happens, only to a player who could still move the team.",
+              "_comment": "R5 (VM weave): once the operator password is in hand, submitting the login flag is what closes the redirect window. Fire a can't-miss warning the instant flag 2 lands while the window is still open, for every player (not only one who already revised the projection and assigned a team), so nobody loses the chance to move the team without warning. R4: the trigger is the flag going through the relay, not the act of logging in on the host.",
               "eventPattern": "global_variable_changed:flag2_submitted",
-              "condition": "value === true && globalVars.projection_revised === true && globalVars.team_assigned === true && !globalVars.team_redirected && globalVars.team_assignment !== 'trojan_horse' && !globalVars.redirect_window_closed",
+              "condition": "value === true && !globalVars.redirect_window_closed && !globalVars.team_redirected",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 6000, "message": "Before you log in: if the team's moving, move it now. Once they see you on that host, it stays where it is." }
+              "sendTimedMessage": { "delay": 6000, "message": "The moment that operator flag goes through the relay, they see you and the window to move the team shuts for good. If you're moving them, now's the time." }
             },
             {
               "_comment": "PASS 5 alignment r1 (M3): the debrief tells a player who found the correction with the window open from one who found it after it shut. Set when the correction lands with the window open and the team on something other than Trojan Horse...",
@@ -1899,7 +1899,7 @@ scada_password = "CascadeWindow19"
         {
           "type": "vm-launcher",
           "id": "vm_launcher_attack_terminal",
-          "name": "VM Access Terminal",
+          "name": "Field Console (Kali)",
           "takeable": false,
           "observations": "The Kali box you set up here on the maintenance VLAN -- your working machine for reaching the host that is running the cascade.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
@@ -1920,6 +1920,7 @@ scada_password = "CascadeWindow19"
     items, so the relay the flag is submitted at carries the annotation. %>
           "puzzle_graph_unlocks": "scada_control",
           "acceptsVms": ["scada_attack_host"],
+          "acceptsVmLabels": { "scada_attack_host": "ENTROPY's backup host" },
           "flags": <%= flags_for_vm('scada_attack_host', ['flag{nfs_coordination_traffic}', 'flag{netcat_c2_intercepted}', 'flag{operator_account_login}', 'flag{root_on_attack_host}']) %>,
 <%# flagRewards is INDEX-PARALLEL to flags (games_controller.rb:1748) -- one
     reward object per flag, in order. set_global and unlock_object are
@@ -1934,22 +1935,26 @@ scada_password = "CascadeWindow19"
             {
               "type": "give_item",
               "item_name": "Coordination Schedule -- Relay Decode",
+              "label": "Coordination schedule pulled off their open share",
               "description": "NFS export read -- the relay has decoded the coordination file it points at, and the operator account's name"
             },
             {
               "type": "give_item",
               "item_name": "Listener Capture -- Operator Credentials",
+              "label": "Listener capture saved -- operator password in clear",
               "description": "Listener read -- the operator password, and the control room door password in clear"
             },
             {
               "type": "set_global",
               "key": "flag3_submitted",
               "value": true,
+              "label": "Logged in as their operator -- the host has noticed you",
               "description": "Logged in as their operator -- and the host has noticed you"
             },
             {
               "type": "unlock_object",
               "objectId": "crisis_control_system",
+              "label": "Root on their host -- the abort console unlocks",
               "description": "Root on the attack host -- job killed, remote access locked out, the cascade control system will take an abort"
             }
           ],

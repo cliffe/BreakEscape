@@ -156,9 +156,9 @@ The team's logged for {team_assignment == "fracture": Fracture, Washington|{team
             It's running, and root's in. The console in the control room takes the abort now.
             -> door_line ->
         - cascade_armed:
-            It's running. Fifteen minutes from your login on their host. Get root, then put the abort in at the control room console.
+            It's running. Fifteen minutes from when that login went through the relay. Get root, then put the abort in at the control room console.
         - else:
-            No clock yet. The sequence waits on the host that drives it. The moment you log in there, assume they start it.
+            No clock yet. The sequence waits on the host that drives it. The moment your login goes through the relay, assume they start it.
             So open the control room door first. The console in there is the only place the abort goes in.
         }
     }
@@ -321,7 +321,7 @@ HaX here, Agent. I've got your channel and the board.
     {countdown_expired:
         Step one ran. Seattle's dark. Steps two to four wait on the abort.
     - else:
-        The clock's running. Fifteen minutes from your login on their host.
+        The clock's running. Fifteen minutes, from the moment you put that login through the relay.
     }
     // Root in with an earlier flag still missing: the ladder below stops at
     // that flag, so the abort is named here.
@@ -361,12 +361,12 @@ HaX here, Agent. I've got your channel and the board.
 - not flag2_submitted:
     Scan every port on their host. Something answers whoever connects. Its flag goes through the relay.
 - not scada_door_reached and not flag3_submitted:
-    Open the control room door, north of the server hall, before you log in on their host.
+    Open the control room door, north of the server hall, before you put that login flag through the relay.
     -> password_line ->
 - not flag3_submitted:
-    One login: the name from the share, the password from the listener. That account holds the next flag. The moment you log in, the clock starts.
+    One login: the name from the share, the password from the listener. That account holds the next flag. Submit it and the clock starts.
     {projection_revised and team_assigned and team_assignment != "trojan_horse" and not team_redirected and not redirect_window_closed:
-        If you mean to move the team, do it before you log in.
+        If you mean to move the team, do it before that flag's in.
     }
 - not flag4_submitted:
     Get root on their host and put the root flag through the relay. The console opens itself after.
@@ -597,7 +597,7 @@ One authority signing for all four. One operation wearing four coats.
         The window's shut. It goes in the report as found, not as ignored.
     - else:
         {team_assigned:
-            That's grounds to move the team. The window's open until they're too committed, or until you log in on their host. Whichever comes first.
+            That's grounds to move the team. The window's open until they're too committed, or until that login goes through the relay. Whichever comes first.
         - else:
             The team's still waiting on your call. If you're making it now, that's where it goes.
         }
@@ -625,7 +625,7 @@ You pay for it with the operation you abandon. Your call.
 // Engine regression fixes (2026-10-17, blind A M2): "now or never" read as
 // "decide before you read anything". The window shuts on the operator login
 // (flag 3) or the forty-minute timer, so say which.
-The window stays open until you log in as their operator, or the timer on screen runs out. Then the team stays put.
+The window stays open until that operator login goes through the relay, or the timer on screen runs out. Then the team stays put.
 
 -> redirect_open_choices
 
@@ -652,7 +652,7 @@ The window stays open until you log in as their operator, or the timer on screen
 + [No. Leave them where they are.]
     #set_global:redirect_declined:true
     ~ redirect_declined = true
-    Then they stay. I'll log that you weighed it and held. If that changes before you log in as their operator, tell me.
+    Then they stay. I'll log that you weighed it and held. If that changes before that operator login goes through the relay, tell me.
     -> hub
 
 === redirect_closed ===
@@ -842,9 +842,9 @@ Submit its flag and the relay hands you the capture. The control room password's
 ~ vm3_hint_given = true
 You've got a name from the share and a password from the listener. That's one login, and that account holds the next flag.
 
-But open the control room door first. The moment you log in, assume they see you and start the clock.
+But open the control room door first. The moment you put that login flag through the relay, assume they see you and start the clock.
 {projection_revised and team_assigned and team_assignment != "trojan_horse" and not team_redirected and not redirect_window_closed:
-    And if you mean to move the team, do it before you log in. Once they see you, it stays where it is.
+    And if you mean to move the team, do it before that flag's in. Once they see you, it stays where it is.
 }
 -> hub
 
@@ -933,7 +933,7 @@ Go.
 === guide_nfs ===
 ~ nfs_guide_hint_given = true
 #give_item:lab-workstation:m07_nfs_field_guide
-NFS and netcat guide's in your kit.
+NFS and netcat guide's in your inventory now -- open it to read it.
 
 Read what the host shares, without changing it.
 
@@ -948,7 +948,7 @@ SSH guide's in your kit. The worked example's the hospital job. Skip the Hydra h
 
 You've got a name from the share and a password from the listener. That's one login. Use it and look through what that account holds.
 
-Log in when the control room door's open, not before. Go.
+Put that login through the relay only once the control room door's open, not before. Go.
 -> hub
 
 === guide_privesc ===
