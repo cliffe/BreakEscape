@@ -16,7 +16,7 @@
       },
       "_prefix": "Prefix for the full episode (id e1_invoice_fraud). The defend-only shell (id e1_invoice_fraud_defend) sets episode_e1_invoice_fraud_defend_defend_ instead. No stage on purpose: the effective stage is 'mission', and an explicit training or mission stage with passPercent 0 draws a validator warning.",
       "title": "Brightwell payments inbox",
-      "brief": "You're covering Brightwell's payments inbox before the three o'clock payment run. Five messages are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. Reporting a real message never costs you anything.",
+      "brief": "You're covering Brightwell's payments inbox before the three o'clock payment run. Six messages are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "scoringProfile": "awareness",
       "verifyVerdict": true,
       "feedbackMode": "immediate",
@@ -62,7 +62,8 @@
             "whyFine": {
               "attachmentPlausible": "An invoice PDF from a supplier you buy from, quoting a purchase order you raised, is exactly what you'd expect.",
               "default": "It's from Harlow's real domain, it matches a purchase order Brightwell raised, and it asks for nothing new: the same terms and the same bank details."
-            }
+            },
+            "falseAlarmCost": "Left unpaid, September's cartons would hold up the next delivery."
           }
         },
         {
@@ -230,7 +231,7 @@
       "id": "finance_form_a",
       "_form": "Finance parallel form A. Authored as pre; the BA check pair launches it as post (minigameData.stage). Item n here matches item n in finance_form_b on phish or genuine, flags, header results and difficulty; the table is in ../BRAND_SET.md.",
       "title": "Payments inbox check",
-      "brief": "Ten messages from a Brightwell Foods payments inbox. Brightwell banks with Calderbrook Bank and only pays suppliers it already deals with. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten messages from a Brightwell Foods payments inbox. Brightwell banks with Calderbrook Bank and only pays suppliers it already deals with. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "stage": "pre",
       "pairedWith": "finance_form_b",
       "scoringProfile": "awareness",
@@ -574,7 +575,7 @@
       "id": "finance_form_b",
       "_form": "Finance parallel form B. Authored as post; the BA check pair launches it as pre (minigameData.stage). Item n here matches item n in finance_form_a; the table is in ../BRAND_SET.md.",
       "title": "Payments inbox check",
-      "brief": "Ten messages from a Brightwell Foods payments inbox. Brightwell banks with Calderbrook Bank and only pays suppliers it already deals with. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten messages from a Brightwell Foods payments inbox. Brightwell banks with Calderbrook Bank and only pays suppliers it already deals with. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "stage": "post",
       "pairedWith": "finance_form_a",
       "scoringProfile": "awareness",
@@ -942,7 +943,7 @@
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e1_invoice_fraud_defend), which has no OSINT, write or flip stage. P7-J copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are simply never shown).",
-      "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. You're covering the payments inbox this afternoon, and five messages are waiting. Some are real and some were built to trick you. Sort them, and report or check anything that doesn't sit right. Reporting a real message never costs you anything.",
+      "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. You're covering the payments inbox this afternoon, and six messages are waiting. Some are real and some were built to trick you. Sort them, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: the Brightwell payments inbox."
     }
   }

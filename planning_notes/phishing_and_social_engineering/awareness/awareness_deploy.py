@@ -12,9 +12,9 @@ heading "The habit to keep" is used). See episode-model.js awarenessSettings and
 """
 
 AWARENESS_RULE_OF_THUMB_TEXT = (
-    "When a message pressures you to move money, grant access or read back a code, stop and check "
-    "it using contact details you already have, rather than the ones the message gives you. Taking "
-    "a minute to confirm is always a fair thing to do."
+    "When a message pressures you to move money, grant access, sign in or read back a code, "
+    "stop and check it yourself through a route you already trust, not the link, number or "
+    "page the message gives you. Taking a minute to confirm is always a fair thing to do."
 )
 
 

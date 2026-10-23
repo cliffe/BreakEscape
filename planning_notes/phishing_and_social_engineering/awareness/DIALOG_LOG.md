@@ -1120,3 +1120,104 @@ show no Monday card, so they are unaffected.
 - Screenshots looked at: the E1 flip after choosing `pretext_bank_change` shows the per-branch defender
   line quoting the urgent run-due pretext; a rendered E1 debrief shows "The habit to keep" box above the
   Monday card, the card pointing at the "How to report here" box below.
+
+## Data fixer: playtest P5 findings, round 7 (2026-10-23)
+
+Fixing the P5 data items from `playtests/PLAYTEST_P5_E1_E4.md` and `PLAYTEST_P5_E5_E7.md`.
+Source-of-record edits in the fragments + four generators + the seven hand-authored full erbs;
+the 31 generated shells (7 defend-only + 24 checks) regenerated and copied in. No voiced NPC line
+changed: every edit is brief / debrief / flip / persona-reply / description UI text, or (E3) ink
+choice display-conditions and a VAR — no spoken ink line text was touched, and awareness has no TTS
+cache. Engine fixer owns the parallel P5 items.
+
+### P5-4 (E1–E4) + P5-2 (E5–E7): the "never costs you anything" briefs vs the result's stated cost
+The briefs promised "Reporting a real message never costs you anything" while the result screen now
+names a cost. Reworded every brief/description to agree with the result: reporting when unsure is
+always fine and never marked down, but a real one reported does take a colleague's time.
+- Base (message/page): "Reporting when you're unsure is always fine and never marked down, though a
+  real one does take a colleague's time to check."
+- Call (E3): "Ringing back when you're unsure is always fine and never marked down, though a real
+  caller does take a colleague's time to check."
+- E4 (report-or-check): "Reporting or checking when you're unsure is always fine and never marked
+  down, though a real one does take a colleague's time to check."
+- Catalogue descriptions ("Each answer is explained, and …" / "Only the inbox is scored, and …")
+  shortened to "… reporting [or checking | ringing back] when you're unsure is always fine and never
+  marked down."
+- 40 occurrences across the 7 fragments + 4 generators + 7 full erbs, plus 7 full-episode
+  mission.json "Only the … is scored, and …" tails. No "never costs you anything" string remains in
+  any shell or fragment.
+
+### P5-9 (E1–E4): E1 says five messages, the inbox has six — count audit
+`e1_payments_inbox` holds six messages but the set brief and the defend-only brief said "Five".
+Fixed to "Six"/"six" in `e1/defend.json` (set brief + `_defendOnly` brief), the E1 full erb set
+brief, and `gen_e1_shells.py` (scenario_brief, endGoal, kiosk observations, success screen,
+mission.json description). Audited every shell's number words against its defend set size: E1 was the
+only genuine mismatch (E5 "Five pages"/5 and E6 "six things"/6 are correct; other number words were
+"three o'clock", "one email", etc.).
+
+### E5–E7 P5-1: E5 flip prose "showed a padlock" on a No-padlock build
+`strings.flipDefenderLine` (fragment + full erb) dropped "and showed a padlock", so it is now true
+whichever padlock choice the learner made: "The page wore the Quayholt look, so she began typing her
+password. … only the address in the bar gave it away."
+
+### E5–E7 P5-8: E5 miss reason / Hana's reply named Quayholt for a DocShare build
+Hana's `replies.missed` (attack fragment + full erb) reworded to name the service point without
+assuming the chosen brand: "That page wasn't Quayholt's own sign-in — the address was wrong, and it
+isn't where I log in — so I didn't put my password in. I'll go to the portal the normal way." True
+for both a Quayholt look-alike and a DocShare build. (Naming the specific chosen service — e.g.
+"DocShare" — would need the engine to inject the build's brand into the flip reply; left for engine.)
+
+### E5–E7 P5-12: E5 landed advisory "That feels rushed." too thin
+The E5 phish target had no `factorStrings.urgencyCalibrated.fail`, so the engine default
+"That feels rushed." showed. Added the E6/E7-style full sentence (attack fragment + full erb):
+fail "'Sign in before the end of the day' is the kind of deadline that gets someone to sign in
+before they stop to check the address.", failMissed "", redFlag "The 'before the end of the day'
+line pushes you to sign in before you check the address in the bar."
+
+### E5–E7 P5-13: E7 compose label talks of a call, options are addresses
+Renamed the `sender_address` slot label "the line it comes from" → "the address it comes from"
+(attack fragment + full erb); the options are email addresses.
+
+### E1–E4 P5-7: E3 call menu offered lines the prep card hid
+`leila_servicedesk.ink` gated the two ungated call choices on the same facts their
+`lines[*].requires` name: the name-drop line on `se_intel_quayholt_claims_head`, the no-callback line
+on `se_intel_quayholt_gordon_away` (new VAR declared; the global already exists). skip_verification
+stays always-available (it has no `requires`). Recompiled `leila_servicedesk.json` (darren_price.json
+unchanged).
+
+### truth.falseAlarmCost on genuine items (commit 1c8106fd1), where a concrete cost teaches better
+Added short, item-specific costs (fragment + full erb, parity kept):
+- E1 `e1_harlow_invoice`: "Left unpaid, September's cartons would hold up the next delivery."
+- E6 `e6_shift_moved`: "Dismissed as a scam, the new start time gets missed and the early run goes
+  short-handed."
+- E7 `e7_vm_ravinder_train`: "It asks for nothing, so little is lost, but flagging it has someone
+  chase Ravinder on the train to re-confirm invoices he already approved."
+- E7 `e7_vm_lindiwe_gate`: "Left unactioned, nobody rings Harlow, the driver takes the chilled
+  cartons back, and the delivery is lost."
+
+### aw4 rule of thumb: one shared rule, reworded to fit all channels (user approved one shared rule)
+Kept a single shared rule but adjusted the text so it fits sign-in pages (E5) and SMS/QR (E6) as well
+as money/call episodes. In `awareness_deploy.py` and the 7 full erbs:
+"When a message pressures you to move money, grant access, sign in or read back a code, stop and
+check it yourself through a route you already trust, not the link, number or page the message gives
+you. Taking a minute to confirm is always a fair thing to do." (adds "sign in"; "a route you already
+trust, not the link, number or page" replaces "contact details … rather than the ones", which did not
+fit a page or a QR code).
+
+### Pipeline / parity / checks
+- No-change baseline before editing: fresh regen of all 31 shells byte-identical to the repo. After
+  edits, regenerated into scratch and copied in only the 38 changed files (7 defend scenario.json.erb,
+  7 defend mission.json, 24 check scenario.json.erb; check mission.json carry no cost phrase so are
+  unchanged).
+- `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs`: 1810/1810 pass.
+  Fragment↔erb parity 7/7, rule-of-thumb identity (38 shells), genuine-feedback/falseAlarmCost checks.
+- Validator `--strict-social --no-graph --skip-ink` on all 38 shells: exit 0, only pre-existing
+  suggestions (leila_reset_granted, avatar, timedConversation).
+- E3 ink recompiled.
+- Full-episode bridges (keyless :3001, one at a time, no server start/stop, other sessions left alone):
+  e2 14/14, e3 21/21, e5 18/18, e6 15/15 PASS. e1 12/13, e4 13/14, e7 12/13 fail ONLY the final debrief
+  assertion `(!!noblame === (cards.length > 0))`. This is PRE-EXISTING, not from these edits: each
+  fails identically on the HEAD scenario (verified by swapping HEAD's erb in and back for e1/e4/e7).
+  The bridges were last green at the commit that added the awareness block (DIALOG_LOG 2026-10-23);
+  engine commits since (genuine-item feedback, 1c8106fd1) render `.aw-card` for trusted real items in a
+  perfect round, which the stale invariant does not expect. HAND BACK to the engine/bridge owner.

@@ -82,7 +82,7 @@
     "awareness": {
       "ruleOfThumb": {
         "heading": "The habit to keep",
-        "text": "When a message pressures you to move money, grant access or read back a code, stop and check it using contact details you already have, rather than the ones the message gives you. Taking a minute to confirm is always a fair thing to do."
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
       }
     },
     "triageSets": [
@@ -90,7 +90,7 @@
         "id": "e6_phone_messages",
         "playerSentAuth": { "accounts": { "analyst": { "spf": "pass", "dkim": "fail", "dmarc": "fail", "envelopeFrom": "bounce.tarrowby.example", "replyTo": "{account_address}" } } },
         "title": "Tarrowby work phone",
-        "brief": "It's your break at Tarrowby's Shipley depot, and six things are waiting on your work phone: texts, two printed notices you passed on site, and an email. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. On a notice, press 'Where does this code go?' to see the address behind the code. Reporting a real message never costs you anything.",
+        "brief": "It's your break at Tarrowby's Shipley depot, and six things are waiting on your work phone: texts, two printed notices you passed on site, and an email. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. On a notice, press 'Where does this code go?' to see the address behind the code. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
@@ -155,7 +155,8 @@
               "whyFine": {
                 "smish_shortlink_urgency": "There's no link at all. It points you to the staff app you already use, so you can check it there.",
                 "default": "It's from Shauna's number, which is already saved on your phone with earlier messages in the thread. It tells you about a change and asks you to do nothing except turn up."
-              }
+              },
+              "falseAlarmCost": "Dismissed as a scam, the new start time gets missed and the early run goes short-handed."
             }
           },
           {

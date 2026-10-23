@@ -33,7 +33,7 @@
       "id": "e5_links_inbox",
       "_prefix": "Prefix for the full episode (id e5_signin_pages). The defend-only shell (id e5_signin_pages_defend) sets episode_e5_signin_pages_defend_defend_ instead, as E1 does. No stage on purpose, as in E1.",
       "title": "Quayholt sign-in pages",
-      "brief": "Five pages are open in your browser, each one reached from a link in your Quayholt inbox this morning. For each one, choose Trust (you'd sign in), Report or Delete (you'd close it), then tick what you noticed. Press the address bar, the padlock and the certificate to look closer. Quayholt's own sites all end in .quayholt.example, such as sso.quayholt.example. Reporting a real page never costs you anything.",
+      "brief": "Five pages are open in your browser, each one reached from a link in your Quayholt inbox this morning. For each one, choose Trust (you'd sign in), Report or Delete (you'd close it), then tick what you noticed. Press the address bar, the padlock and the certificate to look closer. Quayholt's own sites all end in .quayholt.example, such as sso.quayholt.example. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "scoringProfile": "awareness",
       "verifyVerdict": false,
       "feedbackMode": "immediate",
@@ -178,7 +178,7 @@
       "id": "general_form_a",
       "_form": "General-staff parallel form A. Authored as pre; the BA check pair launches it as post (minigameData.stage). Item n here matches item n in general_form_b; the table is in _formPairing above.",
       "title": "Inbox and sign-in check",
-      "brief": "Ten items from a Quayholt Insurance inbox: emails, and pages opened from links. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten items from a Quayholt Insurance inbox: emails, and pages opened from links. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "stage": "pre",
       "pairedWith": "general_form_b",
       "scoringProfile": "awareness",
@@ -393,7 +393,7 @@
       "id": "general_form_b",
       "_form": "General-staff parallel form B. Authored as post; the BA check pair launches it as pre (minigameData.stage). Item n here matches item n in general_form_a; the table is in _formPairing above.",
       "title": "Inbox and sign-in check",
-      "brief": "Ten items from a Quayholt Insurance inbox: emails, and pages opened from links. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten items from a Quayholt Insurance inbox: emails, and pages opened from links. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "stage": "post",
       "pairedWith": "general_form_a",
       "scoringProfile": "awareness",
@@ -616,7 +616,7 @@
       "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: put together a fake Quayholt sign-in page from ready-made parts, choose the web address it would sit at, and send one email carrying its link. Nothing is built for real and nothing is collected. Then you swap seats and check five pages that Quayholt staff reached from links in their inbox. Only the pages are scored.",
       "flipHeading": "Now it lands on you",
       "flipIntro": "This is the page you put together, as Hana Novak, the claims handler you sent it to, would meet it after following the link. The parts picked out below are what make it believable.",
-      "flipDefenderLine": "Hana Novak, the claims handler you sent it to, opened the link between two claims. The page wore the Quayholt look and showed a padlock, so she began typing her password. That isn't carelessness: the page was built to pass for the real sign-in, and only the address in the bar gave it away.",
+      "flipDefenderLine": "Hana Novak, the claims handler you sent it to, opened the link between two claims. The page wore the Quayholt look, so she began typing her password. That isn't carelessness: the page was built to pass for the real sign-in, and only the address in the bar gave it away.",
       "flipNoSend": "Your page didn't go out this time, so there's nothing of yours to show. Next, the same kind of page turns up behind a link in a Quayholt inbox, and you're the one deciding whether to sign in.",
       "flipMissed": "The defence is the same either way: next, the same kind of page turns up behind a link in a Quayholt inbox, and you're the one deciding whether to sign in.",
       "flipMissedHeading": "Nothing to replay this time",
@@ -628,7 +628,7 @@
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e5_signin_pages_defend), which has no OSINT, write or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",
-      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. Five web pages are open, each one reached from a link in a Quayholt inbox. Some are real and some were built to collect your password. For each one, decide whether you'd sign in, and report anything that doesn't sit right. Reporting a real page never costs you anything.",
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. Five web pages are open, each one reached from a link in a Quayholt inbox. Some are real and some were built to collect your password. For each one, decide whether you'd sign in, and report anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: five pages opened from a Quayholt inbox."
     }
   }

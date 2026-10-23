@@ -85,14 +85,14 @@
     "awareness": {
       "ruleOfThumb": {
         "heading": "The habit to keep",
-        "text": "When a message pressures you to move money, grant access or read back a code, stop and check it using contact details you already have, rather than the ones the message gives you. Taking a minute to confirm is always a fair thing to do."
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
       }
     },
     "triageSets": [
       {
         "id": "e5_links_inbox",
         "title": "Quayholt sign-in pages",
-        "brief": "Five pages are open in your browser, each one reached from a link in your Quayholt inbox this morning. For each one, choose Trust (you'd sign in), Report or Delete (you'd close it), then tick what you noticed. Press the address bar, the padlock and the certificate to look closer. Quayholt's own sites all end in .quayholt.example, such as sso.quayholt.example. Reporting a real page never costs you anything.",
+        "brief": "Five pages are open in your browser, each one reached from a link in your Quayholt inbox this morning. For each one, choose Trust (you'd sign in), Report or Delete (you'd close it), then tick what you noticed. Press the address bar, the padlock and the certificate to look closer. Quayholt's own sites all end in .quayholt.example, such as sso.quayholt.example. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
         "scoringProfile": "awareness",
         "verifyVerdict": false,
         "feedbackMode": "immediate",
@@ -334,7 +334,7 @@
         "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: put together a fake Quayholt sign-in page from ready-made parts, choose the web address it would sit at, and send one email carrying its link. Nothing is built for real and nothing is collected. Then you swap seats and check five pages that Quayholt staff reached from links in their inbox. Only the pages are scored.",
         "flipHeading": "Now it lands on you",
         "flipIntro": "This is the page you put together, as Hana Novak, the claims handler you sent it to, would meet it after following the link. The parts picked out below are what make it believable.",
-        "flipDefenderLine": "Hana Novak, the claims handler you sent it to, opened the link between two claims. The page wore the Quayholt look and showed a padlock, so she began typing her password. That isn't carelessness: the page was built to pass for the real sign-in, and only the address in the bar gave it away.",
+        "flipDefenderLine": "Hana Novak, the claims handler you sent it to, opened the link between two claims. The page wore the Quayholt look, so she began typing her password. That isn't carelessness: the page was built to pass for the real sign-in, and only the address in the bar gave it away.",
         "flipNoSend": "Your page didn't go out this time, so there's nothing of yours to show. Next, the same kind of page turns up behind a link in a Quayholt inbox, and you're the one deciding whether to sign in.",
         "flipMissed": "The defence is the same either way: next, the same kind of page turns up behind a link in a Quayholt inbox, and you're the one deciding whether to sign in.",
         "flipMissedHeading": "Nothing to replay this time",
@@ -888,7 +888,10 @@
             "redFlag": null
           },
           "urgencyCalibrated": {
-            "pass": "✓ The pressure reads as believable"
+            "pass": "✓ The pressure reads as believable",
+            "fail": "'Sign in before the end of the day' is the kind of deadline that gets someone to sign in before they stop to check the address.",
+            "failMissed": "",
+            "redFlag": "The 'before the end of the day' line pushes you to sign in before you check the address in the bar."
           },
           "senderAuth": {
             "pass": "✓ Sender authentication would pass",
@@ -898,7 +901,7 @@
         },
         "replies": {
           "landed": "Thanks, I'll sign in through that link.",
-          "missed": "The address on that page isn't our usual Quayholt sign-in, so I didn't put my password in. I'll go to the portal the normal way."
+          "missed": "That page wasn't Quayholt's own sign-in — the address was wrong, and it isn't where I log in — so I didn't put my password in. I'll go to the portal the normal way."
         },
         "hints": [
           "Which address do Quayholt staff already trust for IT notices? Put that in the From line.",

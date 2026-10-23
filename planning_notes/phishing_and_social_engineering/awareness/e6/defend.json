@@ -39,7 +39,7 @@
       "_prefix": "Prefix for the full episode (id e6_texts_and_qr). The defend-only shell (id e6_texts_and_qr_defend) sets episode_e6_texts_and_qr_defend_defend_ instead, as E1, E3 and E5 do. No stage on purpose, as in E1.",
       "_order": "Teaching order, so a likely miss is followed by a similar item (11 section 4.3): fake text, then a real text; fake QR notice, then a real one; then a QR code in an email; then a second fake text that adds the reply-STOP trick.",
       "title": "Tarrowby work phone",
-      "brief": "It's your break at Tarrowby's Shipley depot, and six things are waiting on your work phone: texts, two printed notices you passed on site, and an email. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. On a notice, press 'Where does this code go?' to see the address behind the code. Reporting a real message never costs you anything.",
+      "brief": "It's your break at Tarrowby's Shipley depot, and six things are waiting on your work phone: texts, two printed notices you passed on site, and an email. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. On a notice, press 'Where does this code go?' to see the address behind the code. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "scoringProfile": "awareness",
       "verifyVerdict": true,
       "feedbackMode": "immediate",
@@ -80,7 +80,8 @@
             "whyFine": {
               "smish_shortlink_urgency": "There's no link at all. It points you to the staff app you already use, so you can check it there.",
               "default": "It's from Shauna's number, which is already saved on your phone with earlier messages in the thread. It tells you about a change and asks you to do nothing except turn up."
-            }
+            },
+            "falseAlarmCost": "Dismissed as a scam, the new start time gets missed and the early run goes short-handed."
           }
         },
         {
@@ -173,7 +174,7 @@
       "id": "mobile_form_a",
       "_form": "Mobile parallel form A. Authored as pre; the BA check pair launches it as post (minigameData.stage). Item n here matches item n in mobile_form_b; the table is in _formPairing above.",
       "title": "Work phone check",
-      "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. Tarrowby's own sites end in tarrowby.example. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. Tarrowby's own sites end in tarrowby.example. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "stage": "pre",
       "pairedWith": "mobile_form_b",
       "scoringProfile": "awareness",
@@ -363,7 +364,7 @@
       "id": "mobile_form_b",
       "_form": "Mobile parallel form B. Authored as post; the BA check pair launches it as pre (minigameData.stage). Item n here matches item n in mobile_form_a; the table is in _formPairing above.",
       "title": "Work phone check",
-      "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. Tarrowby's own sites end in tarrowby.example. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. Tarrowby's own sites end in tarrowby.example. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "stage": "post",
       "pairedWith": "mobile_form_a",
       "scoringProfile": "awareness",
@@ -572,7 +573,7 @@
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e6_texts_and_qr_defend), which has no OSINT, write or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",
-      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier in West Yorkshire. It's your break at the Shipley depot, and six things are waiting on your work phone: texts, two printed notices you passed on site, and an email. Some are real and some were built to trick you. Sort them, and report or check anything that doesn't sit right. Reporting a real message never costs you anything.",
+      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier in West Yorkshire. It's your break at the Shipley depot, and six things are waiting on your work phone: texts, two printed notices you passed on site, and an email. Some are real and some were built to trick you. Sort them, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: six items on a Tarrowby work phone."
     }
   }

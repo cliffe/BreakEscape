@@ -54,7 +54,7 @@
       "_prefix": "Prefix for the full episode (id e4_exec_whaling). The defend-only shell (id e4_exec_whaling_defend) sets episode_e4_exec_whaling_defend_defend_ instead, as E1, E3 and E5 do. No stage on purpose, as in E1.",
       "_order": "Teaching order: the genuine itinerary (what is public about the trip), the email that uses it, the copied-voice follow-up, then her real voicemail straight after (the similar item after a likely miss, 11 section 4.3: same voice, and only the number and the request tell them apart), then a look-alike of the travel agent from item 1.",
       "title": "Merrin & Sallow PA inbox",
-      "brief": "You're Tomás Carvalho, PA to Catherine Merrin, the managing partner, and she flies to Lisbon this morning. Yasmin in finance approves the firm's payments. Five emails and voicemails are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. A voice you know is not proof on its own. Checking or reporting something real never costs you anything.",
+      "brief": "You're Tomás Carvalho, PA to Catherine Merrin, the managing partner, and she flies to Lisbon this morning. Yasmin in finance approves the firm's payments. Five emails and voicemails are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. A voice you know is not proof on its own. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "scoringProfile": "awareness",
       "verifyVerdict": true,
       "feedbackMode": "immediate",
@@ -174,7 +174,7 @@
       "id": "executive_form_a",
       "_form": "Executive and PA parallel form A. Authored as pre; the BA check pair launches it as post (minigameData.stage). Item n here matches item n in executive_form_b; the table is in _formPairing above.",
       "title": "PA inbox check",
-      "brief": "Ten emails and voicemails from the inbox of a PA at Merrin & Sallow Architects. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Checking or reporting something real never costs you anything.",
+      "brief": "Ten emails and voicemails from the inbox of a PA at Merrin & Sallow Architects. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "stage": "pre",
       "pairedWith": "executive_form_b",
       "scoringProfile": "awareness",
@@ -386,7 +386,7 @@
       "id": "executive_form_b",
       "_form": "Executive and PA parallel form B. Authored as post; the BA check pair launches it as pre (minigameData.stage). Item n here matches item n in executive_form_a; the table is in _formPairing above.",
       "title": "PA inbox check",
-      "brief": "Ten emails and voicemails from the inbox of a PA at Merrin & Sallow Architects. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Checking or reporting something real never costs you anything.",
+      "brief": "Ten emails and voicemails from the inbox of a PA at Merrin & Sallow Architects. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "stage": "post",
       "pairedWith": "executive_form_a",
       "scoringProfile": "awareness",
@@ -623,7 +623,7 @@
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e4_exec_whaling_defend), which has no OSINT, write or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",
-      "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. You're Tomás Carvalho, PA to the managing partner, Catherine Merrin, and she's travelling today. Five emails and voicemails are waiting. Some are real and some were made to trick you, including one that sounds just like her. Sort them, and check or report anything that doesn't sit right. Checking or reporting something real never costs you anything.",
+      "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. You're Tomás Carvalho, PA to the managing partner, Catherine Merrin, and she's travelling today. Five emails and voicemails are waiting. Some are real and some were made to trick you, including one that sounds just like her. Sort them, and check or report anything that doesn't sit right. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional practice. In scope: the PA's inbox and voicemail."
     }
   }

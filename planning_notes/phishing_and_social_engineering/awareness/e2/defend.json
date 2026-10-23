@@ -53,7 +53,7 @@
       "_prefix": "Prefix for the full episode (id e2_cv_lures). The defend-only shell (id e2_cv_lures_defend) sets episode_e2_cv_lures_defend_defend_ instead, as E1 and E5 do. No stage on purpose, as in E1.",
       "_order": "Each phish is followed by the genuine message it imitates (11 section 4.3): the look-alike link (row 2) by a real CV that is actually attached (row 3), and the enable-content lure (row 4) by a real Word CV that asks for nothing (row 5).",
       "title": "Tarrowby recruitment inbox",
-      "brief": "You're covering Tarrowby's recruitment inbox while Fatima is in interviews. Six messages are waiting, and attachments show as labels. For each one, choose Trust, Report or Delete, then tick what you noticed. Reporting a real message never costs you anything.",
+      "brief": "You're covering Tarrowby's recruitment inbox while Fatima is in interviews. Six messages are waiting, and attachments show as labels. For each one, choose Trust, Report or Delete, then tick what you noticed. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "scoringProfile": "awareness",
       "verifyVerdict": false,
       "feedbackMode": "immediate",
@@ -195,7 +195,7 @@
       "id": "hr_form_a",
       "_form": "HR and recruitment parallel form A. Authored as pre; the BA check pair launches it as post (minigameData.stage). Item n here matches item n in hr_form_b; the table is in _formPairing above.",
       "title": "Recruitment inbox check",
-      "brief": "Ten messages from a Tarrowby Logistics recruitment inbox. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten messages from a Tarrowby Logistics recruitment inbox. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "stage": "pre",
       "pairedWith": "hr_form_b",
       "scoringProfile": "awareness",
@@ -395,7 +395,7 @@
       "id": "hr_form_b",
       "_form": "HR and recruitment parallel form B. Authored as post; the BA check pair launches it as pre (minigameData.stage). Item n here matches item n in hr_form_a; the table is in _formPairing above.",
       "title": "Recruitment inbox check",
-      "brief": "Ten messages from a Tarrowby Logistics recruitment inbox. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten messages from a Tarrowby Logistics recruitment inbox. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "stage": "post",
       "pairedWith": "hr_form_a",
       "scoringProfile": "awareness",
@@ -611,7 +611,7 @@
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e2_cv_lures_defend), which has no OSINT, write or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",
-      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. You're covering the recruitment inbox this morning, and six messages are waiting. Some are real applications and some were built to trick you. Sort them, and report anything that doesn't sit right. Reporting a real message never costs you anything.",
+      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. You're covering the recruitment inbox this morning, and six messages are waiting. Some are real applications and some were built to trick you. Sort them, and report anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: the Tarrowby recruitment inbox."
     }
   }

@@ -82,7 +82,7 @@
     "awareness": {
       "ruleOfThumb": {
         "heading": "The habit to keep",
-        "text": "When a message pressures you to move money, grant access or read back a code, stop and check it using contact details you already have, rather than the ones the message gives you. Taking a minute to confirm is always a fair thing to do."
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
       }
     },
     "triageSets": [
@@ -90,7 +90,7 @@
         "id": "e7_finance_line",
         "playerSentAuth": { "accounts": { "analyst": { "spf": "pass", "dkim": "fail", "dmarc": "fail", "envelopeFrom": "bounce.brightwellfoods.example", "replyTo": "{account_address}" } } },
         "title": "Finance office: phone and inbox",
-        "brief": "You're covering the finance office's phone and inbox on Friday afternoon while the team is in the quarter-end meeting. Adaeze Okafor, the finance manager, is the one who signs off payments here. Three voicemails and two emails have come in. For each one, choose Trust, Report, Delete or Verify (ring the person back on a number you already hold), then tick what you noticed. Nobody will ask whether a voice sounded real: what counts is what each message asks you to do. Reporting a real message never costs you anything.",
+        "brief": "You're covering the finance office's phone and inbox on Friday afternoon while the team is in the quarter-end meeting. Adaeze Okafor, the finance manager, is the one who signs off payments here. Three voicemails and two emails have come in. For each one, choose Trust, Report, Delete or Verify (ring the person back on a number you already hold), then tick what you noticed. Nobody will ask whether a voice sounded real: what counts is what each message asks you to do. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
@@ -131,7 +131,8 @@
               "whyFine": {
                 "borrowed_authority": "It's the chief executive, but he isn't using that to skip anything: the invoices went through the normal approval in the system.",
                 "default": "It came from Ravinder's mobile, which is already in the office contacts. It asks you to do nothing, and he tells you to ring that same mobile if anyone needs him. If you wanted to check, ringing him back on it would be a fine Verify."
-              }
+              },
+              "falseAlarmCost": "It asks for nothing, so little is lost, but flagging it has someone chase Ravinder on the train to re-confirm invoices he already approved."
             }
           },
           {
@@ -204,7 +205,8 @@
                 "secrecy_or_bypass": "She's in a hurry, but she asks you to follow the process, not skip it: no paying at the gate, and a call to Harlow on the number already on file.",
                 "vish_callback_pressure": "She gives you two ways to ring her back, her extension and the mobile on the staff list.",
                 "default": "It's Lindiwe's own extension, it asks for no payment, and what she wants is the safe check itself. Ringing Harlow on the supplier-file number, or ringing her back on 2214, is the right kind of Verify."
-              }
+              },
+              "falseAlarmCost": "Left unactioned, nobody rings Harlow, the driver takes the chilled cartons back, and the delivery is lost."
             }
           },
           {
@@ -427,7 +429,7 @@
           {
             "id": "sender_address",
             "type": "address",
-            "label": "the line it comes from"
+            "label": "the address it comes from"
           }
         ]
       },

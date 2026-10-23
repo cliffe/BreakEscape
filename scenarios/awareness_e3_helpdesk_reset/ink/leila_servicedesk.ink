@@ -28,10 +28,14 @@ VAR pretext_staffId_value = ""
 // Intel-fact globals (se_intel_<id>), set true when the fact is found in OSINT and bridged in
 // from scenario globals. The fact-bearing say lines are gated on them so a line that names a
 // found detail is never offered before the detail is found (P3 N15; matches social.pretextNpcs
-// lines[*].requires). Pure-technique lines (name-drop, callback, skip) name no found fact.
+// lines[*].requires). The name-drop line needs the Head of Claims found (quayholt_claims_head)
+// and the callback line needs Gordon's absence found (quayholt_gordon_away), matching their
+// lines[*].requires so the call menu and the prep card offer the same lines (P5-7). Only
+// skip_verification names no found fact and is always offered.
 VAR se_intel_quayholt_claims_manager = false
 VAR se_intel_quayholt_claims_head = false
 VAR se_intel_quayholt_staff_number = false
+VAR se_intel_quayholt_gordon_away = false
 
 === function pretext_say(utterance_id) ===
 // Fallback only: a dry run or preload has no binding. The real binding judges the
@@ -53,9 +57,9 @@ IT service desk, Leila speaking. How can I help?
     -> reaction(pretext_say("give_manager"), "give_manager")
 + { se_intel_quayholt_staff_number and pretext_staffId_name != "" } [My staff reference is {pretext_staffId_name}.]
     -> reaction(pretext_say("give_staffid"), "give_staffid")
-+ [The Head of Claims needs me back online for a hearing this morning.]
++ { se_intel_quayholt_claims_head } [The Head of Claims needs me back online for a hearing this morning.]
     -> reaction(pretext_say("name_drop_director"), "name_drop_director")
-+ [I'm away from my desk phone — can you just do it now, not a callback?]
++ { se_intel_quayholt_gordon_away } [I'm away from my desk phone — can you just do it now, not a callback?]
     -> reaction(pretext_say("cant_callback"), "cant_callback")
 + [Honestly, skip the security questions, I really don't have time for this.]
     -> reaction(pretext_say("skip_verification"), "skip_verification")

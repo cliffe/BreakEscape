@@ -31,7 +31,7 @@
       "_prefix": "Prefix for the full episode (id e3_helpdesk_reset). The defend-only shell (id e3_helpdesk_reset_defend) sets episode_e3_helpdesk_reset_defend_defend_ instead, as E1 and E5 do. No stage on purpose, as in E1.",
       "_calls": "The three calls are in awarenessEpisode.defend.calls; the role swap (P7-P) merges them into this set as call messages, so the round has 4 items.",
       "title": "Quayholt service desk",
-      "brief": "You're on the Quayholt IT service desk in Leila Nassar's seat. You started at 07:00 and it's mid-morning now: three calls are waiting, and a sign-in prompt from overnight is still on your own phone. For each call, choose Comply, Ring back (hang up and ring the number already on file), Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report. Ringing back a real caller never costs you anything.",
+      "brief": "You're on the Quayholt IT service desk in Leila Nassar's seat. You started at 07:00 and it's mid-morning now: three calls are waiting, and a sign-in prompt from overnight is still on your own phone. For each call, choose Comply, Ring back (hang up and ring the number already on file), Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report. Ringing back when you're unsure is always fine and never marked down, though a real caller does take a colleague's time to check.",
       "scoringProfile": "awareness",
       "verifyVerdict": true,
       "feedbackMode": "immediate",
@@ -67,7 +67,7 @@
       "id": "helpdesk_form_a",
       "_form": "Helpdesk parallel form A. Authored as pre; the BA check pair launches it as post (minigameData.stage). Item n here matches item n in helpdesk_form_b; the table is in _formPairing above.",
       "title": "Service desk check",
-      "brief": "Ten items from the Quayholt IT service desk: calls, a voicemail, emails and a sign-in prompt on your phone. For each one, pick what you'd do, then tick what you noticed. Ring back or Verify means checking on a number already on file. You'll see how you did at the end. Reporting or checking something real never costs you anything.",
+      "brief": "Ten items from the Quayholt IT service desk: calls, a voicemail, emails and a sign-in prompt on your phone. For each one, pick what you'd do, then tick what you noticed. Ring back or Verify means checking on a number already on file. You'll see how you did at the end. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "stage": "pre",
       "pairedWith": "helpdesk_form_b",
       "scoringProfile": "awareness",
@@ -274,7 +274,7 @@
       "id": "helpdesk_form_b",
       "_form": "Helpdesk parallel form B. Authored as post; the BA check pair launches it as pre (minigameData.stage). Item n here matches item n in helpdesk_form_a; the table is in _formPairing above.",
       "title": "Service desk check",
-      "brief": "Ten items from the Quayholt IT service desk: calls, a voicemail, emails and a sign-in prompt on your phone. For each one, pick what you'd do, then tick what you noticed. Ring back or Verify means checking on a number already on file. You'll see how you did at the end. Reporting or checking something real never costs you anything.",
+      "brief": "Ten items from the Quayholt IT service desk: calls, a voicemail, emails and a sign-in prompt on your phone. For each one, pick what you'd do, then tick what you noticed. Ring back or Verify means checking on a number already on file. You'll see how you did at the end. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "stage": "post",
       "pairedWith": "helpdesk_form_a",
       "scoringProfile": "awareness",
@@ -584,7 +584,7 @@
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e3_helpdesk_reset_defend), which has no OSINT, write, mfa or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",
-      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. You're on the IT service desk in Leila Nassar's seat. Three calls are waiting and a sign-in prompt from overnight is still on your phone. Some callers are who they say, and some are reading facts they found online. Help the real ones, and ring back or escalate anything that doesn't sit right. Ringing back a real caller never costs you anything.",
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. You're on the IT service desk in Leila Nassar's seat. Three calls are waiting and a sign-in prompt from overnight is still on your phone. Some callers are who they say, and some are reading facts they found online. Help the real ones, and ring back or escalate anything that doesn't sit right. Ringing back when you're unsure is always fine and never marked down, though a real caller does take a colleague's time to check.",
       "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: three calls and one sign-in prompt in the service desk seat."
     }
   }

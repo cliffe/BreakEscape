@@ -208,18 +208,18 @@ def defend_only():
     }
     sc = scenario(
         mission, 'Invoice fraud: the payments inbox',
-        "Awareness episode E1, inbox only. You're covering the payments inbox at Brightwell Foods, a fictional food manufacturer, before the afternoon payment run. Five messages are waiting: sort them, and report or check anything that doesn't sit right.",
-        'Sort the five messages in the payments inbox at the training kiosk.',
+        "Awareness episode E1, inbox only. You're covering the payments inbox at Brightwell Foods, a fictional food manufacturer, before the afternoon payment run. Six messages are waiting: sort them, and report or check anything that doesn't sit right.",
+        'Sort the six messages in the payments inbox at the training kiosk.',
         ('payments_inbox_aim', 'Cover the payments inbox', 'Sort the payments inbox at the training kiosk.'),
         ('sort_payments_inbox', 'Sort the payments inbox'),
         done, globals_, {'triageSets': [s], 'awarenessEpisode': ep},
         HOSTS['adaeze'], 'adaeze_okafor',
-        ("A touch-screen kiosk showing Brightwell's payments inbox. Five messages are waiting.",
-             "A touch-screen kiosk showing Brightwell's payments inbox. All five messages are sorted."),
-        success_screen('Payments inbox done', "You've sorted all five messages and finished this episode."))
+        ("A touch-screen kiosk showing Brightwell's payments inbox. Six messages are waiting.",
+             "A touch-screen kiosk showing Brightwell's payments inbox. All six messages are sorted."),
+        success_screen('Payments inbox done', "You've sorted all six messages and finished this episode."))
     meta = {
         'display_name': 'Awareness E1: Invoice fraud (inbox only)',
-        'description': "An eight-minute awareness episode for finance staff, on the inbox side only. Cover the payments inbox at Brightwell Foods, a fictional company, before the afternoon payment run: five messages, some real and some built to trick you. Each answer is explained, and reporting a real message never costs you anything.",
+        'description': "An eight-minute awareness episode for finance staff, on the inbox side only. Cover the payments inbox at Brightwell Foods, a fictional company, before the afternoon payment run: six messages, some real and some built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
         'difficulty_level': 1,
         'scoring': 'completion',
         'secgen_scenario': None,

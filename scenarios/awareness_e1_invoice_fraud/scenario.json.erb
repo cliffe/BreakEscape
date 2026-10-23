@@ -82,7 +82,7 @@
     "awareness": {
       "ruleOfThumb": {
         "heading": "The habit to keep",
-        "text": "When a message pressures you to move money, grant access or read back a code, stop and check it using contact details you already have, rather than the ones the message gives you. Taking a minute to confirm is always a fair thing to do."
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
       }
     },
     "triageSets": [
@@ -90,7 +90,7 @@
         "id": "e1_payments_inbox",
         "playerSentAuth": { "accounts": { "analyst": { "spf": "pass", "dkim": "fail", "dmarc": "fail", "envelopeFrom": "bounce.brightwellfoods.example", "replyTo": "{account_address}" } } },
         "title": "Brightwell payments inbox",
-        "brief": "You're covering Brightwell's payments inbox before the three o'clock payment run. Five messages are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. Reporting a real message never costs you anything.",
+        "brief": "You're covering Brightwell's payments inbox before the three o'clock payment run. Six messages are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
@@ -136,7 +136,8 @@
               "whyFine": {
                 "attachmentPlausible": "An invoice PDF from a supplier you buy from, quoting a purchase order you raised, is exactly what you'd expect.",
                 "default": "It's from Harlow's real domain, it matches a purchase order Brightwell raised, and it asks for nothing new: the same terms and the same bank details."
-              }
+              },
+              "falseAlarmCost": "Left unpaid, September's cartons would hold up the next delivery."
             }
           },
           {

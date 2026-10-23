@@ -1,6 +1,6 @@
 {
   "display_name": "Awareness E3: Helpdesk reset (service desk only)",
-  "description": "An eight-minute awareness episode for IT service desk staff, on the defending side only. Sit in the service desk seat at Quayholt Insurance, a fictional company: three callers want password resets or changes to their sign-in, and a sign-in prompt turns up on your own phone. Each answer is explained, and ringing back a real caller never costs you anything.",
+  "description": "An eight-minute awareness episode for IT service desk staff, on the defending side only. Sit in the service desk seat at Quayholt Insurance, a fictional company: three callers want password resets or changes to their sign-in, and a sign-in prompt turns up on your own phone. Each answer is explained, and ringing back when you're unsure is always fine and never marked down.",
   "difficulty_level": 1,
   "scoring": "completion",
   "secgen_scenario": null,
