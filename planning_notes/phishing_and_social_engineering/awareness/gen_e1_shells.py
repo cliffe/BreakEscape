@@ -292,7 +292,7 @@ def check(pair, stage):
                 "Ten new messages from the payments inbox of Brightwell Foods, a fictional company, matched to the "
                 f"first check (awareness_pre_finance_{pair}). The end screen compares the two results when the first check was finished.")
         obs = 'A touch-screen kiosk with ten messages from a payments inbox, ready for the second check.'
-        ending = success_screen('Second check done', 'Thank you for taking both checks.')
+        ending = success_screen('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, 'Sort the ten messages at the training kiosk.', aim, task, done,
                   globals_, {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, ending, extra)

@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { triage_post_done:
-        Julian Sallow: Both done. We're grateful you sat the pair.
+        Julian Sallow: That's done. We're grateful you sat it.
     - else:
         Julian Sallow: Back with us. Ten more on the kiosk, the same sort as before. If you did the first, the end screen sets them side by side.
     }

@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { triage_post_done:
-        Farah Qureshi: All saved. Thanks for sticking with both checks.
+        Farah Qureshi: All saved. Thanks for sticking with it.
     - else:
         Farah Qureshi: Hi again. Ten new messages on the kiosk for the last check. If you did the first one, you'll see both results side by side.
     }

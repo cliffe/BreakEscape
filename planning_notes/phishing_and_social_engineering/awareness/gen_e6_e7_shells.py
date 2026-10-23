@@ -241,7 +241,7 @@ CHECK_LINES = {
         'Thanks.', 'Any time.'),
     ('lerato_dlamini', 'post'): (
         "You're back. Ten fresh items on the kiosk, the same idea as the first check. The end screen lines this one up against the one you did before.",
-        "That's both checks logged. Thanks for sitting them; it helps us see what the training shifted.",
+        "That's logged. Thanks for sitting it; it helps us see what the training shifted.",
         'Thanks.', 'Any time.'),
     ('jun_watanabe', 'pre'): (
         "Hiya. There's a short check on the kiosk before we start: ten texts, notices and emails from a work phone. Just go with what you'd normally do.",
@@ -249,7 +249,7 @@ CHECK_LINES = {
         'Thanks.', 'No problem.'),
     ('jun_watanabe', 'post'): (
         "Welcome back. Ten new items waiting on the kiosk, same as last time. If you did the first check, the end screen shows the two side by side.",
-        "That's the second check in. Thanks for doing both; it all helps.",
+        "That's it in. Thanks for doing it; it all helps.",
         'Thanks.', 'No problem.'),
 }
 
@@ -461,7 +461,7 @@ def check(ekey, pair, stage):
                 f"{c['items_post']} It is matched to the first check (awareness_pre_{word}_{pair}), and the end screen "
                 "compares the two results when the first check was finished.")
         obs = c['kiosk'].format(nth='second')
-        conclusion = ('Second check done', 'Thank you for taking both checks.')
+        conclusion = ('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, c['end'], aim, task, done, globals_,
                        {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, conclusion, extra)

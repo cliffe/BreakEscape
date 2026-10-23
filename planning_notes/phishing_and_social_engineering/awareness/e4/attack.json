@@ -64,7 +64,7 @@
       "text": "When you get a moment, could you send me next week's diary?", "slots": [],
       "urgency": "low" },
     "ms_ask_confirm": { "part": "ask", "text": "Drop me a line here once it's gone through.", "slots": [],
-      "urgency": "medium" },
+      "urgency": "low" },
     "ms_ask_calm": { "part": "ask", "text": "No rush, let me know once it's sorted.", "slots": [],
       "urgency": "low" }
   },
@@ -154,7 +154,7 @@
         "pretextRelevant": { "pass": "✓ Fits a trip he knows she is on", "fail": "No trip he can match this to, so a rushed payment from the road reads as odd.", "redFlag": null },
         "urgencyCalibrated": { "pass": "✓ The pressure reads as believable" }
       },
-      "replies": { "landed": "Will do, Catherine. I'll get it paid this afternoon and keep it off the finance thread. Safe travels." },
+      "replies": { "landed": "Will do, Catherine. I'll get it paid this afternoon and keep it off the finance thread. Safe travels.", "missed": "Before I pay anything I'll confirm it with Catherine on her usual number, or check with finance. Nothing goes out until then." },
       "hints": [
         "Whose name would make the PA act on a payment without checking?",
         "What trip is she publicly on this week, so an email from the road reads as expected?",

@@ -79,7 +79,7 @@ CHECK_LINES = {
             'Thanks, Anjali.', 'Any time.'),
         'post': (
             "Welcome back. Ten fresh items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
-            "Second check saved. Thanks for doing both.",
+            "Check saved. Thanks for doing it.",
             'Thanks, Anjali.', 'Any time.'),
     },
     'sofia_marchetti': {
@@ -89,7 +89,7 @@ CHECK_LINES = {
             'Thanks, Sofia.', 'No trouble.'),
         'post': (
             "Good to see you back. Ten new items on the kiosk, same as before. If you did the first check, the end screen compares the two.",
-            "That's the second one saved. Thanks for sitting both.",
+            "That's saved. Thanks for sitting it.",
             'Thanks, Sofia.', 'No trouble.'),
     },
     'owen_treharne': {
@@ -99,7 +99,7 @@ CHECK_LINES = {
             'Thanks, Owen.', 'No bother at all.'),
         'post': (
             "Back again, good. Ten new emails and pages on the kiosk, same idea as last time. If you did the first, the end screen shows how they compare.",
-            "Second check saved. Thanks for doing the pair.",
+            "Check saved. Thanks for doing it.",
             'Thanks, Owen.', 'No bother at all.'),
     },
     'pauline_hendry': {
@@ -109,7 +109,7 @@ CHECK_LINES = {
             'Thanks, Pauline.', "You're welcome."),
         'post': (
             "Welcome back. Ten new emails and pages waiting on the kiosk, same idea as before. If you did the first check, the end screen compares them.",
-            "Second check saved. Thank you for doing both.",
+            "Check saved. Thank you for doing it.",
             'Thanks, Pauline.', "You're welcome."),
     },
 }
@@ -489,7 +489,7 @@ def check(ekey, pair, stage):
                 f"{c['items_post']} It is matched to the first check (awareness_pre_{word}_{pair}), and the end screen "
                 "compares the two results when the first check was finished.")
         obs = c['kiosk'].format(nth='second')
-        ending = success_screen('Second check done', 'Thank you for taking both checks.')
+        ending = success_screen('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, c['end'], aim, task, done, globals_,
                   {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, ending, extra)

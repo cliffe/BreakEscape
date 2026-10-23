@@ -228,6 +228,12 @@
                 "lookalike_domain",
                 "urgencyCalibrated"
               ],
+              "flagAlternatives": [
+                [
+                  "lookalike_domain",
+                  "senderTrust"
+                ]
+              ],
               "perFlagNote": {
                 "unexpected_qr": "A code in an email does what a link does, but you can't read where it goes, and it moves you onto your phone, away from the checks on your work mail",
                 "lookalike_domain": "The sender is tarrowbey.example, with an extra e. Tarrowby's IT desk writes from tarrowby.example",
@@ -317,6 +323,8 @@
         "flipDefenderLine": "Kaylee was in the yard with a pallet truck when it buzzed. It named the parking permit she'd already been told to register for, so scanning it felt like getting a job off her list. Nobody who scans one of these is being careless: it was built to read as the notice she was waiting for.",
         "flipNoSend": "Your message didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives on a Tarrowby work phone, and you're the one reading it.",
         "flipMissed": "Your message didn't land this time, so there's nothing of yours to replay from the other side. The defence is the same either way: next, the same kind of message turns up on a Tarrowby work phone, and you're the one reading it.",
+        "flipMissedHeading": "Nothing to replay this time",
+        "flipLandedNoTells": "It got through, but there was nothing in it to pick apart this time, so there's nothing to replay. Next, the same kind of message turns up on a Tarrowby work phone, and you're the one reading it.",
         "noBlameLine": "Being caught by one of these is no fault of yours. These were built to look like Tarrowby's own messages, and they land on a phone you're reading between jobs. Catching them is a habit, not a test of how clever you are.",
         "mondayCard": "On Monday: if a text, a notice or an email wants you to scan a code or tap a short link to pay, sign in or confirm something, stop. Don't reply, not even STOP. Open the app or site the way you normally would, or ring the sender on a number you already hold, then report the message the way your organisation asks you to.",
         "defendOnly": "These landed on a phone between jobs, and they were built to read like Tarrowby's own messages, so anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
@@ -672,7 +680,8 @@
           }
         },
         "replies": {
-          "landed": "Cheers Dev, scanning it now so I'm on the list."
+          "landed": "Cheers Dev, scanning it now so I'm on the list.",
+          "missed": "Not scanning that one — I'll check with the depot office first before I tap anything."
         },
         "hints": [
           "Which internal team would a member of depot staff expect a parking notice from?",

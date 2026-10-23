@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { triage_post_done:
-        Graham Whitfield: Both checks done now. That's grand, thanks for taking the time with them.
+        Graham Whitfield: That's you done. Grand, thanks for taking the time with it.
     - else:
         Graham Whitfield: Back again. Ten fresh ones on the kiosk, same sort of thing.
         Graham Whitfield: Do them as you would. If you sat the first check, you'll get the two side by side at the end.

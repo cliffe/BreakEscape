@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { triage_post_done:
-        Sofia Marchetti: That's the second one saved. Thanks for sitting both.
+        Sofia Marchetti: That's saved. Thanks for sitting it.
     - else:
         Sofia Marchetti: Good to see you back. Ten new items on the kiosk, same as before. If you did the first check, the end screen compares the two.
     }

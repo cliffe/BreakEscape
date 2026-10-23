@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { triage_post_done:
-        Ibrahim Diallo: That's both logged. Thanks for doing the pair.
+        Ibrahim Diallo: That's logged. Thanks for doing it.
     - else:
         Ibrahim Diallo: Welcome back. Ten new ones on the kiosk, same as before. Did the first check? The end screen shows how they compare.
     }

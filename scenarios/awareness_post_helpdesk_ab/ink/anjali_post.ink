@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { triage_post_done:
-        Anjali Rao: Second check saved. Thanks for doing both.
+        Anjali Rao: Check saved. Thanks for doing it.
     - else:
         Anjali Rao: Welcome back. Ten fresh items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.
     }

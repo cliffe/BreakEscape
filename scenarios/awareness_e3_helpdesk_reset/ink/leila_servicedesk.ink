@@ -25,6 +25,13 @@ VAR pretext_manager_name = ""
 VAR pretext_manager_value = ""
 VAR pretext_staffId_name = ""
 VAR pretext_staffId_value = ""
+// Intel-fact globals (se_intel_<id>), set true when the fact is found in OSINT and bridged in
+// from scenario globals. The fact-bearing say lines are gated on them so a line that names a
+// found detail is never offered before the detail is found (P3 N15; matches social.pretextNpcs
+// lines[*].requires). Pure-technique lines (name-drop, callback, skip) name no found fact.
+VAR se_intel_quayholt_claims_manager = false
+VAR se_intel_quayholt_claims_head = false
+VAR se_intel_quayholt_staff_number = false
 
 === function pretext_say(utterance_id) ===
 // Fallback only: a dry run or preload has no binding. The real binding judges the
@@ -40,11 +47,11 @@ IT service desk, Leila speaking. How can I help?
 -> desk
 
 === desk ===
-+ { pretext_who_name != "" and pretext_team_name != "" } [Morning, it's {pretext_who_name} in {pretext_team_name}, I'm locked out of my account.]
++ { se_intel_quayholt_claims_manager and pretext_who_name != "" and pretext_team_name != "" } [Morning, it's {pretext_who_name} in {pretext_team_name}, I'm locked out of my account.]
     -> reaction(pretext_say("open_locked_out"), "open_locked_out")
-+ { pretext_manager_name != "" } [My manager's {pretext_manager_name}, she'll vouch for me.]
++ { se_intel_quayholt_claims_head and pretext_manager_name != "" } [My manager's {pretext_manager_name}, she'll vouch for me.]
     -> reaction(pretext_say("give_manager"), "give_manager")
-+ { pretext_staffId_name != "" } [My staff reference is {pretext_staffId_name}.]
++ { se_intel_quayholt_staff_number and pretext_staffId_name != "" } [My staff reference is {pretext_staffId_name}.]
     -> reaction(pretext_say("give_staffid"), "give_staffid")
 + [The Head of Claims needs me back online for a hearing this morning.]
     -> reaction(pretext_say("name_drop_director"), "name_drop_director")

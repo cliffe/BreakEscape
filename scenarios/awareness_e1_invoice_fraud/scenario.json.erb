@@ -310,6 +310,8 @@
         "flipDefenderLine": "The payments team read it between the morning's invoices, with the payment run due at three. Derek's name is on it and the invoice number is real, so changing the payee details looks like the job in front of them. Acting on a message built this carefully is not carelessness; it was made to pass for the real thing.",
         "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives in a payments inbox, and you're the one reading it.",
         "flipMissed": "Your email didn't land this time, so there's nothing of yours to replay from the other side. The defence is the same either way: next, the same kind of message turns up in a payments inbox, and you're the one reading it.",
+        "flipMissedHeading": "Nothing to replay this time",
+        "flipLandedNoTells": "It got through, but there was nothing in it to pick apart this time, so there's nothing to replay. Next, the same kind of message turns up in a payments inbox, and you're the one reading it.",
         "noBlameLine": "Nobody is marked down for a miss here. Every one of these was written by someone whose job is making it look right, and anyone working at pace can act on one.",
         "mondayCard": "On Monday: if an email asks you to change bank details or to pay in a hurry, don't reply and don't use any number in the email. Ring the person on a number you already hold, then report the email the way your organisation asks you to.",
         "defendOnly": "These messages were written by people whose job is to make them look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away."
@@ -457,7 +459,7 @@
         "part": "ask",
         "text": "Can you confirm once the new details are saved?",
         "slots": [],
-        "urgency": "medium"
+        "urgency": "low"
       },
       "ask_when_convenient": {
         "part": "ask",
@@ -610,7 +612,10 @@
           {
             "id": "s_invoice",
             "text": "Invoice INV-2217",
-            "topic": "finance"
+            "topic": "finance",
+            "requires": [
+              "brightwell_open_invoice"
+            ]
           },
           {
             "id": "s_other",
@@ -683,7 +688,8 @@
           }
         },
         "replies": {
-          "landed": "Thanks Derek, I'll get the payee details updated before we run payment."
+          "landed": "Thanks Derek, I'll get the payee details updated before we run payment.",
+          "missed": "Thanks, but I don't change payee details from an email. I'll ring Harlow on the number we already hold to check first."
         },
         "hints": [
           "Who does Brightwell's finance team already trust for invoices from this supplier?",

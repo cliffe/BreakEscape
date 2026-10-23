@@ -552,3 +552,178 @@ briefs, perFlagNote) are on-screen text, not NPC/host voice lines.
 - Full-episode bridges (Node 24, one at a time, live keyless :3001, no server start/stop): **all
   six affected episodes PASS** — e1-full 13/13 (3914), e2-full 14/14 (3915), e3-full 21/21 (3913),
   e4-full 14/14 (3916), e6-full 15/15 (3918), e7-full 13/13 (3919). e5-full unchanged, not re-run.
+
+## Data fixer round 5 (2026-10-23) — engine round 3 (b7881f594) data hand-off
+
+Authoring for the data hooks engine round 3 added. Data only (fragments, generators, full-episode
+erbs, awareness ink). No engine/CSS/validator changes.
+
+### Items
+
+- **1. E6 IT email `flagAlternatives`.** `e6_mfa_scan` (From `it-servicedesk@tarrowbey.example`, a
+  look-alike of the real Tarrowby IT desk at `tarrowby.example`): added
+  `flagAlternatives: [["lookalike_domain","senderTrust"]]`. `senderTrust` is not in `truth.flags`
+  (it is a factor, so a valid alternate under the new "member outside truth.flags" rule): ticking
+  "I don't trust this sender" now credits the same unit and is never "Not a flag here".
+  **Audit of other phish whose From is itself the look-alike of a missing twin:** no others need the
+  new treatment. The sender-spoof phish that carry both tells are already grouped
+  `[senderTrust, lookalike_domain]` (e1 `e1_lookalike_bank`/`*_bank`/`*_spoof`, e2 `ha/hb_*_spoof`,
+  e3 `ha/hb_*_spoof`, e4/e5/e6 `*_spoof`/`*_bank`). The remaining `lookalike_domain`-only phish are
+  not From-trust cases: e2 `ha_careers_missing`/`hb_shortlist_missing` (cold applicants on a
+  look-alike webmail domain with a credential-harvest link — `senderTrust` does not apply, the
+  tell is the link); e2 `e2_portfolio_lookalike` (already grouped with `linkCredible`); the e5/e6
+  `page`/`qr` look-alikes (non-email kinds never offer `senderTrust`). Full e6 erb mirrored.
+- **2. E7 CEO email `vish_callback_pressure`.** `e7_ceo_wire` ("I'm in meetings all afternoon, so
+  reply here rather than calling"): added `vish_callback_pressure` as an **authored flag** (truest
+  to the message — it is a distinct manipulation from the time pressure: deflecting the callback
+  that would catch it), with its own `perFlagNote`. Trimmed the `urgencyCalibrated` note so the
+  callback-steering clause is not double-counted (now reads "…leave no time to check before the
+  money would move"). Set is only in E7 (full + defend-only); `vish_callback_pressure` is in the
+  set's `channelTells` and is offered on email (not excluded). Full e7 erb mirrored.
+- **3. Ask templates mis-tagged `urgency`.** `e1 ask_confirm` ("Can you confirm once the new details
+  are saved?") and `e4 ms_ask_confirm` ("Drop me a line here once it's gone through.") → `"low"`:
+  neither carries time pressure. Audited every `ask` template across e1–e7: the other `medium`/`high`
+  asks genuinely carry a deadline ("before the closing date today", "before the end of the day",
+  "today … clamped on Monday", "Release it today") and keep their tag. Fragment + full erb each.
+- **4. E7 `factorStrings.urgencyCalibrated.failMissed`.** Added so a miss no longer shows the
+  landing-only "the debrief shows why it works": `failMissed` = "The pressure is the point of this
+  call: urgency that leaves no time to check is what pushes a target past their doubts." (self-
+  contained, no "debrief"). Attack fragment + full e7 erb.
+- **5. `flipLandedNoTells` / `flipMissedHeading` (and `flipMissed`) for the mail-send episodes.**
+  Added to E1, E2, E4, E5, E6, E7. `flipMissed` now only means did-not-land / failed call, so E2,
+  E4, E6, E7 (which had none in the fragment; the full erbs already carried their own) got an
+  E1-style "didn't land" `flipMissed`; every send episode got `flipMissedHeading`
+  ("Nothing to replay this time") and `flipLandedNoTells` (the "it landed but there's nothing to
+  pick apart, so nothing to replay" reassurance). E3 is a call episode (no `landedNoTells` path for
+  calls) and keeps its existing `flipMissed`; not touched. Defend fragments (reach defend-only
+  shells too, harmless there) + full erbs.
+- **6. In-voice `replies.missed` (optional, done for all six send targets).** On a miss the target
+  now replies declining/verifying in their own voice (text reply, not TTS — no audio cost), instead
+  of silence: Adaeze (E1) won't change payee details off an email, Fatima (E2) opens the CV in the
+  viewer only, Tomás (E4) confirms with Catherine/finance first, Hana (E5) didn't type her password
+  because the address was wrong, Kaylee (E6) won't scan without checking the depot office, Tom (E7)
+  won't release off a message and will ring Ravinder back. phishTargets live only in the full
+  episodes; attack fragments mirrored for the record.
+- **7. `requires` on fact-bearing lines + E3 ink gating.** E1 `s_invoice` ("Invoice INV-2217")
+  subject → `requires: ["brightwell_open_invoice"]` (not offered before the invoice is found).
+  E3 pretext lines that present a found fact → `requires`: `open_locked_out`
+  (`quayholt_claims_manager`, who+team), `give_manager` (`quayholt_claims_head`), `give_staffid`
+  (`quayholt_staff_number`). The E3 ink (`leila_servicedesk.ink`) choices were gated on the same
+  facts: declared `VAR se_intel_quayholt_claims_manager/_claims_head/_staff_number = false` and
+  added each as a condition on its say-choice (alongside the existing blank-filled condition).
+  **Conditions only — no choice wording changed, so no voiced line changed.** Recompiled.
+  `name_drop_director` ("The Head of Claims needs me back online…") left ungated: it names a generic
+  role, not a discovered detail, and has no `claims` entry — noted as a judgement call.
+- **8. "Both checks" lie on a fresh game (no pre).** Post-check host line (triage_post_done branch)
+  and post success screen asserted the player took both checks; true only if a pre check was also
+  sat. The ink can't tell (no pre-done global reaches the post shell — only `triage_post_done`),
+  so the lines were reworded to be true either way (the welcome-back line already handles the "if
+  you did the first check" conditionality). 12 post host inks reworded + recompiled; the 4 shell
+  generators' post success screen body → "Thanks for taking the time with it. If you also sat the
+  earlier check, the results are shown side by side." Finance host inks are hand-written (gen_e1
+  writes no ink); the other ten are generated, so their `CHECK_LINES` in gen_e2_e4 / gen_e3_e5 /
+  gen_e6_e7 were updated to match (regen ink == repo ink, verified). **Voiced host lines changed —
+  see below.**
+- **9. "You'll see how you did at the end." (optional).** Left as-is: it sets the expectation that
+  feedback comes at the end and isn't clearly redundant after round 3; removing it across ~24
+  generated briefs is scope creep without clear benefit.
+- **10. E3 duration decision.** The user decided E3 stays at ~17 min (no structural cut),
+  2026-10-23. Recorded.
+- **11. Channels bridge autofill.** `tools/playtest/se/bridge-p7-channels.jsonl`: the autofill cue
+  is now hidden behind a `.tri-autofill-btn` ("Try your password manager"); the check now asserts
+  the cue starts hidden, clicks the button, then verifies the revealed text.
+
+### Coordinator E5 items (found testing the new Quayholt logo)
+
+- **(a) Builder Page score line** "a payslip notice is what the email promised" — this is the
+  **engine default** `purposePass` (`landing-page-model.js` `DEFAULT_STRINGS`), not E5 data. Not
+  edited in the engine; **overridden in E5 data** (`landingPages[sso_login].strings.purposePass`)
+  to "✓ Page: a session-expired sign-in is what the email promised." (the page's matching
+  `purposeId` is `expired`). Fragment + full e5 erb.
+- **(b) Look-alike page submit button reads "Session expired"** — **engine, not cleanly data.**
+  `landing-page-render.js:236` draws the submit button face from the purpose **label**
+  (`purposeLabel || 'Sign in'`), and that same label is both the builder's choice chip and the
+  page `<h3>` heading, so the "Session expired" label can't be renamed to "Sign in" without making
+  two builder choices indistinguishable and losing the page heading. No data-only fix; needs an
+  engine change (a fixed "Sign in" submit face, or a per-purpose/page button label separate from
+  the choice label). **Flagged for the user/engine — left unchanged.**
+
+### Changed voiced lines (TTS) — item 8 post-check host line, one per post shell
+
+Only the `triage_post_done` (after-the-check) host line changed; welcome-back and choice/reply
+lines are untouched. These are placeholder-sprite training shells (audio not yet generated), but
+listed for the TTS key:
+
+- graham (finance_ab): "Both checks done now. That's grand, thanks for taking the time with them."
+  → "That's you done. Grand, thanks for taking the time with it."
+- farah (finance_ba): "All saved. Thanks for sticking with both checks." → "All saved. Thanks for
+  sticking with it."
+- yasmin (executive_ab): "That's the second one in. Thank you for taking both." → "That's it in.
+  Thank you for taking the time with it."
+- julian (executive_ba): "Both done. We're grateful you sat the pair." → "That's done. We're
+  grateful you sat it."
+- owen (general_ab): "Second check saved. Thanks for doing the pair." → "Check saved. Thanks for
+  doing it."
+- pauline (general_ba): "Second check saved. Thank you for doing both." → "Check saved. Thank you
+  for doing it."
+- anjali (helpdesk_ab): "Second check saved. Thanks for doing both." → "Check saved. Thanks for
+  doing it."
+- sofia (helpdesk_ba): "That's the second one saved. Thanks for sitting both." → "That's saved.
+  Thanks for sitting it."
+- jun (hr_ab): "That's the pair of them in. Thanks for sitting both." → "That's it in. Thanks for
+  sitting it."
+- ibrahim (hr_ba): "That's both logged. Thanks for doing the pair." → "That's logged. Thanks for
+  doing it."
+- lerato (mobile_ab): "That's both checks logged. Thanks for sitting them; it helps us see what the
+  training shifted." → "That's logged. Thanks for sitting it; it helps us see what the training
+  shifted."
+- jun (mobile_ba): "That's the second check in. Thanks for doing both; it all helps." → "That's it
+  in. Thanks for doing it; it all helps."
+
+All other changed strings (flip narration, `failMissed`, `purposePass`, `perFlagNote`, the success
+screen, `replies.missed`) are on-screen text, not NPC/host voice lines. The E3 ink change is
+conditions only — no spoken line moved.
+
+### Where each change lives (survives a regenerate)
+
+- Fragments (source of record): `e1/attack.json`, `e1/defend.json`, `e2/attack.json`,
+  `e2/defend.json`, `e3/attack.json`, `e4/attack.json`, `e4/defend.json`, `e5/attack.json`,
+  `e6/attack.json`, `e6/defend.json`, `e7/attack.json`, `e7/defend.json`.
+- Generators: `gen_e1_shells.py` (post success screen), `gen_e2_e4_shells.py`,
+  `gen_e3_e5_shells.py`, `gen_e6_e7_shells.py` (post success screen + post host `CHECK_LINES`).
+- Full episodes (hand-mirrored, edited directly): all seven `awareness_e*` erbs.
+- Generated shells: regenerated into scratch (no-change baseline byte-identical first), diffed,
+  copied in — 18 changed (six `*_defend` for flip strings; e6/e7 defend also the flag changes;
+  twelve `post_*` for the success-screen body). Each copied diff showed only the intended change.
+- Ink (hand-maintained in repo, recompiled): `leila_servicedesk.ink` (E3 gating) + 12 `*_post.ink`
+  (item 8); the e2/e4/e6/e7/e3/e5 `*_post.ink` are generator-authored and now match `CHECK_LINES`.
+
+### Checks run
+
+- Validator (`--strict-social --no-graph --skip-ink`): **all 38 awareness shells exit with 0
+  errors.** Warnings unchanged from HEAD (the E7 `urgencyCalibrated` fail/redFlag advisory and the
+  outcome-global advisory are pre-existing, verified against HEAD in a full dir context).
+- Ink: `leila_servicedesk.json` and the 12 `*_post.json` recompiled with `bin/inklecate`; valid.
+- Node tests: `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs` —
+  **1739/1739 pass.**
+- Bridges (Node 24, one at a time, live keyless :3001, no server start/stop; other sessions'
+  drivers left running):
+  - **e3-full PASS** (21/21, game 3977) and **e5-full PASS** (18/18, game 3979).
+  - **e1/e2/e4/e6/e7-full**: each has exactly one false eval — the debrief check that reads
+    `.aw-monday`/`ep.stage === 'debrief'` — and it runs *before* the bridge's "Finish" click. Engine
+    round 3 ("Saving on Finish" / item-by-item list) renders the debrief + monday card only after
+    Finish, so the assertion fires one step early. The following "Finish" click then renders it and
+    the **final completion eval passes** in every one (episode reaches debrief, `*_defend_done` and
+    `phish_*_landed` true, not failed, closed). The episodes work; the bridges' debrief eval is
+    mis-ordered for round 3. My data edits touch none of the fields that eval reads (stage, done,
+    the done-global, the monday/no-blame strings, se_awareness_records), and e5 — which got the same
+    flip-string and `replies.missed` treatment — passes, so this is not a data regression. **Fix for
+    the orchestrator: move the `.aw-monday`/debrief eval to after the "Finish" click in
+    bridge-e1/e2/e4/e6/e7-full.jsonl** (out of this task's scope, which only updated p7-channels).
+  - **p7-channels**: the **autofill check (C4b, the one this task updated) now PASSES** (seq 32 →
+    true: it clicks `.tri-autofill-btn`, then reads the revealed cue). Four *other* evals in that
+    bridge fail — C2 (row kind tags), C5 (verdict-button swap for call/push), C6 (review-card action
+    words / row badges), C7 (result grid 100% + Deny/report counts). These are round-3 engine-feature
+    checks in `test_social_p7_channels` (a scenario this task did not edit) and separate evals from
+    the one I changed, so they are pre-existing round-3 bridge↔engine gaps, not a regression from the
+    autofill edit. Flagged for the orchestrator.

@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { triage_post_done:
-        Lerato Dlamini: That's both checks logged. Thanks for sitting them; it helps us see what the training shifted.
+        Lerato Dlamini: That's logged. Thanks for sitting it; it helps us see what the training shifted.
     - else:
         Lerato Dlamini: You're back. Ten fresh items on the kiosk, the same idea as the first check. The end screen lines this one up against the one you did before.
     }

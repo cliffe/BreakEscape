@@ -152,9 +152,9 @@
         "open": { "pass": "✓ He would take the call", "fail": "Nothing about the caller or the reason made him act on it.", "redFlag": null },
         "senderTrust": { "pass": "✓ It sounds like the chief executive he knows", "fail": "He does not place this voice as the chief executive, so a rushed payment request carries no weight.", "redFlag": "The From line carries Ravinder Sandhu's real Brightwell address, so it reads as the chief executive, but it was forged: Ravinder never sent it, and a From line can be set to show any name and address." },
         "pretextRelevant": { "pass": "✓ Ties to a payment he is already expecting to release", "fail": "No payment he can match this to, so no reason to act on it.", "redFlag": null },
-        "urgencyCalibrated": { "pass": "✓ The pressure reads as believable", "fail": "The pressure is the point of this call; the debrief shows why it works." }
+        "urgencyCalibrated": { "pass": "✓ The pressure reads as believable", "fail": "The pressure is the point of this call; the debrief shows why it works.", "failMissed": "The pressure is the point of this call: urgency that leaves no time to check is what pushes a target past their doubts." }
       },
-      "replies": { "landed": "Of course, I'll release it now and keep it quiet until you're back." },
+      "replies": { "landed": "Of course, I'll release it now and keep it quiet until you're back.", "missed": "I'm not releasing that off a message. I'll ring Ravinder on the number we hold and confirm before anything moves." },
       "hints": [
         "Whose voice would a clerk in accounts payable act on without a second thought?",
         "What payment is already due this week, so the request sounds like normal business?",

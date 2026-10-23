@@ -104,12 +104,13 @@
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "ravinder.sandhu.private@inboxly.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust", "borrowed_authority", "secrecy_or_bypass", "urgencyCalibrated"],
+            "flags": ["senderTrust", "borrowed_authority", "secrecy_or_bypass", "urgencyCalibrated", "vish_callback_pressure"],
             "perFlagNote": {
               "senderTrust": "The name is the chief executive's, but the address is a personal inbox at inboxly.example, not brightwellfoods.example. The voicemail it mentions doesn't make it more real: a fake voice and a fake email can come from the same sender",
               "borrowed_authority": "The chief executive's name is doing the job the approval process should do. 'I'll sign it off when I'm back' and 'don't put it through the usual approval' lean on his seniority to push it past the check, and a name in the From line is no proof he sent it",
               "secrecy_or_bypass": "'Keep it to yourself' and 'don't put it through the usual approval' ask you to skip the check that would catch this",
-              "urgencyCalibrated": "'Today' and 'in meetings all afternoon' leave no time to check, and steer you away from ringing him"
+              "urgencyCalibrated": "'Today' and 'in meetings all afternoon' leave no time to check before the money would move",
+              "vish_callback_pressure": "'Reply here rather than calling' is there to stop you doing the one thing that would catch this: ringing Ravinder back on the number you already hold. A sender who talks you out of checking is the warning sign, not the reassurance"
             },
             "ifTrusted": "£18,400 would go to an account the sender controls. The real Ravinder never asked for it.",
             "reportReply": "Thanks. Ravinder knows nothing about it, and his real address is on brightwellfoods.example. The voicemail came from the same people, so we've reported both."
@@ -158,6 +159,9 @@
       "flipIntro": "This is the voicemail you scripted, as the finance office would find it. The lines picked out below are what make it believable.",
       "flipDefenderLine": "It landed just after nine on a Friday, in the voice the finance office hears every week. By the end of the message the payment was half set up. A voice you know is hard to argue with, and copying it is the whole trick; acting on it is no lapse of sense.",
       "flipNoSend": "Your script didn't go out this time, so there's nothing of yours to show. Next, the same kind of voicemail reaches the finance office's phone, and you're the one listening.",
+      "flipMissed": "Your script didn't land this time, so there's nothing of yours to replay from the other side. The defence is the same either way: next, the same kind of voicemail reaches the finance office's phone, and you're the one listening.",
+      "flipMissedHeading": "Nothing to replay this time",
+      "flipLandedNoTells": "It got through, but there was nothing in it to pick apart this time, so there's nothing to replay. Next, the same kind of voicemail reaches the finance office's phone, and you're the one listening.",
       "noBlameLine": "A familiar voice is hard to doubt, and these calls were built to lean on exactly that trust, so anyone can be caught by one.",
       "mondayCard": "On Monday: a voice you recognise is not proof of who is calling, and neither is an email that backs it up. If a call or voicemail asks for money, secrecy or a skipped step, ring the person back on a number you already hold, then report it the way your organisation asks you to.",
       "defendOnly": "A familiar voice feels like proof, and these messages were made to use that, so anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away and why ringing back on a number you already hold works whoever is speaking."

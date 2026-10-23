@@ -102,7 +102,7 @@ CHECK_LINES = {
         'Thanks, Jun.', 'No bother.'),
     ('jun', 'post'): (
         "You're back. Ten fresh ones on the kiosk, same drill. If you did the first check, the end screen puts the two side by side.",
-        "That's the pair of them in. Thanks for sitting both.",
+        "That's it in. Thanks for sitting it.",
         'Thanks, Jun.', 'No bother.'),
     ('ibrahim', 'pre'): (
         "Hello. There's a short check on the kiosk before the training: ten emails of the sort that land in recruitment. Just handle them as you normally would.",
@@ -110,7 +110,7 @@ CHECK_LINES = {
         'Thanks, Ibrahim.', 'Any time.'),
     ('ibrahim', 'post'): (
         "Welcome back. Ten new ones on the kiosk, same as before. Did the first check? The end screen shows how they compare.",
-        "That's both logged. Thanks for doing the pair.",
+        "That's logged. Thanks for doing it.",
         'Thanks, Ibrahim.', 'Any time.'),
     ('yasmin', 'pre'): (
         "Hello. Before the training there's a short check on the kiosk: ten emails and voicemails of the kind a PA gets. Do what you'd normally do with them.",
@@ -118,7 +118,7 @@ CHECK_LINES = {
         'Thanks, Yasmin.', "You're welcome."),
     ('yasmin', 'post'): (
         "Welcome back. Ten new emails and voicemails on the kiosk, same idea. If you took the first check, the end screen compares them.",
-        "That's the second one in. Thank you for taking both.",
+        "That's it in. Thank you for taking the time with it.",
         'Thanks, Yasmin.', "You're welcome."),
     ('julian', 'pre'): (
         "Good of you to sit this. There's a short check on the kiosk first: ten emails and voicemails a PA might get. Deal with them as you would.",
@@ -126,7 +126,7 @@ CHECK_LINES = {
         'Thanks, Julian.', 'Not at all.'),
     ('julian', 'post'): (
         "Back with us. Ten more on the kiosk, the same sort as before. If you did the first, the end screen sets them side by side.",
-        "Both done. We're grateful you sat the pair.",
+        "That's done. We're grateful you sat it.",
         'Thanks, Julian.', 'Not at all.'),
 }
 
@@ -134,7 +134,7 @@ CHECK_ENDINGS = {
     'pre': {'type': 'success', 'title': 'First check done',
             'body': 'Your result is saved, ready for the second check to compare with.'},
     'post': {'type': 'success', 'title': 'Second check done',
-             'body': 'Thank you for taking both checks.'},
+             'body': 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.'},
 }
 
 EPISODES = {

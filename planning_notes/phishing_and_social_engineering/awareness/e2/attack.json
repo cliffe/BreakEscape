@@ -178,7 +178,7 @@
         },
         "urgencyCalibrated": { "pass": "✓ The pressure reads as believable" }
       },
-      "replies": { "landed": "Thanks for your application — I'll open your CV and pass it to the hiring manager." },
+      "replies": { "landed": "Thanks for your application — I'll open your CV and pass it to the hiring manager.", "missed": "Thanks for this. I'll open the CV in the viewer, and if it asks me to enable anything or sign in to see it, I'll leave it and ask you to send it another way." },
       "hints": [
         "What is Tarrowby actually advertising, and what reference does the vacancy carry?",
         "Name the vacancy she is recruiting for so the application reads as expected.",

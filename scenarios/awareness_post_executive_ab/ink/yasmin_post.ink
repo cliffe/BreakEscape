@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { triage_post_done:
-        Yasmin Chaudhry: That's the second one in. Thank you for taking both.
+        Yasmin Chaudhry: That's it in. Thank you for taking the time with it.
     - else:
         Yasmin Chaudhry: Welcome back. Ten new emails and voicemails on the kiosk, same idea. If you took the first check, the end screen compares them.
     }

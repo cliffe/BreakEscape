@@ -58,7 +58,7 @@
       "slots": [ { "id": "invoice", "type": "reference", "label": "which invoice" } ],
       "urgency": "low" },
     "ask_confirm": { "part": "ask", "text": "Can you confirm once the new details are saved?", "slots": [],
-      "urgency": "medium" },
+      "urgency": "low" },
     "ask_when_convenient": { "part": "ask", "text": "Just drop me a line whenever it's sorted.", "slots": [],
       "urgency": "low" }
   },
@@ -122,7 +122,7 @@
       "displayName": "Adaeze Okafor",
       "role": "Finance Manager",
       "subjects": [
-        { "id": "s_invoice", "text": "Invoice INV-2217", "topic": "finance" },
+        { "id": "s_invoice", "text": "Invoice INV-2217", "topic": "finance", "requires": ["brightwell_open_invoice"] },
         { "id": "s_other", "text": "Quick note", "topic": "general" }
       ],
       "interests": { "topics": ["finance"] },
@@ -149,7 +149,7 @@
         "pretextRelevant": { "pass": "✓ Ties to an invoice she is expecting to pay", "fail": "No open invoice she can match this to, so no reason to act on it.", "redFlag": null },
         "urgencyCalibrated": { "pass": "✓ The pressure reads as believable" }
       },
-      "replies": { "landed": "Thanks Derek, I'll get the payee details updated before we run payment." },
+      "replies": { "landed": "Thanks Derek, I'll get the payee details updated before we run payment.", "missed": "Thanks, but I don't change payee details from an email. I'll ring Harlow on the number we already hold to check first." },
       "hints": [
         "Who does Brightwell's finance team already trust for invoices from this supplier?",
         "What open invoice could you tie the message to, so it reads as expected?",

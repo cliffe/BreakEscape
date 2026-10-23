@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { triage_post_done:
-        Jun Watanabe: That's the pair of them in. Thanks for sitting both.
+        Jun Watanabe: That's it in. Thanks for sitting it.
     - else:
         Jun Watanabe: You're back. Ten fresh ones on the kiosk, same drill. If you did the first check, the end screen puts the two side by side.
     }

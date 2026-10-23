@@ -172,6 +172,7 @@
         { "id": "w_slips", "match": false, "slips": true, "text": "Youre session has expire. Please sign-in agian to carry on." }
       ],
       "strings": {
+        "purposePass": "✓ Page: a session-expired sign-in is what the email promised.",
         "defDomainTier1": "The address is {shown}, not {real}. One letter is wrong.",
         "defDomainTier2": "The address is {shown}, not {real}. Read it from the right: the extra word gives it away.",
         "defDomainTier3": "The address is {shown}, not {real}. Compare every letter; a look-alike character is doing the work.",
@@ -230,7 +231,7 @@
           "redFlag": null
         }
       },
-      "replies": { "landed": "Thanks, I'll sign in through that link." },
+      "replies": { "landed": "Thanks, I'll sign in through that link.", "missed": "The address on that page isn't our usual Quayholt sign-in, so I didn't put my password in. I'll go to the portal the normal way." },
       "hints": [
         "Which address do Quayholt staff already trust for IT notices? Put that in the From line.",
         "What change were staff told about, so an unexpected sign-in prompt reads as expected?",
