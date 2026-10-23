@@ -3,7 +3,8 @@
 Status: plan, 2026-10-23, rounds 1 to 4 folded in (twelve reviews), R5 (workflow review, 82 confirmed
 findings, `deduction/REVIEW_R5_CONSOLIDATED.md`) and R6 (engine, integration, fixture-simulation reviews
 and the sidecar/gap integration, `deduction/integration/FOLD_LEDGER.md`) applied, and R7 (confirmation
-reviews: engine, integration, fixtures by simulation; 32 findings, all fixed) applied (§14); the user's
+reviews: engine, integration, fixtures by simulation; 32 findings, all fixed) and R8 (confirmation
+reviews; 14 findings, 4 majors, all fixed) applied (§14); the user's
 answers of 2026-10-22 (Q1 to Q9) are in §13.1. Nothing here is built.
 
 This file wins over `designs/12_deduction_board.md` where they differ. Until packet P10-X1 copies its
@@ -677,8 +678,9 @@ later.) The `deduction_` and `scenario_triggers_` prefixes are unused today (gre
 No free text. `atMs` is game time (`systems/game-clock.js`). `decidedAtVerdict` is whether the held facts
 already decided that suspect when the verdict was given (for the debrief, §3.10). **What the debrief needs
 from the verdict's moment is stored at that moment**, ids only, because grants are flip-only booleans with
-no order (`se_intel_<id>`) and the model cannot rebuild an earlier held set: `recordVerdict` (and `close()`
-for each kind `none` verdict) writes `deciders` (`heldDeciders`, when the suspect was decided), `settling`
+no order (`se_intel_<id>`) and the model cannot rebuild an earlier held set: `recordVerdict` (including
+`close()`'s kind `none` verdicts, which go through it with `fromClose`, §5.5) writes `decidedAtVerdict`,
+`deciders` (`heldDeciders`, when the suspect was decided), `settling`
 (`settlingFacts`, when it was not) and `byCount` (`[{ clue, how }]`), each computed on the held set of
 that moment. A retry's cleared `final` verdicts drop them with the verdict. Under 4 KB for six suspects
 with every list full (about 3.3 KB measured with eighteen `seen` facts and two `settling` and `byCount`
@@ -1089,7 +1091,17 @@ Behaviour:
   on a map hit, it decrements the count, adds that payload object to the set and drops it (not marked
   fired, no actions). So two triggers on one restored pickup both skip it, and a handler
   that would have returned early cannot leave an entry behind to swallow a later real pickup. Later pickups
-  of the same id run as usual. An id that never emits stays on the list harmlessly.
+  of the same id run as usual. **The map uses the restore's own skip rules**, because an entry that never
+  emits would stay on the map and swallow a later real pickup with the same key (`notes|undefined` is the
+  likely one). Left out: `notepad` entries (skipped, `inventory.js:122-126`, `:170-174`); every
+  `/^notes\d*$/` type (`addToInventory` returns before the emit, `:551-560`, and `restoreNoteFromSave`
+  emits nothing, `:262-276`); and every entry the duplicate check would skip, judged with that check
+  (`id || lockRef` equal, or type and name equal, `:133-155`) against `window.inventory.items` at arming,
+  which is still the pre-restore set because each add pushes only after its POST resolves and
+  `game_loaded` is emitted synchronously at the end of `create()`. With no `breakEscapeConfig.gameId` no
+  map is built: `addToInventory` does not await, so every restore emit has already run inside `create()`
+  before `game_loaded` (`core/game.js:2221`, `:2260`). The remaining case, an add POST that fails so its
+  emit never runs, leaves one entry behind (accepted, §12).
   An NPC `#give_item` flushed at unload whose add POST landed but whose emit never ran comes back as a
   restore and fires nothing (accepted, §12). Globals restore
   silently. After that, only real play fires a trigger. DL16 also warns on a `once: false` trigger whose
@@ -1279,6 +1291,12 @@ debrief's ids from that moment (`deciders`, `settling`, `byCount`, §4.5), write
 `deduction_verdict_<s>`, sets the suspect's mark to match and locks it, and grades it against `truth()`.
 Under `reveal: "end"` (so in every `when: "final"` case) it toasts "Verdict recorded: <name>, <kind
 word>…" (§6.3), except for the final call's verdicts, which close the case at once.
+**Kind `none` at close.** `close()` records each unnamed suspect's `{ value: 'clear', kind: 'none' }` through
+`recordVerdict` with an internal `fromClose` option that only `close()` passes: it skips the `allowed`
+check (`none` is never in `allowed`) and the "case is closed" check, shows no toast under either
+`reveal`, and otherwise stores the verdict like any other, with `decidedAtVerdict`, `deciders`,
+`settling` and `byCount` taken at that moment (the "worked out but not named" line reads
+`decidedAtVerdict`, §6.3). A call with kind `none` and no `fromClose` is refused (`reason: 'kind'`).
 
 - Under `when: "anytime"`: it runs the actions of that outcome's list and of the suspect's own list whose
   **effective timing** is `verdict` (an action's `at`, else `verdict` when `reveal` is `now` and `close`
@@ -1321,7 +1339,8 @@ mission." in a strict case; `state.koWarned`).
 
 **Closing** (`close()`, async). Returns if closed. In this order:
 
-1. `reconcileKOs()`. Every suspect with no verdict gets `{ value: 'clear', kind: 'none' }`. Every
+1. `reconcileKOs()`. Every suspect with no verdict gets `{ value: 'clear', kind: 'none' }`, through
+   `recordVerdict` with `fromClose` ("Kind `none` at close" above: no `allowed` check, no toast). Every
    verdict is graded. Under `when: "final"`, `wrongCount` is set here to the number of `wrong_guilty`
    outcomes, so Finish collects every escalation step it reaches (under `final` nothing ran at the verdicts).
 2. Globals are written. When a retry is due (the conditions under "Retry" below), only `deduction_state`
@@ -1388,36 +1407,44 @@ makes a second call return at once while one is running. Returns unless `debrief
    write contention, `objectives-manager.js:981-992`): `objectivesManager.completeTask(solvedTask)` when
    every outcome is right, else `objectivesManager.skipTask(solvedTask)` (`:654-685`; server `def
    skip_task!` in `app/models/break_escape/game.rb`, which drops that task's share under the `tasks`
-   scoring mode and lets its aim complete). Before the conclusion aim's tasks, **for a success-screen
-   ending only** (a credits ending concludes through the credits' own `/conclude` call), the runtime runs
-   `onClose`'s `set_global` actions whose global a conclusion gate (`concludeRequires.globals` or such an
-   `unlockCondition`) names, then `await syncConfirmed()`, so the server sees them at the conclusion call.
-   **For that ending, if that sync or the step's first one returned `false`, or the gate check below (run
-   here over everything but the conclusion aim's own tasks) fails, step 3 stops before the conclusion aim's
-   tasks**: they stay unrecorded and the
-   run ends unsettled (below). The next Finish calls them after a good sync, and the server concludes on
-   that call. This matters because the server re-checks a pending conclusion only inside a task save
-   (`recheck_pending_mission_conclusions!` in `game.rb`), and for a success-screen ending nothing else calls
-   `conclude_mission!`: a re-run that called no task would leave the mission `in_progress`.
-   Then each collected `complete_task`, then `onClose`'s
+   scoring mode and lets its aim complete). Then each collected `complete_task`, then `onClose`'s
    `complete_task` entries, in order, **except that every task of the mission's conclusion aim is moved to
    the end** (in that same relative order), so the aim can only conclude on step 3's last call and the
    success screen (which opens after 1 s idle) cannot open while step 3 is still running with movement
-   held. **Each task is recorded as it settles** (`t:<taskId>`), judged by
+   held. **The pre-check, for a success-screen ending only** (a credits ending concludes through the
+   credits' own `/conclude` call, which checks the gate itself): once every task outside the conclusion
+   aim has been called and has returned, immediately before the first conclusion-aim task, the runtime
+   runs `onClose`'s `set_global` actions whose global a conclusion gate (`concludeRequires.globals` or such
+   an `unlockCondition`) names, then `await syncConfirmed()`, so the server sees them at the conclusion
+   call, then runs the gate check below over everything but the conclusion aim's own tasks. Running it
+   this late means a gate whose `tasksCompleted` names an `onClose` or collected task in another aim (DL22
+   ⚠️) sees that task already saved, so the first Finish concludes. **For that ending, if that sync or the
+   step's first one returned `false`, or the pre-check fails, step 3 stops before the conclusion aim's
+   tasks**: they stay unrecorded and the run ends unsettled (below). The next Finish calls them after a
+   good sync, and the server concludes on that call. This matters because the server re-checks a pending
+   conclusion only inside a task save (`recheck_pending_mission_conclusions!` in `game.rb`), and for a
+   success-screen ending nothing else calls `conclude_mission!`: a re-run that called no task would leave
+   the mission `in_progress`. **Each task is recorded as it settles** (`t:<taskId>`), judged by
    `objectivesManager.taskIndex[id]?.status` being `completed` or `skipped` after the call returns (an unknown
    task id is a validator error, DL14, never a runtime case), because
    `completeTask` returns nothing and on a failed save or a server refusal (`success: false`, from the
    task-type checks) puts the task back to `active` (`objectives-manager.js:551-596`). A task already
    recorded is not called again. **An unmet conclusion gate does not refuse the task**: `def
    complete_task!` in `game.rb` saves it as completed and returns `success: true` with a `warning`, and the
-   client keeps it `completed` and shows "Not Yet…" (the `response.warning` branch of `completeTask`). So
-   on every Finish run in which every task of the conclusion aim is settled (completed or skipped) and
-   the mission has not concluded (the runtime listens for `mission_concluded`, `objectives-manager.js:1104`,
-   and reads `window.breakEscapeConfig.missionConcludedAt` on load), the runtime checks the conclusion aim's `concludeRequires`
-   itself, the server's own test (`unmet_conclude_requirements` in `game.rb`): every `tasksCompleted` id
-   has status `completed` in `taskIndex`, and every `globals` name is `true` in the synced globals. If any
-   is unmet, the case counts as **unsettled**.
-4. Only if every task is settled and the gate check passed: `onClose`'s **non-task** actions last, through
+   client keeps it `completed` and shows "Not Yet…" (the `response.warning` branch of `completeTask`). So,
+   **for a success-screen ending only**, on every Finish run in which every task of the conclusion aim is
+   settled (completed or skipped) and the mission has not concluded (the runtime listens for
+   `mission_concluded`, `objectives-manager.js:1104`, and reads `window.breakEscapeConfig.missionConcludedAt`
+   on load), the runtime checks the conclusion aim's `concludeRequires` itself, the server's own test
+   (`unmet_conclude_requirements` in `game.rb`): every `tasksCompleted` id has status `completed` in
+   `taskIndex`, and every `globals` name is `true` in the synced globals. If any is unmet, the case counts
+   as **unsettled**. A credits ending has no post-check and no gate-caused "unsettled": its gate globals
+   may be set by step 4's own `onClose` `set_global` (DL22 ⚠️), which a post-check here would read as
+   false on every Finish, so step 4 would never run; the credits' `concludeMission()` syncs before its
+   `/conclude`, and the server's refusal shows its own "Not Yet" alert
+   (`music/scenario-music-events.js:159-180`, `game.rb` `/conclude`).
+4. Only if every task is settled and (for a success-screen ending) the gate check passed: `onClose`'s
+   **non-task** actions last, through
    `applyActions` (recorded as `close`), except the gate `set_global`s step 3 already ran, which do not run
    again. The ending global that rolls the credits sits here, so the credits'
    `concludeMission()` (`music/scenario-music-events.js:159-180`) runs only after every task has been saved
@@ -1432,8 +1459,8 @@ makes a second call return at once while one is running. Returns unless `debrief
    given back at once after step 4.
 5. Only if step 4 ran: `debriefPending: false`, `debriefSeen: true`, sync.
 
-If a task is still unsettled after step 3 (a failed save, a type-check refusal, or the conclusion gate
-check above), steps 4 and 5 do not run:
+If a task is still unsettled after step 3 (a failed save, a type-check refusal, or, for a success-screen
+ending, the conclusion gate pre-check or post-check above), steps 4 and 5 do not run:
 `debriefPending` stays true, movement is given back at once (the same remembered value), and the runtime
 toasts "The case file could not be
 closed yet. Open the case file to try again." Reopening the board then shows the debrief and Finish again;
@@ -1445,11 +1472,16 @@ the pattern of `main.js:157-166`), which shows the retry panel if one is still d
 
 **The debrief, once.** `openDebrief()` picks the view (`'retry'` when a retry is due and `retryUsed` is
 false, else `'debrief'`). When the board in deduction mode is the current minigame, it calls that board's
-`showView(view)` and launches nothing ("Runtime and board"). Otherwise it waits until no minigame is open
-(the `busy()` pattern of `ui/success-screen.js:44-47`) **and the credits visualiser is closed**
+`showView(view)` and launches nothing ("Runtime and board"). Otherwise it waits for the success screen's
+rule, **1 s of continuous idle polled every 250 ms** (`ui/success-screen.js:34-35`, `:68-80`): idle means no
+minigame is open (the `busy()` pattern of `ui/success-screen.js:44-47`), **the credits visualiser is closed**
 (`window.BondVisualiser?.isOpen()`, `music/bond-visualiser.js:1788`; it is not a minigame, so `busy()` alone
-misses it, and on a reload between the conclusion and Finish `main.js` replays it) and opens the board with
-that `view`. A flag stops a second launch while one is waiting or showing; it clears when the board closes,
+misses it, and on a reload between the conclusion and Finish `main.js` replays it) **and no delayed event
+mapping is pending** (no inner map of `window.npcManager?._delayedMappings` holds an entry; the outer map
+keeps an empty inner map per NPC after a fire, `npc-manager.js:182`, `:616-627`). A pending mapping checks
+only `currentMinigame` when it fires, and its `phone-chat` branch opens the phone 500 ms later, which would
+end a board launched in that gap (`npc-manager.js:125`, `:1166-1191`); the 1 s of continuous idle covers the
+500 ms after the entry is removed. Any busy poll restarts the second. Then it opens the board with that `view`. A flag stops a second launch while one is waiting or showing; it clears when the board closes,
 so a panel or debrief closed without finishing can be launched again by the case file or a reload.
 `openDebrief()` waits while `window.playerIsKnockedOut?.()` is true, and clears its flag when the launch
 does not leave a deduction board as `MinigameFramework.currentMinigame` (`startMinigame` returns null while
@@ -2184,7 +2216,10 @@ later (`npc-manager.js:1166-1191`), which would cut off the chat the verdict cam
 and lose the reply lines and `#exit_conversation`. So **every handler-call mapping that a verdict, a grant
 or a global write can fire carries `"delayMs": 600`** (500 to 800): a delayed mapping waits for the open
 minigame to close and re-checks its condition then (`npc-manager.js:602-629`). A pending delay is lost on
-a reload; the hub re-offer below covers that. The player can close
+a reload; the hub re-offer below covers that. The close's debrief waits while a delayed mapping is pending
+and for 1 s of idle after it (§5.5 "The debrief, once"), but a handler call keyed on `deduction_closed` or
+a `deduction_outcome_<s>` would still fire as the debrief opens and end it, so key end-of-case calls on a
+global `onClose` sets at Finish instead (DL12 ⚠️). The player can close
 the call before choosing, and a `onceOnly` call is spent once it closes, so the handler's hub offers the
 same choice again: `+ {se_intel_a_okafor_brass_key and deduction_verdict_ded_a_okafor == "" and
 a_key_choice == ""} [About Okafor's key] -> key_seen`, and for each forced warned close `+ {a_thrown_out
@@ -2238,8 +2273,9 @@ the hub. Every option sets the global the credits read.
   them/you/these/the suspects", "exactly/only <n> people/suspects/<noun>s", "one of them/you/these
   is/was", "<n> of them/you/these", "the one who", and "the <guilty noun>", "the real <guilty noun>" and
   "Not the <guilty noun>" in the brief, `briefText`, `verdictNoun`, the board `title`,
-  `closeHint`, `debrief.closingLine` and the objectives' aim and task titles (a title such as "The
-  sleeper" or "Identify the insider" says there is one).
+  `closeHint`, `debrief.closingLine`, the objectives' aim and task titles and the `mission.json`
+  `display_name` and `description` (a title such as "The sleeper" or "Identify the insider" says there is
+  one; fixture C is named "Safe house" for this reason).
 - Write about the opposition without number ("anyone here who serves the lodge"), including reactions
   that can fire for several suspects ("You let them walk", not "one of us"). DL10 catches only its
   patterns, so the dialogue review checks this by reading.
@@ -2299,7 +2335,7 @@ with a deduction board and no `social` key at all never reaches the area: `Valid
 is useless without the block, and such a scenario fails its own bridge.) `scripts/validate_social/triggers.rb`
 runs DL16 for every scenario with a `triggers` key.
 
-**Where the scenario is.** DL9(g) reads `mission.json`, and DL10 reads `mission.json`'s `description` and a
+**Where the scenario is.** DL9(g) reads `mission.json`, and DL10 reads `mission.json`'s `display_name` and `description` and a
 brief given as an ink file; both resolve against `ctx.scenario_dir`. P10-C1 adds a `scenario_dir:` keyword
 (default `nil`: scoring then counts as `tasks`, and the ink brief and description are not read, with a
 ⚠️ "scenario folder unknown", which `Deduction` emits, only when `social.deduction` exists) to
@@ -2319,7 +2355,7 @@ only on C2b's small fixtures (DL10's marked-brief and `closeRoute` checks on `tr
 value-kind on `trust/`, DL14's `unlockable` on `opening/`), so **C2b may fix a fault those cases find in
 C2a's section** of `deduction.rb`, the one exception to "its own section", and lists each such fix in its
 report. Every deduction message starts `deduction: DL<n>: ` inside the existing `Mail.err` /
-`Mail.warn_` helpers (`validate_social/mail.rb:54-60`), so it reads `❌ SOCIAL: deduction: DL6: …` or
+`Mail.warn_` helpers (`def self.err` and `def self.warn_` in `validate_social/mail.rb`), so it reads `❌ SOCIAL: deduction: DL6: …` or
 `⚠️ SOCIAL: deduction: DL8: …`; every trigger message starts `❌ TRIGGERS: DL16: ` / `⚠️ TRIGGERS: DL16: `.
 The message columns below give the text after that prefix. Tests take the rule from `/: DL(\d+): /`. The
 prefix carries only the number, so a co-fire named by sub-clause or as a second message of one rule
@@ -2348,10 +2384,20 @@ modules.
   `final_call/` and `layout/`). P10-K-B mirrors into it, and into `final_call/` and `layout/`, any change
   to B's data or to the lines above (data and tag placement), not other dialogue. The tests copy the folder into a
   temp `repo_root`, as `test/js/validator-social-pretext.test.mjs:48-68` does, and call
-  `ValidateSocial.check` in-process (`test/js/validator-social-options.test.mjs:28-35`). Each "Bad case" is
+  `ValidateSocial.check` in-process (`test/js/validator-social-options.test.mjs:28-35`) with
+  **`valid_item_types: nil`**, as the options test does. Do not copy the pretext test's
+  `valid_item_types: Set.new([...])`: without `case-file` in it, `social_object_sprites` errors on B's
+  case-file board and the clean fixture fails. Each "Bad case" is
   a **one-change mutation of fixture B** unless the column names its own small fixture. A test passes when
   the output **includes the expected message and no message from any other DL rule, except the co-firing
-  rules the column lists**. A listed co-fire **must** appear, except one marked "(may)". Fixture B's
+  rules the column lists**. A listed co-fire **must** appear, except one marked "(may)". **Staged
+  co-fires:** P10-C2a's cases assert only the co-fires from rules already built when C2a lands (its own,
+  P10-B's and the existing social lints); a listed co-fire from a C2b rule (DL5–DL9, DL12, DL18) is written
+  into the case marked "after C2b" and not asserted, and the "no other DL rule" check ignores those rules
+  until then. The cases this covers today: DL1 → DL12 (Nair's report tag), DL11 → DL12 (no delivery route
+  for `ko`), DL14 `remove_item b_cabinet_key` → DL9, and §11.5's DL14 `reveal_hostiles` cases → DL9(a).
+  P10-C2b turns those assertions on, as an exception to "its own cases" in the test file (beside the
+  C2a-section exception in "Who builds what"), and lists each one in its report. Fixture B's
   expected statuses for every DL6, DL7 and DL8 mutation are in `conformance.json`, so the derived-set lints
   are checked against data, not hand arithmetic (DL7's: Okoro guilty by the pigeonhole step; Lindqvist,
   Haddad and Morgan clear).
@@ -2431,9 +2477,18 @@ modules.
   Unknown and none do not count. An `npc` route's grant counts as opening only when its `#grant_fact` is
   reachable through choices whose conditions name nothing but that fact's own `se_intel_*`, the witness's
   own influence, questions or wary variables, or `not` of those; a choice or block reading any other global
-  is gated.
-- *Progress topic* of a witness: a choice whose body charges influence and sets a global that has a *gate
-  reader*, and grants no clue (Tomás's alarm topic, which sets `b_heard_alarm`).
+  is gated. A `favour` route counts as opening only when its favour's `unlockFact` is itself an opening
+  fact, worked out first **without** favour routes (the ask needs that fact held, §3.4), so a favour whose
+  errand room is an opening room but whose `unlockFact` lies behind a closed door adds nothing to the
+  opening set. In DL8's one-closed-room warning the same test uses the opening facts plus that room's
+  other facts (A's favour, in the cloakroom and unlocked by the hall's glass, counts there, as §9.2's hand
+  check has it; `deduction/sim/r8_favour.js`). Only A has a favour, so A, C and D's DL8 results do not move.
+- *Progress topic* of a witness: a choice whose *topic flow* charges influence and sets a global that has
+  a *gate reader*, and grants no clue (Tomás's alarm topic, which sets `b_heard_alarm` in its body and
+  charges through `-> charge`, §7.2). The *topic flow* of a choice is its body plus every knot reached from
+  it by divert, followed in order and transitively, never through a choice, and stopping at the knot that
+  holds the choice (the hub). Both DL6 clauses that read a progress topic (its charge and its wary test)
+  read this flow, so a charge reached only by divert still makes the topic a progress topic.
 - *Gate readers* of a global `g`: a trigger or timer `condition`, an `eventMappings` `condition`, an aim
   `unlockCondition`, or an ink choice condition (`{...}` on a `+`/`*` line) or conditional block in a
   story the scenario loads, that names `g`. Credits, closing-card lines and plain ink text do not count.
@@ -2455,13 +2510,13 @@ modules.
 | DL3 | Every cell's `suspect` is a suspect and `clue` a clue; `subject` equals `suspect`; for each clue, cells equal `count`; each suspect has exactly one cell in each `exactlyOne` slot and at least one in each `oneOrMore` slot; no two cells of one suspect hold the same clue (§4.1) | "clue '<c>' has count 2 but 3 facts hold it" / "suspect '<s>' holds clue '<c>' twice" | a third `grievance` fact, declared (`se_intel_<f>`) and routed through `t_b_hr_summary` (whose `grant_facts` gains it), so only DL3 fires (DL5, DL6, DL8, DL21 skipped) |
 | DL4 | Profiles: ids unique, `text` and `label` non-empty; every rule passes `validate_rule`. ⚠️ when a profile is unsatisfiable on static grounds (`profile_satisfiable?` in the Ruby port, the export `profileSatisfiable(profile, deduction, intelFacts)` in `social-deduction.js` (§5.1), the conformance key `satisfiable` with one unsatisfiable case per clause and one satisfiable case, §11.1): a `has c` of a clue with count 0; a `markedAtLeast n` with `n` above the total count of marked clues, or above the largest number of cells any one suspect has in slots that hold marked clues; an `all` that needs two different clues in the same `exactlyOne` slot, or both `has c` and `not has c`. Fixture A's Courier (matched by nobody in the truth, by design) is satisfiable and gives no warning | "profile '<p>' rule: unknown key 'hasnt'" / "⚠️ profile '<p>' can be true for nobody: markedAtLeast 4 but only 3 marked clues exist" | `{ "hasnt": "grievance" }` (co-fires: the schema error for the same key (CLI only: the in-process test sees no schema errors); DL5, DL6, DL8 and DL21 are skipped after DL4's error) |
 | DL5 | `solution` covers every suspect and only those, and equals the truth; zero guilty is ⚠️ | "solution says '<s>' is '<x>' but the clues make them '<y>'" | swap the `clue` of `b_okoro_grievance` and `b_haddad_grievance` (the truth then has zero guilty: co-fires DL5's own zero-guilty ⚠️; DL21 quiet: equal cells in every slot) |
-| DL6 | Every suspect is decided, the same way as the truth, with only the reachable facts held (an error otherwise). When attacks are on and a suspect is undecided only until the KO-drop routes (room **none**) are added, that is a ⚠️ instead of the error; with `disableAttacks: true` KO-drop routes never count. ⚠️ when a witness (an `npc` route) holds more charged topics (clue topics plus *progress topics* whose body charges influence) than the questions they answer before `wary` (first free, then 15 a question against the `wary` threshold) and their ink offers no *recovery choice*; a recovery counts only if it lifts influence to at least `wary.at + rearmMargin` and the wary flag has `clearOnRearm: true`; a suspect's own `npc` route is not budgeted, nor is an NPC with no `social.characters` entry. ⚠️ "progress topic '<choice>' in '<n>' is a once-only choice or has a wary branch; wariness can close '<global>' for good" when a progress topic is a `*` choice, or its body or knot tests `ded_<n>_wary`. ⚠️ when, with the facts reachable *after a wrong call*, some innocent other than the one wrongly accused can no longer be decided ("after one wrong call, '<s>' can only be decided by ..."). ⚠️ when attacks are on and an `npc` route of a non-suspect, non-`koImmune` NPC is the only route still open to a fact some suspect needs (a KO of that witness would strand the suspect; set `koImmune: true` on clue-holding witnesses). ⚠️ when an ink line or action runs `#remove_npc` / `lose_ally` on an NPC whose `itemsHeld` or `rfidCard` holds the only key, card or code to a room that holds routes, with no `#give_item` of it before the removal. The `<facts>` list comes from `deciders()` (§5.1); when only a pair or more decides, the message names `settlingFacts()` instead | "'<s>' cannot be decided once every tampering has happened: needs one of <facts>" / "⚠️ '<s>' can only be decided by knocking someone out" / "⚠️ witness '<n>' holds 4 clue topics but answers 3 before turning wary, with no way to win them back" / "⚠️ knocking out '<n>' would leave '<s>' undecidable" | make `b_lindqvist_device` and `b_haddad_device` reachable only as KO drops: `b_haddad_phone` (`type: "phone"`) and `b_haddad_laptop` (`type: "laptop"`) in Haddad's `itemsHeld` (her ink has no `#give_item`, so no per-item gift matches); triggers `t_b_ko_1` and `t_b_ko_2` on `item_picked_up:<type>` with `where.itemId`, each granting one fact, places "Haddad's bag"; the two facts' routes swapped to those triggers, and the two facts taken out of the printout's `grant_facts`. One `personal_device` copy is unseen against two hidden device cells, so Lindqvist is undetermined (access and grievance T, device U); Haddad is still clear on access. B has attacks off, so the result is the error for Lindqvist, needing one of those two facts (co-fires: none). P10-A computes the statuses in `conformance.json` from this exact mutation |
+| DL6 | Every suspect is decided, the same way as the truth, with only the reachable facts held (an error otherwise). When attacks are on and a suspect is undecided only until the KO-drop routes (room **none**) are added, that is a ⚠️ instead of the error; with `disableAttacks: true` KO-drop routes never count. ⚠️ when a witness (an `npc` route) holds more charged topics (clue topics plus *progress topics* whose body charges influence) than the questions they answer before `wary` (first free, then 15 a question against the `wary` threshold) and their ink offers no *recovery choice*; a recovery counts only if it lifts influence to at least `wary.at + rearmMargin` and the wary flag has `clearOnRearm: true`; a suspect's own `npc` route is not budgeted, nor is an NPC with no `social.characters` entry. ⚠️ "progress topic '<choice>' in '<n>' is a once-only choice or has a wary branch; wariness can close '<global>' for good" when a progress topic is a `*` choice, or a test of `ded_<n>_wary` can skip its answer or its global write: a conditional block or conditional divert on the wary global placed before the `set_global` (`~` or `#set_global`) in the choice's *topic flow* (*Progress topic*, below). A wary test after the global write does not count (B's `charge` knot gives its tell "Tomás glances at the clock." after the alarm's `#set_global`, so clean B is quiet). ⚠️ when, with the facts reachable *after a wrong call*, some innocent other than the one wrongly accused can no longer be decided ("after one wrong call, '<s>' can only be decided by ..."). ⚠️ when attacks are on and an `npc` route of a non-suspect, non-`koImmune` NPC is the only route still open to a fact some suspect needs (a KO of that witness would strand the suspect; set `koImmune: true` on clue-holding witnesses). ⚠️ when an ink line or action runs `#remove_npc` / `lose_ally` on an NPC whose `itemsHeld` or `rfidCard` holds the only key, card or code to a room that holds routes, with no `#give_item` of it before the removal. The `<facts>` list comes from `deciders()` (§5.1); when only a pair or more decides, the message names `settlingFacts()` instead | "'<s>' cannot be decided once every tampering has happened: needs one of <facts>" / "⚠️ '<s>' can only be decided by knocking someone out" / "⚠️ witness '<n>' holds 4 clue topics but answers 3 before turning wary, with no way to win them back" / "⚠️ knocking out '<n>' would leave '<s>' undecidable" | make `b_lindqvist_device` and `b_haddad_device` reachable only as KO drops: `b_haddad_phone` (`type: "phone"`) and `b_haddad_laptop` (`type: "laptop"`) in Haddad's `itemsHeld` (her ink has no `#give_item`, so no per-item gift matches); triggers `t_b_ko_1` and `t_b_ko_2` on `item_picked_up:<type>` with `where.itemId`, each granting one fact, places "Haddad's bag"; the two facts' routes swapped to those triggers, and the two facts taken out of the printout's `grant_facts`. One `personal_device` copy is unseen against two hidden device cells, so Lindqvist is undetermined (access and grievance T, device U); Haddad is still clear on access. B has attacks off, so the result is the error for Lindqvist, needing one of those two facts (co-fires: none). P10-A computes the statuses in `conformance.json` from this exact mutation |
 | DL7 | Every fadable fact: (a) declares `deduction_faded_<f>` (bool, false); (b) has at least one route with `closedBy: "deduction_faded_<f>"` and at least one without; (c) each `closedBy` route is gated: a `trigger` route's `condition` names `deduction_faded_<f>`; an `npc` route's ink names it in a condition; an `object` route is ⚠️ (cannot be traced; gate it with a trigger); (d) each route without `closedBy` is a different `via`/`id` pair from every `closedBy` route. On any cell, a `closedBy` naming another global (§4.2, e.g. A's `a_lodge_suspicious`) needs that global declared as a bool, and the route gated on it as in (c) (its trigger's `condition` or the NPC's ink names it; an `object` route ⚠️) | "fact '<f>' can be destroyed but has no other route" / "route trigger 't_y' of fact '<f>' is closedBy 'a_lodge_suspicious' but its condition does not name it" | add a `deduction_tamper` of `b_okoro_access` to a timer (co-fires: DL13 for the undeclared `deduction_faded_b_okoro_access`; not DL6: the badge-log route has no `closedBy`, so the fact stays reachable) |
 | DL8 | No early collapse: with the opening facts held, (a) at most `earlyCollapse.maxGuilty` (default 0) suspects are guilty, and (b) at least `ceil(minOpen × suspects)` (default 0.5) are undetermined. Suspects in `allowEarly` are left out of both counts; `allowEarly` without `_why` is an error. ⚠️ when at least two rooms are closed at the start (hold routes and are not opening rooms; a container in an opening room that is not open from the start, and holds routes, counts as a closed place of its own, both in that count and as "any one of them") and the opening facts plus those of any **one** of them decide every suspect (the rest of the map would not matter). A case with one closed room never gets this warning | "the opening rooms decide 3 of 4 suspects; the case collapses early" / "⚠️ the opening rooms and 'a_cloakroom' decide every suspect" | move the DHCP printout into the office |
 | DL9 | Rigidity, wrong-call costs, retry and endings. *Play-changing* effects: `fail_mission`, `remove_item`, `lose_ally`, `reveal_hostiles`, `deduction_tamper`, and a `set_global` with `cost: true` whose global has a gate reader. (a) Derived rigidity: `strict` if any `fail_mission` is in `onWrongGuilty`, `onMissedGuilty`, `escalation` or a per-suspect list; else `costly` if any of those lists holds a play-changing effect; else `light`. It must equal `stakes.rigidity`. (b) A `cost: true` global with no gate reader is an error. (c) ⚠️ when `when` is `anytime`, `accuse`, `act` or `ko` is allowed, and some innocent's wrong-guilty lists (global, per-suspect, and any `escalation`) hold no play-changing effect. (d) `disclosure: "brief"` needs a non-empty `briefText` that appears verbatim in the brief; `disclosure: "hidden"` needs a non-empty `twistNote` and no `briefText`. (e) A strict case needs `when: "final"`, `stakes.solvedTask`, an ending in credits (not a `success` conclusion screen), and two music entries on its ending trigger, one conditioned on `!globalVars.mission_failed` and one on `globalVars.mission_failed`, the second with a non-victory playlist and its own `headerText` or credits title (§7.10); each missing piece is an error. (f) `retry: 1` needs `when: "final"` and `final` in `allowed`. (j) `reveal: "now"` with `when: "final"` is an error (nothing is graded before the close, so "now" has no meaning); escalation under `when: "final"` is allowed and runs at Finish, `wrongCount` being set at close (§5.5). (i) ⚠️ when `reveal` is `end` and a `cost: true` global, or an escalation step meant to change play, has no `"at": "verdict"`: it would run only at Finish, after the case has closed, so it gates nothing. (g) Scoring (read from `mission.json` in `ctx.scenario_dir`, default `tasks`; §8 "Where the scenario is"): `stakes.scoreLine: true` needs `solvedTask` and scoring `tasks`; ⚠️ when `briefText` mentions the score (`\bscore\b`) under any other mode. A skipped `solvedTask` never counts as a play-changing effect, so under `completion` or `partial_then_complete` a `costly` case still needs one from the list above. (h) A case whose **declared** `stakes.rigidity` is `strict` or `costly` (a mismatch with the derived one is (a)'s message, not (h)'s) needs, all three (§5.4; the ticker clause only when the case can end in credits): its conclusion screen, when `bond_visualiser`, has `bondVisualiserOpts.headerText` with neither "COMPLETE" nor "SUCCESS"; every music entry with `credits` or `closingCard` (on any trigger the case's ending can fire) has a `headerText` with neither word; and the scenario has a `creditsOverlay.ticker` whose lines have none of "COMPLETE", "SUCCESS", "WELL PLAYED", or uses `creditsTheme: "cyber"` (its fixed STATUS "COMPLETE" is accepted, §5.4) | "stakes.rigidity is 'light' but onWrongGuilty holds fail_mission, which is 'strict'" / "cost global 'a_lodge_suspicious' is read by no gate" / "strict case: no music entry for a loss (condition on mission_failed)" | change B's rigidity to `costly` |
-| DL10 | The brief: every profile `text`, and each `parts.items` entry of a profile that has `parts` (the board shows those in its place, §6.3), appears verbatim (whitespace-normalised) in `scenario_brief` (`brief.source: "scenario_brief"`) or in the named `.ink` file's text (`"ink"`). ⚠️ when a case with a `markedAtLeast` rule has a brief that says "marked" (or the `markedLabel`) nowhere outside the profile text ("the brief never says what makes a clue marked", §7.9). ⚠️ when the brief, `briefText`, `verdictNoun`, `title`, `closeHint`, `closeRoute`, `debrief.closingLine`, `debrief.notes[].text`, the objectives' aim and task titles, the `mission.json` `description` (read through `ctx.scenario_dir`), or the ink text of any NPC whose story carries a `#verdict*` tag or the favour warning implies a number of guilty: case-insensitive `\b(exactly\|only)\s+(one\|two\|three\|\d)\s+(of (them\|you\|these\|the suspects)\|people\|persons?\|suspects?\|<guilty noun>s?)\b` (so a clue count such as "There is only one" in a profile does not match), `\bone of (them\|you\|these)\s+(is\|was)\b`, `\b(two\|three\|\d) of (them\|you\|these)\b`, `\bthe one who\b`, and `\bthe (real \|actual )?<guilty noun>\b` or `\bnot the <guilty noun>\b` with the case's own noun | "profile '<p>' text is not in the brief" / "⚠️ 'Not the insider' implies there is one insider" | set B's clear noun back to "Not the insider" |
+| DL10 | The brief: every profile `text`, and each `parts.items` entry of a profile that has `parts` (the board shows those in its place, §6.3), appears verbatim (whitespace-normalised) in `scenario_brief` (`brief.source: "scenario_brief"`) or in the named `.ink` file's text (`"ink"`). ⚠️ when a case with a `markedAtLeast` rule has a brief that says "marked" (or the `markedLabel`) nowhere outside the profile text ("the brief never says what makes a clue marked", §7.9). ⚠️ when the brief, `briefText`, `verdictNoun`, `title`, `closeHint`, `closeRoute`, `debrief.closingLine`, `debrief.notes[].text`, the objectives' aim and task titles, the `mission.json` `display_name` and `description` (read through `ctx.scenario_dir`), or the ink text of any NPC whose story carries a `#verdict*` tag or the favour warning implies a number of guilty: case-insensitive `\b(exactly\|only)\s+(one\|two\|three\|\d)\s+(of (them\|you\|these\|the suspects)\|people\|persons?\|suspects?\|<guilty noun>s?)\b` (so a clue count such as "There is only one" in a profile does not match), `\bone of (them\|you\|these)\s+(is\|was)\b`, `\b(two\|three\|\d) of (them\|you\|these)\b`, `\bthe one who\b`, and `\bthe (real \|actual )?<guilty noun>\b` or `\bnot the <guilty noun>\b` with the case's own noun | "profile '<p>' text is not in the brief" / "⚠️ 'Not the insider' implies there is one insider" | set B's clear noun back to "Not the insider" |
 | DL11 | KO: `ko` in `allowed` with `disableAttacks: true` is an error; attacks on and `ko` not in `allowed` is an error (a KO always counts, §5.11); a suspect with `koImmune: true` is ⚠️ | "verdict kind 'ko' is allowed but disableAttacks is true: nobody can be knocked out" / "attacks are on, so a knockout counts as a verdict: add 'ko' to verdicts.allowed" | add `ko` to B's `allowed` (first message; co-fires: DL12, no delivery route for `ko`) |
-| DL12 | Verdict and close wiring. Each allowed kind has a delivery route (`accuse`: an ink `#verdict:accuse` in a suspect's own story or `#verdict:accuse:<s>` anywhere; `report`: `#verdict:report:<s>`; `act`: a `verdict` action with value `guilty` (the default) or `#verdict:act:<s>`; `trust`: an ink `#verdict:trust` in a suspect's own story, `#verdict:trust:<s>` anywhere, or a `verdict` action with `value: "clear"`; `final`: a `case-file` with `mode: "deduction"` and `allowSubmit: true`; `ko`: attacks on). Every `#verdict:<kind>` without a suspect is in a suspect's own story; every `#verdict:<kind>:<s>` names a suspect and an allowed kind; with `when: "final"`, `accuse`, `act` and `trust` tags are errors, and so are `accuse`, `act` or `trust` in `allowed` and any `verdict` action (§4.1); `final` in `allowed` without `when: "final"` is an error. There is at least one close route (`#verdict_close`, a `verdict_close` action, or the final call). Each `#verdict_close` is in a *close knot* (§8, derived sets: in a choice body, or a knot reached only through choices, with a sibling choice starting "Not yet"); each `verdict_close` action is inside a `confirm_action`'s `onConfirm`. `when: "anytime"` needs a non-empty `closeHint`; ⚠️ when `when` is `anytime`, `allowed` has no `trust` and the case has no `closeRoute` ("nothing tells the player how this case closes or that anyone left unnamed is cleared: set closeRoute"). ⚠️ when ink reads `deduction_decidable_<s>` in a case with `nudge: false` (the runtime never writes it, §4.4). ⚠️ when a close route cannot reach *the ending*: after each close route, the ending must be set by `onClose`, by a trigger whose `on` is a global `onClose` sets (its condition may narrow it), or by an object in a room that the same close route unlocks ("close route in knot 'pull_out' leaves no way to the ending"). A witness (an `npc` route that is not a suspect) that is not a `social.characters` entry with a `reports` threshold is ⚠️. ⚠️ when a tag other than `#exit_conversation` follows `#verdict_close` on the same ink line ("tag '#unlock_door:a_sanctum' follows #verdict_close in knot 'go_in': put it first"; §7.5) | "#verdict_close in knot 'send' has no 'Not yet' choice beside it" | drop `close_check`'s "Not yet" choice from Nair's ink (§7.5; co-fires: none) |
+| DL12 | Verdict and close wiring. Each allowed kind has a delivery route (`accuse`: an ink `#verdict:accuse` in a suspect's own story or `#verdict:accuse:<s>` anywhere; `report`: `#verdict:report:<s>`; `act`: a `verdict` action with value `guilty` (the default) or `#verdict:act:<s>`; `trust`: an ink `#verdict:trust` in a suspect's own story, `#verdict:trust:<s>` anywhere, or a `verdict` action with `value: "clear"`; `final`: a `case-file` with `mode: "deduction"` and `allowSubmit: true`; `ko`: attacks on). Every `#verdict:<kind>` without a suspect is in a suspect's own story; every `#verdict:<kind>:<s>` names a suspect and an allowed kind; with `when: "final"`, `accuse`, `act` and `trust` tags are errors, and so are `accuse`, `act` or `trust` in `allowed` and any `verdict` action (§4.1); `final` in `allowed` without `when: "final"` is an error. There is at least one close route (`#verdict_close`, a `verdict_close` action, or the final call). Each `#verdict_close` is in a *close knot* (§8, derived sets: in a choice body, or a knot reached only through choices, with a sibling choice starting "Not yet"); each `verdict_close` action is inside a `confirm_action`'s `onConfirm`. `when: "anytime"` needs a non-empty `closeHint`; ⚠️ when `when` is `anytime`, `allowed` has no `trust` and the case has no `closeRoute` ("nothing tells the player how this case closes or that anyone left unnamed is cleared: set closeRoute"). ⚠️ when ink reads `deduction_decidable_<s>` in a case with `nudge: false` (the runtime never writes it, §4.4). ⚠️ when a close route cannot reach *the ending*: after each close route, the ending must be set by `onClose`, by a trigger whose `on` is a global `onClose` sets (its condition may narrow it), or by an object in a room that the same close route unlocks ("close route in knot 'pull_out' leaves no way to the ending"). A witness (an `npc` route that is not a suspect) that is not a `social.characters` entry with a `reports` threshold is ⚠️. ⚠️ when a tag other than `#exit_conversation` follows `#verdict_close` on the same ink line ("tag '#unlock_door:a_sanctum' follows #verdict_close in knot 'go_in': put it first"; §7.5). ⚠️ when an NPC's `eventMappings` entry with `conversationMode: "phone-chat"` is keyed on `global_variable_changed:deduction_closed` or `global_variable_changed:deduction_outcome_<s>` (any suspect): the phone branch ends whatever minigame is open, delayed or not (`npc-manager.js:1166-1191`), so the call can end the debrief the close is opening ("phone call on 'deduction_closed' for '<n>' can end the debrief: key it on a global onClose sets at Finish"; §5.5 "The debrief, once") | "#verdict_close in knot 'send' has no 'Not yet' choice beside it" | drop `close_check`'s "Not yet" choice from Nair's ink (§7.5; co-fires: none) |
 | DL13 | Declared globals, not imported: `deduction_state` (`{}`), `deduction_closed` (false), `deduction_verdict_<s>` and `deduction_outcome_<s>` (`""`) for every suspect, `deduction_favour_<s>` (false) for every favour, `deduction_faded_<f>` (false) for every fadable fact, `se_intel_<f>` (false) for every cell, `deduction_decidable_<s>` (false) for every suspect when `nudge` is on (§4.4), `mission_failed` (`""`) when any `fail_mission` exists | "global 'deduction_outcome_ded_b_morgan' is not declared" | delete one declaration |
 | DL14 | References resolve: `verdict.suspect` is a suspect; `deduction_tamper.facts` are cells; `remove_item.itemId` and every `favours.<s>.item` name an item in the scenario that is neither `type: "key"` (keys live on the key ring) nor a notes type (`/^notes\d*$/`, which goes to the notepad), since `remove_item` can remove neither; `reveal_hostiles` has a `room` and every NPC in `npcs` is an NPC of that room with `behavior.initiallyHidden: true` and a `behavior.hostile` block, and the scenario has `social.deduction` (a foe whose room has not loaded needs the runtime, §5.7); `lose_ally.npc` is an NPC and its `global` is declared; `favours` keys are suspects, `unlockFact` a cell of that suspect, `room` a room, `item` an item in that room or in a container there; ⚠️ (built by P10-C2b, which owns *room of a route*) when the favour's room also holds a route, other than the favour itself, to one of that suspect's cells; `stakes.solvedTask` and every `complete_task` name tasks; no list holds `skip_task` (not an action; `solvedTask` covers it); every action in `stakes`, `escalation`, per-suspect and favour lists, and recursively in any `confirm_action.onConfirm` among them, has a type in DL16's known list ("stakes list 'onWrongGuilty' action type 'reveal_hostile' is unknown"); `verdict.value` is `guilty` or `clear`, and `kind: "trust"` with `value: "guilty"`, or `value: "clear"` with a kind other than `trust`, is an error ("verdict action on '<s>' is clear but kind 'act'"); the kind is one of `allowed` (the Ruby known-kinds list holds `accuse`, `report`, `ko`, `act`, `trust`, `final`); `debrief.notes[].suspect` is a suspect, every `globalVars.<g>` its `condition` names is declared in `globalVariables`, and the condition parses in the `global-condition.js` syntax (no parentheses); every `#unlock_door:<r>` in an NPC's ink has `<r>` in that NPC's `unlockable` ("NPC '<n>' unlocks '<r>' in its ink but its unlockable does not list it": the server refuses the unlock, `validate_npc_unlock`) | "remove_item names 'b_cabinet_key', a key: keys cannot be removed" / "debrief note for '<s>' reads 'c_released_x', which is not declared" | add `{ "type": "remove_item", "itemId": "b_cabinet_key" }` to B's `onWrongGuilty`, with a `type: "key"` item of that id in the office (co-fires: DL9, the derived rigidity becomes `costly`) |
 | DL15 | Banned terms (§3.11) in player-facing strings: `title`, `verdictNoun`, slot and clue labels, clue `clause`, `countLine`, profile `label`, `text` and `parts.items`, `briefText`, `tamperText`, `closeHint`, `closeRoute`, `markedLabel`, `debrief.*` (`notes[].text` included), favour `debriefLine`, every action `text`, route `place`, the facts' `text` and `label` for cells, and `scenario_brief`; and the `.ink` text of every suspect, every `npc`-route witness and every story carrying `#verdict*`, `#grant_fact` or `#deduction_favour`. Errors for the banned list, ⚠️ for the warned words (`quest`, `arkham`, and `herald`, `zealot`, `chosen` as profile labels). In ink, `token` and `tokens` are ⚠️ only (a "session token" is ordinary Cyber Security dialogue), the rest stay errors. `_allowTerms: [...]` on the deduction block exempts a listed word, with a `_why` note | "player-facing text uses 'token' (clue 'brass_key' label)" | a clue label "the brass token" |
@@ -2471,7 +2526,7 @@ modules.
 | DL19 | Enums and closed shapes, among them: `verdicts.allowed` items from `accuse`, `report`, `ko`, `act`, `trust`, `final`; `voice` `plain` or `pulp`; the optional keys `markedLabel`, `closeRoute` (strings), `profiles[].parts` (closed: `join` `any` or `all`, `items` a non-empty string array) and `debrief.notes` (at most 12 items, each closed with `suspect`, `condition` and `text`, all required strings; `debrief` stays closed); the `verdict` action's `value` (`guilty` or `clear`) where the schema shape-checks it; and `deduction_tamper`'s optional `emptyText` (string). `deduction_state.seen` and `.saved` are runtime state inside a global, not schema-checked | schema message (`validator-social-schema.test.mjs`) | `reveal: "later"`; `"voice": "noir"` |
 | DL20 | A `case-file` with `mode: "deduction"` requires `social.deduction`; `allowSubmit: true` requires `final` in `allowed` | "case-file '<id>' is a deduction board but the scenario has no social.deduction" | a deduction board with no block |
 | DL21 | ⚠️ Cell layout gives guilt away: in some slot, every guilty suspect has more cells than every innocent (or fewer). "Guilty" is read from `solution`; the rule is skipped when `solution` names no guilty suspect or no innocent | "every guilty suspect has more 'carry' cells than every innocent; the board shows it before any clue" | its own small fixture `social_deduction/layout/`: B's data with the `device` slot made `oneOrMore` and Okoro given a second device cell (a third `personal_device` copy, count 3), so the only guilty suspect has more device cells than every innocent (co-fires: none) |
-| DL22 | **Error** when a conclusion aim's `concludeRequires.tasksCompleted` (or an `unlockCondition` that needs the task completed) names the `solvedTask`, or `concludeRequires.globals` (or such an `unlockCondition`) names a global set **only** in outcome-conditional lists (`onRightGuilty`, `onWrongGuilty`, `onMissedGuilty`, `onRightClear`, `escalation`, per-suspect lists, `onBackfire`): a lost case skips the solved task (a skipped task never satisfies `tasksCompleted`, `def skip_task!`) and never sets those globals, so `concludeMission()` is refused on every attempt and a lost mission can never reach its credits, against §13.1 Q4. Also an **error** when the conclusion screen is the success screen (or no credits entry keys on the ending global) and the gate names a global that `onClose` sets only indirectly, through anything other than one of its own `set_global` actions (a trigger on an `emit_event` or on a global `onClose` sets): the runtime runs only `onClose`'s gate-named `set_global`s before the conclusion aim's tasks (§5.5 step 3), and a success-screen ending never asks the server again ("aim 'b_conclusion' waits on 'b_filed', which onClose sets only after the conclusion call; a success-screen ending never asks the server again"). Also an **error** when the conclusion screen is the success screen and a global the gate names is also the global a credits music entry keys on: the two endings would race, and the credits' `concludeMission()` would start while Finish still holds movement ("gate global 'x' also rolls the credits: pick one ending"). ⚠️ when it names an `onClose` task or a global an `onClose` `set_global` sets: allowed (under a success-screen ending Finish sets those globals and syncs before the conclusion aim's tasks; under a credits ending they are set in step 4 and the credits' `concludeMission()` syncs before its `/conclude`, `music/scenario-music-events.js:190-201`; either way every task runs before the ending global, §5.5), but check the order by hand; under a credits ending the indirect case is this ⚠️ too, since the credits call the server again | "aim 'b_conclusion' waits on solved task 'b_case_solved', which a lost case skips: the mission could never conclude" / "⚠️ aim 'b_conclusion' waits on 'b_case_closed', which the case completes at Finish" | error: add `concludeRequires: { "tasksCompleted": ["b_case_solved"] }` to B's conclusion aim; error (indirect): B's `onClose` gains `{ "type": "emit_event", "event_name": "b_filed_evt" }`, a trigger on `b_filed_evt` sets `b_filed` (declared false), and the conclusion aim gains `concludeRequires: { "globals": ["b_filed"] }`; warning: the `tasksCompleted` form with `b_case_closed` (no co-fires in any of the three) |
+| DL22 | **Error** when a conclusion aim's `concludeRequires.tasksCompleted` (or an `unlockCondition` that needs the task completed) names the `solvedTask`, or `concludeRequires.globals` (or such an `unlockCondition`) names a global set **only** in outcome-conditional lists (`onRightGuilty`, `onWrongGuilty`, `onMissedGuilty`, `onRightClear`, `escalation`, per-suspect lists, `onBackfire`): a lost case skips the solved task (a skipped task never satisfies `tasksCompleted`, `def skip_task!`) and never sets those globals, so `concludeMission()` is refused on every attempt and a lost mission can never reach its credits, against §13.1 Q4. Also an **error** when the conclusion screen is the success screen (or no credits entry keys on the ending global) and the gate names a global that `onClose` sets only indirectly, through anything other than one of its own `set_global` actions (a trigger on an `emit_event` or on a global `onClose` sets): the runtime runs only `onClose`'s gate-named `set_global`s before the conclusion aim's tasks (§5.5 step 3), and a success-screen ending never asks the server again ("aim 'b_conclusion' waits on 'b_filed', which onClose sets only after the conclusion call; a success-screen ending never asks the server again"). Also an **error** when the conclusion screen is the success screen and a global the gate names is also the global a credits music entry keys on: the two endings would race, and the credits' `concludeMission()` would start while Finish still holds movement ("gate global 'x' also rolls the credits: pick one ending"). ⚠️ when it names an `onClose` task or a global an `onClose` `set_global` sets: allowed (under a success-screen ending Finish sets those globals and syncs immediately before the conclusion aim's tasks, after every other task has been called, so an `onClose` task in another aim is already saved; under a credits ending they are set in step 4, which Finish reaches because a credits ending has no step-3 gate check and the credits' `concludeMission()` syncs before its `/conclude`, `music/scenario-music-events.js:190-201`; either way every task runs before the ending global, §5.5), but check the order by hand; under a credits ending the indirect case is this ⚠️ too, since the credits call the server again | "aim 'b_conclusion' waits on solved task 'b_case_solved', which a lost case skips: the mission could never conclude" / "⚠️ aim 'b_conclusion' waits on 'b_case_closed', which the case completes at Finish" | error: add `concludeRequires: { "tasksCompleted": ["b_case_solved"] }` to B's conclusion aim; error (indirect): B's `onClose` gains `{ "type": "emit_event", "event_name": "b_filed_evt" }`, a trigger on `b_filed_evt` sets `b_filed` (declared false), and the conclusion aim gains `concludeRequires: { "globals": ["b_filed"] }`; warning: the `tasksCompleted` form with `b_case_closed` (no co-fires in any of the three) |
 | DL23 | ⚠️ A profile's words do not name its clues: its `text` (and, with `parts`, the joined `parts.items`) does not contain, case-insensitively and whitespace-normalised, the `label` or the `clause` of each clue its rule names (a clue the board shows under a label the player never read in the profile) | "⚠️ profile 'courier' text does not name clue 'archive_pass' ('In the Archive')" | give B's `personal_device` clue the label "unregistered phone" (co-fires: none) |
 
 Tests: `test/js/validator-social-deduction.test.mjs` (every DL except DL16 and DL19) and
@@ -2483,7 +2538,10 @@ tests" above).
 ## 9. The four use cases as test fixtures
 
 Each is `scenarios/test_social_deduction_<x>/` with `scenario.json.erb`, `mission.json` (`"collection":
-"testing"`, `"secgen_scenario": null`, a description ending "Not a mission."), `ink/` (sources and
+"testing"`, `"secgen_scenario": null`, a description ending "Not a mission.", and the `display_name`
+"Test: social deduction B, night shift", "Test: social deduction A, open evening", "Test: social deduction
+C, safe house" or "Test: social deduction D, night train"; DL10 scans the `display_name` too, so a fixture is
+never named after a guilty count, §7.9), `ink/` (sources and
 compiled `.json`, §7), and placeholder names and sprites already in `assets/` (chosen by the fixture
 packet; vary age and background across each cast, AGENTS.md "Keep the cast diverse"). The closest models:
 `scenarios/test_social_board_indicators` (a one-room social fixture with a case-file),
@@ -2932,8 +2990,10 @@ conclusion aim's `conclusionScreen` is `{ "type": "bond_visualiser", "bondVisual
 "CASE CLOSED" } }`, and the scenario sets `"creditsOverlay": { "ticker": ["CASE CLOSED", "OPEN EVENING"] }`
 (DL9(h)), so no screen says "MISSION COMPLETE". `debrief.closingLine` (static, true on every run, names no
 number of guilty; DL10 scans it): "The key had one owner, and Marsh's marks added up to three. A ward charm
-cleared Ishikawa, and the badge log cleared Delacroix. A profile can fit more than one guest, so each guest
-had to be checked against all three, and counting what was left settled as much as finding it."
+cleared Ishikawa, and the badge log cleared Delacroix. Any one profile is enough, and two guests matched
+different ones, so finding one cultist never ended the case. Counting what was left settled as much as
+finding it." (True on every run: the solution is fixed, Okafor guilty by Keyholder alone and Marsh by
+Devotee alone, and no guest fits two profiles; DL10's patterns do not match "two guests matched".)
 
 Costs compared: a probe accusation loses the coats; a second brings the doorman; a third ends the evening
 early. Accusing all five pays all of that, loses Venn, and has every innocent named in the credits. A
@@ -3009,7 +3069,7 @@ from a handler's call; KO with the first-punch warning; reveal now; per-suspect 
 3 with a forced warned close; `lose_ally`; `reveal_hostiles` on both paths; a warned close; a story ending
 with credits conditions and a neutral conclusion header.
 
-### 9.3 Fixture C — The sleeper
+### 9.3 Fixture C — Safe house
 
 **Kind:** same universe, combat on, a story that ends in credits. Three field contacts at a safe house;
 the brief does not say how many are sleepers. Board `title` "Safe house"; `verdictNoun` "Sleeper" / "Not a sleeper". Scoring: the
@@ -3683,7 +3743,7 @@ check); `disableClose` as F3 needs.
 
 | Id | Scope | Owns | Consumes / provides | Model | After | Proof |
 |---|---|---|---|---|---|---|
-| **P10-A** Evaluator | §5.1: the pure module and its tests, `profileSatisfiable` and `decidedBy` included; the conformance file, seeded from `deduction/sim/` (§11.1), with at least 40 cases: every rule kind, each of T/F/U, count elimination, the pigeonhole step for `has` and for `markedAtLeast`, marked supply, `any` over `all` with `not`, the §4.3 worked lines, the four `decidedBy` cases and the six `satisfiable` cases of §11.1 (one per DL4 clause, plus A's Courier), A's `byCount` scoping cases (H+C+A, H+C+F), and every room-by-room set of §9 (opening rooms and each further room, A's eight states and C's six included: O, O+bag, O+bag+office, O+bag+office+garage, O+office (the DL8 single-room set and the after-a-wrong-call set without the bag: Novak guilty, Baptiste clear, Ahmed open) and O+garage (Novak guilty, Ahmed and Baptiste open, after L-84's gossip move)) for all four fixtures, plus the statuses of fixture B's DL6, DL7 and DL8 bad-case mutations (§8); and §11.1's two whole-fixture checks, over an atoms file it ports from `deduction/sim/fixtures.js` (tests use copied fixtures, never planning files): `test/js/fixtures/social_deduction/atoms.js`, one export per fixture with its atoms (`id`, `room`, `facts`, `witness`, `charged`, `kindWord`, `progress`, `forbid`, `fadable`, and `req` as a predicate over the atom set and the verdict mode), witness budgets and verdict modes, the sim's short suspect ids mapped to the plan's `ded_<x>_<name>` and its fact ids to the plan's (B's from §4.9; A, C and D as `<x>_<suspect>_<clue>`, the sim's `mkCells` convention, until each K packet renames them in that file) | `systems/social-deduction.js`, `test/js/social-deduction-eval.test.mjs`, `test/js/fixtures/social_deduction/conformance.json`, `test/js/fixtures/social_deduction/atoms.js` | Provides §5.1's exports; inputs also `deduction/sim/` (`eval.js`, `fixtures.js`, `run.js`, `strategies.js`, `extra.js`, `mutations.js`) | Opus | — | `bin/test-js` on its test: §11.1 green |
+| **P10-A** Evaluator | §5.1: the pure module and its tests, `profileSatisfiable` and `decidedBy` included; the conformance file, seeded from `deduction/sim/` (§11.1), with at least 40 cases: every rule kind, each of T/F/U, count elimination, the pigeonhole step for `has` and for `markedAtLeast`, marked supply, `any` over `all` with `not`, the §4.3 worked lines, the four `decidedBy` cases and the six `satisfiable` cases of §11.1 (one per DL4 clause, plus A's Courier), A's `byCount` scoping cases (H+C+A, H+C+F), and every room-by-room set of §9 (opening rooms and each further room, A's eight states and C's six included: O, O+bag, O+bag+office, O+bag+office+garage, O+office (the DL8 single-room set and the after-a-wrong-call set without the bag: Novak guilty, Baptiste clear, Ahmed open) and O+garage (Novak guilty, Ahmed and Baptiste open, after L-84's gossip move)) for all four fixtures, plus the statuses of fixture B's DL6, DL7 and DL8 bad-case mutations (§8); and §11.1's two whole-fixture checks, over an atoms file it ports from `deduction/sim/fixtures.js` (tests use copied fixtures, never planning files): `test/js/fixtures/social_deduction/atoms.js`, one export per fixture with its atoms (every field the sim's atoms carry: `id`, `room`, `facts`, `witness`, `charged`, `noWary` (the alarm topic, which wariness does not block, `sim/run.js:48-49`; without it B's alarm-last-while-wary order never sets `b_heard_alarm` and check (2) fails on B), `kindWord`, `progress`, `forbid`, `fadable`, `v` (DL6's validator view: `closedBy`, `costGated`, `ko`), `place`, and `req` as a predicate over the atom set and the verdict mode), witness budgets and verdict modes, the sim's short suspect ids mapped to the plan's `ded_<x>_<name>` and its fact ids to the plan's (B's from §4.9; A, C and D as `<x>_<suspect>_<clue>`, the sim's `mkCells` convention, until each K packet renames them in that file) | `systems/social-deduction.js`, `test/js/social-deduction-eval.test.mjs`, `test/js/fixtures/social_deduction/conformance.json`, `test/js/fixtures/social_deduction/atoms.js` | Provides §5.1's exports; inputs also `deduction/sim/` (`eval.js`, `fixtures.js`, `run.js`, `strategies.js`, `extra.js`, `mutations.js`) | Opus | — | `bin/test-js` on its test: §11.1 green |
 | **P10-D** Triggers | §5.2, armed on `game_loaded`, idempotent | `systems/scenario-triggers.js`, `test/js/social-scenario-triggers.test.mjs` | Consumes `utils/global-condition.js`, `writeGlobal` (`deferEmit`); `applyActions` injected. Provides `installScenarioTriggers`, `matchesWhere`, `FIRED_KEY` | Sonnet | — | §11.3 triggers list |
 | **P10-E** Actions | §5.4: the seven cases (`reveal_hostiles` with `room`, calling the runtime's `deferHostile`; `verdict` with `value` and the kind defaults, `trust` for clear; `deduction_tamper` with `emptyText`), the `grant_facts` case (one batch toast), and `confirm_action`'s `confirmLabel` and `cancelLabel` passed to `gameConfirm` | `systems/apply-actions.js` (its own cases only), `test/js/social-apply-actions-deduction.test.mjs` | Consumes `window.deductionRuntime` (stubbed), `writeGlobal`, `removeFromInventory`, `npcBehaviorManager`, `npcHostileSystem`, `NPCGameBridge`. No new import in `apply-actions.js`. The test's scenario is bootstrap-shaped (no room `npcs`) | Opus | P10-F1, P10-F2 (their findings in the build log) | §11.3 actions list; existing tests that read `apply-actions.js` still pass: `flag-station-resubmit`, `flag-reward-door-sprites`, `engine-fixes-pass4c`, `npc-ko-immune-and-door-event`, `social-global-writer`, `social-intel`, `social-ready-toast`, `examine-minigame` |
 | **P10-G** Ink tags | §5.3: the four tag cases (`#verdict:trust[:<s>]` records `clear`), lazy `import()` only | `minigames/helpers/chat-helpers.js` (its own cases only), `test/js/social-tag-processor-deduction.test.mjs` (copies `apply-actions.js`, `social-intel.js`, `global-writer.js` and their imports, and rewrites the `import()` path as well as the static ones) | Consumes `applyActions` (lazily), `window.deductionRuntime` (stubbed); `minigames/person-chat/person-chat-pending-reply.js`, `minigames/person-chat/person-chat-minigame.js` (`_flushPendingReply`, the `_stateTagsApplied` handling in `displayAccumulatedDialogue`) and `test/js/person-chat-pending-reply.test.mjs` (its method-lifting harness, the model for the flush cases), all read only | Sonnet | — | §11.2, including the pending-reply flush cases; unchanged and green: `social-tag-processor`, `global-sync-declared`, `portrait-variants`, `engine-fixes-round3` |
@@ -3699,8 +3759,8 @@ check); `disableClose` as F3 needs.
 | **P10-H2** Board views | §6.1, §6.4–§6.8: views, the retry panel, the debrief (authored notes under the outcome words), CSS, the dispatch block with lazy `import()`, and the board's `showView(view)` hook; the nudge's how line, the progress lines, "New" tags and `markSeen()` on close, the counts `<details>`, the profile `parts`, the footer's `closeRoute`; the keyboard model (stable `data-suspect` / `data-control`, focus restore, radio groups, the modal confirm) and the one live region; the §6.8 test state | `minigames/intel-board/deduction-view.js`, `minigames/intel-board/intel-board-minigame.js` (dispatch block only), `public/break_escape/css/intel-board-deduction.css`, `test/js/social-deduction-board.test.mjs` | Consumes P10-H1; the runtime through `params.runtime`, stubbed with the shape of §5.5 "Runtime and board" (`setMark`, `submitFinal`, `retryCall`, `declineRetry`, `getState`, `finishDebrief`, `markSeen`) | Opus | P10-H1 | §11.4 view list; unchanged and green: `social-intel-board`, `-defender`, `-engagement`, `-indicators`, `social-influence-bar` |
 | **P10-C1** Schema and triggers lints | §5.10, DL16, DL19: `social.deduction` (with `voice`, `markedLabel`, `closeRoute`, `profiles[].parts`, `debrief.notes`, and `trust` in the `verdicts.allowed` enum), the fact field and `triggers` in the schema; the per-object `triggerOnInteract[].type` enum gains `hint` (with `title` and `message`), `grant_facts` and the seven §5.4 types (not recursing into `onConfirm`); `case-file` additions; a `shredder` entry in `scripts/minigame-data-schemas.json` (optional: `title`, `documentTitle`, `content`, `stripCount`, `strips`, `allowRotation`, `successMessage`, `stateWrites`), so fixture D validates without that warning; `triggers` in `known_top_level` and the `--strict-social` exit test (any ❌ when the scenario has `social` or `triggers`); `validate_social.rb`'s header comment ("A scenario without one always exits 0", `:14-15`) updated to that rule; `triggers.rb` with the action-type constant (`grant_facts` in it); the `Triggers.check` call. Schema-test mechanics: trigger shape cases assert on the schema's `other` errors (they are not under `#/social`, so they fail every run, §5.10), not on social issues; the existing key-list assertion for `base.social` (`validator-social-schema.test.mjs:96-101`) gains `deduction`; `base.json` declares `scenario_triggers_fired: {}` so DL16 stays quiet on it | `scripts/scenario-schema.json`, `scripts/minigame-data-schemas.json`, `scripts/validate_scenario.rb` (four places only: the `known_top_level = %w[` array, the `if options[:strict_social] && json_data.key?('social')` exit test, the `social_issues = ValidateSocial.check(` call, which gains `scenario_dir: File.dirname(erb_path)`, and the `--strict-social` option's help text, which states the new exit rule (`validate_scenario.rb:5252`)), `scripts/validate_social.rb` (the `Triggers` call and the `scenario_dir:` keyword on `check` and `Context`; the `Deduction` registration line is P10-C2a's, §10.3), `scripts/validate_social/triggers.rb`, `test/js/validator-social-triggers.test.mjs`, `test/js/fixtures/social_triggers/`, the new cases in `test/js/validator-social-schema.test.mjs` and `test/js/fixtures/social_schema/base.json` | Consumes nothing new; inputs also `test/js/validator-social-framework.test.mjs` (the CLI test model) | Sonnet | — (wave 2 for file ownership) | DL16 and DL19 tests; `bin/test-js test/js/validator-*.test.mjs test/js/event-mapping-unlock-door.test.mjs test/js/credits-theme.test.mjs` green (every test that runs the validator or reads the schema, not only `validator-social-*`); the `--strict-social` comparison of §11.5 (R0 method) shows no change on any scenario with a `social` key. `validate_scenario.rb` carries another agent's uncommitted hunk (2026-10-22): re-read before editing, edit only the four places, leave the commit to the orchestrator (§2) |
 | **P10-I1** Influence externals in ordinary chats | §7.2: for a social character, `_beginSocialRun` also calls `influence.bindInfluenceExternals?.(engine, { npcId, characterId: influence.resolveCharacter?.(npcId)?.characterId, channel: 'person'\|'phone', runId: this._socialRunId })` on the engine it passes to `trackTurns` (phone: `this.conversation?.engine \|\| this.inkEngine`), skipped when `this.params?.pretextCallId` is set (a pretext call binds it through `attachPretext`) | the `_beginSocialRun` hunk of `minigames/person-chat/person-chat-minigame.js` and of `minigames/phone-chat/phone-chat-minigame.js` (nothing else in either file), `test/js/social-influence-chat-binding.test.mjs` | Consumes `window.socialInfluence` (`bindInfluenceExternals`, `resolveCharacter`, `systems/social-influence.js:283`, `:556`, read only). Provides `se_influence` bound in every social person and phone chat, which fixture B's witness costs (§9.1) and D's conductor rest on | Sonnet | — (wave 2 for file ownership) | §11.3 influence-binding cases; unchanged and green (they read either chat file): `person-chat-pending-reply`, `phone-chat-close-race`, `phone-chat-choice-keys`, `phone-chat-hub-residuals`, `phone-chat-line-tags`, `phone-intro-once-and-notepad-raw`, `phone-player-lines`, `phone-reopen-and-persistence`, `social-pretext-first-menu`, `social-npc-records`, `social-ink-vars`, `social-tag-processor`, `global-sync-declared`, `social-lab-fairbairn-scenes`, `social-lab-ruth-keys`, `finale-voiced-calls`, `finale-forced-call-and-closing-card`, `session-overlay-pause`, `engine-fixes-pass4b`, `engine-fixes-round4`, `engine-fixes-round6`. Both files may hold other agents' hunks: re-read first, own hunk only (§2) |
-| **P10-C2a** Plain deduction lints | §8 DL1–DL4, DL10, DL11, DL13–DL15, DL17, DL20–DL23 (DL14's `trust` value-kind rule, `debrief.notes` and `unlockable` checks; DL10's `notes`, `closeRoute`, `parts` and marked-brief checks; the known-kinds list with `trust`), the simple derived sets of §8 (*cells*, *routes of a fact*, *fadable facts*, *the ending*), the `DL<n>: ` message prefix, and the clean fixture (§8 "Fixtures and tests": B's data and the stub ink) | `scripts/validate_social/deduction.rb` (its own section), `test/js/validator-social-deduction.test.mjs`, `test/js/fixtures/social_deduction/good/`, `final_call/`, `layout/` | Consumes P10-B, P10-C1; the model of `validator-social-pretext.test.mjs:48-68` for a temp `repo_root` | Sonnet | P10-B, P10-C1 | One good and one bad case per DL item it owns; the clean fixture gives no issue of any kind; `bin/test-js test/js/validator-*.test.mjs test/js/event-mapping-unlock-door.test.mjs test/js/credits-theme.test.mjs` green |
-| **P10-C2b** Derived-set lints | §8's derived sets (room of a route, opening rooms, reachable facts, after a wrong call, gate readers, recovery choice, progress topics, close knot) and DL5–DL9, DL12, DL18, DL14's favour-room warning; the small fixtures of §11.5, each with its expected statuses computed by running `social-deduction.js` over its held sets and recorded in the fixture's `_why` (the reviewer re-runs them) | `scripts/validate_social/deduction.rb` (its own section, plus fixes in C2a's section that its `trust/` and `opening/` cases find, listed in its report, §8 "Who builds what"), its cases in `test/js/validator-social-deduction.test.mjs`, `test/js/fixtures/social_deduction/after_wrong/`, `opening/`, `strict/`, `favour/`, `trust/` | Consumes P10-C2a | Opus | P10-C2a | One good and one bad case per DL item it owns; the clean fixture still gives no issue of any kind; `bin/test-js test/js/validator-*.test.mjs test/js/event-mapping-unlock-door.test.mjs test/js/credits-theme.test.mjs` green; the R0-method `--strict-social` comparison shows no change |
+| **P10-C2a** Plain deduction lints | §8 DL1–DL4, DL10, DL11, DL13–DL15, DL17, DL20–DL23 (DL14's `trust` value-kind rule, `debrief.notes` and `unlockable` checks; DL10's `notes`, `closeRoute`, `parts` and marked-brief checks; the known-kinds list with `trust`), the simple derived sets of §8 (*cells*, *routes of a fact*, *fadable facts*, *the ending*), the `DL<n>: ` message prefix, and the clean fixture (§8 "Fixtures and tests": B's data and the stub ink) | `scripts/validate_social/deduction.rb` (its own section), `test/js/validator-social-deduction.test.mjs`, `test/js/fixtures/social_deduction/good/`, `final_call/`, `layout/` | Consumes P10-B, P10-C1; the model of `validator-social-pretext.test.mjs:48-68` for a temp `repo_root` (with `valid_item_types: nil`, §8) | Sonnet | P10-B, P10-C1 | One good and one bad case per DL item it owns, asserting only co-fires from rules already built (the rest marked "after C2b", §8 "Staged co-fires"); the clean fixture gives no issue of any kind; `bin/test-js test/js/validator-*.test.mjs test/js/event-mapping-unlock-door.test.mjs test/js/credits-theme.test.mjs` green |
+| **P10-C2b** Derived-set lints | §8's derived sets (room of a route, opening rooms, reachable facts, after a wrong call, gate readers, recovery choice, progress topics, close knot) and DL5–DL9, DL12, DL18, DL14's favour-room warning; the small fixtures of §11.5, each with its expected statuses computed by running `social-deduction.js` over its held sets and recorded in the fixture's `_why` (the reviewer re-runs them) | `scripts/validate_social/deduction.rb` (its own section, plus fixes in C2a's section that its `trust/` and `opening/` cases find, listed in its report, §8 "Who builds what"), its cases in `test/js/validator-social-deduction.test.mjs`, `test/js/fixtures/social_deduction/after_wrong/`, `opening/`, `strict/`, `favour/`, `trust/` | Consumes P10-C2a | Opus | P10-C2a | One good and one bad case per DL item it owns; every C2a case marked "after C2b" turned on and green, each listed in its report (§8 "Staged co-fires"); the clean fixture still gives no issue of any kind; `bin/test-js test/js/validator-*.test.mjs test/js/event-mapping-unlock-door.test.mjs test/js/credits-theme.test.mjs` green; the R0-method `--strict-social` comparison shows no change |
 
 **Wave 3: wiring, regression, engine commit, contract docs.** P10-W may start once its own four packets
 have landed; P10-Q0 and the engine commit wait for all of wave 2's code (P10-B, P10-I1 and P10-C2b included).
@@ -3773,7 +3833,7 @@ is not touched: the board is already registered (`minigames/index.js:178`).
 | `test/js/fixtures/social_deduction/atoms.js` (the whole-fixture checks' acquisition atoms, ported from `deduction/sim/fixtures.js`) | P10-A; each P10-K-x edits only its own fixture's atoms |
 | `test/js/fixtures/social_deduction/good/` | P10-C2a; P10-K-B mirrors fixture B's data and tag placement into it (not dialogue) |
 | `test/js/fixtures/social_deduction/runtime-*.json` | P10-U1 |
-| `test/js/validator-social-deduction.test.mjs` | P10-C2a, then P10-C2b (its own cases) |
+| `test/js/validator-social-deduction.test.mjs` | P10-C2a, then P10-C2b (its own cases, plus turning on C2a's "after C2b" co-fire assertions, §8) |
 | `test/js/fixtures/social_deduction/final_call/`, `layout/` (DL17 and DL21 bad-case fixtures) | P10-C2a; P10-K-B mirrors fixture B's data and tag placement into them |
 | `test/js/fixtures/social_deduction/after_wrong/`, `opening/`, `strict/`, `favour/` (§11.5's extra DL6, DL8, DL9 and DL14 favour cases) | P10-C2b |
 | `test/js/fixtures/social_deduction/trust/` (DL12's trust cases) | P10-C2b |
@@ -3898,7 +3958,8 @@ seeds `conformance.json` from it.
 
 - No `triggers` key: no listener added, the returned handle is inert.
 - Nothing fires before `game_loaded`, and restore pickups that arrive **after** it are ignored: with
-  `gameScenario.playerInventory` holding `id` x, an `item_picked_up:notes { itemId: 'x' }` emitted after
+  `gameScenario.playerInventory` holding `{ type: 'id_badge', id: 'x' }` (not a notes type, which the map
+  leaves out, §5.2), an `item_picked_up:id_badge { itemId: 'x' }` emitted after
   `game_loaded` (as the async restore does, §5.2) runs no trigger and marks nothing fired; a second pickup
   of x, and a pickup of any other id, run as usual. The same with `startItemsInInventory` on a first load
   (empty `playerInventory`). Two triggers (`item_picked_up:key` and `item_picked_up:*`) on one restored item:
@@ -3906,6 +3967,10 @@ seeds `conformance.json` from it.
   derived `keyId`; two restored items of one type with no `id`, `opens_lock` or `key_id` (`itemId:
   undefined`) are both dropped, and a third, real pickup fires; a trigger whose `where` does not match
   the restored payload still takes it off the map, so a later real pickup of that id fires.
+- The map follows the restore's skip rules (§5.2): with `playerInventory` holding a `notepad`, a `notes`
+  item with no id and an entry that duplicates an item already in `window.inventory.items` at arming, the
+  map has none of them, so a real `item_picked_up:notes { itemId: undefined }` after `game_loaded` fires;
+  with no `breakEscapeConfig.gameId` no map is built and the first real pickup after `game_loaded` fires.
 - A matching event runs the actions once; a second identical event does nothing with `once` (default)
   and runs again with `once: false`.
 - `where` mismatch, `condition` false: nothing runs, nothing marked fired. `condition` uses
@@ -3989,7 +4054,8 @@ seeds `conformance.json` from it.
 - Finish failures: a second call while the first is running returns at once (`finishing`); a task left
   `active` after its call (a failed save) stops before step 4, keeps `debriefPending`, toasts; so does a
   conclusion-aim task left `completed` while the stubbed server returned a `warning` and the conclusion
-  aim's `concludeRequires` names a task or global not yet met (the gate check, §5.5 step 3), and a later
+  aim's `concludeRequires` names a task or global not yet met (the gate check, §5.5 step 3, success-screen
+  endings only), and a later
   Finish runs only what is not yet recorded (`t:<taskId>`, `c:<sid>`, `e:<n>`); a "reload" in the middle of
   step 3 runs the unsettled tasks on the next Finish and never repeats a settled one; movement is disabled
   from the call until step 4 and given back on every path.
@@ -4014,13 +4080,30 @@ seeds `conformance.json` from it.
   and is given back after 10 s if it never does.
 - The debrief and the credits visualiser: with `debriefPending` and a concluded game both set on load, the
   debrief opens only after `BondVisualiser.isOpen()` turns false.
+- The debrief's idle wait: with a fake clock and a 250 ms poll, `openDebrief()` launches only after 1 s of
+  continuous idle (a minigame that opens at 600 ms and closes at 700 ms restarts the second); with a stub
+  `npcManager._delayedMappings` holding a pending entry it does not launch until the entry is gone and a
+  further second of idle has passed (a stub phone launch 500 ms after the entry is removed finds no board
+  to end).
+- Kind `none` at close: under `reveal: "end"` with `verdicts.allowed: ["final"]`, an unnamed suspect gets
+  `{ value: 'clear', kind: 'none' }` stored (not refused), no "Verdict recorded" toast, and its
+  `decidedAtVerdict`, `deciders`, `settling` and `byCount` from the close; a direct `recordVerdict` call
+  with kind `none` and no `fromClose` returns `{ recorded: false, reason: 'kind' }`; a guilty suspect
+  decided at close and left unnamed gets the "worked out but not named" line.
 - Conclusion gates (success-screen ending): an `onClose` `set_global` whose global the conclusion aim's
   `concludeRequires.globals` names is written and synced before the last conclusion task is called, and is
   not run again in step 4; with the gate sync stubbed to return `false`, the first Finish calls no
   conclusion-aim task and toasts "could not be closed yet", and the re-run calls the conclusion task the
   first run held back (one call, which the stubbed server concludes on); a `skipTask` of a conclusion task
-  (with the stubbed server's `warning`) triggers the check too. With a credits ending, no gate
-  `set_global` is run in step 3 (it runs in step 4).
+  (with the stubbed server's `warning`) triggers the check too. The gate `set_global`s, their sync and the
+  pre-check run after every task outside the conclusion aim has been called and immediately before the
+  first conclusion-aim task: with a `concludeRequires.tasksCompleted` gate naming an `onClose` task in
+  another aim (DL22's ⚠️ shape), the first Finish calls that task, passes the pre-check, calls the
+  conclusion task and concludes, with no "could not be closed yet" toast. With a credits ending, no gate
+  `set_global` is run in step 3 (it runs in step 4), and there is no gate pre-check or post-check: a
+  credits ending whose `concludeRequires.globals` names a global that `onClose`'s own `set_global` sets
+  (DL22's ⚠️) reaches step 4 on the first Finish, the global is written there, the stub credits trigger
+  fires, and no "could not be closed yet" toast shows.
 - Inventory guard: from the Finish call until step 4 ends, `window.deductionRuntime.blockingInventory` is
   true and `inventoryBlockedByForcedMinigame()` (the real `systems/forced-minigame-guard.js`) returns true
   with no current minigame; false again on every exit path; `forced-minigame-guard.test.mjs` unchanged and
@@ -4185,6 +4268,9 @@ carries every §6.8 key.
   - DL12 no way to the ending: drop `onClose`'s `complete_task` from B (no co-fires).
   - DL12 tag after the close: Nair's `send` line gains `#set_global:b_heard_alarm:true` after
     `#verdict_close` (the ⚠️ only); B's own `#verdict_close #exit_conversation` stays quiet.
+  - DL12 call on the close: Nair gains an `eventMappings` entry `{ "eventPattern":
+    "global_variable_changed:deduction_closed", "conversationMode": "phone-chat", "targetKnot": "<her
+    report hub knot>", "delayMs": 600 }` (the ⚠️ only; Nair is a phone NPC, §9.1).
   - DL22 credits race: `strict/` with its conclusion screen changed to the success screen and the
     conclusion gate's `globals` naming the global its credits entries key on (DL22's race error; co-fires
     DL9(e), a strict case's ending not in credits; (may) DL9(h)).
@@ -4210,7 +4296,11 @@ carries every §6.8 key.
   - DL14's favour keys, `unlockFact`, `room`, `item`, the notes and key bans, the favour-room ⚠️ and its
     "not firing on the favour itself": small fixture `favour/` (B's data, `disableAttacks: true` kept, since
     with attacks on DL11 would error on every variant while B's `allowed` lacks `ko`; one favour on Haddad,
-    `unlockFact` one of her cells). Clean variant: favour `room` `b_kitchen` and its item there, which gives
+    `unlockFact: "b_haddad_access"`, which only the badge log in the server room routes, so it is not an
+    opening fact and the favour routes add nothing to DL8's opening set: the opening result stays clean B's,
+    Okoro and Lindqvist U, 2 of 4 open; with an opening `unlockFact` such as `b_haddad_grievance` both
+    variants would raise DL8's error, Lindqvist clearing by count once her device is seen). The `_why`
+    says so. Clean variant: favour `room` `b_kitchen` and its item there, which gives
     no issue (no kitchen route reaches a Haddad cell: Tomás and the complaint route Okoro's and Lindqvist's).
     The ⚠️ variant: `room` `b_office` and the item there (the HR summary in the office routes
     `b_haddad_grievance`). Not Lindqvist: every B room holds a route to one of his cells, so no clean
@@ -4237,8 +4327,11 @@ carries every §6.8 key.
   - In `after_wrong/`: a witness with four clue topics and no kind word (DL6 budget ⚠️); one KO-drop-only
     cell with attacks on (DL6 ⚠️, not the error).
   - DL6 progress topic: B with Tomás's alarm topic as `* [Anything odd last night?]` plus a `{
-    ded_b_tomas_wary: … -> topics }` branch (the new ⚠️ only).
-  - DL7(c): the timer mutation of DL7's row plus a new plain object `b_rack_label` in `b_server` whose
+    ded_b_tomas_wary: … -> topics }` branch placed before its answer and its `#set_global:b_heard_alarm:true`
+    (the new ⚠️ only; the alarm still charges through `-> charge`, which the topic flow follows). Clean B,
+    whose only wary test on that flow is `charge`'s tell after the global write, stays quiet.
+  - DL7(c): the timer mutation of DL7's row, with `deduction_faded_b_okoro_access` declared (bool, false)
+    so DL13 and DL7(a) stay quiet, plus a new plain object `b_rack_label` in `b_server` whose
     `triggerOnInteract` grants `b_okoro_access`, listed in that fact's `routes` as an `object` route with
     `closedBy: "deduction_faded_b_okoro_access"` (the ⚠️); DL7(d): a
     `closedBy` route and an open route with the same `via`/`id` (its own case); a non-faded `closedBy`
@@ -4373,14 +4466,16 @@ the end card), so §5.5 states the design and P10-F3 confirms it. One answer was
 unmet conclusion gate leaves the task `completed` with a warning rather than `active`, so §5.5 step 3 now
 checks the gate itself; F3 confirms that behaviour too. Round R6 found the other half (R6E-2): a
 success-screen ending never asks the server again after the last task, so a gate global set after it
-leaves the mission unconcluded for good. Finish now runs `onClose`'s gate-named `set_global`s and syncs
-before the conclusion aim's tasks, re-checks the gate on every Finish run once those tasks are settled
-(skips included), and DL22 makes an indirectly set gate global an error under a success-screen ending.
+leaves the mission unconcluded for good. For that ending, Finish now runs `onClose`'s gate-named
+`set_global`s and syncs immediately before the conclusion aim's tasks (after every other task), re-checks
+the gate on every Finish run once those tasks are settled (skips included), and DL22 makes an indirectly
+set gate global an error under a success-screen ending. A credits ending has neither check (R8E-1): its
+own `/conclude` call checks the gate, and step 4 is where `onClose` may set a gate global.
 
 | # | Risk | Prove first (spike) | Fallback |
 |---|---|---|---|
 | 1 | A hidden foe revealed before its room loads gets default combat numbers, no health bar or tint, or comes back hidden after a reload; or the client cannot find its room (the bootstrap strips room `npcs`) | P10-F1, both paths of §5.7, on a bootstrap-shaped scenario | `reveal_hostiles` carries `room` (DL14 checks it). If the deferred turn still lacks the bar, emit the restored-hostile event ourselves once the behaviour exists (`npc-hostile.js:199-205` emits `NPC_HOSTILE_CHANGED` with `restored: true`) |
-| 2 | `npc_ko` fires before the drops land or again on reload; a gift's `item_picked_up` lacks `itemId` | P10-F2 | The first-verdict rule already stops a double count; if the order is wrong, the runtime defers its KO handling one tick; if a gift lacks `itemId`, key the trigger on `npc_items_changed` plus the held item's absence. Accepted: an NPC `#give_item` flushed at unload whose add POST landed but whose emit never ran comes back on the next load as a restore and fires nothing (§5.2) |
+| 2 | `npc_ko` fires before the drops land or again on reload; a gift's `item_picked_up` lacks `itemId` | P10-F2 | The first-verdict rule already stops a double count; if the order is wrong, the runtime defers its KO handling one tick; if a gift lacks `itemId`, key the trigger on `npc_items_changed` plus the held item's absence. Accepted: an NPC `#give_item` flushed at unload whose add POST landed but whose emit never ran comes back on the next load as a restore and fires nothing (§5.2). Also accepted: a restore whose add POST fails never emits, so its entry stays in the one-shot ignore map and swallows one later real pickup with the same `<type>|<id>` key (§5.2) |
 | 3 | The debrief, the success screen and the credits fight for the screen; a server gate sees a task before its globals; the credits' conclude races the tasks | P10-F3 confirms §5.5 | §5.5 runs every task after the debrief and `syncConfirmed`, awaited one at a time, and the ending global last; if the credits still open over the debrief, `onClose`'s ending global is set one tick after the overlay closes |
 | 4 | A phone NPC's `unlockDoor` mapping does not reach a room that is not loaded, so fixture D's train stalls | P10-F4 (the spike scenario), both paths: the mapping, and an ink `#unlock_door` from an NPC with `unlockable` | Give the next carriage's key with `give_item` in the stop trigger's actions, or unlock through `NPCGameBridge.unlockDoor` from the trigger (which the server also checks against that NPC's `unlockable` and the met-NPC list, `validate_npc_unlock`, so the NPC must list the room) |
 | 5 | Count elimination and the pigeonhole step are not understood ("why is Morgan cleared when I never saw her file?") | P10-BL | The count line shows "found"; the debrief's count line explains it; the nudge stays on by default |
@@ -4525,7 +4620,7 @@ findings are fixed, withdrawn with a reason, or deferred with a reason. Each rou
 files: round 1 `deduction/REVIEW_R1_ENGINE.md`, `REVIEW_R1_DESIGN.md`, `REVIEW_R1_INTEGRATION.md`; rounds 2
 to 4 the `REVIEW_R2_*`, `REVIEW_R3_*` and `REVIEW_R4_*` files named under their headings; round R5
 `REVIEW_R5_CONSOLIDATED.md`; round R6 the `REVIEW_R6_*` files and `deduction/integration/`; round R7 the
-`REVIEW_R7_*` files.
+`REVIEW_R7_*` files; round R8 the `REVIEW_R8_*` files.
 
 | Round | Reviewer | Blockers | Majors | Minors | Outcome |
 |---|---|---|---|---|---|
@@ -5048,3 +5143,49 @@ undecided, so the steward fallback stands. Outputs in the session scratchpad (`r
 | R7F-6 | nit | fixed: C's kind line no longer states a guilty count | §9.3 |
 | R7F-7 | nit | fixed: §3.10's Why examples (and §6.2's) use the §6.3 "yes," forms | §3.10, §6.2 |
 | R7F-8 | nit | fixed: A's stop-at-first shares as "about 54 % / 39 %"; D's size as "millions of states, a minute or two in full"; the conductor's no-kind-word line without a terminal count | §9.2, §9.4, §11.1 |
+
+### Round R8 (confirmation)
+
+Three read-only confirmation reviews of the R7-folded plan: `deduction/REVIEW_R8_ENGINE.md`,
+`REVIEW_R8_FIXTURES.md` and `REVIEW_R8_INTEGRATION.md`. All R7 findings were confirmed closed (R7E-1 to
+R7E-10 with the gaps below, R7F-1 to R7F-8, R7I-1 to R7I-14). The fixer checked each finding against the
+code before acting (spot checks: `_delayedMappings` is an NPC-keyed map of inner maps that stay behind
+empty, `npc-manager.js:182`, `:616-627`; the phone branch's `endMinigame` and 500 ms launch; the success
+screen's `IDLE_MS` 1000 and `POLL_MS` 250; the restore loop's `notepad`, notes and duplicate skips and the
+notes-family early return in `addToInventory`; `Mail.err` / `Mail.warn_` at `mail.rb:56-62`; the options
+test's `valid_item_types: nil` against the pretext test's set; `noWary`, `v` and `place` on the sim's
+atoms). None was found wrong and none needs the user. Edits were exact-match replacements (three packet
+and owner rows by a scripted exact-match replace with a uniqueness check).
+
+| Round | Reviewer | Blockers | Majors | Minors | Nits | Outcome |
+|---|---|---|---|---|---|---|
+| R8 | Engine, runtime and board | 0 | 1 | 4 | 0 | 5 fixed, 0 withdrawn |
+| R8 | Fixtures by simulation | 0 | 0 | 2 | 0 | 2 fixed, 0 withdrawn |
+| R8 | Integration (packets, validator, tests, dry-runs) | 0 | 3 | 4 | 0 | 7 fixed, 0 withdrawn |
+
+**Simulation (R8I-2).** New `deduction/sim/r8_favour.js` computes DL8's opening set for `favour/` under the
+R7 rule (a favour route counts by its room) and the R8 rule (only when its `unlockFact` is an opening fact,
+worked out without favour routes). R7 rule: all four variants (kitchen or office, `unlockFact`
+`b_haddad_grievance` or `b_haddad_access`) fire DL8 (Okoro U, Lindqvist, Haddad, Morgan clear, 1 of 4
+open). R8 rule with `b_haddad_access`: both variants quiet (Okoro U, Lindqvist U, 2 of 4 open), as §11.5
+now states; with `b_haddad_grievance` both still fire. A's one favour (cloakroom, unlocked by the hall's
+glass) adds nothing to the opening set under either rule, and the hall-plus-cloakroom single-room check
+is unchanged (Delacroix open, agrees with §9.2); C and D have no favours. `run.js` B and C and
+`mutations.js` re-run with no disagreement; no fixture data changed.
+
+| Id | Sev | Outcome | Where |
+|---|---|---|---|
+| R8E-1 | major | fixed: the step-3 post-check and its "unsettled" result apply to success-screen endings only; a credits ending is gated by its own `/conclude` (the "Not Yet" alert), so a gate global set by `onClose`'s own `set_global` is written in step 4 on the first Finish; step 4's condition, the unsettled list, DL22's ⚠️ and §12's prose say so; §11.3 case: a credits ending with such a gate reaches step 4 on the first Finish and the stub credits trigger fires | §5.5 Endings, §8 DL22, §11.3, §12 |
+| R8E-2 | minor | fixed: the gate `set_global`s, their sync and the pre-check run once every task outside the conclusion aim has been called, immediately before the first conclusion-aim task; §11.3 case: a `tasksCompleted` gate on an `onClose` task in another aim concludes on the first Finish | §5.5 Endings, §8 DL22, §11.3, §12 |
+| R8E-3 | minor | fixed: `close()` records kind `none` through `recordVerdict` with an internal `fromClose` option: no `allowed` check, no "case is closed" check, no toast, and `decidedAtVerdict` with `deciders`, `settling` and `byCount` stored at that moment; kind `none` without it is refused; §11.3 case | §4.5, §5.5 Verdicts and Closing, §11.3 |
+| R8E-4 | minor | fixed: the ignore map uses the restore's own skip rules (no `notepad`, no `/^notes\d*$/` type, no entry the duplicate check skips against `window.inventory.items` at arming) and is not built with no `gameId`; the failed-add-POST case accepted in §12 risk 2; the existing §11.3 restore case moved off a notes type (it would have contradicted the rule) and a skip-rule case added | §5.2, §11.3, §12 |
+| R8E-5 | minor | fixed: `openDebrief()` waits for 1 s of continuous idle polled every 250 ms, idle including no pending delayed mapping; DL12 ⚠️ for a `phone-chat` mapping on `deduction_closed` or `deduction_outcome_<s>`, with a §11.5 B mutation; §7.8 tells authors; §11.3 case | §5.5 The debrief, once, §7.8, §8 DL12, §11.3, §11.5 |
+| R8F-1 | minor | fixed: §9.3 is "Fixture C — Safe house"; §9 gives every fixture's `mission.json` `display_name` ("Test: social deduction <x>, <name>"); DL10, §7.9 and §8 "Where the scenario is" scan `display_name` as well as `description` | §7.9, §8, §9, §9.3 |
+| R8F-2 | minor | fixed: A's `closingLine` uses the reviewer's wording ("Any one profile is enough, and two guests matched different ones, so finding one cultist never ended the case."), checked true on every run (fixed solution: Okafor by Keyholder alone, Marsh by Devotee alone, no guest fits two profiles) | §9.2 |
+| R8I-1 | major | fixed: a *topic flow* (the choice body plus every knot reached by divert, not through choices, stopping at the hub) is what both progress-topic clauses read; DL6's wary clause counts only a wary test before the `set_global` that can skip the answer or the write, so `charge`'s tell does not count and clean B is quiet; the §11.5 mutation puts its wary branch before the answer and still fires | §8 derived sets, DL6, §11.5 |
+| R8I-2 | major | fixed: a `favour` route counts as opening only when its `unlockFact` is itself an opening fact, worked out without favour routes (and, for DL8's single-room warning, with that room's other facts); `favour/` uses `unlockFact: "b_haddad_access"`, with the reason in `_why`; checked by `sim/r8_favour.js` (above) | §8 derived sets, §11.5, `sim/r8_favour.js` |
+| R8I-3 | major | fixed: §8 "Staged co-fires": C2a asserts only co-fires from rules already built and marks the rest "after C2b" (DL1 → DL12, DL11 → DL12, DL14 `remove_item` → DL9, DL14 `reveal_hostiles` → DL9(a)); C2b turns them on and lists them; C2a, C2b and the §10.3 test-file row say so | §8, §10.1 C2a and C2b, §10.3 |
+| R8I-4 | minor | fixed: DL7(c)'s case declares `deduction_faded_b_okoro_access` (bool, false), so DL13 and DL7(a) stay quiet | §11.5 |
+| R8I-5 | minor | fixed: P10-A's atoms carry every field the sim's atoms carry, `noWary`, `v` and `place` named | §10.1 P10-A |
+| R8I-6 | minor | fixed: the `Mail.err` / `Mail.warn_` citation by helper name (`def self.err`, `def self.warn_` in `mail.rb`) | §8 |
+| R8I-7 | minor | fixed: the deduction validator tests pass `valid_item_types: nil`, with the reason (the pretext test's set lacks `case-file`); C2a's inputs say so | §8 Fixtures and tests, §10.1 C2a |
