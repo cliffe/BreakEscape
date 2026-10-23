@@ -464,6 +464,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       "unlockCondition": { "aimsCompleted": ["deactivate_the_launch"] },
       "order": 9,
       "missionConclusion": true,
+      "conclusionScreen": { "type": "bond_visualiser" },
       <%# Ending gate: the three VM flags are the technical work this mission is
           not allowed to skip. Story tasks are not listed -- they cost score if
           unfinished, they do not withhold the ending. %>
@@ -473,7 +474,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       "tasks": [
         {
           "taskId": "use_launch_device",
-          "title": "Use the ENTROPY Launch Device",
+          "title": "File your debrief with Agent HaX",
           "type": "custom",
           "status": "active"
         }
@@ -993,7 +994,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
             {
               "eventPattern": "attack_aborted",
               "onceOnly": true,
-              "completeTask": ["deactivate_launch", "use_launch_device"],
+              "completeTask": "deactivate_launch",
               "sendTimedMessage": {
                 "delay": 2000,
                 "message": "Abort confirmed. Operation Shatter is dead. 🦎 Both codes secured. Call me when you're ready to debrief."
@@ -1002,7 +1003,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
             {
               "eventPattern": "attack_launched",
               "onceOnly": true,
-              "completeTask": ["deactivate_launch", "use_launch_device"],
+              "completeTask": "deactivate_launch",
               "sendTimedMessage": {
                 "delay": 4000,
                 "message": "...I'm seeing reports. 🦎 Hospital switchboards. Emergency lines flooded. The attack went through. Call me."
@@ -1087,6 +1088,12 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "displayName": "Agent HaX",
           "npcType": "person",
           "eventMappings": [
+            {
+              "_comment": "close_the_case is a bond_visualiser conclusion, so it must not complete before the debrief has finished (it would open the credits overlay over the debrief). use_launch_device completes when the debrief conversation closes; the music event on the same close rolls the credits. Same ordering as m10's M-2 fix.",
+              "eventPattern": "conversation_closed:closing_debrief_person",
+              "onceOnly": true,
+              "completeTask": "use_launch_device"
+            },
             {
               "eventPattern": "global_variable_changed:start_debrief_cutscene",
               "condition": "value === true",

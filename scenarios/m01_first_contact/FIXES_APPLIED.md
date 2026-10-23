@@ -609,3 +609,9 @@ All critical issues resolved:
 
 **Document Version:** 1.0
 **Last Updated:** 2025-12-01
+
+## 2026-10-23: finished m01 shows the credits on reload
+
+`close_the_case` had `missionConclusion: true` but no `conclusionScreen`, so reloading a finished game showed nothing (the credits only play from the music event on `conversation_closed:closing_debrief_person`). Added `"conclusionScreen": { "type": "bond_visualiser" }`; on reload F22's `endingReplayOptions` rebuilds the credits from the music event.
+
+Ordering fix that goes with it: `use_launch_device` (the aim's only task) used to complete on `attack_aborted` / `attack_launched`, well before the debrief, so the new screen would have opened an empty overlay at the launch device. It now completes from a `conversation_closed:closing_debrief_person` mapping (same close as the music event, m10 M-2 pattern). `deactivate_launch` still completes at the attack event. Checked live on :3001: live ending unchanged (no overlay over any debrief line, one credits roll after the last line); reload now shows the credits, with the same 15 lines as the music event.
