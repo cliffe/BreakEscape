@@ -6,7 +6,9 @@
 // S4: A's glass has a lost-lift outcome (glass_smudge) and the bar staff's fallback ring topic (bar_marsh_ring),
 // with the bar staff's kind word modelled (bar_kind).
 // R7 (plan md5 d6345a0d9413611328f5cd005e728266): the intern's and D's steward's kind words added (transcription gaps;
-// no effect on any result as authored). D's lost lift is modelled in r7_dlift.js, not here (the plan has no outcome for it).
+// no effect on any result as authored).
+// R7 fix (R7F-1): D's glass has a lost-lift outcome (glass_lost) and the steward's fallback ring topic (steward_ring),
+// mirroring A's; r7_dlift.js keeps the before/after variants.
 //
 // Atom = one acquisition step. req(S, m):
 //   S.has(atomId), S.held(factId), S.infl(witness) (influence before the next question),
@@ -304,7 +306,12 @@ D.atoms = [
   { id: 'stop2', room: 'stop', facts: [], req: S => S.has('stop1'), progress: true },
   { id: 'lost_property', room: 'd_car3', facts: ['d_sato_notebook'], req: car(3) },
   { id: 'newspaper', room: 'd_car3', facts: ['d_devries_want'], req: car(3) },
-  { id: 'glass', room: 'd_car3', facts: ['d_devries_ring'], req: car(3) },
+  // the glass: one dusting, two outcomes (R7F-1). An identified lift grants the ring (t_d_glass); an unidentified one
+  // sets d_glass_smudged (t_d_glass_smudged), which opens the steward's fallback topic "Whose glass was that?" (car 1;
+  // the doors stay open behind the player; a fourth charged topic, the steward's kind word recovers).
+  { id: 'glass', room: 'd_car3', facts: ['d_devries_ring'], forbid: ['glass_lost'], req: car(3), place: 'the glass in car 3' },
+  { id: 'glass_lost', room: 'd_car3', facts: [], progress: true, forbid: ['glass'], req: car(3) },
+  { id: 'steward_ring', room: 'd_car1', facts: ['d_devries_ring'], witness: 'steward', charged: true, req: S => S.has('glass_lost'), place: 'the steward (whose glass it was)' },
   { id: 'dv_phone', room: 'd_car3', facts: ['d_devries_sim'], req: car(3), forbid: ['stop3'], fadable: true, v: { closedBy: true } },
   { id: 'shred', room: 'd_car3', facts: ['d_chen_charm'], req: car(3) },
   { id: 'stop3', room: 'stop', facts: [], req: S => S.has('stop2'), progress: true },
@@ -330,6 +337,8 @@ D.planStates = [
     claim: { sato: 'undetermined', chen: 'clear', devries: 'undetermined', volkov: 'guilty', mensah: 'clear' }, line: 'R6F-4: literal path leaves Sato, de Vries U' },
   { name: 'D main bridge after L-102 (D3 adds the lost-property notebook and the glass)', atoms: ['steward_sato', 'steward_chen', 'steward_mensah', 'stop1', 'stop2', 'shred', 'stop3', 'lost_property', 'glass', 'stop4', 'backup', 'cond_sato', 'cond_devries', 'cond_volkov_pass', 'cond_kind', 'cond_volkov_want', 'briefcase'],
     claim: { sato: 'guilty', chen: 'clear', devries: 'guilty', volkov: 'guilty', mensah: 'clear' }, line: '§9.4 D3/D4 ("a correct submit")' },
+  { name: 'D main bridge with the lift lost (R7F-1: steward fallback, steward kind word)', atoms: ['steward_sato', 'steward_chen', 'steward_mensah', 'stop1', 'stop2', 'shred', 'stop3', 'lost_property', 'glass_lost', 'steward_kind', 'steward_ring', 'stop4', 'backup', 'cond_sato', 'cond_devries', 'cond_volkov_pass', 'cond_kind', 'cond_volkov_want', 'briefcase'],
+    claim: { sato: 'guilty', chen: 'clear', devries: 'guilty', volkov: 'guilty', mensah: 'clear' }, line: '§9.4 hand check, lift lost' },
 ];
 D.verdictModes = () => {
   const out = [];

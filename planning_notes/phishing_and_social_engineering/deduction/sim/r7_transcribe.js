@@ -60,7 +60,7 @@ T.D = {
   sources: {
     rack: ['d_car1', 'sato_pass'], cond_sato: ['d_car4', 'sato_pass'], steward_sato: ['d_car1', 'sato_want'], steward_chen: ['d_car1', 'chen_want'], steward_mensah: ['d_car1', 'mensah_want'],
     chen_ticket: ['d_car2', 'chen_pass'], coat: ['d_car2', 'chen_charm'], shred: ['d_car3', 'chen_charm'], chen_ink: ['d_car2', 'chen_notebook'], lost_property: ['d_car3', 'sato_notebook'],
-    cond_devries: ['d_car4', 'devries_pass'], newspaper: ['d_car3', 'devries_want'], glass: ['d_car3', 'devries_ring'], dv_phone: ['d_car3', 'devries_sim'], backup: ['d_car4', 'devries_sim'],
+    cond_devries: ['d_car4', 'devries_pass'], newspaper: ['d_car3', 'devries_want'], glass: ['d_car3', 'devries_ring'], steward_ring: ['d_car1', 'devries_ring'] /* R7F-1 fold: the steward's fallback after a lost lift */, dv_phone: ['d_car3', 'devries_sim'], backup: ['d_car4', 'devries_sim'],
     cond_volkov_pass: ['d_car4', 'volkov_pass'], cond_volkov_want: ['d_car4', 'volkov_want'], briefcase: ['d_car4', 'volkov_key'], ko_key: ['none', 'volkov_key'], volkov_ink: ['d_car4', 'volkov_charm'],
     mensah_ticket: ['d_car5', 'mensah_pass'], mensah_ink: ['d_car5', 'mensah_umbrella'],
   },

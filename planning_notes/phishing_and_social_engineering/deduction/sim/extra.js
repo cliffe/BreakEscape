@@ -100,12 +100,12 @@ if (!only || only === 'A') {
   // the glass changes a status: (status vector) sets reachable with and without the glass object, per verdict mode
   {
     let modesDiff = 0, ex = null;
-    for (const vm of [{ label: 'none', m: {} }, ...modesA]) {
+    for (const vm of modesA) { // R7F-5: modesA already holds the no-verdict mode; it was counted twice
       const sets = [[], ['glass', 'glass_smudge']].map(drop => withDropped(fx, drop, () => { const seen = new Set(); explore(fx, vm.m, { onState: mk => seen.add(fmt(fx, fx._.statusE(fx._.fmOfAtoms(mk)))) }); return seen; }));
       const only = [...sets[0]].filter(x => !sets[1].has(x));
       if (only.length) { modesDiff++; if (!ex) ex = `${vm.label}: ${only[0]}`; }
     }
-    L(`  status vectors reachable only with the glass: in ${modesDiff} of ${modesA.length + 1} modes (no verdicts included), e.g. ${ex}`);
+    L(`  status vectors reachable only with the glass: in ${modesDiff} of ${modesA.length} verdict combinations (the no-verdict one among them), e.g. ${ex}`);
   }
   // D7 explicit: KO Marsh then one wrong call (accuse Delacroix), then everything
   const vm = { ko: new Set(['marsh']), gone: new Set(['marsh']), judged: new Set(['marsh', 'delacroix']), wrongLanded: 1, allyLost: false };
@@ -148,6 +148,13 @@ if (!only || only === 'D') {
   const e = essentialUnderVerdicts(fx);
   L(`sources whose removal strands an unjudged suspect (${e.modes} KO combinations, baseline ${e.base}):`);
   for (const [id, x] of Object.entries(e.out)) L(`  ${id}: ${x.n - e.base > 0 ? '+' + (x.n - e.base) + ' e.g. ' + x.ex : 'never'}`);
+  // R7F-1: the glass as a whole (never dusted: both outcomes and so the steward's fallback gone), and the fallback alone
+  // (a single-atom drop of 'glass' leaves glass_lost and the fallback, so it reads "never"; of steward_ring, a lost lift with no fallback)
+  {
+    const modes = fx.verdictModes(); const cnt = drop => withDropped(fx, drop, () => modes.filter(vm => terminalsUndecided(fx, vm.m).bad.length).length);
+    L(`  the glass never dusted [glass, glass_lost, steward_ring]: ${cnt(['glass', 'glass_lost', 'steward_ring'])} of ${modes.length} KO sets strand someone`);
+    L(`  lost lift, no fallback [steward_ring]: ${cnt(['steward_ring'])} of ${modes.length}`);
+  }
   // the main bridge path, plus what it needs
   const base = ['steward_sato', 'steward_chen', 'steward_mensah', 'stop1', 'stop2', 'shred', 'stop3', 'stop4', 'backup', 'cond_sato', 'cond_devries', 'cond_volkov_pass', 'cond_kind', 'cond_volkov_want', 'briefcase'];
   for (const add of [[], ['lost_property'], ['glass'], ['newspaper', 'glass'], ['lost_property', 'newspaper', 'glass'], ['lost_property', 'newspaper'], ['lost_property', 'glass']]) {

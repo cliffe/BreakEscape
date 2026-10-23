@@ -6,7 +6,8 @@ const FX = require('./fixtures');
 const { prep, explore, fmt, nameAtoms } = require('./run');
 const { evaluateAll, settlingFacts } = require('./eval');
 const D = FX.D; const L = s => console.log(s);
-const base = D.atoms.slice();
+// fixtures.js now carries the fix (glass_lost, steward_ring); strip it so each variant below starts from the R7 plan.
+const base = D.atoms.filter(a => a.id !== 'glass_lost' && a.id !== 'steward_ring').map(a => a.id === 'glass' ? Object.assign({}, a, { forbid: undefined }) : a);
 const car = n => S => n === 1 || S.has('stop' + (n - 1));
 const glass = base.find(a => a.id === 'glass');
 const stewardKind = null; // now in fixtures.js (R7)

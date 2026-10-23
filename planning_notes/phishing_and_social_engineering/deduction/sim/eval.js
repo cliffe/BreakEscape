@@ -52,7 +52,8 @@ function evalRule(rule, s, ctx, trace) {
       const h = hidden(ctx, s, y);
       extra += (counting && OPTS.count) ? Math.min(h, M) : h;
       const fy = (counting && OPTS.pigeon) ? Math.min(h, Math.max(0, M - others(ctx, s, y))) : 0;
-      if (fy > 0 && !firstForcedClue) firstForcedClue = Object.keys(ctx.fx.clues).find(c => ctx.fx.clues[c].slot === y && ctx.fx.clues[c].marked);
+      // R7F-4: the slot's first marked clue with copies still unseen (remaining > 0), never one already used up
+      if (fy > 0 && !firstForcedClue) firstForcedClue = Object.keys(ctx.fx.clues).find(c => ctx.fx.clues[c].slot === y && ctx.fx.clues[c].marked && ctx.remaining[c] > 0);
       forced += fy;
     }
     if (kk + forced >= n) { if (kk < n && trace) trace.push({ clue: firstForcedClue, how: 'markedForced' }); return 'T'; }
