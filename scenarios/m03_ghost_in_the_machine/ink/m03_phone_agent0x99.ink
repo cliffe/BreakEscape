@@ -464,7 +464,7 @@ Client roster, transaction records, anything to the Architect.
 { revelation_heard:
     -> hub
 }
-{player_name()}, your distcc flag just landed, and the logs came through with it.
+{player_name()}, your distcc flag just landed -- the whole transaction log came through with it. Open your copy and read along.
 There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost.
 And a line under it: "Target Selection Consultation", ten thousand. They chose the hospital for Ghost.
 Target line: St. Catherine's Regional. Sable's sign-off on the approval.
