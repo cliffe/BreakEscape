@@ -1861,6 +1861,12 @@
             "flipHeading": {"type": "string"},
             "flipIntro": {"type": "string"},
             "flipDefenderLine": {"type": "string"},
+            "flipDefenderLineByChoice": {
+              "type": "object",
+              "description": "aw2: the flip's defender line per chosen pretext, keyed by the template id the learner picked (state.sent.templateId). A matching entry replaces flipDefenderLine for that branch; any other branch falls back to flipDefenderLine. Keys are social.templates ids",
+              "additionalProperties": {"type": "string"},
+              "patternProperties": {"^_": {}}
+            },
             "flipNoSend": {"type": "string"},
             "noBlameLine": {"type": "string"},
             "mondayCard": {"type": "string"},

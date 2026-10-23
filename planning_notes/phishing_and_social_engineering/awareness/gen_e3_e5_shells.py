@@ -16,6 +16,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import training_room  # noqa: E402
+import awareness_deploy  # noqa: E402
 
 REPO = '/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape'
 AW = f'{REPO}/planning_notes/phishing_and_social_engineering/awareness'
@@ -306,6 +307,8 @@ def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, 
     if extra:
         sc.update(extra)
     sc['social'] = social
+    # aw4: the deployment-wide rule of thumb, identical in every awareness shell.
+    sc['social']['awareness'] = awareness_deploy.awareness_block()
     company = social['awarenessEpisode']['company']
     sc['lighting'] = training_room.scenario_lighting(company)
     rf = training_room.room_fields(company)

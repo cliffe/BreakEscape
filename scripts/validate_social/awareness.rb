@@ -51,7 +51,7 @@ module ValidateSocial
       issues.concat(stage_checks(ep))
       issues.concat(id_suffix_checks(ep))
       issues.concat(attack_checks(ctx, ep)) if full?(ep)
-      issues.concat(string_checks(ep))
+      issues.concat(string_checks(ctx, ep))
       issues.concat(settings_checks(ctx, ep))
       issues.concat(mfa_checks(ep))
       set = defend_set(ctx, ep, issues)
@@ -293,7 +293,7 @@ module ValidateSocial
 
     FACILITATOR_KEYS = %w[brief osint build write mfa flip defend debrief check pause].freeze
 
-    def self.string_checks(ep)
+    def self.string_checks(ctx, ep)
       strings = ep['strings']
       return [] unless strings.is_a?(Hash)
 
@@ -301,6 +301,7 @@ module ValidateSocial
       if strings.key?('brief') && (!strings['brief'].is_a?(String) || strings['brief'].strip.empty?)
         issues << err('strings.brief is empty; the brief stage would open on a blank panel')
       end
+      issues.concat(flip_by_choice_checks(ctx, strings['flipDefenderLineByChoice'])) if strings.key?('flipDefenderLineByChoice')
       %w[conceptPanel voicePanel].each do |key|
         next unless strings.key?(key)
 
@@ -322,6 +323,32 @@ module ValidateSocial
           end if ep['facilitated'] == true
         else
           issues << err('strings.facilitator must be an object { <stageId>: string, pause: string }')
+        end
+      end
+      issues
+    end
+
+    # aw2: the choice-aware flip defender line (strings.flipDefenderLineByChoice). Keyed by the
+    # template id the learner picked (state.sent.templateId, which is always a pretext). A key that
+    # is not a template id, or a template that is not a pretext, would never be shown; warn on it.
+    def self.flip_by_choice_checks(ctx, by)
+      return [err('strings.flipDefenderLineByChoice must be an object { <pretext templateId>: string }')] unless by.is_a?(Hash)
+
+      templates = ctx.social['templates']
+      template_ids = templates.is_a?(Hash) ? templates.keys : []
+      pretext_ids = templates.is_a?(Hash) ? templates.select { |_, t| t.is_a?(Hash) && t['part'] == 'pretext' }.keys : []
+      issues = []
+      by.each do |key, val|
+        next if key.to_s.start_with?('_')
+
+        if !val.is_a?(String) || val.strip.empty?
+          issues << err("strings.flipDefenderLineByChoice.#{key} has no text; drop the key and the branch falls back to flipDefenderLine")
+          next
+        end
+        if !template_ids.include?(key)
+          issues << warn_("strings.flipDefenderLineByChoice.#{key} is not a social.templates id; the flip keys this map on the pretext the learner chose (state.sent.templateId), so this line would never be shown")
+        elsif !pretext_ids.include?(key)
+          issues << warn_("strings.flipDefenderLineByChoice.#{key} is the template '#{key}', which is not a 'pretext'; only the chosen pretext is recorded as the flip's templateId, so this line would never be shown")
         end
       end
       issues

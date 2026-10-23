@@ -18,8 +18,12 @@
 // there is nothing to replay), flipLandedNoTells when `landedNoTells` is true (it landed but
 // carries no tells to replay; falls back to flipMissed), and flipNoSend otherwise. With nothing
 // to replay the heading is flipMissedHeading, not the "it lands on you" heading (P3 N-6).
-// getState() -> { shown: 'message' | 'page' | 'call' | 'missed' | 'landedNoTells' | 'noSend', parts, tells }
-// (`shown` is the first part shown; `parts` lists every part; `tells` the sentences on screen).
+// The defender line under the replay is choice-aware (aw2): with a `templateId` (the learner's
+// chosen pretext, state.sent.templateId) and a matching strings.flipDefenderLineByChoice entry, the
+// per-branch line shows (in the .aw-defender-line node); otherwise the single
+// strings.flipDefenderLine (see defenderLine()).
+// getState() -> { shown: 'message' | 'page' | 'call' | 'missed' | 'landedNoTells' | 'noSend', parts,
+// tells } (`shown` is the first part shown; `parts` lists every part; `tells` the sentences on screen).
 // Every string goes in with textContent.
 
 import { MailReader } from '../mail-client/mail-reader.js';
@@ -63,6 +67,18 @@ const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 const str = (strings, key) => (strings && typeof strings[key] === 'string' && strings[key]) ? strings[key] : DEFAULTS[key];
 
+/**
+ * The defender line for the flip (aw2). When the learner's chosen pretext (state.sent.templateId)
+ * has an entry in strings.flipDefenderLineByChoice, that choice-aware line is shown, so the flip
+ * quotes back the lever the learner pulled; otherwise the single flipDefenderLine (then DEFAULT).
+ * The map is keyed by template id, so one episode can carry a line per pretext branch.
+ */
+export function defenderLine(strings, templateId) {
+    const byChoice = isObj(strings) ? strings.flipDefenderLineByChoice : null;
+    if (isObj(byChoice) && isStr(templateId) && isStr(byChoice[templateId])) return byChoice[templateId];
+    return str(strings, 'flipDefenderLine');
+}
+
 const UNKNOWN_TELL = 'Something about this one did not add up.';
 
 /** The sentence for a tell id: the library's, else the page tells', else a neutral phrase (never the raw id). */
@@ -72,7 +88,7 @@ export function tellSentence(id, message) {
     return PAGE_TELLS[id] || UNKNOWN_TELL;
 }
 
-export function renderFlipView(container, { message = null, page = null, call = null, missed = false, landedNoTells = false, strings = {}, onContinue } = {}) {
+export function renderFlipView(container, { message = null, page = null, call = null, missed = false, landedNoTells = false, templateId = null, strings = {}, onContinue } = {}) {
     const root = el('section', 'aw-flip');
     const heading = el('h2', 'aw-heading', str(strings, 'flipHeading'));
     heading.tabIndex = -1;
@@ -184,7 +200,7 @@ export function renderFlipView(container, { message = null, page = null, call = 
     }
 
     if (parts.length) {
-        root.appendChild(el('p', 'aw-defender-line', str(strings, 'flipDefenderLine')));
+        root.appendChild(el('p', 'aw-defender-line', defenderLine(strings, templateId)));
     } else if (missed || landedNoTells) {
         const landed = !missed && landedNoTells;
         parts.push(landed ? 'landedNoTells' : 'missed');

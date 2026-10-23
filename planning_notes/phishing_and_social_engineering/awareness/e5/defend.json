@@ -622,7 +622,7 @@
       "flipMissedHeading": "Nothing to replay this time",
       "flipLandedNoTells": "The page passed without a slip this time, nothing in it to pull apart. Next, the same kind of page turns up behind a link in a Quayholt inbox, and you're the one deciding whether to sign in.",
       "noBlameLine": "A miss here is no reflection on you. Every one of these pages was built to pass for the real thing, and signing in to one says nothing about how careful a person is.",
-      "mondayCard": "On Monday: before you type a password, read the address bar. Your organisation's real sign-in page sits on its own domain, and your password manager knows it. If a page asks you to sign in and the address is new to you, close it, go to the site the way you normally would, and report the link the way your organisation asks you to.",
+      "mondayCard": "On Monday: before you type a password, read the address bar. Your organisation's real sign-in page sits on its own domain, and your password manager knows it. If a page asks you to sign in and the address is new to you, close it, go to the site the way you normally would, and report the link using the route in the box below.",
       "defendOnly": "These pages were built to pass for the real sign-in, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
       "defendIntro": "Five pages are open, each from a link. For each one, decide whether you'd sign in, then tick what you noticed."
     },

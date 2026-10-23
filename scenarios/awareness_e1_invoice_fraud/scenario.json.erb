@@ -79,6 +79,12 @@
     "phish_supplier_contact_attempts": 0
   },
   "social": {
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access or read back a code, stop and check it using contact details you already have, rather than the ones the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    },
     "triageSets": [
       {
         "id": "e1_payments_inbox",
@@ -347,12 +353,17 @@
         "flipHeading": "Now it lands on you",
         "flipIntro": "This is the email you just sent, as the payments team at Brightwell would see it. The lines picked out below are what make it believable.",
         "flipDefenderLine": "The payments team read it between the morning's invoices, with the payment run due at three. Derek's name is on it and the invoice number is real, so changing the payee details looked like the job in front of them. Anyone clearing a payment run acts on the one that checks out.",
+        "flipDefenderLineByChoice": {
+          "pretext_bank_change": "With the three o'clock payment run due, the team read it quickly. Derek's name was on it, the invoice number was real, and it asked them to change the payee before releasing payment, so updating the bank details looked like the job in front of them.",
+          "pretext_bank_change_calm": "The 'no rush today' is what let it through. Derek's name, the real invoice number and a quiet note to update the payee before the next run read as ordinary housekeeping, so it went on the list to sort with everything else.",
+          "pretext_statement": "A monthly statement 'for your records' asks for nothing, so on its own there was nothing to act on. The From line was forged all the same, and it is the request to move money that turns a trusted-looking sender into a loss."
+        },
         "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives in a payments inbox, and you're the one reading it.",
         "flipMissed": "The defence is the same either way: next, the same kind of message turns up in a payments inbox, and you're the one reading it.",
         "flipMissedHeading": "Nothing to replay this time",
         "flipLandedNoTells": "It landed clean, with nothing in it to catch this time. Next, the same kind of message turns up in a payments inbox, and you're the one reading it.",
         "noBlameLine": "Nobody is marked down for a miss here. Every one of these was written by someone whose job is making it look right, and anyone working at pace can act on one.",
-        "mondayCard": "On Monday: if an email asks you to change bank details or to pay in a hurry, don't reply and don't use any number in the email. Ring the person on a number you already hold, then report the email the way your organisation asks you to.",
+        "mondayCard": "On Monday: if an email asks you to change bank details or to pay in a hurry, don't reply and don't use any number in the email. Ring the person on a number you already hold, then report the email using the route in the box below.",
         "defendOnly": "These messages were written by people whose job is to make them look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away."
       },
       "debrief": {

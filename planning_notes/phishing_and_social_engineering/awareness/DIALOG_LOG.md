@@ -1023,3 +1023,100 @@ four general check scenarios regenerated and copied in. 0 residual past-tense; 3
 - Full-episode bridges (keyless :3001, one at a time): **e1-full 13/13 PASS** (with the new 6-message plan);
   **e7-full 13/13 PASS** at HEAD (after the E7 revert). The intermediate E7 attempt's 8/13 failure is the
   evidence for the defendSetKind flip described above. e2–e6 unchanged by this pass (not re-run).
+
+---
+
+## Fun-and-learning: aw2 (choice-aware flip line) + aw4 (shared rule of thumb) (2026-10-23)
+
+The two remaining FUN_DECISIONS "Awareness" changes: aw2 (held last pass for want of an engine hook)
+and aw4 (held for its engine hook, added in a8caac8e0). Engine + schema + validator + tests + data.
+No ink touched, so no TTS impact (every string here is on-screen panel/flip text, not host voice).
+
+### aw2 engine hook — a choice-aware flip defender line
+
+The flip replayed the learner's own message but narrated it with one fixed `strings.flipDefenderLine`,
+so the pretext the learner picked was never named back. Added a small hook:
+
+- `flip-view.js`: new exported `defenderLine(strings, templateId)` — returns
+  `strings.flipDefenderLineByChoice[templateId]` when that key holds text, else `flipDefenderLine`,
+  else the engine default. `renderFlipView` takes a new `templateId` option and renders the resolved
+  line in `.aw-defender-line` (getState shape unchanged; the line is read from the DOM).
+- `episode-runner-minigame.js`: `_renderFlip` passes `templateId: this.state.sent?.templateId ?? null`
+  (the chosen pretext the model already records in `sentFromRecord`; a call has none → null).
+- `scenario-schema.json`: `strings.flipDefenderLineByChoice` added (object of template id → string).
+- `validate_social/awareness.rb`: `flip_by_choice_checks` — warns on a key that is not a
+  `social.templates` id, or is a template that is not a `part: "pretext"` (never selected as the
+  flip's templateId); errors on an empty value or a non-object. `string_checks` now takes `ctx`.
+- Tests: `social-episode-views.test.mjs` (defenderLine resolver + rendered `.aw-defender-line`,
+  per-branch and fallback); `validator-social-awareness.test.mjs` (clean pretext keys, the two warns,
+  the empty error, the non-object error).
+
+**Authoring (full erbs only).** `flipDefenderLineByChoice` is erb-only: only a full episode makes a
+pretext choice; the defend-only shell has no write/flip stage and the generator pops the flip strings
+there, so it is NOT in the fragment and the generated shells never carry it. Added
+`flipDefenderLineByChoice` to `STRINGS_ERB_ONLY_OK` in `social-awareness-fragment-erb-parity.test.mjs`
+with a reason. Each of the five template episodes (E1, E2, E4, E6, E7) already offered 2–3 pretexts
+(the compose forces the choice when `templateSets.pretext` has more than one); the consequential lever
+is urgent vs calm vs a benign no-ask variant. One short per-branch line each, true for that branch:
+
+- **E1** `pretext_bank_change` (urgent run-due), `pretext_bank_change_calm` (the "no rush" is what lets
+  it through), `pretext_statement` (a plain statement asks for nothing; the ask is what bites).
+- **E2** `pretext_application` (named the vacancy + a CV, read as a real applicant),
+  `pretext_general` (a speculative note has less pull, but the attachment still does the work).
+- **E4** `ms_pretext_pay_now` (rush + "keep it between us" left no room to check),
+  `ms_pretext_pay_calm` (no deadline/secrecy; the ease is what slipped it by), `ms_pretext_diary`
+  (a diary ask costs nothing; the request to move money is what turns a convincing message into a loss).
+- **E6** `pretext_qr_permit` (named the permit + a Friday deadline), `pretext_qr_permit_calm` (the easy
+  "when you get a chance" matched the rollout, no flag raised), `pretext_bulletin` (a bulletin asks for
+  nothing; the scan is the hook).
+- **E7** `pretext_ceo_payment` (a voice + a message in the CEO's name, half the transfer set up),
+  `pretext_catchup` (a catch-up asks for nothing; the request to move money is the bite).
+
+E3 (a pretext call) and E5 (a built page) carry no pretext templateId, so they get no by-choice map
+(the validator would warn), consistent with FUN_REVIEW item 2 naming E1/E2/E4/E6/E7.
+
+### aw4 — one shared rule of thumb in every debrief
+
+The debrief hook (`ruleOfThumb`, a8caac8e0) read `social.awareness.ruleOfThumb` and rendered nothing
+without it. Set one deployment-wide rule, identical in all 38 shells:
+
+> The habit to keep — When a message pressures you to move money, grant access or read back a code,
+> stop and check it using contact details you already have, rather than the ones the message gives
+> you. Taking a minute to confirm is always a fair thing to do.
+
+- Single-sourced for the generators in `awareness_deploy.py` (`AWARENESS_RULE_OF_THUMB_TEXT` /
+  `_HEADING`, `awareness_block()`); the four generators import it and set
+  `sc['social']['awareness']` in `scenario()`, so all 31 generated shells (7 defend-only + 24 checks)
+  carry it. Hand-mirrored the identical `{heading, text}` into the 7 full erbs.
+- Gave it the heading "The habit to keep" (visible, matching the aw1 "How to report here" box), so the
+  shared rule reads as a titled box above the Monday card rather than blending into the flow.
+- Test `social-awareness-rule-of-thumb.test.mjs`: all 38 shells carry a non-empty
+  `social.awareness.ruleOfThumb`, and every shell's ruleOfThumb object is byte-identical — the single
+  guard that the generators and the hand-authored full erbs stay in step.
+
+**Monday cards → the report box (FUN hook note, done).** The report-route box (aw1) now renders
+directly under the Monday card, so the 7 cards that ended "report it the way your organisation asks you
+to" now end "report it using the route in the box below", giving that instruction a concrete referent.
+Reworded in the 7 fragments + 7 full erbs (the 7 defend-only shells pick it up on regen). Check shells
+show no Monday card, so they are unaffected.
+
+### Pipeline / parity
+- Fragments edited: `e{1..7}/defend.json` (Monday card tail only). Full erbs edited directly: all seven
+  (aw4 ruleOfThumb + Monday reword; E1/E2/E4/E6/E7 also flipDefenderLineByChoice). Generators: all four
+  (import awareness_deploy + inject the awareness block). New: `awareness_deploy.py`.
+- No-change baseline before editing: fresh regen of all 31 shells byte-identical to HEAD (training_room
+  current). After copy-in, a fresh regen is byte-identical again (0 diffs, scenario.json.erb +
+  mission.json + generated ink). 31 generated scenario.json.erb copied in (every shell gained the
+  awareness block; the 7 defend-only also the Monday reword); mission.json and ink unchanged.
+
+### Checks run
+- `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs`: **1782/1782 pass**
+  (+4 new: 2 flip-view aw2, 1 validator aw2, 1 rule-of-thumb identity). Parity test: 7/7.
+- Validator `--strict-social --no-graph --skip-ink` on all **38** awareness shells: **all exit 0**, no
+  new warnings (no flipDefenderLineByChoice / ruleOfThumb / awareness.* warnings).
+- Full-episode bridges (keyless :3001, one at a time, no server start/stop; another session's drivers
+  were running during e5–e7 and were left alone): **all 7 PASS** — e1 13/13, e2 14/14, e3 21/21,
+  e4 14/14, e5 18/18, e6 15/15, e7 13/13 (games 4170–4183).
+- Screenshots looked at: the E1 flip after choosing `pretext_bank_change` shows the per-branch defender
+  line quoting the urgent run-due pretext; a rendered E1 debrief shows "The habit to keep" box above the
+  Monday card, the card pointing at the "How to report here" box below.

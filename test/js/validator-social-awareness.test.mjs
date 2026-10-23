@@ -259,6 +259,31 @@ test('strings.brief: empty or blank is an error; absent is left alone', { skip }
   assert.deepEqual(lint(j), []);
 });
 
+// aw2: strings.flipDefenderLineByChoice is keyed by the pretext the learner chose. A key that is not
+// a template id, or a template that is not a pretext, would never be shown (warn); an empty value is
+// an error; pretext keys with text are clean.
+test('strings.flipDefenderLineByChoice: pretext keys clean, others warn, empty errors', { skip }, () => {
+  let j = fx('clean_full.json');
+  ep(j).strings.flipDefenderLineByChoice = { pretext_invoice: 'The invoice branch.', pretext_account: 'The account branch.' };
+  assert.deepEqual(lint(j), [], 'two real pretext keys with text are clean');
+
+  j = fx('clean_full.json');
+  ep(j).strings.flipDefenderLineByChoice = { not_a_template: 'x' };
+  expectIn(lint(j), /⚠️.*flipDefenderLineByChoice\.not_a_template is not a social\.templates id/);
+
+  j = fx('clean_full.json');
+  ep(j).strings.flipDefenderLineByChoice = { ask_confirm: 'x' };
+  expectIn(lint(j), /⚠️.*flipDefenderLineByChoice\.ask_confirm is the template 'ask_confirm', which is not a 'pretext'/);
+
+  j = fx('clean_full.json');
+  ep(j).strings.flipDefenderLineByChoice = { pretext_invoice: '  ' };
+  expectIn(lint(j), /❌.*flipDefenderLineByChoice\.pretext_invoice has no text/);
+
+  j = fx('clean_full.json');
+  ep(j).strings.flipDefenderLineByChoice = 'not an object';
+  expectIn(lint(j), /❌.*flipDefenderLineByChoice must be an object/);
+});
+
 test('the real validator: schema passes on test_social_episode; the only social error is the missing kiosk sprite', { skip }, () => {
   const r = spawnSync('ruby', ['scripts/validate_scenario.rb', 'scenarios/test_social_episode/scenario.json.erb',
     '--no-graph', '--skip-ink', '--strict-social'], { cwd: root, encoding: 'utf8', env });

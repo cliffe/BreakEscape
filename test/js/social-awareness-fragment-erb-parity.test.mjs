@@ -24,6 +24,9 @@
 //   - strings keys present only in the erb are full-episode-only UI panels not needed in the
 //     fragment / defend-only shell: conceptPanel, flipCallIntro, flipPageIntro, voicePanel,
 //     defendIntro (E6/E7 carry it only in the erb).
+//   - strings.flipDefenderLineByChoice (aw2) is erb-only: the per-pretext flip defender line needs
+//     the attack's pretext choice (state.sent.templateId), which only a full episode makes; the
+//     defend-only shell has no write/flip stage, and the generator pops the flip strings there.
 //   - the triage set's erb-only "playerSentAuth" is the full episode's record of what the learner
 //     sent on the red-team side; the fragment set (also feeding defend-only, which has no send) omits it.
 //
@@ -50,7 +53,7 @@ const EPISODES = [
 // strings keys whose VALUE is allowed to differ between fragment and erb.
 const STRINGS_VALUE_EXEMPT = new Set(['defendIntro']);
 // strings keys allowed to exist only in the erb (full-episode-only panels).
-const STRINGS_ERB_ONLY_OK = new Set(['conceptPanel', 'flipCallIntro', 'flipPageIntro', 'voicePanel', 'defendIntro']);
+const STRINGS_ERB_ONLY_OK = new Set(['conceptPanel', 'flipCallIntro', 'flipPageIntro', 'voicePanel', 'defendIntro', 'flipDefenderLineByChoice']);
 // triage-set-level keys allowed to exist only in the erb.
 const SET_ERB_ONLY_OK = new Set(['playerSentAuth']);
 

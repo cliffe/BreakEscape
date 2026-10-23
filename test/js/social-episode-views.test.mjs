@@ -36,7 +36,7 @@ window.gameState = { globalVariables: {} };
 
 const mod = (rel) => import(pathToFileURL(join(dir, rel)));
 const { renderStepStrip, renderWordmark } = await mod('minigames/episode-runner/step-strip.js');
-const { renderFlipView, tellSentence } = await mod('minigames/episode-runner/flip-view.js');
+const { renderFlipView, tellSentence, defenderLine } = await mod('minigames/episode-runner/flip-view.js');
 const { renderDebrief } = await mod('minigames/episode-runner/debrief-view.js');
 const { redFlagString } = await mod('minigames/inbox-triage/triage-flags.js');
 
@@ -129,6 +129,43 @@ test('flip with message null shows flipNoSend and no tells', () => {
     assert.equal(h.querySelectorAll('.aw-tell').length, 0);
     assert.equal(h.querySelector('.mail-reader'), null);
     assert.deepEqual(flip.getState(), { shown: 'noSend', parts: ['noSend'], tells: [] });
+});
+
+// aw2: the flip's defender line is choice-aware. The learner's chosen pretext (templateId) picks a
+// per-branch line from strings.flipDefenderLineByChoice; anything unmatched falls back to the single
+// flipDefenderLine, then to the engine default.
+test('aw2 defenderLine(): chosen pretext wins, else flipDefenderLine, else the default', () => {
+    const strings = {
+        flipDefenderLine: 'A fallback line.',
+        flipDefenderLineByChoice: { pretext_bank_change: 'The urgent branch line.', pretext_bank_change_calm: 'The calm branch line.' }
+    };
+    assert.equal(defenderLine(strings, 'pretext_bank_change'), 'The urgent branch line.');
+    assert.equal(defenderLine(strings, 'pretext_bank_change_calm'), 'The calm branch line.');
+    // a pretext with no entry, and a null templateId, both fall back to flipDefenderLine
+    assert.equal(defenderLine(strings, 'pretext_statement'), 'A fallback line.');
+    assert.equal(defenderLine(strings, null), 'A fallback line.');
+    // no by-choice map at all: flipDefenderLine
+    assert.equal(defenderLine({ flipDefenderLine: 'Only one line.' }, 'pretext_bank_change'), 'Only one line.');
+    // nothing authored: the engine default (non-empty)
+    assert.ok(defenderLine({}, 'pretext_bank_change').length > 0);
+    // a blank by-choice value is ignored, not shown
+    assert.equal(defenderLine({ flipDefenderLine: 'Fallback.', flipDefenderLineByChoice: { pretext_x: '' } }, 'pretext_x'), 'Fallback.');
+});
+
+test('aw2 flip: renders the chosen pretext branch line, and falls back when it is unmatched', () => {
+    const strings = {
+        flipDefenderLine: 'A fallback line.',
+        flipDefenderLineByChoice: { pretext_bank_change: 'The urgent branch line.' }
+    };
+    const h1 = host();
+    renderFlipView(h1, { message: sent(), templateId: 'pretext_bank_change', strings, onContinue() {} });
+    assert.equal(h1.querySelector('.aw-defender-line').textContent, 'The urgent branch line.');
+    const h2 = host();
+    renderFlipView(h2, { message: sent(), templateId: 'pretext_statement', strings, onContinue() {} });
+    assert.equal(h2.querySelector('.aw-defender-line').textContent, 'A fallback line.');
+    const h3 = host();
+    renderFlipView(h3, { message: sent(), strings, onContinue() {} });
+    assert.equal(h3.querySelector('.aw-defender-line').textContent, 'A fallback line.');
 });
 
 const set = () => ({
