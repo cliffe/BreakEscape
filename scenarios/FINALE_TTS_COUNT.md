@@ -209,3 +209,4 @@ No audio exists yet, so nothing is orphaned by the change. The officers' m09 and
 - 2026-10-23 m10 phase-5 regression fix pass: +4 new (Netherton "Agent. With me." and the narrator's "Time for one more." at 06:00; Victoria's order-already-killed line; Vos's trace line), 2 reworded (Ghost's m02 opener; Netherton's "I know the one you mean…").
 - 2026-10-23 m09 targeted recheck N1: 0 voiced, 0 reworded (384); the new lines are an unvoiced hub status row and an unvoiced timed text.
 - 2026-10-23 m10 blind fix pass: +4 new, all Mercer ("Still here. So is the console.", "Sensible. Use it if you must…", "No. If you want me off it…", bark "Right. Come on, then."); 0 reworded.
+- 2026-10-23 m10 targeted check R2 fixes: 0 voiced changes (mappings only).
