@@ -478,6 +478,11 @@ export class PersonChatMinigame extends MinigameScene {
             }
             
             const loaded = await this.conversation.loadStory(storySource);
+
+            // Closed while the story was loading, or ended by another minigame opening
+            // over it (cleanup() without complete(), F25): the UI is torn down and the
+            // social run already ended, so there is nothing to start or show
+            if (this._cleanedUp || !this.gameState.isActive) return;
             
             if (!loaded) {
                 console.error('❌ Failed to load conversation story');
@@ -592,6 +597,7 @@ export class PersonChatMinigame extends MinigameScene {
             if (this.params?.pretextCallId) {
                 try { await attachPretext(this, { chat: 'person' }); }
                 catch (e) { console.warn('⚠️ pretext attach failed:', e.message); }
+                if (this._cleanedUp || !this.gameState.isActive) return;
             }
 
             this.isConversationActive = true;
@@ -1913,6 +1919,10 @@ export class PersonChatMinigame extends MinigameScene {
         // Clear NPC context
         window.currentConversationNPCId = null;
         window.currentConversationMinigameType = null;
+
+        // Ended without complete() (another minigame opened over this one): a
+        // startConversation() still awaiting its story must see the chat as closed
+        this.gameState.isActive = false;
 
         // Play any barks that were deferred while the conversation was open
         if (window.barkSystem) {
