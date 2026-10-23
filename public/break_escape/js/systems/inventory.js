@@ -443,9 +443,14 @@ export async function addToInventory(sprite) {
             return { ok: true, reason: 'already' };
         }
 
-        // NEW: Validate with server before adding
+        // NEW: Validate with server before adding.
+        // Not for an item restored from the server's own inventory on load: the server
+        // already holds it, and re-validating it as a new pickup fails for an NPC gift.
+        // With no source NPC the server takes the first NPC copy holding the item in its
+        // room order, which can be one the player has not met (m10 F3: "NPC not
+        // encountered: nightshade_lock" on every reload once his payment was held).
         const gameId = window.breakEscapeConfig?.gameId;
-        if (gameId) {
+        if (gameId && !sprite._restoredFromSave) {
             try {
                 // Create item data with ID from scenario if available
                 const itemData = sprite.scenarioData;

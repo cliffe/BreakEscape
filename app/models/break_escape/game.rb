@@ -137,11 +137,12 @@ module BreakEscape
     end
 
     # Inventory management
-    def add_inventory_item!(item)
-      player_state['inventory'] ||= []
+    # True when the player already holds this item (by id, or by type and name
+    # when either side has no id). The match add_inventory_item! dedupes on.
+    def inventory_includes?(item)
+      return false if item.blank?
 
-      # Check if item already exists in inventory (by id or combination of type and name)
-      item_exists = player_state['inventory'].any? do |existing_item|
+      (player_state['inventory'] || []).any? do |existing_item|
         # Match by ID if both have IDs
         if item['id'].present? && existing_item['id'].present?
           existing_item['id'] == item['id']
@@ -151,6 +152,13 @@ module BreakEscape
           existing_item['name'] == item['name']
         end
       end
+    end
+
+    def add_inventory_item!(item)
+      player_state['inventory'] ||= []
+
+      # Check if item already exists in inventory (by id or combination of type and name)
+      item_exists = inventory_includes?(item)
 
       unless item_exists
         player_state['inventory'] << item

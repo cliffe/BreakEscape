@@ -951,6 +951,16 @@ module BreakEscape
         when 'add'
           # Validate item exists and is collectible
           source_npc_id = (params[:source_npc_id] || params[:sourceNpcId]).presence&.to_s
+          # Already held and no giver named: nothing to add, so nothing to validate.
+          # A reload used to re-send every held item like this, and re-validating an
+          # NPC gift with no source NPC took the first NPC copy holding it in room
+          # order, one the player may not have met (m10 F3: "NPC not encountered:
+          # nightshade_lock"). A give that names its NPC still validates, so the
+          # gift record for that NPC is kept.
+          if source_npc_id.blank? && @game.inventory_includes?(item.to_unsafe_h)
+            Rails.logger.info "[BreakEscape] Item already in inventory, accepted without revalidation: #{item['type']} / #{item['name']}"
+            return render json: { success: true, inventory: @game.player_state['inventory'] }
+          end
           validation_error = validate_item_collectible(item, source_npc_id)
           if validation_error
             Rails.logger.warn "[BreakEscape] inventory validation failed: #{validation_error}"
