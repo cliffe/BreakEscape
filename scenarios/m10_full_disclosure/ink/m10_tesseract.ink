@@ -790,7 +790,7 @@ Dr Adrian Tesseract: Somebody has to be the during. Better me.
 { tess_menu:
     ~ tess_menu = false
 - else:
-    -> core_router
+    -> exch_3_done
 }
 ~ temp speaker = m09_hax_confession_answer == "same_in_your_place" or m09_hax_confession_answer == "afterwards"
 ~ temp taught = m09_hax_confession_answer == "should_have_told"
@@ -803,7 +803,7 @@ Dr Adrian Tesseract: Somebody has to be the during. Better me.
     ~ exchange_3 = "miss"
     -> ko_sting ->
     Dr Adrian Tesseract: You've told me the cost. I asked who does the hurting.
-    -> core_router
+    -> exch_3_done
 // slot 2: HaX, by her answer in Helena > plain decoy
 + { speaker } [HaX. You're on speaker.]
     ~ exchange_3 = "record"
@@ -815,13 +815,13 @@ Dr Adrian Tesseract: Somebody has to be the during. Better me.
     Agent HaX: I've said it to every agent I've run since. I never once meant 'so someone else can bleed'.
     -> first_landed ->
     Dr Adrian Tesseract: Ninety-nine.
-    -> core_router
+    -> exch_3_done
 + { taught } [She learned that from you.]
     ~ exchange_3 = "record"
     -> ko_sting ->
     -> first_landed ->
     Dr Adrian Tesseract: *pause* Yes. By example.
-    -> core_router
+    -> exch_3_done
 + { not slot2 } [Nobody elected you to teach the whole world a lesson.]
     -> exch_3_plain
 // slot 3: the rebuttal
@@ -830,7 +830,7 @@ Dr Adrian Tesseract: Somebody has to be the during. Better me.
     -> ko_sting ->
     -> first_landed ->
     Dr Adrian Tesseract: Better me, I said. And I brought you.
-    -> core_router
+    -> exch_3_done
 // slot 4 (ruling 5: the notes answer needs the optional annotation read): the Tomb Alpha notes > what HaX does with the line > plain decoy
 // Puzzle chains P4: what an m09 player who opened the sheet saw.
 + { tapes } [Your Alpha notes made students work it out. Now you'd hand everyone the answer.]
@@ -838,13 +838,13 @@ Dr Adrian Tesseract: Somebody has to be the during. Better me.
     -> ko_sting ->
     -> first_landed ->
     Dr Adrian Tesseract: I was younger. I meant it then.
-    -> core_router
+    -> exch_3_done
 + { not tapes and helena } [She carries it so she never hands it on. You never taught that part.]
     ~ exchange_3 = "record"
     -> ko_sting ->
     -> first_landed ->
     Dr Adrian Tesseract: *pause* I never said it. She worked it out.
-    -> core_router
+    -> exch_3_done
 + { slot2 and not slot4 } [Nobody elected you to teach the whole world a lesson.]
     -> exch_3_plain
 
@@ -852,6 +852,20 @@ Dr Adrian Tesseract: Somebody has to be the during. Better me.
 ~ exchange_3 = "miss"
 -> ko_sting ->
 Dr Adrian Tesseract: Nobody elected the people who hoard, either. I asked who does the hurting.
+-> exch_3_done
+
+// Teaching R2-n7: after exchange 3, the player hears which answers landed.
+=== exch_3_done ===
+{
+- landed_count() >= 3:
+    Narrator: All three of your answers landed. He knows it.
+- landed_count() == 2:
+    Narrator: Two of your answers landed. He hasn't conceded the third.
+- landed_count() == 1:
+    Narrator: One of your answers landed. The other two he turned.
+- else:
+    Narrator: None of your answers landed. He turned every one.
+}
 -> core_router
 
 // FA §3.6: the knock-out pattern, by band; 0 says nothing.

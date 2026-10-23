@@ -798,7 +798,8 @@ A key switch and a breaker row, labelled GALLERY SHUTTER.
 {gallery_shutter_cut:
     -> cut_call
 }
-Turn the key a quarter. That takes the row off their board.
+// Teaching R2-n4: local control before isolation.
+Turn the key a quarter. That takes the row off their board, so nobody upstairs can put it back.
 // Blind fix pass F4: the key turn is the player's act at the panel, said as one.
 + [(Turn the key a quarter right.)]
     ~ cut_step = 2
