@@ -685,6 +685,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 // The merged set (11 N15) and the awareness skin (the Report animation)
                 ...(set ? { set } : {}),
                 skin: 'awareness',
+                // A debrief later in this episode carries the real-items cost and why lines, so the
+                // triage result names the items only (disc_visible). A check ends on the result.
+                debriefFollows: debriefAfter(episode, stage),
                 onComplete: (success, result) => this._triageDone(stage, options, holder, reopenBase, episode, set, success, result)
             });
         } catch (e) {
@@ -795,6 +798,13 @@ export function watchCall({ episode, callId, before = null, reopen = {}, globals
     callWatches.set(episode.id, { stop, tick });
     timer = schedule(tick, CALL_WAIT_MS);
     return { stop: () => stopCallWatch(episode.id), tick };
+}
+
+/** Whether the episode's debrief comes after `stage` (the triage result is then not the last word). */
+export function debriefAfter(episode, stage) {
+    const stages = stagesFor(episode);
+    const at = stages.indexOf(stage);
+    return at >= 0 && stages.indexOf('debrief') > at;
 }
 
 function isNormal(success, result) {

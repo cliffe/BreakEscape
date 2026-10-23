@@ -41,7 +41,8 @@
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { MailReader } from '../mail-client/mail-reader.js';
-import { scoreTriage, weakestFactor, bandFor, verdictPoints, FULL_VERDICT_POINTS, CRITICAL_PENALTY, criticalWhat } from './triage-scoring.js';
+import { scoreTriage, weakestFactor, bandFor, verdictPoints, FULL_VERDICT_POINTS, CRITICAL_PENALTY, criticalWhat,
+    genuineFeedback, genuineFeedbackText } from './triage-scoring.js';
 import { buildTriageMessages } from './triage-messages.js';
 import { buildHeaderPanel } from './header-panel.js';
 import {
@@ -991,7 +992,14 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 `(${criticalWhat(result.criticalKinds) || "approving a sign-in you didn't start, or doing what an impostor asked on a call"}). ` +
                 `That costs ${CRITICAL_PENALTY} points off the round${result.criticalMisses.length === 1 ? "" : " each"}, on top of the item itself.`));
         }
-        if (!stored && this.feedbackMode === 'end') p.appendChild(this._itemList());
+        // The genuine items (FUN_DECISIONS disc_visible): which real ones the learner trusted, what
+        // made each flagged one safe and why both halves matter. End-of-round feedback puts the
+        // "what made it safe" lines under the item list; immediate feedback names the items only,
+        // because each card already said why.
+        const genuine = stored ? null : this._genuineFeedback();
+        if (!stored && this.feedbackMode === 'end') p.appendChild(this._itemList(genuine));
+        const genuineBox = genuine ? this._genuineSummary(genuine) : null;
+        if (genuineBox) p.appendChild(genuineBox);
 
         if (!stored) {
             const entries = Object.entries(result.perFactor);
@@ -1078,7 +1086,10 @@ export class InboxTriageMinigame extends SocialOverlayScene {
      * at the end" holds on the last screen too (P3 N-9). Same rule as the review cards; the
      * wording never blames.
      */
-    _itemList() {
+    _itemList(genuine = null) {
+        // disc_visible: a real item treated as a phish gets what made it safe under its own line.
+        // Three or more fold away, so the list stays short.
+        const fold = (genuine?.flagged?.length || 0) > 2;
         const box = el('section', 'tri-items');
         box.setAttribute('aria-label', 'Item by item');
         box.appendChild(el('h4', 'tri-items-title', 'Item by item'));
@@ -1092,10 +1103,50 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             li.append(icon(right ? 'mark-tick' : 'mark-question'),
                 el('span', 'tri-item-title', this._cardTitle(m)),
                 el('span', 'tri-item-verdict', ` · ${this._actionLabel(m, ans)}: ${right ? 'right call' : 'worth another look'}`));
+            const why = genuine?.flagged.find((f) => f.id === m.id);
+            if (why) {
+                const line = why.why ? `It was real. What made it safe: ${why.why}${why.cost ? ` ${why.cost}` : ''}`
+                    : `It was real.${why.cost ? ` ${why.cost}` : ''}`;
+                if (fold) {
+                    const d = el('details', 'tri-item-why');
+                    d.append(el('summary', null, 'It was real: what made it safe'), el('p', null, line.replace(/^It was real\. What made it safe: /, '')));
+                    li.appendChild(d);
+                } else {
+                    li.appendChild(el('p', 'tri-item-why', line));
+                }
+            }
             ol.appendChild(li);
         }
         box.appendChild(ol);
         return box;
+    }
+
+    /** genuineFeedback() for this round, or null (no answered real item, or the set opts out). */
+    _genuineFeedback() {
+        if (this.set?.genuineFeedback === false) return null;
+        return genuineFeedback({
+            messages: this.messages, answers: this._answerList(), profile: this.profile,
+            titleOf: (m) => this._cardTitle(m), actionLabel: (m, a) => this._actionLabel(m, a)
+        });
+    }
+
+    /**
+     * The result screen's few lines on the real items: who was trusted, which were treated as a
+     * phish (named here under immediate feedback; under end-of-round feedback the item list above
+     * carries what made each safe), the cost of a false alarm and why both halves matter. When an
+     * episode debrief follows (params.debriefFollows), the cost and why lines are left to it.
+     */
+    _genuineSummary(genuine) {
+        const text = genuineFeedbackText(genuine, { detail: false });
+        if (!text) return null;
+        const box = el('section', 'tri-genuine');
+        box.setAttribute('aria-label', 'The real ones');
+        const later = this.params.debriefFollows === true;
+        if (text.trusted) box.appendChild(el('p', 'tri-genuine-trusted', text.trusted));
+        if (text.flaggedLead && this.feedbackMode !== 'end') box.appendChild(el('p', 'tri-genuine-flagged', text.flaggedLead));
+        if (text.cost && !later) box.appendChild(el('p', 'tri-genuine-cost', text.cost));
+        if (text.why && !later) box.appendChild(el('p', 'tri-genuine-why', text.why));
+        return box.childNodes.length ? box : null;
     }
 
     _notifyResult(result) {
@@ -1254,6 +1305,14 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 actionButtons: [...(this.reader?.readPane?.querySelectorAll?.('.tri-verdict') || [])]
                     .map((b) => b.dataset.action),
                 comparison: this.step === 'result' && this.comparison ? JSON.parse(JSON.stringify(this.comparison)) : null,
+                // The real-items lines on the result screen (disc_visible): what is drawn, by class.
+                genuine: this.step === 'result' && this.resultEl ? {
+                    trusted: this.resultEl.querySelector('.tri-genuine-trusted')?.textContent || '',
+                    flagged: this.resultEl.querySelector('.tri-genuine-flagged')?.textContent || '',
+                    itemWhy: [...this.resultEl.querySelectorAll('.tri-item-why')].map((n) => n.textContent),
+                    cost: this.resultEl.querySelector('.tri-genuine-cost')?.textContent || '',
+                    why: this.resultEl.querySelector('.tri-genuine-why')?.textContent || ''
+                } : null,
                 messages: this.messages.map((m) => ({
                     id: m.id,
                     kind: kindOf(m),

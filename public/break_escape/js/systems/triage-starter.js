@@ -328,7 +328,7 @@ function savingNotifier(params) {
  *                           scenarioData.minigameData holds triageSetId and,
  *                           for a shell, conclusionTaskId
  * @param {Object} [options] { stage, conclusionTaskId, triageSetId, set,
- *                           skin, onComplete(success, result) }
+ *                           skin, debriefFollows, onComplete(success, result) }
  *                           set: a ready-made set object used in place of the lookup;
  *                           skin: 'awareness' gives the overlay the awareness skin
  *                           (the Report button's positive animation)
@@ -390,6 +390,8 @@ export function startInboxTriageMinigame(lockable, options = {}) {
         storedResult: readOnly ? stored : null,
         savingNotice: SAVING_NOTICE,
         skin: options.skin === 'awareness' ? 'awareness' : null,
+        // The episode runner: a debrief follows this round (inbox-triage-minigame.js _genuineSummary).
+        debriefFollows: options.debriefFollows === true,
         onComplete: (success, result) => {
             if (!success || !result || result.aborted) {
                 callback?.(false, result);

@@ -1626,6 +1626,7 @@
             "perFlagNote": {"type": "object", "additionalProperties": {"type": "string"}},
             "whyFine": {"type": "object", "additionalProperties": {"type": "string"}},
             "ifTrusted": {"type": "string"},
+            "falseAlarmCost": {"type": "string", "description": "Real items only (optional): one sentence on what reporting or deleting this real one would cost (a payment held up, a colleague left waiting). Shown after what made it safe on the result screen and the debrief (disc_visible)."},
             "headerNote": {"type": "string"},
             "reportReply": {"type": "string"}
           },
@@ -1965,6 +1966,7 @@
         "chipStyle": {"type": "string", "enum": ["plain", "technical", "character"]},
         "flagPlayerSent": {"type": ["string", "boolean"], "description": "Opt-in (inbox-triage-minigame.js): marks the player's own sends on the review flip; a string is the line shown, true uses a default"},
         "verifyVerdict": {"type": "boolean"},
+        "genuineFeedback": {"type": "boolean", "description": "false hides the result screen's and debrief's lines on the real items (which were trusted, what made a flagged one safe). Default on."},
         "brief": {"type": "string"},
         "pairedWith": {"type": "string"},
         "channelTells": {"type": "array", "items": {"type": "string"}},

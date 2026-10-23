@@ -104,6 +104,12 @@
 .aw-flag-caught .aw-flag-word { color: var(--aw-accent); }
 .aw-flag-missed .aw-flag-word { color: var(--aw-warn); }
 .aw-if-trusted { margin: 6px 0; font-size: 15px; }
+/* the real items (disc_visible): trusted, treated as a phish and why both halves matter */
+.aw-genuine { margin: 0 0 12px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-radius: 4px; font-size: 15px; }
+.aw-genuine p { margin: 4px 0; }
+.aw-genuine-list { margin: 4px 0; padding-left: 20px; }
+.aw-genuine-fold summary { cursor: pointer; min-height: 32px; }
+.aw-genuine-cost, .aw-genuine-why { color: #3e4c59; }
 /* optional concept and voice panels (strings.conceptPanel, strings.voicePanel) */
 .aw-panel { margin: 0 0 12px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-left: 4px solid var(--aw-accent); border-radius: 4px; }
 .aw-panel-heading { margin: 0 0 4px; font-size: 16px; }

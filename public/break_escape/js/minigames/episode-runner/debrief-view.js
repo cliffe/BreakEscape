@@ -19,11 +19,14 @@
 // ("kept the team safe"); it shows only when that is at least one, and never counts misses.
 // getState() -> { items: number, mondayCard: boolean, noBlame: boolean,
 //                 conceptPanel: boolean, voicePanel: boolean, reportRoute: 'configured' |
-//                 'generic' | null, ruleOfThumb: boolean, teamProtected: number | null }.
+//                 'generic' | null, ruleOfThumb: boolean, teamProtected: number | null,
+//                 genuine: { trusted, flagged } | null }.
+// The real items (disc_visible) follow the cards: the real ones trusted, what made each one
+// treated as a phish safe, the cost of a false alarm and why both halves matter (buildGenuine).
 // Every string goes in with textContent. The wording never blames the learner.
 
 import { redFlagString, skillName } from '../inbox-triage/triage-flags.js';
-import { weakestFactor, flagUnits, unitAccepts } from '../inbox-triage/triage-scoring.js';
+import { weakestFactor, flagUnits, unitAccepts, genuineFeedback, genuineFeedbackText } from '../inbox-triage/triage-scoring.js';
 import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject } from '../inbox-triage/triage-kinds.js';
 
 const DEFAULTS = Object.freeze({
@@ -32,6 +35,9 @@ const DEFAULTS = Object.freeze({
     noBlameLine: 'Nobody here is being marked down for a miss. These messages are built to look right.',
     defendOnly: 'This round is defence only. Anything you did not read the right way is picked out below.',
     allRight: 'You read every one of these the right way. Nothing to pick over here.',
+    // Nothing needs a card, but a real one was reported: "every one the right way" would sit
+    // oddly above the lines on it (disc_visible).
+    allPhishRight: 'Every phish was caught, with every tell named.',
     finish: 'Finish'
 });
 
@@ -210,6 +216,47 @@ export function teamLine(count, teamSize) {
         : `Your reports and checks this round kept ${what} away from the rest of your team.`;
 }
 
+/**
+ * The real items (FUN_DECISIONS disc_visible): which real ones the learner trusted, what made each
+ * one they treated as a phish safe, the cost of a false alarm and why both halves matter. An item
+ * with a card above points at it rather than repeating its "why this one was fine" lines. Three or
+ * more items fold into a <details>. Returns { node, trusted, flagged } or null.
+ */
+function buildGenuine(set, answers, reviewedIds, profile) {
+    const messages = Array.isArray(set?.messages) ? set.messages.filter(isObj) : [];
+    const fb = genuineFeedback({
+        messages, answers, profile,
+        titleOf: (m) => titleOf(m, m.id),
+        actionLabel: (m, a) => verdictWordAndLine(a, m, false).word
+    });
+    const text = fb ? genuineFeedbackText(fb, { detail: true }) : null;
+    if (!text) return null;
+    const box = el('section', 'aw-genuine');
+    box.setAttribute('aria-label', 'The real ones');
+    if (text.trusted) box.appendChild(el('p', 'aw-genuine-trusted', text.trusted));
+    if (text.items.length) {
+        const ul = el('ul', 'aw-genuine-list');
+        for (const f of fb.flagged) {
+            const line = reviewedIds.has(f.id)
+                ? `‘${f.title}’ (you chose ${f.action}). Its card above says what made it safe.${f.cost ? ` ${f.cost}` : ''}`
+                : text.items.find((it) => it.id === f.id)?.text || '';
+            const li = el('li', 'aw-genuine-item', line);
+            li.dataset.genuineId = f.id; // not data-message-id, which marks a card
+            ul.appendChild(li);
+        }
+        if (fb.flagged.length > 2) {
+            const d = el('details', 'aw-genuine-fold');
+            d.append(el('summary', 'aw-genuine-flagged', text.flaggedLead), ul);
+            box.appendChild(d);
+        } else {
+            box.append(el('p', 'aw-genuine-flagged', text.flaggedLead), ul);
+        }
+    }
+    if (text.cost) box.appendChild(el('p', 'aw-genuine-cost', text.cost));
+    if (text.why) box.appendChild(el('p', 'aw-genuine-why', text.why));
+    return { node: box, trusted: fb.trusted.length, flagged: fb.flagged.length };
+}
+
 function textBox(tag, className, label, block) {
     const box = el(tag, className);
     box.setAttribute('aria-label', label);
@@ -273,9 +320,14 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
                 ? `The tell most often missed: ${names[0]} (${counts}).`
                 : `The tells most often missed: ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} (${counts} each).`));
         }
-    } else if (answers.length) {
-        root.appendChild(el('p', 'aw-all-right', str(strings, 'allRight')));
     }
+    // disc_visible: the real items, after the cards it may point at.
+    const genuine = set?.genuineFeedback === false ? null
+        : buildGenuine(set, answers, new Set(reviewed.map((a) => a.id)), set?.scoringProfile === 'analyst' ? 'analyst' : 'awareness');
+    if (!reviewed.length && answers.length) {
+        root.appendChild(el('p', 'aw-all-right', genuine?.flagged ? DEFAULTS.allPhishRight : str(strings, 'allRight')));
+    }
+    if (genuine) root.appendChild(genuine.node);
 
     const concept = buildPanel(strings, 'conceptPanel');
     if (concept) root.appendChild(concept);
@@ -318,7 +370,8 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
         getState() {
             return { items: reviewed.length, mondayCard: true, noBlame, conceptPanel: !!concept, voicePanel: !!voice,
                 reportRoute: route ? (route.configured === true ? 'configured' : 'generic') : null,
-                ruleOfThumb: !!rule, teamProtected: teamText ? team : null };
+                ruleOfThumb: !!rule, teamProtected: teamText ? team : null,
+                genuine: genuine ? { trusted: genuine.trusted, flagged: genuine.flagged } : null };
         }
     };
 }

@@ -138,6 +138,7 @@ module ValidateSocial
         issues << err("#{where}.#{key} '#{set[key]}' must be one of #{allowed.join(', ')}") unless allowed.include?(set[key])
       end
       issues << err("#{where}.verifyVerdict must be true or false") if set.key?('verifyVerdict') && ![true, false].include?(set['verifyVerdict'])
+      issues << err("#{where}.genuineFeedback must be true or false") if set.key?('genuineFeedback') && ![true, false].include?(set['genuineFeedback'])
       issues
     end
 
@@ -584,8 +585,11 @@ module ValidateSocial
         end
       end
 
-      %w[headerNote ifTrusted reportReply].each do |f|
+      %w[headerNote ifTrusted reportReply falseAlarmCost].each do |f|
         issues << err("#{mw}.truth.#{f} is empty; the review card would show a blank line") if t.key?(f) && blank?(t[f])
+      end
+      if t['isPhish'] && t.key?('falseAlarmCost')
+        issues << warn_("#{mw}.truth.falseAlarmCost is on a phish; it is shown only for a real item reported or deleted, so it is never seen")
       end
       if t['isPhish']
         issues.concat(phish_truth(t, flag_list, m, mw))

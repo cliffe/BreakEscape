@@ -177,6 +177,12 @@
 .tri-skills { margin: 8px 0; padding-left: 20px; }
 .tri-weakest { padding: 6px 8px; border-left: 4px solid var(--ui-accent, #ffcc44); background: rgba(255, 204, 68, 0.08); }
 .tri-come-back { color: var(--ui-text-dim, #c3ccdf); }
+/* The real items (disc_visible): what the learner trusted, what made a flagged one safe */
+.tri-genuine { margin: 10px 0; padding: 6px 8px; border-left: 4px solid var(--ui-line, #4c5b80); }
+.tri-genuine p { margin: 4px 0; }
+.tri-genuine-cost, .tri-genuine-why { color: var(--ui-text-dim, #c3ccdf); }
+.tri-item-why { margin: 2px 0 6px 24px; font-size: 14px; color: var(--ui-text-dim, #c3ccdf); }
+.tri-item-why summary { cursor: pointer; min-height: 32px; }
 .tri-save-note { min-height: 1.4em; color: var(--ui-accent, #ffcc44); }
 .tri-result-bar { display: flex; flex-wrap: wrap; }
 

@@ -354,3 +354,127 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         zeroSkills: zeros,
     };
 }
+
+// ── Feedback on the genuine items (FUN_DECISIONS disc_visible) ───────────────────────────
+// The discrimination figure (aw3) stays organiser-only. The learner gets the detail instead:
+// which real items they trusted, which they flagged and what made each one safe, and why both
+// halves (catching phish, leaving real mail alone) matter. No index, no rates, no blame.
+
+const TRUST_VERDICTS = ['trust', 'verify'];
+const FLAG_VERDICTS = ['report', 'delete'];
+
+/** "A", "A and B", "A, B and C". */
+export function listJoin(items) {
+    const xs = (items || []).filter((x) => typeof x === 'string' && x);
+    if (xs.length <= 1) return xs.join('');
+    return `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
+}
+
+const quoted = (t) => `‘${t}’`;
+
+/**
+ * The genuine items of a round, sorted by what the learner did. Pure.
+ *
+ *   genuineFeedback({ messages, answers, profile, titleOf?, actionLabel? }) -> null | {
+ *     realTotal, trusted: [{ id, title }],
+ *     flagged: [{ id, title, verdict, action, why, cost }]
+ *   }
+ *
+ * trusted  real items given Trust or Verify (Ring back) for full verdict marks. Comply on an
+ *          unchecked genuine caller is not listed: the result grid does not count it as right.
+ * flagged  real items answered Report or Delete (Escalate, Refuse, Deny, Deny and report).
+ *          `why` is the item's truth.whyFine.default (else its first whyFine line), `cost` its
+ *          optional truth.falseAlarmCost. Report is full marks under awareness ("never wrong"),
+ *          so the wording built from this never calls it a mistake.
+ * Returns null when the round has no answered real item, or the set opts out
+ * (set.genuineFeedback === false, read by the callers).
+ */
+export function genuineFeedback({ messages, answers, profile = 'awareness', titleOf, actionLabel } = {}) {
+    if (!Array.isArray(messages)) return null;
+    const byId = new Map();
+    for (const a of answers || []) if (a && typeof a === 'object') byId.set(a.id ?? a.messageId, a);
+    const title = (m) => (typeof titleOf === 'function' ? titleOf(m) : null) || m.subject || m.id;
+    const label = (m, a) => (typeof actionLabel === 'function' ? actionLabel(m, a) : null) || a.verdict;
+    const trusted = [];
+    const flagged = [];
+    let realTotal = 0, answered = 0;
+    for (const m of messages) {
+        if (!m || typeof m !== 'object') continue;
+        const truth = m.truth && typeof m.truth === 'object' ? m.truth : {};
+        // A playerSent entry is replayed as a phish (triage-messages.js); an answer that says
+        // isPhish (the debrief's stored answers) wins over a set entry that lacks truth.
+        if (truth.isPhish || m.kind === 'playerSent' || m.playerSent === true) continue;
+        const a = byId.get(m.id);
+        if (a && a.isPhish === true) continue;
+        realTotal += 1;
+        if (!a || typeof a.verdict !== 'string') continue;
+        answered += 1;
+        const kind = typeof m.kind === 'string' && m.kind ? m.kind : 'email';
+        let pts = 0;
+        try { pts = verdictPoints(profile, false, a.verdict, kind); } catch (e) { continue; }
+        if (TRUST_VERDICTS.includes(a.verdict) && pts >= FULL_VERDICT_POINTS) {
+            trusted.push({ id: m.id, title: title(m) });
+        } else if (FLAG_VERDICTS.includes(a.verdict)) {
+            const wf = truth.whyFine && typeof truth.whyFine === 'object' ? truth.whyFine : {};
+            const why = (typeof wf.default === 'string' && wf.default.trim())
+                || Object.values(wf).find((v) => typeof v === 'string' && v.trim()) || '';
+            const cost = typeof truth.falseAlarmCost === 'string' ? truth.falseAlarmCost.trim() : '';
+            flagged.push({ id: m.id, title: title(m), verdict: a.verdict, action: label(m, a), why: String(why).trim(), cost });
+        }
+    }
+    if (!answered) return null;
+    return { realTotal, trusted, flagged };
+}
+
+/** Why both halves matter, in one sentence (no numbers). */
+export const GENUINE_WHY_LINE = 'Both halves matter: catching a phish stops the attack, and trusting the real ones '
+    + 'keeps work moving and leaves your security team time for the reports that count.';
+
+/**
+ * The plain-text lines for genuineFeedback()'s result. Pure.
+ *
+ *   genuineFeedbackText(fb, { detail }) -> null | {
+ *     trusted: string, flaggedLead: string, items: [{ id, text }], cost: string, why: string
+ *   }
+ *
+ * detail false (immediate feedback: each card already said what made the item safe) names the
+ * flagged items in `flaggedLead` and leaves `items` empty. detail true (end-of-round feedback,
+ * the debrief) gives one line per flagged item with what made it safe. Empty strings are left out
+ * by the callers. Reporting stays "never wrong", matching the cards and the result grid.
+ */
+export function genuineFeedbackText(fb, { detail = false } = {}) {
+    if (!fb || typeof fb !== 'object') return null;
+    const trusted = Array.isArray(fb.trusted) ? fb.trusted : [];
+    const flagged = Array.isArray(fb.flagged) ? fb.flagged : [];
+    const out = { trusted: '', flaggedLead: '', items: [], cost: '', why: '' };
+    if (trusted.length) {
+        const names = listJoin(trusted.map((t) => quoted(t.title)));
+        out.trusted = flagged.length || trusted.length < (fb.realTotal || 0)
+            ? `You trusted ${trusted.length === 1 ? 'this real one' : 'these real ones'}: ${names}.`
+            : `You trusted the real ones: ${names}.`;
+    }
+    if (flagged.length) {
+        const one = flagged.length === 1;
+        if (detail) {
+            out.flaggedLead = one ? 'One real one was treated as a phish:' : `${flagged.length} real ones were treated as phish:`;
+            out.items = flagged.map((f) => ({
+                id: f.id,
+                text: `${quoted(f.title)} (you chose ${f.action}). ${f.why ? `What made it safe: ${f.why}` : 'It was real.'}`
+                    + (f.cost ? ` ${f.cost}` : '')
+            }));
+        } else {
+            const names = listJoin(flagged.map((f) => `${quoted(f.title)} (${f.action})`));
+            out.flaggedLead = `${one ? 'One real one was treated as a phish' : `${flagged.length} real ones were treated as phish`}: ${names}. `
+                + `${one ? 'Its card' : 'Each card'} showed what made it safe.`;
+        }
+        const reported = flagged.some((f) => f.verdict === 'report');
+        const binned = flagged.some((f) => f.verdict === 'delete');
+        out.cost = reported && binned
+            ? "Reporting when you're unsure is never wrong, but treating a real message as a phish has a cost: a report takes a colleague's time to check, and a deleted or refused one can mean a missed payment or a colleague left waiting."
+            : reported
+                ? "Reporting when you're unsure is never wrong, but a report on a real message has a cost: a colleague has to stop and check it, and the real request waits."
+                : 'Deleting or refusing a real one has a cost: it can mean a missed payment, a missed shift change or a colleague left waiting.';
+    }
+    out.why = GENUINE_WHY_LINE;
+    return out;
+}
