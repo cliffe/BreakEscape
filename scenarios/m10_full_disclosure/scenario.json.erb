@@ -195,8 +195,10 @@ outer_lock_pin = '6083'
 # (flags_for_vm), not account names, passwords or keys, so they are fixed strings
 # here, as m01's password list and m09's logins are. Values are final (2026-10-22);
 # the build must seed these exact strings.
+# VM settled 2026-10-23: the monitoring foothold is unauthenticated (a hole in
+# the platform), so secmon is only the service account's name on the tag, not a
+# login; no monitoring password is handed out.
 monitor_login_user = 'secmon'
-monitor_login_password = 'Bunker!Monitor59'
 release_login_user = 'relops'
 release_login_password = 'Release!Shift25'
 core_access_key = 'TSRCT-CORE-9F21'
@@ -2642,10 +2644,11 @@ end
           "puzzle_graph_note": "The breach also waits on the table scene and the pair back (OT 4.1).",
           <%# VM-WIRE: flag 1 (the foothold on the security monitoring host). One flag per station (F-18). %>
           "acceptsVms": [<%= j.(station.(1)[:vm]) %>],
+          "acceptsVmLabels": { <%= j.(station.(1)[:vm]) %>: "the monitoring host" },
           "flags": <%= station_flags.(1) %>,
           "hintOnlyFlags": <%= station_hints.(1) %>,
           "flagRewards": [
-            { "type": "emit_event", "event_name": "flag_1_in", "description": "Flag 1: a foothold on their security monitoring host" }
+            { "type": "emit_event", "event_name": "flag_1_in", "description": "Flag 1: a foothold on their security monitoring host", "label": "A foothold on their security monitoring host." }
           ]
         },
         {
@@ -2679,7 +2682,7 @@ end
           "observations": "The second van. A steel rail along one wall, for cuffs."
         },
         {
-          "_comment": "VM gating F12 (handoff B5 item 1), puzzle chains R3 m1: the monitoring host's service login, a tag on Tomb Gamma's gate terminal (their kit, not SAFETYNET's field console), so flag 1 needs this find. Position beside the terminal's stand (SD R4 d2); strings set by the VM plan.",
+          "_comment": "VM settled 2026-10-23: flag 1's foothold is a hole in the monitoring platform, not a login. The tag names the monitoring host and its service account (orientation), not a password. A tag on Tomb Gamma's gate terminal (their kit, not SAFETYNET's field console). Position beside the terminal's stand (SD R4 d2).",
           "type": "notes",
           "id": "monitor_maintenance_tag",
           "name": "Maintenance Tag",
@@ -2687,7 +2690,7 @@ end
           "readable": true,
           "position": { "x": 15.6, "y": 3.4 },
           "observations": "A laminated maintenance tag on a cable tie, hanging off the gate terminal's power lead.",
-          "text": "TOMB GAMMA SECURITY MONITORING. Service login, for maintenance only.\nHost: <%= bunker_monitor_ip %>\nUser: <%= monitor_login_user %>\nPassword: <%= monitor_login_password %>\nDo not remove.",
+          "text": "TOMB GAMMA SECURITY MONITORING.\nHost: <%= bunker_monitor_ip %>\nRuns as service account <%= monitor_login_user %>. Maintenance only.\nDo not remove.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "gate_terminal"
         }
@@ -3693,10 +3696,11 @@ not_tethered = '!globalVars.nightshade_tethered'
           "puzzle_graph_note": "The gallery stair waits on flags 2 and 3 and the shutter cut (OT 4.4).",
           <%# VM-WIRE: flag 2 (the staging schedule). %>
           "acceptsVms": [<%= j.(station.(2)[:vm]) %>],
+          "acceptsVmLabels": { <%= j.(station.(2)[:vm]) %>: "the monitoring host" },
           "flags": <%= station_flags.(2) %>,
           "hintOnlyFlags": <%= station_hints.(2) %>,
           "flagRewards": [
-            { "type": "emit_event", "event_name": "flag_2_in", "description": "Flag 2: the staging schedule" }
+            { "type": "emit_event", "event_name": "flag_2_in", "description": "Flag 2: the staging schedule", "label": "The staging copy of the release schedule." }
           ]
         },
         {
@@ -3749,14 +3753,19 @@ not_tethered = '!globalVars.nightshade_tethered'
           "takeable": false,
           "position": "as-type:m10_hatch",
           "observations": "The sealed section's maintenance hatch, painted shut in the sixties and opened again last year. The field kit's link is clipped to the frame.",
+          "_comment_r39": "R39: after flag 3 the hatch reads back a short excerpt of the release host's kill config (concept level), so the console-stop callback at the core (ink/m10_tesseract.ink: 'the way his kill config said it would') pays off something the player saw. The VM m10 agent seeds the matching artefact on the release host.",
+          "observationVariants": [
+            { "condition": "globalVars.flag3_submitted === true", "value": "The hatch stands open. On HaX's screen clipped to the frame, the release host's kill config, pulled off the box:\nRELEASE 06:00 UTC, DAY 13. EARLY-ACCESS SHARES 04:00 UTC.\nThe whole thing hangs on a single trigger -- and it isn't on this host.\nIt's on the core console. That's the only place it can be held or let go." }
+          ],
           "puzzle_graph_unlocks": "gallery",
           "puzzle_graph_note": "The gallery stair waits on flags 2 and 3 and the shutter cut (OT 4.4).",
           <%# VM-WIRE: flag 3 (out of the release service's container onto its host). %>
           "acceptsVms": [<%= j.(station.(3)[:vm]) %>],
+          "acceptsVmLabels": { <%= j.(station.(3)[:vm]) %>: "the release host" },
           "flags": <%= station_flags.(3) %>,
           "hintOnlyFlags": <%= station_hints.(3) %>,
           "flagRewards": [
-            { "type": "emit_event", "event_name": "flag_3_in", "description": "Flag 3: out of the release service onto its host" }
+            { "type": "emit_event", "event_name": "flag_3_in", "description": "Flag 3: out of the release service onto its host", "label": "Out of the release container, onto its host." }
           ]
         },
         {
@@ -4306,10 +4315,11 @@ not_tethered = '!globalVars.nightshade_tethered'
           "observations": "The core host terminal. His box.",
           <%# VM-WIRE: flag 4 (the core host). %>
           "acceptsVms": [<%= j.(station.(4)[:vm]) %>],
+          "acceptsVmLabels": { <%= j.(station.(4)[:vm]) %>: "the core host" },
           "flags": <%= station_flags.(4) %>,
           "hintOnlyFlags": <%= station_hints.(4) %>,
           "flagRewards": [
-            { "type": "emit_event", "event_name": "flag_4_in", "description": "Flag 4: the core host" }
+            { "type": "emit_event", "event_name": "flag_4_in", "description": "Flag 4: the core host", "label": "Onto the Architect's core host." }
           ]
         },
         {
@@ -4331,7 +4341,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readDisplay": "gameDisplay",
           "addToNotes": true,
           "position": "as-type:m10_wall_screen",
-          "observations": "His box's file index, behind the core host's own access code.",
+          "observations": "His box's file index, readable once you're on the core host.",
           "text": "",
           "textVariants": [
             { "condition": "globalVars.flag4_submitted === true && globalVars.m09_albion_notified === true", "value": <%= j.(txt[:core_files].('2017. Drafted. Sent from Helena, day 12. Not by me.')) %> },
@@ -4347,7 +4357,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "observations": "The service door, east wall. Steel, a reader, and a camera on a bracket above it that has never once moved."
         },
         {
-          "_comment": "VM gating F12 (handoff B5 item 3), puzzle chains R3 M1: the core host's access code, left out by Tesseract on the desk beside his host terminal for the agent he invited, so it is found only where flag 4's station already works. Position on that desk (SD R4 d1); string set by the VM plan.",
+          "_comment": "VM settled 2026-10-23: the core foothold needs no code; the envelope is Tesseract's host pointer and his invitation to the agent he called down, not a login. Left on the desk beside his terminal, found where flag 4's station already works. Position on that desk (SD R4 d1).",
           "type": "notes",
           "id": "core_access_key",
           "name": "Core Access Code",
@@ -4355,7 +4365,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readable": true,
           "position": { "x": 2.2, "y": 4.8 },
           "observations": "An envelope on the desk beside the host terminal, stamped CORE. ACCESS. Left out for whoever came down.",
-          "text": "CORE. HOST ACCESS CODE. ONE HOLDER.\nHost: <%= core_host_ip %>\n<%= core_access_key %>\nFor the agent. A.T.",
+          "text": "CORE HOST. HIS BOX.\nHost: <%= core_host_ip %>\nFor the agent, from A.T.: <%= core_access_key %>\nNot a password. His word that this is the box he wants you on.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "core_host_terminal"
         }

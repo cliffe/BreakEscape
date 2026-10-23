@@ -139,7 +139,8 @@ Dr Adrian Tesseract: Take your time. It goes at six whatever we say. Or now, if 
 }
 Dr Adrian Tesseract: Ninety-nine. You've done well with them.
 Agent HaX: Still HaX.
-Agent HaX: Get on his box. He'll keep.
+// R38: the reason first. If he reaches for the key, HaX wants a hand on the feed before anything leaves that console.
+Agent HaX: Get on his box — if anything moves off that console, I want a hand on the feed before it does. He'll keep.
 ~ core_greeted = true
 ~ tess_menu = true
 -> arrival_menu

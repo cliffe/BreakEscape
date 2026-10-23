@@ -587,10 +587,11 @@ One of his operators dropped a duty sheet by the east racks. The login's on it.
 Their monitoring watches the cameras and the doors. It's still software, and software has holes.
 Get a foothold on it and their own eyes work for us.
 // Scenario design R4 n1: the season's lesson, said once.
-People leave logins on their kit. Look for them.
+People leave notes on their kit. Look for them.
 // VM gating F12: the steer names its find.
 // Puzzle chains R3 m1: the tag hangs off their gate terminal, not our field console.
-There's a maintenance tag on their gate terminal's lead. Their service login's on it.
+// VM settled 2026-10-23: the foothold is the platform's own hole; the tag only names the host and the monitoring account, not a login.
+There's a maintenance tag on their gate terminal's lead. It names the host, and the account their monitoring runs as.
 -> support_hub
 
 === box_topic ===
@@ -602,6 +603,7 @@ There's a maintenance tag on their gate terminal's lead. Their service login's o
 // Scenario design R5 n2: an envelope, not a key. Teaching R2-n3 (opus48): its find is an access code (a single token), not a login account.
 // Dialogue R5 n2/n4, puzzle chains R4 n4: beside the terminal, on the desk; one "his box".
 He's left an envelope beside his terminal, stamped CORE. His access code's in it. He wants you on his box.
+If anything moves off that console, I want to be on the feed before it does.
 He walled it off, the same way the release service was. You've broken out of one of those tonight.
 He'll have kept himself a way out. Find it.
 -> support_hub

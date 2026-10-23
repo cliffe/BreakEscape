@@ -287,7 +287,8 @@ Agent HaX: If she's in that room, she means it. Get past her. Don't argue with h
     Agent HaX: They've brought Nightshade up in cuffs. He asked for you.
 }
 ~ aside_done = true
-Agent HaX: Start the gate console on your way past. It's slow to boot.
+// R38: flag 1's reason, said once to every player. Their cameras watch the gate until we own their monitoring.
+Agent HaX: Start the gate console on your way past. Their cameras and doors watch this gate until we're inside their monitoring. It's slow to boot.
 // Scenario design R2 m4: on the silent branch Netherton asks his question now. R3 n1: HaX's van line
 // comes after the console line, so his "He…" follows a line about Nightshade.
 { neth_branch == "silent":
