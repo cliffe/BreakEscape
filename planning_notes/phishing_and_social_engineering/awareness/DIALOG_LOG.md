@@ -461,3 +461,94 @@ player line; they read acceptably as a caller confirming/closing and carry no ca
 - **Full-episode bridges** (Node 24, one at a time on the live keyless :3001; no server start/stop):
   **all PASS** — e1-full 12/12 (3827), e3-full 21/21 (3828), e2-full 13/13 (3829), e4-full 13/13
   (3830), lab bridge-6 36/36 (3832). No retries needed.
+
+## Data fixer round 4 (2026-10-23) — P3 playtest data items (PLAYTEST_P3_E1_E4 / E5_E7)
+
+Data-only pass against the two P3 reports. Engine items (flip-string routing split, result-grid
+"handled right" counts, Verify/Report % wording, tick-by-kind filtering, debrief either-tick dedup,
+E5 missing-logo render, `Voicemail Voicemail` label, hooded sprite, hearts HUD, N-9/N13/N14
+engine-added brief lines) were left for the parallel engine fixer and are listed in the hand-back,
+not touched here.
+
+### Items
+
+- **Item 1 — uniform caller/voicemail labels (P3 N3, MAJOR).** Impostor transcripts were labelled
+  "Caller" while genuine ones used a first name, leaking the verdict. Adopted the voicemail scheme
+  (label by the name the caller gives) everywhere. Fragment `e3/defend.json`: `ha_call_facilities`
+  Caller→**Owen**, `hb_call_payroll` Caller→**Pauline** (feeds the helpdesk check forms too).
+  Fragment `e7/defend.json`: `e7_vm_ravinder_cloned` Caller→**Ravinder**. Full erbs:
+  `awareness_e3_helpdesk_reset` `e3_call_gordon_impostor` Caller→**Gordon**, `e3_call_on_behalf`
+  Caller→**Josh**; `awareness_e7_voice_ceo` cloned voicemail Caller→**Ravinder**. E4 (Catherine/
+  Yasmin/Oskar) was already uniform, no change. Only the `who` display label changed, never the
+  spoken `text`, so no TTS cache key moves.
+- **Item 2 — finance phish with a knowledge-only tell (P3 N-1, MAJOR) + audit.**
+  `fa_invoice_share` (Merrow) and `fb_bank_portal` (Fernhill) scored only `senderTrust`, whose basis
+  ("Brightwell doesn't bank with Fernhill / use Merrow") was never on screen — and the From address
+  actually matches the claimed org, so `senderTrust` is the wrong tell. Restored BRAND_SET.md's own
+  slot-8 spec `["linkCredible", "pretextRelevant"]`: `linkCredible` is the visible link-text ≠
+  destination mismatch both messages already carry, and `pretextRelevant` is now fair because the
+  finance check brief states "Brightwell banks with Calderbrook Bank and only pays suppliers it
+  already deals with." perFlagNote and the brief rewritten to match. A/B change is identical
+  (`fa` slot 7 ↔ `fb` slot 7), so form parity and the balance lint hold. **Audit of every
+  check-form and defend-set phish across all six roles:** only these two matched the pattern. Every
+  other single-flag phish is catchable on screen — internal sender on free webmail (inboxly/
+  quickpost) → visible `senderTrust`; `linkCredible`-only portal phish (ea_speaker_portal,
+  eb_travel_portal, ga_solicitor_share, gb_quarantine_notice) → visible link; look-alike/urgency/QR
+  tells visible. No further fixes.
+- **Item 3 + m3 — E2/E4 "careful" flip after a failed send (P3 N1).** `flipMissed` in the
+  `awareness_e2_cv_lures` and `awareness_e4_exec_whaling` erbs said "this careful application/
+  message", wrong after a send that did not land. The engine routes **both** did-not-land and
+  careful-landed-no-tells to `flipMissed` (one string, two states), and the full-episode `strings`
+  schema is closed (`additionalProperties:false`), so a new `flipLandedNoTells` key cannot be added
+  as data. Reworded `flipMissed` to a neutral line true of both states ("There's nothing of yours to
+  replay from the other side this time. …"), which fixes N1 without regressing m3. The ideal
+  two-string split (schema key + routing) is in the engine hand-back.
+- **Item 5 — executive check slot parity (P3 N-11).** Exec phish sat on all-odd (A) / all-even (B)
+  slots. New permutations in `gen_e2_e4_shells.py`: A phish → slots 1,2,4,7,9; B → 3,5,6,8,10.
+  Still disjoint across A/B (and so across pre/post), still 5 phish each, pure reorder (no flag/
+  count change), but no longer a guessable parity.
+- **Item 6.**
+  - E7 "ten to five on a Friday" vs the 09:04 scene stamp → "just after nine on a Friday" in
+    `e7/defend.json` and the `awareness_e7_voice_ceo` erb (F10).
+  - E3 length (~17 vs 13): modest once-read trim (plan Cut F) — tightened `flipDefenderLine`
+    (also drops "and sounded rushed", which was asserted even after a calm call, P3 N11) and
+    `flipMissed`, in `e3/defend.json` and the erb. The larger cuts to reach 13 (skip the second
+    read for high scorers; drop one defend call) are structural/engine and left for the orchestrator.
+  - E4 sender picker offers only the free-webmail address — **no change**: a logged deliberate
+    decision (this log, cycle 4 N2); a firm-domain or look-alike option would contradict DMARC or
+    duplicate E2.
+  - Host over-praise: searched the host lines and DIALOG_LOG — no over-praising line remains
+    (E5-14's host line is already matter-of-fact). No change.
+  - Stale "Convincing enough" (E5-13) and the "Reported %" stats (N7/t2): engine (stale builder
+    verdict refresh; scoring-display wording). Hand-back.
+- **Item 7 (cheap data trivials).** N19: the `e1_lookalike_bank` senderTrust note said the address
+  "isn't a Brightwell one at all" for the look-alike `brightwel1foods.example`; reworded to name the
+  look-alike (fragment + erb). N-18: `e6/attack.json` senderTrust redFlag "the depot notice she acts
+  on" (ambiguous after "Dev Acharya") → "…Kaylee acts on" (attack fragment + erb). The remaining
+  trivials/minors are engine (listed in the hand-back).
+
+### Voiced lines
+
+None. Only `who` display labels changed on call/voicemail transcripts; the spoken `text` and
+`clipId`s are untouched, so no TTS cache key moves. The trimmed/reworded strings (flip narration,
+briefs, perFlagNote) are on-screen text, not NPC/host voice lines.
+
+### Where each change lives (survives a regenerate)
+
+- Fragments: `e1/defend.json`, `e3/defend.json`, `e6/attack.json`, `e7/defend.json`; generator
+  `gen_e2_e4_shells.py` (exec PERMUTE).
+- Full episodes (hand-mirrored, edited directly): `awareness_e1_invoice_fraud`,
+  `awareness_e2_cv_lures`, `awareness_e3_helpdesk_reset`, `awareness_e4_exec_whaling`,
+  `awareness_e6_texts_and_qr`, `awareness_e7_voice_ceo` erbs.
+- Generated shells: regenerated into scratch, diffed, copied in — 14 shells changed
+  (e1/e7 defend-only; finance, helpdesk, executive pre/post AB/BA). No-change baseline was
+  byte-identical before editing; each copied diff showed only the intended change.
+
+### Checks run
+
+- Validator (`--strict-social --no-graph --skip-ink`): **all 38 awareness shells exit 0**.
+- Node tests: `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs` —
+  **1730/1730 pass**.
+- Full-episode bridges (Node 24, one at a time, live keyless :3001, no server start/stop): **all
+  six affected episodes PASS** — e1-full 13/13 (3914), e2-full 14/14 (3915), e3-full 21/21 (3913),
+  e4-full 14/14 (3916), e6-full 15/15 (3918), e7-full 13/13 (3919). e5-full unchanged, not re-run.

@@ -152,7 +152,7 @@
       "advisoryFactors": ["urgencyCalibrated"],
       "factorStrings": {
         "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
-        "senderTrust": { "pass": "✓ From Facilities, who she'd expect a parking notice from", "fail": "She does not recognise this sender. Depot notices reach her from Facilities, not from a name she has never seen.", "redFlag": "The From line carries Dev Acharya's real Facilities address, so it reads as the depot notice she acts on, but it was forged: Facilities never sent it, and a From line can be set to show any name and address." },
+        "senderTrust": { "pass": "✓ From Facilities, who she'd expect a parking notice from", "fail": "She does not recognise this sender. Depot notices reach her from Facilities, not from a name she has never seen.", "redFlag": "The From line carries Dev Acharya's real Facilities address, so it reads as the depot notice Kaylee acts on, but it was forged: Facilities never sent it, and a From line can be set to show any name and address." },
         "pretextRelevant": { "pass": "✓ Ties to the new parking permit she was told to register for", "fail": "No change she can match this to, so no reason to scan anything.", "redFlag": null },
         "urgencyCalibrated": { "pass": "✓ The Friday deadline reads as believable" }
       },

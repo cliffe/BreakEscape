@@ -93,7 +93,7 @@
             ],
             "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
-              "senderTrust": "It signs off as Brightwell Accounts, but the address isn't a Brightwell one at all, so it isn't who it says it is",
+              "senderTrust": "It signs off as Brightwell Accounts, but the address only looks like Brightwell's: it's brightwel1foods.example, a 1 in place of the l, not the real brightwellfoods.example",
               "lookalike_domain": "The display name is right, but the address is brightwel1foods, with a digit 1 where the l should be",
               "changed_bank_details": "A bank-detail change on an open invoice is the commonest invoice-fraud move. The safe step is to ring the supplier on the number you already hold",
               "urgencyCalibrated": "'Before today's payment run' pushes you to change the account before you'd stop to ring Harlow and check"
@@ -195,7 +195,7 @@
       "id": "finance_form_a",
       "_form": "Finance parallel form A. Authored as pre; the BA check pair launches it as post (minigameData.stage). Item n here matches item n in finance_form_b on phish or genuine, flags, header results and difficulty; the table is in ../BRAND_SET.md.",
       "title": "Payments inbox check",
-      "brief": "Ten messages from a Brightwell Foods payments inbox. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten messages from a Brightwell Foods payments inbox. Brightwell banks with Calderbrook Bank and only pays suppliers it already deals with. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
       "stage": "pre",
       "pairedWith": "finance_form_b",
       "scoringProfile": "awareness",
@@ -459,10 +459,12 @@
           "truth": {
             "isPhish": true,
             "flags": [
-              "senderTrust"
+              "linkCredible",
+              "pretextRelevant"
             ],
             "perFlagNote": {
-              "senderTrust": "Brightwell doesn't use Merrow Logistics, so an invoice-share from a supplier you've never dealt with is the tell, whatever the link looks like"
+              "linkCredible": "The link reads 'merrowlogistics.example' but it opens docshare-login.example, a sign-in page rather than an invoice",
+              "pretextRelevant": "Brightwell has never dealt with Merrow Logistics, so a cold invoice-share from them has no reason to reach payments"
             },
             "ifTrusted": "The link opens a sign-in page that collects your email password.",
             "reportReply": "Thanks. We don't use Merrow, and the link went to a sign-in page we've now blocked."
@@ -537,7 +539,7 @@
       "id": "finance_form_b",
       "_form": "Finance parallel form B. Authored as post; the BA check pair launches it as pre (minigameData.stage). Item n here matches item n in finance_form_a; the table is in ../BRAND_SET.md.",
       "title": "Payments inbox check",
-      "brief": "Ten messages from a Brightwell Foods payments inbox. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+      "brief": "Ten messages from a Brightwell Foods payments inbox. Brightwell banks with Calderbrook Bank and only pays suppliers it already deals with. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
       "stage": "post",
       "pairedWith": "finance_form_a",
       "scoringProfile": "awareness",
@@ -802,10 +804,12 @@
           "truth": {
             "isPhish": true,
             "flags": [
-              "senderTrust"
+              "linkCredible",
+              "pretextRelevant"
             ],
             "perFlagNote": {
-              "senderTrust": "Brightwell doesn't bank with Fernhill, so an alert from a bank that isn't yours is the tell, whatever the link looks like"
+              "linkCredible": "The link reads 'fernhillbusinessbank.example/secure' but it opens fernhill-secure-login.example, a sign-in page that isn't the bank's",
+              "pretextRelevant": "Brightwell banks with Calderbrook, not Fernhill, so a 'payment held' alert from Fernhill has no reason to reach this inbox"
             },
             "ifTrusted": "The link opens a sign-in page that collects banking passwords.",
             "reportReply": "Thanks. Brightwell doesn't bank with Fernhill, and we've blocked the sign-in page."

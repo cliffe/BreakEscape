@@ -85,7 +85,7 @@
       {
         "id": "finance_form_a",
         "title": "Payments inbox check",
-        "brief": "Ten messages from a Brightwell Foods payments inbox. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+        "brief": "Ten messages from a Brightwell Foods payments inbox. Brightwell banks with Calderbrook Bank and only pays suppliers it already deals with. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
         "stage": "post",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
@@ -390,10 +390,12 @@
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderTrust"
+                "linkCredible",
+                "pretextRelevant"
               ],
               "perFlagNote": {
-                "senderTrust": "Brightwell doesn't use Merrow Logistics, so an invoice-share from a supplier you've never dealt with is the tell, whatever the link looks like"
+                "linkCredible": "The link reads 'merrowlogistics.example' but it opens docshare-login.example, a sign-in page rather than an invoice",
+                "pretextRelevant": "Brightwell has never dealt with Merrow Logistics, so a cold invoice-share from them has no reason to reach payments"
               },
               "ifTrusted": "The link opens a sign-in page that collects your email password.",
               "reportReply": "Thanks. We don't use Merrow, and the link went to a sign-in page we've now blocked."

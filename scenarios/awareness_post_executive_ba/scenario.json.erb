@@ -106,39 +106,135 @@
         },
         "messages": [
           {
-            "id": "ea_speaker_portal",
+            "id": "ea_larkspur_bank",
             "from": {
-              "name": "Fennick Summit Speaker Team",
-              "address": "speakers@fennicksummit-speakers.example"
+              "name": "Larkspur Travel",
+              "address": "accounts@larkspur-travel.example"
             },
             "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Action needed: confirm your speaker's travel details",
-            "time": "13:15",
-            "body": "Hello,\nWe are finalising travel for speakers at Fennick Summit. Please sign in to the speaker portal and confirm your speaker's passport details and travel dates:\n{{link:portal}}\nSpeaker Team",
-            "links": [
-              {
-                "id": "portal",
-                "text": "fennicksummit.example/speakers",
-                "destination": "https://speaker-portal-signin.example/fennick"
-              }
-            ],
+            "subject": "Milan booking LT-5528: our bank details have changed",
+            "time": "09:10",
+            "body": "Dear Tomás,\nPlease note that we have moved to a new bank. Invoice LT-5528 for the partners' Milan trip should now be paid to:\nAccount name: Larkspur Travel Ltd\nAccount number ending 6150\nPlease update your records before payment.\nKind regards,\nLarkspur Travel Accounts",
             "auth": {
               "spf": "pass",
-              "dkim": "none",
-              "dmarc": "none",
-              "envelopeFrom": "fennicksummit-speakers.example",
-              "replyTo": "speakers@fennicksummit-speakers.example"
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.larkspur-travel.example",
+              "replyTo": "accounts@larkspur-travel.example"
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "linkCredible"
+                "lookalike_domain",
+                "changed_bank_details",
+                "senderTrust"
+              ],
+              "flagAlternatives": [
+                [
+                  "senderTrust",
+                  "lookalike_domain"
+                ]
               ],
               "perFlagNote": {
-                "linkCredible": "The link text names one site, but it really goes to speaker-portal-signin.example"
+                "lookalike_domain": "Larkspur's real domain is larkspurtravel.example. This is larkspur-travel.example, with an added hyphen",
+                "changed_bank_details": "New bank details on an open invoice is the commonest invoice-fraud move. The safe step is to ring Larkspur on the number you already hold",
+                "senderTrust": "The name says Larkspur, but the address is on larkspur-travel.example, which isn't Larkspur's"
               },
-              "ifTrusted": "The page would ask for passport details and a sign-in, and the sender would keep both.",
-              "reportReply": "Thanks. Nobody here is booked at that event, and the link went to a sign-in page that isn't theirs."
+              "headerNote": "All three checks passed because the sender owns larkspur-travel.example. A pass tells you which domain sent it, not that it's Larkspur.",
+              "ifTrusted": "The Milan payment would go to an account the sender controls.",
+              "reportReply": "Thanks. Larkspur haven't changed bank, and that domain isn't theirs."
+            }
+          },
+          {
+            "id": "ea_venue_deposit",
+            "from": {
+              "name": "Catherine Merrin",
+              "address": "catherine.merrin.personal@quickpost-mail.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Pay this before 11, keep it quiet",
+            "time": "09:35",
+            "body": "Tomás,\nI'm in back-to-back meetings. I've agreed to hold the Brackenmoor launch venue and the £4,200 deposit has to be paid before 11 or we lose the date. I'll forward the account details in a moment. Keep it between us for now, Yasmin included, until I'm back.\nCatherine\nSent from my phone",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quickpost-mail.example",
+              "replyTo": "catherine.merrin.personal@quickpost-mail.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "secrecy_or_bypass",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The managing partner's name on a personal inbox at quickpost-mail.example, not merrinsallow.example",
+                "secrecy_or_bypass": "'Keep it between us, Yasmin included' keeps out the person who would check",
+                "urgencyCalibrated": "'Before 11' while she's in meetings leaves no time to ask her"
+              },
+              "headerNote": "All three checks passed because the sender owns quickpost-mail.example. A pass tells you which domain sent it, not that it's Catherine.",
+              "ifTrusted": "£4,200 would go to an account the sender controls.",
+              "reportReply": "Thanks. Catherine didn't send it, and her real address is on merrinsallow.example."
+            }
+          },
+          {
+            "id": "ea_expenses_form",
+            "from": {
+              "name": "Yasmin Chaudhry",
+              "address": "yasmin.chaudhry@merrinsallow.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "New expenses form from 1 November",
+            "time": "08:05",
+            "body": "Hi Tomás,\nFrom 1 November we're using the new expenses form on the finance page of the intranet. The old spreadsheet still works for anything dated October.\nThanks,\nYasmin\nFinance",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "merrinsallow.example",
+              "replyTo": "yasmin.chaudhry@merrinsallow.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Yasmin's real address, a routine change, and it points you to the intranet you already use. It asks for nothing."
+              }
+            }
+          },
+          {
+            "id": "ea_vm_tunnel",
+            "kind": "voicemail",
+            "from": {
+              "name": "Catherine Merrin",
+              "address": "07700 900582 (not in your contacts)"
+            },
+            "subject": "Voicemail from Catherine Merrin",
+            "time": "10:02",
+            "duration": "0:21",
+            "audio": {
+              "clipId": "VO7_ea_vm_tunnel"
+            },
+            "transcript": [
+              {
+                "who": "Catherine",
+                "text": "Tomás, it's Catherine, I'm on a borrowed phone, mine's dead. I need the Brackenmoor deposit sent today, I'm texting you the account now. It's a sensitive one, so keep it off the finance list for now. I'm going into a tunnel, so don't ring back. Thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "vish_callback_pressure",
+                "secrecy_or_bypass"
+              ],
+              "perFlagNote": {
+                "vish_callback_pressure": "A number that isn't in your contacts, a 'dead' phone and 'don't ring back': every route to check it on her real number is closed off",
+                "secrecy_or_bypass": "'Keep it off the finance list' skips the people who would check the payment"
+              },
+              "ifTrusted": "The deposit would go to whatever account the text names, and the sender would have it.",
+              "reportReply": "Thanks. We rang Catherine on her own mobile: her phone was fine and she hadn't called. The voice sounded like hers, which is why the number and the request matter more."
             }
           },
           {
@@ -170,6 +266,33 @@
               "whyFine": {
                 "attachmentPlausible": "An invoice PDF for a trip you booked is what you'd expect.",
                 "default": "Larkspur's real domain, a trip you booked, payment to the account on file, and nothing changed. It asks for nothing new."
+              }
+            }
+          },
+          {
+            "id": "ea_slides_today",
+            "from": {
+              "name": "Catherine Merrin",
+              "address": "catherine.merrin@merrinsallow.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Slides printed by 4 today, please",
+            "time": "11:20",
+            "body": "Tomás,\nSorry for the short notice. Could you get twenty copies of the Brackenmoor slides printed and bound by four? The file is in the project folder, version 3. Use the usual print room order.\nThanks,\nCatherine",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "merrinsallow.example",
+              "replyTo": "catherine.merrin@merrinsallow.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "urgencyCalibrated": "It's a tight deadline, but for a normal job done the normal way. Hurry on its own isn't the tell; hurry to skip a check is.",
+                "senderTrust": "Catherine's real work address.",
+                "default": "Her real address, an ordinary request, the file where it always lives and the usual print order. Nothing is paid, kept quiet or skipped."
               }
             }
           },
@@ -237,36 +360,39 @@
             }
           },
           {
-            "id": "ea_vm_tunnel",
-            "kind": "voicemail",
+            "id": "ea_speaker_portal",
             "from": {
-              "name": "Catherine Merrin",
-              "address": "07700 900582 (not in your contacts)"
+              "name": "Fennick Summit Speaker Team",
+              "address": "speakers@fennicksummit-speakers.example"
             },
-            "subject": "Voicemail from Catherine Merrin",
-            "time": "10:02",
-            "duration": "0:21",
-            "audio": {
-              "clipId": "VO7_ea_vm_tunnel"
-            },
-            "transcript": [
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Action needed: confirm your speaker's travel details",
+            "time": "13:15",
+            "body": "Hello,\nWe are finalising travel for speakers at Fennick Summit. Please sign in to the speaker portal and confirm your speaker's passport details and travel dates:\n{{link:portal}}\nSpeaker Team",
+            "links": [
               {
-                "who": "Catherine",
-                "text": "Tomás, it's Catherine, I'm on a borrowed phone, mine's dead. I need the Brackenmoor deposit sent today, I'm texting you the account now. It's a sensitive one, so keep it off the finance list for now. I'm going into a tunnel, so don't ring back. Thanks."
+                "id": "portal",
+                "text": "fennicksummit.example/speakers",
+                "destination": "https://speaker-portal-signin.example/fennick"
               }
             ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "none",
+              "dmarc": "none",
+              "envelopeFrom": "fennicksummit-speakers.example",
+              "replyTo": "speakers@fennicksummit-speakers.example"
+            },
             "truth": {
               "isPhish": true,
               "flags": [
-                "vish_callback_pressure",
-                "secrecy_or_bypass"
+                "linkCredible"
               ],
               "perFlagNote": {
-                "vish_callback_pressure": "A number that isn't in your contacts, a 'dead' phone and 'don't ring back': every route to check it on her real number is closed off",
-                "secrecy_or_bypass": "'Keep it off the finance list' skips the people who would check the payment"
+                "linkCredible": "The link text names one site, but it really goes to speaker-portal-signin.example"
               },
-              "ifTrusted": "The deposit would go to whatever account the text names, and the sender would have it.",
-              "reportReply": "Thanks. We rang Catherine on her own mobile: her phone was fine and she hadn't called. The voice sounded like hers, which is why the number and the request matter more."
+              "ifTrusted": "The page would ask for passport details and a sign-in, and the sender would keep both.",
+              "reportReply": "Thanks. Nobody here is booked at that event, and the link went to a sign-in page that isn't theirs."
             }
           },
           {
@@ -294,132 +420,6 @@
               "whyFine": {
                 "vish_callback_pressure": "She gives you her own extension and invites a call.",
                 "default": "A colleague on her desk extension, asking for something routine with no deadline. Ringing her back on 2214 would settle any doubt."
-              }
-            }
-          },
-          {
-            "id": "ea_larkspur_bank",
-            "from": {
-              "name": "Larkspur Travel",
-              "address": "accounts@larkspur-travel.example"
-            },
-            "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Milan booking LT-5528: our bank details have changed",
-            "time": "09:10",
-            "body": "Dear Tomás,\nPlease note that we have moved to a new bank. Invoice LT-5528 for the partners' Milan trip should now be paid to:\nAccount name: Larkspur Travel Ltd\nAccount number ending 6150\nPlease update your records before payment.\nKind regards,\nLarkspur Travel Accounts",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "bounce.larkspur-travel.example",
-              "replyTo": "accounts@larkspur-travel.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "lookalike_domain",
-                "changed_bank_details",
-                "senderTrust"
-              ],
-              "flagAlternatives": [
-                [
-                  "senderTrust",
-                  "lookalike_domain"
-                ]
-              ],
-              "perFlagNote": {
-                "lookalike_domain": "Larkspur's real domain is larkspurtravel.example. This is larkspur-travel.example, with an added hyphen",
-                "changed_bank_details": "New bank details on an open invoice is the commonest invoice-fraud move. The safe step is to ring Larkspur on the number you already hold",
-                "senderTrust": "The name says Larkspur, but the address is on larkspur-travel.example, which isn't Larkspur's"
-              },
-              "headerNote": "All three checks passed because the sender owns larkspur-travel.example. A pass tells you which domain sent it, not that it's Larkspur.",
-              "ifTrusted": "The Milan payment would go to an account the sender controls.",
-              "reportReply": "Thanks. Larkspur haven't changed bank, and that domain isn't theirs."
-            }
-          },
-          {
-            "id": "ea_slides_today",
-            "from": {
-              "name": "Catherine Merrin",
-              "address": "catherine.merrin@merrinsallow.example"
-            },
-            "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Slides printed by 4 today, please",
-            "time": "11:20",
-            "body": "Tomás,\nSorry for the short notice. Could you get twenty copies of the Brackenmoor slides printed and bound by four? The file is in the project folder, version 3. Use the usual print room order.\nThanks,\nCatherine",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "merrinsallow.example",
-              "replyTo": "catherine.merrin@merrinsallow.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "urgencyCalibrated": "It's a tight deadline, but for a normal job done the normal way. Hurry on its own isn't the tell; hurry to skip a check is.",
-                "senderTrust": "Catherine's real work address.",
-                "default": "Her real address, an ordinary request, the file where it always lives and the usual print order. Nothing is paid, kept quiet or skipped."
-              }
-            }
-          },
-          {
-            "id": "ea_venue_deposit",
-            "from": {
-              "name": "Catherine Merrin",
-              "address": "catherine.merrin.personal@quickpost-mail.example"
-            },
-            "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Pay this before 11, keep it quiet",
-            "time": "09:35",
-            "body": "Tomás,\nI'm in back-to-back meetings. I've agreed to hold the Brackenmoor launch venue and the £4,200 deposit has to be paid before 11 or we lose the date. I'll forward the account details in a moment. Keep it between us for now, Yasmin included, until I'm back.\nCatherine\nSent from my phone",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "catherine.merrin.personal@quickpost-mail.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "senderTrust",
-                "secrecy_or_bypass",
-                "urgencyCalibrated"
-              ],
-              "perFlagNote": {
-                "senderTrust": "The managing partner's name on a personal inbox at quickpost-mail.example, not merrinsallow.example",
-                "secrecy_or_bypass": "'Keep it between us, Yasmin included' keeps out the person who would check",
-                "urgencyCalibrated": "'Before 11' while she's in meetings leaves no time to ask her"
-              },
-              "headerNote": "All three checks passed because the sender owns quickpost-mail.example. A pass tells you which domain sent it, not that it's Catherine.",
-              "ifTrusted": "£4,200 would go to an account the sender controls.",
-              "reportReply": "Thanks. Catherine didn't send it, and her real address is on merrinsallow.example."
-            }
-          },
-          {
-            "id": "ea_expenses_form",
-            "from": {
-              "name": "Yasmin Chaudhry",
-              "address": "yasmin.chaudhry@merrinsallow.example"
-            },
-            "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "New expenses form from 1 November",
-            "time": "08:05",
-            "body": "Hi Tomás,\nFrom 1 November we're using the new expenses form on the finance page of the intranet. The old spreadsheet still works for anything dated October.\nThanks,\nYasmin\nFinance",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "merrinsallow.example",
-              "replyTo": "yasmin.chaudhry@merrinsallow.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "default": "Yasmin's real address, a routine change, and it points you to the intranet you already use. It asks for nothing."
               }
             }
           }

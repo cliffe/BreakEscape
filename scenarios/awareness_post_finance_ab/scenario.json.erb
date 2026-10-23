@@ -85,7 +85,7 @@
       {
         "id": "finance_form_b",
         "title": "Payments inbox check",
-        "brief": "Ten messages from a Brightwell Foods payments inbox. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
+        "brief": "Ten messages from a Brightwell Foods payments inbox. Brightwell banks with Calderbrook Bank and only pays suppliers it already deals with. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting a real message never costs you anything.",
         "stage": "post",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
@@ -195,10 +195,12 @@
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderTrust"
+                "linkCredible",
+                "pretextRelevant"
               ],
               "perFlagNote": {
-                "senderTrust": "Brightwell doesn't bank with Fernhill, so an alert from a bank that isn't yours is the tell, whatever the link looks like"
+                "linkCredible": "The link reads 'fernhillbusinessbank.example/secure' but it opens fernhill-secure-login.example, a sign-in page that isn't the bank's",
+                "pretextRelevant": "Brightwell banks with Calderbrook, not Fernhill, so a 'payment held' alert from Fernhill has no reason to reach this inbox"
               },
               "ifTrusted": "The link opens a sign-in page that collects banking passwords.",
               "reportReply": "Thanks. Brightwell doesn't bank with Fernhill, and we've blocked the sign-in page."

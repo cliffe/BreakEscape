@@ -250,13 +250,14 @@ def panels(ekey, frag, EP):
 # `messages` (new[i] = old[order[i]]), so forms A and B no longer share one per-slot pattern. The
 # permutations put the phish in DISJOINT ordinal slots across A and B: no slot is a phish in both forms
 # of a pair (the earlier reorder left one shared phish slot per role — playtest N7). Executive has 5
-# phish, so its A/B phish slots partition the 10 slots. Scoring is per item, so a pure reorder changes
-# no counts, no flag multiset.
+# phish, so its A/B phish slots partition the 10 slots; the split is irregular (not all-odd/all-even,
+# which playtest P3 N-11 found guessable after one form): A phish in slots 1,2,4,7,9; B in 3,5,6,8,10.
+# Scoring is per item, so a pure reorder changes no counts, no flag multiset.
 PERMUTE = {
     'hr_form_a': [5, 9, 0, 3, 4, 7, 6, 8, 1, 2],
     'hr_form_b': [2, 3, 1, 8, 4, 6, 5, 0, 9, 7],
-    'executive_form_a': [7, 1, 5, 8, 4, 9, 2, 6, 3, 0],
-    'executive_form_b': [8, 2, 0, 5, 9, 7, 6, 3, 1, 4],
+    'executive_form_a': [2, 3, 0, 4, 1, 6, 5, 8, 7, 9],
+    'executive_form_b': [0, 1, 2, 6, 3, 4, 8, 5, 9, 7],
 }
 
 

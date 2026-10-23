@@ -55,9 +55,9 @@
           "duration": "0:38",
           "audio": { "clipId": "VO8_ravinder_cloned" },
           "transcript": [
-            { "who": "Caller", "text": "Hi, it's Ravinder. I'm on a borrowed phone, mine's died, so don't bother trying my mobile." },
-            { "who": "Caller", "text": "The Leeds site: the agent needs the deposit, eighteen thousand four hundred, before five today or it goes to the other bidder. I've emailed you about it." },
-            { "who": "Caller", "text": "Keep it between us until the board announces it, and don't wait for Adaeze. I'm signing it off myself. I'm going into a meeting, so just email me when it's gone. Thanks." }
+            { "who": "Ravinder", "text": "Hi, it's Ravinder. I'm on a borrowed phone, mine's died, so don't bother trying my mobile." },
+            { "who": "Ravinder", "text": "The Leeds site: the agent needs the deposit, eighteen thousand four hundred, before five today or it goes to the other bidder. I've emailed you about it." },
+            { "who": "Ravinder", "text": "Keep it between us until the board announces it, and don't wait for Adaeze. I'm signing it off myself. I'm going into a meeting, so just email me when it's gone. Thanks." }
           ],
           "truth": {
             "isPhish": true,
@@ -156,7 +156,7 @@
       "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. First you're on the red team: write the script for a short voicemail in the voice of Brightwell's chief executive, Ravinder Sandhu, asking for something he would never ask for on the phone. Nobody judges how real it would sound. Then you swap seats: you're Tom Reilly in accounts payable, covering the finance office's phone and inbox, with three voicemails and two emails waiting. Only the second part is scored.",
       "flipHeading": "Now it's on your phone",
       "flipIntro": "This is the voicemail you scripted, as the finance office would find it. The lines picked out below are what make it believable.",
-      "flipDefenderLine": "It landed at ten to five on a Friday, in the voice the finance office hears every week. By the end of the message the payment was half set up. A voice you know is hard to argue with, and copying it is the whole trick; acting on it is no lapse of sense.",
+      "flipDefenderLine": "It landed just after nine on a Friday, in the voice the finance office hears every week. By the end of the message the payment was half set up. A voice you know is hard to argue with, and copying it is the whole trick; acting on it is no lapse of sense.",
       "flipNoSend": "Your script didn't go out this time, so there's nothing of yours to show. Next, the same kind of voicemail reaches the finance office's phone, and you're the one listening.",
       "noBlameLine": "A familiar voice is hard to doubt, and these calls were built to lean on exactly that trust, so anyone can be caught by one.",
       "mondayCard": "On Monday: a voice you recognise is not proof of who is calling, and neither is an email that backs it up. If a call or voicemail asks for money, secrecy or a skipped step, ring the person back on a number you already hold, then report it the way your organisation asks you to.",

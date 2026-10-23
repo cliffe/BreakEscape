@@ -101,8 +101,8 @@
           "from": { "name": "Owen Treharne", "address": "07700 900418" },
           "time": "08:20",
           "transcript": [
-            { "who": "Caller", "text": "Hiya, Owen Treharne, Facilities. I'm locked out of the door-access system and the contractors are stood outside the loading bay." },
-            { "who": "Caller", "text": "No point ringing the desk back, the work phone's dead and I'm on my personal mobile. The Operations Director wants that bay open by half eight, so just reset it now and I'll sort the paperwork later." }
+            { "who": "Owen", "text": "Hiya, Owen Treharne, Facilities. I'm locked out of the door-access system and the contractors are stood outside the loading bay." },
+            { "who": "Owen", "text": "No point ringing the desk back, the work phone's dead and I'm on my personal mobile. The Operations Director wants that bay open by half eight, so just reset it now and I'll sort the paperwork later." }
           ],
           "truth": {
             "isPhish": true,
@@ -308,8 +308,8 @@
           "from": { "name": "Pauline Hendry", "address": "07700 900733" },
           "time": "08:20",
           "transcript": [
-            { "who": "Caller", "text": "Hello love, it's Pauline in Payroll. I can't get into the payroll system and the run goes at ten." },
-            { "who": "Caller", "text": "No use ringing my desk, I'm not there, I'm on my own phone. The Finance Director said to ring you and get it done, and if the run's late it's three hundred people not paid." }
+            { "who": "Pauline", "text": "Hello love, it's Pauline in Payroll. I can't get into the payroll system and the run goes at ten." },
+            { "who": "Pauline", "text": "No use ringing my desk, I'm not there, I'm on my own phone. The Finance Director said to ring you and get it done, and if the run's late it's three hundred people not paid." }
           ],
           "truth": {
             "isPhish": true,
@@ -570,9 +570,9 @@
       "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First, the red team: see what Quayholt's staff have put online, then ring the IT service desk as Gordon McLeish, a locked-out claims manager, and try to talk Leila Nassar into a password reset. Then swap seats: you're Leila, taking three calls and an overnight sign-in prompt. Only Leila's seat is scored.",
       "flipHeading": "Now you're the one answering",
       "flipIntro": "This is your call as Leila heard it on the service desk. The lines picked out below are what made it believable.",
-      "flipDefenderLine": "Mid-morning, more calls holding, Leila picked this one up. The caller had Gordon's name, team, manager and staff number, every answer right, and sounded rushed, so she reached for the reset. Anyone might have: he'd done his homework. The callback was the one thing that would have told him from the real Gordon.",
+      "flipDefenderLine": "Mid-morning, more calls holding, Leila picked this one up. The caller had Gordon's name, team, manager and staff number, every answer right, so she reached for the reset. He'd done his homework, and the callback was the one thing that would have told him from the real Gordon.",
       "flipNoSend": "Your call didn't get through this time, so there's nothing of yours to show. Next, the same kind of call comes in to the service desk, and you're the one answering.",
-      "flipMissed": "Your call didn't get what it was after this time, so there's nothing of yours to replay. The defence is the same either way: next, the same kind of call comes in to the service desk, and you're the one answering.",
+      "flipMissed": "Your call didn't get what it was after this time, so there's nothing of yours to replay. Next, the same kind of call comes in to the service desk, and you're the one answering.",
       "noBlameLine": "Nothing here counts against you. These callers rehearse sounding right, and a service desk that tries to help them is doing its job under pressure.",
       "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password or move someone's sign-in prompts, hang up and ring them back on the number already on file, not one they give you. If a sign-in prompt arrives that you didn't start, deny it and report it the way your organisation asks you to.",
       "defendOnly": "These calls were made by people whose job is to sound right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",

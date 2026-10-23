@@ -87,28 +87,59 @@
         },
         "messages": [
           {
-            "id": "eb_planning_panel",
+            "id": "eb_studio_closed",
             "from": {
-              "name": "Leah Abramson",
-              "address": "leah@abramsonplanning.example"
+              "name": "Thandiwe Moyo",
+              "address": "thandiwe.moyo@merrinsallow.example"
             },
-            "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Planning committee date for Mill Lane",
-            "time": "14:40",
-            "body": "Hi Tomás,\nThe council has set the Mill Lane committee for the 18th at 6pm. Could you pencil it in for Julian? I'll send the officer's report when it's published.\nBest wishes,\nLeah\nAbramson Planning",
+            "to": "all-staff@merrinsallow.example",
+            "subject": "Studio closed Monday for the floor works",
+            "time": "08:05",
+            "body": "Hi all,\nThe studio is closed on Monday while the new floor goes down. Please work from home, and take anything you need on Friday. Normal service on Tuesday.\nThanks,\nThandiwe\nStudio Manager",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "abramsonplanning.example",
-              "replyTo": "leah@abramsonplanning.example"
+              "envelopeFrom": "merrinsallow.example",
+              "replyTo": "thandiwe.moyo@merrinsallow.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "pretextRelevant": "Keeping the partners' diaries is your job, and Leah is the firm's planning consultant.",
-                "default": "A known consultant's real address and a diary date. Nothing to pay, sign in to or keep quiet."
+                "default": "The studio manager's real address and a notice to everyone. It asks for nothing."
+              }
+            }
+          },
+          {
+            "id": "eb_ropewalk_booking",
+            "from": {
+              "name": "The Ropewalk",
+              "address": "events@theropewalk.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Booking RW-1907 confirmed: Julian Sallow",
+            "time": "08:40",
+            "body": "Dear Tomás,\nThis confirms booking RW-1907: Julian Sallow's talk on Thursday at 14:00 and a stand in the main hall. Our invoice follows on the usual terms, payable to the account on file.\nKind regards,\nThe Ropewalk Events Team",
+            "attachments": [
+              {
+                "label": "RW-1907-confirmation.pdf",
+                "kind": "pdf"
+              }
+            ],
+            "auth": {
+              "spf": "fail",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "mailer.venuedesk.example",
+              "replyTo": "events@theropewalk.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "attachmentPlausible": "A booking confirmation PDF for a booking you made is what you'd expect.",
+                "default": "The venue's real domain, a booking you made, payment to the account on file, and nothing changed. It asks for nothing new."
               }
             }
           },
@@ -153,27 +184,122 @@
             }
           },
           {
-            "id": "eb_studio_closed",
+            "id": "eb_statements_noon",
             "from": {
-              "name": "Thandiwe Moyo",
-              "address": "thandiwe.moyo@merrinsallow.example"
+              "name": "Yasmin Chaudhry",
+              "address": "yasmin.chaudhry@merrinsallow.example"
             },
-            "to": "all-staff@merrinsallow.example",
-            "subject": "Studio closed Monday for the floor works",
-            "time": "08:05",
-            "body": "Hi all,\nThe studio is closed on Monday while the new floor goes down. Please work from home, and take anything you need on Friday. Normal service on Tuesday.\nThanks,\nThandiwe\nStudio Manager",
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Card statements signed by noon tomorrow, please",
+            "time": "11:20",
+            "body": "Hi Tomás,\nThe auditors are in tomorrow afternoon, so I need Catherine's and Julian's card statements signed by noon. They're in the usual tray in finance. Sorry for the rush.\nThanks,\nYasmin",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
               "envelopeFrom": "merrinsallow.example",
-              "replyTo": "thandiwe.moyo@merrinsallow.example"
+              "replyTo": "yasmin.chaudhry@merrinsallow.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "The studio manager's real address and a notice to everyone. It asks for nothing."
+                "urgencyCalibrated": "It's a tight deadline, but for a normal job done the normal way. Hurry on its own isn't the tell; hurry to skip a check is.",
+                "senderTrust": "Yasmin's real work address.",
+                "default": "Her real address, a routine audit task, and the statements are in the usual tray. Nothing is paid, sent outside or kept quiet."
+              }
+            }
+          },
+          {
+            "id": "eb_consultant_fee",
+            "from": {
+              "name": "Catherine Merrin",
+              "address": "catherine.m.private@inboxly.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Pay this today, between us",
+            "time": "09:35",
+            "body": "Tomás,\nI've agreed a fee of £6,750 with a heritage consultant for the Brackenmoor scheme and it has to be paid today to hold her diary. Details attached in the next email. Please keep this between us and don't raise it with Yasmin until I'm back, it's a delicate one.\nCatherine\nSent from my phone",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "catherine.m.private@inboxly.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "secrecy_or_bypass",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The managing partner's name on a personal inbox at inboxly.example, not merrinsallow.example",
+                "secrecy_or_bypass": "'Keep this between us' and 'don't raise it with Yasmin' keep out the person who would check",
+                "urgencyCalibrated": "'Paid today to hold her diary' leaves no time to check"
+              },
+              "headerNote": "All three checks passed because the sender owns inboxly.example. A pass tells you which domain sent it, not that it's Catherine.",
+              "ifTrusted": "£6,750 would go to an account the sender controls.",
+              "reportReply": "Thanks. Catherine didn't send it, and her real address is on merrinsallow.example."
+            }
+          },
+          {
+            "id": "eb_vm_hearing",
+            "kind": "voicemail",
+            "from": {
+              "name": "Catherine Merrin",
+              "address": "Number withheld"
+            },
+            "subject": "Voicemail from Catherine Merrin",
+            "time": "10:02",
+            "duration": "0:20",
+            "audio": {
+              "clipId": "VO7_eb_vm_hearing"
+            },
+            "transcript": [
+              {
+                "who": "Catherine",
+                "text": "Tomás, it's Catherine. I'm in a client meeting and can't talk. Please send the signed Brackenmoor contract to the solicitor's address I'm texting you, and leave it off the shared drive until I'm back. Don't ring, I can't pick up. Thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "vish_callback_pressure",
+                "secrecy_or_bypass"
+              ],
+              "perFlagNote": {
+                "vish_callback_pressure": "The number is withheld and she tells you not to ring, so you can't check it on the number in your contacts",
+                "secrecy_or_bypass": "'Leave it off the shared drive' keeps the people who would notice out of it"
+              },
+              "ifTrusted": "A signed client contract would go to an address the sender chose.",
+              "reportReply": "Thanks. We rang Catherine's mobile at the break: she hadn't called, and the solicitor already has the contract. The voice sounded like hers, which is why the number and the request matter more."
+            }
+          },
+          {
+            "id": "eb_planning_panel",
+            "from": {
+              "name": "Leah Abramson",
+              "address": "leah@abramsonplanning.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Planning committee date for Mill Lane",
+            "time": "14:40",
+            "body": "Hi Tomás,\nThe council has set the Mill Lane committee for the 18th at 6pm. Could you pencil it in for Julian? I'll send the officer's report when it's published.\nBest wishes,\nLeah\nAbramson Planning",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "abramsonplanning.example",
+              "replyTo": "leah@abramsonplanning.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "pretextRelevant": "Keeping the partners' diaries is your job, and Leah is the firm's planning consultant.",
+                "default": "A known consultant's real address and a diary date. Nothing to pay, sign in to or keep quiet."
               }
             }
           },
@@ -276,132 +402,6 @@
               },
               "ifTrusted": "The page would ask for passport details and a sign-in, and the sender would keep both.",
               "reportReply": "Thanks. We didn't book through them, and the link went to a sign-in page that isn't theirs."
-            }
-          },
-          {
-            "id": "eb_statements_noon",
-            "from": {
-              "name": "Yasmin Chaudhry",
-              "address": "yasmin.chaudhry@merrinsallow.example"
-            },
-            "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Card statements signed by noon tomorrow, please",
-            "time": "11:20",
-            "body": "Hi Tomás,\nThe auditors are in tomorrow afternoon, so I need Catherine's and Julian's card statements signed by noon. They're in the usual tray in finance. Sorry for the rush.\nThanks,\nYasmin",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "merrinsallow.example",
-              "replyTo": "yasmin.chaudhry@merrinsallow.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "urgencyCalibrated": "It's a tight deadline, but for a normal job done the normal way. Hurry on its own isn't the tell; hurry to skip a check is.",
-                "senderTrust": "Yasmin's real work address.",
-                "default": "Her real address, a routine audit task, and the statements are in the usual tray. Nothing is paid, sent outside or kept quiet."
-              }
-            }
-          },
-          {
-            "id": "eb_consultant_fee",
-            "from": {
-              "name": "Catherine Merrin",
-              "address": "catherine.m.private@inboxly.example"
-            },
-            "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Pay this today, between us",
-            "time": "09:35",
-            "body": "Tomás,\nI've agreed a fee of £6,750 with a heritage consultant for the Brackenmoor scheme and it has to be paid today to hold her diary. Details attached in the next email. Please keep this between us and don't raise it with Yasmin until I'm back, it's a delicate one.\nCatherine\nSent from my phone",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "catherine.m.private@inboxly.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "senderTrust",
-                "secrecy_or_bypass",
-                "urgencyCalibrated"
-              ],
-              "perFlagNote": {
-                "senderTrust": "The managing partner's name on a personal inbox at inboxly.example, not merrinsallow.example",
-                "secrecy_or_bypass": "'Keep this between us' and 'don't raise it with Yasmin' keep out the person who would check",
-                "urgencyCalibrated": "'Paid today to hold her diary' leaves no time to check"
-              },
-              "headerNote": "All three checks passed because the sender owns inboxly.example. A pass tells you which domain sent it, not that it's Catherine.",
-              "ifTrusted": "£6,750 would go to an account the sender controls.",
-              "reportReply": "Thanks. Catherine didn't send it, and her real address is on merrinsallow.example."
-            }
-          },
-          {
-            "id": "eb_ropewalk_booking",
-            "from": {
-              "name": "The Ropewalk",
-              "address": "events@theropewalk.example"
-            },
-            "to": "tomas.carvalho@merrinsallow.example",
-            "subject": "Booking RW-1907 confirmed: Julian Sallow",
-            "time": "08:40",
-            "body": "Dear Tomás,\nThis confirms booking RW-1907: Julian Sallow's talk on Thursday at 14:00 and a stand in the main hall. Our invoice follows on the usual terms, payable to the account on file.\nKind regards,\nThe Ropewalk Events Team",
-            "attachments": [
-              {
-                "label": "RW-1907-confirmation.pdf",
-                "kind": "pdf"
-              }
-            ],
-            "auth": {
-              "spf": "fail",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "mailer.venuedesk.example",
-              "replyTo": "events@theropewalk.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "attachmentPlausible": "A booking confirmation PDF for a booking you made is what you'd expect.",
-                "default": "The venue's real domain, a booking you made, payment to the account on file, and nothing changed. It asks for nothing new."
-              }
-            }
-          },
-          {
-            "id": "eb_vm_hearing",
-            "kind": "voicemail",
-            "from": {
-              "name": "Catherine Merrin",
-              "address": "Number withheld"
-            },
-            "subject": "Voicemail from Catherine Merrin",
-            "time": "10:02",
-            "duration": "0:20",
-            "audio": {
-              "clipId": "VO7_eb_vm_hearing"
-            },
-            "transcript": [
-              {
-                "who": "Catherine",
-                "text": "Tomás, it's Catherine. I'm in a client meeting and can't talk. Please send the signed Brackenmoor contract to the solicitor's address I'm texting you, and leave it off the shared drive until I'm back. Don't ring, I can't pick up. Thanks."
-              }
-            ],
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "vish_callback_pressure",
-                "secrecy_or_bypass"
-              ],
-              "perFlagNote": {
-                "vish_callback_pressure": "The number is withheld and she tells you not to ring, so you can't check it on the number in your contacts",
-                "secrecy_or_bypass": "'Leave it off the shared drive' keeps the people who would notice out of it"
-              },
-              "ifTrusted": "A signed client contract would go to an address the sender chose.",
-              "reportReply": "Thanks. We rang Catherine's mobile at the break: she hadn't called, and the solicitor already has the contract. The voice sounded like hers, which is why the number and the request matter more."
             }
           }
         ]
