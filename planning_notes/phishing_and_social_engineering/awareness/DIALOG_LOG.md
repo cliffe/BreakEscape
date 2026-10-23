@@ -348,3 +348,116 @@ compiled ink `.json` are unchanged.
   e1/e2/e6/e7 each needed one retry for the known flip send-timing race (first run failed only the
   "sent record tells" flip assertion, an attack-side compose race unrelated to these defend-side
   edits); e3/e5 passed first try. e4 untouched, not run.
+
+---
+
+## Cycle: "either tick counts" scoring + E3 caller-reply standalone pass (2026-10-23)
+
+Two changes: an engine mechanism so one tell named by two triage flags is scored once (Task A), and
+rewording the E3 call transcripts whose caller replies were left answering a removed player line
+(Task B).
+
+### Task A — `truth.flagAlternatives` ("either tick counts")
+
+**Mechanism (engine).** Some messages carry one tell that two flags can name — a look-alike link is
+`lookalike_domain` or `linkCredible`; a look-alike From address is `lookalike_domain` or `senderTrust`.
+Before this change each authored flag was scored on its own, so ticking one showed the other as
+"missed" in the debrief. A message's `truth.flagAlternatives` (array of groups, e.g.
+`[["lookalike_domain","linkCredible"]]`) now groups those flags into one scoring **unit**: credited
+if any member is ticked, reported missed **once** under the group's first member's note, never
+over-counted when both are ticked. A flag in no group is its own unit, so a message without the
+field scores exactly as before.
+
+- `public/break_escape/js/minigames/inbox-triage/triage-scoring.js`: new `flagUnits()` helper;
+  `scoreTriage()` now scores by units (verdict points unchanged; reasons = 40 × caughtUnits/units;
+  `perMessage.missed`, `perFactor`, `flagRecall` all unit-based). The display `caught` array still
+  lists every authored flag the player ticked (both members shown if both ticked).
+- `scripts/scenario-schema.json`: `truth.flagAlternatives` added to the closed `socialTriageMessage`
+  truth schema (was `additionalProperties:false`).
+- `scripts/validate_social/triage.rb`: validates it — array of groups, each ≥2 distinct ids, every
+  member an authored `truth.flags` id, a flag in at most one group, phish-only. (validate_scenario.rb
+  untouched.)
+- Tests: new `test/js/social-triage-alternatives.test.mjs` (flagUnits + scoreTriage, 10 cases); new
+  cases in `test/js/validator-social-triage.test.mjs`.
+
+**Data — messages grouped and why.** Every grouped pair names the look-alike domain as one
+observable (sender and/or link); verified against each perFlagNote. Group order sets the missed
+note: senderTrust-led for a From-address tell ("read the address, it isn't who it says"),
+lookalike_domain-led for a link tell.
+
+- `["lookalike_domain","linkCredible"]` — the look-alike **link**: `e2_portfolio_lookalike` (E2).
+- `["senderTrust","lookalike_domain"]` — the look-alike **From address**: `e1_lookalike_bank`,
+  `fa_pennine_bank`, `fa_remittance_spoof`, `fb_castell_bank`, `fb_creditors_spoof` (E1);
+  `ha_agency_spoof`, `hb_onboarding_spoof` (E2/HR); `ha_list_spoof`, `hb_resets_spoof` (E3/helpdesk
+  checks); `e4_wrenfield_lookalike`, `ea_larkspur_bank`, `ea_card_spoof`, `eb_ropewalk_bank`,
+  `eb_travel_dates_spoof` (E4); `ga_payroll_spoof`, `gb_facilities_spoof` (E5/general);
+  `ma_drivers_numbers_spoof`, `mb_new_starters_spoof` (E6/mobile). 19 messages in all.
+- **Not grouped:** `unexpected_qr`+`lookalike_domain` QR rows (E6) stay two tells — "it's a QR at all"
+  and "the destination domain is a look-alike" are separate observations a learner can catch
+  independently. `senderTrust` on freemail rows (no lookalike) and `senderAuth`+`senderTrust` (visible
+  address vs header checks) are also distinct tells.
+
+A/B check-form parity holds: each grouped check message is derived from the fragment, so its A/B
+mirror gets the same group (finance/HR/helpdesk/executive/general/mobile pairs matched).
+
+### Task B — E3 caller replies read standalone
+
+Round 3 removed the Service Desk operator's lines from the E3 call transcripts. Five caller replies
+then answered a line that was gone. Reworded so each is a standalone caller-only record and keeps
+its teaching beat (a genuine caller is fine being rung back on a known number; an impostor resists
+or redirects). No player lines reintroduced. **Not voiced** (text transcripts), so no TTS impact.
+
+Note: `ha_call_facilities` (Owen) is an **impostor** (isPhish, vish_callback_pressure +
+borrowed_authority), not a genuine awkward call as the brief's parenthetical read; its reply
+therefore resists the callback. `hb_call_payroll` (Pauline) is the B-form impostor mirror of
+facilities and dangled identically after round 3, so it was reworded too, to keep the A/B pair
+matched and standalone (logged tidy-up beyond the four the brief named).
+
+- `e3_call_gordon_impostor` (impostor): "That's my desk phone, and I'm not at my desk, am I? I'm
+  boarding in ten minutes. Just reset it and read me the new one." → "No sense ringing the desk, I'm
+  not there, I'm boarding in ten minutes. Just reset it and read me the new password."
+- `ha_call_facilities` (impostor): "I'm on my personal phone, the work one's dead. Look, the
+  Operations Director wants that bay open by half eight. Just reset it now and I'll sort the paperwork
+  later." → "No point ringing the desk back, the work phone's dead and I'm on my personal mobile. The
+  Operations Director wants that bay open by half eight, so just reset it now and I'll sort the
+  paperwork later."
+- `hb_call_payroll` (impostor, parity): "I'm not at my desk, I'm on my own phone. The Finance Director
+  said to ring you and get it done. If the run's late, it's three hundred people not paid." → "No use
+  ringing my desk, I'm not there, I'm on my own phone. The Finance Director said to ring you and get
+  it done, and if the run's late it's three hundred people not paid."
+- `ha_call_hr_awkward` (genuine, Sofia): "Honestly, it's me. Fine, ring the mobile, but please be
+  quick." → "Honestly, it's me, but I know how it goes. Ring me back on the mobile you've got for me,
+  just be quick about it."
+- `hb_call_comms_awkward` (genuine, Niamh): "Right, fine. Ring now, please, I'll keep the phone in my
+  hand." → "Fine, do it properly. Ring me straight back on the number you hold for me, I'll keep the
+  phone in my hand."
+
+Residual (flagged, not changed): `ha_call_ayaan` ("Yes, that's my desk. Thanks.") and the Darren
+monitor call ("Great, thanks.") are genuine innocuous decoy closers that also followed a removed
+player line; they read acceptably as a caller confirming/closing and carry no callback beat.
+
+### Where each change lives (survives a regenerate)
+
+- Engine/schema/validator/tests: edited directly (not generated).
+- Task A fragments: `awareness/e{1,2,3,4,5,6}/defend.json` (19 flagAlternatives insertions).
+- Task B fragment: `awareness/e3/defend.json` (5 caller lines).
+- Full episodes (hand-mirrored): `awareness_e1_invoice_fraud`, `awareness_e2_cv_lures`,
+  `awareness_e4_exec_whaling` erbs got their one grouped message's flagAlternatives;
+  `awareness_e3_helpdesk_reset` erb got the gordon_impostor line (the other four E3 defend calls
+  live only in the generated shells, not the full erb).
+- Generated shells: regenerated into scratch, diffed, copied in — 27 shells for Task A (e1/e2/e4
+  defend + 24 pre/post check forms; e3/e5/e6/e7 defend-only unchanged, their grouped messages are
+  check-only) and 5 for Task B (e3 defend + 4 helpdesk checks). Each diff showed only the intended
+  change.
+
+### Checks run
+
+- **No-change baseline:** fresh regen of all four generators into scratch is byte-identical to the
+  repo before editing (all generated scenario.json.erb / mission.json / .ink).
+- **Validator** (`--strict-social --no-graph --skip-ink`): **all 38 awareness shells exit 0**, and
+  `scenarios/lab_social_engineering/scenario.json.erb` exits 0.
+- **Node tests:** `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs` —
+  **1713/1713 pass** (was 1701; +12 new).
+- **Full-episode bridges** (Node 24, one at a time on the live keyless :3001; no server start/stop):
+  **all PASS** — e1-full 12/12 (3827), e3-full 21/21 (3828), e2-full 13/13 (3829), e4-full 13/13
+  (3830), lab bridge-6 36/36 (3832). No retries needed.

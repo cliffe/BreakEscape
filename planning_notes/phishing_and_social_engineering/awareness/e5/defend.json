@@ -301,6 +301,7 @@
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "lookalike_domain"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
               "senderTrust": "Payroll writes to you from quayholt.example, the address your payslips come from, not from a sender you don't recognise",
               "lookalike_domain": "Read the address: it ends in quayholt-payroll.example, not quayholt.example. The added word makes a separate domain anyone can register"
@@ -515,6 +516,7 @@
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "lookalike_domain"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
               "senderTrust": "Facilities notices reach you from quayholt.example, not from a sender you've never dealt with",
               "lookalike_domain": "Read the address: it ends in quayholt-site.example, not quayholt.example. The added word makes a separate domain anyone can register"

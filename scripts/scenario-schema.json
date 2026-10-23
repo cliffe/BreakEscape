@@ -1585,6 +1585,7 @@
           "properties": {
             "isPhish": {"type": "boolean"},
             "flags": {"type": "array", "items": {"type": "string"}},
+            "flagAlternatives": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}},
             "perFlagNote": {"type": "object", "additionalProperties": {"type": "string"}},
             "whyFine": {"type": "object", "additionalProperties": {"type": "string"}},
             "ifTrusted": {"type": "string"},

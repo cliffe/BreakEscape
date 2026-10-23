@@ -282,6 +282,7 @@
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "lookalike_domain"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
               "senderTrust": "The name on the From line looks right, but the address isn't on tarrowby.example at all.",
               "lookalike_domain": "tarrowby-depot.example looks like Tarrowby, but the added word makes it a different domain. Tarrowby's own mail comes from tarrowby.example."
@@ -471,6 +472,7 @@
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "lookalike_domain"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
               "senderTrust": "The name on the From line looks right, but the address isn't on tarrowby.example at all.",
               "lookalike_domain": "tarrowby-team.example looks like Tarrowby, but the added word makes it a different domain. Tarrowby's own mail comes from tarrowby.example."

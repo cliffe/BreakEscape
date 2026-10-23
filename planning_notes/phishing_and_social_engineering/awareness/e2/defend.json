@@ -99,6 +99,7 @@
           "truth": {
             "isPhish": true,
             "flags": ["lookalike_domain", "attachmentPlausible", "linkCredible"],
+            "flagAlternatives": [["lookalike_domain", "linkCredible"]],
             "perFlagNote": {
               "lookalike_domain": "The link goes to tarrowby-careers.example, not tarrowby.example. Tarrowby's own sites all end in tarrowby.example; the added word with a hyphen makes a separate domain anyone can register, so don't assume it's theirs",
               "attachmentPlausible": "It says the CV is attached, but nothing is. The 'portfolio' link is there to replace it, and it wants your Tarrowby sign-in",
@@ -306,6 +307,7 @@
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "lookalike_domain"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
               "senderTrust": "The name says Roseanne at Kettlewick, but the address is on kettlewick-talent.example, which isn't the agency's",
               "lookalike_domain": "Kettlewick's real domain is kettlewick.example. kettlewick-talent.example adds a word with a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
@@ -503,6 +505,7 @@
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "lookalike_domain"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
               "senderTrust": "The name says Thanh at Tarrowby, but the address is on tarrowby-onboarding.example, which isn't Tarrowby's",
               "lookalike_domain": "Tarrowby's own sites end in tarrowby.example. tarrowby-onboarding.example adds a word with a hyphen, making a separate domain anyone can register, so don't assume it's theirs"

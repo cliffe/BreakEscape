@@ -157,6 +157,7 @@
           "truth": {
             "isPhish": true,
             "flags": ["lookalike_domain", "changed_bank_details", "senderTrust"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
               "lookalike_domain": "This morning's itinerary came from wrenfieldtravel.example. This one is wrenfield-travel.example, with an added hyphen",
               "changed_bank_details": "'Use these details, not the ones on file' is the commonest invoice-fraud move. The itinerary said everything was paid on the firm's account. The safe step is to ring Wrenfield on the number you already hold",
@@ -228,6 +229,7 @@
           "truth": {
             "isPhish": true,
             "flags": ["lookalike_domain", "changed_bank_details", "senderTrust"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
               "lookalike_domain": "Larkspur's real domain is larkspurtravel.example. This is larkspur-travel.example, with an added hyphen",
               "changed_bank_details": "New bank details on an open invoice is the commonest invoice-fraud move. The safe step is to ring Larkspur on the number you already hold",
@@ -293,6 +295,7 @@
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "lookalike_domain"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
               "senderTrust": "The name says Thandiwe, but the address is on merrin-sallow.example, which isn't the firm's",
               "lookalike_domain": "The firm's domain is merrinsallow.example. merrin-sallow.example adds a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
@@ -438,6 +441,7 @@
           "truth": {
             "isPhish": true,
             "flags": ["lookalike_domain", "changed_bank_details", "senderTrust"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
               "lookalike_domain": "The Ropewalk's real domain is theropewalk.example. This is theropewalk-events.example, with an added word",
               "changed_bank_details": "New bank details on an open booking is the commonest invoice-fraud move. The safe step is to ring the venue on the number you already hold",
@@ -503,6 +507,7 @@
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "lookalike_domain"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
               "senderTrust": "The name says Thandiwe, but the address is on merrinsallow-group.example, which isn't the firm's",
               "lookalike_domain": "The firm's domain is merrinsallow.example. merrinsallow-group.example adds a word with a hyphen, making a separate domain anyone can register, so don't assume it's theirs"

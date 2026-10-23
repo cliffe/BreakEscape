@@ -91,6 +91,38 @@ export function weakestFactor(perFactor) {
     return best;
 }
 
+/**
+ * Group a message's authored flags into scoring units, honouring `truth.flagAlternatives`
+ * (05 "Either tick counts"). Some messages carry one tell that two flags can name — a look-alike
+ * link is `lookalike_domain` or `linkCredible`; a look-alike From address is `lookalike_domain`
+ * or `senderTrust`. An alternatives group names those flags so the pair is scored as one unit:
+ * credited when any member is ticked, reported missed once under its first member's note.
+ *
+ * Each returned unit is { members: [authored flag ids, in group order], note: members[0] }. A flag
+ * in no group is its own singleton unit, so a message without the field groups one flag per unit
+ * and scores exactly as before. Only members listed in `authoredFlags` are kept; a group with no
+ * authored member produces no unit. Units come out in the order the first member appears in
+ * `authoredFlags`, so an unchanged message keeps its original flag order.
+ */
+export function flagUnits(authoredFlags, flagAlternatives) {
+    const authored = [...new Set(authoredFlags || [])];
+    const groups = (Array.isArray(flagAlternatives) ? flagAlternatives : []).filter(Array.isArray);
+    const groupOf = new Map();
+    for (const g of groups) {
+        const members = g.filter((id) => authored.includes(id));
+        if (members.length) for (const id of members) if (!groupOf.has(id)) groupOf.set(id, members);
+    }
+    const seen = new Set();
+    const units = [];
+    for (const id of authored) {
+        if (seen.has(id)) continue;
+        const members = groupOf.get(id) || [id];
+        for (const m of members) seen.add(m);
+        units.push({ members, note: members[0] });
+    }
+    return units;
+}
+
 export function scoreTriage({ messages, answers, profile = 'awareness', bands, passPercent } = {}) {
     if (!PROFILES.includes(profile)) throw new RangeError(`triage-scoring: unknown scoringProfile "${profile}"`);
     if (!Array.isArray(messages)) throw new TypeError('triage-scoring: messages must be an array');
@@ -120,19 +152,27 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         const verdict = a.verdict;
         const vPts = verdictPoints(profile, isPhish, verdict);
         const ticked = [...new Set(a.flags || [])].filter((f) => f !== NONE_CHIP);
-        const caught = authoredFlags.filter((f) => ticked.includes(f));
-        const missed = authoredFlags.filter((f) => !ticked.includes(f));
+        const tickedSet = new Set(ticked);
+        // Score by units, not raw flags: an alternatives group counts once (05 "Either tick
+        // counts"). Without truth.flagAlternatives every flag is its own unit and this is
+        // identical to one-flag-one-unit scoring.
+        const units = flagUnits(authoredFlags, truth.flagAlternatives);
+        const unitCaught = (u) => u.members.some((m) => tickedSet.has(m));
+        const caught = authoredFlags.filter((f) => tickedSet.has(f));
+        const missed = units.filter((u) => !unitCaught(u)).map((u) => u.note);
         const falseClaims = ticked.filter((f) => !authoredFlags.includes(f));
-        const fPts = flagPoints(profile, isPhish, { caught: caught.length, falseClaims: falseClaims.length, authored: authoredFlags.length });
+        const caughtUnits = units.filter(unitCaught).length;
+        const fPts = flagPoints(profile, isPhish, { caught: caughtUnits, falseClaims: falseClaims.length, authored: units.length });
         const score = roundHalfUp(vPts + fPts);
         perMessage.push({
             id: msg.id, isPhish, verdict, verdictPoints: vPts, flagPoints: roundHalfUp(fPts), score,
             caught, missed, falseClaims, answered: true,
         });
 
-        for (const f of authoredFlags) {
+        for (const u of units) {
+            const f = u.note;
             perFactor[f] = perFactor[f] || { caught: 0, missed: 0 };
-            perFactor[f][caught.includes(f) ? 'caught' : 'missed'] += 1;
+            perFactor[f][unitCaught(u) ? 'caught' : 'missed'] += 1;
         }
         for (const f of falseClaims) falseByFactor[f] = (falseByFactor[f] || 0) + 1;
 
@@ -144,8 +184,8 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
             // Report only (05 "Extensions for the awareness episodes").
             if (verdict === 'report' || verdict === 'delete' || verdict === 'verify') phishCaught += 1;
             if (verdict === 'report') reportCount += 1;
-            flagsCaught += caught.length;
-            flagsAuthored += authoredFlags.length;
+            flagsCaught += caughtUnits;
+            flagsAuthored += units.length;
         } else if (verdict === 'report' || verdict === 'delete') {
             falseAlarms += 1;
         }

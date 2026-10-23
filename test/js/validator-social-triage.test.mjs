@@ -416,6 +416,45 @@ test('the CLI under --strict-social exits 1 on the broken fixture and 0 on the c
   assert.deepEqual(social.filter((l) => !/assets\/objects\/.*\.png does not exist/.test(l)), []);
 });
 
+test('05 "Either tick counts": truth.flagAlternatives shape and membership', { skip }, () => {
+  // A valid group of two authored flags raises nothing. lookalike_domain is a channel tell,
+  // so the set must enable it.
+  const withTell = () => { const j = mini(); j.social.triageSets[0].channelTells = ['lookalike_domain']; return j; };
+  const ok = withTell();
+  ok.social.triageSets[0].messages[1].truth = {
+    isPhish: true, flags: ['senderTrust', 'lookalike_domain'],
+    flagAlternatives: [['senderTrust', 'lookalike_domain']],
+    perFlagNote: { senderTrust: 'n', lookalike_domain: 'n' },
+  };
+  assert.deepEqual(lintJson(ok), []);
+
+  const mut = (fn) => { const j = withTell(); j.social.triageSets[0].messages[1].truth = {
+    isPhish: true, flags: ['senderTrust', 'lookalike_domain'],
+    perFlagNote: { senderTrust: 'n', lookalike_domain: 'n' }, ...fn }; return lintJson(j); };
+
+  expectIn(mut({ flagAlternatives: 'nope' }), /flagAlternatives must be an array of groups/);
+  expectIn(mut({ flagAlternatives: [['senderTrust']] }), /flagAlternatives\[0\] needs at least two flag ids/);
+  expectIn(mut({ flagAlternatives: [['senderTrust', 'senderTrust']] }), /flagAlternatives\[0\] lists the same id twice/);
+  expectIn(mut({ flags: ['senderTrust', 'lookalike_domain'], flagAlternatives: [['senderTrust', 'urgencyCalibrated']] }),
+    /flagAlternatives\[0\]: 'urgencyCalibrated' is not in truth\.flags/);
+
+  // A flag may sit in only one group.
+  const two = withTell();
+  two.social.triageSets[0].messages[1].truth = {
+    isPhish: true, flags: ['senderTrust', 'lookalike_domain', 'linkCredible'],
+    flagAlternatives: [['senderTrust', 'lookalike_domain'], ['lookalike_domain', 'linkCredible']],
+    perFlagNote: { senderTrust: 'n', lookalike_domain: 'n', linkCredible: 'n' },
+  };
+  expectIn(lintJson(two), /flagAlternatives: 'lookalike_domain' appears in more than one group/);
+
+  // Not allowed on real mail.
+  const real = withTell();
+  real.social.triageSets[0].messages[0].truth = {
+    isPhish: false, flags: [], whyFine: { default: 'fine' }, flagAlternatives: [['senderTrust', 'lookalike_domain']],
+  };
+  expectIn(lintJson(real), /flagAlternatives is set on real mail/);
+});
+
 test('the fixtures were not rewritten by any run', { skip }, () => {
   assert.equal(folderHash(fx), fixturesBefore);
 });

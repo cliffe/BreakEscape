@@ -102,7 +102,7 @@
           "time": "08:20",
           "transcript": [
             { "who": "Caller", "text": "Hiya, Owen Treharne, Facilities. I'm locked out of the door-access system and the contractors are stood outside the loading bay." },
-            { "who": "Caller", "text": "I'm on my personal phone, the work one's dead. Look, the Operations Director wants that bay open by half eight. Just reset it now and I'll sort the paperwork later." }
+            { "who": "Caller", "text": "No point ringing the desk back, the work phone's dead and I'm on my personal mobile. The Operations Director wants that bay open by half eight, so just reset it now and I'll sort the paperwork later." }
           ],
           "truth": {
             "isPhish": true,
@@ -123,7 +123,7 @@
           "time": "08:41",
           "transcript": [
             { "who": "Sofia", "text": "It's Sofia in HR. I'm locked out of the HR system and I've got interviews from nine. This is the third time this month." },
-            { "who": "Sofia", "text": "Honestly, it's me. Fine, ring the mobile, but please be quick." }
+            { "who": "Sofia", "text": "Honestly, it's me, but I know how it goes. Ring me back on the mobile you've got for me, just be quick about it." }
           ],
           "truth": {
             "isPhish": false,
@@ -204,6 +204,7 @@
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "lookalike_domain"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
               "senderTrust": "A request like this would come from a Quayholt address the desk already knows, not from a sender no one has dealt with",
               "lookalike_domain": "Read the address: it ends in quayholt-corp.example, not quayholt.example. The added '-corp' makes a separate domain anyone can register"
@@ -308,7 +309,7 @@
           "time": "08:20",
           "transcript": [
             { "who": "Caller", "text": "Hello love, it's Pauline in Payroll. I can't get into the payroll system and the run goes at ten." },
-            { "who": "Caller", "text": "I'm not at my desk, I'm on my own phone. The Finance Director said to ring you and get it done. If the run's late, it's three hundred people not paid." }
+            { "who": "Caller", "text": "No use ringing my desk, I'm not there, I'm on my own phone. The Finance Director said to ring you and get it done, and if the run's late it's three hundred people not paid." }
           ],
           "truth": {
             "isPhish": true,
@@ -329,7 +330,7 @@
           "time": "08:41",
           "transcript": [
             { "who": "Niamh", "text": "It's Niamh in Comms. The town hall stream starts at nine and my account's locked. I genuinely don't have time for this." },
-            { "who": "Niamh", "text": "Right, fine. Ring now, please, I'll keep the phone in my hand." }
+            { "who": "Niamh", "text": "Fine, do it properly. Ring me straight back on the number you hold for me, I'll keep the phone in my hand." }
           ],
           "truth": {
             "isPhish": false,
@@ -410,6 +411,7 @@
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "lookalike_domain"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
               "senderTrust": "A review like this would come from a Quayholt address the desk already knows, not from a sender nobody has dealt with",
               "lookalike_domain": "Read the address: it ends in quayholt-team.example, not quayholt.example. The added '-team' makes a separate domain anyone can register"
@@ -501,7 +503,7 @@
           "transcript": [
             { "who": "Caller", "text": "Hello, Gordon McLeish, Claims Manager. I'm locked out of my account and I'm at the airport." },
             { "who": "Caller", "text": "QH-20719. I report to Ngozi Okonkwo, and she needs the claims report from me before the board meets at ten." },
-            { "who": "Caller", "text": "That's my desk phone, and I'm not at my desk, am I? I'm boarding in ten minutes. Just reset it and read me the new one." }
+            { "who": "Caller", "text": "No sense ringing the desk, I'm not there, I'm boarding in ten minutes. Just reset it and read me the new password." }
           ],
           "notes": {
             "perFlagNote": {
