@@ -5,6 +5,8 @@
 // (L-84), releases as a verdict mode (L-85); D's main bridge takes the notebook and the glass (L-102).
 // S4: A's glass has a lost-lift outcome (glass_smudge) and the bar staff's fallback ring topic (bar_marsh_ring),
 // with the bar staff's kind word modelled (bar_kind).
+// R7 (plan md5 d6345a0d9413611328f5cd005e728266): the intern's and D's steward's kind words added (transcription gaps;
+// no effect on any result as authored). D's lost lift is modelled in r7_dlift.js, not here (the plan has no outcome for it).
 //
 // Atom = one acquisition step. req(S, m):
 //   S.has(atomId), S.held(factId), S.infl(witness) (influence before the next question),
@@ -107,7 +109,7 @@ const A = {
     ishikawa: { pass: ['archive_pass'], want: ['wants_codex'], carry: ['ward_charm', 'notebook'] },
     delacroix: { pass: ['lecture_hall'], want: ['wants_codex'], carry: ['umbrella'] },
   }, 'a'),
-  witnesses: { barstaff: { step: 15, wary: -20, refuses: -40, kind: 'bar_kind' }, intern: { step: 15, wary: -20, refuses: -40 } },
+  witnesses: { barstaff: { step: 15, wary: -20, refuses: -40, kind: 'bar_kind' }, intern: { step: 15, wary: -20, refuses: -40, kind: 'intern_kind' } },
 };
 const coatsOpen = m => !(m.wrongLanded > 0); // a_lodge_suspicious (cost, at verdict under reveal now)
 const archive = S => S.has('code_note') || S.has('venn_code');
@@ -126,6 +128,8 @@ A.atoms = [
   { id: 'glass_smudge', room: 'a_hall', facts: [], progress: true, forbid: ['glass'], req: () => true },
   { id: 'bar_marsh_ring', room: 'a_hall', facts: ['a_marsh_sigil_ring'], witness: 'barstaff', charged: true, req: S => S.has('glass_smudge'), place: 'the bar staff (whose glass it was)' },
   { id: 'bar_kind', room: 'a_hall', facts: [], witness: 'barstaff', kindWord: true, progress: true, req: () => true },
+  // R7: the intern's once-only kind word (§9.2: each witness has one; it unlocks a flavour hint, +20 influence)
+  { id: 'intern_kind', room: 'a_hall', facts: [], witness: 'intern', kindWord: true, progress: true, req: () => true },
   // cloakroom: lockpick (start inventory)
   { id: 'coat_venn', room: 'a_cloakroom', facts: ['a_venn_ward_charm'], req: (S, m) => coatsOpen(m), v: { costGated: true } },
   { id: 'coat_ishikawa', room: 'a_cloakroom', facts: ['a_ishikawa_ward_charm', 'a_ishikawa_notebook'], req: (S, m) => coatsOpen(m), v: { costGated: true } },
@@ -281,7 +285,7 @@ const D = {
     volkov: { garden: 'd_volkov_pass', wants_funding: 'd_volkov_want', brass_key: 'd_volkov_key', ward_charm: 'd_volkov_charm' },
     mensah: { lecture_hall: 'd_mensah_pass', wants_peace: 'd_mensah_want', umbrella: 'd_mensah_umbrella' },
   }),
-  witnesses: { steward: { step: 15, wary: -20, refuses: -40 }, conductor: { step: 15, wary: -20, refuses: -40, kind: 'cond_kind' } },
+  witnesses: { steward: { step: 15, wary: -20, refuses: -40, kind: 'steward_kind' }, conductor: { step: 15, wary: -20, refuses: -40, kind: 'cond_kind' } },
 };
 for (const [c, d] of Object.entries(D.clues)) if (A.clues[c]) { if (A.clues[c].label && !d.label) d.label = A.clues[c].label; if (A.clues[c].clause) d.clause = A.clues[c].clause; }
 const car = n => S => n === 1 || S.has('stop' + (n - 1));
@@ -291,6 +295,8 @@ D.atoms = [
   { id: 'steward_sato', room: 'd_car1', facts: ['d_sato_want'], req: car(1), witness: 'steward', charged: true },
   { id: 'steward_chen', room: 'd_car1', facts: ['d_chen_want'], req: car(1), witness: 'steward', charged: true },
   { id: 'steward_mensah', room: 'd_car1', facts: ['d_mensah_want'], req: car(1), witness: 'steward', charged: true },
+  // R7: the steward's once-only kind word (§9.4 line 3253: three clue topics and a kind word)
+  { id: 'steward_kind', room: 'd_car1', facts: [], req: car(1), witness: 'steward', kindWord: true, progress: true },
   { id: 'stop1', room: 'stop', facts: [], req: () => true, progress: true },
   { id: 'chen_ticket', room: 'd_car2', facts: ['d_chen_pass'], req: car(2) },
   { id: 'coat', room: 'd_car2', facts: ['d_chen_charm'], req: car(2), forbid: ['stop2'], fadable: true, v: { closedBy: true } },
