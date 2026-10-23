@@ -1459,6 +1459,7 @@
           "displayName": "Gareth Fairbairn",
           "npcType": "person",
           "position": { "x": 6.5, "y": 4.25 },
+          "behavior": { "immovable": true },
           "spriteSheet": "gareth_fairbairn",
           "spriteTalk": "assets/characters/gareth_fairbairn_talk.png",
           "spriteVisemes": "assets/characters/gareth_fairbairn_visemes.png",
@@ -1590,6 +1591,16 @@
           "puzzle_graph_role": "item",
           "puzzle_graph_links": [ { "from": "osint_workstation", "to": "operations_room_key" } ],
           "minigameData": { "siteIds": ["company", "social", "deck"] }
+        },
+        {
+          "type": "info_screen",
+          "id": "recon_info_screen",
+          "name": "Wall Display",
+          "position": "as-type:info_screen",
+          "takeable": false,
+          "interactable": true,
+          "observations": "Today's date and the team's booked hours. No client names: Tarnside keeps those off anything a visitor could read.",
+          "addToNotes": false
         }
       ]
     },
@@ -1603,6 +1614,7 @@
           "fire_alarm_point": [ { "intensity": 0 } ],
           "pc12": [ { "intensity": 0 } ],
           "laptop7": [ { "intensity": 0 } ],
+          "comms_cabinet": { "color": "#6dffb0", "radius": 16, "intensity": 0.3, "effect": "blink", "leds": 1 },
           "mail_terminal": { "color": "#9fd4ff", "radius": 44, "intensity": 0.65, "offsetY": 6, "effect": "screen" }
         }
       },
@@ -1677,6 +1689,7 @@
         "ambient": "#b2b8c8",
         "emitters": {
           "aes_dvr": { "color": "#7dffa0", "radius": 10, "intensity": 0.5, "above": true },
+          "cctv_monitors": [ { "intensity": 0 } ],
           "fire_alarm_point": [ { "intensity": 0 } ],
           "pc8": [ { "intensity": 0 } ],
           "siem_dashboard": { "color": "#7dffb0", "radius": 40, "intensity": 0.5, "offsetY": 16, "effect": "screen" }
@@ -1694,6 +1707,7 @@
           "displayName": "Tomasz",
           "npcType": "person",
           "position": { "x": 6, "y": 6 },
+          "behavior": { "immovable": true },
           "spriteSheet": "tomasz",
           "spriteTalk": "assets/characters/tomasz_talk.png",
           "spriteVisemes": "assets/characters/tomasz_visemes.png",
