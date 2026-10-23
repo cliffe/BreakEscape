@@ -464,6 +464,20 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
 
   "show_scenario_brief": "on_resume",
 
+  <%# F30: phone message times show story time. The night operation is the local
+      night of day 11 (about 22:45 in Helena, UTC-6), which the Citadel's UTC clock
+      (CONTRACT 8.2 "UTC only"; FINALE_ARC 1.5) reads as about 04:45 on day 12. The
+      hangar debrief is Netherton's "Oh-six-hundred, day thirteen. Twenty hours.",
+      so it jumps to 10:00 on start_debrief. Rate 1: the operation is 35-60 minutes
+      of play and nothing else is spoken as a time. %>
+  "gameClock": {
+    "start": "04:45",
+    "rate": 1,
+    "anchors": [
+      { "condition": "globalVars.start_debrief === true", "time": "10:00" }
+    ]
+  },
+
   "startRoom": "loading_dock",
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
   "startPosition": { "x": 7, "y": 6.8 },

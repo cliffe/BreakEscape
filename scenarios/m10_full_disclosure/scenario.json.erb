@@ -1224,6 +1224,31 @@ end
     ]
   },
 
+  <%# F30: phone message times show story time (UTC, as every screen does). The
+      clock opens at the forward post's 01:45 and each anchor mirrors a raid_clock
+      step (OT 6), so a text is stamped with the time the nearest screen shows.
+      >= so a skipped step is caught by the next. Rate 0.5 so a slow player's
+      stamp doesn't run past the next step (a step can wait 15 story minutes);
+      anchors only move forward. The core: ending set = a few minutes before six. %>
+  "gameClock": {
+    "start": "01:45",
+    "rate": 0.5,
+    "anchors": [
+      { "condition": "globalVars.raid_clock >= 't0200'", "time": "02:00" },
+      { "condition": "globalVars.raid_clock >= 't0210'", "time": "02:10" },
+      { "condition": "globalVars.raid_clock >= 't0220'", "time": "02:20" },
+      { "condition": "globalVars.raid_clock >= 't0230'", "time": "02:30" },
+      { "condition": "globalVars.raid_clock >= 't0245'", "time": "02:45" },
+      { "condition": "globalVars.raid_clock >= 't0300'", "time": "03:00" },
+      { "condition": "globalVars.raid_clock >= 't0315'", "time": "03:15" },
+      { "condition": "globalVars.raid_clock >= 't0330'", "time": "03:30" },
+      { "condition": "globalVars.raid_clock >= 't0345'", "time": "03:45" },
+      { "condition": "globalVars.raid_clock >= 't0400'", "time": "04:00" },
+      { "condition": "globalVars.ending !== ''", "time": "05:55" },
+      { "condition": "globalVars.raid_clock >= 't0600'", "time": "06:00" }
+    ]
+  },
+
   "startRoom": "forward_post",
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
 
