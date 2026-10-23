@@ -60,15 +60,17 @@ test('E10: unlock-system reads door options for password and PIN pads', () => {
     assert.match(m, /maxAttempts: lockable\?\.maxAttempts \|\| lockable\?\.scenarioData\?\.maxAttempts \|\| lockable\?\.doorProperties\?\.maxAttempts \|\| undefined/);
 });
 
-test('E8: the player registry uses the configured spriteTalk when it matches the played sprite', () => {
+test('E8: the player registry uses the configured spriteTalk when it matches the played sprite', async () => {
+    // The rule moved into utils/player-avatar.js (aw9); game.js's registry calls it.
     const src = read('js/core/game.js');
-    const start = src.indexOf('spriteTalk: (() => {');
-    const body = src.slice(start, src.indexOf('})(),', start) + 5);
-    // run the real IIFE with a stand-in window
-    const run = (cfg, scenarioPlayer) => {
-        const w = { breakEscapeConfig: cfg, gameScenario: { player: scenarioPlayer } };
-        return new Function('window', `return ({ ${body} }).spriteTalk;`)(w);
-    };
+    assert.match(src, /spriteTalk: playerTalkPath\(chosenPlayerSprite\(\), window\.gameScenario\?\.player\?\.spriteTalk\)/);
+    const { mkdtempSync, writeFileSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const { pathToFileURL } = await import('node:url');
+    const dir = mkdtempSync(join(tmpdir(), 'engine-a-avatar-'));
+    writeFileSync(join(dir, 'player-avatar.mjs'), read('js/utils/player-avatar.js'));
+    const A = await import(pathToFileURL(join(dir, 'player-avatar.mjs')).href);
+    const run = (cfg, scenarioPlayer) => A.playerTalkPath(A.chosenPlayerSprite(cfg, { player: scenarioPlayer }), scenarioPlayer?.spriteTalk);
     assert.equal(run({ playerSprite: 'female_hacker_hood_v2' },
         { spriteSheet: 'female_hacker_hood_v2', spriteTalk: 'assets/characters/female_hacker_hood_talk.png' }),
         'assets/characters/female_hacker_hood_talk.png');

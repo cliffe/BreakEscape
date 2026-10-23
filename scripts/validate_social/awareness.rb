@@ -52,6 +52,7 @@ module ValidateSocial
       issues.concat(id_suffix_checks(ep))
       issues.concat(attack_checks(ctx, ep)) if full?(ep)
       issues.concat(string_checks(ep))
+      issues.concat(settings_checks(ctx, ep))
       issues.concat(mfa_checks(ep))
       set = defend_set(ctx, ep, issues)
       done = nil
@@ -251,6 +252,39 @@ module ValidateSocial
         elsif atk.key?('target') && !(page['targets'].is_a?(Hash) && page['targets'].key?(atk['target']))
           issues << err("attack.landingPageId '#{page_id}' has no targets entry for attack.target '#{atk['target']}'; the builder could not aim the page at them")
         end
+      end
+      issues
+    end
+
+    # ---- deployment settings (social.awareness: aw1, aw4, aw6) ------------------------
+
+    REPORT_ROUTE_SLOT = 'slot:customer_report_route'
+    SETTING_MAX = 600
+
+    def self.settings_checks(ctx, ep)
+      issues = []
+      debrief = ep['debrief']
+      if debrief.is_a?(Hash) && debrief.key?('mondayCard') && debrief['mondayCard'] != REPORT_ROUTE_SLOT
+        issues << warn_("debrief.mondayCard is '#{debrief['mondayCard']}'; only '#{REPORT_ROUTE_SLOT}' is read (it asks for the 'How to report here' box)")
+      end
+      aw = ctx.social['awareness']
+      return issues if aw.nil?
+      return issues << Mail.err('social.awareness must be an object { reportRoute, ruleOfThumb, teamSize }') unless aw.is_a?(Hash)
+
+      { 'reportRoute' => 'the generic "find out how to report" line shows instead',
+        'ruleOfThumb' => 'nothing is shown' }.each do |key, fallback|
+        next unless aw.key?(key)
+
+        v = aw[key]
+        text = v.is_a?(Hash) ? v['text'] : v
+        if !text.is_a?(String) || text.strip.empty?
+          issues << Mail.warn_("social.awareness.#{key} has no text; #{fallback}")
+        elsif text.strip.length > SETTING_MAX
+          issues << Mail.warn_("social.awareness.#{key} is #{text.strip.length} characters; the debrief shows the first #{SETTING_MAX}")
+        end
+      end
+      if aw.key?('teamSize') && !(aw['teamSize'].is_a?(Integer) && aw['teamSize'] >= 2)
+        issues << Mail.err("social.awareness.teamSize is #{aw['teamSize'].inspect}; it must be a whole number of people, 2 or more (the team line drops it otherwise)")
       end
       issues
     end

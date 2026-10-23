@@ -205,6 +205,16 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         this.sortEl = el('div', 'tri-sort');
         this.progressEl = el('p', 'tri-progress');
         this.sortEl.appendChild(this.progressEl);
+        // aw6: the awareness skin's "team kept safe" tally: phish reported or checked by another
+        // route so far. Shown only with immediate feedback, where each verdict's truth is already
+        // on screen, so the count gives nothing away. Private and positive: no denominator.
+        this.teamEl = null;
+        if (this.awarenessSkin && this.feedbackMode === 'immediate') {
+            this.teamEl = el('p', 'aw-team-tally');
+            this.teamEl.setAttribute('aria-live', 'polite');
+            this.sortEl.appendChild(this.teamEl);
+            this._renderTeamTally(false);
+        }
         this.reader = new MailReader(this.sortEl, {
             pushLayer: (close, name) => this.pushLayer(close, name),
             influence: false,
@@ -415,7 +425,31 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _renderSort() {
         const done = this.answers.size;
         this.progressEl.textContent = `${done} of ${this.messages.length} sorted`;
+        this._renderTeamTally(false);
         this.reader.render();
+    }
+
+    /** aw6: phish answered Report or Verify so far (a call's Escalate is Report, Ring back Verify). */
+    teamProtectedCount() {
+        let n = 0;
+        for (const m of this.messages) {
+            const a = this.answers.get(m.id);
+            if (a && m.truth?.isPhish === true && (a.verdict === 'report' || a.verdict === 'verify')) n += 1;
+        }
+        return n;
+    }
+
+    _renderTeamTally(pop) {
+        if (!this.teamEl) return;
+        const n = this.teamProtectedCount();
+        this.teamEl.textContent = '';
+        this.teamEl.append(icon('mark-tick'), el('span', 'aw-team-tally-text', `Phish stopped for the team: ${n}`));
+        this.teamEl.title = 'Phish you reported or checked by another route this round';
+        this.teamEl.classList.remove('aw-team-pop');
+        if (pop) {
+            void this.teamEl.offsetWidth; // restart the animation
+            this.teamEl.classList.add('aw-team-pop');
+        }
     }
 
     _onOpen(rec) {
@@ -601,10 +635,16 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const ms = Number.isFinite(opened) ? Math.max(0, Date.now() - opened) : 0;
         const answer = { id: s.messageId, verdict: s.verdict, flags, ms };
         if (s.action && s.action !== s.verdict) answer.action = s.action;
+        const teamBefore = this.teamEl ? this.teamProtectedCount() : 0;
         this.answers.set(s.messageId, answer);
-        if (this.awarenessSkin && answer.verdict === 'report') this._reportWin = s.messageId;
+        if (this.awarenessSkin && answer.verdict === 'report') {
+            this._reportWin = s.messageId;
+            // The report sting (11 §4.3, §8): a short positive sound with the pop animation.
+            try { window.soundManager?.play?.('ui_confirm'); } catch (e) { /* sound is optional */ }
+        }
         this._closeSheet(false);
         const rec = this.messages.find((m) => m.id === s.messageId);
+        if (this.teamEl) this._renderTeamTally(this.teamProtectedCount() > teamBefore);
         this._announce(`Verdict locked: ${this._actionLabel(rec, answer)}.`);
         this.progressEl.textContent = `${this.answers.size} of ${this.messages.length} sorted`;
 
@@ -826,15 +866,17 @@ export class InboxTriageMinigame extends SocialOverlayScene {
      * runner's skin, or an awareness-profile set) has neither, so it points at the
      * learner's own inbox and their security team instead.
      */
-    _resultCopy() {
+    _resultCopy(several = false) {
+        // `several`: the weakest line names tied skills, so the nudge says "them", not "it".
+        const it = several ? 'them' : 'it';
         if (this.awarenessSkin || this.profile === 'awareness') {
             return {
-                weakest: this._awarenessWeakestLine(),
+                weakest: this._awarenessWeakestLine(it),
                 noFlags: 'Next time, tick what looks off. The review cards show what gave each fake one away.'
             };
         }
         return {
-            weakest: 'Practise it in the mail client, then look it up in your lab sheet.',
+            weakest: `Practise ${it} in the mail client, then look ${it} up in your lab sheet.`,
             noFlags: 'Tick what looks off next time, then check your lab sheet.'
         };
     }
@@ -845,19 +887,19 @@ export class InboxTriageMinigame extends SocialOverlayScene {
      * call/prompt queue about checking through a channel you trust. All point at the IT/security
      * team. A mixed set falls back to the inbox wording.
      */
-    _awarenessWeakestLine() {
+    _awarenessWeakestLine(it = 'it') {
         const kinds = this.messages.map((m) => kindOf(m));
         const every = (allow) => kinds.length > 0 && kinds.every((k) => allow.includes(k));
         const ask = 'and if you are not sure, ask your IT or security team.';
         if (kinds.some((k) => k === 'email' || k === 'playerSent')) {
-            return `Look for it in the next messages you get at work, ${ask}`;
+            return `Look for ${it} in the next messages you get at work, ${ask}`;
         }
         if (every(['page'])) return `Read the address bar before you sign in to any page, ${ask}`;
         if (every(['call', 'push', 'voicemail'])) {
             return `If a caller, prompt or voicemail pushes you to act, stop and check through a channel you already trust, ${ask}`;
         }
         if (every(['sms', 'qr'])) return `Be wary of links and codes you did not ask for, ${ask}`;
-        return `Look for it in the next messages you get at work, ${ask}`;
+        return `Look for ${it} in the next messages you get at work, ${ask}`;
     }
 
     _score() {
@@ -897,7 +939,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // Per-answer ms stays in memory (05): the starter writes only the four globals.
             answers: s.perMessage.map((pm) => {
                 const a = this.answers.get(pm.id) || {};
-                const out = { id: pm.id, verdict: pm.verdict, flags: a.flags || [], score: pm.score, ms: a.ms ?? 0 };
+                // isPhish rides along for the measurement store's discrimination figure (aw3).
+                const out = { id: pm.id, verdict: pm.verdict, flags: a.flags || [], score: pm.score, ms: a.ms ?? 0, isPhish: pm.isPhish === true };
                 if (a.action) out.action = a.action;
                 return out;
             })
@@ -978,7 +1021,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                         const nudges = isObj(this.set.nudges) ? this.set.nudges : {};
                         p.appendChild(el('p', 'tri-weakest',
                             `${weakestText(weak, 'Weakest skill', 'Weakest skills')} ` +
-                            (nudges[weak.id] || this._resultCopy().weakest)));
+                            (nudges[weak.id] || this._resultCopy(Array.isArray(weak.ties) && weak.ties.length > 1).weakest)));
                     }
                 } else {
                     p.appendChild(el('p', 'tri-weakest',
@@ -1205,6 +1248,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 skin: this.awarenessSkin ? 'awareness' : null,
                 reportThanks: !!this.reader?.readPane?.querySelector?.('.aw-report-thanks'),
                 reportWin: !!this.reader?.readPane?.querySelector?.('.aw-report-win'),
+                teamTally: this.teamEl ? this.teamProtectedCount() : null,
                 callClaims: [...(this.reader?.readPane?.querySelectorAll?.('.tri-call-claim') || [])]
                     .map((c) => ({ fact: c.dataset.fact, value: c.querySelector('.tri-claim-value')?.textContent || '' })),
                 actionButtons: [...(this.reader?.readPane?.querySelectorAll?.('.tri-verdict') || [])]

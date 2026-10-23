@@ -119,7 +119,7 @@ test('J10 control: ticking at least one flag keeps the "Weakest skill:" line', (
     assert.doesNotMatch(weak.textContent, /didn't name any flags/);
 });
 
-const LAB_LINE = 'Practise it in the mail client, then look it up in your lab sheet.';
+const LAB_LINE = 'Practise them in the mail client, then look them up in your lab sheet.'; // several tied skills
 function openWith(set, params = {}) {
     current?.cleanup();
     document.body.innerHTML = '';
@@ -218,4 +218,22 @@ test('enable_content_prompt is a library tell: chip label, red flag and a skill 
     assert.ok(li, 'the breakdown lists the tell');
     assert.equal(li.textContent, 'Enable-content prompts: caught 1 of 1');
     assert.doesNotMatch($(s, '.tri-skills').textContent, /enable_content_prompt/);
+});
+
+test('weakest skill: the nudge says "it" for one skill and "them" for several tied skills', () => {
+    // Several tied skills (four at 0 of 1): "them".
+    const several = playWeakest(openWith(makeSet()));
+    assert.match(several, /^Weakest skills: /);
+    assert.ok(several.endsWith('Practise them in the mail client, then look them up in your lab sheet.'), several);
+    const aw = playWeakest(openWith(makeSet({ scoringProfile: 'awareness' })));
+    assert.match(aw, /Look for them in the next messages you get at work/);
+    // One skill: a two-message set where only the pressure tell is missed: "it".
+    const two = openWith(makeSet({ scoringProfile: 'awareness', messages: msgs().slice(0, 2) }));
+    click($(two, '.tri-start'));
+    verdict(two, 'm1_it', 'trust');
+    verdict(two, 'm2_payroll', 'report', ['senderTrust', 'linkCredible']);
+    click($(two, '.tri-next'));
+    const one = $(two, '.tri-weakest').textContent;
+    assert.match(one, /^Weakest skill: /);
+    assert.match(one, /Look for it in the next messages you get at work/);
 });

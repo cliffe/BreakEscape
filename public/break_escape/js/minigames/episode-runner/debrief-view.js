@@ -9,8 +9,17 @@
 // Two optional panels sit between the cards and the Monday card: strings.conceptPanel (E2's
 // macro explainer) and strings.voicePanel (E4 and E7, copied voices). Each is plain text, or
 // { heading, text } of plain text; a blank line in the text starts a new paragraph.
+// Three optional deployment lines (the runner resolves them from social.awareness and the
+// host page's breakEscapeConfig.awareness, episode-model.js awarenessSettings):
+//   reportRoute  { heading, text, configured }: the "How to report here" box under the Monday
+//                card (aw1, debrief.mondayCard "slot:customer_report_route");
+//   ruleOfThumb  { heading?, text }: one line shared by every debrief, above the Monday card (aw4);
+//   teamSize     the number of people on the learner's team, for the team line (aw6).
+// The team line (aw6) says how many phish the learner reported or checked by another route
+// ("kept the team safe"); it shows only when that is at least one, and never counts misses.
 // getState() -> { items: number, mondayCard: boolean, noBlame: boolean,
-//                 conceptPanel: boolean, voicePanel: boolean }.
+//                 conceptPanel: boolean, voicePanel: boolean, reportRoute: 'configured' |
+//                 'generic' | null, ruleOfThumb: boolean, teamProtected: number | null }.
 // Every string goes in with textContent. The wording never blames the learner.
 
 import { redFlagString, skillName } from '../inbox-triage/triage-flags.js';
@@ -180,7 +189,39 @@ function buildPanel(strings, key) {
     return panel;
 }
 
-export function renderDebrief(container, { result, set, strings = {}, variant = 'full', onFinish } = {}) {
+/**
+ * aw6: phish reported or checked by another route this round. A stored `teamProtected` (the
+ * debrief reopened from the state global) wins; else the result's reportCount + phishVerified.
+ */
+function teamProtectedOf(result) {
+    const n = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.round(v) : null);
+    if (!isObj(result)) return null;
+    if (n(result.teamProtected) !== null) return n(result.teamProtected);
+    if (n(result.reportCount) === null) return null;
+    return n(result.reportCount) + (n(result.phishVerified) ?? 0);
+}
+
+/** The team line (aw6), or '' when there is nothing to thank the learner for. */
+export function teamLine(count, teamSize) {
+    if (!Number.isFinite(count) || count < 1) return '';
+    const what = count === 1 ? 'one phish' : `${count} phish`;
+    return Number.isInteger(teamSize) && teamSize >= 2
+        ? `Your reports and checks this round kept ${what} away from the ${teamSize} people on your team.`
+        : `Your reports and checks this round kept ${what} away from the rest of your team.`;
+}
+
+function textBox(tag, className, label, block) {
+    const box = el(tag, className);
+    box.setAttribute('aria-label', label);
+    if (block.heading) box.appendChild(el('h3', `${className}-heading`, block.heading));
+    for (const para of block.text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)) {
+        box.appendChild(el('p', `${className}-text`, para));
+    }
+    return box;
+}
+
+export function renderDebrief(container, { result, set, strings = {}, variant = 'full', onFinish,
+    reportRoute = null, ruleOfThumb = null, teamSize = null } = {}) {
     const root = el('section', 'aw-debrief');
     const heading = el('h2', 'aw-heading', DEFAULTS.heading);
     heading.tabIndex = -1;
@@ -241,9 +282,26 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     const voice = buildPanel(strings, 'voicePanel');
     if (voice) root.appendChild(voice);
 
+    // aw6: a thank-you for the phish the learner kept from the team. Positive only: no
+    // denominator and nothing about what was missed.
+    const team = teamProtectedOf(result);
+    const teamText = teamLine(team, teamSize);
+    if (teamText) root.appendChild(el('p', 'aw-team', teamText));
+
+    // aw4: one rule of thumb, the same in every debrief of a deployment.
+    const rule = isObj(ruleOfThumb) && isStr(ruleOfThumb.text) ? ruleOfThumb : null;
+    if (rule) root.appendChild(textBox('aside', 'aw-rule', rule.heading || 'The habit to keep', rule));
+
     const monday = el('aside', 'aw-monday', str(strings, 'mondayCard'));
     monday.setAttribute('aria-label', 'One thing to do on Monday');
     root.appendChild(monday);
+    // aw1: the organisation's own route to report, or the generic "find out how" line.
+    const route = isObj(reportRoute) && isStr(reportRoute.text) ? reportRoute : null;
+    if (route) {
+        const box = textBox('aside', 'aw-report-route', 'How to report here', { heading: route.heading || 'How to report here', text: route.text });
+        box.dataset.configured = route.configured === true ? 'true' : 'false';
+        root.appendChild(box);
+    }
     // The no-blame line answers a miss; after a round with nothing missed it read oddly
     // ("A miss here is no reflection on you" under 100%: N-17), so it shows only with a card.
     const noBlame = reviewed.length > 0 || !answers.length;
@@ -257,6 +315,10 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
 
     return {
         destroy() { root.remove(); },
-        getState() { return { items: reviewed.length, mondayCard: true, noBlame, conceptPanel: !!concept, voicePanel: !!voice }; }
+        getState() {
+            return { items: reviewed.length, mondayCard: true, noBlame, conceptPanel: !!concept, voicePanel: !!voice,
+                reportRoute: route ? (route.configured === true ? 'configured' : 'generic') : null,
+                ruleOfThumb: !!rule, teamProtected: teamText ? team : null };
+        }
     };
 }

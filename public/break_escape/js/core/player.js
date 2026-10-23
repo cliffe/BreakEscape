@@ -13,6 +13,7 @@ import {
     SPRITE_PADDING_BOTTOM_ATLAS
 } from '../utils/constants.js';
 import { ensureCharacterTexture } from '../systems/character-textures.js';
+import { playerTalkPath, syncScenarioPlayer } from '../utils/player-avatar.js';
 import { insertDoorwayWaypoints } from '../systems/path-doorways.js';
 
 export let player = null;
@@ -136,16 +137,12 @@ export async function updatePlayerSprite(newSpriteKey) {
     player.body.setOffset(31, 66);
     
     // Update scenario reference BEFORE recreating animations so createPlayerAnimations() uses the new sprite
-    if (window.gameScenario) {
-        window.gameScenario.player = window.gameScenario.player || {};
-        window.gameScenario.player.spriteSheet = newSpriteKey;
-    }
+    if (window.gameScenario) syncScenarioPlayer(window.gameScenario, newSpriteKey);
 
     // Keep character registry in sync so person-chat portraits use the right talk image
     if (window.characterRegistry?.player) {
-        const legacyTalkMap = { 'hacker': 'assets/characters/hacker-talk.png', 'hacker-red': 'assets/characters/hacker-red-talk.png' };
         window.characterRegistry.player.spriteSheet = newSpriteKey;
-        window.characterRegistry.player.spriteTalk = legacyTalkMap[newSpriteKey] || `assets/characters/${newSpriteKey}_talk.png`;
+        window.characterRegistry.player.spriteTalk = playerTalkPath(newSpriteKey, window.gameScenario?.player?.spriteTalk);
     }
     
     // Destroy old animations before creating new ones (they reference the old sprite texture)
@@ -211,10 +208,10 @@ export function createPlayer(gameInstance) {
     const hasExplicitSprite = !!(window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet);
     console.log(`🎮 Loading player sprite: ${playerSprite}`);
 
-    // Update scenario to match saved preference (also initialises player object for scenarios that omit it)
+    // Update scenario to match saved preference (also initialises player object for scenarios that omit it).
+    // The talk portrait follows the chosen avatar: a scenario's spriteTalk for another character is replaced (aw9).
     if (window.gameScenario && window.breakEscapeConfig?.playerSprite) {
-        window.gameScenario.player = window.gameScenario.player || {};
-        window.gameScenario.player.spriteSheet = window.breakEscapeConfig.playerSprite;
+        syncScenarioPlayer(window.gameScenario, window.breakEscapeConfig.playerSprite);
     }
 
     // Find initial frame (first breathing-idle_south frame)

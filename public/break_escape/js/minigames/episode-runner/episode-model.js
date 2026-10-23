@@ -16,6 +16,10 @@
 //   flipPage(episode, social, globals)  the built page the flip shows (E5), or null
 //   flipCall(episode, social, sent)     the call the flip shows (E3), or null
 //   measurementCtx(episode, set, launchStage, now)   ctx for recordTriageResult
+//   teamProtectedOf(result)       the "team kept safe" tally (aw6): phish reported or checked
+//   awarenessSettings(social, config)  the scenario's social.awareness block, with the host
+//                                 page's breakEscapeConfig.awareness winning (aw1, aw4, aw6)
+//   reportRouteFor(episode, social, config)  the debrief's "How to report here" box (aw1)
 //
 // Stage order (P7-X lints it): osint -> build? -> write (mail or call) -> mfa? -> flip -> defend.
 // `mfa` may also sit straight after `flip`. `build` and `mfa` are attack stages.
@@ -95,7 +99,26 @@ function cleanSent(raw) {
 function cleanDefend(raw) {
     if (!isObj(raw)) return null;
     const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
-    return { percent: num(raw.percent), reportRate: num(raw.reportRate), verifyCount: num(raw.verifyCount) };
+    const out = { percent: num(raw.percent), reportRate: num(raw.reportRate), verifyCount: num(raw.verifyCount) };
+    // aw6: the team tally survives a reopen of the debrief. Kept only when the source has it
+    // (a stored count, or a triage result with its report and check counts).
+    const team = teamProtectedOf(raw);
+    if (team !== null) out.teamProtected = team;
+    return out;
+}
+
+/**
+ * aw6: how many phish the learner reported or checked by another route this round (the
+ * "team kept safe" tally). Deleting a phish protects only the learner, so it is not counted.
+ * Reads a stored `teamProtected`, else the triage result's reportCount + phishVerified;
+ * null when neither is there.
+ */
+export function teamProtectedOf(raw) {
+    if (!isObj(raw)) return null;
+    const n = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.round(v) : null);
+    if (n(raw.teamProtected) !== null) return n(raw.teamProtected);
+    if (n(raw.reportCount) === null) return null;
+    return n(raw.reportCount) + (n(raw.phishVerified) ?? 0);
 }
 
 /**
@@ -386,4 +409,65 @@ export function measurementCtx(episode, set, launchStage = null, now = Date.now(
 /** The defend summary kept in the state global: numbers only. */
 export function defendSummary(result) {
     return cleanDefend(result) || { percent: 0, reportRate: 0, verifyCount: 0 };
+}
+
+// ── deployment settings (aw1, aw4, aw6) ───────────────────────────────────────
+
+/**
+ * The generic "how to report" line, shown when the episode's debrief asks for the customer's
+ * route (debrief.mondayCard "slot:customer_report_route") and nobody has configured one. It
+ * names no real organisation's route: it tells the learner to find out theirs.
+ */
+export const GENERIC_REPORT_ROUTE = Object.freeze({
+    heading: 'How to report here',
+    text: 'Find out today how your organisation wants suspicious emails, calls and texts reported: ' +
+        'ask your IT or security team, and keep the answer somewhere you can find it. ' +
+        'Until you know, tell IT or your manager straight away.'
+});
+export const REPORT_ROUTE_SLOT = 'slot:customer_report_route';
+
+const MAX_SETTING_TEXT = 600;
+
+/** Plain text, trimmed and capped; anything else ''. */
+function settingText(v) {
+    return typeof v === 'string' ? v.trim().slice(0, MAX_SETTING_TEXT) : '';
+}
+
+/** A string, or { heading?, text }: the cleaned { heading, text }, or null when there is no text. */
+function textBlock(v) {
+    if (typeof v === 'string') return settingText(v) ? { heading: '', text: settingText(v) } : null;
+    if (!isObj(v) || !settingText(v.text)) return null;
+    return { heading: settingText(v.heading), text: settingText(v.text) };
+}
+
+/**
+ * The awareness settings an episode reads: `social.awareness` in the scenario
+ * ({ reportRoute, ruleOfThumb, teamSize }), with the host page's
+ * `window.breakEscapeConfig.awareness` winning key by key, so one deployment can set its
+ * organisation's route for every episode without editing the scenarios. Pure.
+ */
+export function awarenessSettings(social, config) {
+    const fromScenario = isObj(social?.awareness) ? social.awareness : {};
+    const fromHost = isObj(config?.awareness) ? config.awareness : {};
+    const pick = (key) => (fromHost[key] !== undefined && fromHost[key] !== null ? fromHost[key] : fromScenario[key]);
+    const size = Number(pick('teamSize'));
+    return {
+        reportRoute: textBlock(pick('reportRoute')),
+        ruleOfThumb: textBlock(pick('ruleOfThumb')),
+        teamSize: Number.isInteger(size) && size >= 2 && size <= 100000 ? size : null
+    };
+}
+
+/**
+ * aw1: the debrief's "How to report here" box: { heading, text, configured }, or null.
+ * A configured route always shows. Without one, the generic line shows only when the episode
+ * asks for the customer slot (debrief.mondayCard "slot:customer_report_route").
+ */
+export function reportRouteFor(episode, social, config) {
+    const { reportRoute } = awarenessSettings(social, config);
+    if (reportRoute) {
+        return { heading: reportRoute.heading || GENERIC_REPORT_ROUTE.heading, text: reportRoute.text, configured: true };
+    }
+    if (episode?.debrief?.mondayCard === REPORT_ROUTE_SLOT) return { ...GENERIC_REPORT_ROUTE, configured: false };
+    return null;
 }

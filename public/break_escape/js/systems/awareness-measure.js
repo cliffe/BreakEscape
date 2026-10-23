@@ -8,7 +8,10 @@
  *   key      "<stage>:<setId>", unique in the array. The first answer wins (11 S4.1):
  *            a key that is already present is never overwritten.
  *   nothing  is written for an aborted round or a read-only reopen.
- *   no free text is stored: only ids, enums, numbers and a timestamp.
+ *   no free text is stored: only ids, enums, numbers, booleans and a timestamp.
+ *   disc     (aw3) the discrimination figure for organisers: hits on phish against false
+ *            alarms on genuine items, so a learner who reports everything is told apart
+ *            from a careful one. Stored, never shown to the learner. See discrimination().
  *
  * buildBlock, readBlocks and toXapi are pure. toXapi keeps the block shaped
  * so that it maps to xAPI (actor, verb, object, result); the actor is passed
@@ -65,6 +68,8 @@ export function buildBlock(result, ctx = {}) {
             score: num(a.score, { min: 0, max: 100, round: true }),
             ms: num(a.ms, { min: 0, round: true })
         };
+        // aw3: whether the item was a phish, when the result says (the triage minigame does).
+        if (typeof a.isPhish === 'boolean') item.phish = a.isPhish;
         return item;
     });
     return {
@@ -78,8 +83,49 @@ export function buildBlock(result, ctx = {}) {
         at: isoOf(ctx.now),
         percent: num(r.percent, { min: 0, max: 100, round: true }),
         reportRate: num(r.reportRate, { min: 0, max: 1 }),
+        disc: discrimination(items),
         items
     };
+}
+
+/** A phish counts as caught on Report, Delete or Verify (as the scorer's phishCaught). */
+const CAUGHT = new Set(['report', 'delete', 'verify']);
+/** A genuine item is a false alarm on Report or Delete (as the scorer's falseAlarms). Verify is not. */
+const FALSE_ALARM = new Set(['report', 'delete']);
+
+const rate = (n, d) => (d > 0 ? Math.round((n / d) * 1000) / 1000 : null);
+
+/**
+ * aw3: the discrimination figure for one round, from items that carry `phish`. Pure.
+ *   phish, genuine     how many of each the round had
+ *   hits               phish caught (Report, Delete or Verify; a call's Escalate is Report,
+ *                      Ring back is Verify)
+ *   falseAlarms        genuine items Reported or Deleted (Verify on a genuine item is the
+ *                      careful move, not a false alarm)
+ *   hitRate            hits / phish, 0 to 1, or null with no phish
+ *   falseAlarmRate     falseAlarms / genuine, 0 to 1, or null with no genuine item
+ *   index              hitRate - falseAlarmRate, -1 to 1 (Youden's J): 1 is perfect
+ *                      discrimination, 0 is no better than treating everything alike (reporting
+ *                      everything scores 0), or null when either rate is null
+ * Returns null when no item says whether it was a phish (an older result).
+ */
+export function discrimination(items) {
+    const known = (Array.isArray(items) ? items : []).filter((i) => isObj(i) && typeof i.phish === 'boolean');
+    if (!known.length) return null;
+    let phish = 0, genuine = 0, hits = 0, falseAlarms = 0;
+    for (const i of known) {
+        if (i.phish) {
+            phish += 1;
+            if (CAUGHT.has(i.verdict)) hits += 1;
+        } else {
+            genuine += 1;
+            if (FALSE_ALARM.has(i.verdict)) falseAlarms += 1;
+        }
+    }
+    const hitRate = rate(hits, phish);
+    const falseAlarmRate = rate(falseAlarms, genuine);
+    const index = hitRate === null || falseAlarmRate === null ? null : Math.round((hitRate - falseAlarmRate) * 1000) / 1000;
+    return { phish, genuine, hits, falseAlarms, hitRate, falseAlarmRate, index };
 }
 
 /** The blocks held in a globals object (or a bare value). Pure; never throws. */
@@ -151,7 +197,10 @@ export function toXapi(block, actor) {
         result: {
             completion: true,
             score: { scaled: block.percent / 100, raw: block.percent, min: 0, max: 100 },
-            extensions: { [`${XAPI_BASE}/reportRate`]: block.reportRate }
+            extensions: {
+                [`${XAPI_BASE}/reportRate`]: block.reportRate,
+                ...(isObj(block.disc) ? { [`${XAPI_BASE}/discrimination`]: block.disc } : {})
+            }
         },
         context: { extensions: ctxExt },
         timestamp: block.at

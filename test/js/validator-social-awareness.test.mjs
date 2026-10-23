@@ -314,3 +314,24 @@ test('the kiosk entry in minigame-data-schemas.json needs episodeId and nothing 
   const s = JSON.parse(readFileSync(join(root, 'scripts/minigame-data-schemas.json'), 'utf8'));
   assert.deepEqual(s.kiosk, { required: ['episodeId'], optional: [] });
 });
+
+test('social.awareness (aw1, aw4, aw6): clean settings pass; blanks warn, a bad teamSize errors', { skip }, () => {
+  let j = fx('clean_full.json');
+  j.social.awareness = { reportRoute: 'Use the Report button.', ruleOfThumb: { heading: 'Habit', text: 'Stop. Check. Report.' }, teamSize: 12 };
+  assert.deepEqual(lint(j), []);
+  j = fx('clean_full.json');
+  j.social.awareness = { reportRoute: '  ', ruleOfThumb: { text: '' }, teamSize: 1 };
+  const out = lint(j);
+  expectIn(out, /social\.awareness\.reportRoute has no text; the generic/);
+  expectIn(out, /social\.awareness\.ruleOfThumb has no text; nothing is shown/);
+  expectIn(out, /social\.awareness\.teamSize is 1/);
+  j = fx('clean_full.json');
+  j.social.awareness = { reportRoute: 'x'.repeat(700) };
+  expectIn(lint(j), /reportRoute is 700 characters/);
+  j = fx('clean_full.json');
+  j.social.awareness = 'nope';
+  expectIn(lint(j), /social\.awareness must be an object/);
+  j = fx('clean_full.json');
+  ep(j).debrief = { mondayCard: 'slot:something_else' };
+  expectIn(lint(j), /only 'slot:customer_report_route' is read/);
+});

@@ -1014,3 +1014,46 @@ test('flip split: a landed send with no tells to replay is landedNoTells, not mi
     assert.equal(f.missed, false);
     assert.equal(f.landedNoTells, true);
 });
+
+test('aw1/aw4/aw6: the debrief gets the report route, rule of thumb and team size; the host page wins', () => {
+    const ep = { ...fullEpisode(), id: 'e1_fixture_defend', variant: 'defendOnly', debrief: { mondayCard: 'slot:customer_report_route' } };
+    setup(ep);
+    window.gameScenario.social.awareness = { reportRoute: 'Use the Report button.', ruleOfThumb: 'Stop. Check. Report.', teamSize: 9 };
+    open(ep);
+    click('.er-start');
+    click('.er-launch');
+    cur().gameResult = { setId: 'fixture_inbox', percent: 100, reportRate: 1, reportCount: 1, phishVerified: 1, answers: [] };
+    cur().complete(true);
+    let d = calls.debrief.at(-1);
+    assert.deepEqual(d.reportRoute, { heading: 'How to report here', text: 'Use the Report button.', configured: true });
+    assert.deepEqual(d.ruleOfThumb, { heading: '', text: 'Stop. Check. Report.' });
+    assert.equal(d.teamSize, 9);
+    assert.equal(stored(ep.id).defend.teamProtected, 2, 'the tally is kept for a reopen');
+    click('.stub-finish');
+    // with nothing configured the slot gives the generic line; the host page's setting wins over the scenario's
+    setup(ep);
+    window.breakEscapeConfig = { awareness: { reportRoute: { heading: 'Reporting here', text: 'Forward to security.' } } };
+    try {
+        open(ep);
+        click('.er-start');
+        click('.er-launch');
+        cur().gameResult = { setId: 'fixture_inbox', percent: 100, reportRate: 1, answers: [] };
+        cur().complete(true);
+        d = calls.debrief.at(-1);
+        assert.deepEqual(d.reportRoute, { heading: 'Reporting here', text: 'Forward to security.', configured: true });
+        assert.equal(d.ruleOfThumb, null);
+        assert.equal(d.teamSize, null);
+        click('.stub-finish');
+        setup(ep);
+        delete window.breakEscapeConfig;
+        open(ep);
+        click('.er-start');
+        click('.er-launch');
+        cur().gameResult = { setId: 'fixture_inbox', percent: 100, reportRate: 1, answers: [] };
+        cur().complete(true);
+        assert.equal(calls.debrief.at(-1).reportRoute.configured, false);
+        click('.stub-finish');
+    } finally {
+        delete window.breakEscapeConfig;
+    }
+});

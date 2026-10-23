@@ -70,12 +70,13 @@ export class PersonChatMinigame extends MinigameScene {
         }
         this.npc = npc;
         
-        // Get player config from scenario
-        this.playerData = this.scenario.player || {
-            id: 'player',
-            displayName: 'Agent 0x00',
-            spriteSheet: 'hacker'
-        };
+        // Get player config from scenario, with the character registry's player on top: the
+        // registry holds the chosen avatar and its portrait, so the video-call self-view shows
+        // the learner's own avatar, not a talk image the scenario named for someone else (aw9).
+        const registryPlayer = window.characterRegistry?.player || null;
+        this.playerData = (this.scenario.player || registryPlayer)
+            ? { ...(this.scenario.player || {}), ...(registryPlayer || {}) }
+            : { id: 'player', displayName: 'Agent 0x00', spriteSheet: 'hacker' };
         
         // Build character index for multi-character support
         this.characters = this.buildCharacterIndex();

@@ -2903,7 +2903,8 @@ The only object type that opens an episode. `minigameData` is `{ episodeId }` an
 | `brand` | `{ name, logoText, accent }` | The neutral skin's wordmark, drawn in CSS from `logoText` (else `name`), and the accent colour (`#` plus 3 to 8 hex digits; the schema rejects anything else). No image |
 | `scopeNote` | string | Shown under the brief ("Authorised exercise at ..., a fictional company. In scope: ...") |
 | `facilitated` | boolean | A workshop run. See [Facilitated mode](#facilitated-mode) |
-| `role`, `company`, `durationTargetMin`, `debrief` | | Accepted, and not read by any code. They are notes for the author (`debrief` held the Monday card slot; the text lives in `strings`) |
+| `debrief` | `{ mondayCard, noBlameLine }` | `mondayCard: "slot:customer_report_route"` asks the debrief for the "How to report here" box (see [The debrief's deployment lines](#the-debriefs-deployment-lines)). Any other value is only linted (a warning); `noBlameLine` is not read |
+| `role`, `company`, `durationTargetMin` | | Accepted, and not read by any code. They are notes for the author |
 
 ### Stages
 
@@ -2918,7 +2919,7 @@ The only object type that opens an episode. `minigameData` is `{ episodeId }` an
 | `mfa` | Opens the mock authenticator: a stream of unrequested sign-in prompts and the target's approval. Unscored | `awarenessEpisode.mfa` |
 | `flip` | Shows what the learner just made from the other side: the sent email, the built page or the call | See below |
 | `defend` | Opens the triage round on `defend.setId` with the awareness skin; records the result | `defend.setId` |
-| `debrief` | A card per answer, the concept and voice panels if authored, the Monday card, the no-blame line, then Finish | `strings` |
+| `debrief` | A card per item missed, the concept and voice panels if authored, the team line, the rule of thumb, the Monday card, the "How to report here" box, the no-blame line, then Finish | `strings`; `social.awareness` for the deployment lines |
 | `check` | A check mission's only stage: the triage round at `defend.stage`, ending on its own result screen | `defend.stage` |
 
 **Order.** A full episode is `brief, osint, write, flip, defend, debrief`, with two optional insertions: `build` straight after `osint`, and `mfa` straight after `write` or straight after `flip`. Both may be present, giving six valid lists. The lint rejects any other order. A defend-only episode is exactly `brief, defend, debrief`, and the runner drops any attack stage from one whatever is authored. `mfa` and `build` never appear in a defend-only or check shell.
@@ -3064,6 +3065,29 @@ The lint errors on a `conceptPanel` or `voicePanel` with no text, and on a `faci
 
 The debrief and flip copy never blames. "Nobody is marked down" and "built to look right" are the register; "you fell for it" is not.
 
+### The debrief's deployment lines
+
+Three debrief lines belong to the organisation running the training, not to the episode, so they sit in `social.awareness` rather than in `strings`. The host page can set the same keys in `window.breakEscapeConfig.awareness`, and a key set there wins over the scenario's, so one deployment can name its own route in every episode without editing the shells. Nothing on the server fills `breakEscapeConfig.awareness` yet.
+
+```json
+"social": { "awareness": {
+  "reportRoute": { "heading": "How to report here", "text": "Use the Report button in Outlook, or ring the IT service desk on 4000." },
+  "ruleOfThumb": "Stop. Check on a route you already hold. Report.",
+  "teamSize": 12 } }
+```
+
+| Key | What it does | Unset |
+|---|---|---|
+| `reportRoute` | The organisation's own route to report a suspicious email, call or text, in a box straight under the Monday card. A string, or `{ heading, text }` (heading default "How to report here"). It shows whenever it is set | An episode whose `debrief.mondayCard` is `"slot:customer_report_route"` (every shell) shows a generic line instead: find out today how your organisation wants these reported, ask IT or security, and until then tell IT or your manager. Never put a real organisation's route in a shell unless the deployment is that organisation's |
+| `ruleOfThumb` | One short habit, the same in every debrief of a deployment, in a box above the Monday card (aria label "The habit to keep"; a `{ heading, text }` heading is shown) | Nothing is shown |
+| `teamSize` | Whole number, 2 or more: the people on the learner's team, named in the team line ("...kept 2 phish away from the 12 people on your team.") | The line says "the rest of your team" |
+
+Each text is plain, trimmed and capped at 600 characters; a blank line starts a new paragraph. The lint warns on a blank `reportRoute` or `ruleOfThumb` and on one over 600 characters, and errors on a `teamSize` that is not a whole number of at least 2.
+
+**The team line** ("Your reports and checks this round kept 2 phish away from the rest of your team.") counts the phish the learner Reported or checked by another route (Verify, Ring back, Escalate, Deny and report). Deleting a phish protects only the learner, so it does not count. The line shows only when the count is at least one and never gives a denominator, so it cannot read as a list of misses. The count is kept in `episode_<id>_state.defend.teamProtected`, so a reopened debrief shows it too. During the round the triage overlay shows the same count live ("Phish stopped for the team: 2"), with immediate feedback only, since under end-of-round feedback a count that rises only on a phish would give the answers away.
+
+**The report sting.** With the awareness skin, a Report verdict (including a call's Escalate and a push's Deny and report) plays the `ui_confirm` sound, pops the locked verdict once and shows "Thanks for reporting. That warns everyone else."
+
 ### Facilitated mode
 
 `"facilitated": true` makes an episode a workshop run on a shared screen. The runner adds a group prompt to each stage from `strings.facilitator[<stage id>]`, hides the per-learner score (the percent, the headline and each card's score) on the shared debrief, and stops on a pause panel after every stage but the last (`strings.facilitator.pause`, else "Stop here and talk it over as a group before the next step.") until Continue. The pause is held in memory only, so a reopen from the kiosk goes straight to the stage. `strings.facilitator` is `{ brief, osint, build, write, mfa, flip, defend, debrief, check, pause }`, any subset; the lint warns about a stage in `stages` with no line when `facilitated` is true. The triage round itself is still done individually. The measurement is recorded as usual.
@@ -3160,14 +3184,27 @@ Each finished defend or check round writes one block into `se_awareness_records`
 { "v": 1, "key": "episode:e1_payments_inbox", "setId": "e1_payments_inbox", "form": "e1_payments_inbox",
   "stage": "episode", "episodeId": "e1_invoice_fraud", "variant": "full", "at": "2026-10-22T09:41:07.000Z",
   "percent": 80, "reportRate": 0.5,
+  "disc": { "phish": 2, "genuine": 3, "hits": 2, "falseAlarms": 1, "hitRate": 1, "falseAlarmRate": 0.333, "index": 0.667 },
   "items": [ { "itemId": "e1_lookalike_bank", "verdict": "report", "action": "",
-               "chips": ["changed_bank_details"], "score": 100, "ms": 14210 } ] }
+               "chips": ["changed_bank_details"], "score": 100, "ms": 14210, "phish": true } ] }
 ```
 
 - `key` is `<stage>:<setId>`. `stage` is `pre` or `post` for a check, `episode` otherwise. `form` is the set id, so the A and B forms can be told apart.
 - **The first answer is the one kept.** A key already in the array is never overwritten; a replay of the same set writes nothing. Nothing is written for a round closed before the result, or for the read-only reopen of a round that was already done.
-- `reportRate` is the share of the phish that were reported, 0 to 1. `items` has an entry per message: the learner's `verdict` (`trust`, `report`, `delete` or `verify`), the `action` when the button used differs from the verdict (a call's `escalate` or `comply`; otherwise empty), the chips ticked, the score (0 to 100) and the time taken in milliseconds. **No free text is stored**: ids, numbers and a timestamp. A ten-item block is well under 4 KB.
-- It is written through the shared writer without deferring, because nothing listens on it. It is not exported between missions. Nothing reads the records back in the game yet; they ride along in the saved state. `systems/awareness-measure.js` also holds `readBlocks(globals)` and `toXapi(block, actor)`, which maps a block to xAPI statements (one per item and one for the round; the caller supplies the actor).
+- `reportRate` is the share of the phish that were reported, 0 to 1. `items` has an entry per message: the learner's `verdict` (`trust`, `report`, `delete` or `verify`), the `action` when the button used differs from the verdict (a call's `escalate` or `comply`; otherwise empty), the chips ticked, the score (0 to 100), the time taken in milliseconds and `phish` (true for a phish, false for a genuine item). **No free text is stored**: ids, numbers, booleans and a timestamp. A ten-item block is well under 4 KB.
+- `disc` is the **discrimination figure, for organisers only** (the learner never sees it). `reportRate` and `percent` cannot tell a careful learner from one who reports everything, because Report scores on a genuine item too. `disc` can:
+
+  | Field | Meaning |
+  |---|---|
+  | `phish`, `genuine` | How many of each the round had |
+  | `hits` | Phish caught: Report, Delete or Verify (a call's Escalate is Report, Ring back Verify) |
+  | `falseAlarms` | Genuine items Reported or Deleted. Verify on a genuine item is the careful move and is not counted |
+  | `hitRate` | `hits / phish`, 0 to 1 (3 decimal places), or `null` with no phish |
+  | `falseAlarmRate` | `falseAlarms / genuine`, 0 to 1, or `null` with no genuine item |
+  | `index` | `hitRate - falseAlarmRate` (Youden's J), -1 to 1: 1 is perfect, 0 is no better than treating every item alike (reporting everything scores 0), `null` when either rate is `null` |
+
+  A block from a result without the `phish` marks (written before this field existed) has `disc: null`. With 4 to 10 items a round, one learner's figure is noisy: compare cohorts or pre against post, using the counts rather than averaging the rates. The figure is per round, so a pre and post pair give a before and after, and the per-role check forms mean it measures that role's channels only. `toXapi` adds it to the round statement as the extension `.../awareness/discrimination`.
+- It is written through the shared writer without deferring, because nothing listens on it. It is not exported between missions. Nothing reads the records back in the game yet, and there is no organiser view: they ride along in the saved state (`player_state.globalVariables.se_awareness_records` on the game row), where an organiser report or export would read them. `systems/awareness-measure.js` also holds `readBlocks(globals)` and `toXapi(block, actor)`, which maps a block to xAPI statements (one per item and one for the round; the caller supplies the actor).
 
 Declare it `[]` ([Building a shell](#building-a-shell), step 3).
 

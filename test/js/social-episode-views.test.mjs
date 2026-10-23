@@ -157,7 +157,7 @@ test('debrief (Cut A): a card only for items got wrong, plus the Monday card and
     const d = renderDebrief(h, { result: result(), set: set(), strings: { mondayCard: 'On Monday, use the Report button.', noBlameLine: 'No blame here.' }, variant: 'full', onFinish: () => { finished += 1; } });
     // m1 (trusted a phish, score 0) is reviewed; m2 (reported, 100) and m3 (trusted real, 100) are not.
     assert.equal(h.querySelectorAll('.aw-card').length, 1);
-    assert.deepEqual(d.getState(), { items: 1, mondayCard: true, noBlame: true, conceptPanel: false, voicePanel: false });
+    assert.deepEqual(d.getState(), { items: 1, mondayCard: true, noBlame: true, conceptPanel: false, voicePanel: false, reportRoute: null, ruleOfThumb: false, teamProtected: null });
     assert.equal(h.querySelector('.aw-monday').textContent, 'On Monday, use the Report button.');
     assert.equal(h.querySelector('.aw-no-blame').textContent, 'No blame here.');
     const first = h.querySelector('[data-message-id="m1"]');
@@ -349,7 +349,7 @@ test('debrief: the optional concept and voice panels render as plain text, betwe
     const d = renderDebrief(h, { result: result(), set: set(), variant: 'full', onFinish() {},
         strings: { conceptPanel: `Why enable content matters. ${evil}\n\nA real CV never needs it.`,
                    voicePanel: { heading: 'Voices can be copied', text: 'Ring back on a number you hold.' } } });
-    assert.deepEqual(d.getState(), { items: 1, mondayCard: true, noBlame: true, conceptPanel: true, voicePanel: true });
+    assert.deepEqual(d.getState(), { items: 1, mondayCard: true, noBlame: true, conceptPanel: true, voicePanel: true, reportRoute: null, ruleOfThumb: false, teamProtected: null });
     const concept = h.querySelector('.aw-concept-panel');
     assert.equal(concept.querySelector('.aw-panel-heading').textContent, 'How it works');
     assert.deepEqual([...concept.querySelectorAll('.aw-panel-text')].map((p) => p.textContent),

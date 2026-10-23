@@ -403,6 +403,29 @@
         "triageSets": {"type": "array", "items": {"$ref": "#/definitions/socialTriageSet"}},
         "pretextNpcs": {"type": "array", "items": {"$ref": "#/definitions/socialPretextCall"}},
         "awarenessEpisode": {"$ref": "#/definitions/socialAwarenessEpisode"},
+        "awareness": {
+          "type": "object",
+          "description": "Deployment settings the awareness episodes read (FUN_DECISIONS aw1, aw4, aw6). The host page's window.breakEscapeConfig.awareness wins key by key. Plain text only, at most 600 characters each",
+          "properties": {
+            "reportRoute": {
+              "description": "aw1: the organisation's own route to report a suspicious message, call or text, drawn in the debrief's 'How to report here' box under the Monday card. A string, or { heading, text }. Unset, an episode whose debrief.mondayCard is 'slot:customer_report_route' shows a generic 'find out how your organisation wants it reported' line. Never write a real organisation's route here unless it is that organisation's deployment",
+              "oneOf": [
+                {"type": "string"},
+                {"type": "object", "required": ["text"], "properties": {"heading": {"type": "string"}, "text": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}
+              ]
+            },
+            "ruleOfThumb": {
+              "description": "aw4: one short rule shared by every debrief, shown above the Monday card. A string, or { heading, text }. Unset, nothing is shown",
+              "oneOf": [
+                {"type": "string"},
+                {"type": "object", "required": ["text"], "properties": {"heading": {"type": "string"}, "text": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}
+              ]
+            },
+            "teamSize": {"type": "integer", "minimum": 2, "maximum": 100000, "description": "aw6: the people on the learner's team, named in the debrief's team line"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
         "engagement": {
           "type": "object",
           "description": "The engagement (design 10, 00 §11)",
@@ -1880,9 +1903,9 @@
         },
         "debrief": {
           "type": "object",
-          "description": "Reserved, not read: accepted but nothing reads it.",
+          "description": "mondayCard 'slot:customer_report_route' asks the debrief for the 'How to report here' box (social.awareness.reportRoute, else a generic line). noBlameLine is reserved, not read",
           "properties": {
-            "mondayCard": {"type": "string"},
+            "mondayCard": {"type": "string", "description": "'slot:customer_report_route' is the only value the runner reads"},
             "noBlameLine": {"type": "boolean"}
           },
           "patternProperties": {"^_": {}},

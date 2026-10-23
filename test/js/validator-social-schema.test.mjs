@@ -161,3 +161,14 @@ test('the CLI: a social typo prints as a social error, and fails the run under -
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('social.awareness (aw1, aw4, aw6): the schema takes the three settings and rejects a typo', { skip }, () => {
+  const ok = clone();
+  ok.social.awareness = { reportRoute: { heading: 'How to report here', text: 'Use Report.' }, ruleOfThumb: 'Stop. Check. Report.', teamSize: 8, _note: 'n' };
+  const bad = clone();
+  bad.social.awareness = { reportRoot: 'typo', teamSize: 1 };
+  const [r1, r2] = schemaRun([ok, bad]);
+  assert.deepEqual(r1, { social: [], other: [] });
+  assert.ok(r2.social.some((e) => e.includes('#/social/awareness') && e.includes('reportRoot')), r2.social.join('\n'));
+  assert.ok(r2.social.some((e) => e.includes('/teamSize')), r2.social.join('\n'));
+});

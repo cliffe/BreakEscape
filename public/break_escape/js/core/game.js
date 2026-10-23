@@ -44,6 +44,7 @@ import { mailScheduler } from '../systems/mail-scheduler.js';  // Mail jobs and 
 import '../systems/mail-runner.js';  // Registers the ink-job runner on the mail scheduler (P1-J); self-installs on import after mailScheduler
 import { notifyNewMail } from '../minigames/mail-client/mail-notification.js';  // HUD/bark for delivered mail (P1-F)
 import { watchReadinessGlobals } from '../systems/social-intel.js';  // needsGlobal readiness slots re-check on a global change
+import { chosenPlayerSprite, playerTalkPath } from '../utils/player-avatar.js';  // aw9: the chosen avatar wins, the portrait follows
 
 // Global variables that will be set by main.js
 let gameScenario;
@@ -1738,21 +1739,10 @@ export async function create() {
         const playerData = {
             id: 'player',
             displayName: window.gameState?.playerName || window.gameScenario?.player?.displayName || 'Agent 0x00',
-            spriteSheet: window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood_v2',
-            spriteTalk: (() => {
-                const sprite = window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood_v2';
-                // Use the scenario's configured player.spriteTalk when it belongs to the played sprite
-                // (the player's chosen sprite overrides the scenario's, and old scenarios carry a stale
-                // default talk image, so a file for a different character is ignored)
-                const configuredTalk = window.gameScenario?.player?.spriteTalk;
-                if (configuredTalk) {
-                    const stem = (configuredTalk.split('/').pop() || '').replace(/\.\w+$/, '').replace(/[_-]talk$/, '');
-                    if (stem && stem === sprite.replace(/_v2$/, '')) return configuredTalk;
-                }
-                // Legacy sprites use hyphen naming; all others follow {sprite}_talk.png convention
-                const legacyMap = { 'hacker': 'assets/characters/hacker-talk.png', 'hacker-red': 'assets/characters/hacker-red-talk.png' };
-                return legacyMap[sprite] || `assets/characters/${sprite}_talk.png`;
-            })(),
+            spriteSheet: chosenPlayerSprite(),
+            // The scenario's player.spriteTalk only when it belongs to the played sprite: the
+            // player's chosen avatar overrides the scenario's, and the portrait follows it (aw9).
+            spriteTalk: playerTalkPath(chosenPlayerSprite(), window.gameScenario?.player?.spriteTalk),
             metadata: {}
         };
         window.characterRegistry.setPlayer(playerData);

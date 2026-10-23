@@ -131,3 +131,17 @@
 @media (prefers-reduced-motion: reduce) {
     .aw-report-win, .aw-report-thanks.aw-report-win { animation: none; }
 }
+
+/* aw6: the "team kept safe" tally in the triage sort view, and the debrief's team line */
+.triage-client.aw-skin .aw-team-tally { display: inline-flex; align-self: flex-start; width: fit-content; max-width: 100%; box-sizing: border-box;
+    align-items: center; gap: 6px; margin: 4px 0 6px; padding: 2px 10px; transform-origin: left center;
+    border: 1px solid #8fe0c4; border-radius: 12px; color: #8fe0c4; font-weight: 700; font-size: 14px; }
+.triage-client.aw-skin .aw-team-tally img, .triage-client.aw-skin .aw-team-tally svg { width: 14px; height: 14px; }
+.aw-team-pop { animation: aw-report-pop 0.6s ease-out 1; }
+.aw-team { margin: 0 0 10px; font-weight: 600; color: var(--aw-accent); }
+/* aw4: the shared rule of thumb; aw1: the organisation's route to report */
+.aw-rule { margin: 0 0 10px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-left: 4px solid var(--aw-accent); border-radius: 4px; }
+.aw-rule-heading, .aw-report-route-heading { margin: 0 0 4px; font-size: 16px; }
+.aw-rule-text, .aw-report-route-text { margin: 4px 0; font-size: 15px; }
+.aw-report-route { margin: 0 0 10px; padding: 10px 14px; background: #fff; border: 1px dashed var(--aw-accent); border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) { .aw-team-pop { animation: none; } }

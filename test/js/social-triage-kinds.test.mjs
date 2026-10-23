@@ -342,7 +342,7 @@ test('a push Deny and report and a call Ring back: review cards, row badges and 
     const r = s.result;
     assert.equal(r.reportCount, 3, 'push Deny and report, sms Report, page Report');
     assert.equal(r.verifyCount, 1);
-    assert.deepEqual(r.answers.find((a) => a.id === 'push_odd'), { id: 'push_odd', verdict: 'report', flags: ['unrequested_mfa_push'], score: 100, ms: r.answers.find((a) => a.id === 'push_odd').ms, action: 'deny_report' });
+    assert.deepEqual(r.answers.find((a) => a.id === 'push_odd'), { id: 'push_odd', verdict: 'report', flags: ['unrequested_mfa_push'], score: 100, ms: r.answers.find((a) => a.id === 'push_odd').ms, isPhish: true, action: 'deny_report' });
     assert.equal(r.answers.find((a) => a.id === 'mail_real').action, undefined, 'an email answer keeps its old shape');
     assert.equal(state(s).comparison, null, 'a training round shows no comparison');
 });
