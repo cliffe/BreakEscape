@@ -87,7 +87,7 @@
   "secgen": {
     "scenario": "m09_digital_archaeology (Break Escape SAFETYNET: Mission 9 — Digital Archaeology VMs)",
     "vulnerabilities": [
-      "Apache Druid unauthenticated RCE (catalogue server foothold)",
+      "Credentialed access with a recovered login (catalogue server foothold)",
       "Nostromo web server RCE (Tomb Beta server foothold)",
       "Sudo misconfiguration on a pager utility (root on both servers)",
       "Document and credential analysis on the recovered hosts"
