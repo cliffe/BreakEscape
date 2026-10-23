@@ -8,11 +8,11 @@
         "kiosk": { "color": "#9fd4ff", "radius": 28, "intensity": 0.45, "offsetY": -20, "effect": "screen" },
         "fire_alarm_point": [ { "intensity": 0 } ]
       },
-      "lights": [ { "x": 1.75, "y": 2.3, "color": "#ffe2b0", "radius": 80, "intensity": 0.35 } ]
+      "lights": [ { "x": 1.75, "y": 2.6, "color": "#ffe2b0", "radius": 110, "intensity": 0.5 } ]
     }
   },
   "tarrowby_logistics": {
-    "mood": "Early shift at the depot, greyer daylight through the yard window, the vending machine's glow.",
+    "mood": "Early shift at the depot, greyer daylight from the rooflights, the vending machine's glow.",
     "scenario": { "enabled": true, "defaultMode": "on", "ambient": "#bcc2cc" },
     "room": {
       "emitters": {
@@ -29,7 +29,8 @@
     "room": {
       "emitters": {
         "kiosk": { "color": "#9fd4ff", "radius": 28, "intensity": 0.45, "offsetY": -20, "effect": "screen" },
-        "conference_screen": { "color": "#9fc0ff", "radius": 36, "intensity": 0.4, "effect": "screen" },
+        "aw_quayholt_queue": { "color": "#9fc0ff", "radius": 32, "intensity": 0.35, "effect": "screen" },
+        "info_screen": { "intensity": 0.25, "radius": 24 },
         "fire_alarm_point": [ { "intensity": 0 } ]
       },
       "lights": [ { "x": 1.75, "y": 2.3, "color": "#e8f0ff", "radius": 72, "intensity": 0.3 } ]

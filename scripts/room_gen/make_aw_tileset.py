@@ -8,8 +8,8 @@ Each sheet is room6's layout raised to the 2-tile wall standard, as
 make_uni_tileset.py builds the campus sheets, with the company's own wall colour,
 its brand accent (BRAND_SET.md) as the skirting line, and one floor:
 
-  room_aw_brightwell     warm off-white, green skirting,      charcoal-blue carpet tiles
-  room_aw_tarrowby       pale grey,      steel-blue skirting, blue-grey sheet vinyl (depot office)
+  room_aw_brightwell     warm off-white, green skirting,      oatmeal carpet tiles
+  room_aw_tarrowby       blue-grey paint, steel-blue skirting, blue-grey sheet vinyl (depot office)
   room_aw_quayholt       cool white,     purple skirting,     blue carpet tiles
   room_aw_merrin_sallow  warm stone,     bronze skirting,     sealed concrete (architects' studio)
 
@@ -28,8 +28,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from room_geometry import FLOOR_TOP, raise_back_wall, sheet_floor_top  # noqa: E402
 from make_hospital_tileset import is_floor  # noqa: E402
 from make_uni_tileset import (  # noqa: E402
-    CARPET_BLUE, CARPET_CHARCOAL, ROOT, SRC, OUT_DIR, concrete_pixel, paint_floor, shade, vinyl_pixel,
+    CARPET_BLUE, ROOT, SRC, OUT_DIR, carpet_pixel_fn, concrete_pixel, paint_floor, shade, vinyl_pixel,
 )
+
+# Brightwell's own floor (ROOMS_REVIEW_C1 M3): oatmeal carpet tiles, warm like the
+# oat mark and the afternoon sun, so it no longer reads as Quayholt's navy carpet.
+# Kept light enough that the shadowed seam under the wall (x0.9) stays above
+# room_geometry's floor-line luma, or check_room_walls reads it as the line.
+CARPET_OATMEAL = carpet_pixel_fn((150, 140, 114), (136, 126, 102), (164, 154, 126), (128, 120, 98))
 
 
 def hexrgb(h):
@@ -39,8 +45,8 @@ def hexrgb(h):
 
 # name: (back wall, side wall, skirting accent, floor painter)
 SHEETS = {
-    "room_aw_brightwell": ((232, 226, 212), (214, 207, 192), hexrgb("#2f6f5e"), CARPET_CHARCOAL),
-    "room_aw_tarrowby": ((218, 220, 222), (198, 201, 205), hexrgb("#3b5b8c"), vinyl_pixel),
+    "room_aw_brightwell": ((232, 226, 212), (214, 207, 192), hexrgb("#2f6f5e"), CARPET_OATMEAL),
+    "room_aw_tarrowby": ((200, 208, 218), (182, 190, 202), hexrgb("#3b5b8c"), vinyl_pixel),
     "room_aw_quayholt": ((234, 238, 242), (212, 218, 226), hexrgb("#6b4c9a"), CARPET_BLUE),
     "room_aw_merrin_sallow": ((216, 206, 190), (196, 185, 168), hexrgb("#8a5a2b"), concrete_pixel),
 }

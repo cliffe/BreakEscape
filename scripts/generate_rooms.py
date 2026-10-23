@@ -1101,6 +1101,8 @@ WALL_MOUNTED_EXTRAS = {
     "aw_poster_report_tarrowby",
     "aw_poster_report_quayholt",
     "aw_poster_report_merrin_sallow",
+    "aw_brightwell_range",
+    "aw_quayholt_queue",
 }
 
 

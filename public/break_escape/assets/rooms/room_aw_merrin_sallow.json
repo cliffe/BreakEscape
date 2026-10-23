@@ -118,7 +118,7 @@
                  "y":50
                 }, 
                 {
-                 "gid":433,
+                 "gid":1441,
                  "height":32,
                  "id":5,
                  "name":"",
@@ -130,7 +130,7 @@
                  "y":216
                 }, 
                 {
-                 "gid":437,
+                 "gid":1442,
                  "height":32,
                  "id":6,
                  "name":"",
@@ -142,7 +142,7 @@
                  "y":300
                 }, 
                 {
-                 "gid":433,
+                 "gid":1441,
                  "height":32,
                  "id":7,
                  "name":"",
@@ -154,7 +154,7 @@
                  "y":216
                 }, 
                 {
-                 "gid":437,
+                 "gid":1442,
                  "height":32,
                  "id":8,
                  "name":"",
@@ -166,7 +166,7 @@
                  "y":300
                 }, 
                 {
-                 "gid":433,
+                 "gid":1441,
                  "height":32,
                  "id":9,
                  "name":"",
@@ -178,7 +178,7 @@
                  "y":216
                 }, 
                 {
-                 "gid":437,
+                 "gid":1442,
                  "height":32,
                  "id":10,
                  "name":"",
@@ -343,18 +343,6 @@
                  "y":234
                 }, 
                 {
-                 "gid":835,
-                 "height":15,
-                 "id":24,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":20,
-                 "x":114,
-                 "y":234
-                }, 
-                {
                  "gid":962,
                  "height":27,
                  "id":25,
@@ -364,7 +352,7 @@
                  "visible":true,
                  "width":26,
                  "x":86,
-                 "y":232
+                 "y":246
                 }, 
                 {
                  "gid":1398,
@@ -2880,7 +2868,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":624,
+         "tilecount":635,
          "tileheight":60,
          "tiles":[
                 {
@@ -6626,6 +6614,72 @@
                  "image":"..\/objects\/kiosk.png",
                  "imageheight":60,
                  "imagewidth":27
+                }, 
+                {
+                 "id":634,
+                 "image":"..\/objects\/aw_brightwell_oatbox1.png",
+                 "imageheight":13,
+                 "imagewidth":14
+                }, 
+                {
+                 "id":635,
+                 "image":"..\/objects\/aw_hard_hat1.png",
+                 "imageheight":10,
+                 "imagewidth":14
+                }, 
+                {
+                 "id":636,
+                 "image":"..\/objects\/aw_chair_south_slate1.png",
+                 "imageheight":32,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":637,
+                 "image":"..\/objects\/aw_chair_north_slate1.png",
+                 "imageheight":26,
+                 "imagewidth":16
+                }, 
+                {
+                 "id":638,
+                 "image":"..\/objects\/aw_chair_w_slate1.png",
+                 "imageheight":32,
+                 "imagewidth":17
+                }, 
+                {
+                 "id":639,
+                 "image":"..\/objects\/aw_pc_off1.png",
+                 "imageheight":22,
+                 "imagewidth":34
+                }, 
+                {
+                 "id":640,
+                 "image":"..\/objects\/aw_studio_chair_s1.png",
+                 "imageheight":32,
+                 "imagewidth":32
+                }, 
+                {
+                 "id":641,
+                 "image":"..\/objects\/aw_studio_chair_n1.png",
+                 "imageheight":32,
+                 "imagewidth":32
+                }, 
+                {
+                 "id":642,
+                 "image":"..\/objects\/aw_brightwell_range1.png",
+                 "imageheight":24,
+                 "imagewidth":30
+                }, 
+                {
+                 "id":643,
+                 "image":"..\/objects\/aw_quayholt_queue1.png",
+                 "imageheight":30,
+                 "imagewidth":48
+                }, 
+                {
+                 "id":644,
+                 "image":"..\/objects\/aw_chairs_stacked_slate1.png",
+                 "imageheight":45,
+                 "imagewidth":20
                 }],
          "tilewidth":60
         }],

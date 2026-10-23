@@ -15,13 +15,13 @@ Tarnside Assurance has been hired to test Ledgerwell Ltd. Research the company f
 | AND-gate convergences | 1 |
 | Rooms | 4 |
 | Puzzle graph nodes / edges | 19 / 25 |
-| Story graph nodes / edges | 8 / 7 |
+| Story graph nodes / edges | 9 / 7 |
 
 ## Critical Path
 
-7 hops through story aims — minimum mandatory sequence to reach mission completion:
+5 hops through story aims — minimum mandatory sequence to reach mission completion:
 
-**Get it in writing → Plan the engagement → Reconnaissance → First two sends → Prepare for Sofia → The hard send → Write the report → Defend**
+**Get it in writing → Plan the engagement → Reconnaissance → First two sends → Prepare for Sofia → The hard send**
 
 ## How to Read These Diagrams
 
@@ -153,16 +153,19 @@ flowchart TD
   aim_phish_hard{{"The hard send"}}
   aim_report{{"Write the report"}}
   aim_defend{{"Defend"}}
+  story_talk_to_ruth_adeyemi>"Talk to Ruth Adeyemi"]
 
   aim_authorise -.-> aim_plan
   aim_plan -.-> aim_recon
   aim_recon -.-> aim_phish_easy
   aim_phish_easy -.-> aim_prepare_hard
   aim_prepare_hard -.-> aim_phish_hard
-  aim_phish_hard -.-> aim_report
   aim_report -.-> aim_defend
+  story_talk_to_ruth_adeyemi -.->|sends_done| aim_report
 
-  class aim_authorise,aim_plan,aim_recon,aim_phish_easy,aim_prepare_hard,aim_phish_hard,aim_report,aim_defend critical
+  class aim_authorise,aim_plan,aim_recon,aim_phish_easy,aim_prepare_hard,aim_phish_hard critical
+  class aim_report,aim_defend aim
+  class story_talk_to_ruth_adeyemi action
 ```
 
 ## Story + Puzzle (Integrated)
@@ -217,6 +220,7 @@ flowchart TD
   aim_phish_hard{{"The hard send"}}
   aim_report{{"Write the report"}}
   aim_defend{{"Defend"}}
+  story_talk_to_ruth_adeyemi>"Talk to Ruth Adeyemi"]
 
   door_recon_room --> recon_room
   door_operations_room --> operations_room
@@ -248,8 +252,8 @@ flowchart TD
   aim_recon -.-> aim_phish_easy
   aim_phish_easy -.-> aim_prepare_hard
   aim_prepare_hard -.-> aim_phish_hard
-  aim_phish_hard -.-> aim_report
   aim_report -.-> aim_defend
+  story_talk_to_ruth_adeyemi -.->|sends_done| aim_report
   door_recon_room -.-> aim_recon
   door_operations_room -.-> aim_phish_easy
   door_blue_team_room -.-> aim_defend
@@ -259,7 +263,9 @@ flowchart TD
   class rules_of_engagement,planning_whiteboard,osint_workstation,page_builder,desk_phone item
   class npc_ruth_adeyemi,recon_room_key,operations_room_key,blue_team_room_key key
   class andgate1 gate
-  class aim_authorise,aim_plan,aim_recon,aim_phish_easy,aim_prepare_hard,aim_phish_hard,aim_report,aim_defend critical
+  class aim_authorise,aim_plan,aim_recon,aim_phish_easy,aim_prepare_hard,aim_phish_hard critical
+  class aim_report,aim_defend aim
+  class story_talk_to_ruth_adeyemi action
   class node_start start
 ```
 

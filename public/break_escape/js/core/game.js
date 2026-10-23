@@ -365,6 +365,17 @@ export function preload() {
     this.load.image('osint-workstation', 'objects/osint-workstation.png');
     this.load.image('triage-workstation', 'objects/triage-workstation.png');
     this.load.image('kiosk', 'objects/kiosk.png');
+    this.load.image('aw_brightwell_oatbox1', 'objects/aw_brightwell_oatbox1.png');
+    this.load.image('aw_hard_hat1', 'objects/aw_hard_hat1.png');
+    this.load.image('aw_chair_south_slate1', 'objects/aw_chair_south_slate1.png');
+    this.load.image('aw_chair_north_slate1', 'objects/aw_chair_north_slate1.png');
+    this.load.image('aw_chair_w_slate1', 'objects/aw_chair_w_slate1.png');
+    this.load.image('aw_pc_off1', 'objects/aw_pc_off1.png');
+    this.load.image('aw_studio_chair_s1', 'objects/aw_studio_chair_s1.png');
+    this.load.image('aw_studio_chair_n1', 'objects/aw_studio_chair_n1.png');
+    this.load.image('aw_brightwell_range1', 'objects/aw_brightwell_range1.png');
+    this.load.image('aw_quayholt_queue1', 'objects/aw_quayholt_queue1.png');
+    this.load.image('aw_chairs_stacked_slate1', 'objects/aw_chairs_stacked_slate1.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');

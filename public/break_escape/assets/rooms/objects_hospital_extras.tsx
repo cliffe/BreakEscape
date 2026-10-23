@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="624" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="635" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -1872,5 +1872,38 @@
  </tile>
  <tile id="633">
   <image source="../objects/kiosk.png" width="27" height="60"/>
+ </tile>
+ <tile id="634">
+  <image source="../objects/aw_brightwell_oatbox1.png" width="14" height="13"/>
+ </tile>
+ <tile id="635">
+  <image source="../objects/aw_hard_hat1.png" width="14" height="10"/>
+ </tile>
+ <tile id="636">
+  <image source="../objects/aw_chair_south_slate1.png" width="16" height="32"/>
+ </tile>
+ <tile id="637">
+  <image source="../objects/aw_chair_north_slate1.png" width="16" height="26"/>
+ </tile>
+ <tile id="638">
+  <image source="../objects/aw_chair_w_slate1.png" width="17" height="32"/>
+ </tile>
+ <tile id="639">
+  <image source="../objects/aw_pc_off1.png" width="34" height="22"/>
+ </tile>
+ <tile id="640">
+  <image source="../objects/aw_studio_chair_s1.png" width="32" height="32"/>
+ </tile>
+ <tile id="641">
+  <image source="../objects/aw_studio_chair_n1.png" width="32" height="32"/>
+ </tile>
+ <tile id="642">
+  <image source="../objects/aw_brightwell_range1.png" width="30" height="24"/>
+ </tile>
+ <tile id="643">
+  <image source="../objects/aw_quayholt_queue1.png" width="48" height="30"/>
+ </tile>
+ <tile id="644">
+  <image source="../objects/aw_chairs_stacked_slate1.png" width="20" height="45"/>
  </tile>
 </tileset>

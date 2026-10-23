@@ -6013,6 +6013,72 @@
       "w": 27,
       "h": 60,
       "gid": 1434
+    },
+    "aw_brightwell_oatbox1": {
+      "id": 634,
+      "w": 14,
+      "h": 13,
+      "gid": 1435
+    },
+    "aw_hard_hat1": {
+      "id": 635,
+      "w": 14,
+      "h": 10,
+      "gid": 1436
+    },
+    "aw_chair_south_slate1": {
+      "id": 636,
+      "w": 16,
+      "h": 32,
+      "gid": 1437
+    },
+    "aw_chair_north_slate1": {
+      "id": 637,
+      "w": 16,
+      "h": 26,
+      "gid": 1438
+    },
+    "aw_chair_w_slate1": {
+      "id": 638,
+      "w": 17,
+      "h": 32,
+      "gid": 1439
+    },
+    "aw_pc_off1": {
+      "id": 639,
+      "w": 34,
+      "h": 22,
+      "gid": 1440
+    },
+    "aw_studio_chair_s1": {
+      "id": 640,
+      "w": 32,
+      "h": 32,
+      "gid": 1441
+    },
+    "aw_studio_chair_n1": {
+      "id": 641,
+      "w": 32,
+      "h": 32,
+      "gid": 1442
+    },
+    "aw_brightwell_range1": {
+      "id": 642,
+      "w": 30,
+      "h": 24,
+      "gid": 1443
+    },
+    "aw_quayholt_queue1": {
+      "id": 643,
+      "w": 48,
+      "h": 30,
+      "gid": 1444
+    },
+    "aw_chairs_stacked_slate1": {
+      "id": 644,
+      "w": 20,
+      "h": 45,
+      "gid": 1445
     }
   }
 }

@@ -25,7 +25,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 
-HOST_POSITION = {'x': 5.5, 'y': 3.5}     # sprite centre in tiles (176,112); feet near y 144
+HOST_POSITION = {'x': 5.5, 'y': 3.8}     # sprite centre in tiles (176,122); feet near y 154, head clear of the skirting (ROOMS_REVIEW_C1 t2)
 START_POSITION = {'x': 6, 'y': 6.2}      # between host and kiosk (192,198)
 
 _LIGHTING = json.loads((HERE / 'training_room_lighting.json').read_text())

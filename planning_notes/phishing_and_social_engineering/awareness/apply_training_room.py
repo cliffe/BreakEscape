@@ -18,6 +18,15 @@ chatBackground stays out until the POV backgrounds exist (room_fields omits it).
 
 Usage: python3 apply_training_room.py           # patch the 7 shells in the repo
        python3 apply_training_room.py <outdir>  # write patched copies to <outdir>
+
+Refresh (shells already wired, all 38 awareness shells): re-splice the fields that
+come from training_room.py and training_room_lighting.json after either changes,
+leaving everything else in the file byte for byte:
+
+  * top-level lighting, rooms.training_room.lighting, the host's position
+
+       python3 apply_training_room.py --refresh           # in place
+       python3 apply_training_room.py --refresh <outdir>  # patched copies to <outdir>
 """
 import copy
 import json
@@ -136,7 +145,64 @@ def patch_text(text, company):
     return text
 
 
+def _value_span(text, anchor):
+    """(start, end) of the JSON value after the one line `anchor` (e.g. '  "lighting": ')."""
+    import re
+    hits = [m for m in re.finditer(r'(?m)^' + re.escape(anchor), text)]
+    assert len(hits) == 1, f'{anchor!r}: {len(hits)} matches'
+    start = hits[0].end()
+    _, end = json.JSONDecoder().raw_decode(text, start)
+    return start, end
+
+
+def refresh_text(text):
+    """Re-splice scenario lighting, room lighting and the host position from training_room."""
+    old = json.loads(text)
+    company = old['social']['awarenessEpisode']['company']
+    rf = training_room.room_fields(company)
+    for anchor, value, base in (
+            ('  "lighting": ', training_room.scenario_lighting(company), 2),
+            ('      "lighting": ', rf['lighting'], 6)):
+        a, b = _value_span(text, anchor)
+        text = text[:a] + _indented(value, base) + text[b:]
+    a, b = _value_span(text, '          "position": ')
+    text = text[:a] + _indented(copy.deepcopy(training_room.HOST_POSITION), 10) + text[b:]
+    # the result must equal the old shell with exactly those three fields replaced
+    exp = copy.deepcopy(old)
+    exp['lighting'] = training_room.scenario_lighting(company)
+    exp['rooms']['training_room']['lighting'] = rf['lighting']
+    hosts = [n for n in exp['rooms']['training_room']['npcs'] if 'position' in n]
+    assert len(hosts) == 1, 'expected one positioned host'
+    hosts[0]['position'] = copy.deepcopy(training_room.HOST_POSITION)
+    assert json.loads(text) == exp, 'refresh changed more than the three fields'
+    return text
+
+
+def refresh(outdir):
+    import glob
+    for path in sorted(glob.glob(os.path.join(REPO, 'scenarios', 'awareness_*', 'scenario.json.erb'))):
+        name = os.path.basename(os.path.dirname(path))
+        text = open(path).read()
+        if not json.loads(text)['rooms']['training_room']['type'].startswith('room_aw_'):
+            print('SKIP (not wired):', name)
+            continue
+        new = refresh_text(text)
+        dest = path
+        if outdir:
+            d = os.path.join(outdir, name)
+            os.makedirs(d, exist_ok=True)
+            dest = os.path.join(d, 'scenario.json.erb')
+        elif new == text:
+            continue
+        with open(dest, 'w') as f:
+            f.write(new)
+        print('wrote', dest, '' if new != text else '(unchanged)')
+
+
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == '--refresh':
+        refresh(sys.argv[2] if len(sys.argv) > 2 else None)
+        return
     outdir = sys.argv[1] if len(sys.argv) > 1 else None
     for name in FULL_SHELLS:
         path = os.path.join(REPO, 'scenarios', name, 'scenario.json.erb')

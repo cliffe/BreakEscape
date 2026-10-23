@@ -1,0 +1,10 @@
+{
+  "scenario": "awareness_e3_helpdesk_reset_defend",
+  "start_room": "training_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}
