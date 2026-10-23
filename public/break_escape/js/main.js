@@ -161,7 +161,7 @@ function initializeGame() {
             const conclusionAim = scenario.objectives.find(a => a.missionConclusion);
             if (!conclusionAim || !window.objectivesManager) return;
             console.log('🔁 Replaying mission conclusion screen on reload');
-            window.objectivesManager.handleMissionConcluded(conclusionAim);
+            window.objectivesManager.handleMissionConcluded(conclusionAim, { replay: true });
         });
     }
     

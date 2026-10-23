@@ -116,6 +116,30 @@ export function buildEndSequence(entry, globals, test) {
     return seq;
 }
 
+/**
+ * Reload of a concluded game (finale F22): the live ending ran from the music event
+ * that carried the credits, with the event's data in scope. Rebuild it from the saved
+ * globals: take the music events that carry a card or credits, give each condition the
+ * data its trigger would have had (`global_variable_changed:X` -> { name, value }),
+ * and use the first that holds.
+ * @param {Array} events - scenario.music.events
+ * @param {object} globals - saved globalVariables
+ * @param {(condition: string, data: object) => boolean} test
+ * @returns {{entry: object, sequence: Array}|null} null when no ending entry holds
+ */
+export function replayEndingEntry(events, globals, test) {
+    for (const entry of events || []) {
+        if (!entry || !(entry.credits?.length || entry.closingCard)) continue;
+        const m = /^global_variable_changed:(.+)$/.exec(entry.trigger || '');
+        const data = m ? { name: m[1], value: globals?.[m[1]] } : {};
+        if (m && !entry.condition && !data.value) continue;
+        if (entry.condition && !test(entry.condition, data)) continue;
+        const sequence = buildEndSequence(entry, globals || {}, c => test(c, data));
+        if (sequence.length) return { entry, sequence };
+    }
+    return null;
+}
+
 /** How long a card stays up: long enough to read every line. */
 export function cardHoldMs(lineCount) {
     return 2500 + 1500 * Math.max(1, lineCount || 0);

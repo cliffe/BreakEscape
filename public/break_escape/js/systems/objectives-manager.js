@@ -1095,7 +1095,7 @@ export class ObjectivesManager {
    * and also from main.js on reload when breakEscapeConfig.missionConcludedAt is set.
    * @param {Object} aim - The aim object with missionConclusion:true
    */
-  handleMissionConcluded(aim) {
+  handleMissionConcluded(aim, { replay = false } = {}) {
     if (!aim) return;
 
     console.log(`🏁 Mission concluded via aim: ${aim.aimId}`);
@@ -1116,7 +1116,13 @@ export class ObjectivesManager {
     } else if (screen.type === 'bond_visualiser') {
       // Open the fullscreen bond visualiser (used for mission credits / victory sequence)
       if (window.BondVisualiser) {
-        window.BondVisualiser.open(screen.bondVisualiserOpts || {});
+        const opts = { ...(screen.bondVisualiserOpts || {}) };
+        // On reload nothing re-fires the music event that carried the credits, so
+        // rebuild them from the saved globals (F22) unless the aim brings its own.
+        if (replay && !opts.credits?.length) {
+          Object.assign(opts, window.endingReplayOptions?.(window.gameScenario) || {});
+        }
+        window.BondVisualiser.open(opts);
       } else {
         console.warn('[ObjectivesManager] window.BondVisualiser is not defined');
       }

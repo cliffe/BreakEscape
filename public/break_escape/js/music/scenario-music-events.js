@@ -19,7 +19,7 @@
  */
 
 import MusicController from './music-controller.js';
-import { buildEndSequence } from './closing-sequence.js';
+import { buildEndSequence, replayEndingEntry } from './closing-sequence.js';
 
 const TAG = '[ScenarioMusic]';
 
@@ -53,6 +53,24 @@ function evaluateCondition(condition, data) {
         return false;
     }
 }
+
+/**
+ * Options for the credits screen on reload of a concluded game: the same card and
+ * credits the live ending showed, rebuilt from the saved globals. No music or
+ * forced-close options, since nothing is playing. Null when the scenario has none.
+ * @param {object} scenario - window.gameScenario
+ * @param {object} [globals] - defaults to window.gameState.globalVariables
+ */
+export function endingReplayOptions(scenario, globals) {
+    const found = replayEndingEntry(
+        scenario?.music?.events,
+        globals || window.gameState?.globalVariables || {},
+        (cond, data) => evaluateCondition(cond, data)
+    );
+    if (!found) return null;
+    return { credits: found.sequence, headerText: found.entry.headerText, statusText: found.entry.statusText };
+}
+if (typeof window !== 'undefined') window.endingReplayOptions = endingReplayOptions;
 
 /**
  * Check whether any still-alive hostile NPC exists.
