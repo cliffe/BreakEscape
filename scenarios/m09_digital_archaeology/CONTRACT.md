@@ -1062,3 +1062,6 @@ Voiced delta: +4 (Netherton's confirm; Sorensen's shredder greeting, reply and r
 - R2-n8: the E-M4 entry above now quotes the shipped hub line.
 
 Voiced delta: +1 (Netherton, the debrief line), 384 → 385 by `TtsLineExtractor`. The task titles, hub line and HaX text are unvoiced.
+
+**Teaching R2, VM-adjacent** (opus48, checked against the finale VM plan's F12/F13 gating; no SecGen or exploit-detail file beyond the plan was opened). The one m09 item that sits next to VM content:
+- R2-n2: the hub topic "[I'm on his box. Where do I look?]", `flag3_submitted` arm, gains a second line naming why flag 4 needs full control: "The copy job runs as the box's keeper. To read it, you have to be the keeper." True to the VM: flag 4 is root on `tomb_beta_server`, and the mirror job to Tomb Gamma sits in root's home, readable only at keeper (root) level, as flag 2's ledger did on the catalogue server (FINALE_VM_PLAN §1; §6 m09 flag 4). Concept level, no technique. Unvoiced hub ink, so no voiced delta.

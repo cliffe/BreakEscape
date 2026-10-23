@@ -212,3 +212,4 @@ No audio exists yet, so nothing is orphaned by the change. The officers' m09 and
 - 2026-10-23 m10 targeted check R2 fixes: 0 voiced changes (mappings only).
 - 2026-10-23 m09 teaching R2: +1 voiced, Netherton's debrief line "A staff credential, seven years live. Every leaver's account is being checked before Monday." (R2-n5; 384 → 385 by TtsLineExtractor). R2-m1/m4/m5 are task titles, hub ink and a HaX text, all unvoiced.
 - 2026-10-23 m10 teaching R2: +4 Narrator (exchange-3 landed line, by landed_count()); 0 reworded.
+- 2026-10-23 m10 teaching R2, VM-adjacent (opus48): 0 new, 1 reworded (the `console_stop` Narrator line gains "the way his kill config said it would", R2-m3); its clip needs regenerating. The R2-m2/m3 HaX texts, R2-n9 hub row and R2-n3 credential-word edits are unvoiced; m09 R2-n2 is unvoiced hub ink (0 voiced).

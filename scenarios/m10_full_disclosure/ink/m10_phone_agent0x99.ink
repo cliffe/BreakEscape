@@ -129,8 +129,8 @@ VAR hax_suspect = ""
     The core. Hear him out.
 - outer_lock_open:
     // Dialogue R4 m3: true after a reload at the post; names the find.
-    // Scenario design R5 n2: a login, so the key stays Tesseract's.
-    The core. His box first. The login's beside his terminal.
+    // Scenario design R5 n2: the word "key" stays Tesseract's. Teaching R2-n3 (opus48): flag 4's find is an access code (a single token), not a login account, so HaX and the envelope both say "access code".
+    The core. His box first. The access code's beside his terminal.
 - gallery_open:
     Up the stair. The lock's at the end.
 // Dialogue R3 n8: the pull waiting, whatever else is done.
@@ -142,8 +142,8 @@ VAR hax_suspect = ""
     // Dialogue R4 m3: names the find.
     Get under the release service. The hatch in the sealed section. The duty sheet from the east racks has the login.
 - server_hall_entered:
-    // Handoff B7: flag 2's find, by its station.
-    The console takes the staging copy. Its sign-in card's on the desk beside it.
+    // Handoff B7: flag 2's find, by its station. Teaching R2-n9 (opus48): the staging copy sits on the monitoring host already held, behind its own sign-in; one box, separate stores.
+    The console takes the staging copy. It sits on their monitoring host, behind its own sign-in. The card's on the desk beside it.
 - gallery_shutter_cut:
     Server hall's through there.
 // Dialogue R1 m15, puzzle chains P1: in the power room, the job is the shutter, and who does it.
@@ -599,9 +599,9 @@ There's a maintenance tag on their gate terminal's lead. Their service login's o
 // VM gating F12: the steer names its find.
 // Puzzle chains R3 M1: the key is in the core, left out by him.
 // Dialogue R4 §5: the envelope first, and one "left".
-// Scenario design R5 n2: an envelope with a login, not a key.
+// Scenario design R5 n2: an envelope, not a key. Teaching R2-n3 (opus48): its find is an access code (a single token), not a login account.
 // Dialogue R5 n2/n4, puzzle chains R4 n4: beside the terminal, on the desk; one "his box".
-He's left an envelope beside his terminal, stamped CORE. His login's in it. He wants you on his box.
+He's left an envelope beside his terminal, stamped CORE. His access code's in it. He wants you on his box.
 He walled it off, the same way the release service was. You've broken out of one of those tonight.
 He'll have kept himself a way out. Find it.
 -> support_hub

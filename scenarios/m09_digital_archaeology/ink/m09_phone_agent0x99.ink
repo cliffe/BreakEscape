@@ -734,6 +734,8 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     {flag3_submitted:
         // VM hint, flag 4: checked against the VM plan (opus48). Name the target, imply no live link ("set to copy", as hour_read).
         Now all of it. Something on there is set to copy to Tomb Gamma. Take the whole box and we'll see what.
+        // Teaching R2-n2 (opus48): why full control — the mirror job sits where only the box's keeper (root) can read it, as flag 2's ledger did.
+        The copy job runs as the box's keeper. To read it, you have to be the keeper.
     - else:
         // VM hint, flag 3: checked against the VM plan (opus48). Line kept vague: the owner reveal is the player's to make, not spoken here.
         First, whose box it is. Somebody set it up and never handed it back.

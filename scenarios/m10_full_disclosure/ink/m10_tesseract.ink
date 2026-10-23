@@ -944,7 +944,7 @@ Dr Adrian Tesseract: That's my argument. The key is yours to use or not.
         Agent HaX: Service door. He always builds his own way out first.
     }
 }
-Narrator: The release goes dead under your hands. He doesn't try to stop you.
+Narrator: The release goes dead under your hands, the way his kill config said it would. He doesn't try to stop you.
 {
 - m09_reading_finished and m09_cage_bin != "derek_file":
     Dr Adrian Tesseract: Then I was wrong about two things.
