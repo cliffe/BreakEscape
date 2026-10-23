@@ -205,6 +205,7 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
         onComplete: (success, result) => {
             if (success) {
                 console.log('LOCKPICK SUCCESS');
+                window.expectContainerAfterUnlock?.(lockable);
                 window.gameAlert('Successfully picked the lock!', 'success', 'Lockpicking', 4000);
                 callback(true);
             } else {
@@ -444,6 +445,7 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 const successMsg = unlockMethod === 'lockpick'
                     ? 'Successfully picked the lock!'
                     : 'Successfully unlocked with the correct key!';
+                window.expectContainerAfterUnlock?.(lockable, type);
                 window.gameAlert(successMsg, 'success', 'Unlock Successful', 4000);
                 // Small delay to ensure minigame cleanup completes before room loading
                 if (unlockTargetCallback) {
@@ -550,6 +552,7 @@ export function startPinMinigame(lockable, type, correctPin, callback) {
         onComplete: (success, result) => {
             if (success) {
                 console.log('PIN MINIGAME SUCCESS');
+                window.expectContainerAfterUnlock?.(lockable, type);
                 window.gameAlert(`Correct PIN! The ${type} is now unlocked.`, 'success', 'PIN Accepted', 4000);
                 callback(true, result); // Pass result with serverResponse
             } else {
@@ -607,6 +610,7 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
         onComplete: (success, result) => {
             if (success) {
                 console.log('PASSWORD MINIGAME SUCCESS');
+                window.expectContainerAfterUnlock?.(lockable, type);
                 window.gameAlert(`Correct password! The ${type} is now unlocked.`, 'success', 'Password Accepted', 4000);
                 callback(true, result); // Pass result with serverResponse
             } else {

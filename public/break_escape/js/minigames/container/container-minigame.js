@@ -913,6 +913,14 @@ export function returnToContainerAfterNotes() {
                 containerState.contents.splice(itemIndex, 1);
             }
             
+            // The container reopens just below, so this toast waits for it with the
+            // others. Shown now it was pulled back by the container opening and shown
+            // again when it closed: "has been noted" twice (F13, engine F24).
+            window.expectPanelWithin?.(1000);
+            // The container reopens just below, so this toast waits for it with the
+            // others. Shown now it was pulled back by the container opening and shown
+            // again when it closed: "has been noted" twice (F13, engine F24).
+            window.expectPanelWithin?.(1000);
             window.gameAlert(`${containerState.itemToTake.name} has been noted`, 'success', 'Added to Notes', 2000);
         }
         

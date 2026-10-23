@@ -24,8 +24,47 @@ export function shouldHoldNotification(type, panelOpen) {
     return !!panelOpen && HOLDABLE_TYPES.has(type);
 }
 
+// A panel the caller knows is about to open (a container that auto-opens 500 ms after
+// the unlock toast). Info and success toasts raised in that window wait for the panel
+// instead of being shown, pulled back when it opens and shown again when it closes: that
+// glimpse-then-replay was the "Password Accepted", "Task Complete" and "has been noted"
+// toasts appearing twice (m10 blind playtest F13, engine F24).
+let panelExpectedUntil = 0;
+
+export function expectPanelWithin(ms, now = Date.now()) {
+    panelExpectedUntil = Math.max(panelExpectedUntil, now + ms);
+}
+
+export function panelExpected(now = Date.now()) {
+    return now < panelExpectedUntil;
+}
+
+export function clearExpectedPanel() {
+    panelExpectedUntil = 0;
+}
+
+/**
+ * An unlocked container opens by itself 500 ms after the unlock toast (unlockTarget).
+ * Call before that toast so it waits for the container instead of showing, being pulled
+ * back when the container opens and showing again when it closes. Doors and locks with
+ * nothing inside open no panel. Returns true when a panel is expected.
+ */
+export function expectContainerAfterUnlock(lockable, type) {
+    if (type === 'door' || lockable?.doorProperties) return false;
+    const contents = lockable?.scenarioData ? lockable.scenarioData.contents : lockable?.contents;
+    if (!contents) return false;
+    expectPanelWithin(1500);
+    return true;
+}
+
+if (typeof window !== 'undefined') {
+    window.expectContainerAfterUnlock = expectContainerAfterUnlock;
+    window.expectPanelWithin = expectPanelWithin;
+    window.clearExpectedPanel = clearExpectedPanel;
+}
+
 function releaseHeldNotifications() {
-    if (fullScreenPanelOpen()) return;
+    if (fullScreenPanelOpen() || panelExpected()) return;
     clearInterval(holdTimer);
     holdTimer = null;
     heldNotifications.splice(0).forEach((args) => renderNotification(...args));
@@ -89,7 +128,7 @@ if (typeof window !== 'undefined') window.holdRecentNotifications = holdRecentNo
 
 // Show a notification instead of using alert()
 export function showNotification(message, type = 'info', title = '', duration = 5000) {
-    if (shouldHoldNotification(type, fullScreenPanelOpen())) {
+    if (shouldHoldNotification(type, fullScreenPanelOpen() || panelExpected())) {
         // The same toast raised twice while a panel is open (two code paths announcing one
         // event) shows once
         if (isQueuedDuplicate(heldNotifications, message, type, title)) return null;

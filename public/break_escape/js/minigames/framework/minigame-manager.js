@@ -177,6 +177,8 @@ export const MinigameFramework = {
         // A task or pickup toast raised just before this opened waits for it to close
         // (notifications.js; m07 confirmation N1)
         window.holdRecentNotifications?.();
+        // The panel the toasts were waiting for is here: it holds them from now on
+        window.clearExpectedPanel?.();
         this.currentMinigame.init();
         this.currentMinigame.start();
         
