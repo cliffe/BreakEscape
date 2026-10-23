@@ -761,7 +761,8 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
         }
     - keypad_topic_asks == 2:
         // Educational R1 E-M2: the season's first keyed cipher, against m02's encodings.
-        It's Vigenère. A cipher this time, not an encoding. Without the key, nobody reads it.
+        // Teaching R2-m4: keyed, and still breakable without the key.
+        It's Vigenère. A cipher this time: it needs a key, where an encoding doesn't. It can be broken without one, but not tonight.
         The key is the salvage bay's word, on the chart by the keypad.
     - else:
         ROT13 moved every letter thirteen places. This moves each letter by the next letter of the key.

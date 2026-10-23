@@ -239,6 +239,8 @@ hax_maps << text_map("global_variable_changed:cage_opened", "value === true && g
 hax_maps << { "eventPattern" => "global_variable_changed:nightshade_file_held", "condition" => "value === true && globalVars.cage_opened && !globalVars.legacy_clock_run", "onceOnly" => true, "setGlobal" => { "legacy_clock_run" => true } }
 hax_maps << { "eventPattern" => "room_exited", "condition" => "data.roomId === 'restricted_cage' && globalVars.cage_opened && !globalVars.legacy_clock_run", "setGlobal" => { "legacy_clock_run" => true } }
 hax_maps << text_map("room_entered:restricted_cage", nil, "That cabinet takes a print. She stamps everything.", delay: 2000)
+# Teaching R2-m5: the biometric lesson, once the print has opened the cabinet.
+hax_maps << text_map("objective_task_completed:open_plan_cabinet", nil, "She can change a PIN tomorrow. She can't change her thumb, and she's left it on every stamp she owns.", delay: 2000)
 # Alignment R6 r6-1: not once the cage is open (she has left the hatch).
 hax_maps << text_map("room_entered", "globalVars.flag2_submitted && !globalVars.hatch_talked && !globalVars.cage_opened", "She's still feeding it.")
 
@@ -703,7 +705,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
         { "taskId": "get_inside", "title": "Get inside the archive", "type": "custom", "status": "active" },
         { "taskId": "meet_the_clerk", "title": "Talk to the clerk at the front desk", "type": "npc_conversation", "targetNPC": "noor_haddad", "status": "active", "optional": true },
         { "taskId": "set_up_drop_terminal", "title": "Set up the field laptop in the reading room", "type": "custom", "status": "active" },
-        { "taskId": "submit_catalogue_flag", "title": "Get into the catalogue server and submit the flag", "type": "submit_flags",
+        { "taskId": "submit_catalogue_flag", "title": "Get into the catalogue server and submit the flag at the drop terminal", "type": "submit_flags",
           "targetFlags": ["drop_terminal:catalogue_server-flag1"], "targetCount": 1, "currentCount": 0, "showProgress": true, "status": "active",
           "puzzle_graph_unlocks": "restricted_stacks" }
       ]
@@ -733,7 +735,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       "order": 2,
       "unlockCondition": { "aimCompleted": "get_in" },
       "tasks": [
-        { "taskId": "submit_ledger_flag", "title": "Pull the Initiative's ledger off the catalogue server and submit it", "type": "submit_flags",
+        { "taskId": "submit_ledger_flag", "title": "Pull the Initiative's ledger off the catalogue server and submit it at the drop terminal", "type": "submit_flags",
           "targetFlags": ["drop_terminal:catalogue_server-flag2"], "targetCount": 1, "currentCount": 0, "showProgress": true, "status": "active" },
         { "taskId": "answer_the_offer", "title": "Answer the Recruiter's offer", "type": "custom", "status": "locked", "puzzle_graph_unlocks": "sorensen_office" },
         { "taskId": "cross_reference_wren", "title": "Find WREN's file among Harwick & Lowe's boxes in the open stacks", "type": "custom", "status": "locked", "optional": true }
@@ -764,10 +766,10 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       "tasks": [
         { "taskId": "enter_tape_room", "title": "Get into the tape room", "type": "enter_room", "targetRoom": "tape_room", "status": "active" },
         { "taskId": "open_salvage_cage", "title": "Get through the salvage cage keypad", "type": "unlock_room", "targetRoom": "salvage_cage", "status": "active" },
-        { "taskId": "submit_owner_flag", "title": "Find out who owns Tomb Beta's server and submit it", "type": "submit_flags",
+        { "taskId": "submit_owner_flag", "title": "Find out who owns Tomb Beta's server and submit it at the drop link in the salvage cage", "type": "submit_flags",
           "targetFlags": ["tomb_beta_station:tomb_beta_server-flag1"], "targetCount": 1, "currentCount": 0, "showProgress": true, "status": "active" },
         { "taskId": "hear_the_name", "title": "Take the call with HaX and Netherton", "type": "custom", "status": "locked" },
-        { "taskId": "submit_control_flag", "title": "Take full control of Tomb Beta's server and submit it", "type": "submit_flags",
+        { "taskId": "submit_control_flag", "title": "Take full control of Tomb Beta's server and submit it at the drop link", "type": "submit_flags",
           "targetFlags": ["tomb_beta_station:tomb_beta_server-flag2"], "targetCount": 1, "currentCount": 0, "showProgress": true, "status": "active" },
         { "taskId": "hear_the_mirror_job", "title": "Hear what the server is mirroring to Tomb Gamma", "type": "custom", "status": "locked" },
         { "taskId": "send_the_notice", "title": "Send his vendor notice, or hold it", "type": "custom", "status": "locked", "optional": true }

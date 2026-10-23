@@ -284,6 +284,8 @@ Narrator: He reads the first name off the card. He doesn't look down for the sec
 - else:
     Director Magnus Netherton: Sun River. Analysis found the lease an hour ago. It was in Mrs Sorensen's office all night. That is where the order sends us.
 }
+// Teaching R2-n5: the account lesson, brought back as a consequence (voiced).
+Director Magnus Netherton: A staff credential, seven years live. Every leaver's account is being checked before Monday.
 Narrator: He lays the Montana order on a crate and uncaps a pen.
 // R3 I-7: the ruthless save, remembered once (pays off the briefing's
 // "Nobody mentions why.").

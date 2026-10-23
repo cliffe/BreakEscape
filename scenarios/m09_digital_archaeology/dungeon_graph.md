@@ -125,13 +125,13 @@ flowchart TD
   field_kit_link["Field Kit Link"]
   crate_stencilled_beta{"Crate, Stencilled BETA"}
   andgate1((" + "))
-  vmch_submit_catalogue_flag["Get into the catalogue server and submit the flag"]
+  vmch_submit_catalogue_flag["Get into the catalogue server and submit the flag at the drop terminal"]
   vmfl_submit_catalogue_flag{"Catalogue Flag"}
-  vmch_submit_ledger_flag["Pull the Initiative's ledger off the catalogue server and submit it"]
+  vmch_submit_ledger_flag["Pull the Initiative's ledger off the catalogue server and submit it at the drop terminal"]
   vmfl_submit_ledger_flag{"Ledger Flag"}
-  vmch_submit_owner_flag["Find out who owns Tomb Beta's server and submit it"]
+  vmch_submit_owner_flag["Find out who owns Tomb Beta's server and submit it at the drop link in the salvage cage"]
   vmfl_submit_owner_flag{"Owner Flag"}
-  vmch_submit_control_flag["Take full control of Tomb Beta's server and submit it"]
+  vmch_submit_control_flag["Take full control of Tomb Beta's server and submit it at the drop link"]
   vmfl_submit_control_flag{"Control Flag"}
   server_closet("IT -- Authorised Contractors Only")
 
@@ -341,13 +341,13 @@ flowchart TD
   field_kit_link["Field Kit Link"]
   crate_stencilled_beta{"Crate, Stencilled BETA"}
   andgate1((" + "))
-  vmch_submit_catalogue_flag["Get into the catalogue server and submit the flag"]
+  vmch_submit_catalogue_flag["Get into the catalogue server and submit the flag at the drop terminal"]
   vmfl_submit_catalogue_flag{"Catalogue Flag"}
-  vmch_submit_ledger_flag["Pull the Initiative's ledger off the catalogue server and submit it"]
+  vmch_submit_ledger_flag["Pull the Initiative's ledger off the catalogue server and submit it at the drop terminal"]
   vmfl_submit_ledger_flag{"Ledger Flag"}
-  vmch_submit_owner_flag["Find out who owns Tomb Beta's server and submit it"]
+  vmch_submit_owner_flag["Find out who owns Tomb Beta's server and submit it at the drop link in the salvage cage"]
   vmfl_submit_owner_flag{"Owner Flag"}
-  vmch_submit_control_flag["Take full control of Tomb Beta's server and submit it"]
+  vmch_submit_control_flag["Take full control of Tomb Beta's server and submit it at the drop link"]
   vmfl_submit_control_flag{"Control Flag"}
   server_closet("IT -- Authorised Contractors Only")
   aim_get_in{{"Get In And Set Up The Drop Terminal"}}

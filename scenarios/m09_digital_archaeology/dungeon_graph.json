@@ -340,7 +340,7 @@
     },
     {
       "id": "vmch_submit_catalogue_flag",
-      "label": "Get into the catalogue server and submit the flag",
+      "label": "Get into the catalogue server and submit the flag at the drop terminal",
       "kind": "vm",
       "optional": false
     },
@@ -352,7 +352,7 @@
     },
     {
       "id": "vmch_submit_ledger_flag",
-      "label": "Pull the Initiative's ledger off the catalogue server and submit it",
+      "label": "Pull the Initiative's ledger off the catalogue server and submit it at the drop terminal",
       "kind": "vm",
       "optional": false
     },
@@ -364,7 +364,7 @@
     },
     {
       "id": "vmch_submit_owner_flag",
-      "label": "Find out who owns Tomb Beta's server and submit it",
+      "label": "Find out who owns Tomb Beta's server and submit it at the drop link in the salvage cage",
       "kind": "vm",
       "optional": false
     },
@@ -376,7 +376,7 @@
     },
     {
       "id": "vmch_submit_control_flag",
-      "label": "Take full control of Tomb Beta's server and submit it",
+      "label": "Take full control of Tomb Beta's server and submit it at the drop link",
       "kind": "vm",
       "optional": false
     },
