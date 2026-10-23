@@ -348,13 +348,14 @@ flowchart TD
   rc_npc_gareth_fairbairn_9("Gareth Fairbairn")
   rc_npc_ruth_adeyemi_10("Ruth Adeyemi")
   rc_osint_workstation_11{"OSINT Workstation"}
-  rc_mail_workstation_12{"Mail Workstation"}
-  rc_page_builder_13{"Page Builder"}
-  rc_desk_phone_14{"Desk Phone"}
-  rc_npc_dev_15("Dev")
-  rc_triage_workstation_16{"Triage Workstation"}
-  rc_soc_board_17{"SOC Board"}
-  rc_npc_tomasz_18("Tomasz")
+  rc_recon_info_screen_12{"Wall Display"}
+  rc_mail_workstation_13{"Mail Workstation"}
+  rc_page_builder_14{"Page Builder"}
+  rc_desk_phone_15{"Desk Phone"}
+  rc_npc_dev_16("Dev")
+  rc_triage_workstation_17{"Triage Workstation"}
+  rc_soc_board_18{"SOC Board"}
+  rc_npc_tomasz_19("Tomasz")
 
   engagement_office --> recon_room
   engagement_office --> operations_room
@@ -370,17 +371,18 @@ flowchart TD
   engagement_office --> rc_npc_gareth_fairbairn_9
   engagement_office --> rc_npc_ruth_adeyemi_10
   recon_room --> rc_osint_workstation_11
-  operations_room --> rc_mail_workstation_12
-  operations_room --> rc_page_builder_13
-  operations_room --> rc_desk_phone_14
-  operations_room --> rc_npc_dev_15
-  blue_team_room --> rc_triage_workstation_16
-  blue_team_room --> rc_soc_board_17
-  blue_team_room --> rc_npc_tomasz_18
+  recon_room --> rc_recon_info_screen_12
+  operations_room --> rc_mail_workstation_13
+  operations_room --> rc_page_builder_14
+  operations_room --> rc_desk_phone_15
+  operations_room --> rc_npc_dev_16
+  blue_team_room --> rc_triage_workstation_17
+  blue_team_room --> rc_soc_board_18
+  blue_team_room --> rc_npc_tomasz_19
 
   class engagement_office room
   class recon_room,operations_room,blue_team_room lock
-  class rc_roe_sheet_1,rc_planning_whiteboard_2,rc_recon_board_3,rc_report_workstation_4,rc_recon_key_6,rc_operations_key_7,rc_blue_team_key_8,rc_osint_workstation_11,rc_mail_workstation_12,rc_page_builder_13,rc_desk_phone_14,rc_triage_workstation_16,rc_soc_board_17 item
-  class rc_npc_ruth_adeyemi_5,rc_npc_gareth_fairbairn_9,rc_npc_ruth_adeyemi_10,rc_npc_dev_15,rc_npc_tomasz_18 npc
+  class rc_roe_sheet_1,rc_planning_whiteboard_2,rc_recon_board_3,rc_report_workstation_4,rc_recon_key_6,rc_operations_key_7,rc_blue_team_key_8,rc_osint_workstation_11,rc_recon_info_screen_12,rc_mail_workstation_13,rc_page_builder_14,rc_desk_phone_15,rc_triage_workstation_17,rc_soc_board_18 item
+  class rc_npc_ruth_adeyemi_5,rc_npc_gareth_fairbairn_9,rc_npc_ruth_adeyemi_10,rc_npc_dev_16,rc_npc_tomasz_19 npc
   class node_start start
 ```
