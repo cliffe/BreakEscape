@@ -1,41 +1,26 @@
-# Deduction plan: resume note (2026-10-22, session limit hit)
+# Deduction plan: resume note (2026-10-23)
 
-**Read first:** `DEDUCTION_IMPLEMENTATION_PLAN.md` (the plan, 3,839 lines; §13.1 user decisions,
-§14 review log), `DECISIONS_PENDING.md` (Q1–Q9, all answered), `APPROVAL_LOG.md` (AP-1, AP-2 pending).
+**Status: the plan is ready to build.** `DEDUCTION_IMPLEMENTATION_PLAN.md` (5,285 lines) passed nine
+review rounds; R9 found no blockers or majors and applied its five minors. §13.1 holds the user's
+decisions (Q1–Q9), §14 the full review log, `APPROVAL_LOG.md` the two deferred approvals (AP-1, AP-2).
 
-## Done
+## What exists
 
-- Review rounds R1–R4 (three Opus reviewers each: engine, design, integration), all folded in.
-- Workflow round R5: 18 finders (11 lenses + 7 builder dry-runs/critic), 3-vote verification;
-  82 confirmed (15 major, 67 minor), all applied (`REVIEW_R5_CONSOLIDATED.md`, plan §14).
-- Sidecar (`sidecar/`): evaluator prototype exhaustively checked fixtures (`SIM_REPORT.md`, 8
-  disagreements), player tests per fixture (3 personas + judge), design/learning/stress/copy/mockup/
-  accessibility reviews, ranked `SIDECAR_RECOMMENDATIONS.md` (38 items).
-- Fixture drafts (`sidecar/drafts/A–D/`): scenario, ink, bridges drafted, compiled and linted;
-  `PLAN_GAPS.md` per fixture (A had 7 blockers: unlockable list, phone-chat mode, verdict-tag timing,
-  player phone, lockpickable sanctum, ending trigger, route places).
-- User decisions Q5–Q9 adopted (active clear verdict, "Let them go" in C, nudge says how not which,
-  corporate nouns, `deduction.voice`). **Not yet in the plan.**
+- The plan, with the user's decisions, data contract, engine items S16+, lints DL1–DL23, fixtures A–D,
+  packets P10-* in waves 0–5, tests, risks and spikes.
+- `sim/`: the evaluator prototype and fixture models used to check every fixture exhaustively
+  (P10-A ports it to `test/js/fixtures/social_deduction/atoms.js`).
+- `sidecar/`: simulation, player tests, design, learning, copy, mockup and accessibility work, and
+  compiled fixture drafts (`sidecar/drafts/A–D/`) that builders can compare against.
+- `integration/`: the verified integration items and `FOLD_LEDGER.md` (105 items, all applied).
+- Review files R1–R9.
 
-## Interrupted by the session limit
+## To start building (orchestrator, plan §2 and §10.3)
 
-1. **R6 of the finalisation workflow:** finders mostly ran; merge, verify and fix did not. Resume with
-   `Workflow({scriptPath: "<session>/workflows/scripts/deduction-plan-finalise-wf_213b5996-74e.js",
-   resumeFromRunId: "wf_213b5996-74e"})` — finished agents replay from cache. (Session dir:
-   `~/.claude/projects/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/f343dc8a-c9f7-426c-b0b8-fbe5002f3392/`.)
-2. **Integration prep:** the five mergers and the dedupe finished (94 items, saved in
-   `INTEGRATION_ITEMS_UNVERIFIED.json`); every verifier failed on the limit. **The "94 rejected" in that
-   run's result is an artefact of errors, not a judgement.** Resume the same way with
-   `deduction-integration-prep-wf_3bfce0bf-8ba.js` / `wf_3bfce0bf-8ba`. Many items may already be
-   covered by R5's fixes; the verifiers check against the current plan.
+1. Add the "Phase 10: deduction" block to `docs/agents/SE_BUILD_BRIEF.md`, a resume pointer in
+   `SE_BUILD_LOG.md`, and create `DEDUCTION_BUILD_LOG.md`.
+2. Run wave 0 (P10-B0 baseline, spikes P10-F1–F4 in the untracked spike scenario), then waves 1–5.
+3. P10-X1 adds the SE README, `IMPLEMENTATION_PLAN.md` and design 00 rows once the code exists.
 
-## Still to do, in order
-
-1. Finish R6 (resume above) so R5's edits are reviewed.
-2. Verify the 94 integration items (resume above) → `INTEGRATION_INPUT.md`.
-3. One fixer folds the confirmed integration items and Q5–Q9 into the plan (exact-match edits; §13.1
-   gets Q5–Q9; §14 gets a block).
-4. A final review round over the integration changes (fixture logic again: re-run the `sidecar`
-   simulator in the scratchpad if still present, or rebuild it from `SIM_REPORT.md`'s method).
-5. Commit the planning docs (explicit paths), then add the Phase 10 pointer to the SE README,
-   `IMPLEMENTATION_PLAN.md` phase table and `SE_BUILD_BRIEF` (plan §10.3 names the owners).
+Rounds R1–R4 were single-agent reviews in three lenses; R5 a workflow round; R6–R9 agent rounds with
+simulator checks. Counts per round are in plan §14.
