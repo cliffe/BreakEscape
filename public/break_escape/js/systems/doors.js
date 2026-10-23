@@ -17,6 +17,7 @@ import {
 } from '../utils/constants.js';
 import { handleUnlock, notifyServerUnlock } from './unlock-system.js';
 import { isRepeatInteraction } from './interaction-repeat.js';
+import { waitForRoomReady } from './room-ready.js';
 
 let gameRef = null;
 let rooms = null;
@@ -702,11 +703,12 @@ function openDoor(doorSprite) {
         // Load the connected room if it doesn't exist
         // Use window.rooms to ensure we see the latest state
         const needsLoading = !window.rooms || !window.rooms[props.connectedRoom];
+        let roomLoadPromise = null;
         if (needsLoading) {
             console.log(`Loading room: ${props.connectedRoom}`);
             if (window.loadRoom) {
                 // loadRoom is now async - fire and forget for door transitions
-                window.loadRoom(props.connectedRoom).catch(err => {
+                roomLoadPromise = window.loadRoom(props.connectedRoom).catch(err => {
                     console.error(`Failed to load room ${props.connectedRoom}:`, err);
                 });
             }
@@ -784,31 +786,21 @@ function openDoor(doorSprite) {
         // before manipulating its door sprites
         if (needsLoading) {
             console.log('Room just loaded, waiting for creation to complete...');
-            // Poll until the room actually exists in window.rooms
-            let attempts = 0;
-            const maxAttempts = 20; // Max 1 second (20 * 50ms)
-            const waitForRoom = () => {
-                attempts++;
-                // Check if room exists AND is fully initialized (has doorSprites array)
-                const room = window.rooms ? window.rooms[props.connectedRoom] : null;
-                const isFullyInitialized = room && room.doorSprites !== undefined;
-                
-                if (isFullyInitialized) {
-                    console.log(`Room ${props.connectedRoom} is now fully initialized (after ${attempts * 50}ms)`);
-                    processRoomDoors();
-                } else if (attempts >= maxAttempts) {
-                    console.error(`Room ${props.connectedRoom} failed to fully initialize after ${attempts * 50}ms`);
+            // Wait on loadRoom's own promise (resolves once createRoom has run),
+            // not a fixed delay: big rooms (ink story, many textures) take longer.
+            waitForRoomReady(
+                () => (window.rooms ? window.rooms[props.connectedRoom] : null),
+                roomLoadPromise
+            ).then(({ ready, timedOut, waitedMs, room }) => {
+                if (ready) {
+                    console.log(`Room ${props.connectedRoom} is now fully initialized (after ${waitedMs}ms)`);
+                } else {
+                    console.error(`Room ${props.connectedRoom} failed to fully initialize after ${waitedMs}ms${timedOut ? ' (timeout)' : ''}`);
                     console.error('Room state:', room);
                     // Try anyway as a last resort
-                    processRoomDoors();
-                } else {
-                    const roomExists = room !== null;
-                    const hasDoorSprites = room && room.doorSprites !== undefined;
-                    console.log(`Waiting for room ${props.connectedRoom}... (attempt ${attempts}), exists: ${roomExists}, doorSprites: ${hasDoorSprites}`);
-                    setTimeout(waitForRoom, 50);
                 }
-            };
-            waitForRoom();
+                processRoomDoors();
+            });
         } else {
             console.log('Room already exists, processing doors immediately');
             processRoomDoors();
