@@ -131,6 +131,7 @@ function buildOrientation(pattern, size, sp, rng) {
         const cy = 0.55 * N;
         const w = 0.2 * N, h = 0.28 * N;
         const k = 3 + rng() * 0.6;
+        sp.centre = { x: cx, y: cy }; // the top of the hump, the arch's reference point
         for (let y = 0; y < N; y++) {
             for (let x = 0; x < N; x++) {
                 const e = Math.exp(-(((y - cy) / h) ** 2));
@@ -389,7 +390,8 @@ function resolveVariant(variant, size, partial) {
  * @returns {{size:number, owner:string, pattern:string, ridges:Float32Array, mask:Float32Array,
  *   cores:{x:number,y:number}[], deltas:{x:number,y:number}[],
  *   minutiae:{x:number,y:number,type:'ending'|'bifurcation',ux:number,uy:number}[],
- *   bounds:{x:number,y:number,w:number,h:number},
+ *   bounds:{x:number,y:number,w:number,h:number}, centre:{x:number,y:number},
+ *   canonical:{cores:Object[], deltas:Object[], centre:{x:number,y:number}, opens:('left'|'right'|null)},
  *   transform:{rotation:number,dx:number,dy:number,cutAngle:(number|null),cutOffset:number}}}
  *   `ridges` and `mask` are row-major 0..1. `minutiae` are in this print's frame; `ux`/`uy` are the
  *   canonical coordinates, equal for the same finger across variants. `bounds` bounds mask > 0.5.
@@ -481,7 +483,20 @@ export function generatePrint({ owner, pattern, size = 128, variant = null, part
     }
     const bounds = x1 < 0 ? { x: 0, y: 0, w: 0, h: 0 } : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
 
-    return { size: N, owner, pattern: pat, ridges, mask, cores, deltas, minutiae, bounds, transform: tf };
+    // Canonical (upright card) frame: the reference point the comparison marks are placed round
+    // (the core, the middle of a whorl's two cores, or the summit of an arch) and, for a loop,
+    // which way it opens (the side away from the delta).
+    const canonCentre = pat === 'arch' ? sp.centre
+        : { x: sp.cores.reduce((t, c) => t + c.x, 0) / sp.cores.length, y: sp.cores.reduce((t, c) => t + c.y, 0) / sp.cores.length };
+    const canonical = {
+        cores: sp.cores.map(c => ({ x: c.x, y: c.y })),
+        deltas: sp.deltas.map(d => ({ x: d.x, y: d.y })),
+        centre: { x: canonCentre.x, y: canonCentre.y },
+        opens: pat === 'loop' ? (sp.side > 0 ? 'left' : 'right') : null
+    };
+    const centre = toFinal(canonCentre.x, canonCentre.y);
+
+    return { size: N, owner, pattern: pat, ridges, mask, cores, deltas, minutiae, bounds, transform: tf, centre, canonical };
 }
 
 /** Parse '#rgb', '#rrggbb', 'rgb(...)' / 'rgba(...)' to [r, g, b]. */

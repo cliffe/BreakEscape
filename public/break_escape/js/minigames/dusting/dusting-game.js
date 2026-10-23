@@ -16,6 +16,7 @@ import {
     SURFACES, POWDERS, TOOLS, DIFFICULTY, DustField, TapeGrid, surfaceForObject, contrastFactor,
     liftQuality, ratingFor, developedDensity, wrongPowderReason, decoyPatterns
 } from './dusting-model.js';
+import { pickLiftMarks, pickDecoyMarks, compareFeatures, featuresOf, mismatchReason, REF_WORDS } from './print-features.js';
 import { ART_SLOTS, SURFACE_SLOT, preloadArt, onArtLoaded, drawSlot, artRect, hasArt, slotCanvas, refreshSlotCanvases } from './dusting-art.js';
 import { displayNameForOwner, bestLiftFromObject } from '../../systems/biometric-samples.js';
 import { displayDashes } from '../../utils/display-dashes.js';
@@ -68,7 +69,7 @@ const FORENSIC = {
     powder: 'Powder sticks to that residue. Examiners pick a powder that contrasts with the surface: dark on pale, light on dark, magnetic on textured plastic.',
     dust: 'Over-brushing fills the furrows between ridges and destroys the detail. Less is more.',
     lift: 'Lifting tape moves the powdered print onto a backing card, so it can be kept as evidence.',
-    compare: 'About 60 to 65% of prints are loops, 30 to 35% whorls and around 5% arches. Examiners compare minutiae: where ridges end or split.'
+    compare: 'About 60 to 65% of prints are loops, 30 to 35% whorls and around 5% arches. Examiners check the class first (the pattern, and which way a loop opens), then the minutiae: where ridges end or split.'
 };
 const FORENSIC_MATCH = 'England and Wales dropped the fixed 16-point standard in 2001; examiners now judge the whole comparison.';
 
@@ -123,6 +124,7 @@ function shiftPrint(p, sx, sy) {
     return {
         ...p, ridges, mask,
         cores: p.cores.map(mv), deltas: p.deltas.map(mv), minutiae: p.minutiae.map(mv),
+        centre: p.centre ? mv(p.centre) : p.centre,
         bounds: { x: p.bounds.x + sx, y: p.bounds.y + sy, w: p.bounds.w, h: p.bounds.h }
     };
 }
@@ -523,7 +525,13 @@ export class DustingMinigame extends MinigameScene {
                 <div class="dusting-refs">${this._refButtons(true)}</div>
                 <div class="dusting-buttons"><button class="dusting-btn dusting-primary" data-action="finish">Log the print</button></div>`;
         }
-        return `${head}<p>That is ${/^[aeiou]/i.test(this.print.pattern) ? 'an' : 'a'} ${PATTERN_INFO[this.print.pattern].label.toLowerCase()}, marked on the card. Now pick the reference card that matches your lift.</p>
+        const opens = this.print.pattern === 'loop' && this.print.canonical && this.print.canonical.opens
+            ? ` It opens to the ${this.print.canonical.opens}.` : '';
+        const legend = this.liftMarks && this.liftMarks.length
+            ? `<p class="dusting-legend">Now the minutiae, marked round ${REF_WORDS[this.print.pattern] || 'the core'} on every card (green + core, triangle delta): <span class="dusting-key-end" aria-hidden="true"></span> ridge ending, <span class="dusting-key-fork" aria-hidden="true"></span> fork. The matching card has the same marks in the same places.</p>`
+            : '';
+        return `${head}<p>That is ${/^[aeiou]/i.test(this.print.pattern) ? 'an' : 'a'} ${PATTERN_INFO[this.print.pattern].label.toLowerCase()}, marked on the card.${opens} Check the class first: rule out any card with a different pattern${this.print.pattern === 'loop' ? ' or a loop that opens the other way' : ''}.</p>
+            ${legend}
             <div class="dusting-refs">${this._refButtons(false)}</div>
             <p class="dusting-feedback" data-dyn="feedback"></p>
             <div class="dusting-buttons"><button class="dusting-btn" data-action="unidentified">Log as unidentified</button></div>`;
@@ -647,11 +655,10 @@ export class DustingMinigame extends MinigameScene {
             this.announce(`Match. This is ${this.ownerName}'s print. The numbered tags mark the same ridge detail on both cards.`);
         } else {
             c.rejected = true;
-            const lp = this.print.pattern;
-            const an = w => (/^[aeiou]/.test(w) ? 'an ' : 'a ') + w;
-            this.message = c.pattern !== lp
-                ? `No match: that card is ${an(PATTERN_INFO[c.pattern].label.toLowerCase())} and your lift is ${an(PATTERN_INFO[lp].label.toLowerCase())}.`
-                : 'No match: the ridge endings and forks near the core sit in different places. Compare them card by card.';
+            const diff = compareFeatures(this.liftFeatures, c.features);
+            this.message = diff.match
+                ? 'No match: the ridge endings and forks near the core sit in different places. Compare them card by card.'
+                : mismatchReason(diff, this.liftFeatures, c.features);
             this._renderPanel();
             this.announce(this.message);
         }
@@ -697,7 +704,16 @@ export class DustingMinigame extends MinigameScene {
         const names = [];
         const cand = Array.isArray(this.data.fingerprintCandidates) ? this.data.fingerprintCandidates : null;
         const ownerLc = String(this.ownerName).toLowerCase(), ownerRaw = String(this.owner).toLowerCase();
-        if (cand && cand.length) names.push(...cand);
+        // An entry may be a name, or { name, pattern } to fix that card's pattern class (F26).
+        const forced = new Map();
+        if (cand && cand.length) {
+            for (const e of cand) {
+                const nm = e && typeof e === 'object' ? (e.name || e.owner) : e;
+                if (!nm) continue;
+                names.push(nm);
+                if (e && typeof e === 'object' && PATTERNS.includes(e.pattern)) forced.set(String(nm), e.pattern);
+            }
+        }
         else {
             const npcs = window.npcManager && window.npcManager.npcs;
             if (npcs) {
@@ -727,7 +743,7 @@ export class DustingMinigame extends MinigameScene {
 
         const decoyClasses = decoyPatterns(lp, decoyNames.length, this.diff.decoySamePattern, seed, decoyNames.map(nm => patternForOwner(nm)));
         const decoys = decoyNames.map((nm, k) => {
-            const pattern = decoyClasses[k];
+            const pattern = forced.get(String(nm)) || decoyClasses[k];
             return { label: nm, pattern, print: cachedPrint({ owner: nm, pattern }), correct: false };
         });
         const correct = { label: this.ownerName, pattern: lp, print: cachedPrint({ owner: this.owner, pattern: lp }), correct: true };
@@ -736,6 +752,24 @@ export class DustingMinigame extends MinigameScene {
         list.splice(at, 0, correct);
         this.candidates = list.map((c, i) => ({ ...c, index: i, rejected: false }));
         this.correctIndex = at;
+        this._buildMarks();
+    }
+
+    /**
+     * F26: mark a few minutiae round the core on the lift and on every card, so the cards can be
+     * compared by eye. The owner's card carries the lift's marks; each decoy's marks are its own,
+     * picked so it differs from the lift in at least one feature (pattern, loop side or a minutia).
+     */
+    _buildMarks() {
+        const count = this.diff.marks ?? 3;
+        const ownerCard = this.candidates[this.correctIndex];
+        const { lift, card } = pickLiftMarks(this.print, ownerCard.print, count);
+        this.liftMarks = lift;
+        this.liftFeatures = featuresOf(this.print, lift);
+        for (const c of this.candidates) {
+            c.marks = c.correct ? card : pickDecoyMarks(this.liftFeatures, c.print, count);
+            c.features = featuresOf(c.print, c.marks);
+        }
     }
 
     // ------------------------------------------------------------------ input
@@ -1215,13 +1249,15 @@ export class DustingMinigame extends MinigameScene {
         const mark = dark ? '#00ff41' : '#0a6b2d';
         if (this.patternOk) {
             c.save(); c.strokeStyle = mark; c.fillStyle = mark; c.lineWidth = 1.5;
-            for (const k of this.print.cores) { c.beginPath(); c.arc(k.x, k.y, 4, 0, Math.PI * 2); c.stroke(); }
+            // F26: a cross for a core, so it is not mistaken for a ridge-ending ring
+            for (const k of this.print.cores) { c.beginPath(); c.moveTo(k.x - 4, k.y); c.lineTo(k.x + 4, k.y); c.moveTo(k.x, k.y - 4); c.lineTo(k.x, k.y + 4); c.stroke(); }
             for (const t of this.print.deltas) {
                 if (t.x < 0 || t.y < 0 || t.x >= N || t.y >= N) continue;
                 c.beginPath(); c.moveTo(t.x, t.y - 4); c.lineTo(t.x + 4, t.y + 3); c.lineTo(t.x - 4, t.y + 3); c.closePath(); c.stroke();
             }
             c.restore();
         }
+        if (this.patternOk && !this.identified && this.liftMarks) this._drawMarks(c, this.liftMarks, dark ? '#ffd23f' : '#b00020');
         if (this.identified) this._drawMatchTags(c, this.print, this._matches().map(m => m.lift), dark ? '#00ff41' : '#b00020', dark);
     }
 
@@ -1263,6 +1299,29 @@ export class DustingMinigame extends MinigameScene {
         c.restore();
     }
 
+    /** Marked minutiae: a ring for a ridge ending, a square for a fork. */
+    _drawMarks(c, marks, col) {
+        c.save(); c.strokeStyle = col; c.lineWidth = 1.5;
+        for (const m of marks) {
+            c.beginPath();
+            if (m.type === 'bifurcation') c.rect(m.x - 3.5, m.y - 3.5, 7, 7);
+            else c.arc(m.x, m.y, 4, 0, Math.PI * 2);
+            c.stroke();
+        }
+        c.restore();
+    }
+
+    /** Core rings and delta triangles on a reference card, as on the lift, so the class can be read on both. */
+    _drawCardSingulars(c, p) {
+        c.save(); c.strokeStyle = '#0a6b2d'; c.lineWidth = 1.5;
+        for (const k of p.cores) { c.beginPath(); c.moveTo(k.x - 4, k.y); c.lineTo(k.x + 4, k.y); c.moveTo(k.x, k.y - 4); c.lineTo(k.x, k.y + 4); c.stroke(); }
+        for (const t of p.deltas) {
+            if (t.x < 0 || t.y < 0 || t.x >= N || t.y >= N) continue;
+            c.beginPath(); c.moveTo(t.x, t.y - 4); c.lineTo(t.x + 4, t.y + 3); c.lineTo(t.x - 4, t.y + 3); c.closePath(); c.stroke();
+        }
+        c.restore();
+    }
+
     _drawReferences() {
         this.panel.querySelectorAll('.dusting-ref-canvas').forEach(cv => {
             const cand = this.candidates[Number(cv.dataset.ref)];
@@ -1275,6 +1334,8 @@ export class DustingMinigame extends MinigameScene {
                 d.data[j] = bgc[0] + (ink[0] - bgc[0]) * a; d.data[j + 1] = bgc[1] + (ink[1] - bgc[1]) * a; d.data[j + 2] = bgc[2] + (ink[2] - bgc[2]) * a; d.data[j + 3] = 255;
             }
             c.putImageData(d, 0, 0);
+            if (this.patternOk && !this.identified) this._drawCardSingulars(c, p);
+            if (this.patternOk && !this.identified && cand.marks) this._drawMarks(c, cand.marks, '#b00020');
             if (this.identified && cand.correct) this._drawMatchTags(c, p, this._matches().map(m => m.ref), '#b00020', false);
             const s = this.wide && this.candidates.length <= 2 ? 2 : 1;
             cv.style.width = `${N * s}px`; cv.style.height = `${N * s}px`;
@@ -1319,6 +1380,11 @@ export class DustingMinigame extends MinigameScene {
             debug: {
                 pattern: this.print.pattern,
                 correctCandidate: this.correctIndex >= 0 ? this.correctIndex : (this.patternOk ? this.correctIndex : null),
+                liftMarks: (this.liftMarks || []).map(m => ({ type: m.type, x: Math.round(m.x), y: Math.round(m.y), dx: Math.round(m.dx), dy: Math.round(m.dy) })),
+                cards: this.patternOk ? this.candidates.map(c => ({
+                    label: c.label, pattern: c.pattern, opens: c.features ? c.features.opens : null,
+                    marks: (c.marks || []).map(m => ({ type: m.type, x: Math.round(m.x), y: Math.round(m.y), dx: Math.round(m.dx), dy: Math.round(m.dy) }))
+                })) : [],
                 printCentre: { ...this.printCentre }
             }
         };

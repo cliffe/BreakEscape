@@ -95,15 +95,18 @@ export const POWDERS = {
  * - `findHintVisible`: a faint smudge shows in the find step without the torch.
  * - `partial`: 'never' | 'maybe' (about half the surfaces) | 'always' the print is cut by a straight edge.
  * - `sheenScale`: multiplier for the torch sheen's visibility radius.
+ * - `marks`: minutiae marked round the core on the lift and every card in the compare step (F26), so the
+ *   cards can be told apart by eye; the right card carries the same marks in the same places.
  * @type {Object<string, {pfog:number, minCoverage:number, residueStrength:number, candidates:number,
- *   decoySamePattern:'never'|'one'|'all', findHintVisible:boolean, partial:'never'|'maybe'|'always', sheenScale:number}>}
+ *   decoySamePattern:'never'|'one'|'all', findHintVisible:boolean, partial:'never'|'maybe'|'always', sheenScale:number,
+ *   marks:number}>}
  */
 export const DIFFICULTY = {
     // easy: the decoy has a different pattern class, so the compare is by class; near-identical
     // whorls on easy were not a fair comparison (m08 E16). Medium and hard keep the minutiae test.
-    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findHintVisible: true, partial: 'never', sheenScale: 1.0 },
-    medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findHintVisible: false, partial: 'maybe', sheenScale: 1.0 },
-    hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findHintVisible: false, partial: 'always', sheenScale: 0.7 }
+    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findHintVisible: true, partial: 'never', sheenScale: 1.0, marks: 3 },
+    medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findHintVisible: false, partial: 'maybe', sheenScale: 1.0, marks: 3 },
+    hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findHintVisible: false, partial: 'always', sheenScale: 0.7, marks: 2 }
 };
 
 const PATTERN_CLASSES = ['loop', 'whorl', 'arch'];

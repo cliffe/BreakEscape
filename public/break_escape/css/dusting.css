@@ -140,3 +140,9 @@
     .dusting-main { flex-direction: column; align-items: center; }
     .dusting-panel { width: 100%; }
 }
+
+/* F26: legend for the marked minutiae on the lift and the reference cards */
+.dusting-legend { font-size: 0.92em; }
+.dusting-key-end, .dusting-key-fork { display: inline-block; width: 9px; height: 9px; border: 2px solid #ff5a6a; vertical-align: -1px; margin: 0 2px; }
+.dusting-key-end { border-radius: 50%; }
+.dusting-hc .dusting-key-end, .dusting-hc .dusting-key-fork { border-color: #fff; }
