@@ -490,3 +490,16 @@ build (F9), grouped at the end and tagged **[build]**.
   line claims "my account, my terminal, my mail".
 - **Stale review docs (housekeeping, not play bugs).** m04's `secgen_review/02_consistency_matrix.md` and
   m06's Oct-18 review prose still describe distcc footholds the VMs no longer run; flag for the user.
+
+## 9. Status after the fix pass (2026-10-23)
+
+**Rules corrected by the user (2026-10-23).** The hard rules are that VM work is diegetic and that the VM challenges are required to complete the mission. More generally the work should be fun, and the player should see its practical impact. In-game finds that feed VM steps and story artefacts on the VM are good practice, not mandates. Holding a flag before it can be submitted is fine: m01's launch code does it on purpose. Read criterion 2's "never hold a flag you can't yet submit" in sections 3–4 and the m09/m10 hard-rule-break findings in that light; they are no longer defects in themselves.
+
+**Done** (all except R10, which the user dropped because it only affects the standalone deployment; Hacktivity integrates the VM):
+- Engine R1, R7, R8, R9, R13, R14 and the R29 validator check: 74810fe06. In Hacktivity the binding supplies real target IPs (R35).
+- m01 711851e39 (R11, R29, R36), m02 e5dac40ea (R6, R11, R18), m03 49ca8dcd3 (R11, R17, R23), m04 3caa47eae (R3, R36), m05 e794996a1 (R19, R24), m06 84f8ec099 (R2, R12), m07 1f292b5f2 (R4, R5, R11, R26; R25 already covered by the engine and scenario), m08 364c44673 (R15, R16, R20). Every mission also got reward labels (R1) and in-world host names (R8). All browser-checked on the keyless server.
+- SecGen: m04 and m08 7c2532511 (R27, R21, R22); m09 and m10 2b0e1b4bc (R30–R34, R37). User picks: m09's catalogue is opened by the duty-desk slip's login; Tomb Beta keeps its web-server foothold; m10 keeps a separate staging account for flag 2. Finds that promised logins the boxes don't use were reworded as host pointers.
+- m09/m10 game side (R31 hint at the catalogue terminal, R36, R38, R39, find rewording): see the m09/m10 commit.
+- R28: no change (accepted under F20, and no longer a defect under the corrected rules).
+
+**Still needs the user's SecGen build:** m04's three files and flag order; m08's `svc-planning` login; m09's catalogue login and Tomb Beta files; m10's staging account, account names and seeded files. No run has yet done the VM work for real.
