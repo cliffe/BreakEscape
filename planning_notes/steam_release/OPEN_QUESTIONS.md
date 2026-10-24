@@ -8,6 +8,9 @@ recorded below. `README.md` and `ENTITLEMENTS.md` have been updated to match.
 
 ## Needs further discussion
 
+Round 2 form (these points plus Google Play, 14 questions):
+https://claude.ai/artifact/D1j8pH7GgmV87vnTaDRB41
+
 | Q | Question | Where the options are written up |
 |---|---|---|
 | B2 | First-launch link screen. Steam doesn't give us an email address, so the link screen has to ask for one | `ENTITLEMENTS.md`, "Sign-in details" |
