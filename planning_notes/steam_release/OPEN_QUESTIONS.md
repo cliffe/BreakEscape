@@ -14,9 +14,32 @@ https://claude.ai/artifact/D1j8pH7GgmV87vnTaDRB41
 Round 3 form (products, org tiers, org managers assigning games, quota; 13 questions):
 https://claude.ai/artifact/JFBPunbAdaYph9nCi1C7iN
 
+Round 4 form (event-based access model and pricing; 11 questions):
+https://claude.ai/artifact/DLEWJPMHgAVGdLufiTaYQX
+
 | Q | Question | Where the options are written up |
 |---|---|---|
 | C2, C3 | Products and tiers across individual, org and Steam/Play access: org tiers (awareness courses, incident response games, full VM labs), org managers assigning games, org members' access to hackboxes and games. Direction picked: new Product and Entitlement tables | `ENTITLEMENTS.md`, "Recording ownership" |
+
+## Round 3 answers (2026-10-24)
+
+- P1, P2: **no Product model; the event is the product.** Steam and Play games are specific game
+  events; org content is events they copy (pools today, games too). Design in `ACCESS_MODEL.md`.
+- P3: Pro and Premium include everything, as today; they differ only in VM quota.
+- T1: org plans, but access stays with copying events into the org; maybe also let an org plan
+  grant specific `open_subscription` events directly. Awareness courses deserve an org plan.
+  **Pricing to discuss**: Steam/Play games at about £10? A games-only Stripe subscription?
+  Games/awareness at about £5 per user per month?
+- T2: keep org seats + end date, add a plan choice to the org form.
+- T3: org members get only what the org manager copied or assigned to the org, as now; games
+  become copyable too.
+- T4: seated members (role other than `user`) while the org's plan is current.
+- T5: leave as today; rare, and the user wants to contact the org and resolve it by hand.
+- O1: org managers copy game events as with pool courses, with their own dates.
+- O2: limited to the org plan's events; others are shown but can't be selected.
+- Q1: quota comes from the org plan; plans with no VM content give guest quota.
+- Q2: active, trialing and cancelling subscriptions all count.
+- Q3: one release, with migrations, tests and a per-org check list.
 
 ## Round 2 answers (2026-10-24)
 

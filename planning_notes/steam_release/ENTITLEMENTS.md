@@ -22,6 +22,10 @@ subscriptions unlock every game in the browser, and the desktop app is for Steam
   slot (engine `mission_policy.rb:16`). That's harmless today, but has to be closed before game
   access is sold separately.
 
+> **Superseded 2026-10-24 (round 3):** events are the unit of access; there is no Product model.
+> See `ACCESS_MODEL.md`. The sections below on Product, PlanProduct and OrgProduct are kept as a
+> record. The Steam sign-in, keys and store rules in this file still stand.
+
 ## Target model: products and entitlements
 
 Add a small layer that every access path asks: "does this user hold product X?"
