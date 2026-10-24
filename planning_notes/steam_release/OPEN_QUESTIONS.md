@@ -11,6 +11,9 @@ recorded below. `README.md` and `ENTITLEMENTS.md` have been updated to match.
 Round 2 form (these points plus Google Play, 14 questions):
 https://claude.ai/artifact/D1j8pH7GgmV87vnTaDRB41
 
+Round 3 form (products, org tiers, org managers assigning games, quota; 13 questions):
+https://claude.ai/artifact/JFBPunbAdaYph9nCi1C7iN
+
 | Q | Question | Where the options are written up |
 |---|---|---|
 | C2, C3 | Products and tiers across individual, org and Steam/Play access: org tiers (awareness courses, incident response games, full VM labs), org managers assigning games, org members' access to hackboxes and games. Direction picked: new Product and Entitlement tables | `ENTITLEMENTS.md`, "Recording ownership" |

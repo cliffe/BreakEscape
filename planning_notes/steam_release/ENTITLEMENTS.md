@@ -127,6 +127,41 @@ How access works today (from the user, 2026-10-24; event enums checked in `app/m
 - Users in an org with a subscription don't automatically get the hackboxes and games; they need an
   individual subscription to unlock those.
 
+Code survey (2026-10-24, Hacktivity, read-only; paths relative to the Hacktivity repo):
+
+- **Org membership** is `users.org_id`; there is no membership model. Org managers are users with
+  the global `vip` or `account_manager` role and that org_id (`user.rb:232-268`). The org
+  subscription buyer becomes `account_manager` (`stripe_service.rb:96-103`).
+- **Seats:** a member takes a seat by holding any role other than `user`
+  (`org.rb:11-14`). Joining by invitation upgrades `user` to `pro` only if a seat is free
+  (`pending_invitations_controller.rb:67-75`). Seats total = manual (`orgs.seats`, while
+  `subscription_end_date` is in the future) + the seats on current org subscriptions
+  (`org.rb:40-42`).
+- **An org subscription only adds seats.** Members' access comes from their `pro` role and
+  org_id. On expiry nothing happens to members: `update_subscribable_status` is commented out
+  (`stripe_service.rb:323-332`), so they keep `pro`.
+- **Manual deals** are org `seats` + `subscription_end_date`, set by admins in OrgsController
+  (`orgs_controller.rb:71`). There is no admin form for Subscription rows, and `Subscription`
+  requires a unique `stripe_id`.
+- **`plans.user_role` is never copied to `users.role`.** It is read directly for quota:
+  `has_premium_quota?` is `(org && role != 'user') || active subscription's plan.user_role ==
+  'premium' || admin?` (`user.rb:290-292`). So individual Pro subscribers get guest quota and
+  seated org members get premium.
+- **Plans** (seeded in `db/seeds/plans.rb`): Pro (individual), Premium (individual), Business &
+  Education (organization, premium).
+- **Why org members don't get hackboxes and games:** for `open_subscription` events,
+  `GameSlotPolicy#start?` and `SecGenBatchPolicy#assign_vm_set?` require
+  `has_active_subscription?` (the user's own subscriptions only) or an open free window. The org's
+  subscription, seat and role are never consulted. Hackboxes are `Experience` events
+  (`events_controller.rb:38-41`). The live `open_to` values of hackbox and game events were not
+  checked in the database.
+- `has_active_subscription?` uses the `active` scope only, so `trialing` and `cancelling`
+  subscribers fail it.
+- **Copying:** VIPs and account managers can copy any event with no org_id (pool, game or other)
+  into an `open_to: org_members` event for their org, if the org has a free seat
+  (`event_policy.rb:93-100`, `events_controller.rb:264-418`). Game slots are copied with it. There
+  is no limit on which events an org may copy.
+
 What the products design needs to cover, then:
 
 1. Individual subscription plans, Steam ownership and later Play ownership, all answered by one
