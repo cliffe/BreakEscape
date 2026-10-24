@@ -89,6 +89,48 @@ Valve's rules to plan around (verify against current Steamworks documentation be
   must not sell Hacktivity subscriptions or link to the Stripe checkout in the game.
 - A Steam game may require a third-party account. The store page has to say so.
 
+## Selling on our own site (Stripe → entitlement + Steam key)
+
+Flow (2026-10-24 sketch; the Valve-side details are marked "verify"):
+
+1. **Key stock.** Request a batch of keys for the game's package in Steamworks (manual, reviewed by
+   Valve; verify current limits). Import the file into a `SteamKey` table: key encrypted at rest,
+   product, batch, status (`available`, `assigned`, `revoked`), assigned_to, assigned_at. Alert
+   admins when stock falls below a threshold.
+2. **Checkout.** Signed-in Hacktivity user (the same account the Steam app links to) clicks Buy on
+   the game's page → Stripe Checkout in `mode: payment` with the product's one-off Price (GBP and
+   USD, like the subscription plans). Stripe Tax handles VAT/sales tax: on our own site Hacktivity
+   is the seller, whereas Steam handles tax for Steam sales.
+3. **Fulfilment** in the existing Stripe webhook (`checkout.session.completed`), in one
+   transaction:
+   - create `Entitlement(source: stripe_purchase, source_ref: <session id>)`, so the game is
+     playable in the browser at once;
+   - do **not** assign a key yet. The account page shows "Claim your Steam key". Claiming takes
+     one `available` key with `SELECT … FOR UPDATE SKIP LOCKED`, marks it assigned, and shows it
+     with a Steam redeem link (`store.steampowered.com/account/registerkey?key=…`).
+   Claim-on-demand means browser-only buyers use no keys, which keeps our key requests in line
+   with Steam sales (Valve can refuse requests that look out of proportion).
+4. **After redeeming**, the player owns the game on Steam. When the Steam app links to the same
+   Hacktivity account, `Entitlement(source: steam)` is added beside the Stripe one. Access is
+   the union of sources, so nothing is duplicated or lost.
+5. **Refunds and chargebacks** (`charge.refunded`, `charge.dispute.created`): revoke the Stripe
+   entitlement. If a key was claimed, mark it `revoked` and report it to Valve to revoke
+   (verify the current Steamworks process). Once Steam removes the licence, the ownership recheck
+   at sign-in drops the steam entitlement too. To limit key resale with stolen cards, the claim
+   button can wait until Radar clears the payment, or for a short hold (for example 48 hours).
+
+Price parity: Valve's rule (verify the wording) is that keys sold elsewhere should not get a better
+deal than Steam customers get at the time. So the Stripe price matches the Steam base price in that
+currency, and Steam sales are matched rather than beaten. Steam's lower regional prices don't need
+matching in GBP/USD. We'd only need region-locked keys if grey-market resale shows up.
+
+Revenue: Valve takes no cut on keys sold off Steam, so a Stripe sale keeps the price minus Stripe
+fees and tax. It also brings Hacktivity a direct customer under its own terms (already true for
+every Steam player under the account-link decision).
+
+Org bulk purchases (a class set) can use the same table: N entitlements granted to the org's
+members, and keys only if they ask for the Steam build.
+
 ## Subscriptions and Steam together
 
 Recommended rules:
