@@ -1,6 +1,10 @@
 # Entitlements, Steam keys and the subscription model
 
-Status: draft plan, 2026-10-22. Companion to `README.md`.
+Status: draft plan, 2026-10-22; updated 2026-10-24 with the pick-form answers (`OPEN_QUESTIONS.md`).
+Companion to `README.md`.
+
+Decided 2026-10-24 (E3, E4): **Steam only.** We don't sell Steam keys on our own site. Hacktivity
+subscriptions unlock every game in the browser, and the desktop app is for Steam buyers.
 
 ## Today
 
@@ -27,7 +31,7 @@ Product          id, key ("licence_to_hack", "eldritch_hacker", "ir_simulations"
                  steam_app_id (nullable), steam_demo_app_id (nullable)
 ProductMission   product_id, break_escape_mission_id        (or a `product` field in mission.json)
 Entitlement      user_id, product_id, source, source_ref, starts_at, ends_at (nullable), revoked_at
-                 source ∈ steam | stripe_purchase | subscription | org | key | grant
+                 source ∈ steam | google_play (later) | subscription | org | key | grant
 ```
 
 - Missions get a `product` (or `game`) field in mission.json beside `collection`, so the catalogue
@@ -39,11 +43,14 @@ Entitlement      user_id, product_id, source, source_ref, starts_at, ends_at (nu
   - **org** access: the user holds a seat in an org with an `OrgProduct` row for it. This makes the
     existing "org pays for specific games" arrangement explicit, instead of depending only on which
     events an admin created;
-  - an unrevoked **Entitlement** row (Steam, one-off purchase, key, manual grant).
+  - an unrevoked **Entitlement** row (Steam, later Google Play, key, manual grant).
+- Steam players start games from a **library event** per product (C1): an event that represents
+  the game, holding its game slots, so `GameSlotPolicy` is reused unchanged apart from the
+  entitlement condition. Steam play stays out of other events' scoreboards (C5).
 - Events and game slots stay as they are for scheduling, scoring and cohorts. The entitlement check
   is an extra condition in `GameSlotPolicy#start?` and the engine's `create_game?` hook, not a
   replacement for events.
-- Subscriptions and org access are computed live. Steam, purchase and key access are stored rows.
+- Subscriptions and org access are computed live. Steam, Play and key access are stored rows.
   Don't write rows for subscribers, or cancellations get messy.
 
 ## How Steam ownership reaches Hacktivity
@@ -64,6 +71,77 @@ Entitlement      user_id, product_id, source, source_ref, starts_at, ends_at (nu
 Storage: `users.steam_id` (unique), plus a `SteamLink` audit table if we want link and unlink
 history.
 
+## Sign-in details (B2, B5, B7)
+
+**Email (B2, needs further discussion).** Steam never gives us the player's email address. The
+Web API returns the SteamID64, persona name, avatar, profile URL and (if the profile is public)
+country. So the "create a free account" path on the link screen has to ask for an email and a
+password, as the website sign-up does, and verify the email. Points to settle:
+
+- Ask for a password at all? Without one, the account can only be reached through the Steam app
+  until the player sets one with a reset email. Asking for email only and sending a "set your
+  password" link keeps the first launch short.
+- Whether to let the player start m01 before the email is verified, and lock progress after a
+  grace period.
+- Existing accounts: "sign in to an existing account" uses the normal email, password and (if set)
+  MFA, once, to link.
+
+**MFA (B5).** How it works:
+
+1. Hacktivity trusts a valid Steam auth ticket as proof of identity. The ticket can only be made by
+   a Steam client signed in to that Steam account, and Steam Guard (Steam's own two-factor) protects
+   that sign-in.
+2. Ticket sign-in in the desktop app therefore never asks for Hacktivity MFA.
+3. Linking an existing account that has MFA turned on asks for the password and MFA code once, at
+   link time, so someone with only a Steam account can't take over a Hacktivity account.
+4. Website sign-in is unchanged: email, password, and MFA if the user turned it on. Steam-created
+   accounts can turn MFA on for the website like anyone else.
+5. Suggested guard: accounts with staff or org-manager roles (admin, account_manager, org owners)
+   can't be linked to Steam, or still need Hacktivity MFA on ticket sign-in. A stolen Steam account
+   then can't reach anything privileged.
+
+**Terms (B7).** Steamworks lets an app show a custom EULA that the player accepts before first
+launch (verify the current setting). Options, which can be combined:
+
+- set the Hacktivity terms (or a short EULA that points to them) as the Steam EULA;
+- show and require acceptance of the terms on the link screen when the account is created or linked
+  (needed anyway, since Hacktivity records acceptance on its own account);
+- on a terms change, email notice only, and continued use counts as acceptance (the B7 pick).
+
+## Recording ownership (C2, C3: needs further discussion)
+
+Two ways to record "this user owns Licence to Hack" and "this org pays for the incident response
+simulations":
+
+**Option 1: new Product and Entitlement tables** (as above). Subscriptions and orgs map to products
+through `PlanProduct` and `OrgProduct`. Steam (and later Play) ownership is an Entitlement row.
+
+- For: one-off ownership and subscriptions are different things and stay separate. No Stripe fields
+  to fake.
+- Against: new tables and a new check beside the existing subscription check.
+
+**Option 2: reuse Plan and Subscription.** Add a Plan per product ("Licence to Hack (Steam)") and
+give Steam buyers a Subscription row on it.
+
+- For: `has_active_subscription?` and the admin screens already understand subscriptions, and
+  `plans.user_role` already sets the quota tier, which would also answer D1.
+- Against: `Subscription` is built around Stripe. It requires a unique `stripe_id`, `end_date`,
+  `currency`, `interval` and `seats`, and has Stripe calls such as `vat_applicable?`. A Steam
+  licence would need placeholder values (for example `stripe_id: "steam:<steamid>:<appid>"` and a
+  far-future end date), and every Stripe job would need to skip those rows. The check also still
+  ignores the plan today, so a Steam "subscription" would unlock every game unless
+  `has_active_subscription?` learns which products a plan covers. That is the same change as
+  `PlanProduct` in option 1.
+
+**C3 (org deals).** Today orgs get specific games through which events an admin creates. Options:
+keep that and treat event membership as the access record (no change, but the access rule lives in
+admin habit), or add `OrgProduct` so the org's subscription states the products it pays for, with
+events still used for scheduling.
+
+Leaning: option 1 for C2, with `plans.user_role` reused for the Steam quota tier, and `OrgProduct`
+for C3. The deciding question is whether the user wants Steam licences to appear in the existing
+subscription admin screens.
+
 ## Steam keys
 
 Steam keys are generated free in Steamworks and redeemed on Steam. They grant ownership on Steam,
@@ -74,10 +152,8 @@ Uses:
 
 | Use | How |
 |---|---|
-| Sell on our own site (Stripe) as well as on Steam | Buyer pays through Stripe and gets a Steam key and a Hacktivity entitlement (`source: stripe_purchase`). Store keys in a `SteamKey` pool table (key, product, assigned_to, assigned_at) |
 | Press, streamers, testers | Keys from Steamworks or Valve's curator connect, no Hacktivity changes needed |
 | Bundles / education resellers | Keys, subject to Valve's approval of the request |
-| Subscribers who want the Steam version | Optional perk, see below |
 
 Valve's rules to plan around (verify against current Steamworks documentation before committing):
 
@@ -89,7 +165,11 @@ Valve's rules to plan around (verify against current Steamworks documentation be
   must not sell Hacktivity subscriptions or link to the Stripe checkout in the game.
 - A Steam game may require a third-party account. The store page has to say so.
 
-## Selling on our own site (Stripe → entitlement + Steam key)
+## ~~Selling on our own site (Stripe → entitlement + Steam key)~~ (not planned: E3, Steam only)
+
+Kept as a record of the option, in case it comes back. The Hacktivity pricing page links to the
+Steam store pages instead (a link from our website to Steam is fine; the rule against outside
+purchase links applies inside the Steam app).
 
 Flow (2026-10-24 sketch; the Valve-side details are marked "verify"):
 
@@ -139,19 +219,16 @@ Recommended rules:
    `Entitlement(source: steam)` for that product only, not a subscription. A Steam buyer who links
    can play that game in the browser on Hacktivity too (same account and saves for Mode A). Their
    VM allowance is the Steam allowance (`README.md`), not the subscription quota.
-2. **Subscribers keep "everything" on Hacktivity.** They can also use the Steam desktop app
-   without buying on Steam: install with a key (if we give them one), or play the free demo app
-   and sign in with their Hacktivity account to unlock the full game. Check Valve's rules on
-   unlocking a Steam app's content from an outside account before relying on the second route.
-   If those rules don't allow it, subscribers play in the browser and the Steam app is for Steam
-   buyers.
+2. **Subscribers keep "everything" on Hacktivity, in the browser** (E4, decided 2026-10-24). The
+   Steam app is for Steam buyers. A subscriber who wants the Steam version buys it on Steam. This
+   also avoids Valve's rules on unlocking a Steam app from an outside account.
 3. **Org (education/corporate) customers** keep buying seats + specific products through
-   Hacktivity (`OrgProduct`). Steam is not their channel. Orgs that want desktop installs use the
-   same Hacktivity sign-in route as subscribers.
+   Hacktivity. Steam is not their channel, and they play in the browser. How the org's products
+   are recorded is C3, still open (see "Recording ownership").
 4. **Subscription ends:** subscription-sourced access stops. Steam and one-off purchase access
    continues, because the user owns the game.
 5. **Scoring:** Steam play outside a Hacktivity event doesn't feed event scoreboards. Achievements
-   live on Steam.
+   live on Steam (C5). Steam leaderboards are a future idea.
 
 ## Migration from today
 

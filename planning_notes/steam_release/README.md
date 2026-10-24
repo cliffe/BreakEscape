@@ -1,6 +1,6 @@
 # Steam release plan
 
-Status: draft plan, 2026-10-22. Entitlements, keys and the subscription model are covered in `ENTITLEMENTS.md`. The open architecture questions are in `OPEN_QUESTIONS.md`.
+Status: draft plan, 2026-10-22; updated 2026-10-24 with the pick-form answers (recorded in `OPEN_QUESTIONS.md`). Entitlements, keys and the subscription model are covered in `ENTITLEMENTS.md`. The open architecture questions are in `OPEN_QUESTIONS.md`.
 
 **Decided 2026-10-24: the Steam games are online only, with Hacktivity as the back end.** Every game, Eldritch Hacker included, runs as Mode A below. The local engine (Mode B), the hybrid VM option and the offline VM pack are dropped. The sections on them are kept, struck through in the headings, as a record of what was considered.
 
@@ -73,7 +73,21 @@ The options, from least to most work:
 3. **Local VM pack.** Ship pre-built VM images (one SecGen build per mission, plus a Kali-style attacker image) as an optional free DLC/depot for VirtualBox or QEMU. Flags are fixed per release and checked locally against hashes. No server cost. Against: several GB per mission, players have to install and network a hypervisor (a big support load for a general Steam audience), and fixed flags will end up in online walkthroughs. That matters little for a single-player game but breaks the "every player gets their own build" idea.
 4. **Browser-only "Steam edition" of Licence to Hack.** Replace each VM step with an in-game simulated terminal. This contradicts the decided positioning ("real hacking on real VMs"), so it is listed only for completeness, and needs the user's call.
 
-Decided 2026-10-24: **option 1 (hosted VMs only)**. Options 2 and 3 are dropped with Mode B, and option 4 contradicts the positioning. How capacity, allowance and queueing work is in `OPEN_QUESTIONS.md` (area D).
+Decided 2026-10-24: **option 1 (hosted VMs only)**. Options 2 and 3 are dropped with Mode B, and option 4 contradicts the positioning.
+
+Picks (2026-10-24): fair use with one active set, idle shutdown and a generous hidden cap (D2); VMs reached through the in-game VM panel in the same window (D4); UK hosting only at launch, without making a point of it on the store page (D5); a reserved pre-built SecGen batch pool for Steam, topped up automatically (D6). What happens when that pool is full (D3) is out of scope until it becomes a problem.
+
+### VM capacity for Steam players (D1: needs further discussion)
+
+Today's quota (`config/initializers/quota_config.rb` in Hacktivity) has two levels, guest and premium. Guests get 1 active set, 1 owned set, a 1-hour activation timer (extended by 2 hours) and a **1-day wait between VM set claims** in the same event (`xp_claim_wait_time_guest`). Premium gets 5 sets, 5/25-hour timers and no wait. User roles are `user, pro, lbu_student, vip, admin, account_manager`, and `plans.user_role` sets the role a plan gives.
+
+Options:
+
+1. **A new `steam` (or `game_owner`) role** with its own quota: 1 active set, the D2 hidden cap, no claim wait, guest-length timers. Clean to report on, and the Steam pool (D6) can key off the role. Against: a user can hold one role, so a Steam buyer who later subscribes needs a rule for which wins.
+2. **Free (guest) quota, with the claim wait lifted.** Either for all free users, which is a change to the free tier as a whole, or only for game slots in a library event of a product the user owns. The second is narrower and needs no new role.
+3. **Quota from the product, not the role:** an owned product carries its own limits, applied only inside its library event. The most flexible, and the most code.
+
+Leaning: option 2, narrow form (lift the wait inside owned library events, keep guest limits elsewhere), with Steam-sourced usage tagged for the dashboard.
 
 VM cost guard rails: a per-SteamID allowance of VM hours, idle shutdown (the activation timers already exist), one active set at a time, and a waiting room when the cluster is full. Add a dashboard for Steam-sourced VM usage so pricing can be checked against real cost after launch.
 
@@ -83,7 +97,9 @@ VM cost guard rails: a per-SteamID allowance of VM hours, idle shutdown (the act
 - Don't split the missions into per-mission DLC: it fragments the story and makes VM allowance accounting harder. A **demo app** (m01 only, VM stage included, using a small allowance) is worth it: Steam demos have their own app ID and store page.
 - Achievements: map to existing objectives and the on_game_complete / on_task_complete hooks.
 - Steam Cloud: not needed; the server holds the saves.
-- Steam Deck: needs controller input (the game is keyboard/mouse driven at the moment, so the minigames especially need a pass) and readable text at 1280×800. This is separate work and could follow launch, marked "Playable" rather than "Verified".
+- Steam Deck at launch as "Playable", with trackpad and on-screen keyboard (A5). A full controller pass (the minigames especially) and text readable at 1280×800 can follow; "Verified" needs that pass.
+- Platforms at launch: Windows and Linux/Deck (A4). Builds that don't match the server are refused with "Update through Steam" (A3).
+- Demo: m01 including its VM stage, on a small allowance (E2).
 - Ratings: IARC questionnaire through Steamworks; Steamworks app fee per app (currently US$100, refunded after enough revenue; verify).
 
 ## Phases
@@ -92,6 +108,34 @@ VM cost guard rails: a per-SteamID allowance of VM hours, idle shutdown (the act
 2. **Client prep in BreakEscape:** vendor CDN scripts, precompile ink, make sure no code assumes a browser URL bar (back button, `window.location` redirects to Hacktivity pages).
 3. **Electron shell, Mode A:** Steam sign-in, account link, entitlement check, overlay, achievements. Internal testing on Windows, Linux and Deck.
 4. **Steamworks setup:** app, depots, demo app, store page, pricing, and the key and parity rules (see `ENTITLEMENTS.md`). Coming Soon page at least two weeks before launch (Steam requirement; verify).
-5. **Early access / beta release** with VM allowance guard rails.
+5. **Release** with VM allowance guard rails. Picked: full release once m01–m10 are finished (E6); Early Access is still under discussion, see "Release type".
 6. **Eldritch Hacker** as a second app on the same shell and back end. It needs no VMs, so its only running cost is the Hacktivity web load.
 7. Optional: a Deck controller pass.
+
+## Release type (E6: needs further discussion)
+
+Pick so far: full release once m01–m10 are finished. The alternative is the whole game in Early Access, with m01–m08 at launch and m09–m10 added.
+
+- **Early Access, for:** sells and gathers reviews while m09–m10 are written; Steam players test the VM capacity at a smaller scale before full launch; the store page can say what's coming.
+- **Early Access, against:** Steam players judge the story on an unfinished ending; the launch visibility (front page, wishlist emails) is spent on Early Access, and the full release later gets less; Valve expects regular updates.
+- **Full release, for:** the Season 1 story lands whole, and the launch push goes to the finished game.
+- **Middle route:** a free demo (E2) or a Steam Playtest during development to test VM load, then full release.
+
+## Google Play (Android)
+
+Wanted alongside Steam (A4 note, 2026-10-24). Since the games are online only, the Android app can be a thin wrapper round the same Hacktivity pages.
+
+| Option | How | For | Against |
+|---|---|---|---|
+| **Trusted Web Activity (TWA)** (Bubblewrap) | The app opens Hacktivity in Chrome full-screen, with no browser bar | Same Chromium engine as Electron and our Playwright tests; tiny app; updates without a Play release; Play Billing works through the Digital Goods API | Needs Chrome (or another TWA browser) on the device; little native access |
+| **Capacitor** | Our pages in Android System WebView, plus native plugins | Native plugins (Play Billing, Play Games achievements, push); WebView is Chromium too | A native project to maintain; WebView differs slightly from Chrome |
+| React Native / native rewrite | | | Not worth it: the game is a Phaser web client |
+
+Leaning: **TWA first** (the smallest step from "load everything from Hacktivity"), moving to Capacitor only if we need Play Games achievements or other native features.
+
+What carries over and what doesn't:
+
+- **Sign-in:** no Steam ticket on Android. The app signs in to Hacktivity directly (email and password, or Google sign-in), using the same account a Steam buyer linked. Steam owners then get their games on Android too, if we allow that.
+- **Purchases:** Google requires Play Billing for digital goods bought inside a Play app (verify the current rules: external purchase links and alternative billing are allowed in some regions since 2024–25). A Play purchase verified server-side through the Google Play Developer API becomes `Entitlement(source: google_play)`. Hacktivity subscribers signing in on Android: the "reader app" exemption doesn't cover games, so check whether a Play app may unlock content bought elsewhere without offering it through Play Billing too.
+- **Input:** the game is keyboard and mouse. Phones need touch controls for movement and every minigame, an on-screen keyboard for terminals, and readable text on a small screen. This is a bigger pass than the Deck one.
+- **VMs on a phone:** Licence to Hack's VM stages (a desktop in the VM panel) are hard to use on a phone and workable on a tablet with a keyboard. Eldritch Hacker needs no VMs and suits mobile better. Options: tablets only for Licence to Hack, or Eldritch Hacker first on Play.
