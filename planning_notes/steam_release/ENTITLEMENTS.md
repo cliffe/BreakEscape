@@ -73,18 +73,12 @@ history.
 
 ## Sign-in details (B2, B5, B7)
 
-**Email (B2, needs further discussion).** Steam never gives us the player's email address. The
-Web API returns the SteamID64, persona name, avatar, profile URL and (if the profile is public)
-country. So the "create a free account" path on the link screen has to ask for an email and a
-password, as the website sign-up does, and verify the email. Points to settle:
-
-- Ask for a password at all? Without one, the account can only be reached through the Steam app
-  until the player sets one with a reset email. Asking for email only and sending a "set your
-  password" link keeps the first launch short.
-- Whether to let the player start m01 before the email is verified, and lock progress after a
-  grace period.
-- Existing accounts: "sign in to an existing account" uses the normal email, password and (if set)
-  MFA, once, to link.
+**Email (B8, B9, decided 2026-10-24).** Steam never gives us the player's email address. The Web
+API returns the SteamID64, persona name, avatar, profile URL and (if the profile is public)
+country. So "create a free account" on the link screen asks for email, password and terms
+acceptance, as the website sign-up does, and the email must be verified (Hacktivity already
+automates this). "Sign in to an existing account" uses the normal email, password and (if set)
+MFA, once, to link.
 
 **MFA (B5).** How it works:
 
@@ -96,9 +90,10 @@ password, as the website sign-up does, and verify the email. Points to settle:
    link time, so someone with only a Steam account can't take over a Hacktivity account.
 4. Website sign-in is unchanged: email, password, and MFA if the user turned it on. Steam-created
    accounts can turn MFA on for the website like anyone else.
-5. Suggested guard: accounts with staff or org-manager roles (admin, account_manager, org owners)
-   can't be linked to Steam, or still need Hacktivity MFA on ticket sign-in. A stolen Steam account
-   then can't reach anything privileged.
+5. Decided (B10): admin, account_manager and org-owner accounts can't be linked to Steam, so a
+   stolen Steam account can't reach anything privileged. Staff test the Steam build with a
+   separate player account. Check this again if a linked user is later given one of those roles:
+   either refuse the role change or remove the link.
 
 **Terms (B7).** Steamworks lets an app show a custom EULA that the player accepts before first
 launch (verify the current setting). Options, which can be combined:
@@ -108,7 +103,43 @@ launch (verify the current setting). Options, which can be combined:
   (needed anyway, since Hacktivity records acceptance on its own account);
 - on a terms change, email notice only, and continued use counts as acceptance (the B7 pick).
 
+Decided (B11): the full Hacktivity terms are the Steam EULA, plus acceptance on the link screen.
+Every terms change therefore also means updating the Steam EULA in Steamworks; add that to the
+terms-change checklist.
+
 ## Recording ownership (C2, C3: needs further discussion)
+
+Picked (C2, 2026-10-24): **option 1, new Product and Entitlement tables**, with plans mapped to
+products through `PlanProduct`. The wider design needs careful planning and further discussion.
+
+How access works today (from the user, 2026-10-24; event enums checked in `app/models/event.rb`):
+
+- Subscriptions are set up either automatically through Stripe or manually by an admin. An active
+  subscription grants access to every event (courses and games) that is `open_to:
+  open_subscription`. Those events can also have a free-access window
+  (`free_access_starts_at`/`ends_at`).
+- A subscription sets the user's role, and the role sets the VM quota (free, pro, premium).
+- Event types are event, course, experience, pool and game. Organisations' VIPs and account
+  managers can make course copies of any `pool` event, giving the org its own instance with its own
+  release dates. They should also be able to assign games the same way.
+- There is one business subscription today. Different tiers may be needed: the upcoming awareness
+  courses and the incident response games would be cheaper than the full VM labs.
+- Users in an org with a subscription don't automatically get the hackboxes and games; they need an
+  individual subscription to unlock those.
+
+What the products design needs to cover, then:
+
+1. Individual subscription plans, Steam ownership and later Play ownership, all answered by one
+   `has_product?` check.
+2. Org subscription tiers that each include a set of products (for example awareness, incident
+   response games, full VM labs), through `PlanProduct` on the org's plan.
+3. Whether an org tier can include hackboxes and games for its members, so members no longer need
+   their own subscription.
+4. Org managers assigning games to their members, as they copy pool courses today, limited to the
+   products their tier includes.
+5. VM quota staying tied to role, with the D1/D7 rules for Steam owners layered on top.
+
+The options below were the round-2 choices and are kept for reference.
 
 Two ways to record "this user owns Licence to Hack" and "this org pays for the incident response
 simulations":

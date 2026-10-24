@@ -13,13 +13,32 @@ https://claude.ai/artifact/D1j8pH7GgmV87vnTaDRB41
 
 | Q | Question | Where the options are written up |
 |---|---|---|
-| B2 | First-launch link screen. Steam doesn't give us an email address, so the link screen has to ask for one | `ENTITLEMENTS.md`, "Sign-in details" |
-| C2 | How ownership is recorded: a new Entitlement table, or the existing Plan and Subscription models | `ENTITLEMENTS.md`, "Recording ownership" |
-| C3 | How org deals for specific games are recorded | `ENTITLEMENTS.md`, "Recording ownership" |
-| D1 | Which VM capacity and quota tier Steam players get (a new role, or free with the claim wait lifted) | `README.md`, "VM capacity for Steam players" |
-| E6 | Full release after m10, or the whole game in Early Access | `README.md`, "Release type" |
+| C2, C3 | Products and tiers across individual, org and Steam/Play access: org tiers (awareness courses, incident response games, full VM labs), org managers assigning games, org members' access to hackboxes and games. Direction picked: new Product and Entitlement tables | `ENTITLEMENTS.md`, "Recording ownership" |
 
-## Answers (2026-10-24)
+## Round 2 answers (2026-10-24)
+
+- B8: the in-app sign-up asks for email, password and terms acceptance.
+- B9: yes, the email must be verified; Hacktivity already automates this.
+- B10: admin, account_manager and org-owner accounts can't be linked to Steam.
+- B11: the full Hacktivity terms are the Steam EULA, plus acceptance on the link screen. Every terms
+  change also needs the Steam EULA updated.
+- C2: new Product and Entitlement tables, with plans mapped to products through PlanProduct. The
+  wider products-and-tiers design (see the user's note in `ENTITLEMENTS.md`) **needs further
+  discussion**.
+- C3: covered by the C2 discussion.
+- D1: free (guest) quota, with the claim wait lifted inside games the player owns.
+- D7: a Steam buyer who also subscribes gets whichever quota is more generous, per event.
+- E6: a Steam Playtest during m09–m10 work, then full release of m01–m10.
+- E7: the Hacktivity pricing page and each game's page link to the Steam store pages.
+- G1: Android app as a Trusted Web Activity (Bubblewrap).
+- G2: Licence to Hack first on Play, phones and tablets.
+- G3: one-off Play Billing purchase per game, verified server-side into `Entitlement(source:
+  google_play)`.
+- G4: Play buyers only. Each store app is a wrapper round one game: Hacktivity navigation and links
+  are hidden, and any nudge to the rest of Hacktivity opens in the system browser, so no Stripe
+  purchase can be made from the Steam or Play apps (`README.md`, "Single-game app mode").
+
+## Round 1 answers (2026-10-24)
 
 **A. Desktop app**
 

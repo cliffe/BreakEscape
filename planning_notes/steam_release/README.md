@@ -87,7 +87,7 @@ Options:
 2. **Free (guest) quota, with the claim wait lifted.** Either for all free users, which is a change to the free tier as a whole, or only for game slots in a library event of a product the user owns. The second is narrower and needs no new role.
 3. **Quota from the product, not the role:** an owned product carries its own limits, applied only inside its library event. The most flexible, and the most code.
 
-Leaning: option 2, narrow form (lift the wait inside owned library events, keep guest limits elsewhere), with Steam-sourced usage tagged for the dashboard.
+Decided 2026-10-24 (D1): **option 2, narrow form**: guest quota, with the claim wait lifted inside the library events of products the player owns. Steam-sourced usage is tagged for the dashboard. A Steam buyer who also subscribes gets whichever quota is more generous in each event (D7).
 
 VM cost guard rails: a per-SteamID allowance of VM hours, idle shutdown (the activation timers already exist), one active set at a time, and a waiting room when the cluster is full. Add a dashboard for Steam-sourced VM usage so pricing can be checked against real cost after launch.
 
@@ -112,9 +112,9 @@ VM cost guard rails: a per-SteamID allowance of VM hours, idle shutdown (the act
 6. **Eldritch Hacker** as a second app on the same shell and back end. It needs no VMs, so its only running cost is the Hacktivity web load.
 7. Optional: a Deck controller pass.
 
-## Release type (E6: needs further discussion)
+## Release type (E6)
 
-Pick so far: full release once m01–m10 are finished. The alternative is the whole game in Early Access, with m01–m08 at launch and m09–m10 added.
+Decided 2026-10-24: **a Steam Playtest while m09–m10 are written, then full release of m01–m10.** The Playtest tests VM load and the sign-in flow with real Steam players without spending the launch visibility. The considerations behind the choice:
 
 - **Early Access, for:** sells and gathers reviews while m09–m10 are written; Steam players test the VM capacity at a smaller scale before full launch; the store page can say what's coming.
 - **Early Access, against:** Steam players judge the story on an unfinished ending; the launch visibility (front page, wishlist emails) is spent on Early Access, and the full release later gets less; Valve expects regular updates.
@@ -131,11 +131,21 @@ Wanted alongside Steam (A4 note, 2026-10-24). Since the games are online only, t
 | **Capacitor** | Our pages in Android System WebView, plus native plugins | Native plugins (Play Billing, Play Games achievements, push); WebView is Chromium too | A native project to maintain; WebView differs slightly from Chrome |
 | React Native / native rewrite | | | Not worth it: the game is a Phaser web client |
 
-Leaning: **TWA first** (the smallest step from "load everything from Hacktivity"), moving to Capacitor only if we need Play Games achievements or other native features.
+Decided 2026-10-24 (G1): **TWA (Bubblewrap)**, moving to Capacitor only if we need Play Games achievements or other native features. Licence to Hack goes to Play first, on phones and tablets (G2). Each game is a one-off Play Billing purchase, verified server-side into `Entitlement(source: google_play)` (G3). Only Play buyers can play in the Play app (G4).
 
 What carries over and what doesn't:
 
-- **Sign-in:** no Steam ticket on Android. The app signs in to Hacktivity directly (email and password, or Google sign-in), using the same account a Steam buyer linked. Steam owners then get their games on Android too, if we allow that.
+- **Sign-in:** no Steam ticket on Android. The app signs in to Hacktivity directly (email and password, or Google sign-in). Only Play purchases unlock the game in the Play app (G4), even for Steam owners and subscribers.
 - **Purchases:** Google requires Play Billing for digital goods bought inside a Play app (verify the current rules: external purchase links and alternative billing are allowed in some regions since 2024–25). A Play purchase verified server-side through the Google Play Developer API becomes `Entitlement(source: google_play)`. Hacktivity subscribers signing in on Android: the "reader app" exemption doesn't cover games, so check whether a Play app may unlock content bought elsewhere without offering it through Play Billing too.
 - **Input:** the game is keyboard and mouse. Phones need touch controls for movement and every minigame, an on-screen keyboard for terminals, and readable text on a small screen. This is a bigger pass than the Deck one.
-- **VMs on a phone:** Licence to Hack's VM stages (a desktop in the VM panel) are hard to use on a phone and workable on a tablet with a keyboard. Eldritch Hacker needs no VMs and suits mobile better. Options: tablets only for Licence to Hack, or Eldritch Hacker first on Play.
+- **VMs on a phone:** Licence to Hack goes first, on phones as well (G2), so the VM panel needs a phone layout: touch-friendly remote desktop controls, an on-screen keyboard with the keys a terminal needs (Ctrl, Tab, arrows, Esc), and a landscape lock during VM stages. Plan a phone playtest of a full VM stage before committing to a Play launch date.
+
+## Single-game app mode (G4 note, applies to Steam and Play)
+
+Each store app is a wrapper round one game, not a window onto Hacktivity:
+
+- The app opens the game's library event directly. Hacktivity's navigation bar, footer and menus are hidden, as are links to other events, courses, hackboxes, pricing and account billing.
+- Any link to the rest of Hacktivity (a "more on Hacktivity" nudge, the terms, account settings) opens in the system browser, outside the app. Electron: `shell.openExternal` from a `setWindowOpenHandler`/`will-navigate` guard that allows only the game's own paths. TWA: links outside the game's scope open in a Custom Tab or the browser.
+- Server side, the app identifies itself (a header or user-agent token set by the shell), and Hacktivity renders the single-game layout and refuses Stripe checkout and billing pages for those requests. The rule then holds even if the client guard misses a link.
+
+This keeps the store apps separate from Hacktivity and makes sure no Stripe purchase can be made from the Steam or Play apps.
