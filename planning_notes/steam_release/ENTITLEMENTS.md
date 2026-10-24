@@ -53,8 +53,9 @@ Entitlement      user_id, product_id, source, source_ref, starts_at, ends_at (nu
    gets the SteamID, then checks ownership with `ISteamUser/CheckAppOwnership` for the app (and
    any DLC).
 3. If the SteamID is linked to a user, that user's `Entitlement(source: steam)` is created or
-   refreshed. If not, the player either signs in to an existing Hacktivity account (link) or gets
-   a new lightweight account keyed on the SteamID, with no password, where email is optional.
+   refreshed. If not, the app shows a link screen: create a free Hacktivity account or sign in to
+   an existing one. Either way the player accepts the standard terms (decided 2026-10-24).
+   Steam ticket sign-in is used from then on.
 4. Ownership is rechecked at each sign-in, so refunds and revoked keys drop off: set `revoked_at`
    when `CheckAppOwnership` says no.
 5. A Steam-linked account can also sign in through Steam OpenID on the website. That's optional,
