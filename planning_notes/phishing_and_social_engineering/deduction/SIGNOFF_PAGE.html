@@ -1,0 +1,704 @@
+<title>Deduction Board Sign-off</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Courier+Prime:wght@400;700&display=swap">
+<style>
+/* Layout: a case file. One reading column, with the board mockup and decision cards set off as evidence on the desk. */
+:root {
+  --desk: #e9edf0;
+  --card: #ffffff;
+  --ink: #1b2330;
+  --muted: #5a6474;
+  --rule: #ccd3db;
+  --hidden: #8d97a6;
+  --sigil: #b23a2c;
+  --sigil-soft: #f6e3df;
+  --clear: #2a7a57;
+  --clear-soft: #dff0e7;
+  --warn: #9a6a12;
+  --warn-soft: #f6ecd6;
+  --focus: #2457c5;
+  --display: "Pixelify Sans", "Courier Prime", ui-monospace, monospace;
+  --body: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --typed: "Courier Prime", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --desk: #12171d; --card: #1b222b; --ink: #e5e9ef; --muted: #a2acba; --rule: #34404d;
+    --hidden: #7c8796; --sigil: #e57565; --sigil-soft: #3a2320; --clear: #5cc49a; --clear-soft: #17332a;
+    --warn: #e2b55a; --warn-soft: #362c17; --focus: #7aa2ff; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --desk: #12171d; --card: #1b222b; --ink: #e5e9ef; --muted: #a2acba; --rule: #34404d;
+  --hidden: #7c8796; --sigil: #e57565; --sigil-soft: #3a2320; --clear: #5cc49a; --clear-soft: #17332a;
+  --warn: #e2b55a; --warn-soft: #362c17; --focus: #7aa2ff; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--desk); color: var(--ink); font: 17px/1.55 var(--body); }
+.wrap {
+  max-width: 980px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 96px;
+  display: grid; gap: 56px;
+}
+h1, h2, h3 { font-family: var(--display); font-weight: 700; line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 5.5vw, 3.2rem); letter-spacing: 0.01em; }
+h2 { font-size: clamp(1.45rem, 3.5vw, 1.9rem); }
+h3 { font-size: 1.15rem; font-weight: 500; }
+p { margin: 0; max-width: 66ch; }
+.stack { display: grid; gap: 16px; }
+.stack-lg { display: grid; gap: 24px; }
+.tag { font: 700 0.74rem/1 var(--typed); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: 1.15rem; color: var(--ink); }
+.muted { color: var(--muted); }
+a { color: var(--focus); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+
+/* Hero */
+.hero { display: grid; gap: 18px; border-bottom: 2px solid var(--ink); padding-bottom: 32px; }
+.stamp {
+  justify-self: start; font: 700 0.8rem/1 var(--typed); letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--sigil); border: 2px solid var(--sigil); padding: 6px 10px; border-radius: 3px; transform: rotate(-2deg);
+}
+.facts { display: flex; flex-wrap: wrap; gap: 8px 22px; font: 0.9rem/1.4 var(--typed); color: var(--muted); }
+.facts b { color: var(--ink); }
+
+/* Walkthrough */
+.walk { display: grid; gap: 0; counter-reset: beat; border-left: 2px solid var(--rule); margin-left: 8px; }
+.beat { position: relative; padding: 0 0 22px 26px; display: grid; gap: 6px; }
+.beat::before {
+  counter-increment: beat; content: counter(beat);
+  position: absolute; left: -15px; top: 0; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--ink); color: var(--desk); font: 700 0.85rem/28px var(--typed); text-align: center;
+}
+.beat h3 { padding-top: 2px; }
+.quote { font: 0.98rem/1.5 var(--typed); background: var(--card); border: 1px solid var(--rule); padding: 10px 14px; border-radius: 4px; max-width: 66ch; }
+
+/* Board mockup */
+.board { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 18px; display: grid; gap: 16px; }
+.board-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: baseline; }
+.board-title { font: 700 1.1rem/1.2 var(--display); }
+.stakes-line { font: 0.88rem/1.4 var(--typed); color: var(--warn); background: var(--warn-soft); padding: 4px 8px; border-radius: 3px; }
+.profile-card { border: 1px dashed var(--rule); border-radius: 4px; padding: 12px 14px; display: grid; gap: 8px; }
+.profile-card ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.counts { display: flex; flex-wrap: wrap; gap: 6px 16px; font: 0.82rem/1.4 var(--typed); color: var(--muted); }
+.suspects { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.suspect { border: 1px solid var(--rule); border-radius: 4px; padding: 10px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.suspect-name { font-weight: 700; display: flex; justify-content: space-between; gap: 6px; align-items: baseline; }
+.mark { font: 700 0.7rem/1 var(--typed); letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 6px; border-radius: 3px; border: 1px solid var(--rule); color: var(--muted); white-space: nowrap; }
+.mark.guilty { color: var(--sigil); border-color: var(--sigil); }
+.mark.clear { color: var(--clear); border-color: var(--clear); }
+.slot { display: grid; gap: 4px; }
+.slot-label { font: 0.72rem/1.2 var(--typed); color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.cell { font-size: 0.86rem; line-height: 1.3; padding: 4px 6px; border-radius: 3px; background: var(--desk); }
+.cell.hidden { color: var(--hidden); font-style: italic; }
+.cell.marked { background: var(--sigil-soft); color: var(--ink); }
+.cell.marked::before { content: "✦ marked · "; color: var(--sigil); font-weight: 700; }
+.cell.gone { color: var(--muted); text-decoration: line-through; background: transparent; border: 1px dashed var(--rule); }
+.cell.new::after { content: " New"; font: 700 0.68rem/1 var(--typed); color: var(--focus); }
+.nudge { font: 0.92rem/1.4 var(--typed); padding: 8px 12px; border-left: 3px solid var(--focus); background: var(--desk); }
+.caption { font-size: 0.85rem; color: var(--muted); }
+
+/* Pillars */
+.pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px 28px; }
+.pillar { display: grid; gap: 6px; align-content: start; }
+.pillar h3 { font-size: 1.05rem; }
+
+/* Decision cards */
+.group { display: grid; gap: 14px; }
+.decision { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 18px; display: grid; gap: 12px; }
+.decision header { display: grid; gap: 4px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; }
+.two > div { min-width: 0; display: grid; gap: 4px; align-content: start; }
+.two p { font-size: 0.97rem; }
+@media (max-width: 680px) { .two { grid-template-columns: 1fr; } }
+.choice { display: flex; flex-wrap: wrap; gap: 8px; border: 0; padding: 0; margin: 0; }
+.choice legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.choice label {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 14px;
+  border: 1px solid var(--rule); border-radius: 999px; cursor: pointer; font-weight: 600; font-size: 0.95rem;
+  background: var(--desk);
+}
+.choice input { accent-color: var(--ink); width: 16px; height: 16px; }
+.choice label:has(input:checked) { border-color: var(--ink); background: var(--card); box-shadow: inset 0 0 0 1px var(--ink); }
+.choice label.ok:has(input:checked) { border-color: var(--clear); box-shadow: inset 0 0 0 1px var(--clear); color: var(--clear); }
+.choice label.adj:has(input:checked) { border-color: var(--warn); box-shadow: inset 0 0 0 1px var(--warn); color: var(--warn); }
+.choice label.no:has(input:checked) { border-color: var(--sigil); box-shadow: inset 0 0 0 1px var(--sigil); color: var(--sigil); }
+textarea {
+  width: 100%; min-height: 64px; resize: vertical; font: 0.95rem/1.45 var(--body); color: var(--ink);
+  background: var(--desk); border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px;
+}
+.ideas { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.idea { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 14px; display: grid; gap: 8px; align-content: start; }
+.idea > label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; font-weight: 700; }
+.idea input[type=checkbox] { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--ink); flex: none; }
+.idea p { font-size: 0.93rem; }
+.idea .note { min-height: 44px; }
+.fixtures { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.fixture { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; display: grid; gap: 10px; align-content: start; }
+.fixture dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 0.92rem; }
+.fixture dt { font: 700 0.74rem/1.6 var(--typed); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.fixture dd { margin: 0; min-width: 0; }
+.settled { display: grid; gap: 6px; padding: 0; margin: 0; list-style: none; }
+.settled li { display: grid; grid-template-columns: 3.2em 1fr; gap: 8px; font-size: 0.95rem; }
+.settled b { font-family: var(--typed); }
+
+/* Save bar */
+.savebar {
+  position: sticky; bottom: 0; z-index: 5;
+  background: var(--card); border-top: 2px solid var(--ink);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px));
+}
+.savebar-in { max-width: 980px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+.status { font: 0.9rem/1.3 var(--typed); color: var(--muted); }
+.status.ok { color: var(--clear); }
+.status.local { color: var(--warn); }
+.progress { font: 700 0.9rem/1 var(--typed); }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; }
+button {
+  font: 600 0.95rem/1 var(--body); min-height: 42px; padding: 0 16px; border-radius: 4px; cursor: pointer;
+  border: 1px solid var(--ink); background: var(--card); color: var(--ink);
+}
+button.primary { background: var(--ink); color: var(--card); }
+#copyFallback { width: 100%; min-height: 160px; font: 0.85rem/1.4 var(--typed); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="stamp">For sign-off</span>
+  <h1>Who is the agent in the room?</h1>
+  <p class="lede">A deduction layer for Break Escape. The brief tells you exactly what marks an ENTROPY agent or a cultist. You gather evidence from people, objects and every puzzle in the building, check each suspect against those rules, and then make calls that have real consequences.</p>
+  <p>This page walks through the design as a player would meet it, then lists each new element with a choice for you: approve it, adjust it, or rethink it. Your answers save as you go, so I can read them back and fold them into the plan.</p>
+  <div class="facts">
+    <span><b>Plan:</b> deduction/DEDUCTION_IMPLEMENTATION_PLAN.md</span>
+    <span><b>Reviewed:</b> 9 rounds, ready to build</span>
+    <span><b>For:</b> Eldritch Hacker and Incident Simulations</span>
+    <span><b>Inspired by:</b> Horror on the Orient Express (board game)</span>
+  </div>
+</header>
+
+<section class="stack-lg" aria-labelledby="play-h">
+  <div class="stack">
+    <span class="tag">Part 1 · The player's view</span>
+    <h2 id="play-h">One evening at the Institute</h2>
+    <p>Here is fixture A, "Open evening", as a player would play it. It is a test case with placeholder names, but it uses every part of the system.</p>
+  </div>
+  <ol class="walk" style="list-style:none;padding:0;margin:0 0 0 8px">
+    <li class="beat">
+      <h3>The brief gives you the rules</h3>
+      <p>HaX calls before you go in. Five guests are at the Tesseract Institute's open evening. The lodge's people can be recognised three ways, and any one of them is enough:</p>
+      <div class="quote">Keyholder: carries the brass Tesseract key. There is only one.<br>Courier: badged into the archive, wants the Codex, and has no ward charm.<br>Devotee: has three or more marked clues.</div>
+      <p>HaX also tells you what a wrong call will cost: "Accuse the wrong guest and the lodge closes ranks. People stop talking to you." Nobody says how many guests are guilty. It could be one, all five, or none.</p>
+    </li>
+    <li class="beat">
+      <h3>The board shows what you don't know yet</h3>
+      <p>You open the case file. Each guest has a card with three slots (where they were, what they want, what they carry) and every clue is shown face down. You can see that Marsh carries three things and you know none of them. The profile card counts the clues in play: one brass key, two ward charms, three archive badges.</p>
+    </li>
+    <li class="beat">
+      <h3>People talk about other people</h3>
+      <p>The bar staff and the intern know who went where. The first question is free. Every question after that costs a little goodwill, and if you push too hard the intern goes quiet or, worse, tells someone you've been asking. A kind word wins some of it back. Suspects can show you what's in their bag, but their own word never clears them.</p>
+    </li>
+    <li class="beat">
+      <h3>Every puzzle can be evidence</h3>
+      <p>You pick the cloakroom lock and go through the coats: a ward charm in one pocket, a marked burner SIM in another. You dust Marsh's wine glass and the print shows a sigil ring. The archive badge log clears one guest outright. Each find drops onto the board, marked "New".</p>
+    </li>
+    <li class="beat">
+      <h3>A favour, and a risk</h3>
+      <p>Marsh asks you to fetch something from the cloakroom for her. Doing it shows you everything about her, which is tempting. If she's one of them, you've just run an errand for the lodge. HaX warned you not to do favours for anyone you haven't cleared.</p>
+    </li>
+    <li class="beat">
+      <h3>The nudge</h3>
+      <p>The board says: "You have enough to decide about Venn. Check what's on their card." It never says which way. You look again: everything Venn carries is known, and it's a ward charm. So no key, she can't be a Courier, and she has no marked clues. She's clear.</p>
+    </li>
+    <li class="beat">
+      <h3>The one key turns up, and counting pays</h3>
+      <p>The archive camera shows the brass key in Okafor's hand. There is only one, so nobody else can be a Keyholder, even guests whose pockets you never searched. HaX gives you a choice: confront her now, have it seized after the evening, or watch where she takes it. Confronting her is certain, but it warns the others.</p>
+    </li>
+    <li class="beat">
+      <h3>Calls, then the debrief</h3>
+      <p>You accuse in conversation as you go. When you're ready, HaX asks if you're done ("Not yet" is always an option). Then the debrief goes through each guest: what the evidence said, what you called, and why. For a mistake it shows either "You already held what settled it" or the clue that would have, and where it was.</p>
+    </li>
+  </ol>
+</section>
+
+<section class="stack-lg" aria-labelledby="board-h">
+  <div class="stack">
+    <span class="tag">What it looks like</span>
+    <h2 id="board-h">The case board, mid-game</h2>
+    <p>A mockup of the board's new deduction mode, drawn in the existing intel board's style. The game draws this as pixel art with pinned cards; this mockup shows the structure.</p>
+  </div>
+  <div class="board" role="img" aria-label="Mockup of the deduction board for fixture A, mid-game">
+    <div class="board-head">
+      <span class="board-title">Open evening · case file</span>
+      <span class="stakes-line">Stakes: a wrong call changes what you can do next.</span>
+    </div>
+    <div class="profile-card">
+      <span class="tag">What to look for (any one is enough)</span>
+      <ul>
+        <li><b>Keyholder</b>: carries the brass Tesseract key.</li>
+        <li><b>Courier</b>: badged into the archive, wants the Codex, has no ward charm.</li>
+        <li><b>Devotee</b>: three or more marked clues.</li>
+      </ul>
+      <div class="counts">
+        <span>Brass key: 1 in this case · found: none yet</span>
+        <span>Ward charm: 2 · found: Ishikawa, Venn</span>
+        <span>Archive badge: 3 · found: 2</span>
+      </div>
+    </div>
+    <div class="suspects">
+      <div class="suspect">
+        <div class="suspect-name">Okafor <span class="mark">Undecided</span></div>
+        <div class="slot"><span class="slot-label">Where they were</span><div class="cell">Lecture hall</div></div>
+        <div class="slot"><span class="slot-label">What they want</span><div class="cell marked">the Codex</div></div>
+        <div class="slot"><span class="slot-label">What they carry</span><div class="cell hidden">Hidden</div><div class="cell hidden">Hidden</div></div>
+      </div>
+      <div class="suspect">
+        <div class="suspect-name">Venn <span class="mark clear">Not a cultist</span></div>
+        <div class="slot"><span class="slot-label">Where they were</span><div class="cell">Archive</div></div>
+        <div class="slot"><span class="slot-label">What they want</span><div class="cell">a reference</div></div>
+        <div class="slot"><span class="slot-label">What they carry</span><div class="cell new">Ward charm</div></div>
+      </div>
+      <div class="suspect">
+        <div class="suspect-name">Marsh <span class="mark guilty">Cultist?</span></div>
+        <div class="slot"><span class="slot-label">Where they were</span><div class="cell hidden">Hidden</div></div>
+        <div class="slot"><span class="slot-label">What they want</span><div class="cell">a promotion</div></div>
+        <div class="slot"><span class="slot-label">What they carry</span><div class="cell marked">sigil ring</div><div class="cell marked">burner SIM</div><div class="cell hidden">Hidden</div></div>
+      </div>
+      <div class="suspect">
+        <div class="suspect-name">Ishikawa <span class="mark">Undecided</span></div>
+        <div class="slot"><span class="slot-label">Where they were</span><div class="cell gone">Evidence destroyed</div></div>
+        <div class="slot"><span class="slot-label">What they want</span><div class="cell">funding</div></div>
+        <div class="slot"><span class="slot-label">What they carry</span><div class="cell">Ward charm</div><div class="cell hidden">Hidden</div></div>
+      </div>
+      <div class="suspect">
+        <div class="suspect-name">Delacroix <span class="mark">Undecided</span></div>
+        <div class="slot"><span class="slot-label">Where they were</span><div class="cell">Archive</div></div>
+        <div class="slot"><span class="slot-label">What they want</span><div class="cell hidden">Hidden</div></div>
+        <div class="slot"><span class="slot-label">What they carry</span><div class="cell hidden">Hidden</div><div class="cell hidden">Hidden</div></div>
+      </div>
+    </div>
+    <div class="nudge">You have enough to decide about Venn. Check what's on their card.</div>
+  </div>
+  <p class="caption">Marked clues carry a symbol and the word "marked", never colour alone. Hidden cells show how much is left to learn about each person. Marks are the player's own notes until something commits them as a verdict.</p>
+</section>
+
+<section class="stack-lg" aria-labelledby="fun-h">
+  <div class="stack">
+    <span class="tag">Why it should be fun</span>
+    <h2 id="fun-h">What makes it play well</h2>
+  </div>
+  <div class="pillars">
+    <div class="pillar"><h3>You're checking rules, not guessing a plot</h3><p>The profiles are stated up front, so every conclusion is something you can prove. The satisfying moment is "that rules her out", not "I think the author meant him".</p></div>
+    <div class="pillar"><h3>Counting is a weapon</h3><p>Knowing there is only one brass key, or two ward charms, lets you clear people you haven't fully searched. Players feel clever when an elimination lands.</p></div>
+    <div class="pillar"><h3>Every room you already know how to play pays off</h3><p>Lockpicking, PIN safes, dusting, RFID cloning, logs and conversations all feed the same board, so familiar puzzles get a new purpose.</p></div>
+    <div class="pillar"><h3>Shortcuts with a price</h3><p>Pushing a witness, doing a favour or confronting early all save time and all carry risk. The player decides how much to gamble.</p></div>
+    <div class="pillar"><h3>The opposition fights back</h3><p>Evidence gets destroyed at story beats, which rewards collecting early and having a second source. Recovering a shredded note feels like a win.</p></div>
+    <div class="pillar"><h3>Calls matter, and you're told how much</h3><p>Each mission states its stakes. A wrong call can close a route, start a fight or lose the mission, and the debrief shows exactly why, without blame.</p></div>
+  </div>
+</section>
+
+<section class="stack-lg" aria-labelledby="teach-h">
+  <div class="stack">
+    <span class="tag">Why it teaches</span>
+    <h2 id="teach-h">The Cyber Security underneath</h2>
+    <p>The mechanics map onto insider-risk and attribution practice: working from an indicator profile, not a hunch; looking for evidence of absence; needing several indicators rather than one; not stopping at the first match; corroborating before evidence disappears; and remembering that wrongly accusing a colleague does real harm. Pushing a witness and doing favours are social engineering seen from the investigator's side, and the favour that helps a cultist is tailgating with a story.</p>
+  </div>
+</section>
+
+<section class="stack-lg" aria-labelledby="game-h">
+  <div class="stack">
+    <span class="tag">Part 2 · Your decisions</span>
+    <h2 id="game-h">Gameplay elements</h2>
+    <p>Each element is described as the player sees it and as it's built. Pick one option for each and add a note where you want something different. "Adjust" means keep the idea but change it; "Rethink" means it doesn't work for you.</p>
+  </div>
+  <div class="group" id="gameplayList"></div>
+</section>
+
+<section class="stack-lg" aria-labelledby="arch-h">
+  <div class="stack">
+    <h2 id="arch-h">Architecture</h2>
+    <p>How it fits into the engine. It's built alongside the ongoing social engineering work, and every new piece does nothing in a scenario without a deduction block, so the shipped missions are unaffected.</p>
+  </div>
+  <div class="group" id="archList"></div>
+</section>
+
+<section class="stack-lg" aria-labelledby="fix-h">
+  <div class="stack">
+    <h2 id="fix-h">The four test cases</h2>
+    <p>Each one is a small test scenario that proves a different style of play. They're built in the order B, A, C, D. Names are placeholders.</p>
+  </div>
+  <div class="fixtures" id="fixtureList"></div>
+</section>
+
+<section class="stack-lg" aria-labelledby="ideas-h">
+  <div class="stack">
+    <span class="tag">Part 3 · Take it further</span>
+    <h2 id="ideas-h">Ideas to make it more fun, or different</h2>
+    <p>None of these is in the plan yet. Some came from the design reviews and player tests; some are deferred extensions the data already leaves room for. Tick the ones you'd like planned and say how.</p>
+  </div>
+  <div class="ideas" id="ideaList"></div>
+</section>
+
+<section class="stack-lg" aria-labelledby="q-h">
+  <div class="stack">
+    <h2 id="q-h">Open questions</h2>
+  </div>
+  <div class="group" id="questionList"></div>
+</section>
+
+<section class="stack" aria-labelledby="done-h">
+  <h2 id="done-h">Already decided</h2>
+  <p class="muted">Your earlier answers, shown for reference. Use the overall notes below if you want to revisit one.</p>
+  <ul class="settled">
+    <li><b>Q1</b><span>Retry after a strict loss is off by default; a mission can opt in once.</span></li>
+    <li><b>Q2</b><span>A knockout is final; the suspect isn't brought round.</span></li>
+    <li><b>Q3</b><span>No score change beyond skipping the "case solved" task.</span></li>
+    <li><b>Q4</b><span>A lost mission ends through the debrief and credits with failure lines, never "MISSION COMPLETE".</span></li>
+    <li><b>Q5</b><span>Players can vouch for (clear) a suspect as a verdict.</span></li>
+    <li><b>Q6</b><span>In fixture C, a contact sent to wait can be let go.</span></li>
+    <li><b>Q7</b><span>The nudge says how a suspect became decidable ("Check the counts." / "Check what's on their card."), never which way.</span></li>
+    <li><b>Q8</b><span>Real Incident Simulations missions use "Refer to HR" / "No further action".</span></li>
+    <li><b>Q9</b><span>Engine text comes in a plain voice (default) and a pulp voice.</span></li>
+  </ul>
+</section>
+
+<section class="stack-lg" aria-labelledby="overall-h">
+  <div class="stack">
+    <h2 id="overall-h">Overall</h2>
+  </div>
+  <div class="decision">
+    <header><h3>Architecture</h3><p class="muted">Approve the engine design so building can start with wave 0 (baseline and spikes)?</p></header>
+    <fieldset class="choice" id="ov_arch"><legend>Architecture</legend></fieldset>
+  </div>
+  <div class="decision">
+    <header><h3>Gameplay</h3><p class="muted">Approve the gameplay design as described, including any adjustments you've noted above?</p></header>
+    <fieldset class="choice" id="ov_game"><legend>Gameplay</legend></fieldset>
+  </div>
+  <div class="decision">
+    <header><h3>Anything else</h3><p class="muted">Direction, priorities, or something that should feel different.</p></header>
+    <textarea id="ov_notes" aria-label="Overall notes"></textarea>
+  </div>
+  <textarea id="copyFallback" hidden readonly aria-label="Your answers as text"></textarea>
+</section>
+
+</div>
+
+<div class="savebar">
+  <div class="savebar-in">
+    <span class="progress" id="progress">0 of 0 answered</span>
+    <span class="status" id="status">Connecting…</span>
+    <div class="btns">
+      <button type="button" id="copyBtn">Copy answers</button>
+      <button type="button" class="primary" id="sendBtn">Mark as finished</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const GAMEPLAY = [
+  { id: "g_profiles", title: "Profiles stated in the brief",
+    player: "The brief tells you exactly what marks an agent or cultist, and the board repeats it. Any profile matching is enough. Nobody tells you how many are guilty: it could be none or everyone.",
+    build: "Profiles are data rules (has, not, all, any, at-least-N-marked). The brief text is linted so it can't imply a number guilty. Profiles found mid-mission as evidence is a later option on the same data." },
+  { id: "g_board", title: "The case board and public counts",
+    player: "One card per suspect with the same slots for everyone. Every clue cell shows face down, so you know how much is left to learn. The profile card counts each clue in play and where it's been found.",
+    build: "A new deduction mode on the existing intel board (one case-file object). Cell counts come from the clue data, and the validator warns if cell counts would give guilt away." },
+  { id: "g_marked", title: "Marked clues",
+    player: "Some clues carry the opposition's sign: a sigil, a forum handle, a ritual date. A threshold profile ('three or more marked') means no single clue convicts, but enough of them do.",
+    build: "A marked flag on a clue type, shown with a symbol and the word 'marked' (or the mission's own word, such as 'cult sign')." },
+  { id: "g_sources", title: "Evidence from everywhere",
+    player: "Items people hold (by trade, favour, pickpocketing or a knockout), witness gossip, lockpicked bags, PIN safes, fingerprint dusting, cloned badges, door logs, shredded papers, email and OSINT all feed the board.",
+    build: "Every clue is an ordinary intel fact. A new scenario 'triggers' block turns any puzzle's success event into a clue, so none of the eight puzzle minigames needs editing. A #grant_fact ink tag covers conversations." },
+  { id: "g_witness", title: "Pushing a witness",
+    player: "The first question is free; each one after it costs goodwill. A wary witness gets vague, a refusing one ends the chat, and one who reports you tips off the opposition, who then destroy a piece of evidence. A kind word wins some goodwill back.",
+    build: "Reuses the existing influence meter and its thresholds; no new meter. Witnesses get at least three topics so pushing is a real choice." },
+  { id: "g_favours", title: "Favours",
+    player: "A suspect asks you to run an errand. Doing it reveals everything about them at once. If they're guilty, you've helped them, and the story makes you pay. The brief warns you not to do favours for anyone you haven't cleared.",
+    build: "#deduction_favour reveals all of that suspect's clues after a real errand; the favour's backfire actions run only if the suspect is guilty." },
+  { id: "g_unique", title: "The one-of-a-kind item",
+    player: "When the only key turns up, you choose: confront the owner now (certain, but others are warned), have it seized later, or watch where they take it.",
+    build: "Authored ink using existing tags. Every option that deals with the owner counts as a verdict; deferring says so." },
+  { id: "g_tamper", title: "Evidence destroyed",
+    player: "At story beats the opposition wipes a log or shreds a note. That clue shows as 'Evidence destroyed'. You can win it back through another route: recovering the shredded paper, restoring a backup, or asking a second witness.",
+    build: "A deduction_tamper action fades the first clue you don't already hold. The validator insists every destroyable clue has a second route." },
+  { id: "g_nudge", title: "The nudge",
+    player: "'You have enough to decide about Venn. Check the counts.' It never says which way. A mission can switch it off for a harder case.",
+    build: "Computed by the same evaluator the validator uses, so it is always right. 'How' lines are checked by simulation to occur both ways." },
+  { id: "g_verdicts", title: "Making calls",
+    player: "Accuse someone in conversation, report names to SAFETYNET or a manager, knock a suspect out (that counts as accusing them, and it's final), act on what you know (lock them in, feed them a fake), vouch for someone, or make the final call on the board. Each mission picks which of these it allows, and whether calls land as you go or all at the end.",
+    build: "One verdict record per suspect, with a kind; the first call stands. New #verdict and #verdict_close tags; knockouts hook the existing npc_ko event." },
+  { id: "g_stakes", title: "Stakes, told up front",
+    player: "Strict: one wrong call loses the mission. Costly: a wrong call changes what you can do next (a witness stops talking, a route closes, a fight starts). Light: it changes the story and the debrief. The brief says which, unless the mission is built around a twist.",
+    build: "Per-outcome action lists, plus escalation on repeated wrong calls. The validator works out the rigidity from the actions and rejects a mismatch with what the brief claims." },
+  { id: "g_debrief", title: "The debrief",
+    player: "One card per suspect: what the evidence says, your call, your own note, and why. That covers the clause that matched or failed, 'You already held what settled it', or the clue that would have settled it and where it was. Right calls made before the evidence settled them are flagged as lucky. No blame wording.",
+    build: "Built from the evidence held at the moment of each verdict, which is stored with the verdict. Opens before any ending runs; the credits follow only after Finish." },
+  { id: "g_voice", title: "Two voices",
+    player: "Incident Simulations reads plain and corporate, with 'Refer to HR' and 'No further action' as the calls. Eldritch Hacker reads pulpy, but never at the cost of a clue being clear.",
+    build: "A deduction.voice key selects the engine's plain or pulp strings; verdict nouns come from the mission." },
+];
+
+const ARCH = [
+  { id: "a_facts", title: "Clues are ordinary intel facts",
+    player: "Clues behave like everything else you collect: saved, in your notes, readable by any conversation.",
+    build: "Reuses grantFact and the se_intel_* globals. A deduction field on a fact names its suspect and clue. Nothing new to persist per clue." },
+  { id: "a_eval", title: "One evaluator, everywhere",
+    player: "The board, the nudge, the debrief and the validator always agree.",
+    build: "A pure JavaScript module (three-valued logic, public counts, pigeonhole elimination) for runtime and board, and a Ruby port for the validator, kept equal by shared conformance cases seeded from the simulator." },
+  { id: "a_triggers", title: "Scenario-level triggers",
+    player: "Any puzzle can produce a clue.",
+    build: "A top-level 'triggers' block maps an event (door unlocked, item picked up, fingerprint identified, card cloned, global changed) to actions. It arms after the game loads, ignores restored inventory, and is opt-in for every scenario." },
+  { id: "a_tags", title: "New ink tags and actions",
+    player: "Writers can grant clues, record verdicts and close cases from dialogue.",
+    build: "Tags: #grant_fact, #verdict, #verdict_close, #deduction_favour. Actions: verdict, grant_facts, deduction_tamper, remove_item, fail_mission, reveal_hostiles (pre-placed hidden NPCs, no runtime spawning), lose_ally. Each one does nothing without a deduction block." },
+  { id: "a_runtime", title: "The deduction runtime",
+    player: "Calls, the debrief and the ending survive a reload at any point.",
+    build: "One state object (ids only), verdict grading, a careful Finish order (sync before tasks, credits last), and witnesses' influence bound in ordinary chats." },
+  { id: "a_lints", title: "Validator lints DL1 to DL23",
+    player: "Every case shipped is solvable, fair and honest about its stakes.",
+    build: "Checks that the solution matches the evidence, every suspect can be decided, the opening rooms don't give the case away, destroyed clues have a second route, the stakes line is true, and no board-game terms or implied guilty counts reach the player." },
+  { id: "a_tests", title: "Simulator and tests",
+    player: "No hidden dead ends.",
+    build: "An exhaustive simulator (15 million states for the train case) proves every fixture, alongside unit, validator, board and bridge tests, a blind playtest, and back-compat checks on the shipped missions." },
+  { id: "a_phasing", title: "Build plan: Phase 10",
+    player: "Arrives alongside the social engineering lab and episodes.",
+    build: "Waves 0 to 5: baseline and four engine spikes, then the evaluator, validator, runtime and board, then the four test cases and playtests. About 30 work packets; Opus for engine and judgement work, Sonnet for well-specified packets." },
+];
+
+const FIXTURES = [
+  { id: "f_B", title: "B · Night shift", skin: "Incident Simulations",
+    who: "Four staff; a door was left open for an outsider.",
+    rules: "One Insider profile: went in outside their role, a personal device on the network, and a grievance this month (all three).",
+    calls: "Name any number to the shift manager by phone. No combat.",
+    stakes: "Light. Completion scoring.",
+    proves: "The no-combat route for items people hold, witness budgets, door logs, the clean validator fixture." },
+  { id: "f_A", title: "A · Open evening", skin: "Eldritch Hacker",
+    who: "Five guests at the Institute.",
+    rules: "Three profiles: Keyholder, Courier, Devotee.",
+    calls: "Accuse as you go, or knock someone out.",
+    stakes: "Costly: witnesses stop talking, and a second wrong call brings a doorman.",
+    proves: "All three profile types, favours, the unique-item choice, dusting with a fallback, a forced exit." },
+  { id: "f_C", title: "C · Safe house", skin: "Eldritch Hacker",
+    who: "Three contacts; one cannot be trusted.",
+    rules: "A tradecraft profile from HaX.",
+    calls: "Act on knowledge: send contacts to wait, lock them in or let them go; knockouts.",
+    stakes: "Hidden until the end, as a twist.",
+    proves: "Act verdicts, the release choice, hidden stakes, a handler who pulls you out." },
+  { id: "f_D", title: "D · Night train", skin: "Eldritch Hacker",
+    who: "Five passengers in moving carriages.",
+    rules: "Three profiles; evidence is destroyed at every stop.",
+    calls: "One final call on the board, with the nudge on.",
+    stakes: "Strict: one wrong or missed call loses the mission.",
+    proves: "Strict mode, tampering and recovery, bringing stops forward, credits that show a loss honestly." },
+];
+
+const IDEAS = [
+  { id: "i_press", title: "Press a wary witness",
+    text: "Once a witness is wary, a 'Press him. He won't like it.' choice gets the clue now but takes them to the reporting threshold, and the evidence that's then destroyed names who talked." },
+  { id: "i_threats", title: "At-risk warnings",
+    text: "Before a tamper, the board marks the cell that's threatened ('At risk: the next stop'), so racing the opposition becomes a visible goal." },
+  { id: "i_react", title: "Suspects who react",
+    text: "A suspect who notices you investigating moves room, hides an item, or tries to leave, raising the tension mid-case." },
+  { id: "i_liars", title: "Unreliable witnesses",
+    text: "A witness who lies about one slot, exposed only by corroboration. Teaches source reliability. Needs a new 'contested clue' state." },
+  { id: "i_hidden", title: "Profiles found as evidence",
+    text: "The brief gives part of the rule; the rest is found mid-mission (an intercepted induction page). The data already reserves room for this." },
+  { id: "i_two", title: "Two rival cells",
+    text: "Two opposition groups in one case, each with its own profile and verdict noun, so a suspect can be guilty of the wrong thing." },
+  { id: "i_reveal", title: "Drawing-room reveal",
+    text: "The debrief plays out card by card, with each suspect's reaction line as you're proved right or wrong, like the end of a detective story." },
+  { id: "i_confidence", title: "Say how sure you are",
+    text: "Each call carries a confidence (sure / likely / guessing). The debrief praises well-calibrated calls and flags confident mistakes." },
+  { id: "i_shuffle", title: "Random setup for replay",
+    text: "A seeded shuffle deals clues differently each playthrough, checked by the evaluator for a fair, decidable case. Costs authored text templates per clue." },
+  { id: "i_class", title: "Classroom discussion mode",
+    text: "Before the final call, the game pauses for a group discussion and shows the board in a shareable view, for taught sessions." },
+];
+
+const QUESTIONS = [
+  { id: "q_first", title: "Which real mission should use this first?",
+    opts: ["An Incident Simulations insider case", "An Eldritch Hacker lodge mission", "Both, in parallel", "Neither yet"] },
+  { id: "q_stakes", title: "Default stakes for Eldritch Hacker missions",
+    opts: ["Light", "Costly", "Strict for the finale only", "Varies by mission"] },
+  { id: "q_count", title: "Suspects per case",
+    opts: ["3 to 4", "4 to 5", "Up to 6", "Varies by mission"] },
+  { id: "q_nudge", title: "Should the nudge be on by default?",
+    opts: ["On everywhere", "On for Incident Simulations, off for Eldritch Hacker", "Off by default", "Let each mission choose"] },
+  { id: "q_start", title: "When should building start?",
+    opts: ["Now (wave 0 alongside the SE work)", "After the SE lab playtests finish", "After the first mission design is agreed", "Hold for now"] },
+];
+
+const VERDICT_OPTS = [["approve", "Approve", "ok"], ["adjust", "Adjust", "adj"], ["rethink", "Rethink", "no"]];
+const OVERALL_OPTS = [["approve", "Approve", "ok"], ["approve_changes", "Approve with my changes", "adj"], ["rethink", "Rethink", "no"]];
+
+function el(tag, attrs, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === "class") n.className = v; else if (k === "text") n.textContent = v; else n.setAttribute(k, v);
+  }
+  for (const k of kids) if (k) n.append(k);
+  return n;
+}
+function radios(container, name, opts) {
+  for (const [value, label, cls] of opts) {
+    const input = el("input", { type: "radio", name, value, id: name + "_" + value });
+    container.append(el("label", { class: cls || "", for: name + "_" + value }, input, document.createTextNode(label)));
+  }
+}
+function decisionCard(item) {
+  const fs = el("fieldset", { class: "choice" }, el("legend", { text: item.title }));
+  radios(fs, item.id, VERDICT_OPTS);
+  return el("article", { class: "decision" },
+    el("header", {}, el("h3", { text: item.title })),
+    el("div", { class: "two" },
+      el("div", {}, el("span", { class: "tag", text: "What the player sees" }), el("p", { text: item.player })),
+      el("div", {}, el("span", { class: "tag", text: "How it's built" }), el("p", { text: item.build }))),
+    fs,
+    el("textarea", { id: item.id + "_note", "aria-label": item.title + " notes", placeholder: "Notes: what to change, or why" }));
+}
+function render() {
+  const g = document.getElementById("gameplayList"); GAMEPLAY.forEach(i => g.append(decisionCard(i)));
+  const a = document.getElementById("archList"); ARCH.forEach(i => a.append(decisionCard(i)));
+  const f = document.getElementById("fixtureList");
+  FIXTURES.forEach(x => {
+    const fs = el("fieldset", { class: "choice" }, el("legend", { text: x.title }));
+    radios(fs, x.id, VERDICT_OPTS);
+    const dl = el("dl", {});
+    [["Skin", x.skin], ["Cast", x.who], ["Rules", x.rules], ["Calls", x.calls], ["Stakes", x.stakes], ["Proves", x.proves]]
+      .forEach(([k, v]) => { dl.append(el("dt", { text: k }), el("dd", { text: v })); });
+    f.append(el("article", { class: "fixture" }, el("h3", { text: x.title }), dl, fs,
+      el("textarea", { id: x.id + "_note", "aria-label": x.title + " notes", placeholder: "Notes" })));
+  });
+  const ideas = document.getElementById("ideaList");
+  IDEAS.forEach(x => {
+    const cb = el("input", { type: "checkbox", id: x.id });
+    ideas.append(el("div", { class: "idea" },
+      el("label", { for: x.id }, cb, el("span", { text: x.title })),
+      el("p", { text: x.text }),
+      el("textarea", { class: "note", id: x.id + "_note", "aria-label": x.title + " notes", placeholder: "How you'd want it" })));
+  });
+  const q = document.getElementById("questionList");
+  QUESTIONS.forEach(x => {
+    const fs = el("fieldset", { class: "choice" }, el("legend", { text: x.title }));
+    radios(fs, x.id, x.opts.map((o, i) => ["o" + i, o, ""]));
+    q.append(el("article", { class: "decision" }, el("header", {}, el("h3", { text: x.title })), fs,
+      el("textarea", { id: x.id + "_note", "aria-label": x.title + " notes", placeholder: "Notes" })));
+  });
+  radios(document.getElementById("ov_arch"), "ov_arch", OVERALL_OPTS);
+  radios(document.getElementById("ov_game"), "ov_game", OVERALL_OPTS);
+}
+render();
+
+const RADIO_IDS = [...GAMEPLAY, ...ARCH, ...FIXTURES, ...QUESTIONS].map(x => x.id).concat(["ov_arch", "ov_game"]);
+const NOTE_IDS = [...GAMEPLAY, ...ARCH, ...FIXTURES, ...IDEAS, ...QUESTIONS].map(x => x.id + "_note").concat(["ov_notes"]);
+
+function collect() {
+  const choices = {}, notes = {}, ideas = {};
+  RADIO_IDS.forEach(id => { const c = document.querySelector('input[name="' + id + '"]:checked'); if (c) choices[id] = c.value; });
+  NOTE_IDS.forEach(id => { const v = document.getElementById(id).value.trim(); if (v) notes[id] = v; });
+  IDEAS.forEach(x => { if (document.getElementById(x.id).checked) ideas[x.id] = true; });
+  return { choices, notes, ideas };
+}
+function apply(a) {
+  if (!a) return;
+  Object.entries(a.choices || {}).forEach(([id, v]) => { const r = document.getElementById(id + "_" + v); if (r) r.checked = true; });
+  Object.entries(a.notes || {}).forEach(([id, v]) => { const t = document.getElementById(id); if (t) t.value = v; });
+  Object.keys(a.ideas || {}).forEach(id => { const c = document.getElementById(id); if (c) c.checked = true; });
+}
+function updateProgress() {
+  const a = collect();
+  document.getElementById("progress").textContent = Object.keys(a.choices).length + " of " + RADIO_IDS.length + " answered";
+}
+
+const statusEl = document.getElementById("status");
+function setStatus(text, cls) { statusEl.textContent = text; statusEl.className = "status" + (cls ? " " + cls : ""); }
+
+const LOCAL_KEY = "deduction-signoff-draft";
+function saveLocal(a) { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(a)); } catch (e) {} }
+function loadLocal() { try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || "null"); } catch (e) { return null; } }
+
+let docRef = null, finished = false, writing = Promise.resolve(), timer = null, lastJson = "";
+async function writeRemote() {
+  const a = collect();
+  const json = JSON.stringify([a, finished]);
+  saveLocal(a);
+  if (!docRef) { setStatus("Saved in this browser only. Use Copy answers to send them.", "local"); return; }
+  if (json === lastJson) return;
+  lastJson = json;
+  setStatus("Saving…");
+  writing = writing.then(() => docRef.set({ answers: a, finished, version: 1, savedAt: new Date().toISOString() }))
+    .then(() => setStatus(finished ? "Finished and saved for Claude" : "Saved for Claude", "ok"))
+    .catch(() => { lastJson = ""; setStatus("Couldn't save online. Your answers are kept in this browser; use Copy answers.", "local"); });
+  return writing;
+}
+function scheduleSave() { updateProgress(); clearTimeout(timer); timer = setTimeout(writeRemote, 1200); }
+document.addEventListener("change", scheduleSave);
+document.addEventListener("input", e => { if (e.target.tagName === "TEXTAREA" && e.target.id !== "copyFallback") scheduleSave(); });
+
+function asText() {
+  const a = collect(), lines = ["Deduction board sign-off", ""];
+  const label = (opts, v) => (opts.find(o => o[0] === v) || [, v])[1];
+  const sec = (title, list) => {
+    lines.push("## " + title);
+    list.forEach(x => {
+      const v = a.choices[x.id], n = a.notes[x.id + "_note"];
+      lines.push("- " + x.title + ": " + (v ? label(VERDICT_OPTS, v) : "no answer") + (n ? " — " + n : ""));
+    });
+    lines.push("");
+  };
+  sec("Gameplay", GAMEPLAY); sec("Architecture", ARCH); sec("Test cases", FIXTURES);
+  lines.push("## Ideas");
+  IDEAS.forEach(x => { if (a.ideas[x.id] || a.notes[x.id + "_note"]) lines.push("- " + (a.ideas[x.id] ? "[x] " : "[ ] ") + x.title + (a.notes[x.id + "_note"] ? " — " + a.notes[x.id + "_note"] : "")); });
+  lines.push("", "## Questions");
+  QUESTIONS.forEach(x => {
+    const v = a.choices[x.id], n = a.notes[x.id + "_note"];
+    lines.push("- " + x.title + ": " + (v ? x.opts[Number(v.slice(1))] : "no answer") + (n ? " — " + n : ""));
+  });
+  lines.push("", "## Overall",
+    "- Architecture: " + (a.choices.ov_arch ? label(OVERALL_OPTS, a.choices.ov_arch) : "no answer"),
+    "- Gameplay: " + (a.choices.ov_game ? label(OVERALL_OPTS, a.choices.ov_game) : "no answer"));
+  if (a.notes.ov_notes) lines.push("- Notes: " + a.notes.ov_notes);
+  return lines.join("\n");
+}
+document.getElementById("copyBtn").addEventListener("click", () => {
+  const text = asText(), fb = document.getElementById("copyFallback");
+  const showFallback = () => { fb.value = text; fb.hidden = false; fb.focus(); fb.select(); setStatus("Select all and copy the text below.", "local"); };
+  try {
+    navigator.clipboard.writeText(text).then(() => setStatus("Copied. Paste it into the chat.", "ok"), showFallback);
+  } catch (e) { showFallback(); }
+});
+document.getElementById("sendBtn").addEventListener("click", () => { finished = true; clearTimeout(timer); writeRemote(); });
+
+apply(loadLocal());
+updateProgress();
+
+(async () => {
+  const use = window.claude && window.claude.use;
+  if (!use) { setStatus("Saved in this browser only. Use Copy answers to send them.", "local"); return; }
+  try {
+    const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    if (!db || !user) { setStatus("Sign in to save online, or use Copy answers.", "local"); return; }
+    const uid = await user.id();
+    if (!uid) { setStatus("Sign in to save online, or use Copy answers.", "local"); return; }
+    docRef = db.collection("responses").doc(uid);
+    const snap = await docRef.get();
+    if (snap.exists) {
+      const d = snap.data() || {};
+      apply(d.answers); finished = !!d.finished;
+      lastJson = JSON.stringify([collect(), finished]);
+      updateProgress();
+      setStatus(finished ? "Finished and saved for Claude" : "Saved for Claude", "ok");
+    } else {
+      setStatus("Ready. Answers save for Claude as you go.", "ok");
+      if (Object.keys(collect().choices).length) scheduleSave();
+    }
+  } catch (e) {
+    setStatus("Couldn't connect. Answers are kept in this browser; use Copy answers.", "local");
+  }
+})();
+</script>
