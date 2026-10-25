@@ -23,9 +23,23 @@ https://claude.ai/artifact/QBKtq9fDreEQch1CKxUG1V
 Round 6 review (full design draft v2 with schema and seed rows, plus 11 review points):
 https://claude.ai/artifact/HacZEWwASkqX7wE68ntAYA
 
+Implementation plan review (`IMPLEMENTATION_PLAN.md`, 9 points to approve):
+https://claude.ai/artifact/Av3Qsr23MLZBvd33GoqHi1
+
 | Q | Question | Where the options are written up |
 |---|---|---|
 | C2, C3 | Products and tiers across individual, org and Steam/Play access: org tiers (awareness courses, incident response games, full VM labs), org managers assigning games, org members' access to hackboxes and games. Direction picked: new Product and Entitlement tables | `ENTITLEMENTS.md`, "Recording ownership" |
+
+## Round 6 answers (2026-10-25)
+
+All recommended options taken: plan grants and org ticks (V1); org managers and admins tick (V2);
+`orgs.plan_id` set by Stripe and the org form (V3); non-admins copy pools in their plan only (V4;
+the UI already hides copy on games for VIPs, but the policy and route allow it); one
+`org_only_scoreboards` setting, off by default (V5); one `includes_all_events` flag (W1);
+Awareness & Games uses the Games plan's list (W2); store ids as event columns (W3); refunds set
+`revoked_at` (W4); rotating free mission wording on the Steam demo (W5). N1: write the Hacktivity
+implementation plan; tests extensive, especially policy and access by role
+(`IMPLEMENTATION_PLAN.md`).
 
 ## Round 5 answers (2026-10-25)
 
