@@ -17,9 +17,32 @@ https://claude.ai/artifact/JFBPunbAdaYph9nCi1C7iN
 Round 4 form (event-based access model and pricing; 11 questions):
 https://claude.ai/artifact/DLEWJPMHgAVGdLufiTaYQX
 
+Round 5 form (simplest access model: alternatives with pros and cons; 8 questions):
+https://claude.ai/artifact/QBKtq9fDreEQch1CKxUG1V
+
 | Q | Question | Where the options are written up |
 |---|---|---|
 | C2, C3 | Products and tiers across individual, org and Steam/Play access: org tiers (awareness courses, incident response games, full VM labs), org managers assigning games, org members' access to hackboxes and games. Direction picked: new Product and Entitlement tables | `ENTITLEMENTS.md`, "Recording ownership" |
+
+## Round 4 answers (2026-10-25)
+
+The user wants the solution kept clean and simple; the uncertain points went to round 5.
+
+- M1: EventEntitlement, **only for single-sale games**; save the store metadata (SteamID etc.).
+- M2, M3: unsure. Admin assignment must be easy. Playable = open-subscription events (individuals,
+  and orgs by opt-in per event); copyable = orgs (all pools on the full plan, a subset on
+  Awareness & Games). Round 5 S1, S2.
+- M4: maybe games needn't be copyable: copying only matters for an org's own release dates and
+  weightings. Perhaps courses stay copyable and games are opted in for direct access. Round 5 G5.
+- M5: per org, admin picks open-subscription events (games, hackboxes) org users access directly;
+  courses are copied. Round 5 G7.
+- M6: one public Licence to Hack game event, plus a free demo with the first mission. Round 5 E9.
+- M7: add an admin list of lapsed orgs that still have seated members.
+- R1: discuss. Infrastructure scales without extra cost, so the price is what players accept;
+  nothing similar on the market, Hacknet nearest (simulated). Round 5 R1.
+- R2: Eldritch Hacker £9.99.
+- R3: yes, a "Games" individual plan, about £4.99/month, all game events, guest quota.
+- R4: one new org plan, Awareness & Games (about £5/user/month), beside Business & Education.
 
 ## Round 3 answers (2026-10-24)
 
