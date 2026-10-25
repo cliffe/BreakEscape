@@ -20,9 +20,29 @@ https://claude.ai/artifact/DLEWJPMHgAVGdLufiTaYQX
 Round 5 form (simplest access model: alternatives with pros and cons; 8 questions):
 https://claude.ai/artifact/QBKtq9fDreEQch1CKxUG1V
 
+Round 6 review (full design draft v2 with schema and seed rows, plus 11 review points):
+https://claude.ai/artifact/HacZEWwASkqX7wE68ntAYA
+
 | Q | Question | Where the options are written up |
 |---|---|---|
 | C2, C3 | Products and tiers across individual, org and Steam/Play access: org tiers (awareness courses, incident response games, full VM labs), org managers assigning games, org members' access to hackboxes and games. Direction picked: new Product and Entitlement tables | `ENTITLEMENTS.md`, "Recording ownership" |
+
+## Round 5 answers (2026-10-25)
+
+- S1: one `plan_events` table (plan, event, access play/copy), ticked from the event form.
+- S2: a visible plan flag, "includes every open-subscription event" (plus all pools on the org
+  plan).
+- G5: orgs play games directly; no org copies of games (the user's understanding: only admins can
+  copy games today; the code allows VIPs to copy any event with no org, see round 6 V4). Orgs need
+  a way to select open-subscription events for direct access.
+- G6: "my org only" filter, plus an org setting for whether members see the filtered scoreboard.
+- G7: no pick (round 6 V1 drafts plan grants + org opt-in).
+- E8: `source`, `source_ref` and a jsonb `metadata` column.
+- E9: no new mechanism: the demo is a free window on a slot, as open-subscription events already
+  allow; demo players are free accounts; the free mission can rotate.
+- R1: Licence to Hack £14.99.
+
+Design draft v2 with all of this: `ACCESS_MODEL.md`.
 
 ## Round 4 answers (2026-10-25)
 
