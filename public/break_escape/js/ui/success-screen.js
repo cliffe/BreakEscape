@@ -26,6 +26,7 @@
  * imports of its own.
  */
 import { displayDashes } from '../utils/display-dashes.js';
+import { isDesktopApp, DESKTOP_APP_HOME } from '../utils/desktop-app.js';
 
 export const SUCCESS_SCREEN_ID = 'scenario-success-screen';
 export const DEFAULT_TITLE = 'Exercise complete';
@@ -110,6 +111,12 @@ function returnToMissions(deps) {
     const w = win();
     const navigate = deps.navigate || ((url) => { w.location.href = url; });
     const closeTab = deps.closeTab || (() => { w.close(); });
+    // The Hacktivity desktop app is one window: closing it would quit the app and /break_escape/missions
+    // is admin-only. Go to the host's root, which sends the app to its game's event page.
+    if (isDesktopApp(w)) {
+        navigate(DESKTOP_APP_HOME);
+        return;
+    }
     if (w?.breakEscapeConfig?.hacktivityMode) {
         try { w.opener?.focus(); } catch (e) { /* cross-origin opener */ }
         closeTab();

@@ -18,7 +18,7 @@ const js = join(here, '../../public/break_escape/js');
 
 const dir = mkdtempSync(join(tmpdir(), 'success-screen-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
-for (const rel of ['ui/success-screen.js', 'utils/display-dashes.js', 'systems/objectives-manager.js']) {
+for (const rel of ['ui/success-screen.js', 'utils/display-dashes.js', 'utils/desktop-app.js', 'systems/objectives-manager.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }
@@ -173,6 +173,20 @@ test('Return to missions, standalone: goes to /break_escape/missions', () => {
     S.showSuccessScreen({ title: 'Done' }, syncDeps({ navigate: (u) => went.push(u), closeTab: () => went.push('close') }));
     document.getElementById('success-screen-return').click();
     assert.deepEqual(went, ['/break_escape/missions']);
+});
+
+test('Return to missions, desktop app: goes to / and never closes the window', () => {
+    const ua = Object.getOwnPropertyDescriptor(window.navigator, 'userAgent');
+    Object.defineProperty(window.navigator, 'userAgent', { value: 'Mozilla/5.0 HacktivityApp/0.1.0 (game=licence-to-hack; edition=demo)', configurable: true });
+    try {
+        window.breakEscapeConfig = { hacktivityMode: true };
+        const went = [];
+        S.showSuccessScreen({ title: 'Done' }, syncDeps({ navigate: (u) => went.push(u), closeTab: () => went.push('close') }));
+        document.getElementById('success-screen-return').click();
+        assert.deepEqual(went, ['/']);
+    } finally {
+        if (ua) Object.defineProperty(window.navigator, 'userAgent', ua); else delete window.navigator.userAgent;
+    }
 });
 
 test('Return to missions, Hacktivity: closes the tab, and falls back to the missions page if it stays open', () => {

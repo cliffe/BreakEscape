@@ -14,6 +14,7 @@
 import MusicController from '../music/music-controller.js';
 import { setHudLabel, clearHudLabel } from './info-label.js';
 import { attacksDisabled } from '../systems/player-combat.js';
+import { isDesktopApp, DESKTOP_APP_HOME } from '../utils/desktop-app.js';
 import {
     UI_THEMES, SIZE_STEPS, HEALTH_STYLES, getDisplaySettings, updateDisplaySettings, missionTheme,
 } from './display-settings.js';
@@ -81,6 +82,7 @@ export class GameMenu {
                         <button type="button" class="game-menu-item game-menu-resume" data-action="resume">Resume</button>
                         <button type="button" class="game-menu-item" data-action="character">Character</button>
                         ${PAGES.map(p => `<button type="button" class="game-menu-item" data-page="${p.id}">${p.label}</button>`).join('')}
+                        ${isDesktopApp() ? '<button type="button" class="game-menu-item game-menu-leave" data-action="leave">Back to missions</button>' : ''}
                     </nav>
                     <div class="game-menu-pages">
                         <section class="game-menu-page" data-page="audio"></section>
@@ -103,6 +105,7 @@ export class GameMenu {
             if (item.dataset.page) this.showPage(item.dataset.page);
             else if (item.dataset.action === 'resume') this.close();
             else if (item.dataset.action === 'character') this._openCharacter();
+            else if (item.dataset.action === 'leave') this._askLeave();
         });
         overlay.querySelector('.game-menu-close').addEventListener('click', () => this.close());
 
@@ -204,6 +207,55 @@ export class GameMenu {
         }
     }
 
+    // Desktop app only: the window has no tabs or address bar, so the menu is the way out.
+    // Asks in the menu's own panel (no confirm() dialog), then saves and goes to the host's
+    // root, which sends the app to its game's event page.
+    _askLeave() {
+        const page = this.overlay.querySelector('.game-menu-page[data-page="leave"]') || (() => {
+            const section = document.createElement('section');
+            section.className = 'game-menu-page';
+            section.dataset.page = 'leave';
+            this.overlay.querySelector('.game-menu-pages').appendChild(section);
+            return section;
+        })();
+        page.innerHTML = `
+            <h3>Back to missions</h3>
+            <p class="game-menu-note">Your progress is saved, and you can carry on from the mission list. A puzzle or conversation you haven't finished starts again when you come back.</p>
+            <p class="game-menu-note game-menu-leave-error" role="alert" hidden>Couldn't save just now. Check your connection and try again.</p>
+            <button type="button" class="game-menu-reset" data-leave="yes">Leave the game</button>
+            <button type="button" class="game-menu-reset" data-leave="no">Stay</button>
+        `;
+        page.querySelector('[data-leave="no"]').addEventListener('click', () => this.showPage('audio'));
+        const yes = page.querySelector('[data-leave="yes"]');
+        yes.addEventListener('click', () => this._leave(yes.dataset.force === 'yes'));
+        this.showPage('leave');
+    }
+
+    // Saves and waits for the server to confirm before leaving. If the save fails the player
+    // stays, with the error shown and "Leave anyway" offered (the pagehide flush still tries).
+    async _leave(force = false) {
+        const button = this.overlay.querySelector('[data-leave="yes"]');
+        const error = this.overlay.querySelector('.game-menu-leave-error');
+        if (!force) {
+            if (button) button.disabled = true;
+            let saved = true;
+            try {
+                const sync = window.stateSync;
+                if (sync?.syncConfirmed) saved = await sync.syncConfirmed();
+            } catch (e) { saved = false; }
+            if (button) button.disabled = false;
+            if (!saved) {
+                if (error) error.hidden = false;
+                if (button) {
+                    button.textContent = 'Leave anyway';
+                    button.dataset.force = 'yes';
+                }
+                return;
+            }
+        }
+        (this._navigate || ((url) => { window.location.href = url; }))(DESKTOP_APP_HOME);
+    }
+
     _openCharacter() {
         this.close();
         window.playerHUD?.openPlayerPreferences?.();
@@ -231,6 +283,7 @@ export class GameMenu {
     close() {
         if (!this.isOpen) return;
         this.isOpen = false;
+        if (this.page === 'leave') this.page = 'audio'; // never reopen on the confirmation
         this.overlay.classList.remove('visible');
         this.button.classList.remove('panel-open');
         this._returnMusicPanel();

@@ -4,6 +4,7 @@
  */
 
 import { CombatEvents } from '../events/combat-events.js';
+import { isDesktopApp, DESKTOP_APP_HOME } from '../utils/desktop-app.js';
 
 export class GameOverScreen {
   constructor() {
@@ -196,7 +197,12 @@ export class GameOverScreen {
   }
 
   mainMenu() {
-    // Navigate to scenario select or main menu
+    // Navigate to scenario select or main menu. The Hacktivity desktop app has no missions page for
+    // players: the host's root sends it back to its game's event page.
+    if (isDesktopApp(window)) {
+        window.location.href = DESKTOP_APP_HOME;
+        return;
+    }
     window.location.href = '/break_escape/missions';
   }
 
