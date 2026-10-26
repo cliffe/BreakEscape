@@ -24,6 +24,29 @@ const PAGES = [
     { id: 'controls', label: 'Controls' },
 ];
 
+// Items a host game shell asks for (breakEscapeConfig.walkthroughUrl and
+// shellMenuUrl): the mission's walkthrough in a new tab, and quitting back to
+// the shell. Progress is already saved on the server, so quitting is a page change.
+function shellItems(cfg = window.breakEscapeConfig || {}) {
+    let html = '';
+    if (cfg.walkthroughUrl) {
+        html += '<button type="button" class="game-menu-item" data-action="walkthrough">Walkthrough</button>';
+    }
+    if (cfg.shellMenuUrl || cfg.shellReturnUrl) {
+        html += '<button type="button" class="game-menu-item game-menu-quit" data-action="quit">Save and quit to menu</button>';
+    }
+    return html;
+}
+
+export function openWalkthrough(cfg = window.breakEscapeConfig || {}, open = (url) => window.open(url, '_blank', 'noopener')) {
+    if (cfg.walkthroughUrl) open(cfg.walkthroughUrl);
+}
+
+export function quitToShell(cfg = window.breakEscapeConfig || {}, navigate = (url) => { window.location.href = url; }) {
+    const url = cfg.shellMenuUrl || cfg.shellReturnUrl;
+    if (url) navigate(url);
+}
+
 function optionList(items, selected) {
     return items.map(({ value, label }) =>
         `<option value="${value}"${String(value) === String(selected) ? ' selected' : ''}>${label}</option>`).join('');
@@ -81,6 +104,7 @@ export class GameMenu {
                         <button type="button" class="game-menu-item game-menu-resume" data-action="resume">Resume</button>
                         <button type="button" class="game-menu-item" data-action="character">Character</button>
                         ${PAGES.map(p => `<button type="button" class="game-menu-item" data-page="${p.id}">${p.label}</button>`).join('')}
+                        ${shellItems()}
                     </nav>
                     <div class="game-menu-pages">
                         <section class="game-menu-page" data-page="audio"></section>
@@ -103,6 +127,8 @@ export class GameMenu {
             if (item.dataset.page) this.showPage(item.dataset.page);
             else if (item.dataset.action === 'resume') this.close();
             else if (item.dataset.action === 'character') this._openCharacter();
+            else if (item.dataset.action === 'walkthrough') openWalkthrough();
+            else if (item.dataset.action === 'quit') quitToShell();
         });
         overlay.querySelector('.game-menu-close').addEventListener('click', () => this.close());
 

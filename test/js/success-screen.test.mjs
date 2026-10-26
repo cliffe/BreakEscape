@@ -183,3 +183,13 @@ test('Return to missions, Hacktivity: closes the tab, and falls back to the miss
     // jsdom's window.closed stays false, as a tab the player opened by hand would
     assert.deepEqual(went, ['close', '/break_escape/missions']);
 });
+
+test('game shell: the host names the return page and its label; the tab stays open', () => {
+    window.breakEscapeConfig = { hacktivityMode: true, shellReturnUrl: '/events/7/play/operations/3/debrief', shellReturnLabel: 'Debrief' };
+    const went = [];
+    S.showSuccessScreen({ title: 'Done', buttonText: 'Return to missions' }, syncDeps({ navigate: (u) => went.push(u), closeTab: () => went.push('close') }));
+    const ret = document.getElementById('success-screen-return');
+    assert.equal(ret.textContent, 'Debrief');
+    ret.click();
+    assert.deepEqual(went, ['/events/7/play/operations/3/debrief']);
+});

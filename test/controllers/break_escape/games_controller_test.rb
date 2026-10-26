@@ -103,6 +103,32 @@ module BreakEscape
       assert_match(/window\.breakEscapeConfig/, response.body)
     end
 
+    test 'show passes a host game shell its links, and leaves them null without a hook' do
+      get game_url(@game)
+      assert_match(/shellReturnUrl: null/, response.body)
+      assert_match(/walkthroughUrl: null/, response.body)
+
+      BreakEscape.configuration.shell_links = lambda do |game|
+        { menu_url: '/events/1/play/operations', return_url: "/events/1/play/operations/#{game.id}/debrief",
+          return_label: 'Debrief', walkthrough_url: 'https://example.org/walkthrough', ignored: 'x' }
+      end
+      get game_url(@game)
+      assert_response :success
+      assert_match(%r{shellMenuUrl: "/events/1/play/operations"}, response.body)
+      assert_match(%r{shellReturnUrl: "/events/1/play/operations/#{@game.id}/debrief"}, response.body)
+      assert_match(/shellReturnLabel: "Debrief"/, response.body)
+      assert_match(%r{walkthroughUrl: "https://example.org/walkthrough"}, response.body)
+      refute_match(/ignored/, response.body)
+
+      # A failing hook never breaks the game page
+      BreakEscape.configuration.shell_links = ->(_game) { raise 'boom' }
+      get game_url(@game)
+      assert_response :success
+      assert_match(/shellReturnUrl: null/, response.body)
+    ensure
+      BreakEscape.configuration.shell_links = nil
+    end
+
     test 'show should inject game configuration' do
       get game_url(@game)
       assert_response :success

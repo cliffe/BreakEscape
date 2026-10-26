@@ -110,6 +110,13 @@ function returnToMissions(deps) {
     const w = win();
     const navigate = deps.navigate || ((url) => { w.location.href = url; });
     const closeTab = deps.closeTab || (() => { w.close(); });
+    // A host that launched the game in its own game shell names the page to go
+    // back to (the mission's debrief); the game was opened in the same tab.
+    const shellReturn = w?.breakEscapeConfig?.shellReturnUrl;
+    if (shellReturn) {
+        navigate(shellReturn);
+        return;
+    }
     if (w?.breakEscapeConfig?.hacktivityMode) {
         try { w.opener?.focus(); } catch (e) { /* cross-origin opener */ }
         closeTab();
@@ -129,7 +136,9 @@ function openNow(opts, deps) {
 
     const title = typeof opts.title === 'string' && opts.title.trim() ? opts.title : DEFAULT_TITLE;
     const body = typeof opts.body === 'string' ? opts.body.trim() : '';
-    const buttonText = typeof opts.buttonText === 'string' && opts.buttonText.trim() ? opts.buttonText : DEFAULT_BUTTON;
+    const shellLabel = win()?.breakEscapeConfig?.shellReturnUrl ? win().breakEscapeConfig.shellReturnLabel : null;
+    const buttonText = shellLabel ||
+        (typeof opts.buttonText === 'string' && opts.buttonText.trim() ? opts.buttonText : DEFAULT_BUTTON);
 
     const overlay = doc.createElement('div');
     overlay.id = SUCCESS_SCREEN_ID;

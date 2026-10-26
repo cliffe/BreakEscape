@@ -675,3 +675,26 @@ For Hacktivity integration issues:
 - Verify Devise authentication is working
 - Check Pundit policies are configured
 - Review Rails logs for errors
+
+## Game shell links (`shell_links`)
+
+A host that wraps missions in its own full-screen game shell (Hacktivity does this for
+Game events: `GameShellController`) opens the mission in the same tab and tells the game
+where its links go:
+
+```ruby
+# config/initializers/break_escape.rb
+config.shell_links = lambda do |game|
+  # nil keeps the engine's defaults (the success screen closes the tab or goes to /break_escape/missions)
+  { menu_url: "...", return_url: "...", return_label: "Debrief", walkthrough_url: "..." }
+end
+```
+
+- `menu_url`: the pause menu gains **Save and quit to menu**, which goes there (progress is
+  already saved on the server).
+- `return_url` and `return_label`: the success screen's main button goes there, with that
+  label, instead of closing the tab.
+- `walkthrough_url`: the pause menu gains **Walkthrough**, opening it in a new tab.
+
+The values reach the page as `breakEscapeConfig.shellMenuUrl`, `shellReturnUrl`,
+`shellReturnLabel` and `walkthroughUrl`. A hook that raises is logged and ignored.
