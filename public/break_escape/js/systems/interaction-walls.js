@@ -77,15 +77,17 @@ export function roomFloorRect(room) {
     };
 }
 
-const FOOT_HALF = 5; // the player body is 10px tall; updatePlayerRoom tests its bottom edge
+const FOOT_HALF = 5; // default half body height, for a body centre with no body to measure
 
 /**
  * The room whose floor holds a body centred at (x, y), by updatePlayerRoom's own
- * test (feet = centre + FOOT_HALF; floor starts BACK_WALL_ROWS tiles down), or null.
+ * test (its bottom edge = centre + half its height; floor starts BACK_WALL_ROWS
+ * tiles down), or null. `half` is the body's half height: pass the player's
+ * (playerFeet() carries it) so this agrees with updatePlayerRoom for any body size.
  */
-export function roomIdAtFeet(x, y, rooms = roomsMap()) {
+export function roomIdAtFeet(x, y, rooms = roomsMap(), half = FOOT_HALF) {
     if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
-    const feetY = y + FOOT_HALF;
+    const feetY = y + (Number.isFinite(half) ? half : FOOT_HALF);
     for (const [id, room] of Object.entries(rooms)) {
         const pos = room?.position, map = room?.map;
         if (!pos || !map) continue;
@@ -128,7 +130,13 @@ export function roomIdOfTarget(target, rooms = roomsMap()) {
  */
 export function sameRoomFrom(from, target, rooms = roomsMap()) {
     if (!from || !target || target.doorProperties) return true;
-    const here = roomIdAtFeet(from.x, from.y, rooms);
+    let here = roomIdAtFeet(from.x, from.y, rooms, from.half);
+    // Feet in no room (a gap): judge by the last room the player was in, so a gap
+    // is not a way round the rule
+    if (!here) {
+        const last = typeof window !== 'undefined' ? window.currentPlayerRoom : null;
+        here = last && rooms[last] ? last : null;
+    }
     if (!here) return true;
     const there = roomIdOfTarget(target, rooms);
     return !there || there === here;
@@ -146,14 +154,23 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 /** The player's feet (body centre), or the sprite position. */
 export function playerFeet(player) {
     const c = player?.body?.center;
-    if (c && Number.isFinite(c.x) && Number.isFinite(c.y)) return { x: c.x, y: c.y };
+    if (c && Number.isFinite(c.x) && Number.isFinite(c.y)) {
+        const half = Number.isFinite(player.body.halfHeight) ? player.body.halfHeight
+            : Number.isFinite(player.body.height) ? player.body.height / 2 : FOOT_HALF;
+        return { x: c.x, y: c.y, half };
+    }
     if (player && Number.isFinite(player.x)) return { x: player.x, y: player.y };
     return null;
 }
 
 /** Where the reach line ends on a target, seen from the floor point `from`. */
-export function interactionTargetPoint(target, from, room = roomOfTarget(target)) {
+export function interactionTargetPoint(target, from, room) {
     if (!target) return null;
+    if (!room) {
+        // The room it stands in now (an NPC that changed rooms), else its home room
+        const id = roomIdOfTarget(target);
+        room = (id && roomsMap()[id]) || roomOfTarget(target);
+    }
     let p;
     const bc = target.body?.center;
     if (target._isNPC && bc && Number.isFinite(bc.x) && Number.isFinite(bc.y)) {
@@ -186,9 +203,24 @@ export function wallClearFrom(from, target, { room, occ = occlusion() } = {}) {
     if (target.doorProperties) return true;
     if (!sameRoomFrom(from, target)) return false; // different room (see SAME-ROOM RULE)
     if (!occ || typeof occ.isWallClearBetween !== 'function') return true;
-    const to = interactionTargetPoint(target, from, room ?? roomOfTarget(target));
+    const to = interactionTargetPoint(target, from, room);
     if (!to) return true;
     return occ.isWallClearBetween(from, to);
+}
+
+/**
+ * True when two feet points (body centres: an NPC and the player, say) stand in
+ * the same room and no wall stands between them. For an NPC attack: nobody
+ * punches through a wall, or through the strip behind a back wall into the room
+ * below. A point in no room (a gap) is judged by the wall test alone.
+ */
+export function feetClear(a, b, { occ = occlusion(), rooms = roomsMap() } = {}) {
+    if (!a || !b) return true;
+    const ra = roomIdAtFeet(a.x, a.y, rooms, a.half);
+    const rb = roomIdAtFeet(b.x, b.y, rooms, b.half);
+    if (ra && rb && ra !== rb) return false; // a gap (no room) is left to the wall test
+    if (!occ || typeof occ.isWallClearBetween !== 'function') return true;
+    return occ.isWallClearBetween({ x: a.x, y: a.y }, { x: b.x, y: b.y });
 }
 
 /** True when no wall or closed door stands between the player and the target. */
@@ -207,7 +239,7 @@ export function findClearStandPoint(target, player, pfm, range, opts = {}) {
     const feet = playerFeet(player);
     if (!feet) return null;
     const footDx = feet.x - player.x, footDy = feet.y - player.y;
-    const room = opts.room ?? roomOfTarget(target);
+    const room = opts.room;
     const reachOf = opts.reachOf || ((c) => Math.hypot(c.x - footDx - target.x, c.y - footDy - target.y));
     // Walkable cells are coarse (a desk in front of the target can leave the
     // nearest one ~28px off), so allow up to 1px short of the full range
@@ -225,7 +257,7 @@ export function findClearStandPoint(target, player, pfm, range, opts = {}) {
             if (seen.has(key)) continue;
             seen.add(key);
             if (reachOf(c) > maxReach) continue;
-            if (!wallClearFrom(c, target, { room, occ: opts.occ })) continue;
+            if (!wallClearFrom({ x: c.x, y: c.y, half: feet.half }, target, { room, occ: opts.occ })) continue;
             const walk = Math.hypot(c.x - feet.x, c.y - feet.y);
             if (walk < bestWalk) { best = { x: c.x, y: c.y }; bestWalk = walk; }
         }
@@ -234,5 +266,5 @@ export function findClearStandPoint(target, player, pfm, range, opts = {}) {
 }
 
 if (typeof window !== 'undefined') {
-    window.interactionWalls = { sameRoomFrom, roomIdAtFeet, roomIdOfTarget, interactionLineClear, wallClearFrom, interactionTargetPoint, findClearStandPoint };
+    window.interactionWalls = { feetClear, sameRoomFrom, roomIdAtFeet, roomIdOfTarget, interactionLineClear, wallClearFrom, interactionTargetPoint, findClearStandPoint };
 }

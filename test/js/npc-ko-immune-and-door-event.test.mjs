@@ -25,7 +25,8 @@ const eventsUrl = dataUrl(readFileSync(join(js, 'events/combat-events.js'), 'utf
 const hostileSrc = readFileSync(join(js, 'systems/npc-hostile.js'), 'utf8')
     .split("'../config/combat-config.js'").join(`'${configUrl}'`)
     .split("'../events/combat-events.js'").join(`'${eventsUrl}'`)
-    .split("'./npc-sprites.js'").join(`'${dataUrl('export const getNPCDirection = () => "down";')}'`);
+    .split("'./npc-sprites.js'").join(`'${dataUrl('export const getNPCDirection = () => "down";')}'`)
+    .split("'./interaction-walls.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8'))}'`);
 const { initNPCHostileSystem, isNPCKOImmune } = await import(dataUrl(hostileSrc));
 const sys = initNPCHostileSystem();
 window.npcHostileSystem = sys;
@@ -33,7 +34,8 @@ window.npcHostileSystem = sys;
 const combatSrc = readFileSync(join(js, 'systems/player-combat.js'), 'utf8')
     .split("'../config/combat-config.js'").join(`'${configUrl}'`)
     .split("'../utils/knockback.js'").join(`'${dataUrl('export function applyKnockback() {}')}'`)
-    .split("'./fight-styles.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/fight-styles.js'), 'utf8'))}'`);
+    .split("'./fight-styles.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/fight-styles.js'), 'utf8'))}'`)
+    .split("'./interaction-walls.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8'))}'`);
 const { PlayerCombat } = await import(dataUrl(combatSrc));
 
 const actionsSrc = readFileSync(join(js, 'systems/apply-actions.js'), 'utf8')

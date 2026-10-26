@@ -1980,8 +1980,10 @@ export async function create() {
             playerX = startingRoom.position.x + gameScenario.startPosition.x * TILE_SIZE;
             playerY = startingRoom.position.y + gameScenario.startPosition.y * TILE_SIZE;
         } else {
-            playerX = startingRoom.position.x + 160; // Room width / 2 (320/2)
-            playerY = startingRoom.position.y + 144; // Room height / 2 (288/2)
+            // The room's own centre (rooms are not all 320 wide: the fixed 160 put the
+            // player inside the east wall of a 5-tile-wide room)
+            playerX = startingRoom.position.x + (startingRoom.map?.widthInPixels ?? 320) / 2;
+            playerY = startingRoom.position.y + (startingRoom.map?.heightInPixels ?? 288) / 2;
         }
         player.setPosition(playerX, playerY);
         console.log(`Player positioned at (${playerX}, ${playerY}) in starting room ${gameScenario.startRoom}`);
@@ -2095,7 +2097,11 @@ export async function create() {
                 // order is kept within each group): an object of another room is never
                 // interactable from here, and would otherwise swallow the tap and walk away.
                 const feet = playerFeet(player);
-                objectsAtPosition.sort((a, b) => (sameRoomFrom(feet, b) ? 1 : 0) - (sameRoomFrom(feet, a) ? 1 : 0));
+                // Only when something here is in reach: a tap on a far spot keeps depth order, so
+                // this never changes where the player walks to.
+                if (objectsAtPosition.some(o => isObjectInInteractionRange(o))) {
+                    objectsAtPosition.sort((a, b) => (sameRoomFrom(feet, b) ? 1 : 0) - (sameRoomFrom(feet, a) ? 1 : 0));
+                }
                 for (const obj of objectsAtPosition) {
                     if (obj.interactable && window.handleObjectInteraction) {
                         if (isObjectInInteractionRange(obj)) {

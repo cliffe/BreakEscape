@@ -720,6 +720,7 @@ export function handleObjectInteraction(sprite) {
     // Handle swivel chair interaction - a jab kicks it
     if (sprite.isSwivelChair && sprite.body) {
         if (window.player && window.playerCombat) {
+            window.playerCombat.aimAtChair?.(sprite);
             window.playerCombat.punch('jab');
         }
         return;

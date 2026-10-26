@@ -36,7 +36,7 @@ import {
     clickElement as clickElementDom
 } from './input.js';
 import { reachX } from '../interaction-reach.js';
-import { wallClearFrom } from '../interaction-walls.js';
+import { wallClearFrom, sameRoomFrom } from '../interaction-walls.js';
 import { getState, scanNearby, activeMinigameSummary, detectBlockingUi, interactionMenuState, solveStandingPoint, engineInteractDistance, plainNearestEntity, roomContents, doorways } from './state.js';
 import {
     waitUntil, waitForEvent, waitForMovementEnd, waitFrames,
@@ -120,7 +120,7 @@ function interactableNear(x, y) {
 function playerFeet() {
     const p = window.player;
     const b = p && p.body;
-    return b ? { x: b.center.x, y: b.center.y } : { x: p.x, y: p.y };
+    return b ? { x: b.center.x, y: b.center.y, half: b.halfHeight } : { x: p.x, y: p.y };
 }
 
 async function keyboardWalkTo(x, y, { timeoutMs = 20000 } = {}) {
@@ -688,8 +688,9 @@ const bridge = {
             const ny = f.y + (entity.y - pk.y) / plainNow * step;
             // Never nudge to a spot with a wall between it and the target (a wall
             // object seen from the room behind its wall): the game would refuse
-            if (targetSprite && !wallClearFrom({ x: nx, y: ny }, targetSprite)) {
-                nudges.push({ from: Math.round(plainNow), skipped: 'wall-between' });
+            if (targetSprite && !wallClearFrom({ x: nx, y: ny, half: f.half }, targetSprite)) {
+                nudges.push({ from: Math.round(plainNow),
+                    skipped: sameRoomFrom({ x: nx, y: ny, half: f.half }, targetSprite) ? 'wall-between' : 'different-room' });
                 break;
             }
             const kw = await keyboardWalkTo(nx, ny, { timeoutMs: 4000 });

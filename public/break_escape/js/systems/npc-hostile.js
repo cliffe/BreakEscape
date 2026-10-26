@@ -1,4 +1,5 @@
 import { COMBAT_CONFIG } from '../config/combat-config.js';
+import { roomIdAtFeet } from './interaction-walls.js';
 import { CombatEvents } from '../events/combat-events.js';
 import { getNPCDirection } from './npc-sprites.js';
 
@@ -468,10 +469,14 @@ function dropNPCItems(npcId) {
     return;
   }
 
-  // Find the NPC's room
-  let npcRoomId = npc.roomId;
+  // The room the NPC fell in, not its home room: hostile NPCs follow the player
+  // through doors, and a drop registered in another room can't be picked up
+  // (the same-room rule refuses it). Fall back to the home room.
+  const bc = sprite.body?.center;
+  const fellIn = bc ? roomIdAtFeet(bc.x, bc.y, window.rooms) : null;
+  const npcRoomId = fellIn || npc.roomId;
 
-  if (!npcRoomId) {
+  if (!npcRoomId || !window.rooms?.[npcRoomId]) {
     console.warn(`Could not find room for NPC ${npcId}`);
     return;
   }
@@ -547,6 +552,8 @@ function dropNPCItems(npcId) {
       spriteObj[key] = droppedItemData[key];
     });
     
+    spriteObj.roomId = npcRoomId; // after the copy: the room it fell in, whatever the item data says
+
     // IMPORTANT: Preserve texture information for inventory display
     // Phaser sprites have a complex texture object, but inventory expects
     // a simple object with a 'key' property (matching npc-game-bridge pattern)
@@ -580,6 +587,7 @@ function dropNPCItems(npcId) {
     };
     
     // Store in room.objects
+    if (!room.objects) room.objects = {};
     room.objects[spriteObj.objectId] = spriteObj;
     
     console.log(`💧 Dropped item ${droppedItemData.type} from ${npcId} at (${spawnX}, ${spawnY})`);

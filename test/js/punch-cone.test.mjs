@@ -17,7 +17,8 @@ const configUrl = dataUrl(readFileSync(join(js, 'config/combat-config.js'), 'utf
 const src = readFileSync(join(js, 'systems/player-combat.js'), 'utf8')
     .split("'../config/combat-config.js'").join(`'${configUrl}'`)
     .split("'../utils/knockback.js'").join(`'${dataUrl('export function applyKnockback() {}')}'`)
-    .split("'./fight-styles.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/fight-styles.js'), 'utf8'))}'`);
+    .split("'./fight-styles.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/fight-styles.js'), 'utf8'))}'`)
+    .split("'./interaction-walls.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8'))}'`);
 const { PlayerCombat, punchConeHalfAngle } = await import(dataUrl(src));
 const { COMBAT_CONFIG } = await import(configUrl);
 
