@@ -549,9 +549,9 @@ After the step results, give **every finding a severity**. List the findings in 
 
 Use this when the user asks for iterative improvement from playtests ("keep playtesting and fixing", "run a blind playtest", "playtest until it's clean"). This is the orchestrator's procedure. The tester still follows the rest of this skill, and the tester never fixes anything.
 
-1. **Regression playtest** (Sonnet) from the scenario's playtest script, reporting with the severity table.
+1. **Regression playtest** (Haiku, see "Which model drives") from the scenario's playtest script, reporting with the severity table.
 2. **Fix round.** One fixer (Sonnet, since the design decisions are settled first; Opus only for a finding that still needs one) takes the findings. Batch the design decisions for the user first, as checkbox questions with the recommended option first: colour cues, which options should be arguable, how a timer reads, and so on. The fixer runs the static checks (ink compile, tagdiff, validator, dialoguelint, loopcheck) and writes a short confirmation list into the playtest script.
-3. **Confirmation playtest** of exactly what changed, plus a quick regression: credits roll, reload, the main minigames. Commit when it's clean.
+3. **Confirmation playtest** (Haiku) of exactly what changed, plus a quick regression: credits roll, reload, the main minigames. Commit when it's clean.
 4. **Repeat 2–3 while blockers or majors keep appearing.** Watch the counts. sis01 went from 6/37/24 to 0/6/78, 0/8/40 and then a handful of minors. When a round finds no blockers, a few majors that are edge cases, and minors that are mostly taste, more scripted or text-review rounds have stopped paying.
 5. **Then a blind playtest** (Sonnet, two personas, see "Blind runs"), which finds what the scripted runs can't. Fix its findings with the same loop, confirm, and run a **second blind playtest** with a fresh tester to check the fixes from a player's side.
 6. **Done** when a blind run finds no blockers and no "stuck for minutes" moments. Then hear it: generate a sample of audio, have the user listen, fix what sounds wrong, then do the full audio run.
@@ -582,10 +582,16 @@ encrypted archive can't be approached closer than about 31px, and from there
 the flag station takes the click. The final abort/launch confirmation was never
 completed, so the debrief path is untested.
 
-**Drive with Sonnet.** Five Haiku runs failed at the same point — not reacting to
-`ok:false` — including one on the fully fixed harness with the route in hand.
-Haiku is fine for setup, reading reports, and cross-checking a log against a
-claim.
+**Which model drives.** Haiku 5.5 for regression and confirmation runs that
+follow a script or walkthrough: in October 2026 it completed six of eight
+missions at about $1 a run, against $4–8 for a short Sonnet run and $15–28 for
+a full one. Sonnet for blind runs, struggling-player runs, dialogue playtests,
+and for checking any Haiku report of "stuck", "blocked" or "no command for
+this" before anyone treats it as a bug. Haiku follows a route well and reacts
+to `ok:false`, but it recovers badly from an unexpected state: in m01 it let
+`converse` take the fight option, lost, and missed that it could punch Derek;
+in sis02 it called a reachable panel blocked. The previous Haiku failed five runs
+(not reacting to `ok:false`), so use 5.5 or later.
 
 ---
 
