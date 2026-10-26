@@ -169,9 +169,11 @@ Points that matter:
   - Relight side effects seen: walls turned greyer (when "the walls stay cream" was missing), dark screens started glowing white, and a plaque got a smudge. Re-check the whole image.
   - PixelLab exaggerates it a step further: a strong spotlight cone and pool in the corridor, every room a little darker, colours lost on a small chart. Look at the 400px result. If it is too dark, the concept's haze plus a lighter phrase ("soft volumetric light") is the fallback.
 - **"Moody" gets ignored** in bright rooms. Say what is off and what is on ("half the panels off", "one panel on").
-- Use the `pro` model: call `set_model pro` with a fresh `conversation_id` per room **before** the first generation, and not in parallel with it, or the generation may run on flash. A fresh ID keeps history from another room from leaking in.
+Generate with the Antigravity CLI first: `tools/agy_image.sh --out <scratch>/<room>_concept.png --ref <room>_backwall.png --prompt-file <prompt.txt>`. It draws on the Google AI plan's allowance, not the metered API. It has no model choice, and each call is a fresh conversation, so nothing leaks between rooms. Use the MCP only when the script exits 3 (quota or rate limit). On exit 4, ask the user to sign in to `agy`; on exit 2, retry once, then report it.
 
-Call `mcp__nanobanana__gemini_generate_image` with `reference_images: [<room>_backwall.png]`, `aspect_ratio: "1:1"`, and an `output_path` in your scratch folder.
+MCP fallback only:
+- Use the `pro` model: call `set_model pro` with a fresh `conversation_id` per room **before** the first generation, and not in parallel with it, or the generation may run on flash. A fresh ID keeps history from another room from leaking in.
+- Call `mcp__nanobanana__gemini_generate_image` with `reference_images: [<room>_backwall.png]`, `aspect_ratio: "1:1"`, and an `output_path` in your scratch folder.
 
 ### Layered build (use when furniture stands out on the floor)
 
@@ -211,8 +213,7 @@ Judge each failure by whether it shows in that preview. A wrong detail that the 
 
 ## 4. Fix with a Gemini edit, or keep the best
 
-For a failure that shows, edit the concept with `mcp__nanobanana__gemini_edit_image`, in the same `conversation_id`:
-- **Pass `aspect_ratio: "1:1"`** (or call `set_aspect_ratio` first). Without it the call fails.
+For a failure that shows, edit the concept with `tools/agy_image.sh --out <new>.png --ref <concept>.png --prompt "<edit instruction>"` (add `--ref <room>_backwall.png` to restore a back-wall detail). On exit 3, fall back to `mcp__nanobanana__gemini_edit_image`, in the same `conversation_id`, and **pass `aspect_ratio: "1:1"`** (or call `set_aspect_ratio` first); without it the MCP call fails. The edit advice below is from MCP runs; agy uses the same Gemini model, so expect the same behaviour.
 - **Edits that work:**
   - removing a small item;
   - moving or swapping free-standing objects by position, e.g. "Swap the white hand-sanitiser stand and the grey leaflet stand on the right side of the room";
