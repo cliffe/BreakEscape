@@ -57,7 +57,7 @@ echo $! > "$PIDFILE"
 disown -a 2>/dev/null || true
 
 # The harness emits one session-open line when the browser is ready.
-for _ in $(seq 1 300); do
+for _ in $(seq 1 900); do
   if [ -s "$DIR/out" ]; then
     head -1 "$DIR/out"
     echo "SESSION=$TAG"

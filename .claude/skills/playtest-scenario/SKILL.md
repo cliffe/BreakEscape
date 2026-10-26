@@ -115,13 +115,13 @@ Never reconstruct a trace from what you expected to happen. If a command was not
 - `bootstrap` stops on an ending: the credits overlay (`state.missionEnd`) or an end card whose only buttons leave the game ("Return to Missions"). It returns `settled:true, ended:true, endKind:"credits"|"end-card"` and does not click. Use `brief` after that. It cannot be used to get past an ending.
 - A container shows "Loading contents..." for a beat after opening. `mg getState` now waits that out; a state read during it reports an empty safe.
 - An unlocked door can still be shut, and `enter` opens it before walking through. An unlocked door that has *vanished* is normal: opening a door removes its sprite on both sides. `enter` doesn't need the sprite.
-- `converse` stops once the conversation stops saying anything new, so hub NPCs no longer burn the whole turn budget. Pass `choices` when you need a branch.
+- `converse` stops once the conversation stops saying anything new, so hub NPCs no longer burn the whole turn budget. Pass `choices` when you need a branch. It never takes an option you did not name (see "Conversations" below): at an unnamed choice it stops and lists the options.
 
 ### Harness gotchas from pass 4 (October 2026)
 
 Each of these cost at least one pass-4 run (reports in `tools/playtest/m0*-pass4-*report.md`):
 
-- **`bootstrap` drives the opening briefing for you.** It auto-picks choice 1 at each menu, and on a long briefing hub it can loop (m07 Netherton, ~90 s). When the briefing is under test, don't bootstrap through it: let the title screen go, then drive the briefing by hand. Don't close the title screen with `mg close` either; that has closed the briefing underneath it (m03, m06).
+- **`bootstrap` leaves the opening briefing alone (changed October 2026).** It used to auto-pick choice 1 at each menu, which committed story choices the tester never made and looped on long hubs (m07 Netherton, ~90 s; m03). Now it clears the resume prompt, tutorial prompt, title screen and notes, and when a dialogue is on screen it stops and returns `briefingPending:true` with that dialogue in `state`. Drive the briefing yourself with `converse` / `mg`, then call `bootstrap` again to clear whatever opens after it (the tutorial prompt appears once the briefing closes). `{"cmd":"bootstrap","autoBrief":true}` opts back in to the old auto-driving, for regression runs where the briefing choices do not matter. Don't close the title screen with `mg close` either; that has closed the briefing underneath it (m03, m06).
 - **The resume overlay makes `bootstrap` loop.** After a reload with `resume:"resume"`, the "Resume / Restart / New Session" overlay's own Resume button isn't in the helper's list, so it clicked "◀ Prev" in OTHER SESSIONS hundreds of times (6.5 minutes in m02 and m06). Click Resume through the DOM instead (an `eval` that finds the button by its exact text), then carry on.
 - **Run `verify-run.rb` through Rails:** `BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id>`. Plain `ruby` fails.
 - **Read the credits while they play.** They are one `#bv-cr-label` element (inside `#bv-credits-overlay`) that changes about every 3.5 s, and they don't replay after a reload. Attach a MutationObserver to `#bv-cr-label` before the last debrief line, and read the lines from it; `.bv-stage` is the visualiser panel, not the credits.
@@ -133,10 +133,10 @@ Each of these cost at least one pass-4 run (reports in `tools/playtest/m0*-pass4
 - **Interaction range is 32 px (24 px for some objects), measured from the sprite centre (`player.x/y`), not the feet.** `interact` from 36 px reports `no-effect-confirmed`. `moveToNear` used to stop 37-62 px short on the far side of desks (it clicked the sprite-centre spot as if it were a feet target); since October 2026 it clicks the feet position that puts the sprite centre on the spot, and then closes the last few px on the arrow keys. If it still reports `arrived-but-outside-plain-range`, its `nudges` show whether something blocked the way: report that as a layout finding for the scenario (m02 Bed 4, m06 rack sheet and Satoshi, m08 locker, m01 encrypted archive).
 - **In a cloud or headless container, always pass `--headless true`.** There's no X server, so the headed default never starts.
 - **RFID flipper menu items aren't in the `mg` control list.** Click the visible `.flipper-menu-item` through the DOM (an `eval` that finds it by its text) instead of `mg clickControl`.
-- **Never decode in a shell.** Pipes (`base64 -d | tr …`) were refused by the permission layer. Either give the tester the decoded values and log them as "exercised, not earned", or decode with the in-game CyberChef, which can be driven through its iframe URL hash (recipe and input in the `#recipe=…&input=…` fragment).
+- **Never decode in a shell.** Pipes (`base64 -d | tr …`) were refused by the permission layer. Either give the tester the decoded values and log them as "exercised, not earned", or decode with the in-game CyberChef: open the Crypto Analysis Station (`{"cmd":"openInventoryItem","item":"workstation"}`), then `{"cmd":"cyberchef","input":"<text>","recipe":"ROT13(true,true,false,13)"}`, which pastes into the Input pane and returns the Output. Don't hand-build `#recipe=…&input=<base64>` URLs: CyberChef splits the fragment on `=`, so a raw base64 value ending in `=` or `==` loses its padding, fails to decode and leaves the input empty without an error. URL-encode the value (`%3D`) or strip the padding if you must use a hash. CyberChef itself is unmodified; this was never a game regression.
 - **To reload, `eval` `location.reload()`, then press Enter on the title screen.**
 - **`openTasks` matches the on-screen panel** (fixed October 2026): locked tasks are listed separately in `lockedTasks`, and skipped tasks in neither. Older reports that list a task in `openTasks` before it could be seen predate this fix.
-- **A tester's Write to the scratchpad may be refused.** Ask for the whole report in the tester's final message, not only in a file.
+- **A subagent's Write of `REPORT.md` is refused by Claude Code, not by our settings.** The refusal reads "Subagents should return findings as text, not write report files". `.claude/settings.json` allows `Write(*)`; the block is a built-in rule on the file name (a path containing `report`, case-insensitive: `REPORT.md` and `x/report.md` fail, `run-notes.txt`, `playtest-m02.md` and `m02-findings.txt` were accepted). Subagents therefore return the report as their final message, and the orchestrator saves it to `tools/playtest/<scenario>-report.md`. Brief testers that way; if one needs a file for its own notes, name it without "report" (`<mission>-run-notes.md`) in its scratch subfolder.
 
 ## Token discipline
 
@@ -359,12 +359,13 @@ The normal sequence for a locked door is: `room` → `moveToNear` the door → `
 
 ### Conversations: use `converse`, not a hand-rolled loop
 
-`{"cmd":"converse","id":"<npc_id>"}` opens a conversation and drives it to the end in one command: it continues while the dialogue continues, takes each choice branch it has not taken before, closes the minigame, and returns the transcript, the branches it chose, and the inventory afterwards.
+`{"cmd":"converse","id":"<npc_id>"}` opens a conversation and drives it forward in one command: it continues while the dialogue continues, takes the choices you named, and at the first choice you did not name it stops and lists the options (below). When the conversation ends it closes the minigame and returns the transcript, the branches it chose, and the inventory afterwards.
 
-Use it for every NPC. An unfinished conversation input-locks the main world, so every later movement and interaction is refused with `minigame-active` — three runs have died exactly this way, marching through a hundred commands into a game that stopped listening. `converse` cannot leave one open.
+Use it for every NPC. An unfinished conversation input-locks the main world, so every later movement and interaction is refused with `minigame-active` — three runs have died exactly this way, marching through a hundred commands into a game that stopped listening. `converse` closes the conversation when it finishes; the one case it leaves open is a stop at an unnamed choice, which says so (`reason:"stopped-at-choice"`) and must be answered or closed before anything else.
 
-- `choices: ["^Yes", "audit"]` — regexes tried in order when you need a specific branch. Otherwise it exhausts the branches and stops.
-- `exhaustedBranches: true` means the conversation was a hub with nothing new left.
+- `choices: ["^Yes", "audit"]` — regexes matched against the visible options; the first option any of them matches is taken. **If none matches, `converse` does not pick for you** (choices are real story decisions; in m01 the old default took the fight option with Derek). It stops at that choice point, leaves the conversation open, and returns `stoppedAtChoice: {speaker, options:["1. …","2. …"]}` with `reason:"stopped-at-choice"`. Answer with `{"cmd":"converse","choices":["<regex>"]}` (no `id` continues the open dialogue) or `{"cmd":"mg","action":"chooseIndex","args":[n]}`. `"close":true` closes the conversation at a stop instead.
+- `explore: true` is the opt-in for the old behaviour: take each option not taken before, then stop when the hub is spent. Use it only where every branch is safe to commit (a hub of information questions), never on a briefing or a confrontation.
+- `exhaustedBranches: true` means the conversation was a hub with nothing new left (only with `explore`, or after a named pattern repeated).
 - `hitTurnLimit: true` means it ran to `maxTurns` — report it; it may be a loop.
 - `ok: false, reason: "no-dialogue-appeared"` means the target opened something that is not a conversation. Phones are the common case: they open a **contact list** first. Read `contacts` from `mg getState`, then `{"cmd":"mg","action":"clickText","args":["<contact name>"]}` to open the message, and read the transcript from the state text.
 
@@ -386,6 +387,12 @@ Interactables sit close together and the game routes a click by proximity to the
 ```
 
 **`mismatch: true` is a FAILURE.** Close it and approach again with `moveToNear`, or pick your target from the disambiguation menu. Recording it as a pass means the rest of your trace is playing a different mission.
+
+How it is decided (changed October 2026): the bridge records which object or NPC the engine's own handlers were given and compares its id with the one you asked for; the reply then carries `engineTarget` (what the engine actually opened). It no longer compares the object's name with the minigame's title. That comparison reported `ok:false, mismatch:true` for working interactions whose minigame has its own title (Infected Terminal opens "Ransomware Impact Display", a Signing Case opens "Fingerprint Reader", the SIEM Console opens "SIEM Dashboard"). Overlays that are not minigames (the Crypto Analysis Station's laptop) now count as an effect, so they no longer come back as `no-effect-confirmed`.
+
+### Inventory items: `openInventoryItem`
+
+`{"cmd":"openInventoryItem","item":"phone"}` clicks the item in the inventory tray the way a player does. `item` is a tray index, an item id, a type (`phone`, `workstation`, `notepad`) or a name (exact, then substring); `{"cmd":"inventory"}` lists the tray with those fields. The reply names what opened (`opened:{id,title}`) and lists any `alsoMatched` items, so an ambiguous substring is visible. Notes you pick up are not tray items: they go into the Notepad, so open `notepad` and read them there. A forced conversation (briefing, debrief) blocks the tray, and the reply says `blocking-ui` or `minigame-active`.
 
 On a genuine failure, `interact()` reports `plainDistance` and `engineDistance`. Compare **`engineDistance`** against `range` — `plainDistance` is not what the game tests, and comparing it has already sent one run chasing a phantom inconsistency.
 
@@ -414,7 +421,7 @@ Then, per walkthrough step, the loop is: **read `brief` → act → wait determi
 
 **Send one command, read its result, then choose the next.** Do not queue the mission up front. This is the single most common way a run dies: an early `ok:false` goes unread, the world is input-locked behind an open minigame, and the run sends hundreds more commands into a game that stopped listening. Five runs have ended this way, one of them 200 commands past the refusal. Treat every `ok:false` as a stop-and-fix.
 
-Prefer the high-level commands — `room`, `converse`, `lock`, `enter` — over hand-rolled `mg` sequences. Each of them exists because the hand-rolled version failed a run.
+Prefer the high-level commands — `room`, `converse`, `lock`, `enter`, `openInventoryItem`, `cyberchef` — over hand-rolled `mg` and `eval` sequences. Each of them exists because the hand-rolled version failed a run.
 
 Full command list is in the header of `scripts/playtest-session.js`.
 
@@ -520,7 +527,7 @@ Pick the policy from the purpose of the run (see "What a playtest is for"). `tes
 
 **You may not classify a finding as a game or scenario bug.** Report what you observed and what you could not complete, with evidence. Every time this harness has asserted a game bug it has been wrong, and the wrong classification is what wastes the reader's time. If you believe the game is at fault, say "could not complete step N; suspect engine, evidence: ..." and let a human rule on it. Rule out these three first, in order: (1) the target was never actually in engine range — check `interactDistance`, not `distance`; (2) the harness reported success without confirming anything opened; (3) you drove the UI wrongly. Only when all three are excluded is "suspect engine" worth writing.
 
-Write the report to `tools/playtest/<scenario>-report.md` and the replayable command trace to `tools/playtest/<scenario>-trace.md`. Do NOT append run reports to this skill — a skill is instructions, and a growing pile of past runs inside it costs every future run tokens for no benefit. `tools/playtest/m02-report.md` is the shape to copy.
+Write the report to `tools/playtest/<scenario>-report.md` and the replayable command trace to `tools/playtest/<scenario>-trace.md`. **A subagent cannot Write a file named `report`** (Claude Code refuses it; see the gotchas list), so a subagent tester returns the report as its final message and the orchestrator saves it. Do NOT append run reports to this skill — a skill is instructions, and a growing pile of past runs inside it costs every future run tokens for no benefit. `tools/playtest/m02-report.md` is the shape to copy.
 
 Scenarios run 15–25 numbered steps across 4–6 aims, so report per step, grouped by aim, and keep each line to one row.
 

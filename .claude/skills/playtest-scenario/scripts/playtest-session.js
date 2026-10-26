@@ -211,7 +211,7 @@ function substituteFlags(node, at) {
   const gotoUrl = argv.url + (argv.url.includes('?') ? '&' : '?') + 'skip_resume=1';
   await page.goto(gotoUrl, { waitUntil: 'domcontentloaded' });
   try {
-    await page.waitForFunction(() => !!window.__test, null, { timeout: 45000 });
+    await page.waitForFunction(() => !!window.__test, null, { timeout: 120000 });
   } catch {
     emit({ ok: false, error: 'window.__test never appeared — is testBridge enabled (non-production)?' });
     await browser.close(); process.exit(1);
@@ -288,9 +288,14 @@ function substituteFlags(node, at) {
    * Every dismissal is a click or keypress on a real control — see
    * docs/test-bridge.md. `resume` and `tutorial` are explicit because the
    * bridge refuses to guess between destructive options.
+   *
+   * It does NOT play the opening briefing: choices there commit the story.
+   * When a dialogue is on screen it stops and returns briefingPending:true
+   * with the dialogue in `state`. `autoBrief:true` opts in to the old
+   * behaviour (choice 1 at each menu, hubs exit on a repeat).
    */
   async function bootstrap({ tutorial = 'decline', resume = 'new', maxSteps = 400,
-                             settleChecks = 4, settleMs = 900 } = {}) {
+                             settleChecks = 4, settleMs = 900, autoBrief = false } = {}) {
     const trace = [];
     // Overlays here are staggered: the mission brief and the opening cutscene
     // each open a beat after the previous one closes. A single "nothing is
@@ -333,6 +338,13 @@ function substituteFlags(node, at) {
       if (mg) {
         clear = 0;
         const d = await page.evaluate(() => window.__test.minigame.getState()?.dialogue);
+        if (d && (d.awaitingChoice || d.canContinue) && !autoBrief) {
+          // The opening briefing is story the tester must play: its choices are
+          // real and commit the run. Leave it open and hand it over. Pass
+          // {"autoBrief":true} to have bootstrap drive it (choice 1, hubs exit).
+          trace.push(`briefing dialogue left for the tester (${mg.id}); pass autoBrief:true to auto-drive it`);
+          return { trace, settled: true, briefingPending: true, state: await brief() };
+        }
         if (d && (d.awaitingChoice || d.canContinue)) {
           if (d.awaitingChoice) {
             // choices are objects ({number, text}); tolerate plain strings too.
@@ -508,12 +520,20 @@ function substituteFlags(node, at) {
      * the loop internally — continue while it continues, choose when it asks —
      * and returns the transcript plus what the conversation left behind.
      *
-     * `choices` are regexes tried in order against the visible options; the
-     * first that matches wins, otherwise option 1. `maxTurns` bounds it so a
-     * genuine dialogue loop in a scenario surfaces as a finding, not a hang.
+     * `choices` are regexes tried against the visible options; the first
+     * option that matches any of them is taken. With no match it STOPS at that
+     * choice point, leaves the conversation open and returns the options in
+     * `stoppedAtChoice` (choices are real story decisions, so converse never
+     * makes one nobody named). `explore:true` opts in to taking unvisited
+     * options itself; `close:true` closes the conversation at a stop.
+     * `maxTurns` bounds it so a genuine dialogue loop in a scenario surfaces as
+     * a finding, not a hang.
      */
     converse: async (c) => {
       const patterns = c.choices || [];
+      // Exploring (taking options nobody named) is opt-in: it commits real story choices.
+      const explore = c.explore === true;
+      let pendingChoice = null;
       const maxTurns = c.maxTurns || 60;
       const transcript = [];
       const picked = [];
@@ -551,6 +571,14 @@ function substituteFlags(node, at) {
           // before. Hub conversations keep offering the same options, so always
           // taking the first one loops forever — exhaust the branches instead.
           let idx = labels.findIndex(l => patterns.some(rx => new RegExp(rx, 'i').test(l)));
+          if (idx < 0 && !explore) {
+            // Never commit a choice the caller did not name: choices are real
+            // story decisions (m01 took the fight option with Derek). Stop here,
+            // leave the conversation open, and list the options.
+            pendingChoice = { speaker: d.speaker || null,
+                              options: labels.map((t, i) => `${i + 1}. ${t}`) };
+            break;
+          }
           if (idx < 0) idx = labels.findIndex(l => !seen.has(l));
           if (idx < 0) {
             // Everything on offer has been taken: the conversation is a hub with
@@ -570,8 +598,11 @@ function substituteFlags(node, at) {
         await pause(speed.dialogue);
       }
 
-      // Always leave the main world usable, whatever happened above.
-      const closed = await page.evaluate(() => {
+      // Always leave the main world usable, whatever happened above, except
+      // when stopped at an unnamed choice: that conversation stays open for the
+      // caller to answer (close:true closes it anyway).
+      const keepOpen = !!pendingChoice && c.close !== true;
+      const closed = keepOpen ? { leftOpen: true } : await page.evaluate(() => {
         if (!window.MinigameFramework?.currentMinigame) return { alreadyClosed: true };
         return window.__test.minigame.close();
       });
@@ -584,7 +615,8 @@ function substituteFlags(node, at) {
       // conversation driven to completion, so do not report it as one.
       const nothingHappened = turns === 0 && transcript.length === 0;
       return {
-        ok: !after.activeMinigame && !nothingHappened,
+        ok: (keepOpen || !after.activeMinigame) && !nothingHappened,
+        stoppedAtChoice: pendingChoice || undefined,
         turns,
         exhaustedBranches,
         hitTurnLimit: turns >= maxTurns,
@@ -592,9 +624,15 @@ function substituteFlags(node, at) {
         transcript,
         closed,
         inventory: after.inventory,
-        reason: after.activeMinigame ? 'still-open-after-close'
+        reason: keepOpen ? 'stopped-at-choice'
+          : after.activeMinigame ? 'still-open-after-close'
           : (nothingHappened ? 'no-dialogue-appeared' : undefined),
-        hint: nothingHappened
+        hint: keepOpen
+          ? 'Stopped at a choice nobody named; the conversation is still open. Answer it with '
+            + '{"cmd":"converse","choices":["<regex of the option>"]} (no id continues the open dialogue), '
+            + 'or {"cmd":"mg","action":"chooseIndex","args":[n]}. Pass "explore":true to let converse '
+            + 'pick unvisited options itself (that commits real choices), or "close":true to leave.'
+          : nothingHappened
           ? 'The target opened no dialogue. Some interactables (phones, terminals) '
             + 'need a selection first — interact, inspect the minigame state, and drive it '
             + 'with `mg` rather than `converse`.'
@@ -732,6 +770,38 @@ function substituteFlags(node, at) {
       if (!target) return { ok: false, reason: 'no-room-given' };
       return page.evaluate(t => window.__test.enterRoom(t), target);
     },
+
+    /**
+     * Open an inventory-tray item the way a click does: {"cmd":"openInventoryItem","item":"phone"}.
+     * `item` is a tray index, item id, type or name (see __test.openInventoryItem).
+     */
+    openInventoryItem: async (c) => {
+      const r = await page.evaluate(i => window.__test.openInventoryItem(i), c.item ?? c.id ?? c.name ?? c.type);
+      await pause(speed.step);
+      return r;
+    },
+
+    /**
+     * Set CyberChef's input (and optionally recipe) and read the output:
+     * {"cmd":"cyberchef","input":"Uryyb","recipe":"ROT13(true,true,false,13)"}.
+     * The Crypto Analysis Station must be open (openInventoryItem "workstation").
+     * Uses a paste event; do NOT hand-build `#input=<base64>` URLs (raw `=` padding breaks them).
+     */
+    cyberchef: async (c) => {
+      const r = await page.evaluate(([t, rc]) => window.__test.setCyberChefInput(t, { recipe: rc || null }), [c.input ?? '', c.recipe || null]);
+      await pause(speed.step);
+      return r;
+    },
+    cyberchefOutput: () => page.evaluate(() => window.__test.readCyberChefOutput()),
+
+    /** What is in the inventory tray, in order, with the ids/types openInventoryItem accepts. */
+    inventory: () => page.evaluate(() => Array.from(document.querySelectorAll('.inventory-item')).map((img, index) => ({
+      index, id: img.scenarioData?.id || img.objectId || null,
+      type: img.getAttribute('data-type'), name: img.scenarioData?.name || img.alt || null
+    }))),
+
+    /** Doorways of a room (default: the current one), with gap, direction and lock state. */
+    doorways: (c) => page.evaluate(id => window.__test.doorways(id || null), c.room || c.id || null),
 
     /** Text of every notification/toast shown since the last call. */
     toasts: async () => {
