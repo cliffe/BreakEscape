@@ -17,7 +17,7 @@ import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
-import { reachX } from './interaction-reach.js';
+import { reachX, aimX } from './interaction-reach.js';
 
 let gameRef = null;
 
@@ -1900,7 +1900,7 @@ export function tryInteractWithNearest() {
     let best = null;
     let bestScore = Infinity;
 
-    function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null, target = npcSprite) {
+    function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null, target = npcSprite, faceX = objX) {
         const dx = objX - px;
         const dy = objY - py;
         const plainSq = dx * dx + dy * dy;
@@ -1908,8 +1908,8 @@ export function tryInteractWithNearest() {
         if (distSq > rangeSq) return;
         if (target && !interactionLineClear(player, target)) return; // wall between
         const dist = Math.sqrt(distSq);
-        const score = angularDiff(objX, objY) * 1000 + dist;
-        if (score < bestScore) { bestScore = score; best = { objX, objY, handleFn }; }
+        const score = angularDiff(faceX, objY) * 1000 + dist; // angle to the object's centre, range to its nearest part
+        if (score < bestScore) { bestScore = score; best = { objX: faceX, objY, handleFn }; }
     }
 
     // E/W side doors are centered on their tile but the player stands at floor level (tile bottom).
@@ -1921,7 +1921,7 @@ export function tryInteractWithNearest() {
         if (room.objects) {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
-                consider(reachX(obj, px), obj.y, () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj);
+                consider(reachX(obj, px), obj.y, () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj));
             });
         }
 

@@ -55,7 +55,9 @@ export function setupChairCollisions(chair) {
     Object.values(allRooms).forEach(room => {
         if (room.wallCollisionBoxes) {
             room.wallCollisionBoxes.forEach(wallBox => {
-                if (wallBox.body) {
+                // Back-wall strip blocks keep the player out; a prop resting on the
+                // north room's bottom row starts inside one (collision.js)
+                if (wallBox.body && !wallBox.isBackWallBlock) {
                     // Add collision callback for swivel chairs to modify spin on wall hit
                     if (chair.isSwivelChair) {
                         game.physics.add.collider(chair, wallBox, () => {
@@ -135,7 +137,7 @@ export function setupExistingChairsWithNewRoom(roomId) {
     // Collision with new room's wall collision boxes
     if (room.wallCollisionBoxes) {
         room.wallCollisionBoxes.forEach(wallBox => {
-            if (wallBox.body) {
+            if (wallBox.body && !wallBox.isBackWallBlock) {
                 window.chairs.forEach(chair => {
                     if (chair.body) {
                         game.physics.add.collider(chair, wallBox);

@@ -31,3 +31,20 @@ test('no width or no player x falls back to the sprite x', () => {
     assert.equal(reachX({ ...panel, displayWidth: 0 }, 418), 385);
     assert.equal(reachX(panel, NaN), 385);
 });
+
+import { aimX } from '../../public/break_escape/js/systems/interaction-reach.js';
+
+test('aimX is the horizontal centre of the object', () => {
+    assert.equal(aimX(panel), 406);
+    assert.equal(aimX({ x: 100, displayWidth: 40, originX: 0.5, scenarioData: {} }), 100);
+    assert.equal(aimX({ ...panel, _isNPC: true }), 385);
+});
+
+test('a rotated prop spans its rotated bounds', () => {
+    const rot = { x: 385, y: 14, displayWidth: 42, originX: 0, rotation: 1.57, scenarioData: {},
+        getBounds: () => ({ left: 350, right: 385, width: 35, centerX: 367.5 }) };
+    assert.equal(reachX(rot, 300), 350);
+    assert.equal(reachX(rot, 370), 370);
+    assert.equal(reachX(rot, 500), 385);
+    assert.equal(aimX(rot), 367.5);
+});

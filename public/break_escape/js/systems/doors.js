@@ -87,7 +87,7 @@ function placeNorthDoorSingle(roomId, roomPosition, roomDimensions, connectedRoo
             const doorCount = connectedSouthConnections.length;
             const spacing = availableWidth / (doorCount - 1);
 
-            const alignedDoorX = connectedPos.x + edgeInset + (spacing * indexInArray);
+            const alignedDoorX = snapToTileCentre(connectedPos.x, connectedPos.x + edgeInset + (spacing * indexInArray));
             const doorY = roomPosition.y + TILE_SIZE;
 
             return { x: alignedDoorX, y: doorY, connectedRoom };
@@ -118,6 +118,16 @@ function placeNorthDoorSingle(roomId, roomPosition, roomDimensions, connectedRoo
 }
 
 /**
+ * Snap a N/S door's x to the centre of the wall tile it falls in. Even spacing
+ * can land a door on a tile boundary (three doors on a 10-wide wall), but the
+ * gap cut in the wall is one whole tile (removeTilesUnderDoor) and the back-wall
+ * strip beside it is a solid block (collision.js), so the door must sit mid-tile.
+ */
+function snapToTileCentre(roomX, x) {
+    return roomX + (Math.floor((x - roomX) / TILE_SIZE) + 0.5) * TILE_SIZE;
+}
+
+/**
  * Place multiple north doors with even spacing
  */
 function placeNorthDoorsMultiple(roomId, roomPosition, roomDimensions, connectedRooms) {
@@ -133,7 +143,7 @@ function placeNorthDoorsMultiple(roomId, roomPosition, roomDimensions, connected
     const doorSpacing = availableWidth / (doorCount - 1);
 
     connectedRooms.forEach((connectedRoom, index) => {
-        const doorX = roomPosition.x + edgeInset + (doorSpacing * index);
+        const doorX = snapToTileCentre(roomPosition.x, roomPosition.x + edgeInset + (doorSpacing * index));
         const doorY = roomPosition.y + TILE_SIZE;
 
         doorPositions.push({
@@ -170,7 +180,7 @@ function placeSouthDoorSingle(roomId, roomPosition, roomDimensions, connectedRoo
             const doorCount = connectedNorthConnections.length;
             const spacing = availableWidth / (doorCount - 1);
 
-            const alignedDoorX = connectedPos.x + edgeInset + (spacing * indexInArray);
+            const alignedDoorX = snapToTileCentre(connectedPos.x, connectedPos.x + edgeInset + (spacing * indexInArray));
             const doorY = roomPosition.y + roomHeightPx - TILE_SIZE;
 
             return { x: alignedDoorX, y: doorY, connectedRoom };
@@ -211,7 +221,7 @@ function placeSouthDoorsMultiple(roomId, roomPosition, roomDimensions, connected
     const doorSpacing = availableWidth / (doorCount - 1);
 
     connectedRooms.forEach((connectedRoom, index) => {
-        const doorX = roomPosition.x + edgeInset + (doorSpacing * index);
+        const doorX = snapToTileCentre(roomPosition.x, roomPosition.x + edgeInset + (doorSpacing * index));
         const doorY = roomPosition.y + roomHeightPx - TILE_SIZE;
 
         doorPositions.push({

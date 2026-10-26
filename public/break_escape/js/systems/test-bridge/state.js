@@ -548,9 +548,25 @@ function competingInteractables(targetX, targetY) {
     for (const e of seen) {
         if (typeof e.x !== 'number' || typeof e.y !== 'number') continue;
         if (Math.abs(e.x - targetX) < 0.5 && Math.abs(e.y - targetY) < 0.5) continue; // the target itself
-        out.push({ x: e.x, y: e.y });
+        out.push({ x: e.x, y: e.y, sprite: objectSpriteById(e.id) });
     }
     return out;
+}
+
+/** The live scenario-object sprite for an entity id (null for NPCs and doors). */
+function objectSpriteById(id) {
+    if (!id) return null;
+    for (const room of Object.values(window.rooms || {})) {
+        for (const s of Object.values(room.objects || {})) {
+            if (s && (s.scenarioData?.id === id || s.objectId === id)) return s;
+        }
+    }
+    return null;
+}
+
+/** x the engine measures to for a rival: its nearest span point, as reachX does. */
+function rivalX(o, fromX) {
+    return o.sprite ? reachX(o.sprite, fromX) : o.x;
 }
 
 export function solveStandingPoint(targetX, targetY, fromX, fromY, feetOffset = null, target = null) {
@@ -597,15 +613,29 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
     let bestCost = Infinity;
     let bestIgnoringRivals = null;
     let bestCostIgnoringRivals = Infinity;
+    // Ring centres: the sprite's top-left, plus points along a wide target's span,
+    // so stand points under its right half are sampled (reach runs to the nearest
+    // part, interaction-reach.js). Capped at 12 centres for a very wide object.
+    const centres = [targetX];
+    const w = target ? (target.displayWidth ?? target.width ?? 0) : 0;
+    if (w > 16) {
+        const left = target.x - (target.originX ?? 0.5) * w;
+        const n = Math.min(12, Math.ceil(w / 16));
+        for (let i = 0; i <= n; i++) {
+            const cx = reachX(target, left + (w * i) / n);
+            if (!centres.includes(cx)) centres.push(cx);
+        }
+    }
+    for (const centreX of centres)
     for (let r = 12; r <= 56; r += 4) {
         for (let a = 0; a < 360; a += 15) {
             const rad = a * Math.PI / 180;
-            const sx = targetX + Math.cos(rad) * r;
+            const sx = centreX + Math.cos(rad) * r;
             const sy = targetY + Math.sin(rad) * r;
             if (!standable(sx, sy)) continue;
             // The game faces the player at the target before checking, so
             // predict the direction it will pick, then apply that offset.
-            const dir = quantiseDirection(targetX - sx, targetY - sy);
+            const dir = quantiseDirection((target ? reachX(target, sx) : targetX) - sx, targetY - sy);
             const off = interactionOffset(dir);
             // Two conditions, and PLAIN distance is the binding one. A click
             // gathers only interactables within plain range; with one it acts
@@ -624,7 +654,7 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
             // Would the engine even select the target from here? Compare on
             // plain distance, which is the measure its candidate search uses.
             const nearestRival = rivals.reduce(
-                (m, o) => Math.min(m, dist(sx, sy, o.x, o.y)), Infinity);
+                (m, o) => Math.min(m, dist(sx, sy, rivalX(o, sx), o.y)), Infinity);
             point.plainDistance = Math.round(plain * 10) / 10;
             point.nearestRivalDistance = Number.isFinite(nearestRival)
                 ? Math.round(nearestRival * 10) / 10 : null;
@@ -722,7 +752,7 @@ export function plainNearestEntity() {
     let bestD = Infinity;
     for (const e of window.__test.getState().nearby) {
         if (typeof e.x !== 'number' || typeof e.y !== 'number') continue;
-        const d = dist(p.x, p.y, e.x, e.y);
+        const d = dist(p.x, p.y, rivalX({ x: e.x, sprite: objectSpriteById(e.id) }, p.x), e.y);
         if (d < bestD) { bestD = d; best = { id: e.id, name: e.name, distance: Math.round(d * 10) / 10 }; }
     }
     return best;

@@ -154,6 +154,7 @@ export function createWallCollisionBoxes(wallLayer, roomId, position) {
             0
         );
         block.setVisible(false);
+        block.isBackWallBlock = true; // object-physics.js: movable props ignore it
         game.physics.add.existing(block, true);
         game.time.delayedCall(0, () => { if (block.body) block.body.immovable = true; });
         collisionBoxes.push(block);

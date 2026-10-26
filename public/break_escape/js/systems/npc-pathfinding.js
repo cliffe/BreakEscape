@@ -573,7 +573,11 @@ export class NPCPathfindingManager {
         // Unblock the corresponding cells in the world grid too
         const doorWorldX = bounds.worldX + tileX * TILE_SIZE;
         const doorWorldY = bounds.worldY + tileY * TILE_SIZE;
-        const doorW = (direction === 'north' || direction === 'south') ? TILE_SIZE * 2 : TILE_SIZE;
+        // A N/S doorway is one wall column wide (removeTilesUnderDoor cuts one
+        // tile), and the column beside it holds a back-wall block (collision.js).
+        // markWorldCellsWalkable includes the cell at x + width, so stop a cell
+        // short or the carve would open the block's edge to diagonal routes.
+        const doorW = (direction === 'north' || direction === 'south') ? TILE_SIZE - PATHFINDING_STEP : TILE_SIZE;
         const doorH = (direction === 'east'  || direction === 'west')  ? TILE_SIZE * 2 : TILE_SIZE;
         this.markWorldCellsWalkable(doorWorldX, doorWorldY, doorW, doorH);
 
