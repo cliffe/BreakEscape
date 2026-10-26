@@ -26,7 +26,7 @@
     </div>
   <% end %>
 
-  <% if (badge = avatar_badge(entry)) %>
+  <% if (badge = avatar_badge(entry, local_assigns[:menu])) %>
     <span class="avatar-badge"><%= badge %></span>
   <% end %>
 

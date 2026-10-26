@@ -27,6 +27,18 @@ module BreakEscape
 
     private
 
+    # Links a host game shell asks the in-game menu and success screen to use
+    # (BreakEscape.configuration.shell_links). Empty when there is no hook, the
+    # hook returns nil, or it fails: the game then keeps its own defaults.
+    def shell_links_for(game)
+      hook = BreakEscape.configuration.shell_links
+      links = hook&.call(game)
+      links.is_a?(Hash) ? links.symbolize_keys.slice(:menu_url, :return_url, :return_label, :walkthrough_url).compact : {}
+    rescue StandardError => e
+      Rails.logger.warn "[BreakEscape] shell_links hook failed for game #{game.id}: #{e.message}"
+      {}
+    end
+
     def user_not_authorized
       # Do NOT redirect to request.referrer — when this handler fires inside an
       # iframe (e.g. the vm_panel endpoint), the referrer is the game's own show

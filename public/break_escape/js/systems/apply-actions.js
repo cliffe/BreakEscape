@@ -238,9 +238,11 @@ export function showEndScreen(opts = {}) {
     const {
         title = 'MISSION COMPLETE',
         body = '',
-        buttonText = 'Return to Missions',
         outcome = 'neutral'
     } = opts;
+    // A host game shell sends the player to its own page (the debrief), so it names the button.
+    const cfg = window.breakEscapeConfig;
+    const buttonText = (cfg?.shellReturnUrl && cfg.shellReturnLabel) || opts.buttonText || 'Return to Missions';
 
     if (window.player) window.player.disableMovement = true;
 

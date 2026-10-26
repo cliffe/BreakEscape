@@ -41,7 +41,7 @@
           <!-- Grid of static headshots -->
           <div class="sprite-grid" id="sprite-selection-grid-modal">
             <% @avatar_menu.each do |entry| %>
-              <%= render 'break_escape/player_preferences/sprite_card', entry: entry, f: f, id_prefix: 'sprite_modal_' %>
+              <%= render 'break_escape/player_preferences/sprite_card', entry: entry, f: f, id_prefix: 'sprite_modal_', menu: @avatar_menu %>
             <% end %>
           </div>
         </div>

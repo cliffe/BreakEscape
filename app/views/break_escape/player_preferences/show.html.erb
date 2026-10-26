@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/player_preferences.css') %>">
   <%= break_escape_import_map %>
 </head>
-<body>
+<body class="configuration-page">
   <div class="configuration-container">
     <h1>Character Configuration</h1>
 
@@ -57,7 +57,7 @@
           <!-- Grid of static headshots -->
           <div class="sprite-grid" id="sprite-selection-grid">
             <% @avatar_menu.each do |entry| %>
-              <%= render 'break_escape/player_preferences/sprite_card', entry: entry, f: f, id_prefix: 'sprite_' %>
+              <%= render 'break_escape/player_preferences/sprite_card', entry: entry, f: f, id_prefix: 'sprite_', menu: @avatar_menu %>
             <% end %>
           </div>
         </div>
@@ -70,6 +70,9 @@
 
       <!-- Submit -->
       <div class="form-actions">
+        <% if @back_url.present? %>
+          <%= link_to 'Back', @back_url, class: 'btn btn-secondary', id: 'config-back-link' %>
+        <% end %>
         <%= f.submit 'Save Configuration', class: 'btn btn-primary' %>
 
         <% if params[:game_id].blank? %>

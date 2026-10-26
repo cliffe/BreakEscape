@@ -29,7 +29,11 @@ module BreakEscape
       end
     end
 
-    def avatar_badge(entry)
+    # 'This mission' only tells cards apart when the mission picks some characters
+    # out of the menu; when every card carries it (no validSprites), it is noise.
+    def avatar_badge(entry, menu = nil)
+      return nil if entry['status'] == 'mission' && menu && menu.all? { |e| e['status'] == 'mission' }
+
       { 'unlocked' => 'Unlocked', 'mission' => 'This mission' }[entry['status']]
     end
 

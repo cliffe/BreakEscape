@@ -7,6 +7,7 @@ module BreakEscape
     # GET /break_escape/configuration
     def show
       @avatar_menu = @player_preference.avatar_menu
+      @back_url = back_url_for(@game_for_scenario)
     end
 
     # PATCH /break_escape/configuration
@@ -46,6 +47,7 @@ module BreakEscape
           format.html do
             flash.now[:alert] = 'Please select a character sprite.'
             @avatar_menu = @player_preference.avatar_menu
+            @back_url = back_url_for(@game_for_scenario)
             render :show, status: :unprocessable_entity
           end
           format.json do
@@ -108,10 +110,22 @@ module BreakEscape
     def load_scenario_if_validating
       return nil unless params[:game_id].present?
 
-      game = Game.find_by(id: params[:game_id], player: current_player)
-      return nil unless game
+      @game_for_scenario = Game.find_by(id: params[:game_id], player: current_player)
+      return nil unless @game_for_scenario
 
-      game.scenario_data
+      @game_for_scenario.scenario_data
+    end
+
+    # Where the picker's Back link goes when it was opened before a game starts and
+    # has no other way out: the host game shell's menu, or the host's root in the
+    # Hacktivity desktop app (one window, no tabs). Nil otherwise.
+    def back_url_for(game)
+      return nil unless params[:game_id].present?
+
+      shell_menu = game && shell_links_for(game)[:menu_url]
+      return shell_menu if shell_menu.present?
+
+      request.user_agent.to_s.match?(%r{HacktivityApp/}) ? '/' : nil
     end
   end
 end

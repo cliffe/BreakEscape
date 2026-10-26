@@ -99,6 +99,22 @@ test('end screen button: the app goes to / and never closes; a browser closes th
     assert.equal(log.closed, 1);
 });
 
+test('end screen button: a shell with a return link labels it with the shell label', () => {
+    let { w, log } = setup(BROWSER_UA);
+    w.breakEscapeConfig = { shellReturnUrl: '/shell/debrief', shellReturnLabel: 'Debrief' };
+    showEndScreen({ title: 'Done', buttonText: 'Return to Missions' });
+    const btn = document.querySelector('#scenario-end-screen button');
+    assert.equal(btn.textContent, 'Debrief');
+    btn.click();
+    assert.deepEqual(log.href, ['/shell/debrief']);
+
+    // No return link: the scenario's own text stands, even if a label is set
+    ({ w } = setup(BROWSER_UA));
+    w.breakEscapeConfig = { shellMenuUrl: '/shell/menu', shellReturnLabel: 'Debrief' };
+    showEndScreen({ title: 'Done', buttonText: 'Custom' });
+    assert.equal(document.querySelector('#scenario-end-screen button').textContent, 'Custom');
+});
+
 test('game menu: "Back to missions" exists only in the app', () => {
     setup(BROWSER_UA);
     let menu = new GameMenu();
