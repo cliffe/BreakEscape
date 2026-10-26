@@ -244,3 +244,4 @@ Lessons:
 - Room `lights` add without keeping hue, so a warm light on a cold ambient clips towards white at its centre; carry a "warm thing" with an `above` emitter (hue kept) and `floorTint`, and use a room light only for the spill.
 - Check every proposed ambient against the readability floor (luma about 175): two review suggestions fell below it.
 
+- m01 daylight darkness (2026-10-26): lights-off rooms were near-black, which didn't fit a daytime visit to a glass-fronted office. Scenario-level `darkAmbient` `#5a6378` (daylight through glass); hallways `#3c4458` (borrowed light, interior); storage closet `#1c2234` (no window); server room keeps `#0a0f1c`. Motion strikes still read, glows still bloom. Pattern for any daytime glazed building: set `darkAmbient` at scenario level, override windowless rooms.
