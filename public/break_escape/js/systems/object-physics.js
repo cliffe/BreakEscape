@@ -26,17 +26,29 @@ export function initializeObjectPhysics(gameInstance, roomsRef) {
  * slide into the strip or over the south wall, out of the player's reach.
  */
 export function addPropWallCollider(game, prop, wallBox, onHit) {
+    // One collider per (prop, wallBox): rooms.js registers a new room's chairs
+    // through both setupChairCollisions and setupExistingChairsWithNewRoom, and a
+    // second collider would separate the pair twice per step.
+    const colliders = prop._wallColliders || (prop._wallColliders = new Map());
+    const existing = colliders.get(wallBox);
     if (!wallBox.isBackWallBlock) {
-        return game.physics.add.collider(prop, wallBox, onHit);
+        if (existing) return existing;
+        const c = game.physics.add.collider(prop, wallBox, onHit);
+        colliders.set(wallBox, c);
+        return c;
     }
     const state = prop._blockState || (prop._blockState = new Map());
     const overlapFns = prop._blockOverlaps || (prop._blockOverlaps = new Map());
+    const gens = prop._blockGen || (prop._blockGen = new Map());
+    const gen = (gens.get(wallBox) || 0) + 1; // a stale timer must not settle a newer window
+    gens.set(wallBox, gen);
     state.set(wallBox, 'pending');
     const overlaps = () => !!(prop.body && wallBox.body
         && prop.body.right > wallBox.body.left && prop.body.left < wallBox.body.right
         && prop.body.bottom > wallBox.body.top && prop.body.top < wallBox.body.bottom);
     overlapFns.set(wallBox, overlaps);
     game.time.delayedCall(250, () => {
+        if (gens.get(wallBox) !== gen) return;
         if (state.get(wallBox) === 'pending') {
             if (overlaps()) {
                 state.set(wallBox, 'exempt');
@@ -46,9 +58,12 @@ export function addPropWallCollider(game, prop, wallBox, onHit) {
             }
         }
     });
+    if (existing) return existing;
     // Phaser only runs this callback while the bodies already overlap, so it can
     // never see a prop leave; watchExemptions does that on the world step.
-    return game.physics.add.collider(prop, wallBox, onHit, () => state.get(wallBox) ? false : true);
+    const c = game.physics.add.collider(prop, wallBox, onHit, () => state.get(wallBox) ? false : true);
+    colliders.set(wallBox, c);
+    return c;
 }
 
 // Drop each exemption once its prop no longer overlaps the block, then unhook
@@ -64,7 +79,7 @@ function watchExemptions(game, prop) {
             if (st !== 'exempt') return;
             const overlaps = prop._blockOverlaps.get(wallBox);
             if (overlaps && overlaps()) { exempt++; return; }
-            state.delete(wallBox); // it has left the block: collide from now on
+            state.delete(wallBox); // it has left the block (or the prop is gone)
         });
         if (exempt === 0) {
             world.off('worldstep', check);
