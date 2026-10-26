@@ -1,4 +1,4 @@
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "new"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
 {"cmd": "note", "message": "bridge-deduction-c-wrong (DRAFT, sidecar): fixture C, two wrong takedowns, the pull-out call, the act verdict through the exit phone without locking. Plan §9.3. KOs use the debugKO shortcut (combat not played; consequences fire for real)."}
 {"cmd": "eval", "fn": "async () => { /* W0 baseline and toast spy; keycard held, nothing opened */ window.__toasts = window.__toasts || []; if (!window.__toastSpy) { const orig = window.gameAlert; window.gameAlert = (...a) => { window.__toasts.push(a); return orig ? orig(...a) : undefined; }; window.__toastSpy = true; } const G = window.__test.getState().globals; const DS = G.deduction_state || {}; return !!window.deductionRuntime && G.c_keycard_revoked === false && window.inventory.items.some(i => i && i.scenarioData && i.scenarioData.id === 'c_keycard'); }"}
 {"cmd": "note", "message": "C1 KO Ahmed"}
@@ -15,7 +15,7 @@
 {"cmd": "waitFor", "kind": "condition", "fn": "() => { window.__preReload = true; setTimeout(() => location.assign(location.pathname + \"?skip_resume=1\"), 50); return true; }"}
 {"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady() === true", "timeoutMs": 60000}
 {"cmd": "eval", "fn": "async () => { /* RELOAD the page reloaded (sentinel gone) and the game is ready */ const t0 = Date.now(); while (!(window.__test && window.__test.waitUntilReady) && Date.now() - t0 < 60000) await new Promise(r => setTimeout(r, 250)); if (window.__preReload) return false; const r = await window.__test.waitUntilReady({ timeoutMs: 60000 }); return !!(r && r.ok); }"}
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume", "autoBrief": true}
 {"cmd": "eval", "fn": "async () => { /* C1d after a reload the keycard is still gone (server remove) and the verdict holds */ const G = window.__test.getState().globals; const DS = G.deduction_state || {}; return !window.inventory.items.some(i => i && i.scenarioData && i.scenarioData.id === 'c_keycard') && G.deduction_verdict_ded_c_ahmed === 'guilty' && G.c_keycard_revoked === true; }"}
 {"cmd": "note", "message": "C2 KO Baptiste"}
 {"cmd": "debugKO", "id": "ded_c_baptiste"}

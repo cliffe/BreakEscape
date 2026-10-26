@@ -861,20 +861,20 @@ function substituteFlags(node, at) {
     // run here in Node instead of the page, so it is refused. Any error comes back
     // as ok:false rather than crashing the session.
     eval: async (c) => {
-      try {
-        const f = new Function(`return (${c.fn})`)();
-        if (f && typeof f.then === 'function') {
-          f.catch(() => {});
-          return { ok: false, reason: 'eval-not-a-function',
-                   hint: 'fn evaluated to a promise (an async IIFE ran in Node, not the page). Pass a function expression: "async () => { ... }".' };
-        }
-        if (typeof f !== 'function') {
-          return { ok: false, reason: 'eval-not-a-function', hint: 'fn must be a function expression, e.g. "() => window.__test.scan(400)".' };
-        }
-        return await page.evaluate(f);
-      } catch (e) {
-        return { ok: false, reason: 'eval-failed', error: String(e && e.message || e).slice(0, 500) };
+      const bad = (reason, message, hint) => Object.assign(new Error(message), { reason, hint });
+      let f;
+      try { f = new Function(`return (${c.fn})`)(); }
+      catch (e) { throw bad('eval-failed', String(e && e.message || e).slice(0, 500)); }
+      if (f && typeof f.then === 'function') {
+        f.catch(() => {});
+        throw bad('eval-not-a-function', 'fn evaluated to a promise',
+          'An async IIFE ran in Node, not the page. Pass a function expression: "async () => { ... }".');
       }
+      if (typeof f !== 'function') {
+        throw bad('eval-not-a-function', 'fn is not a function', 'fn must be a function expression, e.g. "() => window.__test.scan(400)".');
+      }
+      try { return await page.evaluate(f); }
+      catch (e) { throw bad('eval-failed', String(e && e.message || e).slice(0, 500)); }
     },
 
     speed: (c) => { Object.assign(speed, SPEEDS[c.value] || speed); return { ok: true, speed: c.value }; },
@@ -915,7 +915,7 @@ function substituteFlags(node, at) {
       const result = await handler(cmd);
       emit({ ok: true, cmd: cmd.cmd, result });
     } catch (err) {
-      emit({ ok: false, cmd: cmd.cmd, error: String(err && err.message || err) });
+      emit({ ok: false, cmd: cmd.cmd, error: String(err && err.message || err), ...(err && err.reason ? { reason: err.reason } : {}), ...(err && err.hint ? { hint: err.hint } : {}) });
     }
   }
 

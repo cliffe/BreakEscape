@@ -339,11 +339,20 @@ function ensureTargetRecorder() {
                 engineTargets.push(rec);
                 if (engineTargets.length > 30) engineTargets.shift();
             } catch (e) { /* recording must never break the interaction */ }
+            const stamp = () => { if (rec) rec.tEnd = performance.now(); };
+            let out;
             try {
-                return fn.apply(this, [sprite, ...rest]);
-            } finally {
-                if (rec) rec.tEnd = performance.now();
+                out = fn.apply(this, [sprite, ...rest]);
+            } catch (e) {
+                stamp();
+                throw e;
             }
+            // An async handler (handleDoorInteraction is one) raises its overlay after
+            // an await, so its window ends when the promise settles, not when it is
+            // created. The original promise is returned untouched.
+            if (out && typeof out.then === 'function') out.then(stamp, stamp);
+            else stamp();
+            return out;
         };
         wrapped.__benchRecorder = true;
         window[name] = wrapped;
@@ -938,8 +947,20 @@ const bridge = {
         // The first click may instead have acted on something else near it (a
         // neighbouring door's lock, an NPC). Clicking again would discard that
         // record, so report it now rather than a misleading out-of-range.
-        if (engineTargets.some(r => r.t >= interactStartT) || activeMinigameSummary()) {
-            const early = activeMinigameSummary();
+        const early = activeMinigameSummary();
+        if (!engineTargets.some(r => r.t >= interactStartT) && early) {
+            // A minigame opened during the walk that no handler we recorded asked
+            // for (a forced or timed phone call, say). Not the click's doing.
+            const result = fail('unrelated-minigame', {
+                id, entity, opened: { id: early.id, title: early.title || null },
+                hint: `A minigame ("${early.title || early.id}") opened while walking to "${entity.name || id}", `
+                    + 'but the engine was never asked to interact with anything. Something else opened it '
+                    + '(a timed or forced event). Deal with it, close it, then interact again.'
+            });
+            logAction('interact', { id }, result);
+            return result;
+        }
+        if (engineTargets.some(r => r.t >= interactStartT)) {
             const result = withConfirmation({ id, mode: 'approach-click-acted', entity },
                 { confirmed: true, via: early ? 'minigame' : 'engine-record' }, entity);
             logAction('interact', { id }, result);
