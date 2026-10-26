@@ -24,6 +24,16 @@
  *
  * Doors are never wall-checked: a door is the opening in the wall.
  *
+ * SAME-ROOM RULE. The top-down view fakes depth: a room's top two wall rows
+ * overlap the bottom of the room to its north, and the player may walk there
+ * ("behind" the wall), overlapping the south room's objects. They must not
+ * interact with those, because those objects belong to another room. So every
+ * reach check also needs the player's feet to be in the target's room, decided
+ * the way core/rooms.js updatePlayerRoom decides the player's room (a room's
+ * floor starts below its two wall rows, so the strip behind a south room's back
+ * wall counts as the north room). Doors are exempt: they join two rooms. A feet
+ * point in no room (a gap) or a target with no known room is not blocked.
+ *
  * No imports, so the node tests can load this file on its own.
  */
 
@@ -65,6 +75,63 @@ export function roomFloorRect(room) {
         top: pos.y + BACK_WALL_ROWS * th + INSET,
         bottom: pos.y + rows * th - SOUTH_EDGE - INSET
     };
+}
+
+const FOOT_HALF = 5; // the player body is 10px tall; updatePlayerRoom tests its bottom edge
+
+/**
+ * The room whose floor holds a body centred at (x, y), by updatePlayerRoom's own
+ * test (feet = centre + FOOT_HALF; floor starts BACK_WALL_ROWS tiles down), or null.
+ */
+export function roomIdAtFeet(x, y, rooms = roomsMap()) {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    const feetY = y + FOOT_HALF;
+    for (const [id, room] of Object.entries(rooms)) {
+        const pos = room?.position, map = room?.map;
+        if (!pos || !map) continue;
+        const w = map.widthInPixels ?? 0, h = map.heightInPixels ?? 0;
+        if (feetY >= pos.y + BACK_WALL_ROWS * TILE && feetY <= pos.y + h && x >= pos.x && x <= pos.x + w) return id;
+    }
+    return null;
+}
+
+/**
+ * The id of the room a target belongs to. A door is none (it joins two rooms).
+ * An NPC or a movable prop (a kicked chair) belongs to the room it now stands in;
+ * any other object belongs to the room that loaded it (sprite.roomId), which keeps
+ * a wall fixture on the back wall in its own room.
+ */
+export function roomIdOfTarget(target, rooms = roomsMap()) {
+    if (!target || target.doorProperties) return null;
+    if (target._isNPC || target.isSwivelChair) {
+        const bc = target.body?.center;
+        let at = null;
+        if (bc && Number.isFinite(bc.x) && Number.isFinite(bc.y)) at = roomIdAtFeet(bc.x, bc.y, rooms);
+        else if (target._isNPC && Number.isFinite(target.x)) at = roomIdAtFeet(target.x, target.y - FOOT_HALF, rooms);
+        else if (Number.isFinite(target.x)) {
+            const b = spriteBox(target);
+            at = roomIdAtFeet(b.x + b.w / 2, b.y + b.h - FOOT_HALF - 1, rooms);
+        }
+        if (at) return at;
+    }
+    if (target.roomId && rooms[target.roomId]) return target.roomId;
+    const room = roomOfTarget(target, rooms);
+    if (room) {
+        for (const [id, r] of Object.entries(rooms)) if (r === room) return id;
+    }
+    return null;
+}
+
+/**
+ * True unless the feet at `from` stand in one room and the target belongs to
+ * another. See SAME-ROOM RULE above.
+ */
+export function sameRoomFrom(from, target, rooms = roomsMap()) {
+    if (!from || !target || target.doorProperties) return true;
+    const here = roomIdAtFeet(from.x, from.y, rooms);
+    if (!here) return true;
+    const there = roomIdOfTarget(target, rooms);
+    return !there || there === here;
 }
 
 function spriteBox(s) {
@@ -117,6 +184,7 @@ export function interactionTargetPoint(target, from, room = roomOfTarget(target)
 export function wallClearFrom(from, target, { room, occ = occlusion() } = {}) {
     if (!from || !target) return true;
     if (target.doorProperties) return true;
+    if (!sameRoomFrom(from, target)) return false; // different room (see SAME-ROOM RULE)
     if (!occ || typeof occ.isWallClearBetween !== 'function') return true;
     const to = interactionTargetPoint(target, from, room ?? roomOfTarget(target));
     if (!to) return true;
@@ -166,5 +234,5 @@ export function findClearStandPoint(target, player, pfm, range, opts = {}) {
 }
 
 if (typeof window !== 'undefined') {
-    window.interactionWalls = { interactionLineClear, wallClearFrom, interactionTargetPoint, findClearStandPoint };
+    window.interactionWalls = { sameRoomFrom, roomIdAtFeet, roomIdOfTarget, interactionLineClear, wallClearFrom, interactionTargetPoint, findClearStandPoint };
 }

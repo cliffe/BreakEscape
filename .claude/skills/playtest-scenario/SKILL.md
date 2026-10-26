@@ -483,6 +483,7 @@ Two need judgement:
 | `blocking-ui`           | `{"cmd":"dismiss","label":"<button text>"}`                                                                                                                          |
 | `ambiguous-blocking-ui` | Re-issue `dismiss` with an explicit label. **Never guess** — the session-resume overlay's buttons include "New Session", which discards the save and reloads mid-run |
 | `still-out-of-range`    | The game walked the player but stopped short; `moveTo` closer, then retry                                                                                            |
+| `different-room`        | The target is within reach on distance but belongs to another room than the one the player's feet are in (typically standing behind a south room's back wall, which counts as the north room). The game refuses it by design; walk into the target's room (`moveToNear` does) and retry |
 | `unknown-entity:<id>`   | Not loaded or not in the scan; check `brief().nearby`                                                                                                                |
 
 If `interact` reports `ok: true` but `brief()` shows **no** active minigame and **no** state change, and `drain()` shows no event, suspect a game-side bug before retrying the same call. The bridge is reporting truthfully that it clicked; the game simply did not react. Retrying identically will not help — capture the log and report it.

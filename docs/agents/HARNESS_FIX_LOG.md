@@ -4,6 +4,24 @@ Review-and-fix rounds for two fixes that followed the Haiku 5.5 playtest trial: 
 
 ## Wall strip and reach (commits f4a83f4af, df7753791, 87b169b5f, cd0915e6f, 9148e73ae, e71d96a24)
 
+### Correction (user, 2026-10-26)
+
+The sealing in this section was a misreading of the design. The top-down view fakes depth: a room's top two wall rows overlap the bottom of the room to its north, and the player is meant to walk there, "behind" the wall. From there they may overlap objects of the room to the south, but must not interact with them, because those objects belong to a different room. Everything below that exists to seal the strip is superseded.
+
+Reverted (by hand, not `git revert`):
+- the solid 32x64 back-wall blocks in `collision.js` (`isBackWallBlock`);
+- the prop exemption machinery in `object-physics.js` (`addPropWallCollider`, pending/exempt states, 250 ms settle, `watchExemptions`, generation counter, `_wallColliders` dedupe): chairs use plain `game.physics.add.collider` again;
+- the one-column N/S door carve in `npc-pathfinding.js` `markDoorWalkable` (two tiles wide again);
+- the test-scenario NPC moves (`test-npc-face-player`, `test-npc-personal-space` y 2 back to 1; `test-npc-patrol` bounds back to y 0);
+- tests that only tested the above: `collision-back-wall-blocks`, `prop-block-exemption`, `door-carve-cells`.
+
+Kept, because they stand on their own: `reachX`/`aimX` (reach to the nearest point of a wide object, aim at its centre, rotation handling) and its tests; the bridge refusing stand points behind a wall (`wallClearFrom` checks, ring centres along wide spans, rival measures); `snapToTileCentre` and `removeWallTilesForDoorInRoom` using `calculateDoorPositionsForRoom` (with the door-snap tests; the one-tile cut matches `removeTilesUnderDoor` and the door sprite, so it stays); the test-bridge parse test; all harness commits (a73819578, 306f8241c, cb48719c5, 275051e17, 3ed8fd83f).
+
+Added: the same-room interaction rule. `interaction-walls.js` now decides the room of the player's feet the way `updatePlayerRoom` does (`roomIdAtFeet`: floor starts two rows below a room's top, so the strip behind a south room's back wall is the north room) and the room of a target (`roomIdOfTarget`: sprite `roomId` for objects, so a wall fixture stays in its own room; the room it stands in for NPCs and swivel chairs). `wallClearFrom`, and so `interactionLineClear`, returns false across rooms. Doors, targets with no known room and feet in no room are not blocked. Line of sight stays: it still stops the case where both are in one room with a wall tile between (the sis02 case when the room rule does not apply, and m01's Sarah behind a dividing wall). Every path goes through those two functions: E-key selection, hover info label, click interact and the interaction menu (`isObjectInInteractionRange`), `handleObjectInteraction`, stand-point searches. The click handler also sorts the objects under the tap so those in the player's room come first, since two overlapping rooms can both have an object at the tapped point. The bridge reports `otherRoom` on entities, `interact` fails with `different-room`, and rival measures ignore rivals in another room. New test: `interaction-room-rule.test.mjs`.
+
+Live check (sis02, m01), headless harness: the player walks down behind the SCADA control room's and the engineering workshop's back walls from battery_hall_1; there E, click, and the bridge's interact refuse sis_config_panel and hmi_ops_01 (no minigame, label hidden, reason `different-room`); from the workshop floor sis_config_panel opens, including from below its right half; `moveToNear sis_config_panel` from behind the wall picks a workshop spot and opens it. m01 reception behaves the same way; Sarah still talks; the main-office chair still kicks.
+
+
 ### Round 1
 
 | Severity | Count |

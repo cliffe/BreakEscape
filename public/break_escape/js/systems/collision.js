@@ -126,40 +126,6 @@ export function createWallCollisionBoxes(wallLayer, roomId, position) {
         });
     });
     
-    // Fill the back wall's strip. A neighbour to the north overlaps this room's
-    // top 64px (its south rows sit on our back wall), so once it is loaded its
-    // floor reaches down onto our wall face and the player can walk onto it,
-    // standing "inside" wall fixtures with a wall between them and the floor
-    // (sis02: the workshop panel under battery_hall_1). The wall tiles carry only
-    // thin edge bars, which leave the strip itself open, and a doorway's gap lets
-    // the player step sideways inside it. So each column that has a wall tile in
-    // the two back-wall rows gets a solid block the height of the strip, and a
-    // column with none is a doorway (its tiles were cut out under the door) and
-    // stays open as a corridor between the blocks. The corner columns have no
-    // wall tile there by construction and are always filled.
-    for (let col = 0; col < map.width; col++) {
-        const corner = col === 0 || col === map.width - 1;
-        let hasWall = false;
-        for (let row = 0; row < 2 && !hasWall; row++) {
-            const t = wallLayer.getTileAt(col, row);
-            hasWall = !!(t && t.index !== -1);
-        }
-        if (!corner && !hasWall) continue;
-        const block = game.add.rectangle(
-            position.x + col * TILE_SIZE + TILE_SIZE / 2,
-            position.y + TILE_SIZE, // centre of the 2-row strip
-            TILE_SIZE,
-            2 * TILE_SIZE,
-            0x000000,
-            0
-        );
-        block.setVisible(false);
-        block.isBackWallBlock = true; // object-physics.js: props overlapping it at spawn ignore it
-        game.physics.add.existing(block, true);
-        game.time.delayedCall(0, () => { if (block.body) block.body.immovable = true; });
-        collisionBoxes.push(block);
-    }
-
     console.log(`Created ${collisionBoxes.length} wall collision boxes for room ${roomId}`);
     
     // Add collision with player for all collision boxes
@@ -391,8 +357,8 @@ export function removeWallTilesForDoorInRoom(roomId, fromRoomId, direction, door
     // Calculate door position based on the room's door configuration
     if (direction === 'north' || direction === 'south') {
         // Use the engine's own door placement (the one the door sprites and
-        // removeTilesUnderDoor use), so the cut lines up with the sprite and with
-        // the back-wall block beside it. A N/S doorway is one tile wide.
+        // removeTilesUnderDoor use), so the cut lines up with the door sprite.
+        // A N/S doorway is one tile wide.
         const dims = window.roomDimensions?.[roomId];
         const placed = dims ? calculateDoorPositionsForRoom(
             roomId, roomPosition, dims, roomData.connections || {},

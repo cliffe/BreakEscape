@@ -17,79 +17,6 @@ export function initializeObjectPhysics(gameInstance, roomsRef) {
     rooms = roomsRef;
 }
 
-/**
- * Collide a prop with a wall box. A back-wall strip block (collision.js) is
- * special: a prop resting on the north room's bottom row starts inside one, so
- * a prop that overlaps a block once it has settled ignores that block until it
- * has left it, and collides with every block it did not start in. Without the
- * exemption it would be shoved around at spawn; with a blanket skip it could
- * slide into the strip or over the south wall, out of the player's reach.
- */
-export function addPropWallCollider(game, prop, wallBox, onHit) {
-    // One collider per (prop, wallBox): rooms.js registers a new room's chairs
-    // through both setupChairCollisions and setupExistingChairsWithNewRoom, and a
-    // second collider would separate the pair twice per step.
-    const colliders = prop._wallColliders || (prop._wallColliders = new Map());
-    const existing = colliders.get(wallBox);
-    if (!wallBox.isBackWallBlock) {
-        if (existing) return existing;
-        const c = game.physics.add.collider(prop, wallBox, onHit);
-        colliders.set(wallBox, c);
-        return c;
-    }
-    const state = prop._blockState || (prop._blockState = new Map());
-    const overlapFns = prop._blockOverlaps || (prop._blockOverlaps = new Map());
-    const gens = prop._blockGen || (prop._blockGen = new Map());
-    const gen = (gens.get(wallBox) || 0) + 1; // a stale timer must not settle a newer window
-    gens.set(wallBox, gen);
-    state.set(wallBox, 'pending');
-    const overlaps = () => !!(prop.body && wallBox.body
-        && prop.body.right > wallBox.body.left && prop.body.left < wallBox.body.right
-        && prop.body.bottom > wallBox.body.top && prop.body.top < wallBox.body.bottom);
-    overlapFns.set(wallBox, overlaps);
-    game.time.delayedCall(250, () => {
-        if (gens.get(wallBox) !== gen) return;
-        if (state.get(wallBox) === 'pending') {
-            if (overlaps()) {
-                state.set(wallBox, 'exempt');
-                watchExemptions(game, prop);
-            } else {
-                state.delete(wallBox);
-            }
-        }
-    });
-    if (existing) return existing;
-    // Phaser only runs this callback while the bodies already overlap, so it can
-    // never see a prop leave; watchExemptions does that on the world step.
-    const c = game.physics.add.collider(prop, wallBox, onHit, () => state.get(wallBox) ? false : true);
-    colliders.set(wallBox, c);
-    return c;
-}
-
-// Drop each exemption once its prop no longer overlaps the block, then unhook
-// the world-step listener when none are left (one listener per prop, no leak).
-function watchExemptions(game, prop) {
-    if (prop._blockWatch) return;
-    const world = game.physics && game.physics.world;
-    if (!world) return;
-    const check = () => {
-        const state = prop._blockState;
-        let exempt = 0;
-        state.forEach((st, wallBox) => {
-            if (st !== 'exempt') return;
-            const overlaps = prop._blockOverlaps.get(wallBox);
-            if (overlaps && overlaps()) { exempt++; return; }
-            state.delete(wallBox); // it has left the block (or the prop is gone)
-        });
-        if (exempt === 0) {
-            world.off('worldstep', check);
-            prop._blockWatch = null;
-        }
-    };
-    prop._blockWatch = check;
-    world.on('worldstep', check);
-}
-
 // Set up collision detection between chairs and other objects
 export function setupChairCollisions(chair) {
     if (!chair || !chair.body) return;
@@ -131,11 +58,11 @@ export function setupChairCollisions(chair) {
                 if (wallBox.body) {
                     // Add collision callback for swivel chairs to modify spin on wall hit
                     if (chair.isSwivelChair) {
-                        addPropWallCollider(game, chair, wallBox, () => {
+                        game.physics.add.collider(chair, wallBox, () => {
                             handleChairWallCollision(chair);
                         });
                     } else {
-                        addPropWallCollider(game, chair, wallBox);
+                        game.physics.add.collider(chair, wallBox);
                     }
                 }
             });
@@ -211,7 +138,7 @@ export function setupExistingChairsWithNewRoom(roomId) {
             if (wallBox.body) {
                 window.chairs.forEach(chair => {
                     if (chair.body) {
-                        addPropWallCollider(game, chair, wallBox);
+                        game.physics.add.collider(chair, wallBox);
                     }
                 });
             }

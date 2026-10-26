@@ -701,7 +701,7 @@ const bridge = {
         const result = {
             ok: !!after.inRange,
             id,
-            reason: after.inRange ? undefined : 'arrived-but-still-out-of-range',
+            reason: after.inRange ? undefined : (after.otherRoom ? 'different-room' : 'arrived-but-still-out-of-range'),
             // Where the sprite centre was meant to end up (the engine's measure
             // point), and the feet target actually clicked to get it there.
             aimedAt: { x: Math.round(spot.x), y: Math.round(spot.y) },
@@ -922,6 +922,21 @@ const bridge = {
             entity = findEntity(id) || entity;
         }
 
+        // Close enough on distance but in another room than the player's feet
+        // (behind a wall strip): the game refuses it, so say why instead of
+        // clicking and reporting a misleading out-of-range.
+        if (entity.otherRoom) {
+            const result = fail('different-room', {
+                id, entity,
+                hint: `"${entity.name || id}" belongs to ${entity.room || 'another room'} but the player is standing `
+                    + `in ${window.currentPlayerRoom || 'another room'} (e.g. behind a wall strip). The game only lets the `
+                    + 'player interact with things in the room they stand in (doors excepted). Walk into that room '
+                    + '(moveToNear does) and interact again.'
+            });
+            logAction('interact', { id }, result);
+            return result;
+        }
+
         let sinceSeq = currentSeq();
         await clickWorld(entity.x, entity.y);
 
@@ -1001,6 +1016,15 @@ const bridge = {
             after = findEntity(id) || after;
         }
 
+        if (!after.inRange && after.otherRoom) {
+            const result = fail('different-room', {
+                id, entity: after,
+                hint: `Arrived within reach of "${after.name || id}" but in ${window.currentPlayerRoom || 'another room'}, `
+                    + `not ${after.room || 'its room'}; the game refuses cross-room interaction.`
+            });
+            logAction('interact', { id }, result);
+            return result;
+        }
         if (!after.inRange) {
             const result = fail('still-out-of-range', {
                 id, distance: after.distance, range: after.kind === 'door' ? DOOR_INTERACTION_RANGE : INTERACTION_RANGE, entity: after,

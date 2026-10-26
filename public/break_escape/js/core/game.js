@@ -5,7 +5,7 @@ import { createPlayer, updatePlayerMovement, movePlayerToPoint, facePlayerToward
 import { initializePathfinder } from './pathfinding.js';
 import { initializeInventory, processInitialInventoryItems } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
-import { wallClearFrom, findClearStandPoint } from '../systems/interaction-walls.js';
+import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '../systems/interaction-walls.js';
 import { aimX } from '../systems/interaction-reach.js';
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu } from '../ui/interaction-menu.js';
@@ -2090,6 +2090,12 @@ export async function create() {
         if (objectsAtPosition.length > 0) {
             const player = window.player;
             if (player) {
+                // Rooms overlap by their wall rows, so the tap can land on objects of two
+                // rooms. Offer the ones in the player's own room first (stable, so depth
+                // order is kept within each group): an object of another room is never
+                // interactable from here, and would otherwise swallow the tap and walk away.
+                const feet = playerFeet(player);
+                objectsAtPosition.sort((a, b) => (sameRoomFrom(feet, b) ? 1 : 0) - (sameRoomFrom(feet, a) ? 1 : 0));
                 for (const obj of objectsAtPosition) {
                     if (obj.interactable && window.handleObjectInteraction) {
                         if (isObjectInInteractionRange(obj)) {

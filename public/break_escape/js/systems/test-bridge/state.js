@@ -16,7 +16,7 @@
 import { isWorldPointOnScreen, getCanvas } from './input.js';
 import { staticNpcBodyDistSq } from '../npc-reach.js';
 // Reach also needs no wall between (interactions.js asks the same function)
-import { interactionLineClear, wallClearFrom } from '../interaction-walls.js';
+import { interactionLineClear, wallClearFrom, sameRoomFrom, playerFeet as wallsPlayerFeet } from '../interaction-walls.js';
 // Reach runs to the nearest part of a wide object, in the game and here
 import { reachX, aimX } from '../interaction-reach.js';
 // The engine's own door placement: door sprites (doors.js) and the wall gaps
@@ -297,7 +297,10 @@ function describeObject(sprite, roomId, px, py, mx, my) {
         distance: round(d),
         interactDistance: round(di),
         inRange: di <= INTERACTION_RANGE && interactionLineClear(window.player, sprite),
-        wallBetween: di <= INTERACTION_RANGE && !interactionLineClear(window.player, sprite),
+        // Reachable on distance but belonging to another room than the player's
+        // feet are in (walking behind a wall strip): the game refuses it
+        otherRoom: di <= INTERACTION_RANGE && !sameRoomFrom(wallsPlayerFeet(window.player), sprite),
+        wallBetween: di <= INTERACTION_RANGE && sameRoomFrom(wallsPlayerFeet(window.player), sprite) && !interactionLineClear(window.player, sprite),
         onScreen: isWorldPointOnScreen(sprite.x, sprite.y),
         state: {
             locked: data.locked ?? null,
@@ -376,7 +379,8 @@ function describeNPC(sprite, roomId, px, py, mx, my) {
         // A KO'd NPC is skipped by tryInteractWithNearest, so it is not
         // interactable even when physically in range.
         inRange: di <= INTERACTION_RANGE && !ko && interactionLineClear(window.player, sprite),
-        wallBetween: di <= INTERACTION_RANGE && !interactionLineClear(window.player, sprite),
+        otherRoom: di <= INTERACTION_RANGE && !sameRoomFrom(wallsPlayerFeet(window.player), sprite),
+        wallBetween: di <= INTERACTION_RANGE && sameRoomFrom(wallsPlayerFeet(window.player), sprite) && !interactionLineClear(window.player, sprite),
         onScreen: isWorldPointOnScreen(sprite.x, sprite.y),
         state: {
             hostile,
@@ -593,18 +597,18 @@ export function solveStandingPoint(targetX, targetY, fromX, fromY, feetOffset = 
                 return !!(g[cy] && g[cy][cx] === 0);
             };
             const floorOk = (px, py) => ok(px, py) && wallOk(px, py);
-            const found = solveStandingPointWhere(targetX, targetY, fromX, fromY, floorOk, target)
+            const found = solveStandingPointWhere(targetX, targetY, fromX, fromY, floorOk, target, 0.625, feetOffset)
                 // Nothing walkable within the comfortable margin (a wall object
                 // behind a desk): take a walkable, wall-clear spot nearer the edge of
                 // range rather than an unwalkable one, which the click never reaches
-                || solveStandingPointWhere(targetX, targetY, fromX, fromY, floorOk, target, 0.9);
+                || solveStandingPointWhere(targetX, targetY, fromX, fromY, floorOk, target, 0.9, feetOffset);
             if (found) return found;
         }
     }
-    return solveStandingPointWhere(targetX, targetY, fromX, fromY, wallOk, target);
+    return solveStandingPointWhere(targetX, targetY, fromX, fromY, wallOk, target, 0.625, feetOffset);
 }
 
-function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, target = null, margin = 0.625) {
+function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, target = null, margin = 0.625, feetOffset = null) {
     // Aim well inside range, not on the boundary. 20px, not 24: the solved
     // spot is reached by a click, and click-to-move stops up to
     // ARRIVAL_THRESHOLD (8px) short of its target along the approach, so the
@@ -656,8 +660,11 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
 
             // Would the engine even select the target from here? Compare on
             // plain distance, which is the measure its candidate search uses.
+            // A rival in another room than these feet is not gathered by the game
+            const feetHere = feetOffset ? { x: sx + feetOffset.x, y: sy + feetOffset.y } : null;
             const nearestRival = rivals.reduce(
-                (m, o) => Math.min(m, dist(sx, sy, rivalX(o, sx), o.y)), Infinity);
+                (m, o) => (feetHere && o.sprite && !sameRoomFrom(feetHere, o.sprite))
+                    ? m : Math.min(m, dist(sx, sy, rivalX(o, sx), o.y)), Infinity);
             point.plainDistance = Math.round(plain * 10) / 10;
             point.nearestRivalDistance = Number.isFinite(nearestRival)
                 ? Math.round(nearestRival * 10) / 10 : null;
