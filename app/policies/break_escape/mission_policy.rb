@@ -13,8 +13,12 @@ module BreakEscape
     end
 
     def create_game?
-      # Anyone authenticated can create a game for a mission they can view
-      user.present? && show?
+      # Anyone authenticated can create a game for a mission they can view,
+      # unless the host app narrows that with config.can_create_game.
+      return false unless user.present? && show?
+
+      hook = BreakEscape.configuration&.can_create_game
+      hook.nil? || !!hook.call(user, record)
     end
 
     class Scope < Scope

@@ -247,6 +247,43 @@ module BreakEscape
       assert_not MissionPolicy.new(@player, @unpublished).create_game?,
         "Regular player should not create a game for an unpublished mission"
     end
+
+    test "create_game? is unchanged when can_create_game is nil" do
+      with_create_hook(nil) do
+        assert MissionPolicy.new(@player, @published).create_game?
+      end
+    end
+
+    test "create_game? follows can_create_game when it allows" do
+      args = nil
+      with_create_hook(->(user, mission) { args = [user, mission]; true }) do
+        assert MissionPolicy.new(@player, @published).create_game?
+      end
+      assert_equal [@player, @published], args
+    end
+
+    test "create_game? is refused when can_create_game refuses" do
+      with_create_hook(->(_user, _mission) { false }) do
+        assert_not MissionPolicy.new(@player, @published).create_game?
+      end
+    end
+
+    test "can_create_game cannot widen access to unpublished missions or anonymous users" do
+      with_create_hook(->(_user, _mission) { true }) do
+        assert_not MissionPolicy.new(@player, @unpublished).create_game?
+        assert_not MissionPolicy.new(nil, @published).create_game?
+      end
+    end
+
+    private
+
+    def with_create_hook(hook)
+      original = BreakEscape.configuration.can_create_game
+      BreakEscape.configuration.can_create_game = hook
+      yield
+    ensure
+      BreakEscape.configuration.can_create_game = original
+    end
   end
 
   # ─── GamePolicy: vm_panel? / vm_set_panel? ─────────────────────────────────
