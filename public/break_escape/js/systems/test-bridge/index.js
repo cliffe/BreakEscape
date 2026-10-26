@@ -307,7 +307,7 @@ function overlayRaisedByTarget() {
     // No handler record (a door zone, say): nothing to tie it to, so accept it
     // and let withConfirmation mark the result targetUnverified.
     if (!recs.length) return true;
-    return calls.some(c => recs.some(r => c.t >= r.t && c.t <= (r.tEnd ?? performance.now()) + OVERLAY_AFTER_HANDLER_MS));
+    return calls.some(c => recs.some(r => c.t >= r.t && c.t <= (r.tEnd ?? (r.t + 1000)) + OVERLAY_AFTER_HANDLER_MS));
 }
 function ensureTargetRecorder() {
     for (const name of ['gameDisplay', 'gameConfirm']) {
@@ -347,11 +347,11 @@ function ensureTargetRecorder() {
                 stamp();
                 throw e;
             }
-            // An async handler (handleDoorInteraction is one) raises its overlay after
-            // an await, so its window ends when the promise settles, not when it is
-            // created. The original promise is returned untouched.
-            if (out && typeof out.then === 'function') out.then(stamp, stamp);
-            else stamp();
+            // A handler that returns a promise (an async one, or a chain) may raise its
+            // overlay after an await, so its window ends when the promise settles.
+            // finally() keeps a rejection a rejection for the caller and the page.
+            if (out && typeof out.finally === 'function') return out.finally(stamp);
+            stamp();
             return out;
         };
         wrapped.__benchRecorder = true;
@@ -841,6 +841,15 @@ const bridge = {
                 logAction('enterRoom', { toRoom }, result);
                 return result;
             }
+            if (!clicked.ok && !clicked.mismatch && clicked.reason === 'unrelated-minigame') {
+                const result = fail('unrelated-minigame', {
+                    from, wanted: toRoom, doorway, interact: clicked, opened: clicked.opened,
+                    hint: `A minigame that is not this door's lock opened ("${clicked.opened?.title || clicked.opened?.id}"). `
+                        + 'Deal with it, close it, then enter again.'
+                });
+                logAction('enterRoom', { toRoom }, result);
+                return result;
+            }
             if (!open.ok) {
                 const mg = activeMinigameSummary();
                 const result = fail(mg ? 'door-locked' : 'door-did-not-open', {
@@ -948,14 +957,25 @@ const bridge = {
         // neighbouring door's lock, an NPC). Clicking again would discard that
         // record, so report it now rather than a misleading out-of-range.
         const early = activeMinigameSummary();
-        if (!engineTargets.some(r => r.t >= interactStartT) && early) {
-            // A minigame opened during the walk that no handler we recorded asked
-            // for (a forced or timed phone call, say). Not the click's doing.
+        // A door's own click zone calls handleDoorInteraction directly and a lock
+        // minigame opens synchronously, so nothing is recorded; the minigame's own
+        // lock names its door, which ties it to the click (or not).
+        const earlyChk = early && !engineTargets.some(r => r.t >= interactStartT)
+            ? checkEngineTarget(entity, early) : null;
+        if (earlyChk && earlyChk.verified) {
+            const result = withConfirmation({ id, mode: 'approach-click-acted', entity },
+                { confirmed: true, via: 'minigame' }, entity);
+            logAction('interact', { id }, result);
+            return result;
+        }
+        if (early && !engineTargets.some(r => r.t >= interactStartT)) {
+            // A minigame opened during the walk that nothing ties to this click.
             const result = fail('unrelated-minigame', {
                 id, entity, opened: { id: early.id, title: early.title || null },
                 hint: `A minigame ("${early.title || early.id}") opened while walking to "${entity.name || id}", `
                     + 'but the engine was never asked to interact with anything. Something else opened it '
-                    + '(a timed or forced event). Deal with it, close it, then interact again.'
+                    + '(a timed or forced event, or an earlier interaction\'s delayed open, such as a pickup '
+                    + 'then open). Deal with it, close it, then interact again.'
             });
             logAction('interact', { id }, result);
             return result;

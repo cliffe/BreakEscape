@@ -314,11 +314,13 @@ function describeDoor(door, roomId, px, py) {
     const props = door.doorProperties || {};
     const isSide = props.direction === 'east' || props.direction === 'west';
     // Clicking a door uses DOOR_INTERACTION_RANGE (game.js), which is more
-    // generous than the keyboard path; E/W doors additionally measure from a
-    // half-tile-lower anchor.
-    const anchorY = isSide ? door.y + SIDE_DOOR_Y_OFFSET : door.y;
+    // generous than the keyboard path. A click measures from the door's own
+    // centre (game.js findDoorAtPosition / the tap-gather); only the E key
+    // measures E/W doors from a half-tile-lower anchor (interactions.js), reported
+    // as keyDistance.
     const range = DOOR_INTERACTION_RANGE;
-    const d = dist(px, py, door.x, anchorY);
+    const d = dist(px, py, door.x, door.y);
+    const keyDistance = isSide ? dist(px, py, door.x, door.y + SIDE_DOOR_Y_OFFSET) : d;
     return {
         kind: 'door',
         id: `door:${props.roomId}->${props.connectedRoom}`,
@@ -328,6 +330,7 @@ function describeDoor(door, roomId, px, py) {
         x: round(door.x),
         y: round(door.y),
         distance: round(d),
+        keyDistance: round(keyDistance),
         inRange: d <= range,
         onScreen: isWorldPointOnScreen(door.x, door.y),
         state: {
