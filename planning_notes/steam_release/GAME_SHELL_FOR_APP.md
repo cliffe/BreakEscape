@@ -120,3 +120,28 @@ requests. Today only the links change; the guard below is the only barrier.
   versions the lockfiles pin.
 - Sign-in on a dev server needs the OTP: request "Email me a token" and read the code from the
   `SendTokenEmailJob` line in the server log.
+
+## Merged with the desktop app work (2026-10-26)
+
+Both PRs are merged into local `main`: BreakEscape `b51293fda`, Hacktivity `1a28b466` (merge) and
+`c46d9f5f` (wiring). Where this note's plan and the existing desktop app differed:
+
+- **Start URL:** the app keeps `/app/<game key>`. Hacktivity maps the key to the event
+  (`events.app_key`) and sends a Game event to `/hacktivities/<id>/play`, before and after sign-in,
+  so the app needs no per-environment event id.
+- **Token:** `shell_app?` now uses the full token parser (`AppClient`): `HacktivityApp/<version>
+  (game=…; edition=…)`. A bare `HacktivityApp` no longer counts. `?app=1` still previews the
+  app's link style in a browser.
+- **Stripe and billing:** the server-side scope guard (`AppMode`) refuses them in the app and shows
+  "Open in your browser"; it now lets the app's own shell pages through and refuses other events'.
+  Locked missions in the app show the edition's purchase link (demo: the event's store page),
+  never "View plans".
+- **Sign-in landing:** already handled: app sign-in, sign-up, confirmation and sign-out return to
+  `/app/<key>`, which now reaches the title screen (MFA set-up first when required).
+- **Navigation filtering** stays on the server; the Electron app keeps Hacktivity's own pages in the
+  window and opens `_blank` links and other sites in the system browser. No app change was needed.
+- **Sign out:** signed-in app players get "Sign out" on the title menu.
+- **Engine exits:** the pause menu has one leave item ("Save and quit to menu" with a shell, "Back to
+  missions" in the app without one), both after a confirmed save. Game over and the end-screen button
+  also use the shell's pages.
+- `GameShellOperation` used Ruby 3 endless methods; Hacktivity runs Ruby 2.7, so they were rewritten.
