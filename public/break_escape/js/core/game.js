@@ -6,6 +6,7 @@ import { initializePathfinder } from './pathfinding.js';
 import { initializeInventory, processInitialInventoryItems } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
 import { wallClearFrom, findClearStandPoint } from '../systems/interaction-walls.js';
+import { aimX } from '../systems/interaction-reach.js';
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu } from '../ui/interaction-menu.js';
 import { resolveObjectField, evaluateGlobalCondition } from '../utils/conditional-text.js';
@@ -2094,7 +2095,7 @@ export async function create() {
                         if (isObjectInInteractionRange(obj)) {
                             // Object is in range - face toward it then interact directly.
                             // Click always targets the clicked object; no direction-based selection.
-                            facePlayerToward(obj.x, obj.y);
+                            facePlayerToward(aimX(obj), obj.y); // the object's centre, as the E key faces it
                             if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();
                             window.handleObjectInteraction(obj);
                         } else if (obj.isSwivelChair) {
@@ -2494,7 +2495,7 @@ function gatherInteractablesNearClick(worldX, worldY) {
                     detail,
                     icon,
                     onSelect: () => {
-                        facePlayerToward(obj.x, obj.y);
+                        facePlayerToward(aimX(obj), obj.y); // the object's centre, as the E key faces it
                         if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();
                         if (window.handleObjectInteraction) window.handleObjectInteraction(obj);
                     }

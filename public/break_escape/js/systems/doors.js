@@ -122,8 +122,10 @@ function placeNorthDoorSingle(roomId, roomPosition, roomDimensions, connectedRoo
  * can land a door on a tile boundary (three doors on a 10-wide wall), but the
  * gap cut in the wall is one whole tile (removeTilesUnderDoor) and the back-wall
  * strip beside it is a solid block (collision.js), so the door must sit mid-tile.
+ * floor() picks the centre of the tile holding x; an x exactly on a boundary (the
+ * middle of three doors on a 10-wide wall, x=160) goes to the right-hand tile.
  */
-function snapToTileCentre(roomX, x) {
+export function snapToTileCentre(roomX, x) {
     return roomX + (Math.floor((x - roomX) / TILE_SIZE) + 0.5) * TILE_SIZE;
 }
 

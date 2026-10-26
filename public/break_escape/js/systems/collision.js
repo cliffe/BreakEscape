@@ -154,7 +154,7 @@ export function createWallCollisionBoxes(wallLayer, roomId, position) {
             0
         );
         block.setVisible(false);
-        block.isBackWallBlock = true; // object-physics.js: movable props ignore it
+        block.isBackWallBlock = true; // object-physics.js: props overlapping it at spawn ignore it
         game.physics.add.existing(block, true);
         game.time.delayedCall(0, () => { if (block.body) block.body.immovable = true; });
         collisionBoxes.push(block);
@@ -390,61 +390,24 @@ export function removeWallTilesForDoorInRoom(roomId, fromRoomId, direction, door
     
     // Calculate door position based on the room's door configuration
     if (direction === 'north' || direction === 'south') {
-        // For north/south connections, calculate X position based on room configuration
-        const oppositeDirection = getOppositeDirection(direction);
-        const connections = roomData.connections?.[oppositeDirection];
-        
-        if (Array.isArray(connections)) {
-            // Multiple doors - find the one that connects to fromRoomId
-            const doorIndex = connections.indexOf(fromRoomId);
-            if (doorIndex >= 0) {
-                const totalDoors = connections.length;
-                const availableWidth = roomWidth - (TILE_SIZE * 3); // 1.5 tiles from each edge
-                const doorSpacing = totalDoors > 1 ? availableWidth / (totalDoors - 1) : 0;
-                doorX = roomPosition.x + TILE_SIZE * 1.5 + (doorIndex * doorSpacing);
-            } else {
-                doorX = roomPosition.x + roomWidth / 2; // Default to center
-            }
+        // Use the engine's own door placement (the one the door sprites and
+        // removeTilesUnderDoor use), so the cut lines up with the sprite and with
+        // the back-wall block beside it. A N/S doorway is one tile wide.
+        const dims = window.roomDimensions?.[roomId];
+        const placed = dims ? calculateDoorPositionsForRoom(
+            roomId, roomPosition, dims, roomData.connections || {},
+            window.roomPositions || {}, window.roomDimensions || {}, window.gameScenario
+        ).find(d => d.direction === oppositeDirection && d.connectedRoom === fromRoomId) : null;
+        if (placed) {
+            doorX = placed.x;
+            doorY = placed.y;
         } else {
-            // Single door - check if the connecting room has multiple doors
-            const connectingRoomConnections = window.gameScenario.rooms[fromRoomId]?.connections?.[direction];
-            if (Array.isArray(connectingRoomConnections) && connectingRoomConnections.length > 1) {
-                // The connecting room has multiple doors, find which one connects to this room
-                const doorIndex = connectingRoomConnections.indexOf(roomId);
-                if (doorIndex >= 0) {
-                    // When the connecting room has multiple doors, position this door to match
-                    // If this room is at index 0 (left), position door on the right (southeast)
-                    // If this room is at index 1 (right), position door on the left (southwest)
-                    if (doorIndex === 0) {
-                        // This room is on the left, so door should be on the right
-                        doorX = roomPosition.x + roomWidth - TILE_SIZE * 1.5;
-                        console.log(`Wall tile removal door positioning for ${roomId}: left room (index 0), door on right (southeast), calculated doorX=${doorX}`);
-                    } else {
-                        // This room is on the right, so door should be on the left
-                        doorX = roomPosition.x + TILE_SIZE * 1.5;
-                        console.log(`Wall tile removal door positioning for ${roomId}: right room (index ${doorIndex}), door on left (southwest), calculated doorX=${doorX}`);
-                    }
-                } else {
-                    // Fallback to left positioning
-                    doorX = roomPosition.x + TILE_SIZE * 1.5;
-                    console.log(`Wall tile removal door positioning for ${roomId}: fallback to left, calculated doorX=${doorX}`);
-                }
-            } else {
-                // Single door - use left positioning
-                doorX = roomPosition.x + TILE_SIZE * 1.5;
-                console.log(`Wall tile removal door positioning for ${roomId}: single connection to ${fromRoomId}, calculated doorX=${doorX}`);
-            }
+            console.warn(`No placed ${oppositeDirection} door from ${roomId} to ${fromRoomId}; falling back to the left-corner position`);
+            doorX = roomPosition.x + TILE_SIZE * 1.5;
+            doorY = direction === 'north' ? roomPosition.y + roomHeight - TILE_SIZE : roomPosition.y + TILE_SIZE;
         }
-        
-        if (direction === 'north') {
-            // Original door is north, so new door should be south
-            doorY = roomPosition.y + roomHeight - TILE_SIZE;
-        } else {
-            // Original door is south, so new door should be north
-            doorY = roomPosition.y + TILE_SIZE;
-        }
-        doorWidth = TILE_SIZE * 2;
-        doorHeight = TILE_SIZE;
+        doorWidth = TILE_SIZE; // one tile: a single wall column, as removeTilesUnderDoor cuts
+        doorHeight = TILE_SIZE; // the cut starts at doorY (the wall row)
     } else if (direction === 'east' || direction === 'west') {
         // For east/west connections: positioned at Y center
         // Side door is 1 tile wide (horizontally) and 1 tile tall (vertically)

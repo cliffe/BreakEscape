@@ -17,6 +17,38 @@ export function initializeObjectPhysics(gameInstance, roomsRef) {
     rooms = roomsRef;
 }
 
+/**
+ * Collide a prop with a wall box. A back-wall strip block (collision.js) is
+ * special: a prop resting on the north room's bottom row starts inside one, so
+ * a prop that overlaps a block once it has settled ignores that block until it
+ * has left it, and collides with every block it did not start in. Without the
+ * exemption it would be shoved around at spawn; with a blanket skip it could
+ * slide into the strip or over the south wall, out of the player's reach.
+ */
+export function addPropWallCollider(game, prop, wallBox, onHit) {
+    if (!wallBox.isBackWallBlock) {
+        return game.physics.add.collider(prop, wallBox, onHit);
+    }
+    const state = prop._blockState || (prop._blockState = new Map());
+    state.set(wallBox, 'pending');
+    const overlaps = () => !!(prop.body && wallBox.body
+        && prop.body.right > wallBox.body.left && prop.body.left < wallBox.body.right
+        && prop.body.bottom > wallBox.body.top && prop.body.top < wallBox.body.bottom);
+    game.time.delayedCall(250, () => {
+        if (state.get(wallBox) === 'pending') {
+            if (overlaps()) state.set(wallBox, 'exempt'); else state.delete(wallBox);
+        }
+    });
+    return game.physics.add.collider(prop, wallBox, onHit, () => {
+        const st = state.get(wallBox);
+        if (!st) return true;
+        if (st === 'pending') return false;
+        if (overlaps()) return false;
+        state.delete(wallBox); // it has left the block: collide from now on
+        return true;
+    });
+}
+
 // Set up collision detection between chairs and other objects
 export function setupChairCollisions(chair) {
     if (!chair || !chair.body) return;
@@ -55,16 +87,14 @@ export function setupChairCollisions(chair) {
     Object.values(allRooms).forEach(room => {
         if (room.wallCollisionBoxes) {
             room.wallCollisionBoxes.forEach(wallBox => {
-                // Back-wall strip blocks keep the player out; a prop resting on the
-                // north room's bottom row starts inside one (collision.js)
-                if (wallBox.body && !wallBox.isBackWallBlock) {
+                if (wallBox.body) {
                     // Add collision callback for swivel chairs to modify spin on wall hit
                     if (chair.isSwivelChair) {
-                        game.physics.add.collider(chair, wallBox, () => {
+                        addPropWallCollider(game, chair, wallBox, () => {
                             handleChairWallCollision(chair);
                         });
                     } else {
-                        game.physics.add.collider(chair, wallBox);
+                        addPropWallCollider(game, chair, wallBox);
                     }
                 }
             });
@@ -137,10 +167,10 @@ export function setupExistingChairsWithNewRoom(roomId) {
     // Collision with new room's wall collision boxes
     if (room.wallCollisionBoxes) {
         room.wallCollisionBoxes.forEach(wallBox => {
-            if (wallBox.body && !wallBox.isBackWallBlock) {
+            if (wallBox.body) {
                 window.chairs.forEach(chair => {
                     if (chair.body) {
-                        game.physics.add.collider(chair, wallBox);
+                        addPropWallCollider(game, chair, wallBox);
                     }
                 });
             }
