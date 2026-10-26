@@ -215,3 +215,50 @@ through the engine route.
 Phases 1–3 about 4–5 days with tests; phase 4 about 1 day; phases 5–6 about 3–4 days; system
 tests and the org report about 1–2 days. Roughly two working weeks. The engine hook is half a day
 in BreakEscape.
+
+## Implementation status (2026-10-26)
+
+Approved in the implementation review (I1–I3, J1–J2, K1–K4 all as recommended). Built by Sonnet
+agents phase by phase, each phase reviewed (adversarial review rounds, fixes, re-check) before its
+commit on Hacktivity main, then a whole-change review and fixes.
+
+| Phase | Hacktivity commit |
+|---|---|
+| 0 characterisation tests | 5d9f60b2 |
+| 1 migrations, models, fixtures | c5bf60b8 |
+| 2 EventAccess, policies, views, auto-enrol, copy limit (V4), engine gate (I1) | fc359c9b |
+| 3 VM quota (J1, D1, D7) | 5e269682 |
+| 4 Stripe plan sync (I2); Stripe test flakiness fixed | 0f4c428a |
+| 5 admin and org-manager screens | 1c66aa35 |
+| 6 scoreboards (org filter, C5, I3) | 46d55669 |
+| 7 integration flows, system tests, `rake access:org_report` | ac2d89ec |
+| whole-change review fixes (M1–M4) | 3de32cfb |
+
+Engine (BreakEscape): `config.can_create_game` hook 39ad6b9a5; `missions#show` gate 139ecd0ff.
+
+Suite: 2637 runs; the only failures are two that predate this work
+(`stripe_webhooks_controller_test` invalid payload, `subscription_flow_test` :51). Browser system
+tests are written but can't run on this machine (Capybara/Puma mismatch, no chromedriver); the same
+flows pass as integration tests.
+
+Decisions taken during implementation (beyond the review picks):
+- J1 applies to orgs too: `Org#deal_current?` has no 7-day grace (access, quota, copy).
+- Any route (org opt-in, own subscription, entitlement) auto-enrols an org member.
+- Individual-subscription events need an all-events plan (Games stays games-only).
+- Org copies of pools can't be copied again; the copy button says why a copy is refused.
+- One live entitlement per user, event and source (Steam and Play may both be live).
+- Admin grants count as normal players on public boards; only Steam/Play-only owners are hidden.
+- New plans are skipped by the seeds until their Stripe price ids are set.
+
+Open questions for the user:
+1. Org members with no route aren't auto-enrolled on free-window slots (pre-existing), so they
+   can't play the free demo mission. Give them the free window?
+2. Org-route players appear on public boards (outsiders see them). Hide members of orgs with
+   `org_only_scoreboards` from public boards?
+3. Invitations accepted during the 7-day seat grace seat a member who then has no access.
+4. Pricing-page features for Games and Awareness & Games (the seed gives them all Pro features).
+5. Engine gate: admins only; add account managers?
+
+Before deploy: run `rake access:org_report` on production data; create the two plans in Stripe and
+set the STRIPE_* variables; tick plan_events for game events and awareness pools; set the Licence
+to Hack store ids. Live flag notifications don't apply C5 yet (store work).
