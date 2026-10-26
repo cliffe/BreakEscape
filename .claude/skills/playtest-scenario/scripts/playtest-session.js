@@ -357,6 +357,15 @@ function substituteFlags(node, at) {
             trace.push(`briefing dialogue left for the tester (${mg.id}); pass autoBrief:true to auto-drive it`);
             return { trace, settled: false, briefingPending: true, state: await brief() };
           }
+          // A finished story that stays open (ended, nothing left to choose or
+          // continue) is closed here, as it was before the gap check existed.
+          const after = await page.evaluate(() => window.__test.minigame.getState()?.dialogue).catch(() => null);
+          if (after && after.ended && !after.awaitingChoice && !after.canContinue) {
+            trace.push(`close ended dialogue ${mg.id}`);
+            await page.evaluate(() => window.__test.minigame.close());
+            await pause(400 + speed.step);
+            continue;
+          }
           await pause(speed.dialogue);
           continue;
         }
@@ -652,7 +661,10 @@ function substituteFlags(node, at) {
         reason: pendingChoice ? (keepOpen ? 'stopped-at-choice' : 'closed-at-choice')
           : after.activeMinigame ? 'still-open-after-close'
           : (nothingHappened ? 'no-dialogue-appeared' : undefined),
-        hint: keepOpen
+        hint: !keepOpen && pendingChoice
+          ? 'Reached a choice nobody named and closed the conversation without answering it (close:true). Nothing was '
+            + 'chosen. Run converse again with "choices":["<regex>"] to answer it, or "explore":true to let it pick.'
+          : keepOpen
           ? 'Stopped at a choice nobody named (ok:false on purpose); the conversation is still open. Answer it with '
             + '{"cmd":"converse","choices":["<regex of the option>"]} (no id continues the open dialogue), '
             + 'or {"cmd":"mg","action":"chooseIndex","args":[n]}. Pass "explore":true to let converse '
@@ -844,7 +856,26 @@ function substituteFlags(node, at) {
       return { ok: true, path };
     },
 
-    eval: (c) => page.evaluate(new Function(`return (${c.fn})`)()),
+    // `fn` must be a function expression, e.g. "() => window.__test.scan(400)" or
+    // "async () => { ... }". An async IIFE string ("(async () => {...})()") would
+    // run here in Node instead of the page, so it is refused. Any error comes back
+    // as ok:false rather than crashing the session.
+    eval: async (c) => {
+      try {
+        const f = new Function(`return (${c.fn})`)();
+        if (f && typeof f.then === 'function') {
+          f.catch(() => {});
+          return { ok: false, reason: 'eval-not-a-function',
+                   hint: 'fn evaluated to a promise (an async IIFE ran in Node, not the page). Pass a function expression: "async () => { ... }".' };
+        }
+        if (typeof f !== 'function') {
+          return { ok: false, reason: 'eval-not-a-function', hint: 'fn must be a function expression, e.g. "() => window.__test.scan(400)".' };
+        }
+        return await page.evaluate(f);
+      } catch (e) {
+        return { ok: false, reason: 'eval-failed', error: String(e && e.message || e).slice(0, 500) };
+      }
+    },
 
     speed: (c) => { Object.assign(speed, SPEEDS[c.value] || speed); return { ok: true, speed: c.value }; },
 

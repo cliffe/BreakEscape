@@ -1,4 +1,4 @@
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "new"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
 {"cmd": "note", "message": "RUN"}
 {"cmd": "eval", "fn": "() => { const g = window.gameState.globalVariables; const s = g.episode_e5_signin_pages_state; return !window.MinigameFramework.currentMinigame && s && typeof s==='object' && Object.keys(s).length===0 && g.episode_e5_signin_pages_defend_done===false && g.phish_sso_staff_landed===false; }"}
 {"cmd": "moveToNear", "id": "training_kiosk"}

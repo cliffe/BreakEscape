@@ -1,4 +1,4 @@
-{"cmd":"bootstrap","tutorial":"decline","resume":"new"}
+{"cmd":"bootstrap","tutorial":"decline","resume":"new","autoBrief":true}
 {"cmd":"note","message":"S0 baseline"}
 {"cmd":"eval","fn":"async () => { /* S0 baseline: nothing open, no Teague or Hampshire intel, no account created, nobody reported, influence 0, no attempts, no jobs */ const t = window.__test; const s = t.getState(); const g = s.globals; const ms = window.mailState;\n  return !s.activeMinigame && g.acct_freemail === false && g.acct_freemail_choice === '' && g.burned_guest === false && g.burned_freemail === false\n    && g.teague_influence === 0 && (g.phish_teague_attempts || 0) === 0 && g.target_ready_teague === false && g.phish_teague_landed === false\n    && g.se_intel_teague_role === false && g.target_ready_hampshire === false && (!ms || (ms.jobs || []).length === 0); }"}
 {"cmd":"interact","id":"slice_mail_terminal"}
@@ -131,7 +131,7 @@
 {"cmd":"screenshot","path":"/tmp/be-bridge-reload-wait.png"}
 {"cmd":"screenshot","path":"/tmp/be-bridge-reload-wait.png"}
 {"cmd":"eval","fn":"async () => { /* RELOAD the page reloaded (sentinel gone), the bridge is back and the game is ready */ const t0 = Date.now(); while (!(window.__test && window.__test.waitUntilReady) && Date.now() - t0 < 60000) await new Promise(r => setTimeout(r, 250));\n    if (window.__preReload) return false; const r = await window.__test.waitUntilReady({ timeoutMs: 60000 }); return !!(r && r.ok); }"}
-{"cmd":"bootstrap","tutorial":"decline","resume":"resume"}
+{"cmd":"bootstrap","tutorial":"decline","resume":"resume","autoBrief":true}
 {"cmd":"interact","id":"slice_mail_terminal"}
 {"cmd":"waitFor","kind":"minigame","id":"mail-client"}
 {"cmd":"eval","fn":"async () => { /* D1 reload: the created account is still there (the switcher lists both accounts, no Create entry), the two sent records are kept, the attempt count and the influence value are as before */ const t = window.__test; const mg = window.MinigameFramework.currentMinigame; const st = () => mg.getTestState(); const sleep = (ms) => new Promise(r => setTimeout(r, ms)); const s = st().mail; const g = t.getState().globals; const sent = (window.mailState.mailboxes.guest.messages || []).filter(m => m.folder === 'sent');\n  return g.acct_freemail === true && g.acct_freemail_choice === 'tt1' && s.accounts.join() === 'guest,freemail' && s.creatable.length === 0 && s.switcher.options.map(o => o.value).join() === 'guest,freemail'\n    && sent.length === 2 && g.phish_teague_attempts === 2 && g.teague_influence === 0; }"}

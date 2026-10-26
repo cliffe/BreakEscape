@@ -1,4 +1,4 @@
-{"cmd":"bootstrap","tutorial":"decline","resume":"new"}
+{"cmd":"bootstrap","tutorial":"decline","resume":"new","autoBrief":true}
 {"cmd":"note","message":"P0 baseline: nothing found or landed"}
 {"cmd":"eval","fn":"async () => { const g = window.__test.getState().globals; return g.se_intel_portal_password === false && g.phish_wexley_landed === false; }"}
 {"cmd":"interact","id":"p9_mail_terminal"}

@@ -1,4 +1,4 @@
-{"cmd":"bootstrap","tutorial":"decline","resume":"new"}
+{"cmd":"bootstrap","tutorial":"decline","resume":"new","autoBrief":true}
 {"cmd":"waitFor","kind":"condition","fn":"() => window.__test && window.__test.isReady() === true","timeoutMs":60000}
 {"cmd":"eval","fn":"async () => { /* S0 baseline: nothing landed, no overlay open */ const t = window.__test; const s = t.getState(); return !s.activeMinigame && s.globals.phish_chris_landed === false && (s.globals.phish_chris_attempts || 0) === 0; }"}
 {"cmd":"interact","id":"ft_mail_terminal"}

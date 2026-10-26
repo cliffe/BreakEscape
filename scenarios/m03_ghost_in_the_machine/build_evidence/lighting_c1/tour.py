@@ -22,7 +22,7 @@ def cmd(o):
 def ev(fn):
     s=cmd({'cmd':'eval','fn':fn}); m=re.search(r'"result":("?)([^"\n}]*)',s); return m.group(2) if m else s[:200]
 try:
-    cmd({'cmd':'bootstrap','tutorial':'decline','resume':'new'})
+    cmd({'cmd':'bootstrap','tutorial':'decline','resume':'new','autoBrief':True})
     HIDE=".objectives-panel, #notification-container, .notification, #npc-bark-container, .npc-interaction-prompt, .phone-access-button, #health-ui-container, #hud-info-label, #scenario-timer-display, #toggle-buttons-container, #music-widget-btn-anchor, #vm-controls-overlay, #inventory-container { display: none !important; }"
     hide="() => { if (!document.getElementById('shot-hide-hud')) { const st = document.createElement('style'); st.id = 'shot-hide-hud'; st.textContent = %s; document.head.appendChild(st); } return 1; }" % json.dumps(HIDE)
     close="async () => { const w = ms => new Promise(r => setTimeout(r, ms)); for (let i = 0; i < 12; i++) { const m = window.MinigameFramework && window.MinigameFramework.currentMinigame; if (m) { try { window.MinigameFramework.endMinigame(false); } catch (e) {} } await w(250); } return !!(window.MinigameFramework && window.MinigameFramework.currentMinigame); }"

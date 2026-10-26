@@ -250,7 +250,12 @@ async function confirmEffect(sinceSeq, { settleFrames = 6, timeoutMs = 4000 } = 
         // tutorial or session prompt that happens to appear is not.
         const overlay = detectBlockingUi();
         if (overlay) {
-            const known = workstationPopupOpen() || /game-confirm-dialog|game-display-dialog/.test(overlay.classes || '');
+            // A gameDisplay/gameConfirm counts only if the engine raised it from the
+            // target's own handler (see overlayCalls); the CSS class alone cannot
+            // tell a note from an unrelated timed message. The class test accepts
+            // the backdrop too: the canvas centre can hit either layer.
+            const known = workstationPopupOpen()
+                || (/game-confirm-(dialog|overlay)|game-display-dialog/.test(overlay.classes || '') && overlayRaisedByTarget());
             const summary = { classes: overlay.classes || null, text: String(overlay.text || '').split('\n')[0] };
             if (known) return { confirmed: true, via: 'overlay', overlay: summary };
             unrelated = summary;
@@ -290,8 +295,32 @@ async function confirmEffect(sinceSeq, { settleFrames = 6, timeoutMs = 4000 } = 
 // window, so a door the zone opened leaves no record; the scene's tap-gather
 // does go through window, which is the path that opened a neighbouring door.
 const engineTargets = [];
+// gameDisplay / gameConfirm calls, so an overlay can be tied to the handler that
+// raised it. A message the game shows on a timer lands outside any handler.
+const overlayCalls = [];
+const OVERLAY_AFTER_HANDLER_MS = 150;
 let interactStartT = 0;
+function overlayRaisedByTarget() {
+    const calls = overlayCalls.filter(c => c.t >= interactStartT);
+    if (!calls.length) return false;
+    const recs = engineTargets.filter(r => r.t >= interactStartT);
+    // No handler record (a door zone, say): nothing to tie it to, so accept it
+    // and let withConfirmation mark the result targetUnverified.
+    if (!recs.length) return true;
+    return calls.some(c => recs.some(r => c.t >= r.t && c.t <= (r.tEnd ?? performance.now()) + OVERLAY_AFTER_HANDLER_MS));
+}
 function ensureTargetRecorder() {
+    for (const name of ['gameDisplay', 'gameConfirm']) {
+        const fn = window[name];
+        if (typeof fn !== 'function' || fn.__benchRecorder) continue;
+        const wrapped = function (...args) {
+            overlayCalls.push({ t: performance.now(), name });
+            if (overlayCalls.length > 30) overlayCalls.shift();
+            return fn.apply(this, args);
+        };
+        wrapped.__benchRecorder = true;
+        window[name] = wrapped;
+    }
     const idOf = {
         object: (sp) => (sp?.scenarioData?.id || sp?.objectId || null),
         npc: (sp) => (sp?.npcId || null),
@@ -301,12 +330,20 @@ function ensureTargetRecorder() {
         const fn = window[name];
         if (typeof fn !== 'function' || fn.__benchRecorder) continue;
         const wrapped = function (sprite, ...rest) {
+            let rec = null;
             try {
-                engineTargets.push({ kind, t: performance.now(), id: idOf[kind](sprite),
-                                     name: sprite?.scenarioData?.name || sprite?.name || null });
+                rec = { kind, t: performance.now(), id: idOf[kind](sprite),
+                        name: sprite?.scenarioData?.name
+                            || (kind === 'door' ? sprite?.doorProperties?.door_sign : null)
+                            || sprite?.name || null };
+                engineTargets.push(rec);
                 if (engineTargets.length > 30) engineTargets.shift();
             } catch (e) { /* recording must never break the interaction */ }
-            return fn.apply(this, [sprite, ...rest]);
+            try {
+                return fn.apply(this, [sprite, ...rest]);
+            } finally {
+                if (rec) rec.tEnd = performance.now();
+            }
         };
         wrapped.__benchRecorder = true;
         window[name] = wrapped;
@@ -371,7 +408,7 @@ function withConfirmation(base, confirmation, entity) {
                 + '— the click most likely landed on a different interactable nearby. Close this, then '
                 + 'either use moveToNear(id) to approach from a spot where the target is unambiguous, or '
                 + 'interact again and pick the target from the disambiguation menu. Do NOT treat this as a pass.';
-        } else if (opened && !chk.verified) {
+        } else if (!chk.verified && entity?.id) {
             result.targetUnverified = true;
         }
         return result;
@@ -784,6 +821,17 @@ const bridge = {
                 return d && (!d.sprite.present || d.sprite.open);
             }, { label: 'door-open', timeoutMs: 4000 });
             opened = { ok: open.ok, via: clicked.mode || clicked.reason };
+            if (clicked.mismatch) {
+                const result = fail('wrong-door-opened', {
+                    from, wanted: toRoom, doorway, interact: clicked,
+                    engineTarget: clicked.engineTarget, activeMinigame: activeMinigameSummary(),
+                    hint: `The click acted on ${clicked.engineTarget?.name || clicked.engineTarget?.id || 'a different interactable'} `
+                        + `instead of the door to ${toRoom}. Close what opened (it may be a lock for the wrong door), `
+                        + `then use moveToNear("${door.id}") to approach from a spot where this door is unambiguous.`
+                });
+                logAction('enterRoom', { toRoom }, result);
+                return result;
+            }
             if (!open.ok) {
                 const mg = activeMinigameSummary();
                 const result = fail(mg ? 'door-locked' : 'door-did-not-open', {
@@ -887,6 +935,16 @@ const bridge = {
         // The click started a walk toward the entity. Wait for it to finish,
         // then click again — now in range — to trigger the interaction.
         await waitForMovementEnd({ timeoutMs });
+        // The first click may instead have acted on something else near it (a
+        // neighbouring door's lock, an NPC). Clicking again would discard that
+        // record, so report it now rather than a misleading out-of-range.
+        if (engineTargets.some(r => r.t >= interactStartT) || activeMinigameSummary()) {
+            const early = activeMinigameSummary();
+            const result = withConfirmation({ id, mode: 'approach-click-acted', entity },
+                { confirmed: true, via: early ? 'minigame' : 'engine-record' }, entity);
+            logAction('interact', { id }, result);
+            return result;
+        }
         let after = findEntity(id);
         if (!after) return fail(`entity-vanished:${id}`);
 
@@ -904,7 +962,7 @@ const bridge = {
 
         if (!after.inRange) {
             const result = fail('still-out-of-range', {
-                id, distance: after.distance, range: INTERACTION_RANGE, entity: after,
+                id, distance: after.distance, range: after.kind === 'door' ? DOOR_INTERACTION_RANGE : INTERACTION_RANGE, entity: after,
                 hint: 'Player could not get close enough — the target may be behind a collider.'
             });
             logAction('interact', { id }, result);
@@ -1260,7 +1318,18 @@ const bridge = {
         const matched = describe(el, items.indexOf(el));
         // The click must land on the item: a tray slot under another element
         // (an open overlay, a tooltip) would silently swallow it.
+        // A tray item scrolled out of the strip hit-tests as null; bring it in first.
+        try { el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) { /* older engines */ }
+        await sleepFrames(2);
         const r = el.getBoundingClientRect();
+        if (r.right <= 0 || r.bottom <= 0 || r.left >= window.innerWidth || r.top >= window.innerHeight) {
+            const result = fail('item-off-screen', {
+                item, matched,
+                hint: 'The tray item is outside the viewport even after scrolling it into view; the tray may be collapsed or hidden.'
+            });
+            logAction('openInventoryItem', { item }, result);
+            return result;
+        }
         const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
         if (!top || !(top === el || el.contains(top))) {
             const result = fail('item-obscured', {

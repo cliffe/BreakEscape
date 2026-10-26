@@ -1,4 +1,4 @@
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "new"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
 {"cmd": "note", "message": "RUN"}
 {"cmd": "eval", "fn": "() => { const g=window.gameState.globalVariables; const s=g.episode_e3_helpdesk_reset_state; return !window.MinigameFramework.currentMinigame && s && typeof s==='object' && Object.keys(s).length===0 && g.episode_e3_helpdesk_reset_defend_done===false && g.pretext_quayholt_helpdesk_reset_outcome===''; }"}
 {"cmd": "moveToNear", "id": "training_kiosk"}

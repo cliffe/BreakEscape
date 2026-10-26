@@ -1,4 +1,4 @@
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "new"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
 {"cmd": "note", "message": "reveal lord (grantFact portal_name; exercised, not earned)"}
 {"cmd": "eval", "fn": "async () => { /* G0 reveal lord's contact via the real grantFact path */ const mod=await import('/break_escape/js/systems/social-intel.js'); mod.grantFact('portal_name'); await new Promise(r=>setTimeout(r,200)); try{window.stateSync&&window.stateSync.sync&&window.stateSync.sync();}catch(e){} return window.gameState.globalVariables.se_intel_portal_name===true; }"}
 {"cmd": "moveToNear", "id": "slice_page_builder"}

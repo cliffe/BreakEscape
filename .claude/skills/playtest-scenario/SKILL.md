@@ -383,7 +383,7 @@ Two consequences worth knowing:
 Interactables sit close together and the game routes a click by proximity to the click point, so asking for an NPC can open a note lying on the desk beside them. `interact()` now reports what actually opened:
 
 ```json
-{"ok":true,"mismatch":true,"opened":{"id":"notes","title":"Visitor Sign-In Log"}}
+{"ok":false,"mismatch":true,"reason":"wrong-target-opened","opened":{"id":"notes","title":"Visitor Sign-In Log"}}
 ```
 
 **`mismatch: true` is a FAILURE.** Close it and approach again with `moveToNear`, or pick your target from the disambiguation menu. Recording it as a pass means the rest of your trace is playing a different mission.
@@ -423,6 +423,10 @@ Then, per walkthrough step, the loop is: **read `brief` → act → wait determi
 ```
 
 **Send one command, read its result, then choose the next.** Do not queue the mission up front. This is the single most common way a run dies: an early `ok:false` goes unread, the world is input-locked behind an open minigame, and the run sends hundreds more commands into a game that stopped listening. Five runs have ended this way, one of them 200 commands past the refusal. Treat every `ok:false` as a stop-and-fix.
+
+`eval` takes a function expression that runs in the page: `{"cmd":"eval","fn":"async () => { ... }"}`. Do not pass an async IIFE string (`(async () => {...})()`): it would run in Node, so the session refuses it with `eval-not-a-function`. An error thrown in the page comes back as `ok:false, reason:"eval-failed"` and does not end the session.
+
+A `gameDisplay`/`gameConfirm` overlay counts as a click's effect only when the target's own handler raised it (during the handler or within 150 ms of it returning). A timed message that appears later is `unrelated-overlay`. `enter` returns `wrong-door-opened` (with `engineTarget`) when the door click acted on a different door, and `openInventoryItem` scrolls the tray item into view before its hit test (`item-off-screen` if it is still outside the viewport).
 
 Prefer the high-level commands — `room`, `converse`, `lock`, `enter`, `openInventoryItem`, `cyberchef` — over hand-rolled `mg` and `eval` sequences. Each of them exists because the hand-rolled version failed a run.
 

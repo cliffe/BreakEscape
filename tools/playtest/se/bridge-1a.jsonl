@@ -1,4 +1,4 @@
-{"cmd":"bootstrap","tutorial":"decline","resume":"new"}
+{"cmd":"bootstrap","tutorial":"decline","resume":"new","autoBrief":true}
 {"cmd":"note","message":"S0 baseline"}
 {"cmd":"eval","fn":"async () => { /* S0 baseline: no overlay open, nothing ready or landed, no attempts */ const t = window.__test; const s = t.getState(); const g = s.globals;\n  return !s.activeMinigame && g.target_ready_hampshire === false && g.phish_hampshire_landed === false && (g.phish_hampshire_attempts || 0) === 0 && g.osint_done === false; }"}
 {"cmd":"interact","id":"slice_mail_terminal"}
@@ -80,7 +80,7 @@
 {"cmd":"screenshot","path":"/tmp/be-bridge-reload-wait.png"}
 {"cmd":"screenshot","path":"/tmp/be-bridge-reload-wait.png"}
 {"cmd":"eval","fn":"async () => { /* RELOAD the page reloaded (sentinel gone), the bridge is back and the game is ready */ const t0 = Date.now(); while (!(window.__test && window.__test.waitUntilReady) && Date.now() - t0 < 60000) await new Promise(r => setTimeout(r, 250));\n    if (window.__preReload) return false; const r = await window.__test.waitUntilReady({ timeoutMs: 60000 }); return !!(r && r.ok); }"}
-{"cmd":"bootstrap","tutorial":"decline","resume":"resume"}
+{"cmd":"bootstrap","tutorial":"decline","resume":"resume","autoBrief":true}
 {"cmd":"eval","fn":"async () => { /* D1 reload: the board state (se_board_state) and intel globals survive */ const t = window.__test; const g = window.gameState.globalVariables; const b = g.se_board_state;\n  return g.target_ready_hampshire === true && g.se_intel_hampshire_careers === true && !!b && b.recon && b.recon.seenReady.includes('hampshire'); }"}
 {"cmd":"interact","id":"slice_case_file"}
 {"cmd":"waitFor","kind":"minigame","id":"intel-board"}
@@ -101,7 +101,7 @@
 {"cmd":"screenshot","path":"/tmp/be-bridge-reload-wait.png"}
 {"cmd":"screenshot","path":"/tmp/be-bridge-reload-wait.png"}
 {"cmd":"eval","fn":"async () => { /* RELOAD the page reloaded (sentinel gone), the bridge is back and the game is ready */ const t0 = Date.now(); while (!(window.__test && window.__test.waitUntilReady) && Date.now() - t0 < 60000) await new Promise(r => setTimeout(r, 250));\n    if (window.__preReload) return false; const r = await window.__test.waitUntilReady({ timeoutMs: 60000 }); return !!(r && r.ok); }"}
-{"cmd":"bootstrap","tutorial":"decline","resume":"resume"}
+{"cmd":"bootstrap","tutorial":"decline","resume":"resume","autoBrief":true}
 {"cmd":"eval","fn":"async () => { /* F3 reload: the sent message survives and the reply job is still pending (or already delivered) [P1-F] */ const t = window.__test; const ms = window.mailState;\n  const sent = ((ms && ms.mailboxes && ms.mailboxes.guest && ms.mailboxes.guest.messages) || []).filter(m => m.folder === 'sent');\n  return sent.length === 1 && ((ms.jobs || []).length === 1 || t.getState().globals.phish_hampshire_landed === true); }"}
 {"cmd":"waitFor","kind":"global","name":"phish_hampshire_landed","expected":true,"timeoutMs":60000}
 {"cmd":"waitFor","kind":"task","id":"hampshire_landed","timeoutMs":20000}
