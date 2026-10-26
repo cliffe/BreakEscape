@@ -250,15 +250,24 @@ Decisions taken during implementation (beyond the review picks):
 - Admin grants count as normal players on public boards; only Steam/Play-only owners are hidden.
 - New plans are skipped by the seeds until their Stripe price ids are set.
 
-Open questions for the user:
-1. Org members with no route aren't auto-enrolled on free-window slots (pre-existing), so they
-   can't play the free demo mission. Give them the free window?
-2. Org-route players appear on public boards (outsiders see them). Hide members of orgs with
-   `org_only_scoreboards` from public boards?
-3. Invitations accepted during the 7-day seat grace seat a member who then has no access.
-4. Pricing-page features for Games and Awareness & Games (the seed gives them all Pro features).
-5. Engine gate: admins only; add account managers?
+Answers and follow-up work (2026-10-26, Hacktivity main):
+
+| Change | Commit |
+|---|---|
+| Q2: members of `org_only_scoreboards` orgs hidden from outsiders on public boards, panels and live toasts ("A player"); org view labelled as an org leaderboard. Q4: `plans.listed`; Games and Awareness & Games unlisted (admin-only, no checkout for others), draft feature lists in the seed | 62bcbdbe |
+| D3: Steam/Play players shown on public boards (C5 removed). D4: `GameSlot.available` uses the event start when `release_at` is blank | 3e9fa48f |
+| Playtesters: `playtest` entitlement source, optional `expires_at` (all sources); testers and own-org VIPs/account managers start unreleased missions; see-only visibility unchanged; testers' feedback from first play, editable until release | 059a6074 |
+
+Settled: Q1 no free window for org members (as now); Q3 invitations as now; Q5 engine gate admins
+only; C1–C4 confirmed; D1 lapsed orgs keep their own copied events; D2 re-seating stays on the org
+page (VIPs and account managers already have it); P5 testers' games count normally; P7 no engine
+published check. Deferred: D5, a lapsed player's direct engine game link still opens their own
+game; close it in the Steam sign-in work.
+
+Next: Stripe deploy prep, then Steam/Play sign-in.
 
 Before deploy: run `rake access:org_report` on production data; create the two plans in Stripe and
 set the STRIPE_* variables; tick plan_events for game events and awareness pools; set the Licence
-to Hack store ids. Live flag notifications don't apply C5 yet (store work).
+to Hack store ids. Where Games or Awareness & Games already exist, untick Listed by hand (the seed
+only unlists on creation). Keep unlisted plans' prices out of the Stripe customer portal. Edit the
+draft feature lists in `db/seeds/plans.rb` (the "Hacktivity Games" tooltip mentions Kali VMs).
