@@ -462,5 +462,73 @@ module BreakEscape
         assert_response :success, "Expected sprite '#{sprite}' to be accepted"
       end
     end
+
+    # ─── Opened from a host game shell, with no game ─────────────────────────
+
+    def with_shell_picker(hook)
+      previous = BreakEscape.configuration.shell_picker
+      BreakEscape.configuration.shell_picker = hook
+      yield
+    ensure
+      BreakEscape.configuration.shell_picker = previous
+    end
+
+    SHELL_HOOK = lambda do |return_to|
+      next nil unless return_to == '/play/1'
+
+      { back_url: '/play/1', back_label: 'Back to title', heading: 'Agent file', ui_theme: 'spy',
+        backdrop_style: 'background-image: url(/art.jpg);' }
+    end
+
+    test 'a return_to the host recognises gives the shell look and a Back link to the host page' do
+      with_shell_picker(SHELL_HOOK) do
+        get configuration_url(return_to: '/play/1')
+        assert_response :success
+        assert_includes response.body, 'data-ui-theme="spy"' # the test app wraps the page in its own layout
+        assert_includes response.body, 'configuration-page shell-picker'
+        assert_select '.shell-picker-backdrop[style*="/art.jpg"]'
+        assert_select 'h1', 'Agent file'
+        assert_select 'a#config-back-link[href=?]', '/play/1', text: 'Back to title'
+        assert_select 'input[type=hidden][name=return_to][value=?]', '/play/1'
+        assert_select 'a', text: 'Cancel', count: 0
+        assert_select 'link[href*=ui-themes]'
+      end
+    end
+
+    test 'saving from the shell look goes back to the host page' do
+      with_shell_picker(SHELL_HOOK) do
+        patch configuration_url,
+              params: { return_to: '/play/1', player_preference: { selected_sprite: 'female_hacker_hood_v2', in_game_name: 'TestAgent' } }
+        assert_redirected_to '/play/1'
+      end
+    end
+
+    test 'a return_to the host does not recognise, or no hook, leaves the plain page' do
+      with_shell_picker(SHELL_HOOK) do
+        get configuration_url(return_to: 'https://evil.example/')
+        assert_not_includes response.body, 'shell-picker'
+        assert_select 'a#config-back-link', false
+        assert_select 'a', text: 'Cancel'
+      end
+      with_shell_picker(nil) do
+        get configuration_url(return_to: '/play/1')
+        assert_not_includes response.body, 'shell-picker'
+      end
+    end
+
+    test 'a failing hook leaves the plain page' do
+      with_shell_picker(->(_return_to) { raise 'boom' }) do
+        get configuration_url(return_to: '/play/1')
+        assert_response :success
+        assert_not_includes response.body, 'shell-picker'
+      end
+    end
+
+    test 'with a game the shell look is not used' do
+      with_shell_picker(SHELL_HOOK) do
+        get configuration_url(return_to: '/play/1', game_id: 0)
+        assert_not_includes response.body, 'shell-picker'
+      end
+    end
   end
 end

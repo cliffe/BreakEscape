@@ -531,3 +531,134 @@ h1 {
     font-size: 20px;
   }
 }
+
+/* ===== OPENED FROM A HOST GAME SHELL (no game: configuration?return_to=...) =====
+   The page takes the shell's skin: <html data-ui-theme> and ui-themes.css give the --ui-*
+   variables, the host's title art is the backdrop (dimmed), and the picker sits in a framed
+   panel with the skin's buttons. Art is drawn at the skin's 2x. In a portrait window the
+   panel is zoomed in whole steps of the 2x art (the host shell does the same). */
+/* heading sizes per skin, on the heading font's pixel grid (as the host shell sets them) */
+body.shell-picker { --pk-hs: 20.5px; --pk-hl: 41px; }
+[data-ui-theme="cyberpunk"] body.shell-picker,
+[data-ui-theme="crt"] body.shell-picker,
+[data-ui-theme="circuit"] body.shell-picker { --pk-hs: 16px; --pk-hl: 32px; }
+[data-ui-theme="eldritch"] body.shell-picker { --pk-hs: 20px; --pk-hl: 40px; }
+
+body.shell-picker {
+  background: #050608;
+  color: var(--ui-text);
+  font-size: 20.5px;
+  line-height: 26px;
+  padding: 24px 16px 32px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+}
+
+.shell-picker .shell-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: #050608;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 70% 50%;
+  z-index: 0;
+}
+
+.shell-picker .shell-picker-backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--ui-backdrop, rgba(4, 4, 6, 0.82));
+}
+
+.shell-picker .configuration-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  padding: 18px;
+  background: var(--ui-surface);
+  background-clip: padding-box;
+  border-style: solid;
+  border-width: var(--ui-frame-px);
+  border-image-source: var(--ui-frame-image);
+  border-image-slice: var(--ui-frame-slice);
+  border-image-width: var(--ui-frame-px);
+  border-image-repeat: repeat;
+  image-rendering: pixelated;
+}
+
+.shell-picker h1 {
+  margin: 0 0 16px;
+  font-weight: 400;
+  font-size: var(--pk-hl);
+  font-family: var(--ui-heading-font);
+  text-transform: var(--ui-heading-transform);
+  letter-spacing: var(--ui-heading-spacing);
+  text-shadow: var(--ui-text-glow);
+  color: var(--ui-accent);
+}
+
+.shell-picker .form-group label { color: var(--ui-text-dim); font-size: inherit; letter-spacing: 1px; }
+.shell-picker .form-group small { color: var(--ui-text-faint); font-size: 16px; }
+.shell-picker .selection-required { color: var(--ui-danger); }
+
+.shell-picker .form-control {
+  border: 2px solid var(--ui-line);
+  border-radius: 0;
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--ui-text);
+  font-size: inherit;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.shell-picker .form-control:focus { border-color: var(--ui-accent); box-shadow: 0 0 0 2px var(--ui-accent); }
+
+.shell-picker #sprite-preview-canvas-container { border: 2px solid var(--ui-line); background: rgba(0, 0, 0, 0.45); }
+
+.shell-picker .sprite-card { border: 2px solid var(--ui-line); background: rgba(0, 0, 0, 0.35); }
+.shell-picker .sprite-card:hover:not(.invalid) { border-color: var(--ui-accent); background: var(--ui-surface-hover); }
+.shell-picker .sprite-card.selected { border-color: var(--ui-accent); background: var(--ui-surface-hover); box-shadow: 0 0 0 2px var(--ui-accent); }
+.shell-picker .sprite-card.avatar-unlocked:not(.selected) { border-color: var(--ui-text-dim); }
+.shell-picker .sprite-card.avatar-mission:not(.selected) { border-color: var(--ui-success); }
+
+.shell-picker .btn,
+.shell-picker .btn-primary,
+.shell-picker .btn-secondary {
+  background: none;
+  border-style: solid;
+  border-width: var(--ui-button-px);
+  border-image-source: var(--ui-button-image);
+  border-image-slice: var(--ui-button-slice) fill;
+  border-image-width: var(--ui-button-px);
+  border-image-repeat: repeat;
+  image-rendering: pixelated;
+  color: var(--ui-button-text);
+  font-family: var(--ui-heading-font);
+  font-size: var(--pk-hs);
+  text-transform: var(--ui-heading-transform);
+  letter-spacing: var(--ui-heading-spacing);
+  text-shadow: var(--ui-text-glow);
+  padding: 4px 14px;
+  min-height: 44px;
+  box-sizing: border-box;
+  transition: none;
+}
+
+.shell-picker .btn:hover,
+.shell-picker .btn:focus-visible { background: none; color: var(--ui-button-text); filter: brightness(1.15) var(--ui-glow-filter); outline: none; }
+.shell-picker .btn-primary { color: var(--ui-accent); }
+
+@media (max-width: 768px) {
+  .shell-picker .form-actions { flex-wrap: wrap; }
+  .shell-picker .form-actions .btn { flex: 1 1 140px; text-align: center; }
+}
+
+@media (orientation: portrait) {
+  .shell-picker .configuration-container { --gs-k: 1; zoom: var(--gs-k); }
+}
+@media (orientation: portrait) and (min-width: 580px) { .shell-picker .configuration-container { --gs-k: 1.5; } }
+@media (orientation: portrait) and (min-width: 1440px) { .shell-picker .configuration-container { --gs-k: 2; } }
+@media (orientation: portrait) and (min-width: 2000px) { .shell-picker .configuration-container { --gs-k: 3; } }
+@media (orientation: portrait) and (min-width: 2880px) { .shell-picker .configuration-container { --gs-k: 4; } }

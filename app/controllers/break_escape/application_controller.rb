@@ -39,6 +39,20 @@ module BreakEscape
       {}
     end
 
+    # How the host's game shell wants the character picker drawn when it was opened from
+    # a shell page (BreakEscape.configuration.shell_picker). Nil when there is no hook, no
+    # return_to, the host doesn't recognise it, or the hook fails.
+    def shell_picker_for(return_to)
+      hook = BreakEscape.configuration.shell_picker
+      return nil unless hook && return_to.is_a?(String) && return_to.present?
+
+      picker = hook.call(return_to)
+      picker.is_a?(Hash) && picker[:back_url].present? ? picker.symbolize_keys : nil
+    rescue StandardError => e
+      Rails.logger.warn "[BreakEscape] shell_picker hook failed for #{return_to.inspect}: #{e.message}"
+      nil
+    end
+
     def user_not_authorized
       # Do NOT redirect to request.referrer — when this handler fires inside an
       # iframe (e.g. the vm_panel endpoint), the referrer is the game's own show

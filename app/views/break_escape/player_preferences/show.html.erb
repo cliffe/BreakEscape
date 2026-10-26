@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-<html>
+<%# Opened from a host game shell (BreakEscape.configuration.shell_picker): its skin, backdrop and heading. %>
+<% shell_theme = @shell && (BreakEscape::Mission.normalise_ui_theme(@shell[:ui_theme]) || BreakEscape::Mission::DEFAULT_UI_THEME) %>
+<% heading = (@shell && @shell[:heading].presence) || 'Character Configuration' %>
+<html<% if shell_theme %> data-ui-theme="<%= shell_theme %>"<% end %>>
 <head>
-  <title>Character Configuration - BreakEscape</title>
+  <title><%= @shell ? heading : 'Character Configuration - BreakEscape' %></title>
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
 
@@ -12,12 +15,19 @@
 
   <%# Load configuration CSS %>
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/fonts.css') %>">
+  <% if @shell %>
+    <%# the host's game shell skin (ui-themes.css sets the --ui-* variables player_preferences.css reads) %>
+    <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/ui-themes.css') %>">
+  <% end %>
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/player_preferences.css') %>">
   <%= break_escape_import_map %>
 </head>
-<body class="configuration-page">
+<body class="configuration-page<%= ' shell-picker' if @shell %>">
+  <% if @shell %>
+    <div class="shell-picker-backdrop" style="<%= @shell[:backdrop_style] %>" aria-hidden="true"></div>
+  <% end %>
   <div class="configuration-container">
-    <h1>Character Configuration</h1>
+    <h1><%= heading %></h1>
 
     <% if params[:game_id].present? %>
       <p class="config-prompt">⚠️ Please select your character before starting the mission.</p>
@@ -63,6 +73,10 @@
         </div>
       </div>
 
+      <% if @shell %>
+        <%= hidden_field_tag :return_to, params[:return_to] %>
+      <% end %>
+
       <!-- Hidden field for game_id if validating -->
       <% if params[:game_id].present? %>
         <%= hidden_field_tag :game_id, params[:game_id] %>
@@ -71,11 +85,11 @@
       <!-- Submit -->
       <div class="form-actions">
         <% if @back_url.present? %>
-          <%= link_to 'Back', @back_url, class: 'btn btn-secondary', id: 'config-back-link' %>
+          <%= link_to((@shell && @shell[:back_label].presence) || 'Back', @back_url, class: 'btn btn-secondary', id: 'config-back-link') %>
         <% end %>
         <%= f.submit 'Save Configuration', class: 'btn btn-primary' %>
 
-        <% if params[:game_id].blank? %>
+        <% if params[:game_id].blank? && !@shell %>
           <%= link_to 'Cancel', root_path, class: 'btn btn-secondary' %>
         <% end %>
       </div>

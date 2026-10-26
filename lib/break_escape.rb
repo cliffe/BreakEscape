@@ -17,7 +17,7 @@ module BreakEscape
 
   class Configuration
     attr_accessor :standalone_mode, :demo_user_handle, :on_game_complete, :on_flag_submit, :on_task_complete,
-                  :can_continue_in_slot, :can_create_game, :shell_links
+                  :can_continue_in_slot, :can_create_game, :shell_links, :shell_picker
 
     def initialize
       @standalone_mode      = false
@@ -31,6 +31,12 @@ module BreakEscape
       # shell returns where the in-game links go: { menu_url:, return_url:,
       # return_label:, walkthrough_url: } (any may be nil). nil keeps the defaults.
       @shell_links          = nil
+      # callable: ->(return_to) -> Hash or nil. The character picker opened from a host game
+      # shell without a game (configuration?return_to=<a host path>): the host says whether
+      # return_to is one of its shell pages and, if so, how the picker should look and where
+      # Back goes: { back_url:, back_label:, heading:, ui_theme:, backdrop_style: } (the last
+      # four optional). The engine never follows return_to itself. nil keeps the plain page.
+      @shell_picker         = nil
     end
   end
 end

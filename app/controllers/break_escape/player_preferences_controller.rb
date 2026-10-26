@@ -3,6 +3,7 @@ module BreakEscape
     before_action :set_player_preference
     before_action :authorize_preference
     before_action :set_scenario_context
+    before_action :set_shell
 
     # GET /break_escape/configuration
     def show
@@ -25,6 +26,8 @@ module BreakEscape
             # Redirect to game if came from validation flow
             if params[:game_id].present?
               redirect_to game_path(params[:game_id])
+            elsif @shell
+              redirect_to @shell[:back_url]
             else
               redirect_to configuration_path
             end
@@ -102,6 +105,12 @@ module BreakEscape
     # in-game menu): its validSprites shape the menu and what update accepts.
     # Only the player's own games count, since a scenario's validSprites make
     # characters choosable.
+    # Opened from a host game shell with no game (?return_to=<shell page>): the host decides
+    # how the page looks and where Back goes (BreakEscape.configuration.shell_picker).
+    def set_shell
+      @shell = params[:game_id].blank? ? shell_picker_for(params[:return_to]) : nil
+    end
+
     def set_scenario_context
       @scenario = load_scenario_if_validating
       @player_preference.scenario_context = @scenario
@@ -120,6 +129,7 @@ module BreakEscape
     # has no other way out: the host game shell's menu, or the host's root in the
     # Hacktivity desktop app (one window, no tabs). Nil otherwise.
     def back_url_for(game)
+      return @shell[:back_url] if @shell
       return nil unless params[:game_id].present?
 
       shell_menu = game && shell_links_for(game)[:menu_url]
