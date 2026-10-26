@@ -22,6 +22,68 @@ Added: the same-room interaction rule. `interaction-walls.js` now decides the ro
 Live check (sis02, m01), headless harness: the player walks down behind the SCADA control room's and the engineering workshop's back walls from battery_hall_1; there E, click, and the bridge's interact refuse sis_config_panel and hmi_ops_01 (no minigame, label hidden, reason `different-room`); from the workshop floor sis_config_panel opens, including from below its right half; `moveToNear sis_config_panel` from behind the wall picks a workshop spot and opens it. m01 reception behaves the same way; Sarah still talks; the main-office chair still kicks.
 
 
+#### Correction review, round 1 (314db5e34)
+
+Revert confirmed clean (object-physics.js and npc-pathfinding.js identical to f86749de5; 13 N/S doors crossed live). Room rule agrees with `updatePlayerRoom`. m01 server room objects open. Scope widened by the user: no punching through walls.
+
+| Severity | Count |
+|---|---|
+| Blocker | 1 |
+| Major | 3 |
+| Minor | 7 |
+
+| # | Sev | Finding | Outcome |
+|---|---|---|---|
+| B1 | blocker | Items dropped by an NPC KO'd outside its home room are registered in the home room, so they can't be picked up (m01 launch device, live) | not closed: the server rejects out-of-room drops, so they are lost on reload (round 2 R2-1) |
+| M1 | major | Player punches and chair kicks ignore walls and rooms (Sarah hit from behind reception's wall, live) | fixed in b8b52fae9 |
+| M2 | major | Hostile NPC attacks ignore walls (unleashed Sarah KO'd the player through the wall, live) | fixed in b8b52fae9 (`feetClear` gates npc-combat); matching `npc-behavior.js` change deferred to the user |
+| M3 | major | NPCs that changed room are clamped to their home room, so "wall between" from 20 px (live) | fixed in b8b52fae9 |
+| m1 | minor | Feet test depends on the player body being 10 px tall | fixed in b8b52fae9 |
+| m2 | minor | Feet in no room allow everything; head-start spawn can put the player in a wall | gap fallback fixed in b8b52fae9; the spawn change moved every mission's start point and is being reverted (round 2 R2-3) |
+| m3 | minor | Click sort acts on a same-room object when the tap meant to walk to a front-most other-room one | fixed in b8b52fae9 |
+| m4 | minor | Bridge nudge says wall-between when the cause is the room rule | fixed in b8b52fae9 |
+| m5 | minor | Room-rule test is pure-function only | fixed in b8b52fae9 (`combat-room-rule.test.mjs`) |
+| m6 | minor | Chair kick measured to the body, reach to the sprite (pre-existing) | fixed in b8b52fae9 (`aimAtChair`) |
+| m7 | minor | F turns to face a hostile through a wall | fixed in b8b52fae9 |
+
+#### Correction review, round 2 (b8b52fae9)
+
+Round 1 M1, M3, m1, m3, m4, m6 and m7 confirmed closed. `window.interactionWalls.feetClear` is exposed; `aimAtChair` still obeys the wall rule.
+
+| Severity | Count |
+|---|---|
+| Blocker | 0 |
+| Major | 3 |
+| Minor | 4 |
+
+| # | Sev | Finding | Outcome |
+|---|---|---|---|
+| R2-1 | major | Server rejects drops outside the NPC's scenario room (422), so a reload before pickup loses them; m01 launch device would softlock (live) | fixed in f5f172428 (server accepts a KO'd NPC's drop in any room; survived a reload live) |
+| R2-2 | major | `feetClear` treats an open doorway as a wall: hostile NPCs freeze 26 px away through an open door, and neither side can hit (live) | fixed in f5f172428 (rooms count as one through an open door for combat and NPC talk; NPCs keep chasing; live) |
+| R2-3 | major | Spawn change moved the start in 79 missions; m10 starts on Kowalczyk, sis02 against the console (live) | fixed in f5f172428 (reverted; `new-game.rb` writes a centre `startPosition`) |
+| m-1 | minor | `player.js` spawn edit is dead code | fixed in f5f172428 |
+| m-2 | minor | `--start-room` keeps the original room's `startPosition` | fixed in f5f172428 |
+| m-3 | minor | NPC-side combat test only matches source text; 3 of 4 mutations survive | fixed in f5f172428 (real `NPCCombat` loaded; gate mutations caught) |
+| m-4 | minor | NPC feet passed without half-height; gap rule differs between the two sides | fixed in f5f172428 |
+
+
+#### Correction review, round 3 (f5f172428, final)
+
+All round 2 findings confirmed closed, R2-1 and R2-2 with live evidence. The door rule holds: about 75k feet pairs swept at m01's reception door found no punch past the gap's edge from any reachable spot. Leashed Sarah stays in reception; unleashed she follows through the door without oscillating. Clean worktree: JS 277/277 files, Rails 783 runs with 0 failures; five mutations all caught. Stopped here: no blockers or majors after round 3.
+
+| Severity | Count |
+|---|---|
+| Blocker | 0 |
+| Major | 0 |
+| Minor | 4 |
+
+| # | Sev | Finding | Outcome |
+|---|---|---|---|
+| 1 | minor (older code) | Server trusts a client-reported KO, and an NPC-sourced drop in the NPC's own room needs no KO and can repeat | open: hardening is a design choice (require `npc_defeated?` for every NPC drop, refuse duplicates, refuse KO of `koImmune` NPCs) |
+| 2 | minor | If the KO sync fails, the drop is still posted, and is rejected for an out-of-room fall; state stays consistent because the NPC comes back armed | open, acceptable |
+| 3 | minor | `throughOpenDoor` only checks room A's doors, so a one-way link is asymmetric (only `timed_messages_example`) | open: check both rooms' doors |
+| 4 | minor | `new-game.rb --start-room` centre `startPosition` doesn't avoid furniture | open: snap to a walkable cell, or note it in the script header |
+
 ### Round 1
 
 | Severity | Count |
