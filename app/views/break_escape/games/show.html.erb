@@ -225,6 +225,11 @@
       missionId: <%= @game.mission_id %>,
       missionDisplayName: <%= raw(@mission.display_name.to_json) %>,
       uiTheme: '<%= ui_theme %>',
+      // Set when a host game shell launched this mission (BreakEscape.configuration.shell_links)
+      shellMenuUrl: <%= raw((@shell_links || {})[:menu_url].to_json) %>,
+      shellReturnUrl: <%= raw((@shell_links || {})[:return_url].to_json) %>,
+      shellReturnLabel: <%= raw((@shell_links || {})[:return_label].to_json) %>,
+      walkthroughUrl: <%= raw((@shell_links || {})[:walkthrough_url].to_json) %>,
       // Dev-only Playwright/agent test bridge (window.__test). Never true in
       // production, so main.js never imports the bridge code there.
       testBridge: <%= Rails.env.production? ? 'false' : 'true' %>

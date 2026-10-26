@@ -111,6 +111,13 @@ function returnToMissions(deps) {
     const w = win();
     const navigate = deps.navigate || ((url) => { w.location.href = url; });
     const closeTab = deps.closeTab || (() => { w.close(); });
+    // A host that launched the game in its own game shell names the page to go
+    // back to (the mission's debrief); the game was opened in the same tab.
+    const shellReturn = w?.breakEscapeConfig?.shellReturnUrl;
+    if (shellReturn) {
+        navigate(shellReturn);
+        return;
+    }
     // The Hacktivity desktop app is one window: closing it would quit the app and /break_escape/missions
     // is admin-only. Go to the host's root, which sends the app to its game's event page.
     if (isDesktopApp(w)) {
@@ -136,7 +143,9 @@ function openNow(opts, deps) {
 
     const title = typeof opts.title === 'string' && opts.title.trim() ? opts.title : DEFAULT_TITLE;
     const body = typeof opts.body === 'string' ? opts.body.trim() : '';
-    const buttonText = typeof opts.buttonText === 'string' && opts.buttonText.trim() ? opts.buttonText : DEFAULT_BUTTON;
+    const shellLabel = win()?.breakEscapeConfig?.shellReturnUrl ? win().breakEscapeConfig.shellReturnLabel : null;
+    const buttonText = shellLabel ||
+        (typeof opts.buttonText === 'string' && opts.buttonText.trim() ? opts.buttonText : DEFAULT_BUTTON);
 
     const overlay = doc.createElement('div');
     overlay.id = SUCCESS_SCREEN_ID;

@@ -17,7 +17,7 @@ module BreakEscape
 
   class Configuration
     attr_accessor :standalone_mode, :demo_user_handle, :on_game_complete, :on_flag_submit, :on_task_complete,
-                  :can_continue_in_slot, :can_create_game
+                  :can_continue_in_slot, :can_create_game, :shell_links
 
     def initialize
       @standalone_mode      = false
@@ -27,6 +27,10 @@ module BreakEscape
       @on_task_complete     = nil  # callable: ->(game) { ... }, or nil — fires after any task is successfully completed
       @can_continue_in_slot = nil  # callable: ->(user, game_slot) -> bool, or nil
       @can_create_game      = nil  # callable: ->(user, mission) -> bool, or nil. Gates creating a game directly (games#new/create); nil = any user who can see the mission
+      # callable: ->(game) -> Hash or nil. A host that wraps missions in its own game
+      # shell returns where the in-game links go: { menu_url:, return_url:,
+      # return_label:, walkthrough_url: } (any may be nil). nil keeps the defaults.
+      @shell_links          = nil
     end
   end
 end

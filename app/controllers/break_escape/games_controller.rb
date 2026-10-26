@@ -189,6 +189,8 @@ module BreakEscape
         redirect_to configuration_path(game_id: @game.id) and return
       end
 
+      @shell_links = shell_links_for(@game)
+
       # All game sessions for this player + mission, ordered oldest first
       @mission_sessions = Game.where(player: current_player, mission: @mission)
                               .order(:created_at)
@@ -1379,6 +1381,18 @@ module BreakEscape
     end
 
     private
+
+    # Links a host game shell asks the in-game menu and success screen to use
+    # (BreakEscape.configuration.shell_links). Empty when there is no hook, the
+    # hook returns nil, or it fails: the game then keeps its own defaults.
+    def shell_links_for(game)
+      hook = BreakEscape.configuration.shell_links
+      links = hook&.call(game)
+      links.is_a?(Hash) ? links.symbolize_keys.slice(:menu_url, :return_url, :return_label, :walkthrough_url).compact : {}
+    rescue StandardError => e
+      Rails.logger.warn "[BreakEscape] shell_links hook failed for game #{game.id}: #{e.message}"
+      {}
+    end
 
     def find_vm_launcher_room(scenario_data, vm_title)
       # Returns the room_id containing a vm-launcher object for vm_title, or nil if not found.

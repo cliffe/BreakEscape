@@ -197,8 +197,14 @@ export class GameOverScreen {
   }
 
   mainMenu() {
-    // Navigate to scenario select or main menu. The Hacktivity desktop app has no missions page for
-    // players: the host's root sends it back to its game's event page.
+    // Navigate to scenario select or main menu. A host game shell names its own menu (the game
+    // runs in the shell's tab). The Hacktivity desktop app has no missions page for players: the
+    // host's root sends it back to its game's event page.
+    const shellMenu = window.breakEscapeConfig?.shellMenuUrl;
+    if (shellMenu) {
+        window.location.href = shellMenu;
+        return;
+    }
     if (isDesktopApp(window)) {
         window.location.href = DESKTOP_APP_HOME;
         return;

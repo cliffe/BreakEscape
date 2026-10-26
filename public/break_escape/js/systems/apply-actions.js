@@ -281,6 +281,12 @@ export function showEndScreen(opts = {}) {
     btn.onmouseover = () => { btn.style.background = '#555'; btn.style.borderColor = '#aaa'; };
     btn.onmouseout  = () => { btn.style.background = '#333'; btn.style.borderColor = '#666'; };
     btn.onclick = () => {
+        // A host game shell opened the game in its own tab and names where to go back to.
+        const shellUrl = window.breakEscapeConfig?.shellReturnUrl || window.breakEscapeConfig?.shellMenuUrl;
+        if (shellUrl) {
+            window.location.href = shellUrl;
+            return;
+        }
         // The Hacktivity desktop app is one window: closing it would quit the app. Go to the
         // host's root, which sends the app to its game's event page. (The same test as
         // utils/desktop-app.js; kept inline because tests load this file on its own.)

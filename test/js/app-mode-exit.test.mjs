@@ -178,3 +178,46 @@ test('game menu: a save that throws is treated as failed', async () => {
     assert.deepEqual(urls, []);
     assert.equal(menu.overlay.querySelector('.game-menu-leave-error').hidden, false);
 });
+
+// A host game shell (breakEscapeConfig.shellMenuUrl / shellReturnUrl) runs the game in its own
+// tab, in a browser or in the app. Its pages win over both the app's "/" and closing the tab.
+const SHELL = { hacktivityMode: true, shellMenuUrl: '/hacktivities/7/play/operations?selected=3',
+                shellReturnUrl: '/hacktivities/7/play/operations/3/debrief', walkthroughUrl: 'https://example.org/sheet' };
+
+for (const ua of [BROWSER_UA, APP_UA]) {
+    const where = ua === APP_UA ? 'app' : 'browser';
+
+    test(`shell (${where}): game over main menu goes to the shell menu`, () => {
+        const { w, log } = setup(ua);
+        w.breakEscapeConfig = { ...SHELL };
+        GameOverScreen.prototype.mainMenu.call({});
+        assert.deepEqual(log.href, [SHELL.shellMenuUrl]);
+    });
+
+    test(`shell (${where}): end screen button goes to the debrief and never closes`, () => {
+        const { w, log } = setup(ua);
+        w.breakEscapeConfig = { ...SHELL };
+        showEndScreen({ title: 'Done' });
+        document.querySelector('#scenario-end-screen button').click();
+        assert.deepEqual(log.href, [SHELL.shellReturnUrl]);
+        assert.equal(log.closed, 0);
+    });
+
+    test(`shell (${where}): one "Save and quit to menu" item that saves, then goes to the shell menu`, async () => {
+        const { w } = setup(ua);
+        w.breakEscapeConfig = { ...SHELL };
+        const calls = [];
+        w.stateSync = { syncConfirmed: async () => { calls.push('sync'); return true; } };
+        const menu = new GameMenu();
+        menu._navigate = (url) => calls.push(['go', url]);
+        const items = menu.overlay.querySelectorAll('[data-action="leave"]');
+        assert.equal(items.length, 1);
+        assert.equal(items[0].textContent, 'Save and quit to menu');
+        assert.ok(menu.overlay.querySelector('[data-action="walkthrough"]'));
+        items[0].click();
+        assert.match(menu.overlay.querySelector('.game-menu-page[data-page="leave"] h3').textContent, /Save and quit to menu/);
+        menu.overlay.querySelector('[data-leave="yes"]').click();
+        await new Promise((r) => setTimeout(r, 0));
+        assert.deepEqual(calls, ['sync', ['go', SHELL.shellMenuUrl]]);
+    });
+}

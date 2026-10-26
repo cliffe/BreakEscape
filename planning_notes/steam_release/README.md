@@ -164,3 +164,5 @@ This keeps the store apps separate from Hacktivity and makes sure no Stripe purc
   covered: VM missions (no cluster here), a full sign-up (reCAPTCHA), the packaged build past sign-in.
 - Still to do: Steam sign-in and ownership (needs the Steam app id and publisher key), icons, code
   signing, Steam depots, bump `BreakEscape::VERSION` on release so cached engine JS refreshes.
+
+The single-game layout now exists as Hacktivity's game shell for Game events (2026-10-26); what the app has to do to wrap it is in `GAME_SHELL_FOR_APP.md`.

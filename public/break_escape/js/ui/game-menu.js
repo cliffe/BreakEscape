@@ -25,6 +25,39 @@ const PAGES = [
     { id: 'controls', label: 'Controls' },
 ];
 
+// Items a host game shell asks for (breakEscapeConfig.walkthroughUrl and
+// shellMenuUrl): the mission's walkthrough in a new tab, and quitting back to
+// the shell. Without a shell, the desktop app still gets "Back to missions".
+// Either way leaving waits for a confirmed save (see _leave).
+export function shellItems(cfg = window.breakEscapeConfig || {}, w = window) {
+    let html = '';
+    if (cfg.walkthroughUrl) {
+        html += '<button type="button" class="game-menu-item" data-action="walkthrough">Walkthrough</button>';
+    }
+    const exit = leaveTarget(cfg, w);
+    if (exit) {
+        html += `<button type="button" class="game-menu-item game-menu-leave" data-action="leave">${exit.label}</button>`;
+    }
+    return html;
+}
+
+// Where the pause menu's leave item goes: the host shell's menu, else the desktop app's home.
+export function leaveTarget(cfg = window.breakEscapeConfig || {}, w = window) {
+    const url = cfg.shellMenuUrl || cfg.shellReturnUrl;
+    if (url) return { url, label: 'Save and quit to menu' };
+    if (isDesktopApp(w)) return { url: DESKTOP_APP_HOME, label: 'Back to missions' };
+    return null;
+}
+
+export function openWalkthrough(cfg = window.breakEscapeConfig || {}, open = (url) => window.open(url, '_blank', 'noopener')) {
+    if (cfg.walkthroughUrl) open(cfg.walkthroughUrl);
+}
+
+export function quitToShell(cfg = window.breakEscapeConfig || {}, navigate = (url) => { window.location.href = url; }) {
+    const url = cfg.shellMenuUrl || cfg.shellReturnUrl;
+    if (url) navigate(url);
+}
+
 function optionList(items, selected) {
     return items.map(({ value, label }) =>
         `<option value="${value}"${String(value) === String(selected) ? ' selected' : ''}>${label}</option>`).join('');
@@ -82,7 +115,7 @@ export class GameMenu {
                         <button type="button" class="game-menu-item game-menu-resume" data-action="resume">Resume</button>
                         <button type="button" class="game-menu-item" data-action="character">Character</button>
                         ${PAGES.map(p => `<button type="button" class="game-menu-item" data-page="${p.id}">${p.label}</button>`).join('')}
-                        ${isDesktopApp() ? '<button type="button" class="game-menu-item game-menu-leave" data-action="leave">Back to missions</button>' : ''}
+                        ${shellItems()}
                     </nav>
                     <div class="game-menu-pages">
                         <section class="game-menu-page" data-page="audio"></section>
@@ -105,6 +138,7 @@ export class GameMenu {
             if (item.dataset.page) this.showPage(item.dataset.page);
             else if (item.dataset.action === 'resume') this.close();
             else if (item.dataset.action === 'character') this._openCharacter();
+            else if (item.dataset.action === 'walkthrough') openWalkthrough();
             else if (item.dataset.action === 'leave') this._askLeave();
         });
         overlay.querySelector('.game-menu-close').addEventListener('click', () => this.close());
@@ -219,7 +253,7 @@ export class GameMenu {
             return section;
         })();
         page.innerHTML = `
-            <h3>Back to missions</h3>
+            <h3>${(leaveTarget() || {}).label || 'Back to missions'}</h3>
             <p class="game-menu-note">Your progress is saved, and you can carry on from the mission list. A puzzle or conversation you haven't finished starts again when you come back.</p>
             <p class="game-menu-note game-menu-leave-error" role="alert" hidden>Couldn't save just now. Check your connection and try again.</p>
             <button type="button" class="game-menu-reset" data-leave="yes">Leave the game</button>
@@ -253,7 +287,8 @@ export class GameMenu {
                 return;
             }
         }
-        (this._navigate || ((url) => { window.location.href = url; }))(DESKTOP_APP_HOME);
+        const target = leaveTarget() || { url: DESKTOP_APP_HOME };
+        (this._navigate || ((url) => { window.location.href = url; }))(target.url);
     }
 
     _openCharacter() {
