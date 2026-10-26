@@ -30,23 +30,49 @@ export function addPropWallCollider(game, prop, wallBox, onHit) {
         return game.physics.add.collider(prop, wallBox, onHit);
     }
     const state = prop._blockState || (prop._blockState = new Map());
+    const overlapFns = prop._blockOverlaps || (prop._blockOverlaps = new Map());
     state.set(wallBox, 'pending');
     const overlaps = () => !!(prop.body && wallBox.body
         && prop.body.right > wallBox.body.left && prop.body.left < wallBox.body.right
         && prop.body.bottom > wallBox.body.top && prop.body.top < wallBox.body.bottom);
+    overlapFns.set(wallBox, overlaps);
     game.time.delayedCall(250, () => {
         if (state.get(wallBox) === 'pending') {
-            if (overlaps()) state.set(wallBox, 'exempt'); else state.delete(wallBox);
+            if (overlaps()) {
+                state.set(wallBox, 'exempt');
+                watchExemptions(game, prop);
+            } else {
+                state.delete(wallBox);
+            }
         }
     });
-    return game.physics.add.collider(prop, wallBox, onHit, () => {
-        const st = state.get(wallBox);
-        if (!st) return true;
-        if (st === 'pending') return false;
-        if (overlaps()) return false;
-        state.delete(wallBox); // it has left the block: collide from now on
-        return true;
-    });
+    // Phaser only runs this callback while the bodies already overlap, so it can
+    // never see a prop leave; watchExemptions does that on the world step.
+    return game.physics.add.collider(prop, wallBox, onHit, () => state.get(wallBox) ? false : true);
+}
+
+// Drop each exemption once its prop no longer overlaps the block, then unhook
+// the world-step listener when none are left (one listener per prop, no leak).
+function watchExemptions(game, prop) {
+    if (prop._blockWatch) return;
+    const world = game.physics && game.physics.world;
+    if (!world) return;
+    const check = () => {
+        const state = prop._blockState;
+        let exempt = 0;
+        state.forEach((st, wallBox) => {
+            if (st !== 'exempt') return;
+            const overlaps = prop._blockOverlaps.get(wallBox);
+            if (overlaps && overlaps()) { exempt++; return; }
+            state.delete(wallBox); // it has left the block: collide from now on
+        });
+        if (exempt === 0) {
+            world.off('worldstep', check);
+            prop._blockWatch = null;
+        }
+    };
+    prop._blockWatch = check;
+    world.on('worldstep', check);
 }
 
 // Set up collision detection between chairs and other objects

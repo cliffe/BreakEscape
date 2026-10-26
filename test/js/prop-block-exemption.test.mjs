@@ -17,10 +17,11 @@ const { addPropWallCollider } = await import(dataUrl(src));
 const box = (left, top, right, bottom) => ({ left, top, right, bottom });
 const makeGame = () => {
     const timers = [], colliders = [];
+    const world = { listeners: new Set(), on(e, f) { if (e === 'worldstep') this.listeners.add(f); }, off(e, f) { this.listeners.delete(f); }, step() { [...this.listeners].forEach((f) => f()); } };
     return {
-        timers, colliders,
+        timers, colliders, world,
         time: { delayedCall: (_ms, fn) => timers.push(fn) },
-        physics: { add: { collider: (a, b, hit, process) => { const c = { a, b, hit, process }; colliders.push(c); return c; } } }
+        physics: { world, add: { collider: (a, b, hit, process) => { const c = { a, b, hit, process }; colliders.push(c); return c; } } }
     };
 };
 
@@ -36,13 +37,33 @@ test('a block the prop starts inside is ignored until it leaves, then collides',
     const block = { isBackWallBlock: true, body: box(0, 0, 64, 64) };
     addPropWallCollider(g, prop, block);
     const { process } = g.colliders[0];
+    // Phaser calls process() only while the bodies overlap.
     assert.equal(process(), false, 'pending: ignored while the body settles');
     g.timers.forEach((fn) => fn());
     assert.equal(process(), false, 'overlapping at setup: exempt');
+    assert.equal(g.world.listeners.size, 1, 'one world-step watcher while exempt');
+    g.world.step();
+    assert.equal(process(), false, 'still inside after a step: still exempt');
     prop.body = box(100, 10, 120, 30); // slid clear of the block
-    assert.equal(process(), true, 'left the block: collides from now on');
-    prop.body = box(10, 10, 30, 30); // back over it
-    assert.equal(process(), true, 'no longer exempt once it has left');
+    g.world.step();
+    assert.equal(g.world.listeners.size, 0, 'watcher unhooked once nothing is exempt');
+    prop.body = box(10, 10, 30, 30); // pushed back over it
+    assert.equal(process(), true, 'left the block earlier: collides now');
+});
+
+test('two blocks: leaving one keeps the other exemption and the watcher', () => {
+    const g = makeGame();
+    const prop = { body: box(10, 10, 30, 30) };
+    const a = { isBackWallBlock: true, body: box(0, 0, 64, 64) };
+    const b = { isBackWallBlock: true, body: box(0, 0, 20, 64) };
+    addPropWallCollider(g, prop, a);
+    addPropWallCollider(g, prop, b);
+    g.timers.forEach((fn) => fn());
+    prop.body = box(40, 10, 60, 30); // clear of b, still inside a
+    g.world.step();
+    assert.equal(g.colliders[0].process(), false);
+    assert.equal(g.colliders[1].process(), true);
+    assert.equal(g.world.listeners.size, 1);
 });
 
 test('a block the prop did not start in collides from the start of play', () => {
