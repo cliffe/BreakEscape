@@ -12,7 +12,16 @@
  *                            [--vw 1400] [--vh 1000]     (or env VW / VH)
  *
  * Commands (one JSON object per line):
- *   {"cmd":"bootstrap","tutorial":"decline","resume":"new"}
+ *   {"cmd":"bootstrap","tutorial":"decline","resume":"new"}   (stops at an open briefing: briefingPending:true,
+ *                                            settled:false; add "autoBrief":true to auto-drive it)
+ *   {"cmd":"converse","id":"npc","choices":["^Yes"]}   (takes only named options; stops at an unnamed
+ *                                            choice with ok:false stopped-at-choice; "explore":true takes
+ *                                            unvisited options, "close":true closes at a stop)
+ *   {"cmd":"openInventoryItem","item":"phone"}   (tray index | id | exact name | type | name substring)
+ *   {"cmd":"inventory"}                      → the tray, in order
+ *   {"cmd":"doorways"}                       → doorways of the current room (or {"room":"id"})
+ *   {"cmd":"cyberchef","input":"text","recipe":"ROT13(true,true,false,13)"}  (laptop must be open)
+ *   {"cmd":"cyberchefOutput"}
  *   {"cmd":"state"}                          → full getState()
  *   {"cmd":"brief"}                          → compact decision-sized state
  *   {"cmd":"moveTo","x":210,"y":190}
@@ -291,7 +300,8 @@ function substituteFlags(node, at) {
    *
    * It does NOT play the opening briefing: choices there commit the story.
    * When a dialogue is on screen it stops and returns briefingPending:true
-   * with the dialogue in `state`. `autoBrief:true` opts in to the old
+   * with the dialogue in `state`, and `settled:false` (the run is not ready to play
+   * until the briefing is done; call bootstrap again afterwards). `autoBrief:true` opts in to the old
    * behaviour (choice 1 at each menu, hubs exit on a repeat).
    */
   async function bootstrap({ tutorial = 'decline', resume = 'new', maxSteps = 400,
@@ -338,12 +348,24 @@ function substituteFlags(node, at) {
       if (mg) {
         clear = 0;
         const d = await page.evaluate(() => window.__test.minigame.getState()?.dialogue);
+        // Between a line finishing and the next being actionable (the typewriter
+        // gap) a dialogue reports neither awaitingChoice nor canContinue. It is
+        // still a dialogue: never close it, wait for it to become actionable.
+        if (d && !d.awaitingChoice && !d.canContinue) {
+          await page.evaluate(() => window.__test.waitForDialogue({ timeoutMs: 8000 })).catch(() => {});
+          if (!autoBrief) {
+            trace.push(`briefing dialogue left for the tester (${mg.id}); pass autoBrief:true to auto-drive it`);
+            return { trace, settled: false, briefingPending: true, state: await brief() };
+          }
+          await pause(speed.dialogue);
+          continue;
+        }
         if (d && (d.awaitingChoice || d.canContinue) && !autoBrief) {
           // The opening briefing is story the tester must play: its choices are
           // real and commit the run. Leave it open and hand it over. Pass
           // {"autoBrief":true} to have bootstrap drive it (choice 1, hubs exit).
           trace.push(`briefing dialogue left for the tester (${mg.id}); pass autoBrief:true to auto-drive it`);
-          return { trace, settled: true, briefingPending: true, state: await brief() };
+          return { trace, settled: false, briefingPending: true, state: await brief() };
         }
         if (d && (d.awaitingChoice || d.canContinue)) {
           if (d.awaitingChoice) {
@@ -394,8 +416,8 @@ function substituteFlags(node, at) {
         await page.evaluate(l => window.__test.dismissBlockingUi(l), pick);
         await pause(900);
         // A "New Session" or "Restart" click reloads the page.
-        await page.waitForFunction(() => !!window.__test, null, { timeout: 30000 }).catch(() => {});
-        await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 60000 })).catch(() => {});
+        await page.waitForFunction(() => !!window.__test, null, { timeout: 120000 }).catch(() => {});
+        await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 120000 })).catch(() => {});
         continue;
       }
       clear++;
@@ -613,9 +635,12 @@ function substituteFlags(node, at) {
       // Zero turns means nothing was ever said: the target opened something
       // that is not a conversation, or opened nothing at all. That is not a
       // conversation driven to completion, so do not report it as one.
-      const nothingHappened = turns === 0 && transcript.length === 0;
+      const nothingHappened = turns === 0 && transcript.length === 0 && !pendingChoice;
       return {
-        ok: (keepOpen || !after.activeMinigame) && !nothingHappened,
+        // ok:false at a stop: the run's rule is that ok:false means "stop and
+        // decide", and a stop at an unnamed choice is exactly that (with the
+        // conversation still open and the world input-locked unless close:true).
+        ok: !pendingChoice && !after.activeMinigame && !nothingHappened,
         stoppedAtChoice: pendingChoice || undefined,
         turns,
         exhaustedBranches,
@@ -624,11 +649,11 @@ function substituteFlags(node, at) {
         transcript,
         closed,
         inventory: after.inventory,
-        reason: keepOpen ? 'stopped-at-choice'
+        reason: pendingChoice ? (keepOpen ? 'stopped-at-choice' : 'closed-at-choice')
           : after.activeMinigame ? 'still-open-after-close'
           : (nothingHappened ? 'no-dialogue-appeared' : undefined),
         hint: keepOpen
-          ? 'Stopped at a choice nobody named; the conversation is still open. Answer it with '
+          ? 'Stopped at a choice nobody named (ok:false on purpose); the conversation is still open. Answer it with '
             + '{"cmd":"converse","choices":["<regex of the option>"]} (no id continues the open dialogue), '
             + 'or {"cmd":"mg","action":"chooseIndex","args":[n]}. Pass "explore":true to let converse '
             + 'pick unvisited options itself (that commits real choices), or "close":true to leave.'

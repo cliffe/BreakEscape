@@ -18,7 +18,7 @@
 
 ### BOOTSTRAP (Step 0)
 ```json
-{"cmd":"bootstrap","tutorial":"decline","resume":"new"}
+{"cmd":"bootstrap","tutorial":"decline","resume":"new","autoBrief":true}
 ```
 
 **Response:** Game loaded, session opened.

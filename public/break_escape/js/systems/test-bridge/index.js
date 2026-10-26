@@ -29,6 +29,7 @@
  */
 
 import { INTERACTION_RANGE, DOOR_INTERACTION_RANGE } from '../../utils/constants.js';
+import { workstationPopupOpen } from '../../utils/overlay-open.js';
 import {
     clickWorld, pressKey as rawPressKey, keyDown, keyUp,
     sleepFrames, sleep, worldToClient, isWorldPointOnScreen,
@@ -238,16 +239,21 @@ function fail(reason, extra = {}) {
  */
 async function confirmEffect(sinceSeq, { settleFrames = 6, timeoutMs = 4000 } = {}) {
     await sleepFrames(settleFrames);
+    let unrelated = null;
     const check = () => {
         if (activeMinigameSummary()) return { confirmed: true, via: 'minigame' };
         // Not every interaction opens a minigame or fires an event: the crypto
-        // workstation opens a DOM laptop overlay (CyberChef) and nothing else.
-        // callers refuse main-world input while an overlay is up, so one that
-        // appears after the click can only be the click's doing.
+        // workstation opens a DOM laptop overlay (CyberChef), notes and status
+        // boards a game-confirm-dialog. Callers refuse main-world input while an
+        // overlay is up, so one present now appeared after the click, but it is
+        // only evidence of THIS click if it is a kind an interaction opens. A
+        // tutorial or session prompt that happens to appear is not.
         const overlay = detectBlockingUi();
         if (overlay) {
-            return { confirmed: true, via: 'overlay',
-                     overlay: { classes: overlay.classes || null, text: String(overlay.text || '').split('\n')[0] } };
+            const known = workstationPopupOpen() || /game-confirm-dialog|game-display-dialog/.test(overlay.classes || '');
+            const summary = { classes: overlay.classes || null, text: String(overlay.text || '').split('\n')[0] };
+            if (known) return { confirmed: true, via: 'overlay', overlay: summary };
+            unrelated = summary;
         }
         const events = eventsSince(sinceSeq);
         if (events.length) return { confirmed: true, via: 'event', events: events.map(e => e.event) };
@@ -261,7 +267,7 @@ async function confirmEffect(sinceSeq, { settleFrames = 6, timeoutMs = 4000 } = 
         const found = check();
         if (found) return found;
     }
-    return { confirmed: false };
+    return unrelated ? { confirmed: false, unrelatedOverlay: unrelated } : { confirmed: false };
 }
 
 /**
@@ -277,29 +283,65 @@ async function confirmEffect(sinceSeq, { settleFrames = 6, timeoutMs = 4000 } = 
 // What the engine was actually asked to interact with. The bridge cannot tell
 // "the click opened a different thing" from "this thing opens a minigame whose
 // title differs from its name" (a 'Signing Case' opens 'Fingerprint Reader', a
-// 'SIEM Console' opens 'SIEM Dashboard'), so it records the object/NPC handed to
-// the engine's own handlers and compares ids. Installed lazily because
-// interactions.js assigns these globals after the bridge loads.
-let lastEngineTarget = null;
+// 'SIEM Console' opens 'SIEM Dashboard'), so it records the object, NPC or door
+// handed to the engine's own handlers and compares ids. Installed lazily because
+// interactions.js and doors.js assign these globals after the bridge loads.
+// A door's own click zone calls handleDoorInteraction directly, not through
+// window, so a door the zone opened leaves no record; the scene's tap-gather
+// does go through window, which is the path that opened a neighbouring door.
+const engineTargets = [];
 let interactStartT = 0;
 function ensureTargetRecorder() {
-    for (const [name, kind] of [['handleObjectInteraction', 'object'], ['tryInteractWithNPC', 'npc']]) {
+    const idOf = {
+        object: (sp) => (sp?.scenarioData?.id || sp?.objectId || null),
+        npc: (sp) => (sp?.npcId || null),
+        door: (sp) => (sp?.doorProperties ? `door:${sp.doorProperties.roomId}->${sp.doorProperties.connectedRoom}` : null)
+    };
+    for (const [name, kind] of [['handleObjectInteraction', 'object'], ['tryInteractWithNPC', 'npc'], ['handleDoorInteraction', 'door']]) {
         const fn = window[name];
         if (typeof fn !== 'function' || fn.__benchRecorder) continue;
         const wrapped = function (sprite, ...rest) {
             try {
-                const d = sprite?.scenarioData || {};
-                lastEngineTarget = {
-                    kind, t: performance.now(),
-                    id: kind === 'npc' ? (sprite?.npcId || null) : (d.id || sprite?.objectId || null),
-                    name: d.name || sprite?.name || null
-                };
+                engineTargets.push({ kind, t: performance.now(), id: idOf[kind](sprite),
+                                     name: sprite?.scenarioData?.name || sprite?.name || null });
+                if (engineTargets.length > 30) engineTargets.shift();
             } catch (e) { /* recording must never break the interaction */ }
-            return fn.call(this, sprite, ...rest);
+            return fn.apply(this, [sprite, ...rest]);
         };
         wrapped.__benchRecorder = true;
         window[name] = wrapped;
     }
+}
+
+/**
+ * Compare what the engine was handed with what was asked for. Returns
+ * { wrong, engineTarget?, verified }. The first record after the click is the
+ * click's own target (later ones are chained calls). Without a record, a lock
+ * minigame that opened still names its door; failing both, `verified` is false
+ * and the caller says so rather than assuming.
+ */
+function checkEngineTarget(entity, opened) {
+    if (!entity || !entity.kind || !entity.id) return { wrong: false, verified: false };
+    const rec = engineTargets.find(r => r.t >= interactStartT) || null;
+    if (rec) {
+        const wrong = rec.kind !== entity.kind || (!!rec.id && rec.id !== entity.id);
+        return { wrong, verified: true, engineTarget: wrong ? { kind: rec.kind, id: rec.id, name: rec.name } : undefined };
+    }
+    if (entity.kind === 'door' && opened) {
+        const dp = window.MinigameFramework?.currentMinigame?.params?.lockable?.doorProperties;
+        if (dp) {
+            const got = `door:${dp.roomId}->${dp.connectedRoom}`;
+            return { wrong: got !== entity.id, verified: true,
+                     engineTarget: got !== entity.id ? { kind: 'door', id: got, name: dp.door_sign || null } : undefined };
+        }
+    }
+    // Last resort, no record: only the unambiguous kind confusions.
+    if (opened) {
+        const wrong = (entity.kind === 'npc' && opened.id !== 'person-chat')
+            || (entity.kind === 'object' && opened.id === 'person-chat');
+        return { wrong, verified: false };
+    }
+    return { wrong: false, verified: false };
 }
 
 function withConfirmation(base, confirmation, entity) {
@@ -307,45 +349,41 @@ function withConfirmation(base, confirmation, entity) {
         // "Something happened" is not "the right thing happened". Interactables
         // sit close together and the game's click router picks by proximity to
         // the click point, so asking for an NPC can easily open a note lying on
-        // the desk beside them. That reads as a pass and silently plays a
-        // different mission. Report what actually opened, and say so when it
-        // does not look like what was asked for.
+        // the desk beside them (or a lock on the neighbouring door). That reads
+        // as a pass and silently plays a different mission. Report what actually
+        // opened, and say so when it was not what was asked for. The id check
+        // runs on every confirmation path (minigame, overlay, event).
         const opened = activeMinigameSummary();
         const result = { ok: true, ...base, ...confirmation };
-        if (opened) {
-            result.opened = { id: opened.id, title: opened.title || null };
-            // The engine's own record of what it was asked to open wins. Without
-            // one (a path that bypasses window.*), fall back to the kinds of
-            // mismatch that are unambiguous: an NPC asked for but no
-            // conversation opened, or an object asked for and a conversation
-            // opened. Title comparison is NOT used: most minigames carry their
-            // own title ('Fingerprint Reader', 'SIEM Dashboard') that never
-            // matches the object's name, and flagging those reported a working
-            // interaction as ok:false.
-            const rec = lastEngineTarget && lastEngineTarget.t >= interactStartT ? lastEngineTarget : null;
-            let wrongTarget = false;
-            if (rec && (entity?.kind === 'object' || entity?.kind === 'npc')) {
-                wrongTarget = rec.kind !== entity.kind || (rec.id && entity.id && rec.id !== entity.id);
-                if (wrongTarget) result.engineTarget = { kind: rec.kind, id: rec.id, name: rec.name };
-            } else {
-                wrongTarget = (entity?.kind === 'npc' && opened.id !== 'person-chat')
-                    || (entity?.kind === 'object' && opened.id === 'person-chat');
-            }
-            if (wrongTarget) {
-                // ok:false as well as mismatch:true. A caller that checks only
-                // `ok` — which is most of them — would otherwise record opening
-                // the wrong thing as a passed step, which is how this harness
-                // has produced false passes before.
-                result.ok = false;
-                result.mismatch = true;
-                result.reason = 'wrong-target-opened';
-                result.hint = `Asked to interact with "${entity.name}" but "${opened.title || opened.id}" opened `
-                    + '— the click most likely landed on a different interactable nearby. Close this, then '
-                    + 'either use moveToNear(id) to approach from a spot where the target is unambiguous, or '
-                    + 'interact again and pick the target from the disambiguation menu. Do NOT treat this as a pass.';
-            }
+        if (opened) result.opened = { id: opened.id, title: opened.title || null };
+        const chk = checkEngineTarget(entity, opened);
+        if (chk.engineTarget) result.engineTarget = chk.engineTarget;
+        if (chk.wrong) {
+            // ok:false as well as mismatch:true. A caller that checks only
+            // `ok` — which is most of them — would otherwise record opening
+            // the wrong thing as a passed step, which is how this harness
+            // has produced false passes before.
+            const what = opened ? `"${opened.title || opened.id}" opened` : `the engine acted on ${chk.engineTarget?.kind} "${chk.engineTarget?.id}"`;
+            result.ok = false;
+            result.mismatch = true;
+            result.reason = 'wrong-target-opened';
+            result.hint = `Asked to interact with "${entity.name}" but ${what} `
+                + '— the click most likely landed on a different interactable nearby. Close this, then '
+                + 'either use moveToNear(id) to approach from a spot where the target is unambiguous, or '
+                + 'interact again and pick the target from the disambiguation menu. Do NOT treat this as a pass.';
+        } else if (opened && !chk.verified) {
+            result.targetUnverified = true;
         }
         return result;
+    }
+    if (confirmation.unrelatedOverlay) {
+        return {
+            ...base, ok: false, reason: 'unrelated-overlay', confirmed: false,
+            overlay: confirmation.unrelatedOverlay,
+            hint: 'No minigame opened and no event fired, but a DOM overlay is up that an interaction does not '
+                + 'open (a tutorial or session prompt?). The click did not do what was asked. Dismiss it '
+                + '(dismissBlockingUi) and retry.'
+        };
     }
     const p = window.player;
     const plainDistance = p && entity ? Math.round(Math.hypot(p.x - entity.x, p.y - entity.y) * 10) / 10 : null;
@@ -1185,43 +1223,68 @@ const bridge = {
         const available = items.map(describe);
         const needle = String(item ?? '').trim().toLowerCase();
         const same = (v) => String(v || '').toLowerCase() === needle;
-        const tests = [
-            (img, i) => typeof item === 'number' ? i === item : (/^\d+$/.test(needle) && i === Number(needle) && !items.some(x => same(x.scenarioData?.id) || same(x.objectId))),
-            (img) => same(img.scenarioData?.id) || same(img.objectId),
-            (img) => same(img.getAttribute('data-type')),
-            (img) => same(img.scenarioData?.name) || same(img.alt),
-            (img) => needle && ((img.scenarioData?.name || '').toLowerCase().includes(needle) || (img.alt || '').toLowerCase().includes(needle))
+        const nameOf = (img) => img.scenarioData?.name || img.alt || '';
+        const byIndex = typeof item === 'number' || (/^\d+$/.test(needle)
+            && !items.some(x => same(x.scenarioData?.id) || same(x.objectId)));
+        // Tiers, most specific first. A tier with exactly one hit wins; a tier
+        // with several is ambiguous and is reported, never resolved by order.
+        const tiers = [
+            ['index', (img, i) => byIndex && i === Number(item)],
+            ['id', (img) => same(img.scenarioData?.id) || same(img.objectId)],
+            ['name', (img) => same(nameOf(img))],
+            ['type', (img) => same(img.getAttribute('data-type'))],
+            ['name-substring', (img) => !!needle && nameOf(img).toLowerCase().includes(needle)]
         ];
-        let el = null;
-        let candidates = [];
-        for (const t of tests) {
-            candidates = items.filter((img, i) => t(img, i));
-            if (candidates.length) { el = candidates[0]; break; }
+        let el = null, tier = null, candidates = [];
+        for (const [label, test] of tiers) {
+            candidates = items.filter((img, i) => test(img, i));
+            if (candidates.length) { tier = label; if (candidates.length === 1) el = candidates[0]; break; }
+        }
+        if (candidates.length > 1) {
+            const result = fail('ambiguous-item', {
+                item, matchedBy: tier, candidates: candidates.map(img => describe(img, items.indexOf(img))),
+                hint: 'More than one tray item matches. Use the id or the tray index from `inventory`.'
+            });
+            logAction('openInventoryItem', { item }, result);
+            return result;
         }
         if (!el) {
             const result = fail('no-inventory-item-matching', {
                 item, available,
-                hint: 'Match by tray index, item id, type ("phone"), or name. Notes are in the Notepad item, not the tray.'
+                hint: 'Match by tray index, item id, exact name, type ("phone"), or name substring. Notes are in the '
+                    + 'Notepad item, not the tray. Keys on a key ring are not separate tray items: open the ring itself.'
             });
             logAction('openInventoryItem', { item }, result);
             return result;
         }
         const matched = describe(el, items.indexOf(el));
-        const others = candidates.slice(1).map(img => describe(img, items.indexOf(img)));
+        // The click must land on the item: a tray slot under another element
+        // (an open overlay, a tooltip) would silently swallow it.
+        const r = el.getBoundingClientRect();
+        const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        if (!top || !(top === el || el.contains(top))) {
+            const result = fail('item-obscured', {
+                item, matched, coveredBy: top ? `${top.tagName}.${String(top.className).slice(0, 60)}` : null,
+                hint: 'Another element sits over the tray item at its centre; dismiss it first.'
+            });
+            logAction('openInventoryItem', { item }, result);
+            return result;
+        }
         const sinceSeq = currentSeq();
-        // The real click handler (inventory.js) records via window.handleObjectInteraction.
         ensureTargetRecorder();
+        interactStartT = performance.now();
         clickElementDom(el);
         const confirmed = await confirmEffect(sinceSeq);
-        const mg = activeMinigameSummary();
+        const entity = { kind: 'object', id: matched.id, name: matched.name };
         const result = confirmed.confirmed
-            ? { ok: true, item, matched, ...(others.length ? { alsoMatched: others } : {}), ...confirmed,
-                opened: mg ? { id: mg.id, title: mg.title || null } : undefined }
-            : fail('no-effect-confirmed', {
-                item, matched,
-                hint: 'The click landed but no minigame opened and no event fired. A forced conversation '
-                    + '(briefing, debrief) blocks the tray; check brief for a dialogue first.'
-            });
+            ? withConfirmation({ item, matched, matchedBy: tier }, confirmed, entity)
+            : (confirmed.unrelatedOverlay
+                ? withConfirmation({ item, matched }, confirmed, entity)
+                : fail('no-effect-confirmed', {
+                    item, matched,
+                    hint: 'The click landed but no minigame opened and no event fired. A forced conversation '
+                        + '(briefing, debrief) blocks the tray; check brief for a dialogue first.'
+                }));
         logAction('openInventoryItem', { item }, result);
         return result;
     },
@@ -1233,7 +1296,7 @@ const bridge = {
      *
      * Route: a real paste event on the input editor, which is what a player
      * does and is the route that keeps working. A `#input=` URL hash also works,
-     * but only when the base64 value is URL-encoded or unpadded: CyberChef
+     * but only when the base64 value is passed through encodeURIComponent: CyberChef
      * splits the fragment on `=`, so a raw `...==` padding is cut off, the
      * decode fails and the input is silently left unchanged (this is what broke
      * the hand-built `#recipe=...&input=<base64>` URLs; CyberChef itself is
@@ -1248,6 +1311,13 @@ const bridge = {
         const frame = document.getElementById('cyberchef-frame');
         if (!frame) return fail('no-cyberchef-frame');
         const popup = document.getElementById('laptop-popup');
+        // A player types into a visible editor. The iframe stays loaded after
+        // the laptop is closed, so its DOM would accept input nobody can see.
+        if (!popup || popup.style.display === 'none' || popup.style.display === '') {
+            return fail('laptop-not-open', {
+                hint: 'Open the Crypto Analysis Station first: openInventoryItem("workstation").'
+            });
+        }
         const ready = () => {
             try {
                 const d = frame.contentDocument;
@@ -1266,14 +1336,33 @@ const bridge = {
         const norm = (t) => String(t).replace(/\r\n/g, '\n').replace(/\u00a0/g, ' ').trim();
         const inputEl = () => d.querySelector('#input-text .cm-content');
         const outputEl = () => d.querySelector('#output-text .cm-content');
-        const readInput = () => norm(inputEl()?.innerText || '');
+        // CodeMirror 6 renders only the lines in view, so innerText of a long
+        // input is a fragment. Read the editor's document through the app, and
+        // fall back to the DOM text only if that is not reachable.
+        const docText = (view, el) => {
+            try { const t = view.state.doc.toString(); if (typeof t === 'string') return norm(t); } catch (e) { /* DOM fallback */ }
+            return norm(el?.innerText || '');
+        };
+        const readInput = () => docText(w.app?.manager?.input?.inputEditorView, inputEl());
+        const readOutput = () => docText(w.app?.manager?.output?.outputEditorView, outputEl());
         const want = norm(text);
+        const outputBefore = readOutput();
 
         let recipeApplied = null;
         if (recipe) {
             w.location.hash = 'recipe=' + encodeURIComponent(recipe).replace(/%28/g, '(').replace(/%29/g, ')').replace(/%27/g, "'");
             await sleep(600);
             recipeApplied = (w.app.getRecipeConfig?.() || []).map(o => o.op);
+            const wantedOp = String(recipe).split('(')[0].trim().replace(/_/g, ' ').toLowerCase();
+            if (!recipeApplied.length || !recipeApplied.some(o => String(o).toLowerCase() === wantedOp)) {
+                const result = fail('recipe-not-applied', {
+                    recipe, appliedOps: recipeApplied,
+                    hint: 'CyberChef did not load that recipe. Use CyberChef\'s own operation names with underscores, '
+                        + 'e.g. "From_Base64(\'A-Za-z0-9+/=\',true,false)" or "ROT13(true,true,false,13)".'
+                });
+                logAction('setCyberChefInput', { length: String(text).length, recipe }, result);
+                return result;
+            }
         }
 
         const tryPaste = async () => {
@@ -1307,15 +1396,18 @@ const bridge = {
             try { w.app.setInput(String(text)); await sleep(600); } catch (e) { /* reported below */ }
             if (readInput() === want) via = 'app.setInput';
         }
-        // Let the auto-bake settle: the output stops changing.
-        let out = norm(outputEl()?.innerText || ''), stable = 0;
+        // Let the auto-bake settle. The output must first change from what it
+        // showed before this input (a stale output reads as "stable" at once);
+        // an input that legitimately bakes to the same text gives up after 2.5 s.
+        let out = readOutput(), stable = 0, changed = out !== outputBefore;
+        for (let i = 0; i < 17 && !changed; i++) { await sleep(150); out = readOutput(); changed = out !== outputBefore; }
         for (let i = 0; i < 20 && stable < 3; i++) {
             await sleep(150);
-            const now = norm(outputEl()?.innerText || '');
+            const now = readOutput();
             if (now === out) stable += 1; else { out = now; stable = 0; }
         }
         const result = via
-            ? { ok: true, via, input: readInput(), output: out, recipe: recipeApplied }
+            ? { ok: true, via, playerPath: via === 'paste', input: readInput(), output: out, outputChanged: changed, recipe: recipeApplied }
             : fail('cyberchef-input-not-set', { wanted: want.slice(0, 200), got: readInput().slice(0, 200) });
         logAction('setCyberChefInput', { length: String(text).length, recipe }, result);
         return result;
@@ -1326,7 +1418,10 @@ const bridge = {
         const d = document.getElementById('cyberchef-frame')?.contentDocument;
         const el = d?.querySelector('#output-text .cm-content');
         if (!el) return fail('no-cyberchef-output');
-        return { ok: true, output: String(el.innerText).replace(/\u00a0/g, ' ').trim() };
+        let text;
+        try { text = document.getElementById('cyberchef-frame').contentWindow.app.manager.output.outputEditorView.state.doc.toString(); }
+        catch (e) { text = el.innerText; }
+        return { ok: true, output: String(text).replace(/\r\n/g, '\n').replace(/\u00a0/g, ' ').trim() };
     },
 
     // ── Waits ───────────────────────────────────────────────────────────────

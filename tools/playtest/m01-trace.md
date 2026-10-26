@@ -16,7 +16,7 @@ node .claude/skills/playtest-scenario/scripts/playtest-session.js \
 ## Step 1 — briefing cutscene + overlays — PASS
 
 ```json
-{"cmd":"bootstrap","tutorial":"decline","resume":"new"}
+{"cmd":"bootstrap","tutorial":"decline","resume":"new","autoBrief":true}
 ```
 
 Assert: `settled: true`, room `reception_area`, tasks `check_in_reception` + `access_main_office` open, inventory `["Notepad","Your Phone"]` only.
