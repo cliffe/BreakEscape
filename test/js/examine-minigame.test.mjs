@@ -41,7 +41,8 @@ const stubs = {
     './examine.js': examineUrl,
     './combat-input.js': dataUrl(readFileSync(join(js, 'systems/combat-input.js'), 'utf8')),
     './consumables.js': dataUrl(readFileSync(join(js, 'systems/consumables.js'), 'utf8')),
-    './interaction-walls.js': dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8'))
+    './interaction-walls.js': dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8')),
+    './interaction-reach.js': dataUrl(readFileSync(join(js, 'systems/interaction-reach.js'), 'utf8'))
 };
 
 const started = [];

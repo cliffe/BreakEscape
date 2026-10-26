@@ -17,6 +17,7 @@ import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
+import { reachX } from './interaction-reach.js';
 
 let gameRef = null;
 
@@ -247,7 +248,7 @@ export function checkObjectInteractions() {
             }
 
             // Use simple radial distance from player centre (matches visual highlight zone)
-            const dx = obj.x - px;
+            const dx = reachX(obj, px) - px; // nearest part of a wide object (interaction-reach.js)
             const dy = obj.y - py;
             const distanceSq = dx * dx + dy * dy;
 
@@ -1429,7 +1430,7 @@ export function handleObjectInteraction(sprite) {
         if (!player) return;
         
         // Measure distance with direction-based offset
-        const distanceSq = getInteractionDistance(player, sprite.x, sprite.y);
+        const distanceSq = getInteractionDistance(player, reachX(sprite, player.x), sprite.y);
         
         if (distanceSq > INTERACTION_RANGE_SQ) {
             console.log('INTERACTION_OUT_OF_RANGE', { 
@@ -1920,7 +1921,7 @@ export function tryInteractWithNearest() {
         if (room.objects) {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
-                consider(obj.x, obj.y, () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj);
+                consider(reachX(obj, px), obj.y, () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj);
             });
         }
 
@@ -2005,7 +2006,7 @@ export function tryInteractWithNPC(npcSprite) {
 export function isObjectInInteractionRange(sprite) {
     const player = window.player;
     if (!player || !sprite) return false;
-    const dx = sprite.x - player.x;
+    const dx = reachX(sprite, player.x) - player.x;
     const dy = sprite.y - player.y;
     const distSq = dx * dx + dy * dy;
     if ((sprite._isNPC ? npcReachDistSq(player, sprite, distSq) : distSq) > INTERACTION_RANGE_SQ) return false;

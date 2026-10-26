@@ -16,7 +16,9 @@
 import { isWorldPointOnScreen, getCanvas } from './input.js';
 import { staticNpcBodyDistSq } from '../npc-reach.js';
 // Reach also needs no wall between (interactions.js asks the same function)
-import { interactionLineClear } from '../interaction-walls.js';
+import { interactionLineClear, wallClearFrom } from '../interaction-walls.js';
+// Reach runs to the nearest part of a wide object, in the game and here
+import { reachX } from '../interaction-reach.js';
 // The engine's own door placement: door sprites (doors.js) and the wall gaps
 // cut for them (collision.js) both come from this one function, so a doorway
 // computed with it is where the gap really is, sprite or no sprite.
@@ -278,11 +280,12 @@ function describeObject(sprite, roomId, px, py, mx, my) {
     // interactionMeasurePoint(). Reporting both means a caller sees an
     // object marked inRange:false at a short distance and can tell why
     // (interactDistance) rather than assuming the bridge is simply wrong.
-    const d = dist(px, py, sprite.x, sprite.y);
+    const rx = reachX(sprite, px); // nearest part of a wide object (interaction-reach.js)
+    const d = dist(px, py, rx, sprite.y);
     // Mirrors getInteractionDistance(): the smaller of the facing-offset and
     // plain centre distances. The offset extends reach; the min stops it
     // *reducing* reach for a target the player is nearly standing on.
-    const di = Math.min(dist(mx, my, sprite.x, sprite.y), d);
+    const di = Math.min(dist(mx, my, rx, sprite.y), d);
     return {
         kind: 'object',
         id,
@@ -550,7 +553,13 @@ function competingInteractables(targetX, targetY) {
     return out;
 }
 
-export function solveStandingPoint(targetX, targetY, fromX, fromY, feetOffset = null) {
+export function solveStandingPoint(targetX, targetY, fromX, fromY, feetOffset = null, target = null) {
+    // With the target sprite, a stand point must also have no wall between the
+    // player's feet there and the target (interactionLineClear's own test), or the
+    // game refuses the interaction: sis02's back-wall panel was approached from
+    // the room behind its wall. Rejected points fall through to the floor ones.
+    const wallOk = (px, py) => !target || !feetOffset
+        || wallClearFrom({ x: px + feetOffset.x, y: py + feetOffset.y }, target);
     // With feetOffset (feet minus sprite centre), only consider spots where the
     // feet would stand on a walkable cell of the engine's pathfinding grid: a
     // spot whose feet are inside a desk can't be reached, and walking at it
@@ -564,20 +573,25 @@ export function solveStandingPoint(targetX, targetY, fromX, fromY, feetOffset = 
                 const cy = Math.floor((py + feetOffset.y - B.minY) / B.step);
                 return !!(g[cy] && g[cy][cx] === 0);
             };
-            const found = solveStandingPointWhere(targetX, targetY, fromX, fromY, ok);
+            const floorOk = (px, py) => ok(px, py) && wallOk(px, py);
+            const found = solveStandingPointWhere(targetX, targetY, fromX, fromY, floorOk, target)
+                // Nothing walkable within the comfortable margin (a wall object
+                // behind a desk): take a walkable, wall-clear spot nearer the edge of
+                // range rather than an unwalkable one, which the click never reaches
+                || solveStandingPointWhere(targetX, targetY, fromX, fromY, floorOk, target, 0.9);
             if (found) return found;
         }
     }
-    return solveStandingPointWhere(targetX, targetY, fromX, fromY, () => true);
+    return solveStandingPointWhere(targetX, targetY, fromX, fromY, wallOk, target);
 }
 
-function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable) {
+function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, target = null, margin = 0.625) {
     // Aim well inside range, not on the boundary. 20px, not 24: the solved
     // spot is reached by a click, and click-to-move stops up to
     // ARRIVAL_THRESHOLD (8px) short of its target along the approach, so the
     // sprite lands 6-8px further out than aimed (measured: 24px aims landed at
     // 29-31px, and some past the 32px range).
-    const MARGIN = 0.625;
+    const MARGIN = margin;
     const rivals = competingInteractables(targetX, targetY);
     let best = null;
     let bestCost = Infinity;
@@ -599,9 +613,10 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable) {
             // outside plain range is not gathered at all, so it can neither be
             // acted on nor appear in the menu — however good its offset distance
             // looks. The offset measure is then the engine's execution check.
-            const plain = dist(sx, sy, targetX, targetY);
+            const tx = target ? reachX(target, sx) : targetX; // nearest part of a wide target
+            const plain = dist(sx, sy, tx, targetY);
             if (plain > INTERACTION_RANGE * MARGIN) continue;
-            const d = Math.min(dist(sx + off.x, sy + off.y, targetX, targetY), plain);
+            const d = Math.min(dist(sx + off.x, sy + off.y, tx, targetY), plain);
             if (d > INTERACTION_RANGE * MARGIN) continue;
             const cost = dist(sx, sy, fromX, fromY);
             const point = { x: sx, y: sy, predictedDistance: d, direction: dir };

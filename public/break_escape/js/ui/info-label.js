@@ -9,6 +9,7 @@ import { INTERACTION_RANGE, INTERACTION_RANGE_SQ } from '../utils/constants.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { interactionLineClear } from '../systems/interaction-walls.js';
+import { reachX } from '../systems/interaction-reach.js';
 
 const SIDE_DOOR_RANGE_SQ  = INTERACTION_RANGE_SQ * 4;  // 2× radius for E/W doors
 const SIDE_DOOR_Y_OFFSET  = INTERACTION_RANGE / 2;
@@ -96,7 +97,7 @@ export function updateInfoLabel() {
                     'observations',
                     obj.observations || obj.scenarioData?.name || obj.name || null
                 );
-                consider(obj.x, obj.y, text, INTERACTION_RANGE_SQ, obj);
+                consider(reachX(obj, px), obj.y, text, INTERACTION_RANGE_SQ, obj);
             });
         }
 
