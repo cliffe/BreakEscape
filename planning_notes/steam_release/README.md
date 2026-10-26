@@ -149,3 +149,5 @@ Each store app is a wrapper round one game, not a window onto Hacktivity:
 - Server side, the app identifies itself (a header or user-agent token set by the shell), and Hacktivity renders the single-game layout and refuses Stripe checkout and billing pages for those requests. The rule then holds even if the client guard misses a link.
 
 This keeps the store apps separate from Hacktivity and makes sure no Stripe purchase can be made from the Steam or Play apps.
+
+The single-game layout now exists as Hacktivity's game shell for Game events (2026-10-26); what the app has to do to wrap it is in `GAME_SHELL_FOR_APP.md`.
