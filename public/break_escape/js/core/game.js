@@ -7,6 +7,7 @@ import { initializeInventory, processInitialInventoryItems } from '../systems/in
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
 import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '../systems/interaction-walls.js';
 import { aimX } from '../systems/interaction-reach.js';
+import '../systems/door-gaps.js'; // registers open-doorway lookup for combat reach
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu } from '../ui/interaction-menu.js';
 import { resolveObjectField, evaluateGlobalCondition } from '../utils/conditional-text.js';
@@ -1980,10 +1981,8 @@ export async function create() {
             playerX = startingRoom.position.x + gameScenario.startPosition.x * TILE_SIZE;
             playerY = startingRoom.position.y + gameScenario.startPosition.y * TILE_SIZE;
         } else {
-            // The room's own centre (rooms are not all 320 wide: the fixed 160 put the
-            // player inside the east wall of a 5-tile-wide room)
-            playerX = startingRoom.position.x + (startingRoom.map?.widthInPixels ?? 320) / 2;
-            playerY = startingRoom.position.y + (startingRoom.map?.heightInPixels ?? 288) / 2;
+            playerX = startingRoom.position.x + 160; // Room width / 2 (320/2)
+            playerY = startingRoom.position.y + 144; // Room height / 2 (288/2)
         }
         player.setPosition(playerX, playerY);
         console.log(`Player positioned at (${playerX}, ${playerY}) in starting room ${gameScenario.startRoom}`);

@@ -1410,12 +1410,10 @@ function getStartingRoomCenter(startRoomId) {
     // If rooms are available, get the actual room position
     if (window.rooms && window.rooms[startRoomId]) {
         const roomPos = window.rooms[startRoomId].position;
-        // Centre of the room's own size (rooms are not all 320x288: a 5-tile-wide
-        // room put the old fixed 160px offset inside its east wall)
-        const map = window.rooms[startRoomId].map;
+        // Center of 320x288 room
         return {
-            x: roomPos.x + (map?.widthInPixels ?? 320) / 2,
-            y: roomPos.y + (map?.heightInPixels ?? 288) / 2
+            x: roomPos.x + 160,
+            y: roomPos.y + 144
         };
     }
     

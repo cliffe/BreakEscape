@@ -1490,8 +1490,12 @@ class NPCBehavior {
 
         const style = resolveFightStyle(this.config.hostile.fightStyle);
 
+        // In range by distance, but a wall (or the strip behind a back wall) stands between: keep
+        // chasing, so the path takes it round to the player instead of freezing it in place
+        const reachable = window.npcCombat?.canReachPlayer ? window.npcCombat.canReachPlayer(this.sprite) : true;
+
         // If in attack range, try to attack
-        if (distance <= attackRange) {
+        if (distance <= attackRange && reachable) {
             // Stop moving and clear chase path
             this.sprite.body.setVelocity(0, 0);
             this.isMoving = false;

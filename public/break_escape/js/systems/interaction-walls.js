@@ -124,19 +124,75 @@ export function roomIdOfTarget(target, rooms = roomsMap()) {
     return null;
 }
 
+// ---- Open doorways (combat and NPC talk) ----------------------------------------------
+// Two rooms meet at the foot of a back wall, so feet either side of an OPEN door are in different
+// rooms with nothing between them. For combat and NPC conversation such a pair counts as one
+// room when the line between the feet passes through the doorway. Door positions come from a
+// provider (door-gaps.js registers one in the game; this file has no imports so node tests can
+// load it alone): (roomId) => [{ to, direction, x, y }].
+let doorwayProvider = null;
+export function setDoorwayProvider(fn) { doorwayProvider = typeof fn === 'function' ? fn : null; }
+
+const DOOR_HALF_WIDTH = 16;  // a door tile
+const DOOR_DEPTH = 32;       // along the wall: its two wall rows / the wall tile either side
+
+/** Does the segment a-b touch the axis-aligned rect (Liang-Barsky)? */
+function segmentHitsRect(a, b, r) {
+    let t0 = 0, t1 = 1;
+    const dx = b.x - a.x, dy = b.y - a.y;
+    for (const [p, q] of [[-dx, a.x - r.left], [dx, r.right - a.x], [-dy, a.y - r.top], [dy, r.bottom - a.y]]) {
+        if (p === 0) { if (q < 0) return false; continue; }
+        const t = q / p;
+        if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; }
+        else { if (t < t0) return false; if (t < t1) t1 = t; }
+    }
+    return true;
+}
+
+/** A closed door sprite between the two rooms (an opened door's sprite is gone, or marked open). */
+function doorClosed(roomA, roomB, direction, rooms) {
+    for (const [id, other] of [[roomA, roomB], [roomB, roomA]]) {
+        for (const d of Object.values(rooms[id]?.doorSprites || {})) {
+            const props = d?.doorProperties;
+            if (d?.active !== false && props && props.connectedRoom === other && !props.open) return true;
+        }
+    }
+    return false;
+}
+
+/** True when the segment between two feet points runs through an open doorway joining the two rooms. */
+export function throughOpenDoor(a, b, roomA, roomB, rooms = roomsMap()) {
+    if (!doorwayProvider || !roomA || !roomB || roomA === roomB) return false;
+    let doors;
+    try { doors = doorwayProvider(roomA) || []; } catch (e) { return false; }
+    for (const d of doors) {
+        if (d.to !== roomB) continue;
+        const side = d.direction === 'east' || d.direction === 'west';
+        const rect = side
+            ? { left: d.x - DOOR_DEPTH, right: d.x + DOOR_DEPTH, top: d.y - DOOR_HALF_WIDTH, bottom: d.y + DOOR_HALF_WIDTH }
+            : { left: d.x - DOOR_HALF_WIDTH, right: d.x + DOOR_HALF_WIDTH, top: d.y - DOOR_DEPTH, bottom: d.y + DOOR_DEPTH };
+        if (segmentHitsRect(a, b, rect) && !doorClosed(roomA, roomB, d.direction, rooms)) return true;
+    }
+    return false;
+}
+
+/** The room of a feet point; in a gap, its `fallback` room (the player's last room, an NPC's home). */
+function roomOfPoint(p, rooms) {
+    const id = roomIdAtFeet(p.x, p.y, rooms, p.half);
+    if (id) return id;
+    const fb = p.fallback ?? (p.isPlayer && typeof window !== 'undefined' ? window.currentPlayerRoom : null);
+    return fb && rooms[fb] ? fb : null;
+}
+
 /**
  * True unless the feet at `from` stand in one room and the target belongs to
  * another. See SAME-ROOM RULE above.
  */
 export function sameRoomFrom(from, target, rooms = roomsMap()) {
     if (!from || !target || target.doorProperties) return true;
-    let here = roomIdAtFeet(from.x, from.y, rooms, from.half);
     // Feet in no room (a gap): judge by the last room the player was in, so a gap
     // is not a way round the rule
-    if (!here) {
-        const last = typeof window !== 'undefined' ? window.currentPlayerRoom : null;
-        here = last && rooms[last] ? last : null;
-    }
+    const here = roomOfPoint({ isPlayer: true, ...from }, rooms);
     if (!here) return true;
     const there = roomIdOfTarget(target, rooms);
     return !there || there === here;
@@ -157,7 +213,7 @@ export function playerFeet(player) {
     if (c && Number.isFinite(c.x) && Number.isFinite(c.y)) {
         const half = Number.isFinite(player.body.halfHeight) ? player.body.halfHeight
             : Number.isFinite(player.body.height) ? player.body.height / 2 : FOOT_HALF;
-        return { x: c.x, y: c.y, half };
+        return { x: c.x, y: c.y, half, isPlayer: true };
     }
     if (player && Number.isFinite(player.x)) return { x: player.x, y: player.y };
     return null;
@@ -198,10 +254,22 @@ export function interactionTargetPoint(target, from, room) {
  * True when no wall or closed door stands between the floor point `from` and the
  * target. With no occlusion module loaded it says true (old behaviour).
  */
-export function wallClearFrom(from, target, { room, occ = occlusion() } = {}) {
+export function wallClearFrom(from, target, opts = {}) {
+    const { room, occ = occlusion() } = opts;
     if (!from || !target) return true;
     if (target.doorProperties) return true;
-    if (!sameRoomFrom(from, target)) return false; // different room (see SAME-ROOM RULE)
+    if (!sameRoomFrom(from, target)) {
+        // Different room (see SAME-ROOM RULE). Combat and NPC conversation make an exception
+        // for an open doorway between the two rooms, with a clear line through it.
+        const combat = opts.combat ?? !!target._isNPC;
+        if (!combat) return false;
+        const rooms = roomsMap();
+        const here = roomOfPoint({ isPlayer: true, ...from }, rooms);
+        const there = roomIdOfTarget(target, rooms);
+        const toPt = interactionTargetPoint(target, from, rooms[there]);
+        if (!here || !there || !toPt || !throughOpenDoor(from, toPt, here, there, rooms)) return false;
+        return !occ || typeof occ.isWallClearBetween !== 'function' || occ.isWallClearBetween(from, toPt);
+    }
     if (!occ || typeof occ.isWallClearBetween !== 'function') return true;
     const to = interactionTargetPoint(target, from, room);
     if (!to) return true;
@@ -216,9 +284,9 @@ export function wallClearFrom(from, target, { room, occ = occlusion() } = {}) {
  */
 export function feetClear(a, b, { occ = occlusion(), rooms = roomsMap() } = {}) {
     if (!a || !b) return true;
-    const ra = roomIdAtFeet(a.x, a.y, rooms, a.half);
-    const rb = roomIdAtFeet(b.x, b.y, rooms, b.half);
-    if (ra && rb && ra !== rb) return false; // a gap (no room) is left to the wall test
+    const ra = roomOfPoint(a, rooms);
+    const rb = roomOfPoint(b, rooms);
+    if (ra && rb && ra !== rb && !throughOpenDoor(a, b, ra, rb, rooms)) return false; // a gap (no room) is left to the wall test
     if (!occ || typeof occ.isWallClearBetween !== 'function') return true;
     return occ.isWallClearBetween({ x: a.x, y: a.y }, { x: b.x, y: b.y });
 }
@@ -266,5 +334,5 @@ export function findClearStandPoint(target, player, pfm, range, opts = {}) {
 }
 
 if (typeof window !== 'undefined') {
-    window.interactionWalls = { feetClear, sameRoomFrom, roomIdAtFeet, roomIdOfTarget, interactionLineClear, wallClearFrom, interactionTargetPoint, findClearStandPoint };
+    window.interactionWalls = { feetClear, throughOpenDoor, setDoorwayProvider, sameRoomFrom, roomIdAtFeet, roomIdOfTarget, interactionLineClear, wallClearFrom, interactionTargetPoint, findClearStandPoint };
 }

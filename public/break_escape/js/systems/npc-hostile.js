@@ -302,9 +302,11 @@ function damageNPC(npcId, amount) {
     }
     recordHostility(npcId, state);
     
-    // Sync NPC KO state to server for persistence
+    // Sync NPC KO state to server for persistence. The drop below waits for it: the server
+    // accepts a drop outside the NPC's own room only once the KO is recorded.
+    let koSynced = null;
     if (window.RoomStateSync && npc?.roomId) {
-      window.RoomStateSync.updateNpcState(npc.roomId, npcId, {
+      koSynced = window.RoomStateSync.updateNpcState(npc.roomId, npcId, {
         isKO: true,
         currentHP: 0
       }).catch(err => {
@@ -336,7 +338,7 @@ function damageNPC(npcId, amount) {
     }
 
     // Drop any items the NPC was holding
-    dropNPCItems(npcId);
+    dropNPCItems(npcId, koSynced);
 
     // Note: Item drops are synced to server in dropNPCItems via RoomStateSync
 
@@ -453,7 +455,7 @@ function playNPCDeathAnimation(npcId, sprite) {
  * so multiple drops are visually distinguishable while remaining pickupable.
  * @param {string} npcId - The NPC that was defeated
  */
-function dropNPCItems(npcId) {
+function dropNPCItems(npcId, afterSync = null) {
   const npc = window.npcManager?.getNPC(npcId);
   let sprite = npc?._sprite || npc?.sprite;
   if (npc && !sprite && npc.roomId) {
@@ -613,10 +615,10 @@ function dropNPCItems(npcId) {
         scenarioData: droppedItemData
       };
       
-      window.RoomStateSync.addItemToRoom(npcRoomId, itemForServer, {
+      Promise.resolve(afterSync).catch(() => {}).then(() => window.RoomStateSync.addItemToRoom(npcRoomId, itemForServer, {
         npcId: npcId,
         sourceType: 'npc_defeated'
-      }).catch(err => {
+      })).catch(err => {
         console.error('Failed to sync dropped item to server:', err);
       });
     }

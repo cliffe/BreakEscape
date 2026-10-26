@@ -145,15 +145,110 @@ test('feetClear: same room and no wall; another room or a wall refuses (M2)', ()
     assert.equal(walls.feetClear(floor, { x: 9999, y: 9999 }, { occ: open, rooms }), true, 'a gap is left to the wall test');
 });
 
-test('all three NPC attack checks are gated on the wall rule (M2)', () => {
-    const src = read('systems/npc-combat.js');
-    const attempt = src.slice(src.indexOf('attemptAttack('), src.indexOf('performAttack('));
-    const windup = src.slice(src.indexOf('attack missed - player moved out of range'), src.indexOf('applyAttackDamage(npcId'));
-    const land = src.slice(src.indexOf('applyAttackDamage(npcId, npcSprite, state) {'));
-    for (const [name, part] of [['attemptAttack', attempt], ['windup', windup], ['landing', land]]) {
-        assert.match(part, /npcReachesPlayer\(npcSprite\)/, `${name} checks the wall`);
-    }
-    assert.match(src, /feetClear\(a, playerFeet\(window\.player\)\)/);
+// The NPC attack gates, each exercised alone: in range by distance, player not reachable
+const { NPCCombat } = await import(dataUrl(swap(read('systems/npc-combat.js'))
+    .split("'./npc-attack-guard.js'").join(`'${dataUrl(read('systems/npc-attack-guard.js'))}'`)));
+globalThis.Phaser = { Math: { Distance: { Between: (a, b, c, d) => Math.hypot(c - a, d - b) } } };
+const doorRows = {
+    south: [{ to: 'north', direction: 'north', x: 48, y: 288 }],
+    north: [{ to: 'south', direction: 'south', x: 48, y: 288 }]
+};
+walls.setDoorwayProvider((id) => doorRows[id] || []);
+
+function npcFixture({ playerX, npcX = 48, doorClosed = false }) {
+    // NPC on the south floor (feet 320), player in the strip behind south's back wall (feet 305)
+    const dmg = [];
+    window.player = { x: playerX, y: 305 - 31, lastDirection: 'down', body: bodyAt(playerX, 305, 18, 10) };
+    window.playerHealth = { damage: (a) => dmg.push(a), isKO: () => false };
+    window.playerCombat = {};
+    window.npcSightOcclusion = { isWallClearBetween: () => true };
+    window.npcHostileSystem = {
+        getState: () => ({ isHostile: true, isKO: false, attackRange: 32, attackCooldown: 0, attackDamage: 10 }),
+        isNPCKO: () => false
+    };
+    window.npcBehaviorManager = { getBehavior: () => null };
+    rooms.south.doorSprites = doorClosed ? { d: { active: true, doorProperties: { connectedRoom: 'north', open: false } } } : {};
+    rooms.north.doorSprites = {};
+    const sprite = { npcId: 'sarah', x: npcX, y: 320 - 31, roomId: 'south', body: bodyAt(npcX, 320, 18, 10) };
+    const combat = new NPCCombat({ time: { delayedCall: () => {} } });
+    let swings = 0;
+    combat.playAttackAnimation = () => { swings++; };
+    combat.playHitAnimation = () => {};
+    return { combat, sprite, dmg, swings: () => swings, state: window.npcHostileSystem.getState() };
+}
+
+test('an NPC cannot start an attack through the back wall, but can through an open doorway (M2)', () => {
+    let f = npcFixture({ playerX: 150, npcX: 150 });
+    assert.equal(quiet(() => f.combat.attemptAttack('sarah', f.sprite)), false, 'behind the wall, no door');
+    f = npcFixture({ playerX: 48 });
+    assert.equal(quiet(() => f.combat.attemptAttack('sarah', f.sprite)), true, 'through the open doorway');
+    f = npcFixture({ playerX: 48, doorClosed: true });
+    assert.equal(quiet(() => f.combat.attemptAttack('sarah', f.sprite)), false, 'the door is shut');
+    assert.equal(quiet(() => f.combat.canReachPlayer(f.sprite)), false);
+});
+
+test('a windup does not become a swing through a wall (M2)', () => {
+    let f = npcFixture({ playerX: 150, npcX: 150 });
+    quiet(() => f.combat.startAttackAnimation('sarah', f.sprite, f.state));
+    assert.equal(f.swings(), 0);
+    f = npcFixture({ playerX: 48 });
+    quiet(() => f.combat.startAttackAnimation('sarah', f.sprite, f.state));
+    assert.equal(f.swings(), 1);
+});
+
+test('a landing blow does no damage through a wall, and does through an open doorway (M2)', () => {
+    let f = npcFixture({ playerX: 150, npcX: 150 });
+    quiet(() => f.combat.applyAttackDamage('sarah', f.sprite, f.state));
+    assert.deepEqual(f.dmg, []);
+    f = npcFixture({ playerX: 48 });
+    quiet(() => f.combat.applyAttackDamage('sarah', f.sprite, f.state));
+    assert.deepEqual(f.dmg, [10]);
+});
+
+test('the player punches an NPC through an open doorway, not through the wall; doors that are shut refuse', () => {
+    const run = (px, nx, closed = false) => {
+        npcFixture({ playerX: px, npcX: nx, doorClosed: closed });
+        window.npcHostileSystem = { isNPCHostile: () => false, isNPCKO: () => false, isNPCKOImmune: () => false, setNPCHostile() {} };
+        window.player.y = 305 - 31;
+        const sprite = { npcId: 'sarah', _isNPC: true, visible: true, roomId: 'south', x: nx, y: 289, body: bodyAt(nx, 320, 18, 10) };
+        rooms.south.npcSprites = [sprite]; rooms.north.npcSprites = [];
+        window.chairs = [];
+        const hit = [];
+        const fake = { getCurrentModeConfig: () => ({ damage: 10 }), bodyOverlapsCone: () => true, nearBody: () => false,
+            applyDamage: (id) => hit.push(id), hitboxGraphics: null };
+        quiet(() => PlayerCombat.prototype.checkForHits.call(fake));
+        return hit;
+    };
+    assert.deepEqual(run(48, 48), ['sarah']);
+    assert.deepEqual(run(150, 150), []);
+    assert.deepEqual(run(48, 48, true), []);
+});
+
+test('NPC conversation reach follows the doorway rule, object reach stays strict', () => {
+    npcFixture({ playerX: 48 });
+    const feet = walls.playerFeet(window.player);
+    const npc = { _isNPC: true, roomId: 'south', x: 48, y: 289, body: bodyAt(48, 320, 18, 10) };
+    assert.equal(walls.wallClearFrom(feet, npc), true);
+    const panel = { x: 40, y: 300, roomId: 'south', displayWidth: 32, displayHeight: 32, originX: 0, originY: 0, scenarioData: {} };
+    assert.equal(walls.wallClearFrom(feet, panel), false);
+});
+
+test('a clicked chair is aimed at and kicked even outside the cone (m6)', () => {
+    window.player = { x: 100, y: 330 - 31, lastDirection: 'up', body: bodyAt(100, 330, 18, 10) };
+    window.npcSightOcclusion = { isWallClearBetween: () => true };
+    window.npcHostileSystem = { isNPCHostile: () => false, isNPCKO: () => false, isNPCKOImmune: () => false };
+    rooms.south.npcSprites = []; rooms.north.npcSprites = [];
+    const chair = { isSwivelChair: true, name: 'chair', x: 100, y: 330, displayWidth: 16, displayHeight: 40, body: bodyAt(100, 350, 16, 16) };
+    window.chairs = [chair];
+    const kicked = [];
+    const fake = { getCurrentModeConfig: () => ({ damage: 10 }), nearBody: PlayerCombat.prototype.nearBody,
+        bodyOverlapsCone: () => false, kickChair: (c) => kicked.push(c.name), hitboxGraphics: null };
+    quiet(() => PlayerCombat.prototype.checkForHits.call(fake));
+    assert.deepEqual(kicked, [], 'outside the cone: not kicked');
+    PlayerCombat.prototype.aimAtChair.call(fake, chair);
+    assert.equal(window.player.lastDirection, 'down');
+    quiet(() => PlayerCombat.prototype.checkForHits.call(fake));
+    assert.deepEqual(kicked, ['chair']);
 });
 
 // ---- B1: the drop room -----------------------------------------------------------------------
@@ -179,8 +274,15 @@ test('items drop in the room the NPC fell in, and are registered there (B1)', as
     const { initNPCHostileSystem } = await import(dataUrl(swap(read('systems/npc-hostile.js'))));
     const sys = quiet(() => initNPCHostileSystem());
     quiet(() => { sys.setNPCHostile('derek', true); sys.damageNPC('derek', 10_000); });
+    await new Promise(r => setTimeout(r, 20)); // the drop syncs after the KO sync resolves
     assert.equal(rooms.north.objects.launch_device?.roomId, 'north', 'registered in the north room (home room is south)');
     assert.equal(rooms.south.objects.launch_device, undefined);
     assert.equal(synced[0]?.room, 'north', 'synced with the room it fell in');
     assert.equal(walls.sameRoomFrom({ x: 120, y: 180 }, rooms.north.objects.launch_device, rooms), true, 'pickable from where Derek fell');
+});
+
+test('a hostile that is in range but cannot reach the player keeps chasing instead of freezing (R2-2a)', () => {
+    const src = read('systems/npc-behavior.js');
+    assert.match(src, /canReachPlayer\(this\.sprite\)/);
+    assert.match(src, /if \(distance <= attackRange && reachable\) \{/);
 });

@@ -165,7 +165,7 @@ export class PlayerCombat {
         const d = Math.hypot(sprite.x - player.x, sprite.y - player.y);
         if (d <= bestDist) {
           // Don't turn to face a hostile through a wall, or in another room
-          if (!wallClearFrom(playerFeet(player), sprite)) continue;
+          if (!wallClearFrom(playerFeet(player), sprite, { combat: true })) continue;
           best = sprite;
           bestDist = d;
         }
@@ -443,7 +443,7 @@ export class PlayerCombat {
           }
 
           // Nobody punches through a wall, or from behind a back wall into the room below
-          if (!wallClearFrom(feet, npcSprite)) {
+          if (!wallClearFrom(feet, npcSprite, { combat: true })) {
             return;
           }
 
@@ -482,7 +482,7 @@ export class PlayerCombat {
           return; // Outside cone
         }
 
-        if (!wallClearFrom(feet, chair)) {
+        if (!wallClearFrom(feet, chair, { combat: true })) {
           return; // another room, or a wall in the way
         }
 

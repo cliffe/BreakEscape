@@ -10,14 +10,22 @@ import { playerCanBeAttacked, attacksPausedByUI, minigameBlocksAttacks, ATTACK_R
 import { feetClear, playerFeet } from './interaction-walls.js';
 import { resolveFightStyle, npcIsGuarding, blockedDamage, facingCovers } from './fight-styles.js';
 
-/** True when the NPC's feet and the player's feet share a room with no wall between. */
-function npcReachesPlayer(npcSprite) {
+/** True when the NPC's feet and the player's feet share a room (or an open doorway) with no wall between. */
+export function npcReachesPlayer(npcSprite) {
   const bc = npcSprite?.body?.center;
-  const a = bc && Number.isFinite(bc.x) ? { x: bc.x, y: bc.y } : { x: npcSprite.x, y: npcSprite.y };
+  const half = npcSprite?.body?.halfHeight;
+  const a = bc && Number.isFinite(bc.x)
+    ? { x: bc.x, y: bc.y, half, fallback: npcSprite.roomId }
+    : { x: npcSprite.x, y: npcSprite.y, fallback: npcSprite.roomId };
   return feetClear(a, playerFeet(window.player));
 }
 
 export class NPCCombat {
+  /** Can this NPC's blow land on the player now? (the chase code keeps closing in when it can't) */
+  canReachPlayer(npcSprite) {
+    return window.player ? npcReachesPlayer(npcSprite) : true;
+  }
+
   constructor(scene) {
     this.scene = scene;
     this.npcAttackTimers = new Map(); // npcId -> last attack time
