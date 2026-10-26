@@ -295,6 +295,16 @@ function withConfirmation(base, confirmation, entity) {
     };
 }
 
+/** The live scenario-object sprite for an entity id, or null (NPCs, doors, none). */
+function findSpriteById(id) {
+    for (const room of Object.values(window.rooms || {})) {
+        for (const s of Object.values(room.objects || {})) {
+            if (s && (s.scenarioData?.id === id || s.objectId === id)) return s;
+        }
+    }
+    return null;
+}
+
 function findEntity(id) {
     return scanNearby(Infinity, 5000).find(e => e.id === id) || null;
 }
@@ -363,16 +373,6 @@ const bridge = {
      * runs EasyStar, smooths the path and drives the player — including the
      * on-screen click indicator, which is what makes an automated run
      * watchable.
-/** The live scenario-object sprite for an entity id, or null (NPCs, doors, none). */
-function findSpriteById(id) {
-    for (const room of Object.values(window.rooms || {})) {
-        for (const s of Object.values(room.objects || {})) {
-            if (s && (s.scenarioData?.id === id || s.objectId === id)) return s;
-        }
-    }
-    return null;
-}
-
      *
      * The exception only applies when the destination is off-camera: a pointer
      * event cannot express a point that is not on screen, so we call
@@ -495,6 +495,9 @@ function findSpriteById(id) {
         const entity = findEntity(id);
         if (!entity) return fail(`unknown-entity:${id}`);
 
+        // The sprite itself, for the wall and wide-object checks in the solver
+        // (null for a doorway with no sprite, which needs neither).
+        const targetSprite = findSpriteById(id);
         const feet0 = playerFeet();
         const spot = solveStandingPoint(entity.x, entity.y, window.player.x, window.player.y,
             { x: feet0.x - window.player.x, y: feet0.y - window.player.y }, targetSprite);
@@ -531,6 +534,12 @@ function findSpriteById(id) {
             const f = playerFeet();
             const nx = f.x + (ex - pk.x) / plainNow * step;
             const ny = f.y + (entity.y - pk.y) / plainNow * step;
+            // Never nudge to a spot with a wall between it and the target (a wall
+            // object seen from the room behind its wall): the game would refuse
+            if (targetSprite && !wallClearFrom({ x: nx, y: ny }, targetSprite)) {
+                nudges.push({ from: Math.round(plainNow), skipped: 'wall-between' });
+                break;
+            }
             const kw = await keyboardWalkTo(nx, ny, { timeoutMs: 4000 });
             const moved = kw.steps.reduce((t, st) => t + st.moved, 0);
             nudges.push({ from: Math.round(plainNow), moved });
@@ -565,9 +574,6 @@ function findSpriteById(id) {
             result.hint = `Arrived ${plainAfter}px from "${entity.name || id}" by plain centre distance, `
                 + `outside the ${INTERACTION_RANGE}px gather radius. A click here will not offer this target `
                 + 'at all — not directly and not in the menu. Something blocked the approach; check '
-        // The sprite itself, for the wall and wide-object checks in the solver
-        // (null for a doorway with no sprite, which needs neither).
-        const targetSprite = findSpriteById(id);
                 + '`shortfall` on the move and try approaching from another side.';
         } else {
             const winner = plainNearestEntity();
@@ -602,12 +608,6 @@ function findSpriteById(id) {
      * opening, then click a point on the far side straight through it.
      *
      * Movement is moveTo only (real clicks, or the documented off-screen
-            // Never nudge to a spot with a wall between it and the target (a wall
-            // object seen from the room behind its wall): the game would refuse
-            if (targetSprite && !wallClearFrom({ x: nx, y: ny }, targetSprite)) {
-                nudges.push({ from: Math.round(plainNow), skipped: 'wall-between' });
-                break;
-            }
      * pathfinder call), so this is still never a teleport.
      *
      * Why it is built this way, from measurements (Oct 2026):
