@@ -48,5 +48,39 @@ module BreakEscape
         post games_url, params: { mission_id: @mission.id }
       end
     end
+
+    # GET /missions/:id auto-creates a game for non-VM missions, so it needs the same gate.
+    test "GET /missions/:id creates no game when the hook refuses and the player has none" do
+      BreakEscape.configuration.can_create_game = ->(_user, _mission) { false }
+      Game.where(mission: @mission).delete_all
+
+      assert_no_difference 'Game.count' do
+        get mission_url(@mission)
+      end
+      assert_response :redirect
+      assert_no_match(/\/games\/\d+/, response.location)
+    end
+
+    test "GET /missions/:id still redirects to an existing game when the hook refuses" do
+      player = break_escape_demo_users(:test_user)
+      game = Game.where(mission: @mission, player: player).first ||
+             Game.create!(mission: @mission, player: player)
+      BreakEscape.configuration.can_create_game = ->(_user, _mission) { false }
+
+      assert_no_difference 'Game.count' do
+        get mission_url(@mission)
+      end
+      assert_redirected_to "/break_escape/games/#{game.id}"
+    end
+
+    test "GET /missions/:id creates a game when no hook is set" do
+      BreakEscape.configuration.can_create_game = nil
+      Game.where(mission: @mission).delete_all
+
+      assert_difference 'Game.count', 1 do
+        get mission_url(@mission)
+      end
+      assert_match(/\/games\/\d+/, response.location)
+    end
   end
 end
