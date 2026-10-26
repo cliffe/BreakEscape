@@ -122,7 +122,7 @@ checkbox (`org_events`), and the `org_only_scoreboards` setting.
 
 **Scoreboards:** an open-subscription event's results page gains an "my org only" filter. If the
 viewer's org has `org_only_scoreboards`, members see the filtered view by default. Steam and Play
-play stays off public scoreboards (C5).
+play is shown on public scoreboards like anyone else (D3, user decision: store players register an account during setup to accept terms, so C5 is dropped).
 
 **VM quota** (`User#has_premium_quota?`): the org branch becomes "seated member and the org's plan
 `user_role == 'premium'`". Steam and Play owners get guest quota, with the claim wait lifted inside
