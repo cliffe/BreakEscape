@@ -1,6 +1,7 @@
-// 7.1a (m06 D8, m07 U10, m08 E11): a hostile NPC gives up the chase past
-// chaseRange from its post (combat-config.js, or behavior.hostile.chaseRange)
-// or when the player leaves its room, and goes back to its post.
+// 7.1a (m06 D8, m07 U10, m08 E11): a hostile NPC with behavior.hostile.leash
+// gives up the chase past chaseRange from its post (combat-config.js, or
+// behavior.hostile.chaseRange) or when the player leaves its room, and goes
+// back to its post. Without leash it follows the player anywhere.
 // Run with: node --test test/js/npc-chase-leash.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -90,7 +91,7 @@ test('a hostile chases the player inside its room', () => {
 test('the player steps through the door: the hostile gives up and walks home', () => {
     window.currentPlayerRoom = 'lobby';
     // Chased 120 px from its post; the home-push logic has set a walk home
-    const b = guard({}, { x: 120, y: 0 });
+    const b = guard({ hostile: { leash: true } }, { x: 120, y: 0 });
     b.returningHome = true;
     b.config.patrol.enabled = true;
     const state = silently(() => b.determineState({ x: 150, y: 0 }));
@@ -103,12 +104,26 @@ test('the player steps through the door: the hostile gives up and walks home', (
 
 test('past a per-NPC chaseRange the hostile gives up, even in its own room', () => {
     window.currentPlayerRoom = 'office';
-    const b = guard({ hostile: { chaseRange: 64, aggroDistance: 200 } }, { x: 40, y: 0 });
+    const b = guard({ hostile: { leash: true, chaseRange: 64, aggroDistance: 200 } }, { x: 40, y: 0 });
     assert.notEqual(silently(() => b.determineState({ x: 120, y: 0 })), 'chase');
     assert.equal(b.determineState({ x: 60, y: 0 }), 'chase');
 });
 
-test('chaseAcrossRooms: true keeps the old follow-through-doors chase', () => {
+test('leashed, chaseAcrossRooms: true still follows through doors', () => {
     window.currentPlayerRoom = 'lobby';
-    assert.equal(guard({ hostile: { chaseAcrossRooms: true } }).determineState({ x: 100, y: 0 }), 'chase');
+    assert.equal(guard({ hostile: { leash: true, chaseAcrossRooms: true } }).determineState({ x: 100, y: 0 }), 'chase');
+});
+
+test('parseConfig: the leash is off unless leash: true', () => {
+    assert.equal(guard().config.hostile.leash, false);
+    assert.equal(guard({ hostile: { leash: 'yes' } }).config.hostile.leash, false);
+    assert.equal(guard({ hostile: { leash: true } }).config.hostile.leash, true);
+});
+
+test('unleashed (the default), a hostile follows through doors and past chaseRange', () => {
+    window.currentPlayerRoom = 'lobby';
+    assert.equal(guard().determineState({ x: 100, y: 0 }), 'chase');
+    window.currentPlayerRoom = 'office';
+    const b = guard({ hostile: { chaseRange: 64, aggroDistance: 200 } }, { x: 40, y: 0 });
+    assert.equal(b.determineState({ x: 120, y: 0 }), 'chase');
 });

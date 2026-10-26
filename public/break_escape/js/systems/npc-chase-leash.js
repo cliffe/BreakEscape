@@ -1,9 +1,9 @@
 /**
  * The leash on a hostile NPC's chase (7.1a; m06 D8, m07 U10, m08 E11).
  *
- * A hostile NPC used to follow the player through doors and across the map for
- * as long as the player stayed within its aggro distance. Now it chases only
- * while the player is
+ * By default a hostile NPC follows the player through doors and across the
+ * map for as long as the player stays within its aggro distance. One with
+ * behavior.hostile.leash: true chases only while the player is
  *   - within `chaseRange` px of the NPC's post (where it stood, or the point of
  *     its patrol, when the chase began), and
  *   - in the room the NPC started the chase in, unless the scenario sets
