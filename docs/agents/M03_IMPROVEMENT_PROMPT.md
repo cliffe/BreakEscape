@@ -49,7 +49,7 @@ If browser playtests can't run here, do every phase's static work anyway. Replac
 Run the phases in order. Each phase is a loop of **at least three rounds**:
 
 1. A fresh Opus reviewer runs the skill read-only and tags each finding blocker, major or minor, with file:line.
-2. The fixer acts on the findings: Opus, resumed between rounds so it keeps its context.
+2. The fixer acts on the findings: Sonnet (an Opus fixer only for findings that need a design decision), resumed between rounds so it keeps its context until it passes about 300k tokens; then a fresh fixer starts from a handover note.
 3. A fresh reviewer re-reviews.
 
 Round 3 is at minimum a confirmation that every earlier finding is closed or withdrawn with a reason. Keep going past round 3 while blockers or majors are still turning up, and stop at round 5: list anything left as open.
