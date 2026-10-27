@@ -2286,9 +2286,9 @@ module BreakEscape
           next if msg['seeded'] == true
 
           tier = if msg['folder'] == 'sent' then 1
-                 elsif msg['read'] != true then next
-                 else 0
-                 end
+          elsif msg['read'] != true then next
+          else 0
+          end
           time = msg['gameTime'].is_a?(Numeric) ? msg['gameTime'] : -1
           candidates << [[tier, time, box_index, index], box_id, box, msg]
         end

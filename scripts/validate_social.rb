@@ -536,9 +536,9 @@ module ValidateSocial
             # the same default as the engine (social-influence.js normaliseCharacter and
             # liftLockout): influence.start, else the influence global's declared default, else 0
             default_start = if number?(infl['start']) then infl['start']
-                            elsif number?(ctx.all_globals[infl_global]) then ctx.all_globals[infl_global]
-                            else 0
-                            end
+            elsif number?(ctx.all_globals[infl_global]) then ctx.all_globals[infl_global]
+            else 0
+            end
             rec = e.key?('recoverTo') ? e['recoverTo'] : default_start
             if !number?(rec)
               issues << "❌ SOCIAL: #{where} threshold '#{t['id']}' lockout recoverTo must be a number (got #{rec.inspect})"

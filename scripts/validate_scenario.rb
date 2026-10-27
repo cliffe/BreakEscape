@@ -1829,9 +1829,9 @@ def check_npc_patrol_and_catch_locks(json_data, repo_root = nil, engine_cuts_leg
         next if wps.length < 2
         pairs = if random_mode
                   (0...wps.length).to_a.combination(2).to_a
-                else
+        else
                   (0...wps.length).map { |k| [k, (k + 1) % wps.length] }.uniq { |a, b| [a, b].sort }
-                end
+        end
         pairs.each do |a, b|
           px = Math.hypot(wps[b]['x'] - wps[a]['x'], wps[b]['y'] - wps[a]['y']) * PATROL_TILE_PX
           ms = px / speed * 1000
@@ -4506,9 +4506,9 @@ def carry_over_record_triage_writes(json_data, writes)
                    'mission'
                  end
                end.uniq
-             else
+    else
                [nil]
-             end
+    end
     where = "/social/triageSets[#{i}] (triage starter)"
     stages.each do |stage|
       resolved = stage ? prefix.gsub('{stage}', stage) : prefix
@@ -4548,9 +4548,9 @@ def carry_over_load_source(scenarios_dir, from)
   plain = File.join(dir, 'scenario.json')
   data = if File.exist?(erb)
            render_erb_to_json(erb)
-         elsif File.exist?(plain)
+  elsif File.exist?(plain)
            JSON.parse(File.read(plain))
-         end
+  end
   $carry_over_source_cache[[scenarios_dir, from]] = data
 rescue StandardError => e
   $carry_over_source_cache[[scenarios_dir, from]] = { '__error' => e.message.lines.first.to_s.strip }
