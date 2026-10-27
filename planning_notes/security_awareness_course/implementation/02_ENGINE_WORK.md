@@ -123,6 +123,49 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
 
 **Depends on.** ENG-01 (the flip shows the flood through `flipAftermath`). ENG-08 adds the schema and validator rules in the same change.
 
-**Decision: a new stage id, `guess`. Do not reuse `build` with a new builder.** Here is how `build` and `mfa` are wired, and why reusing them would break things:
+**Decision: a new stage id, `guess`, not a reuse of `build` or `mfa`.**
 
-- `build` is bound to the landing-
+> **Not yet written.** The rest of ENG-02, and the packets ENG-03a to ENG-09d, are still to write. The packet index above gives the planned shape of each.
+
+---
+
+## ENG-10 The core_00 first-play brief and completion (WP-12)
+
+**Goal.** Support the core_00 first-play episode described in `11_WP12_FIRST_PLAY_AND_ANNUAL.md`: a brief-only episode (`"stages": ["brief"]`) that shows a short sequence of "how it works" cards, ends on a "Got it" button, is shown only once per learner, and writes a clean done global when it finishes.
+
+**Read first.** `public/break_escape/js/minigames/episode-runner/episode-runner-minigame.js` (`_renderBrief`, `_renderFinished`, `_saveState`, `_complete`); `episode-model.js` (`stateKey`, `defendPrefix`, `completeStage`); `scripts/validate_social/awareness.rb` (`stage_checks`, `STAGES_BY_VARIANT`); `11_WP12_FIRST_PLAY_AND_ANNUAL.md`.
+
+**Depends on.** Nothing. The schema and validator changes are part of this packet (ENG-08 rule).
+
+**Owner model.** `general-purpose`, `model: "sonnet"`.
+
+**Current code (WP-12 writer's findings, confirmed here).**
+
+- `_renderBrief()` draws one panel: the heading (`ep.brand?.name`), `strings.brief`, an optional `scopeNote` and a single "Start" button that calls `this._complete('brief')`. It has no multi-card sequence, no "Got it" gate and no once-per-learner gating.
+- `_renderFinished()` draws "Finished" and writes nothing.
+- `_saveState(state)` writes only `episode_<id>_state`. The only done global any episode gets is `episode_<id>_defend_done`, and the triage starter writes it, not the runner. So an episode with no triage stage has no completion global for an objective's `concludeRequires` or a host's event mapping.
+- The validator accepts only the `full` and `defendOnly` stage lists (and `["check"]` for a check mission). So `"stages": ["brief"]` is rejected today.
+
+**Stopgap (no engine change).** A host NPC event mapping on `global_variable_changed:episode_core_00_first_play_state` can complete the task when the stored state's `done` includes `brief` (`"condition": "value && Array.isArray(value.done) && value.done.includes('brief')"`). This still needs a validator allowance for `["brief"]`. Use it only if ENG-10 is not ready.
+
+**Change.**
+
+1. **Multi-card brief.** New optional `strings.briefCards`: an array of `{ heading?, text }` (plain text; a blank line starts a paragraph, as `buildPanel` in `debrief-view.js` does). When present, `_renderBrief()` shows one card at a time with "Next" and "Back" buttons and a "Card n of m" line. The last card's button is "Got it" (or `strings.briefDone` when set). Without `briefCards`, `_renderBrief()` is exactly as today.
+2. **Completion global.** New optional `awarenessEpisode.doneGlobal` (a global name the scenario declares, for example `episode_core_00_first_play_done`). When the episode reaches its last stage (`state.stage` becomes null in `_complete`), the runner writes `doneGlobal = true` through `this.deps.write`, with `{ openChat: false }`, as `_saveState` does. Episodes without the key write nothing new, so the 38 built shells are unchanged.
+3. **Once per learner.** New optional `awarenessEpisode.oncePerLearner: true`. When the done global is already true at `init()`, the runner goes straight to `_renderFinished()` with a "You have seen this already" line (`strings.alreadySeen`, with a default). Cross-mission carry-over (so another mission knows it was seen) uses the built `exportGlobals` on the doneGlobal, and needs no engine change.
+4. **Validator and schema (`scripts/validate_social/awareness.rb`, `scripts/scenario-schema.json`).** Allow `"stages": ["brief"]` for a new `"variant": "brief"`, or accept it on a full episode only when `doneGlobal` is set. Prefer the new variant, because it keeps the attack checks off. Add `doneGlobal`, `oncePerLearner` and `strings.briefCards`, `strings.briefDone` and `strings.alreadySeen` to the schema. Lint that `doneGlobal` is declared in `globalVariables` and that `briefCards` is a non-empty array of objects with non-empty `text`.
+
+**Tests to add.**
+
+- `test/js/social-episode-brief-cards.test.mjs` (jsdom, in the style of `social-episode-runner.test.mjs`): without `briefCards` the brief panel is unchanged; with three cards Next and Back move between them and "Got it" completes `brief`; `doneGlobal` is written once when the last stage completes and never for an episode without the key; `oncePerLearner` with the global already true renders the finished panel.
+- Extend `test/js/validator-social-awareness.test.mjs` with a clean brief-only fixture (`test/js/fixtures/social_awareness/clean_brief_only.json`) giving no issues, and failing cases for a missing `doneGlobal` declaration and an empty `briefCards`.
+
+**Acceptance.** The standard engine acceptance, plus `node --test test/js/social-episode-brief-cards.test.mjs test/js/validator-social-awareness.test.mjs`. Expected: all pass, and `git status --porcelain scenarios/` is empty.
+
+**Episodes that depend on it.** The core_00 first-play episode (WP-12). Optionally, the core_17 annual edition's intro.
+
+**Shared code paths.** Episode runner and the awareness validator only. The lab and SAFETYNET never open the runner.
+
+**Do not break.** Every built brief (the bridges `e1-full` to `e7-full` click "Start" on the brief); `test_social_episode` (`p7-episode`); the check missions (`["check"]` stays as it is).
+
+**Stop and ask if.** WP-12 wants the first-play brief to be scored or recorded in `se_awareness_records`. It should not be: it is a brief.
