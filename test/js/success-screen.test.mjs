@@ -189,6 +189,21 @@ test('Return to missions, desktop app: goes to / and never closes the window', (
     }
 });
 
+test('Return to missions, Play app: goes to /app/<key> and never closes the window', () => {
+    const marker = JSON.stringify({ appWindow: 'play-app', store: 'play', gameKey: 'licence-to-hack' });
+    // the test page has an opaque origin, so give it a storage stand-in
+    Object.defineProperty(window, 'sessionStorage', { value: { getItem: () => marker }, configurable: true });
+    try {
+        window.breakEscapeConfig = { hacktivityMode: true };
+        const went = [];
+        S.showSuccessScreen({ title: 'Done' }, syncDeps({ navigate: (u) => went.push(u), closeTab: () => went.push('close') }));
+        document.getElementById('success-screen-return').click();
+        assert.deepEqual(went, ['/app/licence-to-hack']);
+    } finally {
+        delete window.sessionStorage;
+    }
+});
+
 test('Return to missions, Hacktivity: closes the tab, and falls back to the missions page if it stays open', () => {
     window.breakEscapeConfig = { hacktivityMode: true };
     const went = [];

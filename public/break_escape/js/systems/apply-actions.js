@@ -292,8 +292,16 @@ export function showEndScreen(opts = {}) {
         // The Hacktivity desktop app is one window: closing it would quit the app. Go to the
         // host's root, which sends the app to its game's event page. (The same test as
         // utils/desktop-app.js; kept inline because tests load this file on its own.)
-        if (/HacktivityApp\//.test(window.navigator?.userAgent || '')) {
-            window.location.href = '/';
+        // The Play app is one window too: its tab carries the marker client-platform.js stores.
+        let appHome = /HacktivityApp\//.test(window.navigator?.userAgent || '') ? '/' : null;
+        if (!appHome) {
+            try {
+                const m = JSON.parse(window.sessionStorage?.getItem('hacktivity.platform') || 'null');
+                if (m && m.appWindow === 'play-app') appHome = m.gameKey ? '/app/' + encodeURIComponent(m.gameKey) : '/';
+            } catch (e) { /* storage blocked: treat as a browser */ }
+        }
+        if (appHome) {
+            window.location.href = appHome;
             return;
         }
         // Always close the game tab. In Hacktivity mode, also restore focus to the opener.

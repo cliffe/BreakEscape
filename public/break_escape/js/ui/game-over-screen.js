@@ -4,7 +4,7 @@
  */
 
 import { CombatEvents } from '../events/combat-events.js';
-import { isDesktopApp, DESKTOP_APP_HOME } from '../utils/desktop-app.js';
+import { isAppWindow, appHomeUrl } from '../utils/desktop-app.js';
 
 export class GameOverScreen {
   constructor() {
@@ -205,8 +205,8 @@ export class GameOverScreen {
         window.location.href = shellMenu;
         return;
     }
-    if (isDesktopApp(window)) {
-        window.location.href = DESKTOP_APP_HOME;
+    if (isAppWindow(window)) {
+        window.location.href = appHomeUrl(window);
         return;
     }
     window.location.href = '/break_escape/missions';

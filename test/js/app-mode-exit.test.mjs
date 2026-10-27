@@ -37,7 +37,7 @@ copy('systems/apply-actions.js');
 globalThis.window = {}; // modules touch window at load
 globalThis.document = {};
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { isDesktopApp } = await imp('utils/desktop-app.js');
+const { isDesktopApp, isAppWindow, appHomeUrl } = await imp('utils/desktop-app.js');
 const { GameOverScreen } = await imp('ui/game-over-screen.js');
 const { GameMenu } = await imp('ui/game-menu.js');
 const { showEndScreen } = await imp('systems/apply-actions.js');
@@ -47,7 +47,7 @@ const APP_UA = 'Mozilla/5.0 Electron/30.0.0 HacktivityApp/0.1.0 (game=licence-to
 const BROWSER_UA = 'Mozilla/5.0 Chrome/120.0.0.0 Safari/537.36';
 
 // A jsdom window whose location and close are recorded.
-function setup(userAgent) {
+function setup(userAgent, stored = null) {
     const dom = new JSDOM('<!doctype html><body><div id="music-widget-btn-anchor"></div></body>', { pretendToBeVisual: true });
     const w = dom.window;
     const log = { href: [], closed: 0, focused: 0 };
@@ -61,6 +61,7 @@ function setup(userAgent) {
         addEventListener: w.addEventListener.bind(w),
         removeEventListener: w.removeEventListener.bind(w),
         breakEscapeConfig: { hacktivityMode: true },
+        sessionStorage: { getItem: (k) => (k === 'hacktivity.platform' ? stored : null) },
     };
     globalThis.window = stand;
     globalThis.document = w.document;
@@ -72,6 +73,48 @@ test('isDesktopApp: only the app token counts', () => {
     assert.equal(isDesktopApp({ navigator: { userAgent: BROWSER_UA } }), false);
     assert.equal(isDesktopApp({ navigator: { userAgent: 'HacktivityApp' } }), false);
     assert.equal(isDesktopApp({}), false);
+});
+
+const PLAY_MARKER = JSON.stringify({ appWindow: 'play-app', store: 'play', package: 'uk.co.hacktivity.licencetohack', gameKey: 'licence-to-hack' });
+
+test('isAppWindow / appHomeUrl: desktop token, Play marker, platform object, plain browser', () => {
+    assert.equal(isAppWindow({ navigator: { userAgent: APP_UA } }), true);
+    assert.equal(appHomeUrl({ navigator: { userAgent: APP_UA } }), '/');
+    const play = { navigator: { userAgent: BROWSER_UA }, sessionStorage: { getItem: () => PLAY_MARKER } };
+    assert.equal(isAppWindow(play), true);
+    assert.equal(appHomeUrl(play), '/app/licence-to-hack');
+    const viaObject = { navigator: { userAgent: BROWSER_UA }, HacktivityPlatform: { appWindow: 'play-app', homeUrl: () => '/app/x' } };
+    assert.equal(isAppWindow(viaObject), true);
+    assert.equal(appHomeUrl(viaObject), '/app/x');
+    assert.equal(isAppWindow({ navigator: { userAgent: BROWSER_UA }, HacktivityPlatform: { appWindow: 'browser' } }), false);
+    assert.equal(isAppWindow({ navigator: { userAgent: BROWSER_UA }, sessionStorage: { getItem: () => 'garbage' } }), false);
+    const wrongStore = JSON.stringify({ appWindow: 'play-app', store: 'web', gameKey: 'x' });
+    assert.equal(isAppWindow({ navigator: { userAgent: BROWSER_UA }, sessionStorage: { getItem: () => wrongStore } }), false);
+    assert.equal(isAppWindow({ navigator: { userAgent: BROWSER_UA }, sessionStorage: { getItem: () => { throw new Error('blocked'); } } }), false);
+    assert.equal(isAppWindow({ navigator: { userAgent: BROWSER_UA } }), false);
+    assert.equal(appHomeUrl({ navigator: { userAgent: BROWSER_UA } }), '/');
+});
+
+test('Play app: game over menu, end screen and pause menu go to /app/<key> and never close', async () => {
+    let { log } = setup(BROWSER_UA, PLAY_MARKER);
+    GameOverScreen.prototype.mainMenu.call({});
+    assert.deepEqual(log.href, ['/app/licence-to-hack']);
+
+    ({ log } = setup(BROWSER_UA, PLAY_MARKER));
+    showEndScreen({ title: 'Done' });
+    document.querySelector('#scenario-end-screen button').click();
+    assert.deepEqual(log.href, ['/app/licence-to-hack']);
+    assert.equal(log.closed, 0);
+
+    const { w } = setup(BROWSER_UA, PLAY_MARKER);
+    const calls = [];
+    w.stateSync = { syncConfirmed: async () => true };
+    const menu = new GameMenu();
+    menu._navigate = (url) => calls.push(url);
+    menu.overlay.querySelector('[data-action="leave"]').click();
+    menu.overlay.querySelector('[data-leave="yes"]').click();
+    await new Promise((r) => setTimeout(r, 0));
+    assert.deepEqual(calls, ['/app/licence-to-hack']);
 });
 
 test('game over main menu: the app goes to /, a browser to the missions page', () => {

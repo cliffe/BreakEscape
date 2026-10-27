@@ -14,7 +14,7 @@
 import MusicController from '../music/music-controller.js';
 import { setHudLabel, clearHudLabel } from './info-label.js';
 import { attacksDisabled } from '../systems/player-combat.js';
-import { isDesktopApp, DESKTOP_APP_HOME } from '../utils/desktop-app.js';
+import { isAppWindow, appHomeUrl } from '../utils/desktop-app.js';
 import {
     UI_THEMES, SIZE_STEPS, HEALTH_STYLES, getDisplaySettings, updateDisplaySettings, missionTheme,
 } from './display-settings.js';
@@ -45,7 +45,7 @@ export function shellItems(cfg = window.breakEscapeConfig || {}, w = window) {
 export function leaveTarget(cfg = window.breakEscapeConfig || {}, w = window) {
     const url = cfg.shellMenuUrl || cfg.shellReturnUrl;
     if (url) return { url, label: 'Save and quit to menu' };
-    if (isDesktopApp(w)) return { url: DESKTOP_APP_HOME, label: 'Back to missions' };
+    if (isAppWindow(w)) return { url: appHomeUrl(w), label: 'Back to missions' };
     return null;
 }
 
@@ -287,7 +287,7 @@ export class GameMenu {
                 return;
             }
         }
-        const target = leaveTarget() || { url: DESKTOP_APP_HOME };
+        const target = leaveTarget() || { url: appHomeUrl(window) };
         (this._navigate || ((url) => { window.location.href = url; }))(target.url);
     }
 

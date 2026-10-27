@@ -87,6 +87,8 @@
   <%# Loaded last so a theme's rules win over the base HUD styles %>
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/game-menu.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/ui-themes.css') %>">
+  <%# Sets html[data-app-window] and html[data-store] before first paint (desktop app, Play app, browser) %>
+  <script src="<%= be_asset_path('/break_escape/js/client-platform.js') %>" nonce="<%= content_security_policy_nonce %>"></script>
   <%# A theme the player picked in the menu (Display) beats the mission's, but not a
       ?ui_theme= preview; set it before first paint %>
   <script nonce="<%= content_security_policy_nonce %>">
