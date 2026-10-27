@@ -1,188 +1,127 @@
 # core_01 game design: Inbox Zero
 
+core_01 is delivered by four built episodes, plus one new episode this plan adds. The built episodes are not redesigned here: they are described as built, and the new work is E8 *after the click*, designed in the built shape. Where a scenario file and this description differ, the scenario file wins.
+
 ## Concept
 
-It is Monday morning in the player's second week at Larkspur. Their manager needs the week's delivery schedule sent out to the field teams by 10:00, and the schedule depends on an updated file from Northbeck Supplies, one of Larkspur's oldest suppliers. So the player has a real job to do in their inbox, against the clock, while the messages that matter to the job arrive alongside messages that only look like they do.
+The phishing-email outcomes play out as attack-then-defend episodes in a training room at a client company. The learner taps a kiosk, a host welcomes them, and the episode runner steps through the stages: a brief, an attack half in which they build one message from a template with blanks filled from facts found in the OSINT browser, a flip into the inbox that message lands in, a scored defend half triaging a realistic inbox, and a debrief. The point the learner takes away is the one the attack half produces on its own: a well-made phish is hard to spot, so people who fall for one are not stupid, and the defence is to stop and check through a route you already trust.
 
-The module teaches through that tension. The phishing that works in real life arrives when you are expecting something like it: a "Northbeck" email when you are waiting for Northbeck, a "service desk" email in your second week when everything is new. The player learns to pause, check another way and report while still getting the schedule out on time, which is the habit we want them to take back to their own desk.
-
-It works three lenses on the same threat (`01_LEARNING_DESIGN.md`, principle 12): **detect** it (the Practise drill, "Phish or Fine?"), **behave** well (the Apply beat and the reporting habit), and **understand the attacker** (an optional attacker-view beat where the player briefly builds a pretext in a sandbox). The third lens is what breaks the "I would never fall for this" reflex: once a learner has assembled a convincing lure from a colleague's public details, a convincing lure stops looking like something only a careless person clicks. It is optional, it is sandboxed, and it always ends back on the defence.
+E8 adds the piece the plan always wanted and the build lacked: what happens, and what to do, once someone has clicked. It teaches C01-LO6 and core_04 together (`04_BUILT_SO_FAR.md` §4).
 
 ## Setting and cast
 
-- **Rooms:** the Operations area of the open-plan office (`room_office`), the player's desk with a monitor, the kitchen (`room_break`) for an optional chat, and the security office (`room_security`) for Kai's behind-the-scenes scene. No new rooms.
-- **Ama Owusu** (mentor) explains, and reappears if the player clicks something.
-- **Leo Brennan** (desk neighbour) is chatty, clicks a phish during the Apply beat and asks the player what to do.
-- **Kai Murray** (security analyst) thanks reporters in the team chat and shows what happens to a report.
-- **Lena Fischer** (the player's manager, Operations Manager) appears only by email and chat in this module. A new minor character; she needs art only if a later module brings her on screen.
-- **Northbeck Supplies** (fictional supplier): its real contact, Dawn at Northbeck, appears only by email and on a phone call if the player rings to check.
+The world is the built one: one training room per company, a kiosk and a host, no doors, no combat, no VM. There is no recurring mentor and no single workplace. Larkspur Group is retired as a setting; the old course cast (Ama, Kai, Leo, Owain, Lena and the rest) does not appear. The host carries the welcome, and the debrief carries the teaching.
+
+**Built episodes and their companies:**
+
+| Episode | Topic | Company (room) | Role | Host |
+|---|---|---|---|---|
+| E1 | Invoice and bank-detail fraud, BEC | Brightwell Foods | finance | Adaeze Okafor |
+| E2 | CV and recruitment lures | Tarrowby Logistics | HR, recruitment | Fatima Begum |
+| E4 | Executive whaling, with voicemails | Merrin & Sallow Architects | executive and PA | Thandiwe Moyo |
+| E5 | Fake sign-in pages | Quayholt Insurance | general staff | Niamh Doherty |
+
+**New episode:**
+
+- **E8 *after the click*** is proposed at **Quayholt Insurance** (general staff), host **Anjali Rao**, the information security analyst who receives reports, both already in `BRAND_SET.md`. The company and host are confirmable by the user.
+
+All people and companies are fictional; every domain ends `.example`; look-alikes use learnable shapes (a swapped character, an added hyphen, an added word), never homographs.
 
 ## Structure
 
-The critical path is marked **(CP)**. Everything else is optional depth.
+### The built episodes (E1, E2, E4, E5): as built, not redesigned
 
-### 1. Hook: "Mailbox almost full" (1 to 2 minutes)
+Each full episode runs the same stages (`research/built_episodes_vs_plan.md` §1.2):
 
-- **(CP)** The player sits at their desk. The inbox (MG-01) opens with three messages: a welcome note from Lena, the canteen menu, and **"Action required: your mailbox is 98% full"** from "IT Service Desk", sent from a lookalike domain, with a "Re-validate mailbox" button.
-- The player can do anything: read, hover, click, report, delete, ignore. Their first action on the phish is recorded as the **baseline** for C01-LO5.
-- If they click the button, a fake sign-in page opens in the inbox's built-in browser panel with the in-game account already filled in and a **Sign in** button. The game never asks for a real password.
-- Whatever they did, Kai posts in the team chat a minute later: *"Heads up, a fake 'mailbox full' email is going round. Thanks to the people who reported it, it's been pulled from 140 inboxes."*
-- Branches into Learn:
-  - **Reported it:** Ama stops by: *"Kai says you reported that one in your second week. Nice. Want to know what gave it away?"*
-  - **Ignored or deleted it:** Ama stops by: *"You didn't fall for it, which is good. Reporting it is even better: it's how we pulled it from everyone else's inbox."*
-  - **Clicked, did not sign in:** Ama: *"You clicked, then stopped. Good instinct. Let's report it and I'll show you what to look for."* The player reports it with her.
-  - **Signed in:** Ama calls: *"Saw the sign-in. No harm done if we move now."* She walks the player through the "if you clicked" steps (change the password through The Lark, tell the service desk), then into Learn. Tone: calm, practical, no blame.
+1. **Brief and scope note.** The host welcomes the learner and states the exercise is authorised, at a fictional company.
+2. **Attack half** (unscored, capped at one artefact). Look at two public sources in the OSINT browser, collect typed intel facts, then compose one message in the mail client's template mode, with blanks that take only the facts found. A red-flag meter gives escalating guidance before Send. E5 adds a build stage: a look-alike sign-in page assembled from abstract parts (brand, domain, padlock), which captures nothing.
+3. **Flip.** The learner's own message arrives in a defender's inbox with its tells highlighted; a scripted defender line answers the learner's choice.
+4. **Defend half** (scored). Triage the inbox under the awareness profile with immediate feedback. E1 (payments inbox, 6 items, Verify on), E2 (recruitment inbox, 6 items, no Verify), E4 (PA inbox, 3 emails and 2 voicemails, Verify on), E5 (5 page items in a mock browser, no Verify).
+5. **Debrief.** A reasoning card per item, feedback on the genuine items, the team-protected tally, the habit to keep, the "On Monday" card, the customer's reporting route and a no-blame line.
 
-### 2. Learn: "Anatomy of a phish" (3 minutes)
+The scoring is defence only: 60 for the verdict (Trust, Report or Delete; Verify scores as Report where it is on), and 40 for naming the real flags from the closed chip list. Reporting a genuine message is never penalised (`designs/11` §4.1).
 
-- **(CP)** Ama explains at the player's desk (EX-01), using the hook email as the worked example, shown in the conversation panel with highlights stepping through it (BE-08):
-  1. What it asked for (your password) and how it made you feel (rushed, worried).
-  2. The sender: display name versus actual address.
-  3. The link: where it really goes, and how to read a web address from the right-hand end of the domain.
-  4. The defence: **Pause. Check another way. Report.**
-- She closes with one check question: *"Which part of this address is the real domain?"* (MG-20 single item).
-- **Skip:** players can say *"I've done phishing training before."* Ama replies *"Then this'll take ten seconds,"* and goes straight to the check question. A wrong answer brings the explanation back.
-- **Optional topics** in Ama's hub (each under a minute): *"What if I clicked?"* (the procedure), *"Can't MFA stop this?"* (session-stealing kits, in one breath), *"What does the security team do with my report?"* (leads to Kai's scene, below).
+### E8 *after the click* (new, built shape)
 
-### 3. Practise: "Phish or Fine?" (3 to 4 minutes)
+E8 teaches the first steps once a click has happened, and the signs that an account or device is already compromised. It runs the built five stages.
 
-- **(CP)** A drill in the inbox (MG-01 practice mode, BE-07 for the stand-alone version). Ten emails, one at a time. For each, the player chooses **Report**, **Deal with it normally**, or **Check another way** (which opens the directory, The Lark or a colleague to confirm). Feedback is immediate: the clue highlighted, the right route, one line of why.
-- The ten get harder:
-  1. Bulk parcel-delivery phish with a shortened link.
-  2. Fake "shared document" from an unknown external sender.
-  3. Lookalike domain: `larksper.co.uk`.
-  4. Decorated domain: `larkspur.co.uk.account-verify.net`.
-  5. A **genuine** IT notice about planned maintenance, announced on The Lark. (Reporting it gets *"Fine to report if unsure. This one was real: here's how you could have checked."*)
-  6. A callback phish: a fake software renewal invoice with a phone number to cancel.
-  7. A link pointing at a real file-sharing service, from a stranger, about "invoice 2231".
-  8. A **genuine** email from Lena with an attachment she mentioned in person yesterday.
-  9. "Chief Executive" asking everyone to fill in a survey by noon.
-  10. A reply inside a real thread with a known supplier, asking you to sign in to a "secure portal" to see a document.
-- Three items include the link and domain drill inline (MG-03): pick the real domain out of the address.
-- Getting several wrong in a row brings Ama back for a one-line nudge, never a lecture.
+- **Brief and scope note.** Anjali Rao welcomes the learner to the Quayholt training room: *"Everyone clicks something eventually. Today is about the ten minutes after."*
+- **Attack half (unscored).** The learner plays the authorised red-teamer one more time. In the OSINT browser they find a general-staff target's team and a service they use, then compose one credential-phish email from a template with blanks filled from those facts (the same mail client, the same red-flag meter). Nothing is sent outside the game; no link works.
+- **Flip.** The message lands, and this time the flip goes one beat further: the defender clicks and signs in. The learner sees the account begin to behave oddly (a sent-items entry they did not write, a new mail rule), which sets up the defend half.
+- **Defend half (scored).** The learner is now the person whose account was used, triaging the signs that follow, in the inbox-triage defender with its mixed card kinds:
+  - an email in their own sent items they did not write (Report);
+  - a password-reset confirmation they did not request (Report);
+  - a sign-in push from abroad they did not start (Report; reuses the authenticator card from E3 and E9);
+  - a genuine IT maintenance notice, announced on the intranet (Trust, or Verify);
+  - a genuine "your parcel is ready" that is simply ordinary (Trust);
+  - a "shared document" from a stranger that is the next phish (Report or Delete).
+  The teaching point of the set is that the right first move for every real sign is the same: report it through the route you trust, leave the device as it is, and do not try to fix it yourself. Verify is on, so "I would check first" is a scored move.
+- **Debrief.** Reasoning cards, then the recovery steps as a card: report, then change the password on the real site, then follow the service desk, then change the same password anywhere it was reused. The team-protected tally, the habit to keep, the "On Monday" card, the customer report route and the no-blame line close it. core_04 owns the full reporting procedure; E8 is the phishing-specific slice of it.
 
-### 3b. Attacker view, optional: "The Phish Tank" (3 to 4 minutes)
-
-- **Optional, never on the critical path.** Offered after Practise, skippable in one tap; the module is complete without it. It exists to break the "I would never fall for this" reflex before the Apply beat.
-- Jo Fairweather, Larkspur's authorised tester, invites the player to help design this year's test (MG-30, EX-06, BE-11), at a bench that cannot send anything.
-- **(Pretext only)** From Leo's public details on the OSINT board (MG-13), the player picks who to pretend to be, what expected thing to reference, and one lever (authority, urgency, familiarity, curiosity), then orders a short note from a bank of pre-written fragments. No free typing, no links, no attachments, nothing sent.
-- Jo's readable judge rates how convincing the *pretext* is and says why, and names which colleagues would probably be fooled and why that is not foolishness.
-- **The flip:** the pretext the player built lands in their own inbox and they catch it with the procedure. Jo closes with the defence for the lever used, then points back to locking down the public details that made it work.
-- Tone and rails: always an authorised test, always ends on the defence, fully sandboxed. See MG-30 for the safety rails. If an organisation turns the attacker view off (BE-05 setting), the beat is simply absent and nothing else changes.
-
-### 4. Apply: "The 10:00 deadline" (6 to 8 minutes)
-
-- **(CP)** Lena's chat: *"Can you get the delivery schedule out to the field teams by 10? Northbeck are sending an updated file this morning."* A work task bar appears (BE-18): **Get Northbeck's schedule → Check it against last week's → Send it to the field teams.**
-- The inbox fills over about six minutes of game time with around twelve messages, scheduled as interruptions (BE-18). Most are ordinary work. Four are threats, drawn from the bank (BE-13), one from each slot:
-
-| Slot | What arrives | What it tests | Best response |
-|---|---|---|---|
-| **Expected sender** | "Northbeck Supplies" from `northbeck-supplies.co` (the real one is `northbeck.co.uk`): "Updated schedule: view online", link to a sign-in page. Arrives before the real file, while the player is waiting for it. | Lookalike domain under pressure | Report; wait for or ask for the real file |
-| **Hijacked thread** | A reply from Dawn's **real** address inside last week's real thread: "Our new portal: please sign in to download the updated schedule." | Judging the request when the sender is genuine | Check another way: call Northbeck on the number in the supplier directory. Dawn says she sent no such email. Then report |
-| **Authority and social proof** | "From the Chief Executive" to all of Operations: "Complete the staff wellbeing survey by 12:00. 80% of your colleagues already have." Link to a form asking for network sign-in. | Authority, urgency, social proof | Report; check The Lark (no such survey listed) |
-| **Callback** | "Your PDF Pro subscription has renewed: £399.99 charged. To cancel, call 0800 ..." | Call the number in the message | Report; don't call. Any real subscription is checked through the service desk |
-
-- **The genuine schedule** arrives from Dawn's real address with an expected attachment, mid-way through. Opening it is correct; the task can't finish without it.
-- **Leo's slip.** About two-thirds of the way through, Leo leans over (or sends a chat): *"Did you get the Northbeck portal one? I signed in before I noticed the address. Do I need to say anything?"* The player chooses:
-  - *"Report it now and ring the service desk. They'll sort it."* (Best: Leo reports, Kai locks his account, nothing spreads.)
-  - *"Change your password and keep an eye on it."* (Partly right: he changes it but doesn't report; the debrief shows the session the attacker already had.)
-  - *"Delete it. Least said."* (Leo keeps quiet; consequence below.)
-- **Consequences** play out inside the module:
-  - Each report gets a thank-you in the team chat from Kai, with what it achieved ("pulled from 38 inboxes", "blocked the fake site").
-  - If the player signs in on any fake page, twenty game-minutes later the player's own account starts sending the same phish to colleagues (BE-16 short scene: the sent folder fills). Ama calls. Reporting at that point still contains it, and the debrief credits the late report.
-  - If Leo isn't told to report, at the end of the module Kai finds his account sending invoices to Northbeck's other customers. Leo says: *"I thought I'd get in trouble."* Ama: *"You'd have been thanked. Now it's a bigger job."*
-- **(CP)** The player sends the schedule. The task completes whatever they did with the threats; the debrief shows the security side.
-
-### 5. Debrief (2 minutes)
-
-- **(CP)** The debrief screen (BE-02), then Ama and Kai in the security office (or in the conversation panel for the text route).
-- For each threat: a thumbnail of the email, what it was, the clue, what the player did, what checking another way would have looked like, and the outcome.
-- The hook and the expected-sender phish shown side by side: "before" and "after".
-- Kai's report board (EX-05, 30 seconds): how many people reported each email today, and how fast the first report came in. The player's reports are highlighted.
-- Per-outcome results: Secure, Developing or Not yet (see `assessment.md`).
-- **The line to remember:** *"If it asks for your password, money or data, check another way. If in doubt, report it."*
-
-### 6. Check (2 minutes)
-
-- **(CP)** Kai's "spot check" on The Lark (MG-20): six items drawn from the bank in `assessment.md`, at least one per learning outcome.
-
-### 7. Reference
-
-- **(CP)** The Lark opens the reference card (BE-09): Pause, Check another way, Report; what to do if you clicked; where the Report button is in the organisation's own mail client (BE-05).
+E8 has a defend-only variant (brief, defend, debrief) and feeds new items into the general and, where relevant, finance check forms.
 
 ## Decisions and consequences
 
+The attack half is a sequence of authored choices (who to impersonate, which found fact to use, which lever), judged by the pretext judge and never scored against other learners. The defend half is where decisions carry a score, through the verdict and the flags. Every item shows its reasoning, pass or fail. No option shames the player: the worst defend choice still ends with the debrief framing it as "this is how most real incidents start, and this is what reporting would have changed".
+
 | Decision | Options | Learning outcome | How the consequence is shown |
 |---|---|---|---|
-| Hook phish | Report / delete or ignore / click / click and sign in | LO5 (baseline), LO6 | Kai's chat message; Ama's opening line differs; sign-in leads into the "if you clicked" steps |
-| Expected-sender phish | Report / open and sign in / wait or ask for the real file | LO2, LO3, LO5 | Thank-you and inbox pull; or the account-takeover scene |
-| Hijacked thread | Check another way by phone / sign in / reply to ask "is this you?" | LO3, LO4 | Dawn confirms by phone; replying to the thread gets a reassuring answer from the attacker, which the debrief explains |
-| Authority survey | Report / check The Lark / fill it in | LO1, LO3, LO5 | Pulled from inboxes; or the sign-in consequence |
-| Callback phish | Report / call the number / ignore | LO3, LO4 | A call leads to a friendly "refund agent" asking for remote access; the player can still hang up and report |
-| Leo's slip | Report and call / change password only / keep quiet | LO5, LO6 | Leo's outcome at the end |
-| Genuine emails | Open / report / ignore | LO3 (calibration) | Reporting a genuine email is thanked, with a tip on how it could have been checked |
-
-No option shames the player. The worst branch (signing in and saying nothing) still ends with Ama helping, and the debrief frames it as "this is how most real incidents start; this is what reporting would have changed".
+| Each defend item (E1, E2, E4, E5, E8) | Trust / Report / Delete / Verify (where on) | LO2, LO3, LO4, LO5 | Immediate feedback, then the reasoning card in the debrief |
+| E8 sign of a used account | Report / Trust / Delete | LO5, LO6 | The recovery-steps card; the team-protected tally |
+| Naming the flags | the closed chip list | LO1, LO2 | 40 of the item score; missed flags named on the card |
 
 ## Minigames
 
-| Minigame | Status | Use here |
-|---|---|---|
-| **MG-01 Inbox** | new | The whole module. Needs: message list with unread state, reading pane with sender name and address visible on click, link hover showing the real destination, attachments, a built-in browser panel for fake sign-in pages (pre-filled, never real credentials), Report button, reply and forward, scheduled arrivals, events emitted for every action |
-| **MG-03 Link and domain drill** | new | Inline in three practice emails |
-| **MG-20 Knowledge check** | new | Ama's check question and the final spot check |
-| **MG-30 Pretext workshop** | new (P3) | The optional attacker-view beat (3b). Sandboxed, pretext-only; builds on MG-13 and MG-01. Absent if the organisation turns the attacker view off |
-| `phone-chat` | existing | Team chat with Lena, Leo and Kai (or a chat-app skin from MG-05 later) |
-| `person-chat` | existing | Ama at the desk, Leo leaning over, Kai in the security office |
-| MG-04 Voice calls | new (P2) | Calling Northbeck on the directory number; calling the callback number. Until MG-04 exists, these can run as phone NPC conversations in `phone-chat` |
-| `notes` / `text-file` | existing | The supplier directory and The Lark's survey list, as in-world documents |
+All built and reused (`04_BUILT_SO_FAR.md` §1):
+
+| System | Use here |
+|---|---|
+| Episode runner and step strip | The wrapper for every episode |
+| OSINT browser and intel board | The attack half of E1, E2, E4, E5 and E8 |
+| Mail client (template mode, red-flag meter) | Composing the one attack artefact |
+| Landing-page builder | E5's look-alike page (a scored model, never a working page) |
+| Flip view | The hand-off from attack to defend |
+| Inbox-triage defender | Every defend half, with email, voicemail, page and (E8) push cards |
+| Authenticator demo | The E8 unrequested-push card (shared with E3 and E9) |
+| Debrief view | The reasoning cards, tally, habit, "On Monday" card, report route and no-blame line |
+| Concept cards | E2's macros card; an E8 card on the recovery steps |
+| Awareness-measure records | Per-item records for the defend halves and the checks |
 
 ## Explainers
 
-| Explainer | Who | Length | Aids (BE-08) | Followed by |
-|---|---|---|---|---|
-| Anatomy of a phish | Ama (EX-01) | 90 seconds | The hook email with four highlights stepped through; an address with the domain highlighted | "Which part is the real domain?" |
-| What if I clicked? | Ama (EX-01) | 45 seconds | The four steps from the reference card | none (procedure is assessed in Apply) |
-| Can't MFA stop this? | Ama (EX-01) | 30 seconds | A three-box diagram: you, fake site, real site | none |
-| What happens to a report | Kai (EX-05 scene) | 45 seconds | The report queue; "pull from all inboxes" | none |
-| Optional video: "Sixty-second phish" | Recorded in engine (EX-02) | 60 seconds | Plays on the meeting room screen (MG-21) | Linked from the reference card |
+No mentor NPC and no video. The host welcomes and the debrief teaches. Concept cards do the short explaining (E2's macros card; E8's recovery-steps card). Text to speech provides the voices (E4's and E7's voicemails, E8's host lines). A concept panel can carry the "read the domain from the right-hand end" worked example in E5 and E8.
 
 ## Debrief
 
-Shown on BE-02, then spoken by Ama and Kai:
+The built debrief view, in order: a reasoning card per item; detailed feedback on the genuine items (which the learner trusted, checked or flagged); the team-protected tally; the habit to keep, quoted word for word; the "On Monday" card; the customer's reporting route from the slot; the no-blame line. E8 adds the recovery-steps card before the tally.
 
-1. The four threats and the hook, each with what it was, the clue, what the player did, what checking another way looked like, and the outcome.
-2. The before and after: the hook against the expected-sender phish.
-3. Leo's outcome, and why reporting fast mattered more than the click.
-4. Per-outcome results.
-5. The line to remember.
+**The habit to keep** (identical in all shells, enforced by a test):
+
+> When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do.
 
 ## Variants
 
-- **Micro-drill:** "Phish or Fine?" on its own (BE-07): eight emails drawn from the bank, optional timer, streak counter, one new lure theme each month (BE-13, HA-21). About 3 to 4 minutes.
-- **Text route:** each email shown as accessible text (sender name, address, subject, body; links as text with a "check where this goes" action revealing the destination). The same decisions, the same chat messages, the same debrief as text (BE-03).
-- **Facilitated session:** the inbox on a shared screen; the team votes on each email in the Apply beat. Pause points: after the hook ("Who would have clicked? Be honest. Why?"), after the hijacked thread ("If the address is right, what else can you check?"), after Leo's slip ("What stops people reporting their own mistakes here?"). 45 minutes with discussion.
-- **Replay and randomisation:** the bank holds about 60 emails tagged by slot, lever and difficulty. Each play draws a different set of threats and genuine emails, and fictional domains are generated per game, so colleagues can't pass on answers. The annual edition swaps in the year's common lures (tax season, AI tools, new parcel scams).
+- **Defend-only variant:** every episode (E1, E2, E4, E5 and E8) has one, about 8 minutes: brief, defend, debrief, with the same defend set so the measurement is unchanged. It is the opt-out for customers who object to the attack beat, and the micro-drill through the year.
+- **Text route:** not yet built. An equivalent text route and a WCAG 2.2 AA statement are kept as a gap (`04_BUILT_SO_FAR.md` §5; BE-03, BE-04, BE-26).
+- **Facilitated session:** the episode runner has a `facilitated` flag (prompts, no per-learner score on the shared screen) that no shipped shell sets yet. Facilitator notes are scheduled last.
+- **Replay and randomisation:** the defend sets and check forms carry matched items with disjoint phish slots across the A and B forms; look-alike domains and names are invented and varied per set. An annual mixed edition can be built from the existing defend sets (core_17).
 
 ## Alternative concepts
 
-1. **The Phish Tank (attacker view).** Now adopted as the optional beat 3b, realised through MG-30. Jo Fairweather has been hired to run Larkspur's authorised phishing test and asks the player to help design it (EX-06, BE-11). The player picks a pretext from public information about a team, chooses levers (authority, urgency, curiosity) and sees which characters would probably fall for each and why. Then the roles flip: the test lands in the player's own inbox. Teaches the levers by using them. Kept at the level of pretexts and psychology; no technical delivery. (It stayed in this list as the fuller write-up; the beat above is its place in the flow.)
-2. **Post Room.** An arcade take for the micro-drill, in the style of *Papers, Please*: emails arrive as envelopes on a conveyor in the post room, and the player stamps them DELIVER or REPORT, checking each against the supplier directory and the staff list pinned to the wall. Speeds up as the shift goes on. Fun and quick, but further from a real inbox, so better as a drill than as the main module.
-3. **Inbox Defence (team mode).** A facilitated competition for a team-building session: small groups each play the Apply beat on their own screen, and Kai's report board shows which team reported first and with the fewest misses. Good for security champions' events in Hacktivity (HA-13).
+The built attack-then-defend shape is settled; alternative framings are closed. The old plan's optional "Phish Tank" attacker-view workshop is delivered by the attack half itself (the OSINT browser, intel facts, the template composer and the red-flag meter), so it is not a separate idea. Jo Fairweather and the sandbox workshop are dropped.
 
 ## Art and audio
 
-- **Rooms:** existing office, kitchen and security office.
-- **Characters:** Ama, Leo and Kai need their own art (shared with many modules). Lena appears by email and chat only.
-- **New UI art:** the inbox (MG-01) and its browser panel, in the game's pixel style but legible at small sizes; email avatars for senders.
-- **Voice:** about 40 lines for Ama, 10 for Kai, 10 for Leo. No voiced line prints a variable (the player's name, the organisation's name, counts). Kai's counts ("pulled from 140 inboxes") are on-screen chat text, not speech.
+- **Rooms:** the four awareness rooms, dressed per company; room review cycle 1 is done, cycles 2 to 5 and the four POV conversation backgrounds are not started.
+- **Hosts:** Adaeze Okafor (E1), Fatima Begum (E2), Thandiwe Moyo (E4), Niamh Doherty (E5), Anjali Rao (E8). Host art is waiting on PixelLab quota and the user's approval.
+- **Voice:** text to speech for the voicemails and host lines. No voiced line prints a variable: counts, the company name and the report route are on screen only.
+- **No video.**
 
 ## Pitfalls
 
-- **Never ask for a real password.** Fake sign-in pages come pre-filled with the in-game account and have a Sign in button. Say so in the game's opening.
-- **Never use a real domain.** Every domain in the bank must be checked as unregistered or reserved, and links must not work outside the game.
-- **Don't teach spelling mistakes as the main clue.** The hijacked thread and the expected-sender phish are designed to be caught only by the request and by checking another way.
-- **Don't punish over-reporting.** Reporting a genuine email is thanked, with a tip. People who are afraid of being wrong stop reporting.
-- **No gotchas.** Every threat in Apply must be catchable with the procedure taught in Learn and practised in Practise.
-- **Keep the deadline gentle.** The 10:00 clock adds realism, not stress: it can't be failed, and BE-04 lets players turn the clock display off.
-- **Don't imply the attacker is clever and the victim stupid.** Leo is likeable and competent; he was busy and expecting that email.
+- **Don't redesign what is built.** E1, E2, E4 and E5 are shipped shells; this plan extends them with E8 and extra items, it does not restage them.
+- **Never ask for a real password.** The attack half composes from templates and found facts only; sign-in pages and the landing-page builder capture nothing.
+- **Never use a real domain or brand.** Every domain ends `.example`; look-alikes use learnable shapes, never homographs; the lab's brands stay out of the awareness product.
+- **Don't teach spelling mistakes as the main clue.** The defend sets are built so the tell is the request and the check, not the typo.
+- **Don't punish over-reporting.** Reporting a genuine message is never penalised; the defend set credits Report and Verify.
+- **No claims of effectiveness.** The checks report a before-and-after change on matched items for a cohort, and nothing more.

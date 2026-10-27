@@ -1,173 +1,110 @@
 # core_02 assessment
 
+The built product measures the beyond-email outcomes through the **scored defend half** of E3 and E6 (and the voicemail cards in E4 and E7) and the **helpdesk and mobile pre and post check** forms. Both use the awareness scoring profile (60 for the verdict, 40 for the flags) and per-item awareness-measure records (item id, form, verdict, chips, score, stage and time; no free text, no identity). E3's role swap is scored by its own rules and shown as a percent. There is **no default pass mark**: the check missions set the pass percent to 0 and are scored for completion. A pass mark is a later organisation option on the post-check percent.
+
+The plan's behaviours and question items are kept as **candidate items**: each maps onto a defend item or a check item, and the critical behaviours become **mirror pairs** (an impostor matched with a genuine caller or message of the same shape).
+
 ## Assessed behaviours
 
-Each row is recorded through BE-01 and shown in the debrief and the learner's record.
+Ids are unchanged. Each behaviour is now a scored move in a defend set or a check form. "Mirror pair" names the matched genuine item that makes it measurable before and after.
 
-| Id | Behaviour | Learning outcome | Where it is evidenced | Secure | Developing | Not yet |
-|---|---|---|---|---|---|---|
-| C02-B1 | Responds to the hook "IT" call | LO2, LO4 (baseline) | Hook | Refuses the code and checks back (kitchen or directory) | Refuses but does not check or report | Reads out the code or agrees to the tool |
-| C02-B2 | Handles the vishing authority call | LO1, LO4, LO6 | Apply | Ends the call and reports, no code shared | Ends the call, does not report | Reads out the code |
-| C02-B3 | Handles the tech support scam | LO2, LO4 | Apply | Hangs up and reports, no tool installed | Hangs up, does not report | Installs the tool or pays |
-| C02-B4 | Handles the smishing text | LO1, LO6 | Apply | Reports without tapping the link | Deletes it, does not report | Taps the link or replies |
-| C02-B5 | Handles the chat impersonation | LO2, LO3 | Apply | Checks back on Gillian's known number, then reports | Ignores it | Buys the cards or acts on the new number |
-| C02-B6 | Decides on the QR sticker | LO5 | Apply | Does not scan to sign in; reports the sticker | Scans but does not enter anything | Signs in on the lookalike page |
-| C02-B7 | Serves genuine callers (calibration) | LO3 | Practise and Apply | Helps real callers, checking where a quick check exists, without being rude | Over-interrogates or refuses a genuine caller | (not used: caution is never "Not yet") |
-| C02-B8 | Reports their own slip | LO6 | Any beat | Reports within two game-minutes of sharing a code or installing a tool | Reports later in the module | Never reports it |
-| C02-B9 | Picks the check-back route | LO3 | Learn check, Practise | Chooses a trusted route every time (directory, card, 159) | Mixed | Uses the number or link from the message |
-| C02-B10 | Spots the tactics on the bingo card (BE-22) | LO1 | Apply and Debrief | Ticks most tactics as they are used, closely matching the debrief's actual set | Ticks some, misses several | Ticks few or none, or marks tactics that were not used |
+| Id | Behaviour (the scored move) | Learning outcome | Where it is scored | Mirror pair |
+|---|---|---|---|---|
+| C02-B1 | Refuses to hand over a code on a pretext call | LO2, LO4 | E3 role-swap call cards; helpdesk check calls | The genuine, awkward caller in the same set |
+| C02-B2 | Handles the authority "code now" call | LO1, LO4, LO6 | E3 call cards; helpdesk checks | A genuine caller who needs the safe route |
+| C02-B3 | Handles the remote-access or tech-support call (new item) | LO2, LO4 | new E3 defend item; helpdesk check | A genuine scheduled-maintenance call |
+| C02-B4 | Handles the smishing text | LO1, LO6 | E6 text cards; mobile checks | A genuine delivery or depot text |
+| C02-B5 | Handles the chat-app impersonation (new item) | LO2, LO3 | new E6 defend item; mobile check | A genuine message from a known number |
+| C02-B6 | Decides on the QR notice before scanning | LO5 | E6 QR cards (`qr`); mobile checks | A genuine posted notice |
+| C02-B7 | Serves the genuine caller well (calibration) | LO3 | E3 genuine call; the discrimination figure (organisers only) | The impostor calls are its mirror |
+| C02-B8 | Reports the attempt | LO6 | the Report verdict in every defend set, never penalised | (not a pair: Report is the universal safe move) |
+| C02-B9 | Picks the check-back or callback route | LO3 | E3 verification script; the Verify verdict | The number or link in the message is the wrong route |
+| C02-B10 | Names the levers used (the flag chips) | LO1 | 40 of each item's score; the closed chip list | missed flags named on the reasoning card |
 
-C02-B8 applies only to players who shared something. Players who did not are recorded as "not applicable".
-
-The **before and after** for each learner is C02-B1 (the hook "IT" call) against C02-B2 (the vishing authority call in Apply): the same kind of threat, a caller wanting a code, met first cold and then after the teaching.
+Reporting a genuine message is never scored as wrong. The attack half (the pretext call, the push run, the composed text) is never scored.
 
 ## Critical behaviours
 
-To complete the module the learner must, at least once:
+The build gates completion on finishing the defend half and the debrief, not on a behaviour. What the plan called critical behaviours are kept as the **must-include mirror pairs** every form and defend set carries:
 
-- **C02-CB1 Refuse to share a one-time code or grant remote access** to a caller or messenger (C02-B1, B2 or B3 not at Not yet).
-- **C02-CB2 Check back through a trusted route** before acting on at least one request (C02-B1, B5 or B9 at Secure).
-- **C02-CB3 Report any code they shared or tool they installed** before the module ends (C02-B8 not at Not yet), where it applies.
+1. **C02-CB1 Refuse a code or remote access:** every helpdesk set includes an impostor whose right move is to refuse and report, matched with a genuine caller who must still be served safely.
+2. **C02-CB2 Check back through a trusted route:** every set includes an item whose only safe move is a callback or a known number, matched with a genuine item from a known number.
+3. **C02-CB3 Report the attempt:** the Report verdict is on every card, always available and never penalised.
 
-A learner who misses a critical behaviour is taken back to it: Ama replays the relevant Practise contacts with the explanation, then a fresh threat of the same kind arrives in a short replay of the Apply beat. The record keeps both attempts.
+A mishandled item is explained at once, and a similar item follows; the awareness profile locks the first answer, so the similar item is a fresh chance. There is no loop-back gate in the built product.
 
 ## Knowledge check bank
 
-Six items per sitting, covering every learning outcome. Stems are short workplace situations.
+The question items are the pool the helpdesk and mobile forms and the E3 and E6 defend sets draw from, authored as triage cards (a call, text, push, QR or voicemail to sort) or flag-naming prompts. Built forms are 10 items each (4 phish in 10), matched flag multisets, feedback at the end, `passPercent: 0`, A and B sharing no phish slots. Ids are kept as authoring notes.
 
-### C02-Q1 (LO1, LO4, single choice)
+### C02-Q1 (LO1, LO4) is the "read me the code" call
 
-Someone calls, says they are from IT, and asks you to read back the six-digit code that just arrived on your phone "to confirm it's really you". What do you do?
+Built as a helpdesk `call` card: refuse, end, report. Flags for authority and the code request. Mirror: a genuine caller who needs the safe route.
 
-- A. Read it back: it proves who you are. *Feedback: A code is for you to type in, never to read to anyone. Real IT does not ask for it.*
-- **B. Don't read it out, end the call, and report it.** *Feedback: Right. Nobody legitimate needs your one-time code.*
-- C. Read it back but ask for their name first. *Feedback: A name is easy to give and easy to fake. Still do not share the code.*
-- D. Put them on hold and wait. *Feedback: End the call and report it; holding achieves nothing.*
+### C02-Q2 (LO3) is the "move your money to a safe account" bank call
 
-### C02-Q2 (LO3, single choice)
+Built as a check `call` card: hang up and call 159 or the number on the card. Mirror: a genuine bank message that asks nothing.
 
-A caller says they are from your bank's fraud team, there has been suspicious activity, and you should move your money to a "safe account" now. The number on your phone matches your bank's. What is safest?
+### C02-Q3 (LO1) is the pressure-tactics item
 
-- A. Move the money: the number matches, so it is really the bank. *Feedback: Numbers are easily spoofed, and a real bank never asks you to move money to a "safe account".*
-- **B. Hang up and call the number on the back of your card, or 159.** *Feedback: Right. Reach the bank on a route you already have.*
-- C. Ask them security questions to test them. *Feedback: A convincing scammer may answer. Hang up and call back instead.*
-- D. Give them one detail to check if they are genuine. *Feedback: Share nothing. Hang up and call back.*
+Built as the flag-chip naming on any pushy call: urgency, secrecy, helpfulness. Not a standalone quiz item.
 
-### C02-Q3 (LO1, multiple select)
+### C02-Q4 (LO2, LO3) is the new-number gift-card chat
 
-A caller is pushing you to act. Which of these are pressure tactics to be wary of? Choose all that apply.
+Built as the new chat-app `sms` card (C02-B5): reach the person on the known number; report. Mirror: a genuine message from a known number.
 
-- **A. "This has to be done in the next five minutes."** *Feedback: Urgency.*
-- **B. "Let's keep this between us for now."** *Feedback: Secrecy.*
-- **C. "You'd really be helping me out of a jam."** *Feedback: Helpfulness used against you.*
-- D. "Take your time and check with a colleague." *Feedback: A genuine request; the opposite of pressure.*
+### C02-Q5 (LO5) is the QR sticker
 
-### C02-Q4 (LO2, LO3, single choice)
+Built as an E6 `qr` card: do not scan to sign in; report. Mirror: a genuine posted notice.
 
-You get a chat message from your manager on a number you don't recognise: "Lost my phone, on this number now. Can you buy some gift cards for a client, quietly? I'll expense it." What do you do?
+### C02-Q6 (LO4) is the tech-support remote-access call
 
-- A. Buy them: it is clearly your manager and they are in a hurry. *Feedback: A new "it's me" number and an urgent, secret money favour are classic signs of a scam.*
-- **B. Contact your manager on the number you already have for them, and report the message.** *Feedback: Right. Reach them on a route you trust.*
-- C. Reply on the new number to ask if it is really them. *Feedback: The scammer will say yes. Use a number you already have.*
-- D. Buy a smaller amount to be safe. *Feedback: Do not buy anything. Check back first.*
+Built as the new remote-access `call` card (C02-B3): hang up and report; never install. Mirror: a genuine maintenance call.
 
-### C02-Q5 (LO5, single choice)
+### C02-Q7 (LO6) is the "I shared a code" item
 
-There is a QR code sticker on the office coffee machine: "Join the free coffee club, scan here." What is the best move?
+Built into the debrief and the no-blame line, not a scored card; the Report verdict is the move.
 
-- A. Scan it and sign in with your work account: it is on the office machine. *Feedback: A sticker is easy to add. A QR code hides where it really goes, and this one leads to a fake sign-in.*
-- **B. Don't scan to sign in; check with facilities and report the sticker.** *Feedback: Right. Treat an unexpected QR code like a link from a stranger.*
-- C. Scan it just to see where it goes. *Feedback: Better not. If you do and it asks you to sign in or pay, stop.*
-- D. Scan it with a QR app you downloaded. *Feedback: Use your phone's built-in scanner, and still be wary of where it leads.*
+### C02-Q8 (LO1) is the spoofed-number item
 
-### C02-Q6 (LO4, single choice)
+Built as the framing on the bank-call card: a number proves nothing; check back. Carried by the flag chips.
 
-A caller says your laptop is "sending error reports" and offers to fix it if you install a support tool so they can take a look. What do you do?
+### C02-Q9 (LO3) is the supplier bank-change call
 
-- **A. Hang up and report it: never install remote-access software because a cold caller asked.** *Feedback: Right. Giving remote access hands over the device.*
-- B. Let them on just to see what they find. *Feedback: Remote access alone can be enough for harm.*
-- C. Install it but watch what they do. *Feedback: Do not install it. End the call and report.*
-- D. Ask them to email instructions instead. *Feedback: Do not follow them. This is a scam; report it.*
+Built as a check `call` card that points to core_11: change nothing on the call, find the supplier's own number, call back. Mirror: a genuine supplier call that goes through process.
 
-### C02-Q7 (LO6, single choice)
+### C02-Q10 (LO6) is the 7726 home-route item (new)
 
-You realise you read a code out to a caller twenty minutes ago. What is the best thing to do now?
+Built as a new check item and a debrief reference-card line: forward scam texts to 7726, use 159 for bank calls, Report Fraud for the rest. The personal-scam half of LO6, in no shell today.
 
-- **A. Report it straight away and call the service desk; you won't be in trouble.** *Feedback: Right. Fast reporting lets the team lock the account before harm is done.*
-- B. Say nothing and hope it was nothing. *Feedback: The sooner the team knows, the less damage. Report it.*
-- C. Change your password and move on. *Feedback: Changing the password helps, but the team needs to know an attacker may already be in.*
-- D. Wait to see if anything happens. *Feedback: Waiting gives the attacker time. Report now.*
+### C02-Q11 (LO2) is the in-person visitor item
 
-### C02-Q8 (LO1, true or false with reason)
-
-"The call showed my bank's real number, so I can trust it."
-
-- A. True: the number is proof it came from the bank. *Feedback: Numbers can be spoofed to show any name or number.*
-- **B. False: a number can be faked, so check back on a number you already have.** *Feedback: Right.*
-
-### C02-Q9 (LO3, ordering)
-
-A supplier phones asking you to change their bank details for the next payment. Put these steps in the right order.
-
-1. **Don't change anything on the call.**
-2. **End the call politely and find the supplier's number in your own records.**
-3. **Call them back on that number to confirm the request is real.**
-4. **Follow your organisation's payment-change process, or report it if it was fake.**
-
-*Feedback: Never change payment details on an inbound call. Bank-detail fraud is covered in core_11.*
-
-### C02-Q10 (LO6, single choice)
-
-At home, you get a scam text pretending to be a delivery company. Besides deleting it, what can you do?
-
-- **A. Forward it to 7726 for free, so your provider can investigate the number.** *Feedback: Right. 7726 spells SPAM on the keypad.*
-- B. Reply STOP. *Feedback: Replying tells the sender your number is live.*
-- C. Tap the link to unsubscribe. *Feedback: Do not tap links in a scam text.*
-- D. Nothing can be done about texts. *Feedback: Forward it to 7726.*
-
-### C02-Q11 (LO2, single choice)
-
-A visitor at the side door says they are from the printer company, here for the quarterly service, and asks you to point them to the print room so they can get on. What is the right response?
-
-- A. Point them to the print room; they clearly know the routine. *Feedback: Knowing the routine is easy to fake. Visitors sign in and are escorted.*
-- **B. Take them to reception to sign in and be escorted, and report it if they push back.** *Feedback: Right. The physical rules are covered in core_10.*
-- C. Let them in but ask to see an ID badge. *Feedback: A badge can be forged. Sign them in at reception.*
-- D. Tell them to come back later. *Feedback: Help them the right way: reception and an escort.*
-
-(C02-Q11 overlaps with core_10; keep it here as the "conversation" version and point to core_10 for the building rules.)
+Built into the proposed visitor episode E12 (core_10): sign them in and escort, report if pushy. Kept here as the "conversation" version and pointed to core_10.
 
 ## Reflection prompt
 
 - "Think of the last call or message that made you want to act quickly. What would checking back on a number you already had have looked like?"
-- For facilitated sessions: "What is our team's version of 'I'll ring you back on the number I've got'? Could everyone do it under pressure?"
+- For a facilitated session (the `facilitated` flag, not yet shipped): "What is our team's version of 'I will ring you back on the number I have'?"
 
 ## Completion and pass rules
 
-- **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour (with remediation if needed), passed the knowledge check, and opened the reference card.
-- **Pass mark:** 5 of 6 (the organisation can change it; 80% default).
-- **Retakes:** a failed check draws six new items. After two fails, Ama replays the Learn beat before the third attempt.
-- **Test-out** (where allowed): the Apply beat and the check without Learn and Practise. A pass records the module complete; missing a critical behaviour sends the learner through the full module.
+- **Completion:** an episode is complete when the defend half and the debrief are done; a check when the form is done. Missions are scored for completion.
+- **No default pass mark.** The check forms set the pass percent to 0. The post-check shows the change from the newest matched pre-check, per role, and says so when there is no baseline. A pass mark is a later organisation option.
+- **No loop-back gate.** A mishandled item is explained at once, and a similar item follows.
+- **No test-out.** The defend-only variant is the measured defence without the attack.
 
 ## Evidence for auditors
 
-The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game, text, test-out), each assessed behaviour's rating, critical behaviours shown or remediated, the check score, and whether the reference card was opened. This supports:
+The per-item awareness-measure records hold the item id, form, verdict, chips, score, stage, variant and time to answer; the first answer wins. E3's role swap is recorded as a percent. No free text and no learner identity are stored. The discrimination figure (hits on impostor cards against false alarms on genuine callers) goes to organisers only; learners get genuine-item feedback instead. This supports:
 
 - PCI DSS v4.0.1 12.6.3.1 (phishing and related attacks and social engineering);
 - ISO/IEC 27001 Annex A 6.3 and clause 7.3;
-- NIST SP 800-53 Rev 5 AT-2(3) (social engineering and mining);
-- CIS Controls v8.1 14.2 (recognise social engineering, including pretexting) and 14.6 (recognise and report incidents);
+- NIST SP 800-53 Rev 5 AT-2(3);
+- CIS Controls v8.1 14.2 and 14.6;
 - NCSC CAF B6.
 
-See `02_COMPLIANCE_MAPPING.md` for the full references (when present).
+See `02_COMPLIANCE_MAPPING.md`.
 
 ## Measuring effect
 
-Outside the course, an organisation can watch:
-
-- **Reports of suspicious calls, texts and visitors** to the security team, which should rise.
-- **Help desk refusals**: how often staff decline to share a code or grant access when prompted (service desk data, or occasional authorised test calls run under a clear policy).
-- **Time to report** after a suspicious contact, which should fall.
-- **Repeat targets** supported, never named and shamed.
-- **The hook-to-Apply change** (C02-B1 against C02-B2) across the organisation.
-
-Authorised test calls, where used, must be run kindly, with a clear policy, and framed as practice, not as a trap.
+The product's own measure is the before-and-after change on matched helpdesk and mobile items for a cohort, with no effectiveness claim. Beyond the course, an organisation can watch reports of suspicious calls, texts and visitors, help-desk refusals to share a code or grant access, and time to report, all aggregated by department and never by named individual below a privacy threshold. Any authorised test calls the organisation runs must be kind, policy-backed and framed as practice.

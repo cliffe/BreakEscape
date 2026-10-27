@@ -1,189 +1,116 @@
 # core_03 assessment
 
+The built product measures the password and MFA outcomes through the **scored defend halves** (the E3 MFA push card, and E9's prompt and password-practice cards) and the **pre and post check** forms (the helpdesk form carries the push item; E9 adds password items to the general or mobile form). Both use the awareness scoring profile (60 for the verdict, 40 for the flags) and per-item awareness-measure records (item id, form, verdict, chips, score, stage and time; no free text, no identity, and **never a password or passphrase**: the password surface records only the strength band and the choices made, and every word on the tiles is a game word). There is **no default pass mark**: the check missions set the pass percent to 0 and are scored for completion. A pass mark is a later organisation option on the post-check percent.
+
+The plan's behaviours and question items are kept as **candidate items**: each maps onto a defend item or a check item, and the critical behaviours become **mirror pairs** (a prompt you started against one you did not; a strong passphrase against a weak one; a unique password against a reused one).
+
 ## Assessed behaviours
 
-Each row is recorded through BE-01 and shown in the debrief and the learner's record.
+Ids are unchanged. Each behaviour is now a scored move in a defend set or a check form. "Mirror pair" names the matched item that makes it measurable before and after.
 
-| Id | Behaviour | Learning outcome | Where it is evidenced | Secure | Developing | Not yet |
-|---|---|---|---|---|---|---|
-| C03-B1 | Responds to the night prompts | LO5 (baseline) | Hook | Denies and reports (in the app, or by calling the 24/7 desk) | Denies or ignores without reporting; or types the number, then reports it before Jas rings | Types the "IT" number and says nothing until Jas rings |
-| C03-B2 | Builds the manager's passphrase | LO2 | Practise (MG-08) | Three or more random words, no personal details | Adds a swap or a "!", but no personal details | Adds a birth year or a pet's name and keeps it after seeing the meter |
-| C03-B3 | Fixes reused passwords, email first | LO1, LO3 | Practise (MG-08) | Every flagged account fixed, starting with email | Every flagged account fixed, not starting with email | Leaves a flagged account unfixed |
-| C03-B4 | Answers security questions | LO3 | Practise and Apply (MG-08) | Made-up answers, stored in the manager, both times | One made-up, one true | True answers both times |
-| C03-B5 | Chooses sign-in protection | LO4 | Practise (MG-07 enrolment) and Apply (the portal) | A passkey where offered (the app with number matching where the organisation offers no passkeys), and a passkey at the portal | The app where a passkey was offered, or no passkey at the portal | Text messages where something stronger was offered |
-| C03-B6 | Reads prompts in context | LO5 | Practise ("Approve or Deny?") | 5 or 6 of 6 | 3 or 4 of 6 | 0 to 2 of 6 |
-| C03-B7 | Handles the shared PC | LO6 | Apply | Asks Kev to sign in himself, or rings the service desk | Asks Kev, then types the note with his blessing | Types the note without asking |
-| C03-B8 | Handles the Ledger prompt | LO5 | Apply | Denies and reports | Denies or ignores without reporting; or approves, then reports it before Owain rings | Approves and says nothing until Owain rings |
-| C03-B9 | Advises Kev on his password | LO1, LO2, LO3 | Apply | *"Three random words, and the vault remembers the rest"* | *"Write it on a new note, somewhere safer"* | *"Your dog's name and the year"* or *"Keep the birthday, add a !"* |
+| Id | Behaviour (the scored move) | Learning outcome | Where it is scored | Mirror pair |
+|---|---|---|---|---|
+| C03-B1 | Handles the prompt flood and fake "IT" number | LO5 | E9 flip and defend cards; E3 attacker run shows the flood | A prompt the learner did start (approve), in the same set |
+| C03-B2 | Chooses a strong passphrase | LO2 | E9 "which is stronger?" card and the builder | The company-plus-year weak option in the same card |
+| C03-B3 | Gives each account its own password | LO1, LO3 | E9 sign-up card and vault health | The "use my usual" reused option; the reuse rig from the attack half |
+| C03-B4 | Uses a made-up security answer | LO3 | E9 sign-up and practice cards | The true-answer option in the same card |
+| C03-B5 | Chooses the strongest sign-in protection | LO4 | E9 enrolment card; the look-alike passkey test | The text-code option where a passkey was offered |
+| C03-B6 | Reads prompts in context | LO5 | E9 practice prompt list; the helpdesk check push item | Each unrequested prompt is matched with one the learner started |
+| C03-B7 | Handles the shared PC | LO6 | E9 shared-PC card | A proper route (own account or service desk) against using the note |
+| C03-B8 | Handles an unrequested prompt during a sign-in | LO5 | E9 defend card (two prompts at once: one yours, one not) | Approve your own; deny and report the other |
+| C03-B9 | Advises on a weak password (teach-back) | LO1, LO2, LO3 | E9 defend card (choose the advice) | The weak advice options in the same card |
 
-The **before and after** for each learner is C03-B1 against C03-B8: a sign-in prompt they didn't start, first at night under a flood and a fake "IT" message, then in daylight, arriving just when they expect a prompt of their own.
-
-Telling Jas or Owain the truth when they ring is never marked down: the debrief credits it as a late report, and the "Not yet" in B1 and B8 is about approving, not about what happened next.
+Reporting a genuine prompt or message is never scored as wrong. The attack half (the guesser, the reuse rig, the attacker push run) is never scored.
 
 ## Critical behaviours
 
-To complete the module the learner must show:
+The build gates completion on finishing the defend half and the debrief, not on a behaviour. What the plan called critical behaviours are kept as the **must-include mirror pairs** every form and defend set carries:
 
-- **C03-CB1** Doesn't approve a prompt they didn't start: C03-B8 not at Not yet.
-- **C03-CB2** Gives every account its own password: C03-B3 not at Not yet (every flagged account fixed in the vault).
-- **C03-CB3** Doesn't use someone else's written-down password without asking: C03-B7 not at Not yet.
+1. **C03-CB1 Does not approve a prompt they didn't start:** the defend set pairs an unrequested prompt (and the fake "IT" number) with a prompt the learner did start.
+2. **C03-CB2 Gives every account its own password:** the sign-up card pairs a unique generated password with the reused "usual", echoing the attack half's reuse rig.
+3. **C03-CB3 Does not use someone else's written-down password:** the shared-PC card pairs a proper route with using the note.
 
-A learner who misses one goes through the course's remediation loop (`features/assessment_and_evidence.md`, section 4): Owain replays the matching Practise step, then a fresh situation of the same kind arrives in a short replay, drawn from the bank (BE-13): a prompt for a different service during their own sign-in (CB1), a vault with new reuse flags (CB2), or a different shared login, such as the reception PC with a note on its screen (CB3). Shown after practice, the outcome is capped at Developing. After two loops without it, the learner goes on to the check; the record says "practised, not yet shown", and a private "Approve or Deny?" drill (or the matching one) is scheduled two to four weeks later (HA-03, HA-21). Nobody else is told by name.
-
-Every attempt stays in the record. The passphrase (C03-B2) and sign-in method (C03-B5) are assessed but not critical: a learner who keeps a pet's name in the passphrase sees why on the meter, and sign-in methods are usually set by the organisation, not chosen by staff.
+A mishandled item is explained at once, and a similar item follows; the awareness profile locks the first answer. There is no loop-back gate in the built product. The passphrase and sign-in method are assessed but never gated: a learner who keeps a pet's name sees why on the meter, and methods are usually set by the organisation.
 
 ## Knowledge check bank
 
-Six items per sitting, drawn so that every learning outcome is covered. Stems are short workplace situations. Example passwords in the bank are game examples only; the feedback reminds learners never to use an example they have seen.
+The question items are the pool the helpdesk, general and mobile forms and the E3 and E9 defend sets draw from, authored as prompt cards, password-practice cards or flag-naming prompts. Built forms are 10 items each (4 phish in 10), matched flag multisets, feedback at the end, `passPercent: 0`, A and B sharing no slots. Example passwords are game examples only, and the feedback reminds learners never to use an example they have seen. Ids are kept as authoring notes.
 
-### C03-Q1 (LO1, single choice)
+### C03-Q1 (LO1) is the reuse item
 
-A small hobby website you used years ago has been breached. You used the same password for your work account. What is the main risk?
+Built as a card: a breached hobby-site password reused at work. The attack half's reuse rig is its demonstration. Mirror: an account with its own password.
 
-- A. None: the hobby site has nothing to do with work. *Feedback: Attackers try leaked email and password pairs on lots of other sites, automatically.*
-- **B. Attackers will try that email and password on your work account and others.** *Feedback: Right. That's credential stuffing. Change the password everywhere you used it.*
-- C. The hobby site will tell your employer. *Feedback: It won't, and that isn't the risk.*
-- D. Only the hobby account is at risk. *Feedback: Reuse spreads the risk to every account with the same password.*
+### C03-Q2 (LO2) is the "strongest to remember" item
 
-### C03-Q2 (LO2, single choice)
+Built as the "which passphrase is stronger?" card: three random words against company-plus-year, swaps and personal details. Mirror options in the same card.
 
-Which of these is the strongest password to remember for your password manager?
+### C03-Q3 (LO2) is the "change every 90 days" item
 
-- A. `Larkspur2026!` *Feedback: The company name plus a year and a symbol is one of the first patterns attackers try.*
-- B. `P@55w0rd!` *Feedback: Swapping letters for numbers and symbols doesn't fool guessing tools.*
-- C. `Biscuit2019` (your dog's name and the year he was born). *Feedback: Personal details can often be found online.*
-- **D. `kettle orbit marigold`** *Feedback: Right. Three random words: long, unusual and easy to remember. Never use an example you've seen, including this one.*
+Built as a concept-card point and a check item: change when seen, not on a timer.
 
-### C03-Q3 (LO2, true or false with reason)
+### C03-Q4 (LO3) is the new-portal password item
 
-"Changing your password every 90 days keeps your account safe."
+Built as the E9 sign-up card: generate and save. Mirror: "use my usual".
 
-- A. True: regular changes stop attackers using old passwords. *Feedback: Forced changes push people into patterns (`Spring2026!`, `Summer2026!`) that are easy to guess.*
-- **B. False: change it when you know or suspect it has been seen, and keep it strong and unique.** *Feedback: Right. That's the NCSC's advice too.*
+### C03-Q5 (LO3) is the security-question item
 
-### C03-Q4 (LO3, single choice)
+Built as the made-up-answer card. Mirror: the true answer.
 
-You're signing up to a new supplier portal for work. What do you do about the password?
+### C03-Q6 (LO4) is the sign-in ladder item
 
-- A. Use your usual work password so you remember it. *Feedback: If the portal is ever breached, your work account goes with it.*
-- **B. Let the password manager generate a new one and save it.** *Feedback: Right. Unique, strong, and you don't have to remember it.*
-- C. Use your usual password with the supplier's name on the end. *Feedback: Predictable variations are tried too.*
-- D. Make a new one and write it on a note by your screen. *Feedback: Anyone passing can read it. The manager is safer and easier.*
+Built as the enrolment card (passkey, app with number matching, text code, password alone). The look-alike passkey test shows why a passkey ranks first.
 
-### C03-Q5 (LO3, single choice)
+### C03-Q7 (LO5) is the "third prompt in a minute" item
 
-A website asks: "What was the name of your first pet?" What's the safest answer?
+Built as an E9 and helpdesk `push` card: deny and report. Mirror: a prompt the learner started.
 
-- A. The true answer, so you remember it. *Feedback: True answers can often be found online or guessed by people who know you.*
-- **B. A made-up answer, saved in your password manager with the login.** *Feedback: Right. Nobody can look it up, and you won't forget it.*
-- C. The same word on every site. *Feedback: Easy to remember, and easy to reuse against you.*
-- D. Skip it if the site lets you; if not, use the true answer. *Feedback: Skipping is fine. If it insists, make one up and save it.*
+### C03-Q8 (LO5) is the fake "IT, enter 47" item
 
-### C03-Q6 (LO4, ordering)
+Built as the flip and a defend card: do not enter it; deny and report. The number came off the attacker's screen.
 
-Put these ways of signing in in order, strongest first.
+### C03-Q9 (LO5) is the two-prompts-at-once item
 
-1. **A passkey or a security key**
-2. **An authenticator app with number matching**
-3. **A code sent by text message**
-4. **A password on its own**
+Built as C03-B8's card: approve the portal's, deny and report the finance system's. A built-in mirror pair.
 
-*Feedback: A passkey only works on the real site. An app prompt can be approved by mistake or under pressure. A text code can be intercepted or passed on. A password alone can be stolen and reused. Any of the first three is far better than the last.*
+### C03-Q10 (LO6) is the shared-PC sticky-note item
 
-### C03-Q7 (LO5, single choice)
+Built as the shared-PC card: ask for your own account or the service desk. Mirror: using the note.
 
-At 23:40 your phone shows a third sign-in prompt in a minute. You're watching TV. What do you do?
+### C03-Q11 (LO6) is the warehouse-desk hotspot
 
-- A. Approve it so they stop. *Feedback: That lets the attacker in. The flood is designed to make you do exactly that.*
-- B. Turn the phone off until the morning. *Feedback: It stops the noise, but the attacker still has your password and nobody knows.*
-- **C. Deny it, report it, and let the service desk help you change your password.** *Feedback: Right. A prompt you didn't start means someone has your password.*
-- D. Deny it. Nothing else is needed. *Feedback: Denying is right. Report it too, so the password can be changed.*
+Built as the shared-PC card's visual (the note on the monitor), with the accessible list equivalent for the text route.
 
-### C03-Q8 (LO5, single choice)
+### C03-Q12 (LO1, LO3) is the "you were in a breach" multi-select
 
-During a run of prompts, a message from "IT Support" says: "We're fixing a fault. Enter 47 in the app to stop the prompts." What do you do?
-
-- A. Enter 47: it's from IT. *Feedback: No genuine IT team will give you a number to type. That number came from the attacker's sign-in screen.*
-- B. Reply and ask whether it's really IT. *Feedback: The attacker will say yes.*
-- **C. Don't enter it. Deny the prompts and report the prompts and the message.** *Feedback: Right.*
-- D. Ring the number the message came from to check. *Feedback: That's the attacker's number. Use the service desk number you already have.*
-
-### C03-Q9 (LO5, single choice)
-
-You're signing in to a supplier portal and expecting a prompt. Two arrive at once: one for the portal, and one for the finance system, from another country. What do you do?
-
-- A. Approve both: you're signing in anyway. *Feedback: The second isn't yours. Approving it lets an attacker in.*
-- **B. Approve the portal's, deny the other and report it.** *Feedback: Right. Read every prompt: which service, and where from.*
-- C. Deny both and try again later. *Feedback: Safe, but report the one you didn't start: someone has that password.*
-
-### C03-Q10 (LO6, single choice)
-
-You need a file from a shared PC. Its password is on a sticky note on the monitor, and the person who uses it is busy. What do you do?
-
-- A. Use the note: that's what it's there for. *Feedback: It's there for anyone, including visitors, and anything you do is recorded in someone else's name.*
-- **B. Ask them to sign in for you, or ask the service desk for access.** *Feedback: Right. Ask first: the service desk would rather help than clean up.*
-- C. Take a photo of the note for next time. *Feedback: Now it's on your phone too.*
-- D. Use it, then hide the note under the keyboard. *Feedback: Under the keyboard is the first place anyone looks.*
-
-### C03-Q11 (LO6, hotspot)
-
-Shown: a warehouse office desk with a monitor, a keyboard, a kettle, a wall planner and a hi-vis jacket. Click the risk.
-
-- **Correct hotspot:** the sticky note on the monitor reading `WAREHOUSE / Stock2024!`. *Feedback: A password where others can see it is a password for everyone. Ask for your own account, or a shared vault.*
-- **Text route and keyboard or screen reader:** the same item is offered as a labelled list of what is on the desk (monitor and sticky note, keyboard, kettle, wall planner, hi-vis jacket), each selectable without a pointer, so the choice is identical to the hotspot (MG-20 accessible equivalent; `features/accessibility_and_inclusion.md`).
-
-### C03-Q12 (LO1, LO3, multiple select)
-
-The service desk tells you your work email address was in a breach of a booking site you once used. Which of these should you do? Choose all that apply.
-
-- **A. Change the password on every account where you used the same one.** *Feedback: Yes. Reuse is how one breach becomes many.*
-- **B. Let your password manager make each of them unique.** *Feedback: Yes.*
-- **C. Turn on MFA, or a passkey, wherever it's offered.** *Feedback: Yes. A stolen password alone then isn't enough.*
-- D. Close your email account. *Feedback: There's no need. Secure it instead.*
-- **E. Watch for emails that mention the booking: attackers use breach details in phishing.** *Feedback: Yes. They can arrive months later.*
+Built as a check item: change it everywhere reused, make each unique, turn on MFA or a passkey, watch for phishing that uses the breach details.
 
 ## Reflection prompt
 
 - "Which of your accounts would you least like to lose? Does it have its own password, and MFA?"
-- For facilitated sessions: "Where do we still have shared logins or passwords on notes, and what would it take to get rid of them?"
+- For a facilitated session (the `facilitated` flag, not yet shipped): "Where do we still have shared logins or passwords on notes, and what would it take to get rid of them?"
 
 ## Completion and pass rules
 
-- **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour or been taken through the remediation loop for it (at most two loops), passed the knowledge check, and opened the reference card.
-- **Pass mark:** 5 of 6 (the organisation can change it; 80% is the default).
-- **Retakes:** a failed check draws six new items. After two fails, Owain replays the Learn beat before the third attempt.
-- **Test-out** (where the organisation allows it): the Apply beat and the check, without Learn and Practise. Passing records the module as complete; missing a critical behaviour sends the learner through the full module.
-- **Accessibility:** no behaviour depends on speed. The prompts wait for an answer, and the text route records the same rows.
+- **Completion:** an episode is complete when the defend half and the debrief are done; a check when the form is done. Missions are scored for completion.
+- **No default pass mark.** The check forms set the pass percent to 0. The post-check shows the change from the newest matched pre-check and says so when there is no baseline. A pass mark is a later organisation option.
+- **No loop-back gate.** A mishandled item is explained at once, and a similar item follows.
+- **No test-out.** The defend-only variant is the measured defence without the attack.
+- **Accessibility:** no behaviour depends on speed; the prompts wait for an answer, and the text route (when built) records the same rows.
 
 ## Evidence for auditors
 
-The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game, text, test-out), each assessed behaviour's rating, critical behaviours (shown, shown after practice, or practised and not yet shown), the check score, and whether the reference card was opened. **It never holds a password or a passphrase:** MG-08 records only the strength band and the choices made, and every word on the tiles is a game word. This supports:
+The per-item awareness-measure records hold the item id, form, verdict, chips, score, stage, variant and time; the first answer wins. **No record holds a password or a passphrase:** the password surface records only the strength band and the choices. The discrimination figure goes to organisers only; learners get genuine-item feedback. This supports:
 
-- ISO 27001 A.6.3 and ISO 27002 6.3 (password security as a baseline control);
-- NIST AT-2;
-- CIS 14.3;
-- PCI DSS 8.3.8 (authentication policies and procedures communicated to all users);
-- NCSC CAF B6.b (each individual's training tracked);
-- NIS2 Art 21(2)(g) and NIS2 IR 8.1;
-- UK GDPR Art 32;
+- ISO 27001 A.6.3 and ISO 27002 6.3;
+- NIST AT-2; CIS 14.3;
+- PCI DSS 8.3.8;
+- NCSC CAF B6.b;
+- NIS2 Art 21(2)(g) and NIS2 IR 8.1; UK GDPR Art 32;
 - DSPT 2.1.1 and 3.2.1 (categories 3 and 4), for NHS customers;
 - HIPAA 164.308(a)(5)(ii)(C) and (D), FTC 314.4(e) and CMMC AT.L2-3.2.1, for US customers.
 
-It also helps an organisation show it supports users to choose unique passwords, as Cyber Essentials v3.3 asks, without being a Cyber Essentials requirement in itself.
-
-See `02_COMPLIANCE_MAPPING.md` for the full references.
+It also helps an organisation show it supports users to choose unique passwords, as Cyber Essentials v3.3 asks, without being a Cyber Essentials requirement in itself. See `02_COMPLIANCE_MAPPING.md`.
 
 ## Measuring effect
 
-Outside the course, an organisation can watch:
-
-- **MFA coverage and method mix:** the share of staff enrolled, with passkeys and security keys rising and text codes falling.
-- **Reports of unexpected prompts,** and the ratio of reported prompts to denied prompts in the sign-in logs: a rising ratio means people are telling, not just pressing Deny.
-- **Suspicious prompts approved by users** (approvals from unusual places or at unusual times), which should fall.
-- **Password manager adoption** (installs and active use) and the manager's aggregated health score (reused and weak passwords).
-- **Staff accounts found in breach monitoring** with passwords reused at work.
-- **Service desk password reset volume,** which usually falls as managers spread.
-- **Shared logins remaining,** from the identity team's own register.
-- **The hook-to-Apply change** across the organisation in the course itself.
-
-These need sign-in logs from the organisation's identity provider, the password manager's admin reports and service desk data, all aggregated. The dashboard shows them by department, never by named individual below the privacy threshold (HA-09).
+The product's own measure is the before-and-after change on matched items for a cohort, with no effectiveness claim. Beyond the course, an organisation can watch MFA coverage and method mix, reports of unexpected prompts, password-manager adoption, staff accounts found in breach monitoring, and service-desk reset volume, all aggregated by department and never by named individual below a privacy threshold.

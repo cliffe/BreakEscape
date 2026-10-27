@@ -49,7 +49,7 @@ The security team can stop each of these within minutes, but only from the momen
 
 Organisations also have legal and contractual clocks, which start when the organisation becomes aware:
 
-- **Personal data breaches:** under UK GDPR Article 33, an organisation must tell the Information Commission (the ICO) about a reportable breach without undue delay and, where feasible, within 72 hours of becoming aware of it. An organisation handling data for a client (a processor, as Larkspur often is for councils, schools and care homes) must tell that client without undue delay. The 72-hour duty was unchanged when the Information Commissioner became the Information Commission on 30 September 2026.
+- **Personal data breaches:** under UK GDPR Article 33, an organisation must tell the Information Commission (the ICO) about a reportable breach without undue delay and, where feasible, within 72 hours of becoming aware of it. An organisation handling data for a client (a processor, as a haulier, an insurer or an architecture practice may be for councils, schools and care homes) must tell that client without undue delay. The 72-hour duty was unchanged when the Information Commissioner became the Information Commission on 30 September 2026.
 - **Regulated sectors:** in the EU, NIS2 (Directive (EU) 2022/2555, Article 23) puts a three-stage clock on organisations in many sectors, all counted from becoming aware of a significant incident: an early warning within 24 hours, a fuller incident notification within 72 hours, and a final report within one month. At awareness level, the point for staff is only that the organisation's own clock starts the moment someone reports, which is why reporting early matters.
 - **Contracts:** customers' contracts often require prompt notice of incidents affecting their data.
 
@@ -59,10 +59,10 @@ Reports from staff are also one of the organisation's fastest sensors. In a larg
 
 ### How to report
 
-The routes at Larkspur, replaced by the organisation's own through the organisation profile (BE-05):
+The generic routes, replaced by the organisation's own through the `customer_report_route` slot and the organisation profile:
 
-- **A suspicious email or message:** the **Report suspicious** button (core_01).
-- **Anything else:** the security team on **extension 4444**, or the **Report an incident** form on The Lark.
+- **A suspicious email or message:** the **Report** button (core_01).
+- **Anything else:** the organisation's security team, or its "Report an incident" route.
 - **Out of hours, or away from the office:** the **24/7 service desk**. Lost or stolen devices, including a personal phone with work email on it, are reported straight away, even at night or on holiday, so they can be locked and wiped remotely.
 - **Personal data involved:** the same route. The DPO is brought in from there; you don't need to work out whether it's a "breach" (core_05).
 - **Something physical** (a stranger, a propped door, a lost badge): the same route; facilities and security are brought in from there (core_10).
@@ -84,7 +84,7 @@ Also say whether personal information might be involved (yes, no or not sure) an
 
 | Vague | Useful |
 |---|---|
-| "Leo's email is being weird." | "13:50: Leo Brennan's mailbox has sent invoice emails he didn't write, to customers including Brookfield Primary, who rang him. He's at his desk now. We haven't changed anything." |
+| "A colleague's email is being weird." | "13:50: a colleague's mailbox has sent invoice emails they didn't write, to customers who rang to ask. They're at their desk now. We haven't changed anything." |
 
 Don't hold back a report to fill in every detail. Send what you know; the team will ask for the rest.
 
@@ -131,13 +131,21 @@ A personal data breach is a security problem that leads to personal data being l
 
 Files that suddenly won't open or have strange names, a note or screen demanding payment, or a security warning are reasons to report at once and follow the instructions. Don't pay, don't reply, don't restore anything yourself. How malware gets in, and the rest of the story, is in core_07.
 
+### The habit to keep (the shared rule of thumb)
+
+The built episodes end every debrief on one rule of thumb, identical in all shells and enforced by a test. Reporting is the second half of it: check, and tell someone through a route you trust. Quote it word for word:
+
+> When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do.
+
+"Pause. Check. Report." is not used. Each debrief also carries the "On Monday" card, the customer's reporting route and the no-blame line.
+
 ## What to do (the procedure)
 
 As the reference card shows it:
 
 1. **Notice it.** Odd accounts, devices, files, data or people? It might be an incident.
 2. **Leave it.** Don't investigate, fix, delete, forward or switch off.
-3. **Report it now.** Messages: the Report button. Anything else: the security team on 4444, or the form on The Lark. Out of hours: the 24/7 service desk.
+3. **Report it now.** Messages: the Report button. Anything else: the organisation's security team, or its "Report an incident" route. Out of hours: the 24/7 service desk.
 4. **Say what, when, where, who, and what you've done.** Not sure? Say so.
 5. **Follow instructions**, and keep it to yourself until you're told otherwise.
 6. **Your mistake, or a colleague's?** Report it the same way. You'll be thanked.
@@ -168,14 +176,16 @@ Use these as background and inspiration only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+Defaults are generic; the customer fills them from the organisation profile, and the reporting route comes from the `customer_report_route` slot.
+
+| Slot | Default |
 |---|---|
 | Report button for messages | "Report suspicious" in the mail toolbar; in the mobile app under "..." |
-| Security team route | Extension 4444, or the "Report an incident" form on The Lark |
+| Security team route | The organisation's security team, or its "Report an incident" route |
 | Out of hours | The 24/7 service desk line |
 | Lost or stolen devices | The 24/7 service desk, straight away, any time, including personal phones with work email |
-| Personal data involved | The same route; it reaches the DPO, Tomasz Wiśniewski |
-| Physical security | The same route; facilities (Precious Adeyemi) is brought in |
+| Personal data involved | The same route; it reaches the DPO |
+| Physical security | The same route; facilities is brought in |
 | Device instruction | "Don't switch it off. If we ask, unplug the network cable or turn off Wi-Fi, leave it on, and wait for instructions." |
 | What reporters hear back | "A reply within 15 minutes in working hours, and a note when it's closed" |
 | Thank-you practice | "Reports and owned-up mistakes are thanked, never punished, in line with our just culture statement" |

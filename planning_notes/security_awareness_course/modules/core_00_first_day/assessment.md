@@ -1,175 +1,70 @@
 # core_00 assessment
 
+core_00 is the first-play brief inside the kiosk frame, not an episode, so it has **no scored defend half and no quiz of its own**. The built product scores only the episodes' defend halves and the pre and post checks, with per-item awareness-measure records (ids, verdicts, chips, score, stage and time; no free text, no identity). There is **no default pass mark** anywhere: the check missions set the pass percent to 0 and are scored for completion.
+
+The plan's old core_00 behaviours and question items were tied to a "First Day" morning (the fake manager message, the test email, the payroll email) that the build retired. They are kept here as **candidate items mapped onto the episodes' defend sets and the checks**, so the orientation the brief gives is measured where the measurement actually happens, and the critical behaviours become **mirror pairs** in those sets.
+
 ## Assessed behaviours
 
-Each row is recorded through BE-01 and shown in the debrief and the learner's record.
+core_00 records only that the first-play brief was shown and acknowledged (the "Got it" button on the "what we record" card). Each learning outcome is then evidenced in the episodes and checks, not in core_00. Ids are kept and remapped.
 
-| Id | Behaviour | Learning outcome | Where it is evidenced | Secure | Developing | Not yet |
-|---|---|---|---|---|---|---|
-| C00-B1 | Responds to the fake "Lena" message request | LO3, LO4 (baseline) | Hook, and Ama's second chance in Learn | Shows Maureen without sending any details, before she asks | Sends nothing but keeps it to themselves until Maureen or Ama asks; or sends the details, then shows it | Sends the details and never shows anyone |
-| C00-B2 | Finds and uses the Report button | LO1, LO4 | Practise (Owain's test email) | Reports the test unaided | Reports it after Owain points to the button | (not used: practice) |
-| C00-B3 | Handles an MFA prompt they didn't start | LO3 | Practise | Denies it and reports it | Approves it, then denies the next after Owain's tip | (not used: practice; recorded as core_03's baseline) |
-| C00-B4 | Responds to the fake payroll email | LO3, LO4 | Apply | Reports it without confirming the form | Ignores or deletes it; or opens the form, closes it and then reports | Confirms the form |
-| C00-B5 | Reports their own slip | LO4, LO5 | Apply | Reports within two game-minutes of confirming the form, before Leo notices | Reports after Leo's nudge | Doesn't report it before the module ends |
-| C00-B6 | Explains why they would be targeted, and how attacks start | LO2 | Ama's chunk 1 and the Check (C00-Q6, C00-Q7) | Both related items correct | One correct | Neither correct |
-| C00-B7 | Finds the reporting route again | LO4 | Reference (the out-of-hours number task) | Finds it unaided | Finds it after the search hint | (not used: the task always completes) |
-| C00-B8 | Knowledge check | LO2 to LO5 | Check | 5 of 5 | 4 of 5 | 3 or fewer |
-
-C00-B5 applies only to players who confirmed the form. Players who didn't are recorded as "not applicable", not as a pass or a fail.
-
-The **before and after** for each learner is C00-B1 against C00-B4: an unexpected request in the Hook, before any teaching, and another in Apply, after it. The organisation's dashboard shows the same comparison for each induction cohort (HA-09).
+| Id | Behaviour | Learning outcome | Where it is now evidenced | Mirror pair |
+|---|---|---|---|---|
+| C00-B1 | Acknowledges the brief | LO1 | the "Got it" button on the "what we record" card (completion only, not scored) | (not a pair) |
+| C00-B2 | Finds and uses the report button | LO4 | the Report verdict in every episode's defend half, always available and never penalised | Report against Trust on a genuine item |
+| C00-B3 | Handles an unrequested prompt | LO3 | E3 and E9 push cards (deny and report) | A prompt the learner started (approve) |
+| C00-B4 | Reports a suspicious message | LO4 | the Report verdict in E1, E5 and E8 defend sets | A genuine look-alike in the same set |
+| C00-B5 | Reports their own slip | LO4, LO5 | E8's after-the-click set and the no-blame line | (not a pair: Report is the universal safe move) |
+| C00-B6 | Explains why they are targeted, and how attacks begin | LO2 | the "why you" card; the attack half of every episode | (concept, not a scored pair) |
+| C00-B7 | Finds the reporting route again | LO4 | the customer report route in every debrief | (not a pair) |
+| C00-B8 | Applies the habit to an unexpected request | LO3 | the habit to keep, applied across every defend set | A pressured phish against a genuine routine request |
 
 ## Critical behaviours
 
-To complete the module the learner must, at least once:
+core_00 gates nothing: the brief completes when it is read and acknowledged. What the plan called critical behaviours are carried by the episodes, as the **must-include mirror pairs** their defend sets and checks hold:
 
-- **C00-CB1 Report a suspicious message through the organisation's route:** C00-B4 at Secure, or C00-B5 at Secure or Developing (owning up to their own slip counts, because it is the same behaviour).
-- **C00-CB2 Find the reporting route on The Lark** (C00-B7).
+- **C00-CB1 Report a suspicious message:** every defend set includes a phish whose right move is Report, matched with a genuine look-alike.
+- **C00-CB2 Find the reporting route:** the customer report route appears in every debrief, from the `customer_report_route` slot.
 
-They must also pass the knowledge check (C00-B8: 4 of 5 by default; see "Completion and pass rules").
-
-A learner who misses C00-CB1 is taken back to it, following the course's remediation loop (`features/assessment_and_evidence.md`, section 4). Ama replays the "How to report here" chunk in thirty seconds, then a fresh message arrives from the bank (for example "Finish your IT induction: sign in here") and the player reports it. If it still isn't shown, a second loop uses a different message and a more direct prompt from Ama. After two loops the learner goes on to the check: the record says "practised, not yet shown", and a private practice drill is scheduled two to four weeks later (HA-03's practice trigger, HA-21). Whether it is shown after a loop or not at all, the outcomes linked to that critical behaviour are capped at Developing for this sitting (`features/assessment_and_evidence.md`, section 3). C00-CB2 can't be missed for good: the task stays on the list until the number is found, with The Lark's search hint after a while. Every attempt is kept in the record.
+There is no loop-back gate in the built product. A mishandled item in an episode is explained at once, and a similar item follows.
 
 ## Knowledge check bank
 
-Five items per sitting, drawn so that each sitting has at least one item on the motto (LO3), the route (LO4), being unsure (LO4) and owning a mistake (LO5); the fifth comes from LO1 or LO2. Stems are short workplace situations. Contacts and button names shown in items come from the organisation profile (BE-05); Larkspur defaults are shown here.
+core_00 has no quiz. The plan's C00-Q1 to C00-Q12 are retired as a core_00 quiz and their content folds into the episode debriefs and the role check forms, where it is authored as triage items or concept cards. Ids are kept as authoring notes for where each point now lives.
 
-### C00-Q1 (LO3, ordering)
-
-A message asks you to do something unexpected, quickly. Put the three steps in order.
-
-1. **Pause:** notice it's unexpected, urgent, secret, or asking for money, data, codes or access.
-2. **Check:** use a channel you already trust, such as the directory or a colleague.
-3. **Report:** tell the security team, even if you're not sure.
-
-*Feedback: Pause, check, report. One minute of pausing is cheap; acting on a fake request isn't.*
-
-### C00-Q2 (LO4, single choice)
-
-An email feels a bit off, but it might be genuine. What do you do?
-
-- A. Ignore it. *Feedback: If it's an attack, others may fall for it, and nobody will know it got through.*
-- **B. Report it with the Report suspicious button. If it's genuine, the security team will say so.** *Feedback: Right. Reporting is never wrong.*
-- C. Forward it to your team to see if anyone else got it. *Feedback: Forwarding spreads it. The Report button sends it safely.*
-- D. Click the link to see where it goes. *Feedback: Don't test a suspicious link. Report it instead.*
-
-### C00-Q3 (LO5, single choice)
-
-Ten minutes ago you typed your password into a page from an email link. Now you're not sure the page was real. What's the best move?
-
-- A. Wait and see if anything odd happens. *Feedback: Waiting gives an attacker time. Speed matters most.*
-- B. Change your password and say nothing. *Feedback: Changing it helps, but someone may already be signed in. The security team needs to know.*
-- **C. Report it now and call the service desk.** *Feedback: Right. You'll be thanked, and they can lock the attacker out.*
-- D. Delete the email so it can't happen again. *Feedback: The email is evidence, and the harm may already be happening. Report it.*
-
-### C00-Q4 (LO4, hotspot)
-
-Shown: the organisation's mail toolbar. Where do you click to report a suspicious email?
-
-- **Correct hotspot:** the **Report suspicious** button. *Feedback: One click sends it to the security team and takes it out of your inbox.*
-
-### C00-Q5 (LO4, single choice)
-
-A text on your own phone says it's from your manager and asks you to buy gift cards for a client, quietly. Who do you tell at work?
-
-- A. Nobody: it came to your personal phone. *Feedback: It's about work, and colleagues may get the same text. Tell the security team.*
-- **B. The security team, on the number on the reference card.** *Feedback: Right. Then they can warn everyone else.*
-- C. Reply and ask if it's really them. *Feedback: The scammer will say yes.*
-- D. Your manager, on the number in the text. *Feedback: That number belongs to the scammer. Use the directory.*
-
-### C00-Q6 (LO2, multiple select)
-
-Why would criminals want to get into your work account, even in your first week? Choose all that apply.
-
-- **A. They could send convincing emails to everyone you know.** *Feedback: Yes. Messages from a real account are trusted.*
-- **B. They could see the data you can see.** *Feedback: Yes. Customer and staff data is worth money to fraudsters.*
-- **C. They could try to get payments made or bank details changed.** *Feedback: Yes. That's the aim of most fraud.*
-- D. They wouldn't: criminals only target directors. *Feedback: Most attacks go to everyone. Your access is the prize, not your job title.*
-
-### C00-Q7 (LO2, LO3, multiple select)
-
-The day before you start, a message request arrives: *"Welcome to the team! It's Lena, your new manager. Can you send me your personal mobile and email? Keep this between us for now."* Which parts should make you pause? Choose all that apply.
-
-- **A. It's from someone you've never met, on a site you weren't expecting.** *Feedback: Yes. You can't yet tell a real colleague from a fake one, so check.*
-- **B. It asks for your personal details.** *Feedback: Yes. Those are used for the next scam: texts and calls pretending to be colleagues.*
-- **C. It asks you to keep it quiet.** *Feedback: Yes. Secrecy stops you checking with anyone.*
-- D. It's warm and welcoming. *Feedback: Scams are usually friendly. Friendliness isn't a sign either way.*
-
-### C00-Q8 (LO3, single choice)
-
-Someone calls saying they're from IT and asks you to read out the code your phone has just shown. Which is checking through a channel you already trust?
-
-- A. Ask for their direct number and ring them back on it. *Feedback: That number could be the scammer's own.*
-- **B. Hang up and ring the service desk on the number on The Lark.** *Feedback: Right. And never read out a code: IT will never ask for one.*
-- C. Ask them something only IT would know. *Feedback: Attackers research their targets. Use a route they don't control.*
-- D. Read it out if they know your name. *Feedback: Names are easy to find. Never share a code.*
-
-### C00-Q9 (LO5, single choice)
-
-What does the security team do when you report a suspicious email?
-
-- A. Note your name in case you report too many. *Feedback: No. Every report is welcome.*
-- **B. Check it, and if it's an attack, pull it from everyone's inbox and block it.** *Feedback: Right. Your report protects everyone who got the same email.*
-- C. Nothing, unless you clicked on it. *Feedback: Reports matter whether or not anyone clicked.*
-- D. Tell your manager you were targeted. *Feedback: No. Being targeted isn't your fault, and reporting it is a good thing.*
-
-### C00-Q10 (LO5, true or false with reason)
-
-"If my report turns out to be nothing, I've wasted the security team's time."
-
-- A. True: only report when you're sure. *Feedback: Waiting to be sure means attacks get through.*
-- **B. False: a false alarm takes a minute to check, a missed attack can take weeks, and reports are always welcome.** *Feedback: Right.*
-
-### C00-Q11 (LO1, LO4, single choice)
-
-It's a month from now and you need the security team's number in a hurry. Where do you look?
-
-- A. The last suspicious email you received. *Feedback: Never take contact details from a suspicious message.*
-- **B. The reference card on The Lark, or its contacts page.** *Feedback: Right. Pin the card so it's always one click away.*
-- C. A web search for "IT help". *Feedback: Search results can lead to fake support numbers.*
-
-### C00-Q12 (LO5, single choice)
-
-Leo says: "I clicked a dodgy link, but I'm not reporting it. I'll get in trouble." What do you say?
-
-- A. "Fair enough. Just keep an eye on it." *Feedback: The sooner the team knows, the less harm is done.*
-- **B. "Report it now. You'll be thanked, not blamed, and the sooner they know the better."** *Feedback: Right. Encouraging each other to report is how a team stays safe.*
-- C. "Delete it and forget about it." *Feedback: The harm may already be happening, and the email is evidence.*
+- **C00-Q1 (ordering, the habit)** becomes the habit-to-keep concept card in the brief and every debrief.
+- **C00-Q2, C00-Q9 (report when unsure; what the team does)** become the Report verdict and the team-protected tally in every episode.
+- **C00-Q3 (after typing a password)** becomes E8's first-steps and recovery card and core_01 LO6.
+- **C00-Q4 (where is the report button)** becomes the report button, present on every defend card.
+- **C00-Q5, C00-Q8 (a text asking for gift cards; a caller asking for a code)** become core_02's E3 and E6 defend items.
+- **C00-Q6, C00-Q7 (why you are targeted; what makes you pause)** become the "why you" card and the attack half of every episode.
+- **C00-Q10, C00-Q12 (a false alarm is welcome; encourage a colleague to report)** become the no-blame line in every debrief.
+- **C00-Q11 (where to find the number later)** becomes the customer report route card.
 
 ## Reflection prompt
 
-- "Think of the last time something at work felt slightly off. Who could you have asked?"
-- For facilitated sessions: "What would make people here more likely to report a mistake on the day it happens?"
+- "Think of the last time something at work felt slightly off. Who could you have checked with?"
+- For a facilitated session (the `facilitated` flag, not yet shipped): "What would make people here more likely to report a mistake on the day it happens?"
 
 ## Completion and pass rules
 
-- **Complete** when the learner has played through every beat (or the text route), shown each critical behaviour or been taken back through the practice for it, passed the check, and opened the reference card.
-- **Pass mark:** 4 of 5 (80%, the course default; the organisation can change it). The seed suggested four questions; five are used so that the 80% default doesn't demand a perfect score.
-- **Retakes:** a failed check draws five new items. After two fails, Ama replays her four chunks before the third attempt.
-- **Test-out:** not offered. The module takes ten minutes and is where the learner meets the organisation's own reporting route.
+- **Completion:** the brief is complete when it has been shown and the "what we record" card acknowledged. It is shown once per learner.
+- **No pass mark.** core_00 is not scored; it has no check and no pass mark. The measurement lives in the episodes' defend halves and the pre and post checks, which set the pass percent to 0.
+- **No loop-back and no test-out:** the brief is a one-time orientation.
 
 ## Evidence for auditors
 
-The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game or text), each assessed behaviour's rating, critical behaviours shown or remediated, the check score, and that the reference card was opened. Combined with the learner's start date from the organisation's records (HA-01, HA-02), it shows that induction began on hire and within the window the organisation set. Auditors see completion and the check per person, and behaviour and outcome ratings in aggregate unless the organisation chooses otherwise (`features/assessment_and_evidence.md`, section 11). This supports:
+The record shows that the first-play brief was shown and acknowledged, with the date, as the start of the learner's use of the product. Combined with the episodes' per-item awareness-measure records (ids, verdicts, chips, score, stage and time; no free text, no identity), it shows that orientation happened on first use and within any window the organisation sets. This supports:
 
-- **PCI DSS 12.6.1**, and **PCI DSS 12.6.3** for training on hire (with the rest of the Induction Essentials pathway);
-- **ISO 27001 cl. 7.3** and **ISO 27001 A.6.3**;
-- **NCSC CAF B6.a** (people know how to raise a concern) and **NCSC CAF B6.b** (each person's training tracked);
-- **CIS 14.1** and **CIS 14.6**; **NIST AT-2**;
-- the **ICO training toolkit** (induction before access to personal information and within one month of starting, with the rest of the pathway; an assessment with a pass mark);
-- **DSPT 2.1.1** (an induction covering cyber security), for categories 3 and 4.
+- PCI DSS 12.6.1 and the "on hire" part of PCI DSS 12.6.3 (with the episodes the learner then plays);
+- ISO 27001 cl. 7.3 and A.6.3;
+- NCSC CAF B6.a and B6.b;
+- CIS 14.1 and 14.6; NIST AT-2;
+- the ICO training toolkit (orientation before access to personal information, with the rest of the pathway);
+- DSPT 2.1.1 (an induction covering cyber security), for categories 3 and 4.
 
-See `02_COMPLIANCE_MAPPING.md` for the full references.
+Who can see results on the hosting platform is a platform question kept out of this repo. See `02_COMPLIANCE_MAPPING.md`.
 
 ## Measuring effect
 
-Outside the course, an organisation can watch:
-
-- **Time to first report** for new starters: days from their start date to their first use of the Report button or the security line. It should be short.
-- **New starters' report rate** for real suspicious emails in their first three months, compared with longer-serving staff.
-- **Welcome-themed simulations** (if the organisation runs HA-12): the share of new starters who report a "welcome" or "payroll" test in their first month.
-- **The Hook across cohorts:** the share of new starters who showed someone the fake "Lena" message, compared with their Apply result and with later modules.
-- **Confidence and fear of blame:** two survey items before and after (HA-14): "I know how to report a security concern here" and "I would feel comfortable reporting my own mistake". These speak directly to NCSC CAF B6.a.
-- **"Is this genuine?" questions** to the service desk and security team, which should rise at first. That's a good sign.
-
-These need report-button data from the organisation's mail system, start dates from HR or provisioning (HA-02), and the survey (HA-14). Dashboards show them by department and cohort, never by named individual below the privacy threshold (HA-09).
+core_00 makes no claim of effect and is not scored. The product's measure of effect is the episodes' before-and-after change on matched items for a cohort. Beyond the course, an organisation can watch time to first report for new starters and their report rate for real suspicious messages, aggregated by department and never by named individual below a privacy threshold. The product makes no effectiveness claim.

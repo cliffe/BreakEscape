@@ -1,167 +1,111 @@
 # core_01 assessment
 
+The built product measures the phishing-email outcomes two ways: the **scored defend half** of each episode, and the **pre and post check** forms per role. Both use the awareness scoring profile (60 for the verdict, 40 for the flags) and both are recorded as per-item awareness-measure records (item id, form, verdict, chips, score, stage and time to answer; no free text, no learner identity). There is **no default pass mark**: the check missions set the pass percent to 0 and are scored for completion. A pass mark is a later organisation option on the post-check percent, not a default (`04_BUILT_SO_FAR.md` R6).
+
+The plan's original behaviours and question items are kept as **candidate items**: each behaviour maps onto a defend item or a check item, and the critical behaviours become **mirror pairs** (a phish item matched with a genuine look-alike, or an A-form item matched with its B-form twin), so a pre and a post score compare like with like (aw5).
+
 ## Assessed behaviours
 
-Each row is recorded through BE-01 and shown in the debrief and the learner's record.
+Each behaviour is now a scored move in a defend set or a check form. Ids are unchanged. "Mirror pair" names the matched item that makes it measurable before and after.
 
-| Id | Behaviour | Learning outcome | Where it is evidenced | Secure | Developing | Not yet |
-|---|---|---|---|---|---|---|
-| C01-B1 | Responds to the hook phish | LO5 (baseline) | Hook | Reports it | Deletes or ignores it; or clicks, stops, then reports | Signs in and doesn't report before Ama arrives |
-| C01-B2 | Responds to the expected-sender phish | LO2, LO3, LO5 | Apply | Reports it without signing in | Ignores or deletes it | Signs in |
-| C01-B3 | Handles the hijacked thread | LO3, LO4 | Apply | Checks by phone using the directory number, then reports | Reports it without checking; or replies to the thread to ask | Signs in |
-| C01-B4 | Handles the authority survey | LO1, LO3, LO5 | Apply | Reports it, with or without checking The Lark | Ignores it | Fills it in and signs in |
-| C01-B5 | Handles the callback phish | LO3, LO4 | Apply | Reports it without calling | Ignores it | Calls the number (Developing if they hang up and report during the call) |
-| C01-B6 | Advises Leo after his slip | LO5, LO6 | Apply | "Report it now and ring the service desk" | "Change your password and keep an eye on it" | "Delete it. Least said." |
-| C01-B7 | Reports their own click | LO6 | Any beat | Reports within two game-minutes of signing in or clicking | Reports later in the module | Never reports it |
-| C01-B8 | Reads web addresses | LO2 | Practise (MG-03 items), Learn check question | 3 of 3 correct | 2 of 3 | 0 or 1 of 3 |
-| C01-B9 | Calibrates on genuine emails | LO3 | Practise and Apply | Opens the expected genuine emails; checks rather than reports where a quick check is available | Reports a genuine email | (not used: over-reporting is never "Not yet") |
+| Id | Behaviour (the scored move) | Learning outcome | Where it is scored | Mirror pair |
+|---|---|---|---|---|
+| C01-B1 | Reports a credential phish | LO5 | E1, E5 and E8 defend sets; check row for a look-alike sender | Matched with a genuine sign-in notice (the padlock-myth pair, E5) |
+| C01-B2 | Handles a look-alike-domain phish | LO2, LO3, LO5 | E1 defend row 2 (`e1_lookalike_bank`); finance check row 2 (`fa_pennine_bank` / `fb_castell_bank`) | The real supplier's invoice in the next row (`fa_pennine_invoice` / `fb_castell_invoice`) |
+| C01-B3 | Handles a hijacked or genuine-looking thread | LO3, LO4 | E1 `e1_bank_confirmed`; finance check rows 7 and 8; Verify verdict | A genuine urgent-but-normal item (`fa_run_thursday` / `fb_quarter_end`) |
+| C01-B4 | Handles an authority or CEO lure | LO1, LO3, LO5 | E1 `e1_ceo_wire`; finance check row 4 (`fa_ceo_transfer` / `fb_fd_vouchers`); E4 whaling set | A genuine senior-sender item in the same form |
+| C01-B5 | Handles a callback or renewal lure | LO3, LO4 | general and finance check items | A genuine supplier statement in the same form |
+| C01-B6 | Takes the first steps after a click | LO5, LO6 | E8 defend set (the used-account signs) and its recovery-steps card | A genuine IT maintenance notice in the E8 set |
+| C01-B7 | Reports their own click or sign-in | LO6 | E8 defend set; the report verdict, always available and never penalised | (not a pair: Report is the universal safe move) |
+| C01-B8 | Reads web addresses and picks the real domain | LO2 | E5 page items; the general check page items; the flag chips `lookalike_domain` and `linkCredible` | A genuine page on the real domain in the same set |
+| C01-B9 | Calibrates on genuine mail | LO3 | every defend set (the genuine items); the discrimination figure (hits on phish against false alarms on genuine), organisers only | Each genuine item is the mirror of a phish item with the same flag multiset |
 
-C01-B7 applies only to players who clicked or signed in. Players who never did are recorded as "not applicable", not as a pass or a fail.
-
-The **before and after** for each learner is C01-B1 against C01-B2: the same kind of threat (a credential phish from a lookalike sender) in the hook and in the mission.
+Reporting a genuine message is never scored as wrong: it earns the verdict points, and the debrief gives a tip on how a quick check would have told. The attack half is never scored.
 
 ## Critical behaviours
 
-To complete the module the learner must, at least once:
+The build does not gate completion on a behaviour; the episode completes when the defend half and the debrief are done, and the checks when the form is done. What the plan called critical behaviours are kept as the **must-include mirror pairs** every form and defend set carries, so the measurement is honest:
 
-1. **C01-CB1: Report a phishing email** using the Report button (C01-B1, B2, B4 or B5 at Secure).
-2. **C01-CB2: Not sign in through the hijacked thread without checking** (C01-B3 not at Not yet).
-3. **C01-CB3: Report any click or sign-in of their own** before the module ends (C01-B7 not at Not yet), where it applies.
+1. **C01-CB1 Report a phish:** every defend set and every check form includes at least one phish whose right move is Report (or Verify), matched with a genuine look-alike.
+2. **C01-CB2 Judge the request, not the sender:** every form includes a genuine-looking item (a real address, a right-looking domain) whose tell is the request, matched with its genuine twin.
+3. **C01-CB3 First steps after a click:** the E8 defend set includes the used-account signs, matched with a benign look-alike (a genuine reset the learner did ask for, an announced maintenance notice).
 
-A learner who misses a critical behaviour is taken back to it: Ama replays the relevant Practise items with the explanation, then a fresh threat of the same kind arrives in a short replay of the Apply beat. They complete the module when they show the behaviour. The loop runs at most twice; after that the module completes with that outcome capped at Developing and a private follow-up drill is scheduled (`features/assessment_and_evidence.md`). The record keeps every attempt.
+A learner who mishandles an item sees its reasoning card at once, then meets a similar item next (the awareness profile locks a verdict on the first answer, so the similar item is a fresh chance, not a retry). There is no loop-back gate and no remediation lock in the built product.
 
 ## Knowledge check bank
 
-Six items per sitting, drawn so that every learning outcome is covered. Stems are short workplace situations.
+The plan's question items are the **pool the check forms and defend sets draw from**. They are not a separate quiz: each becomes a triage item (a message to sort) or a flag-naming prompt, authored into the role forms. The built forms are 10 items each (4 phish in 10; 5 for executive), with matched flag multisets, paired difficulty, feedback at the end and `passPercent: 0`. The A and B forms share no phish slots (the fix for blocker B1 in the check parity audit), so A-before-B and B-before-A give comparable scores.
 
-### C01-Q1 (LO2, single choice)
+The items below keep their ids as authoring notes for the form slots.
 
-Which website does this link really go to?
-`https://larkspur.co.uk.secure-login.info/mail`
+### C01-Q1 (LO2) is a page or address item
 
-- A. `larkspur.co.uk`. *Feedback: "larkspur.co.uk" is only at the front. Read the domain from the right-hand end.*
-- **B. `secure-login.info`.** *Feedback: Right. The real domain is the part just before the first single slash, read from the right.*
-- C. `mail`. *Feedback: That is the page on the site, not the site itself.*
-- D. It's safe because it starts with `https`. *Feedback: https means the connection is encrypted, not that the site is genuine.*
+Built as a page item in the general check and E5: a link whose real domain is at the right-hand end (`...secure-login.info/mail`). Scored as Report or Delete for the phish; the mirror is a genuine page on the real domain.
 
-### C01-Q2 (LO3, LO4, single choice)
+### C01-Q2 (LO3, LO4) is the genuine-looking-thread item
 
-You're expecting a delivery note from a supplier. An email arrives from their usual contact's real address, in your existing conversation, asking you to sign in to "our new portal" to see it. What do you do?
+Built as E1 `e1_bank_confirmed` and the finance check's genuine supplier invoice: the sender is right, the tell is the request. Verify is the best move where it is on. Mirror: the look-alike bank-change item two rows up.
 
-- A. Sign in: it's from the real address in a real conversation. *Feedback: Accounts get taken over, and attackers reply inside real threads. The request is what to judge.*
-- B. Reply to the email and ask if it's genuine. *Feedback: If the mailbox has been taken over, the attacker will answer "yes".*
-- **C. Call the supplier on the number in the supplier directory, then report it if they didn't send it.** *Feedback: Right. Check through a route the attacker doesn't control.*
-- D. Forward it to colleagues to see if they got it too. *Feedback: Forwarding spreads it. Use the Report button.*
+### C01-Q3 (LO1) is the authority-survey phish
 
-### C01-Q3 (LO1, multiple select)
+Built as a check item: the flags are `senderTrust`, `urgencyCalibrated` and a social-proof line. Scored on Report plus the flag chips. Mirror: a genuine all-staff notice.
 
-An email says: "From the Chief Executive. Complete the staff survey by 12:00. Most of your team already has." Which pressures is it using? Choose all that apply.
+### C01-Q4 (LO6) is the E8 recovery-steps card
 
-- **A. Authority.** *Feedback: It claims to come from the top.*
-- **B. Urgency.** *Feedback: A deadline in a couple of hours.*
-- **C. Social proof.** *Feedback: "Most of your team already has."*
-- D. Reward. *Feedback: Nothing is offered here.*
+Built as the ordering card in the E8 debrief: report, change on the real site, change where reused, follow the service desk. Not a triage item; shown as a concept card, not scored against other learners.
 
-### C01-Q4 (LO6, ordering)
+### C01-Q5 (LO5) is the "not sure" item
 
-You typed your password into a page from an email link, then realised it was fake. Put these steps in order.
+Built as any defend item where Report is the safe move: the verdict earns full points, and the debrief says reporting is never wrong. This is the item that teaches that Report is also the "I am not sure" button.
 
-1. **Report it with the Report button and call the service desk.**
-2. **Change your password by going to the real site yourself.**
-3. **Change the same password anywhere else you used it.**
-4. **Follow the service desk's further instructions.**
+### C01-Q6 (LO3) is the "no typos, looks right" item
 
-*Feedback: Telling the service desk first matters most: they can lock the attacker out while you change the password. (Accept 1 and 2 in either order.)*
+Built as a genuine-looking phish in every form (a right-looking domain, clean copy): the tell is the request. Mirror: a genuine item that also looks clean.
 
-### C01-Q5 (LO5, single choice)
+### C01-Q7 (LO6) is the colleague-slip item
 
-You're not sure whether an email is phishing. It might be genuine. What should you do?
+Built into the E8 debrief and the no-blame line, not as a triage item.
 
-- A. Ignore it and hope it goes away. *Feedback: If it's phishing, others may fall for it; nobody will know it got through.*
-- **B. Report it. If it's genuine, the security team will say so.** *Feedback: Right. Reporting is never wrong.*
-- C. Delete it so nobody clicks it by accident. *Feedback: Deleting protects you but nobody else.*
-- D. Click the link carefully to find out. *Feedback: Don't test a suspicious link. Check another way or report it.*
+### C01-Q8 (LO3, LO4) is the callback or renewal item
 
-### C01-Q6 (LO3, true or false with reason)
+Built as a check item: a renewal invoice with a number to call. Report; the flag is `linkCredible` or `pretextRelevant`. Mirror: a genuine renewal reminder.
 
-"If an email has no spelling mistakes and the logo looks right, it's probably genuine."
+### C01-Q9 (LO2) is the display-name item
 
-- A. True: phishing emails are usually badly written. *Feedback: Not any more. Attackers use translation and AI tools.*
-- **B. False: well-made phishing can look perfect, so judge what it asks for and check another way.** *Feedback: Right.*
+Built as a header detail in the hard check rows (`fa_remittance_spoof` / `fb_creditors_spoof`): the From looks right, the reply-to differs. Flags `senderAuth`, `reply_to_differs`. Mirror: a genuine item whose SPF fails but is fine.
 
-### C01-Q7 (LO6, single choice)
+### C01-Q10 (LO1) is the "what is it trying to make me do" framing
 
-A colleague tells you they clicked a link in a suspicious email and typed their password, but they don't want to make a fuss. What do you say?
+Carried by the attack half (the learner builds the ask) and the debrief, not a scored item.
 
-- **A. "Report it now and call the service desk. You won't be in trouble, and the sooner they know the better."** *Feedback: Right. Speed matters more than the click.*
-- B. "Just change your password and forget about it." *Feedback: Changing the password helps, but the attacker may already be signed in. The service desk needs to know.*
-- C. "Delete the email. No harm done." *Feedback: The harm may already be happening. Report it.*
+### C01-Q11 (LO5) is the simulated-phishing note
 
-### C01-Q8 (LO3, LO4, single choice)
-
-An email says your software subscription has renewed for £399 and gives a number to call to cancel. You don't remember the subscription. What's the safest move?
-
-- A. Call the number to cancel before the payment goes through. *Feedback: This is callback phishing: the scammer is waiting at that number.*
-- **B. Report it, and if you're worried, check your real subscriptions through the service desk or the supplier's website, typed in yourself.** *Feedback: Right.*
-- C. Reply asking for more details. *Feedback: Replying tells them your address is live.*
-
-### C01-Q9 (LO2, hotspot)
-
-Shown: an email header with a display name "Larkspur IT Service Desk" and the address `servicedesk@larkspur-support.net`. Click the part that shows it isn't from Larkspur.
-
-- **Correct hotspot:** the domain `larkspur-support.net`. *Feedback: Anyone can set the display name. The address shows where it really came from.*
-
-### C01-Q10 (LO1, single choice)
-
-What is a phishing email usually trying to get you to do?
-
-- A. Read it. *Feedback: Reading an email is almost always harmless.*
-- **B. Click, open, sign in, pay or reply, so the attacker gets access, money or information.** *Feedback: Right.*
-- C. Forward it. *Feedback: Sometimes, but that isn't usually the goal.*
-- D. Unsubscribe. *Feedback: Not the usual aim.*
-
-### C01-Q11 (LO5, single choice)
-
-Your organisation sends you a test phishing email and you report it. What happens?
-
-- **A. You've done exactly the right thing, and it's recorded as a report.** *Feedback: Right. Reporting tests is the habit we want.*
-- B. You get in trouble for wasting the security team's time. *Feedback: No. Reports are always welcome.*
-- C. Nothing: tests should be ignored. *Feedback: Treat every suspicious email the same way: report it.*
-
-(C01-Q11 uses the organisation's simulated phishing slot; drop it from the bank where the organisation doesn't run simulations.)
+Dropped as a scored item: the built product makes no simulated-phishing tie-in and no effectiveness claim. The point (treat a test like a real phish) sits in the debrief where the customer runs simulations. It stays an organisation option only.
 
 ## Reflection prompt
 
 - "Think of the last email that made you hurry. What would checking another way have looked like?"
-- For facilitated sessions: "What makes people at our organisation hesitate to report a mistake, and what would change that?"
+- For a facilitated session (the `facilitated` flag, not yet shipped): "What makes people here hesitate to report a mistake, and what would change that?"
 
 ## Completion and pass rules
 
-- **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour (with remediation if needed), passed the knowledge check, and opened the reference card.
-- **Pass mark:** 5 of 6 (the organisation can change it; 80% is the default).
-- **Retakes:** a failed check draws six new items. After two fails, Ama replays the Learn beat before the third attempt.
-- **Test-out** (where the organisation allows it): the Apply beat and the check without Learn and Practise. Passing records the module as complete; missing a critical behaviour sends the learner through the full module.
+- **Completion:** an episode is complete when the defend half and the debrief are done; a check is complete when the form is done. Missions are scored for completion.
+- **No default pass mark.** The check forms set the pass percent to 0. The post-check shows the change from the newest matched pre-check, and says so when there is no baseline. A pass mark or certificate is a later organisation option on the post-check percent, not a default.
+- **No loop-back gate.** A mishandled item is explained at once, and a similar item follows; there is no remediation lock in the built product.
+- **No test-out.** The defend-only variant (about 8 minutes) is the nearest thing: the measured defence without the attack.
 
 ## Evidence for auditors
 
-The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game, text, test-out), each assessed behaviour's rating, critical behaviours shown or remediated, the check score, and whether the reference card was opened. Auditors see completion, version, dates and the check result as standard; per-person behaviour ratings are included only if the organisation turns that on (`features/assessment_and_evidence.md`). This supports:
+The per-item awareness-measure records hold the item id, form, verdict, chips, score, stage (pre, post or episode), the variant and the time to answer; the first answer wins. No free text is stored and no learner identity is held in the block (the actor is added by the caller, and the block is shaped for xAPI). A discrimination figure (hits on phish against false alarms on genuine items) goes to organisers only; learners never see it, and get detailed feedback on the genuine items instead. There are no individual league tables, and the attack half is never scored or ranked. This supports:
 
 - PCI DSS 12.6.3.1 (training covering phishing and related attacks and social engineering);
-- ISO 27001 cl. 7.2 (records of competence), cl. 7.3 and A.6.3;
-- NIST AT-2, AT-2(3) and AT-4 (training records) where used;
+- ISO 27001 cl. 7.2, cl. 7.3 and A.6.3;
+- NIST AT-2, AT-2(3) and AT-2(4);
 - CIS 14.2 and CIS 14.6;
-- NCSC CAF B6.b (each individual's training tracked, with effectiveness evaluated: the hook-to-Apply change is that evaluation).
+- NCSC CAF B6.b (the pre-to-post change is the evaluation of effect).
 
-See `02_COMPLIANCE_MAPPING.md` for the full references.
+Who can see results on the hosting platform is a platform question kept out of this repo. See `02_COMPLIANCE_MAPPING.md`.
 
 ## Measuring effect
 
-Outside the course, an organisation can watch:
-
-- **Report rate** for real suspicious emails and for simulated phishing (the share of recipients who report), which should rise.
-- **Time to first report** for a campaign, which should fall.
-- **Reports compared with clicks** in simulations: a healthy ratio has more reports than clicks.
-- **Repeat clickers** in simulations (supportively followed up, never named and shamed).
-- **The hook-to-Apply change** across the organisation in the course itself.
-
-These need report-button data from the organisation's mail system and, if used, simulation results (HA-12). The dashboard shows them by department, never by named individual below the privacy threshold (HA-09).
+The product's own measure is the before-and-after change on matched items for a cohort: the post-check against the newest matched pre-check, per role, with no effectiveness claim. Beyond the course, an organisation can watch report rate and time to first report for real suspicious emails from its own mail system. The dashboard shows these by department, never by named individual below a privacy threshold. The product claims no equivalence between the real world and the in-game items, and no effectiveness.

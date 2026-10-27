@@ -82,7 +82,7 @@ The NCSC suggests checking whether your details have appeared in public data bre
 3. Check the account for activity you don't recognise (changed settings, messages you didn't send, unusual sign-in locations or times).
 4. Watch for phishing that uses details from the breach, which can arrive months later.
 
-Organisations can monitor breach data for their own staff's work addresses (organisation slot). In the game, Larkspur's monitoring partner does this.
+Organisations can monitor breach data for their own staff's work addresses (organisation slot). In the attack half of E9, the authored guesser and reuse rig show how a breached, reused password opens the work account.
 
 ### MFA, or 2-step verification
 
@@ -106,7 +106,7 @@ A passkey replaces a password with a secret kept on your device or in your passw
 
 - **Synced passkeys** live in the account that syncs them (your phone's or your manager's), so protect that account well: a strong password and 2SV. The Cisco case (see Real cases) shows what happens when a synced account is the weak point.
 - **A security key** is a passkey on a small physical key for a keyring. It suits people who prefer something physical or don't use a smartphone for work.
-- **At work** the organisation decides whether staff sign in with passkeys (organisation slot; the Larkspur default is passkeys on work laptops and phones).
+- **At work** the organisation decides whether staff sign in with passkeys (organisation slot; the default is passkeys on work laptops and phones).
 
 ### Prompt floods and the fake "IT" message
 
@@ -122,11 +122,19 @@ The rule is simple and covers every variation:
 
 ### Shared accounts and written-down passwords at work
 
-A shared login (one password for the warehouse PC, taped to the monitor) means nobody knows who did what, the password spreads to anyone who walks past, and leavers keep access. The fix is the organisation's job, but staff can ask for it: their own accounts, or a shared vault in the password manager that controls and records who uses which login. If you find a password on a note, don't use it: tell the owner or the service desk. Using someone else's password, even with their blessing, usually breaks policy and leaves a record in their name. Owain's rule: "Ask us first. We'd rather help than clean up." (Sharing credentials between colleagues is taught in core_14.)
+A shared login (one password for the warehouse PC, taped to the monitor) means nobody knows who did what, the password spreads to anyone who walks past, and leavers keep access. The fix is the organisation's job, but staff can ask for it: their own accounts, or a shared vault in the password manager that controls and records who uses which login. If you find a password on a note, don't use it: tell the owner or the service desk. Using someone else's password, even with their blessing, usually breaks policy and leaves a record in their name. The service desk would rather help than clean up: ask first. (Sharing credentials between colleagues is taught in core_14.)
 
 ### If you think a password or code has been given away
 
 Report it straight away, then change it on the real site or app, and anywhere else you used it. core_04 owns the full reporting procedure; core_01 covers typing a password into a fake page.
+
+### The habit to keep (the shared rule of thumb)
+
+The built episodes end every debrief on one rule of thumb, identical in all shells and enforced by a test. "Read back a code" and "grant access" in it are the password and MFA case directly. Quote it word for word:
+
+> When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do.
+
+"Pause. Check. Report." is not used.
 
 ## What to do (the procedure)
 
@@ -168,16 +176,18 @@ Use these as background and inspiration only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+Defaults are generic, not tied to any one fictional company; the customer fills them from the organisation profile, and the reporting route comes from the `customer_report_route` slot.
+
+| Slot | Default |
 |---|---|
-| Approved password manager and how to get it | "Larkspur Vault", installed on every work laptop and phone; ask the service desk |
-| Browser password saving for work accounts | "Work accounts go in Larkspur Vault. Your browser's manager is fine for personal accounts on your own devices." |
-| MFA methods offered | Passkeys on work laptops and phones; the authenticator app with number matching; security keys on request; text codes only for Ledger until it moves to passkeys |
+| Approved password manager and how to get it | The organisation's password manager, installed on every work laptop and phone; ask the service desk |
+| Browser password saving for work accounts | "Work accounts go in the organisation's manager. Your browser's manager is fine for personal accounts on your own devices." |
+| MFA methods offered | Passkeys on work laptops and phones; the authenticator app with number matching; security keys on request; text codes only where nothing stronger is yet possible |
 | How to report an unexpected prompt or code | Press Deny, then "Report this" in the app; or call the 24/7 service desk |
 | 24/7 service desk | The 24/7 service desk line (shown on the reference card) |
 | Password policy points | At least 12 characters for passwords people choose; common passwords blocked; no forced expiry; change at once if you think it's been seen |
-| Shared accounts | "No shared logins. Teams that share a system get named accounts or a shared folder in Larkspur Vault." |
-| Breach monitoring | "Our monitoring partner watches for Larkspur addresses in published breaches and will contact you." |
+| Shared accounts | "No shared logins. Teams that share a system get named accounts or a shared folder in the manager." |
+| Breach monitoring | "Our monitoring partner watches for the organisation's addresses in published breaches and will contact you." |
 | Breach check for personal accounts (reference card, home section) | "Check your personal email address on a breach-checking site; the NCSC suggests Have I Been Pwned." |
 
 ## Glossary

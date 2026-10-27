@@ -1,14 +1,14 @@
 # core_00 concepts: First day
 
-This file is the source of truth for the module. The game, Ama's explainer, the knowledge check and the reference card must all match it. Most topics here are previews: the module that teaches each one in depth is named, and its `concepts.md` wins if the two ever differ.
+This file is the source of truth for the module. The first-play brief, the host's welcome, the concept cards and the checks must all match it. Most topics here are previews: the module that teaches each one in depth is named, and its `concepts.md` wins if the two ever differ.
 
 ## Key messages
 
 1. **Everyone has access to something worth stealing.** Your email, your logins, the customer and staff data you can see, the payments you can approve, the trust of everyone you work with. Most attackers are criminals after money, and they don't need you to be important.
 2. **Most attacks start with a message, a call or a stolen password,** and they turn up in the middle of normal work.
-3. **Pause. Check. Report.** Pause when something is unexpected, urgent, secret, or asks for money, data, codes or access. Check through a channel you already trust. Report anything odd.
+3. **The habit to keep.** When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do. Report anything odd.
 4. **Reporting is never wrong.** Report when you're not sure, and especially after your own mistake. You'll be thanked, not blamed. Speed matters more than the slip.
-5. **Know your route.** Emails: the Report button. Anything else: the security team or the service desk. The numbers are on the reference card, on The Lark.
+5. **Know your route.** Emails: the report button. Anything else: the security team or the service desk. The customer's own reporting route is shown in every debrief (the `customer_report_route` slot).
 
 ## Concepts
 
@@ -22,7 +22,7 @@ This file is the source of truth for the module. The game, Ama's explainer, the 
   - the **personal data** you can see is worth money to fraudsters, and losing it hurts the people it's about (core_05);
   - your **approval or say-so** can move money or change bank details (core_11);
   - your **badge** opens doors (core_10).
-- Say it the way Ama does: they don't want *you*, they want what you can open.
+- The short version: they don't want *you*, they want what you can open.
 
 ### How attacks usually start
 
@@ -39,9 +39,13 @@ This file is the source of truth for the module. The game, Ama's explainer, the 
 - The UK government's Stop! Think Fraud campaign warns businesses about salary diversion, where fraudsters pose as employees to get payroll to change bank details, and advises always confirming bank detail changes using a known phone number. The module's fake payroll email is the same fraud aimed at the employee instead (core_11 covers payment fraud in depth).
 - The answer for a new starter is the same as for anyone, and easier than it sounds: **you're allowed to ask.** Nobody expects a new starter to know whether a request is normal, so checking with a colleague is the obvious move.
 
-### Pause. Check. Report.
+### The habit to keep (the shared rule of thumb)
 
-The course motto. It heads the reference card and every module comes back to it (`03_WORLD_AND_CAST.md`).
+The built episodes end every debrief on one rule of thumb, identical in all shells and enforced by a test. It replaces any motto; "Pause. Check. Report." is not used. Quote it word for word:
+
+> When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do.
+
+In plain parts, which the previews below expand on:
 
 - **Pause** when something is:
   - **unexpected** (you weren't waiting for it, or it doesn't fit how this person normally gets in touch);
@@ -49,7 +53,7 @@ The course motto. It heads the reference card and every module comes back to it 
   - **secret** ("keep this between us", "don't tell IT");
   - **asking for money, data, codes or access** (a payment, gift cards, bank details, a password, an MFA code, a file, remote access, a door held open).
   One of these is enough to pause. Two or more together is a strong sign.
-- **Check** through a channel you already trust: a number from the staff directory or the supplier record, a colleague in person, a bookmark, The Lark. **Never** use the phone number, link or reply address in the message, because the attacker controls those.
+- **Check** through a channel you already trust: a number from the staff directory or the supplier record, a colleague in person, a bookmark, the intranet. **Never** use the phone number, link or reply address in the message, because the attacker controls those.
 - **Report** anything suspicious, straight away, through the organisation's route. Including when you're not sure. Including when you've already clicked, replied or typed something.
 
 Pausing costs a minute. Not pausing can cost the organisation weeks.
@@ -60,7 +64,7 @@ The point of "check" is to use a route the attacker doesn't control (core_01 exp
 
 | Trusted | Not trusted |
 |---|---|
-| The staff directory on The Lark | A number in the email, text or caller's voicemail |
+| The staff directory on the intranet | A number in the email, text or caller's voicemail |
 | Walking over to the person, or calling the number you already have | Replying to the message, or the "new number" it came from |
 | Your bookmark, or the company app | A link in the message |
 | The supplier record in the finance system (core_11) | Contact details on the letter or invoice that asks for the change |
@@ -69,16 +73,16 @@ The point of "check" is to use a route the attacker doesn't control (core_01 exp
 ### How to report here
 
 - **Emails:** the **Report suspicious** button in the mail client (organisation slot). It sends the email to the security team with its hidden details intact and takes it out of your inbox. Don't forward suspicious emails to colleagues to ask "is this real?": that spreads them.
-- **Anything else** (a text, a call, a visitor, a lost badge, a strange pop-up, a mistake you've made): the security team on extension 4444, or the 24/7 service desk (organisation slots). If in doubt which, the service desk will pass it on.
+- **Anything else** (a text, a call, a visitor, a lost badge, a strange pop-up, a mistake you've made): the organisation's security team, or the 24/7 service desk (organisation slots). If in doubt which, the service desk will pass it on.
 - **Personal data involved** (sent to the wrong person, lost, seen by someone who shouldn't): report it the same way; the DPO is brought in through the same route (core_05).
 - **What to say:** what happened, when, and what you've done so far. A rough report now beats a perfect one later (core_04 covers what to include).
 - **On your own phone, for scams that aren't about work:** forward scam texts to 7726, free, and suspicious emails to the NCSC's Suspicious Email Reporting Service at `report@phishing.gov.uk` (core_01, core_02). If you've lost money, call your bank, then Report Fraud (which replaced Action Fraud on 4 December 2025: reportfraud.police.uk or 0300 123 2040) in England, Wales and Northern Ireland; in Scotland, Police Scotland on 101.
 
 ### What happens after a report
 
-Ama's and Kai's version, for the learner:
+The security team's version, for the learner:
 
-1. Kai (or the 24/7 monitoring partner, out of hours) looks at it, usually within minutes.
+1. The security team (or the 24/7 monitoring partner, out of hours) looks at it, usually within minutes.
 2. If it's harmless, you get a thank-you and, sometimes, a tip on how you could have checked.
 3. If it's an attack, they pull the same email out of every inbox, block the sender and any fake website, warn people, and if anyone has clicked or typed a password, lock the account and help them reset it.
 4. If personal data is involved, the DPO assesses whether it's a breach the organisation must report to the Information Commission (the ICO) within 72 hours (UK GDPR Art 33; core_04 and core_05).
@@ -92,7 +96,7 @@ The first report protects everyone else who got the same message. In a large lon
 - The NCSC's Cyber Assessment Framework (v4.0) says an organisation with a positive cyber security culture is one where "people in your organisation raising potential cyber security incidents and issues are treated positively", and that it is failing if "people believe that reporting issues may get them into trouble" (NCSC CAF B6.a).
 - The NCSC's cyber security culture principles make the same point: build safety and trust so people feel able to report problems, and have leaders model it.
 - **Honest mistakes are not misconduct.** Deliberately breaking the rules is different, and the organisation's policies say how that's handled (core_16). The course never blurs the two: a slip reported quickly is a good outcome.
-- Ama's own story makes this real: she once typed her password into a fake page in her first security job, told her manager straight away, and was thanked.
+- Security people say the same from experience: someone who typed a password into a fake page, told their manager straight away and was thanked, not blamed.
 
 ### What the security team does, and doesn't do
 
@@ -104,9 +108,9 @@ The first report protects everyone else who got the same message. In a large lon
 | Helps people put mistakes right | Fix things by blaming someone |
 | Answers questions: "is this OK?" is always welcome | Expect anyone to know everything on day one |
 
-At Larkspur the team is Ama Owusu (Information Security Manager) and Kai Murray (analyst), with an outsourced monitoring partner out of hours; Tomasz Wiśniewski is the DPO (`03_WORLD_AND_CAST.md`).
+In the built product the security team is the host and the analysts of the client company (for example Anjali Rao, the information security analyst at Quayholt Insurance, who receives reports), with an outsourced monitoring partner out of hours and the company's DPO for personal data. All are fictional, from `BRAND_SET.md`.
 
-**Authorised tests.** Many organisations hire testers to check their defences: test phishing emails, test calls, someone trying the doors (at Larkspur, Jo Fairweather of Northlight Security, who appears in several modules). Treat anything suspicious the same way, test or not: report it. If a test catches you out, that's the organisation learning where to improve, not you failing (whether and how the organisation tests is an organisation slot; see core_01 for simulated phishing).
+**Authorised tests.** Many organisations hire testers to check their defences: test phishing emails, test calls, someone trying the doors. The whole awareness product is itself an openly authorised exercise, stated in every scope note. Treat anything suspicious the same way, test or not: report it. If a test catches you out, that's the organisation learning where to improve, not you failing (whether and how the organisation tests is an organisation slot; see core_01 for simulated phishing).
 
 ### Three previews (taught properly elsewhere)
 
@@ -120,7 +124,7 @@ One line each in this module, no more. Match these words exactly so the later mo
 
 What a learner needs to know about the course itself, said once here:
 
-- **Short modules**, each a normal piece of work where something suspicious turns up. A colleague explains the few things you must know, you practise, you do a realistic task, you see what happened and why, then answer a few questions. The reference card stays on The Lark afterwards.
+- **Short episodes**, each about 13 minutes: a brief, an attack half where you build one message from a company's public details, a flip into the inbox it lands in, a scored defend half where you sort the post, and a debrief. A defend-only variant drops the attack half. Pre and post checks bracket the episodes.
 - **Two ways to play.** The game, or a text version with the same choices and the same record (BE-03). Settings for text size, captions, motion and timers are available from the start (BE-04). Nobody needs fast reactions.
 - **Nothing real is ever asked for.** The game never asks for your real password, bank details or personal information. Sign-in pages and forms in the game come pre-filled with made-up details.
 - **What's recorded, and who sees it** (the notice every learner sees before they start, from `features/assessment_and_evidence.md`, section 11): whether you finish each module and when, your check score, and how you handled each situation, as "Secure", "Developing" or "Not yet". Your manager sees whether your training is done and when it's due, not your choices or scores. The training team sees results for groups of ten or more, never yours by name unless you ask them for help. Your choices in the game are practice and are never used for discipline or performance reviews. You can see everything held about you on the "My data" page (HA-17). Being open about this matters: people trust, and play honestly in, a course that tells them what it records.
@@ -133,14 +137,14 @@ Many organisations already use the NCSC's free "Top Tips for Staff" e-learning (
 
 ## What to do (the procedure)
 
-As the reference card shows it, under the heading **Pause. Check. Report.**:
+As the debrief card shows it, under the heading **The habit to keep**:
 
-1. **Pause.** Is it unexpected? Urgent? Secret? Does it ask for money, data, codes or access?
-2. **Check another way.** Use a channel you already trust: the directory, a colleague, a bookmark, The Lark. Never the number, link or reply address in the message.
-3. **Report it.** Emails: the **Report suspicious** button. Anything else: the security team on **4444** or the service desk on **[number]**. Not sure? Report it anyway.
+1. **Notice the pressure.** Is it unexpected, urgent or secret? Does it push you to move money, grant access, sign in or read back a code?
+2. **Check it yourself** through a route you already trust: the directory, a colleague, a bookmark, the intranet. Never the number, link or page the message gives you.
+3. **Report it.** Emails: the **Report** button. Anything else: the organisation's security team or service desk. Not sure? Report it anyway.
 4. **Made a mistake?** Clicked, replied, typed a password, let someone in? Report it now. A fast report turns a big problem into a small one, and you'll be thanked.
 
-(Bold values are organisation slots; Larkspur defaults shown.)
+(Bold values are organisation slots; generic defaults shown, resolved through the `customer_report_route` slot.)
 
 ## Misconceptions and outdated advice
 
@@ -148,7 +152,7 @@ As the reference card shows it, under the heading **Pause. Check. Report.**:
 |---|---|
 | "Security is IT's job." | Most attacks start with a person being asked to do something. IT can't see what you see; your report is often the first sign. |
 | "I'm not important enough to be targeted." | Bulk attacks go to everyone, and your access is the prize, not your job title (key message 1). |
-| "If I report something harmless, I'll look silly." | Reporting is never wrong. A false alarm costs Kai a minute; a missed attack can cost weeks. |
+| "If I report something harmless, I'll look silly." | Reporting is never wrong. A false alarm costs the team a minute; a missed attack can cost weeks. |
 | "If I made a mistake, keeping quiet is safer." | The opposite. Delay does the damage. An organisation where people fear reporting is failing NCSC CAF B6.a. |
 | "Attackers are hooded hackers in dark rooms." | Most are organised criminals running a business. They look and sound ordinary: a polite caller, a plausible email, a friendly visitor. |
 | "The security team is there to catch people out." | They're there to help, and they thank reporters. Monitoring of work systems has rules (core_16). |
@@ -166,22 +170,20 @@ Use these as background only. The game uses fictional names and organisations.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+Defaults are generic; the customer fills them from the organisation profile, and the reporting route comes from the `customer_report_route` slot.
+
+| Slot | Default |
 |---|---|
-| Organisation name and logo | Larkspur Group |
-| Intranet name | The Lark |
+| Organisation name and logo | The customer's own (shown on the title and in the room) |
 | Report button name and location | "Report suspicious" in the mail toolbar; in the mobile mail app under "..." |
-| Security team contact | Extension 4444 |
+| Customer reporting route | "Report it the way your organisation asks you to" until the customer's own route is set |
+| Security team contact | The organisation's security team |
 | Service desk contact | The 24/7 service desk line |
-| How to report a suspicious text or call about work | Call the security team on 4444, or tell the service desk |
-| DPO contact | Tomasz Wiśniewski, through the same route |
-| How payroll and bank details are changed | "Only in the HR system, signed in from The Lark. HR never asks for bank details by email or text." |
-| Badge rule | "Wear it inside, put it away outside, never lend it. Lost it? Tell Facilities straight away." |
-| Leader's message to new starters | "Welcome to Larkspur. None of us will ever message you for favours, codes, gift cards or personal details. If 'we' do, it isn't us: tell the security team." (on screen) |
-| What the organisation sees in training records | The course default notice: managers see completion and due dates only; the training team sees results for groups of ten or more; choices are never used for discipline (`features/assessment_and_evidence.md`, section 11). The organisation can only make this stricter |
-| Induction window | The first two weeks (inside the ICO's month) |
-| Assigned modules and due dates | From the learner's assignments (HA-03) |
-| Existing-staff cohort flag | Off (new starter opening) |
+| How to report a suspicious text or call about work | The organisation's security team, or the service desk |
+| DPO contact | The organisation's DPO, through the same route |
+| How payroll and bank details are changed | "Only in the HR system; HR never asks for bank details by email or text" |
+| What the organisation sees in training records | The product default: results go to the learner and an organiser-only aggregate figure; no free text and no identity are held; choices are never used for discipline. The organisation can only make this stricter |
+| Honest-mistakes statement | The organisation's own, shown on the no-blame card if it will give one |
 
 ## Glossary
 
@@ -196,8 +198,8 @@ Use these as background only. The game uses fictional names and organisations.
 - **Report suspicious button:** the button in the mail client that sends a suspicious email to the security team.
 - **Incident:** anything that might harm the organisation's information or systems, including near misses and mistakes (core_04).
 - **DPO (Data Protection Officer):** the person who looks after how the organisation uses personal data.
-- **The Lark:** Larkspur's intranet, where the reference cards, contacts and policies live.
-- **Reference card:** the one-page summary of a module, with the organisation's own contacts.
+- **Debrief card:** a card in the episode debrief, including the habit to keep, the "On Monday" card and the customer's reporting route.
+- **Concept card:** a short authored card that teaches one point, used in the brief and the debrief.
 - **No blame (just culture):** honest mistakes reported quickly are thanked and fixed, not punished; deliberate misuse is handled differently.
 
 ## Sources

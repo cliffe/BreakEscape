@@ -1,25 +1,43 @@
 # core_01: Phishing emails
 
 **Working game title:** Inbox Zero
-**Pitch:** Get the week's delivery schedule out by 10:00, while the emails that matter to the job arrive alongside emails that only look like they do.
+**Pitch:** Build one phishing email from a supplier's public details, then flip to the inbox it lands in and triage the morning's post while the fakes sit beside the genuine work.
 
 | | |
 |---|---|
-| Audience | All staff |
-| Prerequisites | core_00 recommended (introduces the cast and the Report button) |
-| Full module | 18 minutes |
-| Micro-drill | 3 to 4 minutes ("Phish or Fine?") |
-| Text route | 12 minutes |
-| Priority | MVP |
-| Build size | L, driven by the inbox minigame (MG-01), which many other modules reuse |
+| Audience | All staff. Built as finance (E1), HR (E2), executive and PA (E4) and general-staff (E5) episodes |
+| Prerequisites | core_00 is the first-play brief in the kiosk frame; no module is locked behind another |
+| Full episode | About 13 minutes (brief, attack, flip, defend, debrief) |
+| Defend-only variant | About 8 minutes (brief, defend, debrief) |
+| Pre and post check | 4 to 5 minutes each, per role, no pass mark |
+| Text route | A gap in the build: an equivalent text route and a WCAG 2.2 AA statement are still to come |
+| Priority | Built (E1, E2, E4, E5); the after-the-click addition is new (E8) |
+| Build size | Built. The new work is E8 (LO6) and extra defend items, in the built shape |
+
+## Build status
+
+**Built.** The phishing-email outcomes are carried by four full episodes, each a defend-only variant and the role check forms, all in the "Incident Simulations: Critical Cases" line (`04_BUILT_SO_FAR.md`; `research/built_episodes_vs_plan.md` §2). Where a built episode and this plan once disagreed, the build wins.
+
+| Outcome | Covered by | Status |
+|---|---|---|
+| C01-LO1 pressures and the ask | E1, E2, E4, E5 attack and defend halves; concept cards | **Built** |
+| C01-LO2 read the address and domain | E1 and E5 defend halves; the general check forms (page items); the OSINT browser in every attack half | **Built** |
+| C01-LO3 pause-worthy requests | E1, E2, E4, E5 defend halves; all six role check forms | **Built** |
+| C01-LO4 check through a trusted channel | E1 and E4 defend sets (Verify verdict on); the debrief rule of thumb | **Built** |
+| C01-LO5 report when unsure | the Report verdict in every defend set; the report button, always visible and never penalised | **Built** |
+| C01-LO6 first steps after clicking, opening or typing a password | not yet taught: the debrief shows the consequence, not the recovery | **New (E8)** |
+
+**What the built episodes are:** E1 invoice and bank-detail fraud (Brightwell Foods, finance), E2 CV and recruitment lures (Tarrowby Logistics, HR), E4 executive whaling (Merrin & Sallow Architects, executive and PA), E5 fake sign-in pages (Quayholt Insurance, general staff). Item counts and flags are taken from the scenario files, not the design doc: E1 has 6 defend items (the `BRAND_SET.md` §5 set of 5 was extended in build), E2 has 6, E4 has 3 emails and 2 voicemails, E5 has 5 page items. Each attack half is capped at one artefact and is unscored; the defend half is scored on the verdict and the flags (60 and 40; `designs/11` §4.1). Reporting a genuine message is never penalised.
+
+**What is new:** E8 *after the click* (built shape, new), which teaches C01-LO6 and core_04 together, plus extra defend items that add the "threats arrive inside a real work task" frame the plan always wanted. E8's place in the roadmap is `04_BUILT_SO_FAR.md` §4; its design is in `game_design.md`.
 
 ## Why this module
 
-Phishing is the most common way attacks on organisations begin. In the UK government's Cyber Security Breaches Survey 2025, 85% of businesses that identified a breach or attack in the previous year had experienced phishing. Most of it aims at passwords, which open email, payroll, customer data and the trust of everyone the account can write to. Well-made phishing no longer has spelling mistakes, and it often arrives from real accounts that have been taken over, so the defence has to be a habit (pause, check another way, report) rather than a checklist of cues.
+Phishing is the most common way attacks on organisations begin. In the UK government's Cyber Security Breaches Survey 2025, 85% of businesses that identified a breach or attack in the previous year had experienced phishing. Most of it aims at passwords, which open email, payroll, customer data and the trust of everyone the account can write to. Well-made phishing no longer has spelling mistakes, and it often arrives from real accounts that have been taken over, so the defence has to be a habit (stop and check through a route you already trust) rather than a checklist of cues.
 
 ## Target behaviours
 
-1. **Reports** suspicious emails with the Report button, including when unsure and after their own mistake.
+1. **Reports** suspicious emails with the report button, including when unsure and after their own mistake.
 2. **Checks another way** before signing in, paying or sending data because an email asked: a bookmark, the app, the directory, a colleague.
 
 ## Learning outcomes
@@ -46,57 +64,60 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 - **UK GDPR Art 32** (security of processing: staff awareness is the usual organisational measure).
 - **NYDFS 500.14(a)(3)** (annual training including social engineering), for US financial services customers.
 
+The measurement for this coverage is the pre and post check pair, not a per-module pass mark; see `assessment.md`.
+
 ## Module flow
 
-| Beat | What happens | Format | Minutes |
-|---|---|---|---|
-| Hook | A "mailbox almost full" phish in the player's second week; their response is the baseline | Game (MG-01) | 1 to 2 |
-| Learn | Ama takes the hook email apart: the ask, the feeling, the sender, the link; then Pause, Check another way, Report | NPC explainer with visual aids (EX-01, BE-08) | 3 |
-| Practise | "Phish or Fine?": ten emails, getting harder, with instant feedback and the domain drill | Minigame (MG-01 practice, MG-03) | 3 to 4 |
-| Apply | Send the delivery schedule by 10:00 while four threats arrive among ordinary work; Leo asks for advice after a slip | Game (MG-01, BE-18) | 6 to 8 |
-| Debrief | Each threat, the clue, what you did, what checking would have looked like; Kai's report board | Debrief screen (BE-02) and NPCs | 2 |
-| Check | Six scenario questions | Quiz (MG-20) | 2 |
-| Reference | Reference card on The Lark, with the organisation's own Report button shown | Intranet (BE-09) | under 1 |
+The built episode shape, the same for E1, E2, E4 and E5. A full episode is about 13 minutes; the defend-only variant drops the attack and flip and runs about 8 minutes.
+
+| Stage | What happens | Scored |
+|---|---|---|
+| Brief and scope note | The host welcomes the learner in the training room and names the exercise as an authorised one at a fictional company | no |
+| Attack | Look at two public sources in the OSINT browser, collect typed intel facts, then compose one message from a template whose blanks take only the facts found; a red-flag meter guides before Send. One artefact, no links or payloads that work | no |
+| Flip | The learner's own message arrives in a defender's inbox with its tells highlighted, and a scripted defender line answers the learner's choice | no |
+| Defend | Triage the inbox with Trust, Report, Delete and (in E1 and E4) Verify; immediate feedback explains a miss before the next, similar item | yes |
+| Debrief | A reasoning card per item, feedback on the genuine items, the "team protected" tally, the habit to keep, the "On Monday" card, the customer's reporting route and a no-blame line | no |
+| Pre and post check | Separate missions that bracket the episodes: matched parallel forms, counterbalanced, no pass mark, per-item records only | the checks are scored, with no pass or fail |
 
 ## Reuse from existing Break Escape content
 
-- **Rooms:** `room_office` (Operations), `room_break` (kitchen), `room_security`.
-- **Conversations:** `person-chat` for Ama, Leo and Kai; `phone-chat` for the team chat and Lena's messages.
-- **Documents:** `notes` and `text-file` for the supplier directory and The Lark's notices.
-- **Patterns:** the instructor NPC topic hub from the `lab_*` scenarios and `story_design/ink/lab_sheets/phishing_social_engineering.ink` (rewritten as short, defensive, staff-level explanations); timed messages (`scenarios/timed_messages_example`) for scheduled arrivals; event-triggered conversations for Ama's arrival after a click.
-- **Systems:** the game clock and scenario timers for the 10:00 deadline; objectives and tasks for the work task bar.
+Built on the awareness systems on main (`04_BUILT_SO_FAR.md` §1):
+
+- the episode runner and its step strip, in one training room per company with a kiosk and a host, no doors, no combat, no VM;
+- the OSINT browser and the intel board of typed facts (the attack half);
+- the mail client in template mode with the red-flag meter;
+- the landing-page builder (E5), a scored model that never produces a working page;
+- the flip view;
+- the inbox-triage defender with its card kinds (email, call, voicemail, push, page, sms, qr), the report button and Verify;
+- the debrief view (reasoning cards, genuine-item feedback, the team-protected tally, the habit, the "On Monday" card, the customer report-route slot, the no-blame line);
+- concept cards (E2 carries one on macros);
+- awareness-measure records (ids, verdicts, chips, score, stage and time only; no free text, no identity);
+- the look-alike NPC guard and the social validator's strict social job in CI.
+
+The four training rooms are copied from a seminar room and dressed per company (Brightwell, Tarrowby, Quayholt, Merrin & Sallow), with the accent, a wall logo plate and a "REPORT IT" poster.
 
 ## New features needed
 
-- **MG-01 Inbox** (the core of the module).
-- **MG-03 Link and domain drill** (inline in practice items).
-- **MG-20 Knowledge check.**
-- **BE-01 Assessed decisions** and **BE-02 Debrief screen**: every row in `assessment.md`.
-- **BE-08 Visual aids**: the annotated hook email.
-- **BE-09 Intranet terminal**: The Lark, the survey list, the reference card.
-- **BE-05 Organisation profile**: the customer's own Report button name and location, service desk number and simulation policy.
-- **BE-13 Content banks**: the email bank and per-game domains.
-- **BE-16 Time skips**: the account-takeover consequence.
-- **BE-18 Work task and interruptions**: the schedule task and timed arrivals.
-- **BE-19 Open minigames from conversations and events**: the inbox opening by itself at the hook, and Ama's check question inside her explanation. Today a minigame only opens when the player clicks an object.
-- **BE-20 Authorable tutorial and title screen**: the course's own opening rather than the campaign's.
-- **BE-07 Micro-drill launcher** for "Phish or Fine?" (P2).
-- **MG-30 Pretext workshop** for the optional attacker-view beat 3b (P3; builds on MG-13 and MG-01, so it arrives after both). Optional, sandboxed, pretext-only.
-- **MG-04 Voice calls** for the Northbeck call-back (P2; a phone NPC conversation works until then).
-- **EX-02 and MG-21** for the optional sixty-second video (P2).
+The engine is built. The gaps that E8 and further episodes still need are the open MVP items in `features/README.md` (`04_BUILT_SO_FAR.md` §4):
+
+- **BE-03** an equivalent text route, and **BE-04 and BE-26** accessibility beyond the social overlays;
+- **BE-19** a real `#trigger_minigame`;
+- **BE-20** an authorable title and tutorial (today the shell still shows the platform title);
+- **BE-23** a pause that also stops the clock;
+- **BE-25** Unicode name entry;
+- **BE-30** configurable call labels.
+
+No runtime language model is used anywhere: the pretext judge, the defender replies, the feedback and the hints are authored data or ink. No video is used; the host, concept cards, feedback strings and text to speech do the explaining.
 
 ## Organisation-specific content
 
-- The name and location of the Report button, on desktop and mobile.
-- The service desk contact for "I clicked".
+- The customer's reporting route, resolved through the `customer_report_route` slot and shown in every debrief. The deployment setting for this is a proposed Hacktivity feature awaiting the user's answer (described at feature level only).
+- The name and location of the report button, where the customer wants it named on screen.
 - What to do after opening a suspicious attachment.
-- Whether the organisation runs simulated phishing and how clicks are treated (drops C01-Q11 if not).
-- Whether the optional attacker-view beat (3b, MG-30) is on. Off by default; on when the organisation wants it. When off, the beat is simply absent and nothing else changes.
-- The external sender banner wording, if any.
-- The approved way to reach company systems (bookmarks, an app, a portal).
+- The approved way to reach company systems (a bookmark, an app, a portal).
 
 ## Open questions
 
-1. **Inbox look.** Should MG-01 look like a generic mail client in the game's pixel style, or like a modern flat mail client? *Recommendation: generic and flat, legible, with no real brand, because transfer to the learner's own inbox matters more than style.*
-2. **Hook when replaying.** Should the hook phish change on a retake? *Recommendation: yes, draw a different hook from the bank so the baseline stays honest.*
-3. **Simulation tie-in.** If an organisation uses HA-12 simulated phishing, should a simulated click send the learner the micro-drill? *Recommendation: offer it as an optional link, never as a forced "you failed" page; the research on landing-page training is weak.*
+1. **E8 company and host.** E8 *after the click* is proposed at Quayholt Insurance with host Anjali Rao, the information security analyst who receives reports, so the general-staff thread from E5 carries on. *Recommendation: confirm Quayholt and Anjali Rao, both already in `BRAND_SET.md`.*
+2. **Extra defend items.** The plan still wants more defend items that place the threat inside a real work task. *Recommendation: add them to the existing E1, E2, E4 and E5 defend sets and the check forms, keeping the matched-flag balance the social validator checks.*
+3. **The attacker half for customers who object.** Already answered by the build: the defend-only variant is the opt-out, and the no-blame line moves into its debrief. (Candidate for DECISIONS_PENDING: whether E6 and E7 should be defend-only by default, which the user put on hold as aw7.)

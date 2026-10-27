@@ -68,19 +68,31 @@ Spelling mistakes and odd grammar used to be a good clue. They aren't any more: 
 
 The part that matters is the **domain**: read the address up to the first single `/` after the `://`, then read that part from the right-hand end.
 
-| Address | Real domain | Safe to trust as Larkspur? |
+Examples use a fictional company from the brand set, Brightwell Foods at `brightwellfoods.example`; every domain in the awareness product ends `.example`.
+
+| Address | Real domain | Safe to trust as Brightwell? |
 |---|---|---|
-| `https://thelark.larkspur.co.uk/policies` | `larkspur.co.uk` | Yes |
-| `https://larkspur.co.uk.account-verify.net/login` | `account-verify.net` | No: "larkspur.co.uk" is only a decoration at the front |
-| `https://larkspur-co-uk.sharepoint-docs.com/` | `sharepoint-docs.com` | No |
-| `https://www.larksper.co.uk/` | `larksper.co.uk` | No: one letter changed |
-| `https://bit.ly/3xYz` | `bit.ly` (a link shortener) | Can't tell: the real destination is hidden |
+| `https://intranet.brightwellfoods.example/policies` | `brightwellfoods.example` | Yes |
+| `https://brightwellfoods.example.account-verify.example/login` | `account-verify.example` | No: "brightwellfoods.example" is only a decoration at the front |
+| `https://brightwell-foods.sharepoint-docs.example/` | `sharepoint-docs.example` | No |
+| `https://www.brightwel1foods.example/` | `brightwel1foods.example` | No: one letter changed (a look-alike) |
+| `https://shrtn.example/3xYz` | `shrtn.example` (a link shortener) | Can't tell: the real destination is hidden |
+
+The look-alikes use learnable shapes only (a swapped character, an added hyphen, an added word), never homographs: non-technical staff are taught to read the address, not to inspect code points.
 
 A padlock and `https` mean only that the connection is encrypted. Phishing sites use `https` too.
 
 ### Why "check another way" works
 
 An attacker controls everything inside the message: the sender name, the links, the phone number, the reply address, the logo. They don't control the routes you already trust: the bookmark in your browser, the app on your phone, the number in the company directory, the colleague at the next desk. Checking through one of those routes defeats almost every phish, however convincing, which is why it beats trying to spot every clue.
+
+### The habit to keep (the shared rule of thumb)
+
+The built episodes end every debrief on one rule of thumb, identical in all shells and enforced by a test. It replaces any short motto. Quote it word for word:
+
+> When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do.
+
+Everything above is this rule applied to email: notice the pressure, check through a route you already trust, and report. "Pause. Check. Report." is not used.
 
 ### Why reporting matters
 
@@ -144,15 +156,18 @@ Use these as background and inspiration only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+The built product resolves the reporting route through the `customer_report_route` slot, shown in every debrief, and fills the other values from the organisation profile. Defaults are generic, not tied to any one fictional company.
+
+| Slot | Default |
 |---|---|
+| Customer reporting route (shown in the debrief) | "Report it the way your organisation asks you to" until the customer's own route is set |
 | Name and location of the report button | "Report suspicious" in the mail toolbar; in the mobile mail app under "..." |
-| Other reporting route | The security team on extension 4444 |
-| Service desk contact for "I clicked" | The 24/7 service desk line |
+| Other reporting route | The organisation's security team contact |
+| Service desk contact for "I clicked" | The organisation's 24/7 service desk line |
 | What to do if you opened an attachment | "Leave the device on, unplug the network cable or turn off Wi-Fi if the service desk asks, and wait for instructions" |
-| External sender banner wording | "EXTERNAL: this email came from outside Larkspur" |
-| Simulated phishing policy | "We run test phishing emails. If you report one, thank you. If you click one, you'll see a short tip; nobody is disciplined for clicking." |
-| Approved way to sign in to company systems | Bookmarks on The Lark (the intranet) and the company app |
+| External sender banner wording | "EXTERNAL: this email came from outside the organisation" |
+| Simulated phishing policy | An organisation option only: the built product runs no simulations and makes no click-rate claim |
+| Approved way to sign in to company systems | The organisation's bookmarks, intranet and app |
 
 ## Glossary
 
@@ -179,4 +194,4 @@ Use these as background and inspiration only. Game content uses fictional names.
 - Lain, D., Kostiainen, K. and Čapkun, S. (2022) "Phishing in organizations: findings from a large-scale and long-term study", IEEE Symposium on Security and Privacy.
 - Ho, G. and others (2025) "Understanding the efficacy of phishing training in practice", IEEE Symposium on Security and Privacy.
 - Sheng, S. and others (2007) "Anti-Phishing Phil: the design and evaluation of a game that teaches people not to fall for phish", SOUPS.
-- Chothia, T., Paiu, S.-I. and Oultram, M. (2018) "Phishing attacks: learning by doing", USENIX Workshop on Advances in Security Education (ASE '18). The basis for the optional attacker-view beat: learners who build a convincing pretext stop believing that only careless people are fooled. We use the pretext-and-psychology half at awareness level, not the paper's technical payload work.
+- Chothia, T., Paiu, S.-I. and Oultram, M. (2018) "Phishing attacks: learning by doing", USENIX Workshop on Advances in Security Education (ASE '18). The basis for the built attack-first half: learners who build a convincing pretext stop believing that only careless people are fooled. The build uses the pretext-and-psychology half at awareness level, with templates and found facts only, never the paper's technical payload work, and always flips to the defence.

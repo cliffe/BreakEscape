@@ -1,23 +1,41 @@
 # core_02: Social engineering beyond email
 
 **Working game title:** The Caller
-**Pitch:** Cover the Operations phone line for one busy morning, where most callers want a simple answer and a few want your code, your help, or a quick favour.
+**Pitch:** Run a pretext call against a help desk, then flip to the agent's seat and triage the calls, texts, pushes and QR codes that arrive beside the genuine ones.
 
 | | |
 |---|---|
-| Audience | All staff |
-| Prerequisites | core_00 recommended (introduces the cast and the Report button); pairs with core_01 |
-| Full module | 18 minutes |
-| Micro-drill | 4 minutes ("Caller or Con?") |
-| Text route | 12 minutes |
-| Priority | Phase 2 |
-| Build size | M, driven by the voice-call minigame (MG-04) and the messaging and QR skins (MG-05, MG-06) |
+| Audience | All staff. Built as helpdesk (E3, calls and MFA) and mobile (E6, texts and QR) episodes, with voicemails in E4 and E7 |
+| Prerequisites | core_00 is the first-play brief in the kiosk frame; pairs with core_01 |
+| Full episode | About 13 minutes (E3 about 17, accepted by the user) |
+| Defend-only variant | About 8 minutes |
+| Pre and post check | 4 to 5 minutes each (helpdesk and mobile forms), no pass mark |
+| Text route | A gap in the build (BE-03), still to come |
+| Priority | Built (E3, E6; E4 and E7 voicemails); the in-person, chat-app and remote-access additions are new |
+| Build size | Built. The new work is extra defend items and the UK personal-scam routes, plus the visitor episode (E12) in the roadmap |
+
+## Build status
+
+**Part built** (`research/built_episodes_vs_plan.md` §2). Beyond-email social engineering is carried by two full episodes and the voicemail cards in two more, all in the "Incident Simulations: Critical Cases" line. The build wins over the old plan.
+
+| Outcome | Covered by | Status |
+|---|---|---|
+| C02-LO1 channels and levers | E3 (calls), E6 (texts, QR), E4 and E7 (voicemail); concept cards | **Built** for phone, text, QR, voicemail; **New** for in-person and chat apps |
+| C02-LO2 pause-worthy requests | E3 call cards; E6 text and QR cards; helpdesk and mobile checks | **Built** |
+| C02-LO3 verify through a known number | E3 role swap (callback to the number on file); the habit to keep | **Built** |
+| C02-LO4 refuse a code or remote access | E3 MFA-push and reset stages; the "never read out a code" concept card | **Built** |
+| C02-LO5 decide on a QR code before scanning | E6 QR cards (`qr` card kind) | **Built** |
+| C02-LO6 report at work; 7726, 159 and Report Fraud at home | the report verdict in every defend set | **Built** for the work route; **New** for 7726, 159 and Report Fraud (in no shell yet) |
+
+**What the built episodes are:** E3 help-desk reset by phone then MFA fatigue (Quayholt Insurance, helpdesk), which uses the pretext call on the influence score, an attacker-side MFA push run, then the role swap in which the learner is the service-desk agent triaging three calls (two impostor, one genuine) and one unrequested push, Verify on. E6 texts and QR codes (Tarrowby Logistics, mobile), a work-phone inbox of three texts, two QR notices and one email, Verify on. E4 and E7 carry voicemail cards. Item counts are from the scenario files.
+
+**What is new:** in-person approaches, chat-app impersonation, remote-access scams, and the UK personal-scam routes (7726, 159, Report Fraud), which appear in no shell today. The in-person approach is carried by the proposed visitor episode **E12 the visitor and the tailgater** (core_10, with person-chat in the training room; `04_BUILT_SO_FAR.md` §4). Chat-app and remote-access defend items, and the home routes on the reference card, are new items added to the E3 and E6 sets and the helpdesk and mobile checks, in the built shape.
 
 ## Why this module
 
-Attacks do not only arrive by email. The same fraud lands as a phone call (vishing), a text (smishing), a message on a chat app ("Hi, it's me, I've got a new number"), a QR code on a poster or sticker (quishing), or a friendly stranger at the door with a story (pretexting). The aim is almost always the same as a phishing email: a password, a one-time code, a payment, information, or remote control of a device. Calls and messages feel more personal and more urgent than email, so people act before they think. Criminals know this, and they have learned to ask a human to do the one thing a computer cannot be tricked into: read out a code, or install a tool, or hold a door.
+Attacks do not only arrive by email. The same fraud lands as a phone call (vishing), a text (smishing), a message on a chat app ("Hi, it's me, I've got a new number"), a QR code on a poster or sticker (quishing), or a friendly stranger at the door with a story (pretexting). The aim is almost always the same as a phishing email: a password, a one-time code, a payment, information, or remote control of a device. Calls and messages feel more personal and more urgent than email, so people act before they think.
 
-Two recent cases show the pattern. In 2023 the software firm Retool was breached after an employee got a text claiming to be from IT about an HR benefits (open enrolment) problem, signed in on a fake page, and was then telephoned by an "IT" caller who talked them into sharing a one-time code. The cybercrime group tracked as Scattered Spider, described in a joint US advisory first published in November 2023 and updated to July 2025, repeatedly phoned or texted staff and help desks posing as IT to collect passwords, get remote-access tools installed, or have staff read out MFA codes. The defence against all of it is one habit: stop, and check through a route you already trust before you act.
+Two recent cases show the pattern. In 2023 the software firm Retool was breached after an employee got a text claiming to be from IT about an HR benefits problem, signed in on a fake page, and was then telephoned by an "IT" caller who talked them into sharing a one-time code. The cybercrime group tracked as Scattered Spider, described in a joint US advisory first published in November 2023 and updated to July 2025, repeatedly phoned or texted staff and help desks posing as IT to collect passwords, get remote-access tools installed, or have staff read out MFA codes. The defence against all of it is one habit: stop, and check through a route you already trust before you act.
 
 ## Target behaviours
 
@@ -47,47 +65,57 @@ Contributes to (with core_01, meets the social-engineering training expectation)
 - **NIS2** Article 21(2)(g) (basic cyber hygiene and training).
 - **NCSC CAF** B6 (staff awareness and training).
 
+Measurement is the helpdesk and mobile pre and post check pair, not a per-module pass mark; see `assessment.md`.
+
 ## Module flow
 
-| Beat | What happens | Format | Minutes |
-|---|---|---|---|
-| Hook | "Owain from IT" rings about a security alert and asks the player to read back a code and install a support tool; the response is the baseline | Game (MG-04) | 1 to 2 |
-| Learn | Ama explains the channels and the levers, and hands over a social engineer bingo card; the defence is Pause, Check back, Report | NPC explainer with visual aids (EX-01, BE-08) | 3 |
-| Practise | "Caller or Con?": eight short calls, texts and messages, getting harder, with instant feedback | Minigame (MG-04, MG-05 practice) | 3 to 4 |
-| Apply | Cover the Operations phone line while logging school delivery queries; genuine and fake contacts arrive by call, text, chat and QR, plus a visitor at the door | Game (MG-04, MG-05, MG-06, BE-18) | 6 to 8 |
-| Debrief | The bingo card becomes the score; each attempt replayed with the clue and what checking back would have looked like; Jo's recorded test call | Debrief screen (BE-02), NPCs, demonstration (EX-05, EX-06) | 2 |
-| Check | Six scenario questions | Quiz (MG-20) | 2 |
-| Reference | Reference card on The Lark: Pause, Check back, Report; 7726, 159 and Report Fraud for home | Intranet (BE-09) | under 1 |
+The built episode shape. E3 adds a pretext-call and an MFA stage in the attack half and a role swap in the defend half; E6 uses the phone layout. A full episode is about 13 minutes (E3 about 17); the defend-only variant is about 8 minutes.
+
+| Stage | What happens | Scored |
+|---|---|---|
+| Brief and scope note | The host welcomes the learner and names the exercise as authorised, at a fictional company | no |
+| Attack | E3: a pretext call to the service desk as a locked-out manager (an influence bar shows how each line moved it), then an attacker-side MFA push run approved at an odd hour. E6: compose one "scan this code" message to depot staff. Unscored, one artefact | no |
+| Flip | The learner's own pretext arrives on the receiving end: E3 flips to the agent's seat, E6 to the work phone | no |
+| Defend | E3: triage three calls (two impostor, one genuine) plus one unrequested push, Verify on. E6: a work phone of texts, QR notices and an email, Verify on. New chat-app and remote-access items added here | yes |
+| Debrief | Reasoning cards, genuine-item feedback, the team-protected tally, the habit to keep, the "On Monday" card, the customer report route, the no-blame line, and (new) the home routes 7726, 159 and Report Fraud | no |
+| Pre and post check | Helpdesk and mobile forms bracketing the episodes: matched parallel forms, counterbalanced, no pass mark | the checks are scored, with no pass or fail |
 
 ## Reuse from existing Break Escape content
 
-- **Rooms:** `room_office` (the Operations phone desk), `room_break` (the kitchen, where Owain actually is), `room_reception` (Maureen and the side-door visitor), `room_security` (Ama and Jo's debrief). No new rooms.
-- **Conversations:** `person-chat` for Ama, Maureen, Owain, Jo and the visitor; `phone-chat` for calls, texts and the chat app. The phone minigame already supports `timedMessages`, a terminal theme and TTS voice messages.
-- **Patterns:** the call-back verification in `scenarios/sis02_energy/ink/npc_tom_hadley.ink` (the SOC refuses an unverified change and rings back on the number it holds) is the model for "check back on a number you already have". `scenarios/test-phone-terminal` shows two phones (a trusted contact and an unknown sender) running side by side. `docs/NPC_INFLUENCE.md` for the pressure popups during a pushy call.
-- **Voicemail:** the `phone` object with `voice` and `ttsVoice` (see `README_scenario_design.md`) for Jo's recorded test call.
+Built on the awareness systems on main:
+
+- the episode runner and step strip, in the Quayholt and Tarrowby training rooms;
+- the OSINT browser and intel facts (the attack halves);
+- the pretext call on the influence global, with a bar and thresholds (E3);
+- the MFA authenticator demo (E3, the attacker push run and the defend push card);
+- the role-swap module (E3: the learner becomes the service-desk agent);
+- the inbox-triage defender with its non-email card kinds (`call`, `push`, `voicemail`, `sms`, `qr`) and the report button and Verify;
+- the mail client in template mode with the red-flag meter (E6's one message);
+- one ink story per channel, with synced globals, for the scripted caller and messenger replies;
+- the flip view, concept cards, the debrief view and awareness-measure records;
+- the look-alike NPC guard and the social validator's strict social job.
 
 ## New features needed
 
-- **MG-04 Voice calls** (the core of the module): incoming and outgoing calls, a ringing phone, a directory to call back on a known number, hold and transfer, events for every action. Until it exists, calls can run as `phone-chat` NPC conversations.
-- **MG-05 Messaging apps**: SMS and chat-app skins on the phone chat, with unknown numbers and links.
-- **MG-06 QR code scanner**: scan a code in the world, see where it really goes, choose to open it or not.
-- **BE-18 Work task and interruptions**: the delivery-query log, with calls and messages arriving as scheduled interruptions.
-- **BE-19 Open minigames from conversations and events**: the first call ringing by itself at the hook; Ama's check question.
-- **EX-06 Attacker-view interlude** and **EX-05 Demonstration**: Jo's recorded authorised test call, unpicked by Maureen.
-- **BE-08 Visual aids**: the levers diagram and the bingo card in the conversation panel.
-- **BE-02 Debrief**, **BE-01 Assessed decisions**, **MG-20 Knowledge check**, **BE-09 Intranet terminal**, **BE-05 Organisation profile** (reporting routes and service desk number), **BE-13 Content banks** (the caller and message bank).
-- **BE-22 Tactic spotter card**, the catalogued light overlay listing social engineering tactics that the player ticks off as they hear them in play, and which becomes the debrief score. (A simpler build could reuse the knowledge-check tally; flagged for the orchestrator.)
+The engine is built. The open MVP gaps that the new items and the visitor episode (E12) still need are in `features/README.md`:
+
+- **BE-03** a text route and **BE-04 and BE-26** accessibility beyond the social overlays;
+- **BE-30** configurable call labels (for the call and push cards);
+- **BE-19** a real `#trigger_minigame`;
+- person-chat in the training room, for the E12 visitor approach.
+
+No runtime language model is used: the pretext judge, the caller and messenger replies and the feedback are authored data or ink. No video.
 
 ## Organisation-specific content
 
-- The reporting route for a suspicious call, text or visitor, and the service desk number.
+- The customer reporting route (the `customer_report_route` slot), and the service desk number.
 - How the organisation's genuine IT verifies itself to staff (it never asks for a code or remote access by cold call).
-- The visitor sign-in and escort rule (shared with core_10).
+- The visitor sign-in and escort rule (shared with core_10 and E12).
 - Whether the organisation publishes a "we will never ask you for" list.
 - The home reporting lines on the reference card (7726, 159, Report Fraud; Police Scotland 101 in Scotland).
 
 ## Open questions
 
-1. **Live voice or text calls.** Should MG-04 play recorded TTS voice for callers, or run as on-screen text with an optional voice? *Recommendation: text first with optional TTS, so the module works with sound off and on low-spec devices, and so no voiced line prints a variable.*
-2. **The bingo card.** Build BE-22 as a dedicated overlay, or render it with the existing notes or knowledge-check UI? *Recommendation: start with the existing UI to prove the idea, then propose BE-22 if playtests show it needs its own card.*
-3. **Side-door visitor overlap with core_10.** How much of the door scene belongs here? *Recommendation: keep it to the conversation (the story, the jargon, the ask) and point to core_10 for the physical access rules.*
+1. **In-person approach.** Carried by the proposed E12 (the visitor and the tailgater), which needs person-chat in the training room. *Recommendation: build E12 for core_10 and share its visitor defend item here; keep core_02's in-person content to the conversation (the story, the jargon, the ask) and point to core_10 for the physical rules.*
+2. **Home routes on the card.** 7726, 159 and Report Fraud appear in no shell. *Recommendation: add them to the E3 and E6 debrief reference cards and as a check item, since they are the personal-scam half of LO6.*
+3. **Defend-only by default for E6.** The user put "E6 and E7 defend-only by default" (aw7) on hold. *Recommendation: leave it as a user decision; both episodes already have defend-only variants. (Candidate for DECISIONS_PENDING.)*

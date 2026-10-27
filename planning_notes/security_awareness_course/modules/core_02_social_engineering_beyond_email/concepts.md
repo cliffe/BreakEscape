@@ -54,6 +54,14 @@ An attacker controls everything inside the contact they started: the number show
 
 A practical point: call back on a different line or after a clear gap where you can. Some scam calls stay connected on the line even after you think you have hung up, so use a mobile, or wait, or ring a number you can see is ringing out.
 
+### The habit to keep (the shared rule of thumb)
+
+The built episodes end every debrief on one rule of thumb, identical in all shells and enforced by a test. It is the beyond-email habit too, since a call, a text or a QR code is just another way the same pressure arrives. Quote it word for word:
+
+> When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do.
+
+"Pause. Check. Report." is not used.
+
 ### One-time codes and remote access
 
 - **Never read a code to anyone.** A code sent to you is for you to type into the real app or site yourself, never to repeat to a caller or messenger. Passwords, MFA codes and one-time passcodes are the keys to your accounts (core_03).
@@ -108,9 +116,11 @@ Use as background and inspiration only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+The built product resolves the reporting route through the `customer_report_route` slot, shown in every debrief; defaults are generic, not tied to any one fictional company.
+
+| Slot | Default |
 |---|---|
-| Report a suspicious call, text or visitor | The Report button for messages; the security team on extension 4444; the 24/7 service desk line |
+| Report a suspicious call, text or visitor | The report button for messages; the organisation's security team; the 24/7 service desk line |
 | Service desk number for "someone called asking for a code" | The 24/7 service desk line |
 | How genuine IT verifies itself | "We will never phone you for a one-time code or to install remote-access software" |
 | Visitor rule | Visitors sign in at reception, wear a visitor badge and are escorted (see core_10) |
