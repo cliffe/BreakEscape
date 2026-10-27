@@ -189,3 +189,54 @@ test('Close is a normal exit and the result carries the choice', () => {
     assert.equal(result.count, 'flood');
     assert.equal(result.sent, 4, 'sent counts the rendered cards');
 });
+
+test('initial focus lands on the first radio, not the disabled Confirm (t-2)', () => {
+    const scene = open(DEC());
+    const first = scene.container.querySelector('.auth-choice-radio');
+    assert.ok(first, 'a radio exists');
+    assert.ok(document.activeElement && document.activeElement.matches('.auth-choice-radio'),
+        `focus should be on a radio, was ${document.activeElement && document.activeElement.className}`);
+    assert.equal(document.activeElement, first, 'the first radio specifically');
+    scene.close();
+});
+
+test('Esc with a radio focused is one press and does not skip the beat (t-1, m-1)', () => {
+    const scene = open(DEC());
+    const r = scene.container.querySelector('input[name="auth-timing"][value="night"]');
+    r.focus();
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(named('minigame_completed').length, 0, 'a single Esc did not exit');
+    assert.equal(scene.container.querySelector('.auth-choice').hidden, false, 'still on the choice panel');
+    scene.close();
+});
+
+test('Esc mid-playback returns to choosing instead of skipping (m-1)', () => {
+    const scene = open(DEC());
+    pick(scene, 'timing', 'night');
+    pick(scene, 'count', 'few');
+    scene.container.querySelector('.auth-confirm').click();
+    scene.advance(); // one push delivered, mid-playback
+    assert.equal(scene.getTestState().authenticator.decision.decided, true);
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(named('minigame_completed').length, 0, 'did not exit mid-playback');
+    assert.equal(scene.container.querySelector('.auth-choice').hidden, false, 'back to the choice panel');
+    assert.equal(scene.container.querySelector('.auth-phone').hidden, true, 'phone hidden again');
+    assert.equal(scene.getTestState().authenticator.decision.decided, false);
+    assert.equal(scene.getTestState().authenticator.approvedAt, null);
+    assert.equal(scene.container.querySelectorAll('.auth-card').length, 0, 'feed cleared');
+    // the selection is kept, so a single Confirm replays
+    assert.equal(scene.container.querySelector('.auth-confirm').disabled, false);
+    scene.close();
+});
+
+test('once the outcome is shown, Esc is a normal exit (m-1)', () => {
+    const scene = open(DEC());
+    pick(scene, 'timing', 'night');
+    pick(scene, 'count', 'few');
+    scene.container.querySelector('.auth-confirm').click();
+    drain(scene); // play to the approval and outcome
+    assert.equal(scene.getTestState().authenticator.decision.outcomeShown, true);
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(named('minigame_completed').length, 1, 'Esc now exits');
+    assert.equal(named('minigame_failed').length, 0);
+});

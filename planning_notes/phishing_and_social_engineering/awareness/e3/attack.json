@@ -195,7 +195,7 @@
       ],
       "defenderNotes": {
         "manager": "A helpdesk that calls back on the number already on file does not need to guess whether a manager's name is proof.",
-        "reset_password": "Both answers she accepted, the manager's name and the staff reference, were on the public site. A callback to the number on file defeats every line here."
+        "reset_password": "The manager's name and the staff reference the caller leant on were both on the public site, so neither could prove who was calling. A callback to the number already on file is the one check that separates the real Gordon from an impostor."
       }
     }
   ],
@@ -230,6 +230,6 @@
       }
     },
     "pushTemplate": { "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example", "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" },
-    "defenderNote": "Gordon's app could stop every version of this. Number matching makes a half-asleep tap useless, a prompt he didn't start is a report and not an Approve, and a rate limit caps the flood."
+    "defenderNote": "Gordon's phone is where this stops. With number matching he would have to type a number the attacker never sees, so an idle tap goes nowhere, and a prompt he didn't ask for is one to report, not approve."
   }
 }

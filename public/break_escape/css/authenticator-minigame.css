@@ -14,7 +14,10 @@
     color: var(--auth-ink);
     box-sizing: border-box;
     max-width: 420px;
-    margin: 0 auto;
+    /* Fit, and scroll, on short screens (M-1): the outcome and defender note must stay reachable. */
+    max-height: min(92vh, 760px);
+    overflow-y: auto;
+    margin: 2vh auto;
     padding: 12px;
 }
 
@@ -25,11 +28,17 @@
 }
 .auth-intro { margin: 0 0 12px; font-size: 15px; line-height: 1.4; color: var(--auth-dim); }
 
-/* decision mode: when and how many (E3-11) */
-.auth-choice { display: flex; flex-direction: column; gap: 14px; margin: 0 0 4px; }
-.auth-choice-group { border: 1px solid var(--auth-line); border-radius: 10px; margin: 0; padding: 10px 12px 12px; }
+/* decision mode: when and how many (E3-11).
+   The panel is a light surface so its dark ink reads against the dark overlay (M-2). */
+.auth-choice {
+    display: flex; flex-direction: column; gap: 12px; margin: 0 0 4px;
+    padding: 12px; border-radius: 10px;
+    background: var(--auth-surface); border: 1px solid var(--auth-line); color: var(--auth-ink);
+}
+.auth-choice[hidden] { display: none; }
+.auth-choice-group { border: 1px solid var(--auth-line); border-radius: 10px; margin: 0; padding: 10px 12px 12px; background: #fff; }
 .auth-choice-legend { padding: 0 6px; font-size: 14px; font-weight: 700; color: var(--auth-ink); }
-.auth-choice-opt { display: flex; align-items: flex-start; gap: 8px; padding: 5px 2px; font-size: 14px; line-height: 1.35; cursor: pointer; }
+.auth-choice-opt { display: flex; align-items: flex-start; gap: 8px; padding: 5px 2px; font-size: 14px; line-height: 1.35; cursor: pointer; color: var(--auth-ink); }
 .auth-choice-radio { margin: 2px 0 0; flex: none; }
 .auth-choice-opt-label { color: var(--auth-ink); }
 .auth-confirm { align-self: flex-start; padding: 8px 18px; font: inherit; font-weight: 700; }
@@ -76,6 +85,7 @@
 .auth-approved .auth-phone { outline: 3px solid var(--auth-danger); }
 
 .auth-controls { margin-top: 14px; text-align: center; }
+.auth-controls[hidden] { display: none; }
 .auth-send { padding: 8px 18px; font: inherit; font-weight: 700; }
 .auth-send:disabled { opacity: 0.5; cursor: default; }
 

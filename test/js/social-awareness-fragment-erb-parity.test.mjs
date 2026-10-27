@@ -51,7 +51,10 @@ const EPISODES = [
 ];
 
 // strings keys whose VALUE is allowed to differ between fragment and erb.
-const STRINGS_VALUE_EXEMPT = new Set(['defendIntro']);
+//   - conceptPanel (E3, P6 m-4): the full episode's learner just ran the attack ("Why the call and
+//     the prompts worked"), while the defend-only learner only defended, so the fragment carries a
+//     defender-framed version ("Why these are hard to catch"). Both are present and intentionally differ.
+const STRINGS_VALUE_EXEMPT = new Set(['defendIntro', 'conceptPanel']);
 // strings keys allowed to exist only in the erb (full-episode-only panels).
 const STRINGS_ERB_ONLY_OK = new Set(['conceptPanel', 'flipCallIntro', 'flipPageIntro', 'voicePanel', 'defendIntro', 'flipDefenderLineByChoice']);
 // triage-set-level keys allowed to exist only in the erb.

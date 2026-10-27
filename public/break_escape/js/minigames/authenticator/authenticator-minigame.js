@@ -81,6 +81,7 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         this.decided = false;   // true once the learner confirms when/how-many
         this.chosenCount = 0;   // the authored prompt count behind the chosen bucket
         this.outcomeLines = []; // why-it-worked + defender control, shown after the approval
+        this._removeChoiceLayer = null; // Esc/Close route to "back to choosing" until the outcome shows
     }
 
     // ── lifecycle ──────────────────────────────────────────────────────────────
@@ -145,11 +146,23 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         super.start();
         // Decision mode waits on the learner's choice before any prompt plays.
         if (this.choice && !this.decided) {
-            try { this.confirmButton?.focus?.(); } catch (e) { /* focus is a nicety */ }
+            // The beat must not be skipped by a habitual Esc or Close (m-1): both route to
+            // "back to choosing" until the outcome is on screen. Registering a layer makes a
+            // single Esc land here even with a radio focused (t-1), ahead of the overlay's
+            // text-field blur. The layer is removed once the approval and outcome have shown.
+            if (!this._removeChoiceLayer) this._removeChoiceLayer = this.pushLayer(() => this._backToChoosing(), 'mfa-decision');
+            this._focusFirstRadio();  // start on the first option, not the disabled Confirm (t-2)
             return;
         }
         try { this.sendButton?.focus?.(); } catch (e) { /* focus is a nicety */ }
         this._scheduleNext();
+    }
+
+    _focusFirstRadio() {
+        try {
+            const first = this.choicePanel?.querySelector?.('.auth-choice-radio');
+            (first || this.confirmButton)?.focus?.();
+        } catch (e) { /* focus is a nicety */ }
     }
 
     cleanup() {
@@ -215,6 +228,8 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         this.banner.hidden = false;
         this.root?.classList.add('auth-approved');
         this._renderOutcome();
+        // The outcome is now on screen, so Esc/Close become a normal exit to the flip.
+        if (this._removeChoiceLayer) { this._removeChoiceLayer(); this._removeChoiceLayer = null; }
     }
 
     /** The collapsed tail of a large burst ("…and N more"). */
@@ -329,6 +344,34 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         this._scheduleNext();
     }
 
+    /**
+     * Esc or Close before the outcome is shown (m-1). Cancels any playback and returns to the
+     * choice panel, keeping the radio selection so a re-confirm is one click. The learner cannot
+     * skip the beat by habit; once the approval has played the layer is gone and Esc/Close exit.
+     */
+    _backToChoosing() {
+        if (!this.choice) return;
+        this._cancelTimer();
+        this.timeline = buildTimeline(this.params);
+        this.cursor = 0;
+        this.sent = 0;
+        this.played = [];
+        this.approvedAt = null;
+        this.decided = false;
+        this.chosenCount = 0;
+        this.outcomeLines = [];
+        if (this.feed) { while (this.feed.firstChild) this.feed.removeChild(this.feed.firstChild); }
+        if (this.banner) { this.banner.hidden = true; this.banner.textContent = ''; }
+        this.root?.classList.remove('auth-approved');
+        if (this.outcomeEl) { this.outcomeEl.remove(); this.outcomeEl = null; }
+        if (this.choicePanel) this.choicePanel.hidden = false;
+        if (this.phoneEl) this.phoneEl.hidden = true;
+        if (this.controlsEl) this.controlsEl.hidden = true;
+        this._updateControls();
+        this._updateConfirm();
+        this._focusFirstRadio();
+    }
+
     _appendCard(event, manual = false) {
         const card = el('div', `auth-card${manual ? ' auth-card-manual' : ''}`);
         card.appendChild(el('p', 'auth-card-app', event.app || 'Authenticator'));
@@ -357,6 +400,12 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
     }
 
     // ── exit and test bridge ─────────────────────────────────────────────────────
+
+    requestClose() {
+        // Before the outcome is on screen, Close and Esc mean "back to choosing", never a skip (m-1).
+        if (this.choice && this.approvedAt === null) { this._backToChoosing(); return; }
+        super.requestClose();
+    }
 
     closeResult() {
         const result = { approvedAt: this.approvedAt, sent: this.sent, mode: this.mode };
