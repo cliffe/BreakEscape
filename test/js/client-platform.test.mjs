@@ -260,7 +260,10 @@ test('android-app referrer in a browser tab (display-mode browser, or no matchMe
 test('cold start: an unlisted package or an https referrer does not count', () => {
     let w = load({ referrer: 'android-app://com.evil.app/', before: FULLSCREEN });
     assert.deepEqual(attrs(w), ['browser', 'web']);
+    // an https referrer is no Play evidence: the page is the web app (pwa-app), never play-app
     w = load({ referrer: 'https://hacktivity.test/', before: FULLSCREEN });
+    assert.deepEqual(attrs(w), ['pwa-app', 'web']);
+    w = load({ referrer: 'https://hacktivity.test/' });
     assert.deepEqual(attrs(w), ['browser', 'web']);
 });
 
@@ -721,4 +724,213 @@ test('click router: an off-site link to a host the hand-off refuses is left to t
     // data-outside to a refused host still goes through openOutside, which opens it in the app's own view
     assert.equal(click(w, link('https://example.com/', 'data-outside')).defaultPrevented, true);
     assert.equal(w.__hacktivityOutside[1].via, 'window');
+});
+
+// ---- the installed web app (pwa-app), PWA.md section 8 ----
+// Every combination of: desktop UA, stored Play value, Play marker (referrer / Digital Goods / failed
+// checks), android-app referrer, display mode, Android UA with and without the web app's own marker.
+
+const DISPLAY = (mode) => (w) => { w.matchMedia = (q) => ({ matches: q.includes(`display-mode: ${mode}`), media: q }); };
+const STANDALONE = DISPLAY('standalone');
+const MINIMAL = DISPLAY('minimal-ui');
+const IOS_STANDALONE = (w) => { Object.defineProperty(w.navigator, 'standalone', { value: true }); };
+const ANDROID_UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/131.0.0.0 Mobile Safari/537.36';
+const SHELL_URL = 'https://hacktivity.test/hacktivities/42/play';
+const DESKTOP_UA = 'Mozilla/5.0 Electron/30 HacktivityApp/0.2.0 (game=licence-to-hack; edition=full; store=web)';
+const both = (...fns) => (w) => fns.forEach((f) => f(w));
+const resolves = () => Promise.resolve({});
+
+test('pwa: standalone alone on a shell page is pwa-app/web, with the shell title as home', async () => {
+    const w = load({ url: SHELL_URL, before: STANDALONE });
+    assert.deepEqual(attrs(w), ['pwa-app', 'web'], 'set synchronously');
+    await w.HacktivityPlatform.ready;
+    assert.equal(w.HacktivityPlatform.isAppWindow, true);
+    assert.equal(w.HacktivityPlatform.eventId, '42');
+    assert.equal(w.HacktivityPlatform.homeUrl(), '/hacktivities/42/play');
+    assert.equal(w.sessionStorage.getItem('hacktivity.platform'), null, 'the Play value is not written');
+});
+
+test('pwa: fullscreen, minimal-ui and iOS navigator.standalone count as installed', () => {
+    assert.deepEqual(attrs(load({ url: SHELL_URL, before: FULLSCREEN })), ['pwa-app', 'web']);
+    assert.deepEqual(attrs(load({ url: SHELL_URL, before: MINIMAL })), ['pwa-app', 'web']);
+    assert.deepEqual(attrs(load({ url: SHELL_URL, before: IOS_STANDALONE })), ['pwa-app', 'web']);
+});
+
+test('pwa: an ordinary browser tab is browser/web, even with the marker, which is stripped', () => {
+    let w = load({ url: SHELL_URL });
+    assert.deepEqual(attrs(w), ['browser', 'web']);
+    w = load({ url: `${SHELL_URL}?source=pwa&x=1`, before: DISPLAY('browser') });
+    assert.deepEqual(attrs(w), ['browser', 'web']);
+    assert.equal(w.location.search, '?x=1');
+});
+
+test('pwa: the start URL marker is stripped and the app is chosen', () => {
+    const w = load({ url: `${SHELL_URL}?source=pwa`, before: STANDALONE });
+    assert.deepEqual(attrs(w), ['pwa-app', 'web']);
+    assert.equal(w.location.search, '');
+    assert.equal(w.location.pathname, '/hacktivities/42/play');
+});
+
+test('pwa: the desktop app wins over a standalone display mode (steam and web)', () => {
+    let w = load({ url: SHELL_URL, userAgent: DESKTOP_UA, before: STANDALONE });
+    assert.deepEqual(attrs(w), ['desktop-app', 'web']);
+    w = load({ url: SHELL_URL, userAgent: 'X HacktivityApp/0.2.0 (game=g; edition=full)', before: both(STANDALONE, IOS_STANDALONE) });
+    assert.deepEqual(attrs(w), ['desktop-app', 'steam']);
+    w = load({ url: `${SHELL_URL}?source=pwa`, userAgent: DESKTOP_UA, before: STANDALONE });
+    assert.deepEqual(attrs(w), ['desktop-app', 'web']);
+});
+
+test('pwa: a stored Play value stays play-app with a standalone display mode', () => {
+    const w = load({ url: SHELL_URL, storage: { 'hacktivity.platform': PLAY() }, before: STANDALONE });
+    assert.deepEqual(attrs(w), ['play-app', 'play']);
+    assert.equal(w.HacktivityPlatform.homeUrl(), '/app/licence-to-hack');
+});
+
+test('pwa: the Play marker with a listed referrer stays play-app in a standalone window', async () => {
+    const w = load({ url: 'https://hacktivity.test/app/licence-to-hack?source=play', referrer: `android-app://${PKG}/`, before: STANDALONE });
+    await w.HacktivityPlatform.ready;
+    assert.deepEqual(attrs(w), ['play-app', 'play']);
+});
+
+test('pwa: the Play marker with a resolving Digital Goods service stays play-app', async () => {
+    const w = load({ url: 'https://hacktivity.test/app/licence-to-hack?source=play', dg: resolves, before: STANDALONE });
+    await w.HacktivityPlatform.ready;
+    assert.deepEqual(attrs(w), ['play-app', 'play']);
+});
+
+test('pwa: a Play app page whose Play detection fails is never pwa-app', async () => {
+    // marker, standalone, no referrer, and the Digital Goods service is missing / rejects / resolves nothing
+    for (const dg of [undefined, () => Promise.reject(new Error('no')), () => Promise.resolve(null)]) {
+        const w = load({ url: 'https://hacktivity.test/app/licence-to-hack?source=play', dg, before: STANDALONE });
+        await w.HacktivityPlatform.ready;
+        assert.deepEqual(attrs(w), ['browser', 'web'], 'failed Play check');
+        assert.equal(w.location.search, '', 'marker stripped');
+    }
+    // the same for the TWA's later pages: marker gone, but an android-app referrer of an unlisted package
+    const w = load({ url: SHELL_URL, referrer: 'android-app://com.example.other/', before: STANDALONE });
+    assert.deepEqual(attrs(w), ['browser', 'web']);
+    // a marker plus an unlisted referrer and no standalone mode
+    const w2 = load({ url: 'https://hacktivity.test/app/licence-to-hack?source=play', referrer: 'android-app://com.example.other/' });
+    assert.deepEqual(attrs(w2), ['browser', 'web']);
+});
+
+test('pwa: a Play marker with the web app marker too does not become pwa-app when the Play checks fail', async () => {
+    const w = load({ url: 'https://hacktivity.test/app/licence-to-hack?source=play&x=1', userAgent: ANDROID_UA, before: STANDALONE });
+    await w.HacktivityPlatform.ready;
+    assert.deepEqual(attrs(w), ['browser', 'web']);
+});
+
+test('pwa: a cold start from a link with a listed android-app referrer stays play-app; an unlisted one is browser', () => {
+    let w = load({ url: SHELL_URL, referrer: `android-app://${PKG}/`, before: STANDALONE });
+    assert.deepEqual(attrs(w), ['play-app', 'play']);
+    w = load({ url: SHELL_URL, referrer: 'android-app://com.example.other/', before: STANDALONE });
+    assert.deepEqual(attrs(w), ['browser', 'web']);
+});
+
+test('pwa: Android needs the web app marker; without it a standalone page is browser', () => {
+    assert.deepEqual(attrs(load({ url: SHELL_URL, userAgent: ANDROID_UA, before: STANDALONE })), ['browser', 'web']);
+    assert.deepEqual(attrs(load({ url: SHELL_URL, userAgent: ANDROID_UA, before: FULLSCREEN })), ['browser', 'web']);
+    const w = load({ url: `${SHELL_URL}?source=pwa`, userAgent: ANDROID_UA, before: STANDALONE });
+    assert.deepEqual(attrs(w), ['pwa-app', 'web']);
+});
+
+test('pwa: on Android the marker is remembered for the tab, so later pages stay pwa-app', () => {
+    const w = load({ url: `${SHELL_URL}?source=pwa`, userAgent: ANDROID_UA, before: STANDALONE });
+    const kept = w.sessionStorage.getItem('hacktivity.pwa');
+    assert.ok(kept);
+    const next = load({ url: 'https://hacktivity.test/hacktivities/42/play/operations', userAgent: ANDROID_UA, before: STANDALONE, storage: { 'hacktivity.pwa': kept } });
+    assert.deepEqual(attrs(next), ['pwa-app', 'web']);
+});
+
+test('pwa: blocked storage gives pwa-app off Android and browser on Android', () => {
+    assert.deepEqual(attrs(load({ url: SHELL_URL, storage: 'throws', before: STANDALONE })), ['pwa-app', 'web']);
+    assert.deepEqual(attrs(load({ url: `${SHELL_URL}?source=pwa`, userAgent: ANDROID_UA, storage: 'throws', before: STANDALONE })), ['browser', 'web']);
+    // a stored value that is not JSON is ignored
+    assert.deepEqual(attrs(load({ url: SHELL_URL, storage: { 'hacktivity.platform': '{nope', 'hacktivity.pwa': '{nope' }, before: STANDALONE })), ['pwa-app', 'web']);
+});
+
+test('pwa: a matchMedia that throws gives browser', () => {
+    const w = load({ url: SHELL_URL, before: (win) => { win.matchMedia = () => { throw new Error('x'); }; } });
+    assert.deepEqual(attrs(w), ['browser', 'web']);
+});
+
+test('pwa: the mission page has no metas; the event id comes from its path, or from the tab', () => {
+    let w = load({ url: 'https://hacktivity.test/hacktivities/42/play/mission/9', metas: false, before: STANDALONE });
+    assert.deepEqual(attrs(w), ['pwa-app', 'web']);
+    assert.equal(w.HacktivityPlatform.homeUrl(), '/hacktivities/42/play');
+    // the old address: no event id in the path, so the value stored by the shell page is used
+    w = load({ url: 'https://hacktivity.test/break_escape/games/9', metas: false, before: STANDALONE, storage: { 'hacktivity.pwa': JSON.stringify({ eventId: '42' }) } });
+    assert.deepEqual(attrs(w), ['pwa-app', 'web']);
+    assert.equal(w.HacktivityPlatform.homeUrl(), '/hacktivities/42/play');
+    // nothing known: the site root
+    w = load({ url: 'https://hacktivity.test/break_escape/games/9', metas: false, before: STANDALONE });
+    assert.equal(w.HacktivityPlatform.homeUrl(), '/');
+});
+
+test('pwa: the shell page stores its event id for later pages', () => {
+    const w = load({ url: SHELL_URL, before: STANDALONE });
+    assert.equal(JSON.parse(w.sessionStorage.getItem('hacktivity.pwa')).eventId, '42');
+});
+
+test('pwa: landing on the site root goes back to the shell title; other pages are left alone', () => {
+    const hooks = (w) => { w.document.head.insertAdjacentHTML('beforeend', HOOKS); w.__hacktivityHome = []; w.__hacktivityStubNavigation = true; };
+    const stub = { before: both(STANDALONE, hooks) };
+    let w = load({ ...stub, url: 'https://hacktivity.test/' });
+    assert.deepEqual(plain(w.__hacktivityHome), [{ from: '/', to: '/hacktivities/42/play' }]);
+    // the root with the event only in the tab's storage (the real sign-out case: the page has no metas)
+    w = load({ ...stub, metas: false, url: 'https://hacktivity.test/', storage: { 'hacktivity.pwa': JSON.stringify({ eventId: '42' }) } });
+    assert.deepEqual(plain(w.__hacktivityHome), [{ from: '/', to: '/hacktivities/42/play' }]);
+    // no event known on the root: nothing to go to
+    w = load({ ...stub, metas: false, url: 'https://hacktivity.test/' });
+    assert.deepEqual(plain(w.__hacktivityHome), []);
+    // pricing and account pages are not redirected
+    w = load({ ...stub, url: 'https://hacktivity.test/pricing' });
+    assert.deepEqual(plain(w.__hacktivityHome), []);
+    // a browser tab and the Play app keep their own behaviour
+    w = load({ before: hooks, url: 'https://hacktivity.test/' });
+    assert.deepEqual(plain(w.__hacktivityHome), []);
+});
+
+test('pwa: a payment link opens in a new browser tab; other links are untouched', () => {
+    const w = load({ url: SHELL_URL, before: STANDALONE });
+    const opened = [];
+    w.open = (...args) => { opened.push(args); };
+    const add = (href, attrsText = '') => {
+        const a = w.document.createElement('a');
+        a.setAttribute('href', href);
+        for (const [k, v] of Object.entries(attrsText)) a.setAttribute(k, v);
+        w.document.body.appendChild(a);
+        return a;
+    };
+    const click = (a) => { const e = new w.MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }); a.dispatchEvent(e); return e.defaultPrevented; };
+    assert.equal(click(add('/pricing')), true);
+    assert.equal(click(add('https://hacktivity.test/plans?x=1')), true);
+    assert.deepEqual(plain(opened.map((o) => o.slice(1))), [['_blank', 'noopener'], ['_blank', 'noopener']]);
+    assert.equal(opened[0][0], 'https://hacktivity.test/pricing');
+    assert.equal(click(add('/hacktivities/42/play/operations')), false);
+    assert.equal(click(add('/pricing', { target: '_blank' })), false, 'already a new tab');
+    assert.equal(opened.length, 2);
+});
+
+test('pwa: the click handler does nothing in a browser tab', () => {
+    const w = load({ url: SHELL_URL });
+    const opened = [];
+    w.open = (...args) => { opened.push(args); };
+    const a = w.document.createElement('a');
+    a.setAttribute('href', '/pricing');
+    w.document.body.appendChild(a);
+    const e = new w.MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    a.dispatchEvent(e);
+    assert.equal(e.defaultPrevented, false);
+    assert.equal(opened.length, 0);
+});
+
+test('pwa: the Play app keeps its landing guard and purchase refusal with a standalone display mode', () => {
+    const w = playPage('/terms');
+    STANDALONE(w); // (set after load: the Play value is stored, so the display mode is not consulted)
+    assert.deepEqual(attrs(w), ['play-app', 'play']);
+    assert.deepEqual(plain(w.__hacktivityHome), [{ from: '/terms', to: '/app/licence-to-hack' }]);
+    const p = load({ url: 'https://hacktivity.test/pricing', metas: false, storage: { 'hacktivity.platform': PLAY({ eventId: String(FIXTURE.eventId), appPaths: FIXTURE.patterns, v: '2' }) }, before: both(STANDALONE, (x) => { x.document.head.insertAdjacentHTML('beforeend', HOOKS); x.__hacktivityHome = []; x.__hacktivityStubNavigation = true; }) });
+    assert.deepEqual(attrs(p), ['play-app', 'play']);
+    assert.equal(plain(p.__hacktivityHome).length, 1, 'a payment page goes home in the Play app');
 });

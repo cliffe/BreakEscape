@@ -25,6 +25,10 @@ module BreakEscape
     end
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission]
+    # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
+    # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
+    before_action :require_game_in_host_event, only: [:show]
+
 
     # Actions that read-modify-write @game.player_state and then save! need a
     # row lock, or two concurrent requests for the same game (e.g. a single
@@ -1395,6 +1399,16 @@ module BreakEscape
 
     def set_game
       @game = Game.find(params[:id])
+    end
+
+    # Only when the request names an event (the host's alias route): the game's mission listing must be in it.
+    def require_game_in_host_event
+      return if params[:event_id].blank?
+
+      slot = @game.try(:game_slot)
+      return if slot && slot.event_id.to_s == params[:event_id].to_s
+
+      raise ActiveRecord::RecordNotFound, "Game #{@game.id} is not in event #{params[:event_id]}"
     end
 
     # What sync_state reads or writes. scenario_data is left out (it is fetched

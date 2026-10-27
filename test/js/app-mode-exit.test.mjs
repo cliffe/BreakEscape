@@ -95,6 +95,12 @@ test('isAppWindow / appHomeUrl: desktop token, Play marker, platform object, pla
     assert.equal(appHomeUrl({ navigator: { userAgent: BROWSER_UA } }), '/');
 });
 
+test('web app (pwa-app): a window of its own, home is the shell title', () => {
+    const pwa = { navigator: { userAgent: BROWSER_UA }, HacktivityPlatform: { appWindow: 'pwa-app', homeUrl: () => '/hacktivities/42/play' } };
+    assert.equal(isAppWindow(pwa), true);
+    assert.equal(appHomeUrl(pwa), '/hacktivities/42/play');
+});
+
 test('Play app: game over menu, end screen and pause menu go to /app/<key> and never close', async () => {
     let { log } = setup(BROWSER_UA, PLAY_MARKER);
     GameOverScreen.prototype.mainMenu.call({});

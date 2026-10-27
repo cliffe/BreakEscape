@@ -6,6 +6,7 @@
  *
  * The Play app (a Trusted Web Activity) is a single window too. It is told apart by the marker
  * client-platform.js keeps in sessionStorage['hacktivity.platform'], so isAppWindow() covers both.
+ * The installed web app (appWindow 'pwa-app') is a window of its own too: HacktivityPlatform says so.
  */
 export function isDesktopApp(w = (typeof window !== 'undefined' ? window : undefined)) {
     return /HacktivityApp\//.test(w?.navigator?.userAgent || '');
@@ -31,11 +32,11 @@ export function isAppWindow(w = (typeof window !== 'undefined' ? window : undefi
 /** Where the app goes to leave a mission (the host redirects it to the game's event page). */
 export const DESKTOP_APP_HOME = '/';
 
-/** "/" in the desktop app (the server sends it to the game); /app/<gameKey> in the Play app. */
+/** "/" in the desktop app (the server sends it to the game); /app/<gameKey> in the Play app; the shell title in the web app. */
 export function appHomeUrl(w = (typeof window !== 'undefined' ? window : undefined)) {
     if (isDesktopApp(w)) return DESKTOP_APP_HOME;
     const p = w?.HacktivityPlatform;
-    if (p && p.appWindow === 'play-app' && typeof p.homeUrl === 'function') return p.homeUrl();
+    if (p && (p.appWindow === 'play-app' || p.appWindow === 'pwa-app') && typeof p.homeUrl === 'function') return p.homeUrl();
     const stored = storedPlayMarker(w);
     if (stored && stored.gameKey) return '/app/' + encodeURIComponent(stored.gameKey);
     return DESKTOP_APP_HOME;

@@ -2,7 +2,7 @@
  * Client platform module. A classic script, loaded in <head> before first paint.
  *
  * Works out two separate things, once per tab:
- *   appWindow  browser | desktop-app | play-app   (is the page in a single-window app?)
+ *   appWindow  browser | desktop-app | play-app | pwa-app   (is the page in a single-window app?)
  *   store      web | steam | play                 (which store sells the game here?)
  * and publishes them as html[data-app-window] and html[data-store], plus window.HacktivityPlatform.
  *
@@ -27,6 +27,18 @@
  *      start from a link (email, chat): the app's VIEW filter claims /app/<game>, so Android opens
  *      the app on it without the marker. The display-mode check keeps a page that a browser opens
  *      with an android-app referrer from becoming the app layout.
+ *   5. The installed web app (PWA, planning_notes/steam_release/PWA.md section 8), checked last, so it can
+ *      never take over a desktop or Play window: appWindow 'pwa-app', store 'web'. Chosen when the page is
+ *      shown as an installed app (display-mode fullscreen, standalone or minimal-ui, or the older
+ *      navigator.standalone === true on iOS) and none of the checks above matched. It is never chosen
+ *        - when the URL carried the Play marker (?source=play): that is the Play app's start URL, and a page
+ *          whose Play checks failed stays browser/web, as before;
+ *        - when document.referrer is an android-app:// address (a Play app page, listed or not);
+ *        - on Android unless this tab saw the web app's own marker (?source=pwa, the manifest's start_url).
+ *          Android installs are routed to the Play app, so an Android web app is the exception. Elsewhere the
+ *          marker is only a hint: a link captured into the installed window has none.
+ *      ?source=pwa is always removed from the address bar and remembered for the tab in
+ *      sessionStorage['hacktivity.pwa'] with the event id (the mission page carries no metas).
  * Any storage error means browser/web. Never throws.
  *
  * Play app only (appWindow 'play-app'):
@@ -49,6 +61,14 @@
  *     are left to the app's own view with a URL bar, not sent to a dead tap.
  *   - The sign-in form's Remember me box is ticked, so the player stays signed in.
  *
+ * Web app only (appWindow 'pwa-app'):
+ *   - homeUrl() is the game's shell title, /hacktivities/<event id>/play (event id from the page's meta, its
+ *     own path or the tab's stored value), so leaving a mission never closes the window.
+ *   - Landing on "/" (sign-out ends there) replaces the page with homeUrl(). No other landing guard.
+ *   - A link to a payment page (pricing, plans, subscriptions, checkout...) opens in a new browser tab, so
+ *     Stripe runs in a normal browser.
+ *   - The install button is hidden (the page's script reads HacktivityPlatform.appWindow).
+ *
  * Page contract (see planning_notes/steam_release/ANDROID_PLAN.md section 1):
  *   metas hacktivity-play-packages, hacktivity-app-event, hacktivity-app-paths (all optional)
  *   window.HacktivityPlatform: appWindow, store, gameKey, eventId, isAppWindow, ready,
@@ -60,6 +80,7 @@
 
     var STORAGE_KEY = 'hacktivity.platform';
     var GUARD_KEY = 'hacktivity.landingGuard';
+    var PWA_KEY = 'hacktivity.pwa';
     var BILLING_URL = 'https://play.google.com/billing';
     var DG_TIMEOUT_MS = 3000;
     var OUTSIDE_URL = 'hacktivity-outside://open?url=';
@@ -171,6 +192,68 @@
             return !!(win.matchMedia &&
                 win.matchMedia('(display-mode: fullscreen), (display-mode: standalone), (display-mode: minimal-ui)').matches);
         } catch (e) { return false; }
+    }
+
+    // ---- the installed web app (pwa-app) ----
+
+    function pwaMarkerInUrl() {
+        try { return new win.URL(win.location.href).searchParams.get('source') === 'pwa'; } catch (e) { return false; }
+    }
+
+    function stripPwaMarker() {
+        try {
+            var url = new win.URL(win.location.href);
+            if (url.searchParams.get('source') !== 'pwa') return;
+            url.searchParams.delete('source');
+            win.history.replaceState(win.history.state, '', url.pathname + url.search + url.hash);
+        } catch (e) { /* leave the address as it is */ }
+    }
+
+    function readPwaStored() {
+        try {
+            var v = JSON.parse(win.sessionStorage.getItem(PWA_KEY) || 'null');
+            return v && typeof v === 'object' ? v : {};
+        } catch (e) { return {}; }
+    }
+
+    function writePwaStored(patch) {
+        try {
+            var v = readPwaStored();
+            Object.keys(patch).forEach(function (k) { v[k] = patch[k]; });
+            win.sessionStorage.setItem(PWA_KEY, JSON.stringify(v));
+        } catch (e) { /* storage blocked: the page works for this load only */ }
+    }
+
+    // iOS before the display-mode query was reliable: navigator.standalone === true
+    function iosStandalone() {
+        try { return win.navigator.standalone === true; } catch (e) { return false; }
+    }
+
+    function onAndroid() {
+        try { return /Android/i.test(win.navigator.userAgent || ''); } catch (e) { return false; }
+    }
+
+    // The web app's game event: the page's meta, else /hacktivities/<id>/... in its own path (the mission
+    // page has no metas), else the value stored for this tab.
+    function pwaEventId() {
+        var ev = meta('hacktivity-app-event');
+        if (!ev) {
+            var m = /^\/hacktivities\/(\d{1,12})(?:\/|$)/.exec(win.location.pathname || '');
+            if (m) ev = m[1];
+        }
+        return /^\d{1,12}$/.test(ev || '') ? ev : (/^\d{1,12}$/.test(String(readPwaStored().eventId || '')) ? String(readPwaStored().eventId) : '');
+    }
+
+    // Step 5. playMarker: the URL carried ?source=play. Returns nothing; sets state when it is the web app.
+    function choosePwa(playMarker) {
+        if (playMarker) return; // the Play app's start URL: a failed Play check stays browser/web
+        if (referrerPackage()) return; // an android-app:// referrer is a Play app page, listed or not
+        if (!shownAsApp() && !iosStandalone()) return;
+        if (onAndroid() && !readPwaStored().marker) return; // Android installs go to the Play app
+        state.appWindow = 'pwa-app';
+        state.store = 'web';
+        state.eventId = pwaEventId();
+        if (state.eventId) writePwaStored({ eventId: state.eventId });
     }
 
     function gameKeyFromPath() {
@@ -338,8 +421,24 @@
         return !pathInApp(u.pathname);
     }
 
+    // Web app: a link to a payment page opens in a new browser tab (it is out of the app's scope, so the
+    // installed window hands it to the browser), where Stripe Checkout runs normally.
+    function onPwaClick(ev) {
+        if (ev.defaultPrevented || (typeof ev.button === 'number' && ev.button !== 0)) return;
+        var el = ev.target;
+        var a = el && el.closest ? el.closest('a[href], area[href]') : null;
+        if (!a || a.hasAttribute('data-method') || a.hasAttribute('data-remote') || a.hasAttribute('download')) return;
+        if ((a.getAttribute('target') || '').toLowerCase() === '_blank') return;
+        var u = new win.URL(a.getAttribute('href'), win.location.href);
+        if (u.origin !== win.location.origin || !isPurchasePath(u.pathname)) return;
+        ev.preventDefault();
+        if (hook('__hacktivityOutside', { url: u.href, via: 'window', target: u.href })) return;
+        win.open(u.href, '_blank', 'noopener');
+    }
+
     function onClick(ev) {
         try {
+            if (state.appWindow === 'pwa-app') { onPwaClick(ev); return; }
             if (state.appWindow !== 'play-app' || ev.defaultPrevented) return;
             if (typeof ev.button === 'number' && ev.button !== 0) return;
             var el = ev.target;
@@ -425,6 +524,16 @@
         else tickRememberMe();
     }
 
+    // Web app: the site root (where sign-out ends) goes back to the game's shell title.
+    function whenPwa() {
+        try {
+            if (state.appWindow !== 'pwa-app' || !state.eventId) return;
+            if (canonicalPath(win.location.pathname) !== '/') return;
+            if (hook('__hacktivityHome', { from: win.location.pathname, to: api.homeUrl() })) return;
+            win.location.replace(api.homeUrl());
+        } catch (e) { /* stay on the page */ }
+    }
+
     var api = {
         appWindow: 'browser',
         store: 'web',
@@ -435,6 +544,7 @@
         /** Where the app goes to leave a mission. */
         homeUrl: function () {
             if (state.appWindow === 'play-app' && state.gameKey) return '/app/' + encodeURIComponent(state.gameKey);
+            if (state.appWindow === 'pwa-app' && state.eventId) return '/hacktivities/' + state.eventId + '/play';
             return '/';
         },
         /**
@@ -461,6 +571,8 @@
             }
             var stored = readStored();
             var marker = markerInUrl();
+            // the web app's start URL marker: a hint for this tab, then gone from the address bar
+            if (pwaMarkerInUrl()) { writePwaStored({ marker: true }); stripPwaMarker(); }
             if (stored) {
                 state.appWindow = 'play-app';
                 state.store = 'play';
@@ -482,6 +594,7 @@
                 // a cold start from a link: no marker, but Android opened the app and Chrome says so
                 // (no version code on a link; the hand-off is assumed present)
                 if (listed && shownAsApp()) becomePlay(pkg);
+                else choosePwa(false);
                 return null;
             }
             var launchVersion = versionInUrl();
@@ -515,5 +628,5 @@
     win.HacktivityPlatform = api;
     doc.addEventListener('click', onClick, true);
     if (pending) api.ready = pending.then(whenPlay);
-    else whenPlay();
+    else { whenPlay(); whenPwa(); }
 })(typeof window !== 'undefined' ? window : undefined);
