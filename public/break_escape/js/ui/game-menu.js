@@ -49,8 +49,20 @@ export function leaveTarget(cfg = window.breakEscapeConfig || {}, w = window) {
     return null;
 }
 
-export function openWalkthrough(cfg = window.breakEscapeConfig || {}, open = (url) => window.open(url, '_blank', 'noopener')) {
+// The Play app hands a link that is not one of its own pages to the phone's browser
+// (client-platform.js openOutside, which refuses in-app paths such as the VM console); other
+// windows, and in-app targets, open a tab.
+export function openWalkthrough(cfg = window.breakEscapeConfig || {}, open = openLink) {
     if (cfg.walkthroughUrl) open(cfg.walkthroughUrl);
+}
+
+export function openLink(url, w = window) {
+    const p = w.HacktivityPlatform;
+    if (p && p.appWindow === 'play-app' && typeof p.openOutside === 'function') {
+        const result = p.openOutside(url);
+        if (!result || result.reason !== 'in-app') return;
+    }
+    w.open(url, '_blank', 'noopener');
 }
 
 export function quitToShell(cfg = window.breakEscapeConfig || {}, navigate = (url) => { window.location.href = url; }) {

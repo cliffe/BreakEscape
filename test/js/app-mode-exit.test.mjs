@@ -39,7 +39,7 @@ globalThis.document = {};
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
 const { isDesktopApp, isAppWindow, appHomeUrl } = await imp('utils/desktop-app.js');
 const { GameOverScreen } = await imp('ui/game-over-screen.js');
-const { GameMenu } = await imp('ui/game-menu.js');
+const { GameMenu, openLink } = await imp('ui/game-menu.js');
 const { showEndScreen } = await imp('systems/apply-actions.js');
 console.log = () => {};
 
@@ -280,3 +280,31 @@ for (const ua of [BROWSER_UA, APP_UA]) {
         assert.deepEqual(calls, ['sync', ['go', SHELL.shellMenuUrl]]);
     });
 }
+
+// The walkthrough link: the Play app hands it to the phone's browser, everything else opens a tab.
+test('openLink: Play app sends the link through openOutside and opens no tab', () => {
+    const sent = []; const opened = [];
+    const w = { HacktivityPlatform: { appWindow: 'play-app', openOutside: (u) => { sent.push(u); return { ok: true, via: 'trampoline' }; } }, open: (...a) => opened.push(a) };
+    openLink('https://cliffe.github.io/HacktivityLabSheets/labs/x/', w);
+    assert.deepEqual(sent, ['https://cliffe.github.io/HacktivityLabSheets/labs/x/']);
+    assert.deepEqual(opened, []);
+});
+
+test('openLink: an in-app target falls back to a tab; a refusal opens nothing', () => {
+    const opened = [];
+    const inApp = { HacktivityPlatform: { appWindow: 'play-app', openOutside: () => ({ ok: false, reason: 'in-app' }) }, open: (...a) => opened.push(a) };
+    openLink('/hacktivities/6/play', inApp);
+    assert.deepEqual(opened, [['/hacktivities/6/play', '_blank', 'noopener']]);
+    opened.length = 0;
+    const refused = { HacktivityPlatform: { appWindow: 'play-app', openOutside: () => ({ ok: false, reason: 'purchase' }) }, open: (...a) => opened.push(a) };
+    openLink('/pricing', refused);
+    assert.deepEqual(opened, []);
+});
+
+test('openLink: browser and desktop windows open a tab as before', () => {
+    for (const platform of [undefined, { appWindow: 'browser' }, { appWindow: 'desktop-app' }]) {
+        const opened = [];
+        openLink('https://example.com/', { HacktivityPlatform: platform, open: (...a) => opened.push(a) });
+        assert.deepEqual(opened, [['https://example.com/', '_blank', 'noopener']]);
+    }
+});
