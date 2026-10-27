@@ -427,7 +427,7 @@ export class MailClientMinigame extends SocialOverlayScene {
         }
         const hadCompose = this.composeOpen;
         // Keep the unsent draft across accounts where it still fits (R19 F19-1).
-        const carry = hadCompose && this.composer?.draft ? this.composer.draft() : null;
+        const carry = hadCompose && this.composer?.draft && this.composer.edited ? this.composer.draft() : null;
         if (hadCompose) this.closeCompose(false);
         this._dismissChecklist();
         this.account = next;

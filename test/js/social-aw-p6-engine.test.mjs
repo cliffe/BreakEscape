@@ -87,7 +87,7 @@ test('P6-3: the pressure flag follows the most urgent part, so a calm Ask under 
     assert.ok(m.flags.some((f) => /urgen|pressure/i.test(f)), 'the medium pretext still trips a low advisory maximum');
 });
 
-test('P6-4: the Sharp cap is one rule (three missed tells in never-caught skills); two stay Sharp, three do not', () => {
+test('P6-4 / P7-2: the Sharp cap is one rule; under awareness two skills never caught cap it, and so do three tells', () => {
     const mk = (flags) => ({ id: 'ph', from: { name: 'CEO', address: 'ceo@brightwell.example' }, subject: 'Quick favour', body: 'x',
         truth: { isPhish: true, flags } });
     const reals = Array.from({ length: 9 }, (_, i) => ({ id: `r${i}`, from: { name: 'A', address: 'a@brightwell.example' }, subject: `s${i}`, body: 'x',
@@ -100,7 +100,7 @@ test('P6-4: the Sharp cap is one rule (three missed tells in never-caught skills
     const two = run(['secrecy_or_bypass', 'borrowed_authority']);
     assert.equal(two.zeroSkills.length, 2);
     assert.ok(two.percent >= 85);
-    assert.match(two.headline, /^Sharp/);
+    assert.match(two.headline, /^Getting there/);   // P7-2: two zero skills, one tell each
     const three = run(['urgencyCalibrated', 'secrecy_or_bypass', 'borrowed_authority']);
     assert.match(three.headline, /^Getting there/);
 });

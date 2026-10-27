@@ -42,7 +42,7 @@
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { MailReader } from '../mail-client/mail-reader.js';
 import { scoreTriage, weakestFactor, bandFor, verdictPoints, FULL_VERDICT_POINTS, CRITICAL_PENALTY, criticalWhat,
-    genuineFeedback, genuineFeedbackText, dedupeSentences } from './triage-scoring.js';
+    genuineFeedback, genuineFeedbackText, dedupeSentences, missedPhishText } from './triage-scoring.js';
 import { buildTriageMessages } from './triage-messages.js';
 import { buildHeaderPanel } from './header-panel.js';
 import {
@@ -725,7 +725,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
     /** A card's title: the subject, led by the sender for a non-email kind (two calls both read "Incoming call"). */
     _cardTitle(rec) {
-        const subject = rec.subject || '(no subject)';
+        // A subject cut short with trailing dots (a text's body preview) loses them (P7-7).
+        const subject = String(rec.subject || '(no subject)').replace(/\s*(?:\.{3,}|\u2026)\s*$/, '') || '(no subject)';
         const who = rec.from?.name || rec.from?.address || '';
         return isNonEmail(rec) && who && who !== subject ? `${who} · ${subject}` : subject;
     }
@@ -1017,6 +1018,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         if (!stored && this.feedbackMode === 'end') p.appendChild(this._itemList(genuine));
         const genuineBox = genuine ? this._genuineSummary(genuine) : null;
         if (genuineBox) p.appendChild(genuineBox);
+        // Opt-in (lab R20 F20-1): name the phish that were trusted, beside the real ones above.
+        if (!stored && this.set?.missedPhishLine === true) {
+            const line = missedPhishText(result.answers, this.messages, (m) => shortTitle(m) || this._cardTitle(m));
+            if (line) p.appendChild(el('p', 'tri-missed-phish', line));
+        }
 
         if (!stored) {
             const entries = Object.entries(result.perFactor);

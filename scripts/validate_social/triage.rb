@@ -139,6 +139,7 @@ module ValidateSocial
       end
       issues << err("#{where}.verifyVerdict must be true or false") if set.key?('verifyVerdict') && ![true, false].include?(set['verifyVerdict'])
       issues << err("#{where}.genuineFeedback must be true or false") if set.key?('genuineFeedback') && ![true, false].include?(set['genuineFeedback'])
+      issues << err("#{where}.missedPhishLine must be true or false") if set.key?('missedPhishLine') && ![true, false].include?(set['missedPhishLine'])
       issues
     end
 

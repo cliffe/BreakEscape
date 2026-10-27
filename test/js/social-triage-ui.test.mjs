@@ -277,7 +277,7 @@ test('the same answers under the awareness profile give 86 and hide false alarms
     playWorkedExample(s);
     click($(s, '.tri-next'));
     assert.equal(state(s).result.percent, 86);
-    assert.match(state(s).result.headline, /^Sharp/);
+    assert.match(state(s).result.headline, /^Getting there/);   // two skills on zero cap the grade (P7-2)
     assert.equal($(s, '[data-number="falseAlarms"]'), null);
     assert.equal($(s, '.tri-again'), null, 'passed (passPercent 60): no retry');
 });

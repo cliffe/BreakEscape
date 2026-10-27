@@ -156,7 +156,14 @@ export function defaultSubject(msg) {
     const kind = kindOf(msg);
     const first = (s) => {
         const t = String(s || '').replace(/\{\{link:[^}]*\}\}/g, '').replace(/\s+/g, ' ').trim();
-        return t.length > 48 ? `${t.slice(0, 45)}...` : t;
+        if (t.length <= 48) return t;
+        // Cut at the end of a sentence when one fits, else at a word, so no title stops on "A..."
+        // (P7-7).
+        const sentence = t.slice(0, 48).search(/[.!?](?=[^.!?]*$)/);
+        if (sentence >= 15) return t.slice(0, sentence + 1);
+        const cut = t.slice(0, 45);
+        const sp = cut.lastIndexOf(' ');
+        return `${(sp >= 15 ? cut.slice(0, sp) : cut).replace(/[,;:\s]+$/, '')}...`;
     };
     switch (kind) {
     case 'sms': return first(msg.body) || 'Text message';

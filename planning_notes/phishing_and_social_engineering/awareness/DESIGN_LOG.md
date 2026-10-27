@@ -297,3 +297,17 @@ Live (keyless :3001, fresh games): committed `bridge-e3-full` 22/22 PASS at 1400
 The four room-wide POV conversation backgrounds (`assets/backgrounds/rooms/aw_<company>_blended.png`, committed in 34c7a94d8) are now `rooms.training_room.chatBackground` in all 38 awareness shells. Value form matches the lab: `"assets/backgrounds/rooms/aw_<company>_blended.png"`, one per company (brightwell, tarrowby, quayholt, merrin_sallow). They live in `training_room.py` `ROOMS`; `apply_training_room.py --refresh` now splices the field too (replaces it if present, otherwise inserts it after `door_sign`, the order the generators use). Refresh changed one line per shell. Regenerating into scratch with all four `gen_*_shells.py` gave byte-identical output to the refreshed shells (31 generated shells). Validator `--strict-social --no-graph --skip-ink` clean on all 38; node social and validator-social tests 1843/1843.
 
 Live (keyless :3001, own games): the host chat in the E1-E4 defend shells resolved and loaded the right background for Brightwell, Tarrowby, Quayholt and Merrin & Sallow. Shots: `playtests/ROOMS_C3_screenshots/pov_wired_<company>.png`.
+
+## P7-2 and P7-7: grade cap and clean card titles (2026-10-27)
+
+- **P7-2:** `scoreTriage` now holds an awareness round below the top band when two or more skills were
+  never caught (`AWARENESS_ZERO_SKILLS_CAP = 2` skills), however few tells that is. The old cap of three
+  missed tells (`ZERO_SKILL_MISSES_CAP`) stays, and the analyst profile (the lab) uses only that. Two P7
+  playtests read "Sharp" at 92% with two skills on zero. The 05 worked example under awareness is now
+  86% "Getting there" (note added beside it in `05_inbox_triage_defender.md`). Tests updated:
+  `social-engine-r4-triage` (P7-2 and P4-9), `social-aw-p6-engine` (P6-4), `social-triage-scoring`,
+  `social-triage-ui`.
+- **P7-7:** a text with no subject took its body as the title, cut at 45 characters with dots
+  ("Parceline: we couldn't deliver your parcel. A..."). `defaultSubject` now cuts at a sentence end when
+  one fits in 48 characters, else at a word; the review card title also drops trailing dots from an
+  authored subject. Test in `social-engine-r4-triage`.

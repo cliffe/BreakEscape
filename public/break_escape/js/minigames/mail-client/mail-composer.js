@@ -220,9 +220,11 @@ export class MailComposer {
         this._restoreDraft(opts.draft);
         this._selectDefaultContact();
         // "Send as" changed mid-draft: keep what is still valid for the new account (R19 F19-1).
-        // An unsent draft the new account already holds still wins, as before.
+        // The draft being carried wins over an older unsent one the new account holds (lab R20
+        // F20-3); the client passes none when the learner had not touched the form.
         this.carryNotice = '';
-        if (isObject(opts.carryDraft) && !this._draftRestored) this._carryOver(opts.carryDraft);
+        this.edited = false;
+        if (isObject(opts.carryDraft)) this._carryOver(opts.carryDraft);
         this.render();
     }
 
@@ -763,6 +765,7 @@ export class MailComposer {
 
     _emitChange() {
         this.carryNotice = '';
+        this.edited = true;
         try { this.opts.onChange?.(this.draft()); } catch (err) { console.error('composer onChange failed:', err); }
     }
 

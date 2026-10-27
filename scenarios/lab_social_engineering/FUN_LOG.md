@@ -253,3 +253,31 @@ Source: `playtests/R19.md` F19-1 to F19-4.
   already did. No spoken line was added or changed; `tts_cache/lab_social_engineering` is unaffected.
   If a wary or refusing reply (band 1 or 2) comes first the option stays, and each pick then gets a reply.
   `dev_service_desk.json` recompiled with `bin/inklecate`.
+
+## R20 fixes (2026-10-27)
+
+Source: `playtests/R20.md` (scripted Haiku run, game 4570). A Haiku "major" only counts once checked.
+
+- **F20-1 (result card does not name the trusted phish):** a small real gap, not a bug. Design 05 puts
+  per-message detail in the review cards, and the result card lists only the real ones (`disc_visible`).
+  Added an opt-in set flag `missedPhishLine` (off by default, in the schema and the validator), on in
+  `lab_inbox`: the result card now adds "You trusted these phish: ..." using the clean short titles.
+  Awareness sets are untouched. Pure helper `missedPhishText` in `triage-scoring.js`.
+- **F20-2 (no per-message feedback after Confirm):** misread. In immediate mode the review card
+  (verdict line, tells caught and missed, "What would have happened", score) renders under the
+  "Verdict locked" line, below the open header panel and glossary. The bridge text in the log is cut
+  short mid-glossary, so the card was never read. Critical-miss wording is awareness-only
+  (`isCriticalMiss`), so the analyst lab never shows it, by design. No code change.
+- **F20-3 (Send as replaced the draft just set):** real. The carried draft now wins over an older
+  stored draft on the target account. The composer has an `edited` flag (set by any change, not by its
+  defaults); `switchAccount` carries only an edited draft, so an untouched composer still gets the target
+  account's own stored draft back. Tests: `social-mail-send-as-carry.test.mjs` (the F19-1 "stored wins"
+  test is now "carried wins"), `social-mail-accounts.test.mjs`.
+- **F20-4 (Compose reopens the sent draft):** see the live check below. `_clearDraft()` already clears
+  the saved draft on a judged send; the open composer sits under the checklist, and a Compose click
+  while it is open is a no-op, which is what the run saw.
+- **F20-5:** accepted (hidden `.ob-live` status region), no action.
+
+Shared-code changes made in the same pass for the awareness course (inbox-triage owner this round):
+P7-2 (awareness caps at "Getting there" with two skills never caught; the lab's analyst profile keeps
+the three-tell cap) and P7-7 (clean card titles for texts). See the awareness `DESIGN_LOG.md`.

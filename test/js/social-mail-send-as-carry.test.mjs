@@ -100,10 +100,19 @@ test('Send as: with no differences nothing is reported', () => {
     assert.equal(b.draft().templates.pretext, 'pretext_sheet');
 });
 
-test('Send as: an unsent draft the new account already holds wins over the carried one', () => {
+test('Send as: the carried draft wins over an older unsent draft the new account holds (lab R20 F20-3)', () => {
     const a = make(GUEST);
     a.selectContact('pierce', false);
     const b = make(FREE, { carryDraft: a.draft(), draft: { contactId: 'hampshire', to: 'careers@ledgerwell.example', templates: {}, slots: {} } });
-    assert.equal(b.draft().contactId, 'hampshire');
-    assert.equal(b.carryNotice, '');
+    assert.equal(b.draft().contactId, 'pierce');
+    assert.equal(b.draft().to, 'm.pierce@ledgerwell.example');
+});
+
+test('Send as: the composer is not "edited" until something changes, and is after a carry', () => {
+    const a = make(GUEST);
+    assert.equal(a.edited, false);
+    a.selectContact('pierce', true);
+    assert.equal(a.edited, true);
+    const b = make(FREE, { carryDraft: a.draft() });
+    assert.equal(b.edited, true);
 });

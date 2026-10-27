@@ -2051,6 +2051,7 @@
         "realLabel": {"type": "string", "minLength": 1, "description": "The noun for the genuine items in the result grid (\"Real texts and notices\"); default follows the queue's channels."},
         "flagPlayerSent": {"type": ["string", "boolean"], "description": "Opt-in (inbox-triage-minigame.js): marks the player's own sends on the review flip; a string is the line shown, true uses a default"},
         "verifyVerdict": {"type": "boolean"},
+        "missedPhishLine": {"type": "boolean", "description": "Opt-in (inbox-triage-minigame.js): the result card names the phish the learner trusted. Default off."},
         "genuineFeedback": {"type": "boolean", "description": "false hides the result screen's and debrief's lines on the real items (which were trusted, what made a flagged one safe). Default on."},
         "brief": {"type": "string"},
         "pairedWith": {"type": "string"},
