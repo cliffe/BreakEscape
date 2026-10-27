@@ -55,11 +55,14 @@ entitlement (G3); only Play buyers play in the Play app, and no Stripe purchase 
    as on the website (subscription, organisation, Steam or other entitlements, staff grants), plus
    a Play purchase. No Play-only access rule is needed.
 7. Links out: keep them and open them outside the app. In a TWA, same-site links stay in the app, so
-   the client marks buy links to open in the browser. Check Play's anti-steering rules per region
-   before submission; this may force hiding them in some countries.
+   the client marks them to open in the browser. **Every nudge to buy in the game goes to that
+   platform's own purchase** (owner, 2026-10-27): Play Billing in the Play app, the Steam store page
+   in the Steam app, the website's plans in the browser. That also keeps the Play app inside the
+   anti-steering rules.
 8. Google sign-in: launch without it.
-9. Phones: wait for phones; one launch on phones and tablets after the phone pass and the phone VM
-   playtest.
+9. Phones: wait for phones; one launch on phones and tablets after the phone VM playtest. **Touch is
+   not a blocker** (owner, 2026-10-27): the game already works with touch, so Q5 below shrinks to a
+   check on a phone and an emulator, fixing what shows up, not a planned 9–12 passes.
 
 ## Q1. How Hacktivity knows a request comes from the Android app
 
