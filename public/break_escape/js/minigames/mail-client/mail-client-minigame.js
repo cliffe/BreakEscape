@@ -426,6 +426,8 @@ export class MailClientMinigame extends SocialOverlayScene {
             return false;
         }
         const hadCompose = this.composeOpen;
+        // Keep the unsent draft across accounts where it still fits (R19 F19-1).
+        const carry = hadCompose && this.composer?.draft ? this.composer.draft() : null;
         if (hadCompose) this.closeCompose(false);
         this._dismissChecklist();
         this.account = next;
@@ -435,7 +437,7 @@ export class MailClientMinigame extends SocialOverlayScene {
         this.reader.selectedId = null;
         this.notice = '';
         this._refresh();
-        if (hadCompose) this.openCompose();
+        if (hadCompose) this.openCompose({ carryDraft: carry });
         this._changed({ type: 'account', mailbox: next.mailbox, id: next.id });
         return true;
     }
@@ -718,6 +720,7 @@ export class MailClientMinigame extends SocialOverlayScene {
             forceTargetId: extra.forceTargetId || null,
             inReplyTo: extra.inReplyTo || '',
             presetContactId: extra.presetContactId || null,
+            carryDraft: extra.carryDraft || null,
             meterDefault: this.config.showRedFlagMeter === true,
             // Free-text flavour body (01 §2, 00 §13): the scenario turns the extra box on
             // with mailClient.bodyMode "freeText" or freeTextFlavour; the composer keeps it

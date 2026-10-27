@@ -219,7 +219,62 @@ export class MailComposer {
 
         this._restoreDraft(opts.draft);
         this._selectDefaultContact();
+        // "Send as" changed mid-draft: keep what is still valid for the new account (R19 F19-1).
+        // An unsent draft the new account already holds still wins, as before.
+        this.carryNotice = '';
+        if (isObject(opts.carryDraft) && !this._draftRestored) this._carryOver(opts.carryDraft);
         this.render();
+    }
+
+    /**
+     * Carry a draft over from another account. A part is kept when the new account offers the
+     * same option; otherwise it takes this account's default (or stays unchosen) and is named in
+     * a one-line notice. Only the recipient, From, greeting, pretext, ask and subject can differ.
+     */
+    _carryOver(prev) {
+        const cleared = [];
+        const contact = this.contacts.find((c) => c && c.id === prev.contactId)
+            || this.contacts.find((c) => c && isStr(prev.to) && arr(c.addresses).includes(prev.to));
+        // Start clean for whichever recipient this account has, then lay the old choices on top.
+        this.contactId = null;
+        this._draftRestored = false;
+        this.toAddress = '';
+        this.choice = {};
+        this.slots = {};
+        this._subjectId = null;
+        if (contact) {
+            this.selectContact(contact.id, false);
+            if (arr(contact.addresses).includes(prev.to)) this.toAddress = prev.to;
+        } else {
+            this._selectDefaultContact();
+            if (isStr(prev.contactId) || isStr(prev.to)) cleared.push('To');
+        }
+        if (this.target) {
+            const names = { from: 'From', greeting: 'greeting', pretext: 'pretext', ask: 'ask' };
+            const was = isObject(prev.templates) ? prev.templates : {};
+            for (const part of PARTS) {
+                const id = was[part];
+                if (!isStr(id)) continue;
+                if (this.templateSet(part).includes(id)) {
+                    this.choice[part] = id;
+                    const tpl = templateOf(this.templates, id);
+                    for (const sl of arr(tpl && tpl.slots)) {
+                        if (isObject(prev.slots) && isStr(prev.slots[sl.id])) this.slots[sl.id] = prev.slots[sl.id];
+                    }
+                } else if (this.choice[part] !== id) {
+                    cleared.push(names[part]);
+                }
+            }
+            if (isStr(prev.subject)) {
+                if (this.visibleSubjects().some((x) => x.id === prev.subject)) this._subjectId = prev.subject;
+                else cleared.push('subject');
+            }
+        }
+        if (isStr(prev.attachment)) this.attachment = prev.attachment;
+        if (isStr(prev.link)) this.link = prev.link;
+        if (isStr(prev.freeText)) this.freeText = prev.freeText;
+        this._emitChange();
+        if (cleared.length) this.carryNotice = `Cleared for this account: ${cleared.join(', ')}.`;
     }
 
     // ── state ──────────────────────────────────────────────────────────────
@@ -707,6 +762,7 @@ export class MailComposer {
     }
 
     _emitChange() {
+        this.carryNotice = '';
         try { this.opts.onChange?.(this.draft()); } catch (err) { console.error('composer onChange failed:', err); }
     }
 
@@ -738,6 +794,7 @@ export class MailComposer {
         this.root.textContent = '';
         this.root.appendChild(el('h2', 'mail-compose-title', 'New message'));
         this._renderSendAs();
+        if (this.carryNotice) this.root.appendChild(el('p', 'mail-compose-hint mail-compose-carry', this.carryNotice));
         this._renderTo();
         if (this.contact && !this.target) {
             this.root.appendChild(el('p', 'mail-compose-note',

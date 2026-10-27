@@ -226,3 +226,30 @@ re-checked against the current code first.
   change nothing; the row badge stays). The stale "Verdict locked: Trust" banner did: the live line is a
   visible notice and stayed on screen after another message was opened. Opening a different message
   now clears it. Test in `social-triage-ui.test.mjs`.
+
+## R19 fixes
+
+Source: `playtests/R19.md` F19-1 to F19-4.
+
+- **F19-1 (Send as resets the draft):** the composer now carries the draft across accounts
+  (`mail-composer.js` `_carryOver`, called from `switchAccount` through `openCompose({ carryDraft })`).
+  The recipient, subject, greeting, pretext, ask, filled blanks, attachment, link and free text are kept
+  when the new account offers the same option. A part the new account does not offer (for example a
+  spoofed From on an account that can only send as itself, or a recipient it does not list) takes that
+  account's default, or stays unchosen for the pretext, and the composer shows one line:
+  "Cleared for this account: From." The line goes with the next edit. An unsent draft the new account
+  already holds still wins, as before. Shared with the awareness course; no change when no account switch
+  happens. Tests: `test/js/social-mail-send-as-carry.test.mjs`; `social-mail-accounts.test.mjs` unchanged and green.
+- **F19-2 (stale "Noted:" line):** the OSINT browser's status line (`.ob-live`, a visually hidden
+  `role="status"` region) kept its text when the player moved page. `go()` now clears it when the place
+  changes. Test in `social-osint-browser.test.mjs`.
+- **F19-3 (note text twice):** not a second visible line. The block's own feedback and the hidden status
+  region both hold the note text, and the playtest read the page text, which includes the hidden region.
+  The region is the screen-reader announcement, so it stays; with F19-2 it no longer outlives the page.
+- **F19-4 (repeatable dev option):** real. "I'm helping Sofia..." (`open_buddy`) stayed on the menu for
+  the whole call, was judged and logged each pick, and after the first answer Dev said nothing (the
+  team acknowledgement is once-only), so a player could repeat it silently. It now leaves the menu once
+  the team has been acknowledged (`not team_checked`, beside `not team_repaired`), as the repair option
+  already did. No spoken line was added or changed; `tts_cache/lab_social_engineering` is unaffected.
+  If a wary or refusing reply (band 1 or 2) comes first the option stays, and each pick then gets a reply.
+  `dev_service_desk.json` recompiled with `bin/inklecate`.
