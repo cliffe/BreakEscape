@@ -75,8 +75,8 @@ land; keep each line short and say where the detail lives.
 - [x] Bugs found on the way, fixed: `scenario_map` policy and signed-out `/break_escape/configuration`
       (engine bf0af2854); engine loaded twice, fixed with a gemspec glob (Hacktivity 5f655cce, eb7ee578,
       1b385989; works whether `../BreakEscape` is the engine or its parent folder).
-- [ ] Windows installer of the desktop app: owner installs wine (`sudo apt install wine wine64`,
-      `wineboot --init`), then `npm run build:full:win`. Linux AppImage rebuilt 2026-10-27.
+- [x] Windows installer built with wine 2026-10-27 (`npm run build:full:win`, icon and version info applied;
+      unsigned until there is a certificate, see "At release"). Owner to try it on a Windows machine.
 - [ ] Backlog from reviews: in-page consent dialog instead of `window.confirm`; remember a declined
       restore per account; show "already owned" during restore; fix the pre-existing
       `subscription_flow_test.rb:143` and Stripe webhook test failures. (The older throttles' `req.ip`
