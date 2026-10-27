@@ -188,3 +188,39 @@ test('P6-2: linkInfoFor records the brand the page imitates', async () => {
     const info = lp.linkInfoFor({ built: true, choices: { brand: 'docshare', domainId: 'd1' }, credibility: 10 }, { brands: [] }, 'k');
     assert.equal(info.brand, 'docshare');
 });
+
+// ── Engine round 4 (P7) ───────────────────────────────────────────────────────
+
+const hanaTarget = () => ({
+    id: 'hana', address: 'h@q.example', displayName: 'Hana',
+    requiredFactors: ['linkCredible'], advisoryFactors: [], primedFor: { trusts: ['*'] }, interests: { topics: [] },
+    expectedLink: { brandId: 'quayholt', realDomain: 'quayholt.example' },
+    replies: { landed: 'ok', missed: 'generic', missNoPage: 'no page', missWrongService: 'wrong service', missWrongAddress: 'wrong address' }
+});
+const evalLink = async (over) => {
+    const rules = await import(pathToFileURL(join(dir, 'systems/phish-rules.js')));
+    const base = { account: GUEST, fromAccount: 'g', to: 'h@q.example', templates: {}, slots: {}, headerFrom: { account: true } };
+    return rules.evaluateMessage(hanaTarget(), { ...base, ...over }, { account: GUEST, people: {}, templates: {} });
+};
+
+test('P7-1: the live reply (mail-bridge dataOnlyText) names the cause of the link miss', async () => {
+    const bridge = await import(pathToFileURL(join(dir, 'minigames/mail-client/mail-bridge.js')));
+    const t = hanaTarget();
+    const aw = { awarenessEpisode: {} };
+    const none = await evalLink({});
+    assert.equal(bridge.dataOnlyText(t, none, aw), 'no page');
+    const page = (brand) => ({ link: 'kit', linkInfo: { state: 'ok', brand, domain: 'x.example', meetsThreshold: false } });
+    assert.equal(bridge.dataOnlyText(t, await evalLink(page('docshare')), aw), 'wrong service');
+    assert.equal(bridge.dataOnlyText(t, await evalLink(page('quayholt')), aw), 'wrong address');
+    // No per-cause strings: the one generic reply, as before.
+    assert.equal(bridge.dataOnlyText({ ...t, replies: { landed: 'ok', missed: 'generic' } }, none, aw), 'generic');
+});
+
+test('P7-4: no page attached raises no look-alike-domain red flag; a wrong page still does', async () => {
+    const none = await evalLink({});
+    const f = none.factors.find((x) => x.id === 'linkCredible');
+    assert.equal(f.state, 'missing');
+    assert.equal(f.redFlag, null);
+    const wrong = await evalLink({ link: 'kit', linkInfo: { state: 'ok', brand: 'quayholt', domain: 'x.example', meetsThreshold: false } });
+    assert.match(wrong.factors.find((x) => x.id === 'linkCredible').redFlag, /look-alike/);
+});

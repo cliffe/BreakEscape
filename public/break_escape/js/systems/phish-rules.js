@@ -371,6 +371,9 @@ function entry(target, id, base) {
     const cper = cs[state] && typeof cs[state] === 'object' ? cs[state] : null;
     fail = pick(per && per.fail, cper ? cper.fail : pick(ts.fail, cs.fail));
     redFlag = pick(per && per.redFlag, pick(ts.redFlag, pick(cper && cper.redFlag, cs.redFlag)));
+    // P7-4: no page attached is not a look-alike address, so the generic link red flag (which
+    // names a look-alike domain) is not shown for it; only a flag authored for 'missing' is.
+    if (id === 'linkCredible' && state === 'missing') redFlag = pick(per && per.redFlag, cper && cper.redFlag) || null;
   }
   const out = {
     id, pass: base.pass, state, reply: fail, redFlag, mode: base.mode,
@@ -428,6 +431,17 @@ function linkCauseOf(target, message, linkState) {
   const used = message.linkInfo && message.linkInfo.brand;
   if (isStr(brand) && isStr(used) && used !== brand) return 'wrongService';
   return 'wrongAddress';
+}
+
+/**
+ * P6-2 / P5-8 / P7-1: the target's reply for the cause of a link miss (replies.missNoPage,
+ * missWrongService, missWrongAddress), or null. Shared by dataOnlyReply and the mail bridge's
+ * live reply, so both read the same rule ahead of the one generic replies.missed.
+ */
+export function causeMissReply(target, result) {
+  if (!target || !target.replies || !result || result.landed || result.firstFail !== 'linkCredible') return null;
+  const v = target.replies[MISS_KEY[result.linkCause]];
+  return isStr(v) ? v : null;
 }
 
 const MISS_KEY = Object.freeze({ noPage: 'missNoPage', wrongService: 'missWrongService', wrongAddress: 'missWrongAddress' });
@@ -622,10 +636,8 @@ export function dataOnlyReply(target, result) {
   let text;
   if (result.landed) {
     text = pick(target && target.replies && target.replies.landed, 'Thanks, received.');
-  } else if (target && target.replies && result.firstFail === 'linkCredible' &&
-             isStr(target.replies[MISS_KEY[result.linkCause]])) {
-    // P6-2 / P5-8: a reply for the cause of the link miss, ahead of the one generic decline.
-    text = target.replies[MISS_KEY[result.linkCause]];
+  } else if (causeMissReply(target, result)) {
+    text = causeMissReply(target, result);
   } else if (target && target.replies && isStr(target.replies.missed)) {
     text = target.replies.missed; // an in-voice decline, in place of the factor's line (P3 N4)
   } else {
