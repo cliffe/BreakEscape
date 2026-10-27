@@ -339,9 +339,11 @@ Later:              P13 real-time developer notifications
 
 ### P5. Play-app navigation
 
-- **Repo/files:** BreakEscape `public/break_escape/js/client-platform.js`. No Hacktivity change
-  (sign-out from the shell lands on `/`, which the landing guard returns to `homeUrl()`;
-  `after_sign_out_path_for` stays as it is).
+- **Repo/files:** BreakEscape `public/break_escape/js/client-platform.js`. Built with the native hand-off (hacktivity-android `native/OpenOutsideActivity.java`, see its README) and
+  small Hacktivity changes (AppEntry keeps `v`, `hacktivity-outside-hosts` meta, purchase links tagged
+  `data-store-only="web"`). Sign-out from the shell lands on `/`, which the landing guard returns to
+  `homeUrl()`, so a signed-out player in the Play app arrives at the in-app sign-in page, not the title
+  screen. The owner accepted that. `after_sign_out_path_for` stays as it is.
 - **Build (play-app only):** one click handler on `document` that sends a navigation to
   `openOutside()` when the link has `data-outside`, `target="_blank"`, or a same-origin path that
   doesn't match the stored `appPaths`. It skips `data-method`/`data-remote` links and forms
