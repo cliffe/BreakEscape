@@ -1,161 +1,196 @@
 # World and cast
 
-The awareness course has its own world: one fictional organisation, a recurring cast and a consistent tone. Modules stand alone and can be taken in any order, but sharing a world keeps the art reusable, lets characters carry across modules, and makes the course feel like a series rather than a stack of slides.
+**Reconciled with the build on 2026-10-27.** The plan first set the course inside one invented company, Larkspur Group, with a recurring cast. The build went another way, and the build wins (`04_BUILT_SO_FAR.md` R2). This file now describes the built frame and companies, and keeps the plan's cast as a pool of names for future episodes.
 
-All names here are working names. Check the organisation name for trademark clashes before anything is published.
+Sources of truth for anything built: `../phishing_and_social_engineering/awareness/BRAND_SET.md` (companies, domains, cast), the scenario files `scenarios/awareness_*` (hosts, rooms, items) and `../phishing_and_social_engineering/designs/11_awareness_product_episodes.md` (tone and product rules). Where a design doc and a scenario file differ, the scenario file wins.
+
+Status key: **Built** (on main), **Builds on E# / system X** (extends something built), **New** (plan only).
 
 ## Relationship to the Break Escape campaign
 
-**Recommendation: a separate world, like the Security-Informed Safety games.** The SAFETYNET campaign is a spy thriller with a handler, an enemy organisation (ENTROPY) and combat. Compliance buyers need staff to see their own working day in the game, and the threats to look like the ones in their inbox. Spy framing would undercut that.
+**Built.** The awareness product is its own line, "Incident Simulations: Critical Cases" (user decision F2), apart from SAFETYNET. It uses the neutral corporate skin (`ui_theme: "general"`) and the Hacktivity `training` collection. There is no spy framing, no handler and no ENTROPY. The lab's brands (Ledgerwell, Tarnside Assurance, CloudBoxy, friendface) stay in the lab, so a learner who meets both products does not carry answers across (BRAND_SET §1).
 
-Optional nods for players who know the campaign (a SAFETYNET recruitment poster in the break room, an ENTROPY headline on a newspaper) cost nothing and carry no plot. This is listed as an open question in `README.md`.
+## The frame: a training room, a kiosk and a host
 
-## The organisation: Larkspur Group
+**Built.** Every scenario is one training room at a client company:
 
-- **What it does:** facilities, cleaning and supplies for schools, councils, care homes and NHS sites across the North of England. This gives every module a natural reason to exist: public-sector customers with personal data, hundreds of suppliers and invoices, a warehouse, field staff on mobile devices, a contact centre, and a board answerable to clients.
-- **Size:** about 600 staff. Head office about 180, warehouse and distribution about 120, field engineers and cleaning teams about 250 (most on phones and tablets), contact centre about 50.
-- **Head office:** a converted mill on a canal in a northern English city. Reception and visitor area with badge gates; open-plan operations floor; finance and HR behind a badge door; meeting rooms; kitchen; IT service desk; a small comms room; the board room on the top floor; a side door to the smoking shelter and car park that everybody props open.
-- **Systems (generic, no real brands):** a mail client with a **Report suspicious** button; **Larkspur Chat** (the company chat tool); the intranet, called **The Lark**; the finance system, **Ledger**; the HR system; a customer portal; shared drives and **Larkspur Files** (file sharing); **Larkspur Connect** (the VPN); **Larkspur Vault** (the password manager); **Larkspur Protect** (security software); **Larkspur Apps** (the software portal, where **DocShift** is the approved document converter). Real brand names stay out of the game so customers can map them to their own tools.
-- **Service lines** that modules use: cleaning and facilities management for schools, councils and NHS sites; supplies and deliveries from the warehouse; field maintenance; and **Care Laundry**, which collects and returns care home residents' name-taped clothes (core_05).
-- **Information classes:** Public, Internal, Confidential, Restricted. Customers can rename these (BE-05).
-- **The security team:** Ama Owusu (Information Security Manager), Kai Murray (analyst), and an outsourced 24/7 monitoring partner. Tomasz Wiśniewski is the Data Protection Officer.
-- **Reporting at Larkspur:** the Report suspicious button for messages; the security team on extension 4444 or the 24/7 service desk line; anything involving personal data also goes to the DPO through the same route. The game shows these as defaults and replaces them with the customer's own routes when an organisation profile is set (BE-05).
+- **The room.** One room per company: `room_aw_brightwell`, `room_aw_tarrowby`, `room_aw_quayholt` and `room_aw_merrin_sallow`. There are no doors, no combat and no VMs. Room dressing, lighting and POV backgrounds are still in progress (`awareness/TRAINING_ROOM_PLAN.md`, `HANDOVER.md` §3).
+- **The kiosk.** The training kiosk opens the episode runner, which steps through the stages with a step strip: brief, attack, flip, defend, debrief. A check mission runs one triage form at the same kiosk.
+- **The host.** One NPC per scenario, a member of the company's staff "minding the training", who welcomes the learner and points them at the kiosk. The host is not a mentor who follows the learner across episodes; the teaching sits in the scope note, the per-item feedback, the concept panels and the debrief.
+- **The learner.** The player's display name is "Learner", and they take the role the episode names (finance, hr, helpdesk, executive, general, mobile, or everyone in E7). The chosen avatar always wins and the portrait follows (aw9); the default hooded fallback stays.
+- **The scope note.** Every episode opens by saying it is an authorised exercise at a fictional company and that nothing the learner writes leaves the game. So there are no hidden tests and no surprise reveals.
 
-### The course motto
+### Hosts per scenario (Built)
 
-**Pause. Check. Report.**
-
-- **Pause** when something is unexpected, urgent, secret, or asks for money, data, codes or access.
-- **Check** through a channel you already trust: a number from the directory, a colleague in person, the intranet. Never the contact details in the message.
-- **Report** anything suspicious, including your own mistakes, straight away. Reporting is never wrong.
-
-Ama says it in core_00 and every module comes back to it. It heads the reference card.
-
-### Rules that hold in every module
-
-- **Nobody at Larkspur ever asks anyone to read out a one-time code**, a password or an MFA approval. The service desk and the contact centre verify by calling back on the number already held, or by sending an approval or reset to details already on record. Any request for a code is therefore a sign of an attack, in every module.
-- **Larkspur staff never approve their own payment changes.** Bank detail changes are verified by a call back on the number already on the supplier record and approved by a second person (core_11, role_02).
-- **Reporting is never wrong.** A report that turns out to be harmless is thanked, every time.
-
-## The player
-
-- **Core modules:** the player is a new starter in Larkspur's Operations team, an operations coordinator. It is a deliberately general job: it touches suppliers, customers, personal data, visitors, deliveries and the field teams, so every core topic arises naturally. The player chooses a name and an avatar.
-- **Role modules:** the player takes the role in question at Larkspur (a finance officer, a service desk analyst, a board member, a team leader).
-- **Sector modules:** the player works for one of Larkspur's clients (for example a hospital in sector_01), or for the sector organisation itself.
-
-Dialogue must not assume an order beyond core_00 ("your first week" is fine there and nowhere else). Cross-module memory (BE-17) is an optional extra: if present, characters can remember what the player did in earlier modules.
-
-## Recurring cast
-
-Every named recurring character gets their own art through the PixelLab character pipeline (dialogue bust, talk sheet or visemes, 8-direction walk) and a voice in the voice bible. Extras use the existing generic office sprites. The cast is deliberately varied in age, ethnicity and background; the choices below should be stated in the concept prompts.
-
-| Id | Name | Role | Age and look | Personality | Main modules |
-|---|---|---|---|---|---|
-| `ama_owusu` | Ama Owusu | Information Security Manager; the mentor | 40s, Black British (Ghanaian heritage), locs tied back, cardigan and lanyard | Warm, practical, says "thanks for telling me" before anything else. Admits she once fell for a phish in her first security job. | All core modules |
-| `tomasz_wisniewski` | Tomasz Wiśniewski | Data Protection Officer | 50s, white Polish-British, grey beard, round glasses | Precise, dry humour. "Behind every row in a spreadsheet is a person." | core_05, core_06, core_14, role_05 |
-| `kai_murray` | Kai Murray (they/them) | Security analyst | Late 20s, white Scottish, short dyed hair, headset | Quick and enthusiastic; shows what happens behind the scenes after a report | core_01, core_04, core_07, core_08, role_03 |
-| `maureen_gallagher` | Maureen Gallagher | Receptionist for 25 years | 60s, white, Irish-born, silver bob | Knows everyone, unflappable, the best social-engineer spotter in the building | core_00, core_02, core_10, core_13 |
-| `hassan_qureshi` | Hassan Qureshi | Finance Manager | 40s, British Pakistani, neat beard, suit | Calm and methodical, champion of dual authorisation, nearly caught out once and tells the story | core_11, role_02 |
-| `gillian_marsh` | Gillian Marsh | Chief Executive | Late 50s, white English, short grey hair | Decisive, always travelling, impatient with process; the face and voice fraudsters most like to borrow | core_11, core_15, role_01 |
-| `owain_jenkins` | Owain Jenkins | IT Service Desk Lead | 30s, white Welsh, red beard, company fleece | Relaxed and helpful. "Ask us first. We'd rather help than clean up." | core_00, core_03, core_06, core_07, core_08, core_13, role_03 |
-| `leo_brennan` | Leo Brennan | The player's desk neighbour in Operations | Mid-20s, white Irish-English, curly hair | Friendly, posts everything online, makes mistakes and always reports them fast: the role model for "report it" | core_01, core_04, core_08, core_12, core_13 |
-| `martin_fletcher` | Martin Fletcher | Sales Director | 50s, white English, broad build | Charming, thinks security slows the business down, king of workarounds; comes round over the course | core_05, core_06, core_09, core_13, core_17 |
-| `precious_adeyemi` | Precious Adeyemi | Facilities and Building Security Manager | 40s, Black British (Nigerian heritage), wheelchair user | Practical and dry; owns the doors, badges, CCTV and the clean desk sweep | core_00, core_06, core_10 |
-| `mei_lin_zhou` | Mei Lin Zhou | HR Business Partner | 30s, British Chinese | Discreet, firm about leavers' access and recruitment checks | core_06, core_14, role_05 |
-| `darius_rahimi` | Darius Rahimi | Lead Developer, customer portal | 30s, British Iranian | Loves tooling, pragmatic about risk | role_04 |
-| `shauna_campbell` | Shauna Campbell | Contact Centre Team Leader | 30s, Black British (Jamaican heritage) | Patient, protective of vulnerable customers | role_06 |
-| `harjit_gill` | Harjit Gill | Procurement Lead | 40s, British Sikh, turban | Thorough and sceptical of glossy sales pitches | role_07 |
-| `zainab_hussain` | Zainab Hussain | Field Service Engineer | 30s, British Bangladeshi, hijab, hi-vis jacket | Always on the move between client sites; works from her van, cafés and trains | core_09 |
-| `kev_sutcliffe` | Kev Sutcliffe | Warehouse Supervisor | 50s, white Yorkshire, hearing aids | Distrusts computers, very sharp about people | core_07, core_10, core_13, role_02 |
-| `jo_fairweather` | Jo Fairweather | Ethical social engineer at Northlight Security, a testing firm Larkspur hires | 40s, mixed heritage (white British and Black Caribbean), ex-police | Funny, candid, guides the attacker-view interludes and says what made it easy | core_01, core_02, core_06, core_10, core_12, core_13 |
-| `anne_marie_lambert` | Anne-Marie Lambert | Chair of the Board | 60s, white English | Formal, asks the questions a regulator would ask | role_01 |
-| `faisal_karim` | Dr Faisal Karim | Non-executive director with a cyber background | 50s, British Egyptian | Measured; translates between the security team and the board | role_01 |
-| `eleni_markou` | Eleni Markou | Financial Controller; second approver (senior to Finance Manager Hassan Qureshi) | 50s, Greek Cypriot British, grey-streaked dark hair in a clip, reading glasses on a cord, navy cardigan, walks with a stick | Brisk, dry and kind: "Late, I can explain. Lost, I can't." | core_11, role_02 |
-| `bea_thornton` | Bea Thornton | Payroll Supervisor | 60s, white English from Lancashire, short silver hair, bright red reading glasses | Warm and funny, a little old-school about email; owns up the moment she realises | role_02 |
-| `reena_solanki` | Reena Solanki | Dispatch coordinator, warehouse | 20s, British Indian (Gujarati heritage), short hair, glasses, hi-vis over a hoodie | Quick and funny, always mid-print-run | core_07 |
-| `daniel_kwan` | Daniel Kwan | Head of Communications | 30s, British Korean | Quick and dry, allergic to "fully under control"; insists staff hear things first | role_01 |
-| `rosa_delgado` | Rosa Delgado | Service desk analyst | 20s, British Colombian | Warm and quick, top of the handling-time board; the "slipped, reported, thanked" colleague | role_03 |
-| `ines_carvalho` | Ines Carvalho | Developer, customer portal team | 30s, Portuguese-British | Sharp, funny and fast; always volunteers for the release | role_04 |
-| `sunil_mehta` | Sunil Mehta | QA lead, customer portal team | 40s, British Indian | Methodical; keeps a spreadsheet of every bug since 2019 | role_04 |
-| `marta_ferreira` | Marta Ferreira | Graduate apprentice scheduler, Schools Facilities | 23, Portuguese-British, dark curly hair, a yellow cardigan, a new lanyard | Keen and a little overwhelmed | role_05 |
-| `des_harker` | Des Harker | Retiring scheduler and former school caretaker | 64, white English from Bradford, walks with a stick, flat cap | Warm, proud, a bit sad to go | role_05 |
-| `farida_haidari` | Farida Haidari | Schools Facilities planner | 30s, British Afghan; neat, quick, precise | The team's most experienced planner; owns a slip and is thanked for it | role_05 |
-| `dev_kapoor` | Dev Kapoor | Information Governance Manager; the mentor (healthcare) | 30s, British Indian, neat beard and glasses, lanyard, trainers | Calm, friendly, a little nerdy: "Every look is logged." | sector_01 |
-| `rodel_bautista` | Rodel Bautista | Ward Manager (charge nurse), Ward 12 | 50s, Filipino-British, short greying hair, navy uniform, a fob watch | Brisk, fair and quick to laugh | sector_01 |
-
-**New cast, art and voice needs** (surfaced by the module reviews):
-
-- **Precious Adeyemi** is a wheelchair user and needs a custom wheelchair movement and animation set, not the standard 8-direction walk cycle (first needed in core_00).
-- **Reena Solanki** needs v2-pipeline art (dialogue bust, talk sheet, 8-direction walk); state her look in the concept prompt.
-- **Eleni Markou** needs a full sprite and talk sheet (on screen in role_02; a video-call portrait does for core_11).
-- **Bea Thornton** needs a full sprite and talk sheet.
-- **Daniel Kwan, Rosa Delgado, Ines Carvalho, Sunil Mehta, Marta Ferreira, Des Harker, Farida Haidari, Dev Kapoor** and **Rodel Bautista** are all on screen and speaking, so each needs the full pipeline (bust, talk sheet or visemes, 8-direction walk) and a voice.
-- Voice-only, phone-only and name-only additions are in the Minor characters table below, with their needs noted there.
-
-### Minor characters
-
-These appear mostly by email, chat or phone, so they need art only if a module brings them on screen.
-
-| Id | Name | Role | Notes |
+| Company and room | Scenario | Host | Host's role |
 |---|---|---|---|
-| `lena_fischer` | Lena Fischer | Operations Manager, the player's line manager in the core modules | 40s, German-British; brisk and fair. Sets the work tasks |
-| `dawn_northbeck` | Dawn (Northbeck Supplies) | The player's contact at a long-standing supplier | Her real mailbox is used in a hijacked thread in core_01; she confirms by phone that she sent nothing |
-| `jas` | Jas | Night-desk analyst on Larkspur's outsourced 24/7 service desk | Voice and phone only, no art. Fortyish, from Bradford; unhurried, kind, northern (core_03) |
-| `ruth_hollis` | Ruth Hollis | Facilities officer, Westmoor Council | Phone only; needs a voice, not art. 50s, white English, brisk and friendly (core_13) |
-| `callum_reid` | Callum Reid | Former agency temp in the warehouse team, left in March | Off screen; a name on a sharing list only, no art or voice (core_13) |
-| `leah_brodsky` | Leah Brodsky | The insurer's breach coach (a panel solicitor) | Phone voice only. 40s, Jewish British, brisk and kind (role_01) |
-| `gavin_ashworth` | Gavin Ashworth | Director of Estates, Kirkmoor Hospitals NHS Trust (a client) | Phone voice only. 50s, white, West Yorkshire; worried rather than angry (role_01) |
-| `bev_quigley` | Bev Quigley | Consultant at Ellwood Talent, a recruitment agency | Email and phone only; friendly and persistent (role_05) |
-| `daniel_hartwell_fake` | "Daniel Hartwell" (the fake candidate) | A remote job candidate who is not who he says | Seen only as a polished profile photo and a reluctant camera; the paperwork never quite lines up. No sprite (role_05) |
-| `daniel_hartwell` | Daniel Hartwell (the real one) | A web developer in Leeds whose identity was used | Phone only; 30s, white English (role_05) |
-| `patrick_mulligan` | Dr Patrick Mulligan | Consultant physician; the trust's Caldicott Guardian | A 60-second staff-room video and a brief ward-round cameo. Needs a portrait and talk sheet (a walk sprite only if the cameo stays). 60s, white Irish, half-moon glasses, bow tie (sector_01) |
-| `joy_okonjo` | Joy Okonjo | Staff nurse, Ward 12 | 20s, Black British (Nigerian heritage). Uses the generic sprite `female_nurse2_v2` with a display name, so no new art (sector_01). See the note on Okonjo below |
-| `kayleigh_rowntree` | Kayleigh Rowntree | Healthcare assistant, Ward 12 | 20s, white English, chatty and warm. Uses `female_nurse1_v2`, so no new art (sector_01) |
-| `arthur_fenwick` | Arthur Fenwick | Patient, Ward 12 bed 4, going home to Brindle House | 84; shown as a bed sprite, no character art (sector_01) |
-| `ros_fairbairn` | Ros Fairbairn | Patient in side room 2; a fictional television gardener | 70s; shown as a bed sprite, no character art. Must not resemble a real presenter (sector_01) |
-| `teresa_varga` | Teresa Varga | Deputy manager, Brindle House care home | Voice only (sector_01) |
+| Brightwell Foods, `room_aw_brightwell` | E1 and E1 defend-only | Adaeze Okafor | Finance manager |
+| | E7 and E7 defend-only | Agnieszka Duda | Payroll officer |
+| | Finance checks, AB pair | Graham Whitfield | Check host (early 60s, white British, Halifax) |
+| | Finance checks, BA pair | Farah Qureshi | Check host (early 30s, British Pakistani, Leicester) |
+| Tarrowby Logistics, `room_aw_tarrowby` | E2 and E2 defend-only | Fatima Begum | Recruitment lead |
+| | E6 and E6 defend-only | Chidi Okeke | Fleet coordinator |
+| | HR checks, AB pair | Jun Watanabe | HR assistant |
+| | HR checks, BA pair | Ibrahim Diallo | IT support lead |
+| | Mobile checks, AB pair | Lerato Dlamini | Health and safety adviser |
+| | Mobile checks, BA pair | Jun Watanabe | HR assistant |
+| Quayholt Insurance, `room_aw_quayholt` | E3 and E3 defend-only | Darren Price | Service desk team lead (E3 also has Leila Nassar, the learner's seat in the role swap) |
+| | E5 and E5 defend-only | Niamh Doherty | Internal communications officer |
+| | Helpdesk checks, AB pair | Anjali Rao | Information security analyst |
+| | Helpdesk checks, BA pair | Sofia Marchetti | HR adviser |
+| | General checks, AB pair | Owen Treharne | Facilities manager |
+| | General checks, BA pair | Pauline Hendry | Payroll officer |
+| Merrin & Sallow Architects, `room_aw_merrin_sallow` | E4 and E4 defend-only | Thandiwe Moyo | Studio manager |
+| | Executive checks, AB pair | Yasmin Chaudhry | Finance controller |
+| | Executive checks, BA pair | Julian Sallow | Co-founding partner |
 
-Names already used by Break Escape characters (Sarah, Priya, Helen, Graham, Chen, Okafor, Osei, Kowalski, Ahmed and others in `public/break_escape/assets/characters/`) are avoided so ids never clash. Joy Okonjo (sector_01) uses a generic sprite rather than a new one, so her id (`joy_okonjo`) does not clash with the existing `ms_okafor` or `david_osei` sprites; but "Okonjo" and "Okafor" are both Nigerian surnames beginning "Ok", so if the two ever read as a clash on screen, swap Okonjo for another surname.
+Host art is held until the PixelLab quota resets and the user approves the scope; today the hosts use placeholder sprites (`HANDOVER.md` §2).
 
-### Attackers
+**Note on a doc mismatch.** `HANDOVER.md` §1 lists E7 at Merrin & Sallow. The scenario files put E7 (and its defend-only shell) in `room_aw_brightwell` at Brightwell Foods, reusing E1's emails, as `BRAND_SET.md` §2 says. The scenario files win.
 
-There is no recurring named villain. Threats come from the realistic mix staff actually face: fraud gangs, ransomware affiliates, opportunists, and occasionally an insider. They mostly appear as voices on the phone, messages, emails, websites and visitors at the door, using generic sprites and voices. When an attacker is shown, they are shown as ordinary and businesslike, never as a hooded figure in green text.
+## The four companies (Built)
 
-Jo Fairweather, the ethical tester, gives the attacker's point of view where a module needs it, and always closes with what would have stopped her.
+All four are invented, every domain ends `.example`, and each still needs the pre-ship web search for a real business of the same name (BRAND_SET §1).
 
-## Places
+| Company | Domain | Region and what it is | Episodes | Check forms |
+|---|---|---|---|---|
+| Brightwell Foods | `brightwellfoods.example` | East Midlands food manufacturer (oat bars, cereals, a chilled range), about 400 staff, a long supplier list | E1 invoice fraud (flagship), E7 cloned CEO voice | Finance (AB and BA) |
+| Tarrowby Logistics | `tarrowby.example` | West Yorkshire haulier and warehousing firm, hiring drivers and warehouse staff all year | E2 CV lures, E6 texts and QR codes | HR and mobile (AB and BA) |
+| Quayholt Insurance | `quayholt.example` | Bristol commercial insurer with an in-house IT service desk and single sign-on | E3 help-desk reset and MFA fatigue, E5 fake sign-in pages | Helpdesk and general (AB and BA) |
+| Merrin & Sallow Architects | `merrinsallow.example` | London architecture practice whose partners' diaries are partly public | E4 executive whaling | Executive (AB and BA) |
 
-| Place | Use | Existing room type to start from |
+Each company's look-alikes use only the shapes a learner can learn to check: a swapped character, an added hyphen or an added word. There are no homographs in the awareness product. Suppliers, banks, agencies and shared services (Harlow Packaging, Kettlewick Talent, inboxly, DocShare and the rest) are in BRAND_SET §3 and the `_brandAdditions` blocks of each `awareness/e*/defend.json`.
+
+## Larkspur Group: retired
+
+**Larkspur Group is retired as the course's setting.** The plan's single company (a facilities firm in the North of England) and its systems (The Lark, Ledger, Larkspur Chat, Larkspur Vault and so on) are no longer used. Reasons:
+
+1. The build uses a training room at one of four client companies, so a single recurring workplace has no place in the frame (R2).
+2. **"Larkspur Travel" is already a built supplier.** It appears in the executive check forms as a genuine supplier and as a look-alike (items `ea_larkspur_bank` and `ea_larkspur_invoice`, on `larkspurtravel.example` and `larkspur-travel.example`, in `awareness_pre_executive_ab` and `awareness_post_executive_ba`). A second "Larkspur" company in the same product would confuse learners and blur a check item.
+
+Module plans that still say "Larkspur" should read as "the brand-set company the episode is set at". Fictional suppliers and products the modules name (Northbeck Supplies, Westmoor Council, DocShift and others) may be reused at a brand-set company, but each must be checked against BRAND_SET and given a `.example` domain before use.
+
+## Proposed new companies for E8 to E13 (New)
+
+`04_BUILT_SO_FAR.md` §4 proposes E8 to E13. Most fit the four companies:
+
+| Episode | Fits | Why |
 |---|---|---|
-| Reception and visitor area | Visitors, deliveries, tailgating, badges | `room_reception`, `room_zds_reception` |
-| Open-plan office | Most core modules | `room_office`, `room_office3` to `room_office5`, `room_zds_office` |
-| Meeting room with a screen | Video explainers, briefings | `room_meeting`, `room_zds_conference` |
-| Kitchen and break room | Posters, overheard conversations, the QR code on the coffee machine | `room_break` |
-| IT service desk and security office | Kai and Owain, reporting, behind the scenes | `room_IT`, `room_security` |
-| Comms room | A secure area people try to talk their way into | `room_servers`, `room_zds_servers` |
-| Executive office | The Chief Executive, CEO fraud | `room_ceo`, `room_zds_ceo` |
-| Board room | role_01 | `room_zds_conference` (redressed) |
-| Archive and print room | Confidential waste, the printer, secure disposal | `room_archive_1x2gu`, `small_office_room*_1x1gu` |
-| Finance office | core_11, role_02 | `small_office_room*_1x1gu` (redressed) |
-| Contact centre floor | role_06 | `room_office*` (redressed with headset desks) |
-| Hospital client site | sector_01 | the hospital set (`room_hospital_*`) |
-| Warehouse floor | core_07, core_13 | **new** |
-| Car park and smoking shelter | Tailgating at the side door, the dropped USB stick | **new** |
-| Home office | core_09, deepfake calls in core_15 | **new** |
-| Café | core_09: public Wi-Fi, shoulder surfing | **new** |
-| Train carriage | core_09: overheard calls, screens on show | **new** |
-| Hotel room | core_09: devices left behind | **new** |
+| E8 after the click | Quayholt Insurance | It has a security analyst who receives reports (Anjali Rao) and a service desk |
+| E9 passwords and password managers | Merrin & Sallow Architects | A small practice with shared logins and no IT department of its own gives the topic its reason |
+| E10 fake downloads and "verify you are human" pages | Tarrowby Logistics | Dispatch and yard staff on shared PCs; builds on E6's cast |
+| E12 the visitor and the tailgater | Brightwell Foods | A factory site with visitors, deliveries and a chilled unit (Lindiwe Mokoena's site) |
 
-The university set (`room_uni_*`) would suit an education sector pack later.
+Two do not fit, and get a new company each:
 
-## Tone
+| Proposed company | Domain | Look-alikes (learnable shapes) | Region and what it is | Episode | Status |
+|---|---|---|---|---|---|
+| Cobbleford Care | `cobblefordcare.example` | `cobblefordcare-hr.example` (added word), `cobb1efordcare.example` (swapped character) | A group of four care homes in Cumbria, holding residents' care records and family contacts, so a misdirected or overshared record has a real person behind it | E11 misdirected and overshared data (core_05 and core_06, consequence flip) | Proposed, add to BRAND_SET.md after a web search |
+| Lintgate Communications | `lintgate.example` | `lintgate-files.example` (added word), `1intgate.example` (swapped character) | A Glasgow PR and communications agency that drafts client copy with an AI writing tool, so data in prompts and an injected instruction in a client brief arise naturally | E13 the AI assistant (core_15, authored, no runtime model) | Proposed, add to BRAND_SET.md after a web search |
 
-- **A workplace drama with warmth and humour**, closer to a good office sitcom with real stakes than to a thriller. Consequences are real (money gone, a customer's data exposed, a colleague upset) and shown with care.
-- **People are the defence, not the problem.** Every module shows a colleague catching something, and a colleague who slipped up, reported it and was thanked.
-- **Calm, not scary.** Threats are shown plainly, then answered with a simple action. No countdown sirens for their own sake, no skulls, no "you have been hacked" jump scares.
-- **Plain English.** Characters explain jargon the first time or avoid it. Spoken lines stay short (the dialogue lint flags spoken lines over 30 words).
-- **No brand names, no real people.** Real incidents inspire scenes but names, companies and figures in the game are fictional.
+"Cobbleford" and "Lintgate" had no hits in the repo on 2026-10-27. Each new company's cast follows the diversity rule below, and its names get the same repo check BRAND_SET used.
 
-## Organisation profile
+## The habit to keep (Built)
 
-When a customer sets up the course in Hacktivity, they supply an organisation profile (HA-11, BE-05): name, logo, reporting routes, service desk number, DPO contact, classification labels, policy names and links. On-screen text, documents, the intranet and the reference card use these values in place of Larkspur's. Voiced lines stay generic ("use the Report button", "call the service desk") because the voice cache is keyed on exact text, and a voiced line that printed a customer's name would need fresh audio for every customer.
+The plan's motto *Pause. Check. Report.* is replaced. Every debrief carries the built rule of thumb, word for word, under the heading "The habit to keep" (aw4, set once in `awareness_deploy.py` and enforced by a test):
+
+> "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+
+Whether a short tagline should sit alongside it is D14.
+
+### Rules that hold at every brand-set company
+
+- **Builds on the rule of thumb.** No genuine item at a brand-set company asks anyone to read back a one-time code, a password or an MFA approval; verification is a call back on a number already held. New items must keep to this, and any customer whose own process differs is a module-level question (role_06).
+- **Builds on E1 and E7.** Bank-detail changes are confirmed by a call back on the number already on record (E1's genuine `e1_bank_confirmed` is the model).
+- **Built.** Reporting is never penalised, and a report that turns out harmless is thanked.
+- **Built.** Every fictional phone number is in Ofcom's drama ranges (as E7 already does).
+
+## Tone (Built)
+
+From `designs/11` §4.3 and the shipped strings:
+
+- **No blame.** The debrief never says "you fell for it". It says the item was built to look right, and explains why. Every debrief ends with a no-blame line.
+- **Reporting is a win.** The report button is always visible, never greyed out, and is thanked. The "team protected" tally counts reports.
+- **A miss is a teaching moment.** After a likely miss, the next item is a similar one, not a harder one.
+- **Calm and plain.** Threats are shown plainly and answered with a simple action. No sirens, skulls or jump scares. Spoken lines stay short.
+- **Openly an exercise.** The scope note says it is authorised and fictional, and nothing leaves the game.
+- **No real brands or people, no league tables.** Scores are shown to the learner only; the discrimination figure goes to organisers only (aw3).
+
+## Inclusive casting and art (kept)
+
+- **Built (standing project rule).** Each company's cast varies in age and background, and each entry records what was chosen so the concept prompts can follow it (BRAND_SET §1).
+- **Built.** Attackers are shown as ordinary and businesslike, never as a hooded figure in green text. There is no recurring named villain; threats come from fraud gangs, opportunists and the like, mostly as messages, calls and pages.
+- **New.** A wheelchair user in any future cast needs a custom movement and animation set, not the standard 8-direction walk (the plan's Precious Adeyemi note).
+- **Builds on the host art plan.** A host or staff member who is on screen and speaking needs the full PixelLab pipeline (bust, talk sheet or visemes, 8-direction walk) and a voice; voice-only and email-only people need no art.
+- **Built.** Hand edits to sprites go in `tools/pixellab_overrides/`, never on the atlas.
+
+## Pool of names for future hosts and staff (New)
+
+The plan's recurring cast is no longer one workplace. Its names are offered as a pool for hosts and staff at brand-set companies or new ones, keeping the looks and personalities as starting points for concept prompts. Before use, a name must be checked again against BRAND_SET, the scenarios and `public/break_escape/assets/characters/`.
+
+Checked on 2026-10-27 against the built awareness cast (hosts, BRAND_SET and every `_brandAdditions` block) and the other scenarios.
+
+**No clash found** (free to offer):
+
+| Name | Plan's role and look (starting point) |
+|---|---|
+| Ama Owusu | Information security manager; 40s, Black British (Ghanaian heritage); warm, practical |
+| Kai Murray (they/them) | Security analyst; late 20s, white Scottish; quick, shows what happens after a report |
+| Leo Brennan | Operations colleague; mid 20s, white Irish-English; slips, reports fast, is thanked |
+| Martin Fletcher | Sales director; 50s, white English; king of workarounds |
+| Harjit Gill | Procurement lead; 40s, British Sikh; sceptical of glossy pitches |
+| Zainab Hussain | Field service engineer; 30s, British Bangladeshi, hijab; works from her van |
+| Kev Sutcliffe | Warehouse supervisor; 50s, white Yorkshire, hearing aids; sharp about people |
+| Jo Fairweather | Ethical social engineer at a testing firm; 40s, mixed heritage; could host an attack half |
+| Anne-Marie Lambert | Chair of a board; 60s, white English; asks a regulator's questions |
+| Eleni Markou | Financial controller; 50s, Greek Cypriot British, walks with a stick |
+| Bea Thornton | Payroll supervisor; 60s, white English from Lancashire |
+| Rosa Delgado | Service desk analyst; 20s, British Colombian |
+| Sunil Mehta | QA lead; 40s, British Indian |
+| Des Harker | Retiring scheduler; 64, white English from Bradford, flat cap |
+| Farida Haidari | Planner; 30s, British Afghan |
+| Rodel Bautista | Ward manager; 50s, Filipino-British |
+| Lena Fischer | Operations manager; 40s, German-British |
+| Bev Quigley | Recruitment agency consultant (email and phone) |
+| Arthur Fenwick | Patient or care home resident (bed sprite only) |
+| Daniel Kwan | Head of communications; 30s, British Korean (only the given name is shared, with Daniel Osei, a supplier contact in E1 form B) |
+| Jas | Night-desk analyst (voice only) |
+
+**Clash found** (rename before use; flagged):
+
+| Plan name | Clashes with | Suggested fix |
+|---|---|---|
+| Hassan Qureshi | Farah Qureshi, finance BA check host (Brightwell); also a Qureshi in m10 | New surname |
+| Owain Jenkins | Ifan Jenkins, Castell Fruit (E1 form B); Owen Treharne, a Welsh general check host (Owain and Owen read alike) | New given name and surname |
+| Mei Lin Zhou | Mei Lin Chau, Brightwell procurement buyer (E1) | New given name |
+| Darius Rahimi | Hamid Rahimi, Dunmore Dairy (E1 form A); Darius Petrauskas, E2 candidate | New name |
+| Reena Solanki | Nilesh Solanki, Tarrowby service desk (E6) | New surname |
+| Ines Carvalho | Tomás Carvalho, the E4 PA (Merrin & Sallow) | New surname |
+| Shauna Campbell | Shauna Lofthouse, Tarrowby transport planner (E6) | New given name |
+| Dev Kapoor | Dev Acharya (E6 attack side) and the lab's Dev; BRAND_SET already resolved one Dev clash | New given name |
+| Callum Reid | Callum Whiteley, Tarrowby warehouse (E6) | New given name |
+| Leah Brodsky | Leah Abramson, planning consultant (E4) | New given name |
+| Patrick Mulligan | Patrick Kerrigan, Quayholt COO (E3 helpdesk form B) | New given name |
+| Kayleigh Rowntree | Kaylee Dunford, the E6 flip-line colleague (reads alike) | New given name |
+| Joy Okonjo | Ngozi Okonkwo (E3 pin) and Adaeze Okafor (E1 pin, a host) | New surname |
+| Gillian Marsh | Helen Marsh (m05, sis02); also Marsh End Eggs and Fairley Marsh in the E1 sets | New surname |
+| Maureen Gallagher | Owen Gallagher (m05); BRAND_SET already avoids Gallagher | New surname |
+| Precious Adeyemi | Ruth Adeyemi (lab) | New surname |
+| Ruth Hollis | Ray Hollis (m07, m08, m10) | New surname |
+| Gavin Ashworth | Ben Ashworth (m05) | New surname |
+| Ros Fairbairn | Gareth Fairbairn (lab) | New surname |
+| Marta Ferreira | Blake Ferreira (m09, m10) | New surname |
+| Dr Faisal Karim | Agent Karim (campaign ink) | New surname |
+| Teresa Varga | D. Varga, a handler named in a campaign scenario | New surname |
+| Tomasz Wiśniewski | Tomasz Wierzbicki (campaign) and a `tomasz` character asset; only the given name is shared | Keep the surname, consider a new given name |
+| "Daniel Hartwell" | Only the given name, shared with Daniel Osei and Daniel Kwan | Low risk; keep if role_05 is built |
+
+Within the built cast, BRAND_SET already flags one clash of its own: Tendai Moyo (E2) and Thandiwe Moyo (E4, a host). Rename one if both episodes ship together.
+
+## Places beyond the training room (New)
+
+The frame is one training room, and every episode so far plays inside it, with the outside world shown through the kiosk (inboxes, pages, calls, the OSINT browser). The plan's places list (reception, car park, café, train, home office, warehouse) is kept only as a list of scenes an episode might show through the kiosk or as a concept panel. E12 (visitor and tailgater) is the first to test this: it uses person-chat inside the training room rather than a new room (04 §4). Any new room type would be a change to the frame and needs the user's go-ahead.
+
+## Organisation profile (Builds on aw1)
+
+The debrief's "On Monday" card has a customer slot (`slot:customer_report_route`, aw1). How a deployment sets it is waiting on the user (the reporting-route options form; see `DECISIONS_PENDING.md`). The wider profile (renamed classification labels, policy names) is still plan (BE-05). Voiced lines stay generic ("report it the way your organisation asks"), because the voice cache is keyed on exact text and a voiced line that printed a customer's name would need fresh audio per customer.
