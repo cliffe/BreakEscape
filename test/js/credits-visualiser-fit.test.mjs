@@ -52,3 +52,16 @@ test('card rows centre with auto side margins and are still capped by MAX_CARD_L
     const seq = readFileSync(join(root, 'js/music/closing-sequence.js'), 'utf8');
     assert.match(seq, /export const MAX_CARD_LINES = 5;/);
 });
+
+// Lab R15 T4 (900x700): the credits header's heading, badges, status lines and close
+// button drew over each other, and at phone widths the status block and the close
+// button ran off the screen.
+test('the credits header shrinks and wraps its blocks instead of overflowing', () => {
+    assert.match(rule('#bond-vis-overlay .bv-status-block'), /line-height: 1\.2/);
+    assert.match(rule('#bond-vis-overlay .bv-status-block'), /min-width: 0/);
+    assert.match(rule('#bond-vis-overlay .bv-status-block'), /overflow-wrap: anywhere/);
+    assert.match(rule('#bond-vis-overlay .bv-title-block'), /min-width: 0/);
+    const phone = css.slice(css.indexOf('@media (max-width: 700px)'));
+    assert.match(phone, /\.bv-header \{ flex-wrap: wrap/);
+    assert.match(phone, /\.bv-status-block \{[^}]*flex: 1 1 100%/);
+});
