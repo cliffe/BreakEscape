@@ -27,7 +27,7 @@ function load(opts = {}) {
     const metas = '<meta name="csrf-token" content="tok123">' +
         `<meta name="hacktivity-play-packages" content="${PKG}=licence-to-hack">` +
         '<meta name="hacktivity-app-event" content="42">' +
-        (opts.signedIn === false ? '' : '<meta name="hacktivity-signed-in" content="1"><meta name="hacktivity-signed-in-as" content="agent7">' + (opts.named === false ? '' : '<meta name="hacktivity-app-event-name" content="Licence to Hack">')) +
+        (opts.signedIn === false ? '' : '<meta name="hacktivity-signed-in" content="1"><meta name="hacktivity-signed-in-as" content="agent7"><meta name="hacktivity-user-key" content="k1abc">' + (opts.named === false ? '' : '<meta name="hacktivity-app-event-name" content="Licence to Hack">')) +
         (opts.hooks === false ? '' : '<meta name="hacktivity-test-hooks" content="1">');
     const button = opts.buy === false ? '' :
         '<div><button type="button" data-play-buy data-product-id="game.full" data-event-id="42">Buy the full game <span data-play-price></span></button></div>';
@@ -51,12 +51,29 @@ function load(opts = {}) {
         if (r === 'network') throw new Error('offline');
         return { status: r.status, text: async () => JSON.stringify(r.body) };
     };
+    // the consent dialog is in the page now: answer it like a player (opts.confirm true/false/function),
+    // unless opts.manual leaves it open for the test to drive
     w.confirms = [];
-    w.confirm = (text) => { w.confirms.push(text); return opts.confirm !== false && (typeof opts.confirm === 'function' ? opts.confirm(text) : true); };
+    w.__skew = 0;
+    const realNow = w.Date.now.bind(w.Date);
+    w.Date.now = () => realNow() + w.__skew;
+    if (!opts.manual) {
+        new w.MutationObserver(() => {
+            const d = w.document.querySelector('[data-play-consent]');
+            if (!d || d.__seen) return;
+            d.__seen = true;
+            const text = d.querySelector('p').textContent;
+            w.confirms.push(text);
+            w.__skew += 400; // the dialog ignores presses in its first 300 ms
+            const yes = opts.confirm !== false && (typeof opts.confirm === 'function' ? opts.confirm(text) : true);
+            d.querySelector(yes ? '[data-play-consent-yes]' : '[data-play-consent-no]').click();
+        }).observe(w.document.documentElement, { childList: true, subtree: true });
+    }
     w.__hacktivityReload = [];
     w.reloads = w.__hacktivityReload;
     if (opts.fake) w.__hacktivityFakeDigitalGoods = opts.fake;
     if (opts.dg) w.getDigitalGoodsService = opts.dg;
+    if (opts.seed) opts.seed(w);
     w.eval(src);
     return w;
 }
@@ -256,7 +273,7 @@ test('restore asks before claiming an unlinked purchase, naming the account; yes
         answers: [reply(200, { status: 'unowned', message: 'x' }), GRANTED] });
     await settle(w); await settle(w);
     assert.equal(w.confirms.length, 1);
-    assert.equal(w.confirms[0], 'There’s a Licence to Hack purchase on this Google account that isn’t linked to a Hacktivity account. Unlock Licence to Hack for agent7?');
+    assert.equal(w.confirms[0], 'There’s a purchase of Licence to Hack on this Google account that isn’t linked to a Hacktivity account. Unlock Licence to Hack for agent7?');
     assert.equal(w.requests[1].payload.consent, true);
     assert.equal(w.reloads.length, 1);
 });
@@ -376,4 +393,240 @@ test('without the game name meta the prompt and messages say "this game" and "th
     await settle(g);
     await g.HacktivityPlatform.buy(button(g));
     assert.match(msg(g), /Thank you\. The full game is unlocked\./);
+});
+
+// --- consent dialog -------------------------------------------------------------------------
+
+const UNOWNED = reply(200, { status: 'unowned', message: 'x' });
+const dlg = (w) => w.document.querySelector('[data-play-consent]');
+const fakeOne = (t) => ({ purchases: [{ itemId: 'game.full', purchaseToken: t }] });
+const press = (w, k, shift = false) => {
+    const ev = new w.KeyboardEvent('keydown', { key: k, shiftKey: shift, bubbles: true, cancelable: true });
+    w.document.activeElement.dispatchEvent(ev);
+    return ev;
+};
+
+test('the consent dialog is a modal dialog with the wording, focus on Unlock, and never calls window.confirm', async () => {
+    const w = load({ buy: false, manual: true, fake: fakeOne('fake-ok-m1'), answers: [UNOWNED, GRANTED] });
+    let called = false; w.confirm = () => { called = true; return true; };
+    await settle(w); await settle(w);
+    const d = dlg(w);
+    assert.ok(d, 'dialog open');
+    const box = d.querySelector('[role="dialog"]');
+    assert.equal(box.getAttribute('aria-modal'), 'true');
+    assert.equal(w.document.getElementById(box.getAttribute('aria-labelledby')).textContent, 'Unlock your purchase?');
+    assert.equal(w.document.getElementById(box.getAttribute('aria-describedby')).textContent,
+        'There’s a purchase of Licence to Hack on this Google account that isn’t linked to a Hacktivity account. Unlock Licence to Hack for agent7?');
+    assert.equal(w.document.activeElement, d.querySelector('[data-play-consent-no]'), 'first focus is the safe button');
+    assert.equal(called, false);
+    w.__skew += 400;
+    d.querySelector('[data-play-consent-yes]').click();
+    await settle(w);
+    assert.equal(dlg(w), null);
+    assert.equal(w.requests[1].payload.consent, true);
+});
+
+test('the consent dialog traps Tab and Shift+Tab, and focus coming from outside is pulled back', async () => {
+    const w = load({ manual: true, fake: fakeOne('fake-ok-m2'), answers: [UNOWNED] });
+    await settle(w); await settle(w);
+    const yes = w.document.querySelector('[data-play-consent-yes]'), no = w.document.querySelector('[data-play-consent-no]');
+    assert.equal(w.document.activeElement, no);
+    assert.equal(press(w, 'Tab').defaultPrevented, false, 'Tab from Not now moves on to Unlock naturally');
+    yes.focus();
+    assert.equal(press(w, 'Tab').defaultPrevented, true);
+    assert.equal(w.document.activeElement, no, 'Tab from the last button wraps to the first');
+    assert.equal(press(w, 'Tab', true).defaultPrevented, true);
+    assert.equal(w.document.activeElement, yes, 'Shift+Tab from the first wraps to the last');
+    button(w).focus();
+    assert.equal(w.document.activeElement, no, 'focus outside the dialog comes back in');
+});
+
+test('Escape cancels the consent dialog, remembers the no, and returns focus', async () => {
+    const w = load({ manual: true, fake: fakeOne('fake-ok-m3'), answers: [UNOWNED] });
+    button(w).focus();
+    await settle(w); await settle(w);
+    assert.ok(dlg(w));
+    press(w, 'Escape');
+    await settle(w);
+    assert.equal(dlg(w), null);
+    assert.equal(w.requests.length, 1, 'no consent claim sent');
+    assert.equal(w.document.activeElement, button(w));
+    assert.equal(w.localStorage.getItem('hacktivity.restoreDeclined.k1abc').length > 2, true);
+    assert.equal(w.localStorage.getItem('hacktivity.restoreDeclined.agent7'), null, 'the handle is never a storage key');
+});
+
+test('a second dialog request while one is open waits and shares nothing', async () => {
+    const w = load({ buy: false, manual: true, fake: { purchases: [{ itemId: 'game.full', purchaseToken: 'fake-ok-m4' }, { itemId: 'game.full', purchaseToken: 'fake-ok-m5' }] },
+        answers: [UNOWNED, GRANTED] });
+    await settle(w); await settle(w);
+    assert.equal(w.document.querySelectorAll('[data-play-consent]').length, 1);
+    w.__skew += 400;
+    dlg(w).querySelector('[data-play-consent-yes]').click();
+    await settle(w);
+});
+
+// --- a declined restore is remembered per account ---------------------------------------------
+
+test('declined memory: launch restore skips it silently; a different purchase or account still asks', async () => {
+    const hash = Buffer.from(await webcrypto.subtle.digest('SHA-256', new TextEncoder().encode('fake-ok-n2'))).toString('hex');
+    // jsdom localStorage needs a real origin; the load() url has one. Seed it before the scripts run.
+    const seed = (w) => w.localStorage.setItem('hacktivity.restoreDeclined.k1abc', JSON.stringify([hash]));
+    const w = load({ buy: false, fake: fakeOne('fake-ok-n2'), answers: [], seed });
+    await settle(w); await settle(w);
+    assert.equal(w.requests.length, 0, 'skipped without a request');
+    assert.equal(w.confirms.length, 0);
+    const other = load({ buy: false, fake: fakeOne('fake-ok-n3'), answers: [UNOWNED, GRANTED], seed });
+    await settle(other); await settle(other);
+    assert.equal(other.confirms.length, 1, 'a different purchase asks');
+    const acct = load({ buy: false, fake: fakeOne('fake-ok-n2'), answers: [UNOWNED, GRANTED], seed: (x) => x.localStorage.setItem('hacktivity.restoreDeclined.someone-else', JSON.stringify([hash])) });
+    await settle(acct); await settle(acct);
+    assert.equal(acct.confirms.length, 1, 'another account asks');
+});
+
+test('an explicit restore ignores the declined memory and the launch flag, and a yes forgets the no', async () => {
+    const hash = Buffer.from(await webcrypto.subtle.digest('SHA-256', new TextEncoder().encode('fake-ok-n4'))).toString('hex');
+    const seed = (w) => w.localStorage.setItem('hacktivity.restoreDeclined.k1abc', JSON.stringify([hash]));
+    const w = load({ buy: false, fake: fakeOne('fake-ok-n4'), answers: [UNOWNED, GRANTED], seed });
+    await settle(w); await settle(w);
+    assert.equal(w.requests.length, 0);
+    const r = await w.HacktivityPlatform.restoreNow();
+    assert.equal(r.ok, true);
+    assert.equal(w.confirms.length, 1);
+    assert.equal(w.requests[1].payload.consent, true);
+    assert.deepEqual(JSON.parse(w.localStorage.getItem('hacktivity.restoreDeclined.k1abc')), []);
+});
+
+test('a press on [data-play-restore] runs an explicit restore and says what it found', async () => {
+    const w = load({ buy: false, fake: { purchases: [] }, answers: [] });
+    w.document.body.insertAdjacentHTML('beforeend', '<div><button type="button" data-play-restore>Restore purchases</button></div>');
+    await settle(w); await settle(w);
+    w.document.querySelector('[data-play-restore]').click();
+    await settle(w);
+    assert.match(w.document.querySelector('[data-play-message]').textContent, /didn’t find a purchase/);
+});
+
+test('buying still works after a declined restore (the buy path ignores the memory)', async () => {
+    const hash = Buffer.from(await webcrypto.subtle.digest('SHA-256', new TextEncoder().encode('fake-ok-n5'))).toString('hex');
+    const seed = (w) => w.localStorage.setItem('hacktivity.restoreDeclined.k1abc', JSON.stringify([hash]));
+    const w = load({ fake: { nextToken: () => 'fake-ok-n5' }, answers: [INTENT, GRANTED], seed });
+    await settle(w);
+    const r = await w.HacktivityPlatform.buy(button(w));
+    assert.equal(r.code, 'granted');
+});
+
+// --- already owned during a restore -----------------------------------------------------------
+
+test('restore tells an account that already has the game so, once per purchase, and does not reload', async () => {
+    const owned = reply(200, { status: 'already_owned', message: 'server' });
+    const w = load({ buy: false, fake: fakeOne('fake-ok-o1'), answers: [owned] });
+    await settle(w); await settle(w);
+    assert.equal(w.confirms.length, 0, 'no consent prompt');
+    assert.equal(w.reloads.length, 0);
+    assert.equal(w.document.querySelector('[data-play-banner]').textContent, 'You already own Licence to Hack on this account, so there’s nothing to restore.');
+    // next launch: same purchase, already told: quiet
+    const saved = w.localStorage.getItem('hacktivity.restoreOwnedShown.k1abc');
+    const again = load({ buy: false, fake: fakeOne('fake-ok-o1'), answers: [owned], seed: (x) => x.localStorage.setItem('hacktivity.restoreOwnedShown.k1abc', saved) });
+    await settle(again); await settle(again);
+    assert.equal(again.document.querySelector('[data-play-banner]'), null);
+});
+
+test('an explicit restore always says it, even for the row this account already holds', async () => {
+    const w = load({ buy: false, fake: fakeOne('fake-ok-o2'), answers: [reply(200, { status: 'owned' }), reply(200, { status: 'owned' })] });
+    await settle(w); await settle(w);
+    assert.equal(w.document.querySelector('[data-play-banner]'), null, 'launch restore stays quiet for a normal owner');
+    await w.HacktivityPlatform.restoreNow();
+    assert.match(w.document.querySelector('[data-play-banner]').textContent, /already own Licence to Hack/);
+});
+
+// --- review fixes -----------------------------------------------------------------------------
+
+const keyEv = (w, type, key, init = {}) => {
+    const ev = new w.KeyboardEvent(type, { key, bubbles: true, cancelable: true, ...init });
+    (w.document.activeElement || w.document.body).dispatchEvent(ev);
+    return ev;
+};
+
+test('a press in the first 300 ms does nothing, and neither does a held key (repeat)', async () => {
+    const w = load({ buy: false, manual: true, fake: fakeOne('fake-ok-r1'), answers: [UNOWNED, GRANTED] });
+    await settle(w); await settle(w);
+    const yes = w.document.querySelector('[data-play-consent-yes]');
+    yes.click();
+    await settle(w);
+    assert.ok(dlg(w), 'an early click does not consent');
+    assert.equal(w.requests.length, 1);
+    w.__skew += 400;
+    const held = keyEv(w, 'keydown', 'Enter', { repeat: true });
+    assert.equal(held.defaultPrevented, true, 'a repeated key is blocked');
+    yes.click();
+    await settle(w);
+    assert.equal(dlg(w), null);
+    assert.equal(w.requests[1].payload.consent, true);
+});
+
+test('while the dialog is open no key reaches the page, and a backdrop press keeps focus inside', async () => {
+    const w = load({ manual: true, fake: fakeOne('fake-ok-r2'), answers: [UNOWNED] });
+    const seen = [];
+    for (const t of ['keydown', 'keyup', 'keypress']) w.addEventListener(t, (e) => seen.push(t + ':' + e.key));
+    w.document.addEventListener('keydown', (e) => seen.push('doc:' + e.key));
+    await settle(w); await settle(w);
+    keyEv(w, 'keydown', 'Enter'); keyEv(w, 'keyup', 'Enter'); keyEv(w, 'keydown', 'ArrowDown'); keyEv(w, 'keydown', ' ');
+    const backdrop = dlg(w);
+    w.document.activeElement.blur(); // what a press outside does
+    backdrop.dispatchEvent(new w.MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    assert.ok(backdrop.contains(w.document.activeElement), 'focus stays in the dialog after a backdrop press');
+    w.document.body.focus?.();
+    keyEv(w, 'keydown', 'ArrowLeft');
+    assert.deepEqual(seen, [], 'nothing leaked to the page');
+    press(w, 'Escape');
+    await settle(w);
+    keyEv(w, 'keydown', 'a');
+    assert.deepEqual(seen, ['doc:a', 'keydown:a'], 'keys flow again once it is closed');
+});
+
+test('two purchases with different tokens are asked separately: one yes covers only its own', async () => {
+    const w = load({ buy: false, manual: true, fake: { purchases: [] }, answers: [] });
+    await settle(w);
+    const ask = w.HacktivityPlatform._askConsent;
+    const p1 = ask('tok-one'), p1again = ask('tok-one'), p2 = ask('tok-two');
+    await settle(w);
+    assert.equal(w.document.querySelectorAll('[data-play-consent]').length, 1, 'one dialog at a time');
+    assert.equal(p1, p1again, 'the same token shares its question');
+    let second = 'pending';
+    p2.then((v) => { second = v; });
+    w.__skew += 400;
+    dlg(w).querySelector('[data-play-consent-yes]').click();
+    assert.equal(await p1, true);
+    await settle(w);
+    assert.equal(second, 'pending', 'the first yes did not answer the second purchase');
+    assert.ok(dlg(w), 'the second purchase gets its own dialog');
+    w.__skew += 400;
+    dlg(w).querySelector('[data-play-consent-no]').click();
+    assert.equal(await p2, false);
+});
+
+test('when the dialog cannot be shown the answer is "could not ask", not a remembered no', async () => {
+    const w = load({ buy: false, manual: true, fake: { purchases: [] }, answers: [] });
+    await settle(w);
+    const body = w.document.body;
+    Object.defineProperty(w.document, 'body', { get: () => null, configurable: true });
+    assert.equal(await w.HacktivityPlatform._askConsent('x'), null);
+    Object.defineProperty(w.document, 'body', { get: () => body, configurable: true });
+    assert.equal(w.localStorage.getItem('hacktivity.restoreDeclined.k1abc'), null);
+});
+
+test('without the user-key meta nothing is remembered, and a signed-out page clears the stored lists', async () => {
+    const out = load({ signedIn: false, buy: false, fake: fakeOne('fake-ok-s1'), answers: [],
+        seed: (w) => { w.localStorage.setItem('hacktivity.restoreDeclined.k1abc', '["x"]'); w.localStorage.setItem('hacktivity.restoreOwnedShown.k1abc', '["y"]'); w.localStorage.setItem('other', '1'); } });
+    assert.equal(out.localStorage.getItem('hacktivity.restoreDeclined.k1abc'), null);
+    assert.equal(out.localStorage.getItem('hacktivity.restoreOwnedShown.k1abc'), null);
+    assert.equal(out.localStorage.getItem('other'), '1');
+});
+
+test('the restore link text path: an explicit restore for a first-ever launch with nothing asks nothing', async () => {
+    const w = load({ buy: false, fake: { purchases: [] }, answers: [] });
+    w.document.body.insertAdjacentHTML('beforeend', '<div><a href="#" data-play-restore>Restore purchases</a></div>');
+    await settle(w);
+    w.document.querySelector('[data-play-restore]').click();
+    await settle(w);
+    assert.equal(w.confirms.length, 0);
 });

@@ -8,7 +8,11 @@
  *     (POST /play_purchases/intents), opens the Payment Request sheet, then posts the token
  *     (POST /play_purchases) with the intent id. Never consumes the purchase.
  *   - Restore, once per launch (the tab): list the Google account's purchases and post each token
- *     this tab has not sent. An unlinked purchase (answer "unowned") asks the player first.
+ *     this tab has not sent. An unlinked purchase (answer "unowned") asks the player first, in an
+ *     in-page dialog (focus trapped, Escape cancels). A "no" is remembered for that account and
+ *     purchase (localStorage, keyed by an opaque per-user value from the server, never the handle), so the launch restore does not ask
+ *     again; a buy, or an explicit restore (P.restoreNow(), or a press on [data-play-restore]),
+ *     ignores the memory. An account that already has the game (any source) is told so once.
  *   web and steam never touch Digital Goods: their buy prompts are plain links the server rendered.
  *
  * Facts about Google's side that are NOT confirmed until the internal test track (P11); each is
@@ -36,7 +40,8 @@
  * or ?fake_play_billing=1 (remembered for the tab) for the defaults.
  *
  * Page contract: metas csrf-token, hacktivity-signed-in, hacktivity-signed-in-as (the handle shown in
- * the restore prompt), hacktivity-test-hooks.
+ * the restore prompt), hacktivity-user-key (opaque, keys the localStorage memory), hacktivity-test-hooks.
+ * Only Hacktivity's own pages load this script today; engine pages do not.
  */
 (function (win) {
     'use strict';
@@ -49,6 +54,8 @@
     var PLAY_PURCHASES_URL = '/play_purchases';
     var SENT_KEY = 'hacktivity.restoreSent';
     var RESTORE_RAN_KEY = 'hacktivity.restoreRan';
+    var DECLINED_KEY = 'hacktivity.restoreDeclined';     // localStorage: hashes of tokens the player said no to
+    var OWNED_SHOWN_KEY = 'hacktivity.restoreOwnedShown'; // localStorage: hashes already told "you own it"
     var FAKE_KEY = 'hacktivity.fakeBilling';
     var fakeCounter = 0;
 
@@ -64,6 +71,12 @@
         cancelled: 'Purchase cancelled.',
         granted: 'Thank you. The full game is unlocked.',
         owned: 'You already own the full game on this account.',
+        restoreOwned: 'You already own the full game on this account, so there’s nothing to restore.',
+        restoreNone: 'We didn’t find a purchase on this Google account to restore.',
+        restoreDone: 'Purchases checked.',
+        consentTitle: 'Unlock your purchase?',
+        consentYes: 'Unlock',
+        consentNo: 'Not now',
         pending: 'Purchase pending: it unlocks when Google confirms it.',
         alreadyOwned: 'You already own the full game; this extra purchase will be refunded automatically.',
         claimedElsewhere: 'This purchase is linked to a different Hacktivity account. Contact support to move it.',
@@ -202,12 +215,115 @@
         return text;
     }
 
-    function askConsent() {
+    // The consent question as an in-page dialog. Resolves true (Unlock), false (Not now, Escape) or
+    // null (it could not be shown: no page body; that is not a "no" and is never remembered).
+    // One question at a time, one per purchase: a second purchase waits its turn and gets its own
+    // answer, and a repeat question for the same token shares the first one's answer.
+    // Modal: Tab stays inside, every other key is swallowed at the window, focus returns to where it
+    // was. First focus is on "Not now", repeats are ignored and the buttons ignore the first 300 ms,
+    // because the dialog appears on its own at launch and a key the player is already pressing must
+    // not consent. Inline styles only, with the game shell's pixel font (GNF) first, so it needs no
+    // stylesheet; it scrolls inside itself on a short phone landscape.
+    var consentChain = Promise.resolve();
+    var consentByToken = {};
+    var ACTIVATE_AFTER_MS = 300;
+    function askConsent(token) {
+        var key = String(token || '');
+        if (consentByToken[key]) return consentByToken[key];
+        var p = consentChain.then(showConsent);
+        consentChain = p.then(function () {}, function () {});
+        consentByToken[key] = p;
+        var forget = function () { if (consentByToken[key] === p) delete consentByToken[key]; };
+        p.then(forget, forget);
+        return p;
+    }
+
+    function showConsent() {
         var handle = meta('hacktivity-signed-in-as');
         var name = gameName() || 'this game';
-        var text = 'There’s a ' + (gameName() ? name + ' ' : '') + 'purchase on this Google account that isn’t linked to a Hacktivity account. Unlock ' +
+        var text = 'There’s a purchase ' + (gameName() ? 'of ' + name + ' ' : '') + 'on this Google account that isn’t linked to a Hacktivity account. Unlock ' +
             name + ' for ' + (handle || 'this account') + '?';
-        try { return !!win.confirm(text); } catch (e) { return false; }
+        if (!doc.body) return Promise.resolve(null);
+        return new Promise(function (resolve) {
+            var before = doc.activeElement;
+            var openedAt = Date.now();
+            var uid = 'play-consent-' + openedAt.toString(36);
+            var font = "'GNF','Courier New',system-ui,sans-serif";
+            var overlay = doc.createElement('div');
+            overlay.setAttribute('data-play-consent', '');
+            overlay.setAttribute('style', 'position:fixed;left:0;top:0;right:0;bottom:0;z-index:2147483600;display:flex;align-items:center;justify-content:center;' +
+                'box-sizing:border-box;padding:12px;background:rgba(0,0,0,0.72);overflow:auto');
+            var box = doc.createElement('div');
+            box.setAttribute('role', 'dialog');
+            box.setAttribute('aria-modal', 'true');
+            box.setAttribute('aria-labelledby', uid + '-t');
+            box.setAttribute('aria-describedby', uid + '-d');
+            box.setAttribute('style', 'box-sizing:border-box;width:100%;max-width:440px;max-height:100%;overflow:auto;margin:auto;padding:16px 18px;' +
+                'background:#0b0d12;color:#e8e8ee;border:2px solid #8cf;border-radius:4px;box-shadow:0 8px 32px rgba(0,0,0,0.6);' +
+                'font:20.5px/1.3 ' + font + ';text-align:left');
+            var title = doc.createElement('h2');
+            title.id = uid + '-t';
+            title.textContent = TEXT.consentTitle;
+            title.setAttribute('style', 'margin:0 0 8px;font:20.5px/1.3 ' + font + ';color:#fff;text-transform:uppercase;letter-spacing:0.04em');
+            var body = doc.createElement('p');
+            body.id = uid + '-d';
+            body.textContent = text;
+            body.setAttribute('style', 'margin:0 0 14px');
+            var row = doc.createElement('div');
+            row.setAttribute('style', 'display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end');
+            var btnStyle = 'min-height:44px;min-width:96px;padding:6px 16px;font:20.5px/1 ' + font + ';border-radius:4px;cursor:pointer;';
+            var no = doc.createElement('button');
+            no.type = 'button';
+            no.setAttribute('data-play-consent-no', '');
+            no.textContent = TEXT.consentNo;
+            no.setAttribute('style', btnStyle + 'background:transparent;color:#e8e8ee;border:2px solid #8a8fa0');
+            var yes = doc.createElement('button');
+            yes.type = 'button';
+            yes.setAttribute('data-play-consent-yes', '');
+            yes.textContent = TEXT.consentYes;
+            yes.setAttribute('style', btnStyle + 'background:#8cf;color:#050608;border:2px solid #8cf');
+            row.appendChild(no); row.appendChild(yes);
+            box.appendChild(title); box.appendChild(body); box.appendChild(row);
+            overlay.appendChild(box);
+
+            var finished = false;
+            function finish(answer) {
+                if (finished) return;
+                finished = true;
+                ['keydown', 'keyup', 'keypress'].forEach(function (t) { win.removeEventListener(t, onKey, true); });
+                doc.removeEventListener('focusin', onFocusIn, true);
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                try { if (before && before.focus && doc.contains(before)) before.focus(); } catch (e) { /* ignore */ }
+                resolve(answer);
+            }
+            // Window capture, first in line: nothing but this dialog sees a key while it is open.
+            function onKey(ev) {
+                ev.stopImmediatePropagation();
+                if (ev.type !== 'keydown') return;
+                if (ev.repeat) { ev.preventDefault(); return; } // a held key must not activate a button
+                if (ev.key === 'Escape' || ev.key === 'Esc') {
+                    ev.preventDefault(); finish(false);
+                } else if (ev.key === 'Tab') {
+                    var active = doc.activeElement;
+                    if (!box.contains(active)) { ev.preventDefault(); (ev.shiftKey ? yes : no).focus(); }
+                    else if (ev.shiftKey && active === no) { ev.preventDefault(); yes.focus(); }
+                    else if (!ev.shiftKey && active === yes) { ev.preventDefault(); no.focus(); }
+                }
+            }
+            function onFocusIn(ev) { if (!box.contains(ev.target)) no.focus(); }
+            function answer(value) { return function (ev) {
+                if (Date.now() - openedAt < ACTIVATE_AFTER_MS) { if (ev && ev.preventDefault) ev.preventDefault(); return; }
+                finish(value);
+            }; }
+            // a press on the backdrop keeps focus in the dialog instead of dropping it to the page
+            overlay.addEventListener('mousedown', function (ev) { if (!box.contains(ev.target)) { ev.preventDefault(); no.focus(); } });
+            no.addEventListener('click', answer(false));
+            yes.addEventListener('click', answer(true));
+            ['keydown', 'keyup', 'keypress'].forEach(function (t) { win.addEventListener(t, onKey, true); });
+            doc.addEventListener('focusin', onFocusIn, true);
+            doc.body.appendChild(overlay);
+            no.focus();
+        });
     }
 
     // Test hook for the reload, same pattern as client-platform.js: with the hooks meta and an array
@@ -260,8 +376,11 @@
             return a;
         }).then(function (a) {
             if (!a.ask) return a;
-            if (!askConsent()) return { ok: false, code: 'declined', message: '', declined: true };
-            return claim(eventId, productId, token, { consent: true });
+            return askConsent(token).then(function (yes) {
+                if (yes === null) return { ok: false, code: 'not_asked', message: '', notAsked: true }; // could not ask: not a no
+                if (!yes) return rememberDeclined(token).then(function () { return { ok: false, code: 'declined', message: '', declined: true }; });
+                return forgetDeclined(token).then(function () { return claim(eventId, productId, token, { consent: true }); });
+            });
         });
     }
 
@@ -363,6 +482,32 @@
     function readSent() {
         try { var l = JSON.parse(win.sessionStorage.getItem(keyFor(SENT_KEY)) || '[]'); return Array.isArray(l) ? l : []; } catch (e) { return []; }
     }
+    // Per-account memory in localStorage (the server has no per-user spot for this without a migration).
+    // Lists of token hashes; every access is guarded.
+    // The key is the server's opaque per-user value (meta hacktivity-user-key), never the handle; a page
+    // without it remembers nothing. A signed-out page clears both lists (see the end of the file).
+    function lsKey(base) { var k = meta('hacktivity-user-key'); return k ? base + '.' + k : null; }
+    function lsRead(base) {
+        if (!lsKey(base)) return [];
+        try { var v = JSON.parse(win.localStorage.getItem(lsKey(base)) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+    }
+    function lsWrite(base, list) {
+        if (!lsKey(base)) return;
+        try { win.localStorage.setItem(lsKey(base), JSON.stringify(list.slice(-50))); } catch (e) { /* not remembered */ }
+    }
+    function rememberDeclined(token) {
+        return sha256Hex(String(token)).then(function (h) {
+            var l = lsRead(DECLINED_KEY);
+            if (l.indexOf(h) < 0) { l.push(h); lsWrite(DECLINED_KEY, l); }
+        }, function () {});
+    }
+    function forgetDeclined(token) {
+        return sha256Hex(String(token)).then(function (h) {
+            var l = lsRead(DECLINED_KEY), at = l.indexOf(h);
+            if (at >= 0) { l.splice(at, 1); lsWrite(DECLINED_KEY, l); }
+        }, function () {});
+    }
+
     function writeSent(list) {
         try { win.sessionStorage.setItem(keyFor(SENT_KEY), JSON.stringify(list.slice(-50))); } catch (e) { /* ignore */ }
     }
@@ -375,7 +520,11 @@
     // A forced restore (after a failed sheet) skips the once-per-launch flag.
     function restoreNow(eventId) { return restoreRun(true, eventId); }
 
-    function restoreRun(force, forcedEvent) {
+    // The player asked for it (a "Restore purchases" control): ignores the once-per-launch flag and
+    // any remembered "not now", and always says what it found.
+    function restoreExplicit(near) { return restoreRun(true, null, near || true); }
+
+    function restoreRun(force, forcedEvent, explicit) {
         try {
             if (P.store !== 'play') return Promise.resolve({ ok: false, reason: 'not-play' });
             if (!signedIn()) return Promise.resolve({ ok: false, reason: 'signed-out' });
@@ -385,27 +534,43 @@
                 if (!force && win.sessionStorage.getItem(keyFor(RESTORE_RAN_KEY)) === '1') return Promise.resolve({ ok: true, reason: 'already-ran' });
                 win.sessionStorage.setItem(keyFor(RESTORE_RAN_KEY), '1');
             } catch (e) { return Promise.resolve({ ok: false, reason: 'no-storage' }); } // cannot count: do not loop
-            var results = [];
+            var results = [], told = false;
+            var say = function (text) { if (explicit && explicit !== true) showMessage(text, explicit); else showMessage(text, null); };
             return digitalGoods().then(function (svc) { return svc.listPurchases(); }).then(function (list) {
                 var sent = readSent(), chain = Promise.resolve(), reload = false;
+                var declined = lsRead(DECLINED_KEY), shown = lsRead(OWNED_SHOWN_KEY);
                 (list || []).forEach(function (p) {
                     if (!p || !p.purchaseToken || !p.itemId) return;
                     chain = chain.then(function () {
                         return sha256Hex(String(p.purchaseToken)).then(function (hash) {
-                            if (sent.indexOf(hash) >= 0) return null;
+                            if (!explicit && sent.indexOf(hash) >= 0) return null;
+                            // a "not now" is remembered for this account; only the player asking again (or a buy) overrides
+                            if (!force && declined.indexOf(hash) >= 0) { results.push({ code: 'declined-before' }); return null; }
                             return claimAndFollow(eventId, p.itemId, p.purchaseToken, null).then(function (a) {
                                 var settled = (a.ok && a.code !== 'pending') || a.code === 'claimed_elsewhere' || a.code === 'needs_support' || a.declined;
                                 if (settled) { sent.push(hash); writeSent(sent); }
                                 results.push({ code: a.code });
-                                if (a.code === 'claimed_elsewhere' || a.code === 'needs_support' || a.code === 'pending') showMessage(a.message, null);
+                                if (a.code === 'claimed_elsewhere' || a.code === 'needs_support' || a.code === 'pending') { say(a.message); told = true; }
+                                // the account already has the game (any source): say so, once per purchase on a launch restore
+                                if (a.code === 'already_owned' || (explicit && a.code === 'owned')) {
+                                    if (explicit || shown.indexOf(hash) < 0) { say(named(TEXT.restoreOwned)); told = true; }
+                                    if (shown.indexOf(hash) < 0) { shown.push(hash); lsWrite(OWNED_SHOWN_KEY, shown); }
+                                }
                                 // only a new grant reloads; an owner who already has the game is not reloaded every launch
                                 if (a.code === 'granted') reload = true;
                             });
                         });
                     });
                 });
-                return chain.then(function () { if (reload) reloadPage(); return { ok: true, results: results }; });
-            }).catch(function () { return { ok: false, reason: 'unavailable' }; });
+                return chain.then(function () {
+                    if (explicit && !told && !reload) say(list && list.length ? TEXT.restoreDone : TEXT.restoreNone);
+                    if (reload) reloadPage();
+                    return { ok: true, results: results };
+                });
+            }).catch(function () {
+                if (explicit) say(TEXT.unavailable);
+                return { ok: false, reason: 'unavailable' };
+            });
         } catch (e) {
             return Promise.resolve({ ok: false, reason: 'error' });
         }
@@ -421,8 +586,33 @@
         } catch (e) { /* leave the click alone */ }
     }
 
+    // a "Restore purchases" control: any element with data-play-restore
+    function onRestoreClick(ev) {
+        try {
+            if (P.store !== 'play' || ev.defaultPrevented) return;
+            var el = ev.target && ev.target.closest ? ev.target.closest('[data-play-restore]') : null;
+            if (!el) return;
+            ev.preventDefault();
+            restoreExplicit(el);
+        } catch (e) { /* leave the click alone */ }
+    }
+
+    // Signed out: forget what this device remembered for any account (shared-device privacy).
+    function clearMemory() {
+        try {
+            for (var i = win.localStorage.length - 1; i >= 0; i--) {
+                var k = win.localStorage.key(i);
+                if (k && (k.indexOf(DECLINED_KEY + '.') === 0 || k.indexOf(OWNED_SHOWN_KEY + '.') === 0)) win.localStorage.removeItem(k);
+            }
+        } catch (e) { /* ignore */ }
+    }
+    if (!signedIn()) clearMemory();
+
+    if (testHooksOn()) P._askConsent = askConsent; // for the tests only
     P.buy = buy;
     P.restore = restore;
+    P.restoreNow = function (near) { return restoreExplicit(near); };
+    doc.addEventListener('click', onRestoreClick, true);
     doc.addEventListener('click', onBuyClick, true);
 
     // The platform is settled once P.ready resolves (a Digital Goods check can decide it late).
