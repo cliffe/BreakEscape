@@ -311,3 +311,5 @@ Live (keyless :3001, own games): the host chat in the E1-E4 defend shells resolv
   ("Parceline: we couldn't deliver your parcel. A..."). `defaultSubject` now cuts at a sentence end when
   one fits in 48 characters, else at a word; the review card title also drops trailing dots from an
   authored subject. Test in `social-engine-r4-triage`.
+- Live (keyless :3001, own games 4615 and 4617): E6 defend's Parceline card title reads without dots;
+  E5 defend at 92% with Padlock myth and Secrecy on zero reads "Getting there".

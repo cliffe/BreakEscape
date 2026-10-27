@@ -471,7 +471,7 @@ export function missedPhishText(perMessage, messages, titleOf) {
     if (!titles.length) return '';
     const q = titles.map((t) => `\u2018${t}\u2019`);
     const list = q.length === 1 ? q[0] : `${q.slice(0, -1).join(', ')} and ${q[q.length - 1]}`;
-    return `You trusted ${titles.length === 1 ? 'this phish' : 'these phish'}: ${list}. Each card above shows the tells you missed.`;
+    return `You trusted ${titles.length === 1 ? 'this phish' : 'these phish'}: ${list}. The review cards showed the tells you missed.`;
 }
 
 /** Why both halves matter, in one sentence (no numbers). */

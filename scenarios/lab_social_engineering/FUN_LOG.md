@@ -273,11 +273,27 @@ Source: `playtests/R20.md` (scripted Haiku run, game 4570). A Haiku "major" only
   defaults); `switchAccount` carries only an edited draft, so an untouched composer still gets the target
   account's own stored draft back. Tests: `social-mail-send-as-carry.test.mjs` (the F19-1 "stored wins"
   test is now "carried wins"), `social-mail-accounts.test.mjs`.
-- **F20-4 (Compose reopens the sent draft):** see the live check below. `_clearDraft()` already clears
-  the saved draft on a judged send; the open composer sits under the checklist, and a Compose click
-  while it is open is a no-op, which is what the run saw.
+- **F20-4 (Compose reopens the sent draft):** not reproduced, no code change. `_clearDraft()` already
+  clears the saved draft on a judged send. After a landed send the composer is still open, but under
+  the checklist (the pointer hits `.mail-checklist`, not Send), and a Compose click while it is open is a
+  no-op, which is what the run saw. After Done, Compose opens blank (no attachment, no pretext, empty
+  blanks). A keyboard Tab past the checklist to the covered Send is the only remaining way to a sent form.
 - **F20-5:** accepted (hidden `.ob-live` status region), no action.
 
 Shared-code changes made in the same pass for the awareness course (inbox-triage owner this round):
 P7-2 (awareness caps at "Getting there" with two skills never caught; the lab's analyst profile keeps
 the three-tell cap) and P7-7 (clean card titles for texts). See the awareness `DESIGN_LOG.md`.
+
+Live check (keyless :3001, own games 4608, 4612, 4615, 4617; logs in the scratchpad `lab-r20-fix/`):
+
+- F20-2: Trust on the bank-details phish shows the review card at once (verdict line, two missed tells,
+  "What would have happened: The next payment would go to the attacker...", "Score for this message: 0 of 100").
+- F20-1: after a six-message round the result card reads "You trusted this phish: 'Updated bank details
+  for invoice 4471'. The review cards showed the tells you missed." beside the real-mail lines.
+- F20-3: Consultant (To Melanie, subject Quick one) to T. Test (carried), To changed to Sofia, back to
+  Consultant: To stays Sofia, subject stays the payslip one. The older Consultant draft no longer wins.
+- F20-4: as above. A landed send, Done, Compose: blank form.
+- P7-7 (awareness E6 defend): the Parceline text's card title is "07700 900583 (not in your contacts) ·
+  Parceline: we couldn't deliver your parcel." with no dots.
+- P7-2 (awareness E5 defend): reporting all three phish with only the look-alike tell ticked gives 92%
+  "Getting there" (Padlock myth 0 of 1, Secrecy 0 of 1), where the P7 run read "Sharp".
