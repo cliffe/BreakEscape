@@ -20,7 +20,7 @@
         "drinks_vending": { "color": "#e0f0ff", "radius": 40, "intensity": 0.45 },
         "fire_alarm_point": [ { "intensity": 0 } ]
       },
-      "lights": [ { "x": 1.75, "y": 2.3, "color": "#dfe8f4", "radius": 72, "intensity": 0.3 } ]
+      "lights": [ { "x": 4.5, "y": 5, "color": "#dfe8f4", "radius": 110, "intensity": 0.25 } ]
     }
   },
   "quayholt_insurance": {

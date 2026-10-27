@@ -235,7 +235,7 @@ export function preload() {
     this.load.image('room_uni_library', 'tiles/rooms/room_uni_library.png'); // deep green carpet
     this.load.image('room_uni_special', 'tiles/rooms/room_uni_special.png'); // oxblood carpet with a rug
     this.load.image('room_uni_workshop', 'tiles/rooms/room_uni_workshop.png'); // concrete, hazard line round the bench
-    this.load.image('room_aw_brightwell', 'tiles/rooms/room_aw_brightwell.png'); // awareness: off-white, green skirting, charcoal carpet
+    this.load.image('room_aw_brightwell', 'tiles/rooms/room_aw_brightwell.png'); // awareness: off-white, green skirting, oatmeal carpet
     this.load.image('room_aw_tarrowby', 'tiles/rooms/room_aw_tarrowby.png'); // awareness: pale grey, steel-blue skirting, sheet vinyl
     this.load.image('room_aw_quayholt', 'tiles/rooms/room_aw_quayholt.png'); // awareness: cool white, purple skirting, blue carpet
     this.load.image('room_aw_merrin_sallow', 'tiles/rooms/room_aw_merrin_sallow.png'); // awareness: warm stone, bronze skirting, concrete
@@ -378,6 +378,9 @@ export function preload() {
     this.load.image('aw_brightwell_range1', 'objects/aw_brightwell_range1.png');
     this.load.image('aw_quayholt_queue1', 'objects/aw_quayholt_queue1.png');
     this.load.image('aw_chairs_stacked_slate1', 'objects/aw_chairs_stacked_slate1.png');
+    this.load.image('aw_chair_south_charcoal1', 'objects/aw_chair_south_charcoal1.png');
+    this.load.image('aw_chair_north_charcoal1', 'objects/aw_chair_north_charcoal1.png');
+    this.load.image('aw_chair_w_charcoal1', 'objects/aw_chair_w_charcoal1.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');

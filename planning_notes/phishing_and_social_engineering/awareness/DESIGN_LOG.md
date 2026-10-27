@@ -200,3 +200,22 @@ the 24 check shells were regenerated and copied in, and a fresh regen is byte-id
 - Ink recompiled (E3 full + E3 defend-only): 0 failed.
 - A/B parity re-checked on the shells: 10/10 items, matched phish counts and flag multiset per role; phish slots differ A↔B for all six roles.
 - **Open item for the coordinator:** Cut D (4 items, an explicit orchestrator decision) trips the validator's `--strict-social` rule "an episode's defend set has 5 to 8" on `awareness_e3_helpdesk_reset` and `_defend` (the only two of 38 that fail; all others exit 0). `scripts/validate_scenario.rb` is a shared file another agent is mid-edit on, and relaxing the range is an engine/tooling change — not edited here. The coordinator should decide: relax the social-lint lower bound to 4 for awareness episodes, or revert Cut D.
+
+## Rooms cycle 2 fixes (2026-10-27)
+
+Fixes for `ROOMS_REVIEW_C2.md` (0 blockers, 0 majors, 4 minors, 4 trivials). Static work only: Rails could not boot during another session's rebase, so nothing was checked in game. After-renders are in `playtests/ROOMS_C2_screenshots/` with an `after_` prefix.
+
+| Finding | Severity | Outcome |
+|---|---|---|
+| m1 logo font W reads as H | minor | Fixed. 5-wide W added to `LOGO_FONT` in `make_aw_props.py`; BRIGHTWELL, TARROWBY and SALLOW read correctly at 8x (`after_plates_8x.png`). The optional wide M was not needed (MERRIN reads). |
+| m2 Merrin's fig alone in open floor | minor | Fixed. `planter_fig1` moved from (96, 140) to (34, 176), against the west wall below the report poster. |
+| m3 Brightwell and Quayholt share chairs | minor | Fixed. Charcoal recolour of the seminar chairs (`aw_chair_{south,north,w}_charcoal1`, PIL, same sizes), registered with `register_object.py`, applied to Quayholt's seven seats plus the added east-end chair. The window was left as is. |
+| m4 Tarrowby daylight from a notice board | minor | Fixed. The light moved to a rooflight at tile (4.5, 5), radius 110, intensity 0.25, in `training_room_lighting.json`, refreshed into the 12 Tarrowby shells. Needs the lit tour. |
+| t1 second plate line hard to read | trivial | Fixed. Second line drawn in white on all four plates. |
+| t2 Tarrowby items touch corner lines | trivial | Fixed. Notice board to x 34, hi-vis hooks to x 258. |
+| t3 Brightwell back wall full | trivial | Fixed. Year planner deleted; range poster moved to x 96. Back wall reads window, range, logo, bar chart. |
+| t4 stale text | trivial | Fixed. `game.js` comment says oatmeal carpet; `training_room.py` docstring no longer says "not yet imported"; HANDOVER §1 puts E7 at Brightwell; dated note added at the top of `TRAINING_ROOM_PLAN.md` that §3.2–3.5 and §10 predate C1 and C2. |
+
+Checks: `build_aw_rooms.py --check` differed on all eight files before the rebuild and was `same` after. `check_room_walls.py`: floor at 64 on all four. `generate_rooms.py --check`: OK on all four, the same expected warning kinds. `slot_audit.py --notes` on the four defend shells and E7 full: 0 problems. `validate_scenario.rb --strict-social --no-graph --skip-ink` on all 38 shells: clean. Fragment/ERB parity test: 7 of 7. Only the 12 Tarrowby shells changed in `scenarios/`.
+
+Still owed in game (as in the review): lit tour on the four defend shells, Tarrowby's rooflight pool, Quayholt chairs against Brightwell, fig and host head-room, walk-and-tap.

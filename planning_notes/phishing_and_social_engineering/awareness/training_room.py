@@ -14,7 +14,7 @@ The kiosk needs no position: the map's `kiosk` slot (x 238, y 140, top-left
 
 Lighting lives in training_room_lighting.json beside this file.
 
-Not yet imported by the generators (that wiring is the next step); for a look:
+The generators and apply_training_room.py import this module. For a look:
   python3 training_room.py              # every company's room fields, as JSON
   python3 training_room.py quayholt_insurance
 """
