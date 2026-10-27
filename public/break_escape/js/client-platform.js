@@ -11,15 +11,17 @@
  *        " HacktivityApp/<version> (game=<key>; edition=<full|demo>[; store=<web|steam>])"
  *      with no store field meaning steam, so every built desktop app keeps working.
  *   2. The value stored for this tab in sessionStorage['hacktivity.platform'].
- *   3. The Play app's start URL marker, ?source=play, accepted only when the page is shown as an
- *      installed app (display-mode fullscreen, standalone or minimal-ui) and
+ *   3. The Play app's start URL marker, ?source=play, accepted when
  *        - document.referrer starts with android-app://<package>/ for a package listed in
  *          <meta name="hacktivity-play-packages" content="<package>=<game key>,...">, or
- *        - getDigitalGoodsService('https://play.google.com/billing') resolves.
+ *          (no display-mode check: Bubblewrap's Custom Tab fallback may report display-mode browser;
+ *          verify on the emulator in P10 by unverifying the host), or
+ *        - getDigitalGoodsService('https://play.google.com/billing') resolves AND the page is shown as
+ *          an installed app (display-mode fullscreen, standalone or minimal-ui).
  *      A marker that fails both checks is ignored, so a shared link cannot put a desktop
  *      browser into the app layout. The marker (and the v= beside it) is always removed from
  *      the address bar.
- *      (the version code in v= is kept; a link start has none, so it uses the window.open fallback)
+ *      (the version code in v= is kept; a link start has none, and the hand-off is then assumed)
  *   4. No marker, but document.referrer is android-app://<listed package>/ and the page is shown
  *      as an installed app (display-mode fullscreen, standalone or minimal-ui). That is a cold
  *      start from a link (email, chat): the app's VIEW filter claims /app/<game>, so Android opens
@@ -296,7 +298,9 @@
     }
 
     function trampolineAvailable() {
-        return !!state.v && parseInt(state.v, 10) >= OUTSIDE_MIN_VERSION;
+        // no v (a start from a link): no build without the activity was ever distributed, so it has the
+        // hand-off. Only an explicit lower version code means an older app.
+        return !state.v || parseInt(state.v, 10) >= OUTSIDE_MIN_VERSION;
     }
 
     function openOutside(url) {
@@ -315,6 +319,9 @@
         }
         // a host the hand-off will not open gets a plain window.open (the app's own view, with a URL bar)
         var via = state.appWindow === 'play-app' && trampolineAvailable() && hostAllowed(u) ? 'trampoline' : 'window';
+        // a same-origin window.open stays fullscreen in the TWA as a website page (pricing, Stripe): never
+        // do that in the Play app
+        if (state.appWindow === 'play-app' && via === 'window' && sameOrigin) return { ok: false, reason: 'same-origin' };
         var target = via === 'trampoline' ? OUTSIDE_URL + encodeURIComponent(u.href) : u.href;
         if (hook('__hacktivityOutside', { url: u.href, via: via, target: target })) return { ok: true, via: 'stub' };
         try {
@@ -473,20 +480,24 @@
             var listed = !!pkg && Object.prototype.hasOwnProperty.call(playPackages(), pkg);
             if (!marker) {
                 // a cold start from a link: no marker, but Android opened the app and Chrome says so
-                // (no version code on a link, so this start uses the plain window.open fallback)
+                // (no version code on a link; the hand-off is assumed present)
                 if (listed && shownAsApp()) becomePlay(pkg);
                 return null;
             }
             var launchVersion = versionInUrl();
             stripMarker();
-            // the marker alone is not enough: the page must also be shown as an installed app, so a
-            // browser tab that is handed the marker and an android-app referrer stays the website
-            if (!shownAsApp()) return null;
+            // Marker plus a listed android-app:// referrer is enough: Bubblewrap's Custom Tab fallback (used
+            // when Digital Asset Links do not verify) likely reports display-mode: browser but still
+            // carries the referrer, and the website's buy prompts must not show inside the Play app.
+            // verify on the emulator in P10 by unverifying the host.
             if (listed) {
                 state.v = launchVersion;
                 becomePlay(pkg);
                 return null;
             }
+            // the Digital Goods route has no referrer to go on, so the page must be shown as an installed
+            // app: a browser tab handed the marker alone stays the website
+            if (!shownAsApp()) return null;
             return digitalGoodsResolves().then(function (ok) {
                 if (!ok) return;
                 state.v = launchVersion;

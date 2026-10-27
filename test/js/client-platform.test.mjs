@@ -269,7 +269,7 @@ test('cold start does not override a desktop app', () => {
     assert.deepEqual(attrs(w), ['desktop-app', 'steam']);
 });
 
-test('there is no remembered version: a link start has none, so it uses the window.open fallback', () => {
+test('there is no remembered version: a link start has none, and the hand-off is assumed', () => {
     const w = load({ referrer: `android-app://${PKG}/`, before: (x) => { FULLSCREEN(x); x.localStorage.setItem('hacktivity.playVersion', '3'); } });
     assert.equal(stored(w).v, '');
     assert.equal(w.localStorage.getItem('hacktivity.playVersion'), '3', 'untouched');
@@ -282,15 +282,21 @@ test('a launch with v stores it for the tab only, nothing in localStorage', asyn
     assert.equal(w.localStorage.getItem('hacktivity.playVersion'), null);
 });
 
-test('the marker is not enough in a browser tab: no display mode, no app (referrer or Digital Goods)', async () => {
-    const withReferrer = load({ url: 'https://hacktivity.test/x?source=play&v=2', referrer: `android-app://${PKG}/` });
-    assert.deepEqual(attrs(withReferrer), ['browser', 'web']);
-    assert.equal(withReferrer.location.search, '', 'marker still stripped');
+test('marker plus a listed android-app referrer is the Play app even when display-mode says browser (Custom Tab fallback)', async () => {
+    const w = load({ url: 'https://hacktivity.test/x?source=play&v=2', referrer: `android-app://${PKG}/`, before: (x) => { x.matchMedia = () => ({ matches: false }); } });
+    assert.deepEqual(attrs(w), ['play-app', 'play']);
+    assert.equal(w.location.search, '', 'marker still stripped');
+    assert.equal(stored(w).v, '2');
+    const bare = load({ url: 'https://hacktivity.test/x?source=play', referrer: `android-app://${PKG}/` });
+    assert.deepEqual(attrs(bare), ['play-app', 'play']);
+    const other = load({ url: 'https://hacktivity.test/x?source=play', referrer: 'android-app://com.other.app/' });
+    assert.deepEqual(attrs(other), ['browser', 'web'], 'a package that is not listed is not the app');
+});
+
+test('the marker is not enough in a browser tab without a listed referrer: no display mode, no Digital Goods app', async () => {
     const withDg = load({ url: 'https://hacktivity.test/x?source=play', dg: () => Promise.resolve({}) });
     await withDg.HacktivityPlatform.ready;
     assert.deepEqual(attrs(withDg), ['browser', 'web']);
-    const browserMode = load({ url: 'https://hacktivity.test/x?source=play', referrer: `android-app://${PKG}/`, before: (x) => { x.matchMedia = () => ({ matches: false }); } });
-    assert.deepEqual(attrs(browserMode), ['browser', 'web']);
 });
 
 // ---- openOutside ----
@@ -331,10 +337,22 @@ test('openOutside without the stub navigates with location.href for the trampoli
     w.HacktivityPlatform.openOutside('https://cliffe.github.io/HacktivityLabSheets/');
     assert.deepEqual(plain(w.__opened), [['https://cliffe.github.io/HacktivityLabSheets/', '_blank', 'noopener']]);
     assert.equal(w.__hacktivityOutside[0].via, 'window');
-    // unknown version: also the fallback
+    // no version (a start from a link): the hand-off is assumed present, never window.open
     w = playPage('/hacktivities/6/play', { v: '', stub: false });
     w.HacktivityPlatform.openOutside('https://cliffe.github.io/x');
-    assert.equal(w.__opened.length, 1);
+    assert.equal(w.__opened.length, 0);
+    assert.equal(w.__hacktivityOutside[0].via, 'trampoline');
+});
+
+test('in the Play app a same-origin target is never window.open (it would stay fullscreen as a website page)', () => {
+    const w = playPage('/hacktivities/6/play', { v: '1', stub: false }); // an app too old for the hand-off
+    const r = w.HacktivityPlatform.openOutside('https://hacktivity.test/some/website/page');
+    assert.deepEqual(plain(r), { ok: false, reason: 'same-origin' });
+    assert.equal(w.__opened.length, 0);
+    assert.deepEqual(w.__hacktivityOutside, []);
+    const link = playPage('/hacktivities/6/play', { v: '', stub: true }); // no version: the hand-off
+    assert.equal(link.HacktivityPlatform.openOutside('https://hacktivity.test/some/website/page').ok, true);
+    assert.equal(link.__hacktivityOutside[0].via, 'trampoline');
 });
 
 test('openOutside refuses payment paths, in-app paths, userinfo, odd characters and non-https', () => {
