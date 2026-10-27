@@ -30,7 +30,12 @@ body:has([data-minigame="phone-chat"]) #notification-container {
     transition: all 0.3s ease;
     opacity: 0;
     transform: translateY(-20px);
-    pointer-events: auto;
+    /* A toast is not modal and nothing happens when its body is clicked, so clicks pass
+       through to the game (and the pause menu's centre check, and the test bridge's
+       blocking-ui hit test, see the canvas). Only the close x takes clicks. At 900x700 a
+       stack of task and objective toasts covered the whole right two thirds of the screen
+       for their 5 s (R17 F5). */
+    pointer-events: none;
     position: relative;
     overflow: hidden;
 }
@@ -75,6 +80,7 @@ body:has([data-minigame="phone-chat"]) #notification-container {
     cursor: pointer;
     font-size: 18px;
     color: #aaa;
+    pointer-events: auto;
 }
 
 .notification-close:hover {
