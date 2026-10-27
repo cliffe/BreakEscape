@@ -72,6 +72,32 @@ test('Chrome desktop: hidden until beforeinstallprompt, then an Install button; 
     assert.equal(label(w), 'Install the app');
 });
 
+// the offer fires after client-platform.js but before the deferred pwa-install.js has run
+test('an install offer that fired before pwa-install.js loaded still shows the button, and prompt() works', async () => {
+    const dom = new JSDOM(PAGE(false).replace('</head>', '<meta name="hacktivity-pwa-install" content="1"></head>'), { url: 'https://hacktivity.test/hacktivities/42/play', runScripts: 'outside-only', pretendToBeVisual: true });
+    const w = dom.window;
+    Object.defineProperty(w.navigator, 'userAgent', { value: CHROME });
+    w.matchMedia = (q) => ({ matches: false, media: q });
+    w.eval(platformSrc);
+    const ev = offer(w); // fired now, pwa-install.js not loaded yet
+    assert.equal(ev.defaultPrevented, true, 'kept by client-platform.js');
+    assert.equal(shown(w, '[data-pwa-install]'), false, 'nothing yet');
+    w.eval(installSrc);
+    await w.HacktivityPlatform.ready;
+    await new Promise((r) => w.setTimeout(r, 0));
+    assert.equal(shown(w, '[data-pwa-install]'), true);
+    w.document.querySelector('[data-pwa-install]').click();
+    assert.equal(ev.prompted, 1);
+    assert.equal(w.__hacktivityInstallPrompt, null, 'used once');
+});
+
+test('browser fullscreen (F11) does not hide the install button', async () => {
+    const w = await load({ display: 'fullscreen' });
+    assert.equal(w.HacktivityPlatform.appWindow, 'browser');
+    offer(w);
+    assert.equal(shown(w, '[data-pwa-install]'), true);
+});
+
 test('Chrome desktop: a click calls prompt() once and the button goes away', async () => {
     const w = await load();
     const ev = offer(w);
@@ -130,7 +156,7 @@ test('never in the Play app: stored value, marker with referrer, cold start', as
 });
 
 test('never in the installed web app itself', async () => {
-    for (const opts of [{ display: 'standalone' }, { display: 'fullscreen' }, { display: 'minimal-ui' }, { ua: IPAD, standalone: true }]) {
+    for (const opts of [{ display: 'standalone' }, { display: 'minimal-ui' }, { ua: IPAD, standalone: true }]) {
         const w = await load(opts);
         assert.equal(w.HacktivityPlatform.appWindow, 'pwa-app', JSON.stringify(opts));
         offer(w);

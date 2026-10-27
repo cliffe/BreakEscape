@@ -262,6 +262,8 @@ test('cold start: an unlisted package or an https referrer does not count', () =
     assert.deepEqual(attrs(w), ['browser', 'web']);
     // an https referrer is no Play evidence: the page is the web app (pwa-app), never play-app
     w = load({ referrer: 'https://hacktivity.test/', before: FULLSCREEN });
+    assert.deepEqual(attrs(w), ['browser', 'web']);
+    w = load({ referrer: 'https://hacktivity.test/', before: DISPLAY('standalone') });
     assert.deepEqual(attrs(w), ['pwa-app', 'web']);
     w = load({ referrer: 'https://hacktivity.test/' });
     assert.deepEqual(attrs(w), ['browser', 'web']);
@@ -750,10 +752,31 @@ test('pwa: standalone alone on a shell page is pwa-app/web, with the shell title
     assert.equal(w.sessionStorage.getItem('hacktivity.platform'), null, 'the Play value is not written');
 });
 
-test('pwa: fullscreen, minimal-ui and iOS navigator.standalone count as installed', () => {
-    assert.deepEqual(attrs(load({ url: SHELL_URL, before: FULLSCREEN })), ['pwa-app', 'web']);
+test('pwa: minimal-ui and iOS navigator.standalone count as installed; fullscreen alone does not (F11)', () => {
     assert.deepEqual(attrs(load({ url: SHELL_URL, before: MINIMAL })), ['pwa-app', 'web']);
     assert.deepEqual(attrs(load({ url: SHELL_URL, before: IOS_STANDALONE })), ['pwa-app', 'web']);
+    // a desktop browser tab in F11 reports display-mode fullscreen: still a browser
+    assert.deepEqual(attrs(load({ url: SHELL_URL, before: FULLSCREEN })), ['browser', 'web']);
+    assert.deepEqual(attrs(load({ url: `${SHELL_URL}?source=pwa`, before: FULLSCREEN })), ['browser', 'web']);
+    assert.deepEqual(attrs(load({ url: SHELL_URL, before: FULLSCREEN, userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/131.0.0.0 Safari/537.36' })), ['browser', 'web']);
+});
+
+test('pwa: on Android a fullscreen web app (display_override) still counts, with the marker', () => {
+    assert.deepEqual(attrs(load({ url: `${SHELL_URL}?source=pwa`, userAgent: ANDROID_UA, before: FULLSCREEN })), ['pwa-app', 'web']);
+    assert.deepEqual(attrs(load({ url: SHELL_URL, userAgent: ANDROID_UA, before: FULLSCREEN })), ['browser', 'web'], 'no marker');
+});
+
+test('install prompt: kept early, with its infobar held back, only on a page that asks for it', () => {
+    const fire = (w) => { const e = new w.Event('beforeinstallprompt', { cancelable: true }); w.dispatchEvent(e); return e; };
+    let w = load({ url: SHELL_URL, before: (x) => x.document.head.insertAdjacentHTML('beforeend', '<meta name="hacktivity-pwa-install" content="1">') });
+    const e = fire(w);
+    assert.equal(e.defaultPrevented, true);
+    assert.equal(w.__hacktivityInstallPrompt, e);
+    // a page that did not ask (the website): untouched, so the browser's own infobar still works
+    w = load({ url: SHELL_URL });
+    const e2 = fire(w);
+    assert.equal(e2.defaultPrevented, false);
+    assert.equal(w.__hacktivityInstallPrompt, undefined);
 });
 
 test('pwa: an ordinary browser tab is browser/web, even with the marker, which is stripped', () => {
