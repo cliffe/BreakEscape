@@ -243,3 +243,19 @@ User decision q_timing (FUN_DECISIONS part two): say "about 15 minutes" for a fu
 Applied: full-episode `mission.json` descriptions now read "An awareness episode of about 15 minutes for ..." (16 for E6 and E7), with `estimated_duration_minutes` and `durationTargetMin` set to 15 (16 for E6 and E7). Defend-only descriptions say "about 8 minutes" (the figure was already inside 6 to 8; `durationTargetMin` stays 8). The four finance checks, the only checks that stated a length, say "about 8 to 10 minutes"; their `durationTargetMin` and `estimated_duration_minutes` (4) are untouched pending the owner. `durationTargetMin` is read by no code (schema type check only), so nothing depended on the old values. The defend-only and check changes went through `gen_e1_shells.py`, `gen_e2_e4_shells.py`, `gen_e3_e5_shells.py` and `gen_e6_e7_shells.py` (scratch regen, byte-identical baseline first, only the 11 `mission.json` files copied in).
 
 Still to do: the E3 full erb `durationTargetMin` 13 to 15 (held back while another session edits that erb); the validator warning text in `scripts/validate_social/awareness.rb` still says "13 minute episode"; the organiser guidance to prefer defend-only under 30 minutes is not yet in any description (it belongs with the aw7 organiser guidance).
+
+## Rooms cycle 3 fixes (2026-10-27)
+
+Fixes for `ROOMS_REVIEW_C3.md` (0 blockers, 0 majors, 2 minors, 3 trivials). Commit 1d1ccbc26. After-shots in `playtests/ROOMS_C3_screenshots/` as `after_c3_merrin.png` and `after_c3_brightwell.png`.
+
+| Finding | Severity | Outcome |
+|---|---|---|
+| m1 Merrin plate reads "HERRIN &" | minor | Fixed. 5-wide M added to `LOGO_FONT` in `make_aw_props.py`; `make_aw_props.py` rerun, only `aw_logo_merrin_sallow1.png` changed. Checked at 8x, then in game: the plate reads MERRIN & SALLOW. |
+| m2 Brightwell sun barely shows | minor | Waits. Needs a `window_blinds` floor tint in `training_room_lighting.json` and `apply_training_room.py --refresh`; both held back while another agent rewrites the check shells through the generators. |
+| t1 Merrin fig near the chairs | trivial | Fixed. `planter_fig1` feet 176 to 166 in `build_aw_rooms.py`. In game it stands clear of the north chair row. |
+| t2 Brightwell bar chart crowds plate | trivial | Fixed. `whiteboard2` x 216 to 226 in `build_aw_rooms.py`. In game the gap to the plate matches the others. |
+| t3 Quayholt queue screen halo | trivial | Waits with m2: intensity 0.35 to 0.25 in `training_room_lighting.json`, then `--refresh`. |
+
+Maps rebuilt with `build_aw_rooms.py` (Brightwell and Merrin & Sallow changed; Tarrowby and Quayholt `same`), then `--check`: all eight files `same`. `check_room_walls.py 'room_aw_*'`: floor at 64 on all four. `generate_rooms.py --check` on the four: OK, the same expected warning kinds. `slot_audit.py --notes` on the four defend shells and E7: 0 problems. `apply_training_room.py --refresh` and `training_room_lighting.json` were not touched; no scenario shells changed.
+
+In game (keyless :3001, games 4521 Merrin via `awareness_e4_exec_whaling_defend`, 4522 Brightwell via `awareness_e1_invoice_fraud_defend`, lit only, `--check`: mode on, lit ambient `#cac4bc` and `#c4cad8`, redraw 300 ms): plate, fig and whiteboard as above. The M is the thinnest glyph on the plate at game zoom but reads as M. The POV stage can start for Merrin once the lighting items are settled or deferred.
