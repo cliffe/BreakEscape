@@ -31,7 +31,7 @@ module BreakEscape
       # shell returns where the in-game links go: { menu_url:, return_url:,
       # return_label:, walkthrough_url: } (any may be nil). nil keeps the defaults.
       @shell_links          = nil
-      # callable: ->(return_to) -> Hash or nil. The character picker opened from a host game
+      # callable: ->(return_to) or ->(return_to, player) -> Hash or nil. The character picker opened from a host game
       # shell without a game (configuration?return_to=<a host path>): the host says whether
       # return_to is one of its shell pages and, if so, how the picker should look and where
       # Back goes: { back_url:, back_label:, heading:, ui_theme:, backdrop_style: } (the last

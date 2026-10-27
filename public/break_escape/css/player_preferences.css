@@ -549,9 +549,10 @@ body.shell-picker {
   color: var(--ui-text);
   font-size: 20.5px;
   line-height: 26px;
-  padding: 24px 16px 32px;
-  min-height: 100vh;
-  min-height: 100dvh;
+  padding: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -575,8 +576,9 @@ body.shell-picker {
 .shell-picker .configuration-container {
   position: relative;
   z-index: 1;
-  max-width: 1100px;
-  padding: 18px;
+  max-width: none;
+  margin: 0;
+  padding: 14px;
   background: var(--ui-surface);
   background-clip: padding-box;
   border-style: solid;
@@ -589,7 +591,8 @@ body.shell-picker {
 }
 
 .shell-picker h1 {
-  margin: 0 0 16px;
+  margin: 0;
+  text-align: left;
   font-weight: 400;
   font-size: var(--pk-hl);
   font-family: var(--ui-heading-font);
@@ -650,15 +653,133 @@ body.shell-picker {
 .shell-picker .btn:focus-visible { background: none; color: var(--ui-button-text); filter: brightness(1.15) var(--ui-glow-filter); outline: none; }
 .shell-picker .btn-primary { color: var(--ui-accent); }
 
-@media (max-width: 768px) {
-  .shell-picker .form-actions { flex-wrap: wrap; }
-  .shell-picker .form-actions .btn { flex: 1 1 140px; text-align: center; }
+/* The picker as a game screen. .pk-screen fills the window (page never scrolls): a header bar with
+   Back, the heading and Save, then the framed panel. In landscape the panel is two columns (code
+   name and the selected character on the left, the character grid scrolling on the right); on a
+   portrait screen or phone the columns stack. Sprites are drawn at whole-number scales:
+   --pk-s for the 32px headshots, --pk-ps for the 80px frames of the animated preview. A portrait
+   screen is zoomed by --pk-k (1, 1.5, 2 ...), so those scales stay whole on the device (k * scale). */
+.shell-picker { --pk-k: 1; --pk-s: 4; --pk-ps: 4; }
+.shell-picker .pk-screen {
+  position: relative;
+  z-index: 1;
+  zoom: var(--pk-k);
+  height: calc(100dvh / var(--pk-k));
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 32px 24px;
+  box-sizing: border-box;
+}
+.shell-picker .pk-bar { display: flex; align-items: center; gap: 12px 24px; flex-wrap: wrap; flex: 0 0 auto; }
+.shell-picker .pk-bar h1 { flex: 1 1 160px; min-width: 0; }
+.shell-picker .pk-bar .btn { margin: 0; cursor: pointer; }
+.shell-picker .pk-back::before { content: '\25C0\00a0'; }
+.shell-picker .pk-save { min-width: 160px; }
+
+.shell-picker .configuration-container { flex: 1 1 auto; min-height: 0; overflow: auto; display: flex; }
+.shell-picker #preference-form {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: max(calc(80px * var(--pk-ps)), 260px) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  column-gap: 24px;
+  row-gap: 14px;
+}
+.shell-picker .pk-name { grid-column: 1; grid-row: 1; margin: 0; }
+.shell-picker .pk-name .form-control { max-width: none; }
+.shell-picker .pk-preview { grid-column: 1; grid-row: 2; align-self: start; width: auto; }
+.shell-picker .pk-pick { grid-column: 2; grid-row: 1 / span 2; min-height: 220px; overflow-y: auto; padding-right: 6px; }
+.shell-picker .pk-pick-title { margin: 0 0 10px; color: var(--ui-text-dim); letter-spacing: 1px; }
+.shell-picker .selection-required { text-align: left; margin: 0 0 10px; }
+
+.shell-picker #sprite-preview-canvas-container {
+  --pk-preview-scale: var(--pk-ps);
+  width: calc(80px * var(--pk-ps));
+  height: calc(80px * var(--pk-ps));
+  margin: 0;
+  border: 0;
+  box-shadow: inset 0 0 0 2px var(--ui-line);
+  background: rgba(0, 0, 0, 0.45);
 }
 
-@media (orientation: portrait) {
-  .shell-picker .configuration-container { --gs-k: 1; zoom: var(--gs-k); }
+/* cards sized to their sprite: the headshot is drawn at --pk-s times its 32px, whole pixels */
+.shell-picker .sprite-grid {
+  grid-template-columns: repeat(auto-fill, calc(32px * var(--pk-s) + 16px));
+  gap: 12px;
+  min-width: 0;
 }
-@media (orientation: portrait) and (min-width: 580px) { .shell-picker .configuration-container { --gs-k: 1.5; } }
-@media (orientation: portrait) and (min-width: 1440px) { .shell-picker .configuration-container { --gs-k: 2; } }
-@media (orientation: portrait) and (min-width: 2000px) { .shell-picker .configuration-container { --gs-k: 3; } }
-@media (orientation: portrait) and (min-width: 2880px) { .shell-picker .configuration-container { --gs-k: 4; } }
+.shell-picker .sprite-card { padding: 6px; }
+.shell-picker .sprite-headshot-container,
+.shell-picker .sprite-headshot { width: calc(32px * var(--pk-s)); height: calc(32px * var(--pk-s)); }
+.shell-picker .lock-icon { width: 24px; height: 24px; }
+
+/* the locked ones: after the choosable ones, folded away, smaller and quiet */
+.shell-picker .pk-locked { margin-top: 18px; }
+.shell-picker .pk-locked summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: var(--ui-text-dim);
+  font-family: var(--ui-heading-font);
+  font-size: var(--pk-hs);
+  text-transform: var(--ui-heading-transform);
+  letter-spacing: var(--ui-heading-spacing);
+  list-style: none;
+}
+.shell-picker .pk-locked summary::-webkit-details-marker { display: none; }
+.shell-picker .pk-locked summary::before { content: '\25B6\00a0\00a0'; color: var(--ui-text-faint); }
+.shell-picker .pk-locked[open] summary::before { content: '\25BC\00a0\00a0'; }
+.shell-picker .pk-locked summary:hover,
+.shell-picker .pk-locked summary:focus-visible { color: var(--ui-accent); outline: none; }
+.shell-picker .pk-locked-grid { --pk-s: 2; margin-top: 8px; opacity: 0.6; }
+
+/* short landscape windows: a smaller preview and headshots so the panel still fits */
+@media (min-width: 721px) and (orientation: landscape) and (max-height: 820px) {
+  .shell-picker { --pk-s: 3; --pk-ps: 3; }
+}
+@media (min-width: 721px) and (orientation: landscape) and (max-height: 600px) {
+  .shell-picker { --pk-s: 2; --pk-ps: 2; }
+}
+
+/* portrait screens and phones: one column; Back and Save share the first row, the heading wraps under */
+@media (max-width: 720px), (orientation: portrait) {
+  .shell-picker .pk-screen { padding: 14px 16px 16px; gap: 14px; }
+  .shell-picker .pk-bar h1 { order: 3; flex-basis: 100%; }
+  .shell-picker .pk-bar .pk-save { margin-left: auto; min-width: 0; }
+  .shell-picker #preference-form { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); }
+  .shell-picker .pk-name, .shell-picker .pk-preview, .shell-picker .pk-pick { grid-column: 1; }
+  .shell-picker .pk-name { grid-row: 1; }
+  .shell-picker .pk-preview { grid-row: 2; justify-self: center; }
+  .shell-picker .pk-pick { grid-row: 3; }
+  .shell-picker .pk-name small { display: none; }
+  /* a phone: 2x preview, 3x headshots, three to a row */
+  .shell-picker { --pk-s: 3; --pk-ps: 2; }
+  .shell-picker .sprite-grid { grid-template-columns: repeat(auto-fill, minmax(calc(32px * var(--pk-s) + 8px), 1fr)); gap: 8px; }
+  .shell-picker .configuration-container { padding: 10px; }
+}
+
+/* A portrait screen is zoomed in whole steps of the 2x art (the host shell does the same). The
+   zoom makes the layout width 390 to 540px; scales are even so they stay whole on the device. */
+@media (orientation: portrait) and (min-width: 580px) { .shell-picker { --pk-k: 1.5; --pk-s: 4; --pk-ps: 2; } }
+@media (orientation: portrait) and (min-width: 1440px) { .shell-picker { --pk-k: 2; } }
+@media (orientation: portrait) and (min-width: 2000px) { .shell-picker { --pk-k: 3; } }
+@media (orientation: portrait) and (min-width: 2880px) { .shell-picker { --pk-k: 4; } }
+@media (orientation: portrait) and (min-width: 900px) { .shell-picker { --pk-ps: 4; } }
+/* a tall landscape window has room for bigger headshots */
+@media (min-width: 721px) and (orientation: landscape) and (min-height: 1000px) { .shell-picker { --pk-s: 5; } }
+/* a wide portrait screen (after zoom): the selected character beside the code name */
+@media (orientation: portrait) and (min-width: 900px) {
+  .shell-picker #preference-form { grid-template-columns: max-content minmax(0, 1fr); column-gap: 20px; grid-template-rows: auto minmax(0, 1fr); }
+  .shell-picker .pk-preview { grid-column: 1; grid-row: 1; justify-self: start; }
+  .shell-picker .pk-name { grid-column: 2; grid-row: 1; align-self: center; }
+  .shell-picker .pk-name small { display: block; }
+  .shell-picker .pk-pick { grid-column: 1 / -1; grid-row: 2; }
+}
+/* a phone: Back and Save fit one row */
+@media (max-width: 480px) {
+  .shell-picker .pk-bar { gap: 10px 8px; }
+  .shell-picker .pk-bar .btn { padding: 4px 8px; }
+}

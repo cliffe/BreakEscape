@@ -516,6 +516,29 @@ module BreakEscape
       end
     end
 
+    test 'a hook whose back_url is not a path on this site leaves the plain page' do
+      ['//evil.example/x', 'https://evil.example/', '/\\evil.example'].each do |back|
+        hook = ->(_return_to) { { back_url: back, heading: 'Agent file' } }
+        with_shell_picker(hook) do
+          get configuration_url(return_to: '/play/1')
+          assert_not_includes response.body, 'shell-picker', "back_url #{back.inspect}"
+        end
+      end
+    end
+
+    test 'a hook that takes two arguments is told who is asking' do
+      seen = nil
+      hook = lambda do |return_to, player|
+        seen = player
+        { back_url: return_to, heading: 'Agent file' }
+      end
+      with_shell_picker(hook) do
+        get configuration_url(return_to: '/play/1')
+        assert_includes response.body, 'configuration-page shell-picker'
+        assert_not_nil seen
+      end
+    end
+
     test 'a failing hook leaves the plain page' do
       with_shell_picker(->(_return_to) { raise 'boom' }) do
         get configuration_url(return_to: '/play/1')

@@ -46,8 +46,14 @@ module BreakEscape
       hook = BreakEscape.configuration.shell_picker
       return nil unless hook && return_to.is_a?(String) && return_to.present?
 
-      picker = hook.call(return_to)
-      picker.is_a?(Hash) && picker[:back_url].present? ? picker.symbolize_keys : nil
+      # a hook that takes a second argument is also told who is asking (the host's own page rules)
+      picker = hook.arity == 1 ? hook.call(return_to) : hook.call(return_to, current_player)
+      return nil unless picker.is_a?(Hash)
+
+      picker = picker.symbolize_keys
+      # Back goes to a path on this site only: one leading slash (not "//host" or "/\\host")
+      back = picker[:back_url]
+      back.is_a?(String) && back.match?(%r{\A/(?![/\\])}) ? picker : nil
     rescue StandardError => e
       Rails.logger.warn "[BreakEscape] shell_picker hook failed for #{return_to.inspect}: #{e.message}"
       nil
