@@ -51,9 +51,11 @@ entitlement (G3); only Play buyers play in the Play app, and no Stripe purchase 
 3. Package id: `uk.co.hacktivity.licencetohack`, confirmed.
 4. Upload key: decide later (before the first Play upload).
 5. Business model: free app, one in-app purchase unlocks the full game.
-6. Access: **G4 is replaced for the Play app.** Any Hacktivity user has the same access in the app
-   as on the website (subscription, organisation, Steam or other entitlements, staff grants), plus
-   a Play purchase. No Play-only access rule is needed.
+6. Access: **G4 is replaced, for every platform.** Access is account-wide: the player signs in to
+   Hacktivity, and everything the account holds (subscription, organisation, Steam purchase, Play
+   purchase, staff grants) applies in the browser, the Steam app, the Play app and any other build.
+   Only the payment links depend on the platform (answer 7). No platform-specific access rule.
+   Verify Play's and Steam's rules on honouring purchases made elsewhere before submission.
 7. Links out: keep them and open them outside the app. In a TWA, same-site links stay in the app, so
    the client marks them to open in the browser. **Every nudge to buy in the game goes to that
    platform's own purchase** (owner, 2026-10-27): Play Billing in the Play app, the Steam store page

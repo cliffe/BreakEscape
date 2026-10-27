@@ -117,9 +117,12 @@ The user wants the solution kept clean and simple; the uncertain points went to 
 - G2: Licence to Hack first on Play, phones and tablets.
 - G3: one-off Play Billing purchase per game, verified server-side into `Entitlement(source:
   google_play)`.
-- G4: Play buyers only. Each store app is a wrapper round one game: Hacktivity navigation and links
-  are hidden, and any nudge to the rest of Hacktivity opens in the system browser, so no Stripe
-  purchase can be made from the Steam or Play apps (`README.md`, "Single-game app mode").
+- G4: ~~Play buyers only.~~ Replaced 2026-10-27: access is account-wide on every platform (signed-in
+  Hacktivity account; subscription, organisation, Steam, Play and staff entitlements all count
+  everywhere), and only the payment links follow the platform (`ANDROID.md`, "Owner answers").
+  Each store app is still a wrapper round one game: Hacktivity navigation and links are hidden, and
+  any nudge to the rest of Hacktivity opens in the system browser, so no Stripe purchase can be made
+  from the Steam or Play apps (`README.md`, "Single-game app mode").
 
 ## Round 1 answers (2026-10-24)
 
