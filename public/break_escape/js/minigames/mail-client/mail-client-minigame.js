@@ -914,6 +914,12 @@ export class MailClientMinigame extends SocialOverlayScene {
             if (!node) continue;
             if (covered) node.setAttribute('inert', ''); else node.removeAttribute('inert');
         }
+        // The checklist covers the composer too, so Tab can't reach the sent form's Send under it
+        // and send the same message again (lab R20 F20-4). Edit & resend lifts this.
+        const form = this.composer?.root;
+        if (form) {
+            if (this.checklistPanel) form.setAttribute('inert', ''); else form.removeAttribute('inert');
+        }
     }
 
     // ── arrival (N14) ────────────────────────────────────────────────────────

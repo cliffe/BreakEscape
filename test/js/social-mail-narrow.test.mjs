@@ -235,6 +235,18 @@ test('a panel over the reader makes the toolbar and reader inert, and Tab-order 
     assert.deepEqual(inert(), [false, false]);
 });
 
+test('the checklist makes the composer under it inert until Edit & resend (lab R20 F20-4)', () => {
+    clock = 0;
+    const { scene, host } = open('onSend');
+    scene.openCompose();
+    const form = () => host.querySelector('.mail-composer');
+    scene._handleComposeSend(message({ attachment: null, attachmentKind: null }), scene.composer);
+    assert.ok(host.querySelector('.mail-checklist'), 'the checklist shows');
+    assert.equal(form().hasAttribute('inert'), true, 'the sent form is out of the Tab order');
+    host.querySelector('.mail-checklist-edit').click();
+    assert.equal(form().hasAttribute('inert'), false, 'Edit & resend gives the form back');
+});
+
 test('focus returns to the blank after a pick and to the template select after a change', () => {
     clock = 0;
     const { scene, host } = open('onSend');
