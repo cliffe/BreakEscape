@@ -1282,3 +1282,48 @@ and that all it collects is a menu rating. Three distinct reasons.
 - Validator `--strict-social --no-graph --skip-ink` on all 38 shells: exit 0, only pre-existing suggestions.
 - Bridges skipped (paused). dungeon_graph untouched (--no-graph); the pre-existing lab_social_engineering
   dungeon_graph churn and `sys,json` predate this pass and were left alone.
+
+## Dialogue cycle 4 fixes
+
+From `DIALOG_REVIEW_C4.md` (formal cycle 4, reviewer read-only). Only C4-1 is applied this round;
+E3 is being edited by another agent for the MFA decision, so the two E3-side items wait for the next
+round. Nothing here is voiced; no TTS top-up.
+
+### C4-1 — E4 defend side omits `borrowed_authority` (MAJOR) — FIXED (truth; fragment + erb + defend shell)
+E4's defend set offered `borrowed_authority` as a tick (it is in the set's `channelTells`) and the
+attack-build pretext `ms_pretext_pay_now` claimed it, but neither phish item in the defend set carried
+it in `truth.flags`. A learner who correctly ticked it was told "Not a flag here", contradicting both
+E4's own attack side and E7's identical treatment. Added `borrowed_authority` to `truth.flags` and a
+`perFlagNote` on both items, in the style of E7's notes (e7 erb :173 voicemail, :240 email):
+- `e4_boarding_payment` (email): flags now `senderTrust, borrowed_authority, secrecy_or_bypass,
+  urgencyCalibrated`; note "'I'll sign it off when I land' leans on the managing partner's own authority
+  to push the payment past Yasmin's approval. A name in the From line is no proof she sent it".
+- `e4_vm_gate` (voicemail): flags now `vish_callback_pressure, secrecy_or_bypass, borrowed_authority`;
+  note "'I'll square it with her myself' uses the managing partner's own authority to wave the payment
+  past finance. It sounded like her, and a voice on its own doesn't prove who is speaking".
+Applied to the fragment `e4/defend.json` and the full erb `awareness_e4_exec_whaling/scenario.json.erb`
+with identical flag-array and perFlagNote key order so parity holds. The defend-only shell was
+regenerated from the fragment (below). Check shells carry no episode-set per-message truth, so are
+unaffected.
+
+### C4-2 — E1/E3 no-blame lines end on an identical sentence (MINOR) — DEFERRED
+Next round: E3 is being edited for the MFA decision, so its no-blame tail is left to that agent's pass.
+
+### C4-T1 — E3 critical no-blame line uses a mild "built to A, not to B" shape (TRIVIAL) — DEFERRED
+Next round, with E3 (optional in the review). Same reason as C4-2.
+
+### Pipeline / parity / checks
+- No-change baseline: with the fragment reverted to HEAD, `gen_e2_e4_shells.py` regenerated into scratch
+  reproduced the E4 defend-only shell (scenario.json.erb, mission.json, ink) and all four executive check
+  shells byte-identically to the repo.
+- After the fragment edit, regenerated into scratch; only the E4 defend-only `scenario.json.erb` differed,
+  and only in the two truth blocks above. Copied that one file in; mission.json/ink and the four check
+  shells were unchanged and not touched.
+- `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs`: 1817/1817 pass. Parity 7/7.
+- Validator `--strict-social --no-graph --skip-ink` on all six E4 shells (full, defend-only, the four
+  executive checks): exit 0.
+- Triage-card check (scratch node script against the engine's `chipIdsFor`/`chipLabel`/`skillName`):
+  for both items in all three E4 files, `borrowed_authority` is offered as a tick, is now a scored tell
+  (so no longer "Not a flag here"), carries a perFlagNote, and names "Borrowed authority" in the Result
+  breakdown.
+- Bridges not run (not requested this round).
