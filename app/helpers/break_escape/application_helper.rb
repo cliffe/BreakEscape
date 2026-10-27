@@ -6,6 +6,8 @@ module BreakEscape
     AWARENESS_HEADING_MAX = 80
     AWARENESS_TEAM_MIN    = 2
     AWARENESS_TEAM_MAX    = 100_000
+    # Zero-width characters and bidi controls (U+200B-200F, 202A-202E, 2060-2064, 2066-2069, FEFF).
+    AWARENESS_INVISIBLE   = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]/
 
     # The host's awareness settings for a game, as the client's window.breakEscapeConfig.awareness
     # ({ reportRoute:, ruleOfThumb:, teamSize: }; only keys that have a value). {} when there is no
@@ -34,7 +36,7 @@ module BreakEscape
     def be_plain(value, max = AWARENESS_TEXT_MAX)
       return '' unless value.is_a?(String)
 
-      value.gsub(/\r\n?/, "\n").gsub("\t", ' ').gsub(/[[:cntrl:]&&[^\n]]/, '').strip[0, max].to_s.strip
+      value.gsub(/\r\n?/, "\n").gsub("\t", ' ').gsub(/[[:cntrl:]&&[^\n]]/, '').gsub(AWARENESS_INVISIBLE, '').strip[0, max].to_s.strip
     end
 
     # An integer from 2 to 100000, or nil.

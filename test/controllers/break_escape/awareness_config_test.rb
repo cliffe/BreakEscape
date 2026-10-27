@@ -126,6 +126,12 @@ module BreakEscape
       assert_equal '', be_plain(%w[a])
     end
 
+    test 'be_plain strips bidi controls and zero-width characters' do
+      assert_equal 'abc', be_plain("a\u202Eb\u200Bc")
+      assert_equal 'abcd', be_plain("\uFEFFa\u200Fb\u2066c\u2069\u2060d")
+      assert_equal "caf\u00e9 \u4e2d", be_plain("caf\u00e9 \u4e2d")
+    end
+
     test 'be_team_size bounds' do
       assert_equal 2, be_team_size('2')
       assert_equal 100_000, be_team_size(100_000)
