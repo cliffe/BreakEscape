@@ -21,7 +21,7 @@ The built product has its own documents, which are the source of truth for anyth
 
 - `README.md`: key decisions A to AA;
 - `designs/11_awareness_product_episodes.md`: the episode design;
-- `awareness/HANDOVER.md`: status and the resume plan (development on hold since 2026-10-23);
+- `awareness/HANDOVER.md`: status (resumed 2026-10-27; most stages closed, host art after 3 November, one facilitator guide last);
 - `awareness/BRAND_SET.md`: the four companies, their domains, look-alikes and casts;
 - `FUN_DECISIONS.md`: the aw decisions (debrief, rule of thumb, avatars and so on).
 

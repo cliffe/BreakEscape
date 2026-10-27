@@ -85,18 +85,18 @@ button.ghost{background:transparent;color:var(--accent)}
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">Incident Simulations: Critical Cases · planning review · 27 October 2026</div>
+  <div class="eyebrow">Incident Simulations: Critical Cases · planning review · 27 October 2026, updated after the second merge</div>
   <h1>What is built, what is missing, and what to build next</h1>
-  <p class="lede">Main now has a working social-engineering engine and 38 awareness scenarios. The course plan has been merged with main and rewritten to extend what exists. Where the plan and the build disagreed, the build won. Below are the context, the gaps, and 17 work packages. Each package has a verdict, and there are 6 open decisions. Your answers save as you go.</p>
+  <p class="lede">Main now has a working social-engineering engine and 38 awareness scenarios, and since this morning the product has resumed with most of its stages closed. The course plan has been merged with main and rewritten to extend what exists. Where the plan and the build disagreed, the build won. Below are the context, the gaps, and 17 work packages. Each package has a verdict, and there are 6 open decisions. Your answers save as you go.</p>
   <p class="small">Sources on branch <code>ccr-8675a21c-vu1k0k</code>: <code>planning_notes/security_awareness_course/04_BUILT_SO_FAR.md</code>, the two research notes beside it, and <code>planning_notes/phishing_and_social_engineering/awareness/HANDOVER.md</code>.</p>
 </header>
 
 <h2>1. What is built</h2>
 <div class="facts">
-  <div class="fact"><b>7</b><span>full episodes, each about 13 minutes (E3 about 17)</span></div>
+  <div class="fact"><b>7</b><span>full episodes, each about 15 minutes (E6 and E7 about 16)</span></div>
   <div class="fact"><b>7</b><span>defend-only variants, each about 8 minutes</span></div>
-  <div class="fact"><b>24</b><span>pre and post checks: 6 roles × 2 forms × AB/BA order</span></div>
-  <div class="fact"><b>1810</b><span>node tests passing at hand-over; all 38 shells validate</span></div>
+  <div class="fact"><b>24</b><span>pre and post checks: 6 roles × 2 forms × AB/BA order, about 9 minutes each</span></div>
+  <div class="fact"><b>4</b><span>training-room POV backgrounds made, wired and approved</span></div>
 </div>
 <p><strong>The frame.</strong> Every scenario takes place in one training room with a kiosk and a host. The kiosk runs the episode in stages:</p>
 <ol class="tight">
@@ -140,16 +140,19 @@ button.ghost{background:transparent;color:var(--accent)}
   <li>concept cards (EX-09).</li>
 </ul>
 <p>The student lab, <code>lab_social_engineering</code>, uses the same systems.</p>
-<p><strong>Status.</strong> The awareness product has been on hold since 23 October. Its stages, from the hand-over note:</p>
+<p><strong>Status.</strong> You resumed the product on 27 October. Its stages, from the hand-over note's new status block:</p>
 <div class="stages">Design              ██████████  closed (3 cycles)
-Check forms         ██████████  permuted, audited, all 6 roles
-Engine              ██████████  rounds 1 to 5 in; P6 to confirm
-Data / dialogue     █████████░  rounds 1 to 8 in; bridges not re-run since round 8
-Playtest            █████████░  P5: no blockers or majors
-Dialogue reviews    ██████░░░░  C1 to C3 done; C4 and C5 not run
-Training rooms      █████░░░░░  C1 fixed; C2 to C5 not run
-Host art            ░░░░░░░░░░  waits on PixelLab quota (3 Nov) and your approval
-Timing, POV, config ░░░░░░░░░░  not started</div>
+Check forms         ██████████  closed; about 9 minutes each
+Engine              ██████████  rounds 1 to 5 plus P6/P7 rounds; closing check
+Data / dialogue     ██████████  C1 to C5 closed
+Playtest            ██████████  P6 and P7 done; fixes in
+Fun changes         ██████████  aw1 to aw9 in; aw7: guidance + two seeded courses
+Training rooms      ██████████  C1 to C3 closed
+POV backgrounds     ██████████  four made, wired, approved
+Puzzle-chain pass   ██████████  light pass closed
+Host art            ░░░░░░░░░░  19 concepts approved; PixelLab after 3 Nov
+Timing              ██░░░░░░░░  agent estimates; human runs postponed
+Facilitator guide   ░░░░░░░░░░  one guide for the course, last</div>
 
 <h2>2. How the plan changed to fit the build</h2>
 <div class="scroll"><table>
@@ -213,10 +216,10 @@ document.getElementById("cov").innerHTML=COV.map(([id,n,c])=>`<div class="cell c
 
 const WPS=[
  {id:"WP-01",t:"Finish and ship E1 to E7",size:"M",tags:["Finishes the built product","Recommended first"],
-  pitch:"Take the built product off hold and get it to release. It is close: P5 found no blockers or majors.",
-  builds:"The hand-over resume plan, step by step: run the seven bridges after data round 8, the P6 playtest, fix rounds, dialogue cycles 4 and 5, training-room cycles 2 to 5, a light puzzle-chain pass, then human timing runs.",
-  newwork:"Polish only, apart from host art and the POV backgrounds.",
-  needs:"Your approval for host art (PixelLab quota resets 3 November) and for the Gemini calls for the four training-room backgrounds.",
+  pitch:"Get the resumed product to release. Nearly every stage is closed: P6 and P7 playtests, dialogue C5, rooms C3, POV backgrounds and the puzzle-chain pass.",
+  builds:"The hand-over status block: host characters after the PixelLab reset (3 November) and a short sprite playtest, then human timing runs, then the one facilitator guide.",
+  newwork:"Host art (19 concepts already approved, with Joanne Pell replacing the Brightwell Farah), then the guide.",
+  needs:"When you want the human timing runs.",
   why:"Every later package adds to this product. Shipping it first gives customers something real and gives us timing and feedback from real players."},
  {id:"WP-02",t:"Customer reporting route in Hacktivity",size:"S",tags:["Platform","Waits on you"],
   pitch:"One setting, per course and per organisation: \"how to report suspicious messages here\". It is shown in every debrief.",
@@ -302,11 +305,11 @@ const WPS=[
   newwork:"Items only.",
   needs:"A check-form parity audit after the change.",
   why:"It is high value for the effort, and it closes core_02 without a new episode."},
- {id:"WP-16",t:"Facilitator notes and spaced drills",size:"S",tags:["Delivery"],
-  pitch:"Facilitator notes for a 30 to 45 minute group session per episode, using the <code>facilitated</code> flag, plus a monthly drill schedule built from the defend-only shells.",
-  builds:"The defend-only shells and the runner flag.",
-  newwork:"Documents, plus one facilitated shell to prove the flag.",
-  needs:"Nothing.",
+ {id:"WP-16",t:"Spaced drills and session plans",size:"S",tags:["Delivery","Extends the facilitator guide"],
+  pitch:"You chose one facilitator guide for the whole course, written last. This package adds to it: a monthly drill schedule built from the defend-only shells, and sample session plans (a 30-minute defend-only session, a 45-minute full episode with discussion) that the guide can point to.",
+  builds:"The defend-only shells, the two seeded courses and the one facilitator guide.",
+  newwork:"Documents; a facilitated shell using the runner's flag only if a customer asks for it.",
+  needs:"The facilitator guide first.",
   why:"Many customers run awareness as team sessions. Spaced practice is the best-supported way to keep habits."},
  {id:"WP-17",t:"Kids game prototype: one defend-only world",size:"M",tags:["New product","Defend-only sibling"],
   pitch:"One \"Is it real?\" world for ages 7 to 11. The guide mascot runs a defend-only shell. Triage verdicts become Trust and Tell a grown-up, the tally is a shared \"squad protected\" count, and there is no child data and no attack half.",
@@ -337,8 +340,8 @@ const DECS=[
   opts:["Module designs: E8 Quayholt, E9 Tarrowby, E10 Quayholt, E11 new care/facilities firm, E12 Merrin & Sallow, E13 Brightwell (recommended: the detailed designs use these)","World file: E8 Quayholt, E9 Merrin & Sallow, E10 Tarrowby, E11 Cobbleford Care (new), E12 Brightwell, E13 Lintgate Communications (new)","Ask me per episode when each is designed"]},
  {id:"D-verify",t:"Verify in the check forms",q:"Four role check forms turn Verify on, but the brand-set notes say the checks measure Trust, Report and Delete only.",
   opts:["The scenarios are right: update the notes (recommended)","The notes are right: turn Verify off in the check forms","Look into it and come back to me"]},
- {id:"D-aw7",t:"E6 and E7 defend-only by default (aw7, on hold)",q:"This was put on hold. Do you want to decide now?",
-  opts:["Keep it on hold (recommended)","Yes, default E6 and E7 to defend-only","No, keep the full episodes as the default"]}
+ {id:"D-seed",t:"Seeding new episodes into courses",q:"For E6 and E7 you chose both versions plus organiser guidance, and two seeded courses (defend-only, and both versions). Should every new episode (E8 onward) follow the same pattern?",
+  opts:["Yes: every new episode ships both versions and joins both seeded courses (recommended)","Only the full version joins the courses; defend-only stays a drill","Decide per episode"]}
 ];
 document.getElementById("decs").innerHTML=DECS.map(d=>`
 <section class="wp" id="card-${d.id}">

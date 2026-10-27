@@ -1,5 +1,7 @@
 # The built awareness episodes against the 26-module course plan
 
+> **Snapshot (first merge, 2026-10-27).** Later the same day main resumed the product and closed most stages; timings changed to about 15 minutes per episode and about 9 per check. See `../04_BUILT_SO_FAR.md` §1 for the current status.
+
 Read-only research, 2026-10-27. Sources: the plan in `planning_notes/security_awareness_course/`, the build docs in `planning_notes/phishing_and_social_engineering/`, and the 38 shells in `scenarios/awareness_*` (read directly; where they differ from a design doc, the scenario file wins and the difference is noted).
 
 ## 1. What is built

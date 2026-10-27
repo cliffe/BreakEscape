@@ -62,7 +62,7 @@ Each has a working answer in the plan; confirm or change.
 | Item | Working answer | Where |
 |---|---|---|
 | Induction starter pathway | core_00, then the general check pair with E5, then E1 or E6; about 40 minutes | `00_COURSE_OVERVIEW.md` |
-| Facilitated session length | 30 to 45 minutes (was 45 to 60), to fit the shorter episodes; no shell uses the `facilitated` flag yet | `01_LEARNING_DESIGN.md` |
+| Facilitated session length | Partly answered: the user chose one facilitator guide for the whole course, written last (FUN_DECISIONS q_facil). Still open: the session length the guide recommends; working answer 30 to 45 minutes | `01_LEARNING_DESIGN.md` |
 | core_00 and core_17 targets | core_00 about 5 minutes, no defend-only variant; core_17 about 20 minutes (mixed defend set plus the post-check) | `00_COURSE_OVERVIEW.md` |
 | Defend-only for every role episode | Recommendation: yes, every episode ships a defend-only variant, as E1 to E7 do (the overview still says "none" for role_01 and role_07) | `00_COURSE_OVERVIEW.md` |
 | Secure / Developing / Not yet | Recommendation: drop them as reported bands; keep as descriptive columns only, since the build reports per-item results, not bands | `MODULE_TEMPLATE.md`, assessment files |
@@ -94,6 +94,16 @@ These are the open questions raised inside individual module READMEs that a stak
 | role_06 | One-time codes: the rule of thumb tells everyone not to read back a code, yet many contact centres verify callers that way. Which rule wins? | The course default never asks a customer to read back a code (as every brand-set company does). Organisations that verify by read-back can switch it on; the episode then adds the safeguards and explains why their procedure differs from the rule of thumb. |
 
 ## Decided
+
+### Decided on main since the first reconciliation (2026-10-27, `../phishing_and_social_engineering/FUN_DECISIONS.md`)
+
+- **aw7 (E6 and E7 defend-only by default):** both versions stay listed, with organiser guidance; two courses are seeded in Hacktivity, one with the defend-only episodes and one with both versions.
+- **Episode length:** say "about 15 minutes" (E6 and E7 "about 16"); recommend defend-only for sessions under 30 minutes; human timing runs later.
+- **E3 MFA fatigue:** one learner decision (how many pushes, and when); the debrief explains why fatigue works.
+- **Facilitation:** one facilitator guide for the whole course, in the lab-sheet system, written last.
+- **Hosts and art:** all 19 host concepts approved; the Brightwell finance host is renamed Joanne Pell (m10 has its own Farah Qureshi); POV backgrounds approved and wired; PixelLab characters after the 3 November reset.
+- **E7 mirror pair:** the existing voicemail mirror stays; closed.
+- Still open on main: the reporting-route options form (route_config).
 
 ### D1. Its own world, or part of the Break Escape campaign? (closed 2026-10-27)
 

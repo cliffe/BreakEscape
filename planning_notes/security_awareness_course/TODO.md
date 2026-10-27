@@ -4,7 +4,7 @@
 
 **The plan has been reconciled with the build (2026-10-27).** Main now has the awareness product, "Incident Simulations: Critical Cases": seven episodes, seven defend-only variants and 24 pre and post checks, in a training-room frame at four brand-set companies. Where the plan and the build disagreed, the build won (`04_BUILT_SO_FAR.md` R1 to R13). The earlier review and reconciliation passes (15 October 2026) are done and are not repeated here.
 
-**The built product comes first.** Its own resume plan (P6 playtest, fix rounds, dialogue cycles 4 and 5, training-room cycles 2 to 5, POV backgrounds, host art, timing runs) is in `../phishing_and_social_engineering/awareness/HANDOVER.md` §3. That is not this plan's work, and nothing below starts while the product is on hold unless the user says so.
+**The built product comes first.** It resumed on 2026-10-27 and most stages are closed; what remains is host character art after 3 November, a sprite playtest, human timing runs and one facilitator guide, written last (status block at the top of `../phishing_and_social_engineering/awareness/HANDOVER.md`). That is not this plan's work; new episode designs can proceed alongside it.
 
 ## 1. New episodes E8 to E13: from concept to episode design
 

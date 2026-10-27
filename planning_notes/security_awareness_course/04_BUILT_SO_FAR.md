@@ -1,6 +1,6 @@
 # What is built, and how the plan now builds on it
 
-**Written 2026-10-27, after merging main.** This plan was drafted before main gained a working social-engineering build and an awareness product. This file records what exists, how the plan maps onto it, and how each conflict was settled. **Where the plan and the build disagree, the build wins**, and the plan is rewritten to extend it rather than replace it.
+**Written 2026-10-27, after merging main; updated the same day after a second merge (main had resumed the product and closed most stages).** This plan was drafted before main gained a working social-engineering build and an awareness product. This file records what exists, how the plan maps onto it, and how each conflict was settled. **Where the plan and the build disagree, the build wins**, and the plan is rewritten to extend it rather than replace it.
 
 Full evidence, with paths:
 
@@ -15,7 +15,7 @@ The build's own documents live in `../phishing_and_social_engineering/`. Start w
 
 **The frame.** Every scenario is one training room with a kiosk and a host NPC. The kiosk opens the episode runner, which steps through the stages with a step strip. There are no doors, no combat and no VMs. The player's chosen avatar always wins (aw9).
 
-**Seven full episodes**, each about 13 minutes:
+**Seven full episodes**, each about 15 minutes (E6 and E7 about 16):
 
 | Episode | Topic | Company | Role |
 |---|---|---|---|
@@ -27,7 +27,7 @@ The build's own documents live in `../phishing_and_social_engineering/`. Start w
 | E6 | Texts and QR codes | Tarrowby Logistics | mobile |
 | E7 | Cloned CEO voice | Brightwell Foods | everyone |
 
-E3 runs to about 17 minutes, which the user has accepted.
+E3's target is about 15 minutes. Its MFA-fatigue beat is now a learner decision: the learner picks how many pushes to send and when, and the debrief explains why fatigue works. For sessions under 30 minutes, organisers are told to use the defend-only versions.
 
 Every episode follows the same shape:
 
@@ -39,7 +39,7 @@ Every episode follows the same shape:
 
 **Defend-only variants.** There are seven, each about 8 minutes: brief, defend, debrief.
 
-**Pre and post checks.** There are 24 of them: six roles (finance, hr, helpdesk, executive, general, mobile), each with two 10-item forms played in AB and BA order. Each takes 4 to 5 minutes and has no pass mark. The post-check shows the change from the newest pre-check. Measurement records hold ids, verdicts and times, never free text and never the learner's identity. A discrimination figure goes to organisers only (aw3), and the product makes no effectiveness claims.
+**Pre and post checks.** There are 24 of them: six roles (finance, hr, helpdesk, executive, general, mobile), each with two 10-item forms played in AB and BA order. Each takes about 9 minutes (finance about 8 to 10) and has no pass mark. Under the awareness scoring profile, two zero skills cap the grade at "Getting there". The post-check shows the change from the newest pre-check. Measurement records hold ids, verdicts and times, never free text and never the learner's identity. A discrimination figure goes to organisers only (aw3), and the product makes no effectiveness claims.
 
 **The student lab** (`lab_social_engineering`) is the browser-only technical product. It uses the same systems.
 
@@ -60,7 +60,7 @@ Every episode follows the same shape:
 - the look-alike NPC guard;
 - the social validator (`--strict-social`) and its CI job.
 
-**Status.** Development of the awareness product has been on hold since 2026-10-23. The resume plan is in `../phishing_and_social_engineering/awareness/HANDOVER.md` §3. Design, check forms and engine rounds 1 to 5 are closed, and playtest P5 found no blockers or majors. Not yet started: P6, dialogue cycles 4 and 5, training-room cycles 2 to 5, POV backgrounds, host art and human timing runs.
+**Status (2026-10-27).** The user resumed the product on 2026-10-27, and most stages are now closed: design, check forms, engine (rounds 1 to 5 plus the P6 and P7 rounds), data and dialogue (C1 to C5), playtests P6 and P7, training rooms C1 to C3, the four POV conversation backgrounds (made, wired, approved) and the light puzzle-chain pass. A closing check is running. What remains, in order: host character art after the PixelLab reset on 3 November (all 19 concepts approved; the Brightwell finance host is now Joanne Pell), a short playtest of the new sprites, human timing runs when the user asks, and one facilitator guide for the whole course, written last. aw7 is settled: E6 and E7 keep both versions with organiser guidance, and two courses are seeded in Hacktivity (defend-only episodes; both versions). The current status is the "Status 2026-10-27" block in `../phishing_and_social_engineering/awareness/HANDOVER.md`.
 
 ## 2. How each conflict is settled (build wins)
 
@@ -77,7 +77,7 @@ Every episode follows the same shape:
 | R9 | Explainers | Mentor NPC, produced and engine-recorded video, intranet terminal | **Host NPC, concept cards, feedback strings and text to speech.** No video. EX-02, EX-03 and BE-09 drop to P3 or "if a module needs it" | explainers, engine |
 | R10 | AI | MG-16 simulated assistant | **No language model at runtime** (P). Any AI assistant in an episode is authored data or ink | core_15, minigames |
 | R11 | Avatars | BE-25 "no hooded hackers" | **The chosen avatar always wins, and the portrait follows** (aw9). The default hooded fallback stays | engine |
-| R12 | Timings | 15 to 20 minute modules, 3 to 5 minute drills | **About 13 minutes per episode** (E3 about 17), 8 minutes defend-only and 4 to 5 minutes per check. A pre-check, one episode and a post-check come to 21 to 26 minutes. The defend-only shell is the micro-drill | overview |
+| R12 | Timings | 15 to 20 minute modules, 3 to 5 minute drills | **About 15 minutes per episode** (E6 and E7 about 16), about 8 minutes defend-only and about 9 per check. A pre-check, one episode and a post-check come to about 33 minutes; under 30 minutes, use defend-only. The defend-only shell is the micro-drill | overview |
 | R13 | Domains and brands | D2 open | **`.example` domains, invented brands with learnable look-alike shapes only, and no real brands** (S, BRAND_SET). D2 closed | decisions |
 
 ## 3. Coverage today
@@ -107,7 +107,7 @@ Every episode follows the same shape:
 
 ## 4. What comes next (replaces the old roadmap)
 
-1. **Finish the built product first.** Follow the `HANDOVER.md` resume plan: P6 playtest, fix rounds, dialogue cycles 4 and 5, rooms and POV, host art and timing. This is not this plan's work, but nothing below should start while it is on hold unless the user says so.
+1. **Finish the built product first.** It is nearly done: host character art after 3 November and a sprite playtest, then human timing runs and the one facilitator guide. This is not this plan's work; new episodes can be designed alongside, but their build should not pull people off the release.
 2. **Close the engine gaps that every new episode needs.** These are the open catalogue items in `features/README.md` with build status "Not built" and priority MVP:
    - BE-03 text route;
    - BE-04 and BE-26 accessibility beyond the social overlays;
@@ -135,6 +135,6 @@ The build does not replace these, and they stay as plan:
 - **Every module's `concepts.md`** as the source of truth for new episodes and for check items.
 - **The compliance mapping.** It is re-pointed at the built episodes and checks; see `02_COMPLIANCE_MAPPING.md`.
 - **The accessibility plan,** including the text route and WCAG 2.2 AA. These are gaps in the build.
-- **Facilitator notes.** The runner already has a `facilitated` flag that no shell uses yet.
+- **Facilitation.** The user chose one facilitator guide for the whole course, written last (FUN_DECISIONS q_facil). The runner's `facilitated` flag is still unused; a facilitated shell or per-episode notes are at most an extension.
 - **Spaced drills,** delivered as defend-only shells.
 - **The organisation profile** beyond the reporting route.

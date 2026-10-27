@@ -1,5 +1,7 @@
 # Built inventory: awareness course catalogue against main
 
+> **Snapshot (first merge, 2026-10-27).** Later the same day main resumed the product and closed most stages; timings changed to about 15 minutes per episode and about 9 per check. See `../04_BUILT_SO_FAR.md` §1 for the current status.
+
 Read-only check, 2026-10-27. Plan: `planning_notes/security_awareness_course/features/` (README ids BE, MG, EX, HA). Evidence: code under `public/break_escape/js/`, `scripts/scenario-schema.json`, `scripts/validate_social/`, `test/js/social-*.test.mjs`, the scenarios under `scenarios/awareness_*` and `scenarios/lab_social_engineering`, and the SE docs in `planning_notes/phishing_and_social_engineering/` (README key decisions A to AA, designs 00 to 12, `MECHANICS_AUDIT.md`, `FUN_DECISIONS.md`, design 11 section 10 "Built note"). Code was trusted over docs. The `SE_BUILD_LOG.md` Resume section is stale (dated 2026-10-21); `MECHANICS_AUDIT.md` "Status at end of 2026-10-22" and design 11 section 10 are the later status.
 
 Paths below are relative to `public/break_escape/js/` unless they start with `scripts/`, `scenarios/`, `app/` or `planning_notes/`.
