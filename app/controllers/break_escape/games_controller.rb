@@ -171,7 +171,7 @@ module BreakEscape
         redirect_to configuration_path(game_id: @game.id)
       else
         # All good - start game
-        redirect_to game_path(@game)
+        redirect_to game_page_path_for(@game)
       end
     end
 
@@ -253,7 +253,7 @@ module BreakEscape
       new_game.game_slot = slot if inherit_slot && new_game.respond_to?(:game_slot=)
       new_game.save!
 
-      render json: { success: true, redirect_url: game_path(new_game, skip_resume: 1) }
+      render json: { success: true, redirect_url: game_page_path_for(new_game, skip_resume: 1) }
     rescue Pundit::NotAuthorizedError
       raise
     rescue => e
@@ -1401,14 +1401,16 @@ module BreakEscape
       @game = Game.find(params[:id])
     end
 
-    # Only when the request names an event (the host's alias route): the game's mission listing must be in it.
+    # Only when the route names an event (the host's alias route): the game's mission listing must be in it.
     def require_game_in_host_event
-      return if params[:event_id].blank?
+      # the route's own segment, never a query string (/break_escape/games/37?event_id=1 is the old address)
+      event_id = request.path_parameters[:event_id]
+      return if event_id.blank?
 
       slot = @game.try(:game_slot)
-      return if slot && slot.event_id.to_s == params[:event_id].to_s
+      return if slot && slot.event_id.to_s == event_id.to_s
 
-      raise ActiveRecord::RecordNotFound, "Game #{@game.id} is not in event #{params[:event_id]}"
+      raise ActiveRecord::RecordNotFound, "Game #{@game.id} is not in event #{event_id}"
     end
 
     # What sync_state reads or writes. scenario_data is left out (it is fetched

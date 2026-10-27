@@ -50,11 +50,12 @@
         return 'other';
     }
 
+    // standalone and minimal-ui only: a desktop browser tab in F11 fullscreen is still a browser tab
     function shownAsApp() {
         try {
             if (win.navigator.standalone === true) return true;
             return !!(win.matchMedia &&
-                win.matchMedia('(display-mode: fullscreen), (display-mode: standalone), (display-mode: minimal-ui)').matches);
+                win.matchMedia('(display-mode: standalone), (display-mode: minimal-ui)').matches);
         } catch (e) { return false; }
     }
 
@@ -101,6 +102,7 @@
         if (mode === 'prompt' && deferredPrompt) {
             var saved = deferredPrompt;
             deferredPrompt = null; // a prompt can be used once
+            win.__hacktivityInstallPrompt = null;
             try {
                 saved.prompt();
                 Promise.resolve(saved.userChoice).then(function (choice) {
@@ -120,6 +122,7 @@
     function onInstalled() {
         installed = true;
         deferredPrompt = null;
+        win.__hacktivityInstallPrompt = null;
         try {
             if (typeof win.gtag === 'function') win.gtag('event', 'pwa_installed', { event_category: 'engagement' });
         } catch (e) { /* analytics must never break the page */ }
@@ -135,6 +138,8 @@
     win.addEventListener('appinstalled', onInstalled);
 
     function start() {
+        // an offer that arrived before this script loaded (client-platform.js keeps it)
+        if (!deferredPrompt && win.__hacktivityInstallPrompt) deferredPrompt = win.__hacktivityInstallPrompt;
         var btn = doc.querySelector('[data-pwa-install]');
         if (btn) btn.addEventListener('click', onClick);
         var p = win.HacktivityPlatform;

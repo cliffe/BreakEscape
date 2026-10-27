@@ -29,8 +29,8 @@
  *      with an android-app referrer from becoming the app layout.
  *   5. The installed web app (PWA, planning_notes/steam_release/PWA.md section 8), checked last, so it can
  *      never take over a desktop or Play window: appWindow 'pwa-app', store 'web'. Chosen when the page is
- *      shown as an installed app (display-mode fullscreen, standalone or minimal-ui, or the older
- *      navigator.standalone === true on iOS) and none of the checks above matched. It is never chosen
+ *      shown as an installed app (display-mode standalone or minimal-ui, plus fullscreen on Android only, so a
+ *      desktop browser in F11 is not the app; or the older navigator.standalone === true on iOS) and none of the checks above matched. It is never chosen
  *        - when the URL carried the Play marker (?source=play): that is the Play app's start URL, and a page
  *          whose Play checks failed stays browser/web, as before;
  *        - when document.referrer is an android-app:// address (a Play app page, listed or not);
@@ -224,6 +224,17 @@
         } catch (e) { /* storage blocked: the page works for this load only */ }
     }
 
+    // Is the page in the installed web app's own window? Not a browser tab in F11 fullscreen (display-mode
+    // fullscreen), so off Android only standalone and minimal-ui count; an Android web app may be fullscreen
+    // (display_override) and nobody presses F11 there.
+    function shownAsWebApp() {
+        try {
+            var q = onAndroid() ? '(display-mode: fullscreen), (display-mode: standalone), (display-mode: minimal-ui)'
+                                : '(display-mode: standalone), (display-mode: minimal-ui)';
+            return !!(win.matchMedia && win.matchMedia(q).matches);
+        } catch (e) { return false; }
+    }
+
     // iOS before the display-mode query was reliable: navigator.standalone === true
     function iosStandalone() {
         try { return win.navigator.standalone === true; } catch (e) { return false; }
@@ -248,7 +259,7 @@
     function choosePwa(playMarker) {
         if (playMarker) return; // the Play app's start URL: a failed Play check stays browser/web
         if (referrerPackage()) return; // an android-app:// referrer is a Play app page, listed or not
-        if (!shownAsApp() && !iosStandalone()) return;
+        if (!shownAsWebApp() && !iosStandalone()) return;
         if (onAndroid() && !readPwaStored().marker) return; // Android installs go to the Play app
         state.appWindow = 'pwa-app';
         state.store = 'web';
@@ -622,6 +633,17 @@
             return null;
         }
     }
+
+    // The install prompt can fire before the deferred pwa-install.js has loaded. A page that wants it
+    // (<meta name="hacktivity-pwa-install" content="1">, read when the event fires) has it kept here, and its
+    // mini-infobar held back; pwa-install.js picks it up from window.__hacktivityInstallPrompt.
+    win.addEventListener('beforeinstallprompt', function (ev) {
+        try {
+            if (meta('hacktivity-pwa-install') !== '1') return;
+            ev.preventDefault();
+            win.__hacktivityInstallPrompt = ev;
+        } catch (e) { /* ignore */ }
+    });
 
     var pending = detect();
     publish();

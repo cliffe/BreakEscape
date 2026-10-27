@@ -25,7 +25,8 @@ module BreakEscape
 
             # Redirect to game if came from validation flow
             if params[:game_id].present?
-              redirect_to game_path(params[:game_id])
+              # the host's own address for the player's game (@game_for_scenario is only ever their own)
+              redirect_to(@game_for_scenario ? game_page_path_for(@game_for_scenario) : game_path(params[:game_id]))
             elsif @shell
               redirect_to @shell[:back_url]
             else

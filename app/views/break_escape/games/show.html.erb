@@ -9,6 +9,11 @@
 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <%# The host's web app manifest, only when the page is served at the host's scoped address (the route names
+      an event) and the host says the game is installable (shell_links manifest_url). Not on the old address. %>
+  <% if request.path_parameters[:event_id].present? && (@shell_links || {})[:manifest_url].present? %>
+  <link rel="manifest" href="<%= @shell_links[:manifest_url] %>">
+  <% end %>
   <%# Tab icon supplied by a host game shell (shell_links icon_url); none otherwise %>
   <% if (@shell_links || {})[:icon_url].present? %>
   <link rel="icon" type="image/png" href="<%= @shell_links[:icon_url] %>">
@@ -322,7 +327,7 @@
       <p style="color:#888; font-size:12px; font-family:'Press Start 2P', monospace; margin:0 0 14px;">OTHER SESSIONS</p>
       <div id="session-list" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; min-height:44px;">
         <% other_sessions.each do |session_id, i| %>
-          <a href="/break_escape/games/<%= session_id %>?skip_resume=1" class="session-overlay-btn session-list-item" style="padding:10px 24px; font-size:16px; font-family:'GNF', monospace; background:#2a2a2a; color:#aaa; border:2px solid #555; text-decoration:none; display:none;">Load session #<%= i + 1 %></a>
+          <a href="<%= game_page_path_for(session_id, skip_resume: 1) %>" class="session-overlay-btn session-list-item" style="padding:10px 24px; font-size:16px; font-family:'GNF', monospace; background:#2a2a2a; color:#aaa; border:2px solid #555; text-decoration:none; display:none;">Load session #<%= i + 1 %></a>
         <% end %>
       </div>
       <% if other_sessions.length > 6 %>
