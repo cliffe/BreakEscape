@@ -25,6 +25,25 @@
 }
 .auth-intro { margin: 0 0 12px; font-size: 15px; line-height: 1.4; color: var(--auth-dim); }
 
+/* decision mode: when and how many (E3-11) */
+.auth-choice { display: flex; flex-direction: column; gap: 14px; margin: 0 0 4px; }
+.auth-choice-group { border: 1px solid var(--auth-line); border-radius: 10px; margin: 0; padding: 10px 12px 12px; }
+.auth-choice-legend { padding: 0 6px; font-size: 14px; font-weight: 700; color: var(--auth-ink); }
+.auth-choice-opt { display: flex; align-items: flex-start; gap: 8px; padding: 5px 2px; font-size: 14px; line-height: 1.35; cursor: pointer; }
+.auth-choice-radio { margin: 2px 0 0; flex: none; }
+.auth-choice-opt-label { color: var(--auth-ink); }
+.auth-confirm { align-self: flex-start; padding: 8px 18px; font: inherit; font-weight: 700; }
+.auth-confirm:disabled { opacity: 0.5; cursor: default; }
+
+/* the collapsed tail of a large burst */
+.auth-feed-more { margin: 2px 0 0; text-align: center; font-size: 13px; font-style: italic; color: #c3ccd6; }
+
+/* why it worked, and the defender's control */
+.auth-outcome { margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--auth-surface); border: 1px solid var(--auth-line); }
+.auth-outcome-line { margin: 0 0 8px; font-size: 14px; line-height: 1.45; color: var(--auth-ink); }
+/* the last line is always the defender's control (defenderNote) */
+.auth-outcome-line:last-child { margin-bottom: 0; font-weight: 600; color: var(--auth-ok); }
+
 /* phone shell */
 .auth-phone {
     border: 6px solid #1c2440; border-radius: 22px; background: #0f1530;

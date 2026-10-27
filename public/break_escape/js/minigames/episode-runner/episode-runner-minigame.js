@@ -80,7 +80,7 @@ const STAGE_COPY = Object.freeze({
     osint: { heading: 'Look around', text: 'Open the browser and find out what you can about the people involved. Close it when you have what you need.', button: 'Open the browser' },
     build: { heading: 'Build', text: 'Build the page your message will link to. Close the builder when the page is ready.', button: 'Open the page builder' },
     write: { heading: 'Write', text: 'Write one message using what you found. The meter gives you hints before you send. Your first Send is final.', button: 'Open the mail client' },
-    mfa: { heading: 'Sign-in prompts', text: 'You have the password. Watch what happens on the target\u2019s phone when the sign-in prompts keep coming. Close it when you have seen enough.', button: 'Open the phone' },
+    mfa: { heading: 'Sign-in prompts', text: 'You have the password, but the account still wants a tap on the target\u2019s phone. Choose when to fire the sign-in prompts and how many, then see what happens. Close it when you have seen enough.', button: 'Open the phone' },
     defend: { heading: 'Defend', text: 'Now you are on the receiving end. Go through the inbox and decide what to do with each message.', button: 'Open the inbox' },
     check: { heading: 'Check', text: 'Go through these messages and decide what to do with each one. Your answers are recorded.', button: 'Start' }
 });

@@ -191,10 +191,15 @@ export function childLaunch(episode, stage) {
     }
     if (stage === 'mfa') {
         const mfa = isObj(episode?.mfa) ? episode.mfa : {};
-        return { kind: 'mfa', sceneType: 'authenticator',
-                 params: { pushes: Array.isArray(mfa.pushes) ? mfa.pushes.filter(isObj).map((p) => ({ ...p })) : [],
-                           approvesAt: mfa.approvesAt ?? null,
-                           mode: isStr(mfa.mode) ? mfa.mode : 'attacker' } };
+        const params = { pushes: Array.isArray(mfa.pushes) ? mfa.pushes.filter(isObj).map((p) => ({ ...p })) : [],
+                         approvesAt: mfa.approvesAt ?? null,
+                         mode: isStr(mfa.mode) ? mfa.mode : 'attacker' };
+        // Decision mode (E3-11): the learner picks when and how many. Forwarded only when authored
+        // so the scripted-demo shape stays { pushes, approvesAt, mode }.
+        if (isObj(mfa.choice)) params.choice = mfa.choice;
+        if (isObj(mfa.pushTemplate)) params.pushTemplate = mfa.pushTemplate;
+        if (isStr(mfa.defenderNote)) params.defenderNote = mfa.defenderNote;
+        return { kind: 'mfa', sceneType: 'authenticator', params };
     }
     if (stage === 'write' && writeKind(episode) === 'call') {
         return { kind: 'call', sceneType: 'pretext-prep', params: { callId: attack.callId } };

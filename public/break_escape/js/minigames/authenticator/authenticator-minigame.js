@@ -1,4 +1,4 @@
-// Mock authenticator / push stream (SE design 11 N11, packet P7-M).
+// Mock authenticator / push stream (SE design 11 N11, packet P7-M; E3 decision E3-11).
 //
 // The scene 'authenticator'. It is the E3 attack beat's demonstration: a phone-shaped overlay
 // that plays a scripted stream of unrequested sign-in prompts on a timeline (the odd-hour push
@@ -6,11 +6,24 @@
 // attacker, watches the fatigue attack land and can spam more pushes. Nothing here is scored; the
 // defend beat handles MFA pushes as `push` triage items instead.
 //
-// Params (PHASE7_PACKETS §P7-M):
-//   { pushes: [{ at, app, account, location, device }], approvesAt, mode: "attacker" }
-// Result: { approvedAt, sent, mode }
+// Two modes:
+//   • scripted (no `choice`): the authored `pushes`/`approvesAt` play as a fixed timeline. This
+//     is the original P7-M behaviour and is left byte-for-byte unchanged.
+//   • decision (`choice` present): the learner first picks WHEN to fire the prompts and HOW MANY,
+//     then the burst plays and the target approves. Every combination lands — there is no dead
+//     end — but the outcome panel explains which conditions made this attempt work (a tired or
+//     off-the-clock target, the pretext call that primed them, the urge to make the buzzing stop).
+//     The defender's control (number matching, reporting an unexpected prompt, a rate limit) is
+//     named in the outcome and again on the flip page's conceptPanel.
+//
+// Params (PHASE7_PACKETS §P7-M; E3 decision):
+//   scripted: { pushes: [{ at, app, account, location, device }], approvesAt, mode: "attacker" }
+//   decision: { mode, choice: { intro?, confirm?, timing: { legend, options:[{id,label,at,outcome}] },
+//                                count: { legend, options:[{id,label,n,note}] } },
+//               pushTemplate: { app, account, location, device }, defenderNote }
+// Result: { approvedAt, sent, mode } (decision mode also carries { timing, count }).
 //   approvedAt — the approvesAt value once the approval has played, else null;
-//   sent       — the number of prompts delivered (scripted pushes plus any the learner sent).
+//   sent       — the number of prompt cards delivered (plus any the learner sent by hand).
 //
 // Overlay rules (00 §6): requiresKeyboardInput, its own Close, Esc through SocialOverlayScene.
 // Close and Esc are a normal exit, so they never emit minigame_failed.
@@ -25,9 +38,14 @@ import { buildTimeline } from './authenticator-model.js';
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 const DEFAULT_STEP_MS = 1600;
+// A burst of many prompts shows at most this many cards; the rest collapse into one summary line,
+// so a "flood" reads as a flood without drawing dozens of nodes or dragging the stage past a minute.
+const CHOICE_MAX_CARDS = 4;
 
 const INTRO = 'You are watching the target’s phone. Each prompt you send arrives uninvited. Keep them coming and see what happens.';
+const CHOICE_INTRO = 'You have the password, but the account still wants a tap on the target’s phone. You control the prompts. Decide when to fire them and how many.';
 const APPROVED_LINE = 'The target tapped Approve. The attacker is now signed in — this is MFA fatigue.';
+const CONFIRM_LABEL = 'Start sending prompts';
 const SEND_LABEL = 'Send another push';
 
 function el(tag, className, text) {
@@ -49,12 +67,20 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
             stepMs: Number.isFinite(deps.stepMs) ? deps.stepMs : DEFAULT_STEP_MS
         };
         this.mode = isStr(this.params.mode) ? this.params.mode : 'attacker';
-        this.timeline = buildTimeline(this.params);
+        this.choice = isObj(this.params.choice) ? this.params.choice : null;
+        this.pushTemplate = isObj(this.params.pushTemplate) ? this.params.pushTemplate : {};
+        this.defenderNote = isStr(this.params.defenderNote) ? this.params.defenderNote : '';
+        this.timeline = buildTimeline(this.params);  // empty in decision mode until a choice is made
         this.cursor = 0;        // next event to play
-        this.sent = 0;          // prompts delivered so far
+        this.sent = 0;          // prompt cards delivered so far
         this.approvedAt = null; // set when the approve event plays
         this.played = [];       // ids played, in order (test bridge)
         this._timer = null;
+        // decision mode state
+        this.selection = { timing: null, count: null };
+        this.decided = false;   // true once the learner confirms when/how-many
+        this.chosenCount = 0;   // the authored prompt count behind the chosen bucket
+        this.outcomeLines = []; // why-it-worked + defender control, shown after the approval
     }
 
     // ── lifecycle ──────────────────────────────────────────────────────────────
@@ -73,10 +99,16 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         this.mountCloseControl(bar, 'Close');
         root.appendChild(bar);
 
-        this.intro = el('p', 'auth-intro', INTRO);
+        this.intro = el('p', 'auth-intro', this.choice ? (isStr(this.choice.intro) ? this.choice.intro : CHOICE_INTRO) : INTRO);
         root.appendChild(this.intro);
 
+        // In decision mode the learner chooses before any prompt is drawn; the phone and the
+        // Send control stay hidden until the choice is confirmed.
+        if (this.choice) root.appendChild(this._buildChoicePanel());
+
         const phone = el('div', 'auth-phone');
+        if (this.choice) phone.hidden = true;
+        this.phoneEl = phone;
         const top = el('div', 'auth-phone-top');
         top.appendChild(el('span', 'auth-phone-speaker'));
         phone.appendChild(top);
@@ -94,6 +126,8 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         root.appendChild(this.banner);
 
         const controls = el('div', 'auth-controls');
+        if (this.choice) controls.hidden = true;
+        this.controlsEl = controls;
         this.sendButton = el('button', 'auth-send minigame-button', SEND_LABEL);
         this.sendButton.type = 'button';
         this.addEventListener(this.sendButton, 'click', (e) => {
@@ -109,6 +143,11 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
 
     start() {
         super.start();
+        // Decision mode waits on the learner's choice before any prompt plays.
+        if (this.choice && !this.decided) {
+            try { this.confirmButton?.focus?.(); } catch (e) { /* focus is a nicety */ }
+            return;
+        }
         try { this.sendButton?.focus?.(); } catch (e) { /* focus is a nicety */ }
         this._scheduleNext();
     }
@@ -147,6 +186,7 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         if (!event) return null;
         this.cursor += 1;
         if (event.type === 'approve') this._playApprove(event);
+        else if (event.type === 'summary') this._appendSummary(event.more);
         else this._playPush(event);
         this.played.push(event.id);
         this._updateControls();
@@ -174,6 +214,119 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         this.banner.textContent = APPROVED_LINE;
         this.banner.hidden = false;
         this.root?.classList.add('auth-approved');
+        this._renderOutcome();
+    }
+
+    /** The collapsed tail of a large burst ("…and N more"). */
+    _appendSummary(more) {
+        const n = Number(more) || 0;
+        if (n <= 0) return;
+        const note = el('p', 'auth-feed-more', `…and ${n} more prompt${n === 1 ? '' : 's'} in the same burst.`);
+        this.feed.appendChild(note);
+    }
+
+    /** Decision mode: why this attempt landed, and the defender's control. Shown after approval. */
+    _renderOutcome() {
+        if (!this.choice || !this.outcomeLines.length || this.outcomeEl) return;
+        const panel = el('div', 'auth-outcome');
+        panel.setAttribute('role', 'note');
+        panel.setAttribute('aria-live', 'polite');
+        for (const line of this.outcomeLines) panel.appendChild(el('p', 'auth-outcome-line', line));
+        this.root?.appendChild(panel);
+        this.outcomeEl = panel;
+    }
+
+    // ── decision mode: choosing when and how many ─────────────────────────────────
+
+    _option(group, id) {
+        const opts = Array.isArray(this.choice?.[group]?.options) ? this.choice[group].options : [];
+        return opts.find((o) => isObj(o) && o.id === id) || null;
+    }
+
+    _buildChoicePanel() {
+        const panel = el('div', 'auth-choice');
+        panel.setAttribute('role', 'group');
+        panel.setAttribute('aria-label', 'Choose when and how many');
+
+        const group = (key, cfg) => {
+            if (!isObj(cfg) || !Array.isArray(cfg.options)) return null;
+            const fs = el('fieldset', 'auth-choice-group');
+            fs.appendChild(el('legend', 'auth-choice-legend', isStr(cfg.legend) ? cfg.legend : ''));
+            for (const o of cfg.options) {
+                if (!isObj(o) || !isStr(o.id)) continue;
+                const lab = el('label', 'auth-choice-opt');
+                const input = el('input', 'auth-choice-radio');
+                input.type = 'radio';
+                input.name = `auth-${key}`;
+                input.value = o.id;
+                this.addEventListener(input, 'change', () => {
+                    this.selection[key] = o.id;
+                    this._updateConfirm();
+                });
+                lab.appendChild(input);
+                lab.appendChild(el('span', 'auth-choice-opt-label', isStr(o.label) ? o.label : o.id));
+                fs.appendChild(lab);
+            }
+            return fs;
+        };
+
+        const timing = group('timing', this.choice.timing);
+        const count = group('count', this.choice.count);
+        if (timing) panel.appendChild(timing);
+        if (count) panel.appendChild(count);
+
+        this.confirmButton = el('button', 'auth-confirm minigame-button',
+            isStr(this.choice.confirm) ? this.choice.confirm : CONFIRM_LABEL);
+        this.confirmButton.type = 'button';
+        this.confirmButton.disabled = true;
+        this.addEventListener(this.confirmButton, 'click', (e) => {
+            e.preventDefault?.();
+            this._confirmChoice();
+        });
+        panel.appendChild(this.confirmButton);
+
+        this.choicePanel = panel;
+        return panel;
+    }
+
+    _updateConfirm() {
+        if (this.confirmButton) this.confirmButton.disabled = !(this.selection.timing && this.selection.count);
+    }
+
+    /** Lock in the choice: build the burst, reveal the phone and start playback. */
+    _confirmChoice() {
+        if (this.decided) return;
+        const timing = this._option('timing', this.selection.timing);
+        const count = this._option('count', this.selection.count);
+        if (!timing || !count) return;
+
+        const n = Number.isFinite(count.n) && count.n > 0 ? Math.floor(count.n) : 1;
+        this.chosenCount = n;
+        const shown = Math.min(n, CHOICE_MAX_CARDS);
+        const at = timing.at;
+        const card = (i) => ({
+            type: 'push', id: `c_${i + 1}`, at, display: isStr(at) ? at : '',
+            app: isStr(this.pushTemplate.app) ? this.pushTemplate.app : 'Authenticator',
+            account: isStr(this.pushTemplate.account) ? this.pushTemplate.account : '',
+            location: isStr(this.pushTemplate.location) ? this.pushTemplate.location : '',
+            device: isStr(this.pushTemplate.device) ? this.pushTemplate.device : ''
+        });
+        const events = [];
+        for (let i = 0; i < shown; i++) events.push(card(i));
+        if (n > shown) events.push({ type: 'summary', id: 'summary', more: n - shown });
+        events.push({ type: 'approve', id: 'approve', at, display: isStr(at) ? at : '' });
+        events.forEach((e, i) => { e.order = i; });
+        this.timeline = { events, pushCount: shown };
+        this.cursor = 0;
+
+        this.outcomeLines = [timing.outcome, count.note, this.defenderNote].filter(isStr);
+
+        this.decided = true;
+        if (this.choicePanel) this.choicePanel.hidden = true;
+        if (this.phoneEl) this.phoneEl.hidden = false;
+        if (this.controlsEl) this.controlsEl.hidden = false;
+        try { this.sendButton?.focus?.(); } catch (e) { /* focus is a nicety */ }
+        this._scheduleNext();
     }
 
     _appendCard(event, manual = false) {
@@ -206,20 +359,32 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
     // ── exit and test bridge ─────────────────────────────────────────────────────
 
     closeResult() {
-        return { approvedAt: this.approvedAt, sent: this.sent, mode: this.mode };
+        const result = { approvedAt: this.approvedAt, sent: this.sent, mode: this.mode };
+        if (this.choice) {
+            result.timing = this.selection.timing;
+            result.count = this.selection.count;
+        }
+        return result;
     }
 
     getTestState() {
-        return {
-            ...super.getTestState(),
-            authenticator: {
-                mode: this.mode,
-                sent: this.sent,
-                approvedAt: this.approvedAt,
-                played: [...this.played],
-                finished: this.cursor >= this.timeline.events.length
-            }
+        const auth = {
+            mode: this.mode,
+            sent: this.sent,
+            approvedAt: this.approvedAt,
+            played: [...this.played],
+            finished: this.cursor >= this.timeline.events.length
         };
+        if (this.choice) {
+            auth.decision = {
+                decided: this.decided,
+                timing: this.selection.timing,
+                count: this.selection.count,
+                chosenCount: this.chosenCount,
+                outcomeShown: !!this.outcomeEl
+            };
+        }
+        return { ...super.getTestState(), authenticator: auth };
     }
 }
 

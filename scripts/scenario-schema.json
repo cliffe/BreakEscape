@@ -1925,8 +1925,7 @@
         },
         "mfa": {
           "type": "object",
-          "description": "The mfa stage's push stream (11 N11, P7-M): passed to the authenticator scene. Linted by awareness.rb",
-          "required": ["pushes", "approvesAt"],
+          "description": "The mfa stage, passed to the authenticator scene (11 N11, P7-M; E3 decision E3-11). Two shapes, both linted by awareness.rb: a scripted stream ({ pushes, approvesAt }) or a learner decision ({ choice, pushTemplate, defenderNote }).",
           "properties": {
             "pushes": {
               "type": "array",
@@ -1946,7 +1945,87 @@
               }
             },
             "approvesAt": {"description": "'HH:MM' or a number: when the target taps approve", "type": ["string", "number"]},
-            "mode": {"type": "string", "enum": ["attacker"]}
+            "mode": {"type": "string", "enum": ["attacker"]},
+            "choice": {
+              "type": "object",
+              "description": "Decision mode: the learner picks when (timing) and how many (count) before the burst plays.",
+              "required": ["timing", "count"],
+              "properties": {
+                "intro": {"type": "string"},
+                "confirm": {"type": "string"},
+                "timing": {
+                  "type": "object",
+                  "required": ["options"],
+                  "properties": {
+                    "legend": {"type": "string"},
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": ["id", "label", "at", "outcome"],
+                        "properties": {
+                          "id": {"type": "string"},
+                          "label": {"type": "string"},
+                          "at": {"description": "'HH:MM' or a number: the time on every prompt and the approval", "type": ["string", "number"]},
+                          "outcome": {"description": "Why this timing made the target approve", "type": "string"}
+                        },
+                        "patternProperties": {"^_": {}},
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                },
+                "count": {
+                  "type": "object",
+                  "required": ["options"],
+                  "properties": {
+                    "legend": {"type": "string"},
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": ["id", "label", "n", "note"],
+                        "properties": {
+                          "id": {"type": "string"},
+                          "label": {"type": "string"},
+                          "n": {"description": "How many prompts this bucket sends (cards cap at 4, the rest collapse to a summary)", "type": "integer", "minimum": 1},
+                          "note": {"description": "What this volume leans on", "type": "string"}
+                        },
+                        "patternProperties": {"^_": {}},
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "pushTemplate": {
+              "type": "object",
+              "description": "Decision mode: the fields every generated prompt card shows.",
+              "required": ["app"],
+              "properties": {
+                "app": {"type": "string"},
+                "account": {"type": "string"},
+                "location": {"type": "string"},
+                "device": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "defenderNote": {"description": "Decision mode: the defender's control, shown last in the outcome", "type": "string"}
+          },
+          "dependencies": {
+            "pushes": ["approvesAt"],
+            "approvesAt": ["pushes"],
+            "choice": ["pushTemplate", "defenderNote"],
+            "pushTemplate": ["choice"],
+            "defenderNote": ["choice"]
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false

@@ -173,30 +173,63 @@
       },
       "mfa": {
         "mode": "attacker",
-        "approvesAt": "06:50",
-        "pushes": [
-          {
-            "at": "06:31",
-            "app": "Quayholt SSO",
-            "account": "gordon.mcleish@quayholt.example",
-            "location": "Rotterdam, Netherlands",
-            "device": "Chrome on Windows"
+        "choice": {
+          "intro": "You have Gordon's password, but Quayholt still wants a tap on his phone before it lets you in. You send the prompts. Decide when to fire them and how many.",
+          "confirm": "Start sending prompts",
+          "timing": {
+            "legend": "When do you send them?",
+            "options": [
+              {
+                "id": "work",
+                "label": "During working hours",
+                "at": "10:20",
+                "outcome": "At his desk and alert, Gordon almost reported it. He tapped Approve only because your service-desk call minutes earlier had him half-expecting IT to \"sort his sign-in\". In daylight, a prompt he didn't ask for is the obvious tell."
+              },
+              {
+                "id": "evening",
+                "label": "Late evening, off the clock",
+                "at": "22:40",
+                "outcome": "Half-watching television, Gordon tapped Approve to clear the buzzing without really reading it. Off the clock, people stop treating prompts as work and just swipe them away."
+              },
+              {
+                "id": "night",
+                "label": "The early hours",
+                "at": "02:14",
+                "outcome": "Woken at 02:14, Gordon tapped Approve half-asleep to make his phone stop. Tired and off guard is exactly when a prompt gets waved through."
+              }
+            ]
           },
-          {
-            "at": "06:44",
-            "app": "Quayholt SSO",
-            "account": "gordon.mcleish@quayholt.example",
-            "location": "Rotterdam, Netherlands",
-            "device": "Chrome on Windows"
-          },
-          {
-            "at": "06:50",
-            "app": "Quayholt SSO",
-            "account": "gordon.mcleish@quayholt.example",
-            "location": "Rotterdam, Netherlands",
-            "device": "Chrome on Windows"
+          "count": {
+            "legend": "How many prompts?",
+            "options": [
+              {
+                "id": "few",
+                "label": "Two or three",
+                "n": 3,
+                "note": "A couple of prompts lean on your pretext and the hour more than on wearing him down."
+              },
+              {
+                "id": "many",
+                "label": "A dozen",
+                "n": 12,
+                "note": "A steady run of prompts turns it into a nuisance he wants gone, and one tap ends it."
+              },
+              {
+                "id": "flood",
+                "label": "One after another",
+                "n": 30,
+                "note": "A flood is the loudest version, and the easiest for an alert target, or a rate limit, to catch."
+              }
+            ]
           }
-        ]
+        },
+        "pushTemplate": {
+          "app": "Quayholt SSO",
+          "account": "gordon.mcleish@quayholt.example",
+          "location": "Rotterdam, Netherlands",
+          "device": "Chrome on Windows"
+        },
+        "defenderNote": "Gordon's app could stop every version of this. Number matching makes a half-asleep tap useless, a prompt he didn't start is a report and not an Approve, and a rate limit caps the flood."
       },
       "defend": {
         "setId": "e3_service_desk_queue",
@@ -373,7 +406,7 @@
         "defendIntro": "Now you're in Leila's seat. You started at 07:00 and it's mid-morning: three calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time.",
         "conceptPanel": {
           "heading": "Why the call and the prompts worked",
-          "text": "The caller had Gordon's name, team, manager and staff number, and every one was findable online, so none of them proved who was on the line. Only a callback to the number already on file could tell the real Gordon from the imposter.\n\nThe sign-in prompts that followed are the same attack from another angle. Someone with the password fires off one approval request after another, counting on a tired person tapping approve just to stop the buzzing. A prompt you didn't start is never one to approve, however many times it comes."
+          "text": "The caller had Gordon's name, team, manager and staff number, and every one was findable online, so none of them proved who was on the line. Only a callback to the number already on file could tell the real Gordon from the imposter.\n\nThe sign-in prompts that followed are the same attack from another angle. The attacker chooses two things, when to send the prompts and how many, and both are levers on a tired or off-the-clock target who taps approve to stop the buzzing. The fix sits on the phone, not the person: number matching means a half-asleep tap is not enough, a prompt you didn't start is one to report rather than approve, and a rate limit caps the flood."
         }
       },
       "debrief": {

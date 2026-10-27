@@ -219,3 +219,19 @@ Fixes for `ROOMS_REVIEW_C2.md` (0 blockers, 0 majors, 4 minors, 4 trivials). Sta
 Checks: `build_aw_rooms.py --check` differed on all eight files before the rebuild and was `same` after. `check_room_walls.py`: floor at 64 on all four. `generate_rooms.py --check`: OK on all four, the same expected warning kinds. `slot_audit.py --notes` on the four defend shells and E7 full: 0 problems. `validate_scenario.rb --strict-social --no-graph --skip-ink` on all 38 shells: clean. Fragment/ERB parity test: 7 of 7. Only the 12 Tarrowby shells changed in `scenarios/`.
 
 Still owed in game (as in the review): lit tour on the four defend shells, Tarrowby's rooflight pool, Quayholt chairs against Brightwell, fig and host head-room, walk-and-tap.
+
+## E3 MFA decision (2026-10-27)
+
+The E3 MFA-fatigue beat was a watch-only demo (three scripted prompts, a fixed approval at 06:50, one explanatory line). P5 flagged it (E3-11) and PUZZLE_REVIEW_C1 marked it trivial (T1). Per FUN_DECISIONS q_e3mfa the learner now makes a real choice: **when** to fire the prompts (during working hours / late evening, off the clock / the early hours) and **how many** (two or three / a dozen / one after another).
+
+Design rules it follows:
+- **Every combination lands, no dead end.** The target always approves. What changes is the explanation, not whether it works.
+- **The outcome teaches which conditions made it work.** The authenticator overlay shows, after the approval, the chosen timing's `outcome` (daytime: he nearly reported it, and tapped only because the pretext call had primed him; evening: swiped away off the clock; early hours: half-asleep to stop the buzzing) and the chosen count's `note` (few lean on the pretext and the hour; a dozen becomes a nuisance; a flood is loudest and easiest to spot or rate-limit).
+- **The defender's control is named** in the overlay's last line (`defenderNote`: number matching, a prompt you didn't start is a report not an Approve, a rate limit caps the flood) and again, as a static summary of the attacker's two levers and the three controls, on the flip page's `conceptPanel`.
+- **Kept to about a minute.** A large count collapses to at most four cards plus a "…and N more" summary line.
+
+Data-first where possible, with a small engine change. The decision lives in `awarenessEpisode.mfa.choice` / `pushTemplate` / `defenderNote`; the authenticator scene (`minigames/authenticator/authenticator-minigame.js`) gained a decision branch that is inert when `choice` is absent, so the scripted P7-M shape and all its tests are unchanged. `episode-model.js` forwards the new keys only when authored. The `mfa` stage-strip text was reworded from "Watch what happens" to the decision framing. Schema and the `awareness.rb` social lint now accept both shapes (scripted requires `pushes`+`approvesAt` via a draft-4 `dependencies` pair; decision requires `choice`+`pushTemplate`+`defenderNote`, two or more options each side, every option carrying its teaching copy). E3 is the only episode with an `mfa` stage.
+
+Shared-key ripple: the `conceptPanel` edit touched the fragment (`e3/defend.json`) and the full erb; the E3 defend-only shell was regenerated from the fragment with `gen_e3_e5_shells.py` (into scratch, diffed — the only content change was that one `conceptPanel` string; copied the single `scenario.json.erb` back; no ink or dungeon_graph change).
+
+Checks: node `test/js/social-*` + `validator-social-*` 1824/1824; new `test/js/social-authenticator-decision.test.mjs` (6 tests) and the legacy `social-authenticator.test.mjs` (9) both green; parity 7/7; `validate_scenario.rb --strict-social --no-graph --skip-ink` clean on both E3 shells and all 38 awareness shells. No live browser run yet.

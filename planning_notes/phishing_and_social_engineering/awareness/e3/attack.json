@@ -1,11 +1,11 @@
 {
-  "_note": "E3 helpdesk-vishing attack fragment (P7-Q). A fragment of the `social` block; the full-episode shell (P7-Y2) copies these keys into scenarios/awareness_e3_*/scenario.json.erb and the defend-only/check shells (P7-Y1) leave the attack out. All companies and people are fictional (BRAND_SET.md, Quayholt Insurance). The learner, a junior red-teamer on an authorised Quayholt exercise, impersonates Gordon McLeish, a locked-out Claims Manager, and phones the IT service desk (character `leila` = Leila Nassar) to talk her into a password reset. No reset code, number or real procedure is shown; the NPC's policy is a deliberately weak one, so the lesson is that its two 'security' answers are both findable online. The second attack beat is the MFA-fatigue push stream (see `pushStream`), the demonstration P7-M renders. See the P7-Q report for the globals the shell must declare, the `knows` id list P7-S draws from, and the attack->defend tell map.",
+  "_note": "E3 helpdesk-vishing attack fragment (P7-Q). A fragment of the `social` block; the full-episode shell (P7-Y2) copies these keys into scenarios/awareness_e3_*/scenario.json.erb and the defend-only/check shells (P7-Y1) leave the attack out. All companies and people are fictional (BRAND_SET.md, Quayholt Insurance). The learner, a junior red-teamer on an authorised Quayholt exercise, impersonates Gordon McLeish, a locked-out Claims Manager, and phones the IT service desk (character `leila` = Leila Nassar) to talk her into a password reset. No reset code, number or real procedure is shown; the NPC's policy is a deliberately weak one, so the lesson is that its two 'security' answers are both findable online. The second attack beat is the MFA-fatigue decision (see `mfaDecision`): having 'reset' Gordon in the call, the learner now chooses when to fire approval prompts and how many, then watches the worn-down target tap approve. Every combination lands (no dead end), and the authenticator overlay's outcome panel explains which conditions made it work and names the defender's control. Was a watch-only demo (`pushStream`); turned into a learner decision per FUN_DECISIONS q_e3mfa (2026-10-27) / P5 finding E3-11. See the P7-Q report for the globals the shell must declare, the `knows` id list P7-S draws from, and the attack->defend tell map.",
 
   "_episodeAttack": {
     "_note": "What P7-Y2 sets as awarenessEpisode.attack for the full E3 episode (the fields marked * need the P7-X schema for the mfa stage and the push stream; the pretext fields reuse 06 and need no schema change). Pinned here so the shell and P7-X agree.",
     "callId": "quayholt_helpdesk_reset",
     "siteIds": ["quayholt_site", "quayholt_social"],
-    "pushStream": "see the top-level pushStream key",
+    "mfaDecision": "see the top-level mfaDecision key; the shell sets it as awarenessEpisode.mfa",
     "scored": false,
     "stages": ["brief", "osint", "write", "mfa", "flip", "defend", "debrief"]
   },
@@ -200,14 +200,36 @@
     }
   ],
 
-  "pushStream": {
-    "_note": "E3 MFA-fatigue beat (11 §3.2). Feeds P7-M's mock authenticator scene `authenticator` from the runner's `mfa` stage via socialOverlayParams({ pushes, approvesAt, mode }). The schema and lints are P7-X (wave 3); shape pinned by the P7-M hand-off: pushes[{ at, app, account, location, device }] plus approvesAt, `at` as 'HH:MM'. Not scored. The attacker (the learner, having 'reset' Gordon in the call beat) now spams approval prompts at an odd hour from a wrong place and device until the worn-down target taps approve at 06:50.",
+  "mfaDecision": {
+    "_note": "E3 MFA-fatigue beat (11 §3.2), now a learner decision (E3-11). The shell copies this object verbatim into awarenessEpisode.mfa in scenarios/awareness_e3_helpdesk_reset/scenario.json.erb; the runner's `mfa` stage feeds it to the `authenticator` scene via socialOverlayParams. Not scored, and shown only when the pretext call landed (skipMfaIfUnlanded). Decision mode: the learner picks `timing` (when) and `count` (how many), the burst plays (a large count collapses to a '…and N more' summary line, capped at 4 cards), the target taps approve, and the overlay's outcome panel shows the chosen timing's `outcome`, the chosen count's `note` and `defenderNote`. Every combination lands; the text explains which conditions made it work. The old watch-only shape was { pushes[{ at, app, account, location, device }], approvesAt } and is still supported by the scene when `choice` is absent.",
     "mode": "attacker",
-    "approvesAt": "06:50",
-    "pushes": [
-      { "at": "06:31", "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example", "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" },
-      { "at": "06:44", "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example", "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" },
-      { "at": "06:50", "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example", "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" }
-    ]
+    "choice": {
+      "intro": "You have Gordon's password, but Quayholt still wants a tap on his phone before it lets you in. You send the prompts. Decide when to fire them and how many.",
+      "confirm": "Start sending prompts",
+      "timing": {
+        "legend": "When do you send them?",
+        "options": [
+          { "id": "work", "label": "During working hours", "at": "10:20",
+            "outcome": "At his desk and alert, Gordon almost reported it. He tapped Approve only because your service-desk call minutes earlier had him half-expecting IT to \"sort his sign-in\". In daylight, a prompt he didn't ask for is the obvious tell." },
+          { "id": "evening", "label": "Late evening, off the clock", "at": "22:40",
+            "outcome": "Half-watching television, Gordon tapped Approve to clear the buzzing without really reading it. Off the clock, people stop treating prompts as work and just swipe them away." },
+          { "id": "night", "label": "The early hours", "at": "02:14",
+            "outcome": "Woken at 02:14, Gordon tapped Approve half-asleep to make his phone stop. Tired and off guard is exactly when a prompt gets waved through." }
+        ]
+      },
+      "count": {
+        "legend": "How many prompts?",
+        "options": [
+          { "id": "few", "label": "Two or three", "n": 3,
+            "note": "A couple of prompts lean on your pretext and the hour more than on wearing him down." },
+          { "id": "many", "label": "A dozen", "n": 12,
+            "note": "A steady run of prompts turns it into a nuisance he wants gone, and one tap ends it." },
+          { "id": "flood", "label": "One after another", "n": 30,
+            "note": "A flood is the loudest version, and the easiest for an alert target, or a rate limit, to catch." }
+        ]
+      }
+    },
+    "pushTemplate": { "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example", "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" },
+    "defenderNote": "Gordon's app could stop every version of this. Number matching makes a half-asleep tap useless, a prompt he didn't start is a report and not an Approve, and a rate limit caps the flood."
   }
 }
