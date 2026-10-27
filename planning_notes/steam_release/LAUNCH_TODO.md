@@ -1,0 +1,81 @@
+# Launch to-do: Steam and Google Play
+
+One list of what is left before Licence to Hack ships on Steam and Google Play: what waits on the
+owner, what waits on the store accounts, and what happens at release. Started 2026-10-27. Plans:
+`ANDROID_PLAN.md` (packages P0–P13), `STEAM_PLAN.md` (being written). Tick items off here as they
+land; keep each line short and say where the detail lives.
+
+## Owner: Google Play account (blocks P11 internal track and P12)
+
+- [ ] Open the organisation Play Console account (needs a D-U-N-S number); payments profile.
+- [ ] Create the app with package `uk.co.hacktivity.licencetohack` (confirmed; permanent).
+- [ ] Upload key: generate and keep it (backup location); enrol in Play App Signing. Then add the
+      Play signing key's and upload key's SHA-256 to Hacktivity credentials `android_apps:`.
+- [ ] One-time product for the full game, price set; its first buy option marked
+      "legacy compatible" (keeps `purchases.products.get` working). Put the product id in
+      `events.play_product_id` for the Licence to Hack event.
+- [ ] Google Cloud service account with Play Developer API access; its JSON key in Hacktivity
+      credentials `google_play:` (plus the account-id HMAC key).
+- [ ] Licence testers for the internal track.
+
+## Owner: Steam (blocks Steam sign-in, ownership and upload)
+
+- [ ] Steamworks app ids for the full game and the demo; set `steamAppId` in
+      `hacktivity-desktop/src/config.js` and `events.steam_app_id` / `steam_demo_app_id`.
+- [ ] Publisher Web API key in Hacktivity credentials.
+- [ ] Store page, then `events.store_url`; store and library art is ready in
+      `hacktivity-desktop/steam/licence-to-hack/` (screenshots and the page background still to make).
+- [ ] Further Steamworks settings and steps: see `STEAM_PLAN.md` once written.
+
+## Owner: production and operations
+
+- [ ] Run the read-only `deleted<digits>` username check on production before account deletion
+      ships (command in `ANDROID_PLAN.md` P11a / the P11a report); rename any match.
+- [ ] Restart the dev server and the Resque scheduler (mail guard, rate-limit keys, new schedules).
+- [ ] Production: the new scheduled jobs run on the `default` queue (resque-pool already serves it).
+- [ ] Earlier tasks still open: feedback move (dry run, then `APPLY=1`), `results:recalculate_event`,
+      mission score weights, check the production `store_url`.
+- [ ] Optional: a support email address for purchase-conflict messages (today: "the Contact page").
+
+## Engineering that can't finish until the accounts exist
+
+- [ ] P11: internal testing track with licence testers; verify every "verify in P11" note
+      (Digital Goods v2.0 shapes, `purchaseToken`, client acknowledge, `listPurchases` and pending,
+      voidedReason 8, paging parameter names, `products.get` for the 2025 product model).
+- [ ] P12: store listing, Data safety, content rating, account deletion URL, and the policy checks:
+      anti-steering (pages opened in Chrome still show the website's Pricing menu), honouring
+      purchases made on other platforms (Play and Steam), the account deletion route.
+- [ ] Play Billing Library 8+ requirement (from 31 Aug 2026, extension to 1 Nov 2026): check the
+      version androidbrowserhelper's billing module bundles before the first upload.
+- [ ] Post-deploy checks for asset links: `curl https://hacktivity.co.uk/.well-known/assetlinks.json`,
+      Google's Statement List tester, and Cloudflare not challenging or caching a 404 there.
+- [ ] Repeat P0/P5's headline link cases on the real host with verified asset links, and the Custom
+      Tab fallback with the host unverified (P10 notes).
+- [ ] Stripe deletion path against real Stripe (cancel and retrieve were only stubbed).
+- [ ] Steam: sign-in, ownership and upload items from `STEAM_PLAN.md`.
+
+## Engineering in progress or next (no account needed)
+
+- [ ] P7 review fixes (client purchase and restore), then commit.
+- [ ] P10: the Play app end to end on the emulator against the dev server (fake billing).
+- [ ] Steam plan, its review, then the Steam packages with stand-ins.
+- [ ] Windows build of the desktop app (needs wine or a Windows machine).
+- [ ] Backlog from reviews: in-page consent dialog instead of `window.confirm`; remember a declined
+      restore per account; show "already owned" during restore; fix the pre-existing
+      `subscription_flow_test.rb:143` and Stripe webhook test failures; rate-limit keys for the
+      older throttles behind Cloudflare (they use `req.ip`).
+
+## At release
+
+- [ ] Bump `BreakEscape::ASSETS_VERSION` (Hacktivity pages now load the engine's
+      `client-platform.js` and `client-purchase.js`); deploy engine and Hacktivity together.
+- [ ] Push all four repos (Hacktivity, BreakEscape, hacktivity-desktop, hacktivity-android; the
+      Android repo has no remote yet).
+- [ ] Run migrations (`deleted_at`, `play_purchase_intents`, `app_settings`).
+- [ ] Code signing for Windows; desktop app version bumps.
+
+## Dev data to clean up (ask before deleting)
+
+Event 6 and slots 82–86, mission 197, games 26–35, shell_tags on events 1 and 6, users 2–4, the e2e
+users, and the throwaway `wave1-…` users and records from the Android packages (users 5–19, their
+`google_play` entitlements and purchase intents, the `app_settings` poll row).
