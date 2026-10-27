@@ -206,7 +206,7 @@ module ValidateSocial
         delay = found['emailReplyDelay']
         unless delay.is_a?(Numeric) && REPLY_DELAY.cover?(delay)
           issues << warn_("target '#{target}' emailReplyDelay is #{delay.inspect}; an episode wants #{REPLY_DELAY.first} to #{REPLY_DELAY.last} seconds " \
-                          '(the default is 20, too long to wait in a 13 minute episode)')
+                          '(the default is 20, too long to wait in an episode of about 15 minutes)')
         end
       end
 

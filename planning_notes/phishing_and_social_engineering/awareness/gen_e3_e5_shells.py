@@ -148,7 +148,7 @@ EPISODES = {
             'aim_desc': 'Work through ten items at the training kiosk.',
             'end': 'Work through the ten items at the training kiosk.',
             'name': 'Service desk check',
-            'minutes': 5,
+            'minutes': 9,
         },
     },
     'e5': {
@@ -183,7 +183,7 @@ EPISODES = {
             'aim_desc': 'Sort ten items at the training kiosk.',
             'end': 'Sort the ten items at the training kiosk.',
             'name': 'Inbox and sign-in check',
-            'minutes': 4,
+            'minutes': 9,
         },
     },
 }

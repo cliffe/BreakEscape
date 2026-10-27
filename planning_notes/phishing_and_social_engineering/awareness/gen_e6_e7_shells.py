@@ -291,7 +291,7 @@ EPISODES = {
             'aim_desc': 'Go through ten items at the training kiosk.',
             'end': 'Go through the ten items at the training kiosk.',
             'name': 'Work phone check',
-            'minutes': 4,
+            'minutes': 9,
         },
     },
     'e7': {

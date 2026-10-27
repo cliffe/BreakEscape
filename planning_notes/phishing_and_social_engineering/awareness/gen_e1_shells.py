@@ -243,7 +243,7 @@ def check(pair, stage):
     ep = {
         'id': ep_id, **brand_block(),
         'variant': 'full',
-        'durationTargetMin': 4,
+        'durationTargetMin': 9,
         'scopeNote': 'Authorised exercise at Brightwell Foods, a fictional company. In scope: ten messages from the Brightwell payments inbox.',
         'stages': ['check'],
         'conclusionTaskId': 'finish_check',
@@ -310,7 +310,7 @@ def check(pair, stage):
         'secgen_scenario': None,
         'collection': 'training',
         'ui_theme': 'general',
-        'estimated_duration_minutes': 4,
+        'estimated_duration_minutes': 9,
         'cybok': CYBOK,
     }
     return mission, sc, meta

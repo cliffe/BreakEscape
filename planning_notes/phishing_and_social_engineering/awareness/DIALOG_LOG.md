@@ -1327,3 +1327,56 @@ Next round, with E3 (optional in the review). Same reason as C4-2.
   (so no longer "Not a flag here"), carries a perFlagNote, and names "Borrowed authority" in the Result
   breakdown.
 - Bridges not run (not requested this round).
+
+## Dialogue cycle 4 fixes, part two (2026-10-27)
+
+Picks up C4-2 and C4-T1, deferred above because E3 was being edited for the MFA decision (commit
+`b46fcf3a5`). That edit is now in, so both are done against the current E3 defend set. Fixer on Opus 4.8.
+Also carried a small data round on the pre/post check durations and a validator wording fix.
+
+### C4-2 — E1/E3 no-blame lines end on an identical sentence (MINOR) — FIXED (strings; fragment + full erb + defend shell)
+E1 and E3 both closed their `noBlameLine` on the verbatim sentence "A miss here just shows where to look
+next time." E1 keeps it; E3 now gets a channel-specific tail that holds the same "where to look next time"
+idea without the same words. E3 is a service-desk call set (plus one MFA push), so the tail names the call.
+- Old: "These callers rehearse sounding right, and a service desk that tries to help them is doing its job
+  under pressure. A miss here just shows where to look next time."
+- New: "These callers rehearse sounding right, and a service desk that tries to help them is doing its job
+  under pressure. A miss just shows which call to slow down next time."
+Applied to the fragment `e3/defend.json` (strings.noBlameLine) and the full erb
+`awareness_e3_helpdesk_reset/scenario.json.erb` with identical text so parity holds; the E3 defend-only
+shell was regenerated from the fragment (below).
+
+### C4-T1 — E3 critical no-blame line uses a mild "built to A, not to B" shape (TRIVIAL) — FIXED (strings; fragment + full erb + defend shell)
+`noBlameLineCritical` leaned on the negative-parallelism shape the house style watches for ("built to catch
+you under pressure, not to test how careful you are"). Reworded to keep the no-blame tone and drop the
+construction, left channel-neutral so it still fits both a call and a push miss.
+- Old: "This was built to catch you under pressure, not to test how careful you are. The points only show
+  where to look next time."
+- New: "This was built to catch you when you're under pressure. The points only show where to look next time."
+Same three files as C4-2. The two E3 lines no longer end on the same words as each other or as E1.
+
+### Data round — pre/post check durations (not a dialogue finding)
+The six finance/role check descriptions already read "about 8 to 10 minutes", but the numeric
+`estimated_duration_minutes` (mission.json) and `durationTargetMin` (erb) still said 4 or 5. Set both to 9
+on all 24 check shells, through the generators (`gen_e1_shells.py`, `gen_e2_e4_shells.py`,
+`gen_e3_e5_shells.py`, `gen_e6_e7_shells.py` — the check `minutes` config, not the defend-only 8).
+Defend-only episodes keep 8. Confirmed nothing reads `estimated_duration_minutes`: no JS/Ruby reader in
+BreakEscape (only the generators write it) and none in Hacktivity; `durationTargetMin` likewise has no
+code reader, only the schema declaration. Both are display/metadata only.
+
+### Validator wording — `scripts/validate_social/awareness.rb`
+The `emailReplyDelay` warning said "too long to wait in a 13 minute episode". Changed the prose to "too
+long to wait in an episode of about 15 minutes" to match the course's "about 15 minutes" wording. The only
+number in the message; the `REPLY_DELAY` threshold (seconds, unrelated to episode length) is unchanged and
+does not key off 13/15/16.
+
+### Pipeline / parity / checks
+- No-change baseline: with the generators and fragment at HEAD, all four `gen_*_shells.py` regenerated into
+  scratch reproduced every generated shell (scenario.json.erb, mission.json, ink) byte-identically to HEAD.
+- After the edits, regenerated into scratch; the only differing generated files were the E3 defend-only
+  `scenario.json.erb` (the two no-blame strings) and, for the 24 check shells, each `scenario.json.erb`
+  (`durationTargetMin` 4/5 → 9) and `mission.json` (`estimated_duration_minutes` 4/5 → 9). Copied in only
+  those; ink, dungeon_graph.* and the defend-only mission.json were unchanged and not touched.
+- `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs`: 1824/1824 pass. Parity 7/7.
+- Validator `--strict-social --no-graph --skip-ink` on all 38 awareness shells: exit 0.
+- Bridges not run (not requested this round).

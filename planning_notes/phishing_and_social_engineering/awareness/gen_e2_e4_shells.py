@@ -174,7 +174,7 @@ EPISODES = {
             'aim_desc': 'Sort ten emails at the training kiosk.',
             'end': 'Sort the ten emails at the training kiosk.',
             'name': 'Recruitment inbox check',
-            'minutes': 4,
+            'minutes': 9,
         },
     },
     'e4': {
@@ -212,7 +212,7 @@ EPISODES = {
             'aim_desc': 'Work through ten items at the training kiosk.',
             'end': 'Work through the ten items at the training kiosk.',
             'name': 'PA inbox check',
-            'minutes': 5,
+            'minutes': 9,
         },
     },
 }
