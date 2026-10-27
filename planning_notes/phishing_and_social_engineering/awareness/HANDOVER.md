@@ -1,5 +1,30 @@
 # Awareness course: handover (on hold from 2026-10-23)
 
+## Status 2026-10-27: resumed
+
+The user resumed the course on 2026-10-27, so this note is a status file now rather than a hold note. Sections 2, 3 and 6 below describe the state on 23 October and are kept for history.
+
+```
+Stage               Progress    B/M/m open  Status
+Design              ██████████  0/0/0       closed (3 cycles)
+Check forms         ██████████  0/0/0       closed; durations now 9 min
+Engine              ██████████  0/0/0       rounds 1-5 plus P6/P7 rounds; closing check pending
+Data / dialogue     ██████████  0/0/0       C1-C5 closed (C5: 0/0/0, 2 trivials)
+Playtest            ██████████  0/0/0       P6 and P7 done; fixes in; closing check running
+Fun changes         ██████████  -           aw1-aw9 in; aw7 -> organiser guidance + two seeded courses (Hacktivity f8b4ad9e)
+Training rooms      ██████████  0/0/0       C1-C3 closed
+POV backgrounds     ██████████  -           four made and wired (34c7a94d8, 622effe18)
+Puzzle-chain pass   ██████████  0/0/0       light pass closed (C1: 0/0/2, both settled)
+Host art            ░░░░░░░░░░  -           19 concepts approved (Joanne Pell replaces the Brightwell Farah); PixelLab after 3 Nov
+Timing              ██░░░░░░░░  -           estimates from agent runs; human runs postponed; wording now "about 15 minutes"
+Facilitator guide   ░░░░░░░░░░  -           one guide in HacktivityLabSheets, last
+```
+
+New since the hold, all on main: the E3 MFA-fatigue beat is a learner decision (timing and count); the Brightwell finance host is Joanne Pell; Hana's E5 miss reply names its cause; E6 can tick pressure on the QR notice; E7's cloned voicemail is a critical miss; under the awareness profile, two zero skills cap the grade at "Getting there". The user's decisions are in `../FUN_DECISIONS.md` (two batches on 2026-10-27).
+
+Next, in order: host characters after the PixelLab reset (3 Nov), then a short playtest of the new sprites; human timing runs when the user asks; the facilitator guide last.
+
+
 The user put development of the 38-scenario security-awareness course on hold on 2026-10-23. This note is for whoever picks it up later, human or agent. Read it with `AGENTS.md` (mission loop, model choice, standing rules) and the files it points to; trust the scenario files over any design document.
 
 ## 1. What the course is
