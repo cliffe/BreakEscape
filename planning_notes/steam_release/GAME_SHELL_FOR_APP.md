@@ -145,3 +145,16 @@ Both PRs are merged into local `main`: BreakEscape `b51293fda`, Hacktivity `1a28
   missions" in the app without one), both after a confirmed save. Game over and the end-screen button
   also use the shell's pages.
 - `GameShellOperation` used Ruby 3 endless methods; Hacktivity runs Ruby 2.7, so they were rewritten.
+
+## Possible future improvements
+
+- **Lapsed organisations on members-only Game events** (left as is, owner's decision 2026-10-27).
+  On an organisation's own Game event that is not an open subscription, a member of an organisation
+  whose deal has lapsed still gets Start: `GameSlotPolicy#start?` checks only the member's role and
+  organisation id. The deal date is checked by `EventAccess`, which only open-subscription events
+  use, so there a lapsed organisation's members are already blocked ("ask your account manager").
+  If lapsed organisations should lose access everywhere, `start?` would need the same deal check.
+  The skipped test "org Game event — a member of a lapsed organisation" in Hacktivity's
+  `test/controllers/game_shell_coverage_test.rb` marks the spot.
+- **Walkthroughs:** the briefing hides an operation's walkthrough link while the operation is
+  locked for the viewer (plan needed, not released, event ended) and shows it once it unlocks.
