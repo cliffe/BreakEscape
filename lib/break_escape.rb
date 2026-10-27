@@ -29,7 +29,8 @@ module BreakEscape
       @can_create_game      = nil  # callable: ->(user, mission) -> bool, or nil. Gates creating a game directly (games#new/create); nil = any user who can see the mission
       # callable: ->(game) -> Hash or nil. A host that wraps missions in its own game
       # shell returns where the in-game links go: { menu_url:, return_url:,
-      # return_label:, walkthrough_url: } (any may be nil). nil keeps the defaults.
+      # return_label:, walkthrough_url:, icon_url: } (any may be nil; icon_url is a PNG for the
+      # play page's tab icon). nil keeps the defaults.
       @shell_links          = nil
       # callable: ->(return_to) or ->(return_to, player) -> Hash or nil. The character picker opened from a host game
       # shell without a game (configuration?return_to=<a host path>): the host says whether

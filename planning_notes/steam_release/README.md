@@ -162,7 +162,10 @@ This keeps the store apps separate from Hacktivity and makes sure no Stripe purc
 - End-to-end run of the demo app against a local Hacktivity passed sign-in, event page, store link,
   start and resume a browser-only mission, Back to missions, out-of-scope pages and sign-out. Not
   covered: VM missions (no cluster here), a full sign-up (reCAPTCHA), the packaged build past sign-in.
-- Still to do: Steam sign-in and ownership (needs the Steam app id and publisher key), icons, code
+- Icons (2026-10-27): Licence to Hack's spy in the keyhole, from the title art, for the desktop app,
+  the website favicon on that game's pages and the Android icons. The recipe for each new game, with
+  the Gemini prompts, is `hacktivity-desktop/docs/ICONS.md`.
+- Still to do: Steam sign-in and ownership (needs the Steam app id and publisher key), code
   signing, Steam depots, bump `BreakEscape::VERSION` on release so cached engine JS refreshes.
 
 The single-game layout now exists as Hacktivity's game shell for Game events (2026-10-26); what the app has to do to wrap it is in `GAME_SHELL_FOR_APP.md`.

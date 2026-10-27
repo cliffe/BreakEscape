@@ -107,10 +107,12 @@ module BreakEscape
       get game_url(@game)
       assert_match(/shellReturnUrl: null/, response.body)
       assert_match(/walkthroughUrl: null/, response.body)
+      assert_select 'link[rel=icon]', 0
 
       BreakEscape.configuration.shell_links = lambda do |game|
         { menu_url: '/events/1/play/operations', return_url: "/events/1/play/operations/#{game.id}/debrief",
-          return_label: 'Debrief', walkthrough_url: 'https://example.org/walkthrough', ignored: 'x' }
+          return_label: 'Debrief', walkthrough_url: 'https://example.org/walkthrough',
+          icon_url: '/assets/game-icon-96.png', ignored: 'x' }
       end
       get game_url(@game)
       assert_response :success
@@ -118,6 +120,7 @@ module BreakEscape
       assert_match(%r{shellReturnUrl: "/events/1/play/operations/#{@game.id}/debrief"}, response.body)
       assert_match(/shellReturnLabel: "Debrief"/, response.body)
       assert_match(%r{walkthroughUrl: "https://example.org/walkthrough"}, response.body)
+      assert_select 'link[rel=icon][type="image/png"][href="/assets/game-icon-96.png"]', 1
       refute_match(/ignored/, response.body)
 
       # A failing hook never breaks the game page

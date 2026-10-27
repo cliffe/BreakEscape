@@ -9,6 +9,10 @@
 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <%# Tab icon supplied by a host game shell (shell_links icon_url); none otherwise %>
+  <% if (@shell_links || {})[:icon_url].present? %>
+  <link rel="icon" type="image/png" href="<%= @shell_links[:icon_url] %>">
+  <% end %>
 
   <%# All fonts are self-hosted in /break_escape/assets/fonts/ via fonts.css %>
 

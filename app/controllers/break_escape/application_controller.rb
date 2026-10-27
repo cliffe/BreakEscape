@@ -33,7 +33,7 @@ module BreakEscape
     def shell_links_for(game)
       hook = BreakEscape.configuration.shell_links
       links = hook&.call(game)
-      links.is_a?(Hash) ? links.symbolize_keys.slice(:menu_url, :return_url, :return_label, :walkthrough_url).compact : {}
+      links.is_a?(Hash) ? links.symbolize_keys.slice(:menu_url, :return_url, :return_label, :walkthrough_url, :icon_url).compact : {}
     rescue StandardError => e
       Rails.logger.warn "[BreakEscape] shell_links hook failed for game #{game.id}: #{e.message}"
       {}
