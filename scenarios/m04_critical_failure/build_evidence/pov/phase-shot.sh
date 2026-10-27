@@ -28,7 +28,7 @@ ARGS=(--url "http://127.0.0.1:3001/break_escape/games/$GID" --headless --log "$O
 [ -n "$FX" ] && ARGS+=(--flags "$FX")
 tools/playtest/session-start.sh "${ARGS[@]}" >/dev/null || { tools/playtest/session-stop.sh "$GID" >/dev/null 2>&1; exit 1; }
 trap 'tools/playtest/session-stop.sh "$GID" >/dev/null 2>&1' EXIT
-tools/playtest/cmd.sh "$GID" '{"cmd":"bootstrap","tutorial":"decline","resume":"new"}' >/dev/null
+tools/playtest/cmd.sh "$GID" '{"cmd":"bootstrap","tutorial":"decline","resume":"new","autoBrief":true}' >/dev/null
 echo "GAME_ID=$GID"
 
 ev() { tools/playtest/cmd.sh "$GID" "{\"cmd\":\"eval\",\"fn\":$(printf '%s' "$1" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')}" | grep -oP '"result":"\K[^"]*'; }

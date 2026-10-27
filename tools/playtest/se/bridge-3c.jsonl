@@ -1,4 +1,4 @@
-{"cmd":"bootstrap","tutorial":"decline","resume":"new"}
+{"cmd":"bootstrap","tutorial":"decline","resume":"new","autoBrief":true}
 {"cmd":"interact","id":"slice_triage_collapsed"}
 {"cmd":"waitFor","kind":"minigame","id":"inbox-triage","timeoutMs":30000}
 {"cmd":"eval","fn":"async () => { /* C1 the collapsed-header set opens: two messages, header panel collapsed, on the brief */ const mg = window.MinigameFramework.currentMinigame; const s = mg.getTestState();\n  return s.overlay.sceneType === 'inbox-triage' && s.triage.setId === 'slice_inbox_collapsed'\n    && s.triage.headerPanel === 'collapsed' && s.triage.total === 2 && s.triage.step === 'brief'\n    && s.overlay.layers.length === 0; }"}

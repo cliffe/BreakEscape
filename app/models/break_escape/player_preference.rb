@@ -64,6 +64,18 @@ module BreakEscape
       message: 'only allows letters, numbers, spaces, and underscores'
     }
 
+    DEFAULT_NAME = 'Zero'
+    NAME_MAX_LENGTH = 20
+
+    # Turns a host handle (Hacktivity allows hyphens, dots and ampersands, up
+    # to 25 characters) into a code name the validation accepts: hyphens and
+    # dots become underscores, other disallowed characters are dropped, the
+    # result is cut to 20 characters, and 'Zero' stands in when nothing is left.
+    def self.sanitise_name(raw)
+      name = raw.to_s.tr('-.', '__').gsub(/[^a-zA-Z0-9_ ]/, '').strip[0, NAME_MAX_LENGTH].to_s.strip
+      name.empty? ? DEFAULT_NAME : name
+    end
+
     # Callbacks
     before_validation :set_defaults, on: :create
 
@@ -148,11 +160,11 @@ module BreakEscape
     def set_defaults
       # Seed in_game_name from player.handle if available
       if in_game_name.blank? && player.respond_to?(:handle) && player.handle.present?
-        self.in_game_name = player.handle
+        self.in_game_name = self.class.sanitise_name(player.handle)
       end
 
       # Fallback to 'Zero' if still blank
-      self.in_game_name = 'Zero' if in_game_name.blank?
+      self.in_game_name = DEFAULT_NAME if in_game_name.blank?
 
       # NOTE: selected_sprite left NULL - player MUST choose before first game
     end

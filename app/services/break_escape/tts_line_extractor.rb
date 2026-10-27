@@ -82,8 +82,11 @@ module BreakEscape
     end
 
     # A phone contact whose calls are voiced: a phone-chat eventMapping or its
-    # timedConversation has `voiced: true`.
+    # timedConversation has `voiced: true`, or the contact itself does (a call the
+    # player starts, such as a pretext call from a desk phone: its start knot is
+    # the contact's currentKnot).
     def self.voiced_call?(npc)
+      return true if npc['voiced'] == true
       return true if npc.dig('timedConversation', 'voiced') == true
 
       Array(npc['eventMappings']).any? do |m|
@@ -121,6 +124,7 @@ module BreakEscape
 
     def self.call_start_knots(npc)
       knots = []
+      knots << knot_name(npc['currentKnot'] || 'start') if npc['voiced'] == true
       timed = npc['timedConversation']
       knots << knot_name(timed['targetKnot']) if timed.is_a?(Hash) && timed['voiced'] == true && timed['targetKnot']
       Array(npc['eventMappings']).each do |m|
@@ -237,6 +241,7 @@ module BreakEscape
       @spoken_lines ||= begin
         set = Set.new
         each_host_line { |_host, _path, _line, npc_id, text| set << "#{npc_id}|#{self.class.normalize(text)}" }
+        each_pretext_outcome_line { |npc_id, text, _path| set << "#{npc_id}|#{self.class.normalize(text)}" }
         set
       end
     end
@@ -268,7 +273,9 @@ module BreakEscape
         [story, path && File.exist?(path) ? [File.mtime(path).to_f, File.size(path)] : nil]
       end
       hosts_ids = hosts.map { |h| [h['id'], h['storyPath']] }
-      Digest::MD5.hexdigest(Marshal.dump([people, stories, hosts_ids, @variables.to_a.sort_by { |k, _| k.to_s }]))
+      outcomes = []
+      each_pretext_outcome_line { |npc_id, text, _path| outcomes << [npc_id, text] }
+      Digest::MD5.hexdigest(Marshal.dump([people, stories, hosts_ids, outcomes, @variables.to_a.sort_by { |k, _| k.to_s }]))
     end
 
     private
@@ -279,6 +286,10 @@ module BreakEscape
 
       each_host_line do |host_id, ink_path, line, npc_id, text|
         add_entry(seen, npc_id, text, host_id, "#{File.basename(ink_path)}:#{line.path}")
+      end
+
+      each_pretext_outcome_line do |npc_id, text, path|
+        add_entry(seen, npc_id, text, npc_id, path)
       end
 
       each_room_object do |obj|
@@ -318,6 +329,32 @@ module BreakEscape
           # A voiced phone call shows narration muted and doesn't voice it
           next if phone && (npc_id == 'narrator' || phone_narration?(line.tags))
           yield host_id, ink_path, line, npc_id, text if npc_id
+        end
+      end
+    end
+
+    # The authored goodbye of a pretext call outcome (`social.pretextNpcs[].outcomes.<id>.line`,
+    # e.g. Dev's "reported" line). The client speaks it on finalise (person-chat-pretext.js
+    # finish), outside the ink story, so the walker never sees it. It is voiced only when the
+    # pretext character's phone NPC is a voiced call, in that NPC's own voice
+    # (phone-chat-minigame.js speakOutcomeLine). Yields [npc_id, text, path].
+    def each_pretext_outcome_line
+      social = scenario_data['social']
+      return unless social.is_a?(Hash)
+
+      Array(social['pretextNpcs']).each do |spec|
+        next unless spec.is_a?(Hash) && spec['outcomes'].is_a?(Hash)
+
+        char = social.dig('characters', spec['character'])
+        phone_id = char.is_a?(Hash) ? char.dig('channels', 'phone') : nil
+        npc = phone_id && characters[phone_id]
+        next unless npc && npc['npcType'] == 'phone' && self.class.voiced_call?(npc)
+
+        spec['outcomes'].each do |outcome, cfg|
+          line = cfg.is_a?(Hash) ? cfg['line'] : nil
+          next unless line.is_a?(String) && !self.class.normalize(line).empty?
+
+          yield phone_id, line, "pretextNpcs.#{spec['character']}.outcomes.#{outcome}.line"
         end
       end
     end

@@ -1,4 +1,4 @@
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "new"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
 {"cmd": "note", "message": "bridge-deduction-d-fail (deduction-d-fail:test_social_deduction_d): a fresh game; facts granted from the console (exercised, not earned); stops brought forward with the door objects; KO Volkov; a wrong call on Chen; the loss ends in honest credits. Sidecar DRAFT outline."}
 {"cmd": "eval", "fn": "async () => { /* F0 grant all 18 facts from the console and install the toast spy */ window.__toasts = window.__toasts || []; if (!window.__toastSpy) { window.__toastSpy = true; const orig = window.gameAlert; window.gameAlert = (...a) => { window.__toasts.push({ t: Date.now(), a }); return orig ? orig(...a) : undefined; }; } const facts = Object.keys(window.gameScenario.social.intelFacts); for (const f of facts) window.deductionRuntime.grantFact(f, { source: 'console' }); await new Promise(r => setTimeout(r, 800)); const G = window.gameState.globalVariables; return facts.length === 18 && facts.every(f => G['se_intel_' + f] === true);  }"}
 {"cmd": "moveToNear", "id": "d_door1"}

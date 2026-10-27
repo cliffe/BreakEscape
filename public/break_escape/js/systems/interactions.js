@@ -17,6 +17,7 @@ import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
+import { reachX, aimX } from './interaction-reach.js';
 
 let gameRef = null;
 
@@ -247,7 +248,7 @@ export function checkObjectInteractions() {
             }
 
             // Use simple radial distance from player centre (matches visual highlight zone)
-            const dx = obj.x - px;
+            const dx = reachX(obj, px) - px; // nearest part of a wide object (interaction-reach.js)
             const dy = obj.y - py;
             const distanceSq = dx * dx + dy * dy;
 
@@ -625,7 +626,12 @@ function socialChannelLocked(id, channel) {
     // (00 §8), so without a reason the toast just reads as a dead end (F6-F10).
     const act = channel === 'email' ? 'read your mail' : 'talk to you';
     const who = name || 'That contact';
-    const text = `${who} flagged the last attempt and won't ${act} for now — give it a while, then try again more carefully.`;
+    // The wait is the lockout's own remaining time (lab R16 T8; Dev's is two minutes), rounded up.
+    const left = svc.getLockoutState?.(id)?.remainingMs;
+    const wait = Number.isFinite(left) && left > 0
+        ? (left > 60000 ? `about ${Math.ceil(left / 60000)} more minutes` : 'a minute or less')
+        : 'a couple of minutes';
+    const text = `${who} flagged the last attempt and won't ${act} for now. Wait ${wait}, then try again more carefully.`;
     (window.gameAlert || window.showNotification)?.(text, 'warning', '', 3500);
     return true;
 }
@@ -719,6 +725,7 @@ export function handleObjectInteraction(sprite) {
     // Handle swivel chair interaction - a jab kicks it
     if (sprite.isSwivelChair && sprite.body) {
         if (window.player && window.playerCombat) {
+            window.playerCombat.aimAtChair?.(sprite);
             window.playerCombat.punch('jab');
         }
         return;
@@ -1429,7 +1436,7 @@ export function handleObjectInteraction(sprite) {
         if (!player) return;
         
         // Measure distance with direction-based offset
-        const distanceSq = getInteractionDistance(player, sprite.x, sprite.y);
+        const distanceSq = getInteractionDistance(player, reachX(sprite, player.x), sprite.y);
         
         if (distanceSq > INTERACTION_RANGE_SQ) {
             console.log('INTERACTION_OUT_OF_RANGE', { 
@@ -1899,7 +1906,7 @@ export function tryInteractWithNearest() {
     let best = null;
     let bestScore = Infinity;
 
-    function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null, target = npcSprite) {
+    function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null, target = npcSprite, faceX = objX) {
         const dx = objX - px;
         const dy = objY - py;
         const plainSq = dx * dx + dy * dy;
@@ -1907,8 +1914,8 @@ export function tryInteractWithNearest() {
         if (distSq > rangeSq) return;
         if (target && !interactionLineClear(player, target)) return; // wall between
         const dist = Math.sqrt(distSq);
-        const score = angularDiff(objX, objY) * 1000 + dist;
-        if (score < bestScore) { bestScore = score; best = { objX, objY, handleFn }; }
+        const score = angularDiff(faceX, objY) * 1000 + dist; // angle to the object's centre, range to its nearest part
+        if (score < bestScore) { bestScore = score; best = { objX: faceX, objY, handleFn }; }
     }
 
     // E/W side doors are centered on their tile but the player stands at floor level (tile bottom).
@@ -1920,7 +1927,7 @@ export function tryInteractWithNearest() {
         if (room.objects) {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
-                consider(obj.x, obj.y, () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj);
+                consider(reachX(obj, px), obj.y, () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj));
             });
         }
 
@@ -2005,7 +2012,7 @@ export function tryInteractWithNPC(npcSprite) {
 export function isObjectInInteractionRange(sprite) {
     const player = window.player;
     if (!player || !sprite) return false;
-    const dx = sprite.x - player.x;
+    const dx = reachX(sprite, player.x) - player.x;
     const dy = sprite.y - player.y;
     const distSq = dx * dx + dy * dy;
     if ((sprite._isNPC ? npcReachDistSq(player, sprite, distSq) : distSq) > INTERACTION_RANGE_SQ) return false;

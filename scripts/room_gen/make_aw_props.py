@@ -33,13 +33,15 @@ from make_uni_props import Canvas  # noqa: E402
 OBJ = Path(__file__).resolve().parents[2] / "public/break_escape/assets/objects"
 
 # The logo plates use their own copy of the 3x5 font, so other props keep the
-# shared glyphs. Three overrides (ROOMS_REVIEW_C1 M2, t1): the shared Q reads as
+# shared glyphs. Four overrides (ROOMS_REVIEW_C1 M2, t1): the shared Q reads as
 # a 9 and the N as a lower-case n, and the 3x5 font has no "&". These are 4 px
 # wide; logo_text() advances by each glyph's own width plus a 1 px gap.
 LOGO_FONT = dict(U.FONT)
 LOGO_FONT.update({
     "Q": [".##.", "#..#", "#..#", "#.#.", ".#.#"],
     "N": ["#..#", "##.#", "#.##", "#..#", "#..#"],
+    "W": ["#...#", "#...#", "#.#.#", "#.#.#", ".#.#."],     # C2 m1: the shared W reads as an H
+    "M": ["#...#", "##.##", "#.#.#", "#...#", "#...#"],     # C3 m1: the shared M reads as an H
     "&": [".#..", "#.#.", ".#..", "#.#.", ".#.#"],
 })
 
@@ -155,7 +157,7 @@ def logo(key):
     tx = 17
     logo_text(c, tx, 3, top, WHITE)
     c.hline(tx, w - 5, 9, light(accent))
-    logo_text(c, tx, 11, bottom, light(accent) if key != "merrin_sallow" else WHITE)
+    logo_text(c, tx, 11, bottom, WHITE)   # C2 t1: white, as Merrin's was
     c.save(OBJ, f"aw_logo_{key}1")
 
 
@@ -319,6 +321,11 @@ def dressing():
                      ("hospital_chair1", "aw_chair_w_slate1"),
                      ("chairs_stacked1", "aw_chairs_stacked_slate1")):
         recolour(src, dst, hue=0.60, sat_scale=0.75, val_scale=1.05)
+    # Quayholt: charcoal chairs, so it no longer shares Brightwell's teal set (C2 m3)
+    for src, dst in (("hospital_chair_south", "aw_chair_south_charcoal1"),
+                     ("hospital_chair_north", "aw_chair_north_charcoal1"),
+                     ("hospital_chair1", "aw_chair_w_charcoal1")):
+        recolour(src, dst, hue=0.62, sat_scale=0.12, val_scale=0.55)
     # Quayholt: the spare desk's PC, switched off (pc8 glows through EMITTERS' /^pc\d*/)
     copy_static("pc8", "aw_pc_off1")
     # Merrin & Sallow: the studio chairs, static (t3)

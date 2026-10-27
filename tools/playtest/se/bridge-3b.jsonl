@@ -1,4 +1,4 @@
-{"cmd":"bootstrap","tutorial":"decline","resume":"resume"}
+{"cmd":"bootstrap","tutorial":"decline","resume":"resume","autoBrief":true}
 {"cmd":"note","message":"B0 setup check: a spoofed Teague send is already in the Sent folder"}
 {"cmd":"eval","fn":"async () => { /* B0 bridge-1b left at least one judged Teague send with the two spoof tells (senderTrust, senderAuth), so the playerSent card has a record to replay */ const ms = window.mailState; if (!ms || !ms.mailboxes) return false;\n  const recs = Object.values(ms.mailboxes).flatMap(b => (b && b.messages) || []).filter(r => r && r.folder === 'sent' && r.targetId === 'teague' && Array.isArray(r.tells));\n  const spoof = recs.filter(r => r.tells.includes('senderTrust') && r.tells.includes('senderAuth'));\n  return recs.length > 0 && spoof.length > 0; }"}
 {"cmd":"interact","id":"slice_triage"}

@@ -16,7 +16,9 @@
 import { isWorldPointOnScreen, getCanvas } from './input.js';
 import { staticNpcBodyDistSq } from '../npc-reach.js';
 // Reach also needs no wall between (interactions.js asks the same function)
-import { interactionLineClear } from '../interaction-walls.js';
+import { interactionLineClear, wallClearFrom, sameRoomFrom, playerFeet as wallsPlayerFeet } from '../interaction-walls.js';
+// Reach runs to the nearest part of a wide object, in the game and here
+import { reachX, aimX } from '../interaction-reach.js';
 // The engine's own door placement: door sprites (doors.js) and the wall gaps
 // cut for them (collision.js) both come from this one function, so a doorway
 // computed with it is where the gap really is, sprite or no sprite.
@@ -278,11 +280,12 @@ function describeObject(sprite, roomId, px, py, mx, my) {
     // interactionMeasurePoint(). Reporting both means a caller sees an
     // object marked inRange:false at a short distance and can tell why
     // (interactDistance) rather than assuming the bridge is simply wrong.
-    const d = dist(px, py, sprite.x, sprite.y);
+    const rx = reachX(sprite, px); // nearest part of a wide object (interaction-reach.js)
+    const d = dist(px, py, rx, sprite.y);
     // Mirrors getInteractionDistance(): the smaller of the facing-offset and
     // plain centre distances. The offset extends reach; the min stops it
     // *reducing* reach for a target the player is nearly standing on.
-    const di = Math.min(dist(mx, my, sprite.x, sprite.y), d);
+    const di = Math.min(dist(mx, my, rx, sprite.y), d);
     return {
         kind: 'object',
         id,
@@ -294,7 +297,10 @@ function describeObject(sprite, roomId, px, py, mx, my) {
         distance: round(d),
         interactDistance: round(di),
         inRange: di <= INTERACTION_RANGE && interactionLineClear(window.player, sprite),
-        wallBetween: di <= INTERACTION_RANGE && !interactionLineClear(window.player, sprite),
+        // Reachable on distance but belonging to another room than the player's
+        // feet are in (walking behind a wall strip): the game refuses it
+        otherRoom: di <= INTERACTION_RANGE && !sameRoomFrom(wallsPlayerFeet(window.player), sprite),
+        wallBetween: di <= INTERACTION_RANGE && sameRoomFrom(wallsPlayerFeet(window.player), sprite) && !interactionLineClear(window.player, sprite),
         onScreen: isWorldPointOnScreen(sprite.x, sprite.y),
         state: {
             locked: data.locked ?? null,
@@ -311,11 +317,13 @@ function describeDoor(door, roomId, px, py) {
     const props = door.doorProperties || {};
     const isSide = props.direction === 'east' || props.direction === 'west';
     // Clicking a door uses DOOR_INTERACTION_RANGE (game.js), which is more
-    // generous than the keyboard path; E/W doors additionally measure from a
-    // half-tile-lower anchor.
-    const anchorY = isSide ? door.y + SIDE_DOOR_Y_OFFSET : door.y;
+    // generous than the keyboard path. A click measures from the door's own
+    // centre (game.js findDoorAtPosition / the tap-gather); only the E key
+    // measures E/W doors from a half-tile-lower anchor (interactions.js), reported
+    // as keyDistance.
     const range = DOOR_INTERACTION_RANGE;
-    const d = dist(px, py, door.x, anchorY);
+    const d = dist(px, py, door.x, door.y);
+    const keyDistance = isSide ? dist(px, py, door.x, door.y + SIDE_DOOR_Y_OFFSET) : d;
     return {
         kind: 'door',
         id: `door:${props.roomId}->${props.connectedRoom}`,
@@ -325,6 +333,7 @@ function describeDoor(door, roomId, px, py) {
         x: round(door.x),
         y: round(door.y),
         distance: round(d),
+        keyDistance: round(keyDistance),
         inRange: d <= range,
         onScreen: isWorldPointOnScreen(door.x, door.y),
         state: {
@@ -370,7 +379,8 @@ function describeNPC(sprite, roomId, px, py, mx, my) {
         // A KO'd NPC is skipped by tryInteractWithNearest, so it is not
         // interactable even when physically in range.
         inRange: di <= INTERACTION_RANGE && !ko && interactionLineClear(window.player, sprite),
-        wallBetween: di <= INTERACTION_RANGE && !interactionLineClear(window.player, sprite),
+        otherRoom: di <= INTERACTION_RANGE && !sameRoomFrom(wallsPlayerFeet(window.player), sprite),
+        wallBetween: di <= INTERACTION_RANGE && sameRoomFrom(wallsPlayerFeet(window.player), sprite) && !interactionLineClear(window.player, sprite),
         onScreen: isWorldPointOnScreen(sprite.x, sprite.y),
         state: {
             hostile,
@@ -545,12 +555,34 @@ function competingInteractables(targetX, targetY) {
     for (const e of seen) {
         if (typeof e.x !== 'number' || typeof e.y !== 'number') continue;
         if (Math.abs(e.x - targetX) < 0.5 && Math.abs(e.y - targetY) < 0.5) continue; // the target itself
-        out.push({ x: e.x, y: e.y });
+        out.push({ x: e.x, y: e.y, sprite: objectSpriteById(e.id) });
     }
     return out;
 }
 
-export function solveStandingPoint(targetX, targetY, fromX, fromY, feetOffset = null) {
+/** The live scenario-object sprite for an entity id (null for NPCs and doors). */
+function objectSpriteById(id) {
+    if (!id) return null;
+    for (const room of Object.values(window.rooms || {})) {
+        for (const s of Object.values(room.objects || {})) {
+            if (s && (s.scenarioData?.id === id || s.objectId === id)) return s;
+        }
+    }
+    return null;
+}
+
+/** x the engine measures to for a rival: its nearest span point, as reachX does. */
+function rivalX(o, fromX) {
+    return o.sprite ? reachX(o.sprite, fromX) : o.x;
+}
+
+export function solveStandingPoint(targetX, targetY, fromX, fromY, feetOffset = null, target = null) {
+    // With the target sprite, a stand point must also have no wall between the
+    // player's feet there and the target (interactionLineClear's own test), or the
+    // game refuses the interaction: sis02's back-wall panel was approached from
+    // the room behind its wall. Rejected points fall through to the floor ones.
+    const wallOk = (px, py) => !target || !feetOffset
+        || wallClearFrom({ x: px + feetOffset.x, y: py + feetOffset.y }, target);
     // With feetOffset (feet minus sprite centre), only consider spots where the
     // feet would stand on a walkable cell of the engine's pathfinding grid: a
     // spot whose feet are inside a desk can't be reached, and walking at it
@@ -564,34 +596,53 @@ export function solveStandingPoint(targetX, targetY, fromX, fromY, feetOffset = 
                 const cy = Math.floor((py + feetOffset.y - B.minY) / B.step);
                 return !!(g[cy] && g[cy][cx] === 0);
             };
-            const found = solveStandingPointWhere(targetX, targetY, fromX, fromY, ok);
+            const floorOk = (px, py) => ok(px, py) && wallOk(px, py);
+            const found = solveStandingPointWhere(targetX, targetY, fromX, fromY, floorOk, target, 0.625, feetOffset)
+                // Nothing walkable within the comfortable margin (a wall object
+                // behind a desk): take a walkable, wall-clear spot nearer the edge of
+                // range rather than an unwalkable one, which the click never reaches
+                || solveStandingPointWhere(targetX, targetY, fromX, fromY, floorOk, target, 0.9, feetOffset);
             if (found) return found;
         }
     }
-    return solveStandingPointWhere(targetX, targetY, fromX, fromY, () => true);
+    return solveStandingPointWhere(targetX, targetY, fromX, fromY, wallOk, target, 0.625, feetOffset);
 }
 
-function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable) {
+function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, target = null, margin = 0.625, feetOffset = null) {
     // Aim well inside range, not on the boundary. 20px, not 24: the solved
     // spot is reached by a click, and click-to-move stops up to
     // ARRIVAL_THRESHOLD (8px) short of its target along the approach, so the
     // sprite lands 6-8px further out than aimed (measured: 24px aims landed at
     // 29-31px, and some past the 32px range).
-    const MARGIN = 0.625;
+    const MARGIN = margin;
     const rivals = competingInteractables(targetX, targetY);
     let best = null;
     let bestCost = Infinity;
     let bestIgnoringRivals = null;
     let bestCostIgnoringRivals = Infinity;
+    // Ring centres: the sprite's top-left, plus points along a wide target's span,
+    // so stand points under its right half are sampled (reach runs to the nearest
+    // part, interaction-reach.js). Capped at 12 centres for a very wide object.
+    const centres = [targetX];
+    const w = target ? (target.displayWidth ?? target.width ?? 0) : 0;
+    if (w > 16) {
+        const left = target.x - (target.originX ?? 0.5) * w;
+        const n = Math.min(12, Math.ceil(w / 16));
+        for (let i = 0; i <= n; i++) {
+            const cx = reachX(target, left + (w * i) / n);
+            if (!centres.includes(cx)) centres.push(cx);
+        }
+    }
+    for (const centreX of centres)
     for (let r = 12; r <= 56; r += 4) {
         for (let a = 0; a < 360; a += 15) {
             const rad = a * Math.PI / 180;
-            const sx = targetX + Math.cos(rad) * r;
+            const sx = centreX + Math.cos(rad) * r;
             const sy = targetY + Math.sin(rad) * r;
             if (!standable(sx, sy)) continue;
             // The game faces the player at the target before checking, so
             // predict the direction it will pick, then apply that offset.
-            const dir = quantiseDirection(targetX - sx, targetY - sy);
+            const dir = quantiseDirection((target ? aimX(target) : targetX) - sx, targetY - sy); // the game faces the object's centre
             const off = interactionOffset(dir);
             // Two conditions, and PLAIN distance is the binding one. A click
             // gathers only interactables within plain range; with one it acts
@@ -599,17 +650,21 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable) {
             // outside plain range is not gathered at all, so it can neither be
             // acted on nor appear in the menu — however good its offset distance
             // looks. The offset measure is then the engine's execution check.
-            const plain = dist(sx, sy, targetX, targetY);
+            const tx = target ? reachX(target, sx) : targetX; // nearest part of a wide target
+            const plain = dist(sx, sy, tx, targetY);
             if (plain > INTERACTION_RANGE * MARGIN) continue;
-            const d = Math.min(dist(sx + off.x, sy + off.y, targetX, targetY), plain);
+            const d = Math.min(dist(sx + off.x, sy + off.y, tx, targetY), plain);
             if (d > INTERACTION_RANGE * MARGIN) continue;
             const cost = dist(sx, sy, fromX, fromY);
             const point = { x: sx, y: sy, predictedDistance: d, direction: dir };
 
             // Would the engine even select the target from here? Compare on
             // plain distance, which is the measure its candidate search uses.
+            // A rival in another room than these feet is not gathered by the game
+            const feetHere = feetOffset ? { x: sx + feetOffset.x, y: sy + feetOffset.y } : null;
             const nearestRival = rivals.reduce(
-                (m, o) => Math.min(m, dist(sx, sy, o.x, o.y)), Infinity);
+                (m, o) => (feetHere && o.sprite && !sameRoomFrom(feetHere, o.sprite))
+                    ? m : Math.min(m, dist(sx, sy, rivalX(o, sx), o.y)), Infinity);
             point.plainDistance = Math.round(plain * 10) / 10;
             point.nearestRivalDistance = Number.isFinite(nearestRival)
                 ? Math.round(nearestRival * 10) / 10 : null;
@@ -707,7 +762,7 @@ export function plainNearestEntity() {
     let bestD = Infinity;
     for (const e of window.__test.getState().nearby) {
         if (typeof e.x !== 'number' || typeof e.y !== 'number') continue;
-        const d = dist(p.x, p.y, e.x, e.y);
+        const d = dist(p.x, p.y, rivalX({ x: e.x, sprite: objectSpriteById(e.id) }, p.x), e.y);
         if (d < bestD) { bestD = d; best = { id: e.id, name: e.name, distance: Math.round(d * 10) / 10 }; }
     }
     return best;

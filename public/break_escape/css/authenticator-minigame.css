@@ -14,7 +14,10 @@
     color: var(--auth-ink);
     box-sizing: border-box;
     max-width: 420px;
-    margin: 0 auto;
+    /* Fit, and scroll, on short screens (M-1): the outcome and defender note must stay reachable. */
+    max-height: min(92vh, 760px);
+    overflow-y: auto;
+    margin: 2vh auto;
     padding: 12px;
 }
 
@@ -23,7 +26,37 @@
     display: inline-block; padding: 2px 10px; background: var(--auth-accent); color: #fff;
     border-radius: 3px; font-weight: 800; letter-spacing: 0.14em; font-size: 14px;
 }
-.auth-intro { margin: 0 0 12px; font-size: 15px; line-height: 1.4; color: var(--auth-dim); }
+/* The intro sits on the dark overlay (not the light card), so it needs a light tone to read (T7-2). */
+.auth-intro { margin: 0 0 12px; font-size: 15px; line-height: 1.4; color: #d7dde6; }
+
+/* decision mode: when and how many (E3-11).
+   The panel is a light surface so its dark ink reads against the dark overlay (M-2). */
+.auth-choice {
+    display: flex; flex-direction: column; gap: 12px; margin: 0 0 4px;
+    padding: 12px; border-radius: 10px;
+    background: var(--auth-surface); border: 1px solid var(--auth-line); color: var(--auth-ink);
+}
+.auth-choice[hidden] { display: none; }
+.auth-choice-group { border: 1px solid var(--auth-line); border-radius: 10px; margin: 0; padding: 10px 12px 12px; background: #fff; }
+.auth-choice-legend { padding: 0 6px; font-size: 14px; font-weight: 700; color: var(--auth-ink); }
+.auth-choice-opt { display: flex; align-items: flex-start; gap: 8px; padding: 5px 2px; font-size: 14px; line-height: 1.35; cursor: pointer; color: var(--auth-ink); }
+.auth-choice-radio { margin: 2px 0 0; flex: none; }
+.auth-choice-opt-label { color: var(--auth-ink); }
+.auth-confirm { align-self: flex-start; padding: 8px 18px; font: inherit; font-weight: 700; }
+/* Keep the disabled label legible rather than pale-on-pale (T7-2). The `.auth-choice` prefix
+   outranks the ui theme's `[data-ui-theme] .minigame-button { background: none }` (which ties a
+   bare `.auth-confirm:disabled` and would leave the label on a transparent button over the light
+   card). Dark text on a light-grey fill reads whether or not that fill lands. */
+.auth-choice .auth-confirm:disabled { opacity: 1; background: #d3dae2; border-color: #b9c2cd; color: #3a4452; cursor: default; }
+
+/* the collapsed tail of a large burst */
+.auth-feed-more { margin: 2px 0 0; text-align: center; font-size: 13px; font-style: italic; color: #c3ccd6; }
+
+/* why it worked, and the defender's control */
+.auth-outcome { margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--auth-surface); border: 1px solid var(--auth-line); }
+.auth-outcome-line { margin: 0 0 8px; font-size: 14px; line-height: 1.45; color: var(--auth-ink); }
+/* the last line is always the defender's control (defenderNote) */
+.auth-outcome-line:last-child { margin-bottom: 0; font-weight: 600; color: var(--auth-ok); }
 
 /* phone shell */
 .auth-phone {
@@ -57,6 +90,7 @@
 .auth-approved .auth-phone { outline: 3px solid var(--auth-danger); }
 
 .auth-controls { margin-top: 14px; text-align: center; }
+.auth-controls[hidden] { display: none; }
 .auth-send { padding: 8px 18px; font: inherit; font-weight: 700; }
 .auth-send:disabled { opacity: 0.5; cursor: default; }
 

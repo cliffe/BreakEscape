@@ -29,12 +29,14 @@ stub('ink-stub.mjs', 'export default class InkEngine {}');
 stub('config-stub.mjs', "export const CSRF_TOKEN = 'x';");
 stub('info-label-stub.mjs', 'export function setHudLabel() {} export function clearHudLabel() {}');
 copy('systems/forced-minigame-guard.js', 'forced-minigame-guard.mjs');
+copy('systems/consumables.js', 'consumables.mjs');
 const inventoryUrl = copy('systems/inventory.js', 'inventory.mjs', [
     ["'../core/rooms.js'", "'./rooms-stub.mjs'"],
     ["'./ink/ink-engine.js'", "'./ink-stub.mjs'"],
     ["'../config.js'", "'./config-stub.mjs'"],
     ["'../ui/info-label.js'", "'./info-label-stub.mjs'"],
     ["'./forced-minigame-guard.js'", "'./forced-minigame-guard.mjs'"],
+    ["'./consumables.js'", "'./consumables.mjs'"],
 ]);
 
 globalThis.window = {};

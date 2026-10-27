@@ -182,7 +182,7 @@ The full list is under `_brandAdditions` in `awareness/e5/defend.json`. It adds:
 - two invented third parties, Ashcombe Solicitors and MailGuard;
 - five more cast members (Somali-British, Welsh, Northern Irish, Italian-British and Jamaican-British, aged from their 20s to their 60s).
 
-Gallagher and Farah are not used, because they clash with existing scenarios.
+Gallagher is not used, because it clashes with an existing scenario. Farah was dropped for the same reason (m10) and the Brightwell host is now Joanne Pell.
 
 ## Additions from E5 attack (P7-U, 2026-10-22)
 - **Quayholt cast:**
@@ -194,7 +194,7 @@ Gallagher and Farah are not used, because they clash with existing scenarios.
 ## Additions from E1 shells and E3 defend (P7-J and P7-S, 2026-10-22)
 - **Check-mission hosts (P7-J):**
   - Graham Whitfield, early 60s, white British, Halifax.
-  - Farah Qureshi, early 30s, British Pakistani, Leicester.
+  - Joanne Pell, late 40s, white British, Leicester (renamed from Farah Qureshi on 2026-10-27: the name clashed with m10; key `joanne_pell`).
 - **E3 (P7-S), Quayholt:** Helen Achterberg and Patrick Kerrigan (Chen Jiayi dropped with Cut D; Reuben Ofori added as the helpdesk_form_b genuine voicemail caller). The full list is under `_brandAdditions` in `awareness/e3/defend.json`.
 - **E3 alias:** "Josh Henley", the impostor caller.
 

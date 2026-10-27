@@ -103,7 +103,14 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
+
+/* The blocks of the header may shrink (and wrap their text) instead of overflowing:
+   at 900 px and below the heading, badges, status lines and close button drew over
+   each other, and at phone widths the status block and close button ran off screen. */
+#bond-vis-overlay .bv-header { gap: 12px; }
+#bond-vis-overlay .bv-title-block { min-width: 0; }
 
 #bond-vis-overlay .bv-logo-sprite {
   width: 40px;
@@ -116,6 +123,8 @@
   color: var(--bv-gold);
   text-shadow: 0 0 8px var(--bv-gold);
   letter-spacing: 2px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
   animation: bv-glitch 6s infinite;
 }
 
@@ -133,6 +142,11 @@
   text-align: right;
   font-family: 'GNF', monospace;
   font-size: 14px;
+  /* a long operation name wraps; give the wrapped lines room of their own */
+  line-height: 1.2;
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow-wrap: anywhere;
 }
 
 #bond-vis-overlay .bv-status-line {
@@ -193,6 +207,16 @@
   font-size: 6px;
   overflow: hidden;
   box-shadow: 0 0 8px rgba(0,255,65,0.08);
+}
+
+@media (max-width: 700px) {
+  #bond-vis-overlay .bv-header { flex-wrap: wrap; gap: 8px 12px; }
+  /* logo and close button share the first row; badges and the status block follow,
+     left-aligned and as wide as the window */
+  #bond-vis-overlay .bv-logo { order: 1; flex: 1 1 0; }
+  #bond-vis-overlay .bv-close-btn { order: 2; margin-left: 0; }
+  #bond-vis-overlay .bv-header > div[style] { order: 3; flex: 1 1 100%; flex-wrap: wrap; }
+  #bond-vis-overlay .bv-status-block { order: 4; flex: 1 1 100%; text-align: left; }
 }
 
 @media (max-width: 900px) {

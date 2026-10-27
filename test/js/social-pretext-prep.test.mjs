@@ -417,3 +417,11 @@ test('P3 N9: a line with `requires` stays off the card until every intel fact it
     assert.deepEqual(ids(heldIdsFor(social, { se_intel_org_chart: true, se_intel_events_page: true })), ['plain', 'name_drop', 'both']);
     assert.deepEqual(ids(null), ['plain', 'name_drop', 'both'], 'no held list: unfiltered (old callers)');
 });
+
+test('a phone contact marked voiced: true opens its pretext call as a voiced call (F17)', () => {
+    const phone = { npcType: 'phone', displayName: 'Dev', currentKnot: 'start' };
+    assert.equal(callLaunch(devCall, { ...phone, voiced: true }, 'dev_desk', {}).params.voiced, true);
+    assert.equal(callLaunch(devCall, phone, 'dev_desk', {}).params.voiced, undefined);
+    // person-chat is never voiced this way
+    assert.equal(callLaunch(devCall, { npcType: 'person', displayName: 'X', voiced: true }, 'x', {}).params.voiced, undefined);
+});

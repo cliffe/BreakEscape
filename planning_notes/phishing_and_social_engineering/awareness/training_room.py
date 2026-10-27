@@ -14,7 +14,7 @@ The kiosk needs no position: the map's `kiosk` slot (x 238, y 140, top-left
 
 Lighting lives in training_room_lighting.json beside this file.
 
-Not yet imported by the generators (that wiring is the next step); for a look:
+The generators and apply_training_room.py import this module. For a look:
   python3 training_room.py              # every company's room fields, as JSON
   python3 training_room.py quayholt_insurance
 """
@@ -31,10 +31,10 @@ START_POSITION = {'x': 6, 'y': 6.2}      # between host and kiosk (192,198)
 _LIGHTING = json.loads((HERE / 'training_room_lighting.json').read_text())
 
 ROOMS = {
-    'brightwell_foods':   {'type': 'room_aw_brightwell',    'chatBackground': None},
-    'tarrowby_logistics': {'type': 'room_aw_tarrowby',      'chatBackground': None},
-    'quayholt_insurance': {'type': 'room_aw_quayholt',      'chatBackground': None},
-    'merrin_sallow':      {'type': 'room_aw_merrin_sallow', 'chatBackground': None},
+    'brightwell_foods':   {'type': 'room_aw_brightwell',    'chatBackground': 'assets/backgrounds/rooms/aw_brightwell_blended.png'},
+    'tarrowby_logistics': {'type': 'room_aw_tarrowby',      'chatBackground': 'assets/backgrounds/rooms/aw_tarrowby_blended.png'},
+    'quayholt_insurance': {'type': 'room_aw_quayholt',      'chatBackground': 'assets/backgrounds/rooms/aw_quayholt_blended.png'},
+    'merrin_sallow':      {'type': 'room_aw_merrin_sallow', 'chatBackground': 'assets/backgrounds/rooms/aw_merrin_sallow_blended.png'},
 }
 for _co, _room in ROOMS.items():
     _room['ambient'] = _LIGHTING[_co]['scenario'].get('ambient')
@@ -48,8 +48,8 @@ def scenario_lighting(company):
 
 
 def room_fields(company):
-    """Fields for rooms.training_room: type, chatBackground (only once the POV
-    background exists) and lighting."""
+    """Fields for rooms.training_room: type, chatBackground (the room-wide POV
+    background) and lighting."""
     room = ROOMS[company]
     out = {'type': room['type']}
     if room['chatBackground']:

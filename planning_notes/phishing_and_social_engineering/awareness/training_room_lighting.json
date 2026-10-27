@@ -6,6 +6,7 @@
     "room": {
       "emitters": {
         "kiosk": { "color": "#9fd4ff", "radius": 28, "intensity": 0.45, "offsetY": -20, "effect": "screen" },
+        "window_blinds": { "color": "#ffd9a0", "radius": 48, "intensity": 0.1, "floorTint": 0.5 },
         "fire_alarm_point": [ { "intensity": 0 } ]
       },
       "lights": [ { "x": 1.75, "y": 2.6, "color": "#ffe2b0", "radius": 110, "intensity": 0.5 } ]
@@ -20,7 +21,7 @@
         "drinks_vending": { "color": "#e0f0ff", "radius": 40, "intensity": 0.45 },
         "fire_alarm_point": [ { "intensity": 0 } ]
       },
-      "lights": [ { "x": 1.75, "y": 2.3, "color": "#dfe8f4", "radius": 72, "intensity": 0.3 } ]
+      "lights": [ { "x": 4.5, "y": 5, "color": "#dfe8f4", "radius": 110, "intensity": 0.25 } ]
     }
   },
   "quayholt_insurance": {
@@ -29,7 +30,7 @@
     "room": {
       "emitters": {
         "kiosk": { "color": "#9fd4ff", "radius": 28, "intensity": 0.45, "offsetY": -20, "effect": "screen" },
-        "aw_quayholt_queue": { "color": "#9fc0ff", "radius": 32, "intensity": 0.35, "effect": "screen" },
+        "aw_quayholt_queue": { "color": "#9fc0ff", "radius": 32, "intensity": 0.25, "effect": "screen" },
         "info_screen": { "intensity": 0.25, "radius": 24 },
         "fire_alarm_point": [ { "intensity": 0 } ]
       },

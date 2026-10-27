@@ -133,6 +133,7 @@
             ],
             "truth": {
               "isPhish": true,
+              "critical": true,
               "flags": [
                 "vish_callback_pressure",
                 "secrecy_or_bypass",
@@ -303,6 +304,7 @@
     "training_room": {
       "type": "room_aw_brightwell",
       "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_brightwell_blended.png",
       "lighting": {
         "emitters": {
           "kiosk": {
@@ -311,6 +313,12 @@
             "intensity": 0.45,
             "offsetY": -20,
             "effect": "screen"
+          },
+          "window_blinds": {
+            "color": "#ffd9a0",
+            "radius": 48,
+            "intensity": 0.1,
+            "floorTint": 0.5
           },
           "fire_alarm_point": [
             {

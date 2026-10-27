@@ -21,7 +21,7 @@
 // only through writeGlobal; everything it needs is passed in, so the helpers
 // are unit-testable without a DOM.
 
-import { evaluateMessage, CANONICAL } from '../../systems/phish-rules.js';
+import { evaluateMessage, CANONICAL, causeMissReply } from '../../systems/phish-rules.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import { heldFactIds, heldProvides } from './mail-composer.js';
 import { linkInfoFor, describeVictimOutcome, betterVictim, captureGranted, buildRecord as buildLandingRecord }
@@ -487,6 +487,8 @@ function resolveClaimedFrom(social, account, claimed) {
 export function dataOnlyText(target, result, social = null) {
     const replies = isObject(target && target.replies) ? target.replies : {};
     if (result.landed) return isStr(replies.landed) ? replies.landed : 'Thanks, received.';
+    const byCause = causeMissReply(target, result); // P7-1: name the cause of a link miss
+    if (byCause) return byCause;
     if (isStr(replies.missed)) return replies.missed;
     if (isObject(social && social.awarenessEpisode)) return '';
     const first = arr(result.factors).find((f) => f.mode === 'required' && !f.pass);

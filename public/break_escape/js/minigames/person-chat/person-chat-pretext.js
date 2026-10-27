@@ -618,6 +618,8 @@ export async function attachPretext(minigame, { chat, judge: injected = null } =
             if (isStr(outcomeLine)) {
                 try { minigame.ui?.addMessage?.('npc', outcomeLine); } catch (e) { /* headless */ }
                 try { minigame.history?.addMessage?.('npc', outcomeLine, { read: true }); } catch (e) { /* no history */ }
+                // A voiced call (phone) speaks it too; other chats have no such method
+                try { minigame.speakOutcomeLine?.(outcomeLine); } catch (e) { /* no voice */ }
             }
             const container = minigame.container || minigame.messageContainer || null;
             debriefUp = true;

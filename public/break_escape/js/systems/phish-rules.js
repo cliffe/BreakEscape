@@ -371,6 +371,9 @@ function entry(target, id, base) {
     const cper = cs[state] && typeof cs[state] === 'object' ? cs[state] : null;
     fail = pick(per && per.fail, cper ? cper.fail : pick(ts.fail, cs.fail));
     redFlag = pick(per && per.redFlag, pick(ts.redFlag, pick(cper && cper.redFlag, cs.redFlag)));
+    // P7-4: no page attached is not a look-alike address, so the generic link red flag (which
+    // names a look-alike domain) is not shown for it; only a flag authored for 'missing' is.
+    if (id === 'linkCredible' && state === 'missing') redFlag = pick(per && per.redFlag, cper && cper.redFlag) || null;
   }
   const out = {
     id, pass: base.pass, state, reply: fail, redFlag, mode: base.mode,
@@ -419,6 +422,29 @@ function selectFactorHint(target, fail, header) {
   }
   return isStr(h) ? h : null;
 }
+
+/** Why a link failed ('' when it did not): noPage, wrongService or wrongAddress (P6-2). */
+function linkCauseOf(target, message, linkState) {
+  if (linkState === 'none') return 'noPage';
+  if (linkState !== 'fail') return '';
+  const brand = target && target.expectedLink && target.expectedLink.brandId;
+  const used = message.linkInfo && message.linkInfo.brand;
+  if (isStr(brand) && isStr(used) && used !== brand) return 'wrongService';
+  return 'wrongAddress';
+}
+
+/**
+ * P6-2 / P5-8 / P7-1: the target's reply for the cause of a link miss (replies.missNoPage,
+ * missWrongService, missWrongAddress), or null. Shared by dataOnlyReply and the mail bridge's
+ * live reply, so both read the same rule ahead of the one generic replies.missed.
+ */
+export function causeMissReply(target, result) {
+  if (!target || !target.replies || !result || result.landed || result.firstFail !== 'linkCredible') return null;
+  const v = target.replies[MISS_KEY[result.linkCause]];
+  return isStr(v) ? v : null;
+}
+
+const MISS_KEY = Object.freeze({ noPage: 'missNoPage', wrongService: 'missWrongService', wrongAddress: 'missWrongAddress' });
 
 /**
  * evaluateMessage(target, message, ctx) -> EvalResult (00 section 3).
@@ -549,6 +575,10 @@ export function evaluateMessage(target, message, ctx) {
     tells,
     templateFlags,
     firstFail: failedRequired.length ? failedRequired[0].id : '',
+    // P6-2 / P5-8: why the link failed, for a reply that names the cause: noPage (nothing
+    // attached), wrongService (a page for a different brand than the target uses) or
+    // wrongAddress (the right service on an address that is not the target's own).
+    linkCause: linkCauseOf(target, message, linkState),
     failCount: failedRequired.length,
     attachment: attachmentState,
     link: linkState
@@ -606,6 +636,8 @@ export function dataOnlyReply(target, result) {
   let text;
   if (result.landed) {
     text = pick(target && target.replies && target.replies.landed, 'Thanks, received.');
+  } else if (causeMissReply(target, result)) {
+    text = causeMissReply(target, result);
   } else if (target && target.replies && isStr(target.replies.missed)) {
     text = target.replies.missed; // an in-voice decline, in place of the factor's line (P3 N4)
   } else {

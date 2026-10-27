@@ -164,7 +164,23 @@ test('P4-3: Trust on a phish email is a critical miss: the penalty, the band cap
     assert.doesNotMatch($(s, '.tri-result-title').textContent, /^Sharp/);
 });
 
-test('P4-9: three or more tells missed in never-caught skills keep a high round out of "Sharp"; the 05 example (two at 0 of 1) stays', () => {
+test('P7-2: awareness caps at "Getting there" with two skills never caught, even at one tell each; analyst keeps the old cap', () => {
+    const tells = { id: 'ph', from: { name: 'CEO', address: 'ceo@brightwell.example' }, subject: 'Quick favour', body: 'Keep this between us.',
+        truth: { isPhish: true, flags: ['urgencyCalibrated', 'secrecy_or_bypass'] } };
+    const msgs = [tells, ...reals(9)];
+    const answers = [{ id: 'ph', verdict: 'verify', flags: [] }, ...trustAll(msgs.slice(1))];
+    const aw = scoreTriage({ messages: msgs, answers });
+    assert.ok(aw.percent >= 85, `percent ${aw.percent}`);
+    assert.equal(aw.zeroSkills.length, 2);
+    assert.match(aw.headline, /^Getting there/);
+    // Analyst: Report, not Verify, and its real-mail Trust is the same 60, so the percent stays high.
+    const an = scoreTriage({ messages: msgs, answers: [{ id: 'ph', verdict: 'report', flags: [] }, ...answers.slice(1)], profile: 'analyst' });
+    assert.equal(an.zeroSkills.length, 2);
+    assert.ok(an.percent >= 85, `analyst percent ${an.percent}`);
+    assert.match(an.headline, /^Sharp/);
+});
+
+test('P4-9: three or more tells missed in never-caught skills keep a high round out of "Sharp" (awareness cap since P7-2 is two skills)', () => {
     const tells = { id: 'ph', from: { name: 'CEO', address: 'ceo@brightwell.example' }, subject: 'Quick favour', body: 'Keep this between us.',
         truth: { isPhish: true, flags: ['urgencyCalibrated', 'secrecy_or_bypass', 'borrowed_authority'] } };
     const msgs = [tells, ...reals(9)];
@@ -215,4 +231,36 @@ test('E1-E4 P4-6: after a safe Refuse the ifTrusted line is what the caller was 
     click($(s2, '.tri-start'));
     act(s2, 'call_imp', 'comply');
     assert.match($(s2, '.tri-if-trusted').textContent, /^What would have happened: /);
+});
+
+test('P7-7: a text with no subject gets a clean card title, not a body cut off with dots', () => {
+    const sms = { id: 'sms_parcel', kind: 'sms', time: '10:02', from: { address: '07700 900583 (not in your contacts)' },
+        body: "Parceline: we couldn't deliver your parcel. A £1.45 redelivery fee is due by 6pm today or it goes back to the sender: {{link:fee}}",
+        links: [{ id: 'fee', text: 'shrtn.example/Pk3x9', destination: 'https://parceline-redelivery.example/fee' }],
+        truth: { isPhish: true, flags: ['lookalike_domain'] } };
+    const s = open(awareSet([sms, realMail]));
+    click($(s, '.tri-start'));
+    act(s, 'sms_parcel', 'report', ['lookalike_domain']);
+    const t = $(s, '.tri-card-title').textContent;
+    assert.doesNotMatch(t, /\.\.\.|…/);
+    assert.match(t, /Parceline: we couldn't deliver your parcel\.$/);
+});
+
+test('F20-1: missedPhishLine names the phish the learner trusted; off by default and for caught phish', () => {
+    const lab = (over = {}) => awareSet([phishMail, { ...phishMail, id: 'phish_2', subject: 'Second one' }, realMail],
+        { scoringProfile: 'analyst', verifyVerdict: false, ...over });
+    const run = (set) => {
+        const s = open(set);
+        click($(s, '.tri-start'));
+        act(s, 'phish_mail', 'trust');
+        act(s, 'phish_2', 'report', ['lookalike_domain']);
+        act(s, 'real_mail', 'trust');
+        toResult(s);
+        return s;
+    };
+    const on = run(lab({ missedPhishLine: true }));
+    const t = $(on, '.tri-missed-phish').textContent;
+    assert.match(t, /^You trusted this phish: ‘Scan to keep your sign-in’\./);
+    assert.doesNotMatch(t, /Second one/);
+    assert.equal($(run(lab()), '.tri-missed-phish'), null);
 });

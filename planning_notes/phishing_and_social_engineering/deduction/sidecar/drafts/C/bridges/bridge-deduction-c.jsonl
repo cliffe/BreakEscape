@@ -1,4 +1,4 @@
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "new"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
 {"cmd": "note", "message": "bridge-deduction-c (DRAFT, sidecar): fixture C careful run on test_social_deduction_c. Plan §9.3 C0-C5 and §11.6. Board DOM selectors ([data-suspect], [data-mark]) are placeholders until P10-H fixes the view's markup."}
 {"cmd": "eval", "fn": "async () => { /* C0a baseline: every deduction global declared, runtime and triggers installed, nudge off, no clue held, no verdict; a spy records toasts from here on */ window.__toasts = window.__toasts || []; if (!window.__toastSpy) { const orig = window.gameAlert; window.gameAlert = (...a) => { window.__toasts.push(a); return orig ? orig(...a) : undefined; }; window.__toastSpy = true; } const G = window.__test.getState().globals; const DS = G.deduction_state || {}; const R = window.deductionRuntime; const st = R && R.getState(); const facts = Object.keys(G).filter(k => k.startsWith('se_intel_c_')); return !!R && !!window.scenarioTriggers && facts.length === 12 && facts.every(k => G[k] === false) && ['ded_c_ahmed','ded_c_novak','ded_c_baptiste'].every(s => G['deduction_verdict_' + s] === '' && G['deduction_outcome_' + s] === '') && G.deduction_closed === false && G.c_keycard_revoked === false && G.c_comms_locked === false && !!st && st.state.nudged.length === 0 && window.inventory.items.some(i => i && i.scenarioData && i.scenarioData.id === 'c_keycard'); }"}
 {"cmd": "moveToNear", "id": "c_board"}
@@ -46,7 +46,7 @@
 {"cmd": "waitFor", "kind": "condition", "fn": "() => { window.__preReload = true; setTimeout(() => location.assign(location.pathname + \"?skip_resume=1\"), 50); return true; }"}
 {"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady() === true", "timeoutMs": 60000}
 {"cmd": "eval", "fn": "async () => { /* RELOAD the page reloaded (sentinel gone) and the game is ready */ const t0 = Date.now(); while (!(window.__test && window.__test.waitUntilReady) && Date.now() - t0 < 60000) await new Promise(r => setTimeout(r, 250)); if (window.__preReload) return false; const r = await window.__test.waitUntilReady({ timeoutMs: 60000 }); return !!(r && r.ok); }"}
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume", "autoBrief": true}
 {"cmd": "eval", "fn": "async () => { /* C1g after a reload the marks survive and the board model shows them */ const G = window.__test.getState().globals; const DS = G.deduction_state || {}; const m = DS.marks || {}; return m.ded_c_ahmed && m.ded_c_ahmed.mark === 'clear' && G.se_intel_c_baptiste_field_kit === true && G.ded_c_baptiste_influence === -15; }"}
 {"cmd": "note", "message": "C2 the office"}
 {"cmd": "enter", "room": "c_office"}

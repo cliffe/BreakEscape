@@ -408,8 +408,10 @@ class NPCBehavior {
                 maxHP: config.hostile?.maxHP,
                 attackCooldown: config.hostile?.attackCooldown,
                 attackRange: config.hostile?.attackRange,
-                // Chase leash (7.1a): px from the NPC's post, and whether it
-                // follows the player out of its room (npc-chase-leash.js)
+                // Chase leash (7.1a), opt-in with leash: true: px from the
+                // NPC's post, and whether it still follows the player out of
+                // its room (npc-chase-leash.js). Unleashed NPCs ignore both.
+                leash: config.hostile?.leash === true,
                 chaseRange: resolveChaseRange(config.hostile?.chaseRange, COMBAT_CONFIG.npc.chaseRange),
                 chaseAcrossRooms: config.hostile?.chaseAcrossRooms === true,
                 pauseToAttack: config.hostile?.pauseToAttack !== undefined ? config.hostile.pauseToAttack : true,
@@ -747,12 +749,13 @@ class NPCBehavior {
             return 'idle';
         }
 
-        // Priority 5: Chase (hostile + in range), on a leash (7.1a): past
-        // chaseRange from its post, or once the player leaves its room, the NPC
-        // gives up and falls through to going home or its patrol
+        // Priority 5: Chase (hostile + in range). A leashed NPC (7.1a,
+        // behavior.hostile.leash) gives up past chaseRange from its post, or
+        // once the player leaves its room, and falls through to going home or
+        // its patrol; an unleashed one follows the player anywhere
         if (isHostile && distanceSq < this.config.hostile.aggroDistanceSq) {
             if (!this._chaseAnchor) this._chaseAnchor = this._chasePost();
-            if (hostileMayChase({
+            if (!this.config.hostile.leash || hostileMayChase({
                 playerPos,
                 playerRoomId: window.currentPlayerRoom || null,
                 anchor: this._chaseAnchor,
@@ -1487,8 +1490,12 @@ class NPCBehavior {
 
         const style = resolveFightStyle(this.config.hostile.fightStyle);
 
+        // In range by distance, but a wall (or the strip behind a back wall) stands between: keep
+        // chasing, so the path takes it round to the player instead of freezing it in place
+        const reachable = window.npcCombat?.canReachPlayer ? window.npcCombat.canReachPlayer(this.sprite) : true;
+
         // If in attack range, try to attack
-        if (distance <= attackRange) {
+        if (distance <= attackRange && reachable) {
             // Stop moving and clear chase path
             this.sprite.body.setVelocity(0, 0);
             this.isMoving = false;

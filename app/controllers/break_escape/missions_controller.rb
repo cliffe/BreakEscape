@@ -33,11 +33,17 @@ module BreakEscape
         # - Standalone mode: Flag input form
         redirect_to "/break_escape/games/new?mission_id=#{@mission.id}"
       else
-      # Legacy behavior for non-VM missions - auto-create game
-      @game = Game.find_or_create_by!(
-        player: current_player,
-        mission: @mission
-      )
+      # Legacy behavior for non-VM missions - auto-create game. A player who
+      # already has a game goes straight to it; creating a new one is gated by
+      # create_game? (and so by the host's can_create_game hook).
+      @game = Game.find_by(player: current_player, mission: @mission)
+      if @game.nil?
+        authorize @mission, :create_game? if defined?(Pundit)
+        @game = Game.find_or_create_by!(
+          player: current_player,
+          mission: @mission
+        )
+      end
         # Use explicit path instead of route helper to ensure it works in engine context
         redirect_to "/break_escape/games/#{@game.id}"
       end

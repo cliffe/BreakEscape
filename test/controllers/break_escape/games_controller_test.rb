@@ -103,6 +103,35 @@ module BreakEscape
       assert_match(/window\.breakEscapeConfig/, response.body)
     end
 
+    test 'show passes a host game shell its links, and leaves them null without a hook' do
+      get game_url(@game)
+      assert_match(/shellReturnUrl: null/, response.body)
+      assert_match(/walkthroughUrl: null/, response.body)
+      assert_select 'link[rel=icon]', 0
+
+      BreakEscape.configuration.shell_links = lambda do |game|
+        { menu_url: '/events/1/play/operations', return_url: "/events/1/play/operations/#{game.id}/debrief",
+          return_label: 'Debrief', walkthrough_url: 'https://example.org/walkthrough',
+          icon_url: '/assets/game-icon-96.png', ignored: 'x' }
+      end
+      get game_url(@game)
+      assert_response :success
+      assert_match(%r{shellMenuUrl: "/events/1/play/operations"}, response.body)
+      assert_match(%r{shellReturnUrl: "/events/1/play/operations/#{@game.id}/debrief"}, response.body)
+      assert_match(/shellReturnLabel: "Debrief"/, response.body)
+      assert_match(%r{walkthroughUrl: "https://example.org/walkthrough"}, response.body)
+      assert_select 'link[rel=icon][type="image/png"][href="/assets/game-icon-96.png"]', 1
+      refute_match(/ignored/, response.body)
+
+      # A failing hook never breaks the game page
+      BreakEscape.configuration.shell_links = ->(_game) { raise 'boom' }
+      get game_url(@game)
+      assert_response :success
+      assert_match(/shellReturnUrl: null/, response.body)
+    ensure
+      BreakEscape.configuration.shell_links = nil
+    end
+
     test 'show should inject game configuration' do
       get game_url(@game)
       assert_response :success
@@ -326,6 +355,35 @@ module BreakEscape
 
       @game.reload
       assert_equal 1, @game.player_state['inventory'].length
+    end
+
+    test 'inventory endpoint accepts a room-map decor cup, keeps it, and removes it by id' do
+      @game.player_state['inventory'] = []
+      @game.save!
+
+      cup = { type: 'office-misc-cup', name: 'Cup of coffee', id: 'reception_office-misc-cup_7', decor: true, takeable: true }
+      post inventory_game_url(@game), params: { action_type: 'add', item: cup }, as: :json
+      assert_response :success
+      assert_equal 1, @game.reload.player_state['inventory'].length
+
+      # A second cup of the same sprite elsewhere is a separate item
+      post inventory_game_url(@game), params: { action_type: 'add', item: cup.merge(id: 'office_office-misc-cup_9') }, as: :json
+      assert_response :success
+      assert_equal 2, @game.reload.player_state['inventory'].length
+
+      post inventory_game_url(@game), params: { action_type: 'remove', item: { id: 'reception_office-misc-cup_7' } }
+      assert_response :success
+      assert_equal ['office_office-misc-cup_9'], @game.reload.player_state['inventory'].map { |i| i['id'] }
+    end
+
+    test 'inventory endpoint refuses decor on anything that is not a cup' do
+      @game.player_state['inventory'] = []
+      @game.save!
+      post inventory_game_url(@game), params: {
+        action_type: 'add', item: { type: 'key', name: 'Master Key', id: 'master_x', decor: true, takeable: true }
+      }, as: :json
+      assert_response :unprocessable_entity
+      assert_empty @game.reload.player_state['inventory']
     end
 
     # Ink endpoint tests

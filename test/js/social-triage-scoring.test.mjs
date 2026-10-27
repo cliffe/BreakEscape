@@ -56,11 +56,12 @@ test('worked example, analyst profile: 100, 73, 57, 40 -> 68% Getting there', ()
     assert.deepEqual(r.falseByFactor, { attachmentPlausible: 1, senderAuth: 1 });
 });
 
-test('worked example, awareness profile: 100, 87, 57, 100 -> 86% Sharp', () => {
+test('worked example, awareness profile: 100, 87, 57, 100 -> 86%, held at Getting there by two zero skills (P7-2)', () => {
     const r = scoreTriage({ messages, answers, profile: 'awareness' });
     assert.deepEqual(scores(r), [100, 87, 57, 100]);
     assert.equal(r.percent, 86);
-    assert.match(r.headline, /^Sharp/);
+    assert.equal(r.zeroSkills.length, 2);
+    assert.match(r.headline, /^Getting there/);
     assert.equal(r.falseAlarms, 1); // recorded...
     assert.equal(r.showFalseAlarms, false); // ...never shown
     assert.equal(r.reportRate, 0.5);

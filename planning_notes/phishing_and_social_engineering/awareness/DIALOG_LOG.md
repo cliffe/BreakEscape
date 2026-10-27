@@ -1282,3 +1282,343 @@ and that all it collects is a menu rating. Three distinct reasons.
 - Validator `--strict-social --no-graph --skip-ink` on all 38 shells: exit 0, only pre-existing suggestions.
 - Bridges skipped (paused). dungeon_graph untouched (--no-graph); the pre-existing lab_social_engineering
   dungeon_graph churn and `sys,json` predate this pass and were left alone.
+
+## Dialogue cycle 4 fixes
+
+From `DIALOG_REVIEW_C4.md` (formal cycle 4, reviewer read-only). Only C4-1 is applied this round;
+E3 is being edited by another agent for the MFA decision, so the two E3-side items wait for the next
+round. Nothing here is voiced; no TTS top-up.
+
+### C4-1 — E4 defend side omits `borrowed_authority` (MAJOR) — FIXED (truth; fragment + erb + defend shell)
+E4's defend set offered `borrowed_authority` as a tick (it is in the set's `channelTells`) and the
+attack-build pretext `ms_pretext_pay_now` claimed it, but neither phish item in the defend set carried
+it in `truth.flags`. A learner who correctly ticked it was told "Not a flag here", contradicting both
+E4's own attack side and E7's identical treatment. Added `borrowed_authority` to `truth.flags` and a
+`perFlagNote` on both items, in the style of E7's notes (e7 erb :173 voicemail, :240 email):
+- `e4_boarding_payment` (email): flags now `senderTrust, borrowed_authority, secrecy_or_bypass,
+  urgencyCalibrated`; note "'I'll sign it off when I land' leans on the managing partner's own authority
+  to push the payment past Yasmin's approval. A name in the From line is no proof she sent it".
+- `e4_vm_gate` (voicemail): flags now `vish_callback_pressure, secrecy_or_bypass, borrowed_authority`;
+  note "'I'll square it with her myself' uses the managing partner's own authority to wave the payment
+  past finance. It sounded like her, and a voice on its own doesn't prove who is speaking".
+Applied to the fragment `e4/defend.json` and the full erb `awareness_e4_exec_whaling/scenario.json.erb`
+with identical flag-array and perFlagNote key order so parity holds. The defend-only shell was
+regenerated from the fragment (below). Check shells carry no episode-set per-message truth, so are
+unaffected.
+
+### C4-2 — E1/E3 no-blame lines end on an identical sentence (MINOR) — DEFERRED
+Next round: E3 is being edited for the MFA decision, so its no-blame tail is left to that agent's pass.
+
+### C4-T1 — E3 critical no-blame line uses a mild "built to A, not to B" shape (TRIVIAL) — DEFERRED
+Next round, with E3 (optional in the review). Same reason as C4-2.
+
+### Pipeline / parity / checks
+- No-change baseline: with the fragment reverted to HEAD, `gen_e2_e4_shells.py` regenerated into scratch
+  reproduced the E4 defend-only shell (scenario.json.erb, mission.json, ink) and all four executive check
+  shells byte-identically to the repo.
+- After the fragment edit, regenerated into scratch; only the E4 defend-only `scenario.json.erb` differed,
+  and only in the two truth blocks above. Copied that one file in; mission.json/ink and the four check
+  shells were unchanged and not touched.
+- `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs`: 1817/1817 pass. Parity 7/7.
+- Validator `--strict-social --no-graph --skip-ink` on all six E4 shells (full, defend-only, the four
+  executive checks): exit 0.
+- Triage-card check (scratch node script against the engine's `chipIdsFor`/`chipLabel`/`skillName`):
+  for both items in all three E4 files, `borrowed_authority` is offered as a tick, is now a scored tell
+  (so no longer "Not a flag here"), carries a perFlagNote, and names "Borrowed authority" in the Result
+  breakdown.
+- Bridges not run (not requested this round).
+
+## Dialogue cycle 4 fixes, part two (2026-10-27)
+
+Picks up C4-2 and C4-T1, deferred above because E3 was being edited for the MFA decision (commit
+`b46fcf3a5`). That edit is now in, so both are done against the current E3 defend set. Fixer on Opus 4.8.
+Also carried a small data round on the pre/post check durations and a validator wording fix.
+
+### C4-2 — E1/E3 no-blame lines end on an identical sentence (MINOR) — FIXED (strings; fragment + full erb + defend shell)
+E1 and E3 both closed their `noBlameLine` on the verbatim sentence "A miss here just shows where to look
+next time." E1 keeps it; E3 now gets a channel-specific tail that holds the same "where to look next time"
+idea without the same words. E3 is a service-desk call set (plus one MFA push), so the tail names the call.
+- Old: "These callers rehearse sounding right, and a service desk that tries to help them is doing its job
+  under pressure. A miss here just shows where to look next time."
+- New: "These callers rehearse sounding right, and a service desk that tries to help them is doing its job
+  under pressure. A miss just shows which call to slow down next time."
+Applied to the fragment `e3/defend.json` (strings.noBlameLine) and the full erb
+`awareness_e3_helpdesk_reset/scenario.json.erb` with identical text so parity holds; the E3 defend-only
+shell was regenerated from the fragment (below).
+
+### C4-T1 — E3 critical no-blame line uses a mild "built to A, not to B" shape (TRIVIAL) — FIXED (strings; fragment + full erb + defend shell)
+`noBlameLineCritical` leaned on the negative-parallelism shape the house style watches for ("built to catch
+you under pressure, not to test how careful you are"). Reworded to keep the no-blame tone and drop the
+construction, left channel-neutral so it still fits both a call and a push miss.
+- Old: "This was built to catch you under pressure, not to test how careful you are. The points only show
+  where to look next time."
+- New: "This was built to catch you when you're under pressure. The points only show where to look next time."
+Same three files as C4-2. The two E3 lines no longer end on the same words as each other or as E1.
+
+### Data round — pre/post check durations (not a dialogue finding)
+The six finance/role check descriptions already read "about 8 to 10 minutes", but the numeric
+`estimated_duration_minutes` (mission.json) and `durationTargetMin` (erb) still said 4 or 5. Set both to 9
+on all 24 check shells, through the generators (`gen_e1_shells.py`, `gen_e2_e4_shells.py`,
+`gen_e3_e5_shells.py`, `gen_e6_e7_shells.py` — the check `minutes` config, not the defend-only 8).
+Defend-only episodes keep 8. Confirmed nothing reads `estimated_duration_minutes`: no JS/Ruby reader in
+BreakEscape (only the generators write it) and none in Hacktivity; `durationTargetMin` likewise has no
+code reader, only the schema declaration. Both are display/metadata only.
+
+### Validator wording — `scripts/validate_social/awareness.rb`
+The `emailReplyDelay` warning said "too long to wait in a 13 minute episode". Changed the prose to "too
+long to wait in an episode of about 15 minutes" to match the course's "about 15 minutes" wording. The only
+number in the message; the `REPLY_DELAY` threshold (seconds, unrelated to episode length) is unchanged and
+does not key off 13/15/16.
+
+### Pipeline / parity / checks
+- No-change baseline: with the generators and fragment at HEAD, all four `gen_*_shells.py` regenerated into
+  scratch reproduced every generated shell (scenario.json.erb, mission.json, ink) byte-identically to HEAD.
+- After the edits, regenerated into scratch; the only differing generated files were the E3 defend-only
+  `scenario.json.erb` (the two no-blame strings) and, for the 24 check shells, each `scenario.json.erb`
+  (`durationTargetMin` 4/5 → 9) and `mission.json` (`estimated_duration_minutes` 4/5 → 9). Copied in only
+  those; ink, dungeon_graph.* and the defend-only mission.json were unchanged and not touched.
+- `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs`: 1824/1824 pass. Parity 7/7.
+- Validator `--strict-social --no-graph --skip-ink` on all 38 awareness shells: exit 0.
+- Bridges not run (not requested this round).
+
+## P6 data fixes (2026-10-27, data fixer, opus48)
+
+Round of P6 playtest findings (`playtests/PLAYTEST_P6_E1_E4.md`, `PLAYTEST_P6_E5_E7.md`) assigned to the
+data owner. Scenario data, fragments and erbs only; engine findings are written up for the engine fixer and
+not touched here. E3 left alone (its playtest was still running). Every change went into the fragment and
+the full episode erb identically for parity; the three affected defend-only shells were regenerated.
+
+| Item | Sev | Where | Outcome |
+| --- | --- | --- | --- |
+| P6A M1 | minor | E4 compose, empty sender-address blank | FIXED (data): `stuck` pointer on the slot |
+| P6A T1 / N20 | trivial | E1 Ravinder, E2 Liam "no reason I'd get this" | FIXED (data): kept as not-a-tell, added a `whyFine` note so the line stops reading as a contradiction |
+| P6A T2 | trivial | E2 macro CV "attachment doesn't fit" | FIXED (data): kept as not-a-tell, added a `whyFine` note |
+| P6-1 | minor | E5 pretext `{portal}` grammar | FIXED (data): restricted the blank to the portal-name reference and added "the" |
+| P6-2 | minor | E5 Hana miss reply mismatch | PARTLY FIXED (data) + ENGINE: neutralised the reply; per-cause variation and block-send handed over |
+| P6-3 | minor | E5 compose meter urgency text | FIXED (data): generic wording that holds whichever part carries the pressure |
+| P6-5 | trivial | E6 "Real mail" result label | ENGINE: `_queueInfo()` noun, no data hook — handed over |
+| P6-6 | trivial | E7 "One answer" critical-miss count | FIXED (data): `truth.critical: true` on the cloned voicemail; clean naming handed over |
+| P5-8 | minor | E5 miss never names the service | PARTLY FIXED (data) + ENGINE: neutral reply; naming the cause handed over (same fix as P6-2) |
+| P5-13 | trivial | E7 compose label "whose voice the call uses" | FIXED (data): relabelled "sender's name" |
+| N-14 | minor | E6 barrier notice has no pressure tick | ENGINE: `urgencyCalibrated` is an email-only factor, not tickable on a QR notice — handed over |
+
+### P6A M1 (minor) — E4 compose gives no pointer when the sender address has no evidence — FIXED (data)
+E4's From template (`ms_from`) address blank only ever fills from `ms_exec_travel_email` (the speaker bio on
+the Events page); a learner who researched only "Our people" sees "sender's address: no evidence yet" and
+the neutral gate line, with nowhere to look. Added the slot's own `stuck` pointer (the composer's existing
+"Stuck? Show me where to look" disclosure; names a source, never the value).
+- New `stuck`: "Her own staff page lists only her normal work address. Look at the events and speaker pages
+  for the address she uses while she's travelling."
+Files: `e4/attack.json`, `awareness_e4_exec_whaling/scenario.json.erb`. Attack-only, so no generated shell.
+
+### P6A T1 / N20 (trivial) and P6A T2 (trivial) — "Not a flag here" reads as a contradiction on a phish — FIXED (data)
+Decision: neither `pretextRelevant` (T1/N20) nor `attachmentPlausible` (T2) is a genuine tell on the named
+phish, so neither was made a scored flag — doing so would teach the wrong lesson.
+- E1 `e1_ceo_wire` and E2 `e2_portfolio_lookalike`: a payments clerk does get payment requests and a
+  recruitment inbox does get CVs. That plausibility is the cover; adding "you had no reason to get this" as
+  a tell would undercut the real tells (sender address, skip-approval, missing attachment, look-alike link).
+- E2 `e2_enable_content`: a Word CV is a normal attachment (the genuine `e2_cv_docx` is also a .docx); the
+  tell is the enable-content demand, not the file type.
+The review card reads `truth.whyFine[id]` for a ticked non-flag on any item (not only genuine ones), so a
+per-factor `whyFine` note turns the "Not a flag here:" line into a short teaching line instead of the
+generic "It wasn't one of this message's tells." Added:
+- `e1_ceo_wire` whyFine.pretextRelevant: "A payments clerk does field payment requests, so getting one is
+  nothing odd in itself. That is the cover; the tells are the sender's real address, the push to skip
+  approval, and the hurry."
+- `e2_portfolio_lookalike` whyFine.pretextRelevant: "A recruitment inbox is exactly where CVs land, so a CV
+  turning up is no surprise. The tells are the missing attachment and the link that wants your Tarrowby
+  sign-in, not that a CV arrived."
+- `e2_enable_content` whyFine.attachmentPlausible: "A Word document is a normal way to send a CV, so the
+  file itself fits. What doesn't fit is being told to enable editing and content before it will show: a
+  real CV never needs that."
+Files: `e1/defend.json`, `e2/defend.json`, the full erbs `awareness_e1_invoice_fraud` and
+`awareness_e2_cv_lures`, and the regenerated defend-only shells `..._defend`. Scoring and the A/B check-form
+pairing are untouched (whyFine is explanatory only). The same pattern could later be applied to the
+check-form CEO phish for consistency; left out of this round to keep scope to the named items.
+
+### P6-1 (minor) — E5 "the SSO move this month" doesn't fit the pretext sentence — FIXED (data)
+The `{portal}` blank (`e5_pretext_reauth`, `e5_pretext_reauth_calm`) is a `reference` slot, and both E5
+reference facts (`sso_portal_name` "Quayholt SSO" and `sso_migration` "the SSO move this month") matched it
+on type alone, so the migration label could land in the slot: "We are moving the SSO move this month to a
+new provider…". These are different grammatical things (a system name vs an event phrase), so no single
+sentence frame fits both; the slot should only take the system name. Disambiguated with `about` (the e3
+pattern): gave `sso_portal_name` `about: "portal"` and both `{portal}` slots `about: "portal"`, so only the
+portal name fills it, and `sso_migration` stays available as a distinctive value for `primedFor`. Added
+"the" before `{portal}` so it reads "We are moving the Quayholt SSO to a new provider…". Verified with
+`optionsForSlot`: the blank now offers only `sso_portal_name`. The portal-name fact is on the "Signing in"
+page, the same page the learner needs for the sender address, so this does not strand the compose.
+Files: `e5/attack.json`, `awareness_e5_signin_pages/scenario.json.erb`. Attack-only, no generated shell.
+
+### P6-2 (minor) and P5-8 (minor) — E5 Hana's miss reply doesn't match the miss — PARTLY FIXED (data) + ENGINE
+`replies.missed` was a single string asserting "the address was wrong", shown whatever the cause (no page
+attached, a DocShare page Hana doesn't use, or a too-far look-alike). Data can only hold one string, so made
+it cause-neutral and true for every miss; it no longer asserts a false cause.
+- Old: "That page wasn't Quayholt's own sign-in — the address was wrong, and it isn't where I log in — so I
+  didn't put my password in. I'll go to the portal the normal way."
+- New: "That link didn't take me to Quayholt's own sign-in, so I didn't put my password in. I'll go to the
+  portal the normal way."
+Files: `e5/attack.json`, `awareness_e5_signin_pages/scenario.json.erb`. ENGINE (handed over): block Send
+until a page is attached (or say "no link attached" in the compose meter), and pick Hana's reply by cause so
+it can name the service (P5-8). `dataOnlyReply`/`phish-rules.js` read only one `replies.missed`; a
+per-cause hook (e.g. keyed by `result.firstFail`, or `missNoPage`/`missWrongService`/`missWrongAddress`)
+would let the data author these. Suggested strings for the engine fixer to wire once the hook exists:
+no page — "There was nothing to sign in to behind that link, so I just closed it."; wrong service —
+"That's a DocShare page, and I don't use DocShare for Quayholt, so I didn't sign in."; wrong address —
+"The address wasn't Quayholt's own sign-in, so I didn't put my password in."
+
+### P6-3 (minor) — E5 meter urgency text names the Ask line even when the pretext is the cause — FIXED (data)
+Confirmed with the engine fixer: the meter is right to flag a medium pretext even with a calm Ask; the fault
+is only the text. `urgencyCalibrated.redFlag` (the meter) and `.fail` (the checklist/advisory) both named
+"'before the end of the day'", which is only in the urgent Ask and is wrong whenever the pressure comes from
+the pretext. Chose the generic rewrite over lowering `e5_pretext_reauth_calm` to low urgency: lowering would
+still leave the high `e5_pretext_reauth` pretext able to raise the flag with a calm Ask, so the specific line
+would still be miscited; a generic line is correct in every pretext/ask combination and still teaches the
+lesson ("pushed to sign in before checking the address").
+- redFlag old: "The 'before the end of the day' line pushes you to sign in before you check the address in
+  the bar." → new: "This pushes you to sign in quickly, before you stop to check the address in the bar."
+- fail old: "'Sign in before the end of the day' is the kind of deadline that gets someone to sign in before
+  they stop to check the address." → new: "A deadline to sign in quickly is the kind of pressure that gets
+  someone to sign in before they stop to check the address." (still a full sentence, so P5-12 stays fixed.)
+Files: `e5/attack.json`, `awareness_e5_signin_pages/scenario.json.erb`. Attack-only, no generated shell.
+
+### P6-6 (trivial) — E7 "One answer" when two phish were trusted — FIXED (data) + ENGINE
+Confirmed with the engine fixer: the count is right; a trusted phish voicemail only counts as a critical
+miss when `truth.critical` is true (`CRITICAL_KINDS` is push/call/email, not voicemail). Trusting the
+cloned-voice voicemail hands over £18,400, the episode's core attack, so set `truth.critical: true` on
+`e7_vm_ravinder_cloned`. The line now reads "2 answers". ENGINE (handed over, optional): `CRITICAL_WHAT` has
+no `voicemail` entry, so `criticalWhat` falls back to the generic "trusting a phish" and the two-miss line
+reads "trusting a phish, or trusting a phish email"; adding e.g. `voicemail: "acting on a spoofed voicemail"`
+to `CRITICAL_WHAT` (triage-scoring.js) would make it read cleanly.
+Files: `e7/defend.json`, `awareness_e7_voice_ceo/scenario.json.erb`, regenerated
+`awareness_e7_voice_ceo_defend`.
+
+### P5-13 (trivial) — E7 compose label still says "voice" on an email surface — FIXED (data)
+The write beat is an email in the CEO's name (C2-M4), so the From-name blank labelled "whose voice the call
+uses" misdescribed it (the options are email addresses). Relabelled to "sender's name", matching E1/E5. The
+address blank already read "the address it comes from", which is correct for an email, and was left.
+Files: `e7/attack.json`, `awareness_e7_voice_ceo/scenario.json.erb`. Attack-only, no generated shell.
+
+### P6-5 (trivial) — E6 result says "Real mail handled right" — HANDED TO ENGINE
+`_queueInfo()` (inbox-triage-minigame.js) returns the "Real mail" noun whenever the queue contains any email,
+and E6's queue mixes texts, QR notices and one email, so it reads "Real mail" rather than the episode's
+texts-and-notices noun (E5's all-pages queue reads "Real pages"). There is no per-set noun override in the
+data, so this needs an engine change: either a mixed sms/qr/email branch in `_queueInfo()` returning e.g.
+"Real texts and notices", or a set-level noun override the data can set. No data change made.
+
+### N-14 (minor) — E6 barrier notice has no pressure tick — HANDED TO ENGINE
+`e6_parking_permit` ("Vehicles not set up may be clamped") carries pressure, but `urgencyCalibrated` is an
+email factor (`FACTOR_ORDER`), and `chipIdsFor` offers a non-email kind only its channel tells, so pressure
+cannot be ticked or scored on a QR notice. There is no pressure channel tell, and a scenario-local tell would
+duplicate the "It's pushing me to hurry" chip on the set's email item and print a raw skill id in the result
+grid (no `SKILL_NAMES` entry). So this needs an engine change: offer/score `urgencyCalibrated` on qr (and
+sms) kinds, or add a pressure channel tell with a skill name. Once that exists the data side is small (add
+`urgencyCalibrated` to the notice's flags + a perFlagNote, kept symmetric across the paired forms). No data
+change made this round.
+
+### Pipeline / parity / checks
+- No-change baseline: `gen_e1_shells.py`, `gen_e2_e4_shells.py`, `gen_e6_e7_shells.py` regenerated into
+  scratch from HEAD reproduced every generated shell byte-identically (all scenario.json.erb + mission.json).
+- After the edits, regenerated into scratch; the only differing generated files were the three defend-only
+  `scenario.json.erb` (E1, E2, E7 — the whyFine notes and `truth.critical`). Copied in only those; every
+  check shell, the E4/E6 defend-only shells, mission.json, ink and dungeon_graph.* were unchanged and not
+  touched. E5 and E4 changes are attack-only and live only in the full erbs.
+- `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs`: 1838/1838 pass (1838, not
+  1824 — tests added by other sessions since; 0 fail). Parity green.
+- Validator `--strict-social --no-graph --skip-ink` on the 8 changed shells (awareness_e1_invoice_fraud(+_defend),
+  awareness_e2_cv_lures(+_defend), awareness_e4_exec_whaling, awareness_e5_signin_pages,
+  awareness_e7_voice_ceo(+_defend)): all "Validation complete" (only the pre-existing timedConversation
+  recommendation).
+- Bridges not run (not in this round's checks). Flag for the playtest: the E5 compose now offers only the
+  portal-name reference in `{portal}`, so a bridge that picked the migration value there needs updating.
+
+## P6 data follow-up (2026-10-27, data fixer, opus48) — after engine round 2 (db44cc919)
+
+Engine round 2 added the hooks for P6-2/P5-8, N-14 and P6-5. Data follow-up, same rules (E3 untouched,
+fragment + erb in parity, regen the affected defend shell, validate).
+
+### P6-2 / P5-8 (minor, E5 Hana) — DONE (data). Per-cause link-miss replies.
+Confirmed the brand ids match before wiring: the E5 target's `expectedLink.brandId` is "quayholt" and the
+Quayholt landing-page brand's `id` is "quayholt" (the only other brand is "docshare"), so the engine's
+`linkCauseOf` returns `wrongService` for a DocShare page and `wrongAddress` for a too-far Quayholt address.
+Set the three cause replies on `sso_staff.replies` (the engine reads them when `firstFail === 'linkCredible'`
+via `MISS_KEY`), keeping the generic `missed` as the fallback:
+- missNoPage: "There was nothing to sign in to behind that link, so I just closed it."
+- missWrongService: "That's a DocShare page, and I don't use DocShare for Quayholt, so I didn't sign in."
+  (names the service — closes P5-8.)
+- missWrongAddress: "The address wasn't Quayholt's own sign-in, so I didn't put my password in. I'll go to
+  the portal the normal way."
+Files: `e5/attack.json`, `awareness_e5_signin_pages/scenario.json.erb` (attack-only; no generated shell).
+Validator `--strict-social` on the E5 full erb: clean (the replies.* keys are accepted).
+
+### N-14 (minor, E6 barrier notice) — BLOCKED by the validator; reverted, handed back.
+The engine runtime (round 2, `chipIdsFor`) now offers an authored email factor on a channel item, so the
+intended data change was: add `urgencyCalibrated` to `e6_parking_permit.truth.flags` with a perFlagNote.
+Made it (fragment + full erb + regen E6 defend shell), then validated. The social validator rejects it:
+`social.triageSets[e6_phone_messages].messages[e6_parking_permit].truth.flags: 'urgencyCalibrated' is an
+email factor; a qr message offers only the set's channel tells as chips, so it could never be ticked`
+(exit non-zero, `--strict-social`). The lint in `scripts/validate_social/triage.rb` is out of sync with the
+round-2 `chipIdsFor`. Per instruction I did not edit the validator; reverted the three E6 files to HEAD
+(regenerated the defend shell from the reverted fragment, byte-identical to HEAD). Hand back to the engine
+fixer: update the triage social lint to allow an authored email factor in a channel message's `truth.flags`
+(mirroring the `chipIdsFor` rule: a factor the message is scored on is always tickable). Once that lands I
+will re-apply the one-line flag + perFlagNote.
+Intended perFlagNote (for when it is re-applied): "'Vehicles not set up may be clamped', from Monday, is
+there to make you scan now rather than stop to check where the code goes."
+
+### P6-5 (trivial, E6 result noun) — WITHDRAWN (engine default is fine) / schema gap noted.
+Tried `realLabel: "Real texts and notices"` on `e6_phone_messages` (the set's real items are a text and a
+QR notice, no genuine email, so it reads more accurately than the mixed default). The schema rejects it:
+`schema: The property '#/social/triageSets/0' contains additional properties ["realLabel"] outside of the
+schema when none are allowed` (`scenario-schema.json` has no `realLabel` on a triageSet, additionalProperties
+false). Reverted. The engine default `realNounFor` already gives "Real texts, notices and emails" for this
+mixed queue, which closes the original "Real mail" finding, so leaving the default is acceptable and P6-5 is
+withdrawn as a data change. If the override is wanted later, the engine fixer needs to add `realLabel` to the
+triageSet schema; then it is a one-line set field.
+
+### Checks
+- `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs`: 1843/1843 pass, parity green.
+- Validator `--strict-social --no-graph --skip-ink`: E5 full erb clean. The two E6 shells failed only while
+  N-14/P6-5 were applied (errors above); after the revert both are back to HEAD and clean.
+- Committed only the E5 per-cause replies (fragment + full erb). E6 left at HEAD pending the validator/schema
+  updates. Bridges not run.
+
+### P6 data follow-up, part 2 (after engine round 3, bd60b83ea + POV wiring 622effe18) — N-14 and P6-5 re-applied
+The round-3 validator now allows `urgencyCalibrated` on a channel message and has `realLabel` in the
+triageSet schema, so both items that were blocked above are now in.
+- N-14: added `urgencyCalibrated` to `e6_parking_permit.truth.flags` with perFlagNote "'Vehicles not set up
+  may be clamped', from Monday, is there to make you scan now rather than stop to check where the code goes".
+- P6-5: set `realLabel: "Real texts and notices"` on `e6_phone_messages` (the set's genuine items are a text
+  and a QR notice, no real email, so this reads more accurately than the mixed default "Real texts, notices
+  and emails").
+Files: `e6/defend.json`, `awareness_e6_texts_and_qr/scenario.json.erb`, and the regenerated
+`awareness_e6_texts_and_qr_defend/scenario.json.erb`. Baseline check first: with POV wiring (622effe18) now
+in the shells, a no-change regen of `gen_e6_e7_shells.py` still reproduced every e6/e7 shell byte-identically
+to HEAD (the POV `chatBackground` comes through the generator), so regenerating preserves it; after the edits
+only the E6 defend `scenario.json.erb` differed, by exactly these two changes.
+Checks: both E6 shells `--strict-social --no-graph --skip-ink` exit 0; node suite 1843/1843 pass, parity green.
+
+### P7-3 (minor, E5) — a wrong-service page no longer lands on Hana — DONE (data)
+P7 found that a DocShare page (the wrong service) still landed on Hana at 60/100 even though the builder
+said "FAIL Brand: Hana doesn't use that service", so the wrong-service/wrong-address replies were
+unreachable and the lesson that she signs in only on her own service didn't hold. The lever is the landing
+page's per-target `brandGate`: `landingPages[0].targets.sso_staff` had `brandGate: false`, so the brand gate
+was never added to the page's land decision and only the credibility threshold (55) mattered. Set it to
+`true`. In `landing-page-model.js scorePage`, `brandGate !== false` adds the brand gate, which passes only
+when the chosen brand equals the pretext brand ("quayholt"); a failed gate makes `meetsThreshold` false, and
+`phish-rules.js judgeLink` lands the email only when `linkInfo.meetsThreshold === true`. So a wrong-brand
+page now fails to land, and `linkCauseOf` returns `wrongService`.
+Tested with the scoring functions (the live reply path P7-1 was still in flight; it has since landed as
+0c3f6379d):
+- DocShare, best page (tier-2 domain, padlock, crisp logo): credibility 67 but gatesPassed=false ->
+  meetsThreshold=false -> linkState=fail, cause=wrongService. Wrong service now misses.
+- Quayholt quaybolt (tier-1 look-alike), no padlock: credibility 65, gate passes, meetsThreshold=true ->
+  lands. The close-look-alike landing is KEPT: E5's lesson is that a convincing look-alike is exactly what
+  gets people, so a believable Quayholt address should still fool Hana.
+- Quayholt best page: credibility 87, lands (the intended solution still works).
+Decision: data-only, `brandGate: true`. No engine gate needed (the key already exists and is honoured). The
+wrong-address reply is reachable only for a genuinely weak Quayholt page (credibility below 55); a strong
+look-alike is meant to land, so that is by design, not a gap.
+Files: `e5/attack.json`, `awareness_e5_signin_pages/scenario.json.erb` (attack-only; no generated shell).
+Checks: E5 full erb `--strict-social` exit 0; node suite 1850/1850 pass (count rose from 1843 with the P7-1
+engine tests in 0c3f6379d; one load-flaky run showed 4 unrelated triage-band failures that a clean re-run
+did not reproduce), parity green.

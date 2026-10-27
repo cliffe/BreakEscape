@@ -200,3 +200,124 @@ the 24 check shells were regenerated and copied in, and a fresh regen is byte-id
 - Ink recompiled (E3 full + E3 defend-only): 0 failed.
 - A/B parity re-checked on the shells: 10/10 items, matched phish counts and flag multiset per role; phish slots differ A↔B for all six roles.
 - **Open item for the coordinator:** Cut D (4 items, an explicit orchestrator decision) trips the validator's `--strict-social` rule "an episode's defend set has 5 to 8" on `awareness_e3_helpdesk_reset` and `_defend` (the only two of 38 that fail; all others exit 0). `scripts/validate_scenario.rb` is a shared file another agent is mid-edit on, and relaxing the range is an engine/tooling change — not edited here. The coordinator should decide: relax the social-lint lower bound to 4 for awareness episodes, or revert Cut D.
+
+## Rooms cycle 2 fixes (2026-10-27)
+
+Fixes for `ROOMS_REVIEW_C2.md` (0 blockers, 0 majors, 4 minors, 4 trivials). Static work only: Rails could not boot during another session's rebase, so nothing was checked in game. After-renders are in `playtests/ROOMS_C2_screenshots/` with an `after_` prefix.
+
+| Finding | Severity | Outcome |
+|---|---|---|
+| m1 logo font W reads as H | minor | Fixed. 5-wide W added to `LOGO_FONT` in `make_aw_props.py`; BRIGHTWELL, TARROWBY and SALLOW read correctly at 8x (`after_plates_8x.png`). The optional wide M was not needed (MERRIN reads). |
+| m2 Merrin's fig alone in open floor | minor | Fixed. `planter_fig1` moved from (96, 140) to (34, 176), against the west wall below the report poster. |
+| m3 Brightwell and Quayholt share chairs | minor | Fixed. Charcoal recolour of the seminar chairs (`aw_chair_{south,north,w}_charcoal1`, PIL, same sizes), registered with `register_object.py`, applied to Quayholt's seven seats plus the added east-end chair. The window was left as is. |
+| m4 Tarrowby daylight from a notice board | minor | Fixed. The light moved to a rooflight at tile (4.5, 5), radius 110, intensity 0.25, in `training_room_lighting.json`, refreshed into the 12 Tarrowby shells. Needs the lit tour. |
+| t1 second plate line hard to read | trivial | Fixed. Second line drawn in white on all four plates. |
+| t2 Tarrowby items touch corner lines | trivial | Fixed. Notice board to x 34, hi-vis hooks to x 258. |
+| t3 Brightwell back wall full | trivial | Fixed. Year planner deleted; range poster moved to x 96. Back wall reads window, range, logo, bar chart. |
+| t4 stale text | trivial | Fixed. `game.js` comment says oatmeal carpet; `training_room.py` docstring no longer says "not yet imported"; HANDOVER §1 puts E7 at Brightwell; dated note added at the top of `TRAINING_ROOM_PLAN.md` that §3.2–3.5 and §10 predate C1 and C2. |
+
+Checks: `build_aw_rooms.py --check` differed on all eight files before the rebuild and was `same` after. `check_room_walls.py`: floor at 64 on all four. `generate_rooms.py --check`: OK on all four, the same expected warning kinds. `slot_audit.py --notes` on the four defend shells and E7 full: 0 problems. `validate_scenario.rb --strict-social --no-graph --skip-ink` on all 38 shells: clean. Fragment/ERB parity test: 7 of 7. Only the 12 Tarrowby shells changed in `scenarios/`.
+
+Still owed in game (as in the review): lit tour on the four defend shells, Tarrowby's rooflight pool, Quayholt chairs against Brightwell, fig and host head-room, walk-and-tap.
+
+## E3 MFA decision (2026-10-27)
+
+The E3 MFA-fatigue beat was a watch-only demo (three scripted prompts, a fixed approval at 06:50, one explanatory line). P5 flagged it (E3-11) and PUZZLE_REVIEW_C1 marked it trivial (T1). Per FUN_DECISIONS q_e3mfa the learner now makes a real choice: **when** to fire the prompts (during working hours / late evening, off the clock / the early hours) and **how many** (two or three / a dozen / one after another).
+
+Design rules it follows:
+- **Every combination lands, no dead end.** The target always approves. What changes is the explanation, not whether it works.
+- **The outcome teaches which conditions made it work.** The authenticator overlay shows, after the approval, the chosen timing's `outcome` (daytime: he nearly reported it, and tapped only because the pretext call had primed him; evening: swiped away off the clock; early hours: half-asleep to stop the buzzing) and the chosen count's `note` (few lean on the pretext and the hour; a dozen becomes a nuisance; a flood is loudest and easiest to spot or rate-limit).
+- **The defender's control is named** in the overlay's last line (`defenderNote`: number matching, a prompt you didn't start is a report not an Approve, a rate limit caps the flood) and again, as a static summary of the attacker's two levers and the three controls, on the flip page's `conceptPanel`.
+- **Kept to about a minute.** A large count collapses to at most four cards plus a "…and N more" summary line.
+
+Data-first where possible, with a small engine change. The decision lives in `awarenessEpisode.mfa.choice` / `pushTemplate` / `defenderNote`; the authenticator scene (`minigames/authenticator/authenticator-minigame.js`) gained a decision branch that is inert when `choice` is absent, so the scripted P7-M shape and all its tests are unchanged. `episode-model.js` forwards the new keys only when authored. The `mfa` stage-strip text was reworded from "Watch what happens" to the decision framing. Schema and the `awareness.rb` social lint now accept both shapes (scripted requires `pushes`+`approvesAt` via a draft-4 `dependencies` pair; decision requires `choice`+`pushTemplate`+`defenderNote`, two or more options each side, every option carrying its teaching copy). E3 is the only episode with an `mfa` stage.
+
+Shared-key ripple: the `conceptPanel` edit touched the fragment (`e3/defend.json`) and the full erb; the E3 defend-only shell was regenerated from the fragment with `gen_e3_e5_shells.py` (into scratch, diffed — the only content change was that one `conceptPanel` string; copied the single `scenario.json.erb` back; no ink or dungeon_graph change).
+
+Checks: node `test/js/social-*` + `validator-social-*` 1824/1824; new `test/js/social-authenticator-decision.test.mjs` (6 tests) and the legacy `social-authenticator.test.mjs` (9) both green; parity 7/7; `validate_scenario.rb --strict-social --no-graph --skip-ink` clean on both E3 shells and all 38 awareness shells. No live browser run yet.
+
+## Episode length wording (2026-10-27)
+
+User decision q_timing (FUN_DECISIONS part two): say "about 15 minutes" for a full episode, "about 16" for E6 and E7, and recommend defend-only for sessions under 30 minutes. Human timing runs stay postponed.
+
+Applied: full-episode `mission.json` descriptions now read "An awareness episode of about 15 minutes for ..." (16 for E6 and E7), with `estimated_duration_minutes` and `durationTargetMin` set to 15 (16 for E6 and E7). Defend-only descriptions say "about 8 minutes" (the figure was already inside 6 to 8; `durationTargetMin` stays 8). The four finance checks, the only checks that stated a length, say "about 8 to 10 minutes"; their `durationTargetMin` and `estimated_duration_minutes` (4) are untouched pending the owner. `durationTargetMin` is read by no code (schema type check only), so nothing depended on the old values. The defend-only and check changes went through `gen_e1_shells.py`, `gen_e2_e4_shells.py`, `gen_e3_e5_shells.py` and `gen_e6_e7_shells.py` (scratch regen, byte-identical baseline first, only the 11 `mission.json` files copied in).
+
+Still to do: the E3 full erb `durationTargetMin` 13 to 15 (held back while another session edits that erb); the validator warning text in `scripts/validate_social/awareness.rb` still says "13 minute episode"; the organiser guidance to prefer defend-only under 30 minutes is not yet in any description (it belongs with the aw7 organiser guidance).
+
+## Rooms cycle 3 fixes (2026-10-27)
+
+Fixes for `ROOMS_REVIEW_C3.md` (0 blockers, 0 majors, 2 minors, 3 trivials). Commit 1d1ccbc26. After-shots in `playtests/ROOMS_C3_screenshots/` as `after_c3_merrin.png` and `after_c3_brightwell.png`.
+
+| Finding | Severity | Outcome |
+|---|---|---|
+| m1 Merrin plate reads "HERRIN &" | minor | Fixed. 5-wide M added to `LOGO_FONT` in `make_aw_props.py`; `make_aw_props.py` rerun, only `aw_logo_merrin_sallow1.png` changed. Checked at 8x, then in game: the plate reads MERRIN & SALLOW. |
+| m2 Brightwell sun barely shows | minor | Waits. Needs a `window_blinds` floor tint in `training_room_lighting.json` and `apply_training_room.py --refresh`; both held back while another agent rewrites the check shells through the generators. |
+| t1 Merrin fig near the chairs | trivial | Fixed. `planter_fig1` feet 176 to 166 in `build_aw_rooms.py`. In game it stands clear of the north chair row. |
+| t2 Brightwell bar chart crowds plate | trivial | Fixed. `whiteboard2` x 216 to 226 in `build_aw_rooms.py`. In game the gap to the plate matches the others. |
+| t3 Quayholt queue screen halo | trivial | Waits with m2: intensity 0.35 to 0.25 in `training_room_lighting.json`, then `--refresh`. |
+
+Maps rebuilt with `build_aw_rooms.py` (Brightwell and Merrin & Sallow changed; Tarrowby and Quayholt `same`), then `--check`: all eight files `same`. `check_room_walls.py 'room_aw_*'`: floor at 64 on all four. `generate_rooms.py --check` on the four: OK, the same expected warning kinds. `slot_audit.py --notes` on the four defend shells and E7: 0 problems. `apply_training_room.py --refresh` and `training_room_lighting.json` were not touched; no scenario shells changed.
+
+In game (keyless :3001, games 4521 Merrin via `awareness_e4_exec_whaling_defend`, 4522 Brightwell via `awareness_e1_invoice_fraud_defend`, lit only, `--check`: mode on, lit ambient `#cac4bc` and `#c4cad8`, redraw 300 ms): plate, fig and whiteboard as above. The M is the thinnest glyph on the plate at game zoom but reads as M. The POV stage can start for Merrin once the lighting items are settled or deferred.
+
+### Rooms cycle 3 lighting items m2 and t3 (2026-10-27)
+
+Commit aa99bbfa0. In `training_room_lighting.json`: Brightwell `room.emitters` gains `"window_blinds": { "color": "#ffd9a0", "radius": 48, "intensity": 0.1, "floorTint": 0.5 }` (m2); Quayholt `aw_quayholt_queue` intensity 0.35 to 0.25 (t3). `apply_training_room.py --refresh` into all 38 shells changed only those lines: 8 Brightwell shells gain the emitter, 12 Quayholt shells change the intensity, the other 18 are byte-identical. `validate_scenario.rb --strict-social --no-graph --skip-ink` on all 38: clean. `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs`: 1824 of 1824 (includes the fragment/erb parity test).
+
+In game (keyless :3001, games 4539 `awareness_e1_invoice_fraud_defend` and 4541 `awareness_e3_helpdesk_reset_defend`, lit, `--close-intro --check`: mode on, lit ambient `#c4cad8`, redraw 300 ms). Shots in `playtests/ROOMS_C3_screenshots/`: `after_c3_light_brightwell.png`, `after_c3_light_quayholt.png`, and 2x side-by-sides `after_c3_light_brightwell_before_after.png`, `after_c3_light_quayholt_before_after.png` (before on the left).
+
+| Finding | Outcome |
+|---|---|
+| m2 Brightwell sun | Kept. Under the window the floor mean goes from RGB (138, 129, 106) to (138, 127, 101) and the carpet near the window reads slightly warmer; the window itself is a touch warmer and paler. Floor away from the window is unchanged to the pixel. It is faint at normal zoom, not garish, and the glow on the window is not harmful, so `intensity` stays 0.1. |
+| t3 Quayholt queue halo | Reduced, not fully gone. Wall just above the queue screen is +7 over plain wall at 0.35 and +4 at 0.25 (the info screen at 0.25, radius 24, is +0). A faint soft glow remains above and below the screen at 2x; it no longer reads as a smudge at game zoom. If it still bothers anyone, the next step is `radius` 32 to 24 on `aw_quayholt_queue`, same as the info screen. |
+
+### E3 MFA decision — P6 fixes (2026-10-27)
+
+P6 part C (PLAYTEST_P6_E3.md) played the decision live: 0 blockers, 2 majors, 5 minors, 6 trivials. Fixes (I own the authenticator JS/CSS and all E3 data):
+
+- **M-1 outcome pushed off screen.** `.auth-choice` kept `display:flex` and overrode the `hidden` attribute after Confirm, so the panel stayed up and shoved the approval, the collapse line and the outcome panel off the bottom with no page scroll. Fixed: `.auth-choice[hidden]`/`.auth-controls[hidden]` now set `display:none`, and `.auth-root` gets `max-height:min(92vh,760px); overflow-y:auto` so it fits and scrolls on short screens (pattern copied from pretext-prep). The phone with its cards is still taller than a short viewport, so when the approval plays the banner is scrolled into view (`scrollIntoView`), bringing the approval and the outcome below it on screen rather than leaving them below the fold (live: the outcome top dropped from y 1002 to y 567 in a 1000 px viewport).
+- **M-2 unreadable labels.** The legends and option labels used dark ink on the dark overlay. The choice panel is now a light surface card (like `.auth-outcome`), with the groups on white, so the dark ink reads.
+- **m-1 habitual Esc/Close skipped the beat.** Esc and Close before the outcome now mean "back to choosing", never a skip: a pushed overlay layer catches Esc (so it also works with a radio focused — t-1), and `requestClose()` is overridden so the Close button does the same. Mid-playback it cancels the burst and returns to the panel, keeping the radio selection. Once the approval/outcome is on screen the layer is removed and Esc/Close exit normally.
+- **m-2 refused-call debrief.** `pretextNpcs.defenderNotes.reset_password` said "Both answers she accepted…" on every outcome, wrong when she refused. Reworded outcome-neutral: the manager's name and staff reference were on the public site, so neither proved who was calling; a callback is the one check.
+- **m-3 / t-3 repetition and timing-bound note.** The overlay `defenderNote` and the debrief conceptPanel listed the same three controls in the same order; the note's "half-asleep tap" also followed the daytime option. The `defenderNote` is now a timing-neutral two-control pointer (number matching + report), leaving the full three (adding rate limit) to the conceptPanel.
+- **m-4 / m-5 conceptPanel.** The shared conceptPanel read oddly for the defend-only learner (never made the call/sent prompts) and after a skipped stage. The full erb's conceptPanel is reworded technique-general ("Whoever has the password…") so it holds whether the call landed or was refused; the fragment (defend-only) now carries a deliberately different, defender-framed version ("Why these are hard to catch", the overnight prompt). `conceptPanel` added to the parity test's `STRINGS_VALUE_EXEMPT` with a reason; the defend-only shell regenerated from the fragment through scratch (only that one string differed).
+- **t-2 focus.** Initial focus goes to the first radio, not the disabled Confirm.
+- **t-4 "imposter" → "impostor"** in both conceptPanels.
+- **t-5 (two Gordon calls share a heading)**: left as is — the identical queue heading is partly the titles fixer's lane (the "· Incoming call" suffix) and two indistinguishable Gordon calls is the lesson; not changed.
+- **t-6 (recap the choice on the flip page)**: not done — optional, and the flip view is engine owned by another fixer this round.
+
+Bridge: `tools/playtest/se/bridge-e3-full.jsonl` now exercises the decision (picks the early hours + two or three, Confirms) and asserts the outcome panel is visible on screen and the choice panel is hidden (a guard against M-1), instead of pressing Escape straight away. New scene tests in `test/js/social-authenticator-decision.test.mjs` cover focus, Esc-back-to-choosing (before and mid-playback) and the post-outcome exit.
+
+Checks: node social + validator-social — all my tests pass (authenticator 9 legacy + 10 decision, p7x schema, E3 parity); the only failures in the suite are E1/E2/E7 parity, which come and go between runs because the other-episode fixers have uncommitted edits in the tree (not E3, not my files). `validate_scenario.rb --strict-social` clean on both E3 shells.
+
+Live (keyless :3001, fresh games): committed `bridge-e3-full` 22/22 PASS at 1400x1000 (it now exercises the decision and polls for the approval before asserting the outcome panel is visible and the choice panel hidden). A focused M-1/M-2 probe 15/15 PASS at both 1280x720 and the short 1280x700: the choice panel computes `display:none` after Confirm, `.auth-root` has `overflow-y:auto`, the outcome is reachable/on screen, and the WCAG contrast of the option labels against their background is ≥4.5 (dark ink on white). The first committed run exposed a fixed-8 s wait and the off-fold outcome; fixed with the poll + banner auto-scroll above.
+
+## POV backgrounds wired
+
+The four room-wide POV conversation backgrounds (`assets/backgrounds/rooms/aw_<company>_blended.png`, committed in 34c7a94d8) are now `rooms.training_room.chatBackground` in all 38 awareness shells. Value form matches the lab: `"assets/backgrounds/rooms/aw_<company>_blended.png"`, one per company (brightwell, tarrowby, quayholt, merrin_sallow). They live in `training_room.py` `ROOMS`; `apply_training_room.py --refresh` now splices the field too (replaces it if present, otherwise inserts it after `door_sign`, the order the generators use). Refresh changed one line per shell. Regenerating into scratch with all four `gen_*_shells.py` gave byte-identical output to the refreshed shells (31 generated shells). Validator `--strict-social --no-graph --skip-ink` clean on all 38; node social and validator-social tests 1843/1843.
+
+Live (keyless :3001, own games): the host chat in the E1-E4 defend shells resolved and loaded the right background for Brightwell, Tarrowby, Quayholt and Merrin & Sallow. Shots: `playtests/ROOMS_C3_screenshots/pov_wired_<company>.png`.
+
+## P7-2 and P7-7: grade cap and clean card titles (2026-10-27)
+
+- **P7-2:** `scoreTriage` now holds an awareness round below the top band when two or more skills were
+  never caught (`AWARENESS_ZERO_SKILLS_CAP = 2` skills), however few tells that is. The old cap of three
+  missed tells (`ZERO_SKILL_MISSES_CAP`) stays, and the analyst profile (the lab) uses only that. Two P7
+  playtests read "Sharp" at 92% with two skills on zero. The 05 worked example under awareness is now
+  86% "Getting there" (note added beside it in `05_inbox_triage_defender.md`). Tests updated:
+  `social-engine-r4-triage` (P7-2 and P4-9), `social-aw-p6-engine` (P6-4), `social-triage-scoring`,
+  `social-triage-ui`.
+- **P7-7:** a text with no subject took its body as the title, cut at 45 characters with dots
+  ("Parceline: we couldn't deliver your parcel. A..."). `defaultSubject` now cuts at a sentence end when
+  one fits in 48 characters, else at a word; the review card title also drops trailing dots from an
+  authored subject. Test in `social-engine-r4-triage`.
+- Live (keyless :3001, own games 4615 and 4617): E6 defend's Parceline card title reads without dots;
+  E5 defend at 92% with Padlock myth and Secrecy on zero reads "Getting there".
+
+### E3 MFA decision — P7 leftovers (2026-10-27)
+
+PLAYTEST_P7_E1_E4.md left two E3 items.
+- **m-4/m-5 residue.** The full episode's conceptPanel heading still read "Why the call and the prompts worked", false after a refused call (stage skipped, no prompts). The body was already technique-general from P6, so the fix is the heading: now "Why the call and the prompts are hard to stop", which holds whether or not the MFA stage ran. Chose the wording route over an engine outcome-variant: a single neutral heading reads correctly in every outcome and needs no change to debrief-view (engine, and near other fixers). The defend-only fragment keeps its own defender-framed heading ("Why these are hard to catch"); conceptPanel is already value-exempt in the parity test, so no fragment change and no defend-shell regen.
+- **T7-2 contrast.** The choice-panel intro was mid-grey (`--auth-dim`) on the near-black overlay, and the disabled Confirm was pale-on-pale. The intro is now a light tone (#d7dde6) for the dark overlay. The disabled Confirm is dark text on a light-grey fill (#3a4452 on #d3dae2, ~7:1). Root cause of the earlier washed-out button: `ui-themes.css` has `[data-ui-theme] .minigame-button { background: none }` at specificity (0,2,0), which tied a bare `.auth-confirm:disabled` and won on order, leaving white-on-transparent over the light card; the rule is now `.auth-choice .auth-confirm:disabled` (0,3,0) with dark text so it reads even if the fill is overridden.
+
+Live (keyless :3001, fresh game, 1400x1000): one full run 24/24 PASS — the whole E3 flow plus the choice-panel contrast (intro rgb(215,221,230); disabled Confirm rgb(58,68,82) on rgb(211,218,226), still disabled) and the debrief conceptPanel heading "Why the call and the prompts are hard to stop". E3 parity green; both E3 shells validate `--strict-social`.

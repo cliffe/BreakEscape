@@ -1,4 +1,4 @@
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "new"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
 {"cmd": "eval", "fn": "async () => { /* S0 baseline: no overlay open, nothing built, landed or sent, and se_landing_pages is an empty record */ const t=window.__test; const s=t.getState(); const g=s.globals; const gv=window.gameState.globalVariables; return !s.activeMinigame && g.landing_payroll_login_built===false && g.phish_lord_landed===false && (g.phish_lord_attempts||0)===0 && gv.se_landing_pages && typeof gv.se_landing_pages==='object' && Object.keys(gv.se_landing_pages).length===0; }"}
 {"cmd": "note", "message": "reveal lord (grantFact portal_name; exercised, not earned)"}
 {"cmd": "eval", "fn": "async () => { /* G0 reveal lord's contact: se_intel_portal_name via the real grantFact path */ const mod=await import('/break_escape/js/systems/social-intel.js'); mod.grantFact('portal_name'); await new Promise(r=>setTimeout(r,200)); try{window.stateSync&&window.stateSync.sync&&window.stateSync.sync();}catch(e){} return window.gameState.globalVariables.se_intel_portal_name===true; }"}
@@ -18,7 +18,7 @@
 {"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady && window.__test.isReady() === true", "timeoutMs": 60000}
 {"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady && window.__test.isReady() === true", "timeoutMs": 60000}
 {"cmd": "eval", "fn": "async () => { /* D-draft reload (step 7): page reloaded, bridge back, game ready */ const t0=Date.now(); while(!(window.__test&&window.__test.waitUntilReady)&&Date.now()-t0<60000) await new Promise(r=>setTimeout(r,250)); if(window.__preReload) return false; const r=await window.__test.waitUntilReady({timeoutMs:60000}); return !!(r&&r.ok); }"}
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume", "autoBrief": true}
 {"cmd": "moveToNear", "id": "slice_page_builder"}
 {"cmd": "interact", "id": "slice_page_builder"}
 {"cmd": "waitFor", "kind": "minigame", "id": "landing-page-builder"}
@@ -33,7 +33,7 @@
 {"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady && window.__test.isReady() === true", "timeoutMs": 60000}
 {"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady && window.__test.isReady() === true", "timeoutMs": 60000}
 {"cmd": "eval", "fn": "async () => { /* D-scored reload (step 7): page reloaded, bridge back, game ready */ const t0=Date.now(); while(!(window.__test&&window.__test.waitUntilReady)&&Date.now()-t0<60000) await new Promise(r=>setTimeout(r,250)); if(window.__preReload) return false; const r=await window.__test.waitUntilReady({timeoutMs:60000}); return !!(r&&r.ok); }"}
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume", "autoBrief": true}
 {"cmd": "moveToNear", "id": "slice_page_builder"}
 {"cmd": "interact", "id": "slice_page_builder"}
 {"cmd": "waitFor", "kind": "minigame", "id": "landing-page-builder"}
@@ -50,7 +50,7 @@
 {"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady && window.__test.isReady() === true", "timeoutMs": 60000}
 {"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady && window.__test.isReady() === true", "timeoutMs": 60000}
 {"cmd": "eval", "fn": "async () => { /* D-built reload (step 7): page reloaded, bridge back, game ready */ const t0=Date.now(); while(!(window.__test&&window.__test.waitUntilReady)&&Date.now()-t0<60000) await new Promise(r=>setTimeout(r,250)); if(window.__preReload) return false; const r=await window.__test.waitUntilReady({timeoutMs:60000}); return !!(r&&r.ok); }"}
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume", "autoBrief": true}
 {"cmd": "moveToNear", "id": "slice_page_builder"}
 {"cmd": "interact", "id": "slice_page_builder"}
 {"cmd": "waitFor", "kind": "minigame", "id": "landing-page-builder"}
@@ -80,7 +80,7 @@
 {"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady && window.__test.isReady() === true", "timeoutMs": 60000}
 {"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady && window.__test.isReady() === true", "timeoutMs": 60000}
 {"cmd": "eval", "fn": "async () => { /* D-partway reload (step 7): page reloaded, bridge back, game ready */ const t0=Date.now(); while(!(window.__test&&window.__test.waitUntilReady)&&Date.now()-t0<60000) await new Promise(r=>setTimeout(r,250)); if(window.__preReload) return false; const r=await window.__test.waitUntilReady({timeoutMs:60000}); return !!(r&&r.ok); }"}
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume", "autoBrief": true}
 {"cmd": "moveToNear", "id": "slice_page_builder"}
 {"cmd": "interact", "id": "slice_page_builder"}
 {"cmd": "waitFor", "kind": "minigame", "id": "landing-page-builder"}

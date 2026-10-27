@@ -25,6 +25,10 @@ module BreakEscape
     end
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission]
+    # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
+    # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
+    before_action :require_game_in_host_event, only: [:show]
+
 
     # Actions that read-modify-write @game.player_state and then save! need a
     # row lock, or two concurrent requests for the same game (e.g. a single
@@ -167,7 +171,7 @@ module BreakEscape
         redirect_to configuration_path(game_id: @game.id)
       else
         # All good - start game
-        redirect_to game_path(@game)
+        redirect_to game_page_path_for(@game)
       end
     end
 
@@ -188,6 +192,8 @@ module BreakEscape
         flash[:alert] = 'Your selected character is not available for this mission. Please choose another.'
         redirect_to configuration_path(game_id: @game.id) and return
       end
+
+      @shell_links = shell_links_for(@game)
 
       # All game sessions for this player + mission, ordered oldest first
       @mission_sessions = Game.where(player: current_player, mission: @mission)
@@ -247,7 +253,7 @@ module BreakEscape
       new_game.game_slot = slot if inherit_slot && new_game.respond_to?(:game_slot=)
       new_game.save!
 
-      render json: { success: true, redirect_url: game_path(new_game, skip_resume: 1) }
+      render json: { success: true, redirect_url: game_page_path_for(new_game, skip_resume: 1) }
     rescue Pundit::NotAuthorizedError
       raise
     rescue => e
@@ -1395,6 +1401,18 @@ module BreakEscape
       @game = Game.find(params[:id])
     end
 
+    # Only when the route names an event (the host's alias route): the game's mission listing must be in it.
+    def require_game_in_host_event
+      # the route's own segment, never a query string (/break_escape/games/37?event_id=1 is the old address)
+      event_id = request.path_parameters[:event_id]
+      return if event_id.blank?
+
+      slot = @game.try(:game_slot)
+      return if slot && slot.event_id.to_s == event_id.to_s
+
+      raise ActiveRecord::RecordNotFound, "Game #{@game.id} is not in event #{event_id}"
+    end
+
     # What sync_state reads or writes. scenario_data is left out (it is fetched
     # only for the rare paths that need it). Reading an attribute not listed
     # here raises ActiveModel::MissingAttributeError; reload_persistence_test
@@ -1747,6 +1765,15 @@ module BreakEscape
     # Items that are always allowed in inventory (core game mechanics)
     ALWAYS_ALLOWED_ITEMS = %w[notepad].freeze
 
+    # Cups of coffee or tea standing in a room are Tiled map decor, not scenario
+    # objects, so they are never "found in the scenario". The client picks one up
+    # with decor: true and its map object id, to drink later from the inventory
+    # (consumables.js DRINKABLE_CUPS: keep the two lists in step).
+    DECOR_CUP_TYPES = %w[
+      office-misc-cup office-misc-cup2 office-misc-cup3 office-misc-cup4
+      office-misc-cup5 coffee_cups1 mugs_tray1
+    ].freeze
+
     def validate_item_collectible(item, source_npc_id = nil)
       @collectible_location = nil
       item_type = item['type']
@@ -1759,6 +1786,12 @@ module BreakEscape
       # Always allow core game items like notepad
       if ALWAYS_ALLOWED_ITEMS.include?(item_type)
         Rails.logger.info "[BreakEscape] Item is always allowed: #{item_type}"
+        return nil
+      end
+
+      # A room-map cup picked up as decor has no scenario entry to check
+      if item['decor'] == true && DECOR_CUP_TYPES.include?(item_type) && item['id'].present?
+        Rails.logger.info "[BreakEscape] Item is a room-map decor cup: #{item_type} / #{item['id']}"
         return nil
       end
 

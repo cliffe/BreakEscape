@@ -42,7 +42,7 @@
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { MailReader } from '../mail-client/mail-reader.js';
 import { scoreTriage, weakestFactor, bandFor, verdictPoints, FULL_VERDICT_POINTS, CRITICAL_PENALTY, criticalWhat,
-    genuineFeedback, genuineFeedbackText, dedupeSentences } from './triage-scoring.js';
+    genuineFeedback, genuineFeedbackText, dedupeSentences, missedPhishText } from './triage-scoring.js';
 import { buildTriageMessages } from './triage-messages.js';
 import { buildHeaderPanel } from './header-panel.js';
 import {
@@ -50,7 +50,7 @@ import {
 } from './triage-flags.js';
 import {
     kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, KIND_LABEL,
-    CALL_ACTIONS, PUSH_ACTIONS
+    CALL_ACTIONS, PUSH_ACTIONS, shortTitle, realNounFor
 } from './triage-kinds.js';
 import { comparisonFor, comparisonText } from './triage-comparison.js';
 
@@ -295,6 +295,13 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         });
     }
 
+    /** The announcement for a message's locked verdict (also what keeps it on screen while that message stays open). */
+    _lockedLine(id) {
+        const rec = this.messages.find((m) => m.id === id);
+        const a = this.answers.get(id);
+        return rec && a ? `Verdict locked: ${this._actionLabel(rec, a)}.` : null;
+    }
+
     _announce(text) {
         this._live = text;
         if (this.liveEl) this.liveEl.textContent = text;
@@ -338,7 +345,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const kinds = this.messages.map((m) => kindOf(m));
         const every = (allow) => kinds.length > 0 && kinds.every((k) => allow.includes(k));
         if (kinds.some((k) => k === 'email' || k === 'playerSent')) {
-            return { label: 'Inbox check', item: ['message', 'messages'], real: 'Real mail',
+            return { label: 'Inbox check', item: ['message', 'messages'], real: realNounFor(kinds, this.set),
                 reportLabel: 'Reported rather than just deleted', dropLegend: false };
         }
         if (every(['call'])) return { label: 'Service desk queue', item: ['call', 'calls'], real: 'Real callers',
@@ -456,6 +463,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     }
 
     _onOpen(rec) {
+        // The "Verdict locked" line is about the message just sorted; opening another must not leave it
+        // reading as that message's verdict (lab R18 F-d).
+        if (this._live && this._live !== this._lockedLine(rec.id)) this._announce('');
         rec.read = true;
         this.openedAt.set(rec.id, Date.now());
     }
@@ -574,8 +584,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         sheet.appendChild(Object.assign(el('h3', 'tri-sheet-title', 'What made you say that?'), { id: 'tri-sheet-title' }));
         sheet.appendChild(el('p', 'tri-sheet-chosen', `You chose: ${this._actionLabel(rec, { verdict, action })}. Tick anything you noticed.`));
 
-        const fs = el('fieldset', 'tri-chips');
-        fs.appendChild(el('legend', 'mail-sr-only', 'What made you say that?'));
+        // A div group, not a fieldset: a fieldset will not reliably clip its own scroll area, and
+        // the tick list must scroll above the Confirm/Back bar (lab R16 N8).
+        const fs = el('div', 'tri-chips');
+        fs.setAttribute('role', 'group');
+        fs.setAttribute('aria-label', 'What made you say that?');
         const inputs = new Map();
         const addChip = (id) => {
             const label = el('label', `tri-chip${id === NONE_ID ? ' tri-chip-none' : ''}`);
@@ -649,7 +662,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         this._closeSheet(false);
         const rec = this.messages.find((m) => m.id === s.messageId);
         if (this.teamEl) this._renderTeamTally(this.teamProtectedCount() > teamBefore);
-        this._announce(`Verdict locked: ${this._actionLabel(rec, answer)}.`);
+        this._announce(this._lockedLine(rec.id));
         this.progressEl.textContent = `${this.answers.size} of ${this.messages.length} sorted`;
 
         if (this.answers.size >= this.messages.length) {
@@ -712,7 +725,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
     /** A card's title: the subject, led by the sender for a non-email kind (two calls both read "Incoming call"). */
     _cardTitle(rec) {
-        const subject = rec.subject || '(no subject)';
+        // A subject cut short with trailing dots (a text's body preview) loses them (P7-7).
+        const subject = String(rec.subject || '(no subject)').replace(/\s*(?:\.{3,}|\u2026)\s*$/, '') || '(no subject)';
         const who = rec.from?.name || rec.from?.address || '';
         return isNonEmail(rec) && who && who !== subject ? `${who} · ${subject}` : subject;
     }
@@ -1004,6 +1018,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         if (!stored && this.feedbackMode === 'end') p.appendChild(this._itemList(genuine));
         const genuineBox = genuine ? this._genuineSummary(genuine) : null;
         if (genuineBox) p.appendChild(genuineBox);
+        // Opt-in (lab R20 F20-1): name the phish that were trusted, beside the real ones above.
+        if (!stored && this.set?.missedPhishLine === true) {
+            const line = missedPhishText(result.answers, this.messages, (m) => shortTitle(m) || this._cardTitle(m));
+            if (line) p.appendChild(el('p', 'tri-missed-phish', line));
+        }
 
         if (!stored) {
             const entries = Object.entries(result.perFactor);
@@ -1130,7 +1149,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         if (this.set?.genuineFeedback === false) return null;
         return genuineFeedback({
             messages: this.messages, answers: this._answerList(), profile: this.profile,
-            titleOf: (m) => this._cardTitle(m), actionLabel: (m, a) => this._actionLabel(m, a)
+            titleOf: (m) => shortTitle(m) || this._cardTitle(m), actionLabel: (m, a) => this._actionLabel(m, a)
         });
     }
 

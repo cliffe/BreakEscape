@@ -1,4 +1,4 @@
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "new"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
 {"cmd": "note", "message": "bridge-deduction-b: fixture B end to end on test_social_deduction_b (fresh game), naming the right person. DRAFT outline from the sidecar; P10-K-B finalises selectors and the board's getTestState shape (§6.8)."}
 {"cmd": "eval", "fn": "async () => { /* B0 baseline: every deduction global declared with its default, the runtime installed, nothing held, no verdicts, case open */ window.__toasts = window.__toasts || []; if (!window.__toastSpy) { const orig = window.gameAlert; window.gameAlert = (...a) => { window.__toasts.push(a); return orig ? orig(...a) : undefined; }; window.__toastSpy = true; } const G = window.__test.getState().globals; const R = window.deductionRuntime; const S = R && R.getState();\n  const sus = ['ded_b_okoro','ded_b_lindqvist','ded_b_haddad','ded_b_morgan']; const facts = ['b_okoro_access','b_lindqvist_access','b_haddad_access','b_morgan_access','b_okoro_device','b_lindqvist_device','b_haddad_device','b_morgan_device','b_okoro_grievance','b_lindqvist_grievance','b_haddad_grievance','b_morgan_grievance'];\n  return !!R && !!S && G.deduction_closed === false && JSON.stringify(G.scenario_triggers_fired) === '{}'\n    && sus.every(s => G['deduction_verdict_' + s] === '' && G['deduction_outcome_' + s] === '')\n    && facts.every(f => G['se_intel_' + f] === false) && G.b_heard_alarm === false && G.ded_b_tomas_influence === 0\n    && S.state.closed === false && Object.keys(S.state.verdicts || {}).length === 0 && Object.values(S.decidable || {}).every(v => v === false); }"}
 {"cmd": "moveToNear", "id": "b_board"}
@@ -69,7 +69,7 @@
 {"cmd": "sync"}
 {"cmd": "waitFor", "kind": "condition", "fn": "() => { window.__preReload = true; setTimeout(() => location.assign(location.pathname + \"?skip_resume=1\"), 50); return true; }"}
 {"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady() === true", "timeoutMs": 60000}
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume", "autoBrief": true}
 {"cmd": "eval", "fn": "async () => { /* B4 after reload: the marks survive, the runtime is installed once, nothing re-toasts */ const st = window.gameState.globalVariables.deduction_state; return !!window.deductionRuntime && st.marks.ded_b_haddad.mark === 'clear' && st.marks.ded_b_okoro.mark === 'guilty' && st.closed === false; }"}
 {"cmd": "note", "message": "B5 server room: door, log filter, DHCP printout"}
 {"cmd": "moveToNear", "id": "b_server"}
@@ -125,7 +125,7 @@
 {"cmd": "sync"}
 {"cmd": "waitFor", "kind": "condition", "fn": "() => { window.__preReload = true; setTimeout(() => location.assign(location.pathname + \"?skip_resume=1\"), 50); return true; }"}
 {"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady() === true", "timeoutMs": 60000}
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume", "autoBrief": true}
 {"cmd": "eval", "fn": "async () => { /* B7 the conclusion replays; nothing re-runs */ const st = window.gameState.globalVariables.deduction_state; return st.closed === true && st.debriefSeen === true && st.ran.includes('close'); }"}
 {"cmd": "dismiss", "label": null}
 {"cmd": "moveToNear", "id": "b_board"}

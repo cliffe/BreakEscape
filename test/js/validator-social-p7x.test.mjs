@@ -234,7 +234,7 @@ test('defend.calls tells and notes: channel tells only, impostor flagged, genuin
   let j = e3();
   ep(j).defend.calls[0].tells = ['senderTrust'];
   ep(j).defend.calls[0].notes = { perFlagNote: { senderTrust: 'n' } };
-  expectIn(lint(j), /truth\.flags: 'senderTrust' is an email factor/);
+  expectIn(lint(j), /truth\.flags: 'senderTrust' is an email factor; a call message has no email From line/);
   j = e3();
   ep(j).defend.calls[0].tells = ['borrowed_authority'];
   ep(j).defend.calls[0].notes = { perFlagNote: { borrowed_authority: 'n' } };

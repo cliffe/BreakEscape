@@ -119,6 +119,18 @@ export function phoneLineVoice(line, contact, characters) {
 }
 
 /**
+ * Who speaks a pretext call's authored outcome line (`outcomes.<id>.line`, shown on finalise,
+ * e.g. Dev's "I'll run this past my manager first"), and the text sent. It is the contact's
+ * own line, so it is voiced like any other line of a voiced call, and only when the call is
+ * voiced. TtsLineExtractor#each_pretext_outcome_line lists the same lines for the batch.
+ * @returns {{speakerId: string, text: string}|null}
+ */
+export function outcomeLineVoice(text, params, contact, characters) {
+    if (!isVoicedCall(params) || typeof text !== 'string') return null;
+    return phoneLineVoice({ type: 'npc', text }, contact, characters);
+}
+
+/**
  * Plays one call line at a time and waits for it. speak() resolves when the line has
  * ended, was skipped or stopped, or could not play (no clip and no key: it resolves at
  * once, so a keyless server only loses the voice, never the call).

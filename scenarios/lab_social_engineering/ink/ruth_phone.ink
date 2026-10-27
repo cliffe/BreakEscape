@@ -115,7 +115,7 @@ Recon's next. If that door's locked, I've got the key — come and see me. The O
     Three people filled in from public sources. The board's "Missing" rows say what's short.
     -> stage2
 + {not se_intel_hampshire_cv_backlog} [Chris's card won't fill.]
-    Open her careers inbox on the page and select it. Her backlog post only shows then.
+    Open the careers inbox on the page and select it. The backlog post only shows then.
     -> stage2
 + {not se_intel_username_convention} [I can't work out the username pattern.]
     Open the published PDF and read its properties. The author field gives the username pattern away.
@@ -141,7 +141,7 @@ Recon's next. If that door's locked, I've got the key — come and see me. The O
     For Chris, a throwaway webmail address: real applicants use one. For Melanie, the guest account, because it lets you set the From line.
     -> stage3
 + {not phish_hampshire_landed} [Chris isn't biting.]
-    Her careers inbox trusts anyone. Apply as a candidate, and attach a CV from the kit.
+    The careers inbox trusts anyone. Apply as a candidate, and attach a CV from the kit.
     -> stage3
 + {not phish_pierce_landed} [Melanie keeps refusing.]
     Who would she open a file from without thinking? Your recon says.

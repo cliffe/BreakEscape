@@ -435,3 +435,28 @@ test('E1 P4-9: with nobody to send to, the To picker says so without claiming no
     assert.equal(to.textContent, 'Nobody to write to yet — find who to send it to first.');
     assert.doesNotMatch(to.textContent, /No contacts/);
 });
+
+test('a blank with only wrong options shows its stuckUntil pointer until the right option is held (lab R16 N9)', () => {
+    const contacts = [{ id: 'pierce', name: 'Melanie Pierce', role: 'Finance', addresses: ['m.pierce@ledgerwell.example'], targetId: 'pierce' }];
+    const fx = fixture();
+    const su = (target) => ({ target, value: 'portal_full', text: 'Ring the service desk.' });
+    fx.templates.from_named.slots = fx.templates.from_named.slots.map((sl) => (sl.id === 'sender_name' ? { ...sl, stuckUntil: su('pierce') } : sl));
+    const build = (globals, templates) => {
+        const r = makeComposer(globals, { contacts, templates });
+        r.composer.chooseTemplate('from', 'from_named');
+        return r.host.querySelector('.mail-blank-field[data-slot="sender_name"]');
+    };
+    let field = build(grant('pierce_trusts_jed'), fx.templates);
+    assert.ok(field.querySelector('button.mail-blank:not([disabled])'), 'the blank still offers its options');
+    const stuck = field.querySelector('details.mail-blank-stuck');
+    assert.ok(stuck, 'pointer shown beside a blank with wrong options');
+    assert.equal(stuck.open, false);
+    assert.equal(stuck.querySelector('.mail-blank-stuck-text').textContent, 'Ring the service desk.');
+    // A different target gets none; holding the right fact removes it.
+    const other = fixture();
+    other.templates.from_named.slots = other.templates.from_named.slots.map((sl) => (sl.id === 'sender_name' ? { ...sl, stuckUntil: su('lord') } : sl));
+    assert.equal(build(grant('pierce_trusts_jed'), other.templates).querySelector('.mail-blank-stuck'), null);
+    const held = fixture();
+    held.templates.from_named.slots = held.templates.from_named.slots.map((sl) => (sl.id === 'sender_name' ? { ...sl, stuckUntil: { target: 'pierce', value: 'baker_full', text: 'x' } } : sl));
+    assert.equal(build(grant('pierce_trusts_jed'), held.templates).querySelector('.mail-blank-stuck'), null, 'gone once the named option is offered');
+});

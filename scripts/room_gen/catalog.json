@@ -6079,6 +6079,24 @@
       "w": 20,
       "h": 45,
       "gid": 1445
+    },
+    "aw_chair_south_charcoal1": {
+      "id": 645,
+      "w": 16,
+      "h": 32,
+      "gid": 1446
+    },
+    "aw_chair_north_charcoal1": {
+      "id": 646,
+      "w": 16,
+      "h": 26,
+      "gid": 1447
+    },
+    "aw_chair_w_charcoal1": {
+      "id": 647,
+      "w": 17,
+      "h": 32,
+      "gid": 1448
     }
   }
 }

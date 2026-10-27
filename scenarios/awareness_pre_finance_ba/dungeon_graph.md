@@ -197,13 +197,13 @@ flowchart TD
 
   training_room("Training Room")
   rc_training_kiosk_1{"Training kiosk"}
-  rc_npc_farah_qureshi_2("Farah Qureshi")
+  rc_npc_joanne_pell_2("Joanne Pell")
 
   training_room --> rc_training_kiosk_1
-  training_room --> rc_npc_farah_qureshi_2
+  training_room --> rc_npc_joanne_pell_2
 
   class training_room room
   class rc_training_kiosk_1 item
-  class rc_npc_farah_qureshi_2 npc
+  class rc_npc_joanne_pell_2 npc
   class node_start start
 ```

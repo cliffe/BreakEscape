@@ -55,6 +55,14 @@ module BreakEscape
       text.to_s.downcase.gsub(/[^\w\s]/, "").strip.gsub(/\s+/, " ")
     end
 
+    # The text sent to the voice. 3.8 reads a hyphen between letters aloud
+    # ("payroll hyphen notices", lab_social_engineering's Dev), so it becomes a
+    # space; the key is still made from the line as written, which normalising
+    # already strips the hyphen from. Digits keep theirs (dates, ranges).
+    def self.spoken_text(text)
+      text.to_s.gsub(/(?<=\p{L})-(?=\p{L})/, " ")
+    end
+
     # Cache key for already-normalised text (see normalize_text). The model is
     # part of the key, so a model change regenerates every line.
     def self.cache_key_for_normalized(normalized, voice_name, style_prompt = nil, language_code = nil)
@@ -128,7 +136,7 @@ module BreakEscape
       # Cache miss — generate via API (requires API key)
       return nil unless enabled?
       Rails.logger.info "[TTS] Cache miss, generating: #{text.truncate(60)} (voice: #{voice_name})"
-      pcm_data = call_gemini_tts(text, voice_name, style_prompt, language_code)
+      pcm_data = call_gemini_tts(self.class.spoken_text(text), voice_name, style_prompt, language_code)
       return nil unless pcm_data
 
       FileUtils.mkdir_p(mp3_path.dirname)

@@ -320,6 +320,70 @@ module BreakEscape
       assert_equal Set.new(%w[call briefing]), TtsLineExtractor.call_knots(data.dig('rooms', 'office', 'npcs', 0), ink)
     end
 
+    # A call the player starts (a desk phone's pretext call) has no event mapping: `voiced: true`
+    # on the contact marks it, and the contact's own knot is the call's start.
+    test "voiced: true on the contact voices the call from its currentKnot, not its narration" do
+      data = scenario(story: HUB_CALL, current: 'call')
+      data['rooms']['office']['npcs'][0].delete('eventMappings')
+      assert_empty entries_for(data)
+      data['rooms']['office']['npcs'][0]['voiced'] = true
+      extractor = TtsLineExtractor.new('walker_test', data)
+      assert_includes extractor.entries.map { |e| [e.npc_id, e.text] }, ['agent_0x99', "Don't hang up."]
+      assert_includes extractor.entries.map { |e| e.npc_id }.uniq, 'agent_0x99'
+      refute extractor.spoken_by?('narrator', 'The line crackles.')
+      npc = data['rooms']['office']['npcs'][0]
+      ink = JSON.parse(File.read(Engine.root.join(HUB_CALL)))
+      assert_equal ['call'], TtsLineExtractor.call_start_knots(npc)
+      assert_includes TtsLineExtractor.call_knots(npc, ink), 'call'
+    end
+
+    # A pretext call's authored goodbye (social.pretextNpcs outcomes.<id>.line) is spoken on
+    # finalise, outside the ink: it is voiced when the call's phone NPC is voiced.
+    def pretext_scenario(voiced: true, line: "Sorry, I'm going to stop you there.")
+      data = scenario(story: HUB_CALL, current: 'call')
+      npc = data['rooms']['office']['npcs'][0]
+      npc.delete('eventMappings')
+      npc['voiced'] = true if voiced
+      data['social'] = {
+        'characters' => { 'dev' => { 'displayName' => 'Dev', 'channels' => { 'phone' => 'agent_0x99' } } },
+        'pretextNpcs' => [{ 'character' => 'dev', 'callId' => 'c',
+                            'outcomes' => { 'got_it' => {}, 'reported' => { 'line' => line, 'setGlobal' => { 'x' => true } },
+                                            'walked_away' => {} } }]
+      }
+      data
+    end
+
+    test "a pretext outcome line is voiced with the voiced phone NPC's voice and accepted by the endpoint" do
+      extractor = TtsLineExtractor.new('walker_test', pretext_scenario)
+      entry = extractor.entries.find { |e| e.text.start_with?('Sorry, ') }
+      assert entry, 'outcome line should be listed'
+      assert_equal 'agent_0x99', entry.npc_id
+      assert_equal HAX_VOICE, entry.voice
+      assert_equal TtsService.new.cache_key_for("Sorry, I'm going to stop you there.", 'Aoede', 'Calm handler.', 'en-GB'), entry.key
+      assert extractor.spoken_by?('agent_0x99', "Sorry, I'm going to stop you there!")
+      refute extractor.spoken_by?('director_netherton', "Sorry, I'm going to stop you there.")
+      refute extractor.spoken_by?('agent_0x99', 'Something else entirely.')
+    end
+
+    test "a pretext outcome line is not voiced when the call is not voiced" do
+      extractor = TtsLineExtractor.new('walker_test', pretext_scenario(voiced: false))
+      assert_empty extractor.entries.select { |e| e.text.start_with?('Sorry, ') }
+      refute extractor.spoken_by?('agent_0x99', "Sorry, I'm going to stop you there.")
+    end
+
+    test "the endpoint cache stamp changes when an outcome line is edited" do
+      a = TtsLineExtractor.new('walker_test', pretext_scenario).cache_stamp
+      b = TtsLineExtractor.new('walker_test', pretext_scenario(line: 'Different words.')).cache_stamp
+      refute_equal a, b
+    end
+
+    test "voiced: true on a contact with no currentKnot starts at start" do
+      npc = { 'voiced' => true }
+      assert TtsLineExtractor.voiced_call?(npc)
+      assert_equal ['start'], TtsLineExtractor.call_start_knots(npc)
+      refute TtsLineExtractor.voiced_call?({})
+    end
+
     test "the call boundary is the home knot: with home 'start' the hub is reached, and no targetKnot voices nothing" do
       entries = entries_for(scenario(mapping: { 'voiced' => true }, story: HUB_CALL))
       assert_includes entries, ['agent_0x99', 'Nothing yet.']

@@ -189,6 +189,18 @@ if [start_room_opt, unlock_opts, set_opts, give_opts, carry_opts].any?(&:present
     orig_start = sd['startRoom']
     sd['startRoom'] = start_room_opt
     if orig_start != start_room_opt
+      # The game spawns at startPosition (room-relative TILES) if the scenario has one, else a fixed
+      # 160,144 px offset: right for a 10x9-tile room, inside the wall of a smaller one. Put the player
+      # on the middle tile of the new start room, from its room file's size.
+      room_type = sd.dig('rooms', start_room_opt, 'type')
+      room_json = File.expand_path("../../public/break_escape/assets/rooms/#{room_type}.json", __dir__)
+      if room_type && File.exist?(room_json)
+        rj = JSON.parse(File.read(room_json))
+        if rj['width'].to_i > 4 && rj['height'].to_i > 4
+          sd['startPosition'] = { 'x' => rj['width'] / 2.0, 'y' => rj['height'] / 2.0 }
+          head_start_notes << "startPosition=#{sd['startPosition'].values.join(',')} (tiles)"
+        end
+      end
       from_npcs = Array(sd.dig('rooms', orig_start, 'npcs'))
       moving, staying = from_npcs.partition { |n| n['npcType'] == 'phone' || carry_opts.include?(n['id']) }
       missing = carry_opts - moving.map { |n| n['id'] }

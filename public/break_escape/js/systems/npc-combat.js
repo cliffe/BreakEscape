@@ -7,9 +7,25 @@ import { COMBAT_CONFIG } from '../config/combat-config.js';
 import { applyKnockback } from '../utils/knockback.js';
 import { getNPCDirection } from './npc-sprites.js';
 import { playerCanBeAttacked, attacksPausedByUI, minigameBlocksAttacks, ATTACK_RESUME_GRACE_MS } from './npc-attack-guard.js';
+import { feetClear, playerFeet } from './interaction-walls.js';
 import { resolveFightStyle, npcIsGuarding, blockedDamage, facingCovers } from './fight-styles.js';
 
+/** True when the NPC's feet and the player's feet share a room (or an open doorway) with no wall between. */
+export function npcReachesPlayer(npcSprite) {
+  const bc = npcSprite?.body?.center;
+  const half = npcSprite?.body?.halfHeight;
+  const a = bc && Number.isFinite(bc.x)
+    ? { x: bc.x, y: bc.y, half, fallback: npcSprite.roomId }
+    : { x: npcSprite.x, y: npcSprite.y, fallback: npcSprite.roomId };
+  return feetClear(a, playerFeet(window.player));
+}
+
 export class NPCCombat {
+  /** Can this NPC's blow land on the player now? (the chase code keeps closing in when it can't) */
+  canReachPlayer(npcSprite) {
+    return window.player ? npcReachesPlayer(npcSprite) : true;
+  }
+
   constructor(scene) {
     this.scene = scene;
     this.npcAttackTimers = new Map(); // npcId -> last attack time
@@ -140,6 +156,11 @@ export class NPCCombat {
       return false;
     }
 
+    // No punch through a wall, or from the strip behind a back wall into the room below
+    if (!npcReachesPlayer(npcSprite)) {
+      return false;
+    }
+
     // Start attack sequence
     this.performAttack(npcId, npcSprite, state);
     return true;
@@ -230,6 +251,12 @@ export class NPCCombat {
       return;
     }
 
+    if (!npcReachesPlayer(npcSprite)) {
+      console.log(`${npcId} attack missed - a wall is in the way`);
+      this.endAttack(npcId);
+      return;
+    }
+
     // Play attack animation
     this.playAttackAnimation(npcSprite, npcId, state);
   }
@@ -266,6 +293,11 @@ export class NPCCombat {
 
     if (distance > state.attackRange * 1.5) { // 1.5x range for leniency during animation
       console.log(`${npcId} attack missed - player moved away during animation`);
+      return;
+    }
+
+    if (!npcReachesPlayer(npcSprite)) {
+      console.log(`${npcId} attack missed - a wall is in the way`);
       return;
     }
 

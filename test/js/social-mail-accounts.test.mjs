@@ -322,6 +322,20 @@ test('Send as: choosing another account switches the sending mailbox and that ac
     assert.deepEqual(scene.composer.getState().sendAs, [{ id: 'guest', burned: false }, { id: 'freemail', burned: false }]);
 });
 
+test('Send as: an edited draft is carried and beats the new account\'s older draft; an untouched one does not (lab R20 F20-3)', () => {
+    const drafts = {};
+    const { scene, host } = open({ accountIds: ['guest', 'freemail'] },
+        { acct_freemail: true, acct_freemail_choice: 'tt1' });
+    scene.mailState.drafts = drafts;
+    scene.openCompose();
+    drafts.freemail = { contactId: 'hampshire', to: 'careers@ledgerwell.example', templates: {}, slots: {} };
+    scene.composer.selectContact('pierce');
+    scene.composer.setSubject?.(scene.composer.visibleSubjects()[0]?.id);
+    assert.equal(scene.composer.edited, true);
+    pick(host.querySelector('.mail-compose-sendas-select'), 'freemail');
+    assert.equal(scene.composer.getState().contactId, 'pierce');   // the draft being carried won
+});
+
 test('the forced-From hint adds "Switch account" only when another listed account can spoof', () => {
     const cfg = config();
     const withGuest = open({ accountIds: ['guest', 'freemail'], defaultAccount: 'freemail', mailClient: cfg },
@@ -329,6 +343,8 @@ test('the forced-From hint adds "Switch account" only when another listed accoun
     assert.equal(withGuest.scene.account.id, 'freemail');
     withGuest.scene.openCompose();
     assert.equal(withGuest.scene.composer.anotherSpoofs, true);
+    assert.equal(withGuest.scene.composer.spoofingAccount.id, 'guest');
+    assert.match(withGuest.host.querySelector('.mail-compose-hint').textContent, /Switch to the .+ account to send as someone else/);
     withGuest.scene.closeCompose();
 
     const alone = open({ accountIds: ['freemail'], mailClient: cfg },

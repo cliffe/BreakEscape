@@ -1,3 +1,5 @@
+> Note, 2026-10-27: §3.2–3.5 and §10 predate rooms cycles C1 and C2 (flip charts, `conference_screen1`, `phone3` and grey chairs are gone). The dressing now lives in `scripts/room_gen/build_aw_rooms.py`; read the maps, not these tables.
+
 # Awareness training rooms: dressing, lighting and POV plan
 
 Status: steps 1–2 of §8 built 2026-10-22 (maps, sheets, signs, kiosk slot, lighting blocks, `training_room.py`); see

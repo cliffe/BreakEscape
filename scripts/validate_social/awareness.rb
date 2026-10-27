@@ -206,7 +206,7 @@ module ValidateSocial
         delay = found['emailReplyDelay']
         unless delay.is_a?(Numeric) && REPLY_DELAY.cover?(delay)
           issues << warn_("target '#{target}' emailReplyDelay is #{delay.inspect}; an episode wants #{REPLY_DELAY.first} to #{REPLY_DELAY.last} seconds " \
-                          '(the default is 20, too long to wait in a 13 minute episode)')
+                          '(the default is 20, too long to wait in an episode of about 15 minutes)')
         end
       end
 
@@ -510,9 +510,14 @@ module ValidateSocial
       return issues unless has_data
 
       mfa = ep['mfa']
-      return issues << err('awarenessEpisode.mfa must be an object { pushes, approvesAt }') unless mfa.is_a?(Hash)
+      return issues << err('awarenessEpisode.mfa must be an object: { pushes, approvesAt } (scripted) or { choice, pushTemplate, defenderNote } (a learner decision)') unless mfa.is_a?(Hash)
 
       issues << err("awarenessEpisode.mfa.mode is #{mfa['mode'].inspect}; the only mode is \"attacker\"") if mfa.key?('mode') && mfa['mode'] != 'attacker'
+
+      # Decision mode (E3-11): the learner chooses when and how many, so there are no authored
+      # `pushes`/`approvesAt`; the burst and the approval are built at runtime from the choice.
+      return issues + decision_checks(mfa) if mfa.key?('choice')
+
       pushes = mfa['pushes']
       keys = []
       if !pushes.is_a?(Array) || pushes.empty?
@@ -554,6 +559,68 @@ module ValidateSocial
           issues << err("awarenessEpisode.mfa.approvesAt (#{mfa['approvesAt']}) is before the first push; the target cannot approve a prompt that has not arrived")
         end
       end
+      issues
+    end
+
+    # The learner-decision shape (E3-11): mfa.choice { timing, count }, mfa.pushTemplate, defenderNote.
+    # Every combination must land (the scene always plays an approval), so the checks are about the
+    # decision being real (two or more options each side) and every option carrying its teaching copy.
+    def self.decision_checks(mfa)
+      issues = []
+      %w[pushes approvesAt].each do |k|
+        issues << err("awarenessEpisode.mfa has both 'choice' and '#{k}'; a decision builds its own stream, so drop '#{k}'") if mfa.key?(k)
+      end
+
+      choice = mfa['choice']
+      return issues << err('awarenessEpisode.mfa.choice must be an object { timing, count }') unless choice.is_a?(Hash)
+
+      issues.concat(choice_group_checks(choice['timing'], 'timing', %w[at outcome]))
+      issues.concat(choice_group_checks(choice['count'], 'count', %w[n note]))
+
+      tmpl = mfa['pushTemplate']
+      if !tmpl.is_a?(Hash)
+        issues << err('awarenessEpisode.mfa.pushTemplate must be an object { app, account?, location?, device? }; the prompt cards need something to show')
+      elsif Mail.blank?(tmpl['app'])
+        issues << err('awarenessEpisode.mfa.pushTemplate.app is missing; the prompt would not say which app is asking')
+      end
+
+      issues << err('awarenessEpisode.mfa.defenderNote is missing; a decision must name the defender\'s control (number matching, report, rate limit)') if Mail.blank?(mfa['defenderNote'])
+      issues
+    end
+
+    # One side of the decision (timing or count): a legend-and-options object whose options each carry
+    # an id, a label and the fields that make the outcome teach (`extra`). Needs two or more options,
+    # or the learner is not really choosing.
+    def self.choice_group_checks(group, name, extra)
+      w = "awarenessEpisode.mfa.choice.#{name}"
+      return [err("#{w} must be an object { legend?, options }")] unless group.is_a?(Hash)
+
+      opts = group['options']
+      return [err("#{w}.options must be a non-empty array")] unless opts.is_a?(Array) && !opts.empty?
+
+      issues = []
+      issues << err("#{w}.options has one option; a decision needs two or more to choose between") if opts.length == 1
+      ids = []
+      opts.each_with_index do |o, i|
+        at = "#{w}.options[#{i}]"
+        unless o.is_a?(Hash)
+          issues << err("#{at} must be an object")
+          next
+        end
+        issues << err("#{at}.id is missing") if Mail.blank?(o['id'])
+        issues << err("#{at}.label is missing") if Mail.blank?(o['label'])
+        ids << o['id'] if o['id'].is_a?(String) && !o['id'].empty?
+        if name == 'count'
+          n = o['n']
+          issues << err("#{at}.n must be a whole number of prompts (1 or more)") unless n.is_a?(Integer) && n >= 1
+          issues << err("#{at}.note is missing; it explains what this volume leans on") if Mail.blank?(o['note'])
+        else
+          issues << err("#{at}.at is #{o['at'].inspect}; give a time as \"HH:MM\" (00:00 to 23:59) or a number") if time_key(o['at']).nil?
+          issues << err("#{at}.outcome is missing; it explains why this timing made the target approve") if Mail.blank?(o['outcome'])
+        end
+      end
+      dupes = ids.select { |x| ids.count(x) > 1 }.uniq
+      issues << err("#{w}.options repeats the id #{dupes.map(&:inspect).join(', ')}") unless dupes.empty?
       issues
     end
 

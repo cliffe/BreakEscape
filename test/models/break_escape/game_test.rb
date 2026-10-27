@@ -90,6 +90,33 @@ module BreakEscape
       refute @game.remove_item_from_room!('break_room', 'no_such_item')
     end
 
+    test "an NPC KO'd outside its scenario room can drop its held item in the room it fell in" do
+      device = { 'type' => 'launch-device', 'name' => 'Launch Device', 'id' => 'entropy_launch_device' }
+      @game.scenario_data = {
+        'startRoom' => 'main_office',
+        'rooms' => {
+          'main_office' => { 'objects' => [], 'npcs' => [] },
+          'break_room' => { 'objects' => [], 'npcs' => [{ 'id' => 'derek', 'itemsHeld' => [device] }] }
+        }
+      }
+      @game.player_state['unlockedRooms'] = %w[main_office break_room]
+      sent = { 'id' => 'entropy_launch_device', 'type' => 'launch-device', 'name' => 'Launch Device', 'x' => 10, 'y' => 20 }
+      meta = { 'npc_id' => 'derek', 'source_type' => 'npc_defeated' }
+
+      # Not KO'd yet: refused (a live NPC cannot drop elsewhere)
+      refute @game.add_item_to_room!('main_office', sent, meta)
+
+      # KO recorded against its home room, as the client reports it
+      assert @game.update_npc_state!('break_room', 'derek', { 'isKO' => true })
+      assert @game.add_item_to_room!('main_office', sent, meta)
+      assert_equal ['entropy_launch_device'], @game.filtered_room_data('main_office')['objects'].map { |o| o['id'] }
+
+      # Only for a defeat drop, and only items the NPC holds
+      refute @game.add_item_to_room!('main_office', sent, { 'npc_id' => 'derek' })
+      refute @game.add_item_to_room!('main_office', sent.merge('id' => 'other', 'type' => 'key'), meta)
+      refute @game.add_item_to_room!('main_office', sent, { 'npc_id' => 'nobody', 'source_type' => 'npc_defeated' })
+    end
+
     test "should unlock room" do
       @game.unlock_room!('office')
       assert @game.room_unlocked?('office')

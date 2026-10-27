@@ -277,7 +277,7 @@ test('the same answers under the awareness profile give 86 and hide false alarms
     playWorkedExample(s);
     click($(s, '.tri-next'));
     assert.equal(state(s).result.percent, 86);
-    assert.match(state(s).result.headline, /^Sharp/);
+    assert.match(state(s).result.headline, /^Getting there/);   // two skills on zero cap the grade (P7-2)
     assert.equal($(s, '[data-number="falseAlarms"]'), null);
     assert.equal($(s, '.tri-again'), null, 'passed (passPercent 60): no retry');
 });
@@ -487,4 +487,28 @@ test('email queue keeps the inbox legend and the "Real mail" grid line', () => {
     const s = open(makeSet());
     assert.ok($(s, '.tri-brief-buttons'), 'email sets keep the verdict legend');
     assert.match($(s, '.tri-brief-title').textContent, /Inbox check:/);
+});
+
+test('R18 F-d: extra clicks on a sorted message change nothing, and a row keeps its verdict badge', () => {
+    const s = open(makeSet());
+    click($(s, '.tri-start'));
+    verdict(s, 'm1_it', 'trust');
+    const before = JSON.stringify([...s.answers.entries()]);
+    // click every verdict button and Confirm again on the locked message, twice over
+    pick(s, 'm1_it');
+    for (let i = 0; i < 2; i++) {
+        for (const b of $$(s, '.tri-verdict')) click(b);
+        for (const b of $$(s, '.tri-confirm')) click(b);
+    }
+    assert.equal(JSON.stringify([...s.answers.entries()]), before);
+    assert.equal($$(s, '.tri-sheet').length, 0);
+    pick(s, 'm2_payroll');
+    verdict(s, 'm2_payroll', 'report');
+    for (const id of ['m1_it', 'm2_payroll']) {
+        assert.ok($(s, `.mail-row[data-id="${id}"]`).textContent.match(/Trusted|Reported/), `row ${id} shows its verdict: ${$(s, `.mail-row[data-id="${id}"]`).textContent}`);
+    }
+    // selecting a still-unsorted message must not leave the previous message's "Verdict locked" banner on screen
+    pick(s, 'm3_parcel');
+    assert.doesNotMatch($(s, '.tri-live').textContent, /Verdict locked/);
+    assert.equal(s.progressEl.textContent, '2 of 4 sorted');
 });

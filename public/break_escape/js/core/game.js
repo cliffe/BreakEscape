@@ -5,7 +5,9 @@ import { createPlayer, updatePlayerMovement, movePlayerToPoint, facePlayerToward
 import { initializePathfinder } from './pathfinding.js';
 import { initializeInventory, processInitialInventoryItems } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
-import { wallClearFrom, findClearStandPoint } from '../systems/interaction-walls.js';
+import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '../systems/interaction-walls.js';
+import { aimX, withoutChairsIfOthers } from '../systems/interaction-reach.js';
+import '../systems/door-gaps.js'; // registers open-doorway lookup for combat reach
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu } from '../ui/interaction-menu.js';
 import { resolveObjectField, evaluateGlobalCondition } from '../utils/conditional-text.js';
@@ -233,7 +235,7 @@ export function preload() {
     this.load.image('room_uni_library', 'tiles/rooms/room_uni_library.png'); // deep green carpet
     this.load.image('room_uni_special', 'tiles/rooms/room_uni_special.png'); // oxblood carpet with a rug
     this.load.image('room_uni_workshop', 'tiles/rooms/room_uni_workshop.png'); // concrete, hazard line round the bench
-    this.load.image('room_aw_brightwell', 'tiles/rooms/room_aw_brightwell.png'); // awareness: off-white, green skirting, charcoal carpet
+    this.load.image('room_aw_brightwell', 'tiles/rooms/room_aw_brightwell.png'); // awareness: off-white, green skirting, oatmeal carpet
     this.load.image('room_aw_tarrowby', 'tiles/rooms/room_aw_tarrowby.png'); // awareness: pale grey, steel-blue skirting, sheet vinyl
     this.load.image('room_aw_quayholt', 'tiles/rooms/room_aw_quayholt.png'); // awareness: cool white, purple skirting, blue carpet
     this.load.image('room_aw_merrin_sallow', 'tiles/rooms/room_aw_merrin_sallow.png'); // awareness: warm stone, bronze skirting, concrete
@@ -376,6 +378,9 @@ export function preload() {
     this.load.image('aw_brightwell_range1', 'objects/aw_brightwell_range1.png');
     this.load.image('aw_quayholt_queue1', 'objects/aw_quayholt_queue1.png');
     this.load.image('aw_chairs_stacked_slate1', 'objects/aw_chairs_stacked_slate1.png');
+    this.load.image('aw_chair_south_charcoal1', 'objects/aw_chair_south_charcoal1.png');
+    this.load.image('aw_chair_north_charcoal1', 'objects/aw_chair_north_charcoal1.png');
+    this.load.image('aw_chair_w_charcoal1', 'objects/aw_chair_w_charcoal1.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');
@@ -2034,7 +2039,7 @@ export async function create() {
         // reach (e.g. a memo lying right next to an NPC), don't guess — show a
         // disambiguation menu listing each by its observation text. This fixes the
         // "can't pick up items next to characters" problem, especially on touch.
-        const nearbyInteractables = gatherInteractablesNearClick(worldX, worldY);
+        const nearbyInteractables = withoutChairsIfOthers(gatherInteractablesNearClick(worldX, worldY));
         if (nearbyInteractables.length > 1) {
             const nativeEvent = pointer.event || {};
             showInteractionMenu(nearbyInteractables, nativeEvent.clientX, nativeEvent.clientY);
@@ -2089,12 +2094,22 @@ export async function create() {
         if (objectsAtPosition.length > 0) {
             const player = window.player;
             if (player) {
+                // Rooms overlap by their wall rows, so the tap can land on objects of two
+                // rooms. Offer the ones in the player's own room first (stable, so depth
+                // order is kept within each group): an object of another room is never
+                // interactable from here, and would otherwise swallow the tap and walk away.
+                const feet = playerFeet(player);
+                // Only when something here is in reach: a tap on a far spot keeps depth order, so
+                // this never changes where the player walks to.
+                if (objectsAtPosition.some(o => isObjectInInteractionRange(o))) {
+                    objectsAtPosition.sort((a, b) => (sameRoomFrom(feet, b) ? 1 : 0) - (sameRoomFrom(feet, a) ? 1 : 0));
+                }
                 for (const obj of objectsAtPosition) {
                     if (obj.interactable && window.handleObjectInteraction) {
                         if (isObjectInInteractionRange(obj)) {
                             // Object is in range - face toward it then interact directly.
                             // Click always targets the clicked object; no direction-based selection.
-                            facePlayerToward(obj.x, obj.y);
+                            facePlayerToward(aimX(obj), obj.y); // the object's centre, as the E key faces it
                             if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();
                             window.handleObjectInteraction(obj);
                         } else if (obj.isSwivelChair) {
@@ -2493,8 +2508,9 @@ function gatherInteractablesNearClick(worldX, worldY) {
                     label: name,
                     detail,
                     icon,
+                    isChair: !!obj.isSwivelChair,
                     onSelect: () => {
-                        facePlayerToward(obj.x, obj.y);
+                        facePlayerToward(aimX(obj), obj.y); // the object's centre, as the E key faces it
                         if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();
                         if (window.handleObjectInteraction) window.handleObjectInteraction(obj);
                     }

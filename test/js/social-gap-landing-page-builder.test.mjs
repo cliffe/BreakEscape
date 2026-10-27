@@ -250,13 +250,14 @@ test('changing the brand drops a chosen domain that is not on the new brand\'s m
 
 // ── restore of odd saved state ───────────────────────────────────────────────
 
-test('a draft naming a domain id that is no longer on the menu opens, and Score reports it cannot be scored', () => {
+test('a draft naming a domain id that is no longer on the menu opens, and Score says why and what to pick', () => {
     setGlobals({ [DRAFTS_KEY]: { payroll_login: { ...ATTEMPT2, domainId: 'removed_domain' } } });
     const s = open();
     assert.equal(bs(s).choices.domainId, 'removed_domain');
     assert.doesNotThrow(() => s.score());
     assert.equal(bs(s).scored, null);
-    assert.match(bs(s).live, /cannot be scored/i);
+    assert.match(bs(s).live, /look-alike address from the list/i);
+    assert.match(s.root.textContent, /belongs to the company.*look-alike/i, 'the Score panel carries the reason');
     assert.equal(gv()[PAGES_KEY], undefined, 'nothing is written for a page that could not be scored');
 });
 

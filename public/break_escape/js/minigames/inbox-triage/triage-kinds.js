@@ -119,12 +119,51 @@ export function kindVerdictLine(kind, isPhish, verdict) {
     return null;
 }
 
+/**
+ * A short, clean name for an item inside a sentence (the result's "You trusted the real ones"
+ * line). A text, call, voicemail, notice or prompt is named by who it came from; an email by its
+ * subject. A title that was cut short with trailing dots loses them, so no quote closes on "..."
+ * (P6-7, P5-6).
+ */
+export function shortTitle(msg) {
+    const strip = (t) => String(t || '').replace(/\s*(?:\.{3,}|\u2026)\s*$/, '').replace(/[,;:\s]+$/, '').trim();
+    const from = isObj(msg?.from) ? msg.from : null;
+    const who = from ? (from.name || '') : (typeof msg?.from === 'string' ? msg.from : '');
+    const subject = isStr(msg?.subject) ? msg.subject : '';
+    if (isNonEmail(msg)) {
+        const caller = isStr(msg?.callerId) ? msg.callerId : who;
+        return strip(caller || subject || defaultSubject(msg));
+    }
+    return strip(subject || who);
+}
+
+/**
+ * The noun for the genuine items of a queue that holds email (P6-5). A set can name it
+ * (`realLabel`). A queue that mixes email with texts, notices or other channels names what it
+ * holds ("Real texts, notices and emails"); a pure mail queue keeps "Real mail".
+ */
+export function realNounFor(kinds, set) {
+    if (isStr(set?.realLabel)) return set.realLabel;
+    const others = [...new Set((kinds || []).filter((k) => k !== 'email' && k !== 'playerSent'))];
+    if (!others.length) return 'Real mail';
+    const word = { sms: 'texts', qr: 'notices', voicemail: 'voicemails', page: 'pages', call: 'calls', push: 'prompts' };
+    const names = [...others.map((k) => word[k] || 'messages'), 'emails'];
+    return `Real ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
 /** A list subject for a kind that has none of its own. */
 export function defaultSubject(msg) {
     const kind = kindOf(msg);
     const first = (s) => {
         const t = String(s || '').replace(/\{\{link:[^}]*\}\}/g, '').replace(/\s+/g, ' ').trim();
-        return t.length > 48 ? `${t.slice(0, 45)}...` : t;
+        if (t.length <= 48) return t;
+        // Cut at the end of a sentence when one fits, else at a word, so no title stops on "A..."
+        // (P7-7).
+        const sentence = t.slice(0, 48).search(/[.!?](?=[^.!?]*$)/);
+        if (sentence >= 15) return t.slice(0, sentence + 1);
+        const cut = t.slice(0, 45);
+        const sp = cut.lastIndexOf(' ');
+        return `${(sp >= 15 ? cut.slice(0, sp) : cut).replace(/[,;:\s]+$/, '')}...`;
     };
     switch (kind) {
     case 'sms': return first(msg.body) || 'Text message';

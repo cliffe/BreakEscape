@@ -228,7 +228,8 @@ test('m08: a KO saves the facing it fell in and a reload restores it', async () 
     const src = read('systems/npc-hostile.js')
         .split("'../config/combat-config.js'").join(`'${configUrl}'`)
         .split("'../events/combat-events.js'").join(`'${eventsUrl}'`)
-        .split("'./npc-sprites.js'").join(`'${dataUrl('export const getNPCDirection = () => "down-right";')}'`);
+        .split("'./npc-sprites.js'").join(`'${dataUrl('export const getNPCDirection = () => "down-right";')}'`)
+    .split("'./interaction-walls.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8'))}'`);
     const fresh = async () => (await import(dataUrl(src + `\n// ${Math.random()}`))).initNPCHostileSystem();
 
     const sys = await fresh();

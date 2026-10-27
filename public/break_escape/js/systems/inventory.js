@@ -8,6 +8,7 @@ import InkEngine from './ink/ink-engine.js';
 import { CSRF_TOKEN } from '../config.js';
 import { setHudLabel, clearHudLabel } from '../ui/info-label.js';
 import { inventoryBlockedByForcedMinigame } from './forced-minigame-guard.js';
+import { markObjectConsumed } from './consumables.js';
 
 // Helper function to create a unique identifier for an item
 export function createItemIdentifier(scenarioData) {
@@ -499,6 +500,12 @@ export async function addToInventory(sprite) {
             }
         }
 
+        // A room-map cup (decor) has no server room object: the used-up global
+        // keeps it out of the room after a reload (consumables.js)
+        // (A cup restored from the saved inventory is already recorded.)
+        const isDecor = sprite.scenarioData?.decor === true;
+        if (isDecor && !sprite._restoredFromSave) markObjectConsumed(sprite.objectId);
+
         // Remove from room if it exists and sync with server
         if (window.currentPlayerRoom && rooms[window.currentPlayerRoom] && rooms[window.currentPlayerRoom].objects) {
             if (rooms[window.currentPlayerRoom].objects[sprite.objectId]) {
@@ -517,7 +524,7 @@ export async function addToInventory(sprite) {
                 // Sync object removal with server's canonical room JSON.
                 // Use sprite.roomId (stamped at load time) rather than window.currentPlayerRoom
                 // in case the player moved rooms after picking up the item.
-                if (window.RoomStateSync) {
+                if (window.RoomStateSync && !isDecor) {
                     const roomId = sprite.roomId || window.currentPlayerRoom;
                     window.RoomStateSync.removeItemFromRoom(roomId, sprite.objectId).catch(err => {
                         console.error('Failed to sync object removal to server:', err);

@@ -219,7 +219,64 @@ export class MailComposer {
 
         this._restoreDraft(opts.draft);
         this._selectDefaultContact();
+        // "Send as" changed mid-draft: keep what is still valid for the new account (R19 F19-1).
+        // The draft being carried wins over an older unsent one the new account holds (lab R20
+        // F20-3); the client passes none when the learner had not touched the form.
+        this.carryNotice = '';
+        this.edited = false;
+        if (isObject(opts.carryDraft)) this._carryOver(opts.carryDraft);
         this.render();
+    }
+
+    /**
+     * Carry a draft over from another account. A part is kept when the new account offers the
+     * same option; otherwise it takes this account's default (or stays unchosen) and is named in
+     * a one-line notice. Only the recipient, From, greeting, pretext, ask and subject can differ.
+     */
+    _carryOver(prev) {
+        const cleared = [];
+        const contact = this.contacts.find((c) => c && c.id === prev.contactId)
+            || this.contacts.find((c) => c && isStr(prev.to) && arr(c.addresses).includes(prev.to));
+        // Start clean for whichever recipient this account has, then lay the old choices on top.
+        this.contactId = null;
+        this._draftRestored = false;
+        this.toAddress = '';
+        this.choice = {};
+        this.slots = {};
+        this._subjectId = null;
+        if (contact) {
+            this.selectContact(contact.id, false);
+            if (arr(contact.addresses).includes(prev.to)) this.toAddress = prev.to;
+        } else {
+            this._selectDefaultContact();
+            if (isStr(prev.contactId) || isStr(prev.to)) cleared.push('To');
+        }
+        if (this.target) {
+            const names = { from: 'From', greeting: 'greeting', pretext: 'pretext', ask: 'ask' };
+            const was = isObject(prev.templates) ? prev.templates : {};
+            for (const part of PARTS) {
+                const id = was[part];
+                if (!isStr(id)) continue;
+                if (this.templateSet(part).includes(id)) {
+                    this.choice[part] = id;
+                    const tpl = templateOf(this.templates, id);
+                    for (const sl of arr(tpl && tpl.slots)) {
+                        if (isObject(prev.slots) && isStr(prev.slots[sl.id])) this.slots[sl.id] = prev.slots[sl.id];
+                    }
+                } else if (this.choice[part] !== id) {
+                    cleared.push(names[part]);
+                }
+            }
+            if (isStr(prev.subject)) {
+                if (this.visibleSubjects().some((x) => x.id === prev.subject)) this._subjectId = prev.subject;
+                else cleared.push('subject');
+            }
+        }
+        if (isStr(prev.attachment)) this.attachment = prev.attachment;
+        if (isStr(prev.link)) this.link = prev.link;
+        if (isStr(prev.freeText)) this.freeText = prev.freeText;
+        this._emitChange();
+        if (cleared.length) this.carryNotice = `Cleared for this account: ${cleared.join(', ')}.`;
     }
 
     // ── state ──────────────────────────────────────────────────────────────
@@ -244,8 +301,13 @@ export class MailComposer {
 
     /** True when some other listed, unreported account may spoof the From (the hint then says Switch account). */
     get anotherSpoofs() {
-        return this.accounts.some((a) => a && this.account && a.id !== this.account.id
-            && a.spoofsFrom === true && !this.isBurned(a));
+        return !!this.spoofingAccount;
+    }
+
+    /** The first other listed, unreported account that may spoof the From, or null; the hint names it. */
+    get spoofingAccount() {
+        return this.accounts.find((a) => a && this.account && a.id !== this.account.id
+            && a.spoofsFrom === true && !this.isBurned(a)) || null;
     }
 
     /** From is forced to the account (no claimed-From blanks) when it cannot spoof (00 §10a, 01 §2). */
@@ -702,6 +764,8 @@ export class MailComposer {
     }
 
     _emitChange() {
+        this.carryNotice = '';
+        this.edited = true;
         try { this.opts.onChange?.(this.draft()); } catch (err) { console.error('composer onChange failed:', err); }
     }
 
@@ -733,6 +797,7 @@ export class MailComposer {
         this.root.textContent = '';
         this.root.appendChild(el('h2', 'mail-compose-title', 'New message'));
         this._renderSendAs();
+        if (this.carryNotice) this.root.appendChild(el('p', 'mail-compose-hint mail-compose-carry', this.carryNotice));
         this._renderTo();
         if (this.contact && !this.target) {
             this.root.appendChild(el('p', 'mail-compose-note',
@@ -803,13 +868,13 @@ export class MailComposer {
             line.className = 'mail-compose-value';
         }
         // One row for the address: when the From is just this account, the account row carries it.
-        if (this._fromIsOwn()) {
-            line.classList.add('mail-compose-from-own');
-            if (this.fromForced) {
-                line.append(el('span', 'mail-compose-hint', this.anotherSpoofs
-                    ? ' You can only send as yourself from this address. Switch account to send as someone else.'
-                    : ' You can only send as yourself from this address.'));
-            }
+        if (this._fromIsOwn()) line.classList.add('mail-compose-from-own');
+        // The hint shows as soon as the account is chosen, even before a recipient is picked (R18 F-b).
+        if (this.fromForced) {
+            const other = this.spoofingAccount;
+            line.append(el('span', 'mail-compose-hint', other
+                ? ` You can only send as yourself from this address. Switch to the ${other.displayName || other.address} account to send as someone else.`
+                : ' You can only send as yourself from this address.'));
         }
         if (!hasSelect || line.textContent) row.appendChild(line);
         this.root.appendChild(row);
@@ -918,6 +983,14 @@ export class MailComposer {
         row.appendChild(select);
     }
 
+    /** The collapsed "Stuck?" disclosure naming where to look, never the value. */
+    _stuckPointer(text) {
+        const stuck = el('details', 'mail-blank-stuck');
+        stuck.append(el('summary', 'mail-blank-stuck-summary', 'Stuck? Show me where to look'),
+            el('span', 'mail-blank-stuck-text', text));
+        return stuck;
+    }
+
     _renderPartBlanks(part) {
         const tpl = templateOf(this.templates, this.choice[part]);
         const slots = arr(tpl && tpl.slots);
@@ -944,18 +1017,22 @@ export class MailComposer {
                 // Optional where-to-look pointer from the template slot (lab R15 N5), behind
                 // the same "Stuck?" disclosure the Case file board uses. It names a source,
                 // never the value, so the gate line itself stays neutral.
-                if (isStr(slot.stuck) && slot.stuck.trim()) {
-                    const stuck = el('details', 'mail-blank-stuck');
-                    stuck.append(el('summary', 'mail-blank-stuck-summary', 'Stuck? Show me where to look'),
-                        el('span', 'mail-blank-stuck-text', slot.stuck));
-                    field.appendChild(stuck);
-                }
+                if (isStr(slot.stuck) && slot.stuck.trim()) field.appendChild(this._stuckPointer(slot.stuck));
             } else {
                 btn.textContent = chosenOpt ? `${blankLabel}: ${chosenOpt.label}` : `${blankLabel}: choose…`;
                 btn.dataset.chosen = chosen || '';
                 btn.setAttribute('aria-haspopup', 'listbox');
                 btn.addEventListener('click', () => this.openPicker(slot, btn));
                 field.appendChild(btn);
+                // A blank that already offers only the wrong options (lab R16 N9): the slot's
+                // stuckUntil { target, value, text } shows a pointer for that target until the
+                // option that earns the right sender is held.
+                const su = slot.stuckUntil;
+                if (isObject(su) && isStr(su.text) && su.text.trim() && isStr(su.value)
+                    && (!isStr(su.target) || (this.target && this.target.id === su.target))
+                    && !options.some((o) => o.value === su.value)) {
+                    field.appendChild(this._stuckPointer(su.text));
+                }
             }
             wrap.appendChild(field);
         }

@@ -1094,7 +1094,7 @@ The win condition itself (usually a `mission_complete` global set from a termina
 - **Coffee in rooms.** A cup of coffee or tea on a room map (office-misc-cup 1–5, coffee_cups1, mugs_tray1) can be drunk once for 20 HP, then it's gone, including after a reload. A scenario object with one of those sprites heals too, unless it has a role (fingerprint, contents, lock, text, trigger, puzzle-graph field), so evidence mugs stay evidence. Set `"consumable": false` to stop a cup being drunk.
 - **Heal items.** Any object or item heals when it has `"healAmount": <n>` (`0` opts out), or `"consumable": true` for its type's default (coffee 15, energy drink 20, sandwich 25, first aid kit 40, otherwise 15). A takeable item is picked up and used from the inventory. At full health nothing is used up.
 - **Regeneration.** Out of combat (10 s since the last hit) the player gets back 1 HP every 2 s, up to half of max HP. Above that, only heal items help. Override it with a top-level `"playerRegen": { "delayMs", "tickMs", "hpPerTick", "capFraction" }`, or turn it off with `"playerRegen": false`.
-- **Leash.** A hostile gives up the chase when the player leaves its room, or goes further than `behavior.hostile.chaseRange` px (default 400) from its post, then walks back. `"chaseAcrossRooms": true` lets it follow through doors.
+- **Leash (opt-in).** By default a hostile follows the player through doors for as long as they stay within its `aggroDistance`. With `"leash": true` in `behavior.hostile`, it gives up the chase when the player leaves its room, or goes further than `behavior.hostile.chaseRange` px (default 400) from its post, then walks back. `"chaseAcrossRooms": true` keeps only the distance limit. Use it to keep a guard at their post (m01 Sarah stays in reception).
 
 #### Patrol Behaviour
 
@@ -2951,6 +2951,8 @@ The only object type that opens an episode. `minigameData` is `{ episodeId }` an
 
 The lint warns if the target's `emailReplyDelay` is outside 5 to 8 seconds (the default, 20, is too long to wait in a 13 minute episode).
 
+(Note, 2026-10-27: awareness full episodes are now described as about 15 minutes, E6 and E7 about 16. The 5 to 8 second advice stands.)
+
 **`defend`**:
 
 | Field | Notes |
@@ -3083,6 +3085,8 @@ Three debrief lines belong to the organisation running the training, not to the 
 | `teamSize` | Whole number, 2 or more: the people on the learner's team, named in the team line ("...kept 2 phish away from the 12 people on your team.") | The line says "the rest of your team" |
 
 Each text is plain, trimmed and capped at 600 characters; a blank line starts a new paragraph. The lint warns on a blank `reportRoute` or `ruleOfThumb` and on one over 600 characters, and errors on a `teamSize` that is not a whole number of at least 2.
+
+A host can set the same three keys per game through `BreakEscape.configuration.awareness_settings`, a callable `->(game) { { report_heading:, report_text:, rule_of_thumb:, team_size: } or nil }` resolved on each play-page load. The engine whitelists the keys, strips control characters, caps text (heading 80, others 600), bounds `teamSize` to 2 to 100000, and writes only the keys that have a value to `window.breakEscapeConfig.awareness`, which wins over `social.awareness` key by key. A hook that raises is logged and ignored.
 
 **The team line** ("Your reports and checks this round kept 2 phish away from the rest of your team.") counts the phish the learner Reported or checked by another route (Verify, Ring back, Escalate, Deny and report). Deleting a phish protects only the learner, so it does not count. The line shows only when the count is at least one and never gives a denominator, so it cannot read as a list of misses. The count is kept in `episode_<id>_state.defend.teamProtected`, so a reopened debrief shows it too. During the round the triage overlay shows the same count live ("Phish stopped for the team: 2"), with immediate feedback only, since under end-of-round feedback a count that rises only on a phish would give the answers away.
 

@@ -456,3 +456,50 @@ test('a delivered timed voiced call is not preloaded and its first line is reque
         delete window.MinigameFramework;
     }
 });
+
+// ---- A pretext call's authored outcome line (shown on finalise) is voiced in a voiced call ----
+
+const { outcomeLineVoice } = voice;
+const REPORTED = "Sorry, I'm going to stop you there. I'll run this past my manager first.";
+
+test('outcomeLineVoice: the contact speaks its outcome line, only when the call is voiced', () => {
+    assert.deepEqual(outcomeLineVoice(REPORTED, { voiced: true }, HAX, characters),
+        { speakerId: 'agent_0x99', text: REPORTED });
+    assert.equal(outcomeLineVoice(REPORTED, {}, HAX, characters), null, 'not a voiced call');
+    assert.equal(outcomeLineVoice(REPORTED, { voiced: true }, MUTE, characters), null, 'contact has no voice');
+    assert.equal(outcomeLineVoice(undefined, { voiced: true }, HAX, characters), null);
+});
+
+function speakOutcomeFake({ voiced, tts }) {
+    const speakOutcomeLine = new Function('deps', `
+        const { outcomeLineVoice, PhoneCallVoice, TTSManager } = deps;
+        return ${mgSrc.slice(mgSrc.indexOf('    async speakOutcomeLine('), mgSrc.indexOf('\n    }\n', mgSrc.indexOf('    async speakOutcomeLine(')) + 6).trim().replace(/^async /, 'async function ')};
+    `)({ outcomeLineVoice, PhoneCallVoice, TTSManager: function () { return tts; } });
+    return {
+        speakOutcomeLine,
+        params: voiced ? { voiced: true } : {},
+        currentNPCId: HAX.id,
+        npcManager: { getNPC: id => characters.get(id), npcs: characters },
+        ui: { elements: { messagesContainer: {} } },
+        addEventListener() {}
+    };
+}
+
+test('speakOutcomeLine asks the server for the outcome line with the contact\'s npc_id', async () => {
+    const tts = new FakeTTS({ duration: 0 });
+    const mg = speakOutcomeFake({ voiced: true, tts });
+    await mg.speakOutcomeLine(REPORTED);
+    assert.deepEqual(tts.played, [['agent_0x99', REPORTED]]);
+});
+
+test('speakOutcomeLine stays silent on a call that is not voiced', async () => {
+    const tts = new FakeTTS({ duration: 0 });
+    const mg = speakOutcomeFake({ voiced: false, tts });
+    await mg.speakOutcomeLine(REPORTED);
+    assert.deepEqual(tts.played, []);
+});
+
+test('the finalise hook in person-chat-pretext.js calls speakOutcomeLine after the line is shown', () => {
+    const src = read('minigames/person-chat/person-chat-pretext.js');
+    assert.match(src, /minigame\.history\?\.addMessage\?\.\('npc', outcomeLine[^\n]*\n[\s\S]{0,200}minigame\.speakOutcomeLine\?\.\(outcomeLine\)/);
+});

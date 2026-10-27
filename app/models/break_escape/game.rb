@@ -380,7 +380,10 @@ module BreakEscape
       # Validate source if provided
       if source_data['npc_id'].present?
         # Verify NPC exists in scenario and is in this room
-        npc_in_room = npc_in_room?(source_data['npc_id'], room_id)
+        # A defeated NPC may fall in any room: hostile NPCs follow the player through doors,
+        # so the drop lands in the room it was KO'd in, not its scenario room.
+        npc_in_room = npc_in_room?(source_data['npc_id'], room_id) ||
+                      (source_data['source_type'] == 'npc_defeated' && npc_defeated?(source_data['npc_id']))
         unless npc_in_room
           Rails.logger.warn "[BreakEscape] NPC #{source_data['npc_id']} not in room #{room_id}, rejecting item add"
           return false
@@ -602,6 +605,16 @@ module BreakEscape
       BreakEscape.configuration.on_game_complete.call(self)
     rescue => e
       Rails.logger.error "[BreakEscape] on_game_complete hook raised: #{e.class}: #{e.message}"
+    end
+
+    # True when the NPC exists in the scenario and its KO was recorded (in whichever
+    # room it was reported from: the client reports a KO against the NPC's home room)
+    def npc_defeated?(npc_id)
+      return false unless find_npc_in_scenario(npc_id)
+
+      (player_state['room_states'] || {}).values.any? do |rs|
+        rs.is_a?(Hash) && rs.dig('npc_states', npc_id, 'isKO') == true
+      end
     end
 
     # Check if NPC exists in a room (scenario or moved)

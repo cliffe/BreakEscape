@@ -88,6 +88,9 @@ class SoundManager {
         this.scene.load.audio('page_turn', 'sounds/page_turn.mp3');
         this.scene.load.audio('message_sent', 'sounds/message_sent.mp3');
         this.scene.load.audio('heartbeat', 'sounds/heartbeat.mp3');
+        // Consumables (CC0, OpenGameArt: drink_gulp qubodup "Liquid bottle drink set", eat_snack Tito "7 eating crunches")
+        this.scene.load.audio('drink_gulp', 'sounds/drink_gulp.mp3');
+        this.scene.load.audio('eat_snack', 'sounds/eat_snack.mp3');
         this.scene.load.audio('footsteps', 'sounds/footsteps.mp3');
         this.scene.load.audio('drawer_open', 'sounds/drawer_open.mp3');
         this.scene.load.audio('rfid_unlock', 'sounds/rfid_unlock.mp3');
@@ -144,6 +147,7 @@ class SoundManager {
             'ui_reject',
             // Game sounds
             'chair_roll', 'message_received', 'phone_vibrate', 'page_turn', 'message_sent', 'heartbeat', 'footsteps', 'drawer_open', 'rfid_unlock',
+            'drink_gulp', 'eat_snack',
             // Combat / KO sounds
             'wilhelm_scream', 'body_fall',
             // Interaction sounds

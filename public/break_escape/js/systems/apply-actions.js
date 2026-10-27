@@ -238,9 +238,11 @@ export function showEndScreen(opts = {}) {
     const {
         title = 'MISSION COMPLETE',
         body = '',
-        buttonText = 'Return to Missions',
         outcome = 'neutral'
     } = opts;
+    // A host game shell sends the player to its own page (the debrief), so it names the button.
+    const cfg = window.breakEscapeConfig;
+    const buttonText = (cfg?.shellReturnUrl && cfg.shellReturnLabel) || opts.buttonText || 'Return to Missions';
 
     if (window.player) window.player.disableMovement = true;
 
@@ -281,6 +283,27 @@ export function showEndScreen(opts = {}) {
     btn.onmouseover = () => { btn.style.background = '#555'; btn.style.borderColor = '#aaa'; };
     btn.onmouseout  = () => { btn.style.background = '#333'; btn.style.borderColor = '#666'; };
     btn.onclick = () => {
+        // A host game shell opened the game in its own tab and names where to go back to.
+        const shellUrl = window.breakEscapeConfig?.shellReturnUrl || window.breakEscapeConfig?.shellMenuUrl;
+        if (shellUrl) {
+            window.location.href = shellUrl;
+            return;
+        }
+        // The Hacktivity desktop app is one window: closing it would quit the app. Go to the
+        // host's root, which sends the app to its game's event page. (The same test as
+        // utils/desktop-app.js; kept inline because tests load this file on its own.)
+        // The Play app is one window too: its tab carries the marker client-platform.js stores.
+        let appHome = /HacktivityApp\//.test(window.navigator?.userAgent || '') ? '/' : null;
+        if (!appHome) {
+            try {
+                const m = JSON.parse(window.sessionStorage?.getItem('hacktivity.platform') || 'null');
+                if (m && m.appWindow === 'play-app') appHome = m.gameKey ? '/app/' + encodeURIComponent(m.gameKey) : '/';
+            } catch (e) { /* storage blocked: treat as a browser */ }
+        }
+        if (appHome) {
+            window.location.href = appHome;
+            return;
+        }
         // Always close the game tab. In Hacktivity mode, also restore focus to the opener.
         // In standalone mode window.close() works when the tab was opened via a link.
         if (window.breakEscapeConfig?.hacktivityMode) {

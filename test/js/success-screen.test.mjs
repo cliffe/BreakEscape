@@ -18,7 +18,7 @@ const js = join(here, '../../public/break_escape/js');
 
 const dir = mkdtempSync(join(tmpdir(), 'success-screen-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
-for (const rel of ['ui/success-screen.js', 'utils/display-dashes.js', 'systems/objectives-manager.js']) {
+for (const rel of ['ui/success-screen.js', 'utils/display-dashes.js', 'utils/desktop-app.js', 'systems/objectives-manager.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }
@@ -175,6 +175,35 @@ test('Return to missions, standalone: goes to /break_escape/missions', () => {
     assert.deepEqual(went, ['/break_escape/missions']);
 });
 
+test('Return to missions, desktop app: goes to / and never closes the window', () => {
+    const ua = Object.getOwnPropertyDescriptor(window.navigator, 'userAgent');
+    Object.defineProperty(window.navigator, 'userAgent', { value: 'Mozilla/5.0 HacktivityApp/0.1.0 (game=licence-to-hack; edition=demo)', configurable: true });
+    try {
+        window.breakEscapeConfig = { hacktivityMode: true };
+        const went = [];
+        S.showSuccessScreen({ title: 'Done' }, syncDeps({ navigate: (u) => went.push(u), closeTab: () => went.push('close') }));
+        document.getElementById('success-screen-return').click();
+        assert.deepEqual(went, ['/']);
+    } finally {
+        if (ua) Object.defineProperty(window.navigator, 'userAgent', ua); else delete window.navigator.userAgent;
+    }
+});
+
+test('Return to missions, Play app: goes to /app/<key> and never closes the window', () => {
+    const marker = JSON.stringify({ appWindow: 'play-app', store: 'play', gameKey: 'licence-to-hack' });
+    // the test page has an opaque origin, so give it a storage stand-in
+    Object.defineProperty(window, 'sessionStorage', { value: { getItem: () => marker }, configurable: true });
+    try {
+        window.breakEscapeConfig = { hacktivityMode: true };
+        const went = [];
+        S.showSuccessScreen({ title: 'Done' }, syncDeps({ navigate: (u) => went.push(u), closeTab: () => went.push('close') }));
+        document.getElementById('success-screen-return').click();
+        assert.deepEqual(went, ['/app/licence-to-hack']);
+    } finally {
+        delete window.sessionStorage;
+    }
+});
+
 test('Return to missions, Hacktivity: closes the tab, and falls back to the missions page if it stays open', () => {
     window.breakEscapeConfig = { hacktivityMode: true };
     const went = [];
@@ -182,4 +211,14 @@ test('Return to missions, Hacktivity: closes the tab, and falls back to the miss
     document.getElementById('success-screen-return').click();
     // jsdom's window.closed stays false, as a tab the player opened by hand would
     assert.deepEqual(went, ['close', '/break_escape/missions']);
+});
+
+test('game shell: the host names the return page and its label; the tab stays open', () => {
+    window.breakEscapeConfig = { hacktivityMode: true, shellReturnUrl: '/events/7/play/operations/3/debrief', shellReturnLabel: 'Debrief' };
+    const went = [];
+    S.showSuccessScreen({ title: 'Done', buttonText: 'Return to missions' }, syncDeps({ navigate: (u) => went.push(u), closeTab: () => went.push('close') }));
+    const ret = document.getElementById('success-screen-return');
+    assert.equal(ret.textContent, 'Debrief');
+    ret.click();
+    assert.deepEqual(went, ['/events/7/play/operations/3/debrief']);
 });

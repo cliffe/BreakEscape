@@ -476,9 +476,11 @@
       "from_own": { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] },
       "from_named": { "part": "from", "text": "{sender_name} <{sender_address}>",
         "slots": [ { "id": "sender_name", "type": "name", "about": "sender", "label": "sender's name",
-                     "stuck": "Who would they expect this from? A colleague they trust shows on their social profile; for a system notice, the service desk knows who sends it." },
+                     "stuck": "Who would they expect this from? A colleague they trust shows on their social profile; for a system notice, the service desk knows who sends it.",
+                     "stuckUntil": { "target": "lord", "value": "portal_full", "text": "Sofia expects a notice from a system, not a person. The service desk knows which system sends it. Ring them from the desk phone." } },
                    { "id": "sender_address", "type": "address", "label": "sender's address",
-                     "stuck": "A colleague's address follows the pattern a lookup on the domain shows. A system's sending address is one the service desk knows." } ] },
+                     "stuck": "A colleague's address follows the pattern a lookup on the domain shows. A system's sending address is one the service desk knows.",
+                     "stuckUntil": { "target": "lord", "value": "portal_address", "text": "A system's sending address is one the service desk knows. Ring them from the desk phone." } } ] },
       "greet_generic": { "part": "greeting", "text": "Hello,", "slots": [] },
       "greet_named": { "part": "greeting", "text": "Hi {name},",
         "slots": [ { "id": "name", "type": "name", "about": "recipient", "label": "name to greet them by",
@@ -702,7 +704,7 @@
             "doneString": "Chris takes .odt and .docx files." },
           { "label": "Why they would read it", "needsIntel": ["hampshire_cv_backlog"],
             "gapString": "You still don't know what they're busy with.",
-            "goalString": "Check the careers inbox, then their social profile.",
+            "goalString": "On the careers page, select the careers inbox line. Chris's profile then shows on Friendface, so read their posts.",
             "doneString": "Chris is racing through CVs before Friday, so one more won't get a close look." }
         ],
         "lord": [
@@ -841,7 +843,7 @@
           "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
           "senderTrust": { "pass": "✓ From the portal she expects", "fail": "She doesn't know this sender. Her payroll notices come from the portal's own address — the service desk knows which.", "redFlag": null,
             "mismatch": { "fail": "The name and the address don't belong together. Her payroll notices come from the portal's own address — Dev at the service desk knows it.", "redFlag": null } },
-          "addressedTo": { "pass": "✓ Addressed her by name", "fail": "No name, or not the one the portal uses.", "redFlag": null },
+          "addressedTo": { "pass": "✓ Addressed her by name", "fail": "No name, or not the one the portal uses. Think about how a system that already knows her would greet her: the full name on her badge, or something shorter?", "redFlag": null },
           "pretextRelevant": { "pass": "✓ Reads like a payslip notice", "fail": "Not a payslip notice she was expecting; she'd check with the office first.", "redFlag": null },
           "linkCredible": { "pass": "✓ The link looked right", "fail": "The page didn't pass the builder's score for her.", "redFlag": null },
           "senderAuth": {
@@ -929,6 +931,7 @@
         "feedbackMode": "immediate",
         "headerPanel": "open",
         "glossary": "open",
+        "missedPhishLine": true,
         "title": "Ledgerwell inbox: trust, report or delete",
         <%# lab3: on the flip, mark the player's own two sends, so the attack-to-defence mirror
             lands for everyone (not only those who open Tomasz's optional topic). UI text only. %>
@@ -1646,6 +1649,7 @@
           "id": "dev_service_desk",
           "displayName": "Dev",
           "npcType": "phone",
+          "voiced": true,
           "avatar": "assets/characters/dev_service_desk_headshot.png",
           "spriteTalk": "assets/characters/dev_service_desk_talk.png",
           "spriteVisemes": "assets/characters/dev_service_desk_visemes.png",

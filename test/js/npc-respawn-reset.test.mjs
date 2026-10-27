@@ -29,7 +29,8 @@ const eventsUrl = dataUrl(readFileSync(join(js, 'events/combat-events.js'), 'utf
 const hostileSrc = readFileSync(join(js, 'systems/npc-hostile.js'), 'utf8')
     .split("'../config/combat-config.js'").join(`'${configUrl}'`)
     .split("'../events/combat-events.js'").join(`'${eventsUrl}'`)
-    .split("'./npc-sprites.js'").join(`'${dataUrl('export const getNPCDirection = () => "down";')}'`);
+    .split("'./npc-sprites.js'").join(`'${dataUrl('export const getNPCDirection = () => "down";')}'`)
+    .split("'./interaction-walls.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8'))}'`);
 const { initNPCHostileSystem } = await import(dataUrl(hostileSrc));
 const sys = quiet(() => initNPCHostileSystem());
 

@@ -1,6 +1,6 @@
 ---
 name: character-talk-animation
-description: Generates the non-pixel-art source portrait (via Gemini/nanobanana MCP) for a Break Escape character's dialogue talk animation, then hands off pixel-art conversion and mouth animation to the user via PixelLab's website. Trigger when the user asks to "make a talk animation", "add a talking portrait", "generate a talk sprite", "create a dialogue portrait", or names a character PNG in `assets/characters/` and asks for its talking head.
+description: Generates the non-pixel-art source portrait (via Gemini, through the Antigravity CLI, with the nanobanana MCP as quota fallback) for a Break Escape character's dialogue talk animation, then hands off pixel-art conversion and mouth animation to the user via PixelLab's website. Trigger when the user asks to "make a talk animation", "add a talking portrait", "generate a talk sprite", "create a dialogue portrait", or names a character PNG in `assets/characters/` and asks for its talking head.
 ---
 
 # Break Escape — character talk animation
@@ -43,7 +43,7 @@ The portrait must be recognisably the *same person* as the walk sprite, because 
 
 ## Step 1 — Gemini non-pixel portrait
 
-Use `mcp__nanobanana__gemini_generate_image` with `aspect_ratio: "1:1"` and `output_path` set to `<...>/characters/<name>_nonpixelart.png`. Pass the source sprite sheet as a `reference_images` entry so the outfit and colouring carry over.
+Generate with the Antigravity CLI first: `tools/agy_image.sh --out <...>/characters/<name>_nonpixelart.png --prompt-file <prompt.txt>` (square by default; add `--ref <image>` for a reference). It uses the Google AI plan's allowance, not the metered API, and gives the same output as the MCP. Fall back to `mcp__nanobanana__gemini_generate_image` (with `aspect_ratio: "1:1"` and `output_path` set as above) only when the script exits 3 (quota or rate limit). On exit 4, ask the user to sign in to `agy`; on exit 2, retry once, then report it. Pass the source sprite sheet as a reference (`--ref`, or `reference_images` on the MCP) so the outfit and colouring carry over.
 
 **Never attach a pixel-art sprite as `reference_images`.** Gemini copies the *style* of a reference, not just its content, so a low-res pixel sprite makes it render the whole portrait in blocky pixel-art — which fights this pipeline (PixelLab does the pixelation later, from a smooth source) and clashes with the rest of the cast. This bit for real on the m02 ward patients. When the only existing art is a pixel sprite, read it for details (hair colour, garment, blanket) and put those in the **text prompt** instead; leave `reference_images` empty. It is safe only when the reference is itself a smooth (non-pixel) portrait.
 

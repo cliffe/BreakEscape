@@ -62,7 +62,8 @@ export const CRITICAL_PENALTY = 15;
 export const CRITICAL_WHAT = Object.freeze({
     push: "approving a sign-in you didn't start",
     call: 'doing what an impostor asked on a call',
-    email: 'trusting a phish email'
+    email: 'trusting a phish email',
+    voicemail: 'acting on a spoofed voicemail'
 });
 
 /** Verdict points (out of 60) by profile, truth and verdict. Verify scores like Report. */
@@ -178,6 +179,13 @@ export function zeroSkills(perFactor) {
  * The 05 worked example (two skills at 0 of 1, 86%) stays Sharp.
  */
 export const ZERO_SKILL_MISSES_CAP = 3;
+
+/**
+ * Awareness profile only (P7-2, 2026-10-27): two or more skills never caught keep the round out
+ * of the top band, however few tells that was. Two playtests in a row read "Sharp" at 92% with two
+ * skills on zero. The analyst profile (the lab) keeps ZERO_SKILL_MISSES_CAP alone.
+ */
+export const AWARENESS_ZERO_SKILLS_CAP = 2;
 
 /**
  * Group a message's authored flags into scoring units, honouring `truth.flagAlternatives`
@@ -321,7 +329,9 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
     // voicemail) still means a phish was not caught, so the top band ("you caught the phish")
     // is out of reach too.
     const phishTrusted = perMessage.filter((m) => m.answered && m.isPhish && m.verdict === 'trust').length;
-    if (criticalMisses.length || phishTrusted || zeroMisses >= ZERO_SKILL_MISSES_CAP) {
+    const zeroCap = zeroMisses >= ZERO_SKILL_MISSES_CAP
+        || (profile === 'awareness' && zeros.length >= AWARENESS_ZERO_SKILLS_CAP);
+    if (criticalMisses.length || phishTrusted || zeroCap) {
         // A critical miss, a trusted phish, or three or more tells missed in skills never caught,
         // caps the round below the top band, whatever the percent: the top band says "you caught
         // the phish and knew why".
@@ -443,6 +453,25 @@ export function genuineFeedback({ messages, answers, profile = 'awareness', titl
     }
     if (!answered) return null;
     return { realTotal, trusted, checked, flagged };
+}
+
+/**
+ * The phish the learner trusted, for the result line a set opts into with `missedPhishLine`
+ * (lab R20 F20-1). `perMessage` is scoreTriage()'s list or the result's `answers`; `titleOf` names a message. Pure.
+ *   missedPhishText(perMessage, messages, titleOf) -> '' | "You trusted these phish: 'A' and 'B'."
+ * Reported, deleted and verified phish are caught, so they are not listed.
+ */
+export function missedPhishText(perMessage, messages, titleOf) {
+    const byId = new Map((messages || []).map((m) => [m.id, m]));
+    const titles = (perMessage || []).filter((m) => m && m.answered !== false && m.isPhish === true && m.verdict === 'trust')
+        .map((m) => {
+            const rec = byId.get(m.id);
+            return (rec && typeof titleOf === 'function' ? titleOf(rec) : null) || m.id;
+        });
+    if (!titles.length) return '';
+    const q = titles.map((t) => `\u2018${t}\u2019`);
+    const list = q.length === 1 ? q[0] : `${q.slice(0, -1).join(', ')} and ${q[q.length - 1]}`;
+    return `You trusted ${titles.length === 1 ? 'this phish' : 'these phish'}: ${list}. The review cards showed the tells you missed.`;
 }
 
 /** Why both halves matter, in one sentence (no numbers). */

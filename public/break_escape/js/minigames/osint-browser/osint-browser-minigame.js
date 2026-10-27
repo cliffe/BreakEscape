@@ -226,6 +226,11 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         const place = locate(this._sites, key, this.globals);
         if (key === TOOLS_KEY ? !this.toolsOn : !place) return false;
         this._dropProperties();
+        // The status line belongs to the page where the note was made (R19 F19-2).
+        if (this._hereKey() !== (key === TOOLS_KEY ? TOOLS_KEY : keyOf(place))) {
+            this._liveText = '';
+            if (this.live) this.live.textContent = '';
+        }
         this.place = place;
         this._visit(place);
         this._renderStrip();

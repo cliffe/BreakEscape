@@ -96,7 +96,11 @@ test('a non-email message: email factors refused, auth and another kind\'s field
   msg(j, 'sms').qr = { destination: 'https://x.example' };
   msg(j, 'sms').body = 'Pay today {{link:missing}}';
   const out = lintJson(j);
-  expectIn(out, /❌.*messages\[qr\]\.truth\.flags: 'senderTrust' is an email factor; a qr message offers only the set's channel tells/);
+  expectIn(out, /❌.*messages\[qr\]\.truth\.flags: 'senderTrust' is an email factor; a qr message has no email From line to read it from/);
+  // N-14: pressure on a barrier notice is a factor the message is scored on and can be ticked.
+  const n = mini();
+  msg(n, 'qr').truth = { isPhish: true, flags: ['unexpected_qr', 'urgencyCalibrated'], perFlagNote: { unexpected_qr: 'n', urgencyCalibrated: 'n' } };
+  expectIn(lintJson(n), /email factor/, 0);
   expectIn(out, /⚠️.*messages\[push\] is a push message with 'auth'; only email has a header panel/);
   expectIn(out, /⚠️.*messages\[sms\] has 'qr', which a sms message does not read/);
   expectIn(out, /❌.*messages\[sms\]\.body uses \{\{link:missing\}\}, which is not in links\[\]/);

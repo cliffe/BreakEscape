@@ -205,3 +205,98 @@ ask which". Q1 ("which can these results NOT tell him?") now needs the step of r
 
 `tools/playtest/se/bridge-6.jsonl` RP1 regex updated for the new unseenNote wording
 (`/no button or inbox for staff to flag/`). bridge-5 and r4-door unchanged.
+
+## R18 fixes
+
+Source: `playtests/R18.md` F-a to F-d. R18 ran on a tree with a stalled rebase, so each finding was
+re-checked against the current code first.
+
+- **F-a (scope-card hint stays):** not reproducible as described. The wrong-pile hint was already
+  removed once its card was placed correctly (placed cards are not drawn as open cards). What did
+  persist was a hint on an earlier card after the student tried a different one. `placeCard` now keeps
+  one hint at a time. Tests in `social-intel-board-engagement.test.mjs`.
+- **F-b (From spoof discoverability):** engine change, SE-only. The forced-From hint only drew once a
+  recipient was chosen and said "Switch account" without naming one. It now shows as soon as the account
+  is chosen and reads "Switch to the Consultant account to send as someone else." The account name comes
+  from the scenario's `mailClient.accounts` (`displayName`). Test in `social-mail-accounts.test.mjs`.
+- **F-c (Sofia's rejection):** on-screen factor text (`factorStrings.addressedTo.fail`), not voiced and
+  not in the TTS list. Now: "No name, or not the one the portal uses. Think about how a system that
+  already knows her would greet her: the full name on her badge, or something shorter?"
+- **F-d (triage verdict):** the lost row verdict did not reproduce (extra clicks on a locked message
+  change nothing; the row badge stays). The stale "Verdict locked: Trust" banner did: the live line is a
+  visible notice and stayed on screen after another message was opened. Opening a different message
+  now clears it. Test in `social-triage-ui.test.mjs`.
+
+## R19 fixes
+
+Source: `playtests/R19.md` F19-1 to F19-4.
+
+- **F19-1 (Send as resets the draft):** the composer now carries the draft across accounts
+  (`mail-composer.js` `_carryOver`, called from `switchAccount` through `openCompose({ carryDraft })`).
+  The recipient, subject, greeting, pretext, ask, filled blanks, attachment, link and free text are kept
+  when the new account offers the same option. A part the new account does not offer (for example a
+  spoofed From on an account that can only send as itself, or a recipient it does not list) takes that
+  account's default, or stays unchosen for the pretext, and the composer shows one line:
+  "Cleared for this account: From." The line goes with the next edit. An unsent draft the new account
+  already holds still wins, as before. Shared with the awareness course; no change when no account switch
+  happens. Tests: `test/js/social-mail-send-as-carry.test.mjs`; `social-mail-accounts.test.mjs` unchanged and green.
+- **F19-2 (stale "Noted:" line):** the OSINT browser's status line (`.ob-live`, a visually hidden
+  `role="status"` region) kept its text when the player moved page. `go()` now clears it when the place
+  changes. Test in `social-osint-browser.test.mjs`.
+- **F19-3 (note text twice):** not a second visible line. The block's own feedback and the hidden status
+  region both hold the note text, and the playtest read the page text, which includes the hidden region.
+  The region is the screen-reader announcement, so it stays; with F19-2 it no longer outlives the page.
+- **F19-4 (repeatable dev option):** real. "I'm helping Sofia..." (`open_buddy`) stayed on the menu for
+  the whole call, was judged and logged each pick, and after the first answer Dev said nothing (the
+  team acknowledgement is once-only), so a player could repeat it silently. It now leaves the menu once
+  the team has been acknowledged (`not team_checked`, beside `not team_repaired`), as the repair option
+  already did. No spoken line was added or changed; `tts_cache/lab_social_engineering` is unaffected.
+  If a wary or refusing reply (band 1 or 2) comes first the option stays, and each pick then gets a reply.
+  `dev_service_desk.json` recompiled with `bin/inklecate`.
+
+## R20 fixes (2026-10-27)
+
+Source: `playtests/R20.md` (scripted Haiku run, game 4570). A Haiku "major" only counts once checked.
+
+- **F20-1 (result card does not name the trusted phish):** a small real gap, not a bug. Design 05 puts
+  per-message detail in the review cards, and the result card lists only the real ones (`disc_visible`).
+  Added an opt-in set flag `missedPhishLine` (off by default, in the schema and the validator), on in
+  `lab_inbox`: the result card now adds "You trusted these phish: ..." using the clean short titles.
+  Awareness sets are untouched. Pure helper `missedPhishText` in `triage-scoring.js`.
+- **F20-2 (no per-message feedback after Confirm):** misread. In immediate mode the review card
+  (verdict line, tells caught and missed, "What would have happened", score) renders under the
+  "Verdict locked" line, below the open header panel and glossary. The bridge text in the log is cut
+  short mid-glossary, so the card was never read. Critical-miss wording is awareness-only
+  (`isCriticalMiss`), so the analyst lab never shows it, by design. No code change.
+- **F20-3 (Send as replaced the draft just set):** real. The carried draft now wins over an older
+  stored draft on the target account. The composer has an `edited` flag (set by any change, not by its
+  defaults); `switchAccount` carries only an edited draft, so an untouched composer still gets the target
+  account's own stored draft back. Tests: `social-mail-send-as-carry.test.mjs` (the F19-1 "stored wins"
+  test is now "carried wins"), `social-mail-accounts.test.mjs`.
+- **F20-4 (Compose reopens the sent draft):** not reproduced, no code change. `_clearDraft()` already
+  clears the saved draft on a judged send. After a landed send the composer is still open, but under
+  the checklist (the pointer hits `.mail-checklist`, not Send), and a Compose click while it is open is a
+  no-op, which is what the run saw. After Done, Compose opens blank (no attachment, no pretext, empty
+  blanks). A keyboard Tab past the checklist to the covered Send is the only remaining way to a sent form.
+  Hardened 2026-10-27 (89df2949e): the checklist makes the composer `inert` until Edit & resend. Live, game
+  4640: 15 trusted Tabs never entered the composer on a miss, 5 on a landing; Edit & resend gave the filled
+  form back; Done then Compose showed none of the sent message.
+- **F20-5:** accepted (hidden `.ob-live` status region), no action.
+
+Shared-code changes made in the same pass for the awareness course (inbox-triage owner this round):
+P7-2 (awareness caps at "Getting there" with two skills never caught; the lab's analyst profile keeps
+the three-tell cap) and P7-7 (clean card titles for texts). See the awareness `DESIGN_LOG.md`.
+
+Live check (keyless :3001, own games 4608, 4612, 4615, 4617; logs in the scratchpad `lab-r20-fix/`):
+
+- F20-2: Trust on the bank-details phish shows the review card at once (verdict line, two missed tells,
+  "What would have happened: The next payment would go to the attacker...", "Score for this message: 0 of 100").
+- F20-1: after a six-message round the result card reads "You trusted this phish: 'Updated bank details
+  for invoice 4471'. The review cards showed the tells you missed." beside the real-mail lines.
+- F20-3: Consultant (To Melanie, subject Quick one) to T. Test (carried), To changed to Sofia, back to
+  Consultant: To stays Sofia, subject stays the payslip one. The older Consultant draft no longer wins.
+- F20-4: as above. A landed send, Done, Compose: blank form.
+- P7-7 (awareness E6 defend): the Parceline text's card title is "07700 900583 (not in your contacts) ·
+  Parceline: we couldn't deliver your parcel." with no dots.
+- P7-2 (awareness E5 defend): reporting all three phish with only the look-alike tell ticked gives 92%
+  "Getting there" (Padlock myth 0 of 1, Secrecy 0 of 1), where the P7 run read "Sharp".

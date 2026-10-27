@@ -5,6 +5,7 @@
 
 import { COMBAT_CONFIG } from '../config/combat-config.js';
 import { applyKnockback } from '../utils/knockback.js';
+import { wallClearFrom, playerFeet } from './interaction-walls.js';
 import { nextComboStep, PUNCH_COMBO, directionToward, blockedDamage } from './fight-styles.js';
 
 /**
@@ -21,6 +22,8 @@ export function punchConeHalfAngle() {
   const a = COMBAT_CONFIG.player.punchConeHalfAngle;
   return (typeof a === 'number' && a > 0 && a <= 90) ? a : 40;
 }
+
+const CLICK_KICK_SLACK = 16; // px of extra reach for a chair the player clicked
 
 export class PlayerCombat {
   constructor(scene) {
@@ -161,6 +164,8 @@ export class PlayerCombat {
         if (window.npcHostileSystem.isNPCKO(sprite.npcId)) continue;
         const d = Math.hypot(sprite.x - player.x, sprite.y - player.y);
         if (d <= bestDist) {
+          // Don't turn to face a hostile through a wall, or in another room
+          if (!wallClearFrom(playerFeet(player), sprite, { combat: true })) continue;
           best = sprite;
           bestDist = d;
         }
@@ -394,6 +399,7 @@ export class PlayerCombat {
 
     // Get player facing direction
     const direction = window.player.lastDirection || 'down';
+    const feet = playerFeet(window.player) || { x: playerX, y: playerY };
 
     // Draw debug hit area (only when debug mode is on)
     if (window.breakEscapeDebug) {
@@ -436,6 +442,11 @@ export class PlayerCombat {
             return; // Outside cone
           }
 
+          // Nobody punches through a wall, or from behind a back wall into the room below
+          if (!wallClearFrom(feet, npcSprite, { combat: true })) {
+            return;
+          }
+
           // Hit detected!
           // If NPC is not hostile, convert them to hostile
           if (!isHostile) {
@@ -465,8 +476,14 @@ export class PlayerCombat {
           return;
         }
 
-        if (!this.bodyOverlapsCone(chair.body, playerX, playerY, direction, punchRange)) {
+        const clicked = chair === this.clickedChair && Date.now() < this.clickedChairUntil;
+        if (!this.bodyOverlapsCone(chair.body, playerX, playerY, direction, punchRange) &&
+            !(clicked && this.nearBody(chair.body, playerX, playerY, punchRange + CLICK_KICK_SLACK))) {
           return; // Outside cone
+        }
+
+        if (!wallClearFrom(feet, chair, { combat: true })) {
+          return; // another room, or a wall in the way
         }
 
         // Hit landed! Kick the chair
@@ -526,6 +543,30 @@ export class PlayerCombat {
     if (diff > 180) diff = 360 - diff;
 
     return diff <= punchConeHalfAngle(); // ±40° by default (7.1h)
+  }
+
+  /** True when the point is within `range` px of the body's box (0 inside it). */
+  nearBody(body, x, y, range) {
+    if (!body) return false;
+    const dx = Math.max(body.left - x, 0, x - body.right);
+    const dy = Math.max(body.top - y, 0, y - body.bottom);
+    return Math.hypot(dx, dy) <= range;
+  }
+
+  /**
+   * A click on a chair in reach: face it (feet to its body, which sits well below
+   * the sprite centre) and let the next punch land on it whatever the cone says.
+   */
+  aimAtChair(chair) {
+    const player = window.player;
+    const feet = playerFeet(player);
+    if (!chair?.body || !feet) return;
+    const bc = chair.body.center;
+    const dir = directionToward(bc.x - feet.x, bc.y - feet.y);
+    player.lastDirection = dir;
+    player.direction = dir;
+    this.clickedChair = chair;
+    this.clickedChairUntil = Date.now() + 1500;
   }
 
   /**

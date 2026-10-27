@@ -332,6 +332,12 @@ attachment claim no longer subtracts); message 3 = 57; message 4 = 60 (reporting
 *"Reported, and that's never wrong. For next time, here's why this one was fine: SPF failed, yet
 DKIM and DMARC passed…"*. No false-alarm count appears on the result screen.
 
+> **Update 2026-10-27 (P7-2).** Under the awareness profile this round now reads "Getting there", not
+> "Sharp": two skills (Pressure and Attachments) were never caught, and two never-caught skills
+> cap the awareness grade below the top band however few tells that is. Two P7 playtests flagged
+> "Sharp" at 92% with two skills on zero. The percent stays 86. The analyst profile (the lab)
+> keeps the older cap of three missed tells in never-caught skills.
+
 ### Why every verdict explains itself
 
 A judgement the learner cannot see is a judgement they cannot learn from. Here every verdict shows its

@@ -83,6 +83,20 @@ module BreakEscape
     end
 
     # =========================================================================
+    # GET /games/:id/scenario_map
+    # =========================================================================
+
+    test 'owner can fetch their own scenario map' do
+      get scenario_map_game_url(@own_game)
+      assert_response :success
+    end
+
+    test "cannot fetch another user's scenario map" do
+      get scenario_map_game_url(@other_game)
+      assert_response :redirect
+    end
+
+    # =========================================================================
     # GET /games/:id/room/:room_id
     # =========================================================================
 

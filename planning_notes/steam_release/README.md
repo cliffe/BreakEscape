@@ -149,3 +149,23 @@ Each store app is a wrapper round one game, not a window onto Hacktivity:
 - Server side, the app identifies itself (a header or user-agent token set by the shell), and Hacktivity renders the single-game layout and refuses Stripe checkout and billing pages for those requests. The rule then holds even if the client guard misses a link.
 
 This keeps the store apps separate from Hacktivity and makes sure no Stripe purchase can be made from the Steam or Play apps.
+
+## Desktop app status (2026-10-26)
+
+- Electron shell: separate repo `hacktivity-desktop` (`b7e2b1d`..`425edd6`), full and demo editions of
+  Licence to Hack, Linux AppImages built here; Windows NSIS needs wine or a Windows machine. Four
+  security review rounds; Playwright tests plus a packaged smoke script.
+- Hacktivity single-game app mode (`27b98ad5`): `/app/:game_key`, app layout, scope guard with an
+  "Open in your browser" page, no Stripe in the app, purchase links per edition (`events.app_key`,
+  `events.store_url`). Engine (`3cf0d1194`): exits return to the mission list; app-only
+  "Back to missions" menu item.
+- End-to-end run of the demo app against a local Hacktivity passed sign-in, event page, store link,
+  start and resume a browser-only mission, Back to missions, out-of-scope pages and sign-out. Not
+  covered: VM missions (no cluster here), a full sign-up (reCAPTCHA), the packaged build past sign-in.
+- Icons (2026-10-27): Licence to Hack's spy in the keyhole, from the title art, for the desktop app,
+  the website favicon on that game's pages and the Android icons. The recipe for each new game, with
+  the Gemini prompts, is `hacktivity-desktop/docs/ICONS.md`.
+- Still to do: Steam sign-in and ownership (needs the Steam app id and publisher key), code
+  signing, Steam depots, bump `BreakEscape::VERSION` on release so cached engine JS refreshes.
+
+The single-game layout now exists as Hacktivity's game shell for Game events (2026-10-26); what the app has to do to wrap it is in `GAME_SHELL_FOR_APP.md`.

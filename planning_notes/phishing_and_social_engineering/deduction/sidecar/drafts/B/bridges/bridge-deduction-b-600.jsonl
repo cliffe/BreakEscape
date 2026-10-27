@@ -1,4 +1,4 @@
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "new"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
 {"cmd": "note", "message": "bridge-deduction-b-600: the board at a 600px viewport (job deduction-b-600:test_social_deduction_b:600)."}
 {"cmd": "moveToNear", "id": "b_board"}
 {"cmd": "interact", "id": "b_board"}

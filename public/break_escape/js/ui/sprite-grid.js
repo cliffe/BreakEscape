@@ -3,6 +3,17 @@
 // - 160x160 Phaser canvas showing breathing-idle of selected sprite
 
 const PREVIEW_SIZE = 160;
+// The sprite frames are 80px, so the preview is drawn at a whole-number scale of them. The default
+// is 2x in a 160px canvas; a host page can ask for a bigger one with the CSS custom property
+// --pk-preview-scale on the container (a whole number), and sizes the container to match.
+const FRAME_SIZE = 80;
+let previewSize = PREVIEW_SIZE;
+
+function previewSizeFor(containerId) {
+  const el = document.getElementById(containerId);
+  const scale = el ? parseInt(getComputedStyle(el).getPropertyValue('--pk-preview-scale'), 10) : NaN;
+  return scale >= 1 && scale <= 8 ? scale * FRAME_SIZE : PREVIEW_SIZE;
+}
 
 function atlasFilename(spriteKey) {
   return spriteKey;
@@ -25,6 +36,7 @@ export function initializeSpritePreview(sprites, selectedSprite, containerIdOver
 
   // Use custom container ID if provided, otherwise use default
   const containerId = containerIdOverride || 'sprite-preview-canvas-container';
+  previewSize = previewSizeFor(containerId);
   const formId = containerIdOverride === 'sprite-preview-canvas-container-modal'
     ? 'preference-form-modal'
     : 'preference-form';
@@ -55,8 +67,8 @@ export function initializeSpritePreview(sprites, selectedSprite, containerIdOver
   const config = {
     type: Phaser.AUTO,
     parent: containerId,
-    width: PREVIEW_SIZE,
-    height: PREVIEW_SIZE,
+    width: previewSize,
+    height: previewSize,
     transparent: true,
     pixelArt: true,
     antialias: false,
@@ -98,11 +110,11 @@ function showSpriteInPreview(scene, spriteKey) {
     currentPreviewSprite.destroy();
   }
 
-  const x = PREVIEW_SIZE / 2;
-  const y = PREVIEW_SIZE / 2;
+  const x = previewSize / 2;
+  const y = previewSize / 2;
 
   currentPreviewSprite = scene.add.sprite(x, y, spriteKey);
-  currentPreviewSprite.setScale(2);
+  currentPreviewSprite.setScale(previewSize / FRAME_SIZE);
 
   const animKey = `${spriteKey}-preview-south`;
   if (!scene.anims.exists(animKey)) {

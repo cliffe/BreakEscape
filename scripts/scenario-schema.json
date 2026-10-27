@@ -1012,7 +1012,9 @@
         "type": {"type": "string", "description": "Matched to intelFacts provides[].type (name, address, date, document, ...)"},
         "about": {"type": "string"},
         "label": {"type": "string"},
-        "stuck": {"type": "string", "description": "Where-to-look pointer the composer shows under this blank while no evidence fills it, behind a 'Stuck?' disclosure (lab R15 N5). Names a source, never the value."}
+        "stuck": {"type": "string", "description": "Where-to-look pointer the composer shows under this blank while no evidence fills it, behind a 'Stuck?' disclosure (lab R15 N5). Names a source, never the value."},
+        "stuckUntil": {"type": "object", "description": "Pointer shown under a blank that has options but not the right one (lab R16 N9): {target (phishTargets id, optional), value (option value that ends it), text}.",
+          "properties": {"target": {"type": "string"}, "value": {"type": "string"}, "text": {"type": "string"}}, "additionalProperties": false}
       },
       "patternProperties": {"^_": {}},
       "additionalProperties": false
@@ -1923,8 +1925,7 @@
         },
         "mfa": {
           "type": "object",
-          "description": "The mfa stage's push stream (11 N11, P7-M): passed to the authenticator scene. Linted by awareness.rb",
-          "required": ["pushes", "approvesAt"],
+          "description": "The mfa stage, passed to the authenticator scene (11 N11, P7-M; E3 decision E3-11). Two shapes, both linted by awareness.rb: a scripted stream ({ pushes, approvesAt }) or a learner decision ({ choice, pushTemplate, defenderNote }).",
           "properties": {
             "pushes": {
               "type": "array",
@@ -1944,7 +1945,87 @@
               }
             },
             "approvesAt": {"description": "'HH:MM' or a number: when the target taps approve", "type": ["string", "number"]},
-            "mode": {"type": "string", "enum": ["attacker"]}
+            "mode": {"type": "string", "enum": ["attacker"]},
+            "choice": {
+              "type": "object",
+              "description": "Decision mode: the learner picks when (timing) and how many (count) before the burst plays.",
+              "required": ["timing", "count"],
+              "properties": {
+                "intro": {"type": "string"},
+                "confirm": {"type": "string"},
+                "timing": {
+                  "type": "object",
+                  "required": ["options"],
+                  "properties": {
+                    "legend": {"type": "string"},
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": ["id", "label", "at", "outcome"],
+                        "properties": {
+                          "id": {"type": "string"},
+                          "label": {"type": "string"},
+                          "at": {"description": "'HH:MM' or a number: the time on every prompt and the approval", "type": ["string", "number"]},
+                          "outcome": {"description": "Why this timing made the target approve", "type": "string"}
+                        },
+                        "patternProperties": {"^_": {}},
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                },
+                "count": {
+                  "type": "object",
+                  "required": ["options"],
+                  "properties": {
+                    "legend": {"type": "string"},
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": ["id", "label", "n", "note"],
+                        "properties": {
+                          "id": {"type": "string"},
+                          "label": {"type": "string"},
+                          "n": {"description": "How many prompts this bucket sends (cards cap at 4, the rest collapse to a summary)", "type": "integer", "minimum": 1},
+                          "note": {"description": "What this volume leans on", "type": "string"}
+                        },
+                        "patternProperties": {"^_": {}},
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "pushTemplate": {
+              "type": "object",
+              "description": "Decision mode: the fields every generated prompt card shows.",
+              "required": ["app"],
+              "properties": {
+                "app": {"type": "string"},
+                "account": {"type": "string"},
+                "location": {"type": "string"},
+                "device": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "defenderNote": {"description": "Decision mode: the defender's control, shown last in the outcome", "type": "string"}
+          },
+          "dependencies": {
+            "pushes": ["approvesAt"],
+            "approvesAt": ["pushes"],
+            "choice": ["pushTemplate", "defenderNote"],
+            "pushTemplate": ["choice"],
+            "defenderNote": ["choice"]
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
@@ -1967,8 +2048,10 @@
         "headerPanel": {"type": "string", "enum": ["collapsed", "open", "off"]},
         "glossary": {"type": "string", "enum": ["closed", "open", "off"]},
         "chipStyle": {"type": "string", "enum": ["plain", "technical", "character"]},
+        "realLabel": {"type": "string", "minLength": 1, "description": "The noun for the genuine items in the result grid (\"Real texts and notices\"); default follows the queue's channels."},
         "flagPlayerSent": {"type": ["string", "boolean"], "description": "Opt-in (inbox-triage-minigame.js): marks the player's own sends on the review flip; a string is the line shown, true uses a default"},
         "verifyVerdict": {"type": "boolean"},
+        "missedPhishLine": {"type": "boolean", "description": "Opt-in (inbox-triage-minigame.js): the result card names the phish the learner trusted. Default off."},
         "genuineFeedback": {"type": "boolean", "description": "false hides the result screen's and debrief's lines on the real items (which were trusted, what made a flagged one safe). Default on."},
         "brief": {"type": "string"},
         "pairedWith": {"type": "string"},

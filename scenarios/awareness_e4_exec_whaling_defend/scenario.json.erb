@@ -128,11 +128,13 @@
               "isPhish": true,
               "flags": [
                 "senderTrust",
+                "borrowed_authority",
                 "secrecy_or_bypass",
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
                 "senderTrust": "A payment request from the managing partner on a free webmail inbox (inboxly.example), not her merrinsallow.example address. Anyone can open a free inbox in a name you know, so stop and ring her on the number in your contacts",
+                "borrowed_authority": "'I'll sign it off when I land' leans on the managing partner's own authority to push the payment past Yasmin's approval. A name in the From line is no proof she sent it",
                 "secrecy_or_bypass": "'Keep it between us' and 'don't send it through Yasmin' skip the approval that would catch this",
                 "urgencyCalibrated": "'Before I land' and 'three hours in the air' leave no time to check and steer you away from ringing her. The flight time came from her public posts"
               },
@@ -163,11 +165,13 @@
               "isPhish": true,
               "flags": [
                 "vish_callback_pressure",
-                "secrecy_or_bypass"
+                "secrecy_or_bypass",
+                "borrowed_authority"
               ],
               "perFlagNote": {
                 "vish_callback_pressure": "The number is withheld and she tells you not to ring back, so you can't check it on the number in your contacts. That is the one check a copied voice can't pass",
-                "secrecy_or_bypass": "'Don't bother Yasmin with it' keeps finance, the people who would check, out of it"
+                "secrecy_or_bypass": "'Don't bother Yasmin with it' keeps finance, the people who would check, out of it",
+                "borrowed_authority": "'I'll square it with her myself' uses the managing partner's own authority to wave the payment past finance. It sounded like her, and a voice on its own doesn't prove who is speaking"
               },
               "ifTrusted": "The voicemail would have made the fake email look confirmed, and the retainer would have gone to the sender's account.",
               "reportReply": "Thanks. Catherine was already through security when this was left, and her phone was off. The voice sounded like hers, which is why the number and the request matter more than the voice."
@@ -303,6 +307,7 @@
     "training_room": {
       "type": "room_aw_merrin_sallow",
       "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_merrin_sallow_blended.png",
       "lighting": {
         "emitters": {
           "kiosk": {

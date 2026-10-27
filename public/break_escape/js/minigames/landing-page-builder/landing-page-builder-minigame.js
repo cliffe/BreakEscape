@@ -35,7 +35,7 @@ import { writeGlobal } from '../../systems/global-writer.js';
 import { createConceptCard } from '../osint-browser/concept-card.js';
 import { renderLandingPage, logoMissing, logoSrc } from './landing-page-render.js';
 import {
-    scorePage, applyScore, setBuilt, buildRecord, linkInfoFor, CHOICE_KEYS, TELL_IDS
+    scorePage, guardDomain, applyScore, setBuilt, buildRecord, linkInfoFor, CHOICE_KEYS, TELL_IDS
 } from './landing-page-model.js';
 import { buildSuspectPage } from './landing-page-inspect.js';
 
@@ -142,6 +142,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         this.choices = null;
         this.scored = null;            // the current ScoreResult, or null when stale/unscored
         this.scoredSig = null;         // the choice signature the score was for
+        this.scoreBlock = null;        // why the last Score press refused (blocked address), or null
         this._openCards = new Set();
         this._attached = false;        // this session attached the page
         this._inspectionComplete = false;
@@ -671,6 +672,10 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
     _scorePanel() {
         const panel = h('section', { class: `lpb-score${this._stale() ? ' is-stale' : ''}`, 'aria-label': 'Score' });
         if (!this.scored) {
+            if (this.scoreBlock) {
+                panel.appendChild(h('p', { class: 'lpb-score-prompt lpb-score-blocked lpb-readable', role: 'alert', text: this.scoreBlock }));
+                return panel;
+            }
             panel.appendChild(h('p', { class: 'lpb-score-prompt', text: 'Press Score to see how convincing this page is.' }));
             return panel;
         }
@@ -776,6 +781,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
      *  score (07 §3). */
     _onChoiceChanged() {
         this._writeDraft();
+        this.scoreBlock = null;
         if (this.scored) {
             // The live line still held the last verdict ("Convincing enough for Hana.") under a
             // panel that now asks for a new Score (E5-13): replace it.
@@ -794,13 +800,31 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
 
     score() {
         this._runScore({ persist: true });
-        this._announce(this.scored ? this.scored.verdict : 'This page cannot be scored.');
+        this._announce(this.scored ? this.scored.verdict : (this.scoreBlock || 'This page cannot be scored.'));
         this._renderAll();
+    }
+
+    /** Plain words for a refused Score. The real domain is shown locked, so a player who
+     *  tries to use it (or has picked nothing) needs to be told why and what to do (R17 F1). */
+    _blockReason() {
+        const g = guardDomain(this.pageDef, this.choices);
+        const brand = this._brandById(this._activeBrandId());
+        const real = brand && brand.realDomain;
+        if (g.reason === 'bad-suffix') {
+            return 'This address is not allowed in the lab. Pick one from the list of look-alike addresses.';
+        }
+        return (real ? `${real} belongs to the company, so you cannot use it. ` : '') +
+            'Pick a look-alike address from the list, one the victim might mistake for the real one, then press Score again.';
     }
 
     _runScore({ persist }) {
         const result = scorePage(this.pageDef, this.choices, this._target());
-        if (result.blocked) { this.scored = null; this.scoredSig = null; return; }
+        if (result.blocked) {
+            this.scored = null; this.scoredSig = null;
+            this.scoreBlock = this._blockReason();
+            return;
+        }
+        this.scoreBlock = null;
         this.scored = result;
         this.scoredSig = this._sig();
         if (persist) {

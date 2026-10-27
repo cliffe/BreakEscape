@@ -526,3 +526,11 @@ The lab is still unvoiced. Caps held (person ≤30, phone ≤25). dialoguelint: 
 
 M1 (Dev's repair once per call) changed choice conditions only; no spoken text changed. The board
 slot strings (m2, m4), Dev's tell labels and the Melanie attachment fail line (t2, t4) are UI text.
+
+## Dialogue cycle 6 (2026-10-27) — spoken-line changes for TTS
+
+Review `DIALOG_REVIEW_C6.md`: 0 blockers, 0 majors, 1 minor (M6-1), verdict close. M6-1 fixed by making Chris Hampshire's references gender-neutral, matching the recon board's they/them strings (Chris has no sprite or stated pronouns).
+
+- `ruth_phone.ink` (phone, Ruth): "Open her careers inbox on the page and select it. Her backlog post only shows then." → "Open the careers inbox on the page and select it. The backlog post only shows then."
+- `ruth_phone.ink` (phone, Ruth): "Her careers inbox trusts anyone. Apply as a candidate, and attach a CV from the kit." → "The careers inbox trusts anyone. Apply as a candidate, and attach a CV from the kit."
+- On-screen only: board goal pointer "read his posts" → "read their posts" (`scenario.json.erb:707`).

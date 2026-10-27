@@ -24,6 +24,25 @@ module BreakEscape
 
     # ─── GET /configuration ──────────────────────────────────────────────────
 
+    # Mounted in a host with nobody signed in: current_user is nil, so the page
+    # must turn the visitor away instead of raising "Player must exist".
+    test 'show signed out in a host redirects (html) or 403s (json) without creating a preference' do
+      was_standalone = BreakEscape.configuration.standalone_mode
+      BreakEscape.configuration.standalone_mode = false
+      ApplicationController.send(:define_method, :current_user) { nil }
+      begin
+        assert_no_difference 'PlayerPreference.count' do
+          get configuration_url
+          assert_response :redirect
+          get configuration_url, headers: { 'Accept' => 'application/json' }
+          assert_response :forbidden
+        end
+      ensure
+        ApplicationController.send(:remove_method, :current_user)
+        BreakEscape.configuration.standalone_mode = was_standalone
+      end
+    end
+
     test 'show returns 200 and renders the configuration page' do
       get configuration_url
       assert_response :success
@@ -214,6 +233,30 @@ module BreakEscape
       assert_response :unprocessable_entity
       json = JSON.parse(response.body)
       assert_equal false, json['success']
+    end
+
+    test 'update re-renders the form with the code name error' do
+      patch configuration_url,
+            params: { player_preference: { selected_sprite: 'female_hacker_hood_v2', in_game_name: 'wave1-p10' } }
+
+      assert_response :unprocessable_entity
+      assert_select 'p.field-error', /Code name only allows letters, numbers, spaces, and underscores/
+    end
+
+    test 'update JSON error names the code name problem' do
+      patch configuration_url,
+            params: { player_preference: { selected_sprite: 'female_hacker_hood_v2', in_game_name: 'wave1-p10' } },
+            headers: { 'Accept' => 'application/json' }
+
+      assert_response :unprocessable_entity
+      assert_match(/In game name/, JSON.parse(response.body)['error'])
+    end
+
+    test 'suggested code name from a hyphenated handle is sanitised' do
+      @preference.update!(in_game_name: 'Zero')
+      @player.update!(handle: 'wave1-p10')
+      get configuration_url
+      assert_select 'input[name="player_preference[in_game_name]"][value=?]', 'wave1_p10'
     end
 
     test 'update does not persist invalid data on failure' do
@@ -460,6 +503,97 @@ module BreakEscape
               params: { player_preference: { selected_sprite: sprite, in_game_name: 'TestAgent' } },
               headers: { 'Accept' => 'application/json' }
         assert_response :success, "Expected sprite '#{sprite}' to be accepted"
+      end
+    end
+
+    # ─── Opened from a host game shell, with no game ─────────────────────────
+
+    def with_shell_picker(hook)
+      previous = BreakEscape.configuration.shell_picker
+      BreakEscape.configuration.shell_picker = hook
+      yield
+    ensure
+      BreakEscape.configuration.shell_picker = previous
+    end
+
+    SHELL_HOOK = lambda do |return_to|
+      next nil unless return_to == '/play/1'
+
+      { back_url: '/play/1', back_label: 'Back to title', heading: 'Agent file', ui_theme: 'spy',
+        backdrop_style: 'background-image: url(/art.jpg);' }
+    end
+
+    test 'a return_to the host recognises gives the shell look and a Back link to the host page' do
+      with_shell_picker(SHELL_HOOK) do
+        get configuration_url(return_to: '/play/1')
+        assert_response :success
+        assert_includes response.body, 'data-ui-theme="spy"' # the test app wraps the page in its own layout
+        assert_includes response.body, 'configuration-page shell-picker'
+        assert_select '.shell-picker-backdrop[style*="/art.jpg"]'
+        assert_select 'h1', 'Agent file'
+        assert_select 'a#config-back-link[href=?]', '/play/1', text: 'Back to title'
+        assert_select 'input[type=hidden][name=return_to][value=?]', '/play/1'
+        assert_select 'a', text: 'Cancel', count: 0
+        assert_select 'link[href*=ui-themes]'
+      end
+    end
+
+    test 'saving from the shell look goes back to the host page' do
+      with_shell_picker(SHELL_HOOK) do
+        patch configuration_url,
+              params: { return_to: '/play/1', player_preference: { selected_sprite: 'female_hacker_hood_v2', in_game_name: 'TestAgent' } }
+        assert_redirected_to '/play/1'
+      end
+    end
+
+    test 'a return_to the host does not recognise, or no hook, leaves the plain page' do
+      with_shell_picker(SHELL_HOOK) do
+        get configuration_url(return_to: 'https://evil.example/')
+        assert_not_includes response.body, 'shell-picker'
+        assert_select 'a#config-back-link', false
+        assert_select 'a', text: 'Cancel'
+      end
+      with_shell_picker(nil) do
+        get configuration_url(return_to: '/play/1')
+        assert_not_includes response.body, 'shell-picker'
+      end
+    end
+
+    test 'a hook whose back_url is not a path on this site leaves the plain page' do
+      ['//evil.example/x', 'https://evil.example/', '/\\evil.example'].each do |back|
+        hook = ->(_return_to) { { back_url: back, heading: 'Agent file' } }
+        with_shell_picker(hook) do
+          get configuration_url(return_to: '/play/1')
+          assert_not_includes response.body, 'shell-picker', "back_url #{back.inspect}"
+        end
+      end
+    end
+
+    test 'a hook that takes two arguments is told who is asking' do
+      seen = nil
+      hook = lambda do |return_to, player|
+        seen = player
+        { back_url: return_to, heading: 'Agent file' }
+      end
+      with_shell_picker(hook) do
+        get configuration_url(return_to: '/play/1')
+        assert_includes response.body, 'configuration-page shell-picker'
+        assert_not_nil seen
+      end
+    end
+
+    test 'a failing hook leaves the plain page' do
+      with_shell_picker(->(_return_to) { raise 'boom' }) do
+        get configuration_url(return_to: '/play/1')
+        assert_response :success
+        assert_not_includes response.body, 'shell-picker'
+      end
+    end
+
+    test 'with a game the shell look is not used' do
+      with_shell_picker(SHELL_HOOK) do
+        get configuration_url(return_to: '/play/1', game_id: 0)
+        assert_not_includes response.body, 'shell-picker'
       end
     end
   end

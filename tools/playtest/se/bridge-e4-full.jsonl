@@ -1,5 +1,5 @@
 {"cmd": "note", "message": "RUN"}
-{"cmd": "bootstrap", "tutorial": "decline", "resume": "new"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
 {"cmd": "eval", "fn": "() => { const g = window.gameState.globalVariables; const st = g.episode_e4_exec_whaling_state; return !window.MinigameFramework.currentMinigame && st && typeof st === 'object' && Object.keys(st).length === 0 && g.episode_e4_exec_whaling_defend_done === false && g.phish_exec_pa_landed === false; }"}
 {"cmd": "moveToNear", "id": "training_kiosk"}
 {"cmd": "interact", "id": "training_kiosk"}

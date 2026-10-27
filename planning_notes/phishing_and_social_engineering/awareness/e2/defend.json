@@ -106,7 +106,10 @@
               "linkCredible": "Read it as a link and it still doesn't add up: it doesn't go to Tarrowby's own recruitment system, and a real CV never needs you to sign in on a careers portal you reached from an email"
             },
             "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password, so whoever runs tarrowby-careers.example could read the recruitment inbox and every candidate's details in it.",
-            "reportReply": "Thanks. Tarrowby has no careers portal on that address, and no candidate needs your password to send a CV. We've blocked tarrowby-careers.example."
+            "reportReply": "Thanks. Tarrowby has no careers portal on that address, and no candidate needs your password to send a CV. We've blocked tarrowby-careers.example.",
+            "whyFine": {
+              "pretextRelevant": "A recruitment inbox is exactly where CVs land, so a CV turning up is no surprise. The tells are the missing attachment and the link that wants your Tarrowby sign-in, not that a CV arrived."
+            }
           }
         },
         {
@@ -148,7 +151,10 @@
               "addressedTo": "'Dear Hiring Manager' and 'the vacancy', with no name and no job: it could have gone to any company with any job open"
             },
             "ifTrusted": "Switching on content would let the document run a small program on your computer, which could give whoever sent it a way into Tarrowby's network.",
-            "reportReply": "Thanks. That file was set up to run a hidden program once content was switched on. We've blocked the sender and checked nobody else opened it."
+            "reportReply": "Thanks. That file was set up to run a hidden program once content was switched on. We've blocked the sender and checked nobody else opened it.",
+            "whyFine": {
+              "attachmentPlausible": "A Word document is a normal way to send a CV, so the file itself fits. What doesn't fit is being told to enable editing and content before it will show: a real CV never needs that."
+            }
           }
         },
         {

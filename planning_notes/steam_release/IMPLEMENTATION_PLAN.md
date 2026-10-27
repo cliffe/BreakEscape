@@ -215,3 +215,59 @@ through the engine route.
 Phases 1–3 about 4–5 days with tests; phase 4 about 1 day; phases 5–6 about 3–4 days; system
 tests and the org report about 1–2 days. Roughly two working weeks. The engine hook is half a day
 in BreakEscape.
+
+## Implementation status (2026-10-26)
+
+Approved in the implementation review (I1–I3, J1–J2, K1–K4 all as recommended). Built by Sonnet
+agents phase by phase, each phase reviewed (adversarial review rounds, fixes, re-check) before its
+commit on Hacktivity main, then a whole-change review and fixes.
+
+| Phase | Hacktivity commit |
+|---|---|
+| 0 characterisation tests | 5d9f60b2 |
+| 1 migrations, models, fixtures | c5bf60b8 |
+| 2 EventAccess, policies, views, auto-enrol, copy limit (V4), engine gate (I1) | fc359c9b |
+| 3 VM quota (J1, D1, D7) | 5e269682 |
+| 4 Stripe plan sync (I2); Stripe test flakiness fixed | 0f4c428a |
+| 5 admin and org-manager screens | 1c66aa35 |
+| 6 scoreboards (org filter, C5, I3) | 46d55669 |
+| 7 integration flows, system tests, `rake access:org_report` | ac2d89ec |
+| whole-change review fixes (M1–M4) | 3de32cfb |
+
+Engine (BreakEscape): `config.can_create_game` hook 39ad6b9a5; `missions#show` gate 139ecd0ff.
+
+Suite: 2637 runs; the only failures are two that predate this work
+(`stripe_webhooks_controller_test` invalid payload, `subscription_flow_test` :51). Browser system
+tests are written but can't run on this machine (Capybara/Puma mismatch, no chromedriver); the same
+flows pass as integration tests.
+
+Decisions taken during implementation (beyond the review picks):
+- J1 applies to orgs too: `Org#deal_current?` has no 7-day grace (access, quota, copy).
+- Any route (org opt-in, own subscription, entitlement) auto-enrols an org member.
+- Individual-subscription events need an all-events plan (Games stays games-only).
+- Org copies of pools can't be copied again; the copy button says why a copy is refused.
+- One live entitlement per user, event and source (Steam and Play may both be live).
+- Admin grants count as normal players on public boards; only Steam/Play-only owners are hidden.
+- New plans are skipped by the seeds until their Stripe price ids are set.
+
+Answers and follow-up work (2026-10-26, Hacktivity main):
+
+| Change | Commit |
+|---|---|
+| Q2: members of `org_only_scoreboards` orgs hidden from outsiders on public boards, panels and live toasts ("A player"); org view labelled as an org leaderboard. Q4: `plans.listed`; Games and Awareness & Games unlisted (admin-only, no checkout for others), draft feature lists in the seed | 62bcbdbe |
+| D3: Steam/Play players shown on public boards (C5 removed). D4: `GameSlot.available` uses the event start when `release_at` is blank | 3e9fa48f |
+| Playtesters: `playtest` entitlement source, optional `expires_at` (all sources); testers and own-org VIPs/account managers start unreleased missions; see-only visibility unchanged; testers' feedback from first play, editable until release | 059a6074 |
+
+Settled: Q1 no free window for org members (as now); Q3 invitations as now; Q5 engine gate admins
+only; C1–C4 confirmed; D1 lapsed orgs keep their own copied events; D2 re-seating stays on the org
+page (VIPs and account managers already have it); P5 testers' games count normally; P7 no engine
+published check. Deferred: D5, a lapsed player's direct engine game link still opens their own
+game; close it in the Steam sign-in work.
+
+Next: Stripe deploy prep, then Steam/Play sign-in.
+
+Before deploy: run `rake access:org_report` on production data; create the two plans in Stripe and
+set the STRIPE_* variables; tick plan_events for game events and awareness pools; set the Licence
+to Hack store ids. Where Games or Awareness & Games already exist, untick Listed by hand (the seed
+only unlists on creation). Keep unlisted plans' prices out of the Stripe customer portal. Edit the
+draft feature lists in `db/seeds/plans.rb` (the "Hacktivity Games" tooltip mentions Kali VMs).

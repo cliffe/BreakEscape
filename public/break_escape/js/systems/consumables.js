@@ -17,9 +17,26 @@
  *     evidence: drinking it would lose the only print surface for him. Empty
  *     dirty mugs, coffee machines and water coolers are not cups.
  *
- * Using one heals by its amount (capped at max HP), shows a toast and uses it
- * up: an inventory item leaves the inventory (and the server's copy), a world
- * object leaves the room. At full health nothing is used up.
+ * One rule for every consumable (user, 2026-10-27: "first interaction adds
+ * them to inventory, then interacting with them from there always consumes
+ * them even if full health"):
+ *   - interacting with one in the world picks it up (never consumed in place);
+ *   - using it from the inventory always consumes it: a sound, a toast, and the
+ *     item leaves the inventory (and the server's copy). The heal is applied
+ *     only if the player is hurt, capped at max HP. There is no "you're not
+ *     hurt, keep it" refusal.
+ *   - messages: a drink says "You drink the <name>.", food "You eat the
+ *     <name>.", first aid "You use the <name>." when nothing healed or the
+ *     scenario has "disableAttacks"; otherwise "<Name>: +N HP".
+ *   - sounds: drinks 'drink_gulp', food 'eat_snack', first aid 'item_interact_1'.
+ *   - an object with a scenario role (m05's fingerprinted mug) is not a
+ *     consumable at all.
+ *
+ * Room-map cups are Tiled decor with no server room object. rooms.js gives
+ * each a stable id (its object id), takeable: true and decor: true. Picking
+ * one up sends it to the inventory endpoint (the server accepts decor cups by
+ * sprite name) and records the id in CONSUMED_GLOBAL so the cup stays gone from
+ * the room after a reload; the cup itself is restored from the inventory.
  *
  * Kept free of imports so it can be tested in isolation.
  */
@@ -36,6 +53,24 @@ export const DEFAULT_HEAL_BY_TYPE = [
   [/^(first_aid|medkit|bandage)/, 40]
 ];
 export const GENERIC_HEAL = 15;
+
+// What a consumable is, for the sound and the message. Drinks are coffee and
+// tea cups plus cans and bottles; first aid is a kit or bandage; the rest is food.
+const DRINK_TYPE = /^(coffee|tea|energy|soda|cola|drink_can|water_bottle)/;
+const AID_TYPE = /^(first_aid|medkit|bandage)/;
+
+// One sound per kind (sound-manager.js loads them)
+export const CONSUME_SOUNDS = { drink: 'drink_gulp', food: 'eat_snack', aid: 'item_interact_1' };
+export const DRINK_SOUND = CONSUME_SOUNDS.drink;
+
+/** 'drink', 'food' or 'aid' for a consumable's scenario data. */
+export function consumableKind(data) {
+  if (isDrinkable(data)) return 'drink';
+  const t = String(data?.type || '').toLowerCase();
+  if (DRINK_TYPE.test(t)) return 'drink';
+  if (AID_TYPE.test(t)) return 'aid';
+  return 'food';
+}
 
 // Cups of coffee or tea in rooms (user, 2026-10-22: "any coffee cups in rooms
 // are consumed for health"), by sprite name: what the hover says and the heal.
@@ -91,6 +126,17 @@ export function markObjectConsumed(objectId, globals) {
   if (!list.includes(objectId)) g[CONSUMED_GLOBAL] = [...list, objectId];
 }
 
+/** True for coffee and tea: a cup sprite or a coffee/tea item type. */
+export function isDrinkable(data) {
+  if (!data) return false;
+  return !!drinkableCupName(data.type) || /^(coffee|tea)/.test(String(data.type || '').toLowerCase());
+}
+
+/** True when the loaded scenario has combat switched off. */
+export function isNoCombat() {
+  return typeof window !== 'undefined' && window.gameScenario?.disableAttacks === true;
+}
+
 function defaultHealForType(type) {
   const t = String(type || '').toLowerCase();
   const hit = DEFAULT_HEAL_BY_TYPE.find(([re]) => re.test(t));
@@ -115,23 +161,21 @@ export function consumableHealAmount(data, { inInventory = false } = {}) {
 }
 
 /**
- * True when interacting with this sprite should consume it now: a consumable
- * in the inventory, or a consumable world object that can't be picked up (a
- * takeable one is picked up first, then used from the inventory).
+ * True when interacting with this sprite should consume it now: only a
+ * consumable already in the inventory. In the world it is picked up first.
  */
 export function shouldConsumeOnInteract(sprite, inventoryItems = []) {
   const data = sprite?.scenarioData;
   if (!data) return false;
   const inInventory = Array.isArray(inventoryItems) && inventoryItems.includes(sprite);
-  if (consumableHealAmount(data, { inInventory }) <= 0) return false;
-  return inInventory || data.takeable !== true;
+  return inInventory && consumableHealAmount(data, { inInventory }) > 0;
 }
 
 /**
  * Use a consumable: heal, toast, and use it up.
  * @param {object} sprite - inventory item or world object sprite
  * @param {object} [deps] - overridable for tests
- * @returns {number} HP healed (0 if nothing happened)
+ * @returns {number} HP healed (0 if nothing healed; it is still used up)
  */
 export function useConsumable(sprite, deps = {}) {
   const w = typeof window !== 'undefined' ? window : {};
@@ -139,26 +183,33 @@ export function useConsumable(sprite, deps = {}) {
   const notify = deps.notify ?? w.showNotification ?? (() => {});
   const inventoryItems = deps.inventoryItems ?? w.inventory?.items ?? [];
   const data = sprite?.scenarioData;
-  if (!data || !health || health.isKO?.()) return 0;
+  if (!data || health?.isKO?.()) return 0;
 
   const inInventory = inventoryItems.includes(sprite);
   const amount = consumableHealAmount(data, { inInventory });
   if (amount <= 0) return 0;
+  const kind = consumableKind(data);
 
-  const hp = health.getHP();
-  const maxHP = health.getMaxHP();
+  const hp = health ? health.getHP() : 0;
+  const maxHP = health ? health.getMaxHP() : 0;
   const name = data.name || 'It';
-  if (hp >= maxHP) {
-    notify(`You're not hurt. Keep the ${name.toLowerCase()} for later.`, 'info', '', 2500);
-    return 0;
-  }
+  const noCombat = deps.noCombat ?? isNoCombat();
+  const hurt = !!health && hp < maxHP;
 
-  const healed = Math.min(amount, maxHP - hp);
-  health.heal(amount);
-  notify(`${name}: +${healed} HP`, 'success', '', 2500);
-  // A green +N over the player and a green flash on the sprite
+  // Always used up; the heal only counts if the player is hurt
+  const healed = hurt ? Math.min(amount, maxHP - hp) : 0;
+  if (hurt) health.heal(amount);
+  const playSound = deps.playSound ?? ((n) => w.soundManager?.play?.(n));
+  try { playSound(CONSUME_SOUNDS[kind]); } catch (err) { console.warn('Could not play consume sound:', err); }
+  if (noCombat || !healed) {
+    const verb = kind === 'drink' ? 'drink' : kind === 'food' ? 'eat' : 'use';
+    notify(`You ${verb} the ${name.toLowerCase()}.`, 'success', '', 2500);
+  } else {
+    notify(`${name}: +${healed} HP`, 'success', '', 2500);
+  }
+  // A green +N over the player and a green flash on the sprite (combat only)
   const player = w.player;
-  if (player) {
+  if (player && healed > 0 && !noCombat) {
     w.damageNumbers?.show?.(player.x, player.y - 30, healed, 'heal');
     w.spriteEffects?.flashTint?.(player, 0x66ff66, 300);
   }

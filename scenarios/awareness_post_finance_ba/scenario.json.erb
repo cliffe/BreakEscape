@@ -448,7 +448,7 @@
         "accent": "#2f6f5e"
       },
       "variant": "full",
-      "durationTargetMin": 4,
+      "durationTargetMin": 9,
       "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: ten messages from the Brightwell payments inbox.",
       "stages": [
         "check"
@@ -475,6 +475,7 @@
     "training_room": {
       "type": "room_aw_brightwell",
       "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_brightwell_blended.png",
       "lighting": {
         "emitters": {
           "kiosk": {
@@ -483,6 +484,12 @@
             "intensity": 0.45,
             "offsetY": -20,
             "effect": "screen"
+          },
+          "window_blinds": {
+            "color": "#ffd9a0",
+            "radius": 48,
+            "intensity": 0.1,
+            "floorTint": 0.5
           },
           "fire_alarm_point": [
             {
@@ -503,8 +510,8 @@
       "connections": {},
       "npcs": [
         {
-          "id": "farah_qureshi",
-          "displayName": "Farah Qureshi",
+          "id": "joanne_pell",
+          "displayName": "Joanne Pell",
           "npcType": "person",
           "position": {
             "x": 5.5,
@@ -513,7 +520,7 @@
           "spriteSheet": "female_scientist_v2",
           "spriteTalk": "assets/characters/female_scientist_talk.png",
           "spriteVisemes": "assets/characters/female_scientist_visemes.png",
-          "storyPath": "scenarios/awareness_post_finance_ba/ink/farah_post.json",
+          "storyPath": "scenarios/awareness_post_finance_ba/ink/joanne_post.json",
           "currentKnot": "start",
           "eventMappings": [
             {

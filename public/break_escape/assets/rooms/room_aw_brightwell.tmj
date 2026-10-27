@@ -390,18 +390,6 @@
      "y": 50
     },
     {
-     "gid": 911,
-     "height": 31,
-     "id": 3,
-     "name": "",
-     "rotation": 0,
-     "type": "",
-     "visible": true,
-     "width": 44,
-     "x": 88,
-     "y": 52
-    },
-    {
      "gid": 852,
      "height": 28,
      "id": 4,
@@ -410,7 +398,7 @@
      "type": "",
      "visible": true,
      "width": 44,
-     "x": 216,
+     "x": 226,
      "y": 50
     },
     {
@@ -614,7 +602,7 @@
      "type": "",
      "visible": true,
      "width": 30,
-     "x": 268,
+     "x": 96,
      "y": 48
     }
    ],
@@ -3140,7 +3128,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 635,
+   "tilecount": 638,
    "tileheight": 60,
    "tiles": [
     {
@@ -6952,6 +6940,24 @@
      "image": "../objects/aw_chairs_stacked_slate1.png",
      "imageheight": 45,
      "imagewidth": 20
+    },
+    {
+     "id": 645,
+     "image": "../objects/aw_chair_south_charcoal1.png",
+     "imageheight": 32,
+     "imagewidth": 16
+    },
+    {
+     "id": 646,
+     "image": "../objects/aw_chair_north_charcoal1.png",
+     "imageheight": 26,
+     "imagewidth": 16
+    },
+    {
+     "id": 647,
+     "image": "../objects/aw_chair_w_charcoal1.png",
+     "imageheight": 32,
+     "imagewidth": 17
     }
    ],
    "tilewidth": 60

@@ -188,3 +188,5 @@ episodes** — it is one shared code change in `debrief-view.js`, costs no teach
 300–560 words of re-read from each. After that, hold the per-item discipline of Cut E (one clear
 sentence per tell, flavour trimmed) on E6 and E7 specifically, and re-measure each full shell with a
 playtest before calling it done; these are word-count estimates, not timed runs.
+
+Note (2026-10-27): the 13-minute target is superseded. Per FUN_DECISIONS q_timing, full episodes are now described as "about 15 minutes" (E6 and E7 "about 16"). This plan is kept as written.

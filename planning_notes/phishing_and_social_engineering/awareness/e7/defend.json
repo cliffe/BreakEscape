@@ -62,6 +62,7 @@
           ],
           "truth": {
             "isPhish": true,
+            "critical": true,
             "flags": ["vish_callback_pressure", "secrecy_or_bypass", "borrowed_authority"],
             "perFlagNote": {
               "vish_callback_pressure": "'Don't bother trying my mobile' and 'just email me' shut off the one check that works whoever is speaking: ringing Ravinder back on the number you already hold. The borrowed phone is the excuse.",

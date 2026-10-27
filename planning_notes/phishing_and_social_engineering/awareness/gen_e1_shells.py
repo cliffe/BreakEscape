@@ -25,10 +25,10 @@ HOSTS = {
         'sprite': 'male_office_worker',
         'about': "Brightwell's finance training lead, early 60s, white, from Halifax; unhurried and kind. New for P7-J (not yet in BRAND_SET.md). Placeholder sprite until P7-Z3.",
     },
-    'farah': {
-        'id': 'farah_qureshi', 'displayName': 'Farah Qureshi',
+    'joanne': {
+        'id': 'joanne_pell', 'displayName': 'Joanne Pell',
         'sprite': 'female_scientist',
-        'about': "Brightwell's learning and development coordinator, early 30s, British Pakistani, from Leicester; brisk and friendly. New for P7-J (not yet in BRAND_SET.md). Placeholder sprite until P7-Z3.",
+        'about': "Brightwell's learning and development coordinator, late 40s, white British, from Leicester; brisk and friendly. Renamed from Farah Qureshi on 2026-10-27 (name clash with m10). Placeholder sprite until P7-Z3.",
     },
 }
 
@@ -219,7 +219,7 @@ def defend_only():
         success_screen('Payments inbox done', "You've sorted all six messages and finished this episode."))
     meta = {
         'display_name': 'Awareness E1: Invoice fraud (inbox only)',
-        'description': "An eight-minute awareness episode for finance staff, on the inbox side only. Cover the payments inbox at Brightwell Foods, a fictional company, before the afternoon payment run: six messages, some real and some built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+        'description': "An awareness episode of about 8 minutes for finance staff, on the inbox side only. Cover the payments inbox at Brightwell Foods, a fictional company, before the afternoon payment run: six messages, some real and some built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
         'difficulty_level': 1,
         'scoring': 'completion',
         'secgen_scenario': None,
@@ -243,7 +243,7 @@ def check(pair, stage):
     ep = {
         'id': ep_id, **brand_block(),
         'variant': 'full',
-        'durationTargetMin': 4,
+        'durationTargetMin': 9,
         'scopeNote': 'Authorised exercise at Brightwell Foods, a fictional company. In scope: ten messages from the Brightwell payments inbox.',
         'stages': ['check'],
         'conclusionTaskId': 'finish_check',
@@ -269,7 +269,7 @@ def check(pair, stage):
             {'from': pre_mission, 'var': 'triage_pre_done', 'as': 'triage_pre_done', 'default': False},
             {'from': pre_mission, 'completed': 'pre_check_completed'},
         ]
-    host = HOSTS['graham' if pair == 'ab' else 'farah']
+    host = HOSTS['graham' if pair == 'ab' else 'joanne']
     letters = pair.upper()
     first, second = (letters[0], letters[1])
     if stage == 'pre':
@@ -279,7 +279,7 @@ def check(pair, stage):
         aim = ('first_check_aim', 'Do the first check', 'Sort ten messages at the training kiosk.')
         task = ('finish_check', 'Finish the first check')
         display = f'Awareness check: finance, before ({letters})'
-        desc = (f"A four-minute check for finance staff, taken before the awareness episodes (pair {letters}). "
+        desc = (f"A check of about 8 to 10 minutes for finance staff, taken before the awareness episodes (pair {letters}). "
                 "Ten messages from the payments inbox of Brightwell Foods, a fictional company. The result is kept so the "
                 f"matching after-check (awareness_post_finance_{pair}) can show how the two compare.")
         obs = 'A touch-screen kiosk with ten messages from a payments inbox, ready for the first check.'
@@ -291,7 +291,7 @@ def check(pair, stage):
         aim = ('second_check_aim', 'Do the second check', 'Sort ten messages at the training kiosk.')
         task = ('finish_check', 'Finish the second check')
         display = f'Awareness check: finance, after ({letters})'
-        desc = (f"A four-minute check for finance staff, taken after the awareness episodes (pair {letters}). "
+        desc = (f"A check of about 8 to 10 minutes for finance staff, taken after the awareness episodes (pair {letters}). "
                 "Ten new messages from the payments inbox of Brightwell Foods, a fictional company, matched to the "
                 f"first check (awareness_pre_finance_{pair}). The end screen compares the two results when the first check was finished.")
         obs = 'A touch-screen kiosk with ten messages from a payments inbox, ready for the second check.'
@@ -310,7 +310,7 @@ def check(pair, stage):
         'secgen_scenario': None,
         'collection': 'training',
         'ui_theme': 'general',
-        'estimated_duration_minutes': 4,
+        'estimated_duration_minutes': 9,
         'cybok': CYBOK,
     }
     return mission, sc, meta

@@ -573,14 +573,14 @@
       "flipDefenderLine": "Mid-morning, more calls holding, Leila picked this one up. The caller had Gordon's name, team, manager and staff number, every answer right, so she reached for the reset. He'd done his homework, and the callback was the one thing that would have told him from the real Gordon.",
       "flipNoSend": "Your call didn't get through this time, so there's nothing of yours to show. Next, the same kind of call comes in to the service desk, and you're the one answering.",
       "flipMissed": "Your call didn't get what it was after this time, so there's nothing of yours to replay. Next, the same kind of call comes in to the service desk, and you're the one answering.",
-      "noBlameLine": "These callers rehearse sounding right, and a service desk that tries to help them is doing its job under pressure. A miss here just shows where to look next time.",
-      "noBlameLineCritical": "This was built to catch you under pressure, not to test how careful you are. The points only show where to look next time.",
+      "noBlameLine": "These callers rehearse sounding right, and a service desk that tries to help them is doing its job under pressure. A miss just shows which call to slow down next time.",
+      "noBlameLineCritical": "This was built to catch you when you're under pressure. The points only show where to look next time.",
       "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password or move someone's sign-in prompts, hang up and ring them back on the number already on file, not one they give you. If a sign-in prompt arrives that you didn't start, deny it and report it using the route in the box below.",
       "defendOnly": "These calls were made by people whose job is to sound right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
       "defendIntro": "You're in Leila's seat. Three calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time.",
       "conceptPanel": {
-        "heading": "Why the call and the prompts worked",
-        "text": "The caller had Gordon's name, team, manager and staff number, and every one was findable online, so none of them proved who was on the line. Only a callback to the number already on file could tell the real Gordon from the imposter.\n\nThe sign-in prompts that followed are the same attack from another angle. Someone with the password fires off one approval request after another, counting on a tired person tapping approve just to stop the buzzing. A prompt you didn't start is never one to approve, however many times it comes."
+        "heading": "Why these are hard to catch",
+        "text": "The caller had Gordon's name, team, manager and staff number, and every one of those is findable online, so on a phone call none of them proves who is really on the line. Only a callback to the number already on file tells the real Gordon from the impostor.\n\nThe overnight sign-in prompt is the same trick from another angle. Whoever has the password sends approval requests and leans on two things, when they arrive and how many, to wear a tired or distracted person down until one tap lets them in. The phone is where it stops: a prompt you didn't start is one to report rather than approve, number matching defeats a careless tap, and a rate limit chokes a flood."
       }
     },
     "_defendOnly": {

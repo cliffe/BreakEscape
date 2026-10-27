@@ -66,13 +66,13 @@ COMPANY_OPS = {
     # East Midlands food manufacturer, finance team (§3.2)
     "brightwell": [
         ("move", 2, 36, 50), ("move", 17, 43, 59),
-        ("sprite", 3, "year_planner1"), ("move", 3, 88, 52),
-        ("sprite", 4, "whiteboard2"), ("move", 4, 216, 50),
+        ("delete", 3),                       # t3: no year planner; the range poster takes its place
+        ("sprite", 4, "whiteboard2"), ("move", 4, 226, 50),
         ("delete", 18, 19, 22),
         ("move", 14, 262, 296),
         ("add", "items", "coffee_station1", 232, 296),
         # m1: the company's own product range on the back wall, right of the bar chart
-        ("add", "items", "aw_brightwell_range1", 268, 48),
+        ("add", "items", "aw_brightwell_range1", 96, 48),
         # M1/m1/M3: a box of the oat bars instead of the tray; payment-run folder
         # instead of the journal stack (m2)
         ("sprite", 24, "aw_brightwell_oatbox1"), ("move", 24, 114, 238),
@@ -83,10 +83,10 @@ COMPANY_OPS = {
     "tarrowby": [
         # M3: H&S notice board where the window was (an inside depot room); t4: the
         # rota board closer to the logo, the map and hi-vis hooks spread out
-        ("sprite", 2, "notice_board1"), ("move", 2, 30, 52), ("delete", 17),
+        ("sprite", 2, "notice_board1"), ("move", 2, 34, 52), ("delete", 17),
         ("sprite", 3, "rota_board1"), ("move", 3, 100, 46),
         ("sprite", 4, "m09_county_map1"), ("move", 4, 222, 48),
-        ("add", "items", "aes_hivis_hook1", 262, 52),
+        ("add", "items", "aes_hivis_hook1", 258, 52),
         ("delete", 18, 19, 14),
         ("add", "items", "drinks_vending1", 222, 300),
         ("sprite", 22, "aw_chairs_stacked_slate1"), ("move", 22, 268, 300),  # t4: off the east wall strip
@@ -116,7 +116,7 @@ COMPANY_OPS = {
         # so neither reads as something to use
         ("add", "table_items", "aw_pc_off1", 228, 280),
         ("add", "table_items", "office-misc-headphones", 262, 276),
-        ("add", "items", "hospital_chair_south", 237, 262),
+        ("add", "items", "aw_chair_south_charcoal1", 237, 262),
         ("add", "items", "qdc_poster_secure1", 14, 170),
         # M3: no flip chart; a floor plant in the corner
         ("delete", 13),
@@ -125,6 +125,12 @@ COMPANY_OPS = {
         ("sprite", 24, "binders1"), ("move", 24, 114, 242),
         ("move", 25, 82, 246),
         ("move", 23, 62, 236),
+        # m3: charcoal chairs, not the teal seminar set Brightwell keeps
+        ("sprite", 5, "aw_chair_south_charcoal1"), ("sprite", 7, "aw_chair_south_charcoal1"),
+        ("sprite", 9, "aw_chair_south_charcoal1"),
+        ("sprite", 6, "aw_chair_north_charcoal1"), ("sprite", 8, "aw_chair_north_charcoal1"),
+        ("sprite", 10, "aw_chair_north_charcoal1"),
+        ("sprite", 12, "aw_chair_w_charcoal1"),
     ],
     # London architecture practice (§3.5)
     "merrin_sallow": [
@@ -132,7 +138,7 @@ COMPANY_OPS = {
         ("add", "items", "plan_chest2", 36, 72),
         ("sprite", 3, "hce_art_canvas1"), ("move", 3, 96, 46),
         ("move", 4, 220, 50), ("move", 18, 227, 59),
-        ("add", "items", "planter_fig1", 96, 140),
+        ("add", "items", "planter_fig1", 34, 166),   # m2: planted against the west wall, below the report poster
         ("add", "table_items", "m10_plans1", 133, 236),
         ("add", "table_items", "bankers_lamp1", 44, 236),
         ("add", "items", "leather_sofa1", 216, 300),

@@ -458,3 +458,14 @@ test('E1-E4 P4-10: start "@home" opens the first site, not the last page visited
     assert.equal(open().getTestState().osint.location, 'company.notes', 'a plain reopen resumes');
     assert.equal(open({ start: '@home' }).getTestState().osint.location, first, '@home ignores the last page');
 });
+
+test('R19 F19-2: the status line from a note is cleared when the player moves to another page', () => {
+    setGlobals();
+    const s = open();
+    let o = pick(s, 'row_pierce');
+    assert.match(o.live, /^Noted: /);
+    assert.match(s.live.textContent, /^Noted: /);
+    click(linkTo(s, 'Read the team notes'));
+    assert.equal(s.live.textContent, '');
+    assert.equal(s.getTestState().osint.live, '');
+});

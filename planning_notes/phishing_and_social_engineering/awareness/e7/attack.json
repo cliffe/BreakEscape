@@ -56,7 +56,7 @@
 
   "templates": {
     "caller_ceo": { "part": "from", "text": "{sender_name} <{sender_address}>",
-      "slots": [ { "id": "sender_name", "type": "name", "about": "sender", "label": "whose voice the call uses" },
+      "slots": [ { "id": "sender_name", "type": "name", "about": "sender", "label": "sender's name" },
                  { "id": "sender_address", "type": "address", "label": "the address it comes from" } ] },
     "greet_rushed": { "part": "greeting", "text": "Tom, it's me, I've only got a minute between site visits.", "slots": [] },
     "pretext_ceo_payment": { "part": "pretext",

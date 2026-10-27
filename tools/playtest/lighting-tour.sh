@@ -66,7 +66,7 @@ ARGS=(--url "http://127.0.0.1:3001/break_escape/games/$GID" --headless --log "$O
 [ -n "$FX" ] && ARGS+=(--flags "$FX")
 tools/playtest/session-start.sh "${ARGS[@]}" >/dev/null || { tools/playtest/session-stop.sh "$GID" >/dev/null 2>&1; exit 1; }
 trap 'tools/playtest/session-stop.sh "$GID" >/dev/null 2>&1' EXIT
-tools/playtest/cmd.sh "$GID" '{"cmd":"bootstrap","tutorial":"decline","resume":"new"}' >/dev/null
+tools/playtest/cmd.sh "$GID" '{"cmd":"bootstrap","tutorial":"decline","resume":"new","autoBrief":true}' >/dev/null
 echo "GAME_ID=$GID"
 
 # Hide the HUD so it does not cover the room in screenshots: objectives panel, toast/notification

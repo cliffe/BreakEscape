@@ -62,6 +62,7 @@
         "id": "e6_phone_messages",
         "title": "Tarrowby work phone",
         "brief": "It's your break at Tarrowby's Shipley depot, and six things are waiting on your work phone: texts, two printed notices you passed on site, and an email. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. On a notice, press 'Where does this code go?' to see the address behind the code. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "realLabel": "Real texts and notices",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
@@ -145,11 +146,13 @@
               "isPhish": true,
               "flags": [
                 "unexpected_qr",
-                "lookalike_domain"
+                "lookalike_domain",
+                "urgencyCalibrated"
               ],
               "perFlagNote": {
                 "unexpected_qr": "A taped-on notice with a code and a payment set-up is exactly where you can't see the address before you scan. Anyone can stick a notice to a barrier",
-                "lookalike_domain": "The code goes to tarrowby-parking.example. Tarrowby's own pages are on tarrowby.example; the added word makes it a different site"
+                "lookalike_domain": "The code goes to tarrowby-parking.example. Tarrowby's own pages are on tarrowby.example; the added word makes it a different site",
+                "urgencyCalibrated": "'Vehicles not set up may be clamped', from Monday, is there to make you scan now rather than stop to check where the code goes"
               },
               "ifTrusted": "The page would take your card details and your number plate. A change to how you park would not reach you first as a code taped to a barrier.",
               "reportReply": "Thanks. Facilities didn't put that up, and there's no contactless parking scheme. We've taken the notices down and checked the other gates."
@@ -306,6 +309,7 @@
     "training_room": {
       "type": "room_aw_tarrowby",
       "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_tarrowby_blended.png",
       "lighting": {
         "emitters": {
           "kiosk": {
@@ -328,11 +332,11 @@
         },
         "lights": [
           {
-            "x": 1.75,
-            "y": 2.3,
+            "x": 4.5,
+            "y": 5,
             "color": "#dfe8f4",
-            "radius": 72,
-            "intensity": 0.3
+            "radius": 110,
+            "intensity": 0.25
           }
         ]
       },

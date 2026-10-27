@@ -12,7 +12,16 @@
  *                            [--vw 1400] [--vh 1000]     (or env VW / VH)
  *
  * Commands (one JSON object per line):
- *   {"cmd":"bootstrap","tutorial":"decline","resume":"new"}
+ *   {"cmd":"bootstrap","tutorial":"decline","resume":"new"}   (stops at an open briefing: briefingPending:true,
+ *                                            settled:false; add "autoBrief":true to auto-drive it)
+ *   {"cmd":"converse","id":"npc","choices":["^Yes"]}   (takes only named options; stops at an unnamed
+ *                                            choice with ok:false stopped-at-choice; "explore":true takes
+ *                                            unvisited options, "close":true closes at a stop)
+ *   {"cmd":"openInventoryItem","item":"phone"}   (tray index | id | exact name | type | name substring)
+ *   {"cmd":"inventory"}                      → the tray, in order
+ *   {"cmd":"doorways"}                       → doorways of the current room (or {"room":"id"})
+ *   {"cmd":"cyberchef","input":"text","recipe":"ROT13(true,true,false,13)"}  (laptop must be open)
+ *   {"cmd":"cyberchefOutput"}
  *   {"cmd":"state"}                          → full getState()
  *   {"cmd":"brief"}                          → compact decision-sized state
  *   {"cmd":"moveTo","x":210,"y":190}
@@ -211,7 +220,7 @@ function substituteFlags(node, at) {
   const gotoUrl = argv.url + (argv.url.includes('?') ? '&' : '?') + 'skip_resume=1';
   await page.goto(gotoUrl, { waitUntil: 'domcontentloaded' });
   try {
-    await page.waitForFunction(() => !!window.__test, null, { timeout: 45000 });
+    await page.waitForFunction(() => !!window.__test, null, { timeout: 120000 });
   } catch {
     emit({ ok: false, error: 'window.__test never appeared — is testBridge enabled (non-production)?' });
     await browser.close(); process.exit(1);
@@ -288,9 +297,15 @@ function substituteFlags(node, at) {
    * Every dismissal is a click or keypress on a real control — see
    * docs/test-bridge.md. `resume` and `tutorial` are explicit because the
    * bridge refuses to guess between destructive options.
+   *
+   * It does NOT play the opening briefing: choices there commit the story.
+   * When a dialogue is on screen it stops and returns briefingPending:true
+   * with the dialogue in `state`, and `settled:false` (the run is not ready to play
+   * until the briefing is done; call bootstrap again afterwards). `autoBrief:true` opts in to the old
+   * behaviour (choice 1 at each menu, hubs exit on a repeat).
    */
   async function bootstrap({ tutorial = 'decline', resume = 'new', maxSteps = 400,
-                             settleChecks = 4, settleMs = 900 } = {}) {
+                             settleChecks = 4, settleMs = 900, autoBrief = false } = {}) {
     const trace = [];
     // Overlays here are staggered: the mission brief and the opening cutscene
     // each open a beat after the previous one closes. A single "nothing is
@@ -333,6 +348,34 @@ function substituteFlags(node, at) {
       if (mg) {
         clear = 0;
         const d = await page.evaluate(() => window.__test.minigame.getState()?.dialogue);
+        // Between a line finishing and the next being actionable (the typewriter
+        // gap) a dialogue reports neither awaitingChoice nor canContinue. It is
+        // still a dialogue: never close it, wait for it to become actionable.
+        if (d && !d.awaitingChoice && !d.canContinue) {
+          await page.evaluate(() => window.__test.waitForDialogue({ timeoutMs: 8000 })).catch(() => {});
+          if (!autoBrief) {
+            trace.push(`briefing dialogue left for the tester (${mg.id}); pass autoBrief:true to auto-drive it`);
+            return { trace, settled: false, briefingPending: true, state: await brief() };
+          }
+          // A finished story that stays open (ended, nothing left to choose or
+          // continue) is closed here, as it was before the gap check existed.
+          const after = await page.evaluate(() => window.__test.minigame.getState()?.dialogue).catch(() => null);
+          if (after && after.ended && !after.awaitingChoice && !after.canContinue) {
+            trace.push(`close ended dialogue ${mg.id}`);
+            await page.evaluate(() => window.__test.minigame.close());
+            await pause(400 + speed.step);
+            continue;
+          }
+          await pause(speed.dialogue);
+          continue;
+        }
+        if (d && (d.awaitingChoice || d.canContinue) && !autoBrief) {
+          // The opening briefing is story the tester must play: its choices are
+          // real and commit the run. Leave it open and hand it over. Pass
+          // {"autoBrief":true} to have bootstrap drive it (choice 1, hubs exit).
+          trace.push(`briefing dialogue left for the tester (${mg.id}); pass autoBrief:true to auto-drive it`);
+          return { trace, settled: false, briefingPending: true, state: await brief() };
+        }
         if (d && (d.awaitingChoice || d.canContinue)) {
           if (d.awaitingChoice) {
             // choices are objects ({number, text}); tolerate plain strings too.
@@ -367,8 +410,15 @@ function substituteFlags(node, at) {
         if (/tutorial/i.test(bl.classes) || /tutorial/i.test(bl.text)) {
           pick = labels.find(l => tutorial === 'accept' ? /yes/i.test(l) : /no|figure/i.test(l));
         } else if (/resume|session/i.test(bl.id || '') || /RESUME SESSION/i.test(bl.text)) {
-          const want = { resume: /^resume$/i, restart: /restart/i, new: /new session/i }[resume];
-          pick = labels.find(l => want.test(l));
+          // The overlay's own button can carry an icon or arrow ("▶ Resume"), so match the word,
+          // not the whole label; "Resume session" headings are not buttons. Never paginate the
+          // OTHER SESSIONS list (Prev/Next): that is what looped for minutes after a reload.
+          const want = { resume: /\bresume\b/i, restart: /\brestart\b/i, new: /new session/i }[resume];
+          pick = labels.find(l => want.test(l) && !/prev|next|load session/i.test(l));
+          if (!pick) {
+            throw new Error(`bootstrap: the resume overlay has no "${resume}" button (buttons: ${labels.join(' | ')}). `
+              + `Click it with dismiss or eval, then call bootstrap again.`);
+          }
         }
         // NEVER fall back to a "Load session #N" entry: those are links to
         // other games, and clicking one abandons the game under test.
@@ -382,8 +432,8 @@ function substituteFlags(node, at) {
         await page.evaluate(l => window.__test.dismissBlockingUi(l), pick);
         await pause(900);
         // A "New Session" or "Restart" click reloads the page.
-        await page.waitForFunction(() => !!window.__test, null, { timeout: 30000 }).catch(() => {});
-        await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 60000 })).catch(() => {});
+        await page.waitForFunction(() => !!window.__test, null, { timeout: 120000 }).catch(() => {});
+        await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 120000 })).catch(() => {});
         continue;
       }
       clear++;
@@ -508,12 +558,20 @@ function substituteFlags(node, at) {
      * the loop internally — continue while it continues, choose when it asks —
      * and returns the transcript plus what the conversation left behind.
      *
-     * `choices` are regexes tried in order against the visible options; the
-     * first that matches wins, otherwise option 1. `maxTurns` bounds it so a
-     * genuine dialogue loop in a scenario surfaces as a finding, not a hang.
+     * `choices` are regexes tried against the visible options; the first
+     * option that matches any of them is taken. With no match it STOPS at that
+     * choice point, leaves the conversation open and returns the options in
+     * `stoppedAtChoice` (choices are real story decisions, so converse never
+     * makes one nobody named). `explore:true` opts in to taking unvisited
+     * options itself; `close:true` closes the conversation at a stop.
+     * `maxTurns` bounds it so a genuine dialogue loop in a scenario surfaces as
+     * a finding, not a hang.
      */
     converse: async (c) => {
       const patterns = c.choices || [];
+      // Exploring (taking options nobody named) is opt-in: it commits real story choices.
+      const explore = c.explore === true;
+      let pendingChoice = null;
       const maxTurns = c.maxTurns || 60;
       const transcript = [];
       const picked = [];
@@ -551,6 +609,14 @@ function substituteFlags(node, at) {
           // before. Hub conversations keep offering the same options, so always
           // taking the first one loops forever — exhaust the branches instead.
           let idx = labels.findIndex(l => patterns.some(rx => new RegExp(rx, 'i').test(l)));
+          if (idx < 0 && !explore) {
+            // Never commit a choice the caller did not name: choices are real
+            // story decisions (m01 took the fight option with Derek). Stop here,
+            // leave the conversation open, and list the options.
+            pendingChoice = { speaker: d.speaker || null,
+                              options: labels.map((t, i) => `${i + 1}. ${t}`) };
+            break;
+          }
           if (idx < 0) idx = labels.findIndex(l => !seen.has(l));
           if (idx < 0) {
             // Everything on offer has been taken: the conversation is a hub with
@@ -570,8 +636,11 @@ function substituteFlags(node, at) {
         await pause(speed.dialogue);
       }
 
-      // Always leave the main world usable, whatever happened above.
-      const closed = await page.evaluate(() => {
+      // Always leave the main world usable, whatever happened above, except
+      // when stopped at an unnamed choice: that conversation stays open for the
+      // caller to answer (close:true closes it anyway).
+      const keepOpen = !!pendingChoice && c.close !== true;
+      const closed = keepOpen ? { leftOpen: true } : await page.evaluate(() => {
         if (!window.MinigameFramework?.currentMinigame) return { alreadyClosed: true };
         return window.__test.minigame.close();
       });
@@ -582,9 +651,13 @@ function substituteFlags(node, at) {
       // Zero turns means nothing was ever said: the target opened something
       // that is not a conversation, or opened nothing at all. That is not a
       // conversation driven to completion, so do not report it as one.
-      const nothingHappened = turns === 0 && transcript.length === 0;
+      const nothingHappened = turns === 0 && transcript.length === 0 && !pendingChoice;
       return {
-        ok: !after.activeMinigame && !nothingHappened,
+        // ok:false at a stop: the run's rule is that ok:false means "stop and
+        // decide", and a stop at an unnamed choice is exactly that (with the
+        // conversation still open and the world input-locked unless close:true).
+        ok: !pendingChoice && !after.activeMinigame && !nothingHappened,
+        stoppedAtChoice: pendingChoice || undefined,
         turns,
         exhaustedBranches,
         hitTurnLimit: turns >= maxTurns,
@@ -592,9 +665,18 @@ function substituteFlags(node, at) {
         transcript,
         closed,
         inventory: after.inventory,
-        reason: after.activeMinigame ? 'still-open-after-close'
+        reason: pendingChoice ? (keepOpen ? 'stopped-at-choice' : 'closed-at-choice')
+          : after.activeMinigame ? 'still-open-after-close'
           : (nothingHappened ? 'no-dialogue-appeared' : undefined),
-        hint: nothingHappened
+        hint: !keepOpen && pendingChoice
+          ? 'Reached a choice nobody named and closed the conversation without answering it (close:true). Nothing was '
+            + 'chosen. Run converse again with "choices":["<regex>"] to answer it, or "explore":true to let it pick.'
+          : keepOpen
+          ? 'Stopped at a choice nobody named (ok:false on purpose); the conversation is still open. Answer it with '
+            + '{"cmd":"converse","choices":["<regex of the option>"]} (no id continues the open dialogue), '
+            + 'or {"cmd":"mg","action":"chooseIndex","args":[n]}. Pass "explore":true to let converse '
+            + 'pick unvisited options itself (that commits real choices), or "close":true to leave.'
+          : nothingHappened
           ? 'The target opened no dialogue. Some interactables (phones, terminals) '
             + 'need a selection first — interact, inspect the minigame state, and drive it '
             + 'with `mg` rather than `converse`.'
@@ -733,6 +815,38 @@ function substituteFlags(node, at) {
       return page.evaluate(t => window.__test.enterRoom(t), target);
     },
 
+    /**
+     * Open an inventory-tray item the way a click does: {"cmd":"openInventoryItem","item":"phone"}.
+     * `item` is a tray index, item id, type or name (see __test.openInventoryItem).
+     */
+    openInventoryItem: async (c) => {
+      const r = await page.evaluate(i => window.__test.openInventoryItem(i), c.item ?? c.id ?? c.name ?? c.type);
+      await pause(speed.step);
+      return r;
+    },
+
+    /**
+     * Set CyberChef's input (and optionally recipe) and read the output:
+     * {"cmd":"cyberchef","input":"Uryyb","recipe":"ROT13(true,true,false,13)"}.
+     * The Crypto Analysis Station must be open (openInventoryItem "workstation").
+     * Uses a paste event; do NOT hand-build `#input=<base64>` URLs (raw `=` padding breaks them).
+     */
+    cyberchef: async (c) => {
+      const r = await page.evaluate(([t, rc]) => window.__test.setCyberChefInput(t, { recipe: rc || null }), [c.input ?? '', c.recipe || null]);
+      await pause(speed.step);
+      return r;
+    },
+    cyberchefOutput: () => page.evaluate(() => window.__test.readCyberChefOutput()),
+
+    /** What is in the inventory tray, in order, with the ids/types openInventoryItem accepts. */
+    inventory: () => page.evaluate(() => Array.from(document.querySelectorAll('.inventory-item')).map((img, index) => ({
+      index, id: img.scenarioData?.id || img.objectId || null,
+      type: img.getAttribute('data-type'), name: img.scenarioData?.name || img.alt || null
+    }))),
+
+    /** Doorways of a room (default: the current one), with gap, direction and lock state. */
+    doorways: (c) => page.evaluate(id => window.__test.doorways(id || null), c.room || c.id || null),
+
     /** Text of every notification/toast shown since the last call. */
     toasts: async () => {
       const list = await page.evaluate(() => { const l = window.__toastLog || []; window.__toastLog = []; return l; });
@@ -749,7 +863,26 @@ function substituteFlags(node, at) {
       return { ok: true, path };
     },
 
-    eval: (c) => page.evaluate(new Function(`return (${c.fn})`)()),
+    // `fn` must be a function expression, e.g. "() => window.__test.scan(400)" or
+    // "async () => { ... }". An async IIFE string ("(async () => {...})()") would
+    // run here in Node instead of the page, so it is refused. Any error comes back
+    // as ok:false rather than crashing the session.
+    eval: async (c) => {
+      const bad = (reason, message, hint) => Object.assign(new Error(message), { reason, hint });
+      let f;
+      try { f = new Function(`return (${c.fn})`)(); }
+      catch (e) { throw bad('eval-failed', String(e && e.message || e).slice(0, 500)); }
+      if (f && typeof f.then === 'function') {
+        f.catch(() => {});
+        throw bad('eval-not-a-function', 'fn evaluated to a promise',
+          'An async IIFE ran in Node, not the page. Pass a function expression: "async () => { ... }".');
+      }
+      if (typeof f !== 'function') {
+        throw bad('eval-not-a-function', 'fn is not a function', 'fn must be a function expression, e.g. "() => window.__test.scan(400)".');
+      }
+      try { return await page.evaluate(f); }
+      catch (e) { throw bad('eval-failed', String(e && e.message || e).slice(0, 500)); }
+    },
 
     speed: (c) => { Object.assign(speed, SPEEDS[c.value] || speed); return { ok: true, speed: c.value }; },
 
@@ -789,7 +922,7 @@ function substituteFlags(node, at) {
       const result = await handler(cmd);
       emit({ ok: true, cmd: cmd.cmd, result });
     } catch (err) {
-      emit({ ok: false, cmd: cmd.cmd, error: String(err && err.message || err) });
+      emit({ ok: false, cmd: cmd.cmd, error: String(err && err.message || err), ...(err && err.reason ? { reason: err.reason } : {}), ...(err && err.hint ? { hint: err.hint } : {}) });
     }
   }
 
