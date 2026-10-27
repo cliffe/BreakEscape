@@ -235,3 +235,11 @@ Data-first where possible, with a small engine change. The decision lives in `aw
 Shared-key ripple: the `conceptPanel` edit touched the fragment (`e3/defend.json`) and the full erb; the E3 defend-only shell was regenerated from the fragment with `gen_e3_e5_shells.py` (into scratch, diffed — the only content change was that one `conceptPanel` string; copied the single `scenario.json.erb` back; no ink or dungeon_graph change).
 
 Checks: node `test/js/social-*` + `validator-social-*` 1824/1824; new `test/js/social-authenticator-decision.test.mjs` (6 tests) and the legacy `social-authenticator.test.mjs` (9) both green; parity 7/7; `validate_scenario.rb --strict-social --no-graph --skip-ink` clean on both E3 shells and all 38 awareness shells. No live browser run yet.
+
+## Episode length wording (2026-10-27)
+
+User decision q_timing (FUN_DECISIONS part two): say "about 15 minutes" for a full episode, "about 16" for E6 and E7, and recommend defend-only for sessions under 30 minutes. Human timing runs stay postponed.
+
+Applied: full-episode `mission.json` descriptions now read "An awareness episode of about 15 minutes for ..." (16 for E6 and E7), with `estimated_duration_minutes` and `durationTargetMin` set to 15 (16 for E6 and E7). Defend-only descriptions say "about 8 minutes" (the figure was already inside 6 to 8; `durationTargetMin` stays 8). The four finance checks, the only checks that stated a length, say "about 8 to 10 minutes"; their `durationTargetMin` and `estimated_duration_minutes` (4) are untouched pending the owner. `durationTargetMin` is read by no code (schema type check only), so nothing depended on the old values. The defend-only and check changes went through `gen_e1_shells.py`, `gen_e2_e4_shells.py`, `gen_e3_e5_shells.py` and `gen_e6_e7_shells.py` (scratch regen, byte-identical baseline first, only the 11 `mission.json` files copied in).
+
+Still to do: the E3 full erb `durationTargetMin` 13 to 15 (held back while another session edits that erb); the validator warning text in `scripts/validate_social/awareness.rb` still says "13 minute episode"; the organiser guidance to prefer defend-only under 30 minutes is not yet in any description (it belongs with the aw7 organiser guidance).

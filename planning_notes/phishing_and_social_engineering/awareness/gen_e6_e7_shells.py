@@ -278,7 +278,7 @@ EPISODES = {
             'kiosk': ('A touch-screen kiosk set up as a Tarrowby work phone, with texts, notices and an email waiting.',
              'A touch-screen kiosk set up as a Tarrowby work phone. The texts, notices and email are all dealt with.'),
             'display': 'Awareness E6: Texts and QR codes (phone only)',
-            'desc': "An eight-minute awareness episode for staff with a work phone, on the defending side only. Six items on a phone at Tarrowby Logistics, a fictional haulier: texts, printed notices with QR codes and an email. Some are real and some were built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+            'desc': "An awareness episode of about 8 minutes for staff with a work phone, on the defending side only. Six items on a phone at Tarrowby Logistics, a fictional haulier: texts, printed notices with QR codes and an email. Some are real and some were built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'defendIntro': "Go through the work phone and decide what to do with each text, notice and email. On a notice, check where the code goes before you would scan it. There's no clock on you here; the whole job is one or two small habits.",
             'conclusion': ('Work phone done', "You've been through all six items and finished this episode."),
@@ -310,7 +310,7 @@ EPISODES = {
             'kiosk': ("A touch-screen kiosk showing the finance office's phone and inbox, with voicemails and emails waiting.",
              "A touch-screen kiosk showing the finance office's phone and inbox. The voicemails and emails are all dealt with."),
             'display': 'Awareness E7: Voice and the CEO (phone and inbox only)',
-            'desc': "An eight-minute awareness episode for all staff, on the defending side only. Cover the finance office's phone and inbox at Brightwell Foods, a fictional company: three voicemails, one of them in a copied voice, and two emails. Each answer is explained, and ringing back when you're unsure is always fine and never marked down.",
+            'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Cover the finance office's phone and inbox at Brightwell Foods, a fictional company: three voicemails, one of them in a copied voice, and two emails. Each answer is explained, and ringing back when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'defendIntro': "Go through the voicemails and emails and decide what to do with each one. Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Work through them at your own pace; it all comes back to ringing the person yourself.",
             'voicePanel': {

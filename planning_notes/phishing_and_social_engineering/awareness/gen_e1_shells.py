@@ -219,7 +219,7 @@ def defend_only():
         success_screen('Payments inbox done', "You've sorted all six messages and finished this episode."))
     meta = {
         'display_name': 'Awareness E1: Invoice fraud (inbox only)',
-        'description': "An eight-minute awareness episode for finance staff, on the inbox side only. Cover the payments inbox at Brightwell Foods, a fictional company, before the afternoon payment run: six messages, some real and some built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+        'description': "An awareness episode of about 8 minutes for finance staff, on the inbox side only. Cover the payments inbox at Brightwell Foods, a fictional company, before the afternoon payment run: six messages, some real and some built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
         'difficulty_level': 1,
         'scoring': 'completion',
         'secgen_scenario': None,
@@ -279,7 +279,7 @@ def check(pair, stage):
         aim = ('first_check_aim', 'Do the first check', 'Sort ten messages at the training kiosk.')
         task = ('finish_check', 'Finish the first check')
         display = f'Awareness check: finance, before ({letters})'
-        desc = (f"A four-minute check for finance staff, taken before the awareness episodes (pair {letters}). "
+        desc = (f"A check of about 8 to 10 minutes for finance staff, taken before the awareness episodes (pair {letters}). "
                 "Ten messages from the payments inbox of Brightwell Foods, a fictional company. The result is kept so the "
                 f"matching after-check (awareness_post_finance_{pair}) can show how the two compare.")
         obs = 'A touch-screen kiosk with ten messages from a payments inbox, ready for the first check.'
@@ -291,7 +291,7 @@ def check(pair, stage):
         aim = ('second_check_aim', 'Do the second check', 'Sort ten messages at the training kiosk.')
         task = ('finish_check', 'Finish the second check')
         display = f'Awareness check: finance, after ({letters})'
-        desc = (f"A four-minute check for finance staff, taken after the awareness episodes (pair {letters}). "
+        desc = (f"A check of about 8 to 10 minutes for finance staff, taken after the awareness episodes (pair {letters}). "
                 "Ten new messages from the payments inbox of Brightwell Foods, a fictional company, matched to the "
                 f"first check (awareness_pre_finance_{pair}). The end screen compares the two results when the first check was finished.")
         obs = 'A touch-screen kiosk with ten messages from a payments inbox, ready for the second check.'

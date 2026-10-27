@@ -2951,6 +2951,8 @@ The only object type that opens an episode. `minigameData` is `{ episodeId }` an
 
 The lint warns if the target's `emailReplyDelay` is outside 5 to 8 seconds (the default, 20, is too long to wait in a 13 minute episode).
 
+(Note, 2026-10-27: awareness full episodes are now described as about 15 minutes, E6 and E7 about 16. The 5 to 8 second advice stands.)
+
 **`defend`**:
 
 | Field | Notes |

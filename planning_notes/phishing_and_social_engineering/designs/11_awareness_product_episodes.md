@@ -59,6 +59,8 @@ credential capture. The payload kit is abstract labels (see `01`).
 
 ### 3.1 Standard episode shape (about 13 min, plus the pre and post checks)
 
+> Note (2026-10-27): the 13-minute target is superseded. Per FUN_DECISIONS q_timing, full episodes are described as "about 15 minutes" (E6 and E7 "about 16"), `durationTargetMin` follows, and defend-only is recommended for sessions under 30 minutes. The text below is kept as written.
+
 An episode is rows 1 to 6 and is one shell mission. The pre-check and the post-check are two further
 shell missions that bracket whichever episodes an organiser sets between them (section 5.2), so three
 episodes cost one pair of checks and not three. Rows 0 and 7 are those two missions, not stages inside
