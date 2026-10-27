@@ -1,17 +1,26 @@
 # role_07: Procurement and supplier management
 
 **Working game title:** Due Diligence
-**Pitch:** Choose a rostering system for 250 field staff, write security into the contract, and live with the supplier you picked: through a breach notice six months in, and the accounts still open when the contract ends.
+**Pitch:** Tell a supplier's evidence from its claims, spot the impersonation that borrows a supplier's name, write security into the contract, and close every account when it ends.
 
 | | |
 |---|---|
 | Audience | Procurement staff, contract owners and anyone who buys or manages a supplier that holds the organisation's data, connects to its systems or runs a service it depends on |
+| Built foundation | None yet: role_07 is a new role. It extends the built episode E1's supplier impersonation and reuses the inbox-triage engine |
+| Company | Brightwell Foods (`brightwellfoods.example`), host Mei Lin Chau (procurement buyer) |
+| New check pair | A supplier-and-procurement check-form pair (`awareness_{pre,post}_procurement_{ab,ba}`), **new** |
 | Prerequisites | core_00 recommended; core_05 helps (personal data) |
-| Full module | 20 minutes |
-| Micro-drill | none (as in the catalogue); "Claim or Evidence?" can run as an optional drill |
-| Text route | 12 to 15 minutes |
+| Full episode | About 13 minutes |
+| Defend-only variant | About 8 minutes |
+| Pre and post check | 4 to 5 minutes each (the new procurement pair) |
 | Priority | Phase 3 |
-| Build size | M, driven by MG-22 (supplier assessment, including its clause step), two time skips (BE-16) and the exit access review (MG-18) |
+| Build size | M. One new attack-first episode extending E1, one consequence-flip episode for due diligence and offboarding, and a new procurement check pair |
+
+## Build status
+
+- **Built, this module extends:** episode **E1 *Invoice and bank-detail fraud*** (`scenarios/awareness_e1_invoice_fraud`) at Brightwell Foods already teaches supplier impersonation (a supplier asking to change its bank details, a genuine-looking sender proving nothing). role_07 extends that to the whole supplier relationship. It reuses the episode runner, OSINT browser, mail client in template mode, flip view, inbox triage, debrief view, concept cards and awareness measurement. role_07 has **no built episode or check** of its own yet.
+- **New (this whole module):** a procurement role at Brightwell. It needs its **own supplier-and-procurement check-form pair** (`awareness_{pre,post}_procurement_{ab,ba}`), a new attack-first episode extending E1's supplier impersonation, and a consequence-flip episode for the parts with no live attacker (tiering, evidence, clauses, offboarding).
+- The awareness product is "Incident Simulations: Critical Cases", on hold since 2026-10-23 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). Nothing new here starts while it is on hold unless the user says so.
 
 ## Why this module
 
@@ -22,7 +31,7 @@ Suppliers are part of an organisation's attack surface and of its single points 
 - **Synnovis, 2024.** A ransomware attack on 3 June 2024 hit almost all of Synnovis's systems and interrupted the pathology services it runs for London NHS trusts; stolen data was published on 20 June, and services weren't fully restored until late autumn (Synnovis).
 - **CrowdStrike, 2024.** No attacker at all: a faulty content update for a security product, released at 04:09 UTC on 19 July 2024 and pulled 78 minutes later, crashed an estimated 8.5 million Windows devices (CrowdStrike; Microsoft).
 
-The UK government expects buyers to manage this: central government departments, their agencies and NHS bodies must apply proportionate cyber controls to their contracts, and for higher-risk contracts the note's answer is to require Cyber Essentials, Cyber Essentials Plus or equivalent controls (PPN 014, Cabinet Office, February 2025). Larkspur's own NHS and council customers ask the same of Larkspur, and Larkspur should ask it of the suppliers that hold its data.
+The UK government expects buyers to manage this: central government departments, their agencies and NHS bodies must apply proportionate cyber controls to their contracts, and for higher-risk contracts the note's answer is to require Cyber Essentials, Cyber Essentials Plus or equivalent controls (PPN 014, Cabinet Office, February 2025). Brightwell's own NHS and council customers ask the same of Brightwell, and Brightwell should ask it of the suppliers that hold its data.
 
 ## Target behaviours
 
@@ -39,11 +48,13 @@ After this module, procurement staff and contract owners can:
 - **R07-LO3** Judge supplier security evidence: tell evidence from claims; check a certificate's scope, issuer and dates; and say what Cyber Essentials, ISO 27001 certificates and SOC 2 reports do and don't show.
 - **R07-LO4** Include the security clauses that matter and hold them in negotiation.
 - **R07-LO5** Set up and remove supplier access safely.
-- **R07-LO6** Respond to a supplier's breach notification: escalate at once to security and the DPO, use the contract, get the facts, keep records.
+- **R07-LO6** Respond to a supplier's breach notification: escalate at once to security and the DPO, use the contract, get the facts, keep records. **Extends E1: distinguish a genuine supplier breach notice from an impersonation that borrows a supplier's name.**
+
+The procurement check pair measures the message-facing outcomes (telling evidence from claims in a bid email, spotting supplier impersonation and a fake breach notice, a supplier access request); the tiering, clause and offboarding outcomes are taught by the consequence-flip episode and concept cards.
 
 ## Compliance coverage
 
-Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2; this matches the module's row in its coverage matrix):
+Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2; this matches the module's coverage matrix row):
 
 - **ISO 27001 cl. 7.2** (competence for people whose work affects information security).
 - **NIST AT-3** (role-based training; its discussion names acquisition and procurement officials).
@@ -58,52 +69,47 @@ The module also teaches the staff side of controls that aren't training requirem
 
 ## Module flow
 
-| Beat | What happens | Format | Minutes |
+The new attack-first episode, in the built shape at Brightwell, extending E1:
+
+| Stage | What happens | Scored? | Minutes |
 |---|---|---|---|
-| Hook | Lena wants ShiftHarbour's order form signed today for 20% off; their security questionnaire says "yes" to everything. The player's response is the baseline | Game (MG-27, `notes`) | 1 to 2 |
-| Learn | Harjit and Ama: four ways a supplier can hurt you; tiering; the evidence ladder; the clauses that matter; supplier access | NPC explainer with visual aids (EX-01, BE-08) | 3 |
-| Practise | "Claim or Evidence?": eight supplier statements, getting harder | Minigame (MG-22 practice, MG-25) | 3 |
-| Apply | Judge three bids, recommend one, negotiate the clauses, set up the supplier's access; then six months later a breach notice, and two years later the contract ends with accounts still open | Game (MG-22, BE-16, MG-18, `log-filter`) | 8 to 9 |
-| Debrief | "Your contract against what happened": each clause, what it gave on breach day and at exit | Debrief screen (BE-02), Harjit, Ama and Tomasz | 2 |
-| Check | Six scenario questions | Quiz (MG-20) | 2 |
-| Reference | The supplier security checklist on The Lark | Intranet (BE-09) | under 1 |
+| Brief and scope note | Mei Lin welcomes the learner to an authorised exercise; the learner is in procurement at Brightwell | no | under 1 |
+| Attack half | OSINT on a supplier's public details, then compose one supplier-impersonation message from found facts (new bank details, an engineer who needs access, or a "we've had a breach, act now") | no | about 4 |
+| Flip | The learner's own message lands in the procurement inbox with its tells named | no | 1 |
+| Defend half | A procurement inbox: a fake supplier breach notice, a fake access request, a claims-only bid email, a "new details" supplier email, against their genuine twins; mirror pairs | yes | about 5 |
+| Debrief | Per-item cards, genuine-item feedback, the team tally, **the habit to keep**, an "On Monday" card, the reporting route, no blame | no | about 2 |
+
+The **consequence-flip** episode (R3) covers the parts with no live attacker: the learner chooses a supplier on claims, accepts weak clauses, or leaves accounts open at exit in a safe sandbox, and the flip shows where each led (a breach notice too late, an engineer's account still live a year on). The new procurement pre and post checks bracket the episodes.
 
 ## Reuse from existing Break Escape content
 
-- **Rooms:** the procurement desk in the open-plan office (`room_office`); the meeting room with a screen for pitch day (`room_meeting`); Owain's IT office (`room_IT`); the security office (`room_security`) on breach day.
-- **`warranty-checklist`** (sis03): a verdict per row behind an evidence gate, with a submit step. The base of MG-22, once its sis03 letterhead, verdict labels, gate global and alert text come from data (`features/minigames.md` section 4).
-- **`forensic-data-platform`**: the bidders' evidence packs (certificate, report extract, policy) as tabs, and the breach notice pack with a gated confirm.
-- **`log-filter`**, `vpn` log type: Kai's view of the supplier account's sign-ins on breach day. Its columns (user, IP, country, MFA, result) fit a supplier account exactly, and sis01 already uses it for a contractor's VPN account with no MFA.
-- **`person-chat` video-call mode** for the three pitches and the clause counter-offers. Its status bar says "SECURE VIDEO LINK" (`person-chat-ui.js`), which needs to come from data ("Larkspur Meet").
-- **`notes`** for the order form, the questionnaire summary, the supplier register and the reference card.
-- **Patterns, not canon:** sis01's contractor VPN account with no MFA (`scenarios/sis01_healthcare/scenario.json.erb`, the m.blake log lines) and sis02's dormant contractor account still live fourteen months after the contractor left (`scenarios/sis02_energy/scenario.json.erb`, the jump server node) are ready-made examples of supplier access gone wrong. The SIS games' names and organisations stay out of this course; the patterns come in with Larkspur's own fictional suppliers.
-- **Systems:** BE-16 time skips over the game clock; objectives for the procurement task.
+- **Episode runner** for all stages; `variant: "full"`, `"defendOnly"` and the consequence flip (R3); the `facilitated` flag for a procurement-team session.
+- **OSINT browser** and **intel facts**; **mail client in template mode** with `systems/phish-rules.js`; **flip view**.
+- **Inbox triage** with the Verify verdict; **mirror pairs** (aw5) in the defend set and the procurement checks. E1's supplier look-alike and "new bank details" patterns carry straight over.
+- **Debrief view**, **concept cards**, **awareness measurement** and the comparison panel.
+- **Rooms:** `room_aw_brightwell`.
 
 ## New features needed
 
-- **MG-22 Supplier assessment:** the three bids, the four verdicts (evidenced, claimed only, a gap, a red flag), the evidence documents, the recommendation, and its clause step. The clause step here also shows the chosen bidder's counter-offer for each clause (played as a short video call in ink), and records which clauses were held.
-- **MG-25 Document inspector:** a certificate's scope and dates against what is being bought.
-- **MG-18 Access review:** the supplier's accounts, keys and delegations at contract end.
-- **MG-27 Work desktop**, **MG-20 Knowledge check**, **BE-01**, **BE-02**.
-- **BE-08 Visual aids:** the four routes, the tiering grid, the evidence ladder, the clause cards.
-- **BE-16 Time skips:** "Six months later" and "Two years later", with the contract's clauses carried forward as globals.
-- **BE-09 Intranet terminal**, **BE-05 Organisation profile** (tiers, required evidence, standard clauses, who signs off), **BE-13 Content banks** (bidders, evidence, incidents), **BE-19 Open minigames from conversations and events** (Harjit's check question, `#trigger_minigame:knowledge_check|r07_q_scope`).
-- **BE-07 Micro-drill launcher**, only if the organisation switches on the optional "Claim or Evidence?" drill.
+- **A new procurement check-form pair** (`awareness_{pre,post}_procurement_{ab,ba}`): a triage set of supplier-facing messages (a fake supplier breach notice, a fake access request, a claims-only bid email, a supplier "new bank details" email), each phish mirror-paired with its genuine twin (a genuine breach notice, a genuine access request, an evidenced bid, a genuine change confirmed by call-back). 10 items, 4 phish, matched flag multisets, counterbalanced AB and BA.
+- **A new attack-first episode** extending E1's supplier impersonation, and a **consequence-flip episode** for due diligence and offboarding, as above.
+- **Concept cards:** the four ways a supplier can hurt you; tiering; the evidence ladder (claim, document, independent evidence in scope and in date); the clauses that matter; supplier access from first day to last.
+- **BE-05 Organisation profile** (partly built): the supplier tiers, the required evidence, the standard clauses and the sign-off route in the debrief cards; the reporting-route slot (feature-level only; see `hacktivity.md`).
+- **BE-03 Text route** and **BE-04 accessibility** beyond the social overlays.
+- Not pursued (would redesign beyond the build): the MG-22 supplier-assessment minigame with its bid grid and clause step, MG-25 document inspector, MG-18 access review and the `log-filter` breach-day view. Tiering, evidence, clauses and offboarding are taught by the consequence flip and concept cards; the bid-grid minigame is a later idea in the `features/minigames.md` catalogue (build status "not built").
 
 ## Organisation-specific content
 
-- The supplier tiers, and what evidence each tier needs (Larkspur: Cyber Essentials Plus for any supplier holding staff or customer personal data).
+- The supplier tiers, and what evidence each tier needs (Brightwell: Cyber Essentials Plus for any supplier holding staff or customer personal data).
 - The organisation's supplier security questionnaire, or the short default one.
 - The standard security clauses and the contract schedule they live in.
 - Who signs off a high-tier supplier (procurement, security, the DPO) and the order countersignature threshold.
 - The supplier access process (IT) and the supplier register.
 - How often supplier security is reviewed, and the exit checklist.
-
-These go in the organisation's HA-26 setup checklist.
+- The reporting route shown in the debrief (`slot:customer_report_route`).
 
 ## Open questions
 
-1. **A right answer among the bidders?** *Recommendation: one wrong choice (ShiftHarbour, which has claims without evidence) and two defensible ones, assessed on the reasons and the conditions set, so the module never teaches "always pick the biggest" or "never pick the cheapest".*
-2. **Real cases on screen?** *Recommendation: fictional equivalents in the game, as the brief requires; the real names (MOVEit, Kaseya, Synnovis, CrowdStrike) in the field guide generated from `concepts.md`.*
-3. **Northbeck in the supplier register.** *Recommendation: yes: it holds no Larkspur data but deliveries depend on it, and its taken-over mailbox in core_01 and core_11 is a reminder that a supplier can also be used to impersonate.*
-4. **A micro-drill.** The catalogue lists none. *Recommendation: keep none by default, with "Claim or Evidence?" available as an optional drill for procurement teams.*
+1. **A right answer among bidders?** *Recommendation: in the consequence-flip episode, one wrong choice (claims without evidence) and two defensible ones, judged on the reasons and conditions, so the module never teaches "always pick the biggest" or "never pick the cheapest".*
+2. **Real cases on screen?** *Recommendation: fictional equivalents in the game, as the brief requires; the real names (MOVEit, Kaseya, Synnovis, CrowdStrike) in `concepts.md` only.*
+3. **The bid grid and clause negotiation.** The build's triage engine scores messages, not a bid grid. *Recommendation: teach tiering, evidence and clauses as a consequence flip and concept cards, measure the message-facing outcomes in the procurement check pair, and keep the bid-grid minigame in the backlog.*

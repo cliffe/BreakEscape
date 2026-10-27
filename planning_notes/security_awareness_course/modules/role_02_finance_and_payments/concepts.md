@@ -2,6 +2,8 @@
 
 This file is the source of truth for the module. It assumes core_11's concepts (the five shapes of payment fraud, calling back on a number on record, Confirmation of Payee, reimbursement rules) and points to them rather than repeating them. Phone payments by card belong to role_06; deepfake voice and video to core_15; personal data breaches to core_05.
 
+**World note.** The old Larkspur world is retired. This module builds on the built episodes E1 (invoice and bank-detail fraud) and E7 (cloned CEO voice) and the finance check pair, all at **Brightwell Foods** (`brightwellfoods.example`), the food manufacturer in the built brand set. Brightwell is the fictional default organisation for this file's examples and slots.
+
 ## Key messages
 
 1. **Every change is a claim until you've checked it.** Verify every new payee and every change of bank details on a number held before the request, with a second person, before any money moves.
@@ -86,7 +88,7 @@ The Local Government Transparency Code's Annex B suggests the same core controls
 
 - **By email:** "an employee" asks payroll to change their bank details, usually just before payday, from a personal address or a lookalike. The UK government's Stop! Think Fraud campaign warns businesses about this "salary diversion", where scammers pose as employees and ask HR or payroll to change their bank details.
 - **By phished login:** the fraudster gets the employee's self-service login through phishing and changes the details themselves, sometimes adding rules to hide the notification (FBI IC3, I-091818-PSA, 2018).
-- **Controls:** staff change their own details only in the HR system (Larkspur: signed in from The Lark); payroll never acts on an email; a change close to payday is confirmed with the employee directly, on the directory number or in person; the employee is told of any change on their existing contact details.
+- **Controls:** staff change their own details only in the HR self-service system; payroll never acts on an email; a change close to payday is confirmed with the employee directly, on the directory number or in person; the employee is told of any change on their existing contact details.
 - **If it happens:** the organisation's bank starts the recovery, not the employee's; make sure the employee is paid; tell the DPO, because a staff record was changed without authority (a possible personal data breach, core_05).
 
 ### Refunds and overpayments
@@ -96,11 +98,11 @@ The Local Government Transparency Code's Annex B suggests the same core controls
 
 ### When our name is used
 
-Fraudsters also pose as Larkspur to Larkspur's own customers, sending "new bank details" letters in its name; councils' published spending shows whom to target. Finance teams can help: a line on every invoice ("We will never change our bank details by email. Call us on the number you hold to check."), a ready answer for customers who ring to check, and a report to the security team so other customers can be warned.
+Fraudsters also pose as Brightwell to Brightwell's own customers, sending "new bank details" letters in its name; councils' published spending shows whom to target. Finance teams can help: a line on every invoice ("We will never change our bank details by email. Call us on the number you hold to check."), a ready answer for customers who ring to check, and a report to the security team so other customers can be warned.
 
 ### Payment card data: the basics
 
-For staff who take or handle card payments (Larkspur's credit control takes card payments for overdue invoices through a payment link). PCI DSS sets the rules; the organisation's procedure applies them.
+For staff who take or handle card payments (Brightwell's credit control takes card payments for overdue invoices through a payment link). PCI DSS sets the rules; the organisation's procedure applies them.
 
 - **Never keep the card security code** (the three or four digits on the card) once a payment is authorised, even encrypted, and even if the customer asks you to keep it for next time (PCI DSS v4.0.1 3.3.1.2; PCI SSC FAQ 1574).
 - **Never send card numbers by email, chat or text, and don't ask customers to** (Requirement 4.2.2 prohibits sending unprotected card numbers by end-user messaging; PCI SSC FAQ 1085).
@@ -174,14 +176,14 @@ Use these as background and inspiration only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+| Slot | Default (Brightwell) |
 |---|---|
 | Approval rules and delegations | "Every payment run needs two approvers. When the Finance Manager is away, the Financial Controller approves. Payments over £10,000 need the Financial Controller." |
 | Payment cut-off | 16:00 for same-day payments |
 | Bank detail change procedure | The five steps above; evidence of the call kept in Ledger |
 | Waiting period for changes | None by default; the organisation may set one (Stop! Think Fraud gives 14 or 30 days as examples) |
 | Supplier portal | "Suppliers can request changes in the Ledger portal; every bank change is verified by phone before the next payment." |
-| Payroll change route | "Only in the HR system, signed in from The Lark. Payroll confirms changes near payday with the employee in person or on the directory number." |
+| Payroll change route | "Only in the HR system, through the HR self-service system. Payroll confirms changes near payday with the employee in person or on the directory number." |
 | Refund policy | "Refunds go back to the original account or card only." |
 | Card payments | "Credit control takes card payments only through the secure payment link. Card details received by email are deleted under the card data procedure." |
 | Bank fraud line | Held by the Finance Manager and Financial Controller (on the bank agreement), not on public pages |

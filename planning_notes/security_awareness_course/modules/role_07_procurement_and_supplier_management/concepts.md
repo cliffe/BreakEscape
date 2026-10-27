@@ -2,6 +2,8 @@
 
 This file is the source of truth for the module. Personal data law is core_05's (this module touches processor contracts only); supplier bank detail changes are core_11 and role_02; remote management tools and privileged access are role_03; the board's oversight of supply chain risk is role_01.
 
+**World note.** The old Larkspur world is retired. role_07 is a new role that extends the built episode E1's supplier impersonation, so it is set at **Brightwell Foods** (`brightwellfoods.example`), the food manufacturer in the built brand set, with its long supplier list and a procurement buyer (Mei Lin Chau). Brightwell is the fictional default organisation for this file's examples and slots. role_07 needs its own supplier-and-procurement check-form pair (see `assessment.md`).
+
 ## Key messages
 
 1. **Your suppliers' security is part of yours.** If they hold your data, connect to your systems or run a service you can't do without, their weak spot is yours, and so are their suppliers'.
@@ -97,7 +99,7 @@ Contracts end on paper; access ends when someone removes it.
 
 ### Public sector buyers and new law
 
-- **PPN 014** (Cabinet Office, February 2025; for procurements started on or after 24 February 2025 under the Procurement Act 2023; PPN 09/23 covers earlier ones) applies to central government departments, their executive agencies, non-departmental public bodies and NHS bodies, and others may adopt it. For higher-risk contracts (handling citizens' personal data, or ICT systems holding official data) they require Cyber Essentials, Cyber Essentials Plus or equivalent controls, before data passes to the supplier and renewed every 12 months for the life of the contract. Larkspur, as a supplier to NHS sites and councils, meets these requests itself.
+- **PPN 014** (Cabinet Office, February 2025; for procurements started on or after 24 February 2025 under the Procurement Act 2023; PPN 09/23 covers earlier ones) applies to central government departments, their executive agencies, non-departmental public bodies and NHS bodies, and others may adopt it. For higher-risk contracts (handling citizens' personal data, or ICT systems holding official data) they require Cyber Essentials, Cyber Essentials Plus or equivalent controls, before data passes to the supplier and renewed every 12 months for the life of the contract. Brightwell, as a supplier to NHS sites and councils, meets these requests itself.
 - **The Cyber Security and Resilience Bill** (introduced 12 November 2025) would regulate medium and large managed service providers for the first time and let regulators designate critical suppliers to essential services, such as diagnostics suppliers to the NHS. It is **not yet law**: on 14 October 2026 its Lords report stage was due on 26 October 2026 (`02_COMPLIANCE_MAPPING.md`, section 3.10). Cite it only as something to watch.
 - **NHS care customers** in DSPT categories 3 and 4 are asked for due diligence on their suppliers (DSPT 10.2.1).
 
@@ -145,15 +147,15 @@ Background only. The game uses fictional equivalents: a file-transfer tool breac
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+| Slot | Default (Brightwell) |
 |---|---|
 | Supplier tiers | Low, medium, high, by data, access and dependency (the four questions above) |
 | Evidence required per tier | Medium: Cyber Essentials plus questionnaire evidence. High: Cyber Essentials Plus or an in-scope ISO 27001 certificate, plus an independent report or a penetration test summary from the last 12 months |
-| Standard security clauses | Larkspur's security schedule: the clauses above, with breach notice within 24 hours |
+| Standard security clauses | Brightwell's security schedule: the clauses above, with breach notice within 24 hours |
 | Who signs off a high-tier supplier | The Procurement Lead, the Information Security Manager and the DPO |
 | Countersignature threshold | Orders over £10,000, or any supplier holding personal data, need the Procurement Lead's countersignature |
 | Supplier access process | Requested through the IT service desk; named accounts, MFA, time-limited; reviewed quarterly |
-| Supplier register | On The Lark, owned by procurement, reviewed yearly per supplier |
+| Supplier register | In the staff intranet, owned by procurement, reviewed yearly per supplier |
 | Exit checklist | IT removes all access within one working day of the contract end; the DPO receives the deletion certificate |
 
 ## Glossary

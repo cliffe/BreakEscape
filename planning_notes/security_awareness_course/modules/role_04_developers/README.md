@@ -1,17 +1,27 @@
 # role_04: Developers
 
 **Working game title:** Ship It
-**Pitch:** Get a new feature for Larkspur's customer portal out by Friday, while the shortcuts that sink real teams turn up in your pull requests, your AI assistant's suggestions and your test data.
+**Pitch:** Defend a developer's week against the social engineering aimed at code: a fake maintainer takeover, an invented package from your AI assistant, a secret that leaks and real people in your test data.
 
 | | |
 |---|---|
 | Audience | Software developers, testers, DevOps, platform and data engineers, and anyone who writes, reviews or deploys code or scripts (including low-code builders and analysts who script) |
+| Built foundation | None yet: role_04 is a new role. It reuses the built episode-runner shape and the inbox-triage engine |
+| Company | Stavely Software (`stavely.example`), **proposed, to add to `BRAND_SET.md`** |
+| New check pair | A developer check-form pair (`awareness_{pre,post}_developer_{ab,ba}`), **new** |
 | Prerequisites | core_00. core_15 (AI tools) and core_05 (personal data) recommended |
-| Full module | 25 minutes |
-| Micro-drill | 4 minutes ("Diff or Dud?") |
-| Text route | 15 minutes |
+| Full episode | About 13 minutes |
+| Defend-only variant | About 8 minutes |
+| Pre and post check | 4 to 5 minutes each (the new developer pair) |
 | Priority | Phase 3 |
-| Build size | M, driven by the code review minigame (MG-19) with a small pull request view, and a coding mode for MG-16 |
+| Build size | M. One new attack-first episode and one consequence-flip episode in the built shape, plus a new developer check pair. The code-review minigame is not built; depth is the technical labs |
+
+## Build status
+
+- **Built, this module reuses:** the episode runner, the OSINT browser and intel facts, the mail client in template mode, the flip view, inbox triage (email, `page` and OAuth-consent style cards), the debrief view, concept cards and awareness measurement. role_04 has **no built episode or check** of its own yet.
+- **New (this whole module):** a developer role, set at the proposed Stavely Software. It needs its **own check-form pair** (`awareness_{pre,post}_developer_{ab,ba}`), a new attack-first episode, and a consequence-flip episode for the topics with no live attacker (secrets, test data, code review).
+- **Depth lives in the technical labs, not here.** This is awareness level; the secure-coding recognition that PCI DSS 6.2.2 expects stays in Hacktivity's Web Security and Software Security courses and the Break Escape VM labs. The code-review minigame (MG-19) is not built and is not pursued here; it is a later idea in the `features/minigames.md` catalogue (build status "not built").
+- The awareness product is "Incident Simulations: Critical Cases", on hold since 2026-10-23 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). Nothing new here starts while it is on hold unless the user says so.
 
 ## Why this module
 
@@ -25,20 +35,22 @@ Developers hold keys (cloud credentials, deploy tokens), decide which strangers'
 
 ## Target behaviours
 
-1. **Keeps secrets out of code, and treats a secret that gets out as an incident:** rotate it, then clean up, and tell the security team.
+1. **Keeps secrets out of code, and treats a secret that gets out as an incident:** rotate it, then clean up, and tell the security team. **New (consequence flip).**
 2. **Checks code they didn't write before trusting it:** dependencies, AI assistant output and colleagues' pull requests, with branch protection and review kept on even when it's urgent.
-3. **Reports security problems through the security route:** a leaked secret, real personal data in a test system, an odd approach from a "maintainer", a vulnerability report from outside.
+3. **Reports security problems through the security route:** a leaked secret, real personal data in a test system, an odd approach from a "maintainer", a vulnerability report from outside. **New (attack-first episode and consequence flip).**
 
 ## Learning outcomes
 
 After this module, developers can:
 
 - **R04-LO1** Keep secrets out of source code, repository configuration, tickets, chat and prompts; explain why deleting a committed secret isn't enough; and rotate and report one that leaks.
-- **R04-LO2** Check a dependency before adding it (it exists, it's the one you meant, it's maintained, it comes through the approved source), including names suggested by AI assistants, and recognise lookalike names and internal-name confusion in plain terms.
+- **R04-LO2** Check a dependency before adding it (it exists, it's the one you meant, it's maintained, it comes through the approved source), including names suggested by AI assistants, and recognise look-alike names and internal-name confusion in plain terms.
 - **R04-LO3** Use AI coding assistants within policy: approved tools only, no secrets or customer data in prompts, and review and test what they produce as if a stranger wrote it.
 - **R04-LO4** In code review, spot common problems at awareness level (input that reaches a query, a missing ownership or permission check, sensitive data in logs, a hard-coded secret) and ask for changes.
 - **R04-LO5** Protect the repository and the pipeline: keep branch protection and review on, use short-lived tokens with the least privilege, and treat pressure to bypass controls, including friendly offers of help, as a reason to check.
 - **R04-LO6** Use synthetic or properly anonymised data for testing, report real personal data found where it shouldn't be, and pass vulnerability reports to the disclosure route.
+
+The developer check pair measures the message-facing outcomes (LO2, LO3, LO5 and the reporting half of LO6); LO1 and LO4 are taught by the consequence-flip episode and concept cards, with recognition depth in the technical labs.
 
 ## Compliance coverage
 
@@ -55,9 +67,9 @@ Training requirements this module contributes to (short names from `02_COMPLIANC
 
 **What it doesn't meet on its own.** PCI DSS 6.2.2 asks for training at least every 12 months in software security relevant to each developer's job and languages, including secure design, secure coding and any security testing tools. Ship It is awareness level and language-light, so it contributes but doesn't meet 6.2.2 alone. For depth, point developers to Hacktivity's technical labs:
 
-- the **Web Security** course: sessions and cookies, cross-site scripting, SQL injection, advanced SQL injection and cross-site request forgery (lab sheets in HacktivityLabSheets `_labs/web_security/`, for example `4_sqli.md`);
+- the **Web Security** course: sessions and cookies, cross-site scripting, SQL injection, advanced SQL injection and cross-site request forgery (lab sheets in HacktivityLabSheets `_labs/web_security/`);
 - the **Software Security and Exploitation** course: bug hunting and fuzzing, and how flaws become exploits (`_labs/software_security_exploitation/`);
-- the Break Escape VM labs **`scenarios/lab_vulnerabilities`** ("Vulnerabilities, Exploits, and Remote Access Payloads") and **`scenarios/lab_exploitation`** ("From Scanning to Exploitation"), which show how known flaws in unpatched software are exploited, the reason dependency updates matter;
+- the Break Escape VM labs **`scenarios/lab_vulnerabilities`** and **`scenarios/lab_exploitation`**, which show how known flaws in unpatched software are exploited, the reason dependency updates matter;
 - the **"Secrets in Git History"** field guide (`_labs/safetynet/secrets-in-git-history.md`), which shows why deleted secrets aren't gone.
 
 These labs teach the attacker's side so developers see what their fixes stop. They are optional depth, linked from the reference card.
@@ -66,36 +78,34 @@ The content also follows ISO 27001 A.8.4, A.8.8, A.8.25, A.8.28, A.8.29, A.8.31 
 
 ## Module flow
 
-| Beat | What happens | Format | Minutes |
+The new attack-first episode, in the built shape at Stavely:
+
+| Stage | What happens | Scored? | Minutes |
 |---|---|---|---|
-| Hook | 09:40, "quick approve?": Ines needs her pull request approved before the 10:00 release. It's twelve lines. How the player reviews it is the baseline | Game (MG-19) | 2 |
-| Learn | Darius at the team whiteboard: "Five ways good teams ship bad code" (secrets, dependencies, assistants, review, test data) | NPC explainer with visual aids (EX-01, BE-08) | 4 |
-| Practise | "Diff or Dud?": eight short changes; find the problem, or pass a clean one | Minigame (MG-19 practice mode) | 4 |
-| Apply | Ship the invoice download feature by Friday: build it with Lark Assist, pick a PDF library, test it, open the pull request, review Ines's, answer a helpful stranger and a request to skip branch protection; then three weeks later | Game (MG-19, MG-16, MG-01, BE-18, BE-16) | 10 |
-| Debrief | The release notes: what was caught, what got in, and what three weeks later looked like | Debrief screen (BE-02) and NPCs | 2 |
-| Check | Six scenario questions | Quiz (MG-20) | 2 |
-| Reference | The developer's card on The Lark, with links to the technical labs | Intranet (BE-09) | under 1 |
+| Brief and scope note | The host welcomes the learner to an authorised exercise; the learner is a developer on Stavely's portal team | no | under 1 |
+| Attack half | OSINT on the open-source library the team uses and a developer's public profile, then compose one "maintainer takeover" message or a recruiter-style lure from found facts | no | about 4 |
+| Flip | The learner's own message lands in a developer's inbox with its tells named | no | 1 |
+| Defend half | A developer inbox: a fake maintainer email, a fake CI or registry notice, an OAuth app-consent request, a recruiter lure, against their genuine twins; mirror pairs | yes | about 5 |
+| Debrief | Per-item cards, genuine-item feedback, the team tally, **the habit to keep**, an "On Monday" card, the reporting route, no blame | no | about 2 |
+
+The **consequence-flip** episode (R3) covers the topics with no live attacker: the learner commits a secret, uses real data in test, or approves a risky pull request in a safe sandbox, and the flip shows where each led. The new developer pre and post checks bracket the episodes.
 
 ## Reuse from existing Break Escape content
 
-- **Rooms:** `room_office` redressed as the portal team's area (desk pods with two monitors, a stand-up board, a rubber duck); `room_meeting` for stand-up; `room_security` for Kai.
-- **Minigames:**
-  - `log-filter`'s row flagging, the base for MG-19's line flagging (as `features/minigames.md` plans).
-  - `forensic-data-platform`: the package page on the registry (overview, versions, maintainers, install scripts) with a gated confirm, and the test database's contents.
-  - `text-file` (a configuration file, a log extract), `notes` (the dependency policy, the test data standard, the disclosure policy), `phone-chat` (team chat), `person-chat` (stand-up, Darius, Sunil, Tomasz, Kai).
-- **Existing content:** m08's "Secrets in Git History" field guide (`scenarios/m08_the_mole/scenario.json.erb:822`, published at `HacktivityLabSheets/_labs/safetynet/secrets-in-git-history.md`) as optional depth, not as module content, because it is written from the attacker's side.
-- **Tone reference:** m08's AI receptionist (`scenarios/m08_the_mole/ink/m08_receptionist_ai.ink`) for a helpful machine character, as MG-16 suggests.
+- **Episode runner** for all stages; `variant: "full"`, `"defendOnly"` and the consequence flip (R3); the `facilitated` flag for a team session.
+- **OSINT browser** and **intel facts**; **mail client in template mode** with `systems/phish-rules.js`; **flip view**.
+- **Inbox triage** with the `page` kind (an OAuth consent screen, a registry page) and the Verify verdict; **mirror pairs** (aw5) in the defend set and the new developer checks.
+- **Debrief view**, **concept cards**, **awareness measurement** and the comparison panel.
+- **Rooms:** a new or redressed Stavely training room, proposed with the company.
 
 ## New features needed
 
-- **MG-19 Code review** (the core): flag a line, name the problem, pick the fix, approve or request changes; for a leaked key, choose between "delete it in a new commit" and "rotate the key, then clean the history". This module also needs a small pull request view around it: a description, CI checks (tests, secret scan, dependency check), a merge button that branch protection gates, and the pre-push secret warning with "remove", "mark as a false positive" and "bypass" options. **proposed:** Pull request view, a pull request page around MG-19's diff with CI checks, branch protection and a secret warning, for role_04 and core_17 (S, on top of MG-19).
-- **MG-16 AI assistant chat**, coding mode: Lark Assist suggests code and a package name inside the editor, with the same scripted, no-model approach and `ai_` events.
-- **MG-27 Work desktop:** the developer's PC opening the editor, pull requests, chat, mail and The Lark.
-- **MG-01 Inbox** for the "maintainer" email and the researcher's report.
-- **BE-16 Time skips:** "three weeks later", once, tied to two of the player's decisions.
-- **BE-18 Work task and interruptions**, **BE-01**, **BE-02**, **BE-08**, **BE-09**, **BE-19** (the check question opened with `#trigger_minigame:<minigame>|<configKey>`), **BE-20**, **MG-20**, **EX-01**.
-- **BE-07** and **BE-13** for "Diff or Dud?", with diffs tagged by language so organisations can pick theirs.
-- **Reuse fix:** `forensic-data-platform`'s completion actions through `applyActions` with a BE-01 record (`features/minigames.md`, section 4).
+- **A new developer check-form pair** (`awareness_{pre,post}_developer_{ab,ba}`): a triage set of developer-facing social-engineering messages (the fake maintainer takeover, a fake CI or registry notice, an OAuth app-consent page, a recruiter lure to a developer), each phish mirror-paired with its genuine twin (a real maintainer announcement, a real CI email). 10 items, 4 phish, matched flag multisets, counterbalanced AB and BA.
+- **A new attack-first episode** and a **consequence-flip episode** in the runner at Stavely, as above.
+- **Concept cards:** secrets (deleted isn't gone, rotate first); dependencies (check the name and the source); AI assistants (review and test as a stranger's code); the four review questions; synthetic test data; the disclosure route.
+- **BE-05 Organisation profile** (partly built): the approved AI tool, the secrets manager, the dependency route, the branch-protection rules and the disclosure route in the debrief cards; the reporting-route slot (feature-level only; see `hacktivity.md`).
+- **BE-03 Text route** and **BE-04 accessibility** beyond the social overlays.
+- Not pursued (would redesign beyond the build): the MG-19 code review minigame, the pull request view and the MG-16 coding-mode assistant. Code-review recognition is taught by the consequence flip and concept cards, with depth in the technical labs; the code-review minigame is a later idea in the `features/minigames.md` catalogue (build status "not built").
 
 ## Organisation-specific content
 
@@ -105,12 +115,12 @@ The content also follows ISO 27001 A.8.4, A.8.8, A.8.25, A.8.28, A.8.29, A.8.31 
 - Branch protection and review rules, and the emergency change route.
 - The test data standard: the synthetic data generator, and when anonymised production data is allowed (with the DPO's approval).
 - The vulnerability disclosure policy, its contact route and `security.txt`.
-- The languages and frameworks in use, so the diffs match (BE-13).
+- The languages and frameworks in use, so the examples match.
+- The reporting route shown in the debrief (`slot:customer_report_route`).
 
 ## Open questions
 
-1. **Which language for the code?** *Recommendation: JavaScript (TypeScript) and Python banks first, chosen per organisation, with plain comments so the meaning carries for testers and low-code builders (as MG-19 recommends).*
-2. **Exploit strings.** *Recommendation: never show payloads or attack input. Show the pattern (input joined into a query) and the fix (a parameterised query); the technical labs cover the rest.*
-3. **Real tools in the game.** *Recommendation: no real product names. The editor, the code host and the registry are generic; organisations map them to their own.*
-4. **Package names.** *Recommendation: check before release that every fictional package name in the game is unregistered on the public registries, and keep a pre-release check in the build list, because the module's own example could otherwise be registered by someone else.*
-5. **The EU Cyber Resilience Act.** *Recommendation: mention it only on the card, for organisations that make software products sold in the EU (reporting duties from 11 September 2026), and say that whether it applies is a question for their legal team. Larkspur runs its portal as a service for its own clients, so the game doesn't use it.*
+1. **Stavely Software as a proposed brand-set company.** A software firm with public repositories and open-source dependencies is the natural home for developer threats; none of the four built companies fits. *Recommendation: add Stavely Software (`stavely.example`) to `BRAND_SET.md` with a pre-ship web search. Candidate for DECISIONS_PENDING.*
+2. **Code-review recognition without MG-19.** The build's triage engine scores messages, not code diffs. *Recommendation: teach code review as a consequence flip and concept cards, measure the message-facing outcomes in the developer check pair, and send recognition depth to the technical labs; keep the code-review minigame in the backlog.*
+3. **Package names.** *Recommendation: keep a pre-release check that every fictional package name in the game is unregistered on the public registries, because the module's own example could otherwise be registered by someone else.*
+4. **The EU Cyber Resilience Act.** *Recommendation: mention it only on the card, for organisations that make software products sold in the EU, and say that whether it applies is a question for their legal team.*

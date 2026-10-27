@@ -2,6 +2,8 @@
 
 This file is the source of truth for the module. The game, the explainers, the knowledge check and the reference card must all match it. Facts were checked in October 2026.
 
+**World note.** The old Larkspur world is retired. This module builds on the built episode E3 (help-desk reset by phone, then MFA fatigue, with a role swap) and the helpdesk check pair, both at **Quayholt Insurance** (`quayholt.example`), the commercial insurer in the built brand set with an in-house IT service desk and single sign-on. Quayholt is the fictional default organisation for this file's examples and slots; its service desk team lead is Darren Price and its information security analyst is Anjali Rao.
+
 ## Key messages
 
 1. **A reset hands over an identity.** Treat every password, MFA or access change as handing someone the keys to that person's work, and for an administrator, to everyone's.
@@ -66,7 +68,7 @@ Match the check to the risk. The account type and the request decide the minimum
 
 After every change: revoke existing sessions where the change was for a suspected compromise, notify the user on their known contact routes (email and phone on record), record what was checked, and watch the account for sign-ins from unexpected places. Video checks help, but a face and a voice can be faked (core_15), so pair them with a second route.
 
-**Never ask anyone to read out a one-time code.** Larkspur's desk, like every Larkspur team, never asks a caller to read back a code (core_02 teaches staff never to read one out, to anyone). Codes read over the phone are exactly what attackers ask for, so a desk that asks for them teaches the wrong habit. The desk verifies by calling back on the number already held, or by sending an approval or a reset link to details already held, which the person then completes themselves.
+**Never ask anyone to read out a one-time code.** Quayholt's desk, like every Quayholt team, never asks a caller to read back a code (core_02 teaches staff never to read one out, to anyone). Codes read over the phone are exactly what attackers ask for, so a desk that asks for them teaches the wrong habit. The desk verifies by calling back on the number already held, or by sending an approval or a reset link to details already held, which the person then completes themselves.
 
 ### Privileged access hygiene
 
@@ -80,7 +82,7 @@ After every change: revoke existing sessions where the change was for a suspecte
 
 - Third-party accounts are in scope: Cyber Essentials notes that controlling user accounts "also includes third party accounts", such as the accounts used by support services.
 - A contractor gets a named account, the minimum rights, an end date matching the contract, and MFA. Never a shared login, never an employee's account, never domain admin "so they aren't blocked".
-- Suppliers reach Larkspur's systems only through the approved remote access route, with MFA and time-limited sessions. The British Library's most likely entry point was a server for third-party remote access without MFA (role_01, core_07); sis02's jump server still accepted a contractor who had left fourteen months before.
+- Suppliers reach Quayholt's systems only through the approved remote access route, with MFA and time-limited sessions. The British Library's most likely entry point was a server for third-party remote access without MFA (role_01, core_07); sis02's jump server still accepted a contractor who had left fourteen months before.
 - Choosing and contracting suppliers is role_07.
 
 ### App consent requests
@@ -116,7 +118,7 @@ Restores depend on backups the attacker couldn't reach and on restores that have
 
 ### Culture on the desk
 
-- **Back the analyst who says no.** Owain's rule at Larkspur: nobody is ever in trouble for following the reset procedure, whoever is on the phone.
+- **Back the analyst who says no.** Darren Price's rule at Quayholt: nobody is ever in trouble for following the reset procedure, whoever is on the phone.
 - **Report your own slips straight away.** An analyst who realises they reset the wrong person and says so within minutes has done the most useful thing possible. Co-op's attackers used the account about an hour after the reset; minutes matter.
 - **Leaders back it too.** An executive who accepts the check in public (role_01) makes it easier for everyone.
 
@@ -146,7 +148,7 @@ And for admins:
 | "Executives shouldn't be made to wait." | Executive accounts are the ones attackers most want. The strongest check, done quickly and politely, protects the executive. |
 | "The caller ID shows an internal number, so it's internal." | Caller ID can be faked (core_02). Call back on the directory number. |
 | "Seeing them on video proves who they are." | Faces and voices can be faked (core_15). Pair video with a second route. |
-| "Text them a code and ask them to read it back." | Larkspur never asks anyone to read out a code: it's the habit attackers exploit (core_02). Send an approval or reset to details already held, and let the person complete it. |
+| "Text them a code and ask them to read it back." | Quayholt never asks anyone to read out a code: it's the habit attackers exploit (core_02). Send an approval or reset to details already held, and let the person complete it. |
 | "A reset is safe because the account has MFA." | Resetting MFA is the attack: it moves the second factor to the attacker. |
 | "Admins need admin rights all day." | Give rights when needed, for a set time, on a separate account (Cyber Essentials v3.3; NCSC secure system administration). |
 | "Approving an app is like installing software: low risk." | An app with mail or file permissions keeps that access until it's removed, even after a password reset. |
@@ -167,10 +169,10 @@ Use these as background only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur, fictional) |
+| Slot | Default (Quayholt, fictional) |
 |---|---|
-| Reset procedure | "Larkspur Reset Procedure v3: the ladder on the reset card; privileged and executive changes need ID in person or on video, a second check and a second analyst" |
-| Directory of record | "The HR directory on The Lark (numbers and managers)" |
+| Reset procedure | "Quayholt Reset Procedure v3: the ladder on the reset card; privileged and executive changes need ID in person or on video, a second check and a second analyst" |
+| Directory of record | "The HR directory in the staff directory (numbers and managers)" |
 | Self-service reset | "Self-service from a registered device; desk resets only when that fails" |
 | Privileged access tool | "Admin access through the privileged access portal: requested, approved by the system owner, time-limited" |
 | Admin accounts | "Separate adm- accounts, security key required, no email or browsing" |

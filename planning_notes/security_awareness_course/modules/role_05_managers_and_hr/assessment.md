@@ -1,151 +1,59 @@
 # role_05 assessment
 
+role_05 is measured by the built **hr pre and post check pair** and by the defend halves of E2 and the new recruitment-fraud episode, with the access and culture behaviours evidenced in the consequence-flip episode's choices and debrief. Scored recognition sits only in the defend halves and the checks, with no default pass mark (build decision R6). The behaviours and Q items below keep their stable ids and are mapped onto those built forms, with mirror pairs (aw5).
+
+## Which forms measure this module
+
+- **hr check pair (built):** `awareness_{pre,post}_hr_{ab,ba}`. Ten items each, 4 phish, A and B disjoint on phish slots, counterbalanced AB and BA, `passPercent: 0`, feedback at the end, mirror pairs. This is role_05's measured check; **no new check pair is needed** (R7).
+- **Defend sets (built and new):** E2's recruitment inbox (6 emails, 2 phish, no Verify, a macro concept panel); the recruitment-fraud episode's candidate set (mirror pairs). Both scored in the defend half.
+- **Consequence-flip episode (new, R3):** access that outlives the job. No triage score; the learner's choices and the flip are recorded as decisions and shown in the debrief, and the culture behaviours are evidenced there.
+
 ## Assessed behaviours
 
-Each row is recorded through BE-01 and shown in the debrief and the learner's record.
+Each row is recorded through the measurement store (`systems/awareness-measure.js`): item id, verdict or decision, chips, score, stage and time, ids only, first answer wins, no free text, no learner identity. "Secure, Developing, Not yet" is an authoring rubric for difficulty and feedback, not a shipped grade; the shipped output is the defend score, the per-item verdicts, the consequence-flip decisions and the pre-to-post change.
 
-| Id | Behaviour | Learning outcome | Where it is evidenced | Secure | Developing | Not yet |
-|---|---|---|---|---|---|---|
-| R05-B1 | Requests access for the new starter | LO1 (baseline) | Hook | Builds from the role template | Copies Des, then trims | Copies Des |
-| R05-B2 | Requests access for the agency temp | LO1 | Apply, Thursday | Role template with a four-week end date | Role template, no end date | Copies Des |
-| R05-B3 | Handles Leo's move | LO2 | Apply, Wednesday | Removes the Operations access on move day and sets up forwarding | Lets him keep the mailbox for a month, or removes the access only at the review | Leaves the Operations access in place |
-| R05-B4 | Reviews the team's access | LO3 | Apply, Wednesday (MG-18) | 10 or more of 12 rows right, including the shared login and the service account | 7 to 9 right | 6 or fewer right, or removes the service account without asking |
-| R05-B5 | Decides how to hire the remote contractor | LO4 | Apply, Tuesday | Asks HR for the standard checks before any offer, and passes the doubts to HR and security | Rejects the candidate on a feeling, without the checks or a report | Offers the job without the checks |
-| R05-B6 | Reads the candidate file | LO4 | Apply, Tuesday (MG-25) | Marks 4 or 5 of the 5 mismatches | Marks 2 or 3 | Marks 0 or 1 |
-| R05-B7 | Responds to Farida's confession | LO5 | Apply, Thursday | Thanks her, reports it with her at once, supports her | "Change your password and we'll say no more" | Blames her or refers her to HR |
-| R05-B8 | Makes time for the team's training | LO5 | Apply, Monday | Books the time and covers the phones | "Do it when you can" | "Just click through it" |
-| R05-B9 | Answers Hassan's question about Leo | LO6 | Apply, Wednesday | Points him to HR or to Leo | Offers absence dates | Shares health details |
-| R05-B10 | Raises the concern about Des's export | LO6 | Apply, Wednesday | Tells HR and security, with the facts | Raises it with Des at the leaving do | Searches his mailbox, or lets it go |
-| R05-B11 | Completes Des's leaver checklist | LO2 | Apply, Friday | Accounts (including the supplier portals), devices, keys, changed codes, call lists and an automatic reply instead of continued email | Most items, but misses the codes or the accounts in his name | Leaves his email on, or lets the laptop go |
+| Id | Behaviour | Learning outcome | Where it is evidenced | Good answer | Weaker answer |
+|---|---|---|---|---|---|
+| R05-B1 | Requests access for a new starter | LO1 | **Consequence-flip episode** (the "copy a leaver" choice) | Builds from the role template | Copies the leaver |
+| R05-B2 | Requests access for a temp | LO1 | Consequence-flip episode | Role template with an end date | Copies the leaver, no end date |
+| R05-B3 | Handles a mover | LO2 | Consequence-flip episode | Removes old access on move day, sets forwarding | Leaves the mailbox open |
+| R05-B4 | Reviews the team's access | LO3 | Consequence-flip episode (the ghost-accounts flip) | Spots the ghosts, shared login and toxic combination; asks the owner about the service account | Misses them, or removes the service account without asking |
+| R05-B5 | Decides how to hire a remote candidate | LO4 | **Recruitment-fraud defend set** | Verify through the standard checks; pass doubts to HR and security | Offers without the checks |
+| R05-B6 | Reads the candidate signals | LO4 | **Recruitment-fraud defend set** (the mismatch items) | Flags the refused ID, third-party pay and unverifiable references | Misses them, or flags the accent or the broadband (calibration note, not a fail) |
+| R05-B7 | Responds to a reported mistake | LO5 | Consequence-flip debrief (the "What do you say?" prompts) | Thanks, reports together, supports | Blames, or turns it into a disciplinary matter |
+| R05-B8 | Makes time for training | LO5 | Consequence-flip episode | Books the time and covers | "Just click through it" |
+| R05-B9 | Answers a question about a colleague's health | LO6 | Consequence-flip episode | Points to HR or the person | Shares health details |
+| R05-B10 | Raises a concern about an odd export | LO6 | Consequence-flip episode | Notes the facts, tells HR and security | Searches the mailbox, or lets it go |
+| R05-B11 | Completes a leaver checklist | LO2 | Consequence-flip episode (the flip shows what was missed) | Accounts, devices, keys, changed codes, call lists, auto-reply | Leaves email on, or lets the laptop go |
 
-The **before and after** for each learner is R05-B1 against R05-B2: the same "copy from Des" offer, first in the hook and then under pressure in the Apply beat.
-
-On the fairness variant of the interview (a genuine candidate), R05-B5 is rated the same way: asking for the standard checks is Secure, offering without them is Not yet, and a rejection on a feeling is Developing. R05-B6 then records whether the learner marked anything as a mismatch that wasn't one (accent, broadband), shown in the debrief as a calibration note, not a fail.
+**Before and after.** The hr post-check against the newest hr pre-check gives the measured change for recognising recruitment lures and fraud. The comparison panel shows it only when a baseline exists, and says so when there is none. There is no effectiveness claim beyond a cohort's change on matched items. On the genuine-candidate mirror twin, flagging the accent or the broadband is shown as a calibration note, never a penalty; reporting is never penalised.
 
 ## Critical behaviours
 
-To complete the module the learner must, at least once:
+Kept as authoring priorities, not hard gates (the build has no loop-back gate; a missed item draws immediate feedback, its mirror-pair twin, or the consequence flip):
 
-- **R05-CB1** Remove access that is no longer needed in a live situation: R05-B3 at Secure, or R05-B11 at Secure, or R05-B4 at Secure or Developing.
-- **R05-CB2** Respond to a reported mistake without blame: R05-B7 not at Not yet.
-- **R05-CB3** Not hire without the standard checks: R05-B5 not at Not yet.
-
-The remediation loop follows `features/assessment_and_evidence.md`, section 4. A learner who misses a critical behaviour hears what happened without blame; Ama or Mei Lin replays the relevant Practise cards with the explanation; then a fresh scene of the same kind runs as a short replay of the Apply beat (a different mover, a different confession such as a misdirected email or a lost phone, or a different candidate). If it still isn't shown, a second loop runs with another scene and a more direct prompt. After two loops the learner goes on to the check anyway: the record says "practised, not yet shown", a private practice drill is scheduled for two to four weeks later (HA-03, HA-21), and the organisation's training contact is offered as help. Nobody else is told by name. An outcome whose critical behaviour was shown only after practice is capped at Developing for this sitting. Every attempt is kept in the record.
+- **R05-CB1** Remove access that is no longer needed (R05-B3, B4 or B11): the consequence-flip episode.
+- **R05-CB2** Respond to a reported mistake without blame (R05-B7): the culture card and the "What do you say?" prompts.
+- **R05-CB3** Don't hire without the standard checks (R05-B5): the recruitment-fraud defend set.
 
 ## Knowledge check bank
 
-Six items per sitting, drawn so that every learning outcome is covered. Stems are short workplace situations.
+The twelve Q items keep their ids and become a candidate pool for hr check stems, defend items, consequence-flip choices and concept cards. Delivery is tagged, with mirror pairs noted:
 
-### R05-Q1 (LO1, single choice)
+- **R05-Q1 (LO1)** "Copy access from the leaver". Consequence-flip choice and concept card.
+- **R05-Q2 (LO1)** What a temp should get. Consequence-flip choice.
+- **R05-Q3 (LO2)** A mover keeping the old mailbox. Consequence-flip choice.
+- **R05-Q4 (LO2)** The leaver checklist. Consequence-flip choice; the flip shows what was missed.
+- **R05-Q5 (LO3)** An unrecognised service account. Consequence-flip choice (ask the owner).
+- **R05-Q6 (LO3)** Why the review matters. Concept card.
+- **R05-Q7 (LO4)** The warning signs to pass to HR. **Recruitment-fraud defend items**, mirror-paired with innocent twins (accent, broadband).
+- **R05-Q8 (LO4)** "The agency has checked." **Recruitment-fraud defend item**, mirror-paired with a genuine agency candidate.
+- **R05-Q9 (LO5)** The 17:50 confession. The culture card; the "What do you say?" prompt.
+- **R05-Q10 (LO5)** Thank, Act, Support, Learn. Concept card.
+- **R05-Q11 (LO6)** A question about a colleague's health. Consequence-flip choice.
+- **R05-Q12 (LO6)** An odd export by a leaver. Consequence-flip choice.
 
-A new starter is replacing someone who has been with you fifteen years. The access form offers "Copy access from the leaver". What do you do?
-
-- A. Copy it; it's quickest and she's doing the same job. *Feedback: That copies fifteen years of extras: old projects, admin rights, codes.*
-- **B. Use the role template, and add anything missing when there's a reason.** *Feedback: Right. Access follows the job, not the person.*
-- C. Copy it and ask IT to remove anything odd later. *Feedback: "Later" rarely comes, and IT can't tell what's odd for your team.*
-- D. Give her read-only access to everything so she can learn. *Feedback: Read access to everything still exposes everything.*
-
-### R05-Q2 (LO1, multiple select)
-
-An agency temp starts on Monday for four weeks. What should they get? Choose all that apply.
-
-- **A. A named account of their own.** *Feedback: So everything they do can be traced to them.*
-- B. The team's shared login, like everyone else. *Feedback: Shared logins mean nobody can tell who did what. Ask IT for a named account.*
-- **C. An end date on their access, set now.** *Feedback: Set it when you ask, not when you remember.*
-- D. Admin rights, to save bothering IT for four weeks. *Feedback: Admin rights are for people who administer systems.*
-- **E. Induction training before they handle personal data.** *Feedback: Right. Training comes before access.*
-
-### R05-Q3 (LO2, single choice)
-
-A colleague moves to Finance on Wednesday and asks to keep her old team mailbox "for a month, in case customers email". What's the best response?
-
-- A. Fine, for a month. *Feedback: She'd keep reading customer mail she no longer handles.*
-- **B. Remove her old access on Wednesday, and set up forwarding or an automatic reply for the old role's mail.** *Feedback: Right. Customers still reach the team, and her access matches her new job.*
-- C. Keep it until the next access review. *Feedback: That could be months, and it can break separation of duties in the meantime.*
-- D. Let her decide when she's finished with it. *Feedback: The manager owns the request; people rarely ask for access to be taken away.*
-
-### R05-Q4 (LO2, multiple select)
-
-A long-serving scheduler retires on Friday. Which belong on the leaver checklist? Choose all that apply.
-
-- **A. Change the key safe and alarm codes they know.** *Feedback: Knowledge can't be handed back, so the codes change.*
-- **B. Take their mobile number off the schools' alarm call lists.** *Feedback: Other organisations' lists are easy to forget.*
-- **C. Close the accounts on suppliers' portals in their name.** *Feedback: These sit outside your own IT.*
-- D. Leave their email on for a month so they can say goodbye. *Feedback: Send the goodbye before they go and set an automatic reply.*
-- **E. Collect their laptop, phone, badge and keys.** *Feedback: Right.*
-
-### R05-Q5 (LO3, single choice)
-
-During an access review you find an account called `backup-sync` that you don't recognise. It's used every night. What do you do?
-
-- A. Remove it: you don't know what it is. *Feedback: It may run a backup. Removing it could stop something that matters.*
-- B. Keep it: it's in use, so it must be fine. *Feedback: In use isn't the same as needed or safe. Find out what it is.*
-- **C. Ask the owner or the service desk before deciding.** *Feedback: Right. Ask about anything you don't recognise.*
-- D. Leave it out of the review. *Feedback: Unknown accounts are exactly what reviews are for.*
-
-### R05-Q6 (LO3, true or false with reason)
-
-"If nobody has complained, everyone's access must be right, so the access review is a formality."
-
-- A. True: problems would have shown up. *Feedback: Extra access causes no complaints until it's misused.*
-- **B. False: reviews find leavers, movers, shared logins and unused admin rights that nobody notices day to day.** *Feedback: Right.*
-
-### R05-Q7 (LO4, multiple select)
-
-You're interviewing a remote candidate for a contractor role. Which of these should you pass to HR as warning signs? Choose all that apply.
-
-- **A. They want the laptop sent to an address that isn't on their ID.** *Feedback: A red flag in the UK and US advisories.*
-- **B. They ask to be paid into an account in someone else's name.** *Feedback: Also a listed red flag.*
-- C. They have a strong regional accent. *Feedback: Not a sign of anything. Judging people on accent is unfair and can be unlawful discrimination.*
-- **D. They won't show their original ID on a live video call.** *Feedback: The check needs the original document, in person or on live video.*
-- E. Their broadband is slow and the picture judders. *Feedback: Common and innocent. The same checks will clear a genuine candidate.*
-
-### R05-Q8 (LO4, single choice)
-
-The agency says, "References and checks are done; he can start Monday." Nobody at your organisation has seen his original ID. What do you do?
-
-- A. Start him Monday; the agency has checked. *Feedback: The duty to check is yours, and a stolen identity passes a background check.*
-- **B. Ask HR to complete the standard checks (original ID, the right to work check, references found independently) before he starts.** *Feedback: Right. Same checks, every candidate.*
-- C. Start him, but give him no access for a week. *Feedback: He'd still be paid and on the payroll under an identity nobody has checked.*
-- D. Reject him to be safe. *Feedback: A quiet rejection can't be reported, and it may be unfair to a genuine candidate.*
-
-### R05-Q9 (LO5, single choice)
-
-It's 17:50. A team member says: "I typed my password into a fake payslip page. Please don't tell anyone." What do you say first?
-
-- **A. "Thank you for telling me. Let's ring the service desk now; I'll sit with you."** *Feedback: Right. Thanks first, then act fast together.*
-- B. "Change your password and we'll say no more." *Feedback: Kind, but the attacker may already be signed in. The service desk needs to know.*
-- C. "How did that get past you? We did the training." *Feedback: Blame teaches people to hide the next one.*
-- D. "I'll have to let HR know." *Feedback: A reported mistake is a security matter, not a disciplinary one.*
-
-### R05-Q10 (LO5, ordering)
-
-Someone in your team owns up to a security mistake. Put your steps in order.
-
-1. **Thank them for telling you.**
-2. **Report it together, straight away.**
-3. **Support them while it's sorted.**
-4. **Learn from it: fix what made it easy, and share the lesson without their name unless they agree.**
-
-*Feedback: Thanks comes first because it decides whether they keep talking. Reporting fast limits the damage. (Accept 2 and 3 in either order.)*
-
-### R05-Q11 (LO6, single choice)
-
-A colleague's new manager asks you: "Anything I should know about his health? He was off for a while last year." What do you say?
-
-- A. Tell her the diagnosis so she can be supportive. *Feedback: Health details are special category data. They stay with HR and occupational health.*
-- **B. "For anything about absence or health, HR is the right route, or ask him."** *Feedback: Right. Helpful, and it keeps health information where it belongs.*
-- C. Forward her his absence record. *Feedback: That's HR's to share, and only what she needs.*
-- D. "I can't say anything about him at all." *Feedback: You can talk about his work. It's the health details that go through HR.*
-
-### R05-Q12 (LO6, single choice)
-
-Reviewing your team's access, you see that a colleague who leaves on Friday emailed a spreadsheet of 1,400 contacts to a personal address. What do you do?
-
-- A. Search their mailbox to see what else they've sent. *Feedback: That's an investigation, and it's for HR, security and the DPO under the organisation's policy.*
-- B. Ask them about it at their leaving do. *Feedback: Kind, but public. The conversation belongs with HR, in private.*
-- **C. Note the facts and tell HR and the security team.** *Feedback: Right. They can find out what happened fairly, and most of the time there's an innocent reason.*
-- D. Let it go; they're leaving anyway. *Feedback: The data would stay on an account nobody controls.*
+**Recruitment-fraud defend set (mirror pairs).** The four pairs in the structure table (refused ID vs poor broadband; third-party pay vs own named account; unverifiable references vs checkable ones; fabricated history vs an unusual but checkable one). Item counts and matched flag multisets follow the hr forms so a role_05 defend set passes the validator's balance lint; the authoritative counts live in the scenario file if and when the shell is built.
 
 ## Reflection prompt
 
@@ -154,37 +62,25 @@ Reviewing your team's access, you see that a colleague who leaves on Friday emai
 
 ## Completion and pass rules
 
-- **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour or been taken through the remediation loop (above), passed the knowledge check, and opened the reference card.
-- **Pass mark:** 5 of 6 (the organisation can change it; 80% is the default).
-- **Retakes:** a failed check draws six new items. After two fails, Ama and Mei Lin replay the Learn beat before the third attempt.
-- **Test-out** (where the organisation allows it): the Apply beat and the check without Learn and Practise. Passing records the module as complete; missing a critical behaviour sends the learner through the full module.
-- **Policies:** if the organisation attaches its leaver or screening policy (HA-07), acknowledging it is part of completion.
+- **Complete** when the learner has played the episodes (or the defend-only variants and the consequence flip), seen the per-item feedback and the debriefs, and taken the hr post-check. There is no default pass mark (R6); a pass mark is an organisation setting on the hr post-check percent, not a default.
+- **No retake gate.** A missed item draws immediate feedback and its mirror-pair twin or the consequence flip; the checks can be replayed; the measurement store keeps the first answer per item per stage.
+- **Policies:** if the organisation attaches its leaver or screening policy, acknowledging it can be part of completion (a later platform option, feature-level only).
 
 ## Evidence for auditors
 
-The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game, text, test-out), each assessed behaviour's rating, critical behaviours shown, shown after practice, or practised and not yet shown, the check score, whether the reference card was opened, and any policy acknowledgements. This supports:
+The record (in game globals; a server-side record only if productised, build decision R) shows, per role and per stage: item ids, verdicts and consequence-flip decisions, chips, the defend score and the pre-to-post change, with no free text and no learner identity in the block. The organiser also sees the discrimination figure; learners never do. This supports:
 
-- NCSC CAF B6.a (people who report are treated positively) and NCSC CAF B6.b (a training path for each role, tracked per person); DSPT B6.a and B6.b for NHS customers;
-- ISO 27001 cl. 7.2 and ISO 27001 A.6.3;
-- NIST AT-3 (role-based training) and NIST AT-2(2) (insider threat);
-- CIS 14.9 (role-specific training);
+- NCSC CAF B6.a and B6.b; DSPT B6.a and B6.b for NHS customers;
+- ISO 27001 cl. 7.2 and A.6.3;
+- NIST AT-3 and AT-2(2);
+- CIS 14.9;
 - NIS2 IR 10.1 and IR 10.2 where the Implementing Regulation applies;
 - DORA RTS Art 19;
-- the ICO training toolkit (specialised training for roles with key data protection duties);
+- the ICO training toolkit;
 - CMMC AT.L2-3.2.3 for US defence customers.
 
-See `02_COMPLIANCE_MAPPING.md` for the full references.
+See `02_COMPLIANCE_MAPPING.md` for the full references. The product makes no effectiveness claim.
 
 ## Measuring effect
 
-Outside the course, an organisation can watch:
-
-- **Leaver accounts disabled on time:** the share disabled by the end of the last working day, from service desk tickets. It should rise.
-- **Access review results:** completion on time, and removals per review, which rise at first and then fall as hygiene improves.
-- **Mover tickets that include removals,** not only additions.
-- **Hiring checks completed before the start date,** from HR records, including for agency and contract workers.
-- **Self-reported incidents by team:** the number (a rise is good) and the time from the mistake to the report (a fall is good).
-- **A pulse question** in the staff survey: "I'd tell my manager if I made a security mistake", by team.
-- **Training completed on time** by team.
-
-These need service desk and HR data and a short survey (HA-14). The dashboard shows them by team or department, never by named individual below the privacy threshold (HA-09).
+Outside the course, an organisation can watch: leaver accounts disabled on time; access review completion and removals per review; mover tickets that include removals; hiring checks completed before the start date (including for agency and contract workers); self-reported incidents by team (a rise is good) and time to report (a fall is good); a pulse question ("I'd tell my manager if I made a security mistake", by team); and training completed on time by team. These need service desk and HR data and a short survey. Any dashboard shows them by team or department, never by named individual, and the product claims no effectiveness.

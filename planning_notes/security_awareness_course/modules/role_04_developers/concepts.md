@@ -2,6 +2,8 @@
 
 This file is the source of truth for the module. The game, the explainers, the knowledge check and the reference card must all match it. Facts were checked in October 2026. It stays at awareness level: it says what to spot and what to do, never how to attack.
 
+**World note.** The old Larkspur world is retired. role_04 is a new role, so it has no built episode yet; it is set at **Stavely Software** (`stavely.example`), a proposed brand-set company (a UK software firm that builds and runs a booking-and-invoicing portal for its clients). Stavely is the fictional default organisation for this file's examples and slots, and its approved AI coding assistant is Stav Assist. Add Stavely Software to `BRAND_SET.md` with a pre-ship web search. role_04 needs its own developer check-form pair (see `assessment.md`).
+
 ## Key messages
 
 1. **Secrets never go in code.** Not in source, repository configuration, tickets, chat or prompts. Use the secrets manager. If one gets out, rotate it first, then clean up, then tell security: deleting it isn't enough.
@@ -143,15 +145,15 @@ Use these as background only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur, fictional) |
+| Slot | Default (Stavely, fictional) |
 |---|---|
-| Approved AI coding tool | "Lark Assist in the editor, with company accounts; no customer data or secrets in prompts" |
-| Secrets manager | "The Larkspur vault; secrets injected at deploy time" |
+| Approved AI coding tool | "Stav Assist in the editor, with company accounts; no customer data or secrets in prompts" |
+| Secrets manager | "The Stavely vault; secrets injected at deploy time" |
 | Leaked secret route | "Rotate through the vault, then tell the security team on 4444 or in the security channel" |
 | Dependency policy | "New dependencies through the internal package proxy only, approved by the lead developer" |
 | Branch rules | "Protected main branch, two approvals, required checks; emergency changes need a second reviewer from the on-call rota" |
 | Test data standard | "Synthetic data from the test data generator; production data only with the DPO's written approval" |
-| Disclosure route | "security.txt on every Larkspur domain, pointing to the security team's form" |
+| Disclosure route | "security.txt on every Stavely domain, pointing to the security team's form" |
 | Languages for the diffs | "TypeScript and Python" |
 | Technical depth | "Hacktivity Web Security and Software Security courses; lab_vulnerabilities and lab_exploitation" |
 

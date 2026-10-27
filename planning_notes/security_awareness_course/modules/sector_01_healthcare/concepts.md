@@ -2,6 +2,8 @@
 
 This file is the source of truth for the module. The game, the explainers, the knowledge check and the reference card must all match it. Data protection law in general is core_05, phishing core_01, reporting core_04, ransomware and updates core_07, and visitors core_10; this module covers how they apply on a ward.
 
+**World note.** The old Larkspur world is retired. sector_01 is a new sector role, so it has no built episode yet; it is set at **Beckside Hospitals NHS Trust** (`beckside.example`), a proposed brand-set healthcare organisation (an NHS trust, with Beckside General Hospital and Ward 12). Beckside is the fictional default organisation for this file's examples and slots. The facilities contractor on site is the proposed Harbreck Facilities Group (role_01). Add Beckside to `BRAND_SET.md` with a pre-ship web search. sector_01 needs its own healthcare check-form pair (see `assessment.md`).
+
 ## Key messages
 
 1. **Only look at what you need for your work.** Every time you open a record it is logged. Looking out of curiosity, even at a famous patient or a relative, is a breach, a disciplinary matter, and can be a crime.
@@ -94,7 +96,7 @@ This file is the source of truth for the module. The game, the explainers, the k
 
 - **Staff-only areas** are for staff with ID. Wear yours. A polite challenge ("Can I help you? Who are you here to see?") is part of the job, and so is checking a story through the switchboard rather than the number a visitor offers.
 - **Never leave a stranger alone** near computers, records or the medicines room. Call security if you're worried.
-- **Contractors** (including Larkspur's engineers on client sites) sign in, wear ID, and expect to be checked. Visitors and building security in general are core_10.
+- **Contractors** (including a facilities contractor's engineers on site) sign in, wear ID, and expect to be checked. Visitors and building security in general are core_10.
 
 ### Reporting, and a just culture
 
@@ -148,7 +150,7 @@ Use these as background and inspiration only. Game content uses fictional names,
 
 ## Organisation-specific slots
 
-| Slot | Default (Beckside Hospitals NHS Trust, a Larkspur client) |
+| Slot | Default (Beckside Hospitals NHS Trust, proposed) |
 |---|---|
 | Organisation and ward names | Beckside General Hospital; Ward 12 (general medicine) |
 | Phone enquiries | Patients name who may be given updates and can set a password; the ward gives general updates only to those people; everything else is passed to the nurse in charge |

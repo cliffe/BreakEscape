@@ -1,141 +1,57 @@
 # role_03 assessment
 
+role_03 is measured by the built **helpdesk pre and post check pair** and by the defend halves of E3 (the role swap) and the new least-privilege episode, scored only in the defend half and in the checks, with no default pass mark (build decision R6). The behaviours and Q items below keep their stable ids and are mapped onto those built forms, with mirror pairs (aw5).
+
+## Which forms measure this module
+
+- **Helpdesk check pair (built):** `awareness_{pre,post}_helpdesk_{ab,ba}`. Ten items each, 4 phish, a mix of emails, calls, a voicemail and a push, Verify on in the scenario files, A and B disjoint on phish slots, counterbalanced AB and BA, `passPercent: 0`, feedback at the end. This is role_03's measured check; **no new check pair is needed** (R7).
+- **Defend sets (built and new):** E3's role swap (3 calls, 2 impostor and 1 genuine, plus 1 unrequested push, Verify on, claimed facts shown by label); the new episode's consent, tooling and alert set (mirror pairs). All scored in the defend half.
+
 ## Assessed behaviours
 
-Each row is recorded through BE-01 and shown in the debrief and the learner's record. "How soon" is always measured in story events (before the next ticket, before Kai's alert), never in real minutes.
+Each row is recorded through the measurement store (`systems/awareness-measure.js`): item id, verdict, chips, score, stage and time, ids only, first answer wins, no free text, no learner identity. "Secure, Developing, Not yet" is an authoring rubric for difficulty and feedback, not a shipped grade; the shipped output is the defend score, the per-item verdicts and the pre-to-post change. "How soon" is measured in story events (before the next call, before the alert), never in real minutes.
 
-| Id | Behaviour | Learning outcome | Where it is evidenced | Secure | Developing | Not yet |
-|---|---|---|---|---|---|---|
-| R03-B1 | Handles the airport call | LO1, LO2 (baseline) | Hook, H1 | Doesn't move the authenticator; offers the in-person or video ID check with a second check, or a call back on the directory number | Asks the lead before deciding; or asks the security questions first, then refuses | Moves the authenticator after the questions |
-| R03-B2 | Reports their own slip | LO6 | Hook, H2 (only if H1 was a reset) | Tells Owain before taking the next ticket | Tells someone when Kai's alert arrives | Says nothing when the alert arrives |
-| R03-B3 | Picks the check that fits the risk | LO2, LO3 | Practise | 6 of 6 | 4 or 5 | 3 or fewer |
-| R03-B4 | Handles the contractor's admin request | LO3 | Apply, test 1 | A separate admin account with the minimum rights, approval, an end date and a security key | A separate account, but with domain admin and no end date | Domain admin on his normal account, or the shared admin login |
-| R03-B5 | Handles the app consent request | LO4 | Apply, test 2 | Refuses, offers the approved tool, sends it for security review | Approves it for Martin's team only | Approves it for the organisation |
-| R03-B6 | Acts on the sign-in alert | LO5 | Apply, test 4 | Flags the 09:41 row and escalates to Kai before anything else | Rings Jamie on the directory number first, then escalates | Closes the alert |
-| R03-B7 | Supports a colleague's report | LO6 | Apply, test 4 | "We'll tell Kai together" | Tells Rosa she should report it, but leaves her to it | "Fix it quietly", or "not my ticket" |
-| R03-B8 | Handles the supplier's remote tool | LO4 | Apply, test 5 | Refuses to whitelist, books the approved route, has the tool removed and reported | Refuses, but leaves the tool in place and unreported | Whitelists it, or asks for the PC to be left unlocked |
-| R03-B9 | Handles the request to switch protection off | LO4 | Apply, test 6 | Raises a change to tune it and offers a fix | "Nothing we can do" (safe, unhelpful) | Turns it off |
-| R03-B10 | Handles the "contractor's" MFA reset on a privileged account | LO2, LO6 | Apply, test 7 | Verifies through a route the caller doesn't control (Bridget on chat, a call back on the number in his record, or ID in person), then refuses politely and escalates to Kai | Refuses because it's a privileged account but neither verifies nor escalates; or verifies but doesn't tell Kai | Resets it on what he knows, or on security questions |
+| Id | Behaviour | Learning outcome | Where it is evidenced (built unless marked new) | Good answer | Weaker answer |
+|---|---|---|---|---|---|
+| R03-B1 | Handles the locked-out "manager" | LO1, LO2 | **E3 role-swap call items; helpdesk checks** | Call back on the number on record; refuse politely | Acts on the facts the caller knows |
+| R03-B2 | Handles the unrequested push | LO2, LO6 | **E3 push item; helpdesk checks** | Deny and report a push nobody started | Approves it |
+| R03-B3 | Picks the check that fits the risk | LO2, LO3 | E3 role swap (the claimed facts shown by label); helpdesk checks | The strong check for the account type | A weak, public-fact check |
+| R03-B4 | Handles a contractor's admin request | LO3 | **New: the admin-access defend item** | Separate admin account, least rights, approval, an end date, phishing-resistant MFA | Domain admin on the normal account |
+| R03-B5 | Handles the app consent request | LO4 | **New: the broad-consent defend item** | Report; send for security review; offer the approved tool | Approves the broad app |
+| R03-B6 | Acts on the sign-in alert after a reset | LO5 | **New: the post-reset alert item** | Escalate to security before anything else | Closes it as "probably a VPN" |
+| R03-B7 | Supports a colleague's report | LO6 | E3 and new-episode debriefs (no-blame card) | "Let's tell security together, now" | "Fix it quietly" |
+| R03-B8 | Handles the supplier's remote tool | LO4 | **New: the remote-tool defend item** | Verify; refuse to whitelist; book the gateway route; remove and report | Whitelists it |
+| R03-B9 | Handles the request to switch protection off | LO4 | **New: the disable-security defend item** | Raise a change to tune, not disable | Turns it off |
+| R03-B10 | Handles an MFA reset on a privileged account under pressure | LO2, LO6 | **E3 role-swap privileged call; helpdesk checks** | Verify through a route the caller doesn't control; refuse politely; escalate | Resets on what the caller knows |
 
-R03-B2 applies only to players who moved the authenticator in the hook. Players who didn't are recorded as "not applicable", not as a pass or a fail.
-
-The **before and after** is R03-B1 against R03-B10: the same request (an MFA reset on a high-value account, by phone, under time pressure), first from a "chief executive" at an airport gate before any teaching, then from a "contractor" nobody on the desk knows yet.
+**Before and after.** The helpdesk post-check against the newest helpdesk pre-check gives the measured change. The comparison panel shows it only when a baseline exists, and says so when there is none. There is no effectiveness claim beyond a cohort's change on matched items. A refusal that turns out to be a genuine caller is never counted against anyone; reporting is never penalised.
 
 ## Critical behaviours
 
-To complete the module the learner must show each of these, or be taken back through the practice for it:
+Kept as authoring priorities, not hard gates (the build has no loop-back gate; a missed item draws immediate feedback and its mirror-pair twin):
 
-- **R03-CB1 Never changes MFA on a privileged or executive account on what the caller knows, or on caller ID, alone** (R03-B10 not at Not yet; the hook is a baseline and never counts against it).
-- **R03-CB2 Escalates a suspicious sign-in after a reset** (R03-B6 not at Not yet).
-- **R03-CB3 Doesn't approve an app with organisation-wide mail and file access** (R03-B5 not at Not yet).
-
-**The remediation loop** follows `features/assessment_and_evidence.md`, section 4. If a critical behaviour wasn't shown, the debrief says what happened without blame and Owain offers to go over it: *"That one catches good analysts. Let's try it once more."* He replays the matching part of the ladder (one to two minutes), then a fresh case of the same kind arrives in a short replay of the queue (one to three minutes), drawn from the bank: a "finance director" in a hotel who needs MFA moved before a payment run (CB1); a new-device sign-in on another account after a self-service reset (CB2); a "calendar assistant" app asking for every mailbox (CB3). Shown: recorded as "shown after practice", and the linked outcome is capped at Developing for this sitting. Not shown: a second loop with another fresh case and a more direct prompt. After two loops the learner goes on to the check; the record says "practised, not yet shown", a private follow-up drill ("Prove It") is scheduled two to four weeks later (HA-03, HA-21), and nobody else is told by name. Every attempt is kept.
+- **R03-CB1** Never change MFA on a privileged or executive account on what the caller knows or on caller ID alone (R03-B10): E3 and the helpdesk checks.
+- **R03-CB2** Escalate a suspicious sign-in after a reset (R03-B6): the new episode's alert item.
+- **R03-CB3** Don't approve an app with organisation-wide mail and file access (R03-B5): the new episode's consent item.
 
 ## Knowledge check bank
 
-Six items per sitting, drawn so that every learning outcome is covered. Stems are short service desk situations. Every outcome has at least two items: LO1 (R03-Q1, Q4), LO2 (R03-Q2, Q3, Q12), LO3 (R03-Q5, Q6), LO4 (R03-Q7, Q8), LO5 (R03-Q9, Q10), LO6 (R03-Q4, Q11, Q12).
+The twelve Q items keep their ids and become a candidate pool for helpdesk check stems, defend items and concept cards. Delivery is tagged, with mirror pairs noted:
 
-### R03-Q1 (LO1, single choice)
+- **R03-Q1 (LO1)** What the right facts prove. Concept card; a candidate "easy" check stem.
+- **R03-Q2 (LO2)** The caller's new call-back number. **Built as an E3 call item**, mirror-paired with a genuine caller reachable on the number on record.
+- **R03-Q3 (LO2)** The order of steps to move the chief executive's authenticator. Concept card (the ladder).
+- **R03-Q4 (LO1, LO6)** Which are pressure tactics. Concept card on the lever cards.
+- **R03-Q5 (LO3)** The contractor's admin account. **New defend item**, mirror-paired with a correctly scoped admin account.
+- **R03-Q6 (LO3)** Reading email as an admin. Concept card on least privilege.
+- **R03-Q7 (LO4)** The broad-consent app. **New defend item**, mirror-paired with the approved narrow tool.
+- **R03-Q8 (LO4)** The supplier's remote tool. **New defend item**, mirror-paired with a genuine gateway session.
+- **R03-Q9 (LO5)** The sign-in a minute after a reset. **New defend item**, mirror-paired with a genuine travelling user.
+- **R03-Q10 (LO5)** Which signals go to security. Concept card on the alerts after a reset.
+- **R03-Q11 (LO6)** Supporting a colleague who slipped. Concept card (no blame); the debrief line.
+- **R03-Q12 (LO6, LO2)** The real chief executive on the office line. **Candidate helpdesk-check call item** (caller ID can be faked), mirror-paired with a genuine in-person verification.
 
-A caller gives the right employee number, date of birth and manager's name. What does that prove?
-
-- A. That it's them: three facts is plenty. *Feedback: All three can be found on social media, company websites or old breaches.*
-- **B. Nothing on its own. Those facts can be found or bought, so verify through a route they don't control.** *Feedback: Right. Knowing isn't proving.*
-- C. That it's them, if they answered quickly. *Feedback: A prepared caller answers fastest of all.*
-- D. That it's someone inside the organisation. *Feedback: Outsiders can find all of it.*
-
-### R03-Q2 (LO2, single choice)
-
-The caller says their phone was stolen and gives you a new number to call back on. What do you do?
-
-- A. Call the new number: it's the only way to reach them. *Feedback: Whoever answers that number is whoever gave it to you.*
-- **B. Don't use it. Use the number in the directory, or another route they don't control: their manager on a known channel, or ID in person or on video.** *Feedback: Right. The route has to be one the caller can't set up.*
-- C. Ask more security questions instead. *Feedback: More questions are more things that can be looked up.*
-
-### R03-Q3 (LO2, ordering)
-
-The chief executive needs her authenticator moved to a new phone. Put the steps in order.
-
-1. **Check her ID in person (or on video) against her HR photo.**
-2. **Make a second check: her assistant or the duty director on a known number.**
-3. **A second analyst approves.**
-4. **Move the authenticator and sign the account out everywhere else.**
-5. **Notify her on her contact details of record, and note on the ticket what you checked.**
-
-*Feedback: Identity first, then the second route, then the second person, and only then the change. Accept steps 1 and 2 in either order.*
-
-### R03-Q4 (LO1, LO6, multiple select)
-
-Which of these are pressure tactics? Choose all that apply.
-
-- **A. "I'm boarding in ten minutes."** *Feedback: Urgency, often with travel to explain why the usual route won't work.*
-- **B. "Do you know who I am?"** *Feedback: Seniority. The more senior the account, the more it's worth checking.*
-- **C. "Your colleague did it last time without all this."** *Feedback: Social proof, and a nudge to skip the procedure.*
-- D. "Can you give me the ticket number?" *Feedback: An ordinary question.*
-
-### R03-Q5 (LO3, single choice)
-
-A project manager asks you to give a new contractor domain admin on his normal account "so he isn't blocked". What do you set up?
-
-- A. Domain admin on his normal account, removed when the project ends. *Feedback: His everyday account would read email and browse with full rights, and "when the project ends" tends not to happen.*
-- **B. A separate admin account with only the rights the migration needs, approved by the system owner, ending with his contract, with phishing-resistant MFA.** *Feedback: Right. Least privilege, for a set time, on an account used for nothing else.*
-- C. The team's shared admin login for today. *Feedback: Shared logins can't be traced or removed from one person.*
-
-### R03-Q6 (LO3, true or false with reason)
-
-"It's fine to read email with my admin account, as long as I'm careful."
-
-- A. True: being careful is what matters. *Feedback: One bad attachment would run with your admin rights.*
-- **B. False: admin accounts are for admin work only, with no email or web browsing, because anything you open runs with admin rights.** *Feedback: Right. Cyber Essentials requires exactly this.*
-
-### R03-Q7 (LO4, single choice)
-
-A director asks you to approve an app that wants to "read and write all mailboxes" and "send mail as any user". What do you do?
-
-- A. Approve it: a director asked. *Feedback: Seniority doesn't change what the app can do.*
-- B. Approve it and reset the director's password afterwards to be safe. *Feedback: The app keeps its access after a password reset.*
-- **C. Don't approve it. Check what's needed and why, offer an approved tool, and send it for security review.** *Feedback: Right. Treat app consent like an access request.*
-
-### R03-Q8 (LO4, single choice)
-
-A supplier rings: "We've put our remote support tool on one of your PCs. Your antivirus keeps closing it. Can you whitelist it?" What do you do?
-
-- A. Whitelist it for the day. *Feedback: Criminals use the same tools with the same story.*
-- **B. No. Book the work through the approved supplier route, have the tool removed, and tell the security team.** *Feedback: Right. Approved tools, approved routes, whoever is asking.*
-- C. Leave the PC logged in so they can finish quickly. *Feedback: That hands an unknown connection an open session.*
-
-### R03-Q9 (LO5, single choice)
-
-You reset an account at 09:40. At 09:41 the account signs in from another country on a new device. What now?
-
-- **A. Escalate to the security team straight away, then contact the user on the directory number.** *Feedback: Right. Every minute counts while someone else may hold the account.*
-- B. Ring the user first to ask if they're abroad. *Feedback: Check with them too, but escalate first so the security team can act.*
-- C. Close it: people use VPNs. *Feedback: Straight after a reset, this is the pattern of a takeover.*
-
-### R03-Q10 (LO5, multiple select)
-
-Which of these should go to the security team? Choose all that apply.
-
-- **A. A new MFA device registered on an administrator's account that nobody asked for.** *Feedback: Right.*
-- **B. A mailbox rule forwarding everything to an outside address.** *Feedback: Right. A common step after a takeover.*
-- **C. A remote support tool nobody approved, found on a warehouse PC.** *Feedback: Right.*
-- D. A printer that's run out of toner. *Feedback: An ordinary ticket.*
-
-### R03-Q11 (LO6, single choice)
-
-A colleague realises the person she reset an hour ago probably wasn't who they said. She's worried. What do you say?
-
-- **A. "Let's tell the security team together, now. Finding it this fast is the best outcome there is."** *Feedback: Right. Speed limits the damage, and nobody is blamed for reporting.*
-- B. "Reset it again quietly and nobody needs to know." *Feedback: The attacker may already have set up other ways back in.*
-- C. "That's on your ticket, not mine." *Feedback: Helping a colleague report is part of the job.*
-
-### R03-Q12 (LO6, LO2, single choice)
-
-The real chief executive rings from her office line, annoyed: "Just move my authenticator. You know it's me." What do you do?
-
-- A. Move it: the office line proves it's her. *Feedback: Caller ID can be faked.*
-- **B. Politely go to her office with a colleague, check her ID and set it up with her.** *Feedback: Right. It takes minutes, and it's what protects her account.*
-- C. Ask her the security questions. *Feedback: Anyone who prepared could answer them.*
+**New episode defend set (mirror pairs).** The four pairs in the structure table (broad consent vs approved tool; remote-tool whitelist vs gateway session; post-reset anomaly vs travelling user; disable security vs tune it). Item counts and matched flag multisets follow the helpdesk forms so a role_03 defend set passes the validator's balance lint; the authoritative counts live in the scenario file if and when the shell is built.
 
 ## Reflection prompt
 
@@ -144,36 +60,24 @@ The real chief executive rings from her office line, annoyed: "Just move my auth
 
 ## Completion and pass rules
 
-- **Complete** when the learner has played all beats (or the text route), shown each critical behaviour or been taken back through the practice for it (two loops at most), passed the knowledge check, and opened the reset card.
-- **Pass mark:** 5 of 6 (the organisation can change it; 80% is the default).
-- **Retakes:** a failed check draws six new items. After two fails, Owain's Learn beat replays before the third attempt.
-- **Test-out** (where the organisation allows it): the Apply beat and the check without Learn and Practise. Missing a critical behaviour sends the learner through the full module, with no "failed" label.
+- **Complete** when the learner has played the episodes (or the defend-only variants), seen the per-item feedback and the debriefs, and taken the helpdesk post-check. There is no default pass mark (R6); a pass mark is an organisation setting on the helpdesk post-check percent, not a default.
+- **No retake gate.** A missed item draws immediate feedback and its mirror-pair twin; the checks can be replayed; the measurement store keeps the first answer per item per stage.
 
 ## Evidence for auditors
 
-The learner's record (HA-05) shows: module id and version, start and completion dates, time on task, route (game, text, test-out), each behaviour's rating, critical behaviours shown, shown after practice, or practised and not yet shown, the check score, and whether the reset card was opened. This supports:
+The record (in game globals; a server-side record only if productised, build decision R) shows, per role and per stage: item ids, verdicts, chips, the defend score and the pre-to-post change, with no free text and no learner identity in the block. The organiser also sees the discrimination figure; learners never do. This supports:
 
-- NIST AT-3 and NIST AT-2(3);
+- NIST AT-3 and AT-2(3);
 - CIS 14.9;
-- ISO 27001 cl. 7.2 and ISO 27001 A.6.3;
+- ISO 27001 cl. 7.2 and A.6.3;
 - NCSC CAF B6.b, and DSPT 3.3.1 for NHS customers;
 - PCI DSS 12.6.3.1, and PCI DSS 12.10.4 in part;
 - NIS2 IR 8.2 and IR 10.1 where the Implementing Regulation applies; DORA Art 13(6);
 - UK GDPR Art 32;
 - NYDFS 500.10(a)(2), FTC 314.4(e)(3), CMMC AT.L2-3.2.2 and SOC 2 CC1.4 for US customers.
 
-The record is awareness-level evidence for IT and service desk roles. It is not evidence of technical competence or of incident response team training (PCI DSS 12.10.4 in full); pair it with Hacktivity's technical labs for those staff (`README.md`, Compliance coverage).
+The record is awareness-level evidence for IT and service desk roles. It is not evidence of technical competence or of full incident response team training (PCI DSS 12.10.4); pair it with Hacktivity's technical labs for those staff. The product makes no effectiveness claim.
 
 ## Measuring effect
 
-Outside the course, an organisation can watch:
-
-- **Resets with a recorded strong check**: the share of password and MFA resets where the ticket shows a call back, a registered-device prompt, a manager confirmation or an ID check, rising towards all of them.
-- **Privileged and executive resets with a second analyst**, aiming for all of them.
-- **Time from a suspicious sign-in after a reset to escalation**, falling.
-- **Self-reported slips**: analysts reporting their own doubtful resets, which should rise at first (a sign of trust, not of worse work).
-- **App consents and remote tools**: unapproved remote tools found in audits, and consent requests sent for review rather than approved at the desk.
-- **Admin hygiene**: the share of administrators with separate admin accounts and phishing-resistant MFA, and standing admin rights replaced by time-limited ones.
-- **Authorised test calls**: if the organisation commissions social engineering tests of its desk (with Jo Fairweather's kind of firm), the share of test calls refused or verified.
-
-These come from the service desk tool, the identity platform and the security team's records. They are reported by team, never used to rank individual analysts, and a refusal that turns out to be a genuine caller is never counted against anyone.
+Outside the course, an organisation can watch: resets with a recorded strong check; privileged and executive resets with a second analyst; time from a suspicious sign-in after a reset to escalation; self-reported slips (which should rise at first, a sign of trust); unapproved remote tools found in audits and consent requests sent for review; the share of administrators with separate admin accounts and phishing-resistant MFA; and, if the organisation commissions social engineering tests of its desk, the share of test calls refused or verified. These come from the service desk tool, the identity platform and the security team's records, are reported by team, never used to rank individual analysts, and a refusal that turns out to be genuine is never counted against anyone. The product claims no effectiveness.

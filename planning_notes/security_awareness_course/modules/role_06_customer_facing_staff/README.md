@@ -1,21 +1,30 @@
 # role_06: Customer-facing and contact centre staff
 
 **Working game title:** Who's Calling?
-**Pitch:** A morning shift on Larkspur's customer contact team, where the callers who need help and the callers who want to take over an account sound exactly alike, and the procedure is what tells them apart.
+**Pitch:** A shift on Quayholt's customer contact team, where the callers who need help and the callers who want to take over an account sound exactly alike, and the procedure is what tells them apart.
 
 | | |
 |---|---|
 | Audience | Contact centre advisers, receptionists, account managers, and anyone who handles customers' calls, chats or emails |
+| Built foundation | None yet: role_06 is a new role. It reuses the built E3 role-swap pattern and the inbox-triage engine's `call`, `sms` and `page` cards |
+| Company | Quayholt Insurance (`quayholt.example`), host a contact-centre team leader |
+| New check pair | A customer-verification check-form pair (`awareness_{pre,post}_customer_{ab,ba}`), **new** |
 | Prerequisites | core_00; core_02 recommended (calls, texts and people at the door in general) |
-| Full module | 20 minutes |
-| Micro-drill | 4 minutes ("Verify or Deny?") |
-| Text route | 12 minutes |
+| Full episode | About 13 minutes |
+| Defend-only variant | About 8 minutes |
+| Pre and post check | 4 to 5 minutes each (the new customer pair) |
 | Priority | Phase 3 |
-| Build size | M, driven by the caller verification desk (MG-17, shared with role_03) on top of voice calls (MG-04) |
+| Build size | M. One new attack-first, role-swap episode in the built shape plus a new customer check pair; it reuses E3's role-swap mechanics |
+
+## Build status
+
+- **Built, this module reuses:** the **E3 role-swap pattern** (`episode-runner/role-swap.js`): the learner plays the attacker, then the role swaps and the learner is the agent, triaging `call` cards (and here `sms` and `page`) with the Verify verdict, the claimed facts shown by label. Plus the episode runner, OSINT browser, pretext prep and the influence bar, flip view, debrief view, concept cards and awareness measurement. role_06 has **no built episode or check** of its own yet.
+- **New (this whole module):** a customer-facing role at Quayholt Insurance (the contact centre verifies customers; role_03's service desk at the same company verifies colleagues). It needs its **own customer-verification check-form pair** (`awareness_{pre,post}_customer_{ab,ba}`) and a new attack-first, role-swap episode.
+- The awareness product is "Incident Simulations: Critical Cases", on hold since 2026-10-23 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). Nothing new here starts while it is on hold unless the user says so.
 
 ## Why this module
 
-Contact centres hold the keys to customers' accounts. An adviser can change an email address, reset a login, redirect a delivery or send a refund, so criminals ring them: talking an account open is often easier than breaking it open, and they can ring back until they reach someone who will help. What advisers can see is valuable too. A customer's name, address and account history are exactly what makes a scam call to that customer believable. Tricking someone into disclosing personal data ("blagging") is itself an offence under section 170 of the Data Protection Act 2018.
+Contact centres hold the keys to customers' accounts. An adviser can change an email address, reset a login, redirect a payout or take a premium, so criminals ring them: talking an account open is often easier than breaking it open, and they can ring back until they reach someone who will help. What advisers can see is valuable too. A customer's name, address and account history are exactly what makes a scam call to that customer believable. Tricking someone into disclosing personal data ("blagging") is itself an offence under section 170 of the Data Protection Act 2018.
 
 - **Coinbase, May 2025.** Criminals paid contractors and employees in customer support roles outside the US to copy customer data from internal systems (names, addresses, ID images, account details), then demanded money not to publish it. The company estimated costs of US$180 million to US$400 million, including reimbursing customers who had sent funds to the criminals as a result (Coinbase SEC filing, 15 May 2025).
 - **Card payments by phone.** The PCI Security Standards Council warns that card details spoken on a call are exposed to whoever hears and records them, and that staff can be "approached and threatened by organized crime" for them. Its guidance is to keep card details away from advisers and recordings altogether (*Protecting Telephone-Based Payment Card Data*, 2018).
@@ -31,11 +40,13 @@ Contact centres hold the keys to customers' accounts. An adviser can change an e
 After this module, customer-facing staff can:
 
 - **R06-LO1** Verify a caller with checks that match the request, using things the customer has (a call back on the number on the account, or an approval or reset sent only to contact details already held) rather than things anyone could look up.
-- **R06-LO2** Recognise an account takeover attempt, especially a recent change of contact details followed by a reset, a new delivery address or a refund.
+- **R06-LO2** Recognise an account takeover attempt, especially a recent change of contact details followed by a reset, a new payout destination or a refund.
 - **R06-LO3** Keep to the procedure under pressure (urgency, anger, authority), escalate to a team leader rather than give in, and report the attempt.
 - **R06-LO4** Share personal and account information only with verified, authorised people, and only what is needed, without reading details out to prompt a caller.
 - **R06-LO5** Spot a customer who is being scammed and protect them: tell them plainly, point them to their bank (159) and Report Fraud, and report it inside the organisation.
 - **R06-LO6** Take card payments by phone only through the secure payment route, and never write down, type, email or chat card details.
+
+The customer check pair measures the verification, takeover and reporting outcomes (LO1 to LO4); the scam-protection and card-payment outcomes (LO5, LO6) are taught by defend items and concept cards.
 
 ## Compliance coverage
 
@@ -53,54 +64,48 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 
 ## Module flow
 
-| Beat | What happens | Format | Minutes |
+The new attack-first, role-swap episode, in the built shape at Quayholt:
+
+| Stage | What happens | Scored? | Minutes |
 |---|---|---|---|
-| Hook | The first call of the shift: "Joan from Linnet Lane Primary" has a new mobile and wants the portal's reset code sent to it. The player's handling is the baseline | Game (MG-17, MG-04) | 1 to 2 |
-| Learn | Shauna at the player's desk: what a good check is, the ladder of checks, the takeover pattern, protecting customers, card payments | NPC explainer with visual aids (EX-01, BE-08) | 3 |
-| Practise | "Verify or Deny?": eight call cards, getting harder, with instant feedback | Minigame drill (MG-17 practice mode) | 3 |
-| Apply | The 10:00 queue: a genuine query, a chat asking for documents, a customer being scammed who then pays by card, an account takeover, an angry "council" caller, and the real Joan | Game (MG-17, MG-04, BE-18) | 7 to 8 |
-| Debrief | Call replays with the caller's tactics labelled; Kai's fraud board; what happened to Mr Bakshi | Debrief screen (BE-02), Shauna and Kai | 2 |
-| Check | Six scenario questions | Quiz (MG-20) | 2 |
-| Reference | The adviser's card: checks for each kind of request, scam signs, payment rules, the reporting route | Intranet (BE-09) | under 1 |
+| Brief and scope note | The team leader welcomes the learner to an authorised exercise at Quayholt's contact centre | no | under 1 |
+| Attack half | OSINT on a customer's public details, then compose one account-takeover pretext call or message from found facts (on the influence bar) | no | about 4 |
+| Flip | The learner's own approach shown from the adviser's side, its tells named | no | 1 |
+| Defend half (role swap) | The learner is the adviser: a queue of calls, chats and texts (genuine and impostor) with mirror pairs, Verify on, the claimed facts shown by label | yes | about 6 |
+| Debrief | Per-item cards with the tactics labelled, genuine-item feedback, the team tally, **the habit to keep**, an "On Monday" card, the reporting route, no blame | no | about 2 |
+
+The new customer pre and post checks bracket the episode.
 
 ## Reuse from existing Break Escape content
 
-- **Rooms:** the Customer Hub (the contact centre floor: `room_office4`, redressed with headset desks as `03_WORLD_AND_CAST.md` plans); Shauna's huddle corner with a whiteboard (`whiteboard1`); the security office (`room_security`) for Kai's fraud board; reception (`room_reception`, redressed as the warehouse trade counter) for the optional front desk scene.
-- **Conversations:** `phone-chat` for calls until MG-04 exists (phone NPCs with TTS voice messages and `timedMessages`); `phone-chat` with a chat skin for the web chat until MG-05; `person-chat` for Shauna, Kai and Jo.
-- **Minigames:** `notes` for the ladder of checks and the anti-fraud script; `text-file` for call notes; `examine` for the card terminal in the front desk scene; `forensic-data-platform` for Kai's fraud board if a richer view is wanted.
-- **Patterns:** sis02's managed security provider refusing an unverified change and ringing back on the number it holds (`scenarios/sis02_energy/ink/npc_tom_hadley.ink`, lines 136 to 171) is the model for the call-back; `docs/NPC_INFLUENCE.md` for the angry caller (his influence variable drives his escalating lines, not his behaviour); `scenarios/test-phone-terminal` for phone threads; m02's receptionist (`m02_npc_receptionist.ink`) for a polite refusal under pressure.
-- **Props:** headsets (`office-misc-headphones`), desk phones (`phone1` to `phone5`), the whiteboard.
+- **Episode runner** and the **role-swap module** (`episode-runner/role-swap.js`): attacker first, then the role swaps to the adviser's seat.
+- **OSINT browser** and **intel facts**; **pretext prep and the pretext judge** with the **influence bar** for the pretext approach; **flip view**.
+- **Inbox triage** with the `call`, `sms` and `page` kinds and the Verify verdict; **mirror pairs** (aw5) in the defend set and the customer checks; the claimed facts shown by label so the learner checks what they used.
+- **Debrief view** (with the per-item tactics labelled), **concept cards**, **awareness measurement** and the comparison panel.
+- **Rooms:** `room_aw_quayholt`, redressed for the contact centre.
 
 ## New features needed
 
-- **MG-17 Caller verification desk** (shared with role_03). This module's needs are listed in `game_design.md`, Minigames: the call and chat queue, a customer record with its change history, a ladder of checks for each kind of request, approvals and resets sent only to details already held, call-back through the directory, escalation to the team leader, a fraud report, and an outcome for every contact.
-- **MG-04 Voice calls:** the phone, the directory and hold that MG-17 sits on.
-- **MG-20 Knowledge check**, **BE-01 Assessed decisions** and **BE-02 Debrief screen**.
-- **BE-18 Work task and interruptions:** "Clear the 10:00 queue", with contacts arriving on a schedule.
-- **BE-16 Time skips:** Mr Bakshi a week later; the takeover if it succeeds.
-- **BE-08 Visual aids:** the ladder of checks, "know versus have", the takeover timeline, the scam signs card, the secure payment diagram.
-- **BE-09 Intranet** and **BE-05 Organisation profile:** the adviser's card with the customer's own verification rules, payment method and routes.
-- **BE-07 Micro-drill launcher:** "Verify or Deny?".
-- **BE-19:** the first call arriving on its own at the hook; Shauna's check question, opened from conversation with `#trigger_minigame:knowledge_check|<configKey>`.
-- **BE-22 Tactic spotter card:** its list of tactics labels the call replays in the debrief; the card itself can be switched on in the facilitated session, where the room ticks tactics as they hear them.
-- **proposed:** Secure payment line, a keypad overlay through which the customer's card entry reaches the adviser only as masked digits while the recording pauses itself; card-like numbers typed into notes are flagged. Also useful for role_02.
-- **proposed:** Call replay, a debrief panel (BE-02) that replays a call as a transcript timeline with the caller's tactics (from BE-22's list) and the player's checks labelled. Also useful for core_02 and role_03.
-- **MG-25 Document inspector** (optional): the "engineer's" work order in the front desk scene.
-- **EX-08 Printable poster and briefing pack:** the adviser's desk card (the ladder of checks and the five steps for a scammed customer) and a team briefing, which also gives PCI DSS 12.6.3 a second method of communication.
+- **A new customer-verification check-form pair** (`awareness_{pre,post}_customer_{ab,ba}`): a triage set of customer calls, chats and texts, each phish mirror-paired with its genuine twin (a takeover reset against a genuine locked-out customer; a "send the payout to my new account" against a genuine change confirmed by call-back; a blagging data request against a genuine named contact). 10 items, 4 phish, matched flag multisets, counterbalanced AB and BA.
+- **A new attack-first, role-swap episode** in the runner at Quayholt, as above.
+- **Concept cards:** know versus have; the ladder of checks; the takeover timeline; protecting a scammed customer (159, Report Fraud); the secure payment route and card data do and don't.
+- **BE-05 Organisation profile** (partly built): the verification rules, the secure payment method, the promise to customers and the routes in the debrief cards; the reporting-route slot (feature-level only; see `hacktivity.md`).
+- **BE-03 Text route** and **BE-04 accessibility** beyond the social overlays.
+- Not pursued (would redesign beyond the build): the MG-17 caller verification desk as a standalone queue, the proposed secure-payment-line keypad overlay and the dedicated call-replay panel. The secure payment route and the scam-victim steps are taught as defend items and concept cards; the richer desk and keypad overlay are a later idea in the `features/minigames.md` catalogue (build status "not built").
 
 ## Organisation-specific content
 
 - The verification policy: what each kind of request needs, the approved checks, call-back rules, whether read-back codes are used at all (and if so, the wording of the code message), and any waiting period after contact details change.
-- The secure payment method (keypad entry, a payment link or an automated line), and whether staff use card terminals (which turns on the front desk scene).
+- The secure payment method (keypad entry, a payment link or an automated line), and whether staff use card terminals (which turns on the front desk defend item).
 - The organisation's promise to customers, such as "We will never ask you to pay into a new bank account by phone, text or email."
 - The internal route for suspected fraud, and the team leader escalation.
 - The vulnerable customer policy and the support it offers.
 - The abusive caller policy: when an adviser may end a call.
-- Customer types (business, consumer or both), and any sector rules on vulnerable customers (for example, for firms regulated by the Financial Conduct Authority).
+- The reporting route shown in the debrief (`slot:customer_report_route`).
 
 ## Open questions
 
-1. **One-time codes.** core_02 and core_03 teach everyone never to read a code out to anyone, yet many contact centres verify callers by asking them to read one back. *Recommendation: Larkspur's default never asks a customer to read out a code. Its step-ups are a call back on the number held, or an approval or reset that the system sends only to contact details already held and the customer completes themselves. Organisations that do verify with read-back codes can switch them on; the module then adds the safeguards (only on calls the customer made, only to details already held, a message saying what the code is for and "we will never call you to ask for it", never on a call the adviser made) and explains why their procedure differs from the course-wide rule.*
-2. **MG-17 shared with role_03.** The service desk verifies colleagues; the contact centre verifies customers. *Recommendation: one desk with two record types (staff and customer) and a configurable ladder of checks; the contact centre adds the secure payment line, the chat tab and refund rules.*
-3. **How angry the angry caller gets.** *Recommendation: raised voice, threats to complain and "I'll have your job"; no slurs or threats of violence. A content note on the module card and the option to skip the audio and read the transcript.*
-4. **Business or consumer customers.** *Recommendation: both by default (schools and residents' families); an organisation setting drops the family calls for business-only contact centres and swaps in a second business caller.*
+1. **One-time codes.** core_02 and core_03 teach everyone never to read a code out to anyone, yet many contact centres verify callers by asking them to read one back. *Recommendation: Quayholt's default never asks a customer to read out a code. Its step-ups are a call back on the number held, or an approval or reset that the system sends only to contact details already held and the customer completes themselves. Organisations that do verify with read-back codes can switch them on, with the safeguards in `concepts.md`.*
+2. **Shared role-swap with role_03.** The service desk verifies colleagues; the contact centre verifies customers, both at Quayholt. *Recommendation: reuse the role-swap mechanics, with a customer record type and a configurable ladder of checks for role_06.*
+3. **Business or consumer customers.** *Recommendation: both by default (commercial customers such as schools and councils, and individual policyholders); an organisation setting drops the consumer calls for business-only contact centres.*
+4. **The scam-victim and card-payment beats.** The build has no secure-payment keypad overlay. *Recommendation: teach them as defend items and concept cards; keep the keypad overlay in the backlog.*

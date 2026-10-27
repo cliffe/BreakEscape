@@ -2,6 +2,8 @@
 
 This file is the source of truth for the module. The game, the explainers, the knowledge check and the reference card must all match it. Calls, texts and people at the door in general are taught in core_02; payment fraud aimed at the organisation is core_11; data protection law is core_05. This module covers what customer-facing staff do when the caller, the chat or the email is about a customer's account.
 
+**World note.** The old Larkspur world is retired. role_06 is a new role that reuses the built E3 role-swap pattern, so it is set at **Quayholt Insurance** (`quayholt.example`), the commercial insurer in the built brand set, where the contact centre verifies policyholders and commercial customers (including schools, councils and care homes it insures). Quayholt is the fictional default organisation for this file's examples and slots. role_06 needs its own customer-verification check-form pair (see `assessment.md`).
+
 ## Key messages
 
 1. **Check every caller the same way, especially the ones in a hurry.** Urgency, anger and authority are reasons to keep to the procedure, not to skip it.
@@ -25,7 +27,7 @@ This file is the source of truth for the module. The game, the explainers, the k
 - **Things the caller knows** are weak when they are public or leaked: a name, an address, a date of birth, an account number printed on an invoice, the head teacher's name on a school website, a mother's maiden name.
 - **Things the customer has** are stronger: a phone or email already on the account (a call back to it, or an approval or reset sent to it that the customer completes themselves), access to the customer portal (approve the request there), or a known person at the customer's organisation reached through its own number.
 - **Caller ID is not a check.** The number shown can be faked ("spoofed").
-- **Match the check to the request.** The organisation sets a ladder; Larkspur's default is:
+- **Match the check to the request.** The organisation sets a ladder; Quayholt's default is:
 
 | Request | Examples | Check |
 |---|---|---|
@@ -34,7 +36,7 @@ This file is the source of truth for the module. The game, the explainers, the k
 | Changes and money | New email or phone, new delivery address, login reset, refund, new named contact, payment details | Step up: check the change history first, then call back on the number on the account (from before any recent change), or have the system send an approval or reset to contact details already held, which the customer completes themselves. Refunds go only to the original payment method |
 
 - **Ask, don't tell.** Open questions ("What's the postcode on the account?") check the caller. Leading questions ("Is it still LS6 4QT?") hand them the answer.
-- **Don't ask customers to read out codes.** Everyone is taught never to read a code to anyone (core_02, core_03), because scammers ring people pretending to be an organisation and ask for the code they've just triggered. If advisers asked for codes too, customers couldn't tell the difference. So Larkspur's step-ups are a call back, or an approval or reset that the system sends to details already held and the customer completes themselves; nothing secret is ever read to the adviser. Some organisations do verify callers with a read-back code. Where they do, the code goes only to details already held, only on a call the customer made, in a message that says what it's for and that "we will never call you to ask for it", and advisers never ask for a code on a call they made.
+- **Don't ask customers to read out codes.** Everyone is taught never to read a code to anyone (core_02, core_03), because scammers ring people pretending to be an organisation and ask for the code they've just triggered. If advisers asked for codes too, customers couldn't tell the difference. So Quayholt's step-ups are a call back, or an approval or reset that the system sends to details already held and the customer completes themselves; nothing secret is ever read to the adviser. Some organisations do verify callers with a read-back code. Where they do, the code goes only to details already held, only on a call the customer made, in a message that says what it's for and that "we will never call you to ask for it", and advisers never ask for a code on a call they made.
 - **Genuine customers usually understand.** "To protect your account, I'll ring you back on the number we hold" is good service, not an accusation.
 
 ### Account takeover
@@ -77,7 +79,7 @@ This file is the source of truth for the module. The game, the explainers, the k
 
 - **Use the secure route.** Keypad entry with masking (the customer types the number on their phone keypad and the adviser hears only flat tones), a payment link sent to the customer, or an automated payment line. The adviser never hears or sees the full card number or the security code.
 - **If a customer starts reading the number out,** stop them politely and switch to the secure route.
-- **Never** write card numbers down, type them into notes, take them by email, chat, text or social media, or keep them "to put through later". The PCI Security Standards Council's guidance says card data must never be sent over an unencrypted messaging channel "such as chat, social media, SMS (short message service)/text, or e-mail". (Its guidance accepts paper only if it is stored securely and shredded; Larkspur's rule is simpler: never.)
+- **Never** write card numbers down, type them into notes, take them by email, chat, text or social media, or keep them "to put through later". The PCI Security Standards Council's guidance says card data must never be sent over an unencrypted messaging channel "such as chat, social media, SMS (short message service)/text, or e-mail". (Its guidance accepts paper only if it is stored securely and shredded; Quayholt's rule is simpler: never.)
 - **The security code is never kept.** Storing sensitive authentication data, which includes the three or four digit security code, after the payment is authorised "is not permitted, even if the data is encrypted", and that includes call recordings (PCI SSC, 2018; PCI DSS v4.0.1 requirement 3.3.1, with the card security code covered specifically by 3.3.1.2). The secure route keeps it out of recordings in the first place.
 - **If card details arrive by email or chat,** don't reply with them or copy them anywhere. Follow the organisation's procedure to delete them, and tell the customer how to pay safely.
 - **Approaches.** Criminals sometimes approach or threaten advisers for the card details they hear. Report any approach at once (PCI SSC, 2018).
@@ -91,7 +93,7 @@ This file is the source of truth for the module. The game, the explainers, the k
 
 - **Report every suspected attempt, including the ones that failed.** One call is a nuisance; the same call to five accounts is a campaign, and the security team can only see it if each adviser reports their piece.
 - **Include:** the time, the account, what the caller asked for, what they already knew, the number or address they used, and what you did.
-- **Report through the organisation's route** (at Larkspur, the security team on extension 4444 or the fraud form on The Lark). Nobody is in trouble for reporting, or for a call that got past them and was reported quickly.
+- **Report through the organisation's route** (at Quayholt, the security team on extension 4444 or the fraud form on the staff intranet). Nobody is in trouble for reporting, or for a call that got past them and was reported quickly.
 
 ## What to do (the procedure)
 
@@ -119,7 +121,7 @@ As the reference card shows it:
 | "Call recordings are secure, so card details on them are fine." | The security code must not be kept after authorisation, even encrypted. |
 | "A failed attempt isn't worth reporting." | Failed attempts show the pattern, and the next call may reach a colleague who says yes. |
 | "A scammed customer is the bank's problem." | You may be the first to notice. A minute of plain advice can save someone's savings. |
-| "It's fine to ask a customer to read back a code; we sent it." | It teaches customers the very habit scammers use. Larkspur's advisers ring back, or let the customer approve the request themselves. Organisations that do use read-back codes keep them to calls the customer made, and never ask for one on a call they made. |
+| "It's fine to ask a customer to read back a code; we sent it." | It teaches customers the very habit scammers use. Quayholt's advisers ring back, or let the customer approve the request themselves. Organisations that do use read-back codes keep them to calls the customer made, and never ask for one on a call they made. |
 
 ## Real cases
 
@@ -131,16 +133,16 @@ Use these as background and inspiration only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+| Slot | Default (Quayholt) |
 |---|---|
 | Ladder of checks | General information: none. Account information: account number, postcode and a named contact's name, asked not read out. Changes and money: change history checked, then a call back on the number held, or an approval or reset sent to details already held |
 | Recent change window | Treat any change of contact details in the last 30 days as a reason to use the details from before it |
-| Read-back codes | Off. If an organisation switches them on, the message reads: "Larkspur code: 482913. Give it only to a Larkspur adviser on a call YOU made to us. We will never call you to ask for it." (number generated per play, never voiced) |
+| Read-back codes | Off. If an organisation switches them on, the message reads: "Quayholt code: 482913. Give it only to a Quayholt adviser on a call YOU made to us. We will never call you to ask for it." (number generated per play, never voiced) |
 | Refunds | Only to the original payment method |
 | Secure payment route | Keypad entry with masking for calls; payment links for chats and emails |
 | Card terminals | One terminal at the warehouse trade counter (turns on the front desk scene) |
 | Promise to customers | "We will never ask you to pay into a new bank account by phone, text or email." |
-| Fraud reporting route | The security team on extension 4444, or the fraud form on The Lark |
+| Fraud reporting route | The security team on extension 4444, or the fraud form on the staff intranet |
 | Escalation | The team leader on the floor; the duty manager out of hours |
 | Abusive callers | Warn once, then end the call and log it |
 | Vulnerable customers | Note the customer's agreed support needs on the record; offer a trusted contact with their consent |

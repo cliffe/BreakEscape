@@ -2,6 +2,8 @@
 
 This file is the source of truth for the module. The game, the explainers, the knowledge check and the reference card must all match it. Data protection law is taught in core_05 and insider risk in core_14; this module covers what managers and HR staff do with them.
 
+**World note.** The old Larkspur world is retired. This module builds on the built episode E2 (CV and recruitment lures) and the hr check pair, both at **Tarrowby Logistics** (`tarrowby.example`), the regional haulier and warehousing firm in the built brand set, hiring drivers and warehouse staff all year. Tarrowby is the fictional default organisation for this file's examples and slots; its recruitment lead is Fatima Begum, its HR assistant Jun Watanabe and its IT service desk analyst Nilesh Solanki.
+
 ## Key messages
 
 1. **Access follows the job, not the person.** Give a new starter what their role needs, not a copy of someone else's access. Temporary access gets an end date.
@@ -156,7 +158,7 @@ Use these as background and inspiration only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+| Slot | Default (Tarrowby) |
 |---|---|
 | Leaver deadline | Accounts disabled at the end of the last working day; at once for sudden departures |
 | Who raises joiner, mover and leaver requests | The line manager, through the service desk portal, with HR copied |
@@ -164,7 +166,7 @@ Use these as background and inspiration only. Game content uses fictional names.
 | Access review | Every quarter for each team, signed off by the manager and the system owners |
 | Screening policy | Identity and right to work seen with original documents, in person or by live video; two references checked through contact details HR finds independently; criminal record checks only where the role needs them |
 | Contractors and agency workers | Named accounts, end dates, the same identity checks, equipment only to the verified address |
-| Statement on mistakes | "Nobody at Larkspur is disciplined for reporting a security mistake. Hiding one is different." |
+| Statement on mistakes | "Nobody at Tarrowby is disciplined for reporting a security mistake. Hiding one is different." |
 | HR information | Absence reasons and health information in the HR system, seen by HR and occupational health; managers see dates and agreed adjustments |
 | Routes | The security team on extension 4444; the HR business partner; the DPO; the whistleblowing line |
 

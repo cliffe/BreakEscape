@@ -2,234 +2,147 @@
 
 ## Concept
 
-It is 02:13 on a Wednesday in November and the player is Larkspur's on-call director this week. Ama Owusu rings: the overnight monitoring partner has found ransomware spreading across the file servers, and she wants to take the whole network offline, which will stop the depots that send cleaning teams to hospitals and care homes in the morning. Gillian Marsh, the chief executive, is on a flight back from Singapore and lands at 07:05. Whatever the player says next is the first entry in the crisis.
+This module is two built things plus one new episode, all in the "Incident Simulations: Critical Cases" frame: a training room with a kiosk and a host, no doors, no combat, no VMs.
 
-The module compresses thirty-six hours into thirty minutes on a crisis board in Larkspur's board room. The "work task" is running the crisis to the board's own objectives: keep the lifeline services going, meet every clock, decide the ransom question properly, and restore safely. The tests arrive as injects inside that work: the insurer asks an awkward question, a respected colleague wants to wait before telling the regulator, a client hears about it from the wrong person, a voice note "from Gillian" asks for a quiet payment. None of them is a trick. Each is a decision a real board has faced, with the advice in the room to make it well.
+- **Built foundation.** Episode E4 *Executive whaling* already teaches leaders the one behaviour they fall for most: an urgent instruction that borrows a leader's name and authority. The learner takes the PA's seat at Merrin & Sallow Architects, researches the partners' public diaries, composes one "about to board, pay this" email in the managing partner's name, sees it flipped into the PA's inbox with its tells named, then defends the inbox (3 emails and 2 voicemails, 3 phish, Verify on). The executive pre and post checks measure the same skill. This is built. Do not redesign it.
+- **New role extension.** A facilitated **board crisis** episode, in the same built shape, at the proposed Harbreck Facilities Group. It covers the decisions only a board can make (contain at a cost, meet the clocks, handle a ransom demand properly, restore safely), which E4 does not touch. It is built from the episode runner with the `facilitated` flag set, so a board can play together on one screen with a pause panel between each stage.
 
-The hook a board member will talk about at lunch: their own decision log comes back at the end, when the chair plays the regulator and asks, "Show me where you wrote down why."
+The hook a board member talks about afterwards is the same one E4 and E7 use: the voice note in the chief executive's voice that asks for a quiet payment, caught not by listening for glitches but by checking another way. In the board crisis that message is the learner's own attack, flipped, and then one item among the crisis-time inbox they defend.
 
-Boards prefer a workshop, so the facilitated session is the main mode: the board plays together around one screen with a facilitator, pausing to discuss (see Variants). The solo version gives each director the same decisions, a personal record and a certificate for Code action C3.
+The old Larkspur Group crisis, its MG-24 crisis decision board, its decision-log minigame and its time skips are retired: they would redesign beyond what the build has. The governance content survives as facilitated pause panels and debrief cards. The larger "crisis board" idea is kept in the `features/minigames.md` catalogue (build status "not built"), not built here.
 
 ## Setting and cast
 
-- **Rooms:** the player's kitchen at night (a conversation background only, for the 02:13 call); Larkspur's board room (`room_zds_conference`, redressed with the Larkspur logo, a canal view and the crisis board on the wall screen); Ama's incident room (`room_security`, with the "Isolate network" button); Gillian's office (`room_ceo`, empty until day two). No new rooms.
-- **Faisal Karim** (non-executive director with a cyber background): the mentor for this module. Measured, kind, slightly too fond of his flask of coffee. Explains in short chunks and translates between the security team and the board.
-- **Anne-Marie Lambert** (chair): chairs the 09:30 emergency board call and plays the regulator in the debrief. Formal, fair, writes everything down with a fountain pen.
-- **Gillian Marsh** (chief executive): on a plane, then on a video call from the airport car, then in the room on day two. Decisive and impatient with process; voices the most tempting misconception ("tell the ICO once, properly").
-- **Ama Owusu** (Information Security Manager): leads the technical response from the incident room. Calm, honest about what she doesn't know yet.
-- **Tomasz Wiśniewski** (Data Protection Officer): advises on the breach, the clock and telling the people affected.
-- **Hassan Qureshi** (Finance Manager): the insurer contact and payroll fallback; receives the fake voice note and brings it straight to the player, because of his own near miss.
-- **Owain Jenkins** (IT Service Desk Lead): restoration options on day two. **Kai Murray** (analyst): status updates on the board.
-- **Lena Fischer** (Operations Manager): by phone at 06:30, asking what to tell the depots.
-- **New: Daniel Kwan**, Head of Communications. 30s, British Korean, quick, dry, allergic to the phrase "fully under control". Drafts every message and insists staff hear things first. Needs art and a voice.
-- **New: Leah Brodsky**, the insurer's breach coach (a solicitor on the insurer's panel). 40s, Jewish British, brisk and kind. Phone voice only.
-- **New: Gavin Ashworth**, Director of Estates at Kirkmoor Hospitals NHS Trust (a fictional client). 50s, white, from West Yorkshire, worried rather than angry. Phone voice only.
-- **The attackers:** never seen or heard. Their demand appears on the ransom screen and as a message on their payment portal, shown as a screenshot Ama prints.
+- **Built: Merrin & Sallow Architects** (`merrinsallow.example`), room `room_aw_merrin_sallow`, host **Thandiwe Moyo**. The E4 cast is already set: **Catherine Merrin** (managing partner, impersonated), **Tomás Carvalho** (the PA, the learner's seat), **Yasmin Chaudhry** (finance controller, the person the PA should ring). The executive check forms carry **Larkspur Travel** as a supplier (genuine and look-alike); that name stays.
+- **New: Harbreck Facilities Group** (`harbreck.example`, **proposed for `BRAND_SET.md`**): a facilities management firm in the North of England, about 600 staff, board-governed, with public-sector lifeline services (hospital and care-home cleaning rotas, school deliveries, payroll). The board crisis episode's room is a new or redressed training room for Harbreck. Cast for this one episode (diverse by age and background, each needing the pre-ship web-search and surname-clash check before release):
+  - **Ama Owusu**, Information Security Manager and the episode host: calm, honest about what she doesn't know yet. (Remapped from the retired Larkspur mentor; she is a Harbreck staff member here, not a recurring course mentor. The build has no recurring mentor.)
+  - **Anne-Marie Lambert**, board chair: formal, fair, writes everything down.
+  - **Gillian Marsh**, chief executive: decisive, impatient with process; the leader whose name and voice are borrowed.
+  - **Hassan Qureshi**, finance manager: receives the fake voice note and brings it straight in.
+  - **Faisal Karim**, non-executive director with a cyber background: appears in the facilitated pause panels to translate between the board and the technical team.
+- The attackers are never seen or heard. Their demand is a printed screenshot; their fake instruction is the learner's own flipped attack and a crisis-time inbox item.
 
 ## Structure
 
-The critical path is marked **(CP)**. Times in brackets are crisis time; the minutes are play time.
+The board crisis episode follows the built stages. Crisis time is shown as a timestamp on each stage, not simulated with a live clock.
 
-### 1. Hook: "02:13" (2 minutes)
+### Built foundation: episode E4 and the executive checks
 
-- **(CP)** Black screen, a phone buzzing, the kitchen at night. The call (MG-04, or a `phone-chat` call until MG-04 exists) with the crisis board's first stamp behind it: "02:13 RANSOMWARE DETECTED: FILE SERVERS".
-- Ama: *"Sorry to wake you. Our monitoring partner has found ransomware spreading on the file servers. I want to take the whole network offline, now."*
-- Ama: *"That stops the depots this morning. Hospital rotas, school deliveries. Gillian's in the air until seven. It's your call."*
-- **Decision H1, contain:** *"Do it. Isolate now, and log that I authorised it."* / *"Can you isolate just the file servers?"* / *"Let's wait until Gillian lands."* / *"What does the plan say?"*
-  - The plan (a `notes` page the player can open at any time) says the Information Security Manager may isolate on her own authority and must tell the on-call director at once. Opening it is rewarded, never required.
-  - "Just the file servers": *"I can, but it's already on two other systems. I'd rather take the lot down."* The player chooses again.
-  - "Wait": *"Every hour it spreads further. By seven it could reach the backups."* If the player still says wait: *"The plan lets me isolate on my own authority. I'm doing it, and I'm logging that you asked me to wait."* Containment happens either way; the log records who decided what.
-- **Decision H2, who to wake** (a card on the crisis board, choose any): Tomasz (DPO), Daniel (communications), Hassan (insurer and money), Owain (recovery), Lena (lifeline services), Anne-Marie (chair), a message to Gillian for when she lands, an all-staff email, our IT supplier's account manager. The plan's list is the first seven. An all-staff email at 02:30 goes through a system the attackers may be reading.
-- Ama: *"Not on email. Use the crisis group on the backup phones."*
-- **First log entry** (MG-24): the board asks *"02:19: what did we decide, and why?"* The player picks a reason ("On Ama's advice, to stop the spread; we accept the loss of depot systems this morning") or types their own. Skipping it is allowed and recorded.
-- The baseline for R01-B1 to B3 is recorded: contain on advice, convene the right people, write it down.
+Already built; summarised so this module reads whole. Brief and scope note (an openly authorised exercise); attack half (OSINT on the partners' travel, then one whaling email, unscored, with the red-flag meter); flip (the email in the PA's inbox, tells named); defend half (the PA inbox, 3 emails and 2 voicemails, 3 phish, Verify on, mirror pairs, scored); debrief (per-item cards, genuine-item feedback, the team tally, the habit, an "On Monday" card, the reporting route, no blame). The executive AB and BA checks bracket it. This evidences R01-LO6.
 
-### 2. Learn: "Before the room fills up" (4 minutes)
+### New episode: the board crisis (facilitated, in the built shape)
 
-- **(CP)** 06:00 in the board room. Faisal is already there with his flask: *"Morning. Five minutes before everyone arrives. It'll save us hours."*
-- Five chunks (EX-01), each under a minute, each with a visual aid in the conversation panel (BE-08):
-  1. **Their job and ours.** Two columns: the technical team contains, investigates and rebuilds; leaders decide what to give up, what to say, what to spend and which risks to accept. *"Ama's team fixes the systems. We decide what we're prepared to lose while they do."*
-  2. **The clocks.** A timeline from 02:13: the ICO by 02:13 on Saturday where feasible, the insurer within 24 hours under our policy (sooner is better), NHS and council clients within 24 hours under their contracts, the police and the NCSC today. *"The clocks started at 02:13, not when we feel ready."*
-  3. **Write it down.** A decision log entry, annotated: time, decision, who, advice, reason, review. *"If it isn't written down, we'll argue about it in three weeks."*
-  4. **If they ask for money.** Four facts on one card: no guarantee of a working key; no way to make stolen data safe; it doesn't meet or reduce our duties to the regulator; it may be unlawful. *"And we agreed our stance at last year's exercise. It's in the board pack."*
-  5. **Say what you know.** The six-part message formula. *"People forgive 'we don't know yet'. They don't forgive 'all fine' followed by the truth."*
-- Check question (MG-20 single item, opened from the conversation with `#trigger_minigame:knowledge_check|r01_clock_check`): *"When did the ICO's seventy-two hours start?"* At 02:13, when we became aware (correct) / when forensics confirms what was taken / when the board meets at 09:30.
-- **Skip:** *"I've been through a real one."* Faisal: *"Then you know the first day disappears. One question, humour me."* A wrong answer brings back the chunk it tests.
-- **Optional topics** in Faisal's hub: *"What does the Code actually ask of us?"* (the five principles on one slide, 45 seconds), *"What does our insurance cover?"* (the NCSC's seven questions), *"What's the government doing about ransom payments?"* (the proposals and their status, 30 seconds), *"Who's behind attacks like this?"* (criminals after money, and the rarer well-resourced groups who want quiet, lasting access; 40 seconds, covering NIST AT-2(5) at awareness level: *"Most want a quick payday. A few want to sit quietly for months. The same basics stop both."*).
+**Brief and scope note.** Ama welcomes the board to an openly authorised exercise at Harbreck. Overnight, ransomware is spreading on the file servers; the chief executive is travelling; the depots send cleaning teams to hospital and care-home sites in the morning. The learner (or the board, in a facilitated session) is a board member on call.
 
-### 3. Practise: "Whose call? Which clock?" (3 minutes)
+**Attack half (unscored, red-flag meter).** OSINT on Harbreck's public pages and the chief executive's public diary and travel, granting the same kind of typed facts E4 uses. Then compose one message in the chief executive's name, from templates whose blanks take only found facts: *"The board has agreed to settle quietly. The adviser needs the first payment tonight. Keep it off email."* This is the whaling pretext placed inside a crisis, where everyone expects unusual instructions. Nothing real is sent; it reaches the fictional finance manager.
 
-- **(CP)** MG-24 practice mode on the wall screen. Ten cards, dealt one at a time, dropped into **Leaders decide**, **Technical team does** or **Not ours to decide**:
-  - Leaders: whether to isolate when it stops services; the ransom stance; what to tell clients and when; which service to restore first; paying staff from last month's figures.
-  - Technical: which forensic tools to use; resetting every administrator password; scanning backups for the attackers' tools.
-  - Not ours: whether the ICO investigates; whether the press runs the story.
-  - Feedback from Faisal in one line each, for example on the press card: *"We can't stop the story. We can make sure ours is the first true one."*
-- Then four clocks to match: the ICO (72 hours, where feasible), Kirkmoor's contract (24 hours), the insurer (24 hours under Larkspur's policy), the police and the NCSC (today, as soon as you can).
-- Two mistakes in a row bring Faisal back with the relevant card from Learn.
+**Flip.** The learner's own message lands in Hassan's inbox with its tells named by their canonical sentences: borrowed authority, urgency, secrecy, a request to skip the process.
 
-### 4. Apply: "Thirty-six hours" (14 minutes)
+**Defend half (scored, Verify on, mirror pairs).** A crisis-time inbox of messages that arrive during the incident, to triage with Trust, Report, Delete or Verify:
+- the fake "chief executive" voice note (`voicemail` kind), the message the learner just built, paired against a genuine crisis-group voicemail from the chair;
+- a push "approve this sign-in" during the outage (`push` kind), paired against a genuine MFA prompt the learner started;
+- a fake "insurer: confirm your bank details to release funds" email with a look-alike link, paired against the genuine breach coach's email that asks the learner to call a number already held;
+- a fake "IT: reset your password here while systems are down" page, paired against the genuine status page.
+Mirror pairs (aw5) mean each phish has a close genuine twin, so the learner practises the difference, not a surface cue. Reporting is never penalised.
 
-- **(CP)** The crisis board (MG-24) fills the wall screen. A task bar (BE-18) shows the board's four objectives in order: **Keep lifeline services going. Meet the clocks. Decide and record. Restore safely.** Status rows: Lifeline services, Email (untrusted), Personal data, ICO clock (a countdown in crisis time), Leak deadline (from inject 4), Press. Time moves by injects, never in real time: the player presses "Go to 06:30" and the board's clock, stamps and countdowns jump forward (MG-24's `crisis_time_moved`, on the engine's pause and time scale feature BE-23). Each inject ends with a decision card, the advisers' views and a reason prompt for the log. The optional timer stays off; a facilitator can run one in a live session.
+**Debrief cards.** Per-item reasoning cards; detailed feedback on the genuine items; the team-protected tally; **the habit to keep**, quoted word for word:
 
-**Inject 1 (06:30): the depots.** Lena on the phone: *"The rota system's dark. Kirkmoor's wards need cleaning teams by half seven. What do I tell the depots?"*
-- *"Use the printed rotas in the depot folders and ring the site managers."* / *"Hold the teams until Owain has the system back."* / *"Ask team leaders to share rotas from their personal email."*
-- Lifeline services goes to PAPER FALLBACK, stays DISRUPTED, or goes to PAPER FALLBACK with a new risk on the board ("Staff and resident names in personal mailboxes").
+> When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do.
 
-**Inject 2 (08:15): the insurer's question.** Leah Brodsky, the breach coach: *"Please don't contact the attackers or pay anything without us. One question for the claim. Was MFA on all remote access, as the policy requires?"* Ama, quietly: *"All staff, yes. One supplier's remote support server, no. It's on the risk register, accepted until the replacement in March."*
-- The policy conditions open in `warranty-checklist` (four rows: MFA on all remote access; offline backups tested quarterly; critical patches within 14 days; plan exercised in the last 12 months). The player marks each compliant, arguable or breached, then tells Leah.
-- *"Tell her the truth and send her the risk register entry."* / *"Say we'll check and come back next week."* / *"Say yes, it's all covered."*
-- Leah to the truth: *"Thank you. Honest answers keep your options open. I'll talk to the insurer today."* No promise of cover is made.
+An "On Monday" card for leaders: *"Decide on advice. Write down why. Tell people what you know."* Then the reporting-route box and the no-blame line.
 
-**Inject 3 (09:30): the emergency board call.** Anne-Marie chairs; Gillian joins by video from the airport car (`person-chat` video-call mode). Tomasz: *"The HR share was copied. Staff records, and care home residents' names in the rota files. That's a personal data breach."* Gillian: *"Can we hold the ICO until Friday? I'd rather tell them once, properly, than look like we don't know what we're doing."*
-- *"Tomasz, what does the ICO expect?"* (he answers, and the evidence unlocks the argument) / *"Let's notify today with what we know and update them later."* / *"Fair point. Wait for the forensic report."* / *"We don't know it's personal data yet. No notification."*
-- As in sis01's Helen scene, Gillian holds her view until the player brings evidence: Tomasz's advice, or Faisal's clock card from Learn. Tomasz: *"Seventy-two hours where feasible. They'd rather have a first report now and the detail later."* Gillian: *"Fine. Early and honest. Send it."*
-- The ICO clock row shows NOTIFIED with the time, or keeps counting down. Waiting until Friday notifies just inside 72 hours in the log and returns in the debrief; "no notification" misses it.
+**Facilitated flag (`facilitated: true`, BE-15).** When set, a pause panel appears between stages so the board discusses the decisions E4 and the triage do not score. These are prompts and concept cards, not scored minigames:
+1. After the brief: *"Who here can switch our network off at 2am without asking anyone? Should they be able to?"* Concept card: contain at a cost, on the technical lead's advice, and own the business impact.
+2. After the attack half: *"What could someone find about our chief executive in ten minutes, and how would a crisis make a fake instruction land?"*
+3. After the flip: *"How would our finance team check an instruction from one of us?"* Concept card: the ICO's 72-hour clock, the insurer line, client contract clocks, the police and the NCSC, all running from awareness.
+4. After the defend half: *"What is our ransom stance, and who must be in the room before any exception?"* Concept card: no guaranteed key, no safe deletion, no reduction of duties, possible unlawfulness, and the value of a stance agreed in advance.
+5. Before the debrief: *"Restore clean, not just fast. What are our lifeline services, and how long could each run on paper?"*
 
-**Inject 4 (11:00): the demand.** Ama brings a printout of the attackers' portal: *"412 GB of your files. Proof attached. Pay by 14:00 tomorrow or we publish."* The samples are HR spreadsheets. The ransom screen (`ransomware-display`) is shown on Ama's laptop, seen and not played. A countdown appears on the board. Daniel: *"If this leaks, it's on social media within the hour."*
-- The board's resolution in `coverage-decision-form` (three sections): **Engage?** No direct contact / only through the insurer's specialist, to learn what they hold / directly, to negotiate. **Payment?** No, under our stance / kept open as a last resort, subject to checks / pay now to stop publication. **Before any exception** (choose all that apply): legal and sanctions advice; insurer told; NCSC and police told; full board agreement; reasons minuted.
-- Last year's board minute is in the board pack on the table (`notes`). Faisal answers questions but doesn't decide.
-- Assessment follows the process, not the verdict (see `assessment.md`). Consequences shown later: in every branch the leak deadline still arrives; in the "pay now" branch the attackers send a decryptor that is slow and partial, and three weeks later part of the data appears on another forum anyway.
-
-**Inject 5 (13:00): the client.** Gavin Ashworth from Kirkmoor Hospitals: *"I heard from our ward manager, not from you. Are your people safe on our sites? Our contract says twenty-four hours."* Daniel offers three drafts on the board:
-- A: *"We're dealing with a cyber attack. Here's what we know, what we don't yet, what we've done, what to watch for, and we'll update you at five."*
-- B: *"A minor IT issue, fully under control. No impact on your services."*
-- C: *"We can't comment until the investigation is finished."*
-- A second card: who hears first, staff or clients? *"Staff, or both at once"* is the answer Daniel argues for: *"They'll be asked at every site this afternoon."*
-- Gavin's reply depends on the draft. To A: *"Right. That's what I needed. Five o'clock, then."*
-
-**Inject 6 (18:40): the voice note.** Hassan comes in with his personal phone: *"This came to my phone. It's Gillian's voice. I'm not touching anything till you've heard it."* The voice note (`phone-chat` voice message): *"Hassan, it's Gillian. The board's agreed to settle quietly. The adviser needs the first payment tonight. Details to follow. Keep it off email."*
-- *"Call Gillian on her number in the crisis group."* / *"Reply to the note and ask her to confirm."* / *"If the board's agreed, pay it."*
-- Calling: Gillian: *"I've sent nothing. I'm in the car with Anne-Marie. Report it."* Replying: the reply comes back at once, *"Yes it's me, hurry"*, and Hassan says: *"That's not how she writes. I'm ringing her."* Paying is refused by Hassan, who tells his near-miss story in two lines. Nobody pays on a voice note; the record shows what the player chose.
-- Kai logs it and reports it. Ama: *"They're watching the news too. A crisis is perfect cover."*
-
-**Inject 7 (day two, 09:00): restoration.** Owain at the `backup-recovery` console, three cards:
-- **Clean rebuild, lifeline first:** the rota and ordering systems from Sunday night's offline backup onto rebuilt servers, about 14 hours; Monday's and Tuesday's changes re-keyed from paper.
-- **Fast restore:** everything from last night's online snapshots, about 4 hours. The snapshots were taken while the attackers were inside.
-- **Finance first:** payroll and finance first because Friday is payday; rotas in three days.
-- Hassan: *"If payroll's not back, we pay everyone last month's amount by bank file and correct it next month."*
-- Consequences: the fast restore is reinfected on day three (a short BE-16 scene: the rota system locks again); finance first leaves hospital sites on paper for three more days; the clean rebuild has rotas back by the evening.
-
-**Inject 8 (day two, 14:00): the deadline.** The countdown reaches zero and a sample is posted (shown as a blurred screenshot). Tomasz: *"Now it's high risk for the people in those files. We tell them ourselves, today, with what to watch for."* Ama: *"My team's been up thirty-one hours."*
-- People affected: *"Tell them directly today, with advice and a helpline."* / *"Wait for the ICO to tell us to."* / *"Say nothing. Nobody reads those sites."*
-- The team: *"Send half home now, shifts from tonight, and thank them in the all-staff message."* / *"Push on until it's fixed."*
-
-**Three weeks later (BE-16).** The board meets in the same room, with the pastries back. On screen: the ICO's letter (asking for the timeline and the decision log; if the notification was late, asking why); the insurer's position (proceeding, or disputed if the conditions were misstated); Gavin's email (trust kept, or a contract review); staff messages; the cost so far. Anne-Marie: *"Before we close, what will we do differently?"* The player picks one of five commitments, which becomes their reflection (see `assessment.md`).
-
-### 5. Debrief (4 minutes)
-
-- **(CP)** The debrief screen (BE-02), then Anne-Marie and Faisal at the board table.
-- **"Show me where you wrote down why."** Anne-Marie plays the regulator and asks three questions. For each, the player answers by choosing an entry from their own decision log: *"When did you become aware?"*, *"When did you tell us, and why then?"*, *"Who decided about payment, and on what advice?"* A missing entry gets: *"There's nothing here. What would you tell the regulator?"*
-- Faisal maps the decisions to the Code's five principles on a grid (A risk: the accepted supplier exception; B strategy: legacy systems and rebuild; C people: the voice note, staff first, wellbeing; D incident: containment, clocks, restoration; E assurance: what the board will ask for every quarter now).
-- Per-outcome results: Secure, Developing or Not yet.
-- **The line to remember:** *"Decide on advice. Write down why. Tell people what you know."*
-
-### 6. Check (2 minutes)
-
-- **(CP)** Six questions on The Lark (MG-20), drawn from the bank in `assessment.md`, at least one per learning outcome.
-
-### 7. Reference
-
-- **(CP)** The Lark opens the board's crisis card (BE-09): the ten questions, the first hour, the first day, the ransom card, and the organisation's own contacts and clocks (BE-05). Links to the NCSC's Cyber Governance Training and Board Toolkit.
+The facilitated debrief hides any per-learner score on the shared screen and adds a grid mapping the discussion to the Code's five principles (A risk, B strategy, C people, D incident, E assurance).
 
 ## Decisions and consequences
 
-| Decision | Options | Learning outcome | How the consequence is shown |
-|---|---|---|---|
-| H1 Contain (02:13) | Isolate now on advice / file servers only / wait for the CEO / read the plan | LO3 (baseline) | Board stamp "NETWORK ISOLATED (AUTHORISED)" or "(ON ISM AUTHORITY)"; later status of the backups |
-| H2 Who to wake | Any of nine | LO3, LO6 | Who is in the room at 06:00; a gap is felt later (no Tomasz means no breach advice until 09:30) |
-| H3 First log entry | Reason chosen or typed / skipped | LO3 (baseline) | The entry reappears in the regulator's questions |
-| D1 Depots (06:30) | Paper rotas / wait / personal email | LO3 | Lifeline status; Gavin's tone at 13:00; a new data risk on the board |
-| D2 Insurer's question (08:15) | Truth with the risk entry / delay / "all covered" | LO2, LO5 | Insurer's position three weeks later |
-| D3 ICO (09:30) | Notify today, in phases / wait for Friday / don't notify | LO4 | ICO clock row; the ICO's letter in the time skip |
-| D4 Ransom resolution (11:00) | Engagement, payment and checks, in three sections | LO5 | The leak deadline, the decryptor in the pay branch, the second leak three weeks later |
-| D5 Client and staff message (13:00) | Draft A, B or C; staff first or clients first | LO6 | Gavin's reply; staff questions on the pressure strip |
-| D6 Voice note (18:40) | Call back on a known number / reply to the note / pay | LO6 | Gillian's answer; Kai's report; Hassan's story |
-| D7 Restoration (day two) | Clean lifeline-first rebuild / fast restore / finance first | LO3 | Reinfection scene, or days more on paper, or rotas back that evening |
-| D8 Deadline (day two) | Tell people directly / wait for the ICO / say nothing; shifts or push on | LO4, LO6 | Messages from affected staff; the team's state in the three-weeks-later scene |
+In the defend half, every scored item pairs a threat with a doable action and never shames the player:
 
-No option shames the player. The worst branch (waiting, saying nothing, paying on a voice note) is stopped or softened by a colleague following the plan, which is itself the lesson: a good plan protects people on their worst night. The debrief frames each choice as "this is how boards get caught out; this is what the plan, the log and the clocks are for".
+| Item (mirror pair) | Phish option caught by | Learning outcome |
+|---|---|---|
+| Fake chief executive voice note vs genuine chair voicemail | Calling the chief executive on a number already held | LO6 |
+| Fake sign-in push vs a push the learner started | Denying and reporting a push you did not start | LO6 |
+| Fake "insurer, confirm bank details" vs the genuine breach coach asking you to call | Verifying through a number already held, not the email's link | LO5, LO6 |
+| Fake "IT reset" page vs the genuine status page | Reading the address, not the look | LO6 |
+
+The facilitated pause panels carry the board decisions (contain, clocks, ransom process, restoration) as discussion, evidenced in the group record rather than scored per learner. The debrief frames each as "this is how boards get caught out; this is what the plan, the checks and the clocks are for".
 
 ## Minigames
 
-| Minigame | Status | Use here |
-|---|---|---|
-| **MG-24 Crisis decision board** | new (extends `command-board`) | The spine of the module. Config (the `commandBoard` block with MG-24's `injects[]`, `principles[]`, `facilitated` and `assess`): title "LARKSPUR GROUP: CRISIS BOARD"; pre-seed "02:13 RANSOMWARE DETECTED: FILE SERVERS"; one inject per Apply decision, each with its advisers (`faisal_karim`, `ama_owusu`, `tomasz_wisniewski`, `hassan_qureshi`, `daniel_kwan`) and options tagged with a Code principle; timeline entries keyed to globals (`isolation_authorised`, `crisis_team_convened`, `insurer_notified`, `ico_notified`, `ransom_resolution`, `client_briefed`, `voice_note_verified`, `restore_choice`, `individuals_notified`); status rows for lifeline services, email, personal data and press; crisis-time countdowns for the ICO clock and the leak deadline; a reason prompt on each decision that writes the log; the practice mode. Events: `crisis_inject_shown`, `crisis_adviser_asked`, `crisis_decision`, `crisis_time_moved`, `crisis_completed` |
-| `command-board` | existing | Already does the scenario title, pre-seeded entries, entries that stamp themselves when globals change, status rows and typed entries. MG-24 adds the injects, cards, advisers and countdowns |
-| `esd-pushbutton` | existing | "ISOLATE NETWORK" in Ama's incident room: `authVar` set by H1, confirm modal, `completionActions` set `network_isolated` |
-| `warranty-checklist` | existing (fixes in `features/minigames.md`, section 4) | The insurer's four conditions with compliant, arguable or breached verdicts (D2), opened from Leah's call with `#trigger_minigame:warranty_checklist|r01_policy_conditions` |
-| `coverage-decision-form` | existing (fixes as above) | The board's ransom resolution (D4); `completionActions` write `ransom_engage`, `ransom_payment`, `ransom_checks_complete` |
-| `backup-recovery` | existing (fixes as above) | The three restoration cards (D7), with `whenAvailable` text once Owain confirms the offline backup is clean; its fixed global names need to become data |
-| `ransomware-display` | existing (fixes as above) | The ransom screen on Ama's laptop, seen not played; its art checked for the calm tone |
-| `phone-chat` | existing | The crisis group, the attackers' portal message as a screenshot, Hassan's voice note (TTS voice message) |
-| `person-chat` | existing | Board scenes; video-call mode for Gillian at 09:30 (the "SECURE VIDEO LINK" bar must read "Larkspur Meet") |
-| `notes` | existing | The incident plan, last year's board minute, the risk register entry, Daniel's drafts |
-| MG-04 Voice calls | new (P2) | The 02:13 call, Leah, Gavin. `phone-chat` calls until it exists |
-| MG-20 Knowledge check | new | Faisal's check question and the final check |
+| System (built) | Use here |
+|---|---|
+| Episode runner (`minigames/episode-runner/`) | The spine of both the built E4 episode and the new board crisis; `variant: "full"` or `"defendOnly"`, `facilitated: true` for the board session |
+| OSINT browser (`minigames/osint-browser/`) and intel facts (`systems/social-intel.js`) | The research stage: the chief executive's public diary and travel |
+| Mail client in template mode (`minigames/mail-client/`) with the red-flag meter and `systems/phish-rules.js` | Compose the one whaling message from blanks filled by found facts |
+| Flip view (`episode-runner/flip-view.js`) | The learner's own message seen from Hassan's inbox, tells named |
+| Inbox triage (`minigames/inbox-triage/`) with `voicemail`, `push` and `page` kinds and the Verify verdict | The crisis-time defend set, with mirror pairs |
+| Debrief view (`episode-runner/debrief-view.js`) | Per-item cards, the habit, the On Monday card, the reporting route, the no-blame line |
+| Concept cards (`osint-browser/concept-card.js`) and the voice panel | "Voices can be faked"; the governance cards in the pause panels |
+| Awareness measurement (`systems/awareness-measure.js`) and the comparison panel | The executive pre and post checks |
+
+No new minigame is built. The MG-24 crisis decision board, a scored decision log and BE-16 time skips are not pursued; they are a larger later idea in the `features/minigames.md` catalogue (build status "not built").
 
 ## Explainers
 
-| Explainer | Who | Length | Aids (BE-08) | Followed by |
-|---|---|---|---|---|
-| Their job and ours | Faisal (EX-01) | 40 seconds | Two-column card | none |
-| The clocks | Faisal | 45 seconds | Timeline from 02:13 with four clocks | "When did the ICO's seventy-two hours start?" |
-| Write it down | Faisal | 30 seconds | An annotated decision log entry | none (assessed in Apply) |
-| If they ask for money | Faisal | 45 seconds | The four facts card; last year's board minute | none (assessed in Apply and the check) |
-| Say what you know | Faisal | 30 seconds | The six-part message formula | none |
-| Optional: what the Code asks | Faisal | 45 seconds | The five principles, one line each | none |
-| Optional: the government's proposals | Faisal | 30 seconds | Three proposals and their status, dated | none |
-| Optional: who's behind it | Faisal | 40 seconds | Two cards: criminals after money; well-resourced groups after lasting access | none (NIST AT-2(5) at awareness level) |
-| The regulator's questions | Anne-Marie (debrief) | 90 seconds | The player's own decision log | Three questions answered from the log |
-| Optional video: "The first hour" | Recorded in engine (EX-02) | 90 seconds | Plays on the board room screen (MG-21) | Linked from the reference card |
+The build's explainers are concept cards, the voice panel, the immediate per-item feedback and the debrief, not a mentor or video (R9). For this module:
+
+| Concept card | Shown where | Covers |
+|---|---|---|
+| Voices can be faked | The voice panel in the defend half | LO6; check another way |
+| Whose call is it? | Pause panel 1 | LO1; leaders decide, the technical team does |
+| The clocks | Pause panel 3 | LO4; from awareness, not from certainty |
+| If they ask for money | Pause panel 4 | LO5; the four facts |
+| Restore clean, not fast | Pause panel 5 | LO3 |
+| Optional: who's behind it | Available in the OSINT browser | NIST AT-2(5) at awareness level: most want a quick payday, a few want quiet lasting access, the same basics stop both |
+
+No video. If a customer insists on a talking-head, the file marks it optional only and it is not built.
 
 ## Debrief
 
-Shown on BE-02, then spoken by Anne-Marie and Faisal:
+Shown on the built debrief view, with the facilitated additions when the flag is set:
 
-1. The crisis timeline with every decision, its time and the reason the player logged (or a gap where none was logged).
-2. The hook against Apply: the 02:13 decisions beside the 09:30 notification and the later log entries, as "deciding on advice, under uncertainty, and writing down why".
-3. The regulator's three questions, answered from the log.
-4. The Code grid: each decision mapped to principles A to E.
-5. Per-outcome results.
-6. The line to remember: *"Decide on advice. Write down why. Tell people what you know."*
+1. A per-item reasoning card for each defend item.
+2. Detailed feedback on the genuine items.
+3. The team-protected tally.
+4. **The habit to keep** (quoted above), the shared rule of thumb in every debrief.
+5. The "On Monday" card: *"Decide on advice. Write down why. Tell people what you know."*
+6. The reporting-route box (`slot:customer_report_route`) and the no-blame line.
+7. Facilitated only: the Code grid (A to E) and the group's action list.
 
 ## Variants
 
-- **Micro-drill:** none in the catalogue, because board time is scarce. An optional "quarterly five" (BE-07, 3 minutes) can go in a board pack: five check items drawn from the bank, rotated each quarter, with the organisation's own ten questions.
-- **Text route:** each inject as a short scene in text with the same options; the crisis board as an accessible table that updates after each decision; the decision log as a form; the ransom resolution and restoration choices as lists with the same trade-offs. The same record as the game (BE-03). About 15 minutes.
-- **Facilitated session (the main mode, 60 to 90 minutes):** the board plays as Larkspur's board on one screen, with a facilitator at the HA-13 console who can pause, skip or swap injects and enter the group's choices (BE-15). Roles can be handed out (on-call director, chair, DPO, communications, finance), or the group decides together. Seven pause points:
-  1. After the 02:13 call: *"Who here can switch our network off at 2am without asking anyone? Should they be able to?"*
-  2. After the first log entry: *"Where would our decision log live if email and the shared drive were down?"*
-  3. After the insurer's question: *"Who here has read our policy's conditions? Do we meet them today?"*
-  4. After the ICO debate: *"What would make us wait, and what would waiting cost?"*
-  5. After the demand: *"What is our ransom stance? If we don't have one, what would it be, and who must be in the room?"*
-  6. After the voice note: *"How would our finance team check an instruction from one of us?"*
-  7. After restoration: *"What are our lifeline services, and how long could each run on paper?"*
-  The session ends with each director writing one commitment, which the facilitator collects as the exercise's action list (Code D2 and D4). A **reverse seniority** rule in the facilitator notes asks the most junior person to answer first at each pause. Printable inject cards give a paper fallback if the screen fails. **Own-plan version:** the organisation's incident plan headings, crisis roles, contacts, ransom stance, insurer and clocks load from the organisation profile (BE-05, HA-11) in place of Larkspur's, the injects keep their shape, and the facilitator's console saves the action list and a short exercise report. Run that way, the session is the board's annual exercise of its own plan (Cyber Governance Code D2); run with Larkspur's plan, it is training only.
-- **Replay and randomisation:** the entry route (a supplier's remote access without MFA; a service desk reset after a phone call, linking to role_03; a phishing link, linking to core_01); whether the chief executive can be reached; which data was taken (HR files, residents' details, school contacts); which client calls (a hospital trust, a council, a schools trust); and how the fake instruction arrives (voice note, video call or email). The annual edition updates the law cards (UK ransomware measures, the Cyber Security and Resilience Bill) and swaps in the year's lessons from published reviews.
+- **Defend-only variant:** the board crisis as brief, defend, debrief (about 8 minutes), same defend set, for boards that object to the "write a phish" beat. The no-blame line moves into the debrief's `defendOnly` string.
+- **Facilitated session (the group mode):** the `facilitated` flag on the full episode, played on one screen with the pause panels above. A reverse-seniority rule in the facilitator notes asks the most junior person to answer first at each pause. The own-plan version loads the organisation's incident plan headings, crisis roles, contacts, ransom stance, insurer and clocks into the debrief cards (BE-05), so the session is the board's annual exercise of its own plan (Cyber Governance Code D2); run with Harbreck's plan it is training only. Facilitator notes and lab sheets are written last, after the product ships (build decision R).
+- **Text route:** each stage as text with the same options, the same records; a gap in the build (BE-03).
+- **Spaced practice:** the defend-only shell as a quarterly five-minute drill; the executive checks repeated each year.
+- **Replay:** the entry route and which data was taken can vary; the annual edition updates the law cards.
 
 ## Alternative concepts
 
-1. **The Board Pack.** A quarterly board meeting rather than a crisis. The player reads Ama's cyber report and the papers around it, and must find the five risks buried there (the accepted supplier exception, a restore that has never been tested, a ransom stance nobody wrote down, a lapsed exercise, a "green" measure that measures nothing) on a detective board with string. A time skip then shows the attack, and which questions would have changed it. Strong on Code principles A and E; less adrenaline.
-2. **Ransom Room.** One scene, twenty minutes, one decision: the board in a room with five advisers (legal, insurer, NCSC liaison, communications, a negotiator), each holding one piece of the picture that only appears if the board asks the right question. The board votes, and three different futures play out with BE-16. Good for a board away-day, narrower in scope.
-3. **Red Team Briefing.** Jo Fairweather presents the findings of an authorised test to the board (EX-06): the three routes she would use to reach the systems that matter. The board has a fixed budget and must decide which to fix this year, with the attack then replayed against their choices. Teaches risk appetite and strategy (Code A and B) through budget trade-offs; light on incident decisions.
+1. **The Board Pack.** A quarterly board meeting rather than a crisis, built as a consequence-flip episode (R3): the board reads the cyber report, misses five buried risks in a safe sandbox, and the flip shows where each led. Strong on Code principles A and E; no live attacker needed.
+2. **Ransom Room.** A defend-only board away-day: one crisis-time inbox, a facilitated discussion of the ransom demand, three futures shown as debrief cards. Narrower, fits a short slot.
+3. **Red Team Briefing.** An authorised-test findings briefing as concept cards: the three routes an attacker would use, and a fixed budget to decide what to fix this year. Teaches risk appetite through trade-offs; light on incident decisions.
 
 ## Art and audio
 
-- **Rooms:** `room_zds_conference` redressed (Larkspur logo, canal view, wall screen for the board, water jugs, a pastry plate that empties as the hours pass and refills three weeks later); `room_security` with the isolation button; a new night-time kitchen conversation background for the hook (`room-pov-background` skill or a simple illustrated background).
-- **Characters:** Faisal, Anne-Marie, Gillian, Ama, Tomasz, Hassan, Owain and Kai use their course art. New: Daniel Kwan (art and voice). Leah Brodsky and Gavin Ashworth are voice only. Lena appears by phone only.
-- **UI:** MG-24's cards and countdowns in the board's style; the "Larkspur Meet" bar for video calls.
-- **Voice:** about 35 lines for Faisal, 20 for Anne-Marie, 20 for Ama, 12 for Gillian, 10 each for Tomasz, Hassan and Daniel, 6 each for Leah, Gavin and Owain, 4 each for Lena and Kai. The fake voice note uses Gillian's voice with a flatter style; the debrief stresses that detection wasn't the defence, checking was. No voiced line prints a variable: times, counts, money and the player's title are on-screen text only.
-- **Music:** low, steady and unhurried (BE-21), no countdown sirens.
+- **Rooms:** the built `room_aw_merrin_sallow` for E4; a new or redressed Harbreck training room for the board crisis (room review and POV backgrounds are later cycles in the build).
+- **Characters:** E4's Thandiwe Moyo, Catherine Merrin, Tomás Carvalho and Yasmin Chaudhry use their awareness art. Harbreck's Ama Owusu, Anne-Marie Lambert, Gillian Marsh, Hassan Qureshi and Faisal Karim need art and voices; host art is held on PixelLab quota and the user's approval (`HANDOVER.md`).
+- **Voice:** text-to-speech only (no runtime language model). The fake voice note uses Gillian's voice with a flatter style; the debrief stresses that detection wasn't the defence, checking was. No voiced line prints a variable: times, counts, money and titles are on-screen text only, so the voice cache stays keyed on exact text.
+- **Music:** low and unhurried, no countdown sirens.
 
 ## Pitfalls
 
-- **Don't lecture senior people.** Every explanation is under a minute, and directors who know it can skip to the question.
-- **Don't moralise about paying.** Assess the process. Paying is lawful in most cases; the module shows its limits, not a sermon.
-- **Don't drift into technical detail.** No malware names, attack steps or tools. The board sees what a board sees.
-- **Don't overload the law.** Three clocks matter most (the ICO, contracts, the insurer); the rest are on the card.
-- **No fear without action.** Every alarming inject comes with advice in the room and a doable choice.
+- **Don't lecture senior people.** Concept cards are short and skippable; the scored work is the triage.
+- **Don't moralise about paying.** Discuss the process in the pause panel; the module shows paying's limits, not a sermon.
+- **Don't drift into technical detail.** No malware names, attack steps or tools.
+- **No fear without action.** Every alarming item is paired with a doable choice, and reporting is never penalised.
 - **Don't teach deepfake detection.** The voice note is caught by calling back, not by listening for glitches (core_15).
+- **Don't let the most senior voice decide everything in a group.** Use the reverse-seniority rule.
 - **Keep it current.** The ransomware proposals and the Cyber Security and Resilience Bill may change; the cards that mention them carry a "checked on" date.
-- **Fictional names only in the game.** The insurer is Fellside (not sis03's Meridian), the client is Kirkmoor Hospitals; real organisations appear only in `concepts.md` and the facilitator notes.
-- **Don't let the most senior voice decide everything in a group.** The facilitator notes use the reverse seniority rule.
-- **Don't make it about blame.** The supplier exception was accepted by people doing their best; the lesson is to see accepted risks together.
+- **Fictional names only in the game.** Harbreck, Merrin & Sallow and their casts are invented; real organisations appear only in `concepts.md` and the facilitator notes.

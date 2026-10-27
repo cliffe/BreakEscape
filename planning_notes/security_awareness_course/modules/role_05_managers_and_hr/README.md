@@ -1,17 +1,26 @@
 # role_05: People managers and HR
 
 **Working game title:** Joiners, Movers, Leavers
-**Pitch:** A week as a team leader: a new starter, a move to Finance, a retirement, a remote hire that doesn't add up and a frightened colleague at 17:50, where every small decision about access, and every reaction to a mistake, decides how safe the team is.
+**Pitch:** Managers and HR defend recruitment against malicious CVs and fake remote candidates, then learn to give the least access, close it on the last day, and say "thank you" when someone reports a mistake.
 
 | | |
 |---|---|
 | Audience | Line managers, team leaders and HR staff |
+| Built foundation | Episode E2 (CV and recruitment lures) and the hr check pair, at Tarrowby Logistics |
+| Company | Tarrowby Logistics (`tarrowby.example`); E2 host Fatima Begum |
 | Prerequisites | core_00; core_01 and core_04 recommended (the phishing and reporting basics a manager gets asked about) |
-| Full module | 25 minutes |
-| Micro-drill | none |
-| Text route | 15 minutes |
+| Full episode | About 13 minutes (E2) |
+| Defend-only variant | About 8 minutes |
+| Pre and post check | 4 to 5 minutes each (the hr pair) |
 | Priority | Phase 3 |
-| Build size | M, driven by the access review (MG-18, built from the existing `warranty-checklist`) and the candidate file (MG-25) |
+| Build size | M. The recruitment-lure half is built (E2, the hr checks); the role extension (recruitment fraud, joiners-movers-leavers access, no-blame culture) is one new attack-first episode, one consequence-flip episode and concept cards |
+
+## Build status
+
+- **Built, this module builds on it:** episode **E2 *CV and recruitment lures*** (`scenarios/awareness_e2_cv_lures`), Tarrowby Logistics, host Fatima Begum. The learner researches, composes one job application with an attachment chosen from labels (a malicious CV or a "enable content" document), sees it flipped, then defends the recruitment inbox (6 emails, 2 phish, 4 genuine, no Verify) with a short macro concept panel. The **hr check pair** (`awareness_{pre,post}_hr_{ab,ba}`) measures the skill. Covers R05-LO4 in part (malicious CVs, portfolio links, "enable content").
+- **Builds on E2 and the hr checks:** malicious attachments, portfolio links and "enable content" lures aimed at recruiters are taught and measured today.
+- **New (role extension this plan adds):** recruitment fraud by borrowed identities and proxies (R05-LO4, the other half); joiners, movers and leavers access (R05-LO1, LO2, LO3); and the no-blame culture and HR data on a need-to-know basis (R05-LO5, LO6). Delivered as one new attack-first episode (recruitment fraud), one consequence-flip episode (access that outlives the job), and concept cards; see `game_design.md`.
+- The awareness product is "Incident Simulations: Critical Cases", on hold since 2026-10-23 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). Nothing new here starts while it is on hold unless the user says so.
 
 ## Why this module
 
@@ -24,20 +33,20 @@ Recruitment has become a way in as well. In September 2024 the UK's Office of Fi
 
 ## Target behaviours
 
-1. **Gives the least access** a role needs, and makes sure movers and leavers lose access, devices, keys and codes on the day.
-2. **Says "thank you" and acts** when someone reports a mistake: gets it reported at once, supports them, never blames.
-3. **Insists on the same checks for every new hire**, and raises concerns about candidates or colleagues through HR and security rather than handling them alone.
+1. **Gives the least access** a role needs, and makes sure movers and leavers lose access, devices, keys and codes on the day. **New.**
+2. **Says "thank you" and acts** when someone reports a mistake: gets it reported at once, supports them, never blames. **New.**
+3. **Insists on the same checks for every new hire**, and raises concerns about candidates or colleagues through HR and security rather than handling them alone. **Built in part: E2's recruitment lures; new: recruitment fraud.**
 
 ## Learning outcomes
 
 After this module, managers and HR staff can:
 
-- **R05-LO1** Request the least access a new starter's role needs, with an end date for temporary staff, instead of copying someone else's access.
-- **R05-LO2** Make sure a mover's old access, and a leaver's accounts, devices, keys, codes and data, are dealt with on the day they move or leave.
-- **R05-LO3** Review their team's access, remove what is no longer needed, and ask the system owner when unsure.
-- **R05-LO4** Recognise the signs of recruitment fraud (borrowed identities, proxies, altered video) and apply the standard identity and right to work checks fairly to every candidate.
-- **R05-LO5** Respond to a team member who reports a mistake by thanking them, getting it reported at once and supporting them, and set the team's culture by making time for training.
-- **R05-LO6** Handle HR and health information on a need-to-know basis, and raise a concern about a colleague through HR and security instead of investigating it themselves.
+- **R05-LO1** Request the least access a new starter's role needs, with an end date for temporary staff, instead of copying someone else's access. **New.**
+- **R05-LO2** Make sure a mover's old access, and a leaver's accounts, devices, keys, codes and data, are dealt with on the day they move or leave. **New.**
+- **R05-LO3** Review their team's access, remove what is no longer needed, and ask the system owner when unsure. **New.**
+- **R05-LO4** Recognise the signs of recruitment fraud (malicious attachments and links, borrowed identities, proxies, altered video) and apply the standard identity and right to work checks fairly to every candidate. **Built in part: E2; new: the fraud half.**
+- **R05-LO5** Respond to a team member who reports a mistake by thanking them, getting it reported at once and supporting them, and set the team's culture by making time for training. **New.**
+- **R05-LO6** Handle HR and health information on a need-to-know basis, and raise a concern about a colleague through HR and security instead of investigating it themselves. **New.**
 
 ## Compliance coverage
 
@@ -56,37 +65,36 @@ The module also supports the organisation's own access, screening and leaver con
 
 ## Module flow
 
-| Beat | What happens | Format | Minutes |
+E2 played in the built episode shape:
+
+| Stage | What happens | Scored? | Minutes |
 |---|---|---|---|
-| Hook | Monday 08:40. Owain's ticket for the new starter offers "copy access from Des Harker" in one click. The player's choice is the baseline | Game (MG-18 request mode) | 1 to 2 |
-| Learn | Ama and Mei Lin: access follows the job; day one, move day and last day; hiring checks; what to say when someone owns up | NPC explainer with visual aids (EX-01, BE-08) | 4 |
-| Practise | "Access or Excess?": eight quick requests, then three "What do you say?" cards | Minigame drill (MG-18 practice mode, MG-20 items) | 3 to 4 |
-| Apply | The rest of the week: training time, a remote candidate, Leo's move to Finance, the access review, Farida at 17:50, a temp who needs "the same as Des", Des's last day | Game (BE-18 week planner, MG-18, MG-25, BE-16) | 11 to 12 |
-| Debrief | The team's access on Monday and on Friday, each decision and where it led, and the team pulse | Debrief screen (BE-02), Ama and Mei Lin | 2 |
-| Check | Six scenario questions | Quiz (MG-20) | 2 |
-| Reference | The manager's card: joiners, movers, leavers, reviews, hiring checks, "thanks for telling me" | Intranet (BE-09) | under 1 |
+| Brief and scope note | Fatima welcomes the learner to an authorised exercise; the learner is in recruitment at Tarrowby | no | under 1 |
+| Attack half | OSINT on a public vacancy, then compose one job application with an attachment chosen from labels (a malicious CV or "enable content" document) | no | about 4 |
+| Flip | The learner's own application lands in the recruiter's inbox with its tells named | no | 1 |
+| Defend half | The recruitment inbox (6 emails, 2 phish, 4 genuine), a macro concept panel, mirror pairs | yes | about 5 |
+| Debrief | Per-item cards, genuine-item feedback, the team tally, **the habit to keep**, an "On Monday" card and the reporting route | no | about 2 |
+
+The new **recruitment fraud** episode runs the same shape. The **access that outlives the job** consequence-flip episode (R3) has no natural attacker: the learner makes the "copy a leaver's access" mistake in a safe sandbox and the flip shows the ghost accounts and the toxic combination it left. The hr pre and post checks bracket the episodes.
 
 ## Reuse from existing Break Escape content
 
-- **Rooms:** `room_office` (the Operations floor), `small_office_room1_1x1gu` (the player's office), `small_office_room3_1x1gu` (Mei Lin's HR office), `room_IT` (Owain's service desk), `room_break` (Des's leaving do), `room_meeting` (the in-person identity check).
-- **Conversations:** `person-chat` for Ama, Mei Lin, Owain, Leo, Farida, Marta and Des; `person-chat` video-call mode (`person-chat-ui.js`) for the remote interview; `phone-chat` for Lena, Hassan, the recruitment agency and the team chat.
-- **Minigames:** `warranty-checklist` (sis03: rows with three verdict buttons, a gated submit and saved state; `public/break_escape/js/minigames/warranty-checklist/`) as the base for MG-18; `forensic-data-platform` (tabs, tables, a confirm step) as the candidate file until MG-25 exists; `alarm-panel` (lamps bound to globals, with a configurable `panelTitle` and `footer`) reskinned as the team pulse board; `container` for Des's desk drawer; `notes` for the leaver checklist and the access policy.
-- **Patterns:** the debrief as a conversation gated on globals (`scenarios/sis01_healthcare/ink/npc_sharma.ink`); timed messages for the week's interruptions; event-triggered conversations for Farida's knock at the door; m05 Insider Trading's recruiter material for ideas only (core_14 owns insider recruitment).
-- **Systems:** the game clock (`gameClock`) across a compressed week; objectives and tasks for the week planner; the facilitator stop-points in `scenarios/sis02_energy/mission.json` as the model for the workshop version.
+- **Episode runner** for all stages; `variant: "full"`, `"defendOnly"` and the consequence flip (R3); the `facilitated` flag for a managers' workshop.
+- **OSINT browser**, **intel facts**, **mail client in template mode** with the red-flag meter, and the **flip view**.
+- **Inbox triage** with the macro concept panel (E2) and attachment labels; **mirror pairs** (aw5) in the defend sets and the hr checks.
+- **Debrief view**, **concept cards**, **awareness measurement** and the comparison panel.
+- **The look-alike NPC guard and player avatar**.
+- **Rooms:** `room_aw_tarrowby` for E2 and the new episodes.
 
 ## New features needed
 
-- **MG-18 Access review:** built from `warranty-checklist`, with a configurable title and letterhead (today "Meridian Cyber Insurance" and its globals are hard-coded), verdict labels (Keep, Reduce, Remove, Ask the owner), an expected verdict per row for BE-01, and a **request mode** for joiners and movers (pick from a role template or copy a user; set an end date).
-- **MG-25 Document inspector:** the candidate's CV, ID scan, right to work result and references, compared with each other.
-- **MG-20 Knowledge check**, **BE-01 Assessed decisions** and **BE-02 Debrief screen**.
-- **BE-18 Work task and interruptions:** the Monday to Friday planner, with the clock jumping between scenes.
-- **BE-16 Time skips:** the "three months later" consequences.
-- **BE-19:** MG-18 opening from Owain's ticket; Ama's check question and the "What do you say?" cards, opened from conversation with `#trigger_minigame:knowledge_check|<configKey>`.
-- **MG-27 Work desktop:** the player's computer as one launcher for Owain's tickets, MG-18, the team chat and The Lark.
-- **BE-08 Visual aids:** the two access lists side by side, the access lifecycle diagram, the hiring red flags card, the "thank, act, support, learn" card.
-- **BE-09 Intranet** and **BE-05 Organisation profile:** the manager's card with the customer's own leaver process, screening policy and reporting routes.
-- **proposed:** Video call connection effects (freeze, blur and audio lag) in `person-chat` video-call mode, set by ink tags, plus a configurable label for the call bar (today "SECURE VIDEO LINK" is hard-coded). These are ordinary call-quality dressing that can appear for any caller, not a deepfake tell (core_15 teaches that fakes don't reliably glitch); the candidate is caught by the identity and process checks, never by the video. Likely shared with core_15.
-- **MG-04 Voice calls** (P2) for ringing a referee on an independently found number; a `phone-chat` conversation works until then.
+- **A new recruitment-fraud episode** in the runner at Tarrowby: the attack half composes a fake application from a borrowed identity; the defend set triages candidate messages and files, each phish with a close genuine twin (a fake remote candidate with mismatched paperwork and a refusal to show original ID, against a genuine candidate with awkward circumstances such as poor broadband or a career break), as mirror pairs. Concept cards carry the fair-checks rule.
+- **A consequence-flip episode** (R3) for joiners, movers and leavers access: the learner copies a leaver's access or leaves a mover's access open in a safe sandbox, and the flip shows the ghost accounts, the shared login and the toxic combination. Concept cards carry day one, move day, last day and the review.
+- **Concept cards:** access follows the job; the access lifecycle; the fair checks for every hire; HR information on a need-to-know basis; Thank, Act, Support, Learn when someone owns up.
+- **BE-05 Organisation profile** (partly built): the leaver deadline, the screening policy, the statement on mistakes and the reporting routes in the debrief cards; the reporting-route slot (feature-level only; see `hacktivity.md`).
+- **BE-03 Text route** and **BE-04 accessibility** beyond the social overlays.
+- **Video call quality dressing** (freeze, blur, lag) that can appear for any caller in a `person-chat` video scene: ordinary call-quality dressing, never a deepfake tell (core_15 teaches that fakes don't reliably glitch); the fake candidate is caught by the identity and process checks, not the video. Likely shared with core_15.
+- Not pursued (would redesign beyond the build): the MG-18 access review desk built from `warranty-checklist`, the MG-25 document inspector, the `alarm-panel` team pulse board and the week planner. The twelve-row access review and the live pulse board are a later idea in the `features/minigames.md` catalogue (build status "not built"); access is taught as a consequence flip and concept cards.
 
 ## Organisation-specific content
 
@@ -96,11 +104,11 @@ The module also supports the organisation's own access, screening and leaver con
 - The pre-employment screening policy (identity, right to work, references, criminal record checks where the role needs them) and the rules for agencies, freelancers and contractors.
 - The organisation's statement on security mistakes, and how it fits the disciplinary policy.
 - Where HR and health information is kept, and who can see it.
-- Routes: the security team, HR, the DPO and the whistleblowing line.
+- Routes: the security team, HR, the DPO and the whistleblowing line; and the reporting route shown in the debrief (`slot:customer_report_route`).
 
 ## Open questions
 
-1. **Micro-drill.** The catalogue gives role_05 none. *Recommendation: none at launch; "Access or Excess?" could become a quarterly drill timed with access reviews later (BE-07).*
-2. **How specific to be about recruitment fraud.** The official advisories are about North Korean IT workers. *Recommendation: name them in `concepts.md` and on the reference card, but keep the game's fraudster an unnamed, faceless network, so no candidate's nationality, accent or appearance becomes the clue. The clues are inconsistencies and refusals.*
-3. **Control references.** The module supports access, screening and leaver controls (for example ISO/IEC 27001's controls on access rights, screening and responsibilities after employment). *Recommendation: add short references for them to `02_COMPLIANCE_MAPPING.md` only if customers ask; they aren't training requirements.*
-4. **An HR-only route.** HR teams may want recruitment and leavers without the team-manager scenes. *Recommendation: an organisation setting that swaps the team huddle and Farida's scene for an HR case queue, keeping the same assessed behaviours.*
+1. **Recruitment fraud specifics.** The official advisories are about North Korean IT workers. *Recommendation: name them in `concepts.md` and on the reference card, but keep the game's fraudster an unnamed, faceless network, so no candidate's nationality, accent or appearance becomes the clue. The clues are inconsistencies and refusals, and the genuine-candidate mirror twin makes "run the checks" the only reliable rule.*
+2. **Control references.** The module supports access, screening and leaver controls. *Recommendation: add short references to `02_COMPLIANCE_MAPPING.md` only if customers ask; they aren't training requirements.*
+3. **An HR-only route.** *Recommendation: an organisation setting that frames the recruitment-fraud episode for HR without the team-manager framing, keeping the same defend set and checks.*
+4. **Access as a consequence flip.** The build has no scored access-review desk. *Recommendation: teach joiners, movers and leavers as a consequence-flip episode and concept cards; keep the richer review desk in the backlog.*

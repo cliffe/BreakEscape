@@ -2,6 +2,8 @@
 
 This file is the source of truth for the module. The game, the explainers, the knowledge check and the reference card must all match it. Facts were checked in October 2026; lines marked **check before each edition** change often.
 
+**World note.** The old Larkspur Group world is retired. The built module builds on episode E4 (executive whaling) at Merrin & Sallow Architects and the executive check pair; the new board crisis episode uses **Harbreck Facilities Group** (`harbreck.example`), a proposed brand-set company (a facilities management firm in the North of England, about 600 staff, serving hospitals, care homes and schools). Harbreck is the fictional default organisation for this file's examples and slots. The supplier "Larkspur Travel" in the built executive check forms is a different, unrelated name and is unchanged.
+
 ## Key messages
 
 1. **Cyber risk is business risk, and the board owns it.** Know what matters most to the organisation, what you would do if it stopped, and who decides.
@@ -59,7 +61,7 @@ The NCSC's **Cyber Governance Training** covers the same five principles: an int
 ### The first hours: decisions only leaders can take
 
 - **Contain, at a cost.** Isolating networks or shutting systems down stops the spread but stops services too. As M&S put it to MPs, "there is a difference between choosing to take systems down and them being taken down". Decide on the technical lead's advice, accept the business impact, and record it.
-- **Keep the lifeline services going.** Know which services matter most and how each runs without its systems. For Larkspur that is the cleaning rotas for hospitals and care homes, school deliveries and payroll. Paper fallbacks only work if they are tested: Co-op's were there, "but it is about how often you test them".
+- **Keep the lifeline services going.** Know which services matter most and how each runs without its systems. For Harbreck that is the cleaning rotas for hospitals and care homes, school deliveries and payroll. Paper fallbacks only work if they are tested: Co-op's were there, "but it is about how often you test them".
 - **Bring in help and tell the insurer** as the policy requires.
 - **Write it down.** The NCSC advises keeping a careful record of the response, including "decisions made, actions taken", offline or on systems the incident hasn't touched. The decision log protects the organisation with regulators and insurers, lets the next shift pick up, and is the backbone of the post-incident review. Each entry: time, decision, who decided, the advice taken, the reason, and when it will be reviewed.
 - **Restore clean, not just fast.** Rebuilding takes weeks, not hours. The M&S chairman told MPs that people imagine "you change the fuse and turn the lights back on, but it does not work like that"; Co-op restored service about 14 days after the attack. Restoring from backups taken while attackers were inside can bring them back. Restore the lifeline services first, from backups known to be clean.
@@ -87,7 +89,7 @@ The clock starts at awareness, not when the picture is complete. A first report 
 - **Regulators.** The ICO does not treat paying criminals as reducing the risk to people, so paying will not reduce a penalty (joint NCSC and ICO letter to the Law Society and the Bar Council, July 2022; NCSC, 2024). Working with the NCSC may lead to "a more favourable regulatory response, including a lower fine from the ICO" (NCSC, 2024).
 - **What three organisations did.** The British Library made no payment and did not engage with the attackers; its data was published. Co-op told MPs: "We did not pay a ransom, and nor did we contemplate or at any point discuss paying a ransom." M&S declined to discuss it publicly; its chairman framed the question as "what are you getting for it, once your systems are compromised and you are going to have to rebuild anyway?"
 - **Decide in advance.** A stance agreed by the board (the rule, who may approve an exception, and which checks come first) means the first time the board debates paying is not at 11:00 on the worst day of the year.
-- **UK policy (check before each edition).** The Home Office consulted from January to April 2025 and published its response on 22 July 2025. It proposed a targeted ban on ransom payments by public sector bodies (including the NHS, local councils and schools) and by owners and operators of critical national infrastructure; a payment prevention regime, under which other victims would report an intention to pay before paying; and mandatory incident reporting, with an initial report within 72 hours and a fuller one within 28 days. The government said it would keep developing all three, including how far the ban should reach into supply chains. As of October 2026 none of these is in force. Suppliers to public bodies, like Larkspur, should watch the supply chain question.
+- **UK policy (check before each edition).** The Home Office consulted from January to April 2025 and published its response on 22 July 2025. It proposed a targeted ban on ransom payments by public sector bodies (including the NHS, local councils and schools) and by owners and operators of critical national infrastructure; a payment prevention regime, under which other victims would report an intention to pay before paying; and mandatory incident reporting, with an initial report within 72 hours and a fuller one within 28 days. The government said it would keep developing all three, including how far the ban should reach into supply chains. As of October 2026 none of these is in force. Suppliers to public bodies, like Harbreck, should watch the supply chain question.
 
 ### Cyber insurance
 
@@ -114,7 +116,7 @@ Leaders' names, voices and authority are the ones criminals most like to borrow:
 
 ### Who's behind it (optional explainer)
 
-Most attacks on organisations like Larkspur come from criminals after money, using common weaknesses. Some come from an "advanced persistent threat": NIST describes "an adversary with sophisticated levels of expertise and significant resources" that pursues its objectives repeatedly over a long period, adapts to defenders' countermeasures and stays committed to its goals (NIST SP 800-30 Rev. 1, citing SP 800-39). Such groups often want quiet, lasting access or information rather than a quick payment. For a board the questions are the same ones, asked with a longer view: which of our information or access (for a supplier, its connections into clients' sites and systems) would interest a well-resourced attacker, and would we notice someone who stayed quiet for months? This short explainer covers NIST AT-2(5) at awareness level.
+Most attacks on organisations like Harbreck come from criminals after money, using common weaknesses. Some come from an "advanced persistent threat": NIST describes "an adversary with sophisticated levels of expertise and significant resources" that pursues its objectives repeatedly over a long period, adapts to defenders' countermeasures and stays committed to its goals (NIST SP 800-30 Rev. 1, citing SP 800-39). Such groups often want quiet, lasting access or information rather than a quick payment. For a board the questions are the same ones, asked with a longer view: which of our information or access (for a supplier, its connections into clients' sites and systems) would interest a well-resourced attacker, and would we notice someone who stayed quiet for months? This short explainer covers NIST AT-2(5) at awareness level.
 
 ### People and culture
 
@@ -196,12 +198,12 @@ Use these as background only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur, fictional) |
+| Slot | Default (Harbreck, fictional) |
 |---|---|
-| Incident plan and roles | "Larkspur Incident Response Plan, version 4: the on-call director leads; the Information Security Manager may isolate systems on her own authority and tells the on-call director at once; the chair is told within the hour" |
+| Incident plan and roles | "Harbreck Incident Response Plan, version 4: the on-call director leads; the Information Security Manager may isolate systems on her own authority and tells the on-call director at once; the chair is told within the hour" |
 | Deputy for the chief executive | "The on-call director" |
 | Out-of-band channel | "The crisis group on company backup phones; printed contact cards in the board room safe" |
-| Ransom stance | "Larkspur does not negotiate with or pay criminals. Only the full board can review this, after legal and sanctions advice, with the insurer and the NCSC told first, and the reasons minuted" (board minute from last year's exercise; the staff version in core_07 is the first sentence) |
+| Ransom stance | "Harbreck does not negotiate with or pay criminals. Only the full board can review this, after legal and sanctions advice, with the insurer and the NCSC told first, and the reasons minuted" (board minute from last year's exercise; the staff version in core_07 is the first sentence) |
 | Insurer and incident line | "Fellside Insurance, incident line on the card in the board pack" |
 | Policy conditions | "MFA on all remote access; offline backups tested quarterly; notify the incident line within 24 hours; use panel firms" |
 | Regulators | "The ICO. No NIS duties. Client contracts" |
@@ -209,7 +211,7 @@ Use these as background only. Game content uses fictional names.
 | Lifeline services | "Cleaning rotas for hospitals and care homes; school deliveries; payroll" |
 | Paper fallbacks | "Printed weekly rotas in each depot; phone ordering for schools; payroll repeated from last month by bank file" |
 | Board reporting | "A quarterly cyber report from the Information Security Manager to the Audit and Risk Committee" |
-| Police route | "Report Fraud (Larkspur's sites are all in England); the NCSC's incident reporting service for significant incidents" |
+| Police route | "Report Fraud (Harbreck's sites are all in England); the NCSC's incident reporting service for significant incidents" |
 
 ## Glossary
 
