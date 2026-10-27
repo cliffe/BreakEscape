@@ -178,3 +178,25 @@
   .game-menu-body { flex-direction: column; }
   .game-menu-nav { flex-direction: row; flex-wrap: wrap; flex-basis: auto; }
 }
+
+/* Short landscape screens (a phone on its side, about 915x412): the item column would run off the
+   bottom, so the items sit in a row across the top and only the open page scrolls. "Save and quit
+   to menu" is in the nav, so it is always on screen. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .game-menu-panel {
+    width: min(760px, calc(100vw / var(--hud-zoom, 1) - 16px));
+    max-height: calc(100vh / var(--hud-zoom, 1) - 8px);
+    min-height: 0;
+    box-sizing: border-box; /* the skin's frame is a border: count it in the height */
+  }
+  .game-menu-header { padding: 4px 10px; align-items: center; }
+  .game-menu-header h2 { font-size: 16px; }
+  .game-menu-mission { margin-top: 0; font-size: 12px; }
+  .game-menu-close { width: 32px; height: 32px; }
+  .game-menu-body { flex-direction: column; gap: 8px; padding: 8px 10px; overflow: hidden; flex: 1 1 auto; }
+  .game-menu-nav { flex-direction: row; flex-wrap: wrap; flex: 0 0 auto; gap: 6px; }
+  .game-menu-item { font-size: 14px; padding: 4px 12px; min-height: 36px; }
+  .game-menu-pages { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .game-menu-page h3 { margin-bottom: 6px; }
+  .game-menu-field { margin-bottom: 6px; }
+}

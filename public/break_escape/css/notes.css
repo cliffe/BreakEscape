@@ -402,3 +402,27 @@
     background: #eeeeea;
     font-weight: bold;
 }
+
+/* Short landscape screens (a phone on its side, about 915x412, and the desktop app's 800x600): the notepad is sized by the screen
+   height, not held at 450px wide, so it fits whole; its text scrolls inside it; and the Continue
+   (and note-navigation) buttons sit beside it instead of over the text. */
+@media (orientation: landscape) and (max-height: 640px) {
+    .minigame-container .notes-minigame-game-container { margin: 0 auto; height: 100%; align-items: center; }
+    .notes-minigame-notepad {
+        min-width: 0;
+        height: calc(100vh - 12px);
+        width: calc((100vh - 12px) * 165 / 205);
+        aspect-ratio: auto;
+        background-size: 100% 100%;
+    }
+    .notes-minigame-content-area { padding: 3% 9% 9% 17%; font-size: 14px; line-height: 1.3; height: 94%; }
+    .notes-minigame-text-box { margin: 2% 0 4% 4%; padding: 8px; }
+    .notes-minigame-text { margin-left: 0; }
+    .notes-minigame-title { font-size: 13px; margin: 0 0 2% 4%; }
+    .notes-minigame-observation-container { margin: 2% 0 4% 4%; }
+    .notes-minigame-observation { font-size: 14px; min-height: 24px; padding: 6px; }
+    .minigame-container:has(.notes-minigame-notepad) .minigame-controls {
+        left: auto; right: 24px; bottom: 16px; transform: none; margin-top: 0;
+    }
+    .notes-minigame-nav-container { left: 24px; bottom: 16px; transform: none; flex-wrap: wrap; max-width: 28%; }
+}
