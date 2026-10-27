@@ -193,3 +193,26 @@ test('the board draws its own Close and asks to pause world keys (requiresKeyboa
     assert.ok(s.closeButton, 'own Close control');
     assert.equal(s.params.requiresKeyboardInput, true);
 });
+
+test('R18 F-a: a wrong-pile hint clears once the card is in the right pile, and never shows on a placed card', () => {
+    setup();
+    const s = open({ mode: 'scope' });
+    click(s, sortBtn(s, 'work_mail', 'out'));
+    assert.match(s.container.querySelector('[data-card="work_mail"]').textContent, /Not in the out of scope pile/);
+    click(s, sortBtn(s, 'work_mail', 'in'));
+    assert.doesNotMatch(text(s), /Not in the (in|out of) scope pile/);
+    assert.equal(s.container.querySelector('[data-pile="in"] [data-card="work_mail"]') !== null, true);
+    // a different card's wrong click, then its right click, leaves no hint on the board either
+    click(s, sortBtn(s, 'personal_mail', 'in'));
+    click(s, sortBtn(s, 'personal_mail', 'out'));
+    assert.doesNotMatch(text(s), /Not in the (in|out of) scope pile/);
+});
+
+test('R18 F-a: a hint on one card clears when the student tries another card', () => {
+    setup();
+    const s = open({ mode: 'scope' });
+    click(s, sortBtn(s, 'work_mail', 'out'));
+    click(s, sortBtn(s, 'personal_mail', 'in'));
+    assert.doesNotMatch(s.container.querySelector('[data-card="work_mail"]').textContent, /Not in the/);
+    assert.match(s.container.querySelector('[data-card="personal_mail"]').textContent, /Not in the in scope pile/);
+});

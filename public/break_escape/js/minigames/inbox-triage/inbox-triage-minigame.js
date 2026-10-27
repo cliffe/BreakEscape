@@ -295,6 +295,13 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         });
     }
 
+    /** The announcement for a message's locked verdict (also what keeps it on screen while that message stays open). */
+    _lockedLine(id) {
+        const rec = this.messages.find((m) => m.id === id);
+        const a = this.answers.get(id);
+        return rec && a ? `Verdict locked: ${this._actionLabel(rec, a)}.` : null;
+    }
+
     _announce(text) {
         this._live = text;
         if (this.liveEl) this.liveEl.textContent = text;
@@ -456,6 +463,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     }
 
     _onOpen(rec) {
+        // The "Verdict locked" line is about the message just sorted; opening another must not leave it
+        // reading as that message's verdict (lab R18 F-d).
+        if (this._live && this._live !== this._lockedLine(rec.id)) this._announce('');
         rec.read = true;
         this.openedAt.set(rec.id, Date.now());
     }
@@ -652,7 +662,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         this._closeSheet(false);
         const rec = this.messages.find((m) => m.id === s.messageId);
         if (this.teamEl) this._renderTeamTally(this.teamProtectedCount() > teamBefore);
-        this._announce(`Verdict locked: ${this._actionLabel(rec, answer)}.`);
+        this._announce(this._lockedLine(rec.id));
         this.progressEl.textContent = `${this.answers.size} of ${this.messages.length} sorted`;
 
         if (this.answers.size >= this.messages.length) {

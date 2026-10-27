@@ -205,3 +205,24 @@ ask which". Q1 ("which can these results NOT tell him?") now needs the step of r
 
 `tools/playtest/se/bridge-6.jsonl` RP1 regex updated for the new unseenNote wording
 (`/no button or inbox for staff to flag/`). bridge-5 and r4-door unchanged.
+
+## R18 fixes
+
+Source: `playtests/R18.md` F-a to F-d. R18 ran on a tree with a stalled rebase, so each finding was
+re-checked against the current code first.
+
+- **F-a (scope-card hint stays):** not reproducible as described. The wrong-pile hint was already
+  removed once its card was placed correctly (placed cards are not drawn as open cards). What did
+  persist was a hint on an earlier card after the student tried a different one. `placeCard` now keeps
+  one hint at a time. Tests in `social-intel-board-engagement.test.mjs`.
+- **F-b (From spoof discoverability):** engine change, SE-only. The forced-From hint only drew once a
+  recipient was chosen and said "Switch account" without naming one. It now shows as soon as the account
+  is chosen and reads "Switch to the Consultant account to send as someone else." The account name comes
+  from the scenario's `mailClient.accounts` (`displayName`). Test in `social-mail-accounts.test.mjs`.
+- **F-c (Sofia's rejection):** on-screen factor text (`factorStrings.addressedTo.fail`), not voiced and
+  not in the TTS list. Now: "No name, or not the one the portal uses. Think about how a system that
+  already knows her would greet her: the full name on her badge, or something shorter?"
+- **F-d (triage verdict):** the lost row verdict did not reproduce (extra clicks on a locked message
+  change nothing; the row badge stays). The stale "Verdict locked: Trust" banner did: the live line is a
+  visible notice and stayed on screen after another message was opened. Opening a different message
+  now clears it. Test in `social-triage-ui.test.mjs`.

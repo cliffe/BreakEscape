@@ -549,13 +549,13 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         if (!ENGAGEMENT_MODES.includes(this.mode) || !this.emodel || !['in', 'out'].includes(pile)) return false;
         const item = this.emodel.items.find((i) => i.kind === 'sort' && i.id === cardId);
         if (!item || item.done) return false;
+        this._feedback = {}; // one hint at a time: it belongs to the card just tried, not an earlier one
         if (pile !== item.right) {
             this._feedback[cardId] = { tried: pile, why: item.why };
             this._liveText = `Not that pile. ${item.why}`;
             this._renderEngagement(`[data-card="${cardId}"] [data-option="${pile}"]`);
             return true;
         }
-        delete this._feedback[cardId];
         const cur = readEngagementState(this.globals, this.mode);
         const flipped = this._saveEngagement({ sorted: { ...cur.sorted, [cardId]: pile } });
         this._liveText = `Right. ${item.why}`.trim() + (flipped ? ` ${this.emodel.title} complete.` : '');

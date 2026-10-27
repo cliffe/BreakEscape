@@ -329,6 +329,8 @@ test('the forced-From hint adds "Switch account" only when another listed accoun
     assert.equal(withGuest.scene.account.id, 'freemail');
     withGuest.scene.openCompose();
     assert.equal(withGuest.scene.composer.anotherSpoofs, true);
+    assert.equal(withGuest.scene.composer.spoofingAccount.id, 'guest');
+    assert.match(withGuest.host.querySelector('.mail-compose-hint').textContent, /Switch to the .+ account to send as someone else/);
     withGuest.scene.closeCompose();
 
     const alone = open({ accountIds: ['freemail'], mailClient: cfg },

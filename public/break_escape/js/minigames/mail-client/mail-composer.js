@@ -244,8 +244,13 @@ export class MailComposer {
 
     /** True when some other listed, unreported account may spoof the From (the hint then says Switch account). */
     get anotherSpoofs() {
-        return this.accounts.some((a) => a && this.account && a.id !== this.account.id
-            && a.spoofsFrom === true && !this.isBurned(a));
+        return !!this.spoofingAccount;
+    }
+
+    /** The first other listed, unreported account that may spoof the From, or null; the hint names it. */
+    get spoofingAccount() {
+        return this.accounts.find((a) => a && this.account && a.id !== this.account.id
+            && a.spoofsFrom === true && !this.isBurned(a)) || null;
     }
 
     /** From is forced to the account (no claimed-From blanks) when it cannot spoof (00 §10a, 01 §2). */
@@ -803,13 +808,13 @@ export class MailComposer {
             line.className = 'mail-compose-value';
         }
         // One row for the address: when the From is just this account, the account row carries it.
-        if (this._fromIsOwn()) {
-            line.classList.add('mail-compose-from-own');
-            if (this.fromForced) {
-                line.append(el('span', 'mail-compose-hint', this.anotherSpoofs
-                    ? ' You can only send as yourself from this address. Switch account to send as someone else.'
-                    : ' You can only send as yourself from this address.'));
-            }
+        if (this._fromIsOwn()) line.classList.add('mail-compose-from-own');
+        // The hint shows as soon as the account is chosen, even before a recipient is picked (R18 F-b).
+        if (this.fromForced) {
+            const other = this.spoofingAccount;
+            line.append(el('span', 'mail-compose-hint', other
+                ? ` You can only send as yourself from this address. Switch to the ${other.displayName || other.address} account to send as someone else.`
+                : ' You can only send as yourself from this address.'));
         }
         if (!hasSelect || line.textContent) row.appendChild(line);
         this.root.appendChild(row);
